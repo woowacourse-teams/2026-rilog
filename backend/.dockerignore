@@ -1,0 +1,14 @@
+.gradle
+build
+out
+.idea
+.vscode
+*.iml
+*.iws
+*.ipr
+*.env
+.DS_Store
+
+Dockerfile
+README.md
+HELP.md
