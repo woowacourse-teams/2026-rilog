@@ -1,0 +1,55 @@
+name: "🔧 Chore"
+description: 빌드, 설정, 의존성, CI 등 보조 작업을 수행합니다.
+title: "[chore] "
+labels: ["chore"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: 작업 종류
+      options:
+        - 빌드 설정
+        - CI/CD
+        - 의존성
+        - 개발 환경
+        - 자동화
+        - 저장소 설정
+        - 기타
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 작업 목적
+      description: 이 작업이 필요한 이유를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 작업 내용
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 영향 및 주의사항
+      description: 개발 환경, 배포, 호환성 등에 미치는 영향을 작성해주세요.
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 설정이 정상적으로 적용된다.
+        - [ ] 기존 빌드와 테스트가 통과한다.
+        - [ ] 필요한 사용 방법을 문서화했다.
+    validations:
+      required: true

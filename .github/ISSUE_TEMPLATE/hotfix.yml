@@ -1,0 +1,95 @@
+name: "🚨 Hotfix"
+description: 운영 환경의 긴급 문제를 수정합니다.
+title: "[hotfix] "
+labels: ["hotfix", "priority: critical"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        운영 장애나 사용자에게 즉각적인 영향을 주는 문제에만 사용해주세요.
+
+  - type: textarea
+    id: incident
+    attributes:
+      label: 장애 내용
+      description: 현재 발생 중인 문제를 요약해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 사용자 영향
+      description: 영향받는 사용자와 기능의 범위를 작성해주세요.
+    validations:
+      required: true
+
+  - type: input
+    id: started-at
+    attributes:
+      label: 발생 시각
+      placeholder: "YYYY-MM-DD HH:mm KST"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 심각도
+      options:
+        - Critical — 서비스 전체 이용 불가 또는 데이터 손실
+        - High — 핵심 기능 이용 불가
+        - Medium — 일부 사용자 또는 기능 장애
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 재현 및 확인 방법
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: 임시 대응
+      description: 이미 수행한 조치나 우회 방법을 작성해주세요.
+
+  - type: textarea
+    id: fix-plan
+    attributes:
+      label: 수정 계획
+      description: 추정 원인과 긴급 수정 범위를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: 배포 후 검증
+      value: |
+        - [ ] 장애 상황이 해소됐다.
+        - [ ] 핵심 사용자 흐름을 확인했다.
+        - [ ] 로그와 모니터링 지표를 확인했다.
+        - [ ] 회귀 테스트를 통과했다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: 롤백 계획
+      description: 배포 실패 또는 문제 재발 시 롤백 방법을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: follow-up
+    attributes:
+      label: 후속 작업
+      description: 근본 원인 분석, 테스트 보강 등 후속 이슈를 작성해주세요.

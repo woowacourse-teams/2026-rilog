@@ -1,0 +1,43 @@
+name: "✨ Feature"
+description: 새로운 기능을 제안하거나 구현합니다.
+title: "[feature] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경
+      description: 이 기능이 필요한 이유와 해결하려는 문제를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 목표
+      description: 이 작업으로 달성하려는 결과를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: 요구사항
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 인수 조건
+      description: 완료 여부를 판단할 수 있는 조건을 작성해주세요.
+      value: |
+        - [ ] 정상 흐름이 동작한다.
+        - [ ] 예외·오류 상태를 처리한다.
+        - [ ] 관련 테스트를 통과한다.
+    validations:
+      required: true

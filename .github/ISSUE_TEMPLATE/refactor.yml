@@ -1,0 +1,56 @@
+name: "♻️ Refactor"
+description: 동작 변경 없이 코드 구조를 개선합니다.
+title: "[refactor] "
+labels: ["refactor"]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: 리팩터링 대상
+      description: 개선할 코드나 모듈을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 현재 문제
+      description: 중복, 복잡도, 결합도 등 현재 구조의 문제를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: 개선 방향
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: invariants
+    attributes:
+      label: 유지되어야 하는 동작
+      description: 리팩터링 후에도 변하면 안 되는 동작을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: 검증 방법
+      value: |
+        - [ ] 기존 회귀 테스트를 통과한다.
+        - [ ] API 계약이 변경되지 않는다.
+        - [ ] 사용자 동작이 변경되지 않는다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: 제외 범위
+      description: 이번 리팩터링에 포함하지 않는 내용을 작성해주세요.
