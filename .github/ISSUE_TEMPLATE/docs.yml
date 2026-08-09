@@ -1,0 +1,58 @@
+name: "📝 Docs"
+description: 문서를 작성하거나 기존 문서를 개선합니다.
+title: "[docs] "
+labels: ["docs"]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: 대상 문서
+      description: 작성하거나 수정할 문서와 경로를 작성해주세요.
+      placeholder: "예: conventions/api.md"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: 변경 이유
+      description: 누락, 오류, 정책 변경 등 문서 변경이 필요한 이유를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: 변경 내용
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: related-impact
+    attributes:
+      label: 관련 영향
+      multiple: true
+      options:
+        - 요구사항
+        - API 계약
+        - Frontend
+        - Backend
+        - 테스트
+        - 영향 없음
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 관련 문서와 내용이 일치한다.
+        - [ ] 용어와 링크를 확인했다.
+        - [ ] 구현과 문서 사이의 차이가 없다.
+    validations:
+      required: true

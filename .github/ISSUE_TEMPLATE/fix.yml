@@ -1,0 +1,64 @@
+name: "🐛 Fix"
+description: 일반적인 버그나 예상과 다른 동작을 수정합니다.
+title: "[fix] "
+labels: ["fix"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 문제 설명
+      description: 발생한 문제를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 재현 방법
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 실행 환경
+      value: |
+        - 브랜치/커밋:
+        - 브라우저:
+        - 운영체제:
+        - 기기/화면 크기:
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 수정 방향
+      description: 추정 원인이나 예상 해결 방법이 있다면 작성해주세요.
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 문제를 재현하는 테스트를 추가했다.
+        - [ ] 수정 후 테스트를 통과했다.
+        - [ ] 관련 기능의 회귀 여부를 확인했다.
+    validations:
+      required: true
