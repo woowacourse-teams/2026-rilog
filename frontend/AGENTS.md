@@ -24,9 +24,10 @@
 ## 명명과 export
 
 - 폴더와 일반 TypeScript 파일: kebab-case
-- React 컴포넌트 파일과 타입: PascalCase
+- React 컴포넌트 파일과 타입: PascalCase. `page.tsx`, `layout.tsx` 같은 Next.js 예약 파일은 예외로 한다.
 - hook: `use` + PascalCase
 - 함수와 변수: camelCase
+- boolean 변수는 의미에 맞게 `is`, `has`, `can`, `should`, `did`, `will` 접두사 사용을 권장하되 린트로 강제하지 않는다.
 - 상수: SCREAMING_SNAKE_CASE
 - 컴포넌트: `default export`와 `function` 선언
 - 컴포넌트 외 함수·타입·상수: `named export`
