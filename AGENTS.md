@@ -37,8 +37,8 @@
 
 - Git Flow를 사용한다. `main`은 운영 배포, `develop`은 개발 통합, 파트별 작업 브랜치는 상세 기능 단위로 운용하고 `hotfix` 타입은 배포 후 긴급하고 치명적인 버그 수정에만 사용한다.
 - `main`과 `develop` direct push를 금지한다.
-- 파트별 브랜치는 `<be|fe>/<type>/#<이슈번호>/<이슈-설명>` 형식을 사용한다. 예: `be/feature/#1/초기-세팅`, `fe/feature/#3/응원`.
-- 공통 작업 브랜치는 `<type>/#<이슈번호>/<이슈-설명>` 형식을 사용한다. `type`에는 `docs`, `chore`, `ci` 등 작업 성격을 사용한다.
+- 파트별 이슈의 브랜치는 `<be|fe>/<type>/#<이슈번호>-<이슈-설명>` 형식을 사용한다. 예: `be/feature/#1-초기-세팅`, `fe/feature/#3-응원`.
+- 공통 이슈의 브랜치는 `common/<type>/#<이슈번호>-<이슈-설명>` 형식을 사용한다. 문서, 저장소 설정과 자동화 등 여러 파트에 걸친 작업에 적용하며 `type`에는 `docs`, `chore`, `ci` 등 작업 성격을 사용한다.
 - `feature`, `fix`, `refactor` 등 일반 작업 브랜치는 `develop`에서 분기하고 작업 완료 후 `develop`에 merge한다.
 - `hotfix` 타입 브랜치는 `main`에서 분기하고 해결 후 `main`과 `develop`에 모두 merge한다.
 - PR 제목은 `[Type] #이슈번호 설명` 형식으로 작성하고 `Type`의 첫 글자는 대문자로 쓴다. 예: `[Feature] #12 로그인 기능 추가`.
