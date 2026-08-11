@@ -1,40 +1,37 @@
-:root {
-	--button-height-sm: 2rem;
-	--button-height-md: 2.5rem;
-	--button-height-lg: 3rem;
-	--button-padding-inline-sm: 0.75rem;
-	--button-padding-inline-md: 1rem;
-	--button-padding-inline-lg: 1.25rem;
-	--button-radius: 0.75rem;
-	--button-font-size: var(--text-label);
-	--button-line-height: var(--text-label--line-height);
-	--button-font-weight: var(--font-weight-semibold);
-	--button-focus-ring: var(--focus);
-	--button-disabled-opacity: 0.48;
+@theme inline {
+	--spacing-btn-height-sm: 2rem;
+	--spacing-btn-height-md: 2.5rem;
+	--spacing-btn-height-lg: 3rem;
 
-	--button-primary-background: var(--brand-primary);
-	--button-primary-background-hover: var(--brand-primary-hover);
-	--button-primary-background-active: var(--brand-primary-active);
-	--button-primary-foreground: var(--on-brand-primary);
+	--spacing-btn-inline-sm: 0.75rem;
+	--spacing-btn-inline-md: 1rem;
+	--spacing-btn-inline-lg: 1.25rem;
 
-	--button-cancel-background: transparent;
-	--button-cancel-background-hover: var(--surface-hover);
-	--button-cancel-background-active: var(--surface-active);
-	--button-cancel-foreground: var(--text-secondary);
-	--button-cancel-border: var(--border-default);
+	--color-btn-primary: var(--brand-primary);
+	--color-btn-primary-hover: var(--brand-primary-hover);
+	--color-btn-primary-active: var(--brand-primary-active);
+	--color-btn-primary-foreground: var(--on-brand-primary);
 
-	--button-delete-background: var(--danger);
-	--button-delete-background-hover: var(--danger-hover);
-	--button-delete-background-active: var(--danger-active);
-	--button-delete-foreground: var(--white);
+	--color-btn-cancel: transparent;
+	--color-btn-cancel-hover: var(--surface-hover);
+	--color-btn-cancel-active: var(--surface-active);
+	--color-btn-cancel-foreground: var(--text-secondary);
+	--color-btn-cancel-border: var(--border-default);
 
-	--button-approve-background: var(--success);
-	--button-approve-background-hover: var(--success-hover);
-	--button-approve-background-active: var(--success-active);
-	--button-approve-foreground: var(--white);
+	--color-btn-delete: var(--danger);
+	--color-btn-delete-hover: var(--danger-hover);
+	--color-btn-delete-active: var(--danger-active);
+	--color-btn-delete-foreground: var(--white);
 
-	--button-github-background: var(--github);
-	--button-github-background-hover: var(--github-hover);
-	--button-github-background-active: var(--github-active);
-	--button-github-foreground: var(--white);
+	--color-btn-approve: var(--success);
+	--color-btn-approve-hover: var(--success-hover);
+	--color-btn-approve-active: var(--success-active);
+	--color-btn-approve-foreground: var(--white);
+
+	--color-btn-github: var(--github);
+	--color-btn-github-hover: var(--github-hover);
+	--color-btn-github-active: var(--github-active);
+	--color-btn-github-foreground: var(--white);
+
+	--opacity-btn-disabled: 0.48;
 }
