@@ -75,5 +75,5 @@
 	--github-hover: var(--github-950);
 	--github-active: var(--github-1000);
 
-	--focus: var(--blue-600);
+	--focus-ring: var(--blue-600);
 }

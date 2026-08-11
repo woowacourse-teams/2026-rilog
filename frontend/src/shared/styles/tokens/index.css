@@ -5,38 +5,45 @@
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--text-primary);
+
 	--color-surface: var(--surface);
 	--color-surface-hover: var(--surface-hover);
 	--color-surface-active: var(--surface-active);
+
 	--color-text-primary: var(--text-primary);
 	--color-text-secondary: var(--text-secondary);
 	--color-text-disabled: var(--text-disabled);
 	--color-text-on-dark: var(--text-on-dark);
+
 	--color-border-default: var(--border-default);
 	--color-border-strong: var(--border-strong);
+
 	--color-brand-primary: var(--brand-primary);
 	--color-brand-primary-hover: var(--brand-primary-hover);
 	--color-brand-primary-active: var(--brand-primary-active);
 	--color-brand-secondary: var(--brand-secondary);
 	--color-brand-secondary-soft: var(--brand-secondary-soft);
+
 	--color-on-brand-primary: var(--on-brand-primary);
 	--color-on-brand-secondary: var(--on-brand-secondary);
+
 	--color-danger: var(--danger);
 	--color-danger-hover: var(--danger-hover);
 	--color-danger-active: var(--danger-active);
 	--color-danger-soft: var(--danger-soft);
 	--color-danger-border: var(--danger-border);
 	--color-danger-text: var(--danger-text);
+
 	--color-success: var(--success);
 	--color-success-hover: var(--success-hover);
 	--color-success-active: var(--success-active);
 	--color-success-soft: var(--success-soft);
 	--color-success-border: var(--success-border);
 	--color-success-text: var(--success-text);
-	--color-focus: var(--focus);
+
 	--color-github: var(--github);
 	--color-github-hover: var(--github-hover);
 	--color-github-active: var(--github-active);
 
-	--radius-button: var(--button-radius);
+	--color-focus-ring: var(--focus-ring);
 }
