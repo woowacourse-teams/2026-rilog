@@ -3,6 +3,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettierConfig from 'eslint-config-prettier/flat';
 import checkFile from 'eslint-plugin-check-file';
+import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
 const nextComponentFiles = ['src/**/{page,layout,template,default,loading,error,global-error,not-found}.tsx'];
@@ -23,6 +24,7 @@ const eslintConfig = defineConfig([
 	{
 		plugins: {
 			'check-file': checkFile,
+			'unused-imports': unusedImports,
 		},
 		rules: {
 			'check-file/filename-naming-convention': [
@@ -54,6 +56,7 @@ const eslintConfig = defineConfig([
 					},
 				},
 			],
+			'no-multiple-empty-lines': ['error', { max: 1 }],
 		},
 	},
 	{
@@ -99,9 +102,12 @@ const eslintConfig = defineConfig([
 					prefix: ['T'],
 				},
 			],
-			'@typescript-eslint/no-unused-vars': [
+			'@typescript-eslint/no-unused-vars': 'off',
+			'unused-imports/no-unused-imports': 'error',
+			'unused-imports/no-unused-vars': [
 				'error',
 				{
+					args: 'after-used',
 					argsIgnorePattern: '^_',
 				},
 			],
