@@ -22,7 +22,7 @@ describe('subscribeTokenRefreshFailureQueryRemoval', () => {
 		vi.stubGlobal('window', {});
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createResponse(401)));
 		const queryClient = new QueryClient();
-		const currentUserQueryKey = ['current-user'] as const;
+		const currentUserQueryKey = [...authenticatedQueryKeys.all] as const;
 		const postsQueryKey = ['posts'] as const;
 		queryClient.setQueryData(currentUserQueryKey, { id: 1 });
 		queryClient.setQueryData(postsQueryKey, [{ id: 1 }]);
