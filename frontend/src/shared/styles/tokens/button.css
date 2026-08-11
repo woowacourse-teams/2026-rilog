@@ -1,0 +1,40 @@
+:root {
+	--button-height-sm: 2rem;
+	--button-height-md: 2.5rem;
+	--button-height-lg: 3rem;
+	--button-padding-inline-sm: 0.75rem;
+	--button-padding-inline-md: 1rem;
+	--button-padding-inline-lg: 1.25rem;
+	--button-radius: 0.75rem;
+	--button-font-size: var(--text-label);
+	--button-line-height: var(--text-label--line-height);
+	--button-font-weight: var(--font-weight-semibold);
+	--button-focus-ring: var(--focus);
+	--button-disabled-opacity: 0.48;
+
+	--button-primary-background: var(--brand-primary);
+	--button-primary-background-hover: var(--brand-primary-hover);
+	--button-primary-background-active: var(--brand-primary-active);
+	--button-primary-foreground: var(--on-brand-primary);
+
+	--button-cancel-background: transparent;
+	--button-cancel-background-hover: var(--surface-hover);
+	--button-cancel-background-active: var(--surface-active);
+	--button-cancel-foreground: var(--text-secondary);
+	--button-cancel-border: var(--border-default);
+
+	--button-delete-background: var(--danger);
+	--button-delete-background-hover: var(--danger-hover);
+	--button-delete-background-active: var(--danger-active);
+	--button-delete-foreground: var(--white);
+
+	--button-approve-background: var(--success);
+	--button-approve-background-hover: var(--success-hover);
+	--button-approve-background-active: var(--success-active);
+	--button-approve-foreground: var(--white);
+
+	--button-github-background: var(--github);
+	--button-github-background-hover: var(--github-hover);
+	--button-github-background-active: var(--github-active);
+	--button-github-foreground: var(--white);
+}
