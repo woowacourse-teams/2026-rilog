@@ -18,6 +18,11 @@
 .DS_Store
 *.pem
 
+# Share workspace diagnostics, but keep personal editor files local.
+!.vscode/
+.vscode/*
+!.vscode/settings.json
+
 # debug
 npm-debug.log*
 .pnpm-debug.log*

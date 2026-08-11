@@ -1,0 +1,57 @@
+@theme {
+	--font-sans:
+		'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo',
+		'Noto Sans KR', 'Malgun Gothic', sans-serif;
+
+	--text-caption-1: 0.6875rem;
+	--text-caption-1--line-height: 1rem;
+	--text-caption-1--letter-spacing: 0.01em;
+	--text-caption-2: 0.75rem;
+	--text-caption-2--line-height: 1rem;
+	--text-caption-2--letter-spacing: 0.005em;
+
+	--text-label-1: 0.75rem;
+	--text-label-1--line-height: 1rem;
+	--text-label-1--letter-spacing: 0.005em;
+	--text-label-2: 0.875rem;
+	--text-label-2--line-height: 1.25rem;
+
+	--text-body-1: 0.875rem;
+	--text-body-1--line-height: 1.375rem;
+	--text-body-2: 1rem;
+	--text-body-2--line-height: 1.5rem;
+	--text-body-3: 1.125rem;
+	--text-body-3--line-height: 1.75rem;
+	--text-body-4: 1.25rem;
+	--text-body-4--line-height: 1.875rem;
+
+	--text-title-1: 1.25rem;
+	--text-title-1--line-height: 1.75rem;
+	--text-title-2: 1.5rem;
+	--text-title-2--line-height: 2rem;
+	--text-title-3: 1.75rem;
+	--text-title-3--line-height: 2.25rem;
+
+	--text-heading-1: 3rem;
+	--text-heading-1--line-height: 3.5rem;
+	--text-heading-1--letter-spacing: -0.025em;
+	--text-heading-2: 2.5rem;
+	--text-heading-2--line-height: 3rem;
+	--text-heading-2--letter-spacing: -0.02em;
+	--text-heading-3: 2rem;
+	--text-heading-3--line-height: 2.5rem;
+	--text-heading-3--letter-spacing: -0.015em;
+	--text-heading-4: 1.75rem;
+	--text-heading-4--line-height: 2.25rem;
+	--text-heading-4--letter-spacing: -0.01em;
+
+	--text-display-1: 4rem;
+	--text-display-1--line-height: 4rem;
+	--text-display-1--letter-spacing: -0.04em;
+	--text-display-2: 3rem;
+	--text-display-2--line-height: 3rem;
+	--text-display-2--letter-spacing: -0.035em;
+	--text-display-3: 2.5rem;
+	--text-display-3--line-height: 2.5rem;
+	--text-display-3--letter-spacing: -0.03em;
+}

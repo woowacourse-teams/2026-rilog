@@ -1,0 +1,37 @@
+@theme inline {
+	--spacing-btn-height-sm: 2rem;
+	--spacing-btn-height-md: 2.5rem;
+	--spacing-btn-height-lg: 3rem;
+
+	--spacing-btn-inline-sm: 0.75rem;
+	--spacing-btn-inline-md: 1rem;
+	--spacing-btn-inline-lg: 1.25rem;
+
+	--color-btn-primary: var(--brand-primary);
+	--color-btn-primary-hover: var(--brand-primary-hover);
+	--color-btn-primary-active: var(--brand-primary-active);
+	--color-btn-primary-foreground: var(--on-brand-primary);
+
+	--color-btn-cancel: transparent;
+	--color-btn-cancel-hover: var(--surface-hover);
+	--color-btn-cancel-active: var(--surface-active);
+	--color-btn-cancel-foreground: var(--text-secondary);
+	--color-btn-cancel-border: var(--border-default);
+
+	--color-btn-delete: var(--danger);
+	--color-btn-delete-hover: var(--danger-hover);
+	--color-btn-delete-active: var(--danger-active);
+	--color-btn-delete-foreground: var(--white);
+
+	--color-btn-approve: var(--success);
+	--color-btn-approve-hover: var(--success-hover);
+	--color-btn-approve-active: var(--success-active);
+	--color-btn-approve-foreground: var(--white);
+
+	--color-btn-github: var(--github);
+	--color-btn-github-hover: var(--github-hover);
+	--color-btn-github-active: var(--github-active);
+	--color-btn-github-foreground: var(--white);
+
+	--opacity-btn-disabled: 0.48;
+}
