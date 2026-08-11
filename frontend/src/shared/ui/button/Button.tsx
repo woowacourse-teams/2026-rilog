@@ -1,12 +1,22 @@
-import type { ButtonProps, ButtonSize, ButtonVariant } from './button.types';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
+
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'github' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+
+type ButtonProps = Omit<ComponentPropsWithRef<'button'>, 'children'> & {
+	children: ReactNode;
+	variant?: ButtonVariant;
+	size?: ButtonSize;
+	isPending?: boolean;
+};
 
 const BASE_BUTTON_CLASS_NAME =
 	'inline-flex items-center justify-center gap-2 text-label-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-btn-disabled';
 
 const SIZE_CLASS_NAMES: Record<ButtonSize, string> = {
-	sm: 'h-btn-height-sm rounded-xl px-btn-inline-sm',
-	md: 'h-btn-height-md rounded-xl px-btn-inline-md',
-	lg: 'h-btn-height-lg rounded-xl px-btn-inline-lg',
+	sm: 'h-btn-height-sm rounded-md px-btn-inline-sm',
+	md: 'h-btn-height-md rounded-md px-btn-inline-md',
+	lg: 'h-btn-height-lg rounded-lg px-btn-inline-lg',
 	icon: 'size-10 shrink-0 rounded-lg',
 };
 
