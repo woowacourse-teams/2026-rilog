@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+
+import AuthenticatedQueryCacheSubscriber from '@/features/auth/session-expiration/AuthenticatedQueryCacheSubscriber';
+import QueryProvider from '@/shared/query/QueryProvider';
+
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -10,7 +14,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
 	return (
 		<html lang="ko">
-			<body>{children}</body>
+			<body>
+				<QueryProvider>
+					<AuthenticatedQueryCacheSubscriber />
+					{children}
+				</QueryProvider>
+			</body>
 		</html>
 	);
 }
