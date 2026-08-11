@@ -3,18 +3,12 @@
 		'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo',
 		'Noto Sans KR', 'Malgun Gothic', sans-serif;
 
-	--text-overline: 0.875rem;
-	--text-overline--line-height: 1.375rem;
-	--text-overline--letter-spacing: 0.12em;
-	--text-label: 0.875rem;
-	--text-label--line-height: 1.25rem;
-	--text-body-sm: 0.875rem;
-	--text-body-sm--line-height: 1.375rem;
-	--text-body: 1rem;
-	--text-body--line-height: 1.5rem;
-	--text-body-lg: 1.25rem;
-	--text-body-lg--line-height: 1.875rem;
-	--text-display: 4rem;
-	--text-display--line-height: 4rem;
-	--text-display--letter-spacing: -0.04em;
+	--text-100: 0.875rem;
+	--text-100--line-height: 1.375rem;
+	--text-200: 1rem;
+	--text-200--line-height: 1.5rem;
+	--text-300: 1.25rem;
+	--text-300--line-height: 1.875rem;
+	--text-900: 4rem;
+	--text-900--line-height: 4rem;
 }
