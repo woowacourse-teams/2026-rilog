@@ -9,6 +9,7 @@ type TokenProvider = {
 
 type CreateApiClientOptions = Omit<Options, 'hooks'> & {
 	hooks?: Hooks;
+	onTokenRefreshFailure?: () => void;
 	tokenProvider?: TokenProvider;
 };
 
@@ -36,6 +37,7 @@ const ensureRefreshRetry = (retry: Options['retry']): Options['retry'] => {
 
 export const createApiClient = ({
 	hooks,
+	onTokenRefreshFailure,
 	retry,
 	tokenProvider = ANONYMOUS_TOKEN_PROVIDER,
 	...options
@@ -43,11 +45,26 @@ export const createApiClient = ({
 	let refreshPromise: Promise<string | null> | null = null;
 
 	const refreshAccessToken = () => {
-		refreshPromise ??= tokenProvider.refreshAccessToken().finally(() => {
-			refreshPromise = null;
-		});
+		if (refreshPromise !== null) {
+			return refreshPromise;
+		}
 
-		return refreshPromise;
+		const currentRefreshPromise = tokenProvider
+			.refreshAccessToken()
+			.then((accessToken) => {
+				if (accessToken === null) {
+					onTokenRefreshFailure?.();
+				}
+
+				return accessToken;
+			})
+			.finally(() => {
+				refreshPromise = null;
+			});
+
+		refreshPromise = currentRefreshPromise;
+
+		return currentRefreshPromise;
 	};
 
 	return ky.create({
@@ -96,5 +113,3 @@ export const createApiClient = ({
 		},
 	});
 };
-
-export type { CreateApiClientOptions, TokenProvider };

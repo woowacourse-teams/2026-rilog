@@ -128,4 +128,54 @@ describe('createApiClient', () => {
 		expect(refreshAccessToken).toHaveBeenCalledOnce();
 		expect(fetchMock).toHaveBeenCalledTimes(4);
 	});
+
+	it('공유한 token 갱신 결과가 null이면 실패를 한 번 알린다', async () => {
+		vi.stubGlobal('window', {});
+		const fetchMock = vi.fn().mockResolvedValue(createResponse(401));
+		vi.stubGlobal('fetch', fetchMock);
+		let resolveRefresh: ((token: string | null) => void) | undefined;
+		const refreshAccessToken = vi.fn(
+			() =>
+				new Promise<string | null>((resolve) => {
+					resolveRefresh = resolve;
+				}),
+		);
+		const onTokenRefreshFailure = vi.fn();
+		const client = createApiClient({
+			onTokenRefreshFailure,
+			tokenProvider: {
+				getAccessToken: () => 'expired-token',
+				refreshAccessToken,
+			},
+		});
+
+		const requests = Promise.allSettled([client.get(API_URL), client.get(API_URL)]);
+		await vi.waitFor(() => {
+			expect(refreshAccessToken).toHaveBeenCalledOnce();
+		});
+		resolveRefresh?.(null);
+		const results = await requests;
+
+		expect(results.every(({ status }) => status === 'rejected')).toBe(true);
+		expect(onTokenRefreshFailure).toHaveBeenCalledOnce();
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('token 갱신 요청 자체의 오류는 만료 실패로 알리지 않는다', async () => {
+		vi.stubGlobal('window', {});
+		const fetchMock = vi.fn().mockResolvedValue(createResponse(401));
+		vi.stubGlobal('fetch', fetchMock);
+		const onTokenRefreshFailure = vi.fn();
+		const client = createApiClient({
+			onTokenRefreshFailure,
+			tokenProvider: {
+				getAccessToken: () => 'expired-token',
+				refreshAccessToken: vi.fn().mockRejectedValue(new TypeError('network error')),
+			},
+		});
+
+		await expect(client.get(API_URL)).rejects.toThrow('network error');
+
+		expect(onTokenRefreshFailure).not.toHaveBeenCalled();
+	});
 });
