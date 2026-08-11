@@ -1,0 +1,99 @@
+package kr.rilog.global.advice;
+
+import kr.rilog.global.exception.ErrorInformation;
+import kr.rilog.global.exception.GlobalExceptionInformation;
+import kr.rilog.global.exception.RilogBusinessException;
+import kr.rilog.global.exception.dto.ErrorDetail;
+import kr.rilog.global.exception.dto.InvalidParam;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static final String EXCEPTION_LOG_FORMAT = "[{}] {}";
+    private static final String UNKNOWN_EXCEPTION_LOG_FORMAT = "[{}] 예상치 못한 예외 발생";
+
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorDetail> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.REQUEST_VALIDATION_FAILED;
+
+        List<InvalidParam> invalidParams = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> new InvalidParam(
+                        fieldError.getField(),
+                        fieldError.getDefaultMessage()
+                ))
+                .toList();
+
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+
+        ErrorDetail errorDetail = ErrorDetail.of(
+                errorInformation,
+                invalidParams
+        );
+
+        return ResponseEntity
+                .status(errorInformation.getHttpStatus())
+                .body(errorDetail);
+    }
+
+    @ExceptionHandler(RilogBusinessException.class)
+    public ResponseEntity<ErrorDetail> handleRoomEscapeException(RilogBusinessException e) {
+        ErrorInformation errorInformation = e.getErrorInformation();
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage());
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorDetail> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_REQUEST_BODY;
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorDetail> handleIllegalArgumentException(
+            IllegalArgumentException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_ARGUMENT;
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorDetail> handleHttpRequestMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.METHOD_NOT_SUPPORTED;
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorDetail> handleUnknownException(Exception e) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
+        log.error(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+}
