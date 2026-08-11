@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient, subscribeTokenRefreshFailure } from './api-client';
+
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
 });
-
-import { apiClient, subscribeTokenRefreshFailure } from './api-client';
 
 const createResponse = (status: number) => new Response(null, { status });
 

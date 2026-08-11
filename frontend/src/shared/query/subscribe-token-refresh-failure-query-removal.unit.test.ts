@@ -1,13 +1,14 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '../api/api-client';
+
+import { authenticatedQueryKeys } from './authenticated-query-keys';
+import { subscribeTokenRefreshFailureQueryRemoval } from './subscribe-token-refresh-failure-query-removal';
+
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
 });
-
-import { apiClient } from '../api/api-client';
-
-import { subscribeTokenRefreshFailureQueryRemoval } from './subscribe-token-refresh-failure-query-removal';
 
 const createResponse = (status: number) => new Response(null, { status });
 
