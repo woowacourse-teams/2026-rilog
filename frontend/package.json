@@ -11,9 +11,9 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"typecheck": "next typegen && tsc --noEmit",
-		"test:unit": "vitest run --config config/vitest-unit.config.ts",
-		"test:component": "vitest run --config config/vitest-component.config.ts",
-		"test:e2e": "playwright test --config config/playwright.config.ts",
+		"test:unit": "vitest run --config vitest-unit.config.ts",
+		"test:component": "vitest run --config vitest-component.config.ts",
+		"test:e2e": "playwright test --config playwright.config.ts",
 		"check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:component && pnpm build"
 	},
 	"dependencies": {
