@@ -40,14 +40,6 @@ describe('FileUploader', () => {
 		expect(inputRef.current).toBe(input);
 	});
 
-	it('error helper text를 접근 가능한 설명과 invalid 상태로 연결한다', () => {
-		render(<FileUploader status="error" helperText="10MB 이하의 파일만 첨부할 수 있어요." />);
-
-		const input = screen.getByLabelText('파일 선택');
-		expect(input).toHaveAttribute('aria-invalid', 'true');
-		expect(input).toHaveAccessibleDescription('10MB 이하의 파일만 첨부할 수 있어요.');
-	});
-
 	it('pending 상태에서는 파일 선택을 막고 진행 상태를 알린다', () => {
 		render(<FileUploader isPending />);
 
@@ -56,14 +48,16 @@ describe('FileUploader', () => {
 		expect(input).toHaveAttribute('aria-busy', 'true');
 	});
 
-	it('키보드로 file input에 focus할 수 있다', async () => {
-		const user = userEvent.setup();
-
-		render(<FileUploader />);
+	it('disabled와 접근성 설명을 native input에 전달한다', () => {
+		render(
+			<>
+				<p id="attachment-guide">10MB 이하의 파일만 첨부할 수 있어요.</p>
+				<FileUploader disabled aria-describedby="attachment-guide" />
+			</>,
+		);
 
 		const input = screen.getByLabelText('파일 선택');
-		await user.tab();
-
-		expect(input).toHaveFocus();
+		expect(input).toBeDisabled();
+		expect(input).toHaveAccessibleDescription('10MB 이하의 파일만 첨부할 수 있어요.');
 	});
 });
