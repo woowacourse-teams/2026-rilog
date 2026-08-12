@@ -1,4 +1,4 @@
-package kr.rilog.global.auth.resolver;
+package kr.rilog.domain.auth.resolver;
 
 import kr.rilog.domain.auth.annotation.LoginUserSlug;
 import org.springframework.core.MethodParameter;
