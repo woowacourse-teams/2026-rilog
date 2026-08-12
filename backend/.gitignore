@@ -18,6 +18,7 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
+src/main/java/kr/rilog/test/**
 *.env
 .idea
 *.iws
