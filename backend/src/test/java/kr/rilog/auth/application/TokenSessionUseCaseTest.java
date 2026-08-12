@@ -29,7 +29,7 @@ import kr.rilog.auth.domain.LoginExchangeCode;
 import kr.rilog.auth.domain.RefreshSession;
 import kr.rilog.auth.domain.RefreshTokenRecord;
 import kr.rilog.auth.infrastructure.security.SecureCredentialManager;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.exception.AuthException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

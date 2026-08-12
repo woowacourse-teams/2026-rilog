@@ -11,7 +11,7 @@ import kr.rilog.auth.application.port.AccessTokenCodec;
 import kr.rilog.auth.application.port.UserStore;
 import kr.rilog.auth.domain.AuthPrincipal;
 import kr.rilog.auth.domain.GlobalRole;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import kr.rilog.global.auth.annotation.LoginRequired;
 import kr.rilog.global.auth.annotation.LoginUserId;

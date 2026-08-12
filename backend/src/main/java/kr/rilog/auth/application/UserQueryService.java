@@ -1,7 +1,7 @@
 package kr.rilog.auth.application;
 
 import kr.rilog.auth.application.port.UserStore;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.exception.AuthErrorInformation;
 import kr.rilog.global.exception.AuthException;
 import org.springframework.stereotype.Service;

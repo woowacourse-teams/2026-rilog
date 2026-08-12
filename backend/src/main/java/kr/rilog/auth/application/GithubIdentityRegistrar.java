@@ -7,7 +7,7 @@ import kr.rilog.auth.application.port.SecureCredentialService;
 import kr.rilog.auth.application.port.UserStore;
 import kr.rilog.auth.domain.GithubIdentity;
 import kr.rilog.auth.domain.LoginExchangeCode;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

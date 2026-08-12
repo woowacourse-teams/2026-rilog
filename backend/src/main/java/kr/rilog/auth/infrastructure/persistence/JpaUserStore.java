@@ -2,7 +2,7 @@ package kr.rilog.auth.infrastructure.persistence;
 
 import java.util.Optional;
 import kr.rilog.auth.application.port.UserStore;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import org.springframework.stereotype.Repository;
 
 @Repository

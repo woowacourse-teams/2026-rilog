@@ -1,7 +1,7 @@
 package kr.rilog.auth.application.port;
 
 import java.util.Optional;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 
 public interface UserStore {
 

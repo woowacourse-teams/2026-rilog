@@ -22,7 +22,7 @@ import kr.rilog.auth.application.ExchangeLoginCode;
 import kr.rilog.auth.application.Logout;
 import kr.rilog.auth.application.RefreshLoginSession;
 import kr.rilog.auth.application.StartGithubLogin;
-import kr.rilog.domain.OnboardingStatus;
+import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import kr.rilog.global.exception.AuthErrorInformation;
 import kr.rilog.global.exception.AuthException;

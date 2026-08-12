@@ -27,7 +27,7 @@ import kr.rilog.auth.application.port.UserStore;
 import kr.rilog.auth.domain.GithubIdentity;
 import kr.rilog.auth.domain.RefreshSession;
 import kr.rilog.auth.domain.RefreshTokenRecord;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.exception.AuthException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

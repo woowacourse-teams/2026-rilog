@@ -26,7 +26,7 @@ public class User extends BaseEntity {
     @Column(length = 20, unique = true)
     private String nickname;
 
-    @Column(length = 50, unique = true, updatable = false)
+    @Column(length = 50, unique = true)
     private String slug;
 
     @Column(length = 80)

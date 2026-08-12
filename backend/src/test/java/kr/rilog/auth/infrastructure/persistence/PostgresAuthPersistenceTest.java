@@ -15,7 +15,7 @@ import kr.rilog.auth.domain.LoginExchangeCode;
 import kr.rilog.auth.domain.OAuthLoginAttempt;
 import kr.rilog.auth.domain.RefreshSession;
 import kr.rilog.auth.domain.RefreshTokenRecord;
-import kr.rilog.domain.User;
+import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
