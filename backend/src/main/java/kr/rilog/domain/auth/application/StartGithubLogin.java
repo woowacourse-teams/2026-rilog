@@ -21,20 +21,11 @@ public class StartGithubLogin {
 
     private final OAuthLoginAttemptStore loginAttemptStore;
     private final GithubOAuthProperties properties;
-    private final SecureRandom secureRandom;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public StartGithubLogin(OAuthLoginAttemptStore loginAttemptStore, GithubOAuthProperties properties) {
-        this(loginAttemptStore, properties, new SecureRandom());
-    }
-
-    StartGithubLogin(
-            OAuthLoginAttemptStore loginAttemptStore,
-            GithubOAuthProperties properties,
-            SecureRandom secureRandom
-    ) {
         this.loginAttemptStore = loginAttemptStore;
         this.properties = properties;
-        this.secureRandom = secureRandom;
     }
 
     public URI start() {

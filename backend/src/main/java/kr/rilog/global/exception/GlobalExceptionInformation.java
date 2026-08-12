@@ -16,6 +16,7 @@ public enum GlobalExceptionInformation implements ErrorInformation {
     REQUEST_VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "요청 값 검증에 실패했습니다."),
     DATA_INTEGRITY_VIOLATION(HttpStatus.BAD_REQUEST, "해당 요청을 처리할 수 없습니다."),
     DATA_NOT_DUPLICATED_KEY(HttpStatus.BAD_REQUEST, "유니크 제약 조건 예외 발생"),
+    STATIC_RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 정적 리소스를 찾을 수 없습니다."),
     ;
 
     private final HttpStatus httpStatus;

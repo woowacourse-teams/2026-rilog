@@ -1,0 +1,233 @@
+package kr.rilog.domain.post.service;
+
+import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.Category;
+import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.exception.UserException;
+import kr.rilog.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.JsonNode;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class PostServiceTest {
+
+    private static final String ERROR_INFORMATION = "errorInformation";
+    private static final Long POST_ID = 1L;
+    private static final Long WRITER_ID = 2L;
+    private static final Long RILOG_ID = 3L;
+    private static final Long COLOG_ID = 4L;
+    private static final String RILOG_SLUG = "writer-rilog";
+    private static final String COLOG_SLUG = "team-colog";
+
+    @Mock
+    private PostRepository postRepository;
+
+    @Mock
+    private BlogRepository blogRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private JsonNode content;
+
+    private PostService postService;
+
+    @BeforeEach
+    void setUp() {
+        postService = new PostService(postRepository, blogRepository, userRepository);
+    }
+
+    @Test
+    @DisplayName("개인 블로그에 게시글을 발행하면 해당 개인 블로그에만 게시글을 발행한다")
+    void publishToRilogPublishesOnlyToRilog() {
+        // given
+        User writer = createWriter();
+        Blog rilog = createRilog(writer);
+        PostSaveCommand command = createCommand();
+        Post savedPost = Post.builder().id(POST_ID).build();
+
+        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(postRepository.save(any(Post.class))).thenReturn(savedPost);
+
+        // when
+        PostPublishResult result = postService.publish(command, RILOG_ID, WRITER_ID);
+
+        // then
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        Post publishedPost = postCaptor.getValue();
+
+        assertThat(publishedPost.getUser()).isSameAs(writer);
+        assertThat(publishedPost.getRilog()).isSameAs(rilog);
+        assertThat(publishedPost.getColog()).isNull();
+        assertThat(result).isEqualTo(new PostPublishResult(POST_ID, RILOG_SLUG));
+    }
+
+    @Test
+    @DisplayName("팀 블로그에 게시글을 발행하면 팀 블로그와 작성자의 개인 블로그에 함께 게시글을 발행한다")
+    void publishToCologPublishesToCologAndWriterRilog() {
+        // given
+        User writer = createWriter();
+        Blog colog = createColog();
+        Blog rilog = createRilog(writer);
+        PostSaveCommand command = createCommand();
+        Post savedPost = Post.builder().id(POST_ID).build();
+
+        when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.of(rilog));
+        when(postRepository.save(any(Post.class))).thenReturn(savedPost);
+
+        // when
+        PostPublishResult result = postService.publish(command, COLOG_ID, WRITER_ID);
+
+        // then
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        Post publishedPost = postCaptor.getValue();
+
+        assertThat(publishedPost.getUser()).isSameAs(writer);
+        assertThat(publishedPost.getRilog()).isSameAs(rilog);
+        assertThat(publishedPost.getColog()).isSameAs(colog);
+        assertThat(result).isEqualTo(new PostPublishResult(POST_ID, COLOG_SLUG));
+    }
+
+    @Test
+    @DisplayName("발행할 블로그가 존재하지 않으면 게시글 발행에 실패한다")
+    void publishFailsWhenPublishingBlogDoesNotExist() {
+        // given
+        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_NOT_FOUND);
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("작성자가 존재하지 않으면 게시글 발행에 실패한다")
+    void publishFailsWhenWriterDoesNotExist() {
+        // given
+        User rilogOwner = createWriter();
+        Blog rilog = createRilog(rilogOwner);
+        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+                .isInstanceOf(UserException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(USER_NOT_FOUND);
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("팀 블로그에 발행할 때 작성자의 개인 블로그가 없으면 게시글 발행에 실패한다")
+    void publishToCologFailsWhenWriterRilogDoesNotExist() {
+        // given
+        User writer = createWriter();
+        Blog colog = createColog();
+        when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_ID, WRITER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(RILOG_NOT_FOUND);
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 개인 블로그에는 게시글을 발행할 수 없다")
+    void publishToRilogFailsWhenWriterIsNotOwner() {
+        // given
+        Long notOwnerId = 5L;
+        User writer = createWriter();
+        User rilogOwner = User.builder()
+                .id(notOwnerId)
+                .githubId(200L)
+                .build();
+        Blog rilog = createRilog(rilogOwner);
+        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+
+        // when - then
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    private User createWriter() {
+        return User.builder()
+                .id(WRITER_ID)
+                .githubId(100L)
+                .build();
+    }
+
+    private Blog createRilog(User owner) {
+        return Blog.builder()
+                .id(RILOG_ID)
+                .owner(owner)
+                .name("작성자 블로그")
+                .slug(RILOG_SLUG)
+                .blogType(BlogType.RILOG)
+                .build();
+    }
+
+    private Blog createColog() {
+        return Blog.builder()
+                .id(COLOG_ID)
+                .owner(createWriter())
+                .name("팀 블로그")
+                .slug(COLOG_SLUG)
+                .blogType(BlogType.COLOG)
+                .build();
+    }
+
+    private PostSaveCommand createCommand() {
+        return new PostSaveCommand(
+                "게시글 제목",
+                content,
+                Category.TECH,
+                PostVisibility.PUBLIC,
+                "https://example.com/thumbnail.png",
+                "https://example.com/logo.png"
+        );
+    }
+
+}
