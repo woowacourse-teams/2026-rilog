@@ -1,13 +1,15 @@
 package kr.rilog.domain.auth.presentation;
 
-import kr.rilog.domain.auth.application.CompleteGithubLogin;
-import kr.rilog.domain.auth.application.GithubAccessToken;
-import kr.rilog.domain.auth.application.GithubOAuthUser;
-import kr.rilog.domain.auth.application.StartGithubLogin;
-import kr.rilog.domain.auth.application.port.GithubAccessTokenClient;
-import kr.rilog.domain.auth.application.port.GithubUserClient;
+import kr.rilog.domain.auth.application.CompleteOAuthLogin;
+import kr.rilog.domain.auth.application.OAuthAccessToken;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.SocialLoginUser;
+import kr.rilog.domain.auth.application.StartOAuthLogin;
+import kr.rilog.domain.auth.application.port.OAuthAccessTokenClient;
 import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
+import kr.rilog.domain.auth.application.port.OAuthUserClient;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
+import kr.rilog.domain.auth.infrastructure.github.GithubOAuthAuthorizationUrlProvider;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.startsWith;
@@ -48,7 +51,7 @@ class GithubOAuthControllerTest {
     void callbackVerifiesCodeAndState() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save("valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store);
 
         // when - then
@@ -63,14 +66,14 @@ class GithubOAuthControllerTest {
     void callbackRejectsMissingCodeOrState() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save("valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store);
 
         // when - then
         mockMvc.perform(get("/v1/auth/github/callback")
                         .queryParam("state", "valid-state"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("GITHUB_OAUTH_CALLBACK_PARAMETER_MISSING"));
+                .andExpect(jsonPath("$.errorCode").value("OAUTH_CALLBACK_PARAMETER_MISSING"));
     }
 
     @Test
@@ -78,7 +81,7 @@ class GithubOAuthControllerTest {
     void callbackRejectsReusedState() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save("valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store);
 
         mockMvc.perform(get("/v1/auth/github/callback")
@@ -91,7 +94,7 @@ class GithubOAuthControllerTest {
                         .queryParam("code", "github-code")
                         .queryParam("state", "valid-state"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_GITHUB_OAUTH_STATE"));
+                .andExpect(jsonPath("$.errorCode").value("INVALID_OAUTH_STATE"));
     }
 
     @Test
@@ -102,10 +105,10 @@ class GithubOAuthControllerTest {
 
         // when - then
         mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("error", "access_denied")
-                        .queryParam("state", "valid-state"))
+                .queryParam("error", "access_denied")
+                .queryParam("state", "valid-state"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("GITHUB_OAUTH_REQUEST_FAILED"));
+                .andExpect(jsonPath("$.errorCode").value("OAUTH_REQUEST_FAILED"));
     }
 
     private MockMvc mockMvc(OAuthLoginAttemptStore store) {
@@ -117,11 +120,14 @@ class GithubOAuthControllerTest {
                 "read:user,user:email"
         );
         GithubOAuthController controller = new GithubOAuthController(
-                new StartGithubLogin(store, properties),
-                new CompleteGithubLogin(
+                new StartOAuthLogin(
                         store,
-                        new StubGithubAccessTokenClient(),
-                        new StubGithubUserClient()
+                        List.of(new GithubOAuthAuthorizationUrlProvider(properties))
+                ),
+                new CompleteOAuthLogin(
+                        store,
+                        List.of(new StubOAuthAccessTokenClient()),
+                        List.of(new StubOAuthUserClient())
                 )
         );
 
@@ -135,30 +141,45 @@ class GithubOAuthControllerTest {
         private final Set<String> states = new HashSet<>();
 
         @Override
-        public void save(String state, Duration ttl) {
-            states.add(state);
+        public void save(SocialLoginProvider provider, String state, Duration ttl) {
+            states.add(key(provider, state));
         }
 
         @Override
-        public boolean consume(String state) {
-            return states.remove(state);
+        public boolean consume(SocialLoginProvider provider, String state) {
+            return states.remove(key(provider, state));
         }
-    }
 
-    private static class StubGithubAccessTokenClient implements GithubAccessTokenClient {
-
-        @Override
-        public GithubAccessToken exchange(String code) {
-            return new GithubAccessToken("github-access-token");
+        private String key(SocialLoginProvider provider, String state) {
+            return provider.name() + ":" + state;
         }
     }
 
-    private static class StubGithubUserClient implements GithubUserClient {
+    private static class StubOAuthAccessTokenClient implements OAuthAccessTokenClient {
 
         @Override
-        public GithubOAuthUser getUser(String accessToken) {
-            return new GithubOAuthUser(
-                    1L,
+        public SocialLoginProvider provider() {
+            return SocialLoginProvider.GITHUB;
+        }
+
+        @Override
+        public OAuthAccessToken exchange(String code) {
+            return new OAuthAccessToken("github-access-token");
+        }
+    }
+
+    private static class StubOAuthUserClient implements OAuthUserClient {
+
+        @Override
+        public SocialLoginProvider provider() {
+            return SocialLoginProvider.GITHUB;
+        }
+
+        @Override
+        public SocialLoginUser getUser(OAuthAccessToken accessToken) {
+            return new SocialLoginUser(
+                    SocialLoginProvider.GITHUB,
+                    "1",
                     "octocat",
                     "https://github.com/images/error/octocat_happy.gif"
             );

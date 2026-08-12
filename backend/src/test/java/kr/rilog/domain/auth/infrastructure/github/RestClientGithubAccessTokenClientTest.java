@@ -1,6 +1,7 @@
 package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.GithubAccessToken;
+import kr.rilog.domain.auth.application.OAuthAccessToken;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
@@ -58,9 +59,10 @@ class RestClientGithubAccessTokenClientTest {
                         """, MediaType.APPLICATION_JSON));
 
         // when
-        GithubAccessToken accessToken = client.exchange("github-code");
+        OAuthAccessToken accessToken = client.exchange("github-code");
 
         // then
+        assertEquals(SocialLoginProvider.GITHUB, client.provider());
         assertEquals("github-access-token", accessToken.value());
         server.verify();
     }

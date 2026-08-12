@@ -1,6 +1,8 @@
 package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.GithubOAuthUser;
+import kr.rilog.domain.auth.application.OAuthAccessToken;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.SocialLoginUser;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
@@ -46,12 +48,14 @@ class RestClientGithubUserClientTest {
                         """, MediaType.APPLICATION_JSON));
 
         // when
-        GithubOAuthUser user = client.getUser("github-access-token");
+        SocialLoginUser user = client.getUser(new OAuthAccessToken("github-access-token"));
 
         // then
-        assertEquals(1L, user.id());
-        assertEquals("octocat", user.login());
-        assertEquals("https://github.com/images/error/octocat_happy.gif", user.avatarUrl());
+        assertEquals(SocialLoginProvider.GITHUB, client.provider());
+        assertEquals(SocialLoginProvider.GITHUB, user.provider());
+        assertEquals("1", user.providerUserId());
+        assertEquals("octocat", user.username());
+        assertEquals("https://github.com/images/error/octocat_happy.gif", user.profileImageUrl());
         server.verify();
     }
 
@@ -74,7 +78,7 @@ class RestClientGithubUserClientTest {
         // when
         AuthException exception = assertThrows(
                 AuthException.class,
-                () -> client.getUser("github-access-token")
+                () -> client.getUser(new OAuthAccessToken("github-access-token"))
         );
 
         // then
@@ -96,7 +100,7 @@ class RestClientGithubUserClientTest {
         // when
         AuthException exception = assertThrows(
                 AuthException.class,
-                () -> client.getUser("github-access-token")
+                () -> client.getUser(new OAuthAccessToken("github-access-token"))
         );
 
         // then

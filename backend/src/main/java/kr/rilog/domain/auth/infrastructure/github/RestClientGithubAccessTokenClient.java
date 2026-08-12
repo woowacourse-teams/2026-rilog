@@ -1,7 +1,8 @@
 package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.GithubAccessToken;
-import kr.rilog.domain.auth.application.port.GithubAccessTokenClient;
+import kr.rilog.domain.auth.application.OAuthAccessToken;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.port.OAuthAccessTokenClient;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,7 +17,7 @@ import org.springframework.web.client.RestClientException;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED;
 
 @Component
-public class RestClientGithubAccessTokenClient implements GithubAccessTokenClient {
+public class RestClientGithubAccessTokenClient implements OAuthAccessTokenClient {
 
     private final RestClient restClient;
     private final GithubOAuthProperties properties;
@@ -30,7 +31,12 @@ public class RestClientGithubAccessTokenClient implements GithubAccessTokenClien
     }
 
     @Override
-    public GithubAccessToken exchange(String code) {
+    public SocialLoginProvider provider() {
+        return SocialLoginProvider.GITHUB;
+    }
+
+    @Override
+    public OAuthAccessToken exchange(String code) {
         try {
             GithubAccessTokenResponse response = restClient.post()
                     .uri(properties.tokenUri())
@@ -44,7 +50,7 @@ public class RestClientGithubAccessTokenClient implements GithubAccessTokenClien
                 throw new AuthException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
             }
 
-            return new GithubAccessToken(response.accessToken());
+            return new OAuthAccessToken(response.accessToken());
         } catch (AuthException exception) {
             throw exception;
         } catch (RestClientException exception) {

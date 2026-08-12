@@ -1,5 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
+import kr.rilog.domain.auth.application.SocialLoginProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +39,7 @@ class RedisOAuthLoginAttemptStoreTest {
         Duration ttl = Duration.ofMinutes(5);
 
         // when
-        store.save(state, ttl);
+        store.save(SocialLoginProvider.GITHUB, state, ttl);
 
         // then
         verify(valueOperations).set(
@@ -59,7 +60,7 @@ class RedisOAuthLoginAttemptStoreTest {
         when(valueOperations.getAndDelete(redisKey)).thenReturn("pending");
 
         // when
-        boolean consumed = store.consume(state);
+        boolean consumed = store.consume(SocialLoginProvider.GITHUB, state);
 
         // then
         assertTrue(consumed);
@@ -79,7 +80,7 @@ class RedisOAuthLoginAttemptStoreTest {
         when(valueOperations.getAndDelete(redisKey)).thenReturn(null);
 
         // when
-        boolean consumed = store.consume(state);
+        boolean consumed = store.consume(SocialLoginProvider.GITHUB, state);
 
         // then
         assertFalse(consumed);

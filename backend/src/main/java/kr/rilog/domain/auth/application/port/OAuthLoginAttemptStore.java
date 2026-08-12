@@ -1,11 +1,13 @@
 package kr.rilog.domain.auth.application.port;
 
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+
 import java.time.Duration;
 
 public interface OAuthLoginAttemptStore {
 
-    void save(String state, Duration ttl);
+    void save(SocialLoginProvider provider, String state, Duration ttl);
 
-    boolean consume(String state);
+    boolean consume(SocialLoginProvider provider, String state);
 
 }

@@ -1,7 +1,9 @@
 package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.GithubOAuthUser;
-import kr.rilog.domain.auth.application.port.GithubUserClient;
+import kr.rilog.domain.auth.application.OAuthAccessToken;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.SocialLoginUser;
+import kr.rilog.domain.auth.application.port.OAuthUserClient;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,7 +17,7 @@ import org.springframework.web.client.RestClientException;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_USER_FETCH_FAILED;
 
 @Component
-public class RestClientGithubUserClient implements GithubUserClient {
+public class RestClientGithubUserClient implements OAuthUserClient {
 
     private static final MediaType GITHUB_JSON = MediaType.valueOf("application/vnd.github+json");
 
@@ -31,12 +33,17 @@ public class RestClientGithubUserClient implements GithubUserClient {
     }
 
     @Override
-    public GithubOAuthUser getUser(String accessToken) {
+    public SocialLoginProvider provider() {
+        return SocialLoginProvider.GITHUB;
+    }
+
+    @Override
+    public SocialLoginUser getUser(OAuthAccessToken accessToken) {
         try {
             GithubUserResponse response = restClient.get()
                     .uri(properties.userUri())
                     .accept(GITHUB_JSON)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.value())
                     .retrieve()
                     .body(GithubUserResponse.class);
 
@@ -44,7 +51,12 @@ public class RestClientGithubUserClient implements GithubUserClient {
                 throw new AuthException(GITHUB_USER_FETCH_FAILED);
             }
 
-            return new GithubOAuthUser(response.id(), response.login(), response.avatarUrl());
+            return new SocialLoginUser(
+                    SocialLoginProvider.GITHUB,
+                    String.valueOf(response.id()),
+                    response.login(),
+                    response.avatarUrl()
+            );
         } catch (AuthException exception) {
             throw exception;
         } catch (RestClientException exception) {

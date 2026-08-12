@@ -1,5 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
+import kr.rilog.domain.auth.application.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -8,11 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Locale;
 
 @Component
 public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
-    private static final String KEY_PREFIX = "oauth:github:state:";
+    private static final String KEY_PREFIX_FORMAT = "oauth:%s:state:";
     private static final String PENDING_VALUE = "pending";
     private static final char[] HEX = "0123456789abcdef".toCharArray();
 
@@ -23,18 +25,18 @@ public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
     }
 
     @Override
-    public void save(String state, Duration ttl) {
-        redisTemplate.opsForValue().set(keyOf(state), PENDING_VALUE, ttl);
+    public void save(SocialLoginProvider provider, String state, Duration ttl) {
+        redisTemplate.opsForValue().set(keyOf(provider, state), PENDING_VALUE, ttl);
     }
 
     @Override
-    public boolean consume(String state) {
-        String value = redisTemplate.opsForValue().getAndDelete(keyOf(state));
+    public boolean consume(SocialLoginProvider provider, String state) {
+        String value = redisTemplate.opsForValue().getAndDelete(keyOf(provider, state));
         return PENDING_VALUE.equals(value);
     }
 
-    private String keyOf(String state) {
-        return KEY_PREFIX + sha256Hex(state);
+    private String keyOf(SocialLoginProvider provider, String state) {
+        return KEY_PREFIX_FORMAT.formatted(provider.name().toLowerCase(Locale.ROOT)) + sha256Hex(state);
     }
 
     private String sha256Hex(String value) {

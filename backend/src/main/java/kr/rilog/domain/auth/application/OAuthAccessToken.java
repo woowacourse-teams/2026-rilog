@@ -1,6 +1,6 @@
 package kr.rilog.domain.auth.application;
 
-public record GithubAccessToken(
+public record OAuthAccessToken(
         String value
 ) {
 }

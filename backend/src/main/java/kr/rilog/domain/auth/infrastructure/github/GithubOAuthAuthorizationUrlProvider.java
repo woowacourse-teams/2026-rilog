@@ -1,38 +1,42 @@
-package kr.rilog.domain.auth.application;
+package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.port.OAuthAuthorizationUrlProvider;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthException;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.security.SecureRandom;
-import java.util.Base64;
+import java.time.Duration;
 
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_OAUTH_CONFIGURATION_INVALID;
 
-@Service
-public class StartGithubLogin {
+@Component
+public class GithubOAuthAuthorizationUrlProvider implements OAuthAuthorizationUrlProvider {
 
     private static final String GITHUB_AUTHORIZATION_ENDPOINT = "https://github.com/login/oauth/authorize";
-    private static final int STATE_BYTE_LENGTH = 32;
 
-    private final OAuthLoginAttemptStore loginAttemptStore;
     private final GithubOAuthProperties properties;
-    private final SecureRandom secureRandom = new SecureRandom();
 
-    public StartGithubLogin(OAuthLoginAttemptStore loginAttemptStore, GithubOAuthProperties properties) {
-        this.loginAttemptStore = loginAttemptStore;
+    public GithubOAuthAuthorizationUrlProvider(GithubOAuthProperties properties) {
         this.properties = properties;
     }
 
-    public URI start() {
-        validateConfiguration();
+    @Override
+    public SocialLoginProvider provider() {
+        return SocialLoginProvider.GITHUB;
+    }
 
-        String state = generateState();
-        loginAttemptStore.save(state, properties.stateTtl());
+    @Override
+    public Duration stateTtl() {
+        return properties.stateTtl();
+    }
+
+    @Override
+    public URI createAuthorizationUri(String state) {
+        validateConfiguration();
 
         return UriComponentsBuilder.fromUriString(GITHUB_AUTHORIZATION_ENDPOINT)
                 .queryParam("client_id", properties.clientId())
@@ -49,13 +53,4 @@ public class StartGithubLogin {
             throw new AuthException(GITHUB_OAUTH_CONFIGURATION_INVALID);
         }
     }
-
-    private String generateState() {
-        byte[] bytes = new byte[STATE_BYTE_LENGTH];
-        secureRandom.nextBytes(bytes);
-        return Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(bytes);
-    }
-
 }
