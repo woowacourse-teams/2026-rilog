@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RilogBusinessException.class)
-    public ResponseEntity<ErrorDetail> handleRoomEscapeException(RilogBusinessException e) {
+    public ResponseEntity<ErrorDetail> handleRilogBusinessException(RilogBusinessException e) {
         ErrorInformation errorInformation = e.getErrorInformation();
         log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage());
         return ResponseEntity.status(errorInformation.getHttpStatus())
