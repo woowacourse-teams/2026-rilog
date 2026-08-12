@@ -35,7 +35,7 @@ class GlobalExceptionHandlerTest {
             String logs = appender.list.stream()
                     .map(ILoggingEvent::getFormattedMessage)
                     .reduce("", (left, right) -> left + right);
-            assertTrue(logs.contains("COMMON_001"));
+            assertTrue(logs.contains("INVALID_REQUEST_BODY"));
             assertFalse(logs.contains("exchange-id.secret"));
         } finally {
             logger.detachAppender(appender);

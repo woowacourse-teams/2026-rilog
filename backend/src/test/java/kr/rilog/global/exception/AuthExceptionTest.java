@@ -1,6 +1,5 @@
 package kr.rilog.global.exception;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.DisplayName;
@@ -27,23 +26,13 @@ class AuthExceptionTest {
         );
 
         // then
-        assertAll(
-                () -> assertEquals(
-                        HttpStatus.UNAUTHORIZED,
-                        missingToken.getErrorInformation().getHttpStatus()
-                ),
-                () -> assertEquals(
-                        "AUTH_001",
-                        missingToken.getErrorInformation().getErrorCode()
-                ),
-                () -> assertEquals(
-                        HttpStatus.FORBIDDEN,
-                        insufficientRole.getErrorInformation().getHttpStatus()
-                ),
-                () -> assertEquals(
-                        "AUTH_003",
-                        insufficientRole.getErrorInformation().getErrorCode()
-                )
+        assertEquals(
+                HttpStatus.UNAUTHORIZED,
+                missingToken.getErrorInformation().getHttpStatus()
+        );
+        assertEquals(
+                HttpStatus.FORBIDDEN,
+                insufficientRole.getErrorInformation().getHttpStatus()
         );
     }
 

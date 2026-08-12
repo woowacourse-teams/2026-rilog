@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
                 ))
                 .toList();
 
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation, invalidParams);
 
         ErrorDetail errorDetail = ErrorDetail.of(
                 errorInformation,
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RilogBusinessException.class)
     public ResponseEntity<ErrorDetail> handleRilogBusinessException(RilogBusinessException e) {
         ErrorInformation errorInformation = e.getErrorInformation();
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage());
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation, errorInformation.getMessage());
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
         ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_REQUEST_BODY;
         log.info(
                 EXCEPTION_LOG_FORMAT,
-                errorInformation.getErrorCode(),
+                errorInformation,
                 errorInformation.getMessage()
         );
         return ResponseEntity.status(errorInformation.getHttpStatus())
@@ -80,7 +80,7 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException e
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.METHOD_NOT_SUPPORTED;
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation, e.getMessage());
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -90,7 +90,7 @@ public class GlobalExceptionHandler {
             DataIntegrityViolationException e
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.DATA_NOT_DUPLICATED_KEY;
-        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation, e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -100,7 +100,7 @@ public class GlobalExceptionHandler {
             DataIntegrityViolationException e
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.DATA_INTEGRITY_VIOLATION;
-        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation, e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -108,7 +108,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetail> handleUnknownException(Exception e) {
         ErrorInformation errorInformation = GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
-        log.error(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        log.error(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation, e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }

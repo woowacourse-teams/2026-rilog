@@ -270,11 +270,11 @@ class AuthControllerMvcTest {
         // then
         missingOriginResult
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.errorCode").value("AUTH_008"));
+                .andExpect(jsonPath("$.errorCode").doesNotExist());
 
         untrustedOriginResult
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.errorCode").value("AUTH_008"));
+                .andExpect(jsonPath("$.errorCode").doesNotExist());
     }
 
     @Test

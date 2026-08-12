@@ -190,10 +190,7 @@ git commit -m "feature: 인증 credential 상태 전이 제공"
 @Test
 void insufficientRoleUsesForbiddenContract() {
     AuthException exception = new AuthException(AuthErrorInformation.INSUFFICIENT_ROLE);
-    assertAll(
-        () -> assertEquals(HttpStatus.FORBIDDEN, exception.getErrorInformation().getHttpStatus()),
-        () -> assertEquals("AUTH_003", exception.getErrorInformation().getErrorCode())
-    );
+    assertEquals(HttpStatus.FORBIDDEN, exception.getErrorInformation().getHttpStatus());
 }
 ```
 

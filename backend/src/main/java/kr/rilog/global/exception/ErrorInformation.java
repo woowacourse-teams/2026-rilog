@@ -6,8 +6,6 @@ public interface ErrorInformation {
 
     HttpStatus getHttpStatus();
 
-    String getErrorCode();
-
     String getMessage();
 
 }

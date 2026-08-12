@@ -98,11 +98,11 @@ class AuthMvcTest {
         // then
         missingTokenResult
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.errorCode").value("AUTH_001"));
+                .andExpect(jsonPath("$.errorCode").doesNotExist());
 
         userRoleResult
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.errorCode").value("AUTH_003"));
+                .andExpect(jsonPath("$.errorCode").doesNotExist());
     }
 
     @Test

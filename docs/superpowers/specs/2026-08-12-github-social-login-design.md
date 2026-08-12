@@ -582,7 +582,7 @@ Callback은 브라우저 navigation이므로 인증 실패 시 configured fronte
 - GitHub 원본 오류 body
 - JWT 전체 문자열
 
-로그에는 내부 오류 코드, trace ID, endpoint, GitHub HTTP status, 식별 이후 Rilog userId와 session public ID, rotation/revoke/reuse 이벤트를 기록할 수 있다.
+로그에는 내부 enum 상수명, trace ID, endpoint, GitHub HTTP status, 식별 이후 Rilog userId와 session public ID, rotation/revoke/reuse 이벤트를 기록할 수 있다.
 
 ## 15. 데이터베이스 계약
 
