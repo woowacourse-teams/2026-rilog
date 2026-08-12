@@ -1,3 +1,15 @@
 spring:
   application:
     name: backend
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+github:
+  oauth:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}
+    callback-uri: ${GITHUB_CALLBACK_URI:http://localhost:8080/v1/auth/github/callback}
+    state-ttl: 5m
+    scope: read:user,user:email
