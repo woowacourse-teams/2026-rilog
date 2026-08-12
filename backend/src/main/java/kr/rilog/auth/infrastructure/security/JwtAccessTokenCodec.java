@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.Verification;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -50,10 +51,10 @@ public class JwtAccessTokenCodec implements AccessTokenCodec {
         this.lifetime = lifetime;
         this.clock = clock;
         this.algorithm = Algorithm.HMAC256(secret);
-        this.verifier = JWT.require(algorithm)
+        Verification verification = JWT.require(algorithm)
                 .withIssuer(issuer)
-                .withAudience(audience)
-                .build();
+                .withAudience(audience);
+        this.verifier = ((JWTVerifier.BaseVerification) verification).build(clock);
     }
 
     @Override
@@ -90,7 +91,8 @@ public class JwtAccessTokenCodec implements AccessTokenCodec {
                 || decoded.getIssuedAt() == null
                 || decoded.getExpiresAt() == null
                 || decoded.getId() == null
-                || decoded.getId().isBlank()) {
+                || decoded.getId().isBlank()
+                || decoded.getIssuedAtAsInstant().isAfter(clock.instant())) {
             throw new IllegalArgumentException("JWT required claim is missing");
         }
     }

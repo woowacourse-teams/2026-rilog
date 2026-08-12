@@ -114,6 +114,17 @@ class AuthVerticalFlowTest {
                 exchange.getResponse().getHeader(SET_COOKIE),
                 "__Secure-rilog-refresh"
         );
+        assertEquals(
+                FRONTEND_ORIGIN,
+                exchange.getResponse().getHeader("Access-Control-Allow-Origin")
+        );
+        assertEquals(
+                "true",
+                exchange.getResponse().getHeader("Access-Control-Allow-Credentials")
+        );
+        assertTrue(exchange.getResponse()
+                .getHeader("Access-Control-Expose-Headers")
+                .contains("Authorization"));
 
         mockMvc.perform(get("/test/protected")
                         .header(AUTHORIZATION, "Bearer " + accessToken))

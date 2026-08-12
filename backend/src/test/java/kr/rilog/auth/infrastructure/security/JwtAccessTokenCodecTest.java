@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import kr.rilog.auth.domain.AuthPrincipal;
 import kr.rilog.auth.domain.GlobalRole;
 import kr.rilog.global.exception.AuthException;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.Test;
 class JwtAccessTokenCodecTest {
 
     private static final String SECRET = "01234567890123456789012345678901";
+    private static final Instant NOW = Instant.parse("2026-08-12T00:00:00Z");
 
     @Test
     void issuedJwtRoundTripsRequiredPrincipalClaims() {
@@ -51,13 +54,45 @@ class JwtAccessTokenCodecTest {
         );
     }
 
+    @Test
+    void verificationUsesInjectedClockForExpiration() {
+        String token = codec("rilog-api", fixedClock(NOW))
+                .issue(new AuthPrincipal(7L, GlobalRole.USER));
+
+        JwtAccessTokenCodec afterExpiration = codec(
+                "rilog-api",
+                fixedClock(NOW.plus(Duration.ofMinutes(16)))
+        );
+
+        assertThrows(AuthException.class, () -> afterExpiration.verify(token));
+    }
+
+    @Test
+    void rejectsTokenIssuedInTheFutureAccordingToInjectedClock() {
+        String token = codec("rilog-api", fixedClock(NOW.plusSeconds(1)))
+                .issue(new AuthPrincipal(7L, GlobalRole.USER));
+
+        assertThrows(
+                AuthException.class,
+                () -> codec("rilog-api", fixedClock(NOW)).verify(token)
+        );
+    }
+
     private JwtAccessTokenCodec codec(String audience) {
+        return codec(audience, Clock.systemUTC());
+    }
+
+    private JwtAccessTokenCodec codec(String audience, Clock clock) {
         return new JwtAccessTokenCodec(
                 SECRET,
                 "rilog",
                 audience,
                 Duration.ofMinutes(15),
-                Clock.systemUTC()
+                clock
         );
+    }
+
+    private Clock fixedClock(Instant instant) {
+        return Clock.fixed(instant, ZoneOffset.UTC);
     }
 }

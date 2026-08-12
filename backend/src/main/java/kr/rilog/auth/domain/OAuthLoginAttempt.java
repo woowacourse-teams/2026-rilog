@@ -3,6 +3,7 @@ package kr.rilog.auth.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -12,7 +13,13 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "oauth_login_attempt")
+@Table(
+        name = "oauth_login_attempt",
+        indexes = @Index(
+                name = "idx_oauth_login_attempt_expires_at",
+                columnList = "expires_at"
+        )
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OAuthLoginAttempt {
 
@@ -60,13 +67,15 @@ public class OAuthLoginAttempt {
 
     public String consume(String presentedBrowserBindingHash, Instant now) {
         if (consumedAt != null) {
-            throw new AuthDomainException("OAuth login attempt was already consumed");
+            throw new OAuthAttemptException(OAuthAttemptException.Failure.ALREADY_USED);
         }
         if (!now.isBefore(expiresAt)) {
-            throw new AuthDomainException("OAuth login attempt has expired");
+            throw new OAuthAttemptException(OAuthAttemptException.Failure.EXPIRED);
         }
         if (!SecretHashes.matches(browserBindingHash, presentedBrowserBindingHash)) {
-            throw new AuthDomainException("OAuth browser binding does not match");
+            throw new OAuthAttemptException(
+                    OAuthAttemptException.Failure.BROWSER_BINDING_MISMATCH
+            );
         }
         consumedAt = now;
         return pkceVerifier;

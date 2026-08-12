@@ -1,11 +1,11 @@
 package kr.rilog.auth.infrastructure.github;
 
 import java.net.URI;
-import java.util.Objects;
 import kr.rilog.auth.application.port.GithubOAuthGateway;
 import kr.rilog.auth.domain.GithubIdentity;
 import kr.rilog.global.exception.AuthErrorInformation;
 import kr.rilog.global.exception.AuthException;
+import kr.rilog.global.exception.AuthFailureReason;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
@@ -57,25 +57,48 @@ public class GithubHttpClient implements GithubOAuthGateway {
 
     @Override
     public GithubIdentity fetchIdentity(String code, String codeVerifier) {
+        GithubTokenResponse token = exchangeCodeSafely(code, codeVerifier);
+        if (token == null || token.accessToken() == null || token.accessToken().isBlank()) {
+            throw failure(AuthFailureReason.GITHUB_TOKEN_RESPONSE_INVALID);
+        }
+
+        GithubUserResponse user = fetchUserSafely(token.accessToken());
+        if (user == null) {
+            throw failure(AuthFailureReason.GITHUB_USER_RESPONSE_INVALID);
+        }
         try {
-            GithubTokenResponse token = exchangeCode(code, codeVerifier);
-            if (token == null || token.accessToken() == null || token.accessToken().isBlank()) {
-                throw new AuthException(AuthErrorInformation.GITHUB_OAUTH_FAILED);
-            }
-            GithubUserResponse user = restClient.get()
+            return new GithubIdentity(
+                    user.id(), user.avatarUrl(), user.htmlUrl(), user.email()
+            );
+        } catch (IllegalArgumentException exception) {
+            throw failure(AuthFailureReason.GITHUB_USER_RESPONSE_INVALID);
+        }
+    }
+
+    private GithubTokenResponse exchangeCodeSafely(String code, String codeVerifier) {
+        try {
+            return exchangeCode(code, codeVerifier);
+        } catch (RestClientException exception) {
+            throw failure(AuthFailureReason.GITHUB_TOKEN_REQUEST_FAILED);
+        }
+    }
+
+    private GithubUserResponse fetchUserSafely(String accessToken) {
+        try {
+            return restClient.get()
                     .uri(userEndpoint)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .header(HttpHeaders.ACCEPT, "application/vnd.github+json")
                     .header("X-GitHub-Api-Version", "2022-11-28")
                     .retrieve()
                     .body(GithubUserResponse.class);
-            Objects.requireNonNull(user, "GitHub user response must not be null");
-            return new GithubIdentity(
-                    user.id(), user.avatarUrl(), user.htmlUrl(), user.email()
-            );
-        } catch (RestClientException | IllegalArgumentException | NullPointerException exception) {
-            throw new AuthException(AuthErrorInformation.GITHUB_OAUTH_FAILED);
+        } catch (RestClientException exception) {
+            throw failure(AuthFailureReason.GITHUB_USER_REQUEST_FAILED);
         }
+    }
+
+    private AuthException failure(AuthFailureReason reason) {
+        return new AuthException(AuthErrorInformation.GITHUB_OAUTH_FAILED, reason);
     }
 
     private GithubTokenResponse exchangeCode(String code, String codeVerifier) {

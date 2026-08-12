@@ -1,6 +1,8 @@
 # GitHub Social Login Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+**Status:** Implemented and verified on 2026-08-12 (`./gradlew clean test`, 54 tests)
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Spring Security와 OAuth client library 없이 GitHub OAuth 로그인, JWT Access token, PostgreSQL 기반 Refresh Token Rotation, MVC 인증·인가 어노테이션을 구현한다.
 
@@ -35,7 +37,7 @@
 - Consumes: 기존 `User`, `OnboardingStatus`
 - Produces: `User.registerFromGithub(GithubIdentity)`, `User.synchronizeGithubProfile(GithubIdentity)`, `User.hasRole(GlobalRole)`, `GlobalRole.permits(GlobalRole)`
 
-- [ ] **Step 1: 신규·재로그인과 역할 계층의 실패 테스트 작성**
+- [x] **Step 1: 신규·재로그인과 역할 계층의 실패 테스트 작성**
 
 ```java
 @Test
@@ -55,13 +57,13 @@ void githubReloginPreservesRilogOwnedFields() {
 }
 ```
 
-- [ ] **Step 2: 테스트가 factory·동기화·role 부재로 실패하는지 확인**
+- [x] **Step 2: 테스트가 factory·동기화·role 부재로 실패하는지 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.domain.UserTest'`
 
 Expected: `registerFromGithub`, `synchronizeGithubProfile` 또는 `GlobalRole`을 찾지 못해 FAIL
 
-- [ ] **Step 3: 최소 도메인 구현**
+- [x] **Step 3: 최소 도메인 구현**
 
 ```java
 public enum GlobalRole {
@@ -83,13 +85,13 @@ public static User registerFromGithub(GithubIdentity identity) {
 }
 ```
 
-- [ ] **Step 4: User 단위 테스트 통과 확인**
+- [x] **Step 4: User 단위 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.domain.UserTest'`
 
 Expected: PASS
 
-- [ ] **Step 5: User 도메인 변경 커밋**
+- [x] **Step 5: User 도메인 변경 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/auth/domain/GlobalRole.java backend/src/main/java/kr/rilog/auth/domain/GithubIdentity.java backend/src/main/java/kr/rilog/domain/User.java backend/src/test/java/kr/rilog/domain/UserTest.java
@@ -113,7 +115,7 @@ git commit -m "feature: GitHub 사용자와 전역 역할 도메인 제공"
 - Consumes: `Instant`, `Duration`, hashed presented secrets
 - Produces: `consume(bindingHash, now)`, `consume(secretHash, now)`, `rotate(record, presentedHash, nextTokenId, now, grace)`, `revoke(now)`
 
-- [ ] **Step 1: 만료·중복 소비·rotation·reuse 실패 테스트 작성**
+- [x] **Step 1: 만료·중복 소비·rotation·reuse 실패 테스트 작성**
 
 ```java
 @Test
@@ -129,13 +131,13 @@ void oldGenerationReuseRevokesWholeSession() {
 }
 ```
 
-- [ ] **Step 2: 도메인 타입 부재로 예상대로 실패하는지 확인**
+- [x] **Step 2: 도메인 타입 부재로 예상대로 실패하는지 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.domain.*'`
 
 Expected: auth domain class를 찾지 못해 FAIL
 
-- [ ] **Step 3: JPA entity factory와 상태 전이 구현**
+- [x] **Step 3: JPA entity factory와 상태 전이 구현**
 
 ```java
 public RotationResult rotate(RefreshTokenRecord record, String presentedHash,
@@ -158,13 +160,13 @@ public RotationResult rotate(RefreshTokenRecord record, String presentedHash,
 }
 ```
 
-- [ ] **Step 4: auth domain 테스트 통과 확인**
+- [x] **Step 4: auth domain 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.domain.*'`
 
 Expected: PASS
 
-- [ ] **Step 5: 인증 상태 객체 커밋**
+- [x] **Step 5: 인증 상태 객체 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/auth/domain backend/src/test/java/kr/rilog/auth/domain
@@ -182,7 +184,7 @@ git commit -m "feature: 인증 credential 상태 전이 제공"
 - Consumes: 기존 `ErrorInformation`, `RilogBusinessException`, `GlobalExceptionHandler`
 - Produces: 401 `MISSING_ACCESS_TOKEN`, `INVALID_ACCESS_TOKEN`, `INVALID_REFRESH_TOKEN`, `INVALID_EXCHANGE_CODE`; 403 `INSUFFICIENT_ROLE`; 409 `USER_SLUG_NOT_ASSIGNED`; 400 `INVALID_OAUTH_REQUEST`, `UNTRUSTED_ORIGIN`
 
-- [ ] **Step 1: HTTP 상태와 공통 handler 호환 실패 테스트 작성**
+- [x] **Step 1: HTTP 상태와 공통 handler 호환 실패 테스트 작성**
 
 ```java
 @Test
@@ -195,13 +197,13 @@ void insufficientRoleUsesForbiddenContract() {
 }
 ```
 
-- [ ] **Step 2: auth exception 부재로 실패 확인**
+- [x] **Step 2: auth exception 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.global.exception.AuthExceptionTest'`
 
 Expected: `AuthException`과 `AuthErrorInformation`을 찾지 못해 FAIL
 
-- [ ] **Step 3: 기존 공통 예외 흐름을 확장하는 최소 구현**
+- [x] **Step 3: 기존 공통 예외 흐름을 확장하는 최소 구현**
 
 ```java
 public final class AuthException extends RilogBusinessException {
@@ -211,13 +213,13 @@ public final class AuthException extends RilogBusinessException {
 }
 ```
 
-- [ ] **Step 4: 인증 오류 계약 테스트 통과 확인**
+- [x] **Step 4: 인증 오류 계약 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.global.exception.AuthExceptionTest'`
 
 Expected: PASS
 
-- [ ] **Step 5: 인증 오류 계약 커밋**
+- [x] **Step 5: 인증 오류 계약 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/global/exception backend/src/test/java/kr/rilog/global/exception/AuthExceptionTest.java
@@ -241,7 +243,7 @@ git commit -m "feature: 인증 오류 응답 계약 제공"
 - Consumes: `AuthPrincipal`, `Clock`, issuer, audience, 256-bit signing secret, lifetime
 - Produces: `String issue(AuthPrincipal)`, `AuthPrincipal verify(String)`, `OpaqueCredential issueOpaque()`, `String hash(String)`, `boolean matches(String,String)`
 
-- [ ] **Step 1: opaque credential와 JWT 계약 실패 테스트 작성**
+- [x] **Step 1: opaque credential와 JWT 계약 실패 테스트 작성**
 
 ```java
 @Test
@@ -253,13 +255,13 @@ void jwtRejectsUnexpectedAudience() {
 }
 ```
 
-- [ ] **Step 2: codec와 dependency 부재로 실패 확인**
+- [x] **Step 2: codec와 dependency 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.infrastructure.security.*'`
 
 Expected: `com.auth0:java-jwt` 또는 security class 부재로 FAIL
 
-- [ ] **Step 3: 검증된 JWT adapter와 256-bit random credential 구현**
+- [x] **Step 3: 검증된 JWT adapter와 256-bit random credential 구현**
 
 ```kotlin
 implementation("com.auth0:java-jwt:4.6.0")
@@ -277,13 +279,13 @@ String token = JWT.create()
     .sign(Algorithm.HMAC256(secret));
 ```
 
-- [ ] **Step 4: security 단위 테스트 통과 확인**
+- [x] **Step 4: security 단위 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.infrastructure.security.*'`
 
 Expected: PASS
 
-- [ ] **Step 5: credential와 JWT adapter 커밋**
+- [x] **Step 5: credential와 JWT adapter 커밋**
 
 ```bash
 git add backend/build.gradle.kts backend/src/main/java/kr/rilog/auth/application/port backend/src/main/java/kr/rilog/auth/domain/AuthPrincipal.java backend/src/main/java/kr/rilog/auth/infrastructure/security backend/src/main/java/kr/rilog/global/exception backend/src/test/java/kr/rilog/auth/infrastructure/security
@@ -315,7 +317,7 @@ git commit -m "feature: Rilog credential와 JWT 검증 제공"
 - Consumes: Task 1·2 entity
 - Produces: state hash 조회, exchange/session pessimistic lock 조회, token record 조회·저장, githubId/userId 조회·저장
 
-- [ ] **Step 1: 실제 PostgreSQL에서 단일 소비와 row lock을 요구하는 실패 테스트 작성**
+- [x] **Step 1: 실제 PostgreSQL에서 단일 소비와 row lock을 요구하는 실패 테스트 작성**
 
 ```java
 @Test
@@ -327,13 +329,13 @@ void exchangeCodeIsLoadedWithPessimisticWriteLock() {
 }
 ```
 
-- [ ] **Step 2: Testcontainers/JPA adapter 부재로 실패 확인**
+- [x] **Step 2: Testcontainers/JPA adapter 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.infrastructure.persistence.*'`
 
 Expected: repository adapter 또는 Testcontainers dependency 부재로 FAIL
 
-- [ ] **Step 3: PostgreSQL adapter와 테스트 dependency 구현**
+- [x] **Step 3: PostgreSQL adapter와 테스트 dependency 구현**
 
 ```kotlin
 testImplementation("org.springframework.boot:spring-boot-testcontainers")
@@ -347,13 +349,13 @@ testImplementation("org.testcontainers:testcontainers-postgresql:2.0.5")
 Optional<RefreshSession> findByIdForUpdate(UUID id);
 ```
 
-- [ ] **Step 4: PostgreSQL persistence 테스트 통과 확인**
+- [x] **Step 4: PostgreSQL persistence 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.infrastructure.persistence.*'`
 
 Expected: Docker 사용 가능 환경에서 PASS
 
-- [ ] **Step 5: persistence adapter 커밋**
+- [x] **Step 5: persistence adapter 커밋**
 
 ```bash
 git add backend/build.gradle.kts backend/src/main/java/kr/rilog/auth/application/port backend/src/main/java/kr/rilog/auth/infrastructure/persistence backend/src/test/java/kr/rilog/auth/infrastructure/persistence
@@ -378,7 +380,7 @@ git commit -m "feature: 인증 상태의 PostgreSQL 영속화 제공"
 - Consumes: credential service, attempt/user/exchange stores, GitHub code/state/binding
 - Produces: `StartGithubLogin.Result(URI,String)`, `CompleteGithubLogin.Result(String)`
 
-- [ ] **Step 1: PKCE URL, GitHub request와 transaction 분리 실패 테스트 작성**
+- [x] **Step 1: PKCE URL, GitHub request와 transaction 분리 실패 테스트 작성**
 
 ```java
 @Test
@@ -391,13 +393,13 @@ void authorizationUriContainsStateAndS256Challenge() {
 }
 ```
 
-- [ ] **Step 2: gateway/use case 부재로 실패 확인**
+- [x] **Step 2: gateway/use case 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.application.GithubLoginUseCaseTest' --tests 'kr.rilog.auth.infrastructure.github.GithubHttpClientTest'`
 
 Expected: login use case 또는 GitHub adapter 부재로 FAIL
 
-- [ ] **Step 3: Spring `RestClient` 기반 직접 OAuth HTTP와 분리 transaction 구현**
+- [x] **Step 3: Spring `RestClient` 기반 직접 OAuth HTTP와 분리 transaction 구현**
 
 ```java
 public Result complete(String code, String state, String binding) {
@@ -407,13 +409,13 @@ public Result complete(String code, String state, String binding) {
 }
 ```
 
-- [ ] **Step 4: GitHub contract와 use case 테스트 통과 확인**
+- [x] **Step 4: GitHub contract와 use case 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.application.GithubLoginUseCaseTest' --tests 'kr.rilog.auth.infrastructure.github.GithubHttpClientTest'`
 
 Expected: PASS
 
-- [ ] **Step 5: GitHub OAuth 흐름 커밋**
+- [x] **Step 5: GitHub OAuth 흐름 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/auth/application backend/src/main/java/kr/rilog/auth/infrastructure/github backend/src/test/java/kr/rilog/auth/application/GithubLoginUseCaseTest.java backend/src/test/java/kr/rilog/auth/infrastructure/github/GithubHttpClientTest.java
@@ -434,7 +436,7 @@ git commit -m "feature: GitHub OAuth 로그인 흐름 제공"
 - Consumes: opaque `<public-id>.<secret>`, locked stores, current `User.globalRole`
 - Produces: Access token, optional rotated Refresh token, remaining absolute cookie lifetime, onboarding status
 
-- [ ] **Step 1: 최초 교환, grace, 오래된 reuse, logout 경쟁 실패 테스트 작성**
+- [x] **Step 1: 최초 교환, grace, 오래된 reuse, logout 경쟁 실패 테스트 작성**
 
 ```java
 @Test
@@ -444,13 +446,13 @@ void rotationUsesRemainingAbsoluteLifetime() {
 }
 ```
 
-- [ ] **Step 2: session use case 부재로 실패 확인**
+- [x] **Step 2: session use case 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.application.TokenSessionUseCaseTest'`
 
 Expected: exchange/refresh/logout class 부재로 FAIL
 
-- [ ] **Step 3: transaction 경계와 rotation 결과 mapping 구현**
+- [x] **Step 3: transaction 경계와 rotation 결과 mapping 구현**
 
 ```java
 return switch (session.rotate(record, presentedHash, next.id(), now, grace)) {
@@ -461,13 +463,13 @@ return switch (session.rotate(record, presentedHash, next.id(), now, grace)) {
 };
 ```
 
-- [ ] **Step 4: use case와 PostgreSQL concurrency 테스트 통과 확인**
+- [x] **Step 4: use case와 PostgreSQL concurrency 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.application.*'`
 
 Expected: PASS
 
-- [ ] **Step 5: Rilog session use case 커밋**
+- [x] **Step 5: Rilog session use case 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/auth/application backend/src/test/java/kr/rilog/auth/application
@@ -491,7 +493,7 @@ git commit -m "feature: 로그인 token 교환과 회전 세션 제공"
 - Consumes: `AccessTokenCodec`, `UserQueryService`, class/method/parameter annotations
 - Produces: request attribute `AuthPrincipal`, 401/403, `Long` userId와 current slug resolver
 
-- [ ] **Step 1: class·method role과 resolver 실패 MVC 테스트 작성**
+- [x] **Step 1: class·method role과 resolver 실패 MVC 테스트 작성**
 
 ```java
 mockMvc.perform(get("/test/admin").header(AUTHORIZATION, "Bearer " + userToken))
@@ -502,13 +504,13 @@ mockMvc.perform(get("/test/me").header(AUTHORIZATION, "Bearer " + adminToken))
     .andExpect(content().string("7"));
 ```
 
-- [ ] **Step 2: interceptor와 실제 principal resolver 부재로 실패 확인**
+- [x] **Step 2: interceptor와 실제 principal resolver 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.global.auth.AuthMvcTest'`
 
 Expected: 보호 endpoint가 통과하거나 annotation class 부재로 FAIL
 
-- [ ] **Step 3: requirement 해석, JWT 단일 검증과 resolver 구현**
+- [x] **Step 3: requirement 해석, JWT 단일 검증과 resolver 구현**
 
 ```java
 AuthRequirement requirement = requirementResolver.resolve(handlerMethod);
@@ -519,13 +521,13 @@ if (!principal.role().permits(requirement.requiredRole())) {
 request.setAttribute(AuthPrincipal.class.getName(), principal);
 ```
 
-- [ ] **Step 4: MVC auth 테스트 통과 확인**
+- [x] **Step 4: MVC auth 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.global.auth.AuthMvcTest'`
 
 Expected: PASS
 
-- [ ] **Step 5: MVC 인증·인가 통합 커밋**
+- [x] **Step 5: MVC 인증·인가 통합 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/global/auth backend/src/main/java/kr/rilog/global/config/WebMvcConfig.java backend/src/test/java/kr/rilog/global/auth/AuthMvcTest.java
@@ -551,7 +553,7 @@ git commit -m "feature: MVC 인증과 전역 역할 인가 제공"
 - Consumes: Tasks 5·6 use cases와 exact frontend origin
 - Produces: 302 login/callback, 200 exchange, 204 refresh/logout, Authorization header, secure cookies, callback generic error redirect
 
-- [ ] **Step 1: endpoint header/cookie/origin/error 실패 테스트 작성**
+- [x] **Step 1: endpoint header/cookie/origin/error 실패 테스트 작성**
 
 ```java
 mockMvc.perform(post("/api/auth/token/exchange")
@@ -565,13 +567,13 @@ mockMvc.perform(post("/api/auth/token/exchange")
         containsString("SameSite=Lax"), containsString("Path=/api/auth"))));
 ```
 
-- [ ] **Step 2: controller/config/error 타입 부재로 실패 확인**
+- [x] **Step 2: controller/config/error 타입 부재로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.presentation.AuthControllerMvcTest'`
 
 Expected: controller route를 찾지 못해 FAIL
 
-- [ ] **Step 3: endpoint, exact Origin, cookie와 callback advice 구현**
+- [x] **Step 3: endpoint, exact Origin, cookie와 callback advice 구현**
 
 ```java
 ResponseCookie refresh = ResponseCookie.from("__Secure-rilog-refresh", token)
@@ -579,13 +581,13 @@ ResponseCookie refresh = ResponseCookie.from("__Secure-rilog-refresh", token)
     .path("/api/auth").maxAge(remaining).build();
 ```
 
-- [ ] **Step 4: presentation 계약 테스트 통과 확인**
+- [x] **Step 4: presentation 계약 테스트 통과 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.presentation.AuthControllerMvcTest'`
 
 Expected: PASS
 
-- [ ] **Step 5: 인증 HTTP 계약 커밋**
+- [x] **Step 5: 인증 HTTP 계약 커밋**
 
 ```bash
 git add backend/src/main/java/kr/rilog/auth/config backend/src/main/java/kr/rilog/auth/presentation backend/src/main/resources/application.yaml backend/src/test/java/kr/rilog/auth/presentation
@@ -603,7 +605,7 @@ git commit -m "feature: GitHub 로그인과 token HTTP 계약 제공"
 - Consumes: 전체 auth HTTP/application/domain/persistence 경계
 - Produces: login → callback → exchange → protected request → refresh → logout 검증 증거
 
-- [ ] **Step 1: Fake GitHub를 통한 수직 흐름 실패 테스트 작성**
+- [x] **Step 1: Fake GitHub를 통한 수직 흐름 실패 테스트 작성**
 
 ```java
 @Test
@@ -617,32 +619,32 @@ void completeAuthenticationLifecycle() {
 }
 ```
 
-- [ ] **Step 2: 전체 연결 누락으로 실패 확인**
+- [x] **Step 2: 전체 연결 누락으로 실패 확인**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew test --tests 'kr.rilog.auth.AuthVerticalFlowTest'`
 
 Expected: 빠진 bean, route 또는 persistence contract 때문에 FAIL
 
-- [ ] **Step 3: 연결 오류만 최소 수정하고 설계 문서의 확정 class명·dependency 반영**
+- [x] **Step 3: 연결 오류만 최소 수정하고 설계 문서의 확정 class명·dependency 반영**
 
 ```text
 검증 대상: state/browser binding, GitHub identity 동기화, single-use exchange,
 JWT principal, absolute refresh expiry, rotation/reuse, logout revoke
 ```
 
-- [ ] **Step 4: 전체 backend 검증**
+- [x] **Step 4: 전체 backend 검증**
 
 Run: `JAVA_HOME=/Users/jinriro/Library/Java/JavaVirtualMachines/ms-21.0.10/Contents/Home ./gradlew clean test`
 
 Expected: `BUILD SUCCESSFUL`, 실패 테스트 0개
 
-- [ ] **Step 5: 변경 범위와 secret 유출 검사**
+- [x] **Step 5: 변경 범위와 secret 유출 검사**
 
 Run: `git diff --check && rg -n 'gho_|github-client-secret: [^$]|jwt-signing-secret: [^$]' backend docs`
 
 Expected: whitespace 오류 없음, 실제 credential pattern 없음
 
-- [ ] **Step 6: 수직 흐름과 문서 동기화 커밋**
+- [x] **Step 6: 수직 흐름과 문서 동기화 커밋**
 
 ```bash
 git add backend/src/test/java/kr/rilog/auth/AuthVerticalFlowTest.java docs/superpowers/specs/2026-08-12-github-social-login-design.md docs/adr/0001-custom-github-authentication.md

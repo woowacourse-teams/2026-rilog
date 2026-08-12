@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
@@ -11,9 +12,12 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withUnauthorizedRequest;
 
 import java.net.URI;
 import kr.rilog.auth.domain.GithubIdentity;
+import kr.rilog.global.exception.AuthException;
+import kr.rilog.global.exception.AuthFailureReason;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -70,6 +74,51 @@ class GithubHttpClientTest {
         assertEquals("avatar.png", identity.profileImageUrl());
         assertEquals("https://github.test/rilog", identity.githubUrl());
         assertEquals(null, identity.publicEmail());
+        server.verify();
+    }
+
+    @Test
+    void distinguishesTokenEndpointFailureWithoutLeakingResponseValues() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        GithubHttpClient client = client(builder);
+        server.expect(once(), requestTo("https://github.test/oauth/token"))
+                .andRespond(withUnauthorizedRequest());
+
+        AuthException exception = assertThrows(
+                AuthException.class,
+                () -> client.fetchIdentity("github-code", "pkce-verifier")
+        );
+
+        assertEquals(
+                AuthFailureReason.GITHUB_TOKEN_REQUEST_FAILED,
+                exception.getFailureReason()
+        );
+        server.verify();
+    }
+
+    @Test
+    void distinguishesGithubUserEndpointFailure() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        GithubHttpClient client = client(builder);
+        server.expect(once(), requestTo("https://github.test/oauth/token"))
+                .andRespond(withSuccess(
+                        "{\"access_token\":\"github-token\",\"token_type\":\"bearer\"}",
+                        MediaType.APPLICATION_JSON
+                ));
+        server.expect(once(), requestTo("https://api.github.test/user"))
+                .andRespond(withUnauthorizedRequest());
+
+        AuthException exception = assertThrows(
+                AuthException.class,
+                () -> client.fetchIdentity("github-code", "pkce-verifier")
+        );
+
+        assertEquals(
+                AuthFailureReason.GITHUB_USER_REQUEST_FAILED,
+                exception.getFailureReason()
+        );
         server.verify();
     }
 

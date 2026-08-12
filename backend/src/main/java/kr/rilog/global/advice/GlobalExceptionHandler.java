@@ -63,10 +63,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorDetail> handleHttpMessageNotReadableException(
-            HttpMessageNotReadableException e
+            HttpMessageNotReadableException ignored
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_REQUEST_BODY;
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+        log.info(
+                EXCEPTION_LOG_FORMAT,
+                errorInformation.getErrorCode(),
+                errorInformation.getMessage()
+        );
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }

@@ -3,6 +3,7 @@ package kr.rilog.auth.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.Instant;
@@ -13,7 +14,17 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "refresh_session")
+@Table(
+        name = "refresh_session",
+        indexes = {
+                @Index(name = "idx_refresh_session_user_id", columnList = "user_id"),
+                @Index(
+                        name = "idx_refresh_session_absolute_expires_at",
+                        columnList = "absolute_expires_at"
+                ),
+                @Index(name = "idx_refresh_session_revoked_at", columnList = "revoked_at")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RefreshSession {
 

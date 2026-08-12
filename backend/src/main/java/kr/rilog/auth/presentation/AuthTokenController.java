@@ -43,6 +43,8 @@ public class AuthTokenController {
     ) {
         ExchangeLoginCode.Result result = exchangeLoginCode.exchange(request.code());
         return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.AUTHORIZATION, bearer(result.accessToken()))
                 .header(
                         HttpHeaders.SET_COOKIE,
@@ -64,6 +66,8 @@ public class AuthTokenController {
                 requireRefreshToken(refreshToken)
         );
         ResponseEntity.HeadersBuilder<?> response = ResponseEntity.noContent()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.AUTHORIZATION, bearer(result.accessToken()));
         if (result.refreshToken() != null) {
             response.header(
@@ -85,6 +89,8 @@ public class AuthTokenController {
     ) {
         logout.logout(requireRefreshToken(refreshToken));
         return ResponseEntity.noContent()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(
                         HttpHeaders.SET_COOKIE,
                         cookieFactory.clearRefresh().toString()

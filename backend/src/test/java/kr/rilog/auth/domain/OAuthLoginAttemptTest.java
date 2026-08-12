@@ -20,7 +20,7 @@ class OAuthLoginAttemptTest {
         );
 
         assertEquals("pkce-verifier", attempt.consume("binding-hash", NOW));
-        assertThrows(AuthDomainException.class,
+        assertThrows(OAuthAttemptException.class,
                 () -> attempt.consume("binding-hash", NOW.plusSeconds(1)));
     }
 
@@ -33,9 +33,9 @@ class OAuthLoginAttemptTest {
                 "state-hash-2", "binding-hash", "verifier", NOW.plusSeconds(600)
         );
 
-        assertThrows(AuthDomainException.class,
+        assertThrows(OAuthAttemptException.class,
                 () -> expired.consume("binding-hash", NOW));
-        assertThrows(AuthDomainException.class,
+        assertThrows(OAuthAttemptException.class,
                 () -> wrongBrowser.consume("another-hash", NOW));
     }
 }

@@ -2,6 +2,7 @@ package kr.rilog.auth.presentation;
 
 import java.net.URI;
 import java.util.UUID;
+import kr.rilog.global.exception.AuthException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -31,10 +32,13 @@ public class GithubCallbackExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Void> handleCallbackFailure(Exception exception) {
         String traceId = UUID.randomUUID().toString();
+        String failureReason = exception instanceof AuthException authException
+                ? authException.getFailureReason().name()
+                : exception.getClass().getSimpleName();
         log.warn(
-                "[{}] GitHub OAuth callback failed: {}",
+                "[{}] GitHub OAuth callback failed: reason={}",
                 traceId,
-                exception.getClass().getSimpleName()
+                failureReason
         );
         URI redirect = UriComponentsBuilder.fromUri(frontendCallbackUri)
                 .queryParam("error", "OAUTH_FAILED")
@@ -44,6 +48,9 @@ public class GithubCallbackExceptionHandler {
                 .toUri();
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(redirect)
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header("Referrer-Policy", "no-referrer")
                 .header(
                         HttpHeaders.SET_COOKIE,
                         cookieFactory.clearOAuthBinding().toString()

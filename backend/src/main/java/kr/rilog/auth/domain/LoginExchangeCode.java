@@ -3,6 +3,7 @@ package kr.rilog.auth.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -12,7 +13,13 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "login_exchange_code")
+@Table(
+        name = "login_exchange_code",
+        indexes = @Index(
+                name = "idx_login_exchange_code_expires_at",
+                columnList = "expires_at"
+        )
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LoginExchangeCode {
 

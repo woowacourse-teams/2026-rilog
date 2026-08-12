@@ -23,6 +23,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
@@ -49,6 +50,9 @@ class PostgresAuthPersistenceTest {
 
     @Autowired
     TransactionTemplate transactionTemplate;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     @Test
     void persistsAuthenticationAggregateAndLoadsCredentialsWithLocks() {
@@ -84,6 +88,22 @@ class PostgresAuthPersistenceTest {
         assertEquals(session.getId(), lockedSession.getId());
         assertTrue(tokenRecordStore.findById(tokenId).isPresent());
         assertTrue(userStore.findByGithubId(123L).isPresent());
+    }
+
+    @Test
+    void createsIndexesRequiredForExpiryCleanupAndSessionLookup() {
+        java.util.List<String> indexes = jdbcTemplate.queryForList(
+                "select indexname from pg_indexes where schemaname = 'public'",
+                String.class
+        );
+
+        assertTrue(indexes.contains("idx_oauth_login_attempt_expires_at"));
+        assertTrue(indexes.contains("idx_login_exchange_code_expires_at"));
+        assertTrue(indexes.contains("idx_refresh_session_user_id"));
+        assertTrue(indexes.contains("idx_refresh_session_absolute_expires_at"));
+        assertTrue(indexes.contains("idx_refresh_session_revoked_at"));
+        assertTrue(indexes.contains("idx_refresh_token_record_session_id"));
+        assertTrue(indexes.contains("idx_refresh_token_record_used_at"));
     }
 
     @TestConfiguration(proxyBeanMethods = false)

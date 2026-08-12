@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.HttpHeaders.CACHE_CONTROL;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpHeaders.SET_COOKIE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -111,6 +112,8 @@ class AuthControllerMvcTest {
                         LOCATION,
                         "https://rilog.test/auth/callback?code=exchange-id.secret"
                 ))
+                .andExpect(header().string(CACHE_CONTROL, containsString("no-store")))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
                 .andExpect(header().string(SET_COOKIE, containsString("Max-Age=0")));
     }
 
@@ -121,6 +124,22 @@ class AuthControllerMvcTest {
 
         mockMvc.perform(get("/api/auth/github/callback")
                         .queryParam("code", "github-code")
+                        .queryParam("state", "state")
+                        .cookie(new MockCookie(
+                                AuthCookieFactory.OAUTH_BINDING_COOKIE,
+                                "binding-secret"
+                        )))
+                .andExpect(status().isFound())
+                .andExpect(header().string(
+                        LOCATION,
+                        containsString("error=OAUTH_FAILED&traceId=")
+                ));
+    }
+
+    @Test
+    void githubAccessDenialUsesTheSameGenericFrontendError() throws Exception {
+        mockMvc.perform(get("/api/auth/github/callback")
+                        .queryParam("error", "access_denied")
                         .queryParam("state", "state")
                         .cookie(new MockCookie(
                                 AuthCookieFactory.OAUTH_BINDING_COOKIE,
@@ -155,6 +174,7 @@ class AuthControllerMvcTest {
                 .andExpect(header().string(SET_COOKIE, containsString("HttpOnly")))
                 .andExpect(header().string(SET_COOKIE, containsString("SameSite=Lax")))
                 .andExpect(header().string(SET_COOKIE, containsString("Path=/api/auth")))
+                .andExpect(header().string(CACHE_CONTROL, containsString("no-store")))
                 .andExpect(jsonPath("$.onboardingStatus").value("PENDING"));
     }
 
