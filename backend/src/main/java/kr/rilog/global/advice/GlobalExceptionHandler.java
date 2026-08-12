@@ -6,6 +6,8 @@ import kr.rilog.global.exception.RilogBusinessException;
 import kr.rilog.global.exception.dto.ErrorDetail;
 import kr.rilog.global.exception.dto.InvalidParam;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -20,6 +22,7 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     private static final String EXCEPTION_LOG_FORMAT = "[{}] {}";
+    private static final String DATA_INTEGRITY_EXCEPTION_LOG_FORMAT = "[{}] 데이터 무결성 예외 발생";
     private static final String UNKNOWN_EXCEPTION_LOG_FORMAT = "[{}] 예상치 못한 예외 발생";
 
 
@@ -74,6 +77,26 @@ public class GlobalExceptionHandler {
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.METHOD_NOT_SUPPORTED;
         log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ErrorDetail> handleDuplicateKeyException(
+            DataIntegrityViolationException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.DATA_NOT_DUPLICATED_KEY;
+        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorDetail> handleDataIntegrityViolationException(
+            DataIntegrityViolationException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.DATA_INTEGRITY_VIOLATION;
+        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
