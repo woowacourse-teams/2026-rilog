@@ -10,4 +10,5 @@ public record AuthRequirement(
     public static AuthRequirement publicEndpoint() {
         return new AuthRequirement(false, null);
     }
+
 }

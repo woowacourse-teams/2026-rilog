@@ -97,4 +97,5 @@ public class User extends BaseEntity {
         this.onboardingStatus = OnboardingStatus.COMPLETED;
         this.onboardingCompletedAt = LocalDateTime.now();
     }
+
 }

@@ -19,4 +19,5 @@ public final class AuthException extends RilogBusinessException {
     public AuthFailureReason getFailureReason() {
         return failureReason;
     }
+
 }

@@ -11,4 +11,5 @@ import kr.rilog.auth.domain.GlobalRole;
 public @interface RequireRole {
 
     GlobalRole value();
+
 }

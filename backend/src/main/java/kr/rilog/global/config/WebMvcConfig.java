@@ -62,4 +62,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
         resolvers.add(loginUserIdArgumentResolver);
         resolvers.add(loginUserSlugArgumentResolver);
     }
+
 }

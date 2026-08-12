@@ -1,10 +1,10 @@
 package kr.rilog.global.exception;
 
 /**
- * A credential-free diagnostic reason for authentication failures.
+ * 인증 실패 원인을 나타내는 민감 정보가 포함되지 않은 진단 메시지입니다.
  *
- * <p>The value may be written to operational logs. Request parameters,
- * OAuth codes, access tokens, and cookie values must never be placed here.</p>
+ * <p>운영 로그에 기록될 수 있으므로 요청 파라미터, OAuth 인가 코드,
+ * 액세스 토큰 및 쿠키 값을 포함해서는 안 됩니다.</p>
  */
 public enum AuthFailureReason {
 
@@ -20,4 +20,5 @@ public enum AuthFailureReason {
     GITHUB_TOKEN_RESPONSE_INVALID,
     GITHUB_USER_REQUEST_FAILED,
     GITHUB_USER_RESPONSE_INVALID
+
 }

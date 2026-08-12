@@ -59,4 +59,5 @@ public class AuthRequirementResolver {
         }
         return false;
     }
+
 }

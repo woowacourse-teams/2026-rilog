@@ -68,4 +68,5 @@ public class AuthInterceptor implements HandlerInterceptor {
             throw new AuthException(AuthErrorInformation.INVALID_ACCESS_TOKEN);
         }
     }
+
 }
