@@ -2,12 +2,17 @@ package kr.rilog.domain.blog.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Objects;
+
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 
 @Getter
 @Entity
@@ -45,6 +50,20 @@ public class Blog extends BaseEntity {
 
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;
+    }
+
+    public void validateIsOwner(User user) {
+        if (!isOwner(user)) {
+            throw new BlogException(RILOG_POST_PUBLISH_FORBIDDEN);
+        }
+    }
+
+    private boolean isOwner(User user) {
+        if (owner == null || user == null) {
+            return false;
+        }
+
+        return owner == user || owner.getId() != null && Objects.equals(owner.getId(), user.getId());
     }
 
 }
