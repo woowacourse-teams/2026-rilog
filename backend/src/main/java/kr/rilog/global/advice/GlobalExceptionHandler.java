@@ -14,6 +14,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -99,6 +100,14 @@ public class GlobalExceptionHandler {
         log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorDetail> handleNoResourceFoundException(NoResourceFoundException e) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.DATA_INTEGRITY_VIOLATION;
+        log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation, e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
