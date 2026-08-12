@@ -48,4 +48,9 @@ public enum AuthErrorInformation implements ErrorInformation {
     private final HttpStatus httpStatus;
     private final String message;
 
+    @Override
+    public String getErrorCode() {
+        return this.name();
+    }
+
 }

@@ -8,6 +8,7 @@ import java.util.List;
 public record ErrorDetail(
         int status,
         HttpStatus error,
+        String errorCode,
         String message,
         List<InvalidParam> invalidParams
 ) {
@@ -17,6 +18,7 @@ public record ErrorDetail(
         return new ErrorDetail(
                 httpStatus.value(),
                 httpStatus,
+                errorInformation.getErrorCode(),
                 errorInformation.getMessage(),
                 null
         );
@@ -27,6 +29,7 @@ public record ErrorDetail(
         return new ErrorDetail(
                 httpStatus.value(),
                 httpStatus,
+                errorInformation.getErrorCode(),
                 errorInformation.getMessage(),
                 invalidParams
         );
