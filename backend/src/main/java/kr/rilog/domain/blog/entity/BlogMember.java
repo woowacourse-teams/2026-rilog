@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "post")
+@Table(name = "blog_member")
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BlogMember extends BaseEntity {
