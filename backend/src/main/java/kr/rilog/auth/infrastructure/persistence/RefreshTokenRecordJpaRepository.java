@@ -10,4 +10,5 @@ interface RefreshTokenRecordJpaRepository extends JpaRepository<RefreshTokenReco
 
     @Query("select r.sessionId from RefreshTokenRecord r where r.id = :id")
     java.util.Optional<UUID> findSessionIdById(@Param("id") UUID id);
+
 }

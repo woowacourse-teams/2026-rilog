@@ -24,4 +24,5 @@ public class JpaLoginExchangeCodeStore implements LoginExchangeCodeStore {
     public Optional<LoginExchangeCode> findByIdForUpdate(UUID id) {
         return repository.findByIdForUpdate(id);
     }
+
 }

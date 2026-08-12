@@ -11,4 +11,5 @@ public interface RefreshTokenRecordStore {
     Optional<UUID> findSessionIdById(UUID id);
 
     Optional<RefreshTokenRecord> findById(UUID id);
+
 }

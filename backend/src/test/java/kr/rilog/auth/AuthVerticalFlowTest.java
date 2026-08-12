@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import kr.rilog.global.auth.annotation.LoginRequired;
 import kr.rilog.global.auth.annotation.LoginUserId;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -78,7 +79,9 @@ class AuthVerticalFlowTest {
     }
 
     @Test
+    @DisplayName("GitHub 로그인부터 토큰 교환, 갱신, 로그아웃까지 전체 인증 흐름이 동작한다.")
     void completeAuthenticationLifecycle() throws Exception {
+        // given
         MvcResult login = mockMvc.perform(get("/api/auth/github/login"))
                 .andExpect(status().isFound())
                 .andReturn();
@@ -90,6 +93,7 @@ class AuthVerticalFlowTest {
         );
         assertEquals("S256", queryParam(githubLocation, "code_challenge_method"));
 
+        // when
         MvcResult callback = mockMvc.perform(get("/api/auth/github/callback")
                         .queryParam("code", "github-code")
                         .queryParam("state", state)
@@ -103,6 +107,7 @@ class AuthVerticalFlowTest {
         );
         assertTrue(TOKEN_REQUEST_BODY.get().contains("code_verifier="));
 
+        // when
         MvcResult exchange = mockMvc.perform(post("/api/auth/token/exchange")
                         .header("Origin", FRONTEND_ORIGIN)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,6 +119,8 @@ class AuthVerticalFlowTest {
                 exchange.getResponse().getHeader(SET_COOKIE),
                 "__Secure-rilog-refresh"
         );
+
+        // then
         assertEquals(
                 FRONTEND_ORIGIN,
                 exchange.getResponse().getHeader("Access-Control-Allow-Origin")
@@ -126,11 +133,14 @@ class AuthVerticalFlowTest {
                 .getHeader("Access-Control-Expose-Headers")
                 .contains("Authorization"));
 
+        // when
         mockMvc.perform(get("/test/protected")
                         .header(AUTHORIZATION, "Bearer " + accessToken))
+                // then
                 .andExpect(status().isOk())
                 .andExpect(content().string("1"));
 
+        // when
         MvcResult refresh = mockMvc.perform(post("/api/auth/token/refresh")
                         .header("Origin", FRONTEND_ORIGIN)
                         .cookie(new MockCookie(
@@ -142,20 +152,26 @@ class AuthVerticalFlowTest {
                 refresh.getResponse().getHeader(SET_COOKIE),
                 "__Secure-rilog-refresh"
         );
+
+        // then
         assertNotNull(refresh.getResponse().getHeader(AUTHORIZATION));
 
+        // when
         mockMvc.perform(post("/api/auth/logout")
                         .header("Origin", FRONTEND_ORIGIN)
                         .cookie(new MockCookie(
                                 "__Secure-rilog-refresh", rotatedRefresh
                         )))
+                // then
                 .andExpect(status().isNoContent());
 
+        // when
         mockMvc.perform(post("/api/auth/token/refresh")
                         .header("Origin", FRONTEND_ORIGIN)
                         .cookie(new MockCookie(
                                 "__Secure-rilog-refresh", rotatedRefresh
                         )))
+                // then
                 .andExpect(status().isUnauthorized());
     }
 
@@ -233,6 +249,7 @@ class AuthVerticalFlowTest {
         ProtectedController protectedController() {
             return new ProtectedController();
         }
+
     }
 
     @RestController
@@ -243,5 +260,7 @@ class AuthVerticalFlowTest {
         String protectedEndpoint(@LoginUserId Long userId) {
             return userId.toString();
         }
+
     }
+
 }

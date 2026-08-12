@@ -29,5 +29,7 @@ public class CompleteGithubLogin {
     }
 
     public record Result(String exchangeCode) {
+
     }
+
 }

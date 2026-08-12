@@ -7,4 +7,5 @@ public interface AccessTokenCodec {
     String issue(AuthPrincipal principal);
 
     AuthPrincipal verify(String token);
+
 }

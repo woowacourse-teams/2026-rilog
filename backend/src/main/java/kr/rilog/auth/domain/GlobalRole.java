@@ -8,4 +8,5 @@ public enum GlobalRole {
     public boolean permits(GlobalRole required) {
         return required != null && (this == ADMIN || this == required);
     }
+
 }

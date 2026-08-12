@@ -26,6 +26,7 @@ import kr.rilog.auth.domain.OAuthLoginAttempt;
 import kr.rilog.auth.infrastructure.security.SecureCredentialManager;
 import kr.rilog.domain.OnboardingStatus;
 import kr.rilog.domain.User;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class GithubLoginUseCaseTest {
@@ -40,7 +41,9 @@ class GithubLoginUseCaseTest {
     );
 
     @Test
+    @DisplayName("GitHub 로그인을 시작하면 state, PKCE, 브라우저 바인딩을 생성해 저장한다.")
     void startsLoginWithPersistedStatePkceAndBrowserBinding() {
+        // given
         InMemoryAttemptStore attempts = new InMemoryAttemptStore();
         CapturingGithubGateway github = new CapturingGithubGateway();
         SecureCredentialService credentials = new SecureCredentialManager();
@@ -48,8 +51,10 @@ class GithubLoginUseCaseTest {
                 attempts, credentials, github, CLOCK, POLICY
         );
 
+        // when
         StartGithubLogin.Result result = useCase.start();
 
+        // then
         assertAll(
                 () -> assertTrue(result.authorizationUri().toString().contains("state=")),
                 () -> assertTrue(result.authorizationUri().toString().contains("code_challenge_method=S256")),
@@ -59,7 +64,9 @@ class GithubLoginUseCaseTest {
     }
 
     @Test
+    @DisplayName("GitHub 콜백은 GitHub 소유 필드만 동기화하고 일회용 교환 코드를 발급한다.")
     void callbackSynchronizesOnlyGithubOwnedFieldsAndIssuesSingleUseCode() {
+        // given
         SecureCredentialService credentials = new SecureCredentialManager();
         InMemoryAttemptStore attempts = new InMemoryAttemptStore();
         InMemoryUserStore users = new InMemoryUserStore();
@@ -80,10 +87,12 @@ class GithubLoginUseCaseTest {
                 new GithubIdentityRegistrar(users, codes, credentials, CLOCK, POLICY)
         );
 
+        // when
         CompleteGithubLogin.Result result = useCase.complete(
                 "github-code", github.state, start.browserBinding()
         );
 
+        // then
         assertAll(
                 () -> assertFalse(result.exchangeCode().isBlank()),
                 () -> assertEquals("ril로그", existing.getNickname()),
@@ -96,6 +105,7 @@ class GithubLoginUseCaseTest {
     }
 
     private static final class CapturingGithubGateway implements GithubOAuthGateway {
+
         private String state;
 
         @Override
@@ -110,9 +120,11 @@ class GithubLoginUseCaseTest {
         public GithubIdentity fetchIdentity(String code, String codeVerifier) {
             return new GithubIdentity(123L, "new.png", "new-url", "new@email");
         }
+
     }
 
     private static final class InMemoryAttemptStore implements OAuthLoginAttemptStore {
+
         private OAuthLoginAttempt saved;
 
         @Override
@@ -127,9 +139,11 @@ class GithubLoginUseCaseTest {
                     ? Optional.of(saved)
                     : Optional.empty();
         }
+
     }
 
     private static final class InMemoryUserStore implements UserStore {
+
         private final Map<Long, User> byGithubId = new HashMap<>();
 
         @Override
@@ -152,9 +166,11 @@ class GithubLoginUseCaseTest {
         public Optional<User> findBySlug(String slug) {
             return byGithubId.values().stream().filter(user -> slug.equals(user.getSlug())).findFirst();
         }
+
     }
 
     private static final class InMemoryExchangeCodeStore implements LoginExchangeCodeStore {
+
         private LoginExchangeCode saved;
 
         @Override
@@ -167,5 +183,7 @@ class GithubLoginUseCaseTest {
         public Optional<LoginExchangeCode> findByIdForUpdate(UUID id) {
             return saved != null && saved.getId().equals(id) ? Optional.of(saved) : Optional.empty();
         }
+
     }
+
 }

@@ -10,4 +10,5 @@ public record AuthPrincipal(Long userId, GlobalRole role) {
         }
         Objects.requireNonNull(role, "role must not be null");
     }
+
 }

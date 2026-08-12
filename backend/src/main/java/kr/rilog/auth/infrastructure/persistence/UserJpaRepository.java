@@ -9,4 +9,5 @@ interface UserJpaRepository extends JpaRepository<User, Long> {
     Optional<User> findByGithubId(Long githubId);
 
     Optional<User> findBySlug(String slug);
+
 }

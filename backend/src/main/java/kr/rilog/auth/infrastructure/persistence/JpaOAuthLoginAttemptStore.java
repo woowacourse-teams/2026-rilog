@@ -23,4 +23,5 @@ public class JpaOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
     public Optional<OAuthLoginAttempt> findByStateHashForUpdate(String stateHash) {
         return repository.findByStateHashForUpdate(stateHash);
     }
+
 }

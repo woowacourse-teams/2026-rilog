@@ -8,4 +8,5 @@ public interface GithubOAuthGateway {
     URI buildAuthorizationUri(String state, String codeChallenge);
 
     GithubIdentity fetchIdentity(String code, String codeVerifier);
+
 }

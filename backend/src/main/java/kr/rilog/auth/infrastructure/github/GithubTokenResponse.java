@@ -6,4 +6,5 @@ record GithubTokenResponse(
         @JsonProperty("access_token") String accessToken,
         @JsonProperty("token_type") String tokenType
 ) {
+
 }

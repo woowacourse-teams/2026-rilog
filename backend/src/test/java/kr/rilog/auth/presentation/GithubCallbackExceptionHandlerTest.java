@@ -11,13 +11,16 @@ import java.time.Duration;
 import kr.rilog.global.exception.AuthErrorInformation;
 import kr.rilog.global.exception.AuthException;
 import kr.rilog.global.exception.AuthFailureReason;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 class GithubCallbackExceptionHandlerTest {
 
     @Test
+    @DisplayName("GitHub 콜백 실패 로그에는 안전한 실패 원인만 남기고 자격 증명은 남기지 않는다.")
     void logsOnlySafeFailureReasonAndNeverCredentialValues() {
+        // given
         Logger logger = (Logger) LoggerFactory.getLogger(
                 GithubCallbackExceptionHandler.class
         );
@@ -29,11 +32,14 @@ class GithubCallbackExceptionHandlerTest {
                     new AuthCookieFactory(true, "Lax", Duration.ofMinutes(10)),
                     URI.create("https://rilog.test/auth/callback")
             );
+
+            // when
             handler.handleCallbackFailure(new AuthException(
                     AuthErrorInformation.GITHUB_OAUTH_FAILED,
                     AuthFailureReason.GITHUB_TOKEN_REQUEST_FAILED
             ));
 
+            // then
             String logs = appender.list.stream()
                     .map(ILoggingEvent::getFormattedMessage)
                     .reduce("", (left, right) -> left + right);
@@ -45,4 +51,5 @@ class GithubCallbackExceptionHandlerTest {
             appender.stop();
         }
     }
+
 }

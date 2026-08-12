@@ -37,4 +37,5 @@ public class AuthOriginInterceptor implements HandlerInterceptor {
         }
         return true;
     }
+
 }

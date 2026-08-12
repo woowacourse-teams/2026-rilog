@@ -17,4 +17,5 @@ final class SecretHashes {
                 presented.getBytes(StandardCharsets.UTF_8)
         );
     }
+
 }

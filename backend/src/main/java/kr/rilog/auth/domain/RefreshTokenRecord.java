@@ -83,4 +83,5 @@ public class RefreshTokenRecord {
         concurrencyGraceUntil = now.plus(grace);
         replacedByTokenId = replacementTokenId;
     }
+
 }

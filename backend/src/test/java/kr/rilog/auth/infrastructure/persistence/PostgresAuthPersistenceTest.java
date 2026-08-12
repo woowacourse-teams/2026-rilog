@@ -16,6 +16,7 @@ import kr.rilog.auth.domain.OAuthLoginAttempt;
 import kr.rilog.auth.domain.RefreshSession;
 import kr.rilog.auth.domain.RefreshTokenRecord;
 import kr.rilog.domain.User;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,7 +56,9 @@ class PostgresAuthPersistenceTest {
     JdbcTemplate jdbcTemplate;
 
     @Test
+    @DisplayName("인증 애그리거트를 저장하고 잠금으로 자격 증명을 조회한다.")
     void persistsAuthenticationAggregateAndLoadsCredentialsWithLocks() {
+        // given
         User user = userStore.save(User.registerFromGithub(
                 new GithubIdentity(123L, "avatar", "github", null)
         ));
@@ -73,6 +76,7 @@ class PostgresAuthPersistenceTest {
                 tokenId, session.getId(), "refresh-hash", NOW
         ));
 
+        // when
         OAuthLoginAttempt lockedAttempt = transactionTemplate.execute(
                 ignored -> attemptStore.findByStateHashForUpdate("state-hash").orElseThrow()
         );
@@ -83,6 +87,7 @@ class PostgresAuthPersistenceTest {
                 ignored -> sessionStore.findByIdForUpdate(session.getId()).orElseThrow()
         );
 
+        // then
         assertEquals(attempt.getId(), lockedAttempt.getId());
         assertEquals(code.getId(), lockedCode.getId());
         assertEquals(session.getId(), lockedSession.getId());
@@ -91,12 +96,18 @@ class PostgresAuthPersistenceTest {
     }
 
     @Test
+    @DisplayName("만료 데이터 정리와 세션 조회에 필요한 인덱스를 생성한다.")
     void createsIndexesRequiredForExpiryCleanupAndSessionLookup() {
+        // given
+        String indexQuery = "select indexname from pg_indexes where schemaname = 'public'";
+
+        // when
         java.util.List<String> indexes = jdbcTemplate.queryForList(
-                "select indexname from pg_indexes where schemaname = 'public'",
+                indexQuery,
                 String.class
         );
 
+        // then
         assertTrue(indexes.contains("idx_oauth_login_attempt_expires_at"));
         assertTrue(indexes.contains("idx_login_exchange_code_expires_at"));
         assertTrue(indexes.contains("idx_refresh_session_user_id"));
@@ -114,5 +125,7 @@ class PostgresAuthPersistenceTest {
         PostgreSQLContainer postgresContainer() {
             return new PostgreSQLContainer("postgres:17-alpine");
         }
+
     }
+
 }

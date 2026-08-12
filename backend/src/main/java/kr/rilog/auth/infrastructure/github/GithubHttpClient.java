@@ -116,4 +116,5 @@ public class GithubHttpClient implements GithubOAuthGateway {
                 .retrieve()
                 .body(GithubTokenResponse.class);
     }
+
 }

@@ -12,4 +12,5 @@ public interface UserStore {
     Optional<User> findByGithubId(Long githubId);
 
     Optional<User> findBySlug(String slug);
+
 }

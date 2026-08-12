@@ -20,8 +20,10 @@ import kr.rilog.global.auth.annotation.RequireRole;
 import kr.rilog.global.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.global.auth.resolver.LoginUserSlugArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,40 +54,75 @@ class AuthMvcTest {
     }
 
     @Test
+    @DisplayName("공개 API는 액세스 토큰 없이 호출할 수 있다.")
     void publicEndpointDoesNotRequireToken() throws Exception {
-        mockMvc.perform(get("/test/public"))
+        // given
+        String endpoint = "/test/public";
+
+        // when
+        ResultActions result = mockMvc.perform(get(endpoint));
+
+        // then
+        result
                 .andExpect(status().isOk())
                 .andExpect(content().string("public"));
     }
 
     @Test
+    @DisplayName("클래스 인증과 로그인 사용자 인자는 검증된 액세스 토큰을 사용한다.")
     void classAuthenticationAndPrincipalArgumentsUseVerifiedTokenOnce() throws Exception {
-        mockMvc.perform(get("/test/secure/me")
-                        .header("Authorization", "Bearer user-token"))
+        // given
+        String accessToken = "Bearer user-token";
+
+        // when
+        ResultActions result = mockMvc.perform(get("/test/secure/me")
+                .header("Authorization", accessToken));
+
+        // then
+        result
                 .andExpect(status().isOk())
                 .andExpect(content().string("7:rilog"));
     }
 
     @Test
+    @DisplayName("토큰이 없으면 인증에 실패하고 일반 사용자는 관리자 API에 접근할 수 없다.")
     void missingTokenIsUnauthorizedAndUserCannotAccessAdminMethod() throws Exception {
-        mockMvc.perform(get("/test/secure/me"))
+        // given
+        String userAccessToken = "Bearer user-token";
+
+        // when
+        ResultActions missingTokenResult = mockMvc.perform(get("/test/secure/me"));
+        ResultActions userRoleResult = mockMvc.perform(get("/test/secure/admin")
+                .header("Authorization", userAccessToken));
+
+        // then
+        missingTokenResult
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("AUTH_001"));
 
-        mockMvc.perform(get("/test/secure/admin")
-                        .header("Authorization", "Bearer user-token"))
+        userRoleResult
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.errorCode").value("AUTH_003"));
     }
 
     @Test
+    @DisplayName("클래스의 관리자 권한 조건은 메서드의 로그인 조건으로 약화되지 않는다.")
     void classAdminRequirementCannotBeWeakenedByMethodLoginAnnotation() throws Exception {
-        mockMvc.perform(get("/test/admin/strong")
-                        .header("Authorization", "Bearer user-token"))
+        // given
+        String userAccessToken = "Bearer user-token";
+        String adminAccessToken = "Bearer admin-token";
+
+        // when
+        ResultActions userRoleResult = mockMvc.perform(get("/test/admin/strong")
+                .header("Authorization", userAccessToken));
+        ResultActions adminRoleResult = mockMvc.perform(get("/test/admin/strong")
+                .header("Authorization", adminAccessToken));
+
+        // then
+        userRoleResult
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(get("/test/admin/strong")
-                        .header("Authorization", "Bearer admin-token"))
+        adminRoleResult
                 .andExpect(status().isOk())
                 .andExpect(content().string("admin"));
     }
@@ -93,16 +130,19 @@ class AuthMvcTest {
     @RestController
     @RequestMapping("/test")
     static class PublicController {
+
         @GetMapping("/public")
         String publicEndpoint() {
             return "public";
         }
+
     }
 
     @RestController
     @LoginRequired
     @RequestMapping("/test/secure")
     static class SecuredController {
+
         @GetMapping("/me")
         String me(@LoginUserId Long userId, @LoginUserSlug String slug) {
             return userId + ":" + slug;
@@ -113,20 +153,24 @@ class AuthMvcTest {
         String admin() {
             return "admin";
         }
+
     }
 
     @RestController
     @RequireRole(GlobalRole.ADMIN)
     @RequestMapping("/test/admin")
     static class AdminController {
+
         @LoginRequired
         @GetMapping("/strong")
         String strong() {
             return "admin";
         }
+
     }
 
     private static final class TextTokenCodec implements AccessTokenCodec {
+
         @Override
         public String issue(AuthPrincipal principal) {
             throw new UnsupportedOperationException();
@@ -140,9 +184,11 @@ class AuthMvcTest {
                 default -> throw new IllegalArgumentException("invalid token");
             };
         }
+
     }
 
     private record SingleUserStore(User user) implements UserStore {
+
         @Override
         public User save(User user) {
             return user;
@@ -162,5 +208,7 @@ class AuthMvcTest {
         public Optional<User> findBySlug(String slug) {
             return Optional.empty();
         }
+
     }
+
 }

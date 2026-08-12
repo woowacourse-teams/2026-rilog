@@ -87,4 +87,5 @@ public class SecureCredentialManager implements SecureCredentialService {
             throw new IllegalStateException("SHA-256 must be available", exception);
         }
     }
+
 }

@@ -85,4 +85,5 @@ public class AuthConfiguration {
     URI frontendCallbackUri(AuthProperties properties) {
         return properties.frontendCallbackUri();
     }
+
 }

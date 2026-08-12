@@ -52,5 +52,7 @@ public class StartGithubLogin {
     }
 
     public record Result(URI authorizationUri, String browserBinding) {
+
     }
+
 }

@@ -8,4 +8,5 @@ record GithubUserResponse(
         @JsonProperty("html_url") String htmlUrl,
         String email
 ) {
+
 }

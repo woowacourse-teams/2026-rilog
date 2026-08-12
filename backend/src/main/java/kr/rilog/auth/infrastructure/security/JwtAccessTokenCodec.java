@@ -96,4 +96,5 @@ public class JwtAccessTokenCodec implements AccessTokenCodec {
             throw new IllegalArgumentException("JWT required claim is missing");
         }
     }
+
 }

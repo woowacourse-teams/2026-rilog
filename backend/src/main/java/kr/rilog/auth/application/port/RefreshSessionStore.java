@@ -9,4 +9,5 @@ public interface RefreshSessionStore {
     RefreshSession save(RefreshSession session);
 
     Optional<RefreshSession> findByIdForUpdate(UUID id);
+
 }

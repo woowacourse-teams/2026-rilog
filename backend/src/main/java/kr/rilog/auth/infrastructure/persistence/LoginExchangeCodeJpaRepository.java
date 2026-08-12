@@ -14,4 +14,5 @@ interface LoginExchangeCodeJpaRepository extends JpaRepository<LoginExchangeCode
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from LoginExchangeCode c where c.id = :id")
     Optional<LoginExchangeCode> findByIdForUpdate(@Param("id") UUID id);
+
 }

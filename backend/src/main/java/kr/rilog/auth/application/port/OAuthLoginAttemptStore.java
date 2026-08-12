@@ -8,4 +8,5 @@ public interface OAuthLoginAttemptStore {
     OAuthLoginAttempt save(OAuthLoginAttempt attempt);
 
     Optional<OAuthLoginAttempt> findByStateHashForUpdate(String stateHash);
+
 }

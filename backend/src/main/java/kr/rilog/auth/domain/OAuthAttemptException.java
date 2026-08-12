@@ -14,8 +14,10 @@ public final class OAuthAttemptException extends RuntimeException {
     }
 
     public enum Failure {
+
         ALREADY_USED,
         EXPIRED,
         BROWSER_BINDING_MISMATCH
     }
+
 }

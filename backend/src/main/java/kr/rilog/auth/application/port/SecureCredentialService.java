@@ -11,4 +11,5 @@ public interface SecureCredentialService {
     ParsedCredential parse(String credential);
 
     String pkceChallenge(String verifier);
+
 }

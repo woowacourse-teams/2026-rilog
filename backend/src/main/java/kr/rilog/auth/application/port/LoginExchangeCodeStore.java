@@ -9,4 +9,5 @@ public interface LoginExchangeCodeStore {
     LoginExchangeCode save(LoginExchangeCode code);
 
     Optional<LoginExchangeCode> findByIdForUpdate(UUID id);
+
 }

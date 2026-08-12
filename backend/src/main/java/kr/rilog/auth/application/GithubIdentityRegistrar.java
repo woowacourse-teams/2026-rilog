@@ -54,4 +54,5 @@ public class GithubIdentityRegistrar {
         user.synchronizeGithubProfile(identity);
         return user;
     }
+
 }

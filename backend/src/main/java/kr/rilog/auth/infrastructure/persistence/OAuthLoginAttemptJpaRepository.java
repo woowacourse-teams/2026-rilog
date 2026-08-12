@@ -14,4 +14,5 @@ interface OAuthLoginAttemptJpaRepository extends JpaRepository<OAuthLoginAttempt
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from OAuthLoginAttempt a where a.stateHash = :stateHash")
     Optional<OAuthLoginAttempt> findByStateHashForUpdate(@Param("stateHash") String stateHash);
+
 }

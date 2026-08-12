@@ -29,6 +29,7 @@ import kr.rilog.auth.domain.RefreshSession;
 import kr.rilog.auth.domain.RefreshTokenRecord;
 import kr.rilog.domain.User;
 import kr.rilog.global.exception.AuthException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -68,7 +69,9 @@ class RefreshConcurrencyIntegrationTest {
     TransactionTemplate transactionTemplate;
 
     @Test
+    @DisplayName("동시 리프레시는 한 번만 회전하고 유예 기간 후 재사용하면 세션을 폐기한다.")
     void concurrentRefreshRotatesOnceAndLaterReplayRevokesSession() throws Exception {
+        // given
         User user = userStore.save(User.registerFromGithub(
                 new GithubIdentity(991L, "avatar", "github", null)
         ));
@@ -83,6 +86,7 @@ class RefreshConcurrencyIntegrationTest {
                 initial.id(), session.getId(), initial.secretHash(), NOW
         ));
 
+        // when
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
@@ -97,6 +101,7 @@ class RefreshConcurrencyIntegrationTest {
             RefreshLoginSession.Result second = futures.get(1).get(10, TimeUnit.SECONDS);
             List<RefreshLoginSession.Result> results = List.of(first, second);
 
+            // then
             assertEquals(1, results.stream()
                     .filter(result -> result.refreshToken() != null)
                     .count());
@@ -107,15 +112,18 @@ class RefreshConcurrencyIntegrationTest {
             assertNotNull(second.accessToken());
         }
 
+        // then
         RefreshSession afterConcurrency = loadSession(session.getId());
         assertFalse(afterConcurrency.isRevoked());
 
+        // when
         clock.advance(Duration.ofSeconds(5));
         assertThrows(
                 AuthException.class,
                 () -> refreshLoginSession.refresh(initial.value())
         );
 
+        // then
         RefreshSession afterReplay = loadSession(session.getId());
         assertTrue(afterReplay.isRevoked());
         assertNotNull(afterReplay.getReuseDetectedAt());
@@ -154,9 +162,11 @@ class RefreshConcurrencyIntegrationTest {
         MutableClock mutableClock() {
             return new MutableClock(NOW);
         }
+
     }
 
     static final class MutableClock extends Clock {
+
         private final AtomicReference<Instant> instant;
 
         MutableClock(Instant instant) {
@@ -181,5 +191,7 @@ class RefreshConcurrencyIntegrationTest {
         public Instant instant() {
             return instant.get();
         }
+
     }
+
 }

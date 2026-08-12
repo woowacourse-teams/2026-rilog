@@ -27,10 +27,12 @@ import kr.rilog.global.advice.GlobalExceptionHandler;
 import kr.rilog.global.exception.AuthErrorInformation;
 import kr.rilog.global.exception.AuthException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockCookie;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class AuthControllerMvcTest {
@@ -73,13 +75,19 @@ class AuthControllerMvcTest {
     }
 
     @Test
+    @DisplayName("GitHub 로그인 요청은 브라우저 바인딩 쿠키를 발급하고 인가 페이지로 이동한다.")
     void loginRedirectSetsShortLivedBrowserBindingCookie() throws Exception {
+        // given
         when(startGithubLogin.start()).thenReturn(new StartGithubLogin.Result(
                 URI.create("https://github.test/oauth/authorize?state=state"),
                 "binding-secret"
         ));
 
-        mockMvc.perform(get("/api/auth/github/login"))
+        // when
+        ResultActions result = mockMvc.perform(get("/api/auth/github/login"));
+
+        // then
+        result
                 .andExpect(status().isFound())
                 .andExpect(header().string(
                         LOCATION,
@@ -96,17 +104,23 @@ class AuthControllerMvcTest {
     }
 
     @Test
+    @DisplayName("GitHub 콜백은 일회용 교환 코드를 전달하고 바인딩 쿠키를 제거한다.")
     void callbackRedirectsWithOneTimeCodeAndClearsBindingCookie() throws Exception {
+        // given
         when(completeGithubLogin.complete("github-code", "state", "binding-secret"))
                 .thenReturn(new CompleteGithubLogin.Result("exchange-id.secret"));
 
-        mockMvc.perform(get("/api/auth/github/callback")
+        // when
+        ResultActions result = mockMvc.perform(get("/api/auth/github/callback")
                         .queryParam("code", "github-code")
                         .queryParam("state", "state")
                         .cookie(new MockCookie(
                                 AuthCookieFactory.OAUTH_BINDING_COOKIE,
                                 "binding-secret"
-                        )))
+                        )));
+
+        // then
+        result
                 .andExpect(status().isFound())
                 .andExpect(header().string(
                         LOCATION,
@@ -118,17 +132,23 @@ class AuthControllerMvcTest {
     }
 
     @Test
+    @DisplayName("GitHub 콜백 실패는 일반 오류와 추적 식별자만 프론트엔드에 전달한다.")
     void callbackFailureUsesGenericFrontendErrorAndTraceId() throws Exception {
+        // given
         when(completeGithubLogin.complete(anyString(), anyString(), anyString()))
                 .thenThrow(new AuthException(AuthErrorInformation.INVALID_OAUTH_REQUEST));
 
-        mockMvc.perform(get("/api/auth/github/callback")
+        // when
+        ResultActions result = mockMvc.perform(get("/api/auth/github/callback")
                         .queryParam("code", "github-code")
                         .queryParam("state", "state")
                         .cookie(new MockCookie(
                                 AuthCookieFactory.OAUTH_BINDING_COOKIE,
                                 "binding-secret"
-                        )))
+                        )));
+
+        // then
+        result
                 .andExpect(status().isFound())
                 .andExpect(header().string(
                         LOCATION,
@@ -137,14 +157,22 @@ class AuthControllerMvcTest {
     }
 
     @Test
+    @DisplayName("GitHub 접근 거부는 다른 콜백 실패와 동일한 일반 오류를 반환한다.")
     void githubAccessDenialUsesTheSameGenericFrontendError() throws Exception {
-        mockMvc.perform(get("/api/auth/github/callback")
+        // given
+        MockCookie bindingCookie = new MockCookie(
+                AuthCookieFactory.OAUTH_BINDING_COOKIE,
+                "binding-secret"
+        );
+
+        // when
+        ResultActions result = mockMvc.perform(get("/api/auth/github/callback")
                         .queryParam("error", "access_denied")
                         .queryParam("state", "state")
-                        .cookie(new MockCookie(
-                                AuthCookieFactory.OAUTH_BINDING_COOKIE,
-                                "binding-secret"
-                        )))
+                        .cookie(bindingCookie));
+
+        // then
+        result
                 .andExpect(status().isFound())
                 .andExpect(header().string(
                         LOCATION,
@@ -153,7 +181,9 @@ class AuthControllerMvcTest {
     }
 
     @Test
+    @DisplayName("교환 코드는 액세스 토큰 헤더와 리프레시 쿠키 및 온보딩 상태로 교환된다.")
     void exchangeReturnsAccessHeaderRefreshCookieAndOnboardingStatus() throws Exception {
+        // given
         when(exchangeLoginCode.exchange("exchange-id.secret"))
                 .thenReturn(new ExchangeLoginCode.Result(
                         "access-token",
@@ -162,10 +192,14 @@ class AuthControllerMvcTest {
                         OnboardingStatus.PENDING
                 ));
 
-        mockMvc.perform(post("/api/auth/token/exchange")
+        // when
+        ResultActions result = mockMvc.perform(post("/api/auth/token/exchange")
                         .header("Origin", FRONTEND_ORIGIN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"code\":\"exchange-id.secret\"}"))
+                        .content("{\"code\":\"exchange-id.secret\"}"));
+
+        // then
+        result
                 .andExpect(status().isOk())
                 .andExpect(header().string(AUTHORIZATION, "Bearer access-token"))
                 .andExpect(header().string(SET_COOKIE, containsString(
@@ -179,7 +213,9 @@ class AuthControllerMvcTest {
     }
 
     @Test
+    @DisplayName("리프레시 토큰을 회전하되 유예 요청은 새 쿠키를 덮어쓰지 않는다.")
     void refreshRotatesCookieButGraceResponseDoesNotOverwriteIt() throws Exception {
+        // given
         when(refreshLoginSession.refresh("old-id.secret"))
                 .thenReturn(new RefreshLoginSession.Result(
                         "access-token",
@@ -191,50 +227,74 @@ class AuthControllerMvcTest {
                         "grace-access-token", null, null
                 ));
 
-        mockMvc.perform(post("/api/auth/token/refresh")
+        // when
+        ResultActions rotatedResult = mockMvc.perform(post("/api/auth/token/refresh")
                         .header("Origin", FRONTEND_ORIGIN)
                         .cookie(new MockCookie(
                                 AuthCookieFactory.REFRESH_COOKIE,
                                 "old-id.secret"
-                        )))
+                        )));
+        ResultActions graceResult = mockMvc.perform(post("/api/auth/token/refresh")
+                .header("Origin", FRONTEND_ORIGIN)
+                .cookie(new MockCookie(
+                        AuthCookieFactory.REFRESH_COOKIE,
+                        "grace-id.secret"
+                )));
+
+        // then
+        rotatedResult
                 .andExpect(status().isNoContent())
                 .andExpect(header().string(AUTHORIZATION, "Bearer access-token"))
                 .andExpect(header().string(SET_COOKIE, containsString("new-id.secret")));
 
-        mockMvc.perform(post("/api/auth/token/refresh")
-                        .header("Origin", FRONTEND_ORIGIN)
-                        .cookie(new MockCookie(
-                                AuthCookieFactory.REFRESH_COOKIE,
-                                "grace-id.secret"
-                        )))
+        graceResult
                 .andExpect(status().isNoContent())
                 .andExpect(header().string(AUTHORIZATION, "Bearer grace-access-token"))
                 .andExpect(header().doesNotExist(SET_COOKIE));
     }
 
     @Test
+    @DisplayName("토큰 변경 요청은 Origin이 없거나 신뢰할 수 없으면 거부한다.")
     void tokenMutationsRejectMissingOrUntrustedOrigin() throws Exception {
-        mockMvc.perform(post("/api/auth/token/refresh"))
+        // given
+        String untrustedOrigin = "https://evil.test";
+
+        // when
+        ResultActions missingOriginResult = mockMvc.perform(
+                post("/api/auth/token/refresh")
+        );
+        ResultActions untrustedOriginResult = mockMvc.perform(
+                post("/api/auth/token/refresh").header("Origin", untrustedOrigin)
+        );
+
+        // then
+        missingOriginResult
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.errorCode").value("AUTH_008"));
 
-        mockMvc.perform(post("/api/auth/token/refresh")
-                        .header("Origin", "https://evil.test"))
+        untrustedOriginResult
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.errorCode").value("AUTH_008"));
     }
 
     @Test
+    @DisplayName("로그아웃은 리프레시 세션을 폐기하고 쿠키를 제거한다.")
     void logoutRevokesSessionAndClearsCookie() throws Exception {
+        // given
         doNothing().when(logout).logout("refresh-id.secret");
 
-        mockMvc.perform(post("/api/auth/logout")
+        // when
+        ResultActions result = mockMvc.perform(post("/api/auth/logout")
                         .header("Origin", FRONTEND_ORIGIN)
                         .cookie(new MockCookie(
                                 AuthCookieFactory.REFRESH_COOKIE,
                                 "refresh-id.secret"
-                        )))
+                        )));
+
+        // then
+        result
                 .andExpect(status().isNoContent())
                 .andExpect(header().string(SET_COOKIE, containsString("Max-Age=0")));
     }
+
 }

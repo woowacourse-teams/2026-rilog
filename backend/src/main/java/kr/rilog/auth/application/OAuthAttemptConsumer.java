@@ -63,4 +63,5 @@ public class OAuthAttemptConsumer {
                     AuthFailureReason.OAUTH_BROWSER_BINDING_MISMATCH;
         };
     }
+
 }

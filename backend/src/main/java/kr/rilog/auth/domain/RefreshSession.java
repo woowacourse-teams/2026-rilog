@@ -133,4 +133,5 @@ public class RefreshSession {
     public boolean isRevoked() {
         return revokedAt != null;
     }
+
 }

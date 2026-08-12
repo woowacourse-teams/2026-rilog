@@ -21,4 +21,5 @@ public record AuthPolicy(
             throw new IllegalArgumentException(name + " must be positive");
         }
     }
+
 }

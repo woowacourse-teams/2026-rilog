@@ -32,4 +32,5 @@ public class UserQueryService {
         }
         return slug;
     }
+
 }

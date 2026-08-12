@@ -14,4 +14,5 @@ interface RefreshSessionJpaRepository extends JpaRepository<RefreshSession, UUID
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from RefreshSession s where s.id = :id")
     Optional<RefreshSession> findByIdForUpdate(@Param("id") UUID id);
+
 }

@@ -30,6 +30,7 @@ public record AuthProperties(
             @NotBlank String clientSecret,
             @NotNull URI callbackUri
     ) {
+
     }
 
     public record Jwt(
@@ -38,11 +39,14 @@ public record AuthProperties(
             @NotBlank String signingSecret,
             @NotNull Duration accessLifetime
     ) {
+
     }
 
     public record Cookie(
             boolean secure,
             @NotBlank String sameSite
     ) {
+
     }
+
 }

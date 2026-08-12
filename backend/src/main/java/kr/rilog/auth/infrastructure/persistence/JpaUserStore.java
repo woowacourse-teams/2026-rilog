@@ -33,4 +33,5 @@ public class JpaUserStore implements UserStore {
     public Optional<User> findBySlug(String slug) {
         return repository.findBySlug(slug);
     }
+
 }

@@ -29,4 +29,5 @@ public class JpaRefreshTokenRecordStore implements RefreshTokenRecordStore {
     public Optional<RefreshTokenRecord> findById(UUID id) {
         return repository.findById(id);
     }
+
 }

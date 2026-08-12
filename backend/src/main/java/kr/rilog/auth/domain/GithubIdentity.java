@@ -12,4 +12,5 @@ public record GithubIdentity(
             throw new IllegalArgumentException("githubId must be positive");
         }
     }
+
 }

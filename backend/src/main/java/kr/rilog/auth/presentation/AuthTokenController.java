@@ -108,4 +108,5 @@ public class AuthTokenController {
     private String bearer(String accessToken) {
         return "Bearer " + accessToken;
     }
+
 }

@@ -70,4 +70,5 @@ public class LoginExchangeCode {
         consumedAt = now;
         return userId;
     }
+
 }

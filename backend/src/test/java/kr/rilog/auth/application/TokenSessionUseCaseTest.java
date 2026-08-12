@@ -32,6 +32,7 @@ import kr.rilog.auth.infrastructure.security.SecureCredentialManager;
 import kr.rilog.domain.User;
 import kr.rilog.global.exception.AuthException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class TokenSessionUseCaseTest {
@@ -68,11 +69,15 @@ class TokenSessionUseCaseTest {
     }
 
     @Test
+    @DisplayName("교환 코드를 사용하면 코드를 소비하고 30일 리프레시 세션을 시작한다.")
     void exchangeConsumesCodeAndStartsThirtyDaySession() {
+        // given
         ExchangeLoginCode useCase = exchangeUseCase(clockAt(NOW));
 
+        // when
         ExchangeLoginCode.Result result = useCase.exchange(exchangeCredential.value());
 
+        // then
         assertEquals("access:7:USER", result.accessToken());
         assertNotNull(result.refreshToken());
         assertEquals(Duration.ofDays(30), result.refreshMaxAge());
@@ -84,17 +89,21 @@ class TokenSessionUseCaseTest {
     }
 
     @Test
+    @DisplayName("리프레시 토큰 회전은 절대 만료의 남은 기간을 사용하고 유예 요청은 쿠키를 덮어쓰지 않는다.")
     void rotationUsesRemainingAbsoluteLifetimeAndGraceDoesNotOverwriteCookie() {
+        // given
         ExchangeLoginCode.Result issued = exchangeUseCase(clockAt(NOW))
                 .exchange(exchangeCredential.value());
         Instant rotationTime = NOW.plus(10, DAYS);
         RefreshLoginSession rotation = refreshUseCase(clockAt(rotationTime));
 
+        // when
         RefreshLoginSession.Result rotated = rotation.refresh(issued.refreshToken());
         RefreshLoginSession.Result concurrent = refreshUseCase(
                 clockAt(rotationTime.plusSeconds(4))
         ).refresh(issued.refreshToken());
 
+        // then
         assertEquals(Duration.ofDays(20), rotated.refreshMaxAge());
         assertNotNull(rotated.refreshToken());
         assertEquals("access:7:USER", rotated.accessToken());
@@ -104,7 +113,9 @@ class TokenSessionUseCaseTest {
     }
 
     @Test
+    @DisplayName("유예 기간이 지난 토큰 재사용은 세션을 폐기하지만 잘못된 secret은 세션에 영향을 주지 않는다.")
     void replayOutsideGraceRevokesSessionButWrongSecretDoesNot() {
+        // given
         ExchangeLoginCode.Result issued = exchangeUseCase(clockAt(NOW))
                 .exchange(exchangeCredential.value());
         Instant rotationTime = NOW.plus(1, DAYS);
@@ -113,20 +124,29 @@ class TokenSessionUseCaseTest {
         String wrongSecret = issued.refreshToken().substring(
                 0, issued.refreshToken().indexOf('.') + 1
         ) + "wrong-secret";
+
+        // when
         assertThrows(AuthException.class,
                 () -> refreshUseCase(clockAt(rotationTime.plusSeconds(1))).refresh(wrongSecret));
+
+        // then
         RefreshSession session = sessions.values.values().iterator().next();
         assertFalse(session.isRevoked());
 
+        // when
         assertThrows(AuthException.class,
                 () -> refreshUseCase(clockAt(rotationTime.plusSeconds(5)))
                         .refresh(issued.refreshToken()));
+
+        // then
         assertTrue(session.isRevoked());
         assertEquals(rotationTime.plusSeconds(5), session.getReuseDetectedAt());
     }
 
     @Test
+    @DisplayName("로그아웃은 secret이 일치하는 리프레시 세션만 폐기한다.")
     void logoutRevokesOnlySessionWhoseSecretMatches() {
+        // given
         ExchangeLoginCode.Result issued = exchangeUseCase(clockAt(NOW))
                 .exchange(exchangeCredential.value());
         String wrongSecret = issued.refreshToken().substring(
@@ -136,11 +156,17 @@ class TokenSessionUseCaseTest {
                 sessions, tokens, credentials, clockAt(NOW.plusSeconds(1))
         );
 
+        // when
         assertThrows(AuthException.class, () -> logout.logout(wrongSecret));
+
+        // then
         RefreshSession session = sessions.values.values().iterator().next();
         assertFalse(session.isRevoked());
 
+        // when
         logout.logout(issued.refreshToken());
+
+        // then
         assertTrue(session.isRevoked());
     }
 
@@ -171,6 +197,7 @@ class TokenSessionUseCaseTest {
     }
 
     private static final class TextAccessTokenCodec implements AccessTokenCodec {
+
         @Override
         public String issue(AuthPrincipal principal) {
             return "access:" + principal.userId() + ":" + principal.role();
@@ -180,9 +207,11 @@ class TokenSessionUseCaseTest {
         public AuthPrincipal verify(String token) {
             throw new UnsupportedOperationException();
         }
+
     }
 
     private static final class InMemoryUserStore implements UserStore {
+
         private final Map<Long, User> values = new HashMap<>();
 
         @Override
@@ -209,9 +238,11 @@ class TokenSessionUseCaseTest {
                     .filter(user -> slug.equals(user.getSlug()))
                     .findFirst();
         }
+
     }
 
     private static final class InMemoryExchangeCodeStore implements LoginExchangeCodeStore {
+
         private final Map<UUID, LoginExchangeCode> values = new HashMap<>();
 
         @Override
@@ -224,9 +255,11 @@ class TokenSessionUseCaseTest {
         public Optional<LoginExchangeCode> findByIdForUpdate(UUID id) {
             return Optional.ofNullable(values.get(id));
         }
+
     }
 
     private static final class InMemorySessionStore implements RefreshSessionStore {
+
         private final Map<UUID, RefreshSession> values = new HashMap<>();
 
         @Override
@@ -239,9 +272,11 @@ class TokenSessionUseCaseTest {
         public Optional<RefreshSession> findByIdForUpdate(UUID id) {
             return Optional.ofNullable(values.get(id));
         }
+
     }
 
     private static final class InMemoryTokenStore implements RefreshTokenRecordStore {
+
         private final Map<UUID, RefreshTokenRecord> values = new HashMap<>();
 
         @Override
@@ -260,5 +295,7 @@ class TokenSessionUseCaseTest {
         public Optional<RefreshTokenRecord> findById(UUID id) {
             return Optional.ofNullable(values.get(id));
         }
+
     }
+
 }

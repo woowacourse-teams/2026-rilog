@@ -16,30 +16,35 @@ import org.junit.jupiter.api.Test;
 class UserTest {
 
     @Test
-    @DisplayName("신규 사용자의 온보딩 상태는 PENDING이다")
+    @DisplayName("신규 사용자의 온보딩 상태는 PENDING이다.")
     void newUserStartsWithPendingOnboardingStatus() {
         // given
         User user = User.builder()
                 .githubId(1L)
                 .build();
 
-        // when - then
-        assertEquals(OnboardingStatus.PENDING, user.getOnboardingStatus());
+        // when
+        OnboardingStatus onboardingStatus = user.getOnboardingStatus();
+
+        // then
+        assertEquals(OnboardingStatus.PENDING, onboardingStatus);
     }
 
     @Test
-    @DisplayName("온보딩을 완료하면 사용자 slug가 설정된다")
+    @DisplayName("온보딩을 완료하면 사용자 slug가 설정된다.")
     void slugCanBeUpdatedWhenOnboardingIsCompleted() throws NoSuchFieldException {
         // given
         Field slug = User.class.getDeclaredField("slug");
+
+        // when
         Column column = slug.getAnnotation(Column.class);
 
-        // when - then
+        // then
         assertTrue(column.updatable());
     }
 
     @Test
-    @DisplayName("온보딩을 완료하면 프로필 정보와 온보딩 상태가 갱신된다")
+    @DisplayName("온보딩을 완료하면 프로필 정보와 온보딩 상태가 갱신된다.")
     void completingOnboardingUpdatesProfileAndStatus() {
         // given
         User user = User.builder()
@@ -70,15 +75,20 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("GitHub 신규 사용자는 USER 권한과 PENDING 상태로 생성된다")
+    @DisplayName("GitHub 신규 사용자는 USER 권한과 PENDING 상태로 생성된다.")
     void githubUserStartsWithUserRoleAndPendingOnboarding() {
-        User user = User.registerFromGithub(new GithubIdentity(
+        // given
+        GithubIdentity githubIdentity = new GithubIdentity(
                 1L,
                 "https://github.com/avatar.png",
                 "https://github.com/rilog",
                 "rilog@example.com"
-        ));
+        );
 
+        // when
+        User user = User.registerFromGithub(githubIdentity);
+
+        // then
         assertAll(
                 () -> assertEquals(1L, user.getGithubId()),
                 () -> assertEquals(GlobalRole.USER, user.getGlobalRole()),
@@ -88,8 +98,9 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("GitHub 재로그인은 Rilog 소유 프로필과 역할을 보존한다")
+    @DisplayName("GitHub 재로그인은 Rilog 소유 프로필과 역할을 보존한다.")
     void githubReloginPreservesRilogOwnedFields() {
+        // given
         User user = User.registerFromGithub(new GithubIdentity(
                 1L,
                 "old.png",
@@ -105,6 +116,7 @@ class UserTest {
                 "custom@example.com"
         );
 
+        // when
         user.synchronizeGithubProfile(new GithubIdentity(
                 1L,
                 "new.png",
@@ -112,6 +124,7 @@ class UserTest {
                 "new@example.com"
         ));
 
+        // then
         assertAll(
                 () -> assertEquals("릴로그", user.getNickname()),
                 () -> assertEquals("rilog", user.getSlug()),
@@ -125,15 +138,25 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("ADMIN은 USER 요구사항을 허용하지만 USER는 ADMIN 요구사항을 허용하지 않는다")
+    @DisplayName("ADMIN은 USER 요구사항을 허용하지만 USER는 ADMIN 요구사항을 허용하지 않는다.")
     void globalRoleUsesExplicitHierarchy() {
+        // given
+        GlobalRole admin = GlobalRole.ADMIN;
+        GlobalRole user = GlobalRole.USER;
+
+        // when
+        boolean adminPermitsUser = admin.permits(user);
+        boolean adminPermitsAdmin = admin.permits(admin);
+        boolean userPermitsUser = user.permits(user);
+        boolean userPermitsAdmin = user.permits(admin);
+
+        // then
         assertAll(
-                () -> assertTrue(GlobalRole.ADMIN.permits(GlobalRole.USER)),
-                () -> assertTrue(GlobalRole.ADMIN.permits(GlobalRole.ADMIN)),
-                () -> assertTrue(GlobalRole.USER.permits(GlobalRole.USER)),
-                () -> org.junit.jupiter.api.Assertions.assertFalse(
-                        GlobalRole.USER.permits(GlobalRole.ADMIN)
-                )
+                () -> assertTrue(adminPermitsUser),
+                () -> assertTrue(adminPermitsAdmin),
+                () -> assertTrue(userPermitsUser),
+                () -> org.junit.jupiter.api.Assertions.assertFalse(userPermitsAdmin)
         );
     }
+
 }

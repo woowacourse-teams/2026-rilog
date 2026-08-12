@@ -79,8 +79,10 @@ public class RefreshRotationExecutor {
             Long userId,
             Instant absoluteExpiresAt
     ) {
+
         static Decision invalid() {
             return new Decision(RotationResult.INVALID_CREDENTIAL, null, null);
         }
     }
+
 }

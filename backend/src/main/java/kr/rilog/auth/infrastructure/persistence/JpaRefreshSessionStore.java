@@ -24,4 +24,5 @@ public class JpaRefreshSessionStore implements RefreshSessionStore {
     public Optional<RefreshSession> findByIdForUpdate(UUID id) {
         return repository.findByIdForUpdate(id);
     }
+
 }

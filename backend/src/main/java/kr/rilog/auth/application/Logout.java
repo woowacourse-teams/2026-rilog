@@ -56,4 +56,5 @@ public class Logout {
     private AuthException invalidRefreshToken() {
         return new AuthException(AuthErrorInformation.INVALID_REFRESH_TOKEN);
     }
+
 }
