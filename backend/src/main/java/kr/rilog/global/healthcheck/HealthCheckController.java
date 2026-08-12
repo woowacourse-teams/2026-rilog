@@ -1,10 +1,10 @@
-package kr.rilog.controller;
+package kr.rilog.global.healthcheck;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HealthController {
+public class HealthCheckController {
 
 	@GetMapping("/health")
 	public String health() {
