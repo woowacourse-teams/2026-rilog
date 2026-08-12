@@ -3,6 +3,8 @@ package kr.rilog.domain.auth.application;
 import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,6 +25,7 @@ public class StartGithubLogin {
     private final GithubOAuthProperties properties;
     private final SecureRandom secureRandom;
 
+    @Autowired
     public StartGithubLogin(OAuthLoginAttemptStore loginAttemptStore, GithubOAuthProperties properties) {
         this(loginAttemptStore, properties, new SecureRandom());
     }
