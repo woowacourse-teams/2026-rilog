@@ -34,12 +34,12 @@ public class RefreshRotationExecutor {
             IssuedCredential replacement,
             Instant now
     ) {
-        RefreshTokenRecord initialRecord = tokenRecordStore.findById(parsed.id())
+        java.util.UUID sessionId = tokenRecordStore.findSessionIdById(parsed.id())
                 .orElse(null);
-        if (initialRecord == null) {
+        if (sessionId == null) {
             return Decision.invalid();
         }
-        RefreshSession session = sessionStore.findByIdForUpdate(initialRecord.getSessionId())
+        RefreshSession session = sessionStore.findByIdForUpdate(sessionId)
                 .orElse(null);
         if (session == null) {
             return Decision.invalid();

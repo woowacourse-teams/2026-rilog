@@ -251,6 +251,12 @@ class TokenSessionUseCaseTest {
         }
 
         @Override
+        public Optional<UUID> findSessionIdById(UUID id) {
+            return Optional.ofNullable(values.get(id))
+                    .map(RefreshTokenRecord::getSessionId);
+        }
+
+        @Override
         public Optional<RefreshTokenRecord> findById(UUID id) {
             return Optional.ofNullable(values.get(id));
         }

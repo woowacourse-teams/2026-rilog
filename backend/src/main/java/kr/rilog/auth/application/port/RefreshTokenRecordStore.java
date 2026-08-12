@@ -8,5 +8,7 @@ public interface RefreshTokenRecordStore {
 
     RefreshTokenRecord save(RefreshTokenRecord record);
 
+    Optional<UUID> findSessionIdById(UUID id);
+
     Optional<RefreshTokenRecord> findById(UUID id);
 }

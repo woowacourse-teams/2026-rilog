@@ -21,6 +21,11 @@ public class JpaRefreshTokenRecordStore implements RefreshTokenRecordStore {
     }
 
     @Override
+    public Optional<UUID> findSessionIdById(UUID id) {
+        return repository.findSessionIdById(id);
+    }
+
+    @Override
     public Optional<RefreshTokenRecord> findById(UUID id) {
         return repository.findById(id);
     }

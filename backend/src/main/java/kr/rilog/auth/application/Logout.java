@@ -36,9 +36,9 @@ public class Logout {
     public void logout(String refreshCredential) {
         try {
             ParsedCredential parsed = credentialService.parse(refreshCredential);
-            RefreshTokenRecord record = tokenRecordStore.findById(parsed.id())
+            java.util.UUID sessionId = tokenRecordStore.findSessionIdById(parsed.id())
                     .orElseThrow(this::invalidRefreshToken);
-            RefreshSession session = sessionStore.findByIdForUpdate(record.getSessionId())
+            RefreshSession session = sessionStore.findByIdForUpdate(sessionId)
                     .orElseThrow(this::invalidRefreshToken);
             RefreshTokenRecord lockedRecord = tokenRecordStore.findById(parsed.id())
                     .orElseThrow(this::invalidRefreshToken);
