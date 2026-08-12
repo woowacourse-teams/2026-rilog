@@ -2,16 +2,16 @@ import ky from 'ky';
 
 import type { Hooks, KyInstance, Options } from 'ky';
 
-type TokenProvider = {
+interface TokenProvider {
 	getAccessToken: () => string | null;
 	refreshAccessToken: () => Promise<string | null>;
-};
+}
 
-type CreateApiClientOptions = Omit<Options, 'hooks'> & {
+interface CreateApiClientOptions extends Omit<Options, 'hooks'> {
 	hooks?: Hooks;
 	onTokenRefreshFailure?: () => void;
 	tokenProvider?: TokenProvider;
-};
+}
 
 const ANONYMOUS_TOKEN_PROVIDER: TokenProvider = {
 	getAccessToken: () => null,
