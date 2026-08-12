@@ -1,3 +1,29 @@
 spring:
   application:
     name: backend
+  jpa:
+    open-in-view: false
+
+rilog:
+  auth:
+    frontend-origin: ${RILOG_FRONTEND_ORIGIN}
+    frontend-callback-uri: ${RILOG_FRONTEND_CALLBACK_URI}
+    oauth-attempt-lifetime: 10m
+    exchange-code-lifetime: 90s
+    refresh-lifetime: 30d
+    refresh-concurrency-grace: 4s
+    github:
+      authorization-endpoint: https://github.com/login/oauth/authorize
+      token-endpoint: https://github.com/login/oauth/access_token
+      user-endpoint: https://api.github.com/user
+      client-id: ${GITHUB_CLIENT_ID}
+      client-secret: ${GITHUB_CLIENT_SECRET}
+      callback-uri: ${GITHUB_CALLBACK_URI}
+    jwt:
+      issuer: ${RILOG_JWT_ISSUER}
+      audience: ${RILOG_JWT_AUDIENCE}
+      signing-secret: ${RILOG_JWT_SIGNING_SECRET}
+      access-lifetime: 15m
+    cookie:
+      secure: true
+      same-site: Lax

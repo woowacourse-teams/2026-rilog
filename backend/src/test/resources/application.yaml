@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: backend-test
+  jpa:
+    open-in-view: false
+
+rilog:
+  auth:
+    frontend-origin: https://rilog.test
+    frontend-callback-uri: https://rilog.test/auth/callback
+    oauth-attempt-lifetime: 10m
+    exchange-code-lifetime: 90s
+    refresh-lifetime: 30d
+    refresh-concurrency-grace: 4s
+    github:
+      authorization-endpoint: https://github.test/oauth/authorize
+      token-endpoint: https://github.test/oauth/token
+      user-endpoint: https://api.github.test/user
+      client-id: test-client-id
+      client-secret: test-client-secret
+      callback-uri: https://api.rilog.test/api/auth/github/callback
+    jwt:
+      issuer: rilog-test
+      audience: rilog-api-test
+      signing-secret: test-signing-secret-32-bytes-long!
+      access-lifetime: 15m
+    cookie:
+      secure: true
+      same-site: Lax

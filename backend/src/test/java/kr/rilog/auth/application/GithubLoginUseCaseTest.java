@@ -32,6 +32,12 @@ class GithubLoginUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-08-12T00:00:00Z");
     private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+    private static final AuthPolicy POLICY = new AuthPolicy(
+            java.time.Duration.ofMinutes(10),
+            java.time.Duration.ofSeconds(90),
+            java.time.Duration.ofDays(30),
+            java.time.Duration.ofSeconds(4)
+    );
 
     @Test
     void startsLoginWithPersistedStatePkceAndBrowserBinding() {
@@ -39,7 +45,7 @@ class GithubLoginUseCaseTest {
         CapturingGithubGateway github = new CapturingGithubGateway();
         SecureCredentialService credentials = new SecureCredentialManager();
         StartGithubLogin useCase = new StartGithubLogin(
-                attempts, credentials, github, CLOCK
+                attempts, credentials, github, CLOCK, POLICY
         );
 
         StartGithubLogin.Result result = useCase.start();
@@ -66,12 +72,12 @@ class GithubLoginUseCaseTest {
         CapturingGithubGateway github = new CapturingGithubGateway();
 
         StartGithubLogin.Result start = new StartGithubLogin(
-                attempts, credentials, github, CLOCK
+                attempts, credentials, github, CLOCK, POLICY
         ).start();
         CompleteGithubLogin useCase = new CompleteGithubLogin(
                 new OAuthAttemptConsumer(attempts, credentials, CLOCK),
                 github,
-                new GithubIdentityRegistrar(users, codes, credentials, CLOCK)
+                new GithubIdentityRegistrar(users, codes, credentials, CLOCK, POLICY)
         );
 
         CompleteGithubLogin.Result result = useCase.complete(

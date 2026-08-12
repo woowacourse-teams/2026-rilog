@@ -37,6 +37,12 @@ import org.junit.jupiter.api.Test;
 class TokenSessionUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-08-12T00:00:00Z");
+    private static final AuthPolicy POLICY = new AuthPolicy(
+            Duration.ofMinutes(10),
+            Duration.ofSeconds(90),
+            Duration.ofDays(30),
+            Duration.ofSeconds(4)
+    );
 
     private final SecureCredentialService credentials = new SecureCredentialManager();
     private final InMemoryUserStore users = new InMemoryUserStore();
@@ -146,13 +152,14 @@ class TokenSessionUseCaseTest {
                 users,
                 credentials,
                 accessTokens,
-                clock
+                clock,
+                POLICY
         );
     }
 
     private RefreshLoginSession refreshUseCase(Clock clock) {
         RefreshRotationExecutor executor = new RefreshRotationExecutor(
-                sessions, tokens, Duration.ofSeconds(4)
+                sessions, tokens, POLICY
         );
         return new RefreshLoginSession(
                 executor, users, credentials, accessTokens, clock

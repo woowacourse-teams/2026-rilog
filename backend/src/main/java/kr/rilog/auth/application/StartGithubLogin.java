@@ -2,7 +2,6 @@ package kr.rilog.auth.application;
 
 import java.net.URI;
 import java.time.Clock;
-import java.time.Duration;
 import kr.rilog.auth.application.port.GithubOAuthGateway;
 import kr.rilog.auth.application.port.OAuthLoginAttemptStore;
 import kr.rilog.auth.application.port.SecureCredentialService;
@@ -13,23 +12,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class StartGithubLogin {
 
-    private static final Duration ATTEMPT_LIFETIME = Duration.ofMinutes(10);
-
     private final OAuthLoginAttemptStore attemptStore;
     private final SecureCredentialService credentialService;
     private final GithubOAuthGateway githubOAuthGateway;
     private final Clock clock;
+    private final AuthPolicy authPolicy;
 
     public StartGithubLogin(
             OAuthLoginAttemptStore attemptStore,
             SecureCredentialService credentialService,
             GithubOAuthGateway githubOAuthGateway,
-            Clock clock
+            Clock clock,
+            AuthPolicy authPolicy
     ) {
         this.attemptStore = attemptStore;
         this.credentialService = credentialService;
         this.githubOAuthGateway = githubOAuthGateway;
         this.clock = clock;
+        this.authPolicy = authPolicy;
     }
 
     @Transactional
@@ -41,7 +41,7 @@ public class StartGithubLogin {
                 credentialService.hash(state),
                 credentialService.hash(browserBinding),
                 pkceVerifier,
-                clock.instant().plus(ATTEMPT_LIFETIME)
+                clock.instant().plus(authPolicy.oauthAttemptLifetime())
         );
         attemptStore.save(attempt);
         URI authorizationUri = githubOAuthGateway.buildAuthorizationUri(

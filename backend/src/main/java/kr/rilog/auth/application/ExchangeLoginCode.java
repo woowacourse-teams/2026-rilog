@@ -25,8 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ExchangeLoginCode {
 
-    private static final Duration REFRESH_LIFETIME = Duration.ofDays(30);
-
     private final LoginExchangeCodeStore exchangeCodeStore;
     private final RefreshSessionStore sessionStore;
     private final RefreshTokenRecordStore tokenRecordStore;
@@ -34,6 +32,7 @@ public class ExchangeLoginCode {
     private final SecureCredentialService credentialService;
     private final AccessTokenCodec accessTokenCodec;
     private final Clock clock;
+    private final AuthPolicy authPolicy;
 
     public ExchangeLoginCode(
             LoginExchangeCodeStore exchangeCodeStore,
@@ -42,7 +41,8 @@ public class ExchangeLoginCode {
             UserStore userStore,
             SecureCredentialService credentialService,
             AccessTokenCodec accessTokenCodec,
-            Clock clock
+            Clock clock,
+            AuthPolicy authPolicy
     ) {
         this.exchangeCodeStore = exchangeCodeStore;
         this.sessionStore = sessionStore;
@@ -51,6 +51,7 @@ public class ExchangeLoginCode {
         this.credentialService = credentialService;
         this.accessTokenCodec = accessTokenCodec;
         this.clock = clock;
+        this.authPolicy = authPolicy;
     }
 
     @Transactional
@@ -66,7 +67,7 @@ public class ExchangeLoginCode {
             RefreshSession session = RefreshSession.start(
                     userId,
                     refresh.id(),
-                    clock.instant().plus(REFRESH_LIFETIME),
+                    clock.instant().plus(authPolicy.refreshLifetime()),
                     clock.instant()
             );
             sessionStore.save(session);
@@ -82,7 +83,7 @@ public class ExchangeLoginCode {
             return new Result(
                     accessToken,
                     refresh.value(),
-                    REFRESH_LIFETIME,
+                    authPolicy.refreshLifetime(),
                     user.getOnboardingStatus()
             );
         } catch (AuthDomainException | IllegalArgumentException exception) {

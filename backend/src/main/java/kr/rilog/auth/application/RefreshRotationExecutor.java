@@ -1,6 +1,5 @@
 package kr.rilog.auth.application;
 
-import java.time.Duration;
 import java.time.Instant;
 import kr.rilog.auth.application.port.IssuedCredential;
 import kr.rilog.auth.application.port.ParsedCredential;
@@ -17,16 +16,16 @@ public class RefreshRotationExecutor {
 
     private final RefreshSessionStore sessionStore;
     private final RefreshTokenRecordStore tokenRecordStore;
-    private final Duration concurrencyGrace;
+    private final AuthPolicy authPolicy;
 
     public RefreshRotationExecutor(
             RefreshSessionStore sessionStore,
             RefreshTokenRecordStore tokenRecordStore,
-            Duration concurrencyGrace
+            AuthPolicy authPolicy
     ) {
         this.sessionStore = sessionStore;
         this.tokenRecordStore = tokenRecordStore;
-        this.concurrencyGrace = concurrencyGrace;
+        this.authPolicy = authPolicy;
     }
 
     @Transactional
@@ -55,7 +54,7 @@ public class RefreshRotationExecutor {
                 parsed.secretHash(),
                 replacement.id(),
                 now,
-                concurrencyGrace
+                authPolicy.refreshConcurrencyGrace()
         );
         if (result == RotationResult.ROTATED) {
             tokenRecordStore.save(RefreshTokenRecord.issue(

@@ -1,7 +1,6 @@
 package kr.rilog.auth.application;
 
 import java.time.Clock;
-import java.time.Duration;
 import kr.rilog.auth.application.port.IssuedCredential;
 import kr.rilog.auth.application.port.LoginExchangeCodeStore;
 import kr.rilog.auth.application.port.SecureCredentialService;
@@ -15,23 +14,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class GithubIdentityRegistrar {
 
-    private static final Duration EXCHANGE_CODE_LIFETIME = Duration.ofSeconds(90);
-
     private final UserStore userStore;
     private final LoginExchangeCodeStore exchangeCodeStore;
     private final SecureCredentialService credentialService;
     private final Clock clock;
+    private final AuthPolicy authPolicy;
 
     public GithubIdentityRegistrar(
             UserStore userStore,
             LoginExchangeCodeStore exchangeCodeStore,
             SecureCredentialService credentialService,
-            Clock clock
+            Clock clock,
+            AuthPolicy authPolicy
     ) {
         this.userStore = userStore;
         this.exchangeCodeStore = exchangeCodeStore;
         this.credentialService = credentialService;
         this.clock = clock;
+        this.authPolicy = authPolicy;
     }
 
     @Transactional
@@ -45,7 +45,7 @@ public class GithubIdentityRegistrar {
                 credential.id(),
                 saved.getId(),
                 credential.secretHash(),
-                clock.instant().plus(EXCHANGE_CODE_LIFETIME)
+                clock.instant().plus(authPolicy.exchangeCodeLifetime())
         ));
         return credential.value();
     }
