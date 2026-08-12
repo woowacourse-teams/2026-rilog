@@ -13,3 +13,7 @@ github:
     callback-uri: ${GITHUB_CALLBACK_URI:http://localhost:8080/v1/auth/github/callback}
     state-ttl: 5m
     scope: read:user,user:email
+    token-uri: https://github.com/login/oauth/access_token
+    user-uri: https://api.github.com/user
+    connect-timeout: 3s
+    read-timeout: 3s

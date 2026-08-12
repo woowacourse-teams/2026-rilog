@@ -1,7 +1,11 @@
 package kr.rilog.domain.auth.presentation;
 
 import kr.rilog.domain.auth.application.CompleteGithubLogin;
+import kr.rilog.domain.auth.application.GithubAccessToken;
+import kr.rilog.domain.auth.application.GithubOAuthUser;
 import kr.rilog.domain.auth.application.StartGithubLogin;
+import kr.rilog.domain.auth.application.port.GithubAccessTokenClient;
+import kr.rilog.domain.auth.application.port.GithubUserClient;
 import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -114,7 +118,11 @@ class GithubOAuthControllerTest {
         );
         GithubOAuthController controller = new GithubOAuthController(
                 new StartGithubLogin(store, properties),
-                new CompleteGithubLogin(store)
+                new CompleteGithubLogin(
+                        store,
+                        new StubGithubAccessTokenClient(),
+                        new StubGithubUserClient()
+                )
         );
 
         return MockMvcBuilders.standaloneSetup(controller)
@@ -134,6 +142,26 @@ class GithubOAuthControllerTest {
         @Override
         public boolean consume(String state) {
             return states.remove(state);
+        }
+    }
+
+    private static class StubGithubAccessTokenClient implements GithubAccessTokenClient {
+
+        @Override
+        public GithubAccessToken exchange(String code) {
+            return new GithubAccessToken("github-access-token");
+        }
+    }
+
+    private static class StubGithubUserClient implements GithubUserClient {
+
+        @Override
+        public GithubOAuthUser getUser(String accessToken) {
+            return new GithubOAuthUser(
+                    1L,
+                    "octocat",
+                    "https://github.com/images/error/octocat_happy.gif"
+            );
         }
     }
 }
