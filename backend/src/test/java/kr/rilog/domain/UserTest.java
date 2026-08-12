@@ -45,12 +45,23 @@ class UserTest {
                 .build();
 
         // when
-        user.completeOnboarding("rilog", "rilog-team");
+        user.completeOnboarding(
+                "러로",
+                "jinriro",
+                "안녕하세요.",
+                "www.example.com",
+                "www.githubExample.com",
+                "riro@gmail.com"
+        );
 
         // then
         assertAll(
-                () -> assertEquals("rilog", user.getNickname()),
-                () -> assertEquals("rilog-team", user.getSlug()),
+                () -> assertEquals("러로", user.getNickname()),
+                () -> assertEquals("jinriro", user.getSlug()),
+                () -> assertEquals("안녕하세요.", user.getIntroduction()),
+                () -> assertEquals("www.example.com", user.getProfileImageUrl()),
+                () -> assertEquals("www.githubExample.com", user.getGithubUrl()),
+                () -> assertEquals("riro@gmail.com", user.getEmail()),
                 () -> assertEquals(OnboardingStatus.COMPLETED, user.getOnboardingStatus()),
                 () -> assertNotNull(user.getOnboardingCompletedAt())
         );
