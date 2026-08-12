@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -21,7 +22,8 @@ import java.time.LocalDateTime;
  * NOTE
  * rilog는 개인 블로그,
  * colog는 팀 블로그를 의미한다.
- * */
+ *
+ */
 
 @Getter
 @Entity
@@ -73,5 +75,47 @@ public class Post extends BaseEntity {
     private LocalDateTime publishedAt;
 
 //    private Chapter chapter; // TODO 챕터 or 시리즈 추가 시, 구현 필요
+
+    // THINK Mapper ... ?
+    public static Post create(
+            Blog colog,
+            Blog rilog,
+            User owner,
+            PostDetail detail
+    ) {
+        return Post.builder()
+                .colog(colog)
+                .rilog(rilog)
+                .user(owner)
+                .title(detail.title())
+                .content(detail.content())
+                .category(detail.category())
+                .visibility(detail.visibility())
+                .thumbnailUrl(detail.thumbnailUrl())
+                .logoUrl(detail.logoUrl())
+                .publishedAt(LocalDateTime.now())
+                .status(PostStatus.PUBLISHED)
+                .build();
+    }
+
+    public static Post create( // THINK Mapper ... ?
+                               Blog rilog,
+                               User owner,
+                               PostDetail detail
+    ) {
+        return Post.builder()
+                .colog(null)
+                .rilog(rilog)
+                .user(owner)
+                .title(detail.title())
+                .content(detail.content())
+                .category(detail.category())
+                .visibility(detail.visibility())
+                .thumbnailUrl(detail.thumbnailUrl())
+                .logoUrl(detail.logoUrl())
+                .publishedAt(LocalDateTime.now())
+                .status(PostStatus.PUBLISHED)
+                .build();
+    }
 
 }

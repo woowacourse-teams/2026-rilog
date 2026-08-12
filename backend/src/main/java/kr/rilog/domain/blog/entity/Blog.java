@@ -2,11 +2,17 @@ package kr.rilog.domain.blog.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Objects;
+
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 
 @Getter
 @Entity
@@ -18,6 +24,10 @@ public class Blog extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @Column(length = 20, nullable = false)
     private String name; // NOTE - 팀블로그명 or 개인블로그명(사용자명)
@@ -37,5 +47,23 @@ public class Blog extends BaseEntity {
 
     @Column(length = 512)
     private String serviceUrl;
+
+    public boolean isColog() {
+        return this.blogType == BlogType.COLOG;
+    }
+
+    public void validateIsOwner(User user) {
+        if (!isOwner(user)) {
+            throw new BlogException(RILOG_POST_PUBLISH_FORBIDDEN);
+        }
+    }
+
+    private boolean isOwner(User user) {
+        if (owner == null || user == null) {
+            return false;
+        }
+
+        return owner == user || owner.getId() != null && Objects.equals(owner.getId(), user.getId());
+    }
 
 }

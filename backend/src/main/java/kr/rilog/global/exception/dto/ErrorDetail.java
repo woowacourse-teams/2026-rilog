@@ -27,4 +27,9 @@ public record ErrorDetail(
         return new ErrorDetail(httpStatus.value(), httpStatus, errorInformation.getErrorCode(), errorInformation.getMessage(), invalidParams);
     }
 
+    public static ErrorDetail of(ErrorInformation errorInformation, String message) {
+        HttpStatus httpStatus = errorInformation.getHttpStatus();
+        return new ErrorDetail(httpStatus.value(), httpStatus, errorInformation.getErrorCode(), message, null);
+    }
+
 }
