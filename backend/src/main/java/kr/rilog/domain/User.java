@@ -11,9 +11,9 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 @Getter
-@SuperBuilder
 @Entity
 @Table(name = "users")
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
@@ -51,10 +51,18 @@ public class User extends BaseEntity {
 
     public void completeOnboarding(
             String nickname,
-            String slug
+            String slug,
+            String introduction,
+            String profileImageUrl,
+            String githubUrl,
+            String email
     ) {
         this.nickname = nickname;
         this.slug = slug;
+        this.introduction = introduction;
+        this.profileImageUrl = profileImageUrl;
+        this.githubUrl = githubUrl;
+        this.email = email;
         this.onboardingStatus = OnboardingStatus.COMPLETED;
         this.onboardingCompletedAt = LocalDateTime.now();
     }
