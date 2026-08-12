@@ -1,0 +1,5 @@
+  - `presentation`: HTTP 요청/응답, redirect, request parameter 처리
+  - `application`: 유스케이스 orchestration, 비즈니스 흐름 제어
+  - `application/port`: 외부 저장소·API에 대한 추상 인터페이스
+  - `infrastructure`: Redis, 외부 API client 등 실제 기술 구현체
+  - `config`: 외부 설정값 바인딩과 설정 객체 관리
