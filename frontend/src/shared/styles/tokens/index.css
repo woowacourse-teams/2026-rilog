@@ -1,6 +1,5 @@
 @import './colors.css';
 @import './typography.css';
-@import './button.css';
 
 @theme inline {
 	--color-background: var(--background);
