@@ -45,20 +45,24 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum PostErrorInformation implements ErrorInformation {
 
-    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_001", "게시글을 찾을 수 없습니다."),
-    POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "POST_002", "게시글에 접근할 권한이 없습니다."),
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+    POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 접근할 권한이 없습니다."),
     ;
 
     private final HttpStatus httpStatus;
-    private final String errorCode;
     private final String message;
+
+    @Override
+    public String getErrorCode() {
+        return this.name();
+    }
+
 }
 ```
-
 오류를 추가할 때는 다음 기준을 지킨다.
 
 - 오류 코드는 다른 오류와 중복되지 않게 작성한다.
-- 코드의 접두사로 소유 도메인을 식별할 수 있게 한다. 예: `POST_001`
+- 에러 코드는 Enum의 name을 반환한다.
 - HTTP 상태는 클라이언트가 오류의 성격을 판단할 수 있게 선택한다.
 - 메시지는 내부 구현이나 민감한 정보를 노출하지 않고 사용자가 이해할 수 있게 작성한다.
 - 공통 요청 형식 오류는 `GlobalExceptionInformation`, 도메인 규칙 위반은 도메인별 enum에 둔다.
@@ -107,7 +111,7 @@ public Post findPost(Long postId) {
 {
   "status": 404,
   "error": "NOT_FOUND",
-  "errorCode": "POST_001",
+  "errorCode": "POST_NOT_FOUND",
   "message": "게시글을 찾을 수 없습니다.",
   "invalidParams": null
 }
