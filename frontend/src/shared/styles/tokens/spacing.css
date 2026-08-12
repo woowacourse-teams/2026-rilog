@@ -1,0 +1,14 @@
+@theme inline {
+  --spacing-height-sm: 2rem;
+  --spacing-height-md: 2.5rem;
+  --spacing-height-lg: 3rem;
+  --spacing-height-xl: 4rem;
+  --spacing-height-2xl: 5rem;
+  --spacing-height-3xl: 6rem;
+  --spacing-height-4xl: 8rem;
+
+  --spacing-inline-sm: 0.75rem;
+  --spacing-inline-md: 1rem;
+  --spacing-inline-lg: 1.25rem;
+  --spacing-inline-xl: 1.5rem;
+}
