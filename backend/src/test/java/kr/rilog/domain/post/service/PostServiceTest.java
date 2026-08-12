@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -166,6 +167,28 @@ class PostServiceTest {
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_NOT_FOUND);
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 개인 블로그에는 게시글을 발행할 수 없다")
+    void publishToRilogFailsWhenWriterIsNotOwner() {
+        // given
+        Long notOwnerId = 5L;
+        User writer = createWriter();
+        User rilogOwner = User.builder()
+                .id(notOwnerId)
+                .githubId(200L)
+                .build();
+        Blog rilog = createRilog(rilogOwner);
+        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+
+        // when - then
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
         verify(postRepository, never()).save(any(Post.class));
     }
 

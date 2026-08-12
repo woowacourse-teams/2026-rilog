@@ -41,6 +41,7 @@ public class PostService {
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {
+        rilog.validateIsOwner(writer);
         return Post.create(rilog, writer, command.toDetail());
     }
 
