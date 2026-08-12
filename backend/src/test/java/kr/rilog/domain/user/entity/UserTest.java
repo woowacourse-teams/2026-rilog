@@ -3,9 +3,12 @@ package kr.rilog.domain.user.entity;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.Column;
+import kr.rilog.domain.user.exception.UserErrorInformation;
+import kr.rilog.domain.user.exception.UserException;
 import java.lang.reflect.Field;
 
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +29,7 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("온보딩을 완료하면 사용자 slug가 설정된다")
+    @DisplayName("온보딩 완료 시 사용자 slug를 처음 저장할 수 있다")
     void slugCanBeUpdatedWhenOnboardingIsCompleted() throws NoSuchFieldException {
         // given
         Field slug = User.class.getDeclaredField("slug");
@@ -64,6 +67,42 @@ class UserTest {
                 () -> assertEquals("riro@gmail.com", user.getEmail()),
                 () -> assertEquals(OnboardingStatus.COMPLETED, user.getOnboardingStatus()),
                 () -> assertNotNull(user.getOnboardingCompletedAt())
+        );
+    }
+
+    @Test
+    @DisplayName("온보딩 완료 후 사용자 slug는 다시 변경할 수 없다")
+    void slugCannotBeChangedAfterOnboardingCompleted() {
+        // given
+        User user = User.builder()
+                .githubId(1L)
+                .build();
+        user.completeOnboarding(
+                "러로",
+                "jinriro",
+                "안녕하세요.",
+                "www.example.com",
+                "www.githubExample.com",
+                "riro@gmail.com"
+        );
+
+        // when
+        UserException exception = assertThrows(
+                UserException.class,
+                () -> user.completeOnboarding(
+                        "러로2",
+                        "changed-slug",
+                        "변경 소개",
+                        "www.changed.com",
+                        "www.changedGithub.com",
+                        "changed@gmail.com"
+                )
+        );
+
+        // then
+        assertAll(
+                () -> assertEquals(UserErrorInformation.ONBOARDING_ALREADY_COMPLETED, exception.getErrorInformation()),
+                () -> assertEquals("jinriro", user.getSlug())
         );
     }
 }
