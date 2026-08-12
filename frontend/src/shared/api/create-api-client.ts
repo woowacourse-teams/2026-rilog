@@ -89,6 +89,7 @@ export const createApiClient = ({
 			afterResponse: [
 				...(hooks?.afterResponse ?? []),
 				async ({ request, response, retryCount }) => {
+					// TODO: 401/403 에러 코드 백엔드와 논의 필요
 					if (!isBrowser() || response.status !== 401 || retryCount > 0) {
 						return;
 					}
