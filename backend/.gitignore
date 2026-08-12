@@ -19,6 +19,7 @@ bin/
 
 ### IntelliJ IDEA ###
 src/main/java/kr/rilog/test/**
+local.env
 *.env
 .idea
 *.iws
