@@ -18,11 +18,21 @@ repositories {
 }
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	compileOnly("org.projectlombok:lombok")
+
+	// validation
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+
+	// Swagger
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+
+	// Spring Data Jpa
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+	// PostgresSQL
 	runtimeOnly("org.postgresql:postgresql")
+
+	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
