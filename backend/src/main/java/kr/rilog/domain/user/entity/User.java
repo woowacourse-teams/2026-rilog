@@ -1,4 +1,4 @@
-package kr.rilog.domain;
+package kr.rilog.domain.user.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.global.entity.BaseEntity;

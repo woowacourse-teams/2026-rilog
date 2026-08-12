@@ -1,4 +1,4 @@
-package kr.rilog.domain;
+package kr.rilog.domain.user.entity;
 
 public enum OnboardingStatus {
 
