@@ -1,6 +1,6 @@
-package kr.rilog.global.auth.resolver;
+package kr.rilog.domain.auth.resolver;
 
-import kr.rilog.global.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.LoginUserSlug;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -15,7 +15,7 @@ public class LoginUserSlugArgumentResolver implements HandlerMethodArgumentResol
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(LoginUserId.class)
+        return parameter.hasParameterAnnotation(LoginUserSlug.class)
                 && parameter.getParameterType() == String.class;
     }
 

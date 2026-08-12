@@ -1,4 +1,4 @@
-package kr.rilog.global.auth.annotation;
+package kr.rilog.domain.auth.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface LoginUserId {
+public @interface LoginUserSlug {
 }
