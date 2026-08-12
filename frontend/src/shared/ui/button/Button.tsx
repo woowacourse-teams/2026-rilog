@@ -3,12 +3,12 @@ import type { ComponentPropsWithRef, ReactNode } from 'react';
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'github' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
-type ButtonProps = Omit<ComponentPropsWithRef<'button'>, 'children'> & {
+interface ButtonProps extends Omit<ComponentPropsWithRef<'button'>, 'children'> {
 	children: ReactNode;
 	variant?: ButtonVariant;
 	size?: ButtonSize;
 	isPending?: boolean;
-};
+}
 
 const BASE_BUTTON_CLASS_NAME =
 	'inline-flex items-center justify-center gap-2 text-label-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-btn-disabled';

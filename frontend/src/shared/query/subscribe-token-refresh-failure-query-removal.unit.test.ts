@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { apiClient } from '../api/api-client';
+import { apiClient } from '@/shared/api/api-client';
 
 import { authenticatedQueryKeys } from './authenticated-query-keys';
 import { subscribeTokenRefreshFailureQueryRemoval } from './subscribe-token-refresh-failure-query-removal';

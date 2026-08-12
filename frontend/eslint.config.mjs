@@ -69,6 +69,7 @@ const eslintConfig = defineConfig([
 			},
 		},
 		rules: {
+			'@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
 			'@typescript-eslint/consistent-type-imports': [
 				'error',
 				{

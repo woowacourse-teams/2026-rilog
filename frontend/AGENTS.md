@@ -35,6 +35,26 @@
 - 컴포넌트 테스트: `*.component.test.tsx`
 - E2E: `*.spec.ts`
 
+### TypeScript 타입 선언
+
+- 이름을 가진 객체 계약은 `interface`를 기본으로 한다.
+- union, tuple, 함수 타입, primitive alias, mapped/conditional type처럼 `interface`로 표현할 수 없거나 `type`이 더 명확한 경우에는 `type`을 사용한다.
+- 위 허용 범주에는 별도 근거를 요구하지 않는다. 객체 계약을 예외적으로 type alias로 선언할 때만 이슈 또는 PR에 근거를 기록한다.
+
+### 내부 import 경로
+
+- 같은 모듈 내부에서는 상대 경로를 허용한다. 상대 경로 사용은 의무가 아니며 `@/*` 절대 경로도 사용할 수 있다.
+- 모듈 경계를 넘는 내부 참조는 `@/*` 절대 경로를 사용한다.
+- 모듈 경계는 `app`의 route segment 또는 공통 조립 영역, `features/<slice>`, `domains/<domain>`, `widgets/<widget>`, `shared/<module>`, `shared/ui/<component>`, `test`로 본다.
+- 외부 package import와 CSS 파일 내부의 `@import`에는 이 규칙을 적용하지 않는다.
+- VS Code workspace는 자동 import에서 non-relative 경로를 우선하도록 설정하지만, 에디터 동작이 아니라 코드의 모듈 경계를 기준으로 리뷰한다.
+
+### 배럴 export
+
+- 프로젝트 내부 모듈에는 재수출을 위한 `index.ts` 배럴을 만들지 않고 실제 파일 경로에서 직접 import한다.
+- `export *`와 `@/shared`, `@/features` 같은 root mega-barrel을 사용하지 않는다.
+- 외부 package 분리, 반복적인 내부 파일 이동, 명시적인 public API 관리 필요가 생기면 별도 이슈 또는 ADR에서 배럴 도입을 다시 검토한다.
+
 ## 테스트
 
 - Vitest: policy, mapper, serializer, query key와 순수 함수
@@ -58,3 +78,6 @@
 - ky와 TanStack Query의 책임이 UI 컴포넌트 안에서 혼합된 변경을 지적한다.
 - 사용자 동작 대신 구현 세부만 검증하는 테스트를 지적한다.
 - 임의 색상값, 접근 가능한 이름이 없는 control, keyboard path가 없는 상호작용을 지적한다.
+- 근거 없이 이름을 가진 객체 계약을 type alias로 선언한 변경을 지적한다.
+- 모듈 경계를 넘으면서 상대 경로를 사용한 import를 지적한다.
+- 재수출을 위한 `index.ts` 또는 `export *`를 추가한 변경을 지적한다.

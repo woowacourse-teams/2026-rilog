@@ -1,12 +1,12 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 
-import { subscribeTokenRefreshFailure } from '../api/api-client';
+import { subscribeTokenRefreshFailure } from '@/shared/api/api-client';
 
-type SubscribeTokenRefreshFailureQueryRemovalOptions = {
+interface SubscribeTokenRefreshFailureQueryRemovalOptions {
 	exact?: boolean;
 	queryClient: QueryClient;
 	queryKey: QueryKey;
-};
+}
 
 export const subscribeTokenRefreshFailureQueryRemoval = ({
 	exact,

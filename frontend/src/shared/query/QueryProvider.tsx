@@ -5,9 +5,9 @@ import { useState } from 'react';
 
 import type { ReactNode } from 'react';
 
-type QueryProviderProps = {
+interface QueryProviderProps {
 	children: ReactNode;
-};
+}
 
 export default function QueryProvider({ children }: QueryProviderProps) {
 	const [queryClient] = useState(() => new QueryClient());
