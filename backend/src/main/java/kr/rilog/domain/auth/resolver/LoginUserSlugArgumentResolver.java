@@ -1,6 +1,6 @@
-package kr.rilog.global.auth.resolver;
+package kr.rilog.domain.auth.resolver;
 
-import kr.rilog.global.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.LoginUserId;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;

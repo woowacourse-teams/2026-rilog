@@ -1,9 +1,7 @@
-package kr.rilog.global.auth.resolver;
+package kr.rilog.domain.auth.resolver;
 
-import jakarta.servlet.http.HttpServletRequest;
-import kr.rilog.global.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.LoginUserId;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
