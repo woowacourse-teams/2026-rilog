@@ -1,6 +1,7 @@
 package kr.rilog.domain.user.entity;
 
 import jakarta.persistence.*;
+import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Builder.Default;
@@ -9,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+
+import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALREADY_COMPLETED;
 
 @Getter
 @Entity
@@ -24,7 +27,7 @@ public class User extends BaseEntity {
     @Column(length = 20, unique = true)
     private String nickname;
 
-    @Column(length = 50, unique = true, updatable = false)
+    @Column(length = 50, unique = true)
     private String slug;
 
     @Column(length = 80)
@@ -57,6 +60,10 @@ public class User extends BaseEntity {
             String githubUrl,
             String email
     ) {
+        if (isOnboardingCompleted()) {
+            throw new UserException(ONBOARDING_ALREADY_COMPLETED);
+        }
+
         this.nickname = nickname;
         this.slug = slug;
         this.introduction = introduction;
@@ -65,5 +72,9 @@ public class User extends BaseEntity {
         this.email = email;
         this.onboardingStatus = OnboardingStatus.COMPLETED;
         this.onboardingCompletedAt = LocalDateTime.now();
+    }
+
+    private boolean isOnboardingCompleted() {
+        return this.onboardingStatus == OnboardingStatus.COMPLETED || this.slug != null;
     }
 }

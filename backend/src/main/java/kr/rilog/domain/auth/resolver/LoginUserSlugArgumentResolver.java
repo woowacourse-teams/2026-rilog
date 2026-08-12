@@ -1,9 +1,7 @@
 package kr.rilog.global.auth.resolver;
 
-import jakarta.servlet.http.HttpServletRequest;
-import kr.rilog.global.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.LoginUserSlug;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -11,31 +9,26 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 @Component
-public class LoginUserIdArgumentResolver implements HandlerMethodArgumentResolver{
+public class LoginUserSlugArgumentResolver implements HandlerMethodArgumentResolver{
 
-    private static final String USER_ID_HEADER = "X-Test-User-Id";
+    private static final String USER_SLUG_HEADER = "X-Test-User-Slug";
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(LoginUserId.class)
-                && (parameter.getParameterType() == Long.class
-                || parameter.getParameterType() == long.class);
+        return parameter.hasParameterAnnotation(LoginUserSlug.class)
+                && parameter.getParameterType() == String.class;
     }
 
     // TODO 토큰 구현 후 실제 로직으로 변경할 것.
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-        String value = webRequest.getHeader(USER_ID_HEADER);
+        String value = webRequest.getHeader(USER_SLUG_HEADER);
 
         if (value == null || value.isBlank()) {
-            return 1L;
+            return "testSlug";
         }
 
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException exception) {
-            return 1L;
-        }
+        return value;
     }
 
 }

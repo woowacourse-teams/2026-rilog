@@ -29,6 +29,9 @@ dependencies {
 	// Spring Data Jpa
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
+	// Redis
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
 	// PostgresSQL
 	runtimeOnly("org.postgresql:postgresql")
 
