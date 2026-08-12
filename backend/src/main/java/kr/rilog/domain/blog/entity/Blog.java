@@ -2,6 +2,7 @@ package kr.rilog.domain.blog.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,6 +19,10 @@ public class Blog extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @Column(length = 20, nullable = false)
     private String name; // NOTE - 팀블로그명 or 개인블로그명(사용자명)
