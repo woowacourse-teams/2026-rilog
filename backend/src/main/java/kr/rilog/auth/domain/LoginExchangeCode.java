@@ -41,6 +41,15 @@ public class LoginExchangeCode {
         return new LoginExchangeCode(UUID.randomUUID(), userId, secretHash, expiresAt);
     }
 
+    public static LoginExchangeCode issue(
+            UUID id,
+            Long userId,
+            String secretHash,
+            Instant expiresAt
+    ) {
+        return new LoginExchangeCode(id, userId, secretHash, expiresAt);
+    }
+
     public Long consume(String presentedHash, Instant now) {
         if (consumedAt != null) {
             throw new AuthDomainException("Login exchange code was already consumed");
