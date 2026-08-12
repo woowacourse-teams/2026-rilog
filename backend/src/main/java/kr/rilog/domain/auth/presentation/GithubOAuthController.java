@@ -1,7 +1,8 @@
 package kr.rilog.domain.auth.presentation;
 
-import kr.rilog.domain.auth.application.CompleteGithubLogin;
-import kr.rilog.domain.auth.application.StartGithubLogin;
+import kr.rilog.domain.auth.application.CompleteOAuthLogin;
+import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.StartOAuthLogin;
 import kr.rilog.domain.auth.exception.AuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,22 +13,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 
-import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_OAUTH_REQUEST_FAILED;
+import static kr.rilog.domain.auth.exception.AuthErrorInformation.OAUTH_REQUEST_FAILED;
 
 @RestController
 public class GithubOAuthController {
 
-    private final StartGithubLogin startGithubLogin;
-    private final CompleteGithubLogin completeGithubLogin;
+    private final StartOAuthLogin startOAuthLogin;
+    private final CompleteOAuthLogin completeOAuthLogin;
 
-    public GithubOAuthController(StartGithubLogin startGithubLogin, CompleteGithubLogin completeGithubLogin) {
-        this.startGithubLogin = startGithubLogin;
-        this.completeGithubLogin = completeGithubLogin;
+    public GithubOAuthController(StartOAuthLogin startOAuthLogin, CompleteOAuthLogin completeOAuthLogin) {
+        this.startOAuthLogin = startOAuthLogin;
+        this.completeOAuthLogin = completeOAuthLogin;
     }
 
     @GetMapping("/v1/auth/github")
     public ResponseEntity<Void> start() {
-        URI redirectUri = startGithubLogin.start();
+        URI redirectUri = startOAuthLogin.start(SocialLoginProvider.GITHUB);
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(redirectUri)
                 .build();
@@ -40,10 +41,10 @@ public class GithubOAuthController {
             @RequestParam(required = false) String error
     ) {
         if (StringUtils.hasText(error)) {
-            throw new AuthException(GITHUB_OAUTH_REQUEST_FAILED);
+            throw new AuthException(OAUTH_REQUEST_FAILED);
         }
 
-        completeGithubLogin.complete(code, state);
+        completeOAuthLogin.complete(SocialLoginProvider.GITHUB, code, state);
         return ResponseEntity.noContent().build();
     }
 
