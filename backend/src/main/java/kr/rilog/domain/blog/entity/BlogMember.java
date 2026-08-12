@@ -1,0 +1,47 @@
+package kr.rilog.domain.blog.entity;
+
+import jakarta.persistence.*;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
+import kr.rilog.domain.user.entity.User;
+import kr.rilog.global.entity.BaseEntity;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Entity
+@Table(name = "blog_member")
+@SuperBuilder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class BlogMember extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "blog_id")
+    private Blog blog;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(length = 50)
+    private String blogRole;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BlogPermission permission;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BlogMemberStatus status;
+
+    private LocalDateTime joinedAt;
+
+}

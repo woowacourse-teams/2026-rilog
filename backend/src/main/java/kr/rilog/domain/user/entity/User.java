@@ -1,4 +1,4 @@
-package kr.rilog.domain;
+package kr.rilog.domain.user.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.global.entity.BaseEntity;
@@ -21,10 +21,10 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, length = 20)
+    @Column(length = 20, unique = true)
     private String nickname;
 
-    @Column(unique = true, length = 50)
+    @Column(length = 50, unique = true, updatable = false)
     private String slug;
 
     @Column(length = 80)

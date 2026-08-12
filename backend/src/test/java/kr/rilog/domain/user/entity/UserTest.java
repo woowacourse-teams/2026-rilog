@@ -1,4 +1,4 @@
-package kr.rilog.domain;
+package kr.rilog.domain.user.entity;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
