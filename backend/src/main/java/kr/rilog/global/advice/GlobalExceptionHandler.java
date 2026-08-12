@@ -68,16 +68,6 @@ public class GlobalExceptionHandler {
                 .body(ErrorDetail.of(errorInformation));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorDetail> handleIllegalArgumentException(
-            IllegalArgumentException e
-    ) {
-        ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_ARGUMENT;
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
-        return ResponseEntity.status(errorInformation.getHttpStatus())
-                .body(ErrorDetail.of(errorInformation));
-    }
-
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorDetail> handleHttpRequestMethodNotSupportedException(
             HttpRequestMethodNotSupportedException e
