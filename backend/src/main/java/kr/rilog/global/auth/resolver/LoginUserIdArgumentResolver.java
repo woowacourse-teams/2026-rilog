@@ -1,7 +1,10 @@
 package kr.rilog.global.auth.resolver;
 
-import jakarta.servlet.http.HttpServletRequest;
+import kr.rilog.auth.domain.AuthPrincipal;
 import kr.rilog.global.auth.annotation.LoginUserId;
+import kr.rilog.global.auth.AuthInterceptor;
+import kr.rilog.global.exception.AuthErrorInformation;
+import kr.rilog.global.exception.AuthException;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -13,8 +16,6 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @Component
 public class LoginUserIdArgumentResolver implements HandlerMethodArgumentResolver{
 
-    private static final String USER_ID_HEADER = "X-Test-User-Id";
-
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(LoginUserId.class)
@@ -22,20 +23,16 @@ public class LoginUserIdArgumentResolver implements HandlerMethodArgumentResolve
                 || parameter.getParameterType() == long.class);
     }
 
-    // TODO 토큰 구현 후 실제 로직으로 변경할 것.
     @Override
-    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-        String value = webRequest.getHeader(USER_ID_HEADER);
-
-        if (value == null || value.isBlank()) {
-            return 1L;
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+        AuthPrincipal principal = (AuthPrincipal) webRequest.getAttribute(
+                AuthInterceptor.PRINCIPAL_ATTRIBUTE,
+                NativeWebRequest.SCOPE_REQUEST
+        );
+        if (principal == null) {
+            throw new AuthException(AuthErrorInformation.MISSING_ACCESS_TOKEN);
         }
-
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException exception) {
-            return 1L;
-        }
+        return principal.userId();
     }
 
 }
