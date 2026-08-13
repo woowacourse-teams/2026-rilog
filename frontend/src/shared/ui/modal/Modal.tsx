@@ -105,12 +105,12 @@ export default function Modal({
 			<div
 				className={`flex max-h-[inherit] min-h-0 flex-col overflow-hidden ${size === 'full' ? 'h-full' : ''} ${PADDING_CLASS_NAMES[padding]}`}
 			>
-				<header className="flex flex-none flex-col">
+				<header className="relative flex-none">
 					{showCloseButton && (
 						<Button
 							variant="ghost"
 							size="icon"
-							className="!size-6 self-end rounded-sm"
+							className="absolute top-0 right-0"
 							aria-label={closeButtonLabel}
 							onClick={onClose}
 						>
@@ -119,7 +119,7 @@ export default function Modal({
 							</svg>
 						</Button>
 					)}
-					<div className="min-w-0">
+					<div className={`min-w-0 ${showCloseButton ? 'pr-12' : ''}`}>
 						<h2 id={titleId} className="text-title-2 font-semibold text-text-primary">
 							{title}
 						</h2>
