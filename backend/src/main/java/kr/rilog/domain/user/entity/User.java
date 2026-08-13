@@ -20,6 +20,8 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALR
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
+    private static final String GITHUB_PROFILE_URL_FORMAT = "https://github.com/%s";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -51,6 +53,14 @@ public class User extends BaseEntity {
     private OnboardingStatus onboardingStatus = OnboardingStatus.PENDING;
 
     private LocalDateTime onboardingCompletedAt;
+
+    public static User createPendingGithubUser(Long githubId, String githubLogin, String profileImageUrl) {
+        return User.builder()
+                .githubId(githubId)
+                .githubUrl(GITHUB_PROFILE_URL_FORMAT.formatted(githubLogin))
+                .profileImageUrl(profileImageUrl)
+                .build();
+    }
 
     public void completeOnboarding(
             String nickname,

@@ -14,8 +14,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,7 +62,7 @@ class RedisOAuthLoginAttemptStoreTest {
         boolean consumed = store.consume(SocialLoginProvider.GITHUB, state);
 
         // then
-        assertTrue(consumed);
+        assertThat(consumed).isTrue();
         verify(valueOperations).getAndDelete(redisKey);
         verify(valueOperations, never()).get(redisKey);
         verify(redisTemplate, never()).delete(redisKey);
@@ -83,7 +82,7 @@ class RedisOAuthLoginAttemptStoreTest {
         boolean consumed = store.consume(SocialLoginProvider.GITHUB, state);
 
         // then
-        assertFalse(consumed);
+        assertThat(consumed).isFalse();
         verify(valueOperations).getAndDelete(redisKey);
     }
 

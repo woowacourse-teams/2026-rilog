@@ -27,14 +27,11 @@ public record GithubOAuthProperties(
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(3);
     private static final String DEFAULT_SCOPE = "read:user,user:email";
 
-    public GithubOAuthProperties(
-            String clientId,
-            String clientSecret,
-            URI callbackUri,
-            Duration stateTtl,
-            String scope
+    public static GithubOAuthProperties of(
+            String clientId, String clientSecret, URI callbackUri, Duration stateTtl, String scope
     ) {
-        this(clientId, clientSecret, callbackUri, stateTtl, scope, null, null, null, null);
+        return new GithubOAuthProperties(clientId, clientSecret, callbackUri, stateTtl, scope,
+                null, null, null, null);
     }
 
     public GithubOAuthProperties {

@@ -2,6 +2,7 @@ package kr.rilog.domain.auth.presentation;
 
 import kr.rilog.domain.auth.application.CompleteOAuthLogin;
 import kr.rilog.domain.auth.application.OAuthAccessToken;
+import kr.rilog.domain.auth.application.OAuthLoginUserService;
 import kr.rilog.domain.auth.application.SocialLoginProvider;
 import kr.rilog.domain.auth.application.SocialLoginUser;
 import kr.rilog.domain.auth.application.StartOAuthLogin;
@@ -10,6 +11,7 @@ import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.application.port.OAuthUserClient;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.infrastructure.github.GithubOAuthAuthorizationUrlProvider;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.startsWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -112,7 +117,13 @@ class GithubOAuthControllerTest {
     }
 
     private MockMvc mockMvc(OAuthLoginAttemptStore store) {
-        GithubOAuthProperties properties = new GithubOAuthProperties(
+        OAuthLoginUserService loginUserService = mock(OAuthLoginUserService.class);
+        when(loginUserService.findOrCreate(any(SocialLoginUser.class))).thenReturn(User.builder()
+                .id(1L)
+                .githubId(1L)
+                .build());
+
+        GithubOAuthProperties properties = GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
                 URI.create("http://localhost:8080/v1/auth/github/callback"),
@@ -127,7 +138,8 @@ class GithubOAuthControllerTest {
                 new CompleteOAuthLogin(
                         store,
                         List.of(new StubOAuthAccessTokenClient()),
-                        List.of(new StubOAuthUserClient())
+                        List.of(new StubOAuthUserClient()),
+                        loginUserService
                 )
         );
 
