@@ -135,9 +135,10 @@ describe('Modal', () => {
 			<Modal
 				open
 				title="처리 중"
+				isPending
 				onClose={onClose}
 				cancelAction={{ onClick: onCancel }}
-				primaryAction={{ label: '저장', isPending: true, onClick: onPrimary }}
+				primaryAction={{ label: '저장', onClick: onPrimary }}
 			/>,
 		);
 		const dialog = screen.getByRole('dialog', { name: '처리 중' });
@@ -158,9 +159,10 @@ describe('Modal', () => {
 			<Modal
 				open
 				title="처리 중"
+				isPending={false}
 				onClose={onClose}
 				cancelAction={{ onClick: onCancel }}
-				primaryAction={{ label: '저장', isPending: false, onClick: onPrimary }}
+				primaryAction={{ label: '저장', onClick: onPrimary }}
 			/>,
 		);
 

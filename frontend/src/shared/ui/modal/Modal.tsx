@@ -22,6 +22,7 @@ interface ModalCommonProps {
 	closeButtonLabel?: string;
 	closeOnBackdrop?: boolean;
 	closeOnEscape?: boolean;
+	isPending?: boolean;
 	initialFocusRef?: RefObject<HTMLElement | null>;
 }
 
@@ -72,6 +73,7 @@ export default function Modal({
 	closeButtonLabel = '모달 닫기',
 	closeOnBackdrop = true,
 	closeOnEscape = true,
+	isPending = false,
 	initialFocusRef,
 	footer,
 	cancelAction,
@@ -83,8 +85,6 @@ export default function Modal({
 	const hasContent = children != null;
 	const hasFooter = footer != null || cancelAction != null || primaryAction != null;
 	const primaryVariant = primaryAction?.variant ?? 'primary';
-	const isPending = primaryAction?.isPending === true;
-
 	const handleCancelClick = () => {
 		cancelAction?.onClick?.();
 		onClose();
@@ -159,7 +159,7 @@ export default function Modal({
 										size="md"
 										className="min-w-modal-action"
 										disabled={primaryAction.disabled}
-										isPending={primaryAction.isPending}
+										isPending={isPending}
 										onClick={primaryAction.type === 'submit' ? undefined : primaryAction.onClick}
 									>
 										{primaryAction.label}

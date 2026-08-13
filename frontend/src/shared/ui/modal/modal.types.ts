@@ -14,7 +14,6 @@ interface ModalPrimaryActionBase {
 	label: string;
 	variant?: 'primary' | 'danger';
 	disabled?: boolean;
-	isPending?: boolean;
 }
 
 export type ModalPrimaryAction = ModalPrimaryActionBase &
