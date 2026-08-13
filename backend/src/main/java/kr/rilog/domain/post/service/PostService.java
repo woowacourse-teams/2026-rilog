@@ -47,7 +47,7 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    public PostDetailResponse readPosts(Long postId, Long requesterId) {
+    public PostDetailResponse readPost(Long postId, Long requesterId) {
         Post post = getPost(postId);
         post.validateReadableBy(requesterId);
         return PostDetailResponse.from(post);
