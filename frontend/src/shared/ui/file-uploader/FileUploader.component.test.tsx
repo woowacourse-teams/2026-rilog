@@ -31,6 +31,24 @@ describe('FileUploader', () => {
 		expect(handleChange).toHaveBeenCalledOnce();
 	});
 
+	it('검증에 실패한 파일은 전달하지 않고 input을 초기화한다', async () => {
+		const user = userEvent.setup();
+		const handleChange = vi.fn();
+		const handleFileChange = vi.fn();
+		const validateFile = vi.fn(() => false);
+		const file = new File(['rilog'], 'rilog.txt', { type: 'text/plain' });
+
+		render(<FileUploader onChange={handleChange} onFileChange={handleFileChange} validateFile={validateFile} />);
+
+		const input = screen.getByLabelText('파일 선택');
+		await user.upload(input, file);
+
+		expect(validateFile).toHaveBeenCalledWith(file);
+		expect((input as HTMLInputElement).files).toHaveLength(0);
+		expect(handleFileChange).not.toHaveBeenCalled();
+		expect(handleChange).toHaveBeenCalledOnce();
+	});
+
 	it('native 속성 및 ref를 input에 전달한다', () => {
 		const inputRef = createRef<HTMLInputElement>();
 

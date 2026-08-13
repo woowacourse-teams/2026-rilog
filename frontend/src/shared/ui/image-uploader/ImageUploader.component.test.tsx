@@ -31,6 +31,20 @@ describe('ImageUploader', () => {
 		expect(handleChange).toHaveBeenCalledOnce();
 	});
 
+	it('비이미지 파일은 전달하지 않고 input을 초기화한다', async () => {
+		const user = userEvent.setup({ applyAccept: false });
+		const handleFileChange = vi.fn();
+		const file = new File(['not-an-image'], 'profile.txt', { type: 'text/plain' });
+
+		render(<ImageUploader onFileChange={handleFileChange} />);
+
+		const input = screen.getByLabelText('이미지 변경');
+		await user.upload(input, file);
+
+		expect((input as HTMLInputElement).files).toHaveLength(0);
+		expect(handleFileChange).not.toHaveBeenCalled();
+	});
+
 	it('문구와 native 속성 및 ref를 FileUploader에 전달한다', () => {
 		const inputRef = createRef<HTMLInputElement>();
 

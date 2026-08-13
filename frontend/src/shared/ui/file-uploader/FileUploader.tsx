@@ -10,6 +10,7 @@ interface FileUploaderProps extends Omit<
 > {
 	buttonLabel?: string;
 	onFileChange?: (file: File | null) => void;
+	validateFile?: (file: File) => boolean;
 	isPending?: boolean;
 	pendingLabel?: string;
 	fullWidth?: boolean;
@@ -26,6 +27,7 @@ export default function FileUploader({
 	isPending = false,
 	onChange,
 	onFileChange,
+	validateFile,
 	pendingLabel = '업로드 중',
 	fullWidth = false,
 	ref,
@@ -38,7 +40,15 @@ export default function FileUploader({
 	const displayedButtonLabel = isPending ? pendingLabel : buttonLabel;
 
 	function handleChange(event: ChangeEvent<HTMLInputElement>) {
-		onFileChange?.(event.currentTarget.files?.[0] ?? null);
+		const file = event.currentTarget.files?.[0] ?? null;
+
+		if (file && validateFile && !validateFile(file)) {
+			event.currentTarget.value = '';
+			onChange?.(event);
+			return;
+		}
+
+		onFileChange?.(file);
 		onChange?.(event);
 	}
 
