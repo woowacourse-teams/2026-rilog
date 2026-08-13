@@ -1,5 +1,8 @@
 package kr.rilog.global.advice;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import kr.rilog.global.exception.ErrorInformation;
 import kr.rilog.global.exception.GlobalExceptionInformation;
 import kr.rilog.global.exception.RilogBusinessException;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -67,10 +72,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDetail> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException e
     ) {
-        ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_REQUEST_BODY;
+        ErrorInformation errorInformation =
+                GlobalExceptionInformation.INVALID_REQUEST_BODY;
+
         log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+
+        InvalidParam invalidParam = extractInvalidParam(e);
+
         return ResponseEntity.status(errorInformation.getHttpStatus())
-                .body(ErrorDetail.of(errorInformation));
+                .body(ErrorDetail.of(errorInformation, List.of(invalidParam)));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -116,13 +126,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException e
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.MISSING_REQUEST_PARAMETER;
-
-        List<InvalidParam> invalidParams = List.of(
-                new InvalidParam(
-                        e.getParameterName(),
-                        "필수 요청 파라미터가 누락되었습니다."
-                )
-        );
+        List<InvalidParam> invalidParams = List.of(InvalidParam.missingRequestParameters(e.getParameterName()));
 
         log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
         return ResponseEntity
@@ -136,6 +140,28 @@ public class GlobalExceptionHandler {
         log.error(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
+    }
+
+    private InvalidParam extractInvalidParam(HttpMessageNotReadableException e) {
+
+        Throwable cause = e.getMostSpecificCause();
+
+        if (cause instanceof InvalidFormatException ex) {
+            return InvalidParam.invalidValue(extractFieldName(ex));
+        }
+
+        if (cause instanceof MismatchedInputException ex) {
+            return InvalidParam.invalidFormat(extractFieldName(ex));
+        }
+
+        return InvalidParam.unreadableRequestBody();
+    }
+
+    private String extractFieldName(JsonMappingException e) {
+        return e.getPath().stream()
+                .map(JsonMappingException.Reference::getFieldName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("."));
     }
 
 }
