@@ -21,7 +21,7 @@ public class FeedController implements FeedApiSpec {
             @RequestParam int page,
             @RequestParam int size
     ) {
-        FullFeedPostResponse data = feedService.getFullFeedPostList(page, size);
+        FullFeedPostResponse data = feedService.readFullFeedPostList(page, size);
         return ApiResponse.response(HttpStatus.OK, "전체피드의 게시물 목록 조회에 성공했습니다.", data);
     }
 

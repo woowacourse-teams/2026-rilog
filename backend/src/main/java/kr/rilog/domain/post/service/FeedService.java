@@ -26,7 +26,7 @@ public class FeedService {
     private final BlogRepository blogRepository;
 
     /** 1차 MVP 전체 피드 조회 정책 - 게시됨 + 공개 */
-    public FullFeedPostResponse getFullFeedPostList(int page, int size) {
+    public FullFeedPostResponse readFullFeedPostList(int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
 
         Slice<PostFullFeedRow> feed = postFeedQueryRepository.findFullFeed(

@@ -40,7 +40,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("전체 피드는 발행된 공개 게시글을 요청한 페이지 조건으로 조회한다")
-    void getFullFeedPostListRequestsPublishedPublicPosts() {
+    void readFullFeedPostListRequestsPublishedPublicPosts() {
         // given
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
         when(postFeedQueryRepository.findFullFeed(
@@ -50,7 +50,7 @@ class FeedServiceTest {
         )).thenReturn(new SliceImpl<>(List.of(), pageable, false));
 
         // when
-        feedService.getFullFeedPostList(PAGE, SIZE);
+        feedService.readFullFeedPostList(PAGE, SIZE);
 
         // then
         verify(postFeedQueryRepository).findFullFeed(
@@ -62,7 +62,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("전체 피드 조회 결과에 게시글과 페이지 정보가 포함된다")
-    void getFullFeedPostListReturnsPostsAndPagination() {
+    void readFullFeedPostListReturnsPostsAndPagination() {
         // given
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
         List<PostFullFeedRow> rows = List.of(
@@ -76,7 +76,7 @@ class FeedServiceTest {
         )).thenReturn(new SliceImpl<>(rows, pageable, true));
 
         // when
-        FullFeedPostResponse response = feedService.getFullFeedPostList(PAGE, SIZE);
+        FullFeedPostResponse response = feedService.readFullFeedPostList(PAGE, SIZE);
 
         // then
         assertThat(response.posts())
