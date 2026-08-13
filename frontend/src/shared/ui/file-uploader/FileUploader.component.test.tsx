@@ -14,29 +14,31 @@ describe('FileUploader', () => {
 		expect(input).not.toHaveAttribute('accept');
 	});
 
-	it('선택한 파일과 native change event를 전달한다', async () => {
+	it('선택한 단일 파일과 native change event를 전달한다', async () => {
 		const user = userEvent.setup();
 		const handleChange = vi.fn();
+		const handleFileChange = vi.fn();
 		const file = new File(['rilog'], 'rilog.txt', { type: 'text/plain' });
 
-		render(<FileUploader accept="text/plain" onChange={handleChange} />);
+		render(<FileUploader accept="text/plain" onChange={handleChange} onFileChange={handleFileChange} />);
 
 		const input = screen.getByLabelText('파일 선택');
 		await user.upload(input, file);
 
 		expect(input).toHaveAttribute('accept', 'text/plain');
 		expect((input as HTMLInputElement).files?.[0]).toBe(file);
+		expect(handleFileChange).toHaveBeenCalledWith(file);
 		expect(handleChange).toHaveBeenCalledOnce();
 	});
 
-	it('multiple과 native 속성 및 ref를 input에 전달한다', () => {
+	it('native 속성 및 ref를 input에 전달한다', () => {
 		const inputRef = createRef<HTMLInputElement>();
 
-		render(<FileUploader ref={inputRef} multiple name="attachments" buttonLabel="첨부 파일 선택" />);
+		render(<FileUploader ref={inputRef} name="attachment" buttonLabel="첨부 파일 선택" />);
 
 		const input = screen.getByLabelText('첨부 파일 선택');
-		expect(input).toHaveAttribute('multiple');
-		expect(input).toHaveAttribute('name', 'attachments');
+		expect(input).not.toHaveAttribute('multiple');
+		expect(input).toHaveAttribute('name', 'attachment');
 		expect(inputRef.current).toBe(input);
 	});
 

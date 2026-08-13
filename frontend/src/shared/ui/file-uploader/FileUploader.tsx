@@ -1,12 +1,15 @@
+'use client';
+
 import { useId } from 'react';
 
-import type { ComponentPropsWithRef } from 'react';
+import type { ChangeEvent, ComponentPropsWithRef } from 'react';
 
 interface FileUploaderProps extends Omit<
 	ComponentPropsWithRef<'input'>,
-	'children' | 'defaultValue' | 'type' | 'value'
+	'children' | 'defaultValue' | 'multiple' | 'type' | 'value'
 > {
 	buttonLabel?: string;
+	onFileChange?: (file: File | null) => void;
 	isPending?: boolean;
 	pendingLabel?: string;
 	fullWidth?: boolean;
@@ -21,6 +24,8 @@ export default function FileUploader({
 	disabled = false,
 	id,
 	isPending = false,
+	onChange,
+	onFileChange,
 	pendingLabel = '업로드 중',
 	fullWidth = false,
 	ref,
@@ -32,6 +37,11 @@ export default function FileUploader({
 	const inputId = id ?? generatedId;
 	const displayedButtonLabel = isPending ? pendingLabel : buttonLabel;
 
+	function handleChange(event: ChangeEvent<HTMLInputElement>) {
+		onFileChange?.(event.currentTarget.files?.[0] ?? null);
+		onChange?.(event);
+	}
+
 	return (
 		<div className={`w-full ${className ?? ''}`.trim()}>
 			<label htmlFor={inputId} className={`${FILE_UPLOADER_CLASS_NAME} ${fullWidth ? 'w-full' : 'w-44'}`}>
@@ -41,7 +51,9 @@ export default function FileUploader({
 					ref={ref}
 					id={inputId}
 					type="file"
+					multiple={false}
 					disabled={disabled || isPending}
+					onChange={handleChange}
 					className="hidden"
 					aria-busy={isPending || undefined}
 					aria-describedby={ariaDescribedBy}

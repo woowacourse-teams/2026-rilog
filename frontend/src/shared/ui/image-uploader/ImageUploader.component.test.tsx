@@ -15,17 +15,19 @@ describe('ImageUploader', () => {
 		expect(screen.queryByRole('img')).not.toBeInTheDocument();
 	});
 
-	it('선택한 이미지와 native change event를 그대로 전달한다', async () => {
+	it('선택한 단일 이미지와 native change event를 그대로 전달한다', async () => {
 		const user = userEvent.setup();
 		const handleChange = vi.fn();
+		const handleFileChange = vi.fn();
 		const file = new File(['profile'], 'profile.png', { type: 'image/png' });
 
-		render(<ImageUploader onChange={handleChange} />);
+		render(<ImageUploader onChange={handleChange} onFileChange={handleFileChange} />);
 
 		const input = screen.getByLabelText('이미지 변경');
 		await user.upload(input, file);
 
 		expect((input as HTMLInputElement).files?.[0]).toBe(file);
+		expect(handleFileChange).toHaveBeenCalledWith(file);
 		expect(handleChange).toHaveBeenCalledOnce();
 	});
 
