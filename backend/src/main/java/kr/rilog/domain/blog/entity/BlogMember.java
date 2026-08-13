@@ -54,4 +54,21 @@ public class BlogMember extends BaseEntity {
                 .build();
     }
 
+    public static BlogMember invite(
+            Blog blog,
+            User user,
+            String blogRole,
+            BlogPermission permission,
+            LocalDateTime joinedAt
+    ) {
+        return BlogMember.builder()
+                .blog(blog)
+                .user(user)
+                .blogRole(blogRole)
+                .permission(permission)
+                .status(BlogMemberStatus.ACTIVE)
+                .joinedAt(joinedAt)
+                .build();
+    }
+
 }
