@@ -11,6 +11,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
+import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -60,6 +61,13 @@ public class CologService {
         blogMemberRepository.save(ownerMember);
 
         return CologCreateResult.from(savedColog);
+    }
+
+    public CologDetailResult getDetail(String slug) {
+        Blog colog = blogRepository.findBySlugAndBlogType(slug, BlogType.COLOG)
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
+
+        return CologDetailResult.from(colog);
     }
 
     @Transactional
