@@ -5,8 +5,12 @@ import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.application.port.OAuthUserClient;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -14,34 +18,49 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class CompleteOAuthLoginTest {
 
+    @Mock
+    private OAuthLoginUserService loginUserService;
+
     @Test
-    @DisplayName("정상 callback state는 provider별로 한 번만 소비되고 사용자 정보를 조회한다")
+    @DisplayName("정상 callback state는 provider별로 한 번만 소비되고 로그인 사용자를 조회한다")
     void completeConsumesValidStateOnlyOnce() {
         // given
+        User loginUser = loginUser();
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
         store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
         RecordingOAuthAccessTokenClient accessTokenClient = new RecordingOAuthAccessTokenClient();
         RecordingOAuthUserClient userClient = new RecordingOAuthUserClient();
+        when(loginUserService.findOrCreate(any(SocialLoginUser.class))).thenReturn(loginUser);
         CompleteOAuthLogin completeOAuthLogin = new CompleteOAuthLogin(
                 store,
                 List.of(accessTokenClient),
-                List.of(userClient)
+                List.of(userClient),
+                loginUserService
         );
 
         // when
-        SocialLoginUser user = completeOAuthLogin.complete(SocialLoginProvider.GITHUB, "github-code", "valid-state");
+        User user = completeOAuthLogin.complete(SocialLoginProvider.GITHUB, "github-code", "valid-state");
 
         // then
-        assertEquals(SocialLoginProvider.GITHUB, user.provider());
-        assertEquals("1", user.providerUserId());
-        assertEquals("octocat", user.username());
-        assertEquals("https://github.com/images/error/octocat_happy.gif", user.profileImageUrl());
+        assertSame(loginUser, user);
         assertEquals("github-code", accessTokenClient.requestedCode);
         assertEquals("github-access-token", userClient.requestedAccessToken);
+        verify(loginUserService).findOrCreate(new SocialLoginUser(
+                SocialLoginProvider.GITHUB,
+                "1",
+                "octocat",
+                "https://github.com/images/error/octocat_happy.gif"
+        ));
 
         AuthException exception = assertThrows(
                 AuthException.class,
@@ -59,7 +78,8 @@ class CompleteOAuthLoginTest {
         CompleteOAuthLogin completeOAuthLogin = new CompleteOAuthLogin(
                 store,
                 List.of(new RecordingOAuthAccessTokenClient()),
-                List.of(new RecordingOAuthUserClient())
+                List.of(new RecordingOAuthUserClient()),
+                loginUserService
         );
 
         // when
@@ -79,7 +99,8 @@ class CompleteOAuthLoginTest {
         CompleteOAuthLogin completeOAuthLogin = new CompleteOAuthLogin(
                 new InMemoryOAuthLoginAttemptStore(),
                 List.of(new RecordingOAuthAccessTokenClient()),
-                List.of(new RecordingOAuthUserClient())
+                List.of(new RecordingOAuthUserClient()),
+                loginUserService
         );
 
         // when
@@ -99,7 +120,8 @@ class CompleteOAuthLoginTest {
         CompleteOAuthLogin completeOAuthLogin = new CompleteOAuthLogin(
                 new InMemoryOAuthLoginAttemptStore(),
                 List.of(new RecordingOAuthAccessTokenClient()),
-                List.of(new RecordingOAuthUserClient())
+                List.of(new RecordingOAuthUserClient()),
+                loginUserService
         );
 
         // when
@@ -121,7 +143,8 @@ class CompleteOAuthLoginTest {
         CompleteOAuthLogin completeOAuthLogin = new CompleteOAuthLogin(
                 new InMemoryOAuthLoginAttemptStore(),
                 List.of(accessTokenClient),
-                List.of(userClient)
+                List.of(userClient),
+                loginUserService
         );
 
         // when
@@ -133,6 +156,14 @@ class CompleteOAuthLoginTest {
         // then
         assertEquals(0, accessTokenClient.requestCount);
         assertEquals(0, userClient.requestCount);
+        verify(loginUserService, never()).findOrCreate(any(SocialLoginUser.class));
+    }
+
+    private User loginUser() {
+        return User.builder()
+                .id(1L)
+                .githubId(1L)
+                .build();
     }
 
     private static class InMemoryOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
