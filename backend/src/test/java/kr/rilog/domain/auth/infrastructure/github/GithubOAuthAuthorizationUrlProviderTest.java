@@ -40,7 +40,7 @@ class GithubOAuthAuthorizationUrlProviderTest {
     }
 
     private GithubOAuthProperties properties() {
-        return new GithubOAuthProperties(
+        return GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
                 URI.create("http://localhost:8080/v1/auth/github/callback"),

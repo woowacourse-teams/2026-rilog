@@ -123,7 +123,7 @@ class GithubOAuthControllerTest {
                 .githubId(1L)
                 .build());
 
-        GithubOAuthProperties properties = new GithubOAuthProperties(
+        GithubOAuthProperties properties = GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
                 URI.create("http://localhost:8080/v1/auth/github/callback"),
