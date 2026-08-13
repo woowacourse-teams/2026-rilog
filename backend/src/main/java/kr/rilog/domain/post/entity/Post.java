@@ -6,6 +6,8 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
+import kr.rilog.domain.post.exception.PostErrorInformation;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -116,6 +118,23 @@ public class Post extends BaseEntity {
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
+    }
+
+    public void validateReadableBy(Long requesterId) {
+        if (isPrivate() && !isWrittenBy(requesterId)) {
+            throw new PostException(PostErrorInformation.RENAME_PLZ); // TODO 예외 프론트와
+        }
+    }
+
+    public boolean isPrivate() {
+        return visibility == PostVisibility.PRIVATE;
+    }
+
+    public boolean isWrittenBy(Long requesterId) {
+        return requesterId != null
+                && user != null
+                && user.getId() != null
+                && user.getId().equals(requesterId);
     }
 
 }
