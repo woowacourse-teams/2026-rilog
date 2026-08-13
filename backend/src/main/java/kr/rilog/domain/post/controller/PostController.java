@@ -4,17 +4,13 @@ import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
+import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1")
@@ -24,7 +20,6 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping("/blogs/{blogId}/posts")
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PostPublishResponse> publish(
             @PathVariable Long blogId,
             @LoginUserId Long requesterId,
@@ -35,6 +30,12 @@ public class PostController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(data);
+    }
+
+    @GetMapping("/posts/count")
+    public ResponseEntity<TotalPostsCountResponse> getPostsCount() {
+        TotalPostsCountResponse data = postService.readPostsCount();
+        return ResponseEntity.ok(data);
     }
 
 }
