@@ -78,4 +78,5 @@
 	--github-active: var(--github-1000);
 
 	--focus-ring: var(--blue-600);
+	--overlay-backdrop: rgb(8 12 20 / 0.56);
 }
