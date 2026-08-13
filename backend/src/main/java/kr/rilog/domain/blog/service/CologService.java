@@ -38,7 +38,7 @@ public class CologService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
-    private final Clock clock;
+    private Clock clock = Clock.systemUTC();
 
     @Transactional
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
