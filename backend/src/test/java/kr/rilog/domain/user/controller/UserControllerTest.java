@@ -1,44 +1,109 @@
 package kr.rilog.domain.user.controller;
 
 import kr.rilog.domain.user.service.UserQueryService;
-import kr.rilog.domain.user.service.dto.result.UserInfoResult;
+import kr.rilog.domain.user.exception.UserException;
+import kr.rilog.domain.user.service.UserService;
+import kr.rilog.global.advice.GlobalExceptionHandler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static kr.rilog.domain.user.exception.UserErrorInformation.NICKNAME_DUPLICATED;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class UserControllerTest {
 
-    @Test
-    @DisplayName("GET /v1/users/{slug}는 멤버 초대에 사용할 사용자 정보를 조회한다")
-    void getUserInfoReturnsUserInfoForInvite() throws Exception {
-        // given
-        UserQueryService userQueryService = mock(UserQueryService.class);
-        when(userQueryService.getUserInfo("jinriro"))
-                .thenReturn(new UserInfoResult(
-                        1L,
-                        "리로",
-                        "jinriro",
-                        "https://example.com/profile.png"
-                ));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userQueryService))
+    private UserService userService;
+    private UserQueryService userQueryService;
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        userService = mock(UserService.class);
+        userQueryService= mock(UserQueryService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService, userQueryService))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-
-        // when - then
-        mockMvc.perform(get("/v1/users/{slug}", "jinriro"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(1L))
-                .andExpect(jsonPath("$.data.nickname").value("리로"))
-                .andExpect(jsonPath("$.data.slug").value("jinriro"))
-                .andExpect(jsonPath("$.data.profileImageUrl").value("https://example.com/profile.png"));
-
-        verify(userQueryService).getUserInfo("jinriro");
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"러", "123456789012345678901"})
+    @DisplayName("2자 미만이거나 20자를 초과한 닉네임은 거절한다")
+    void validateNicknameRejectsInvalidLength(String nickname) throws Exception {
+        mockMvc.perform(get("/v1/availability/nickname")
+                        .param("nickname", nickname))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).validateDuplicatedNickname(nickname);
+    }
+
+    @Test
+    @DisplayName("중복된 닉네임이면 중복 오류를 반환한다")
+    void validateNicknameRejectsDuplicatedNickname() throws Exception {
+        String nickname = "러로";
+        doThrow(new UserException(NICKNAME_DUPLICATED))
+                .when(userService).validateDuplicatedNickname(nickname);
+
+        mockMvc.perform(get("/v1/availability/nickname")
+                        .param("nickname", nickname))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NICKNAME_DUPLICATED"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Ab1_", "12345678901234567890", "ri-log_01"})
+    @DisplayName("4자 이상 20자 이하이고 허용 문자로 구성된 슬러그는 사용 가능 여부를 확인한다")
+    void validateSlugAcceptsValidSlug(String slug) throws Exception {
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("사용가능한 슬러그입니다."));
+
+        verify(userService).validateDuplicatedSlug(slug);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abc", "123456789012345678901"})
+    @DisplayName("4자 미만이거나 20자를 초과한 슬러그는 거절한다")
+    void validateSlugRejectsInvalidLength(String slug) throws Exception {
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).validateDuplicatedSlug(slug);
+    }
+
+    @Test
+    @DisplayName("중복된 슬러그이면 중복 오류를 반환한다")
+    void validateSlugRejectsDuplicatedSlug() throws Exception {
+        String slug = "ri_log-01";
+        doThrow(new UserException(NICKNAME_DUPLICATED))
+                .when(userService).validateDuplicatedSlug(slug);
+
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NICKNAME_DUPLICATED"));
+    }
+
+    @Test
+    @DisplayName("닉네임 요청 파라미터가 없으면 거절한다")
+    void validateNicknameRejectsMissingParameter() throws Exception {
+        mockMvc.perform(get("/v1/availability/nickname"))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).validateDuplicatedNickname(org.mockito.ArgumentMatchers.anyString());
+    }
+
 }

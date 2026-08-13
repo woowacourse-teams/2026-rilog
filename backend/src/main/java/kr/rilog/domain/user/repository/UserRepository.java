@@ -16,4 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findBySlugAndOnboardingStatus(String slug, OnboardingStatus onboardingStatus);
 
+    boolean existsByNickname(String nickname);
+
+    boolean existsBySlug(String slug);
+
 }
