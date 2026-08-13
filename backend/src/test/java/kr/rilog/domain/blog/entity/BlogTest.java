@@ -6,6 +6,7 @@ import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,6 +41,50 @@ class BlogTest {
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("팀 블로그를 생성하면 COLOG 타입으로 소유자가 설정된다")
+    void createCologCreatesTeamBlog() {
+        // given
+        User owner = createUser(OWNER_ID);
+
+        // when
+        Blog colog = Blog.createColog(
+                owner,
+                "리로그 팀",
+                "rilog-team",
+                "함께 쓰는 기술 블로그",
+                "https://example.com/logo.png",
+                "https://example.com/cover.png",
+                "https://rilog.example.com",
+                "https://github.com/rilog"
+        );
+
+        // then
+        assertThat(colog)
+                .extracting(
+                        Blog::getOwner,
+                        Blog::getName,
+                        Blog::getSlug,
+                        Blog::getIntroduction,
+                        Blog::getLogoUrl,
+                        Blog::getCoverImageUrl,
+                        Blog::getServiceUrl,
+                        Blog::getGithubUrl,
+                        Blog::getBlogType
+                )
+                .containsExactly(
+                        owner,
+                        "리로그 팀",
+                        "rilog-team",
+                        "함께 쓰는 기술 블로그",
+                        "https://example.com/logo.png",
+                        "https://example.com/cover.png",
+                        "https://rilog.example.com",
+                        "https://github.com/rilog",
+                        BlogType.COLOG
+                );
     }
 
     private User createUser(Long id) {

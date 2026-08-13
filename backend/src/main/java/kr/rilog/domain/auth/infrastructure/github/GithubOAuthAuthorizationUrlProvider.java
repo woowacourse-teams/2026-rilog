@@ -4,6 +4,7 @@ import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthAuthorizationUrlProvider;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -14,15 +15,12 @@ import java.time.Duration;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_OAUTH_CONFIGURATION_INVALID;
 
 @Component
+@RequiredArgsConstructor
 public class GithubOAuthAuthorizationUrlProvider implements OAuthAuthorizationUrlProvider {
 
     private static final String GITHUB_AUTHORIZATION_ENDPOINT = "https://github.com/login/oauth/authorize";
 
     private final GithubOAuthProperties properties;
-
-    public GithubOAuthAuthorizationUrlProvider(GithubOAuthProperties properties) {
-        this.properties = properties;
-    }
 
     @Override
     public SocialLoginProvider provider() {
