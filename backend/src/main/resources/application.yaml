@@ -36,3 +36,9 @@ auth:
     cookie-path: /v1/auth
     cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
     cookie-same-site: Lax
+
+aws:
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+    region: ${AWS_REGION:ap-northeast-2}
+    presigned-url-expiration-minutes: 10
