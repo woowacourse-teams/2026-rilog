@@ -13,11 +13,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,13 +34,15 @@ class OAuthLoginUserServiceTest {
                 .githubId(10L)
                 .build();
         OAuthLoginUserService service = new OAuthLoginUserService(userRepository);
+        when(userRepository.existsByGithubId(10L)).thenReturn(true);
         when(userRepository.findByGithubId(10L)).thenReturn(Optional.of(existingUser));
 
         // when
         User user = service.findOrCreate(githubUser());
 
         // then
-        assertSame(existingUser, user);
+        assertThat(user).isSameAs(existingUser);
+        verify(userRepository).existsByGithubId(10L);
         verify(userRepository).findByGithubId(10L);
         verify(userRepository, never()).saveAndFlush(any(User.class));
     }
@@ -52,22 +52,47 @@ class OAuthLoginUserServiceTest {
     void findOrCreateCreatesPendingUserWhenGithubUserDoesNotExist() {
         // given
         OAuthLoginUserService service = new OAuthLoginUserService(userRepository);
-        when(userRepository.findByGithubId(10L)).thenReturn(Optional.empty());
+        when(userRepository.existsByGithubId(10L)).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        User user = service.findOrCreate(githubUser());
+        service.findOrCreate(githubUser());
 
         // then
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).saveAndFlush(userCaptor.capture());
 
         User savedUser = userCaptor.getValue();
-        assertSame(savedUser, user);
-        assertEquals(10L, savedUser.getGithubId());
-        assertEquals(OnboardingStatus.PENDING, savedUser.getOnboardingStatus());
-        assertEquals("https://github.com/octocat", savedUser.getGithubUrl());
-        assertEquals("https://github.com/images/error/octocat_happy.gif", savedUser.getProfileImageUrl());
+        assertThat(savedUser.getOnboardingStatus()).isEqualTo(OnboardingStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("최초 GitHub 로그인 사용자는 GitHub 계정 식별 정보를 저장한다")
+    void findOrCreateStoresGithubAccountInformationWhenGithubUserDoesNotExist() {
+        // given
+        OAuthLoginUserService service = new OAuthLoginUserService(userRepository);
+        when(userRepository.existsByGithubId(10L)).thenReturn(false);
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        service.findOrCreate(githubUser());
+
+        // then
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).saveAndFlush(userCaptor.capture());
+
+        User savedUser = userCaptor.getValue();
+        assertThat(savedUser)
+                .extracting(
+                        User::getGithubId,
+                        User::getGithubUrl,
+                        User::getProfileImageUrl
+                )
+                .containsExactly(
+                        10L,
+                        "https://github.com/octocat",
+                        "https://github.com/images/error/octocat_happy.gif"
+                );
     }
 
     @Test
@@ -79,18 +104,18 @@ class OAuthLoginUserServiceTest {
                 .githubId(10L)
                 .build();
         OAuthLoginUserService service = new OAuthLoginUserService(userRepository);
-        when(userRepository.findByGithubId(10L))
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.of(existingUser));
+        when(userRepository.existsByGithubId(10L)).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate github id"));
+        when(userRepository.findByGithubId(10L)).thenReturn(Optional.of(existingUser));
 
         // when
         User user = service.findOrCreate(githubUser());
 
         // then
-        assertSame(existingUser, user);
-        verify(userRepository, times(2)).findByGithubId(10L);
+        assertThat(user).isSameAs(existingUser);
+        verify(userRepository).existsByGithubId(10L);
+        verify(userRepository).findByGithubId(10L);
     }
 
     private SocialLoginUser githubUser() {

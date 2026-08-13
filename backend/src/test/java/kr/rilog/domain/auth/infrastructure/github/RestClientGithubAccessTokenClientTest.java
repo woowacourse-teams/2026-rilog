@@ -17,9 +17,8 @@ import org.springframework.web.client.RestClient;
 import java.net.URI;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -62,8 +61,8 @@ class RestClientGithubAccessTokenClientTest {
         OAuthAccessToken accessToken = client.exchange("github-code");
 
         // then
-        assertEquals(SocialLoginProvider.GITHUB, client.provider());
-        assertEquals("github-access-token", accessToken.value());
+        assertThat(client.provider()).isEqualTo(SocialLoginProvider.GITHUB);
+        assertThat(accessToken.value()).isEqualTo("github-access-token");
         server.verify();
     }
 
@@ -87,13 +86,13 @@ class RestClientGithubAccessTokenClientTest {
                         """, MediaType.APPLICATION_JSON));
 
         // when
-        AuthException exception = assertThrows(
-                AuthException.class,
-                () -> client.exchange("github-code")
-        );
-
-        // then
-        assertEquals(AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED, exception.getErrorInformation());
+        // when - then
+        assertThatThrownBy(() -> client.exchange("github-code"))
+                .isInstanceOf(AuthException.class)
+                .hasMessageNotContaining("github-code")
+                .hasMessageNotContaining("github-client-secret")
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
         server.verify();
     }
 
@@ -112,15 +111,11 @@ class RestClientGithubAccessTokenClientTest {
                 .andRespond(withBadRequest());
 
         // when
-        AuthException exception = assertThrows(
-                AuthException.class,
-                () -> client.exchange("github-code")
-        );
-
-        // then
-        assertEquals(AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED, exception.getErrorInformation());
-        assertFalse(exception.getMessage().contains("github-code"));
-        assertFalse(exception.getMessage().contains("github-client-secret"));
+        // when - then
+        assertThatThrownBy(() -> client.exchange("github-code"))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
         server.verify();
     }
 

@@ -21,11 +21,18 @@ public class OAuthLoginUserService {
         }
 
         Long githubId = Long.valueOf(socialLoginUser.providerUserId());
-        return userRepository.findByGithubId(githubId)
-                .orElseGet(() -> createGithubUser(socialLoginUser, githubId));
+        return getOrCreateGithubUser(socialLoginUser, githubId);
     }
 
-    private User createGithubUser(SocialLoginUser socialLoginUser, Long githubId) {
+    private User getOrCreateGithubUser(SocialLoginUser socialLoginUser, Long githubId) {
+        if (userRepository.existsByGithubId(githubId)) {
+            return findGithubUser(githubId);
+        }
+
+        return saveGithubUser(socialLoginUser, githubId);
+    }
+
+    private User saveGithubUser(SocialLoginUser socialLoginUser, Long githubId) {
         try {
             User user = User.createPendingGithubUser(
                     githubId,
@@ -38,5 +45,10 @@ public class OAuthLoginUserService {
             return userRepository.findByGithubId(githubId)
                     .orElseThrow(() -> exception);
         }
+    }
+
+    private User findGithubUser(Long githubId) {
+        return userRepository.findByGithubId(githubId)
+                .orElseThrow();
     }
 }

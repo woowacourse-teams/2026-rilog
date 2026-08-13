@@ -10,7 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GithubOAuthAuthorizationUrlProviderTest {
 
@@ -28,15 +28,15 @@ class GithubOAuthAuthorizationUrlProviderTest {
                 .build()
                 .getQueryParams();
 
-        assertEquals(SocialLoginProvider.GITHUB, provider.provider());
-        assertEquals(Duration.ofMinutes(5), provider.stateTtl());
-        assertEquals("https", redirectUri.getScheme());
-        assertEquals("github.com", redirectUri.getHost());
-        assertEquals("/login/oauth/authorize", redirectUri.getPath());
-        assertEquals("github-client-id", queryParams.getFirst("client_id"));
-        assertEquals("http://localhost:8080/v1/auth/github/callback", queryParams.getFirst("redirect_uri"));
-        assertEquals("read:user,user:email", queryParams.getFirst("scope"));
-        assertEquals("oauth-state", queryParams.getFirst("state"));
+        assertThat(provider.provider()).isEqualTo(SocialLoginProvider.GITHUB);
+        assertThat(provider.stateTtl()).isEqualTo(Duration.ofMinutes(5));
+        assertThat(redirectUri.getScheme()).isEqualTo("https");
+        assertThat(redirectUri.getHost()).isEqualTo("github.com");
+        assertThat(redirectUri.getPath()).isEqualTo("/login/oauth/authorize");
+        assertThat(queryParams.getFirst("client_id")).isEqualTo("github-client-id");
+        assertThat(queryParams.getFirst("redirect_uri")).isEqualTo("http://localhost:8080/v1/auth/github/callback");
+        assertThat(queryParams.getFirst("scope")).isEqualTo("read:user,user:email");
+        assertThat(queryParams.getFirst("state")).isEqualTo("oauth-state");
     }
 
     private GithubOAuthProperties properties() {

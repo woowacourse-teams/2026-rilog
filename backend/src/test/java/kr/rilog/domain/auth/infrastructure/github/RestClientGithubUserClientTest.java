@@ -16,9 +16,8 @@ import org.springframework.web.client.RestClient;
 import java.net.URI;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -51,11 +50,20 @@ class RestClientGithubUserClientTest {
         SocialLoginUser user = client.getUser(new OAuthAccessToken("github-access-token"));
 
         // then
-        assertEquals(SocialLoginProvider.GITHUB, client.provider());
-        assertEquals(SocialLoginProvider.GITHUB, user.provider());
-        assertEquals("1", user.providerUserId());
-        assertEquals("octocat", user.username());
-        assertEquals("https://github.com/images/error/octocat_happy.gif", user.profileImageUrl());
+        assertThat(client.provider()).isEqualTo(SocialLoginProvider.GITHUB);
+        assertThat(user)
+                .extracting(
+                        SocialLoginUser::provider,
+                        SocialLoginUser::providerUserId,
+                        SocialLoginUser::username,
+                        SocialLoginUser::profileImageUrl
+                )
+                .containsExactly(
+                        SocialLoginProvider.GITHUB,
+                        "1",
+                        "octocat",
+                        "https://github.com/images/error/octocat_happy.gif"
+                );
         server.verify();
     }
 
@@ -76,13 +84,11 @@ class RestClientGithubUserClientTest {
                         """, MediaType.APPLICATION_JSON));
 
         // when
-        AuthException exception = assertThrows(
-                AuthException.class,
-                () -> client.getUser(new OAuthAccessToken("github-access-token"))
-        );
-
-        // then
-        assertEquals(AuthErrorInformation.GITHUB_USER_FETCH_FAILED, exception.getErrorInformation());
+        // when - then
+        assertThatThrownBy(() -> client.getUser(new OAuthAccessToken("github-access-token")))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.GITHUB_USER_FETCH_FAILED);
         server.verify();
     }
 
@@ -98,14 +104,12 @@ class RestClientGithubUserClientTest {
                 .andRespond(withUnauthorizedRequest());
 
         // when
-        AuthException exception = assertThrows(
-                AuthException.class,
-                () -> client.getUser(new OAuthAccessToken("github-access-token"))
-        );
-
-        // then
-        assertEquals(AuthErrorInformation.GITHUB_USER_FETCH_FAILED, exception.getErrorInformation());
-        assertFalse(exception.getMessage().contains("github-access-token"));
+        // when - then
+        assertThatThrownBy(() -> client.getUser(new OAuthAccessToken("github-access-token")))
+                .isInstanceOf(AuthException.class)
+                .hasMessageNotContaining("github-access-token")
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.GITHUB_USER_FETCH_FAILED);
         server.verify();
     }
 
