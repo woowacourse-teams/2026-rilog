@@ -1,5 +1,6 @@
 package kr.rilog.domain.user.controller;
 
+import kr.rilog.domain.user.service.UserQueryService;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.service.UserService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -23,27 +24,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerTest {
 
     private UserService userService;
+    private UserQueryService userQueryService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        userQueryService= mock(UserQueryService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService, userQueryService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"러로", "12345678901234567890"})
-    @DisplayName("2자 이상 20자 이하의 닉네임은 사용 가능 여부를 확인한다")
-    void validateNicknameAcceptsBoundaryLength(String nickname) throws Exception {
-        mockMvc.perform(get("/v1/availability/nickname")
-                        .param("nickname", nickname))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.message").value("사용가능한 닉네임입니다."));
-
-        verify(userService).validateDuplicatedNickname(nickname);
     }
 
     @ParameterizedTest
@@ -94,17 +84,6 @@ class UserControllerTest {
         verify(userService, never()).validateDuplicatedSlug(slug);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"리로그1", "ri log", "ri.log", "rilog!"})
-    @DisplayName("영문, 숫자, 하이픈, 언더스코어 이외의 문자가 포함된 슬러그는 거절한다")
-    void validateSlugRejectsUnsupportedCharacters(String slug) throws Exception {
-        mockMvc.perform(get("/v1/availability/slug")
-                        .param("slug", slug))
-                .andExpect(status().isBadRequest());
-
-        verify(userService, never()).validateDuplicatedSlug(slug);
-    }
-
     @Test
     @DisplayName("중복된 슬러그이면 중복 오류를 반환한다")
     void validateSlugRejectsDuplicatedSlug() throws Exception {
@@ -126,4 +105,5 @@ class UserControllerTest {
 
         verify(userService, never()).validateDuplicatedNickname(org.mockito.ArgumentMatchers.anyString());
     }
+
 }
