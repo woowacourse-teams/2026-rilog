@@ -66,7 +66,7 @@ export default function ConfirmModal({
 					<Button
 						ref={cancelButtonRef}
 						variant="secondary"
-						size="lg"
+						size="md"
 						className="min-w-modal-action"
 						disabled={isPending}
 						onClick={onCancel}
@@ -76,7 +76,7 @@ export default function ConfirmModal({
 					<Button
 						ref={confirmButtonRef}
 						variant={variant === 'danger' ? 'danger' : 'primary'}
-						size="lg"
+						size="md"
 						className="min-w-modal-action"
 						isPending={isPending}
 						onClick={onConfirm}

@@ -62,7 +62,7 @@ export default function AlertModal({
 					)}
 				</header>
 				<footer className="mt-8 flex flex-none justify-end">
-					<Button ref={actionButtonRef} size="lg" className="min-w-modal-action" onClick={handleAction}>
+					<Button ref={actionButtonRef} size="md" className="min-w-modal-action" onClick={handleAction}>
 						{actionLabel}
 					</Button>
 				</footer>

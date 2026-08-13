@@ -138,7 +138,13 @@ export default function Modal({
 						{footer ?? (
 							<>
 								{cancelAction !== undefined && (
-									<Button variant="secondary" size="lg" disabled={cancelAction.disabled} onClick={handleCancelClick}>
+									<Button
+										variant="secondary"
+										size="md"
+										className="min-w-modal-action"
+										disabled={cancelAction.disabled}
+										onClick={handleCancelClick}
+									>
 										{cancelAction.label ?? '취소'}
 									</Button>
 								)}
@@ -147,7 +153,8 @@ export default function Modal({
 										type={primaryAction.type ?? 'button'}
 										form={primaryAction.type === 'submit' ? primaryAction.form : undefined}
 										variant={primaryVariant}
-										size="lg"
+										size="md"
+										className="min-w-modal-action"
 										disabled={primaryAction.disabled}
 										isPending={primaryAction.isPending}
 										onClick={primaryAction.type === 'submit' ? undefined : primaryAction.onClick}
