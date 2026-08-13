@@ -37,8 +37,7 @@ public record PostPublishRequest(
                 content,
                 category,
                 visibility,
-                thumbnailUrl,
-                logoUrl
+                thumbnailUrl
         );
     }
 

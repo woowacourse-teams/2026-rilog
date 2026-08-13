@@ -11,8 +11,7 @@ public record PostSaveCommand(
         JsonNode content,
         Category category,
         PostVisibility visibility,
-        String thumbnailUrl,
-        String logoUrl
+        String thumbnailUrl
 
 ) {
     public PostDetail toDetail() {
@@ -21,8 +20,7 @@ public record PostSaveCommand(
                 content,
                 category,
                 visibility,
-                thumbnailUrl,
-                logoUrl
+                thumbnailUrl
         );
     }
 }

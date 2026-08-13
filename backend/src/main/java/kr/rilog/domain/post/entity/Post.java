@@ -71,9 +71,6 @@ public class Post extends BaseEntity {
     @Column(length = 512)
     private String thumbnailUrl;
 
-    @Column(length = 512)
-    private String logoUrl;
-
     private LocalDateTime publishedAt;
 
 //    private Chapter chapter; // TODO 챕터 or 시리즈 추가 시, 구현 필요
@@ -94,7 +91,6 @@ public class Post extends BaseEntity {
                 .category(detail.category())
                 .visibility(detail.visibility())
                 .thumbnailUrl(detail.thumbnailUrl())
-                .logoUrl(detail.logoUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
@@ -114,7 +110,6 @@ public class Post extends BaseEntity {
                 .category(detail.category())
                 .visibility(detail.visibility())
                 .thumbnailUrl(detail.thumbnailUrl())
-                .logoUrl(detail.logoUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
