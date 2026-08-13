@@ -1,6 +1,7 @@
 package kr.rilog.domain.blog.controller;
 
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.global.response.ApiResponse;
@@ -15,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("v1")
 @RequiredArgsConstructor
-public class BlogController {
+public class BlogController implements BlogApiSpec {
 
     private final BlogService blogService;
 
