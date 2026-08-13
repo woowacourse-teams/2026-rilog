@@ -44,7 +44,17 @@ public class RefreshSession extends BaseEntity {
         return new RefreshSession(userId, tokenHash, expiresAt);
     }
 
+    public void revoke(LocalDateTime revokedAt) {
+        if (this.revokedAt == null) {
+            this.revokedAt = revokedAt;
+        }
+    }
+
     public boolean isRevoked() {
         return revokedAt != null;
+    }
+
+    public boolean isExpired(LocalDateTime now) {
+        return !expiresAt.isAfter(now);
     }
 }
