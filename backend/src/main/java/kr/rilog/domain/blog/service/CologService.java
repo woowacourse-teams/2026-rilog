@@ -31,18 +31,6 @@ public class CologService {
     private final UserRepository userRepository;
     private Clock clock = Clock.systemUTC();
 
-    CologService(
-            BlogRepository blogRepository,
-            BlogMemberRepository blogMemberRepository,
-            UserRepository userRepository,
-            Clock clock
-    ) {
-        this.blogRepository = blogRepository;
-        this.blogMemberRepository = blogMemberRepository;
-        this.userRepository = userRepository;
-        this.clock = clock;
-    }
-
     @Transactional
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
         User owner = getUser(ownerId);
