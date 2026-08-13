@@ -2,6 +2,7 @@
 @import 'tailwindcss';
 @import '../shared/styles/tokens/index.css';
 @import '../shared/ui/button/button.css';
+@import '../shared/ui/modal/modal.css';
 
 * {
 	box-sizing: border-box;

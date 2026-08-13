@@ -43,10 +43,19 @@ public class Blog extends BaseEntity {
     private BlogType blogType;
 
     @Column(length = 512)
+    private String logoUrl;
+
+    @Column(length = 512)
     private String coverImageUrl;
 
     @Column(length = 512)
+    private String email;
+
+    @Column(length = 512)
     private String serviceUrl;
+
+    @Column(length = 512)
+    private String githubUrl;
 
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;
