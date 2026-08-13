@@ -48,6 +48,57 @@ class BearerAuthenticationInterceptorTest {
     }
 
     @Test
+    @DisplayName("USER 역할 사용자는 USER 권한 API에 접근할 수 있다")
+    void userRoleCanAccessUserEndpoint() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider(GlobalRole.USER));
+
+        // when - then
+        mockMvc.perform(get("/v1/user")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer user-access-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("user-only:7"));
+    }
+
+    @Test
+    @DisplayName("ADMIN 역할 사용자는 ADMIN 권한 API에 접근할 수 있다")
+    void adminRoleCanAccessAdminEndpoint() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider(GlobalRole.ADMIN));
+
+        // when - then
+        mockMvc.perform(get("/v1/admin")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin-access-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("admin-only"));
+    }
+
+    @Test
+    @DisplayName("필요한 역할이 없는 사용자는 접근을 거부한다")
+    void rejectsUserWithoutRequiredRole() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider(GlobalRole.USER));
+
+        // when - then
+        mockMvc.perform(get("/v1/admin")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer user-access-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_FAILED"));
+    }
+
+    @Test
+    @DisplayName("인가 대상 API도 인증되지 않은 요청은 거부한다")
+    void rejectsUnauthenticatedRequestBeforeAuthorization() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider(GlobalRole.ADMIN));
+
+        // when - then
+        mockMvc.perform(get("/v1/admin"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_HEADER_MISSING"));
+    }
+
+    @Test
     @DisplayName("인증이 필요하지 않은 요청은 Authorization 헤더가 없어도 통과한다")
     void skipsPublicRequestWithoutAuthorizationHeader() throws Exception {
         // given
@@ -159,6 +210,18 @@ class BearerAuthenticationInterceptorTest {
             return userId + ":" + slug;
         }
 
+        @AuthGuard(roles = GlobalRole.USER)
+        @GetMapping("/v1/user")
+        public String userEndpoint(@LoginUserId Long userId) {
+            return "user-only:" + userId;
+        }
+
+        @AuthGuard(roles = GlobalRole.ADMIN)
+        @GetMapping("/v1/admin")
+        public String adminEndpoint() {
+            return "admin-only";
+        }
+
         @AuthGuard
         @GetMapping("/v1/authenticated-without-claims")
         public String authenticatedWithoutClaims() {
@@ -183,7 +246,16 @@ class BearerAuthenticationInterceptorTest {
 
     private static class RecordingAccessTokenProvider implements AccessTokenProvider {
 
+        private final GlobalRole role;
         private String parsedToken;
+
+        RecordingAccessTokenProvider() {
+            this(GlobalRole.USER);
+        }
+
+        RecordingAccessTokenProvider(GlobalRole role) {
+            this.role = role;
+        }
 
         @Override
         public AccessToken issue(Long userId, GlobalRole role, String slug) {
@@ -195,7 +267,7 @@ class BearerAuthenticationInterceptorTest {
             this.parsedToken = accessToken;
             return AccessTokenClaims.of(
                     7L,
-                    GlobalRole.USER,
+                    role,
                     "jinriro",
                     Instant.parse("2026-08-13T00:00:00Z"),
                     Instant.parse("2026-08-13T00:15:00Z")
