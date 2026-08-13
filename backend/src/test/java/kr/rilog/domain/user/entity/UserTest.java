@@ -1,6 +1,7 @@
 package kr.rilog.domain.user.entity;
 
 import jakarta.persistence.Column;
+import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.user.exception.UserErrorInformation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,18 @@ class UserTest {
 
         // when - then
         assertThat(user.getOnboardingStatus()).isEqualTo(OnboardingStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("신규 사용자의 기본 역할은 USER이다")
+    void newUserStartsWithUserRole() {
+        // given
+        User user = User.builder()
+                .githubId(1L)
+                .build();
+
+        // when - then
+        assertThat(user.getGlobalRole()).isEqualTo(GlobalRole.USER);
     }
 
     @Test

@@ -1,29 +1,50 @@
 package kr.rilog.domain.auth.presentation;
 
-import kr.rilog.domain.auth.application.CompleteOAuthLogin;
-import kr.rilog.domain.auth.application.OAuthAccessToken;
-import kr.rilog.domain.auth.application.OAuthLoginUserService;
-import kr.rilog.domain.auth.application.SocialLoginProvider;
-import kr.rilog.domain.auth.application.SocialLoginUser;
-import kr.rilog.domain.auth.application.StartOAuthLogin;
-import kr.rilog.domain.auth.application.port.OAuthAccessTokenClient;
-import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
-import kr.rilog.domain.auth.application.port.OAuthUserClient;
+import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
+import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
+import kr.rilog.domain.auth.application.oauth.OAuthLoginUserService;
+import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
+import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.SocialLoginUser;
+import kr.rilog.domain.auth.application.oauth.StartOAuthLogin;
+import kr.rilog.domain.auth.application.port.oauth.OAuthAccessTokenClient;
+import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
+import kr.rilog.domain.auth.application.port.oauth.OAuthUserClient;
+import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
+import kr.rilog.domain.auth.application.token.access.AccessToken;
+import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
+import kr.rilog.domain.auth.application.token.access.AccessTokenService;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
+import kr.rilog.domain.auth.application.port.token.RefreshTokenGenerator;
+import kr.rilog.domain.auth.application.port.token.RefreshTokenHasher;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
+import kr.rilog.domain.auth.config.RefreshTokenProperties;
+import kr.rilog.domain.auth.entity.RefreshSession;
 import kr.rilog.domain.auth.infrastructure.github.GithubOAuthAuthorizationUrlProvider;
+import kr.rilog.domain.auth.repository.RefreshSessionRepository;
+import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -52,8 +73,8 @@ class GithubOAuthControllerTest {
     }
 
     @Test
-    @DisplayName("GET /v1/auth/github/callback은 정상 code와 state를 검증한다")
-    void callbackVerifiesCodeAndState() throws Exception {
+    @DisplayName("PENDING 사용자의 callback은 Onboarding Token만 발급한다")
+    void callbackIssuesOnlyOnboardingTokenForPendingUser() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
         store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
@@ -63,7 +84,80 @@ class GithubOAuthControllerTest {
         mockMvc.perform(get("/v1/auth/github/callback")
                         .queryParam("code", "github-code")
                         .queryParam("state", "valid-state"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer onboarding-token:1"))
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+    }
+
+    @Test
+    @DisplayName("온보딩이 완료된 사용자의 callback은 Access Token과 Refresh Token을 발급한다")
+    void callbackIssuesAccessTokenAndRefreshTokenForCompletedUser() throws Exception {
+        // given
+        InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
+        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        MockMvc mockMvc = mockMvc(store, User.builder()
+                .id(1L)
+                .githubId(1L)
+                .slug("jinriro")
+                .onboardingStatus(OnboardingStatus.COMPLETED)
+                .build());
+
+        // when - then
+        mockMvc.perform(get("/v1/auth/github/callback")
+                        .queryParam("code", "github-code")
+                        .queryParam("state", "valid-state"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-token:1:USER:jinriro"))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+                        containsString("refresh_token=raw-refresh-token"),
+                        containsString("Path=/v1/auth"),
+                        containsString("Max-Age=1209600"),
+                        containsString("HttpOnly"),
+                        containsString("SameSite=Lax")
+                )));
+    }
+
+    @Test
+    @DisplayName("온보딩이 완료된 사용자의 callback은 사용자 역할을 Access Token에 담는다")
+    void callbackIssuesAccessTokenWithUserRole() throws Exception {
+        // given
+        InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
+        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        MockMvc mockMvc = mockMvc(store, User.builder()
+                .id(1L)
+                .githubId(1L)
+                .slug("jinriro")
+                .globalRole(GlobalRole.ADMIN)
+                .onboardingStatus(OnboardingStatus.COMPLETED)
+                .build());
+
+        // when - then
+        mockMvc.perform(get("/v1/auth/github/callback")
+                        .queryParam("code", "github-code")
+                        .queryParam("state", "valid-state"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-token:1:ADMIN:jinriro"));
+    }
+
+    @Test
+    @DisplayName("온보딩이 완료된 사용자의 callback은 Onboarding Token을 발급하지 않는다")
+    void callbackDoesNotIssueOnboardingTokenForCompletedUser() throws Exception {
+        // given
+        InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
+        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        MockMvc mockMvc = mockMvc(store, User.builder()
+                .id(1L)
+                .githubId(1L)
+                .slug("jinriro")
+                .onboardingStatus(OnboardingStatus.COMPLETED)
+                .build());
+
+        // when - then
+        mockMvc.perform(get("/v1/auth/github/callback")
+                        .queryParam("code", "github-code")
+                        .queryParam("state", "valid-state"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-token:1:USER:jinriro"));
     }
 
     @Test
@@ -117,11 +211,15 @@ class GithubOAuthControllerTest {
     }
 
     private MockMvc mockMvc(OAuthLoginAttemptStore store) {
-        OAuthLoginUserService loginUserService = mock(OAuthLoginUserService.class);
-        when(loginUserService.findOrCreate(any(SocialLoginUser.class))).thenReturn(User.builder()
+        return mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
                 .build());
+    }
+
+    private MockMvc mockMvc(OAuthLoginAttemptStore store, User loginUser) {
+        OAuthLoginUserService loginUserService = mock(OAuthLoginUserService.class);
+        when(loginUserService.findOrCreate(any(SocialLoginUser.class))).thenReturn(loginUser);
 
         GithubOAuthProperties properties = GithubOAuthProperties.of(
                 "github-client-id",
@@ -140,12 +238,34 @@ class GithubOAuthControllerTest {
                         List.of(new StubOAuthAccessTokenClient()),
                         List.of(new StubOAuthUserClient()),
                         loginUserService
-                )
+                ),
+                refreshTokenIssuer(),
+                new RefreshTokenCookieFactory(RefreshTokenProperties.of(
+                        Duration.ofDays(14),
+                        "refresh_token",
+                        "/v1/auth",
+                        false,
+                        "Lax"
+                )),
+                new OnboardingTokenService(new FixedOnboardingTokenProvider()),
+                new AccessTokenService(new FixedAccessTokenProvider())
         );
 
         return MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    private RefreshTokenIssuer refreshTokenIssuer() {
+        RefreshSessionRepository refreshSessionRepository = mock(RefreshSessionRepository.class);
+        when(refreshSessionRepository.save(any(RefreshSession.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        return new RefreshTokenIssuer(
+                new FixedRefreshTokenGenerator(),
+                new FixedRefreshTokenHasher(),
+                refreshSessionRepository,
+                RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax")
+        );
     }
 
     private static class InMemoryOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
@@ -194,6 +314,54 @@ class GithubOAuthControllerTest {
                     "1",
                     "octocat",
                     "https://github.com/images/error/octocat_happy.gif"
+            );
+        }
+    }
+
+    private static class FixedRefreshTokenGenerator implements RefreshTokenGenerator {
+
+        @Override
+        public RefreshToken generate() {
+            return RefreshToken.of("raw-refresh-token");
+        }
+    }
+
+    private static class FixedRefreshTokenHasher implements RefreshTokenHasher {
+
+        @Override
+        public String hash(RefreshToken refreshToken) {
+            return "hashed-refresh-token";
+        }
+    }
+
+    private static class FixedOnboardingTokenProvider implements OnboardingTokenProvider {
+
+        @Override
+        public OnboardingToken issue(Long userId) {
+            return OnboardingToken.of("onboarding-token:%d".formatted(userId));
+        }
+
+        @Override
+        public OnboardingTokenClaims parse(String onboardingToken) {
+            throw new UnsupportedOperationException("Not used in this test");
+        }
+    }
+
+    private static class FixedAccessTokenProvider implements AccessTokenProvider {
+
+        @Override
+        public AccessToken issue(Long userId, GlobalRole role, String slug) {
+            return AccessToken.of("access-token:%d:%s:%s".formatted(userId, role, slug));
+        }
+
+        @Override
+        public AccessTokenClaims parse(String accessToken) {
+            return AccessTokenClaims.of(
+                    1L,
+                    GlobalRole.USER,
+                    "jinriro",
+                    Instant.parse("2026-08-13T00:00:00Z"),
+                    Instant.parse("2026-08-13T00:15:00Z")
             );
         }
     }

@@ -1,6 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.jwt;
 
-import kr.rilog.domain.auth.application.port.AccessTokenProvider;
+import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.config.AccessTokenProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

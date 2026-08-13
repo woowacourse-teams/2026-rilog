@@ -1,6 +1,6 @@
 package kr.rilog.domain.auth.context;
 
-import kr.rilog.domain.auth.application.AccessTokenClaims;
+import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.GlobalRole;
 
 public record AuthenticatedUser(
