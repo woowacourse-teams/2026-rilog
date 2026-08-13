@@ -9,9 +9,9 @@ import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,30 +22,29 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping("/blogs/{blogId}/posts")
+    @ResponseStatus(HttpStatus.CREATED)
     @AuthGuard
-    public ResponseEntity<PostPublishResponse> publish(
+    public ApiResponse<PostPublishResponse> publish(
             @PathVariable Long blogId,
             @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
     ) {
         PostPublishResult result = postService.publish(request.toCommand(), blogId, requesterId);
         PostPublishResponse data = PostPublishResponse.from(result);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(data);
+        return ApiResponse.response(HttpStatus.CREATED, "게시글이 발행되었습니다.", data);
     }
 
     @GetMapping("/posts/{postId}")
     @AuthGuard
-    public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long postId, @LoginUserId Long requesterId) {
+    public ApiResponse<PostDetailResponse> getPost(@PathVariable Long postId, @LoginUserId Long requesterId) {
         PostDetailResponse data = postService.readPost(postId, requesterId);
-        return ResponseEntity.ok(data);
+        return ApiResponse.response(HttpStatus.OK, "게시글 상세 조회에 성공했습니다.", data);
     }
 
     @GetMapping("/posts/count")
-    public ResponseEntity<TotalPostsCountResponse> getPostsCount() {
+    public ApiResponse<TotalPostsCountResponse> getPostsCount() {
         TotalPostsCountResponse data = postService.readPostsCount();
-        return ResponseEntity.ok(data);
+        return ApiResponse.response(HttpStatus.OK, "전체 게시글 수 조회에 성공했습니다.", data);
     }
 
 }
