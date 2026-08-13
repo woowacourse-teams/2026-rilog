@@ -1,6 +1,7 @@
 package kr.rilog.domain.blog.repository;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,5 +19,7 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
               AND blog.blogType = kr.rilog.domain.blog.entity.enums.BlogType.RILOG
             """)
     Optional<Blog> findRilogByOwnerId(@Param("ownerId") Long ownerId);
+
+    Optional<Blog> findBySlugAndBlogType(String slug, BlogType blogType);
 
 }
