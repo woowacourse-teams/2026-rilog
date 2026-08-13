@@ -1,7 +1,6 @@
 package kr.rilog.domain.post.controller;
 
 import jakarta.validation.Valid;
-import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
@@ -22,7 +21,6 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping("/blogs/{blogId}/posts")
-    @AuthGuard
     public ResponseEntity<PostPublishResponse> publish(
             @PathVariable Long blogId,
             @LoginUserId Long requesterId,
@@ -36,7 +34,6 @@ public class PostController {
     }
 
     @GetMapping("/posts/{postId}")
-    @AuthGuard
     public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long postId, @LoginUserId Long requesterId) {
         PostDetailResponse data = postService.readPost(postId, requesterId);
         return ResponseEntity.ok(data);
