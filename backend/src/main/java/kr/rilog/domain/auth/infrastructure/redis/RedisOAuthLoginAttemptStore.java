@@ -1,7 +1,7 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
-import kr.rilog.domain.auth.application.SocialLoginProvider;
-import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
+import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 

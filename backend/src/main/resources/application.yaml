@@ -27,3 +27,12 @@ auth:
   access-token:
     secret: ${ACCESS_TOKEN_SECRET:local-development-access-token-secret-change-me}
     expiration: ${ACCESS_TOKEN_EXPIRATION:15m}
+  onboarding-token:
+    secret: ${ONBOARDING_TOKEN_SECRET:local-development-onboarding-token-secret-change-me}
+    expiration: ${ONBOARDING_TOKEN_EXPIRATION:10m}
+  refresh-token:
+    expiration: ${REFRESH_TOKEN_EXPIRATION:14d}
+    cookie-name: refresh_token
+    cookie-path: /v1/auth
+    cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
+    cookie-same-site: Lax
