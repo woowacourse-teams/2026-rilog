@@ -11,6 +11,7 @@ import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.context.AuthenticatedUser;
 import kr.rilog.domain.auth.context.AuthenticationContext;
 import kr.rilog.domain.auth.exception.AuthException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -24,15 +25,12 @@ import static kr.rilog.domain.auth.exception.AuthErrorInformation.AUTHENTICATION
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.INVALID_AUTHORIZATION_HEADER;
 
 @Component
+@RequiredArgsConstructor
 public class BearerAuthenticationInterceptor implements HandlerInterceptor {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AccessTokenService accessTokenService;
-
-    public BearerAuthenticationInterceptor(AccessTokenService accessTokenService) {
-        this.accessTokenService = accessTokenService;
-    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {

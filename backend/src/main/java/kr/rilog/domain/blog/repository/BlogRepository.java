@@ -23,6 +23,8 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
 
     Optional<Blog> findBySlugAndBlogType(String slug, BlogType blogType);
 
+    boolean existsBySlug(String slug);
+
     @Query("""
             SELECT blogMember.blog
             FROM BlogMember blogMember

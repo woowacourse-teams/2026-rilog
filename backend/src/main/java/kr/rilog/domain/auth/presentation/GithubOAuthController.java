@@ -12,6 +12,7 @@ import kr.rilog.domain.auth.application.oauth.StartOAuthLogin;
 import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -26,6 +27,7 @@ import java.net.URI;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.OAUTH_REQUEST_FAILED;
 
 @RestController
+@RequiredArgsConstructor
 public class GithubOAuthController {
 
     private final StartOAuthLogin startOAuthLogin;
@@ -34,22 +36,6 @@ public class GithubOAuthController {
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
     private final OnboardingTokenService onboardingTokenService;
     private final AccessTokenService accessTokenService;
-
-    public GithubOAuthController(
-            StartOAuthLogin startOAuthLogin,
-            CompleteOAuthLogin completeOAuthLogin,
-            RefreshTokenIssuer refreshTokenIssuer,
-            RefreshTokenCookieFactory refreshTokenCookieFactory,
-            OnboardingTokenService onboardingTokenService,
-            AccessTokenService accessTokenService
-    ) {
-        this.startOAuthLogin = startOAuthLogin;
-        this.completeOAuthLogin = completeOAuthLogin;
-        this.refreshTokenIssuer = refreshTokenIssuer;
-        this.refreshTokenCookieFactory = refreshTokenCookieFactory;
-        this.onboardingTokenService = onboardingTokenService;
-        this.accessTokenService = accessTokenService;
-    }
 
     @GetMapping("/v1/auth/github")
     public ResponseEntity<Void> start() {

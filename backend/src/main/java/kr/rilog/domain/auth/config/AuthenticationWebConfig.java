@@ -3,6 +3,7 @@ package kr.rilog.domain.auth.config;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.LoginUserSlugArgumentResolver;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -11,21 +12,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class AuthenticationWebConfig implements WebMvcConfigurer {
 
     private final BearerAuthenticationInterceptor bearerAuthenticationInterceptor;
     private final LoginUserIdArgumentResolver loginUserIdArgumentResolver;
     private final LoginUserSlugArgumentResolver loginUserSlugArgumentResolver;
-
-    public AuthenticationWebConfig(
-            BearerAuthenticationInterceptor bearerAuthenticationInterceptor,
-            LoginUserIdArgumentResolver loginUserIdArgumentResolver,
-            LoginUserSlugArgumentResolver loginUserSlugArgumentResolver
-    ) {
-        this.bearerAuthenticationInterceptor = bearerAuthenticationInterceptor;
-        this.loginUserIdArgumentResolver = loginUserIdArgumentResolver;
-        this.loginUserSlugArgumentResolver = loginUserSlugArgumentResolver;
-    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
