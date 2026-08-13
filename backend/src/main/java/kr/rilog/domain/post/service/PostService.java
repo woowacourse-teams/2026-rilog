@@ -3,7 +3,10 @@ package kr.rilog.domain.post.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.PostStatus;
+import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -19,6 +22,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUN
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PostService {
 
@@ -38,6 +42,12 @@ public class PostService {
         // TODO content에 있는 이미지 파싱하여, S3에 tag 변경...! 이건 그냥 주석으로 유지 다음에 구현..!
         Post published = postRepository.save(post);
         return PostPublishResult.of(published, publishingBlog);
+    }
+
+
+    public TotalPostsCountResponse readPostsCount() {
+        long count = postRepository.countByStatusAndVisibility(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
+        return new TotalPostsCountResponse(count);
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {
