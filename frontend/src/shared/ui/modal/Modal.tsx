@@ -2,11 +2,42 @@
 
 import { useId } from 'react';
 
-import type { ModalPadding, ModalProps, ModalScrollMode, ModalSize } from './modal.types';
+import type { ModalCancelAction, ModalPadding, ModalPrimaryAction, ModalScrollMode, ModalSize } from './modal.types';
+import type { ReactNode, RefObject } from 'react';
 
 import Button from '@/shared/ui/button/Button';
 
 import BaseModal from './BaseModal';
+
+interface ModalCommonProps {
+	open: boolean;
+	title: ReactNode;
+	description?: ReactNode;
+	children?: ReactNode;
+	onClose: () => void;
+	size?: ModalSize;
+	padding?: ModalPadding;
+	scrollMode?: ModalScrollMode;
+	showCloseButton?: boolean;
+	closeButtonLabel?: string;
+	closeOnBackdrop?: boolean;
+	closeOnEscape?: boolean;
+	initialFocusRef?: RefObject<HTMLElement | null>;
+}
+
+type ModalActions =
+	| {
+			footer?: never;
+			cancelAction?: ModalCancelAction;
+			primaryAction?: ModalPrimaryAction;
+	  }
+	| {
+			footer: ReactNode;
+			cancelAction?: never;
+			primaryAction?: never;
+	  };
+
+type ModalProps = ModalCommonProps & ModalActions;
 
 const SIZE_CLASS_NAMES: Record<ModalSize, string> = {
 	sm: 'max-w-modal-sm',

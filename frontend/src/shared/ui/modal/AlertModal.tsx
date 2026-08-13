@@ -2,12 +2,21 @@
 
 import { useId, useRef } from 'react';
 
-import type { AlertModalProps } from './modal.types';
+import type { ReactNode } from 'react';
 
 import Button from '@/shared/ui/button/Button';
 
 import BaseModal from './BaseModal';
 import { COMPACT_MODAL_CLASS_NAME, COMPACT_MODAL_CONTENT_CLASS_NAME } from './modal.styles';
+
+interface AlertModalProps {
+	open: boolean;
+	title: ReactNode;
+	description?: ReactNode;
+	actionLabel?: string;
+	onAction: () => void;
+	onClose: () => void;
+}
 
 export default function AlertModal({
 	open,
