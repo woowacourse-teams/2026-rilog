@@ -22,3 +22,8 @@ github:
     user-uri: https://api.github.com/user
     connect-timeout: 3s
     read-timeout: 3s
+
+auth:
+  access-token:
+    secret: ${ACCESS_TOKEN_SECRET:local-development-access-token-secret-change-me}
+    expiration: ${ACCESS_TOKEN_EXPIRATION:15m}
