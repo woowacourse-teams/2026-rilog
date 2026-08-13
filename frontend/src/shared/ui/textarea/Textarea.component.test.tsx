@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createRef } from 'react';
+import { createRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import Textarea from './Textarea';
@@ -24,8 +24,23 @@ describe('Textarea', () => {
 	it('maxLength를 기준으로 현재 글자 수를 표시하고 입력을 제한한다', async () => {
 		const user = userEvent.setup();
 		const handleChange = vi.fn();
+		function ControlledTextarea() {
+			const [value, setValue] = useState('');
 
-		render(<Textarea aria-label="소개" maxLength={5} onChange={handleChange} />);
+			return (
+				<Textarea
+					aria-label="소개"
+					maxLength={5}
+					value={value}
+					onChange={(event) => {
+						setValue(event.currentTarget.value);
+						handleChange(event);
+					}}
+				/>
+			);
+		}
+
+		render(<ControlledTextarea />);
 
 		const textarea = screen.getByRole('textbox', { name: '소개' });
 		expect(screen.getByText('0 / 5')).toBeVisible();
