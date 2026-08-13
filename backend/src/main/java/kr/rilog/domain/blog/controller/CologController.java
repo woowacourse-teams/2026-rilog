@@ -5,9 +5,12 @@ import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.CologApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
+import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
+import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
+import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,9 +23,9 @@ public class CologController implements CologApiSpec {
 
     private final CologService cologService;
 
+    @AuthGuard
     @PostMapping("/cologs")
     @ResponseStatus(HttpStatus.CREATED)
-    @AuthGuard
     public ApiResponse<CologCreateResponse> create(
             @LoginUserId Long requesterId,
             @Valid @RequestBody CologCreateRequest request
@@ -31,4 +34,18 @@ public class CologController implements CologApiSpec {
         CologCreateResponse data = CologCreateResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "팀 블로그가 생성되었습니다.", data);
     }
+
+    @AuthGuard
+    @PostMapping("/cologs/{cologId}/members")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<CologMemberInviteResponse> inviteMember(
+            @LoginUserId Long requesterId,
+            @PathVariable("cologId") Long cologId,
+            @Valid @RequestBody CologMemberInviteRequest request
+    ) {
+        CologMemberInviteResult result = cologService.inviteMember(requesterId, cologId, request.toCommand());
+        CologMemberInviteResponse data = CologMemberInviteResponse.from(result);
+        return ApiResponse.response(HttpStatus.CREATED, "팀 멤버가 초대되었습니다.", data);
+    }
+
 }

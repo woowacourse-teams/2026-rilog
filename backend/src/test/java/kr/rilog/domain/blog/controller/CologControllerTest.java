@@ -1,9 +1,12 @@
 package kr.rilog.domain.blog.controller;
 
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
+import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -64,6 +67,37 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.slug").value("rilog-team"));
 
         verify(cologService).create(1L, command);
+    }
+
+    @Test
+    @DisplayName("POST /v1/cologs/{cologId}/members는 로그인 사용자의 팀 멤버 초대를 처리한다")
+    void inviteMemberInvitesCologMemberForLoginUser() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        CologMemberInviteCommand command = new CologMemberInviteCommand(10L, BlogPermission.MEMBER, "Backend");
+        when(cologService.inviteMember(1L, 2L, command))
+                .thenReturn(new CologMemberInviteResult(3L, 10L, BlogPermission.MEMBER, "Backend"));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+                .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(1L))
+                .build();
+
+        // when - then
+        mockMvc.perform(post("/v1/cologs/{cologId}/members", 2L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userId": 10,
+                                  "permission": "MEMBER",
+                                  "blogRole": "Backend"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").value(3L))
+                .andExpect(jsonPath("$.data.userId").value(10L))
+                .andExpect(jsonPath("$.data.permission").value("MEMBER"))
+                .andExpect(jsonPath("$.data.blogRole").value("Backend"));
+
+        verify(cologService).inviteMember(1L, 2L, command);
     }
 
     private record FixedLoginUserIdArgumentResolver(Long userId) implements HandlerMethodArgumentResolver {

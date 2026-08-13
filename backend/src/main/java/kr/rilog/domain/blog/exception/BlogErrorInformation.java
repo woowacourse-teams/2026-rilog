@@ -11,6 +11,9 @@ public enum BlogErrorInformation implements ErrorInformation {
 
     BLOG_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 블로그를 찾을 수 없습니다."),
     BLOG_SLUG_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 팀 slug입니다."),
+    BLOG_MEMBER_INVITE_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 멤버 초대 권한이 없습니다."),
+    BLOG_MEMBER_PERMISSION_INVALID(HttpStatus.BAD_REQUEST, "초대할 수 없는 팀 권한입니다."),
+    BLOG_MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 팀에 참여 중인 사용자입니다."),
     RILOG_NOT_FOUND(HttpStatus.NOT_FOUND, "작성자의 개인 블로그를 찾을 수 없습니다."),
     RILOG_POST_PUBLISH_FORBIDDEN(HttpStatus.FORBIDDEN, "본인의 개인 블로그에만 게시글을 발행할 수 있습니다."),
     ;
@@ -22,4 +25,5 @@ public enum BlogErrorInformation implements ErrorInformation {
     public String getErrorCode() {
         return this.name();
     }
+
 }
