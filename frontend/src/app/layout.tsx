@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import AuthenticatedQueryCacheSubscriber from '@/features/auth/session-expiration/AuthenticatedQueryCacheSubscriber';
 import QueryProvider from '@/shared/query/QueryProvider';
+import Footer from '@/widgets/footer/Footer';
 
 import './globals.css';
 
@@ -14,11 +15,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
 	return (
 		<html lang="ko">
-			<body>
+			<body className="flex min-h-dvh flex-col">
 				<QueryProvider>
 					<AuthenticatedQueryCacheSubscriber />
-					{children}
+					<div className="flex flex-1 flex-col">{children}</div>
 				</QueryProvider>
+				<Footer />
 			</body>
 		</html>
 	);
