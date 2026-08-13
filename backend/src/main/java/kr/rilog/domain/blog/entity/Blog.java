@@ -57,6 +57,25 @@ public class Blog extends BaseEntity {
     @Column(length = 512)
     private String githubUrl;
 
+    public static Blog createColog(
+            User owner,
+            String name,
+            String slug,
+            String introduction,
+            String coverImageUrl,
+            String serviceUrl
+    ) {
+        return Blog.builder()
+                .owner(owner)
+                .name(name)
+                .slug(slug)
+                .introduction(introduction)
+                .coverImageUrl(coverImageUrl)
+                .serviceUrl(serviceUrl)
+                .blogType(BlogType.COLOG)
+                .build();
+    }
+
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;
     }

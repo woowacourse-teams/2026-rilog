@@ -44,4 +44,14 @@ public class BlogMember extends BaseEntity {
 
     private LocalDateTime joinedAt;
 
+    public static BlogMember createOwner(Blog blog, User user, LocalDateTime joinedAt) {
+        return BlogMember.builder()
+                .blog(blog)
+                .user(user)
+                .permission(BlogPermission.OWNER)
+                .status(BlogMemberStatus.ACTIVE)
+                .joinedAt(joinedAt)
+                .build();
+    }
+
 }
