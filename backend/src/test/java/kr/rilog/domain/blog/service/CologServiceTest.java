@@ -13,6 +13,7 @@ import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.blog.service.dto.result.CologProfileResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -198,6 +199,50 @@ class CologServiceTest {
 
         // when - then
         assertThatThrownBy(() -> cologService.getDetail("unknown-team"))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("팀 slug로 팀 프로필 정보를 조회한다")
+    void getProfileFindsCologProfileBySlug() {
+        // given
+        User owner = createCompletedOwner();
+        Blog colog = createDetailedColog(owner);
+        when(blogRepository.findBySlugAndBlogType("rilog-team", BlogType.COLOG)).thenReturn(Optional.of(colog));
+
+        // when
+        CologProfileResult result = cologService.getProfile("rilog-team");
+
+        // then
+        assertThat(result)
+                .extracting(
+                        CologProfileResult::id,
+                        CologProfileResult::name,
+                        CologProfileResult::slug,
+                        CologProfileResult::introduction,
+                        CologProfileResult::logoUrl,
+                        CologProfileResult::coverImageUrl
+                )
+                .containsExactly(
+                        COLOG_ID,
+                        "리로그 팀",
+                        "rilog-team",
+                        "함께 쓰는 기술 블로그",
+                        "https://example.com/logo.png",
+                        "https://example.com/cover.png"
+                );
+    }
+
+    @Test
+    @DisplayName("팀 slug에 해당하는 COLOG가 없으면 팀 프로필 조회를 거부한다")
+    void getProfileRejectsMissingColog() {
+        // given
+        when(blogRepository.findBySlugAndBlogType("unknown-team", BlogType.COLOG)).thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> cologService.getProfile("unknown-team"))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);

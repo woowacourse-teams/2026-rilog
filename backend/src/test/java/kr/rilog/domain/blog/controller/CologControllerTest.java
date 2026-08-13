@@ -8,6 +8,7 @@ import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.blog.service.dto.result.CologProfileResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -71,6 +72,39 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.user.profileImageUrl").value("https://example.com/profile.png"));
 
         verify(cologService).getDetail("rilog-team");
+    }
+
+    @Test
+    @DisplayName("GET /v1/cologs/{slug}/profile은 팀 프로필 정보를 조회한다")
+    void getProfileReturnsCologProfile() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        when(cologService.getProfile("rilog-team"))
+                .thenReturn(new CologProfileResult(
+                        2L,
+                        "리로그 팀",
+                        "rilog-team",
+                        "함께 쓰는 기술 블로그",
+                        "https://example.com/logo.png",
+                        "https://example.com/cover.png"
+                ));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+                .build();
+
+        // when - then
+        mockMvc.perform(get("/v1/cologs/{slug}/profile", "rilog-team"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(2L))
+                .andExpect(jsonPath("$.data.name").value("리로그 팀"))
+                .andExpect(jsonPath("$.data.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.introduction").value("함께 쓰는 기술 블로그"))
+                .andExpect(jsonPath("$.data.logoUrl").value("https://example.com/logo.png"))
+                .andExpect(jsonPath("$.data.coverImageUrl").value("https://example.com/cover.png"))
+                .andExpect(jsonPath("$.data.serviceUrl").doesNotExist())
+                .andExpect(jsonPath("$.data.githubUrl").doesNotExist())
+                .andExpect(jsonPath("$.data.user").doesNotExist());
+
+        verify(cologService).getProfile("rilog-team");
     }
 
     @Test
