@@ -9,7 +9,6 @@ public record PostDetail(
         JsonNode content,
         Category category,
         PostVisibility visibility,
-        String thumbnailUrl,
-        String logoUrl
+        String thumbnailUrl
 ) {
 }

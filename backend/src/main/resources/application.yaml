@@ -1,6 +1,11 @@
 spring:
   application:
     name: backend
+  jpa:
+    properties:
+      hibernate:
+        type:
+          json_format_mapper: jackson3
   data:
     redis:
       host: ${REDIS_HOST:localhost}
