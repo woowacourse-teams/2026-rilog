@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -108,6 +109,25 @@ public class GlobalExceptionHandler {
         log.error(DATA_INTEGRITY_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, e.getMessage()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorDetail> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.MISSING_REQUEST_PARAMETER;
+
+        List<InvalidParam> invalidParams = List.of(
+                new InvalidParam(
+                        e.getParameterName(),
+                        "필수 요청 파라미터가 누락되었습니다."
+                )
+        );
+
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+        return ResponseEntity
+                .status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation, invalidParams));
     }
 
     @ExceptionHandler(Exception.class)
