@@ -11,10 +11,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class StartOAuthLoginTest {
 
@@ -36,17 +33,16 @@ class StartOAuthLoginTest {
                 .build()
                 .getQueryParams();
 
-        assertEquals("https", redirectUri.getScheme());
-        assertEquals("github.com", redirectUri.getHost());
-        assertEquals("/login/oauth/authorize", redirectUri.getPath());
-        assertEquals("github-client-id", queryParams.getFirst("client_id"));
-        assertEquals("http://localhost:8080/v1/auth/github/callback", queryParams.getFirst("redirect_uri"));
-        assertEquals("read:user,user:email", queryParams.getFirst("scope"));
-        assertNotNull(queryParams.getFirst("state"));
-        assertFalse(queryParams.getFirst("state").isBlank());
-        assertEquals(SocialLoginProvider.GITHUB, store.savedProvider);
-        assertEquals(queryParams.getFirst("state"), store.savedState);
-        assertEquals(Duration.ofMinutes(5), store.savedTtl);
+        assertThat(redirectUri.getScheme()).isEqualTo("https");
+        assertThat(redirectUri.getHost()).isEqualTo("github.com");
+        assertThat(redirectUri.getPath()).isEqualTo("/login/oauth/authorize");
+        assertThat(queryParams.getFirst("client_id")).isEqualTo("github-client-id");
+        assertThat(queryParams.getFirst("redirect_uri")).isEqualTo("http://localhost:8080/v1/auth/github/callback");
+        assertThat(queryParams.getFirst("scope")).isEqualTo("read:user,user:email");
+        assertThat(queryParams.getFirst("state")).isNotBlank();
+        assertThat(store.savedProvider).isEqualTo(SocialLoginProvider.GITHUB);
+        assertThat(store.savedState).isEqualTo(queryParams.getFirst("state"));
+        assertThat(store.savedTtl).isEqualTo(Duration.ofMinutes(5));
     }
 
     @Test
@@ -68,9 +64,10 @@ class StartOAuthLoginTest {
                 .getQueryParams()
                 .getFirst("state");
 
-        assertNotNull(state);
-        assertTrue(state.length() >= 43);
-        assertTrue(state.matches("[A-Za-z0-9_-]+"));
+        assertThat(state)
+                .isNotNull()
+                .hasSizeGreaterThanOrEqualTo(43)
+                .matches("[A-Za-z0-9_-]+");
     }
 
     private static class RecordingOAuthLoginAttemptStore implements OAuthLoginAttemptStore {

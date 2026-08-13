@@ -1,18 +1,14 @@
 package kr.rilog.domain.user.entity;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import jakarta.persistence.Column;
 import kr.rilog.domain.user.exception.UserErrorInformation;
-import kr.rilog.domain.user.exception.UserException;
-import java.lang.reflect.Field;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserTest {
 
@@ -25,7 +21,7 @@ class UserTest {
                 .build();
 
         // when - then
-        assertEquals(OnboardingStatus.PENDING, user.getOnboardingStatus());
+        assertThat(user.getOnboardingStatus()).isEqualTo(OnboardingStatus.PENDING);
     }
 
     @Test
@@ -36,7 +32,7 @@ class UserTest {
         Column column = slug.getAnnotation(Column.class);
 
         // when - then
-        assertTrue(column.updatable());
+        assertThat(column.updatable()).isTrue();
     }
 
     @Test
@@ -58,16 +54,26 @@ class UserTest {
         );
 
         // then
-        assertAll(
-                () -> assertEquals("러로", user.getNickname()),
-                () -> assertEquals("jinriro", user.getSlug()),
-                () -> assertEquals("안녕하세요.", user.getIntroduction()),
-                () -> assertEquals("www.example.com", user.getProfileImageUrl()),
-                () -> assertEquals("www.githubExample.com", user.getGithubUrl()),
-                () -> assertEquals("riro@gmail.com", user.getEmail()),
-                () -> assertEquals(OnboardingStatus.COMPLETED, user.getOnboardingStatus()),
-                () -> assertNotNull(user.getOnboardingCompletedAt())
-        );
+        assertThat(user)
+                .extracting(
+                        User::getNickname,
+                        User::getSlug,
+                        User::getIntroduction,
+                        User::getProfileImageUrl,
+                        User::getGithubUrl,
+                        User::getEmail,
+                        User::getOnboardingStatus
+                )
+                .containsExactly(
+                        "러로",
+                        "jinriro",
+                        "안녕하세요.",
+                        "www.example.com",
+                        "www.githubExample.com",
+                        "riro@gmail.com",
+                        OnboardingStatus.COMPLETED
+                );
+        assertThat(user.getOnboardingCompletedAt()).isNotNull();
     }
 
     @Test
@@ -86,23 +92,17 @@ class UserTest {
                 "riro@gmail.com"
         );
 
-        // when
-        UserException exception = assertThrows(
-                UserException.class,
-                () -> user.completeOnboarding(
+        // when - then
+        assertThatThrownBy(() -> user.completeOnboarding(
                         "러로2",
                         "changed-slug",
                         "변경 소개",
                         "www.changed.com",
                         "www.changedGithub.com",
                         "changed@gmail.com"
-                )
-        );
-
-        // then
-        assertAll(
-                () -> assertEquals(UserErrorInformation.ONBOARDING_ALREADY_COMPLETED, exception.getErrorInformation()),
-                () -> assertEquals("jinriro", user.getSlug())
-        );
+                ))
+                .extracting("errorInformation")
+                .isEqualTo(UserErrorInformation.ONBOARDING_ALREADY_COMPLETED);
+        assertThat(user.getSlug()).isEqualTo("jinriro");
     }
 }

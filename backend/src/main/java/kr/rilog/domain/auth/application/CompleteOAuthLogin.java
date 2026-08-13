@@ -4,6 +4,7 @@ import kr.rilog.domain.auth.application.port.OAuthAccessTokenClient;
 import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.application.port.OAuthUserClient;
 import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.domain.user.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -22,13 +23,16 @@ public class CompleteOAuthLogin {
     private final OAuthLoginAttemptStore loginAttemptStore;
     private final Map<SocialLoginProvider, OAuthAccessTokenClient> accessTokenClients;
     private final Map<SocialLoginProvider, OAuthUserClient> userClients;
+    private final OAuthLoginUserService loginUserService;
 
     public CompleteOAuthLogin(
             OAuthLoginAttemptStore loginAttemptStore,
             List<OAuthAccessTokenClient> accessTokenClients,
-            List<OAuthUserClient> userClients
+            List<OAuthUserClient> userClients,
+            OAuthLoginUserService loginUserService
     ) {
         this.loginAttemptStore = loginAttemptStore;
+        this.loginUserService = loginUserService;
         this.accessTokenClients = accessTokenClients.stream()
                 .collect(Collectors.toUnmodifiableMap(
                         OAuthAccessTokenClient::provider,
@@ -41,7 +45,7 @@ public class CompleteOAuthLogin {
                 ));
     }
 
-    public SocialLoginUser complete(SocialLoginProvider provider, String code, String state) {
+    public User complete(SocialLoginProvider provider, String code, String state) {
         if (!StringUtils.hasText(code) || !StringUtils.hasText(state)) {
             throw new AuthException(OAUTH_CALLBACK_PARAMETER_MISSING);
         }
@@ -55,7 +59,8 @@ public class CompleteOAuthLogin {
         }
 
         OAuthAccessToken accessToken = accessTokenClient.exchange(code);
-        return userClient.getUser(accessToken);
+        SocialLoginUser socialLoginUser = userClient.getUser(accessToken);
+        return loginUserService.findOrCreate(socialLoginUser);
     }
 
     private OAuthAccessTokenClient accessTokenClient(SocialLoginProvider provider) {
