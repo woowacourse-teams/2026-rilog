@@ -7,6 +7,7 @@ import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationResult
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotator;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.domain.auth.exception.AuthException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -17,21 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.REFRESH_TOKEN_MISSING;
 
 @RestController
+@RequiredArgsConstructor
 public class AuthTokenController {
 
     private final RefreshTokenRotator refreshTokenRotator;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
     private final RefreshTokenProperties properties;
-
-    public AuthTokenController(
-            RefreshTokenRotator refreshTokenRotator,
-            RefreshTokenCookieFactory refreshTokenCookieFactory,
-            RefreshTokenProperties properties
-    ) {
-        this.refreshTokenRotator = refreshTokenRotator;
-        this.refreshTokenCookieFactory = refreshTokenCookieFactory;
-        this.properties = properties;
-    }
 
     @PostMapping("/v1/auth/token/refresh")
     public ResponseEntity<Void> refresh(HttpServletRequest request) {

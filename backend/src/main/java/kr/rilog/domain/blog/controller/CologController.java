@@ -20,7 +20,6 @@ public class CologController implements CologApiSpec {
 
     private final CologService cologService;
 
-    @Override
     @PostMapping("/cologs")
     @ResponseStatus(HttpStatus.CREATED)
     @AuthGuard

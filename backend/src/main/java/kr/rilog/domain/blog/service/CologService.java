@@ -10,6 +10,7 @@ import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,20 +23,13 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class CologService {
 
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
-    private final Clock clock;
-
-    public CologService(
-            BlogRepository blogRepository,
-            BlogMemberRepository blogMemberRepository,
-            UserRepository userRepository
-    ) {
-        this(blogRepository, blogMemberRepository, userRepository, Clock.systemUTC());
-    }
+    private Clock clock = Clock.systemUTC();
 
     CologService(
             BlogRepository blogRepository,
