@@ -8,6 +8,7 @@ interface ButtonProps extends Omit<ComponentPropsWithRef<'button'>, 'children'> 
 	variant?: ButtonVariant;
 	size?: ButtonSize;
 	isPending?: boolean;
+	fullWidth?: boolean;
 }
 
 const BASE_BUTTON_CLASS_NAME =
@@ -39,6 +40,7 @@ export default function Button({
 	size = 'md',
 	type = 'button',
 	variant = 'primary',
+	fullWidth = false,
 	'aria-busy': ariaBusy,
 	...buttonProps
 }: ButtonProps) {
@@ -47,7 +49,7 @@ export default function Button({
 			{...buttonProps}
 			ref={ref}
 			type={type}
-			className={`${BASE_BUTTON_CLASS_NAME} ${SIZE_CLASS_NAMES[size]} ${VARIANT_CLASS_NAMES[variant]} ${className ?? ''}`.trim()}
+			className={`${BASE_BUTTON_CLASS_NAME} ${SIZE_CLASS_NAMES[size]} ${VARIANT_CLASS_NAMES[variant]} ${fullWidth ? 'w-full!' : ''} ${className ?? ''}`.trim()}
 			disabled={disabled || isPending}
 			aria-busy={isPending ? true : ariaBusy}
 		>
