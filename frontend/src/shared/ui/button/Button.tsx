@@ -11,7 +11,7 @@ type ButtonProps = Omit<ComponentPropsWithRef<'button'>, 'children'> & {
 };
 
 const BASE_BUTTON_CLASS_NAME =
-	'inline-flex items-center justify-center gap-2 text-label-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-btn-disabled';
+	'inline-flex items-center justify-center gap-2 text-label-2 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-btn-disabled';
 
 const SIZE_CLASS_NAMES: Record<ButtonSize, string> = {
 	sm: 'h-btn-height-sm rounded-md px-btn-inline-sm',
