@@ -1,7 +1,6 @@
 package kr.rilog.domain.auth.context;
 
 import jakarta.servlet.http.HttpServletRequest;
-import kr.rilog.domain.auth.application.AccessTokenClaims;
 import kr.rilog.domain.auth.exception.AuthException;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.RequestAttributes;
@@ -10,24 +9,24 @@ import static kr.rilog.domain.auth.exception.AuthErrorInformation.AUTHENTICATION
 
 public final class AuthenticationContext {
 
-    private static final String ACCESS_TOKEN_CLAIMS_ATTRIBUTE = AuthenticationContext.class.getName()
-            + ".ACCESS_TOKEN_CLAIMS";
+    private static final String AUTHENTICATED_USER_ATTRIBUTE = AuthenticationContext.class.getName()
+            + ".AUTHENTICATED_USER";
 
     private AuthenticationContext() {
     }
 
-    public static void set(HttpServletRequest request, AccessTokenClaims claims) {
-        request.setAttribute(ACCESS_TOKEN_CLAIMS_ATTRIBUTE, claims);
+    public static void set(HttpServletRequest request, AuthenticatedUser authenticatedUser) {
+        request.setAttribute(AUTHENTICATED_USER_ATTRIBUTE, authenticatedUser);
     }
 
-    public static AccessTokenClaims get(NativeWebRequest webRequest) {
+    public static AuthenticatedUser get(NativeWebRequest webRequest) {
         Object attribute = webRequest.getAttribute(
-                ACCESS_TOKEN_CLAIMS_ATTRIBUTE,
+                AUTHENTICATED_USER_ATTRIBUTE,
                 RequestAttributes.SCOPE_REQUEST
         );
 
-        if (attribute instanceof AccessTokenClaims claims) {
-            return claims;
+        if (attribute instanceof AuthenticatedUser authenticatedUser) {
+            return authenticatedUser;
         }
 
         throw new AuthException(AUTHENTICATION_CONTEXT_MISSING);

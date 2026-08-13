@@ -1,5 +1,6 @@
 package kr.rilog.domain.auth.interceptor;
 
+import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.LoginUserSlug;
 import kr.rilog.domain.auth.application.AccessToken;
@@ -74,6 +75,44 @@ class BearerAuthenticationInterceptorTest {
     }
 
     @Test
+    @DisplayName("@AuthGuard가 붙은 요청은 토큰 값을 파라미터로 쓰지 않아도 인증을 검사한다")
+    void authenticatesRequestAnnotatedWithAuthGuardWithoutLoginUserParameter() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider());
+
+        // when - then
+        mockMvc.perform(get("/v1/authenticated-without-claims"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_HEADER_MISSING"));
+    }
+
+    @Test
+    @DisplayName("@LoginUserId는 @AuthGuard가 붙은 요청에서만 사용할 수 있다")
+    void rejectsLoginUserIdParameterWithoutAuthGuardAnnotation() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider());
+
+        // when - then
+        mockMvc.perform(get("/v1/misconfigured-user-id")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-access-token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("AUTHENTICATION_ANNOTATION_MISSING"));
+    }
+
+    @Test
+    @DisplayName("@LoginUserSlug는 @AuthGuard가 붙은 요청에서만 사용할 수 있다")
+    void rejectsLoginUserSlugParameterWithoutAuthGuardAnnotation() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider());
+
+        // when - then
+        mockMvc.perform(get("/v1/misconfigured-user-slug")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-access-token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("AUTHENTICATION_ANNOTATION_MISSING"));
+    }
+
+    @Test
     @DisplayName("Bearer 형식이 아닌 Authorization 헤더는 거부한다")
     void rejectsInvalidAuthorizationHeaderFormat() throws Exception {
         // given
@@ -114,9 +153,26 @@ class BearerAuthenticationInterceptorTest {
     @RestController
     private static class TestController {
 
+        @AuthGuard
         @GetMapping("/v1/protected")
         public String protectedEndpoint(@LoginUserId Long userId, @LoginUserSlug String slug) {
             return userId + ":" + slug;
+        }
+
+        @AuthGuard
+        @GetMapping("/v1/authenticated-without-claims")
+        public String authenticatedWithoutClaims() {
+            return "authenticated";
+        }
+
+        @GetMapping("/v1/misconfigured-user-id")
+        public String misconfiguredUserId(@LoginUserId Long userId) {
+            return userId.toString();
+        }
+
+        @GetMapping("/v1/misconfigured-user-slug")
+        public String misconfiguredUserSlug(@LoginUserSlug String slug) {
+            return slug;
         }
 
         @GetMapping("/v1/public")

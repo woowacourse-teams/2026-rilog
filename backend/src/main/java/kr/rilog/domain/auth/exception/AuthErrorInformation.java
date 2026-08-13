@@ -25,6 +25,7 @@ public enum AuthErrorInformation implements ErrorInformation {
     AUTHORIZATION_HEADER_MISSING(HttpStatus.UNAUTHORIZED, "Authorization 헤더가 필요합니다."),
     INVALID_AUTHORIZATION_HEADER(HttpStatus.UNAUTHORIZED, "Authorization 헤더 형식이 올바르지 않습니다."),
     AUTHENTICATION_CONTEXT_MISSING(HttpStatus.UNAUTHORIZED, "인증 사용자 정보가 없습니다."),
+    AUTHENTICATION_ANNOTATION_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "인증 사용자 주입을 위해서는 @AuthGuard 선언이 필요합니다."),
     ;
 
     private final HttpStatus httpStatus;
