@@ -11,7 +11,7 @@
 	--container-modal-xl: 60rem;
 	--container-modal-full: 80rem;
 
-	--radius-modal: var(--radius-2xl);
+	--radius-modal: var(--radius-xl);
 	--shadow-modal: 0 1.5rem 5rem rgb(3 16 42 / 0.32);
 	--color-modal-backdrop: var(--overlay-backdrop);
 }
