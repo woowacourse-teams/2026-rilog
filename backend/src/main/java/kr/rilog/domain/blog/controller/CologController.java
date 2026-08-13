@@ -9,10 +9,12 @@ import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologDetailResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
+import kr.rilog.domain.blog.controller.dto.response.CologProfileResponse;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.blog.service.dto.result.CologProfileResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,13 @@ public class CologController implements CologApiSpec {
         CologDetailResult result = cologService.getDetail(slug);
         CologDetailResponse data = CologDetailResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "팀 상세 조회에 성공했습니다.", data);
+    }
+
+    @GetMapping("/cologs/{slug}/profile")
+    public ApiResponse<CologProfileResponse> getProfile(@PathVariable("slug") String slug) {
+        CologProfileResult result = cologService.getProfile(slug);
+        CologProfileResponse data = CologProfileResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "팀 프로필 조회에 성공했습니다.", data);
     }
 
     @AuthGuard
