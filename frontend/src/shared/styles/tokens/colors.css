@@ -15,6 +15,7 @@
 	--neutral-300: #d7dee8;
 	--neutral-400: #a8b3c3;
 	--neutral-500: #94a3b8;
+	--neutral-600: #64748b;
 	--neutral-700: #3d4c63;
 
 	/* Status primitives */
@@ -43,8 +44,9 @@
 
 	--text-primary: var(--navy-900);
 	--text-secondary: var(--neutral-700);
-	--text-disabled: var(--neutral-500);
+	--text-disabled: var(--neutral-600);
 	--text-on-dark: var(--neutral-50);
+	--text-placeholder: var(--neutral-500);
 
 	--border-default: var(--neutral-300);
 	--border-strong: var(--neutral-400);

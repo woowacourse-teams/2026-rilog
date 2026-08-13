@@ -1,4 +1,5 @@
 @import './colors.css';
+@import './spacing.css';
 @import './typography.css';
 
 @theme inline {
@@ -13,6 +14,7 @@
 	--color-text-secondary: var(--text-secondary);
 	--color-text-disabled: var(--text-disabled);
 	--color-text-on-dark: var(--text-on-dark);
+	--color-text-placeholder: var(--text-placeholder);
 
 	--color-border-default: var(--border-default);
 	--color-border-strong: var(--border-strong);
