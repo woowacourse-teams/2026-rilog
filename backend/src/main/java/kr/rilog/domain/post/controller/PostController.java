@@ -3,6 +3,7 @@ package kr.rilog.domain.post.controller;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.service.PostService;
@@ -30,6 +31,12 @@ public class PostController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(data);
+    }
+
+    @GetMapping("/posts/{postId}")
+    public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long postId, @LoginUserId Long requesterId) {
+        PostDetailResponse data = postService.readPosts(postId, requesterId);
+        return ResponseEntity.ok(data);
     }
 
     @GetMapping("/posts/count")
