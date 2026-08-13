@@ -42,6 +42,15 @@ describe('FileUploader', () => {
 		expect(inputRef.current).toBe(input);
 	});
 
+	it('키보드 Tab으로 file input에 focus할 수 있다', async () => {
+		const user = userEvent.setup();
+		render(<FileUploader />);
+
+		await user.tab();
+
+		expect(screen.getByLabelText('파일 선택')).toHaveFocus();
+	});
+
 	it('pending 상태에서는 파일 선택을 막고 진행 상태를 알린다', () => {
 		render(<FileUploader isPending />);
 
