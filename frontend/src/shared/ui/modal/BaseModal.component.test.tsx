@@ -133,6 +133,43 @@ describe('BaseModal', () => {
 		expect(onDismiss).toHaveBeenCalledTimes(2);
 	});
 
+	it('dismissDisabled이면 backdrop과 Escape를 함께 차단한다', () => {
+		const onDismiss = vi.fn();
+		const { rerender } = render(
+			<BaseModal
+				open
+				accessibility={{ labelledBy: 'disabled-dismiss-title' }}
+				onDismiss={onDismiss}
+				closeOnBackdrop
+				closeOnEscape
+				dismissDisabled
+			>
+				<span id="disabled-dismiss-title">종료 차단 모달</span>
+			</BaseModal>,
+		);
+		const dialog = screen.getByRole('dialog', { name: '종료 차단 모달' });
+
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		rerender(
+			<BaseModal
+				open
+				accessibility={{ labelledBy: 'disabled-dismiss-title' }}
+				onDismiss={onDismiss}
+				closeOnBackdrop
+				closeOnEscape
+				dismissDisabled={false}
+			>
+				<span id="disabled-dismiss-title">종료 차단 모달</span>
+			</BaseModal>,
+		);
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onDismiss).toHaveBeenCalledTimes(2);
+	});
+
 	it('지정한 요소에 초기 focus를 주고 닫힌 뒤 opener에 focus를 복원한다', async () => {
 		vi.useFakeTimers();
 		const initialFocusRef = createRef<HTMLButtonElement>();

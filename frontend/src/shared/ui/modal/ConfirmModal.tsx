@@ -46,8 +46,9 @@ export default function ConfirmModal({
 				labelledBy: titleId,
 				describedBy: hasDescription ? descriptionId : undefined,
 			}}
-			closeOnBackdrop={!isPending}
-			closeOnEscape={!isPending}
+			closeOnBackdrop
+			closeOnEscape
+			dismissDisabled={isPending}
 			initialFocusRef={variant === 'danger' ? cancelButtonRef : confirmButtonRef}
 			className={COMPACT_MODAL_CLASS_NAME}
 		>

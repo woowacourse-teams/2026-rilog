@@ -125,4 +125,68 @@ describe('Modal', () => {
 		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
 		expect(onClose).toHaveBeenCalledTimes(2);
 	});
+
+	it('primary action pending 중 모든 기본 action과 dismiss를 차단하고 pending 해제 후 복원한다', async () => {
+		const user = userEvent.setup();
+		const onClose = vi.fn();
+		const onCancel = vi.fn();
+		const onPrimary = vi.fn();
+		const { rerender } = render(
+			<Modal
+				open
+				title="처리 중"
+				onClose={onClose}
+				cancelAction={{ onClick: onCancel }}
+				primaryAction={{ label: '저장', isPending: true, onClick: onPrimary }}
+			/>,
+		);
+		const dialog = screen.getByRole('dialog', { name: '처리 중' });
+
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '모달 닫기' })).toBeDisabled();
+		await user.click(screen.getByRole('button', { name: '저장' }));
+		await user.click(screen.getByRole('button', { name: '취소' }));
+		await user.click(screen.getByRole('button', { name: '모달 닫기' }));
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onPrimary).not.toHaveBeenCalled();
+		expect(onCancel).not.toHaveBeenCalled();
+		expect(onClose).not.toHaveBeenCalled();
+
+		rerender(
+			<Modal
+				open
+				title="처리 중"
+				onClose={onClose}
+				cancelAction={{ onClick: onCancel }}
+				primaryAction={{ label: '저장', isPending: false, onClick: onPrimary }}
+			/>,
+		);
+
+		expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
+		expect(screen.getByRole('button', { name: '취소' })).toBeEnabled();
+		expect(screen.getByRole('button', { name: '모달 닫기' })).toBeEnabled();
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onClose).toHaveBeenCalledTimes(2);
+	});
+
+	it('primary action disabled는 dismiss를 차단하지 않는다', () => {
+		const onClose = vi.fn();
+		render(
+			<Modal
+				open
+				title="입력 대기"
+				onClose={onClose}
+				primaryAction={{ label: '저장', disabled: true, onClick: vi.fn() }}
+			/>,
+		);
+		const dialog = screen.getByRole('dialog', { name: '입력 대기' });
+
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onClose).toHaveBeenCalledTimes(2);
+	});
 });

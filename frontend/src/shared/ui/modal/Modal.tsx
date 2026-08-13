@@ -83,6 +83,7 @@ export default function Modal({
 	const hasContent = children != null;
 	const hasFooter = footer != null || cancelAction != null || primaryAction != null;
 	const primaryVariant = primaryAction?.variant ?? 'primary';
+	const isPending = primaryAction?.isPending === true;
 
 	const handleCancelClick = () => {
 		cancelAction?.onClick?.();
@@ -99,6 +100,7 @@ export default function Modal({
 			}}
 			closeOnBackdrop={closeOnBackdrop}
 			closeOnEscape={closeOnEscape}
+			dismissDisabled={isPending}
 			initialFocusRef={initialFocusRef}
 			className={`w-modal-viewport md:w-modal-viewport-md ${SIZE_CLASS_NAMES[size]}`}
 		>
@@ -112,6 +114,7 @@ export default function Modal({
 							size="icon"
 							className="absolute top-0 right-0"
 							aria-label={closeButtonLabel}
+							disabled={isPending}
 							onClick={onClose}
 						>
 							<svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none">
@@ -142,7 +145,7 @@ export default function Modal({
 										variant="secondary"
 										size="md"
 										className="min-w-modal-action"
-										disabled={cancelAction.disabled}
+										disabled={cancelAction.disabled || isPending}
 										onClick={handleCancelClick}
 									>
 										{cancelAction.label ?? '취소'}

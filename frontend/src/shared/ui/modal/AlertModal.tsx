@@ -14,6 +14,7 @@ interface AlertModalProps {
 	title: ReactNode;
 	description?: ReactNode;
 	actionLabel?: string;
+	isPending?: boolean;
 	onAction: () => void;
 	onClose: () => void;
 }
@@ -23,6 +24,7 @@ export default function AlertModal({
 	title,
 	description,
 	actionLabel = '확인',
+	isPending = false,
 	onAction,
 	onClose,
 }: AlertModalProps) {
@@ -47,6 +49,7 @@ export default function AlertModal({
 			}}
 			closeOnBackdrop
 			closeOnEscape
+			dismissDisabled={isPending}
 			initialFocusRef={actionButtonRef}
 			className={COMPACT_MODAL_CLASS_NAME}
 		>
@@ -62,7 +65,13 @@ export default function AlertModal({
 					)}
 				</header>
 				<footer className="mt-8 flex flex-none justify-end">
-					<Button ref={actionButtonRef} size="md" className="min-w-modal-action" onClick={handleAction}>
+					<Button
+						ref={actionButtonRef}
+						size="md"
+						className="min-w-modal-action"
+						isPending={isPending}
+						onClick={handleAction}
+					>
 						{actionLabel}
 					</Button>
 				</footer>

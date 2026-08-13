@@ -12,6 +12,7 @@ interface BaseModalProps {
 	accessibility: BaseModalAccessibility;
 	closeOnBackdrop?: boolean;
 	closeOnEscape?: boolean;
+	dismissDisabled?: boolean;
 	initialFocusRef?: RefObject<HTMLElement | null>;
 	className?: string;
 }
@@ -27,6 +28,7 @@ export default function BaseModal({
 	accessibility,
 	closeOnBackdrop = true,
 	closeOnEscape = true,
+	dismissDisabled = false,
 	initialFocusRef,
 	className,
 }: BaseModalProps) {
@@ -101,14 +103,19 @@ export default function BaseModal({
 	}, [initialFocusRef, open, restoreFocus]);
 
 	const handleBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
-		if (closeOnBackdrop && event.target === event.currentTarget && event.currentTarget.dataset.state !== 'closing') {
+		if (
+			!dismissDisabled &&
+			closeOnBackdrop &&
+			event.target === event.currentTarget &&
+			event.currentTarget.dataset.state !== 'closing'
+		) {
 			onDismiss();
 		}
 	};
 
 	const handleCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
 		event.preventDefault(); //애니메이션 적용을 위해 기본 <dialog> 태그의 action 막기
-		if (closeOnEscape && event.currentTarget.dataset.state !== 'closing') {
+		if (!dismissDisabled && closeOnEscape && event.currentTarget.dataset.state !== 'closing') {
 			onDismiss();
 		}
 	};

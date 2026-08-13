@@ -56,4 +56,26 @@ describe('AlertModal', () => {
 		expect(onClose).toHaveBeenCalledOnce();
 		expect(onAction).not.toHaveBeenCalled();
 	});
+
+	it('pending 중 action과 dismiss를 차단하고 pending 해제 후 복원한다', async () => {
+		const user = userEvent.setup();
+		const onAction = vi.fn();
+		const onClose = vi.fn();
+		const { rerender } = render(<AlertModal open title="처리 중" isPending onAction={onAction} onClose={onClose} />);
+		const dialog = screen.getByRole('alertdialog', { name: '처리 중' });
+		const actionButton = screen.getByRole('button', { name: '확인' });
+
+		expect(actionButton).toBeDisabled();
+		await user.click(actionButton);
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onAction).not.toHaveBeenCalled();
+		expect(onClose).not.toHaveBeenCalled();
+
+		rerender(<AlertModal open title="처리 중" isPending={false} onAction={onAction} onClose={onClose} />);
+		expect(screen.getByRole('button', { name: '확인' })).toBeEnabled();
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onClose).toHaveBeenCalledTimes(2);
+	});
 });
