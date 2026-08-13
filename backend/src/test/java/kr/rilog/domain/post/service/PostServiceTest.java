@@ -225,8 +225,7 @@ class PostServiceTest {
                 content,
                 Category.TECH,
                 PostVisibility.PUBLIC,
-                "https://example.com/thumbnail.png",
-                "https://example.com/logo.png"
+                "https://example.com/thumbnail.png"
         );
     }
 
