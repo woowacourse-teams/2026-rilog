@@ -55,8 +55,10 @@ class BlogTest {
                 "리로그 팀",
                 "rilog-team",
                 "함께 쓰는 기술 블로그",
+                "https://example.com/logo.png",
                 "https://example.com/cover.png",
-                "https://rilog.example.com"
+                "https://rilog.example.com",
+                "https://github.com/rilog"
         );
 
         // then
@@ -66,8 +68,10 @@ class BlogTest {
                         Blog::getName,
                         Blog::getSlug,
                         Blog::getIntroduction,
+                        Blog::getLogoUrl,
                         Blog::getCoverImageUrl,
                         Blog::getServiceUrl,
+                        Blog::getGithubUrl,
                         Blog::getBlogType
                 )
                 .containsExactly(
@@ -75,8 +79,10 @@ class BlogTest {
                         "리로그 팀",
                         "rilog-team",
                         "함께 쓰는 기술 블로그",
+                        "https://example.com/logo.png",
                         "https://example.com/cover.png",
                         "https://rilog.example.com",
+                        "https://github.com/rilog",
                         BlogType.COLOG
                 );
     }

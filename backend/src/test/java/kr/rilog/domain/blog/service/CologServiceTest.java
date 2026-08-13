@@ -82,8 +82,10 @@ class CologServiceTest {
                     .name(colog.getName())
                     .slug(colog.getSlug())
                     .introduction(colog.getIntroduction())
+                    .logoUrl(colog.getLogoUrl())
                     .coverImageUrl(colog.getCoverImageUrl())
                     .serviceUrl(colog.getServiceUrl())
+                    .githubUrl(colog.getGithubUrl())
                     .blogType(colog.getBlogType())
                     .build();
         });
@@ -98,8 +100,22 @@ class CologServiceTest {
         verify(blogMemberRepository).save(memberCaptor.capture());
 
         assertThat(blogCaptor.getValue())
-                .extracting(Blog::getOwner, Blog::getSlug, Blog::getBlogType)
-                .containsExactly(owner, "rilog-team", BlogType.COLOG);
+                .extracting(
+                        Blog::getOwner,
+                        Blog::getSlug,
+                        Blog::getLogoUrl,
+                        Blog::getServiceUrl,
+                        Blog::getGithubUrl,
+                        Blog::getBlogType
+                )
+                .containsExactly(
+                        owner,
+                        "rilog-team",
+                        "https://example.com/logo.png",
+                        "https://rilog.example.com",
+                        "https://github.com/rilog",
+                        BlogType.COLOG
+                );
 
         assertThat(memberCaptor.getValue())
                 .extracting(
@@ -178,8 +194,10 @@ class CologServiceTest {
                 "리로그 팀",
                 "rilog-team",
                 "함께 쓰는 기술 블로그",
+                "https://example.com/logo.png",
                 "https://example.com/cover.png",
-                "https://rilog.example.com"
+                "https://rilog.example.com",
+                "https://github.com/rilog"
         );
     }
 }

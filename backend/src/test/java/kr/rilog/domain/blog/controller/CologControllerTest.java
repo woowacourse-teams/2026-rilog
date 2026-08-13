@@ -33,8 +33,10 @@ class CologControllerTest {
                 "리로그 팀",
                 "rilog-team",
                 "함께 쓰는 기술 블로그",
+                "https://example.com/logo.png",
                 "https://example.com/cover.png",
-                "https://rilog.example.com"
+                "https://rilog.example.com",
+                "https://github.com/rilog"
         );
         when(cologService.create(1L, command))
                 .thenReturn(new CologCreateResult(2L, "리로그 팀", "rilog-team"));
@@ -50,8 +52,10 @@ class CologControllerTest {
                                   "name": "리로그 팀",
                                   "slug": "rilog-team",
                                   "introduction": "함께 쓰는 기술 블로그",
+                                  "logoUrl": "https://example.com/logo.png",
                                   "coverImageUrl": "https://example.com/cover.png",
-                                  "serviceUrl": "https://rilog.example.com"
+                                  "serviceUrl": "https://rilog.example.com",
+                                  "githubUrl": "https://github.com/rilog"
                                 }
                                 """))
                 .andExpect(status().isCreated())

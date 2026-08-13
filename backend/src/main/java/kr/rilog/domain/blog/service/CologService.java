@@ -59,8 +59,10 @@ public class CologService {
                 command.name(),
                 command.slug(),
                 command.introduction(),
+                command.logoUrl(),
                 command.coverImageUrl(),
-                command.serviceUrl()
+                command.serviceUrl(),
+                command.githubUrl()
         );
         Blog savedColog = saveColog(colog);
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));

@@ -62,16 +62,20 @@ public class Blog extends BaseEntity {
             String name,
             String slug,
             String introduction,
+            String logoUrl,
             String coverImageUrl,
-            String serviceUrl
+            String serviceUrl,
+            String githubUrl
     ) {
         return Blog.builder()
                 .owner(owner)
                 .name(name)
                 .slug(slug)
                 .introduction(introduction)
+                .logoUrl(logoUrl)
                 .coverImageUrl(coverImageUrl)
                 .serviceUrl(serviceUrl)
+                .githubUrl(githubUrl)
                 .blogType(BlogType.COLOG)
                 .build();
     }

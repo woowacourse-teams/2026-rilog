@@ -24,17 +24,25 @@ public record CologCreateRequest(
         @Size(max = 80, message = "팀 소개는 80자 이하여야 합니다.")
         String introduction,
 
+        @Schema(description = "팀 로고 이미지 URL", example = "https://example.com/logo.png")
+        @Size(max = 512, message = "로고 이미지 URL은 512자 이하여야 합니다.")
+        String logoUrl,
+
         @Schema(description = "팀 커버 이미지 URL", example = "https://example.com/cover.png")
         @Size(max = 512, message = "커버 이미지 URL은 512자 이하여야 합니다.")
         String coverImageUrl,
 
         @Schema(description = "팀 서비스 URL", example = "https://rilog.example.com")
         @Size(max = 512, message = "서비스 URL은 512자 이하여야 합니다.")
-        String serviceUrl
+        String serviceUrl,
+
+        @Schema(description = "팀 GitHub URL", example = "https://github.com/rilog")
+        @Size(max = 512, message = "GitHub URL은 512자 이하여야 합니다.")
+        String githubUrl
 
 ) {
 
     public CologCreateCommand toCommand() {
-        return new CologCreateCommand(name, slug, introduction, coverImageUrl, serviceUrl);
+        return new CologCreateCommand(name, slug, introduction, logoUrl, coverImageUrl, serviceUrl, githubUrl);
     }
 }
