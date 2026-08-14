@@ -9,6 +9,7 @@ import Button from '@/shared/ui/button/Button';
 
 import BaseModal from './BaseModal';
 
+
 interface ModalCommonProps {
 	open: boolean;
 	title: ReactNode;
@@ -123,12 +124,15 @@ export default function Modal({
 							</svg>
 						</Button>
 					)}
-					<div className={`min-w-0 ${showCloseButton ? 'pr-12' : ''}`}>
-						<h2 id={titleId} className="text-title-2 font-semibold text-text-primary">
+					<div className={`min-w-0`}>
+						<h2
+							id={titleId}
+							className={`text-title-2 font-semibold text-text-primary ${showCloseButton ? 'pr-12' : ''}`}
+						>
 							{title}
 						</h2>
 						{hasDescription && (
-							<p id={descriptionId} className="mt-2 text-body-2 text-text-secondary">
+							<p id={descriptionId} className="mt-2 text-body-2 whitespace-pre-wrap text-text-secondary">
 								{description}
 							</p>
 						)}
