@@ -1,7 +1,6 @@
 package kr.rilog.domain.blog.service;
 
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
-import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

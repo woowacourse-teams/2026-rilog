@@ -80,6 +80,19 @@ public class Blog extends BaseEntity {
                 .build();
     }
 
+    public static Blog createRilog(User owner) {
+        return Blog.builder()
+                .owner(owner)
+                .name(owner.getNickname())
+                .slug(owner.getSlug())
+                .introduction(owner.getIntroduction())
+                .logoUrl(owner.getProfileImageUrl())
+                .email(owner.getEmail())
+                .githubUrl(owner.getGithubUrl())
+                .blogType(BlogType.RILOG)
+                .build();
+    }
+
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;
     }
