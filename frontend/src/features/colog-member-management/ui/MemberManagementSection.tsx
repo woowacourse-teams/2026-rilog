@@ -164,7 +164,7 @@ export default function MemberManagementSection({ onDirtyChange }: MemberManagem
 							<col className="w-37" />
 							<col className="w-24" />
 						</colgroup>
-						<thead className="sticky top-0 z-10 bg-surface">
+						<thead className="sticky top-0 z-10 bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
 							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
 								<th scope="col" className="pl-6 font-semibold">
 									멤버
