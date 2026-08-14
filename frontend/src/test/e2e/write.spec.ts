@@ -140,7 +140,7 @@ test.describe('글 작성', () => {
 
 		await page.goBack();
 		await confirmDialog.getByRole('button', { name: '나가기' }).click();
-		await expect(page).toHaveURL('/');
+		await expect(page).toHaveURL('/feeds');
 	});
 
 	test('같은 origin 링크 이동을 확인하고 취소 또는 계속한다', async ({ page }) => {
@@ -160,7 +160,7 @@ test.describe('글 작성', () => {
 
 		await page.getByRole('link', { name: '홈으로 이동' }).click();
 		await confirmDialog.getByRole('button', { name: '나가기' }).click();
-		await expect(page).toHaveURL('/');
+		await expect(page).toHaveURL('/feeds');
 	});
 
 	test('작성 중 reload는 브라우저 기본 경고로 보호한다', async ({ page }) => {
