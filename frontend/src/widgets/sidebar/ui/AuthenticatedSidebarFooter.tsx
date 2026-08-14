@@ -32,6 +32,7 @@ export default function AuthenticatedSidebarFooter() {
 						</span>
 					</Link>
 					<Button
+						aria-label="로그아웃"
 						size="icon"
 						variant="ghost"
 						className={`hidden! shrink-0 items-center justify-center group-focus-within:flex! group-hover:flex! ${FOCUS_CLASS_NAME}`}
