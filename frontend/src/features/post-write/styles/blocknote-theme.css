@@ -1,0 +1,68 @@
+.post-write-blocknote {
+	--radius: var(--radius-xl);
+	--card: var(--surface);
+	--card-foreground: var(--text-primary);
+	--popover: var(--surface);
+	--popover-foreground: var(--text-primary);
+	--primary: var(--brand-primary);
+	--primary-foreground: var(--on-brand-primary);
+	--secondary: var(--surface-hover);
+	--secondary-foreground: var(--text-primary);
+	--muted: var(--surface-hover);
+	--muted-foreground: var(--text-secondary);
+	--accent: var(--surface-hover);
+	--accent-foreground: var(--text-primary);
+	--destructive: var(--danger);
+	--destructive-foreground: var(--white);
+	--border: var(--border-default);
+	--input: var(--border-default);
+	--ring: transparent;
+	--bn-colors-editor-text: var(--text-primary);
+	--bn-colors-editor-background: transparent;
+	--bn-colors-menu-text: var(--text-primary);
+	--bn-colors-menu-background: var(--surface);
+	--bn-colors-tooltip-text: var(--text-primary);
+	--bn-colors-tooltip-background: var(--surface-hover);
+	--bn-colors-hovered-text: var(--text-primary);
+	--bn-colors-hovered-background: var(--surface-hover);
+	--bn-colors-selected-text: var(--on-brand-primary);
+	--bn-colors-selected-background: var(--brand-primary);
+	--bn-colors-disabled-text: var(--text-disabled);
+	--bn-colors-disabled-background: var(--surface-hover);
+	--bn-colors-shadow: var(--border-default);
+	--bn-colors-border: var(--border-default);
+	--bn-colors-side-menu: var(--text-secondary);
+	--bn-font-family: var(--font-sans);
+	--bn-border-radius: var(--radius-lg);
+	min-width: 0;
+}
+
+.post-write-blocknote .bn-container,
+.post-write-blocknote .bn-editor {
+	background: transparent;
+}
+
+.post-write-blocknote .bn-editor {
+	min-height: 22rem;
+	padding-inline: 0;
+	font-family: var(--font-sans);
+	font-size: 1.125rem;
+	line-height: 1.75rem;
+}
+
+.post-write-blocknote .bn-default-styles {
+	font-family: var(--font-sans);
+}
+
+.post-write-blocknote .bn-block-content.ProseMirror-selectednode > *,
+.post-write-blocknote .ProseMirror-selectednode > .bn-block-content > * {
+	outline: none;
+}
+
+@media (max-width: 40rem) {
+	.post-write-blocknote .bn-editor {
+		min-height: 18rem;
+		font-size: 1rem;
+		line-height: 1.5rem;
+	}
+}
