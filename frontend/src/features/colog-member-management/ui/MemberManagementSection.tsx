@@ -104,7 +104,7 @@ export default function MemberManagementSection() {
 						</p>
 					</div>
 
-					<div className="flex gap-1">
+					<div className="flex gap-2">
 						{isEditing ? (
 							<>
 								<Button
