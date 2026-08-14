@@ -17,7 +17,7 @@ interface FileUploaderProps extends Omit<
 }
 
 const FILE_UPLOADER_CLASS_NAME =
-	'cursor-pointer inline-flex items-center justify-center gap-2 h-btn-height-md border border-btn-cancel-border rounded-md bg-btn-cancel text-btn-cancel-foreground hover:bg-btn-cancel-hover active:bg-btn-cancel-active text-label-2 font-semibold transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-focus-ring focus-within:ring-offset-2 has-disabled:cursor-not-allowed has-disabled:opacity-btn-disabled has-disabled:pointer-events-none';
+	'cursor-pointer inline-flex items-center justify-center gap-2 h-btn-height-md border border-btn-cancel-border rounded-md bg-btn-cancel text-btn-cancel-foreground hover:bg-btn-cancel-hover active:bg-btn-cancel-active text-label-2 font-semibold transition-colors focus-within:outline-2 focus-within:outline-focus-ring has-disabled:cursor-not-allowed has-disabled:opacity-btn-disabled has-disabled:pointer-events-none';
 
 export default function FileUploader({
 	buttonLabel = '파일 선택',
