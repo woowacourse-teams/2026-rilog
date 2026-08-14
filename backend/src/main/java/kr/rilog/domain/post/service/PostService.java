@@ -1,7 +1,9 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -31,6 +34,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final BlogRepository blogRepository;
+    private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -64,8 +68,20 @@ public class PostService {
     }
 
     private Post publishToColog(PostSaveCommand command, Blog colog, User writer) {
+        validateCologMember(colog, writer);
         Blog rilog = getRilog(writer);
         return Post.create(colog, rilog, writer, command.toDetail());
+    }
+
+    private void validateCologMember(Blog colog, User writer) {
+        boolean activeMember = blogMemberRepository.existsByBlogIdAndUserIdAndStatus(
+                colog.getId(),
+                writer.getId(),
+                BlogMemberStatus.ACTIVE
+        );
+        if (!activeMember) {
+            throw new BlogException(COLOG_POST_PUBLISH_FORBIDDEN);
+        }
     }
 
     private User getUser(Long requesterId) {
