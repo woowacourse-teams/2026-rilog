@@ -10,6 +10,13 @@ const expectBodyImage = async (page: Page) => {
 	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
 };
 
+const fillPost = async (page: Page) => {
+	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+	await page.keyboard.type('오늘 배운 내용을 기록합니다.');
+};
+
 test.describe('글 작성', () => {
 	test('클립보드 이미지를 본문에 붙여넣는다', async ({ page }) => {
 		await page.goto('/write');
@@ -81,6 +88,21 @@ test.describe('글 작성', () => {
 		expect(overflow).toBe('hidden');
 	});
 
+	test('본문 편집기에 접근 가능한 이름과 오류 설명을 연결한다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await expect(editor).toBeVisible();
+
+		await page.getByRole('button', { name: '발행' }).click();
+		const bodyError = page.getByText('내용을 입력해 주세요.');
+		const bodyErrorId = await bodyError.getAttribute('id');
+
+		expect(bodyErrorId).not.toBeNull();
+		await expect(editor).toHaveAttribute('aria-describedby', bodyErrorId!);
+		await editor.fill('본문');
+		await expect(editor).not.toHaveAttribute('aria-describedby');
+	});
+
 	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {
 		await page.goto('/');
 		await page.goto('/write');
@@ -126,5 +148,16 @@ test.describe('글 작성', () => {
 
 		expect(dialog.type()).toBe('beforeunload');
 		await dialog.dismiss();
+	});
+
+	test('mobile viewport에서 작성 화면과 게시 설정이 가로로 넘치지 않는다', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/write');
+		await fillPost(page);
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+		await page.getByRole('button', { name: '발행' }).click();
+		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 	});
 });
