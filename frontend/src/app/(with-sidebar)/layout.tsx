@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import Sidebar from '@/shared/ui/sidebar/Sidebar';
+import Sidebar from '@/widgets/sidebar/Sidebar';
 
 export default function SidebarLayout({ children }: Readonly<{ children: ReactNode }>) {
 	return (
