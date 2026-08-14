@@ -1,6 +1,6 @@
 @theme {
 	--font-sans:
-		'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo',
+		var(--font-pretendard), Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo',
 		'Noto Sans KR', 'Malgun Gothic', sans-serif;
 
 	--text-caption-1: 0.6875rem;
