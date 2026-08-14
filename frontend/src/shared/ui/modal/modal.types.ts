@@ -31,5 +31,5 @@ export type ModalPrimaryAction = ModalPrimaryActionBase &
 	);
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
-export type ModalPadding = 'none' | 'sm' | 'md' | 'lg';
+export type ModalPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type ModalScrollMode = 'content' | 'custom';

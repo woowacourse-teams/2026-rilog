@@ -17,6 +17,9 @@
 		"check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:component && pnpm build"
 	},
 	"dependencies": {
+		"@blocknote/core": "0.53.0",
+		"@blocknote/react": "0.53.0",
+		"@blocknote/shadcn": "0.53.0",
 		"@tanstack/react-query": "5.101.4",
 		"ky": "2.0.2",
 		"next": "16.3.0",
