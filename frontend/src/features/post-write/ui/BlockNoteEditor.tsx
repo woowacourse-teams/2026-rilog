@@ -18,7 +18,7 @@ export default function BlockNoteEditor({ onChange, onReady, uploadFile, ariaDes
 				...ko,
 				placeholders: {
 					...ko.placeholders,
-					default: '내용을 입력하세요. /를 입력하면 블록을 선택할 수 있습니다.',
+					default: '마크다운 단축 문법을 사용할 수 있습니다. /를 입력하면 블록을 선택할 수 있습니다.',
 				},
 			},
 			uploadFile,

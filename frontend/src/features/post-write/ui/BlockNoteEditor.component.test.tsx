@@ -102,4 +102,19 @@ describe('BlockNoteEditor', () => {
 			configuredUploadFile,
 		]);
 	});
+
+	it('마크다운 단축 문법과 블록 선택 방법을 placeholder로 안내한다', () => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+
+		expect(useCreateBlockNote).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				dictionary: expect.objectContaining({
+					placeholders: expect.objectContaining({
+						default: '마크다운 단축 문법을 사용할 수 있습니다. /를 입력하면 블록을 선택할 수 있습니다.',
+					}),
+				}),
+			}),
+			[defaultUploadFile],
+		);
+	});
 });
