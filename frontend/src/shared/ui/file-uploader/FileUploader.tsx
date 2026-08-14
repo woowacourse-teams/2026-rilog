@@ -53,8 +53,11 @@ export default function FileUploader({
 	}
 
 	return (
-		<div className={`w-full ${className ?? ''}`.trim()}>
-			<label htmlFor={inputId} className={`${FILE_UPLOADER_CLASS_NAME} ${fullWidth ? 'w-full' : 'w-44'}`}>
+		<div className={`w-full`.trim()}>
+			<label
+				htmlFor={inputId}
+				className={`${FILE_UPLOADER_CLASS_NAME} ${className ?? ''} ${fullWidth ? 'w-full' : 'w-44'}`}
+			>
 				<span aria-hidden="true">{displayedButtonLabel}</span>
 				<input
 					{...inputProps}
