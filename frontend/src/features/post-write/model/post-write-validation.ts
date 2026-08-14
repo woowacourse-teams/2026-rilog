@@ -26,7 +26,7 @@ const hasMeaningfulText = (value: unknown): boolean => {
 		return true;
 	}
 
-	return hasMeaningfulText(value.content);
+	return hasMeaningfulText(value.content) || hasMeaningfulText(value.rows) || hasMeaningfulText(value.cells);
 };
 
 const hasMediaUrl = (block: Block): boolean => {

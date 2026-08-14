@@ -7,7 +7,7 @@ import { isMeaningfulPostBody, validatePostDocument } from './post-write-validat
 interface TestBlockInput {
 	type?: string;
 	props?: Record<string, unknown>;
-	content?: unknown[];
+	content?: unknown;
 	children?: Block[];
 }
 
@@ -42,6 +42,22 @@ describe('isMeaningfulPostBody', () => {
 		const imageBlock = createBlock({ type: 'image', props: { url: 'https://example.com/image.png' } });
 
 		expect(isMeaningfulPostBody([imageBlock])).toBe(true);
+	});
+
+	it('텍스트가 입력된 table cell은 유효하다', () => {
+		const tableBlock = createBlock({
+			type: 'table',
+			content: {
+				type: 'tableContent',
+				rows: [
+					{
+						cells: [{ content: [{ type: 'text', text: '표 안의 기록', styles: {} }] }],
+					},
+				],
+			},
+		});
+
+		expect(isMeaningfulPostBody([tableBlock])).toBe(true);
 	});
 });
 
