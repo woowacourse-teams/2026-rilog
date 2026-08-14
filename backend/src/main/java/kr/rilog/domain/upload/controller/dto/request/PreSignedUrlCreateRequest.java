@@ -11,14 +11,27 @@ public record PreSignedUrlCreateRequest(
         @NotBlank(message = "fileName은 필수입니다.")
         String fileName,
 
-        @Schema(description = "ex image/jpeg")
+        @Schema(
+                description = "파일의 MIME 타입",
+                allowableValues = {
+                        "image/jpeg", "image/png", "image/webp", "image/gif",
+                        "application/pdf", "pdf", "application/zip", "zip", "text/plain", "txt"
+                },
+                examples = {
+                        "image/jpeg", "image/png", "image/webp", "image/gif",
+                        "application/pdf", "pdf", "application/zip", "zip", "text/plain", "txt"
+                }
+        )
         @NotBlank(message = "contentType은 필수입니다.")
         String contentType,
 
         @Positive
         long size,
 
-        @Schema(description = "IMAGE | FILE")
+        @Schema(
+                description = "IMAGE | FILE",
+                examples = {"IMAGE", "FILE"}
+        )
         @NotNull(message = "type은 필수입니다.")
         UploadType type
 
