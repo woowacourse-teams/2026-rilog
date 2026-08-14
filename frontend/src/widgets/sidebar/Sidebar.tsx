@@ -10,7 +10,7 @@ interface SidebarProps {
 	isAuthenticated?: boolean;
 }
 
-export default function Sidebar({ isAuthenticated = true }: SidebarProps) {
+export default function Sidebar({ isAuthenticated }: SidebarProps) {
 	return (
 		<aside
 			aria-label="사이드바"
