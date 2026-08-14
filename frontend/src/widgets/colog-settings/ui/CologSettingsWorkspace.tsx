@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
 
 import type { SettingsTab } from '../lib/get-next-tab';
 import type { KeyboardEvent } from 'react';
 
 import MemberManagementSection from '@/features/colog-member-management/ui/MemberManagementSection';
-import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
+
+import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
 import { getNextTab, SETTINGS_TABS } from '../lib/get-next-tab';
 
 import SettingsTabButton from './SettingsTabButton';
@@ -20,55 +20,18 @@ interface CologSettingsWorkspaceProps {
 }
 
 export default function CologSettingsWorkspace({ slug }: CologSettingsWorkspaceProps) {
-	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<SettingsTab>('members');
-
-	const [isMemberDirty, setIsMemberDirty] = useState(false);
-	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
-	const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
 	const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({});
 
-	const handleNavigationAttempt = useCallback(() => {
-		setPendingTab(null);
-		setIsLeaveModalOpen(true);
+	const commitTabChange = useCallback((nextTab: SettingsTab) => {
+		setActiveTab(nextTab);
+		tabRefs.current[nextTab]?.focus();
 	}, []);
 
-	const replaceNavigation = useCallback(
-		(href: string) => {
-			router.replace(href);
-		},
-		[router],
-	);
-
-	const { cancelPendingNavigation, continuePendingNavigation, clearGuardEntry } = useUnsavedChangesGuard({
-		isDirty: isMemberDirty,
-		onNavigationAttempt: handleNavigationAttempt,
-		onReplace: replaceNavigation,
+	const { isLeaveModalOpen, onDirtyChange, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
+		activeTab,
+		onTabChange: commitTabChange,
 	});
-
-	const handleDirtyChange = useCallback(
-		(isDirty: boolean) => {
-			setIsMemberDirty(isDirty);
-			if (!isDirty) {
-				clearGuardEntry();
-			}
-		},
-		[clearGuardEntry],
-	);
-
-	const handleTabChange = (nextTab: SettingsTab) => {
-		if (nextTab === activeTab) {
-			return;
-		}
-
-		if (isMemberDirty) {
-			setPendingTab(nextTab);
-			setIsLeaveModalOpen(true);
-			return;
-		}
-
-		setActiveTab(nextTab);
-	};
 
 	const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentTab: SettingsTab) => {
 		const nextTab = getNextTab(currentTab, event.key);
@@ -78,34 +41,7 @@ export default function CologSettingsWorkspace({ slug }: CologSettingsWorkspaceP
 		}
 
 		event.preventDefault();
-		handleTabChange(nextTab);
-
-		if (!isMemberDirty) {
-			tabRefs.current[nextTab]?.focus();
-		}
-	};
-
-	const handleCancelLeave = () => {
-		setPendingTab(null);
-		cancelPendingNavigation();
-		setIsLeaveModalOpen(false);
-	};
-
-	const handleConfirmLeave = () => {
-		const nextTab = pendingTab;
-
-		setPendingTab(null);
-		setIsLeaveModalOpen(false);
-		setIsMemberDirty(false);
-
-		if (nextTab !== null) {
-			clearGuardEntry();
-			setActiveTab(nextTab);
-			tabRefs.current[nextTab]?.focus();
-			return;
-		}
-
-		void continuePendingNavigation();
+		onTabChangeRequest(nextTab);
 	};
 
 	return (
@@ -131,7 +67,7 @@ export default function CologSettingsWorkspace({ slug }: CologSettingsWorkspaceP
 								ref={(element) => {
 									tabRefs.current[tab.id] = element;
 								}}
-								onClick={() => handleTabChange(tab.id)}
+								onClick={() => onTabChangeRequest(tab.id)}
 								onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
 							/>
 						);
@@ -153,7 +89,7 @@ export default function CologSettingsWorkspace({ slug }: CologSettingsWorkspaceP
 							<p className="mt-0.5 text-body-1 text-text-secondary">팀의 기본 프로필 정보를 관리합니다.</p>
 						</section>
 					)}
-					{activeTab === 'members' && <MemberManagementSection onDirtyChange={handleDirtyChange} />}
+					{activeTab === 'members' && <MemberManagementSection onDirtyChange={onDirtyChange} />}
 					{activeTab === 'danger' && (
 						<section aria-labelledby="danger-settings-title">
 							<h1 id="danger-settings-title" className="text-heading-3 font-bold text-text-primary">
@@ -172,8 +108,8 @@ export default function CologSettingsWorkspace({ slug }: CologSettingsWorkspaceP
 				confirmLabel="이동"
 				cancelLabel="계속 수정"
 				variant="danger"
-				onConfirm={handleConfirmLeave}
-				onCancel={handleCancelLeave}
+				onConfirm={onLeaveConfirm}
+				onCancel={onLeaveCancel}
 			/>
 		</main>
 	);
