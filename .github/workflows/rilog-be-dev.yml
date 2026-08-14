@@ -13,10 +13,14 @@ on:
       - "backend/**"
       - '.github/workflows/rilog-be-dev.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Rilog Dev
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     defaults:
       run:
@@ -31,47 +35,46 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # Gradle 캐시 설정
       - name: Gradle Caching
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('backend/**/*gradle*', 'backend/**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-gradle-${{ hashFiles('backend/**/*gradle*', 'backend/**/gradle-wrapper.properties') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-${{ runner.arch }}-gradle-
 
-      # Gradle Build를 위한 권한 부여
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Build Rilog Service
-        run: ./gradlew clean build -x test
+        run: ./gradlew build -x test --build-cache
 
-      # Docker Setup & 로그인 (v3로 업데이트 및 공식 Action 활용)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Docker Hub Login
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER_NAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker build & push
-        run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -f Dockerfile \
-            -t ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ secrets.DOCKER_TAG }} \
-            --push .
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ secrets.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=min
 
   deploy:
     name: Deploy Rilog Dev
     runs-on: self-hosted
     needs: build
-
     if: github.event_name == 'push'
 
     steps:
