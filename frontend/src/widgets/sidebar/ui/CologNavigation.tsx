@@ -14,7 +14,7 @@ const TEAMS = [
 
 export default function CologNavigation() {
 	return (
-		<nav aria-label="내 코로그" className="mt-7">
+		<nav aria-label="내 코로그">
 			<ul className="mt-2 flex w-full flex-col gap-0.5">
 				{TEAMS.map((team) => (
 					<li key={team.href} className="w-full">

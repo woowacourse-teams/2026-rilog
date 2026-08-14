@@ -1,3 +1,5 @@
+import Divider from '@/shared/ui/divider/Divider';
+
 import AuthenticatedSidebarFooter from './ui/AuthenticatedSidebarFooter';
 import CologNavigation from './ui/CologNavigation';
 import GuestSidebarFooter from './ui/GuestSidebarFooter';
@@ -8,7 +10,7 @@ interface SidebarProps {
 	isAuthenticated?: boolean;
 }
 
-export default function Sidebar({ isAuthenticated }: SidebarProps) {
+export default function Sidebar({ isAuthenticated = true }: SidebarProps) {
 	return (
 		<aside
 			aria-label="사이드바"
@@ -18,7 +20,12 @@ export default function Sidebar({ isAuthenticated }: SidebarProps) {
 
 			<div className="min-h-0 w-full flex-1 overflow-y-auto px-3 pb-4">
 				<PageNavigation />
-				{isAuthenticated && <CologNavigation />}
+				{isAuthenticated && (
+					<>
+						<Divider className="my-4" />
+						<CologNavigation />
+					</>
+				)}
 			</div>
 
 			{isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />}

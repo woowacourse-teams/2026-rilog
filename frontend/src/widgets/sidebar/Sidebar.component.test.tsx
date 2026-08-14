@@ -18,6 +18,7 @@ describe('Sidebar', () => {
 		render(<Sidebar isAuthenticated />);
 
 		expect(screen.getByRole('navigation', { name: '내 코로그' })).toBeInTheDocument();
+		expect(screen.getByRole('separator')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '글쓰기' })).toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
 	});
@@ -26,6 +27,7 @@ describe('Sidebar', () => {
 		render(<Sidebar isAuthenticated={false} />);
 
 		expect(screen.getByRole('link', { name: '로그인' })).toBeInTheDocument();
+		expect(screen.queryByRole('separator')).not.toBeInTheDocument();
 		expect(screen.queryByRole('navigation', { name: '내 코로그' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '글쓰기' })).not.toBeInTheDocument();
 	});
