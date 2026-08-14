@@ -6,7 +6,7 @@ export default function SidebarLayout({ children }: Readonly<{ children: ReactNo
 	return (
 		<div className="min-h-dvh bg-background">
 			<Sidebar />
-			<main className="min-h-dvh pl-17.5">{children}</main>
+			<div className="min-h-dvh pl-17.5">{children}</div>
 		</div>
 	);
 }
