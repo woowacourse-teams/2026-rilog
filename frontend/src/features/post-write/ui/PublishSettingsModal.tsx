@@ -100,18 +100,19 @@ export default function PublishSettingsModal({
 			<form id={PUBLISH_FORM_ID} className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1" action={handleSubmit}>
 				<div className="grid gap-8 md:grid-cols-2 md:gap-10">
 					<section aria-labelledby="representative-image-label">
-						<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-							<div className="min-w-0">
-								<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
-									대표 이미지
-								</h3>
-								<p className="mt-1 text-caption-1 text-text-secondary">
-									선택하지 않으면 본문의 첫 이미지를 사용합니다.
-								</p>
-							</div>
-							<div className="flex flex-none flex-wrap gap-2">
+						<div>
+							<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
+								대표 이미지
+							</h3>
+							<p className="mt-1 text-caption-1 text-text-secondary">
+								선택하지 않으면 본문의 첫 이미지를 사용합니다.
+							</p>
+							<div
+								className={`mt-4 grid gap-2 ${settings.representativeImage === null ? 'grid-cols-1' : 'grid-cols-2'}`}
+							>
 								{/* 브라우저에서 선택한 첫 이미지 파일은 공용 ImageUploader를 통해 부모에 전달됩니다. */}
 								<ImageUploader
+									fullWidth
 									buttonLabel={settings.representativeImage === null ? '이미지 선택' : '이미지 변경'}
 									disabled={isPublishing}
 									onChange={resetFileInput}
@@ -119,9 +120,9 @@ export default function PublishSettingsModal({
 								/>
 								{settings.representativeImage !== null && (
 									<Button
-										size="sm"
+										size="md"
 										variant="ghost"
-										className="focus-visible:-outline-offset-2"
+										className="w-full focus-visible:-outline-offset-2"
 										disabled={isPublishing}
 										onClick={() => onImageChange(null)}
 									>
