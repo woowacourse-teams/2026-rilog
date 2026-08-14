@@ -4,6 +4,35 @@ import { describe, expect, it } from 'vitest';
 import PageShell from './PageShell';
 
 describe('PageShell', () => {
+	it('aside가 없으면 complementary landmark를 렌더링하지 않는다', () => {
+		render(
+			<PageShell>
+				<h2>메인 콘텐츠</h2>
+			</PageShell>,
+		);
+
+		expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+		expect(screen.getByRole('main')).toHaveTextContent('메인 콘텐츠');
+	});
+
+	it('제공된 aside만 렌더링한다', () => {
+		const { rerender } = render(
+			<PageShell leftAside={<h2>왼쪽 보조 콘텐츠</h2>}>
+				<h2>메인 콘텐츠</h2>
+			</PageShell>,
+		);
+
+		expect(screen.getByRole('complementary')).toHaveTextContent('왼쪽 보조 콘텐츠');
+
+		rerender(
+			<PageShell rightAside={<h2>오른쪽 보조 콘텐츠</h2>}>
+				<h2>메인 콘텐츠</h2>
+			</PageShell>,
+		);
+
+		expect(screen.getByRole('complementary')).toHaveTextContent('오른쪽 보조 콘텐츠');
+	});
+
 	it('각 콘텐츠를 정해진 영역에 배치한다', () => {
 		render(
 			<PageShell
