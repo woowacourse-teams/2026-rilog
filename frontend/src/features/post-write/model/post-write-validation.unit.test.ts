@@ -80,4 +80,12 @@ describe('validatePostDocument', () => {
 			validatePostDocument('a'.repeat(513), [createBlock({ content: [{ type: 'text', text: '본문', styles: {} }] })]),
 		).toEqual({ title: '제목은 512자 이하로 입력해 주세요.' });
 	});
+
+	it('앞뒤 공백을 제외한 제목 길이가 512자이면 허용한다', () => {
+		expect(
+			validatePostDocument(`  ${'a'.repeat(512)}  `, [
+				createBlock({ content: [{ type: 'text', text: '본문', styles: {} }] }),
+			]),
+		).toEqual({});
+	});
 });

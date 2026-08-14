@@ -45,10 +45,11 @@ export const isMeaningfulPostBody = (blocks: Block[]) => blocks.some(isMeaningfu
 
 export const validatePostDocument = (title: string, blocks: Block[]): PostDocumentErrors => {
 	const errors: PostDocumentErrors = {};
+	const trimmedTitle = title.trim();
 
-	if (title.trim().length === 0) {
+	if (trimmedTitle.length === 0) {
 		errors.title = '제목을 입력해 주세요.';
-	} else if (title.length > 512) {
+	} else if (trimmedTitle.length > 512) {
 		errors.title = '제목은 512자 이하로 입력해 주세요.';
 	}
 
