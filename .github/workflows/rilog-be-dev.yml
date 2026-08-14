@@ -31,7 +31,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # Gradle 캐시 설정
       - name: Gradle Caching
         uses: actions/cache@v4
         with:
@@ -42,14 +41,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Gradle Build를 위한 권한 부여
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Build Rilog Service
         run: ./gradlew clean build -x test
 
-      # Docker Setup & 로그인 (v3로 업데이트 및 공식 Action 활용)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -60,12 +60,15 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker build & push
-        run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -f Dockerfile \
-            -t ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ secrets.DOCKER_TAG }} \
-            --push .
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile-dev
+          platforms: linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ secrets.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     name: Deploy Rilog Dev
