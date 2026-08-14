@@ -16,6 +16,7 @@ public enum BlogErrorInformation implements ErrorInformation {
     BLOG_MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 팀에 참여 중인 사용자입니다."),
     RILOG_NOT_FOUND(HttpStatus.NOT_FOUND, "작성자의 개인 블로그를 찾을 수 없습니다."),
     RILOG_POST_PUBLISH_FORBIDDEN(HttpStatus.FORBIDDEN, "본인의 개인 블로그에만 게시글을 발행할 수 있습니다."),
+    COLOG_POST_PUBLISH_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 블로그 게시글 발행 권한이 없습니다."),
     ;
 
     private final HttpStatus httpStatus;

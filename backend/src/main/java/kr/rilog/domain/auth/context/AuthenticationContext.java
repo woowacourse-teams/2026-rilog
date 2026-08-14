@@ -20,6 +20,15 @@ public final class AuthenticationContext {
     }
 
     public static AuthenticatedUser get(NativeWebRequest webRequest) {
+        AuthenticatedUser authenticatedUser = getOrNull(webRequest);
+        if (authenticatedUser != null) {
+            return authenticatedUser;
+        }
+
+        throw new AuthException(AUTHENTICATION_CONTEXT_MISSING);
+    }
+
+    public static AuthenticatedUser getOrNull(NativeWebRequest webRequest) {
         Object attribute = webRequest.getAttribute(
                 AUTHENTICATED_USER_ATTRIBUTE,
                 RequestAttributes.SCOPE_REQUEST
@@ -29,6 +38,6 @@ public final class AuthenticationContext {
             return authenticatedUser;
         }
 
-        throw new AuthException(AUTHENTICATION_CONTEXT_MISSING);
+        return null;
     }
 }

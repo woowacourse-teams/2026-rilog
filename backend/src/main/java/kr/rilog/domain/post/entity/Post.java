@@ -6,7 +6,6 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
-import kr.rilog.domain.post.exception.PostErrorInformation;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
@@ -19,6 +18,8 @@ import org.hibernate.type.SqlTypes;
 import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
+
+import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 
 /**
  * NOTE
@@ -117,7 +118,7 @@ public class Post extends BaseEntity {
 
     public void validateReadableBy(Long requesterId) {
         if (isPrivate() && !isWrittenBy(requesterId)) {
-            throw new PostException(PostErrorInformation.RENAME_PLZ); // TODO 예외 프론트와
+            throw new PostException(PRIVATE_POST_READ_FORBIDDEN);
         }
     }
 
