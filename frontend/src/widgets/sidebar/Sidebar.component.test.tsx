@@ -1,11 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import LoginModalProvider from '@/features/login/model/LoginModalProvider';
+
 import Sidebar from './Sidebar';
+
+function renderSidebar(isAuthenticated?: boolean) {
+	return render(
+		<LoginModalProvider>
+			<Sidebar isAuthenticated={isAuthenticated} />
+		</LoginModalProvider>,
+	);
+}
 
 describe('Sidebar', () => {
 	it('기본 접힘 상태에서 hover와 focus 진입 시 펼쳐진다', () => {
-		render(<Sidebar isAuthenticated />);
+		renderSidebar(true);
 
 		expect(screen.getByRole('complementary', { name: '사이드바' })).toHaveClass(
 			'w-17.5',
@@ -15,18 +25,18 @@ describe('Sidebar', () => {
 	});
 
 	it('로그인 사용자용 코로그 탐색과 푸터를 조립한다', () => {
-		render(<Sidebar isAuthenticated />);
+		renderSidebar(true);
 
 		expect(screen.getByRole('navigation', { name: '내 코로그' })).toBeInTheDocument();
 		expect(screen.getByRole('separator')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '글쓰기' })).toBeInTheDocument();
-		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
 	});
 
 	it('비로그인 사용자용 푸터를 조립하고 코로그 탐색을 제외한다', () => {
-		render(<Sidebar isAuthenticated={false} />);
+		renderSidebar(false);
 
-		expect(screen.getByRole('link', { name: '로그인' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
 		expect(screen.queryByRole('separator')).not.toBeInTheDocument();
 		expect(screen.queryByRole('navigation', { name: '내 코로그' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '글쓰기' })).not.toBeInTheDocument();
