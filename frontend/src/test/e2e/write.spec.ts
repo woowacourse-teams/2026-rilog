@@ -6,15 +6,15 @@ const TEST_IMAGE_BYTES = Array.from(
 	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
 );
 
-const expectBodyImage = async (page: Page) => {
-	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
-};
-
 const fillPost = async (page: Page) => {
 	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
 	const editor = page.getByRole('textbox', { name: '게시글 내용' });
 	await editor.click();
 	await page.keyboard.type('오늘 배운 내용을 기록합니다.');
+};
+
+const expectBodyImage = async (page: Page) => {
+	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
 };
 
 test.describe('글 작성', () => {
@@ -101,6 +101,30 @@ test.describe('글 작성', () => {
 		await expect(editor).toHaveAttribute('aria-describedby', bodyErrorId!);
 		await editor.fill('본문');
 		await expect(editor).not.toHaveAttribute('aria-describedby');
+	});
+
+	test('발행 설정을 유지하고 mock 발행 후 게시글 URL로 이동한다', async ({ page }) => {
+		await page.goto('/write');
+		await fillPost(page);
+
+		await page.getByRole('button', { name: '발행' }).click();
+		const publishDialog = page.getByRole('dialog', { name: '게시 설정' });
+		await expect(publishDialog).toBeVisible();
+		await publishDialog.getByText('일상', { exact: true }).click();
+		const cologSelect = publishDialog.getByRole('combobox', { name: 'Co-log' });
+		await cologSelect.selectOption({ index: 1 });
+		const selectedCoLogId = await cologSelect.inputValue();
+		await publishDialog.getByRole('button', { name: '취소' }).click();
+		await expect(publishDialog).toBeHidden();
+
+		await page.getByRole('button', { name: '발행' }).click();
+		await expect(publishDialog.getByRole('radio', { name: '일상' })).toBeChecked();
+		await expect(publishDialog.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		await publishDialog.getByRole('button', { name: '발행' }).click();
+		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
+		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();
+
+		await expect(page).toHaveURL(/\/posts\/mock-/);
 	});
 
 	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {

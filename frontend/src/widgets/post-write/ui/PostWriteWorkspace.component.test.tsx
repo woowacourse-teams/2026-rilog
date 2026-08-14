@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
+import type { PublishPost } from '@/features/post-write/model/post-publication';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
@@ -22,7 +23,9 @@ const createParagraph = (text = ''): Block => ({
 });
 
 function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
+	// BlockNote를 로드하지 않고도 부모와 주고받는 최신 본문 계약을 재현
 	const blocksRef = useRef<Block[]>([createParagraph()]);
+	// focus 위임 여부를 실제 textarea focus로 검증하기 위한 ref
 	const editorRef = useRef<HTMLTextAreaElement>(null);
 
 	useImperativeHandle(ref, () => ({
@@ -51,6 +54,7 @@ const fillValidPost = async (user: ReturnType<typeof userEvent.setup>) => {
 	await user.type(screen.getByRole('textbox', { name: '게시글 내용' }), '오늘 배운 내용을 기록합니다.');
 };
 
+// 여러 발행 시나리오에서 반복되는 필수 Co-log 선택 동작
 const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 	const select = screen.getByRole('combobox', { name: 'Co-log' });
 	const firstCoLogOption = screen.getAllByRole('option')[1];
@@ -136,6 +140,79 @@ describe('PostWriteWorkspace', () => {
 		vi.unstubAllGlobals();
 	});
 
+	it('발행 중 중복 제출과 dismiss를 막고 성공한 상세 URL로 이동한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		let resolvePublish: ((value: { postId: string }) => void) | undefined;
+		const publishPost: PublishPost = vi.fn(
+			() =>
+				new Promise<{ postId: string }>((resolve) => {
+					resolvePublish = resolve;
+				}),
+		);
+		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		const dialog = screen.getByRole('dialog', { name: '게시 설정' });
+		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+		expect(screen.getAllByRole('button', { name: '발행' }).at(-1)).toBeDisabled();
+		fireEvent.click(dialog);
+		fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));
+		expect(dialog).toBeInTheDocument();
+		expect(publishPost).toHaveBeenCalledOnce();
+
+		resolvePublish?.({ postId: 'post/40' });
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/post%2F40'));
+	});
+
+	it('발행 실패 후 입력과 설정을 유지한 채 재시도한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		const publishPost: PublishPost = vi
+			.fn<PublishPost>()
+			.mockRejectedValueOnce(new Error('failed'))
+			.mockResolvedValueOnce({ postId: 'retry-success' });
+		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		const selectedCoLogId = await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		expect(await screen.findByText('failed')).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/retry-success'));
+		expect(publishPost).toHaveBeenCalledTimes(2);
+	});
+
+	it('선택한 대표 이미지를 mock 발행 설정에 포함한다', async () => {
+		const createObjectUrl = vi.fn(() => 'blob:selected-cover');
+		const revokeObjectUrl = vi.fn();
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: 'with-cover' });
+		const { unmount } = render(
+			<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />,
+		);
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		const coverImage = new File(['image'], 'cover.png', { type: 'image/png' });
+		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/with-cover'));
+		expect(publishPost).toHaveBeenCalledOnce();
+		expect(publishPost.mock.calls[0]?.[0].settings.representativeImage).toBe(coverImage);
+		unmount();
+		vi.unstubAllGlobals();
+	});
+
 	it('dirty 상태의 내부 링크 이동을 확인하고 취소 또는 계속한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
@@ -147,7 +224,8 @@ describe('PostWriteWorkspace', () => {
 		link.textContent = '다른 페이지';
 		document.body.append(link);
 		await user.click(link);
-		await user.click(screen.getByRole('button', { name: '계속 작성' }));
+		const leaveDialog = screen.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
+		await user.click(within(leaveDialog).getByRole('button', { name: '계속 작성' }));
 		expect(navigate).not.toHaveBeenCalled();
 
 		await waitFor(() =>
