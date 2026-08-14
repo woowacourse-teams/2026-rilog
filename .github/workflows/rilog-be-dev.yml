@@ -63,7 +63,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            -f Dockerfile-dev \
+            -f Dockerfile \
             -t ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ secrets.DOCKER_TAG }} \
             --push .
 
@@ -72,7 +72,7 @@ jobs:
     runs-on: self-hosted
     needs: build
 
-    if: github.event_name == 'push'
+    #if: github.event_name == 'push'
 
     steps:
       - name: Deploy to server
