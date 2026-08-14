@@ -80,4 +80,51 @@ test.describe('글 작성', () => {
 		expect(height).toBeGreaterThanOrEqual(scrollHeight - 1);
 		expect(overflow).toBe('hidden');
 	});
+
+	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {
+		await page.goto('/');
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('뒤로 가기 보호');
+
+		await page.goBack();
+		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
+		await expect(confirmDialog).toBeVisible();
+		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
+		await expect(page).toHaveURL('/write');
+
+		await page.goBack();
+		await confirmDialog.getByRole('button', { name: '나가기' }).click();
+		await expect(page).toHaveURL('/');
+	});
+
+	test('같은 origin 링크 이동을 확인하고 취소 또는 계속한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('링크 이탈 보호');
+		await page.evaluate(() => {
+			const link = document.createElement('a');
+			link.href = '/';
+			link.textContent = '홈으로 이동';
+			document.body.append(link);
+		});
+
+		await page.getByRole('link', { name: '홈으로 이동' }).click();
+		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
+		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
+		await expect(page).toHaveURL('/write');
+
+		await page.getByRole('link', { name: '홈으로 이동' }).click();
+		await confirmDialog.getByRole('button', { name: '나가기' }).click();
+		await expect(page).toHaveURL('/');
+	});
+
+	test('작성 중 reload는 브라우저 기본 경고로 보호한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('새로고침 보호');
+		const dialogPromise = page.waitForEvent('dialog');
+		void page.reload().catch(() => undefined);
+		const dialog = await dialogPromise;
+
+		expect(dialog.type()).toBe('beforeunload');
+		await dialog.dismiss();
+	});
 });
