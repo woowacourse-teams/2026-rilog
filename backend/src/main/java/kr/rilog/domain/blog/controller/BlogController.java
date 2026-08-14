@@ -1,5 +1,6 @@
 package kr.rilog.domain.blog.controller;
 
+import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
@@ -20,6 +21,7 @@ public class BlogController implements BlogApiSpec {
 
     private final BlogService blogService;
 
+    @AuthGuard
     @GetMapping("/users/me/cologs/preview")
     public ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId) {
         List<MyCologResponse> data = blogService.getMyCologsPreview(requesterId);

@@ -12,7 +12,7 @@ import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.user.controller.apispec.OnboardingApiSpec;
 import kr.rilog.domain.user.controller.dto.request.OnboardingCompleteRequest;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.service.UserService;
+import kr.rilog.domain.user.service.OnboardingService;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -37,7 +37,7 @@ public class OnboardingController implements OnboardingApiSpec {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final OnboardingTokenService onboardingTokenService;
-    private final UserService userService;
+    private final OnboardingService onboardingService;
     private final AccessTokenService accessTokenService;
     private final RefreshTokenIssuer refreshTokenIssuer;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
@@ -50,7 +50,7 @@ public class OnboardingController implements OnboardingApiSpec {
     ) {
         String onboardingToken = extractBearerToken(authorizationHeader);
         OnboardingTokenClaims claims = onboardingTokenService.parse(onboardingToken);
-        User user = userService.completeOnboarding(claims.userId(), request.toCommand());
+        User user = onboardingService.complete(claims.userId(), request.toCommand());
 
         AccessToken accessToken = accessTokenService.issue(user.getId(), user.getGlobalRole(), user.getSlug());
         RefreshToken refreshToken = refreshTokenIssuer.issue(user);
