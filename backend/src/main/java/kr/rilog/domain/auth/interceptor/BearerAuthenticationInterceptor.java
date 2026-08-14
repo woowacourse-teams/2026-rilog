@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.LoginUserSlug;
+import kr.rilog.domain.auth.annotation.NullableLoginUserId;
+import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.GlobalRole;
@@ -40,14 +42,22 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
 
         validateLoginUserParameterUsage(handlerMethod);
         AuthGuard authGuard = authGuard(handlerMethod);
-        if (authGuard == null) {
+        OptionalAuthGuard optionalAuthGuard = optionalAuthGuard(handlerMethod);
+        if (authGuard == null && optionalAuthGuard == null) {
             return true;
         }
 
-        String accessToken = extractAccessToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authGuard == null && !StringUtils.hasText(authorizationHeader)) {
+            return true;
+        }
+
+        String accessToken = extractAccessToken(authorizationHeader);
         AccessTokenClaims claims = accessTokenService.parse(accessToken);
         AuthenticatedUser authenticatedUser = AuthenticatedUser.from(claims);
-        authorize(authGuard, authenticatedUser);
+        if (authGuard != null) {
+            authorize(authGuard, authenticatedUser);
+        }
         AuthenticationContext.set(request, authenticatedUser);
         return true;
     }
@@ -56,12 +66,26 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         if (hasLoginUserParameter(handlerMethod) && authGuard(handlerMethod) == null) {
             throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
         }
+        if (hasNullableLoginUserParameter(handlerMethod)
+                && authGuard(handlerMethod) == null
+                && optionalAuthGuard(handlerMethod) == null) {
+            throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
+        }
     }
 
     private boolean hasLoginUserParameter(HandlerMethod handlerMethod) {
         for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
             if (parameter.hasParameterAnnotation(LoginUserId.class)
                     || parameter.hasParameterAnnotation(LoginUserSlug.class)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasNullableLoginUserParameter(HandlerMethod handlerMethod) {
+        for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
+            if (parameter.hasParameterAnnotation(NullableLoginUserId.class)) {
                 return true;
             }
         }
@@ -85,6 +109,10 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
 
     private AuthGuard authGuard(HandlerMethod handlerMethod) {
         return handlerMethod.getMethodAnnotation(AuthGuard.class);
+    }
+
+    private OptionalAuthGuard optionalAuthGuard(HandlerMethod handlerMethod) {
+        return handlerMethod.getMethodAnnotation(OptionalAuthGuard.class);
     }
 
     private String extractAccessToken(String authorizationHeader) {
