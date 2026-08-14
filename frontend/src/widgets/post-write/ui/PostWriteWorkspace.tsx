@@ -210,6 +210,8 @@ export default function PostWriteWorkspace({
 				document: { title: title.trim(), blocks: publicationBlocks },
 				settings: publicationSettings,
 			});
+			// 이동 경로를 먼저 검증해 실패 시 모달과 이탈 보호 상태를 그대로 유지
+			const postDetailPath = buildPostDetailPath(result.postId);
 
 			// 발행 성공 후에는 작성 페이지를 떠나도 확인 모달이 뜨지 않도록 history guard 표시 해제
 			clearGuardEntry();
@@ -223,8 +225,8 @@ export default function PostWriteWorkspace({
 				setSelectedImageUrl(null);
 			}
 
-			// 발행 결과로 받은 postId를 실제 게시글 상세 URL로 변환한 뒤 현재 history entry를 교체
-			replaceNavigation(buildPostDetailPath(result.postId));
+			// 검증한 게시글 상세 URL로 현재 작성 history entry를 교체
+			replaceNavigation(postDetailPath);
 		} catch (error) {
 			// 실패 상태와 메시지를 함께 저장해서 입력값은 유지한 채 모달에서 재시도할 수 있게 함
 			setPublishState({

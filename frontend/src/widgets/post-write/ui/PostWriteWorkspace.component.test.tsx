@@ -174,6 +174,25 @@ describe('PostWriteWorkspace', () => {
 		historyBackSpy.mockRestore();
 	});
 
+	it('발행 결과의 게시글 ID가 잘못되면 모달과 이탈 보호를 유지한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '   ' });
+		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		const dialog = screen.getByRole('dialog', { name: '게시 설정' });
+		expect(await within(dialog).findByText('게시글 ID가 필요합니다.')).toBeInTheDocument();
+		expect(navigate).not.toHaveBeenCalled();
+
+		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
+		window.dispatchEvent(beforeUnloadEvent);
+		expect(beforeUnloadEvent.defaultPrevented).toBe(true);
+	});
+
 	it('발행 실패 후 입력과 설정을 유지한 채 재시도한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
