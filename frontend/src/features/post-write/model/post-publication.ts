@@ -12,3 +12,14 @@ export interface PublicationSettings {
 	blogId: number | null;
 	representativeImage: File | null;
 }
+
+export interface PublishPostCommand {
+	document: EditorDocument;
+	settings: PublicationSettings;
+}
+
+export interface PublishPostResult {
+	postId: string;
+}
+
+export type PublishPost = (command: PublishPostCommand) => Promise<PublishPostResult>;
