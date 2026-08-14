@@ -1,7 +1,10 @@
 @import 'tailwindcss';
+@import '../features/post-write/styles/blocknote-shadcn.css';
 @import '../shared/styles/tokens/index.css';
 @import '../shared/ui/button/button.css';
 @import '../shared/ui/modal/modal.css';
+
+@source '../../node_modules/@blocknote/shadcn';
 
 * {
 	box-sizing: border-box;
