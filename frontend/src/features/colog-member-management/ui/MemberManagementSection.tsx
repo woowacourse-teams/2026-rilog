@@ -10,6 +10,7 @@ import Button from '@/shared/ui/button/Button';
 import { MOCK_COLOG_MEMBERS } from '../lib/mock-colog-members';
 
 import CologMemberRow from './CologMemberRow';
+import MemberInviteModal from './MemberInviteModal';
 
 interface CologMemberDraft {
 	id: number;
@@ -26,6 +27,7 @@ export default function MemberManagementSection() {
 	const [members, setMembers] = useState(() => MOCK_COLOG_MEMBERS.map((member) => ({ ...member })));
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
+	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 	const displayedMembers = members.map((member) => {
 		const draftMember = draftMembers.find((draft) => draft.id === member.id);
 
@@ -131,7 +133,12 @@ export default function MemberManagementSection() {
 								>
 									멤버 정보 수정
 								</Button>
-								<Button type="button" size="md" className="w-30 px-2 text-label-1">
+								<Button
+									type="button"
+									size="md"
+									className="w-30 px-2 text-label-1"
+									onClick={() => setIsInviteModalOpen(true)}
+								>
 									+ 멤버 초대
 								</Button>
 							</>
@@ -186,6 +193,8 @@ export default function MemberManagementSection() {
 					</table>
 				</div>
 			</form>
+
+			<MemberInviteModal open={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
 		</section>
 	);
 }

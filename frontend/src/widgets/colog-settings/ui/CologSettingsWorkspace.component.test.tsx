@@ -94,4 +94,14 @@ describe('CologSettingsWorkspace', () => {
 		await user.selectOptions(permissionSelect, 'OWNER');
 		expect(saveButton).toBeDisabled();
 	});
+
+	it('멤버 초대 버튼으로 초대 모달을 연다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="rilog" />);
+
+		await user.click(screen.getByRole('button', { name: '+ 멤버 초대' }));
+
+		expect(screen.getByRole('dialog', { name: '멤버 초대' })).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' })).toHaveFocus();
+	});
 });
