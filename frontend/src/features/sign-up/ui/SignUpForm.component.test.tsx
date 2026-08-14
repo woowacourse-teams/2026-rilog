@@ -13,8 +13,26 @@ describe('SignUpForm', () => {
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();
+		expect(
+			screen.getByRole('checkbox', {
+				name: '[필수] 아래 약관에 동의합니다.',
+			}),
+		).toHaveAccessibleDescription('이용약관 및 개인정보처리방침');
 		expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: '시작하기' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '시작하기' })).toHaveAttribute('type', 'submit');
+
+		expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
+			'href',
+			'https://example.com/terms-of-service',
+		);
+		expect(screen.getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
+			'href',
+			'https://example.com/privacy-policy',
+		);
+		screen.getAllByRole('link').forEach((link) => {
+			expect(link).toHaveAttribute('target', '_blank');
+			expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+		});
 	});
 
 	it('한 줄 소개의 글자 수를 입력에 맞춰 안내한다', async () => {
@@ -25,5 +43,20 @@ describe('SignUpForm', () => {
 		await user.type(introduction, '함께 기록해요');
 
 		expect(introduction).toHaveAccessibleDescription('나를 소개하는 문장을 입력하세요. 7 / 80');
+	});
+
+	it('이용약관 및 개인정보처리방침 동의를 선택할 수 있다', async () => {
+		const user = userEvent.setup();
+		render(<SignUpForm />);
+
+		const agreement = screen.getByRole('checkbox', {
+			name: '[필수] 아래 약관에 동의합니다.',
+		});
+		expect(agreement).toBeRequired();
+		expect(agreement).toBeInvalid();
+		await user.click(agreement);
+
+		expect(agreement).toBeChecked();
+		expect(agreement).toBeValid();
 	});
 });

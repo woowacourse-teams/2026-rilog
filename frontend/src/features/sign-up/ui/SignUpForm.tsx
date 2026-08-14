@@ -5,16 +5,22 @@ import { useEffect, useId, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import Button from '@/shared/ui/button/Button';
+import Checkbox from '@/shared/ui/checkbox/Checkbox';
 import Field from '@/shared/ui/field/Field';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+
 const INTRODUCTION_MAX_LENGTH = 80;
+const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
+const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
 
 export default function SignUpForm() {
 	const profileImageLabelId = useId();
+	const termsAgreementId = useId();
+	const termsAgreementLinksId = `${termsAgreementId}-links`;
 	const [previewUrl, setPreviewUrl] = useState('/images/profile-placeholder.svg');
 	const [introduction, setIntroduction] = useState('');
 
@@ -109,11 +115,41 @@ export default function SignUpForm() {
 				)}
 			</Field>
 
+			<label className="flex cursor-pointer items-center gap-2 text-body-2 text-text-primary">
+				<Checkbox
+					id={termsAgreementId}
+					name="termsAgreement"
+					value="accepted"
+					aria-describedby={termsAgreementLinksId}
+					required
+				/>
+				<div className="flex items-center gap-2 text-text-secondary">
+					<a
+						href={TERMS_OF_SERVICE_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="font-semibold underline underline-offset-2 focus-visible:rounded-sm focus-visible:outline-focus-ring"
+					>
+						이용약관
+					</a>
+					<span aria-hidden="true">및</span>
+					<a
+						href={PRIVACY_POLICY_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="font-semibold underline underline-offset-2 focus-visible:rounded-sm focus-visible:outline-focus-ring"
+					>
+						개인정보처리방침
+					</a>
+					<span>에 동의합니다.</span>
+				</div>
+			</label>
+
 			<div className="flex justify-end gap-4">
 				<Button variant="secondary" size="lg" className="w-40 bg-white">
 					취소
 				</Button>
-				<Button size="lg" className="w-40">
+				<Button type="submit" size="lg" className="w-40">
 					시작하기
 				</Button>
 			</div>
