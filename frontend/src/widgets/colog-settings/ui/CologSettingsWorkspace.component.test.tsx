@@ -1,5 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import Link from 'next/link';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CologSettingsWorkspace from './CologSettingsWorkspace';
@@ -16,7 +17,7 @@ describe('CologSettingsWorkspace', () => {
 	});
 
 	it('멤버 관리 탭을 기본으로 표시한다', () => {
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		expect(screen.getByRole('tab', { name: '멤버 관리' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
@@ -31,7 +32,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('탭을 선택하면 해당 설정 내용을 조건부 렌더링한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('tab', { name: '프로필' }));
 
@@ -42,7 +43,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('방향키로 다음 탭에 이동한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		const memberTab = screen.getByRole('tab', { name: '멤버 관리' });
 		memberTab.focus();
@@ -54,7 +55,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('모든 멤버의 권한과 역할을 수정하고 저장한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
 
@@ -77,7 +78,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('멤버 정보 수정을 취소하면 기존 값을 유지한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
 		await user.selectOptions(screen.getByRole('combobox', { name: '김지연 권한' }), 'MEMBER');
@@ -90,7 +91,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('실제로 변경된 멤버가 있을 때만 저장할 수 있다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
 		const saveButton = screen.getByRole('button', { name: '저장' });
@@ -107,7 +108,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('수정 사항이 있으면 탭 이동을 확인하고 취소하거나 계속한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
 		const permissionSelect = screen.getByRole('combobox', { name: '김지연 권한' });
@@ -132,7 +133,12 @@ describe('CologSettingsWorkspace', () => {
 
 	it('수정 사항이 있으면 내부 페이지 이동을 확인한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(
+			<>
+				<Link href="/co-logs/rilog">코로그로 돌아가기</Link>
+				<CologSettingsWorkspace />
+			</>,
+		);
 
 		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
 		await user.selectOptions(screen.getByRole('combobox', { name: '김지연 권한' }), 'ADMIN');
@@ -147,7 +153,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('수정 사항이 있을 때만 beforeunload 기본 경고를 요청한다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
 		const permissionSelect = screen.getByRole('combobox', { name: '김지연 권한' });
@@ -165,7 +171,7 @@ describe('CologSettingsWorkspace', () => {
 
 	it('멤버 초대 버튼으로 초대 모달을 연다', async () => {
 		const user = userEvent.setup();
-		render(<CologSettingsWorkspace slug="rilog" />);
+		render(<CologSettingsWorkspace />);
 
 		await user.click(screen.getByRole('button', { name: '+ 멤버 초대' }));
 
