@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -27,6 +27,18 @@ describe('PostTitleField', () => {
 
 		expect(titleField).toHaveValue('제목');
 		expect(handleEnter).toHaveBeenCalledOnce();
+	});
+
+	it('한글 조합 중 Enter는 본문 이동으로 처리하지 않는다', () => {
+		const handleEnter = vi.fn();
+		render(<ControlledPostTitleField onEnter={handleEnter} />);
+
+		fireEvent.keyDown(screen.getByRole('textbox', { name: '게시글 제목' }), {
+			key: 'Enter',
+			isComposing: true,
+		});
+
+		expect(handleEnter).not.toHaveBeenCalled();
 	});
 
 	it('입력 내용의 scrollHeight만큼 높이를 확장한다', async () => {

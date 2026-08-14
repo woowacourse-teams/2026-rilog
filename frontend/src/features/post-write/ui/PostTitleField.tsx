@@ -32,7 +32,12 @@ export default function PostTitleField({ value, error, inputRef, onChange, onEnt
 	};
 
 	// 제목에서 Enter를 누르면 줄바꿈 대신 본문 에디터로 이동
+	// 제목에서 한글 조합 중인 상태(받침 입력 안 된 상태)일 때 엔터가 한 번 무시되는 현상 방지
 	const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+		if (event.nativeEvent.isComposing) {
+			return;
+		}
+
 		if (event.key === 'Enter') {
 			event.preventDefault();
 			onEnter();
