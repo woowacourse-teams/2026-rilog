@@ -76,8 +76,8 @@ export default function PostWriteWorkspace({
 	const isPublishing = publishState.status === 'pending';
 	const publishError = publishState.status === 'error' ? publishState.message : undefined;
 
-	// 발행 성공 후 게시글 상세 경로 또는 확정된 내부 경로로 이동시키는 함수
-	const performNavigation = useCallback(
+	// 작성 페이지의 guard entry를 목적지로 교체해 비동기 popstate와의 이동 경쟁을 방지
+	const replaceNavigation = useCallback(
 		(href: string) => {
 			// 테스트 등에서 navigate를 주입했다면 Next router 대신 주입 받은 함수를 사용
 			if (navigate !== undefined) {
@@ -85,8 +85,8 @@ export default function PostWriteWorkspace({
 				return;
 			}
 
-			// 실제 화면에서는 Next router로 전달 받은 경로로 이동
-			router.push(href);
+			// 실제 화면에서는 현재 history entry를 목적지로 교체
+			router.replace(href);
 		},
 		[navigate, router],
 	);
@@ -99,11 +99,11 @@ export default function PostWriteWorkspace({
 	// dirty 상태일 때 이탈 확인 모달을 띄우기 위한 커스텀훅
 	// cancelPendingNavigation: 사용자가 계속 작성을 선택하면 보류 중인 이동을 취소하고 history guard 복구
 	// continuePendingNavigation: 사용자가 이동하려던 history 또는 내부 경로로 이동하게 허용
-	// releaseGuardEntry: 발행 완료 후 작성 페이지의 history guard를 제거
-	const { cancelPendingNavigation, continuePendingNavigation, releaseGuardEntry } = useUnsavedChangesGuard({
+	// clearGuardEntry: 발행 완료 후 작성 페이지의 history guard 표시를 동기적으로 제거
+	const { cancelPendingNavigation, continuePendingNavigation, clearGuardEntry } = useUnsavedChangesGuard({
 		isDirty,
 		onNavigationAttempt: handleNavigationAttempt,
-		onNavigate: performNavigation,
+		onReplace: replaceNavigation,
 	});
 
 	// 작성 페이지에 처음 진입하면 바로 제목을 입력할 수 있도록 focus
@@ -211,8 +211,8 @@ export default function PostWriteWorkspace({
 				settings: publicationSettings,
 			});
 
-			// 발행 성공 후에는 작성 페이지를 떠나도 확인 모달이 뜨지 않도록 history guard 해제
-			await releaseGuardEntry();
+			// 발행 성공 후에는 작성 페이지를 떠나도 확인 모달이 뜨지 않도록 history guard 표시 해제
+			clearGuardEntry();
 			setIsDirty(false);
 			setIsPublishModalOpen(false);
 
@@ -223,8 +223,8 @@ export default function PostWriteWorkspace({
 				setSelectedImageUrl(null);
 			}
 
-			// 발행 결과로 받은 postId를 실제 게시글 상세 URL로 변환한 뒤 이동
-			performNavigation(buildPostDetailPath(result.postId));
+			// 발행 결과로 받은 postId를 실제 게시글 상세 URL로 변환한 뒤 현재 history entry를 교체
+			replaceNavigation(buildPostDetailPath(result.postId));
 		} catch (error) {
 			// 실패 상태와 메시지를 함께 저장해서 입력값은 유지한 채 모달에서 재시도할 수 있게 함
 			setPublishState({

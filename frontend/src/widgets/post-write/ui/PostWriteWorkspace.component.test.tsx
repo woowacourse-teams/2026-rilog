@@ -10,8 +10,10 @@ import type { PublishPost } from '@/features/post-write/model/post-publication';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
+const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+
 vi.mock('next/navigation', () => ({
-	useRouter: () => ({ push: vi.fn() }),
+	useRouter: () => ({ push: vi.fn(), replace: replaceMock }),
 }));
 
 const createParagraph = (text = ''): Block => ({
@@ -142,7 +144,9 @@ describe('PostWriteWorkspace', () => {
 
 	it('발행 중 중복 제출과 dismiss를 막고 성공한 상세 URL로 이동한다', async () => {
 		const user = userEvent.setup();
-		const navigate = vi.fn();
+		const historyBackSpy = vi.spyOn(window.history, 'back');
+		historyBackSpy.mockClear();
+		replaceMock.mockClear();
 		let resolvePublish: ((value: { postId: string }) => void) | undefined;
 		const publishPost: PublishPost = vi.fn(
 			() =>
@@ -150,7 +154,7 @@ describe('PostWriteWorkspace', () => {
 					resolvePublish = resolve;
 				}),
 		);
-		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await selectFirstCoLog(user);
@@ -165,7 +169,9 @@ describe('PostWriteWorkspace', () => {
 		expect(publishPost).toHaveBeenCalledOnce();
 
 		resolvePublish?.({ postId: 'post/40' });
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/post%2F40'));
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/posts/post%2F40'));
+		expect(historyBackSpy).not.toHaveBeenCalled();
+		historyBackSpy.mockRestore();
 	});
 
 	it('발행 실패 후 입력과 설정을 유지한 채 재시도한다', async () => {
@@ -216,6 +222,8 @@ describe('PostWriteWorkspace', () => {
 	it('dirty 상태의 내부 링크 이동을 확인하고 취소 또는 계속한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
+		const historyBackSpy = vi.spyOn(window.history, 'back');
+		historyBackSpy.mockClear();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} navigate={navigate} />);
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '이탈 보호');
 
@@ -234,6 +242,8 @@ describe('PostWriteWorkspace', () => {
 		await user.click(link);
 		await user.click(screen.getByRole('button', { name: '나가기' }));
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/next-page?from=write'));
+		expect(historyBackSpy).not.toHaveBeenCalled();
+		historyBackSpy.mockRestore();
 		link.remove();
 	});
 

@@ -6,13 +6,13 @@ const HISTORY_GUARD_KEY = '__rilogWriteGuard';
 interface UseUnsavedChangesGuardOptions {
 	isDirty: boolean;
 	onNavigationAttempt: () => void;
-	onNavigate: (href: string) => void;
+	onReplace: (href: string) => void;
 }
 
 interface UseUnsavedChangesGuardResult {
 	cancelPendingNavigation: () => void;
-	continuePendingNavigation: () => Promise<void>;
-	releaseGuardEntry: () => Promise<void>;
+	continuePendingNavigation: () => void;
+	clearGuardEntry: () => void;
 }
 
 type PendingNavigation = { kind: 'history' } | { kind: 'link'; href: string };
@@ -52,7 +52,7 @@ const getInternalNavigationHref = (event: MouseEvent): string | null => {
 export const useUnsavedChangesGuard = ({
 	isDirty,
 	onNavigationAttempt,
-	onNavigate,
+	onReplace,
 }: UseUnsavedChangesGuardOptions): UseUnsavedChangesGuardResult => {
 	// 현재 문서에 guard용 history entry가 추가되어 있는지 추적
 	const isGuardEntryActiveRef = useRef(false);
@@ -138,38 +138,17 @@ export const useUnsavedChangesGuard = ({
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	}, [isDirty]);
 
-	// 발행 완료 후 guard entry를 제거한 다음 실제 게시글 상세 페이지 이동을 허용
-	const releaseGuardEntry = useCallback(async () => {
+	// 현재 guard 표시를 동기적으로 제거해 후속 replace 이동과 popstate가 경쟁하지 않게 함
+	const clearGuardEntry = useCallback(() => {
 		if (!isGuardEntryActiveRef.current) {
 			return;
 		}
 
-		await new Promise<void>((resolve) => {
-			let isSettled = false;
-			const releaseState = { fallbackTimer: undefined as number | undefined };
-
-			// popstate 발생 여부와 무관하게 cleanup과 resolve를 한 번만 수행
-			const handleReleased = () => {
-				if (isSettled) {
-					return;
-				}
-
-				isSettled = true;
-				if (releaseState.fallbackTimer !== undefined) {
-					window.clearTimeout(releaseState.fallbackTimer);
-				}
-				window.removeEventListener('popstate', handleReleased);
-				isGuardEntryActiveRef.current = false;
-				isBypassingHistoryRef.current = false;
-				resolve();
-			};
-
-			isBypassingHistoryRef.current = true;
-			window.addEventListener('popstate', handleReleased, { once: true });
-			window.history.back();
-			// 브라우저가 popstate를 전달하지 않는 경우에도 발행 후 이동이 멈추지 않도록 fallback 처리
-			releaseState.fallbackTimer = window.setTimeout(handleReleased, 100);
-		});
+		const currentState = getCurrentHistoryState();
+		Reflect.deleteProperty(currentState, HISTORY_GUARD_KEY);
+		window.history.replaceState(currentState, '', window.location.href);
+		isGuardEntryActiveRef.current = false;
+		isBypassingHistoryRef.current = false;
 	}, []);
 
 	// 사용자가 계속 작성을 선택하면 소비된 history guard를 복구하고 보류 중인 링크 이동을 취소
@@ -181,7 +160,7 @@ export const useUnsavedChangesGuard = ({
 	}, [pushGuardEntry]);
 
 	// 사용자가 나가기를 확정하면 보류한 history 또는 내부 링크 이동을 guard 없이 진행
-	const continuePendingNavigation = useCallback(async () => {
+	const continuePendingNavigation = useCallback(() => {
 		const pendingNavigation = pendingNavigationRef.current;
 		pendingNavigationRef.current = null;
 
@@ -192,10 +171,10 @@ export const useUnsavedChangesGuard = ({
 		}
 
 		if (pendingNavigation?.kind === 'link') {
-			await releaseGuardEntry();
-			onNavigate(pendingNavigation.href);
+			clearGuardEntry();
+			onReplace(pendingNavigation.href);
 		}
-	}, [onNavigate, releaseGuardEntry]);
+	}, [clearGuardEntry, onReplace]);
 
-	return { cancelPendingNavigation, continuePendingNavigation, releaseGuardEntry };
+	return { cancelPendingNavigation, continuePendingNavigation, clearGuardEntry };
 };
