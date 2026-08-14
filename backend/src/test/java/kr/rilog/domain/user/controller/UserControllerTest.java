@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static kr.rilog.domain.user.exception.UserErrorInformation.NICKNAME_DUPLICATED;
+import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -88,13 +89,13 @@ class UserControllerTest {
     @DisplayName("중복된 슬러그이면 중복 오류를 반환한다")
     void validateSlugRejectsDuplicatedSlug() throws Exception {
         String slug = "ri_log-01";
-        doThrow(new UserException(NICKNAME_DUPLICATED))
+        doThrow(new UserException(SLUG_DUPLICATED))
                 .when(userService).validateDuplicatedSlug(slug);
 
         mockMvc.perform(get("/v1/availability/slug")
                         .param("slug", slug))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("NICKNAME_DUPLICATED"));
+                .andExpect(jsonPath("$.errorCode").value("SLUG_DUPLICATED"));
     }
 
     @Test

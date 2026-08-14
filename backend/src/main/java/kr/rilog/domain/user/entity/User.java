@@ -90,7 +90,7 @@ public class User extends BaseEntity {
         this.onboardingCompletedAt = LocalDateTime.now();
     }
 
-    private boolean isOnboardingCompleted() {
+    public boolean isOnboardingCompleted() {
         return this.onboardingStatus == OnboardingStatus.COMPLETED || this.slug != null;
     }
 }

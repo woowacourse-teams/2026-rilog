@@ -1,14 +1,25 @@
 package kr.rilog.domain.user.service;
 
+import kr.rilog.domain.user.entity.OnboardingStatus;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static kr.rilog.domain.user.exception.UserErrorInformation.NICKNAME_DUPLICATED;
+import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALREADY_COMPLETED;
+import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
+import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +80,136 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.validateDuplicatedSlug(slug))
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
-                .isEqualTo(NICKNAME_DUPLICATED);
+                .isEqualTo(SLUG_DUPLICATED);
         verify(userRepository).existsBySlug(slug);
+    }
+
+    @Test
+    @DisplayName("PENDING 사용자는 온보딩을 완료할 수 있다")
+    void completeOnboardingCompletesPendingUser() {
+        // given
+        User user = User.builder()
+                .id(1L)
+                .githubId(100L)
+                .onboardingStatus(OnboardingStatus.PENDING)
+                .build();
+        OnboardingCompleteCommand command = command();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByNickname("러로")).thenReturn(false);
+        when(userRepository.existsBySlug("ri_log-01")).thenReturn(false);
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        User completedUser = userService.completeOnboarding(1L, command);
+
+        // then
+        assertThat(completedUser)
+                .extracting(
+                        User::getNickname,
+                        User::getSlug,
+                        User::getIntroduction,
+                        User::getProfileImageUrl,
+                        User::getGithubUrl,
+                        User::getEmail,
+                        User::getOnboardingStatus
+                )
+                .containsExactly(
+                        "러로",
+                        "ri_log-01",
+                        "기록하는 개발자입니다.",
+                        "https://example.com/profile.png",
+                        "https://github.com/jinriro",
+                        "riro@example.com",
+                        OnboardingStatus.COMPLETED
+                );
+        verify(userRepository).saveAndFlush(user);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자는 온보딩을 완료할 수 없다")
+    void completeOnboardingRejectsMissingUser() {
+        // given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+                .isInstanceOf(UserException.class)
+                .extracting("errorInformation")
+                .isEqualTo(USER_NOT_FOUND);
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    @DisplayName("이미 온보딩을 완료한 사용자는 다시 온보딩을 완료할 수 없다")
+    void completeOnboardingRejectsCompletedUser() {
+        // given
+        User user = User.builder()
+                .id(1L)
+                .githubId(100L)
+                .slug("jinriro")
+                .onboardingStatus(OnboardingStatus.COMPLETED)
+                .build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        // when - then
+        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+                .isInstanceOf(UserException.class)
+                .extracting("errorInformation")
+                .isEqualTo(ONBOARDING_ALREADY_COMPLETED);
+        verify(userRepository, never()).existsByNickname(any(String.class));
+        verify(userRepository, never()).existsBySlug(any(String.class));
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    @DisplayName("중복된 닉네임이면 온보딩 완료를 거부한다")
+    void completeOnboardingRejectsDuplicatedNickname() {
+        // given
+        User user = User.builder()
+                .id(1L)
+                .githubId(100L)
+                .onboardingStatus(OnboardingStatus.PENDING)
+                .build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByNickname("러로")).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+                .isInstanceOf(UserException.class)
+                .extracting("errorInformation")
+                .isEqualTo(NICKNAME_DUPLICATED);
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    @DisplayName("중복된 슬러그이면 온보딩 완료를 거부한다")
+    void completeOnboardingRejectsDuplicatedSlug() {
+        // given
+        User user = User.builder()
+                .id(1L)
+                .githubId(100L)
+                .onboardingStatus(OnboardingStatus.PENDING)
+                .build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByNickname("러로")).thenReturn(false);
+        when(userRepository.existsBySlug("ri_log-01")).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+                .isInstanceOf(UserException.class)
+                .extracting("errorInformation")
+                .isEqualTo(SLUG_DUPLICATED);
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    private OnboardingCompleteCommand command() {
+        return new OnboardingCompleteCommand(
+                "러로",
+                "ri_log-01",
+                "기록하는 개발자입니다.",
+                "https://example.com/profile.png",
+                "https://github.com/jinriro",
+                "riro@example.com"
+        );
     }
 }
