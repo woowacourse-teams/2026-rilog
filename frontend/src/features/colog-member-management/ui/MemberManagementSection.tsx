@@ -11,38 +11,84 @@ import { MOCK_COLOG_MEMBERS } from '../lib/mock-colog-members';
 
 import CologMemberRow from './CologMemberRow';
 
+interface CologMemberDraft {
+	id: number;
+	permission: CologMemberPermission;
+	blogRole: string;
+}
+
+interface CologMemberDraftChange {
+	permission?: CologMemberPermission;
+	blogRole?: string;
+}
+
 export default function MemberManagementSection() {
 	const [members, setMembers] = useState(() => MOCK_COLOG_MEMBERS.map((member) => ({ ...member })));
-	const [draftMembers, setDraftMembers] = useState(() => members.map((member) => ({ ...member })));
+	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
-	const displayedMembers = isEditing ? draftMembers : members;
+	const displayedMembers = members.map((member) => {
+		const draftMember = draftMembers.find((draft) => draft.id === member.id);
+
+		return draftMember === undefined ? member : { ...member, ...draftMember };
+	});
 
 	const handleStartEditing = () => {
-		setDraftMembers(members.map((member) => ({ ...member })));
+		setDraftMembers([]);
 		setIsEditing(true);
 	};
 
 	const handleCancelEditing = () => {
-		setDraftMembers(members.map((member) => ({ ...member })));
+		setDraftMembers([]);
 		setIsEditing(false);
 	};
 
 	const handleSave = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		setMembers(draftMembers.map((member) => ({ ...member })));
+		setMembers((currentMembers) =>
+			currentMembers.map((member) => {
+				const draftMember = draftMembers.find((draft) => draft.id === member.id);
+
+				return draftMember === undefined ? member : { ...member, ...draftMember };
+			}),
+		);
+		setDraftMembers([]);
 		setIsEditing(false);
 	};
 
+	const updateDraftMember = (memberId: number, change: CologMemberDraftChange) => {
+		const originalMember = members.find((member) => member.id === memberId);
+
+		if (originalMember === undefined) {
+			return;
+		}
+
+		setDraftMembers((currentDrafts) => {
+			const currentDraft = currentDrafts.find((draft) => draft.id === memberId);
+			const nextDraft: CologMemberDraft = {
+				id: memberId,
+				permission: currentDraft?.permission ?? originalMember.permission,
+				blogRole: currentDraft?.blogRole ?? originalMember.blogRole,
+				...change,
+			};
+
+			if (nextDraft.permission === originalMember.permission && nextDraft.blogRole === originalMember.blogRole) {
+				return currentDrafts.filter((draft) => draft.id !== memberId);
+			}
+
+			if (currentDraft === undefined) {
+				return [...currentDrafts, nextDraft];
+			}
+
+			return currentDrafts.map((draft) => (draft.id === memberId ? nextDraft : draft));
+		});
+	};
+
 	const handlePermissionChange = (memberId: number, permission: CologMemberPermission) => {
-		setDraftMembers((currentMembers) =>
-			currentMembers.map((member) => (member.id === memberId ? { ...member, permission } : member)),
-		);
+		updateDraftMember(memberId, { permission });
 	};
 
 	const handleBlogRoleChange = (memberId: number, blogRole: string) => {
-		setDraftMembers((currentMembers) =>
-			currentMembers.map((member) => (member.id === memberId ? { ...member, blogRole } : member)),
-		);
+		updateDraftMember(memberId, { blogRole });
 	};
 
 	return (
@@ -70,7 +116,7 @@ export default function MemberManagementSection() {
 								>
 									취소
 								</Button>
-								<Button type="submit" size="md" className="w-30 px-2 text-label-1">
+								<Button type="submit" size="md" className="w-30 px-2 text-label-1" disabled={draftMembers.length === 0}>
 									저장
 								</Button>
 							</>

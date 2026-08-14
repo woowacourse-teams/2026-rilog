@@ -77,4 +77,21 @@ describe('CologSettingsWorkspace', () => {
 		expect(memberRow).toHaveTextContent('Owner');
 		expect(memberRow).not.toHaveTextContent('Member');
 	});
+
+	it('실제로 변경된 멤버가 있을 때만 저장할 수 있다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="rilog" />);
+
+		await user.click(screen.getByRole('button', { name: '멤버 정보 수정' }));
+		const saveButton = screen.getByRole('button', { name: '저장' });
+		const permissionSelect = screen.getByRole('combobox', { name: '김지연 권한' });
+
+		expect(saveButton).toBeDisabled();
+
+		await user.selectOptions(permissionSelect, 'ADMIN');
+		expect(saveButton).toBeEnabled();
+
+		await user.selectOptions(permissionSelect, 'OWNER');
+		expect(saveButton).toBeDisabled();
+	});
 });
