@@ -98,6 +98,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 			onClose={handleClose}
 			size="md"
 			padding="xl"
+			scrollMode="custom"
 			showCloseButton={false}
 			initialFocusRef={inputRef}
 			cancelAction={{ label: '취소' }}
@@ -155,7 +156,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 							추가할 멤버가 없습니다.
 						</p>
 					) : (
-						<ul aria-label="추가할 멤버 정보" className="mt-4 min-h-0 flex-1 overflow-y-auto pr-3">
+						<ul aria-label="추가할 멤버 정보" className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3">
 							{candidates.map((candidate) => (
 								<MemberInviteCandidateRow key={candidate.slug} candidate={candidate} onRemove={handleRemoveCandidate} />
 							))}
