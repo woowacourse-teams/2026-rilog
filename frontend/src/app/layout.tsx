@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import AuthenticatedQueryCacheSubscriber from '@/features/auth/session-expiration/AuthenticatedQueryCacheSubscriber';
+import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
 
 import './globals.css';
@@ -16,8 +17,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
 		<html lang="ko">
 			<body>
 				<QueryProvider>
-					<AuthenticatedQueryCacheSubscriber />
-					{children}
+					<LoginModalProvider>
+						<AuthenticatedQueryCacheSubscriber />
+						{children}
+					</LoginModalProvider>
 				</QueryProvider>
 			</body>
 		</html>
