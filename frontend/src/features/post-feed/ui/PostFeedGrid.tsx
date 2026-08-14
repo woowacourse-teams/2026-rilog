@@ -6,6 +6,7 @@ import type { PostFeedPage } from '@/domains/post/model/post-feed';
 import PostFeedCard from '@/domains/post/ui/PostFeedCard';
 import Button from '@/shared/ui/button/Button';
 
+import { usePostFeedEntryAutoScroll } from '../hooks/use-post-feed-entry-auto-scroll';
 import { deduplicatePostFeedItems } from '../lib/deduplicate-post-feed-items';
 import { usePostFeed } from '../model/use-post-feed';
 
@@ -15,6 +16,8 @@ interface PostFeedGridProps {
 	initialPage?: PostFeedPage;
 	initialRequestFailed?: boolean;
 }
+
+const POST_FEED_CONTENT_ID = 'post-feed-content';
 
 export default function PostFeedGrid({ initialPage, initialRequestFailed = false }: PostFeedGridProps) {
 	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
@@ -26,6 +29,10 @@ export default function PostFeedGrid({ initialPage, initialRequestFailed = false
 		[query.data?.pages],
 	);
 	const hasInitialError = (!isQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
+	usePostFeedEntryAutoScroll({
+		isReady: hasInitialError || !query.isPending,
+		targetId: POST_FEED_CONTENT_ID,
+	});
 
 	useEffect(() => {
 		const sentinel = sentinelRef.current;
@@ -56,7 +63,8 @@ export default function PostFeedGrid({ initialPage, initialRequestFailed = false
 	if (hasInitialError) {
 		return (
 			<section
-				className="mx-auto w-full max-w-7xl px-6 pb-20 md:px-16"
+				id={POST_FEED_CONTENT_ID}
+				className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
 				aria-labelledby="post-feed-heading"
 			>
 				<h2 id="post-feed-heading" className="sr-only">
@@ -89,7 +97,8 @@ export default function PostFeedGrid({ initialPage, initialRequestFailed = false
 	if (posts.length === 0) {
 		return (
 			<section
-				className="mx-auto w-full max-w-7xl px-6 pb-20 md:px-16"
+				id={POST_FEED_CONTENT_ID}
+				className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
 				aria-labelledby="post-feed-heading"
 			>
 				<h2 id="post-feed-heading" className="sr-only">
@@ -107,7 +116,8 @@ export default function PostFeedGrid({ initialPage, initialRequestFailed = false
 
 	return (
 		<section
-			className="mx-auto w-full max-w-7xl px-6 pb-20 md:px-16"
+			id={POST_FEED_CONTENT_ID}
+			className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
 			aria-labelledby="post-feed-heading"
 		>
 			<h2 id="post-feed-heading" className="sr-only">

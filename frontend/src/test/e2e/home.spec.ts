@@ -64,3 +64,37 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 	expect(hasHorizontalOverflow).toBe(false);
 });
+
+test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자동 이동을 취소한다', async ({ page }) => {
+	const feedContent = page.locator('#post-feed-content');
+
+	await page.goto('/feeds');
+	await expect(feedContent).toBeVisible();
+	await expect
+		.poll(() =>
+			feedContent.evaluate((element) => {
+				const scrollMarginTop = Number.parseFloat(getComputedStyle(element).scrollMarginTop);
+
+				return Math.abs(Math.round(element.getBoundingClientRect().top - scrollMarginTop));
+			}),
+		)
+		.toBe(0);
+	await expect(page.locator('main > header img')).not.toBeInViewport();
+
+	await page.goto('about:blank');
+	await page.goto('/feeds');
+	await expect(feedContent).toBeVisible();
+	await page.mouse.click(100, 100);
+	await page.waitForTimeout(1_200);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+	await page.goto('about:blank');
+	await page.goto('/feeds');
+	await expect(feedContent).toBeVisible();
+	await page.mouse.wheel(0, 120);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	const interruptedScrollY = await page.evaluate(() => window.scrollY);
+
+	await page.waitForTimeout(1_200);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
+});
