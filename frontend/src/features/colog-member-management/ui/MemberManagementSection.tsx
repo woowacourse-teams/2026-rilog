@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
@@ -23,7 +23,11 @@ interface CologMemberDraftChange {
 	blogRole?: string;
 }
 
-export default function MemberManagementSection() {
+interface MemberManagementSectionProps {
+	onDirtyChange?: (isDirty: boolean) => void;
+}
+
+export default function MemberManagementSection({ onDirtyChange }: MemberManagementSectionProps) {
 	const [members, setMembers] = useState(() => MOCK_COLOG_MEMBERS.map((member) => ({ ...member })));
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
@@ -33,6 +37,10 @@ export default function MemberManagementSection() {
 
 		return draftMember === undefined ? member : { ...member, ...draftMember };
 	});
+
+	useEffect(() => {
+		onDirtyChange?.(draftMembers.length > 0);
+	}, [draftMembers.length, onDirtyChange]);
 
 	const handleStartEditing = () => {
 		setDraftMembers([]);
