@@ -16,4 +16,13 @@ describe('Avatar', () => {
 
 		expect(screen.getByRole('img', { name: 'Rilog 프로필' })).toHaveTextContent('R');
 	});
+
+	it('이미지 주소가 있으면 fallback 대신 프로필 이미지를 표시한다', () => {
+		render(<Avatar src="https://example.com/profile.png" fallback="R" label="Rilog 프로필" />);
+
+		const avatar = screen.getByRole('img', { name: 'Rilog 프로필' });
+
+		expect(avatar).not.toHaveTextContent('R');
+		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://example.com/profile.png');
+	});
 });

@@ -50,7 +50,13 @@ export default function CologMemberRow(props: CologMemberRowProps) {
 		<tr className="h-18.5 border-b border-border-default">
 			<td className="py-3 pl-6">
 				<div className="flex items-center gap-3.5">
-					<UserAvatar fallback="" label={`${member.nickname} 프로필 이미지`} size="lg" tone="subtle" />
+					<UserAvatar
+						src={member.profileImageUrl}
+						fallback=""
+						label={`${member.nickname} 프로필 이미지`}
+						size="lg"
+						tone="subtle"
+					/>
 					<div className="min-w-0">
 						<strong className="block truncate text-body-1 font-semibold text-text-primary">{member.nickname}</strong>
 						<span className="block truncate text-caption-2 text-text-secondary">@{member.slug}</span>

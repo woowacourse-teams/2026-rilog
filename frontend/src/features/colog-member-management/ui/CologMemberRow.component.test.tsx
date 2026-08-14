@@ -33,6 +33,10 @@ describe('CologMemberRow', () => {
 		expect(row).toHaveTextContent('회장');
 		expect(row).toHaveTextContent('Owner');
 		expect(row).toHaveTextContent('2024. 5. 20');
+		expect(screen.getByRole('img', { name: '김지연 프로필 이미지' }).querySelector('img')).toHaveAttribute(
+			'src',
+			MEMBER.profileImageUrl,
+		);
 		expect(screen.getByRole('button', { name: '김지연 멤버 내보내기' })).toBeInTheDocument();
 	});
 
