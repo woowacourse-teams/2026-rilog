@@ -89,7 +89,7 @@ export default function PublishSettingsModal({
 			description="발행 전에 게시글 정보를 확인해 주세요."
 			onClose={onClose}
 			size="xl"
-			padding="lg"
+			padding="xl"
 			scrollMode="custom"
 			showCloseButton={false}
 			closeOnBackdrop={false}
@@ -97,10 +97,10 @@ export default function PublishSettingsModal({
 			cancelAction={{}}
 			primaryAction={{ label: '발행', type: 'submit', form: PUBLISH_FORM_ID }}
 		>
-			<form id={PUBLISH_FORM_ID} className="max-h-[min(60dvh,38rem)] overflow-y-auto pr-1" action={handleSubmit}>
-				<div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] md:gap-8">
+			<form id={PUBLISH_FORM_ID} className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1" action={handleSubmit}>
+				<div className="grid gap-8 md:grid-cols-2 md:gap-10">
 					<section aria-labelledby="representative-image-label">
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+						<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 							<div className="min-w-0">
 								<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
 									대표 이미지
@@ -118,7 +118,13 @@ export default function PublishSettingsModal({
 									onFileChange={onImageChange}
 								/>
 								{settings.representativeImage !== null && (
-									<Button size="sm" variant="ghost" disabled={isPublishing} onClick={() => onImageChange(null)}>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="focus-visible:-outline-offset-2"
+										disabled={isPublishing}
+										onClick={() => onImageChange(null)}
+									>
 										이미지 제거
 									</Button>
 								)}
@@ -126,7 +132,7 @@ export default function PublishSettingsModal({
 						</div>
 						<figure
 							aria-label="게시글 썸네일 미리보기"
-							className="mt-4 overflow-hidden rounded-lg border border-border-default bg-surface"
+							className="mt-5 overflow-hidden rounded-lg border border-border-default bg-surface"
 						>
 							<div className="aspect-video bg-surface-hover">
 								{/* 동적 blob/본문 URL을 그대로 미리보기 위한 UI 전용 이미지입니다. */}
@@ -139,14 +145,14 @@ export default function PublishSettingsModal({
 						</figure>
 					</section>
 
-					<div className="space-y-6">
+					<div className="space-y-8">
 						<fieldset disabled={isPublishing}>
 							<legend className="text-label-2 font-semibold text-text-primary">카테고리</legend>
-							<div className="mt-3 grid grid-cols-2 gap-2">
+							<div className="mt-4 grid grid-cols-2 gap-3">
 								{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
+										className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
 									>
 										<input
 											type="radio"
@@ -173,7 +179,7 @@ export default function PublishSettingsModal({
 								disabled={isPublishing}
 								aria-invalid={cologError !== undefined}
 								aria-describedby={cologError === undefined ? undefined : cologErrorId}
-								className="mt-3 h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:outline-focus-ring"
+								className="mt-4 h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
 								onChange={(event) => {
 									const selectedValue = event.currentTarget.value;
 									onCoLogChange(selectedValue.length === 0 ? null : Number(selectedValue));
