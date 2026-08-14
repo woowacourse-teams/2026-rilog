@@ -12,7 +12,7 @@ import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.service.OnboardingService;
+import kr.rilog.domain.user.service.UserService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -56,7 +56,7 @@ class OnboardingControllerTest {
     void completeOnboardingIssuesAccessTokenAndRefreshToken() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        OnboardingService onboardingService = mock(OnboardingService.class);
+        UserService userService = mock(UserService.class);
         AccessTokenService accessTokenService = mock(AccessTokenService.class);
         RefreshTokenIssuer refreshTokenIssuer = mock(RefreshTokenIssuer.class);
 
@@ -67,14 +67,14 @@ class OnboardingControllerTest {
                         Instant.parse("2026-08-13T00:00:00Z"),
                         Instant.parse("2026-08-13T00:10:00Z")
                 ));
-        when(onboardingService.complete(1L, command()))
+        when(userService.completeOnboarding(1L, command()))
                 .thenReturn(user);
         when(accessTokenService.issue(1L, GlobalRole.USER, "ri_log-01"))
                 .thenReturn(AccessToken.of("access-token"));
         when(refreshTokenIssuer.issue(user))
                 .thenReturn(RefreshToken.of("refresh-token"));
 
-        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingService, accessTokenService, refreshTokenIssuer);
+        MockMvc mockMvc = mockMvc(onboardingTokenService, userService, accessTokenService, refreshTokenIssuer);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -99,10 +99,10 @@ class OnboardingControllerTest {
     void completeOnboardingRejectsMissingAuthorizationHeader() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        OnboardingService onboardingService = mock(OnboardingService.class);
+        UserService userService = mock(UserService.class);
         MockMvc mockMvc = mockMvc(
                 onboardingTokenService,
-                onboardingService,
+                userService,
                 mock(AccessTokenService.class),
                 mock(RefreshTokenIssuer.class)
         );
@@ -115,7 +115,7 @@ class OnboardingControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_HEADER_MISSING"));
 
         verify(onboardingTokenService, never()).parse(any(String.class));
-        verify(onboardingService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
+        verify(userService, never()).completeOnboarding(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
     @Test
@@ -123,10 +123,10 @@ class OnboardingControllerTest {
     void completeOnboardingRejectsInvalidAuthorizationHeader() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        OnboardingService onboardingService = mock(OnboardingService.class);
+        UserService userService = mock(UserService.class);
         MockMvc mockMvc = mockMvc(
                 onboardingTokenService,
-                onboardingService,
+                userService,
                 mock(AccessTokenService.class),
                 mock(RefreshTokenIssuer.class)
         );
@@ -140,7 +140,7 @@ class OnboardingControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
 
         verify(onboardingTokenService, never()).parse(any(String.class));
-        verify(onboardingService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
+        verify(userService, never()).completeOnboarding(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
     @Test
@@ -148,12 +148,12 @@ class OnboardingControllerTest {
     void completeOnboardingRejectsInvalidOnboardingToken() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        OnboardingService onboardingService = mock(OnboardingService.class);
+        UserService userService = mock(UserService.class);
         when(onboardingTokenService.parse("invalid-token"))
                 .thenThrow(new AuthException(INVALID_ONBOARDING_TOKEN));
         MockMvc mockMvc = mockMvc(
                 onboardingTokenService,
-                onboardingService,
+                userService,
                 mock(AccessTokenService.class),
                 mock(RefreshTokenIssuer.class)
         );
@@ -166,12 +166,12 @@ class OnboardingControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_ONBOARDING_TOKEN"));
 
-        verify(onboardingService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
+        verify(userService, never()).completeOnboarding(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
     private MockMvc mockMvc(
             OnboardingTokenService onboardingTokenService,
-            OnboardingService onboardingService,
+            UserService userService,
             AccessTokenService accessTokenService,
             RefreshTokenIssuer refreshTokenIssuer
     ) {
@@ -184,7 +184,7 @@ class OnboardingControllerTest {
         );
         return MockMvcBuilders.standaloneSetup(new OnboardingController(
                         onboardingTokenService,
-                        onboardingService,
+                        userService,
                         accessTokenService,
                         refreshTokenIssuer,
                         new RefreshTokenCookieFactory(properties)

@@ -1,5 +1,7 @@
 package kr.rilog.domain.user.service;
 
+import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -18,6 +20,7 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BlogRepository blogRepository;
 
     public void validateDuplicatedNickname(String nickname) {
         if (userRepository.existsByNickname(nickname)) {
@@ -52,6 +55,17 @@ public class UserService {
                 command.email()
         );
 
-        return userRepository.saveAndFlush(user);
+        User completedUser = userRepository.saveAndFlush(user);
+        createRilogIfAbsent(completedUser);
+        return completedUser;
     }
+
+    private void createRilogIfAbsent(User user) {
+        if (blogRepository.findRilogByOwnerId(user.getId()).isPresent()) {
+            return;
+        }
+
+        blogRepository.save(Blog.createRilog(user));
+    }
+
 }
