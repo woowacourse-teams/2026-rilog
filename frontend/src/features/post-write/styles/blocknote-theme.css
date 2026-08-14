@@ -16,7 +16,7 @@
 	--destructive-foreground: var(--white);
 	--border: var(--border-default);
 	--input: var(--border-default);
-	--ring: transparent;
+	--ring: var(--focus-ring);
 	--bn-colors-editor-text: var(--text-primary);
 	--bn-colors-editor-background: transparent;
 	--bn-colors-menu-text: var(--text-primary);
@@ -56,7 +56,8 @@
 
 .post-write-blocknote .bn-block-content.ProseMirror-selectednode > *,
 .post-write-blocknote .ProseMirror-selectednode > .bn-block-content > * {
-	outline: none;
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
 }
 
 @media (max-width: 40rem) {

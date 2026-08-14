@@ -15,7 +15,7 @@
 	--color-destructive-foreground: var(--white);
 	--color-border: var(--border-default);
 	--color-input: var(--border-default);
-	--color-ring: transparent;
+	--color-ring: var(--focus-ring);
 }
 
 @layer base {
