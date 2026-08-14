@@ -5,14 +5,19 @@ import { describe, expect, it } from 'vitest';
 import GuestSidebarFooter from './GuestSidebarFooter';
 
 describe('GuestSidebarFooter', () => {
-	it('키보드로 접근할 수 있는 로그인 링크를 제공한다', async () => {
+	it('로그인 버튼을 누르면 로그인 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(<GuestSidebarFooter />);
 
-		const loginLink = screen.getByRole('link');
-		expect(loginLink).toHaveAttribute('href', '/login');
+		const loginButton = screen.getByRole('button', { name: '로그인' });
+		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('dialog', { name: '로그인' })).not.toBeInTheDocument();
 
 		await user.tab();
-		expect(loginLink).toHaveFocus();
+		expect(loginButton).toHaveFocus();
+
+		await user.keyboard('{Enter}');
+		expect(screen.getByRole('dialog', { name: '로그인' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'GitHub로 계속하기' })).toHaveFocus();
 	});
 });

@@ -20,13 +20,13 @@ describe('Sidebar', () => {
 		expect(screen.getByRole('navigation', { name: '내 코로그' })).toBeInTheDocument();
 		expect(screen.getByRole('separator')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '글쓰기' })).toBeInTheDocument();
-		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
 	});
 
 	it('비로그인 사용자용 푸터를 조립하고 코로그 탐색을 제외한다', () => {
 		render(<Sidebar isAuthenticated={false} />);
 
-		expect(screen.getByRole('link', { name: '로그인' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
 		expect(screen.queryByRole('separator')).not.toBeInTheDocument();
 		expect(screen.queryByRole('navigation', { name: '내 코로그' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '글쓰기' })).not.toBeInTheDocument();
