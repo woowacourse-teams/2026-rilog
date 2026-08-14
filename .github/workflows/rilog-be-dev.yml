@@ -63,7 +63,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/Dockerfile-dev
+          file: ./backend/Dockerfile
           platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ secrets.DOCKER_TAG }}
@@ -75,7 +75,7 @@ jobs:
     runs-on: self-hosted
     needs: build
 
-    if: github.event_name == 'push'
+    #if: github.event_name == 'push'
 
     steps:
       - name: Deploy to server
