@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import SignUpForm from '@/features/auth/sign-up/SignUpForm';
+import SignUpForm from '@/features/auth/ui/SignUpForm';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 export const metadata: Metadata = {
