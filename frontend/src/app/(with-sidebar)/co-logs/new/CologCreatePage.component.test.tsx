@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import CologCreatePage from './page';
+
+vi.mock('next/navigation', () => ({
+	useRouter: () => ({ back: vi.fn() }),
+}));
 
 describe('CologCreatePage', () => {
 	it('팀 생성 페이지의 목적을 안내한다', () => {

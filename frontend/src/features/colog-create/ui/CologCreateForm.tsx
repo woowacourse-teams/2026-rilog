@@ -1,11 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 
 import type { ChangeEvent } from 'react';
 
 import Button from '@/shared/ui/button/Button';
-import ButtonLink from '@/shared/ui/button/ButtonLink';
 import Field from '@/shared/ui/field/Field';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
@@ -17,6 +17,7 @@ const LOGO_PLACEHOLDER_URL = '/images/profile-placeholder.svg';
 const COVER_PLACEHOLDER_URL = '/images/team-cover-placeholder.svg';
 
 export default function CologCreateForm() {
+	const router = useRouter();
 	const logoLabelId = useId();
 	const coverLabelId = useId();
 	const socialLabelId = useId();
@@ -217,9 +218,9 @@ export default function CologCreateForm() {
 			</div>
 
 			<div className="flex flex-col-reverse justify-end gap-4 sm:flex-row">
-				<ButtonLink href="/feeds" variant="secondary" size="lg" className="w-full bg-white sm:w-40">
+				<Button variant="secondary" size="lg" className="w-full bg-white sm:w-40" onClick={() => router.back()}>
 					취소
-				</ButtonLink>
+				</Button>
 				<Button type="submit" size="lg" className="w-full sm:w-40">
 					팀 만들기
 				</Button>

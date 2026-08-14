@@ -1,10 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CologCreateForm from './CologCreateForm';
 
+const { backMock } = vi.hoisted(() => ({ backMock: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+	useRouter: () => ({ back: backMock }),
+}));
+
 describe('CologCreateForm', () => {
+	beforeEach(() => {
+		backMock.mockClear();
+	});
+
 	it('팀 생성에 필요한 입력과 action을 제공한다', () => {
 		render(<CologCreateForm />);
 
@@ -23,8 +33,17 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('textbox', { name: '서비스 링크' })).toHaveAttribute('type', 'url');
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).toHaveAttribute('type', 'url');
 		expect(screen.getByRole('textbox', { name: '이메일' })).toHaveAttribute('type', 'email');
-		expect(screen.getByRole('link', { name: '취소' })).toHaveAttribute('href', '/feeds');
+		expect(screen.getByRole('button', { name: '취소' })).toHaveAttribute('type', 'button');
 		expect(screen.getByRole('button', { name: '팀 만들기' })).toHaveAttribute('type', 'submit');
+	});
+
+	it('취소하면 브라우저의 이전 경로로 이동한다', async () => {
+		const user = userEvent.setup();
+		render(<CologCreateForm />);
+
+		await user.click(screen.getByRole('button', { name: '취소' }));
+
+		expect(backMock).toHaveBeenCalledOnce();
 	});
 
 	it('팀 소개의 글자 수를 입력에 맞춰 안내한다', async () => {
