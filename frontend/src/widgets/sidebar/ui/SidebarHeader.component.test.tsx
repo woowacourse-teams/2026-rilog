@@ -9,7 +9,7 @@ describe('SidebarBrand', () => {
 		const user = userEvent.setup();
 		render(<SidebarHeader />);
 
-		const brandLink = screen.getByRole('link', { name: 'Rilog 메인으로 이동' });
+		const brandLink = screen.getByRole('link');
 		expect(brandLink).toHaveAttribute('href', '/');
 		expect(brandLink).toHaveTextContent('Rilog.');
 

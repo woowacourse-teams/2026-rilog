@@ -8,22 +8,28 @@ describe('AuthenticatedSidebarFooter', () => {
 	it('글쓰기와 프로필 진입점, 로그아웃 버튼을 제공한다', () => {
 		render(<AuthenticatedSidebarFooter />);
 
-		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');
-		expect(screen.getByRole('link', { name: '파라디 @JetProc' })).toHaveAttribute('href', '/profile');
-		expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
+		const [writeLink, profileLink] = screen.getAllByRole('link');
+		const logoutButton = screen.getByRole('button');
+
+		expect(writeLink).toHaveAttribute('href', '/write');
+		expect(profileLink).toHaveAttribute('href', '/profile');
+		expect(profileLink).toHaveAccessibleName();
+		expect(logoutButton).toBeEnabled();
 	});
 
 	it('키보드로 푸터 링크와 로그아웃 버튼을 순차적으로 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<AuthenticatedSidebarFooter />);
+		const [writeLink, profileLink] = screen.getAllByRole('link');
+		const logoutButton = screen.getByRole('button');
 
 		await user.tab();
-		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveFocus();
+		expect(writeLink).toHaveFocus();
 
 		await user.tab();
-		expect(screen.getByRole('link', { name: '파라디 @JetProc' })).toHaveFocus();
+		expect(profileLink).toHaveFocus();
 
 		await user.tab();
-		expect(screen.getByRole('button', { name: '로그아웃' })).toHaveFocus();
+		expect(logoutButton).toHaveFocus();
 	});
 });

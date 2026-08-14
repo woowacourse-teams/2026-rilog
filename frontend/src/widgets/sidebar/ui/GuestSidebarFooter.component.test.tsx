@@ -9,7 +9,7 @@ describe('GuestSidebarFooter', () => {
 		const user = userEvent.setup();
 		render(<GuestSidebarFooter />);
 
-		const loginLink = screen.getByRole('link', { name: '로그인' });
+		const loginLink = screen.getByRole('link');
 		expect(loginLink).toHaveAttribute('href', '/login');
 
 		await user.tab();

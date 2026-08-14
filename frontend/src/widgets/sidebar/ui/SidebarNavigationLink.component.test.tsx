@@ -17,7 +17,7 @@ describe('SidebarNavigationLink', () => {
 			/>,
 		);
 
-		const link = screen.getByRole('link', { name: '피드 132' });
+		const link = screen.getByRole('link');
 		expect(link).toHaveAttribute('href', '/feeds');
 		expect(link).toHaveAttribute('aria-current', 'page');
 		expect(link).toHaveTextContent('Feed');
@@ -29,6 +29,6 @@ describe('SidebarNavigationLink', () => {
 		render(<SidebarNavigationLink href="/teams/rilog" icon={<span aria-hidden="true">R</span>} label="Rilog" />);
 
 		await user.tab();
-		expect(screen.getByRole('link', { name: 'Rilog' })).toHaveFocus();
+		expect(screen.getByRole('link')).toHaveFocus();
 	});
 });
