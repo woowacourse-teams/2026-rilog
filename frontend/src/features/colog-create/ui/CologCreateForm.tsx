@@ -92,7 +92,7 @@ export default function CologCreateForm() {
 						shape="rectangle"
 						fit="cover"
 						sizes="(max-width: 640px) 100vw, 418px"
-						className="0 w-full max-w-[418px]"
+						className="w-full max-w-[418px]"
 					/>
 					<div className="w-full sm:w-auto">
 						<ImageUploader
