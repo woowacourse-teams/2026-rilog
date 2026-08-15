@@ -3,7 +3,7 @@ export interface PostFeedAuthor {
 	profileImageUrl: string | null;
 }
 
-export interface PostFeedCoLog {
+export interface PostFeedColog {
 	name: string;
 	logoUrl: string | null;
 }
@@ -14,7 +14,7 @@ export interface PostFeedItem {
 	thumbnailUrl: string | null;
 	publishedAt: string;
 	author: PostFeedAuthor;
-	colog: PostFeedCoLog | null;
+	colog: PostFeedColog | null;
 }
 
 export interface PostFeedPage {

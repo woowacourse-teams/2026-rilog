@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostFeedItem } from '@/domains/post/model/post-feed';
 
-import PostFeedCoLogBadge from './PostFeedCoLogBadge';
+import PostFeedCologBadge from './PostFeedCologBadge';
 import PostFeedImage from './PostFeedImage';
 
 interface PostFeedCardProps {
@@ -28,7 +28,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 							fallbackClassName="object-contain p-10 sm:p-12"
 							isScaledOnHover
 						/>
-						{post.colog !== null && <PostFeedCoLogBadge colog={post.colog} />}
+						{post.colog !== null && <PostFeedCologBadge colog={post.colog} />}
 					</div>
 
 					<div className="mt-4 flex flex-1 flex-col">

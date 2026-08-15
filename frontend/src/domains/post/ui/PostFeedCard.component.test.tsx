@@ -43,7 +43,7 @@ describe('PostFeedCard', () => {
 		);
 	});
 
-	it('CoLog 글에만 팀 이름 배지를 표시한다', () => {
+	it('Colog 글에만 팀 이름 배지를 표시한다', () => {
 		const { rerender } = render(<PostFeedCard post={PERSONAL_POST} />);
 
 		expect(screen.queryByText('리로그 팀')).not.toBeInTheDocument();
