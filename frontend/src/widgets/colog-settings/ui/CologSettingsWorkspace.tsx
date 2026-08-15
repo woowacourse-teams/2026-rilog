@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { SettingsTab } from '../lib/get-next-tab';
 import type { KeyboardEvent } from 'react';
 
+import DangerZoneSection from '@/features/colog-deletion/ui/DangerZoneSection';
 import MemberManagementSection from '@/features/colog-member-management/ui/MemberManagementSection';
 import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
@@ -77,14 +78,7 @@ export default function CologSettingsWorkspace() {
 					<CologProfileSection value={savedProfile} onSave={setSavedProfile} onDirtyChange={onDirtyChange} />
 				)}
 				{activeTab === 'members' && <MemberManagementSection onDirtyChange={onDirtyChange} />}
-				{activeTab === 'danger' && (
-					<section aria-labelledby="danger-settings-title">
-						<h1 id="danger-settings-title" className="text-heading-3 font-bold text-text-primary">
-							위험 영역
-						</h1>
-						<p className="mt-0.5 text-body-1 text-text-secondary">팀 삭제와 같이 되돌릴 수 없는 작업을 관리합니다.</p>
-					</section>
-				)}
+				{activeTab === 'danger' && <DangerZoneSection />}
 			</div>
 
 			<ConfirmModal
