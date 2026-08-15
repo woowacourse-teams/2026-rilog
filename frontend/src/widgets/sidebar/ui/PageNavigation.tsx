@@ -1,4 +1,7 @@
-import SidebarNavigationIcon from './SidebarNavigationIcon';
+import CologIcon from '@/widgets/sidebar/assets/colog.svg';
+import FeedIcon from '@/widgets/sidebar/assets/feed.svg';
+
+import { SIDEBAR_GLYPH_CLASS_NAME } from './sidebar-class-names';
 import SidebarNavigationLink from './SidebarNavigationLink';
 
 export default function PageNavigation() {
@@ -7,7 +10,7 @@ export default function PageNavigation() {
 			<SidebarNavigationLink
 				href="/feeds"
 				accessibilityLabel="피드 글 132개"
-				icon={<SidebarNavigationIcon />}
+				icon={<FeedIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />}
 				label="Feed"
 				badge={132}
 				isCurrent
@@ -16,7 +19,7 @@ export default function PageNavigation() {
 			<SidebarNavigationLink
 				href="/cologs"
 				accessibilityLabel="코로그 132개"
-				icon={<SidebarNavigationIcon />}
+				icon={<CologIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />}
 				label="Colog"
 				badge={132}
 				size="md"

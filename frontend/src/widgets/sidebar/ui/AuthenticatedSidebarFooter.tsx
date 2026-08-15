@@ -3,17 +3,22 @@ import Link from 'next/link';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
+import LogOutIcon from '@/widgets/sidebar/assets/log-out.svg';
+import WriteIcon from '@/widgets/sidebar/assets/write.svg';
 
-import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME, FOCUS_CLASS_NAME } from './sidebar-class-names';
+import {
+	EXPANDED_TEXT_CLASS_NAME,
+	EXPANDING_ACTION_CLASS_NAME,
+	FOCUS_CLASS_NAME,
+	SIDEBAR_GLYPH_CLASS_NAME,
+} from './sidebar-class-names';
 
 export default function AuthenticatedSidebarFooter() {
 	return (
 		<>
 			<div className="w-full shrink-0 px-3 pb-3">
 				<ButtonLink href="/write" fullWidth className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}>
-					<span aria-hidden="true" className="shrink-0 text-body-3 leading-none">
-						+
-					</span>
+					<WriteIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					<span className={EXPANDED_TEXT_CLASS_NAME}>글쓰기</span>
 				</ButtonLink>
 			</div>
@@ -37,10 +42,7 @@ export default function AuthenticatedSidebarFooter() {
 						variant="ghost"
 						className={`hidden! shrink-0 items-center justify-center group-focus-within:flex! group-hover:flex! ${FOCUS_CLASS_NAME}`}
 					>
-						{/* TODO: 아이콘으로 교체 필요 */}
-						<span aria-hidden="true" className="text-caption-2">
-							나가기
-						</span>
+						<LogOutIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					</Button>
 				</div>
 			</footer>
