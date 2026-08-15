@@ -2,11 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import DangerZoneSection from './DangerZoneSection';
+import CologDangerZoneSection from './CologDangerZoneSection';
 
-describe('DangerZoneSection', () => {
+describe('CologDangerZoneSection', () => {
 	it('팀 삭제의 영향과 되돌릴 수 없음을 안내한다', () => {
-		render(<DangerZoneSection />);
+		render(<CologDangerZoneSection />);
 
 		expect(screen.getByRole('heading', { level: 1, name: '위험 영역' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: '팀 삭제' })).toBeInTheDocument();
@@ -16,7 +16,7 @@ describe('DangerZoneSection', () => {
 
 	it('팀 삭제 전에 취소할 수 있는 확인 모달을 제공한다', async () => {
 		const user = userEvent.setup();
-		render(<DangerZoneSection />);
+		render(<CologDangerZoneSection />);
 
 		await user.click(screen.getByRole('button', { name: '팀 영구 삭제' }));
 
@@ -33,7 +33,7 @@ describe('DangerZoneSection', () => {
 	it('확정하면 팀 삭제를 요청하고 모달을 닫는다', async () => {
 		const user = userEvent.setup();
 		const onDeleteTeam = vi.fn();
-		render(<DangerZoneSection onDeleteTeam={onDeleteTeam} />);
+		render(<CologDangerZoneSection onDeleteTeam={onDeleteTeam} />);
 
 		await user.click(screen.getByRole('button', { name: '팀 영구 삭제' }));
 		await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '영구 삭제' }));

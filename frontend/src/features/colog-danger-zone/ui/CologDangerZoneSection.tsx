@@ -5,11 +5,11 @@ import { useState } from 'react';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
-interface DangerZoneSectionProps {
+interface CologDangerZoneSectionProps {
 	onDeleteTeam?: () => void;
 }
 
-export default function DangerZoneSection({ onDeleteTeam }: DangerZoneSectionProps) {
+export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZoneSectionProps) {
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
 	const handleDeleteConfirm = () => {
