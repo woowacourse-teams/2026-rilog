@@ -7,7 +7,6 @@ import type { Block } from '@blocknote/core';
 import type { ComponentType } from 'react';
 
 import { buildPostDetailPath } from '@/domains/post/lib/build-post-detail-path';
-import { useUnsavedChangesGuard } from '@/features/post-write/hooks/use-unsaved-changes-guard';
 import { COLOG_OPTIONS_MOCK } from '@/features/post-write/lib/mock-colog-options';
 import { mockPublishPost } from '@/features/post-write/lib/mock-publish-post';
 import { mockUploadPostBodyFile } from '@/features/post-write/lib/mock-upload-post-body-file';
@@ -20,7 +19,11 @@ import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
+import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+
+
+
 
 const DEFAULT_POST_COVER_PATH = '/images/default-post-cover.svg';
 

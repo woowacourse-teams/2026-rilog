@@ -43,9 +43,11 @@ export default function Input({
 	return (
 		<div className="w-full">
 			<div className={`${BASE_INPUT_CLASS_NAME} ${STATUS_CLASS_NAMES[status]} ${className ?? ''}`.trim()}>
-				<label htmlFor={id} className="flex h-full items-center">
-					{left}
-				</label>
+				{left && (
+					<label htmlFor={id} className="flex h-full items-center">
+						{left}
+					</label>
+				)}
 				<input
 					{...inputProps}
 					ref={ref}

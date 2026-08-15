@@ -1,13 +1,19 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import HomePage from './page';
 
-describe('HomePage', () => {
-	it('서비스 이름과 설명을 안내한다', () => {
-		render(<HomePage />);
+const { redirectMock } = vi.hoisted(() => ({
+	redirectMock: vi.fn(),
+}));
 
-		expect(screen.getByRole('heading', { name: 'Rilog' })).toBeInTheDocument();
-		expect(screen.getByText('기록을 작성하고 함께 나누는 공간')).toBeInTheDocument();
+vi.mock('next/navigation', () => ({
+	redirect: redirectMock,
+}));
+
+describe('HomePage', () => {
+	it('루트 경로에서 피드 경로로 이동시킨다', () => {
+		HomePage();
+
+		expect(redirectMock).toHaveBeenCalledWith('/feeds');
 	});
 });
