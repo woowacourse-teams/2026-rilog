@@ -6,7 +6,7 @@ import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
 import type { ChangeEvent } from 'react';
 
-import type { CoLogSummary } from '@/domains/colog/model/colog-summary';
+import type { CologSummary } from '@/domains/colog/model/colog-info';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post-category';
 import Button from '@/shared/ui/button/Button';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
@@ -21,7 +21,7 @@ interface PublishSettingsModalProps {
 	selectedImageUrl: string | null;
 	bodyBlocks: Block[];
 	defaultImageUrl: string;
-	cologOptions: CoLogSummary[];
+	cologOptions: CologSummary[];
 	cologError?: string;
 	publishError?: string;
 	isPublishing: boolean;
