@@ -1,0 +1,51 @@
+@import '@blocknote/core/style.css';
+
+.post-detail-body {
+	min-width: 0;
+	color: var(--text-primary);
+}
+
+.post-detail-body .bn-editor {
+	padding-inline: 0;
+	background: transparent;
+	color: inherit;
+	font-family: var(--font-sans);
+	font-size: var(--text-body-2);
+	line-height: var(--text-body-2--line-height);
+}
+
+.post-detail-body .bn-block-content {
+	padding-block: 0.3rem;
+}
+
+.post-detail-body .bn-block-outer[id] {
+	scroll-margin-top: 2.5rem;
+}
+
+.post-detail-body .bn-block-content[data-content-type='heading'] {
+	padding-top: 2rem;
+	padding-bottom: 0.25rem;
+	letter-spacing: -0.015em;
+}
+
+.post-detail-body .bn-block-content[data-content-type='heading'][data-level='2'] {
+	font-size: var(--text-title-2);
+	line-height: var(--text-title-2--line-height);
+}
+
+.post-detail-body .bn-block-content[data-content-type='heading'][data-level='3'] {
+	font-size: var(--text-title-1);
+	line-height: var(--text-title-1--line-height);
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock'] {
+	margin-block: 1rem;
+	background: var(--brand-primary);
+}
+
+@media (max-width: 47.999rem) {
+	.post-detail-body .bn-editor {
+		font-size: var(--text-body-1);
+		line-height: var(--text-body-1--line-height);
+	}
+}
