@@ -115,7 +115,7 @@ export default function SignUpForm() {
 				)}
 			</Field>
 
-			<label className="flex cursor-pointer items-center gap-2 text-body-2 text-text-primary">
+			<label className="flex items-center gap-2 text-body-2 text-text-primary">
 				<Checkbox
 					id={termsAgreementId}
 					name="termsAgreement"
