@@ -9,7 +9,6 @@ import Button from '@/shared/ui/button/Button';
 
 import BaseModal from './BaseModal';
 
-
 interface ModalCommonProps {
 	open: boolean;
 	title: ReactNode;

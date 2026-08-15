@@ -104,9 +104,7 @@ export default function PublishSettingsModal({
 							<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
 								대표 이미지
 							</h3>
-							<p className="mt-1 text-caption-1 text-text-secondary">
-								선택하지 않으면 본문의 첫 이미지를 사용합니다.
-							</p>
+							<p className="mt-1 text-caption-1 text-text-secondary">선택하지 않으면 본문의 첫 이미지를 사용합니다.</p>
 							<div
 								className={`mt-4 grid gap-2 ${settings.representativeImage === null ? 'grid-cols-1' : 'grid-cols-2'}`}
 							>
