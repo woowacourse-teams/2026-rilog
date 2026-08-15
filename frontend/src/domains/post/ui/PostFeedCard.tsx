@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostFeedItem } from '@/domains/post/model/post-feed';
+import UserAvatar from '@/domains/user/ui/UserAvatar';
 
 import PostFeedCologBadge from './PostFeedCologBadge';
 import PostFeedImage from './PostFeedImage';
@@ -36,16 +37,12 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 							{post.title}
 						</h3>
 						<div className="mt-auto flex min-w-0 items-center gap-2 pt-3 text-body-1 text-text-secondary">
-							<span className="size-7 shrink-0 overflow-hidden rounded-full bg-surface-hover">
-								<PostFeedImage
-									src={post.author.profileImageUrl}
-									alt={post.author.nickname}
-									width={28}
-									height={28}
-									className="size-full object-cover"
-									fallbackClassName="object-contain p-1.5"
-								/>
-							</span>
+							<UserAvatar
+								src={post.author.profileImageUrl ?? undefined}
+								fallback={post.author.nickname.slice(0, 1)}
+								label={`${post.author.nickname} 프로필`}
+								size="md"
+							/>
 							<span className="min-w-0 truncate font-medium">{post.author.nickname}</span>
 							<span aria-hidden="true">·</span>
 							<time dateTime={post.publishedAt} className="shrink-0">

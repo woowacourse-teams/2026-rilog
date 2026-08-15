@@ -23,7 +23,23 @@ describe('PostFeedCard', () => {
 
 		expect(screen.getByRole('link', { name: /함께 기록하는 방법/ })).toHaveAttribute('href', '/posts/17');
 		expect(screen.getByText('리로거')).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '리로거 프로필' })).toHaveTextContent('리');
 		expect(screen.getByText('2026년 8월 4일')).toHaveAttribute('datetime', PERSONAL_POST.publishedAt);
+	});
+
+	it('작성자 프로필 이미지가 있으면 UserAvatar에 표시한다', () => {
+		render(
+			<PostFeedCard
+				post={{
+					...PERSONAL_POST,
+					author: { ...PERSONAL_POST.author, profileImageUrl: 'https://images.rilog.test/profile.png' },
+				}}
+			/>,
+		);
+
+		const avatar = screen.getByRole('img', { name: '리로거 프로필' });
+
+		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://images.rilog.test/profile.png');
 	});
 
 	it('썸네일을 불러오지 못하면 Rilog 기본 이미지를 표시한다', () => {
