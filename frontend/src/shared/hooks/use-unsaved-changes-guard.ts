@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-// 작성 페이지가 추가한 history entry를 기존 history state와 구분하기 위한 key
-const HISTORY_GUARD_KEY = '__rilogWriteGuard';
+const HISTORY_GUARD_KEY = '__rilogUnsavedChangesGuard';
 
 interface UseUnsavedChangesGuardOptions {
 	isDirty: boolean;
@@ -18,7 +17,6 @@ interface UseUnsavedChangesGuardResult {
 type PendingNavigation = { kind: 'history' } | { kind: 'link'; href: string };
 
 const getCurrentHistoryState = (): Record<string, unknown> => {
-	// Next.js가 저장한 history state를 유지하면서 guard 표시만 추가할 수 있도록 객체 형태로 복사
 	const state: unknown = window.history.state;
 	return typeof state === 'object' && state !== null ? { ...state } : {};
 };
@@ -54,14 +52,10 @@ export const useUnsavedChangesGuard = ({
 	onNavigationAttempt,
 	onReplace,
 }: UseUnsavedChangesGuardOptions): UseUnsavedChangesGuardResult => {
-	// 현재 문서에 guard용 history entry가 추가되어 있는지 추적
 	const isGuardEntryActiveRef = useRef(false);
-	// 사용자가 나가기를 확정했거나 발행이 완료된 경우 다음 popstate를 확인 없이 통과시키기 위한 flag
 	const isBypassingHistoryRef = useRef(false);
-	// history와 내부 링크 중 사용자가 확인한 뒤 이어서 수행할 이동을 보관
 	const pendingNavigationRef = useRef<PendingNavigation | null>(null);
 
-	// 현재 URL에 guard용 history entry를 한 번만 추가해 browser back을 가로챌 수 있게 함
 	const pushGuardEntry = useCallback(() => {
 		if (isGuardEntryActiveRef.current) {
 			return;
@@ -71,17 +65,14 @@ export const useUnsavedChangesGuard = ({
 		isGuardEntryActiveRef.current = true;
 	}, []);
 
-	// 작성 내용이 처음 변경되는 시점에 이탈 방지용 history entry 추가
 	useEffect(() => {
 		if (isDirty) {
 			pushGuardEntry();
 		}
 	}, [isDirty, pushGuardEntry]);
 
-	// browser back으로 guard entry를 벗어나려 할 때 페이지 이동 대신 이탈 확인 UI를 요청
 	useEffect(() => {
 		const handlePopState = () => {
-			// 사용자가 이동을 확정한 경우에는 현재 popstate를 소비하고 추가 확인을 생략
 			if (isBypassingHistoryRef.current) {
 				isBypassingHistoryRef.current = false;
 				return;
@@ -98,7 +89,6 @@ export const useUnsavedChangesGuard = ({
 		return () => window.removeEventListener('popstate', handlePopState);
 	}, [onNavigationAttempt]);
 
-	// 같은 origin의 일반 링크는 목적지를 저장하고 이탈 확인 UI를 거친 뒤 이동
 	useEffect(() => {
 		if (!isDirty) {
 			return;
@@ -123,7 +113,6 @@ export const useUnsavedChangesGuard = ({
 		return () => document.removeEventListener('click', handleDocumentClick, true);
 	}, [isDirty, onNavigationAttempt]);
 
-	// 작성 중 새로고침이나 탭 닫기에는 브라우저 기본 이탈 경고 사용
 	useEffect(() => {
 		if (!isDirty) {
 			return;
@@ -138,7 +127,6 @@ export const useUnsavedChangesGuard = ({
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	}, [isDirty]);
 
-	// 현재 guard 표시를 동기적으로 제거해 후속 replace 이동과 popstate가 경쟁하지 않게 함
 	const clearGuardEntry = useCallback(() => {
 		if (!isGuardEntryActiveRef.current) {
 			return;
@@ -151,7 +139,6 @@ export const useUnsavedChangesGuard = ({
 		isBypassingHistoryRef.current = false;
 	}, []);
 
-	// 사용자가 계속 작성을 선택하면 소비된 history guard를 복구하고 보류 중인 링크 이동을 취소
 	const cancelPendingNavigation = useCallback(() => {
 		if (pendingNavigationRef.current?.kind === 'history') {
 			pushGuardEntry();
@@ -159,7 +146,6 @@ export const useUnsavedChangesGuard = ({
 		pendingNavigationRef.current = null;
 	}, [pushGuardEntry]);
 
-	// 사용자가 나가기를 확정하면 보류한 history 또는 내부 링크 이동을 guard 없이 진행
 	const continuePendingNavigation = useCallback(() => {
 		const pendingNavigation = pendingNavigationRef.current;
 		pendingNavigationRef.current = null;

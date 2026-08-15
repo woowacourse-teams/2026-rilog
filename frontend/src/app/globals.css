@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '../shared/styles/tokens/breakpoints.css';
 @import '../features/post-write/styles/blocknote-shadcn.css';
 @import '../shared/styles/tokens/index.css';
 @import '../shared/ui/button/button.css';

@@ -1,5 +1,5 @@
 import CologAvatar from '@/domains/colog/ui/CologAvatar';
-import Button from '@/shared/ui/button/Button';
+import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME } from './sidebar-class-names';
 import SidebarNavigationLink from './SidebarNavigationLink';
@@ -26,7 +26,8 @@ export default function CologNavigation() {
 					</li>
 				))}
 			</ul>
-			<Button
+			<ButtonLink
+				href="/co-logs/new"
 				variant="secondary"
 				aria-label="코로그 만들기"
 				fullWidth
@@ -36,7 +37,7 @@ export default function CologNavigation() {
 					+
 				</span>
 				<span className={EXPANDED_TEXT_CLASS_NAME}>Co-log 만들기</span>
-			</Button>
+			</ButtonLink>
 		</nav>
 	);
 }
