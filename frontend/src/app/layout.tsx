@@ -7,8 +7,6 @@ import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQ
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
 
-
-
 import './globals.css';
 
 const pretendard = localFont({
