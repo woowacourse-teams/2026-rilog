@@ -18,7 +18,7 @@ export default function Avatar({ className, fallback, hasBorder = false, label, 
 		>
 			{src ? (
 				<>
-					{/* 프로필 이미지 URL은 임의의 외부 호스트 URL 가능 */}
+					{/* 추후 Image 태그로 교체 고려 */}
 					{/* eslint-disable-next-line @next/next/no-img-element */}
 					<img src={src} alt="" className="size-full rounded-[inherit] object-cover" />
 				</>
