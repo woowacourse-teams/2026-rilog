@@ -3,9 +3,12 @@ import localFont from 'next/font/local';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
-import AuthenticatedQueryCacheSubscriber from '@/features/auth/session-expiration/AuthenticatedQueryCacheSubscriber';
+
+import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQueryCacheSubscriber';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
+
+
 
 import './globals.css';
 
