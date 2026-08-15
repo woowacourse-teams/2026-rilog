@@ -1,8 +1,8 @@
 package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.OAuthAccessToken;
-import kr.rilog.domain.auth.application.SocialLoginProvider;
-import kr.rilog.domain.auth.application.SocialLoginUser;
+import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
+import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.SocialLoginUser;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
@@ -114,7 +114,7 @@ class RestClientGithubUserClientTest {
     }
 
     private GithubOAuthProperties properties() {
-        return new GithubOAuthProperties(
+        return GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
                 URI.create("http://localhost:8080/v1/auth/github/callback"),

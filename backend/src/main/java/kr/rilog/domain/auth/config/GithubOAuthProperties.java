@@ -1,7 +1,6 @@
 package kr.rilog.domain.auth.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.time.Duration;
@@ -30,32 +29,90 @@ public record GithubOAuthProperties(
     public static GithubOAuthProperties of(
             String clientId, String clientSecret, URI callbackUri, Duration stateTtl, String scope
     ) {
-        return new GithubOAuthProperties(clientId, clientSecret, callbackUri, stateTtl, scope,
-                null, null, null, null);
+        return of(
+                clientId,
+                clientSecret,
+                callbackUri,
+                stateTtl,
+                scope,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
-    public GithubOAuthProperties {
+    public static GithubOAuthProperties of(
+            String clientId,
+            String clientSecret,
+            URI callbackUri,
+            Duration stateTtl,
+            String scope,
+            URI tokenUri,
+            URI userUri,
+            Duration connectTimeout,
+            Duration readTimeout
+    ) {
+        return new GithubOAuthProperties(
+                clientId,
+                clientSecret,
+                defaultCallbackUri(callbackUri),
+                defaultStateTtl(stateTtl),
+                defaultScope(scope),
+                defaultTokenUri(tokenUri),
+                defaultUserUri(userUri),
+                defaultConnectTimeout(connectTimeout),
+                defaultReadTimeout(readTimeout)
+        );
+    }
+
+    private static URI defaultCallbackUri(URI callbackUri) {
         if (callbackUri == null) {
-            callbackUri = DEFAULT_CALLBACK_URI;
+            return DEFAULT_CALLBACK_URI;
         }
-        if (tokenUri == null) {
-            tokenUri = DEFAULT_TOKEN_URI;
-        }
-        if (userUri == null) {
-            userUri = DEFAULT_USER_URI;
-        }
+        return callbackUri;
+    }
+
+    private static Duration defaultStateTtl(Duration stateTtl) {
         if (stateTtl == null) {
-            stateTtl = DEFAULT_STATE_TTL;
+            return DEFAULT_STATE_TTL;
         }
+        return stateTtl;
+    }
+
+    private static String defaultScope(String scope) {
+        if (scope == null || scope.isBlank()) {
+            return DEFAULT_SCOPE;
+        }
+        return scope;
+    }
+
+    private static URI defaultTokenUri(URI tokenUri) {
+        if (tokenUri == null) {
+            return DEFAULT_TOKEN_URI;
+        }
+        return tokenUri;
+    }
+
+    private static URI defaultUserUri(URI userUri) {
+        if (userUri == null) {
+            return DEFAULT_USER_URI;
+        }
+        return userUri;
+    }
+
+    private static Duration defaultConnectTimeout(Duration connectTimeout) {
         if (connectTimeout == null) {
-            connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+            return DEFAULT_CONNECT_TIMEOUT;
         }
+        return connectTimeout;
+    }
+
+    private static Duration defaultReadTimeout(Duration readTimeout) {
         if (readTimeout == null) {
-            readTimeout = DEFAULT_READ_TIMEOUT;
+            return DEFAULT_READ_TIMEOUT;
         }
-        if (!StringUtils.hasText(scope)) {
-            scope = DEFAULT_SCOPE;
-        }
+        return readTimeout;
     }
 
 }

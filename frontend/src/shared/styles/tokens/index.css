@@ -1,9 +1,22 @@
 @import './colors.css';
+@import './spacing.css';
 @import './typography.css';
 
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--text-primary);
+
+	--color-navy-50: var(--navy-50);
+	--color-navy-100: var(--navy-100);
+	--color-navy-200: var(--navy-200);
+	--color-navy-300: var(--navy-300);
+	--color-navy-400: var(--navy-400);
+	--color-navy-500: var(--navy-500);
+	--color-navy-600: var(--navy-600);
+	--color-navy-700: var(--navy-700);
+	--color-navy-800: var(--navy-800);
+	--color-navy-900: var(--navy-900);
+	--color-navy-950: var(--navy-950);
 
 	--color-surface: var(--surface);
 	--color-surface-hover: var(--surface-hover);
@@ -13,6 +26,7 @@
 	--color-text-secondary: var(--text-secondary);
 	--color-text-disabled: var(--text-disabled);
 	--color-text-on-dark: var(--text-on-dark);
+	--color-text-placeholder: var(--text-placeholder);
 
 	--color-border-default: var(--border-default);
 	--color-border-strong: var(--border-strong);

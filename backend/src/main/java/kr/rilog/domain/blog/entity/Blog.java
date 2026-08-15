@@ -43,10 +43,55 @@ public class Blog extends BaseEntity {
     private BlogType blogType;
 
     @Column(length = 512)
+    private String logoUrl;
+
+    @Column(length = 512)
     private String coverImageUrl;
 
     @Column(length = 512)
+    private String email;
+
+    @Column(length = 512)
     private String serviceUrl;
+
+    @Column(length = 512)
+    private String githubUrl;
+
+    public static Blog createColog(
+            User owner,
+            String name,
+            String slug,
+            String introduction,
+            String logoUrl,
+            String coverImageUrl,
+            String serviceUrl,
+            String githubUrl
+    ) {
+        return Blog.builder()
+                .owner(owner)
+                .name(name)
+                .slug(slug)
+                .introduction(introduction)
+                .logoUrl(logoUrl)
+                .coverImageUrl(coverImageUrl)
+                .serviceUrl(serviceUrl)
+                .githubUrl(githubUrl)
+                .blogType(BlogType.COLOG)
+                .build();
+    }
+
+    public static Blog createRilog(User owner) {
+        return Blog.builder()
+                .owner(owner)
+                .name(owner.getNickname())
+                .slug(owner.getSlug())
+                .introduction(owner.getIntroduction())
+                .logoUrl(owner.getProfileImageUrl())
+                .email(owner.getEmail())
+                .githubUrl(owner.getGithubUrl())
+                .blogType(BlogType.RILOG)
+                .build();
+    }
 
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;

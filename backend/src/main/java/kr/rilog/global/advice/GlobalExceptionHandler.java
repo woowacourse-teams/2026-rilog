@@ -1,5 +1,8 @@
 package kr.rilog.global.advice;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import kr.rilog.global.exception.ErrorInformation;
 import kr.rilog.global.exception.GlobalExceptionInformation;
 import kr.rilog.global.exception.RilogBusinessException;
@@ -12,11 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -66,10 +72,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDetail> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException e
     ) {
-        ErrorInformation errorInformation = GlobalExceptionInformation.INVALID_REQUEST_BODY;
+        ErrorInformation errorInformation =
+                GlobalExceptionInformation.INVALID_REQUEST_BODY;
+
         log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage());
+
+        InvalidParam invalidParam = extractInvalidParam(e);
+
         return ResponseEntity.status(errorInformation.getHttpStatus())
-                .body(ErrorDetail.of(errorInformation));
+                .body(ErrorDetail.of(errorInformation, List.of(invalidParam)));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -110,12 +121,47 @@ public class GlobalExceptionHandler {
                 .body(ErrorDetail.of(errorInformation, e.getMessage()));
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorDetail> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException e
+    ) {
+        ErrorInformation errorInformation = GlobalExceptionInformation.MISSING_REQUEST_PARAMETER;
+        List<InvalidParam> invalidParams = List.of(InvalidParam.missingRequestParameters(e.getParameterName()));
+
+        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+        return ResponseEntity
+                .status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation, invalidParams));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetail> handleUnknownException(Exception e) {
         ErrorInformation errorInformation = GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
         log.error(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
+    }
+
+    private InvalidParam extractInvalidParam(HttpMessageNotReadableException e) {
+
+        Throwable cause = e.getMostSpecificCause();
+
+        if (cause instanceof InvalidFormatException ex) {
+            return InvalidParam.invalidValue(extractFieldName(ex));
+        }
+
+        if (cause instanceof MismatchedInputException ex) {
+            return InvalidParam.invalidFormat(extractFieldName(ex));
+        }
+
+        return InvalidParam.unreadableRequestBody();
+    }
+
+    private String extractFieldName(JsonMappingException e) {
+        return e.getPath().stream()
+                .map(JsonMappingException.Reference::getFieldName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("."));
     }
 
 }

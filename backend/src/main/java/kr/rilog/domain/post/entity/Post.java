@@ -6,6 +6,7 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -17,6 +18,8 @@ import org.hibernate.type.SqlTypes;
 import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
+
+import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 
 /**
  * NOTE
@@ -69,9 +72,6 @@ public class Post extends BaseEntity {
     @Column(length = 512)
     private String thumbnailUrl;
 
-    @Column(length = 512)
-    private String logoUrl;
-
     private LocalDateTime publishedAt;
 
 //    private Chapter chapter; // TODO 챕터 or 시리즈 추가 시, 구현 필요
@@ -92,7 +92,6 @@ public class Post extends BaseEntity {
                 .category(detail.category())
                 .visibility(detail.visibility())
                 .thumbnailUrl(detail.thumbnailUrl())
-                .logoUrl(detail.logoUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
@@ -112,10 +111,26 @@ public class Post extends BaseEntity {
                 .category(detail.category())
                 .visibility(detail.visibility())
                 .thumbnailUrl(detail.thumbnailUrl())
-                .logoUrl(detail.logoUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
+    }
+
+    public void validateReadableBy(Long requesterId) {
+        if (isPrivate() && !isWrittenBy(requesterId)) {
+            throw new PostException(PRIVATE_POST_READ_FORBIDDEN);
+        }
+    }
+
+    public boolean isPrivate() {
+        return visibility == PostVisibility.PRIVATE;
+    }
+
+    public boolean isWrittenBy(Long requesterId) {
+        return requesterId != null
+                && user != null
+                && user.getId() != null
+                && user.getId().equals(requesterId);
     }
 
 }

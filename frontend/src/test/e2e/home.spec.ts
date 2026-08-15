@@ -1,49 +1,100 @@
 import { expect, test } from '@playwright/test';
 
-test('홈 화면에 서비스 정보를 표시한다', async ({ page }) => {
+import type { Page } from '@playwright/test';
+
+const postLinks = (page: Page) => page.locator('a[href^="/posts/"]');
+
+test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 탐색한다', async ({ page, request }) => {
+	// TODO(API 연동): API 응답을 fixture로 고정해 게시글 문구와 페이지 개수를 결정적으로 검증
+	const serverResponse = await request.get('/feeds');
+	const serverHtml = await serverResponse.text();
+
+	expect(serverResponse.ok()).toBe(true);
+	expect(serverHtml).toContain('React 19에서 달라진 렌더링 흐름 이해하기');
+	expect(serverHtml).toContain('href="/posts/1"');
+
 	await page.goto('/');
 
+	await expect(page).toHaveURL('http://localhost:3000/feeds');
 	await expect(page).toHaveTitle(/Rilog/);
 	await expect(page.getByRole('heading', { name: 'Rilog' })).toBeVisible();
-	await expect(page.getByRole('main').getByText('기록을 작성하고 함께 나누는 공간')).toBeVisible();
-});
+	await expect(postLinks(page)).toHaveCount(12);
+	const viewportWidth = page.viewportSize()?.width;
+	await expect
+		.poll(async () => {
+			const logoBox = await page.locator('main > header img').boundingBox();
+			const sidebarBox = await page.getByRole('complementary', { name: '사이드바' }).boundingBox();
+			return logoBox === null || sidebarBox === null || viewportWidth === undefined
+				? null
+				: Math.round(logoBox.x + logoBox.width / 2 - (sidebarBox.x + sidebarBox.width + viewportWidth) / 2);
+		})
+		.toBe(0);
+	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
+	const firstCard = postLinks(page).nth(0);
+	const secondCard = postLinks(page).nth(1);
+	const firstMeta = await firstCard.locator('time').boundingBox();
+	const secondMeta = await secondCard.locator('time').boundingBox();
+	expect(firstMeta?.y).toBe(secondMeta?.y);
 
-test('공통 푸터를 화면 하단에 표시하고 키보드로 탐색할 수 있다', async ({ page }) => {
-	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto('/');
+	const firstTitle = firstCard.getByRole('heading');
+	await expect(firstTitle).toHaveCSS('word-break', 'keep-all');
+	await expect(firstTitle).toHaveCSS('overflow-wrap', 'break-word');
+	const initialTitleColor = await firstTitle.evaluate((element) => getComputedStyle(element).color);
+	const thumbnail = firstCard.locator('img[alt$="썸네일"]');
+	const initialThumbnailBox = await thumbnail.boundingBox();
+	await firstCard.hover();
+	await expect
+		.poll(() => firstTitle.evaluate((element) => getComputedStyle(element).color))
+		.not.toBe(initialTitleColor);
+	await expect
+		.poll(async () => (await thumbnail.boundingBox())?.width)
+		.toBeGreaterThan(initialThumbnailBox?.width ?? 0);
 
-	const footer = page.getByRole('contentinfo');
-	await expect(footer).toBeVisible();
-	await expect(footer).toHaveCount(1);
+	await page.mouse.wheel(0, 10_000);
+	await expect(postLinks(page)).toHaveCount(24);
+	await page.mouse.wheel(0, 10_000);
+	await expect(postLinks(page)).toHaveCount(36);
+	await expect(page.getByText('모든 게시글을 확인했어요.')).not.toBeAttached();
+	await expect(page).toHaveURL('http://localhost:3000/feeds');
 
-	const footerBox = await footer.boundingBox();
-	expect(footerBox).not.toBeNull();
-	expect(Math.round((footerBox?.y ?? 0) + (footerBox?.height ?? 0))).toBe(900);
-
-	const links = [
-		page.getByRole('link', { name: 'Rilog 홈' }),
-		page.getByRole('link', { name: '개인정보처리방침' }),
-		page.getByRole('link', { name: '이용약관' }),
-		page.getByRole('link', { name: 'Rilog 이메일 문의' }),
-		page.getByRole('link', { name: 'Rilog Google Form 문의' }),
-		page.getByRole('link', { name: 'Rilog Instagram' }),
-		page.getByRole('link', { name: 'Rilog Threads' }),
-	];
-
-	for (const link of links) {
-		await page.keyboard.press('Tab');
-		await expect(link).toBeFocused();
-	}
-});
-
-test('작은 화면에서도 푸터가 가로 스크롤을 만들지 않는다', async ({ page }) => {
-	await page.setViewportSize({ width: 320, height: 568 });
-	await page.goto('/');
-
-	await expect(page.getByRole('contentinfo')).toBeVisible();
-	const hasHorizontalOverflow = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-
+	await page.setViewportSize({ width: 320, height: 720 });
+	await page.reload();
+	await expect(postLinks(page)).toHaveCount(12);
+	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /^\S+$/);
+	const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 	expect(hasHorizontalOverflow).toBe(false);
+});
+
+test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자동 이동을 취소한다', async ({ page }) => {
+	const feedContent = page.locator('#post-feed-content');
+
+	await page.goto('/feeds');
+	await expect(feedContent).toBeVisible();
+	await expect
+		.poll(() =>
+			feedContent.evaluate((element) => {
+				const scrollMarginTop = Number.parseFloat(getComputedStyle(element).scrollMarginTop);
+
+				return Math.abs(Math.round(element.getBoundingClientRect().top - scrollMarginTop));
+			}),
+		)
+		.toBe(0);
+	await expect(page.locator('main > header img')).not.toBeInViewport();
+
+	await page.goto('about:blank');
+	await page.goto('/feeds');
+	await expect(feedContent).toBeVisible();
+	await page.mouse.click(100, 100);
+	await page.waitForTimeout(1_200);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+	await page.goto('about:blank');
+	await page.goto('/feeds');
+	await expect(feedContent).toBeVisible();
+	await page.mouse.wheel(0, 120);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	const interruptedScrollY = await page.evaluate(() => window.scrollY);
+
+	await page.waitForTimeout(1_200);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
 });

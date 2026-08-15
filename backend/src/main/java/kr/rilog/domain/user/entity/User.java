@@ -1,6 +1,7 @@
 package kr.rilog.domain.user.entity;
 
 import jakarta.persistence.*;
+import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -52,6 +53,11 @@ public class User extends BaseEntity {
     @Default
     private OnboardingStatus onboardingStatus = OnboardingStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Default
+    private GlobalRole globalRole = GlobalRole.USER;
+
     private LocalDateTime onboardingCompletedAt;
 
     public static User createPendingGithubUser(Long githubId, String githubLogin, String profileImageUrl) {
@@ -84,7 +90,7 @@ public class User extends BaseEntity {
         this.onboardingCompletedAt = LocalDateTime.now();
     }
 
-    private boolean isOnboardingCompleted() {
+    public boolean isOnboardingCompleted() {
         return this.onboardingStatus == OnboardingStatus.COMPLETED || this.slug != null;
     }
 }

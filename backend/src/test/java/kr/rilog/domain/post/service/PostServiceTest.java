@@ -2,11 +2,16 @@ package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
+import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -24,12 +29,14 @@ import tools.jackson.databind.JsonNode;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -53,6 +60,9 @@ class PostServiceTest {
     private BlogRepository blogRepository;
 
     @Mock
+    private BlogMemberRepository blogMemberRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -62,7 +72,7 @@ class PostServiceTest {
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(postRepository, blogRepository, userRepository);
+        postService = new PostService(postRepository, blogRepository, blogMemberRepository, userRepository);
     }
 
     @Test
@@ -104,6 +114,8 @@ class PostServiceTest {
 
         when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.of(rilog));
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
@@ -119,6 +131,26 @@ class PostServiceTest {
         assertThat(publishedPost.getRilog()).isSameAs(rilog);
         assertThat(publishedPost.getColog()).isSameAs(colog);
         assertThat(result).isEqualTo(new PostPublishResult(POST_ID, COLOG_SLUG));
+    }
+
+    @Test
+    @DisplayName("팀 블로그의 활성 멤버가 아니면 팀 블로그에 게시글을 발행할 수 없다")
+    void publishToCologFailsWhenWriterIsNotActiveMember() {
+        // given
+        User writer = createWriter();
+        Blog colog = createColog();
+        when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(false);
+
+        // when - then
+        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_ID, WRITER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_POST_PUBLISH_FORBIDDEN);
+        verify(blogRepository, never()).findRilogByOwnerId(WRITER_ID);
+        verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
@@ -160,6 +192,8 @@ class PostServiceTest {
         Blog colog = createColog();
         when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
@@ -190,6 +224,66 @@ class PostServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
         verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("공개 게시글은 로그인하지 않아도 조회할 수 있다")
+    void readPublicPostAllowsAnonymousUser() {
+        // given
+        User writer = createWriter();
+        Post publicPost = createPost(writer, PostVisibility.PUBLIC);
+        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(publicPost));
+
+        // when
+        PostDetailResponse response = postService.readPost(POST_ID, null);
+
+        // then
+        assertThat(response.title()).isEqualTo("게시글 제목");
+    }
+
+    @Test
+    @DisplayName("비공개 게시글은 로그인하지 않으면 조회할 수 없다")
+    void readPrivatePostRejectsAnonymousUser() {
+        // given
+        User writer = createWriter();
+        Post privatePost = createPost(writer, PostVisibility.PRIVATE);
+        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(privatePost));
+
+        // when - then
+        assertThatThrownBy(() -> postService.readPost(POST_ID, null))
+                .isInstanceOf(PostException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("비공개 게시글은 작성자만 조회할 수 있다")
+    void readPrivatePostAllowsOnlyWriter() {
+        // given
+        User writer = createWriter();
+        Post privatePost = createPost(writer, PostVisibility.PRIVATE);
+        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(privatePost));
+
+        // when
+        PostDetailResponse response = postService.readPost(POST_ID, WRITER_ID);
+
+        // then
+        assertThat(response.title()).isEqualTo("게시글 제목");
+    }
+
+    @Test
+    @DisplayName("비공개 게시글은 작성자가 아니면 조회할 수 없다")
+    void readPrivatePostRejectsNonWriter() {
+        // given
+        User writer = createWriter();
+        Post privatePost = createPost(writer, PostVisibility.PRIVATE);
+        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(privatePost));
+
+        // when - then
+        assertThatThrownBy(() -> postService.readPost(POST_ID, 999L))
+                .isInstanceOf(PostException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
     }
 
     private User createWriter() {
@@ -225,9 +319,22 @@ class PostServiceTest {
                 content,
                 Category.TECH,
                 PostVisibility.PUBLIC,
-                "https://example.com/thumbnail.png",
-                "https://example.com/logo.png"
+                "https://example.com/thumbnail.png"
         );
+    }
+
+    private Post createPost(User writer, PostVisibility visibility) {
+        return Post.builder()
+                .id(POST_ID)
+                .user(writer)
+                .rilog(createRilog(writer))
+                .title("게시글 제목")
+                .content(content)
+                .category(Category.TECH)
+                .status(PostStatus.PUBLISHED)
+                .visibility(visibility)
+                .thumbnailUrl("https://example.com/thumbnail.png")
+                .build();
     }
 
 }

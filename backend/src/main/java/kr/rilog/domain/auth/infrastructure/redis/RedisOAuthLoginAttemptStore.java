@@ -1,7 +1,8 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
-import kr.rilog.domain.auth.application.SocialLoginProvider;
-import kr.rilog.domain.auth.application.port.OAuthLoginAttemptStore;
+import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.util.Locale;
 
 @Component
+@RequiredArgsConstructor
 public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
     private static final String KEY_PREFIX_FORMAT = "oauth:%s:state:";
@@ -19,10 +21,6 @@ public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
     private static final char[] HEX = "0123456789abcdef".toCharArray();
 
     private final StringRedisTemplate redisTemplate;
-
-    public RedisOAuthLoginAttemptStore(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
 
     @Override
     public void save(SocialLoginProvider provider, String state, Duration ttl) {

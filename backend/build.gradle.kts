@@ -20,6 +20,9 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
+	// JWT
+	implementation("com.auth0:java-jwt:4.6.0")
+
 	// validation
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 
@@ -31,6 +34,10 @@ dependencies {
 
 	// Redis
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+	// AWS SDK S3
+	implementation(platform("software.amazon.awssdk:bom:2.25.0"))
+	implementation("software.amazon.awssdk:s3")
 
 	// PostgresSQL
 	runtimeOnly("org.postgresql:postgresql")

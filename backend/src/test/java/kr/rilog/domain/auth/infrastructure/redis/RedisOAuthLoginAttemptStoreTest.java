@@ -1,6 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
-import kr.rilog.domain.auth.application.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

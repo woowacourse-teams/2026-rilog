@@ -1,7 +1,11 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 @import 'tailwindcss';
+@import '../shared/styles/tokens/breakpoints.css';
+@import '../features/post-write/styles/blocknote-shadcn.css';
 @import '../shared/styles/tokens/index.css';
 @import '../shared/ui/button/button.css';
+@import '../shared/ui/modal/modal.css';
+
+@source '../../node_modules/@blocknote/shadcn';
 
 * {
 	box-sizing: border-box;
