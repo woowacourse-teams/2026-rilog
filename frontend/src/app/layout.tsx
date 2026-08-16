@@ -21,6 +21,9 @@ const pretendard = localFont({
 export const metadata: Metadata = {
 	title: 'Rilog',
 	description: '기록을 작성하고 함께 나누는 공간',
+	icons: {
+		icon: '/brand/favicon.png',
+	},
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
