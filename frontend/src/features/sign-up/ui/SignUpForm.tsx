@@ -12,7 +12,6 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
-
 const INTRODUCTION_MAX_LENGTH = 80;
 const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
 const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
@@ -115,14 +114,18 @@ export default function SignUpForm() {
 				)}
 			</Field>
 
-			<label className="flex cursor-pointer items-center gap-2 text-body-2 text-text-primary">
+			<label className="flex items-center gap-2 text-body-2 text-text-primary">
 				<Checkbox
 					id={termsAgreementId}
 					name="termsAgreement"
 					value="accepted"
+					aria-label="[필수] 아래 약관에 동의합니다."
 					aria-describedby={termsAgreementLinksId}
 					required
 				/>
+				<span id={termsAgreementLinksId} className="sr-only">
+					이용약관 및 개인정보처리방침
+				</span>
 				<div className="flex items-center gap-2 text-text-secondary">
 					<a
 						href={TERMS_OF_SERVICE_URL}

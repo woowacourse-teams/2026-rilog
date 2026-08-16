@@ -6,7 +6,7 @@ import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
 import type { ChangeEvent } from 'react';
 
-import type { CoLogSummary } from '@/domains/colog/model/colog-summary';
+import type { CologSummary } from '@/domains/colog/model/colog-info';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post-category';
 import Button from '@/shared/ui/button/Button';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
@@ -21,7 +21,7 @@ interface PublishSettingsModalProps {
 	selectedImageUrl: string | null;
 	bodyBlocks: Block[];
 	defaultImageUrl: string;
-	cologOptions: CoLogSummary[];
+	cologOptions: CologSummary[];
 	cologError?: string;
 	publishError?: string;
 	isPublishing: boolean;
@@ -139,7 +139,7 @@ export default function PublishSettingsModal({
 								<img src={previewUrl} alt="게시글 대표 이미지 미리보기" className="size-full object-cover" />
 							</div>
 							<figcaption className="px-4 py-4">
-								<p className="line-clamp-2 text-body-3 font-semibold break-words text-text-primary">{postTitle}</p>
+								<p className="line-clamp-2 text-body-3 font-semibold wrap-break-word text-text-primary">{postTitle}</p>
 							</figcaption>
 						</figure>
 					</section>
@@ -151,7 +151,7 @@ export default function PublishSettingsModal({
 								{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
+										className={`flex min-h-11 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
 									>
 										<input
 											type="radio"
