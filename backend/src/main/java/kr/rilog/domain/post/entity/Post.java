@@ -117,7 +117,11 @@ public class Post extends BaseEntity {
     }
 
     public void validateReadableBy(Long requesterId) {
-        if (isPrivate() && !isWrittenBy(requesterId)) {
+        if (!isPrivate()) {
+            return;
+        }
+
+        if (!isWrittenBy(requesterId)) {
             throw new PostException(PRIVATE_POST_READ_FORBIDDEN);
         }
     }
@@ -131,6 +135,10 @@ public class Post extends BaseEntity {
                 && user != null
                 && user.getId() != null
                 && user.getId().equals(requesterId);
+    }
+
+    public boolean isCologAffiliated() {
+        return colog != null;
     }
 
 }
