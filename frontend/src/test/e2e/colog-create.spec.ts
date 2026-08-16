@@ -21,6 +21,26 @@ test.describe('팀 생성', () => {
 		await expect(page).toHaveURL('/sign-up');
 	});
 
+	test('필수 입력을 검증하고 유효한 정보로 팀을 생성한다', async ({ page }) => {
+		await page.goto('/co-logs/new');
+
+		await page.getByRole('button', { name: '팀 만들기' }).click();
+		await expect(page.getByText('팀 로고를 등록해 주세요.')).toBeVisible();
+		await expect(page.getByLabel('팀 로고 변경')).toBeFocused();
+
+		await page.getByLabel('팀 로고 변경').setInputFiles({
+			name: 'rilog-logo.png',
+			mimeType: 'image/png',
+			buffer: Buffer.from('rilog-logo'),
+		});
+		await page.getByRole('textbox', { name: '팀 이름' }).fill('리로그 E2E');
+		await page.getByRole('textbox', { name: '팀 고유 아이디' }).fill('rilog-e2e');
+		await page.getByRole('textbox', { name: '팀 소개' }).fill('함께 기록하는 팀입니다.');
+		await page.getByRole('button', { name: '팀 만들기' }).click();
+
+		await expect(page).toHaveURL('/co-logs/@rilog-e2e');
+	});
+
 	test('모바일 화면에서 가로로 넘치지 않는다', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto('/co-logs/new');
