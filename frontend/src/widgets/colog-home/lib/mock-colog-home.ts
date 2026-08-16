@@ -19,6 +19,7 @@ export const MOCK_COLOG_HOME_POSTS = Array.from({ length: 5 }, (_, index) => ({
 		index === 0
 			? '컴포넌트 시스템, 이렇게 도입했어요'
 			: '컴포넌트 시스템, 이렇게 도입했어요 두 줄일 땐 이렇게 표시됩니다 세 줄은 표시되지 않아요',
+	thumbnailUrl: index === 1 ? null : '/images/default-post-cover.svg',
 	publishedAt: '2024-05-20',
 	author: {
 		nickname: '김지연',

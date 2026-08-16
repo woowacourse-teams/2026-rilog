@@ -9,12 +9,14 @@ const POST_FIXTURES: PostSummary[] = [
 	{
 		id: 101,
 		title: '접근 가능한 인터페이스 만들기',
+		thumbnailUrl: 'https://images.rilog.test/post.png',
 		publishedAt: '2026-08-16',
 		author: { nickname: '새봄', profileImageUrl: '/images/saebom.png' },
 	},
 	{
 		id: 102,
 		title: '디자인 토큰 운영 기록',
+		thumbnailUrl: null,
 		publishedAt: '2026-08-15',
 		author: { nickname: '여름', profileImageUrl: null },
 	},
@@ -31,6 +33,14 @@ describe('CologPostList', () => {
 			'/posts/101',
 		);
 		expect(within(postSection).getByText('2026년 8월 16일')).toBeInTheDocument();
+		expect(within(postSection).getByRole('img', { name: '접근 가능한 인터페이스 만들기 썸네일' })).toHaveAttribute(
+			'src',
+			expect.stringContaining(encodeURIComponent('https://images.rilog.test/post.png')),
+		);
+		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).toHaveAttribute(
+			'src',
+			expect.stringContaining('/brand/logo.svg'),
+		);
 	});
 
 	it('게시글이 없으면 빈 상태를 제공한다', () => {

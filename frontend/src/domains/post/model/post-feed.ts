@@ -6,7 +6,6 @@ export interface PostFeedColog {
 }
 
 export interface PostFeedItem extends PostSummary {
-	thumbnailUrl: string | null;
 	colog: PostFeedColog | null;
 }
 

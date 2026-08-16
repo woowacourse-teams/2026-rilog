@@ -10,7 +10,7 @@ interface PostFeedImageProps {
 	height: number;
 	className?: string;
 	fallbackClassName?: string;
-	isScaledOnHover?: boolean;
+	isScaledOnInteraction?: boolean;
 }
 
 const FALLBACK_IMAGE_URL = '/brand/logo.svg';
@@ -22,7 +22,7 @@ export default function PostFeedImage({
 	height,
 	className = '',
 	fallbackClassName = '',
-	isScaledOnHover = false,
+	isScaledOnInteraction = false,
 }: PostFeedImageProps) {
 	const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 	const hasFallback = src === null || src === failedImageUrl;
@@ -36,8 +36,8 @@ export default function PostFeedImage({
 			height={height}
 			loading="lazy"
 			className={`${className} ${hasFallback ? fallbackClassName : ''} ${
-				isScaledOnHover
-					? 'transition-transform duration-200 ease-out group-hover:scale-[1.05] group-focus-visible:scale-[1.05] motion-reduce:transform-none motion-reduce:transition-none'
+				isScaledOnInteraction
+					? 'transition-transform duration-200 ease-out group-hover:scale-[1.05] group-focus-visible:scale-[1.05] group-active:scale-[1.05] motion-reduce:transform-none motion-reduce:transition-none'
 					: ''
 			}`.trim()}
 			onError={() => {
