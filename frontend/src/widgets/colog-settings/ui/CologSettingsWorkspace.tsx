@@ -5,7 +5,8 @@ import { useCallback, useRef, useState } from 'react';
 import type { SettingsTab } from '../lib/get-next-tab';
 import type { KeyboardEvent } from 'react';
 
-import MemberManagementSection from '@/features/colog-member-management/ui/MemberManagementSection';
+import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
+import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
 import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
@@ -45,9 +46,7 @@ export default function CologSettingsWorkspace() {
 	};
 
 	return (
-		<div
-			className={`flex h-full min-h-0 flex-col overflow-hidden px-6 pt-4 sm:px-8 md:px-0 ${activeTab === 'profile' ? '' : 'pb-24'}`}
-		>
+		<div className="flex h-full min-h-0 flex-col overflow-hidden px-6 pt-4 sm:px-8 md:px-0">
 			<div role="tablist" aria-label="팀 설정" className="flex shrink-0 gap-2">
 				{SETTINGS_TABS.map((tab) => {
 					const isActive = tab.id === activeTab;
@@ -68,23 +67,35 @@ export default function CologSettingsWorkspace() {
 			</div>
 
 			<div
-				id={`settings-panel-${activeTab}`}
+				id="settings-panel-profile"
 				role="tabpanel"
-				aria-labelledby={`settings-tab-${activeTab}`}
+				aria-labelledby="settings-tab-profile"
+				hidden={activeTab !== 'profile'}
 				className="min-h-0 flex-1 pt-10"
 			>
 				{activeTab === 'profile' && (
 					<CologProfileSection value={savedProfile} onSave={setSavedProfile} onDirtyChange={onDirtyChange} />
 				)}
-				{activeTab === 'members' && <MemberManagementSection onDirtyChange={onDirtyChange} />}
-				{activeTab === 'danger' && (
-					<section aria-labelledby="danger-settings-title">
-						<h1 id="danger-settings-title" className="text-heading-3 font-bold text-text-primary">
-							위험 영역
-						</h1>
-						<p className="mt-0.5 text-body-1 text-text-secondary">팀 삭제와 같이 되돌릴 수 없는 작업을 관리합니다.</p>
-					</section>
-				)}
+			</div>
+
+			<div
+				id="settings-panel-members"
+				role="tabpanel"
+				aria-labelledby="settings-tab-members"
+				hidden={activeTab !== 'members'}
+				className="min-h-0 flex-1 pt-10"
+			>
+				{activeTab === 'members' && <CologMemberManagementSection onDirtyChange={onDirtyChange} />}
+			</div>
+
+			<div
+				id="settings-panel-danger"
+				role="tabpanel"
+				aria-labelledby="settings-tab-danger"
+				hidden={activeTab !== 'danger'}
+				className="min-h-0 flex-1 pt-10"
+			>
+				{activeTab === 'danger' && <CologDangerZoneSection />}
 			</div>
 
 			<ConfirmModal

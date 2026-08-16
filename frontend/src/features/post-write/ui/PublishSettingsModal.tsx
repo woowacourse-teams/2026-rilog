@@ -151,7 +151,7 @@ export default function PublishSettingsModal({
 								{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
+										className={`flex min-h-11 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
 									>
 										<input
 											type="radio"

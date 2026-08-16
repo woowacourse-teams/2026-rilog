@@ -9,7 +9,7 @@ export default function Checkbox({ className, ref, ...inputProps }: CheckboxProp
 				{...inputProps}
 				ref={ref}
 				type="checkbox"
-				className={`peer size-5 cursor-pointer appearance-none rounded border border-border-strong bg-white transition-colors checked:border-brand-primary checked:bg-brand-primary focus-visible:outline-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:bg-surface-active ${className ?? ''}`.trim()}
+				className={`peer size-5 appearance-none rounded border border-border-strong bg-white transition-colors checked:border-brand-primary checked:bg-brand-primary focus-visible:outline-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:bg-surface-active ${className ?? ''}`.trim()}
 			/>
 			<svg
 				aria-hidden="true"

@@ -36,6 +36,31 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('table', { name: '코로그 멤버 목록' })).toBeInTheDocument();
 	});
 
+	it('프로필, 멤버 관리, 위험 영역을 같은 설정 패널 위치에서 전환한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace />);
+
+		const profileTab = screen.getByRole('tab', { name: '프로필' });
+		const memberTab = screen.getByRole('tab', { name: '멤버 관리' });
+		const dangerTab = screen.getByRole('tab', { name: '위험 영역' });
+
+		for (const tab of [profileTab, memberTab, dangerTab]) {
+			expect(document.getElementById(tab.getAttribute('aria-controls') ?? '')).not.toBeNull();
+		}
+
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', profileTab.id);
+
+		await user.click(memberTab);
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', memberTab.id);
+		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
+
+		await user.click(dangerTab);
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', dangerTab.id);
+		expect(screen.getByRole('heading', { name: '위험 영역' })).toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: '프로필' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: '멤버 관리' })).not.toBeInTheDocument();
+	});
+
 	it('방향키로 다음 탭에 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace />);

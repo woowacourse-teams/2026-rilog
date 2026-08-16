@@ -11,6 +11,22 @@
 	box-sizing: border-box;
 }
 
+:where(
+	a[href],
+	button:not(:disabled):not([aria-disabled='true']),
+	input:is([type='button'], [type='submit'], [type='reset'], [type='checkbox'], [type='radio'], [type='file']):not(
+			:disabled
+		),
+	select:not(:disabled),
+	summary,
+	label[for],
+	label:has(input:is([type='checkbox'], [type='radio'], [type='file']):not(:disabled)),
+	[role='button']:not([aria-disabled='true']),
+	[role='tab']:not([aria-disabled='true'])
+) {
+	cursor: pointer;
+}
+
 body {
 	margin: 0;
 	background: var(--background);

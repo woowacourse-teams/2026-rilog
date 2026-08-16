@@ -23,11 +23,11 @@ interface CologMemberDraftChange {
 	blogRole?: string;
 }
 
-interface MemberManagementSectionProps {
+interface CologMemberManagementSectionProps {
 	onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function MemberManagementSection({ onDirtyChange }: MemberManagementSectionProps) {
+export default function CologMemberManagementSection({ onDirtyChange }: CologMemberManagementSectionProps) {
 	const [members, setMembers] = useState(() => MOCK_COLOG_MEMBERS.map((member) => ({ ...member })));
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
@@ -102,7 +102,7 @@ export default function MemberManagementSection({ onDirtyChange }: MemberManagem
 	};
 
 	return (
-		<section aria-labelledby="member-management-title" className="h-full min-h-0">
+		<section aria-labelledby="member-management-title" className="h-full min-h-0 pb-24">
 			<form className="flex h-full min-h-0 flex-col" onSubmit={handleSave}>
 				<div className="flex shrink-0 flex-wrap items-end justify-between gap-6">
 					<div>

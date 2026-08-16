@@ -99,7 +99,7 @@ export default function CologProfileSection({ value, onSave, onDirtyChange }: Co
 		<section aria-labelledby="profile-settings-title" className="flex h-full min-h-0 flex-col">
 			<form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
 				<div className="min-h-0 flex-1 overflow-y-auto px-0.5 pb-8">
-					<div>
+					<div className="-mx-0.5">
 						<h1 id="profile-settings-title" className="text-heading-3 font-bold text-text-primary">
 							프로필
 						</h1>
