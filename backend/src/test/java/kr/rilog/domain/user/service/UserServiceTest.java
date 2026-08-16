@@ -220,7 +220,7 @@ class UserServiceTest {
         User user = User.builder()
                 .id(1L)
                 .githubId(100L)
-                .slug("jinriro")
+                .slug(Slug.from("jinriro"))
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));

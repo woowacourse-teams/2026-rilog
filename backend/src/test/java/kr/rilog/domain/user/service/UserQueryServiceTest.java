@@ -2,6 +2,7 @@ package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
@@ -74,8 +75,8 @@ class UserQueryServiceTest {
         return User.builder()
                 .id(1L)
                 .githubId(100L)
-                .nickname("리로")
-                .slug("jinriro")
+                .nickname(Nickname.from("리로"))
+                .slug(Slug.from("jinriro"))
                 .profileImageUrl("https://example.com/profile.png")
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();

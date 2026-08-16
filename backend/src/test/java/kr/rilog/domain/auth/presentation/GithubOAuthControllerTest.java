@@ -30,6 +30,7 @@ import kr.rilog.domain.auth.repository.RefreshSessionRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -98,7 +99,7 @@ class GithubOAuthControllerTest {
         MockMvc mockMvc = mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
-                .slug("jinriro")
+                .slug(Slug.from("jinriro"))
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build());
 
@@ -126,7 +127,7 @@ class GithubOAuthControllerTest {
         MockMvc mockMvc = mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
-                .slug("jinriro")
+                .slug(Slug.from("jinriro"))
                 .globalRole(GlobalRole.ADMIN)
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build());
@@ -148,7 +149,7 @@ class GithubOAuthControllerTest {
         MockMvc mockMvc = mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
-                .slug("jinriro")
+                .slug(Slug.from("jinriro"))
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build());
 
