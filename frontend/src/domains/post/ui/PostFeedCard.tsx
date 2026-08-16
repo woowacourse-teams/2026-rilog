@@ -33,7 +33,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 					</div>
 
 					<div className="mt-4 flex flex-1 flex-col">
-						<h3 className="line-clamp-2 min-h-14 text-title-1 font-semibold wrap-break-word break-keep text-text-primary transition-colors duration-200 group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring motion-reduce:transition-none">
+						<h3 className="line-clamp-2 text-title-1 font-semibold wrap-break-word break-keep text-text-primary transition-colors duration-200 group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring motion-reduce:transition-none">
 							{post.title}
 						</h3>
 						<div className="mt-auto flex min-w-0 items-center gap-2 pt-3 text-body-1 text-text-secondary">
@@ -45,7 +45,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 							/>
 							<span className="min-w-0 truncate font-medium">{post.author.nickname}</span>
 							<span aria-hidden="true">·</span>
-							<time dateTime={post.publishedAt} className="shrink-0">
+							<time dateTime={post.publishedAt} className="shrink-0 pr-1">
 								{formatPublishedDate(post.publishedAt)}
 							</time>
 						</div>

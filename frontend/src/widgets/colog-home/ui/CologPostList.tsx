@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import { formatPublishedDateMobile } from '@/domains/post/lib/format-published-date-mobile';
 import type { PostSummary } from '@/domains/post/model/post-summary';
 import PostFeedImage from '@/domains/post/ui/PostFeedImage';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
@@ -46,9 +47,14 @@ export default function CologPostList({ posts }: CologPostListProps) {
 											size="sm"
 											className="bg-navy-100"
 										/>
-										<span>{post.author.nickname}</span>
+										<span className="flex-1 truncate">{post.author.nickname}</span>
 										<span aria-hidden="true">·</span>
-										<time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
+										<time dateTime={post.publishedAt} className="hidden sm:inline">
+											{formatPublishedDate(post.publishedAt)}
+										</time>
+										<time dateTime={post.publishedAt} aria-hidden={true} className="sm:hidden">
+											{formatPublishedDateMobile(post.publishedAt)}
+										</time>
 									</div>
 								</article>
 							</Link>
