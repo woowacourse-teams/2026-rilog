@@ -38,7 +38,7 @@ public class PostController implements PostApiSpec {
 
     @GetMapping("/blogs/{slug}/posts/{postId}")
     @OptionalAuthGuard
-    public ApiResponse<PostDetailResponseV2> getPostOfBlogs(
+    public ApiResponse<PostDetailResponseV2> getPostDetails(
             @PathVariable String slug,
             @PathVariable Long postId,
             @NullableLoginUserId Long requesterId

@@ -36,7 +36,7 @@ class PostControllerTest {
 
     @Test
     @DisplayName("블로그의 공개 게시글 상세 조회는 로그인하지 않아도 가능하다")
-    void getPostOfBlogsAllowsAnonymousUser() throws Exception {
+    void getPostDetailsAllowsAnonymousUser() throws Exception {
         // given
         PostService postService = mock(PostService.class);
         when(postService.readPostOfBlogs(BLOG_SLUG, POST_ID, null)).thenReturn(response());
@@ -53,7 +53,7 @@ class PostControllerTest {
 
     @Test
     @DisplayName("블로그 게시글 상세 조회에 Access Token이 있으면 로그인 사용자 ID를 전달한다")
-    void getPostOfBlogsPassesRequesterIdWhenAccessTokenExists() throws Exception {
+    void getPostDetailsPassesRequesterIdWhenAccessTokenExists() throws Exception {
         // given
         PostService postService = mock(PostService.class);
         when(postService.readPostOfBlogs(BLOG_SLUG, POST_ID, 7L)).thenReturn(response());
@@ -70,7 +70,7 @@ class PostControllerTest {
 
     @Test
     @DisplayName("블로그 게시글 상세 조회에 잘못된 Authorization 헤더가 있으면 요청을 거부한다")
-    void getPostOfBlogsRejectsInvalidAuthorizationHeader() throws Exception {
+    void getPostDetailsRejectsInvalidAuthorizationHeader() throws Exception {
         // given
         PostService postService = mock(PostService.class);
         MockMvc mockMvc = mockMvc(postService);

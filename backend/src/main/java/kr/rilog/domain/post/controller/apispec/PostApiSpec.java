@@ -2,13 +2,20 @@ package kr.rilog.domain.post.controller.apispec;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.NullableLoginUserId;
+import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponseV2;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.global.response.ApiResponse;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -28,6 +35,42 @@ public interface PostApiSpec {
             @PathVariable Long blogId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
+    );
+
+    @GetMapping("/blogs/{slug}/posts/{postId}")
+    @OptionalAuthGuard
+    @Operation(
+            summary = "블로그 게시글 상세 조회 API",
+            description = "블로그 slug와 게시글 ID로 게시글 상세 정보를 조회합니다. 소속 블로그 유형에 따라 affiliation 응답이 달라집니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "게시글 상세 조회 성공",
+            useReturnTypeSchema = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = {
+                            @ExampleObject(
+                                    name = "RILOG",
+                                    summary = "개인 블로그 게시글",
+                                    description = "개인 블로그에 소속된 게시글의 상세 응답입니다.",
+                                    value = PostDetailResponseExamples.RILOG
+                            ),
+                            @ExampleObject(
+                                    name = "COLOG",
+                                    summary = "팀 블로그 게시글",
+                                    description = "팀 블로그에 소속된 게시글로, 활성 멤버 수와 공개 게시글 수를 포함합니다.",
+                                    value = PostDetailResponseExamples.COLOG
+                            )
+                    }
+            )
+    )
+    ApiResponse<PostDetailResponseV2> getPostDetails(
+            @Parameter(description = "게시글이 소속된 블로그 slug", example = "jetproc")
+            @PathVariable String slug,
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @NullableLoginUserId Long requesterId
     );
 
     @Operation(
