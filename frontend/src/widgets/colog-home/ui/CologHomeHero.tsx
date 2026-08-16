@@ -45,7 +45,7 @@ export default function CologHomeHero({ profile }: CologHomeHeroProps) {
 			) : null}
 
 			{hasGitHubUrl || hasEmail ? (
-				<div className="mt-2 flex items-center gap-2 text-navy-200 sm:mt-2.5 sm:gap-3">
+				<div className="mt-2 flex items-center gap-0.5 text-navy-200 sm:mt-2.5 sm:gap-1">
 					{hasGitHubUrl ? (
 						<a
 							href={profile.githubUrl}
