@@ -2,13 +2,13 @@ import { useId } from 'react';
 
 import type { RefObject } from 'react';
 
-import LinkIcon from '@/features/colog-profile-management/assets/link.svg';
-import MailIcon from '@/features/colog-profile-management/assets/mail.svg';
 import type {
 	CologProfileSettingsValue,
 	CologProfileValidationErrors,
 } from '@/features/colog-profile-management/model/colog-profile-settings';
 import GitHubIcon from '@/shared/assets/brand/github.svg';
+import LinkIcon from '@/shared/assets/icons/link.svg';
+import MailIcon from '@/shared/assets/icons/mail.svg';
 import Input from '@/shared/ui/input/Input';
 
 type CologProfileSocialField = 'serviceUrl' | 'githubUrl' | 'email';

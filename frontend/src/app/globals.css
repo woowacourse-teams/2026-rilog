@@ -4,6 +4,7 @@
 @import '../shared/styles/tokens/index.css';
 @import '../shared/ui/button/button.css';
 @import '../shared/ui/modal/modal.css';
+@import '../shared/ui/page-shell/page-shell.css';
 
 @source '../../node_modules/@blocknote/shadcn';
 
