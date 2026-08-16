@@ -36,17 +36,6 @@ public class PostController implements PostApiSpec {
         return ApiResponse.response(HttpStatus.CREATED, "게시글이 발행되었습니다.", data);
     }
 
-    @GetMapping("/posts/{postId}")
-    @OptionalAuthGuard
-    @Override
-    public ApiResponse<PostDetailResponse> getPost(
-            @PathVariable Long postId,
-            @NullableLoginUserId Long requesterId
-    ) {
-        PostDetailResponse data = postService.readPost(postId, requesterId);
-        return ApiResponse.response(HttpStatus.OK, "게시글 상세 조회에 성공했습니다.", data);
-    }
-
     @GetMapping("/blogs/{slug}/posts/{postId}")
     @OptionalAuthGuard
     public ApiResponse<PostDetailResponseV2> getPostOfBlogs(
