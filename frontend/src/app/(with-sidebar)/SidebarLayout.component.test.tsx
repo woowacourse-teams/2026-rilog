@@ -15,7 +15,8 @@ describe('SidebarLayout', () => {
 			</LoginModalProvider>,
 		);
 
-		expect(screen.getByRole('complementary', { name: '사이드바' })).toBeInTheDocument();
+		expect(screen.getByRole('complementary', { name: '사이드바' })).toHaveClass('hidden', 'md:flex');
+		expect(screen.getByRole('navigation', { name: '모바일 주요 메뉴' })).toHaveClass('md:hidden');
 		expect(screen.getByRole('main')).toHaveTextContent('페이지 콘텐츠');
 	});
 });

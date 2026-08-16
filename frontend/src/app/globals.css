@@ -36,3 +36,9 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
+
+@media (width < 48rem) {
+	body:has([data-mobile-bottom-navigation]) {
+		padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+	}
+}
