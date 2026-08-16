@@ -71,7 +71,7 @@ export default function CologHomeHero({ profile }: CologHomeHeroProps) {
 			<Button
 				size="icon"
 				aria-label={`${profile.name} 코로그 메뉴 열기`}
-				className="absolute top-20 right-15 flex size-7 items-center justify-center rounded-md text-navy-200 transition-colors hover:text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+				className="absolute top-20 right-5 bg-transparent md:right-15"
 			>
 				<MeatballIcon aria-hidden="true" focusable="false" className="size-6" />
 			</Button>
