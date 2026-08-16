@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQueryCacheSubscriber';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
-import Footer from '@/widgets/footer/Footer';
 
 import './globals.css';
 
@@ -36,7 +35,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
 						{children}
 					</LoginModalProvider>
 				</QueryProvider>
-				<Footer />
 			</body>
 		</html>
 	);
