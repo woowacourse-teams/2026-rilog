@@ -4,10 +4,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 
 import type { SubmitEvent } from 'react';
 
-import type {
-	CologProfileSettingsValue,
-	CologProfileValidationErrors,
-} from '@/features/colog-profile-management/model/colog-profile-settings';
+import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
+import type { CologProfileValidationErrors } from '@/features/colog-profile-management/model/colog-profile-settings';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import Input from '@/shared/ui/input/Input';
@@ -29,14 +27,12 @@ import CologProfileImageFields from './CologProfileImageFields';
 import CologProfileSocialFields from './CologProfileSocialFields';
 
 interface CologProfileSectionProps {
-	value: CologProfileSettingsValue;
-	onSave: (value: CologProfileSettingsValue) => void;
 	onDirtyChange?: (isDirty: boolean) => void;
 }
 
 type CologProfileTextField = keyof CologProfileValidationErrors;
 
-export default function CologProfileSection({ value, onSave, onDirtyChange }: CologProfileSectionProps) {
+export default function CologProfileSection({ onDirtyChange }: CologProfileSectionProps) {
 	const introductionErrorId = useId();
 	const nameRef = useRef<HTMLInputElement>(null);
 	const slugRef = useRef<HTMLInputElement>(null);
@@ -45,9 +41,10 @@ export default function CologProfileSection({ value, onSave, onDirtyChange }: Co
 	const githubUrlRef = useRef<HTMLInputElement>(null);
 	const emailRef = useRef<HTMLInputElement>(null);
 
-	const [draft, setDraft] = useState(value);
+	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
+	const [draft, setDraft] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
 	const [errors, setErrors] = useState<CologProfileValidationErrors>({});
-	const isDirty = !areCologProfileSettingsEqual(draft, value);
+	const isDirty = !areCologProfileSettingsEqual(draft, savedProfile);
 
 	useEffect(() => {
 		onDirtyChange?.(isDirty);
@@ -92,7 +89,7 @@ export default function CologProfileSection({ value, onSave, onDirtyChange }: Co
 			return;
 		}
 
-		onSave(normalizedDraft);
+		setSavedProfile(normalizedDraft);
 	};
 
 	return (

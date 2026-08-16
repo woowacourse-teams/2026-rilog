@@ -7,8 +7,6 @@ import type { KeyboardEvent } from 'react';
 
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
-import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
-import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
@@ -19,9 +17,6 @@ import SettingsTabButton from './SettingsTabButton';
 
 export default function CologSettingsWorkspace() {
 	const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-	const [savedProfile, setSavedProfile] = useState<CologProfileSettingsValue>(() => ({
-		...MOCK_COLOG_PROFILE_SETTINGS,
-	}));
 	const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({});
 
 	const commitTabChange = useCallback((nextTab: SettingsTab) => {
@@ -33,6 +28,14 @@ export default function CologSettingsWorkspace() {
 		activeTab,
 		onTabChange: commitTabChange,
 	});
+	const handleProfileDirtyChange = useCallback(
+		(isDirty: boolean) => onDirtyChange('profile', isDirty),
+		[onDirtyChange],
+	);
+	const handleMembersDirtyChange = useCallback(
+		(isDirty: boolean) => onDirtyChange('members', isDirty),
+		[onDirtyChange],
+	);
 
 	const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentTab: SettingsTab) => {
 		const nextTab = getNextTab(currentTab, event.key);
@@ -73,9 +76,7 @@ export default function CologSettingsWorkspace() {
 				hidden={activeTab !== 'profile'}
 				className="min-h-0 flex-1 pt-10"
 			>
-				{activeTab === 'profile' && (
-					<CologProfileSection value={savedProfile} onSave={setSavedProfile} onDirtyChange={onDirtyChange} />
-				)}
+				<CologProfileSection onDirtyChange={handleProfileDirtyChange} />
 			</div>
 
 			<div
@@ -85,7 +86,7 @@ export default function CologSettingsWorkspace() {
 				hidden={activeTab !== 'members'}
 				className="min-h-0 flex-1 pt-10"
 			>
-				{activeTab === 'members' && <CologMemberManagementSection onDirtyChange={onDirtyChange} />}
+				<CologMemberManagementSection onDirtyChange={handleMembersDirtyChange} />
 			</div>
 
 			<div
@@ -95,7 +96,7 @@ export default function CologSettingsWorkspace() {
 				hidden={activeTab !== 'danger'}
 				className="min-h-0 flex-1 pt-10"
 			>
-				{activeTab === 'danger' && <CologDangerZoneSection />}
+				<CologDangerZoneSection />
 			</div>
 
 			<ConfirmModal

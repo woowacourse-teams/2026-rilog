@@ -104,6 +104,23 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('수정 중인 리로그');
 	});
 
+	it('프로필의 미저장 상태를 탭 전환 후에도 유지하고 다시 이탈을 확인한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace />);
+
+		const nameInput = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.clear(nameInput);
+		await user.type(nameInput, '수정 중인 리로그');
+		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
+		await user.click(screen.getByRole('button', { name: '이동' }));
+
+		await user.click(screen.getByRole('tab', { name: '프로필' }));
+		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('수정 중인 리로그');
+
+		await user.click(screen.getByRole('tab', { name: '위험 영역' }));
+		expect(screen.getByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).toBeInTheDocument();
+	});
+
 	it('모든 멤버의 권한과 역할을 수정하고 저장한다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace />);
