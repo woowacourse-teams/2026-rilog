@@ -6,6 +6,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponseV2;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -56,6 +57,20 @@ public class PostService {
         post.validateReadableBy(requesterId);
         return PostDetailResponse.from(post);
     }
+    
+    public PostDetailResponseV2 readPostOfBlogs(String slug, Long postId, Long requesterId) {
+        Post post = getPost(slug, postId);
+        post.validateReadableBy(requesterId);
+
+        if (!post.isCologAffiliated()) {
+            return PostDetailResponseV2.fromRilog(post);
+        }
+
+        Blog colog = post.getColog();
+        long memberCount = getMemberCount(colog);
+        long postCount = getPostCount(colog);
+        return PostDetailResponseV2.fromColog(post, memberCount, postCount);
+    }
 
     public TotalPostsCountResponse readPostsCount() {
         long count = postRepository.countByStatusAndVisibility(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
@@ -102,6 +117,23 @@ public class PostService {
     private Post getPost(Long postId) {
         return postRepository.findDetailById(postId)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+
+    private Post getPost(String slug, Long postId) {
+        return postRepository.findDetailByIdAndBlogSlug(postId, slug)
+                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+
+    private long getPostCount(Blog colog) {
+        return postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+                colog.getId(),
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC
+        );
+    }
+
+    private long getMemberCount(Blog colog) {
+        return blogMemberRepository.countActiveMembers(colog.getId(), BlogMemberStatus.ACTIVE);
     }
 
 }

@@ -6,9 +6,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
-import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
-import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
-import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
+import kr.rilog.domain.post.controller.dto.response.*;
 import kr.rilog.domain.post.controller.apispec.PostApiSpec;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -46,6 +44,17 @@ public class PostController implements PostApiSpec {
             @NullableLoginUserId Long requesterId
     ) {
         PostDetailResponse data = postService.readPost(postId, requesterId);
+        return ApiResponse.response(HttpStatus.OK, "게시글 상세 조회에 성공했습니다.", data);
+    }
+
+    @GetMapping("/blogs/{slug}/posts/{postId}")
+    @OptionalAuthGuard
+    public ApiResponse<PostDetailResponseV2> getPostOfBlogs(
+            @PathVariable String slug,
+            @PathVariable Long postId,
+            @NullableLoginUserId Long requesterId
+    ) {
+        PostDetailResponseV2 data = postService.readPostOfBlogs(slug, postId, requesterId);
         return ApiResponse.response(HttpStatus.OK, "게시글 상세 조회에 성공했습니다.", data);
     }
 

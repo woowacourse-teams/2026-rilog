@@ -19,7 +19,7 @@ public record PostDetailResponseV2(
         PostBlogAffiliationResponse affiliation
 ) {
 
-    public static PostDetailResponseV2 from(Post post) {
+    public static PostDetailResponseV2 fromRilog(Post post) {
         return new PostDetailResponseV2(
                 post.getTitle(),
                 post.getContent(),
@@ -31,7 +31,7 @@ public record PostDetailResponseV2(
         );
     }
 
-    public static PostDetailResponseV2 from(Post post, long memberCount, long postCount) {
+    public static PostDetailResponseV2 fromColog(Post post, long memberCount, long postCount) {
         return new PostDetailResponseV2(
                 post.getTitle(),
                 post.getContent(),
