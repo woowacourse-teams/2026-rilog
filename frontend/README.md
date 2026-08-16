@@ -82,6 +82,14 @@ pnpm exec playwright install chromium
 탭 들여쓰기, 세미콜론, single quote, trailing comma와 120자 줄 길이를 사용한다. Tailwind CSS 클래스 정렬도 Prettier
 플러그인으로 처리한다.
 
+### SVG 아이콘
+
+- `public`의 SVG는 로고, 커버와 placeholder처럼 URL이 필요한 이미지로 사용한다.
+- React 컴포넌트로 제어할 UI 아이콘은 사용하는 모듈의 `assets`에 두고 SVG 파일에서 직접 import한다.
+- 아이콘은 24x24 `viewBox`와 `currentColor`를 사용하고 실제 크기는 호출부의 `className`으로 지정한다.
+- 버튼이나 링크를 설명하는 장식 아이콘은 `aria-hidden="true"`로 숨기고 control에 accessible name을 제공한다.
+- 아이콘 배럴 export와 이름 기반 icon registry는 만들지 않는다.
+
 세부 작업 규칙과 예외는 [AGENTS.md](./AGENTS.md)를 따른다.
 
 ## 테스트 기준
