@@ -11,7 +11,6 @@ import Modal from '@/shared/ui/modal/Modal';
 
 import { mockFindMemberInviteCandidate } from '../lib/mock-find-member-invite-candidate';
 
-
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
 interface MemberInviteModalProps {

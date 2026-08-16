@@ -6,7 +6,6 @@ import type { ComponentPropsWithRef } from 'react';
 
 import { getTextLength } from '@/shared/ui/textarea/lib/get-text-length';
 
-
 type TextareaSize = 'sm' | 'md' | 'lg';
 type TextareaStatus = 'default' | 'error' | 'success';
 
