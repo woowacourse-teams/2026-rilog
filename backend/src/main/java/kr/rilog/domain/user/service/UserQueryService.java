@@ -5,6 +5,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
+import kr.rilog.global.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,7 @@ public class UserQueryService {
     private final UserRepository userRepository;
 
     public UserInfoResult getUserInfo(String slug) {
-        User user = userRepository.findBySlugAndOnboardingStatus(slug, OnboardingStatus.COMPLETED)
+        User user = userRepository.findBySlugAndOnboardingStatus(Slug.from(slug), OnboardingStatus.COMPLETED)
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
 
         return UserInfoResult.from(user);

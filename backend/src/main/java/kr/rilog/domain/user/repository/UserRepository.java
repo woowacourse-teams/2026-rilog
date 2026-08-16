@@ -2,6 +2,8 @@ package kr.rilog.domain.user.repository;
 
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
+import kr.rilog.global.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,10 +16,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByGithubId(Long githubId);
 
-    Optional<User> findBySlugAndOnboardingStatus(String slug, OnboardingStatus onboardingStatus);
+    Optional<User> findBySlugAndOnboardingStatus(Slug slug, OnboardingStatus onboardingStatus);
 
-    boolean existsByNickname(String nickname);
+    boolean existsByNickname(Nickname nickname);
 
-    boolean existsBySlug(String slug);
+    boolean existsBySlug(Slug slug);
 
 }
