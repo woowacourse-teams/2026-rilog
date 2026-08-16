@@ -1,11 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { CologHomePost } from '@/widgets/colog-home/model/colog-home';
+import type { PostSummary } from '@/domains/post/model/post-summary';
 
 import CologPostList from './CologPostList';
 
-const POST_FIXTURES: CologHomePost[] = [
+const POST_FIXTURES: PostSummary[] = [
 	{
 		id: 101,
 		title: '접근 가능한 인터페이스 만들기',

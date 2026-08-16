@@ -1,8 +1,8 @@
+import type { CologMemberSummary } from '@/domains/colog/model/colog-member-summary';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import type { CologHomeMember } from '@/widgets/colog-home/model/colog-home';
 
 interface CologMemberListProps {
-	members: readonly CologHomeMember[];
+	members: readonly CologMemberSummary[];
 }
 
 export default function CologMemberList({ members }: CologMemberListProps) {

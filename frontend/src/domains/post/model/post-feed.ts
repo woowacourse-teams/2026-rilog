@@ -1,19 +1,12 @@
-export interface PostFeedAuthor {
-	nickname: string;
-	profileImageUrl: string | null;
-}
+import type { PostSummary } from './post-summary';
 
 export interface PostFeedColog {
 	name: string;
 	logoUrl: string | null;
 }
 
-export interface PostFeedItem {
-	id: number;
-	title: string;
+export interface PostFeedItem extends PostSummary {
 	thumbnailUrl: string | null;
-	publishedAt: string;
-	author: PostFeedAuthor;
 	colog: PostFeedColog | null;
 }
 

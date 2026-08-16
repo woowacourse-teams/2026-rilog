@@ -1,11 +1,11 @@
 import Link from 'next/link';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import type { PostSummary } from '@/domains/post/model/post-summary';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import type { CologHomePost } from '@/widgets/colog-home/model/colog-home';
 
 interface CologPostListProps {
-	posts: readonly CologHomePost[];
+	posts: readonly PostSummary[];
 }
 
 export default function CologPostList({ posts }: CologPostListProps) {

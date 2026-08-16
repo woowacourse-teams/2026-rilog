@@ -1,11 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { CologHomeMember } from '@/widgets/colog-home/model/colog-home';
+import type { CologMemberSummary } from '@/domains/colog/model/colog-member-summary';
 
 import CologMemberList from './CologMemberList';
 
-const MEMBER_FIXTURES: CologHomeMember[] = [
+const MEMBER_FIXTURES: CologMemberSummary[] = [
 	{ id: 1, nickname: '새봄', profileImageUrl: '/images/saebom.png' },
 	{ id: 2, nickname: '여름', profileImageUrl: null },
 ];
