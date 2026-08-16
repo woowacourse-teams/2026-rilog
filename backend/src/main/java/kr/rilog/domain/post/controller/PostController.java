@@ -22,11 +22,10 @@ public class PostController implements PostApiSpec {
 
     private final PostService postService;
 
-    @PostMapping("/blogs/{blogId}/posts")
-    @ResponseStatus(HttpStatus.CREATED)
     @AuthGuard
-    @Override
-    public ApiResponse<PostPublishResponse> publish(
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/blogs/{blogId}/posts")
+    public ApiResponse<PostPublishResponse> create(
             @PathVariable Long blogId,
             @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
@@ -36,8 +35,8 @@ public class PostController implements PostApiSpec {
         return ApiResponse.response(HttpStatus.CREATED, "게시글이 발행되었습니다.", data);
     }
 
-    @GetMapping("/blogs/{slug}/posts/{postId}")
     @OptionalAuthGuard
+    @GetMapping("/blogs/{slug}/posts/{postId}")
     public ApiResponse<PostDetailResponseV2> getPostDetails(
             @PathVariable String slug,
             @PathVariable Long postId,
@@ -48,8 +47,7 @@ public class PostController implements PostApiSpec {
     }
 
     @GetMapping("/posts/count")
-    @Override
-    public ApiResponse<TotalPostsCountResponse> getPostsCount() {
+    public ApiResponse<TotalPostsCountResponse> getPostCount() {
         TotalPostsCountResponse data = postService.readPostsCount();
         return ApiResponse.response(HttpStatus.OK, "전체 게시글 수 조회에 성공했습니다.", data);
     }

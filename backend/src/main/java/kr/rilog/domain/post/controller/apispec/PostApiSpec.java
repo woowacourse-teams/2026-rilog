@@ -30,7 +30,7 @@ public interface PostApiSpec {
             responseCode = "201",
             description = "게시글 발행 성공"
     )
-    ApiResponse<PostPublishResponse> publish(
+    ApiResponse<PostPublishResponse> create(
             @Parameter(description = "게시글을 발행할 블로그 ID", example = "1")
             @PathVariable Long blogId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
@@ -81,5 +81,5 @@ public interface PostApiSpec {
             responseCode = "200",
             description = "전체 게시글 수 조회 성공"
     )
-    ApiResponse<TotalPostsCountResponse> getPostsCount();
+    ApiResponse<TotalPostsCountResponse> getPostCount();
 }
