@@ -28,14 +28,6 @@ export default function CologSettingsWorkspace() {
 		activeTab,
 		onTabChange: commitTabChange,
 	});
-	const handleProfileDirtyChange = useCallback(
-		(isDirty: boolean) => onDirtyChange('profile', isDirty),
-		[onDirtyChange],
-	);
-	const handleMembersDirtyChange = useCallback(
-		(isDirty: boolean) => onDirtyChange('members', isDirty),
-		[onDirtyChange],
-	);
 
 	const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentTab: SettingsTab) => {
 		const nextTab = getNextTab(currentTab, event.key);
@@ -70,33 +62,14 @@ export default function CologSettingsWorkspace() {
 			</div>
 
 			<div
-				id="settings-panel-profile"
+				id={`settings-panel-${activeTab}`}
 				role="tabpanel"
-				aria-labelledby="settings-tab-profile"
-				hidden={activeTab !== 'profile'}
+				aria-labelledby={`settings-tab-${activeTab}`}
 				className="min-h-0 flex-1 pt-10"
 			>
-				<CologProfileSection onDirtyChange={handleProfileDirtyChange} />
-			</div>
-
-			<div
-				id="settings-panel-members"
-				role="tabpanel"
-				aria-labelledby="settings-tab-members"
-				hidden={activeTab !== 'members'}
-				className="min-h-0 flex-1 pt-10"
-			>
-				<CologMemberManagementSection onDirtyChange={handleMembersDirtyChange} />
-			</div>
-
-			<div
-				id="settings-panel-danger"
-				role="tabpanel"
-				aria-labelledby="settings-tab-danger"
-				hidden={activeTab !== 'danger'}
-				className="min-h-0 flex-1 pt-10"
-			>
-				<CologDangerZoneSection />
+				{activeTab === 'profile' && <CologProfileSection onDirtyChange={onDirtyChange} />}
+				{activeTab === 'members' && <CologMemberManagementSection onDirtyChange={onDirtyChange} />}
+				{activeTab === 'danger' && <CologDangerZoneSection />}
 			</div>
 
 			<ConfirmModal

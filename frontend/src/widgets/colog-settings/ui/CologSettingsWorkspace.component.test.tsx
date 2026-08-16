@@ -44,17 +44,16 @@ describe('CologSettingsWorkspace', () => {
 		const memberTab = screen.getByRole('tab', { name: '멤버 관리' });
 		const dangerTab = screen.getByRole('tab', { name: '위험 영역' });
 
-		for (const tab of [profileTab, memberTab, dangerTab]) {
-			expect(document.getElementById(tab.getAttribute('aria-controls') ?? '')).not.toBeNull();
-		}
-
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', profileTab.getAttribute('aria-controls'));
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', profileTab.id);
 
 		await user.click(memberTab);
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', memberTab.getAttribute('aria-controls'));
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', memberTab.id);
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 
 		await user.click(dangerTab);
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', dangerTab.getAttribute('aria-controls'));
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', dangerTab.id);
 		expect(screen.getByRole('heading', { name: '위험 영역' })).toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '프로필' })).not.toBeInTheDocument();
@@ -73,7 +72,7 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 	});
 
-	it('저장한 프로필은 다른 탭을 다녀와도 유지한다', async () => {
+	it('프로필을 저장하면 확인 없이 다른 탭으로 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace />);
 
@@ -82,9 +81,8 @@ describe('CologSettingsWorkspace', () => {
 		await user.type(nameInput, '새 리로그');
 		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
-		await user.click(screen.getByRole('tab', { name: '프로필' }));
 
-		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('새 리로그');
+		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 		expect(screen.queryByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).not.toBeInTheDocument();
 	});
 
@@ -104,7 +102,7 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('수정 중인 리로그');
 	});
 
-	it('프로필의 미저장 상태를 탭 전환 후에도 유지하고 다시 이탈을 확인한다', async () => {
+	it('이동을 확인하면 프로필의 미저장 상태를 폐기한다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace />);
 
@@ -113,12 +111,15 @@ describe('CologSettingsWorkspace', () => {
 		await user.type(nameInput, '수정 중인 리로그');
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 		await user.click(screen.getByRole('button', { name: '이동' }));
+		await waitFor(() =>
+			expect(screen.queryByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).not.toBeInTheDocument(),
+		);
 
 		await user.click(screen.getByRole('tab', { name: '프로필' }));
-		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('수정 중인 리로그');
+		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
 
 		await user.click(screen.getByRole('tab', { name: '위험 영역' }));
-		expect(screen.getByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).toBeInTheDocument();
+		expect(screen.queryByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).not.toBeInTheDocument();
 	});
 
 	it('모든 멤버의 권한과 역할을 수정하고 저장한다', async () => {
@@ -201,6 +202,10 @@ describe('CologSettingsWorkspace', () => {
 
 		expect(screen.getByRole('tab', { name: '위험 영역' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '위험 영역' })).toBeInTheDocument();
+
+		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
+		expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+		expect(screen.getByRole('row', { name: /김지연/ })).toHaveTextContent('Owner');
 	});
 
 	it('수정 사항이 있으면 내부 페이지 이동을 확인한다', async () => {

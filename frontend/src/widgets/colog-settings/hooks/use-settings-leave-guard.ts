@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { SettingsTab } from '../lib/get-next-tab';
 
@@ -12,7 +12,7 @@ interface UseSettingsLeaveGuardOptions {
 
 interface UseSettingsLeaveGuardResult {
 	isLeaveModalOpen: boolean;
-	onDirtyChange: (tab: SettingsTab, isDirty: boolean) => void;
+	onDirtyChange: (isDirty: boolean) => void;
 	onTabChangeRequest: (nextTab: SettingsTab) => void;
 	onLeaveCancel: () => void;
 	onLeaveConfirm: () => void;
@@ -23,10 +23,9 @@ export const useSettingsLeaveGuard = ({
 	onTabChange,
 }: UseSettingsLeaveGuardOptions): UseSettingsLeaveGuardResult => {
 	const router = useRouter();
-	const [dirtyTabs, setDirtyTabs] = useState<Partial<Record<SettingsTab, boolean>>>({});
+	const [isDirty, setIsDirty] = useState(false);
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 	const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
-	const isDirty = dirtyTabs[activeTab] ?? false;
 
 	const handleNavigationAttempt = useCallback(() => {
 		setPendingTab(null);
@@ -46,21 +45,15 @@ export const useSettingsLeaveGuard = ({
 		onReplace: replaceNavigation,
 	});
 
-	useEffect(() => {
-		if (!isDirty) {
-			clearGuardEntry();
-		}
-	}, [clearGuardEntry, isDirty]);
-
-	const handleDirtyChange = useCallback((tab: SettingsTab, nextIsDirty: boolean) => {
-		setDirtyTabs((currentDirtyTabs) => {
-			if ((currentDirtyTabs[tab] ?? false) === nextIsDirty) {
-				return currentDirtyTabs;
+	const handleDirtyChange = useCallback(
+		(nextIsDirty: boolean) => {
+			setIsDirty(nextIsDirty);
+			if (!nextIsDirty) {
+				clearGuardEntry();
 			}
-
-			return { ...currentDirtyTabs, [tab]: nextIsDirty };
-		});
-	}, []);
+		},
+		[clearGuardEntry],
+	);
 
 	const handleTabChangeRequest = useCallback(
 		(nextTab: SettingsTab) => {
@@ -90,6 +83,7 @@ export const useSettingsLeaveGuard = ({
 
 		setPendingTab(null);
 		setIsLeaveModalOpen(false);
+		setIsDirty(false);
 
 		if (nextTab !== null) {
 			clearGuardEntry();
