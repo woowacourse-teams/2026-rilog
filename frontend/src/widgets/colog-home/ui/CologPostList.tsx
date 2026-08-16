@@ -19,9 +19,9 @@ export default function CologPostList({ posts }: CologPostListProps) {
 						<li key={post.id}>
 							<Link
 								href={`/posts/${post.id}`}
-								className="group grid min-h-27 grid-cols-[120px_minmax(0,1fr)] gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:grid-cols-[200px_minmax(0,1fr)]"
+								className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 							>
-								<div className="h-27 rounded-lg bg-brand-primary p-2">{/* 썸네일 이미지 */}</div>
+								<div className="aspect-[3/2] h-24 rounded-lg bg-brand-primary p-2 sm:h-27">{/* 썸네일 이미지 */}</div>
 
 								<article className="flex min-w-0 flex-col justify-between py-1">
 									<h2 className="line-clamp-2 text-body-2 font-semibold text-text-primary transition-colors group-hover:text-focus-ring sm:text-body-4">
