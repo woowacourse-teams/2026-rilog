@@ -15,8 +15,10 @@ import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.blog.service.dto.result.CologProfileResult;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -499,8 +501,8 @@ class CologServiceTest {
         return User.builder()
                 .id(OWNER_ID)
                 .githubId(100L)
-                .nickname("리로")
-                .slug("jinriro")
+                .nickname(Nickname.from("리로"))
+                .slug(Slug.from("jinriro"))
                 .profileImageUrl("https://example.com/profile.png")
                 .build();
     }

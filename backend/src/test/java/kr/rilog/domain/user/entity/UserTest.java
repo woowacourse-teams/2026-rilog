@@ -3,6 +3,7 @@ package kr.rilog.domain.user.entity;
 import jakarta.persistence.Column;
 import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.user.exception.UserErrorInformation;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +42,7 @@ class UserTest {
     @DisplayName("온보딩 완료 시 사용자 slug를 처음 저장할 수 있다")
     void slugCanBeUpdatedWhenOnboardingIsCompleted() throws NoSuchFieldException {
         // given
-        Field slug = User.class.getDeclaredField("slug");
+        Field slug = Slug.class.getDeclaredField("value");
         Column column = slug.getAnnotation(Column.class);
 
         // when - then
