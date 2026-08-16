@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
 	agentRules: false,
+	serverExternalPackages: ['@blocknote/server-util'],
 	images: {
 		// TODO(API 연동): Unsplash mock pattern을 실제 이미지 CDN 또는 storage host로 교체
 		remotePatterns: [
