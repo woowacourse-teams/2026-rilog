@@ -27,7 +27,7 @@ export default function CologPostList({ posts }: CologPostListProps) {
 									<h2 className="line-clamp-2 text-body-2 font-semibold text-text-primary transition-colors group-hover:text-focus-ring sm:text-body-4">
 										{post.title}
 									</h2>
-									<div className="flex items-center gap-1.5 text-label-1 text-navy-600">
+									<div className="flex items-center gap-1.5 text-label-2 text-navy-600">
 										<UserAvatar
 											src={post.author.profileImageUrl ?? undefined}
 											fallback={post.author.nickname.slice(0, 1)}
