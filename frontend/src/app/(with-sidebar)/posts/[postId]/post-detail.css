@@ -67,14 +67,3 @@
 	margin-block: 1rem;
 	background: var(--brand-primary);
 }
-
-@media (max-width: 47.999rem) {
-	.post-detail-body .bn-editor {
-		font-size: var(--text-body-1);
-		line-height: 1.625rem;
-	}
-
-	.post-detail-body .bn-block-content[data-content-type='paragraph'] .bn-inline-content {
-		line-height: 1.625rem;
-	}
-}
