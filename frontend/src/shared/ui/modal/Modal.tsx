@@ -53,6 +53,7 @@ const PADDING_CLASS_NAMES: Record<ModalPadding, string> = {
 	sm: 'p-4',
 	md: 'p-6',
 	lg: 'p-8',
+	xl: 'p-8 md:p-10',
 };
 
 const SCROLL_CLASS_NAMES: Record<ModalScrollMode, string> = {
@@ -112,7 +113,7 @@ export default function Modal({
 						<Button
 							variant="ghost"
 							size="icon"
-							className="absolute top-0 right-0"
+							className="absolute top-0 right-0 focus-visible:-outline-offset-2"
 							aria-label={closeButtonLabel}
 							disabled={isPending}
 							onClick={onClose}
@@ -122,12 +123,15 @@ export default function Modal({
 							</svg>
 						</Button>
 					)}
-					<div className={`min-w-0 ${showCloseButton ? 'pr-12' : ''}`}>
-						<h2 id={titleId} className="text-title-2 font-semibold text-text-primary">
+					<div className={`min-w-0`}>
+						<h2
+							id={titleId}
+							className={`text-title-2 font-semibold text-text-primary ${showCloseButton ? 'pr-12' : ''}`}
+						>
 							{title}
 						</h2>
 						{hasDescription && (
-							<p id={descriptionId} className="mt-2 text-body-2 text-text-secondary">
+							<p id={descriptionId} className="mt-2 text-body-2 whitespace-pre-wrap text-text-secondary">
 								{description}
 							</p>
 						)}
@@ -144,7 +148,7 @@ export default function Modal({
 									<Button
 										variant="secondary"
 										size="md"
-										className="min-w-modal-action"
+										className="min-w-modal-action focus-visible:-outline-offset-2"
 										disabled={cancelAction.disabled || isPending}
 										onClick={handleCancelClick}
 									>
@@ -157,7 +161,7 @@ export default function Modal({
 										form={primaryAction.type === 'submit' ? primaryAction.form : undefined}
 										variant={primaryVariant}
 										size="md"
-										className="min-w-modal-action"
+										className="min-w-modal-action focus-visible:-outline-offset-2"
 										disabled={primaryAction.disabled}
 										isPending={isPending}
 										onClick={primaryAction.type === 'submit' ? undefined : primaryAction.onClick}

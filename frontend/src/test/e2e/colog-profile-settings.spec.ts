@@ -1,0 +1,49 @@
+import { expect, test } from '@playwright/test';
+
+test.describe('팀 프로필 설정', () => {
+	test('프로필 탭과 저장된 mock 프로필을 기본으로 제공한다', async ({ page }) => {
+		await page.goto('/co-logs/@rilog/settings');
+
+		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
+		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
+		await expect(page.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveValue('rilog');
+		await expect(page.getByRole('link', { name: '코로그로 돌아가기' })).toHaveAttribute('href', '/co-logs/%40rilog');
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
+	});
+
+	test('프로필을 저장하면 탭을 왕복해도 저장값을 유지한다', async ({ page }) => {
+		await page.goto('/co-logs/@rilog/settings');
+
+		const nameInput = page.getByRole('textbox', { name: '팀 이름' });
+		await nameInput.fill('새 리로그');
+		await page.getByRole('button', { name: '변경사항 저장' }).click();
+		await page.getByRole('tab', { name: '멤버 관리' }).click();
+		await page.getByRole('tab', { name: '프로필' }).click();
+
+		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveValue('새 리로그');
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
+	});
+
+	test('저장하지 않은 프로필의 탭 이동을 취소하거나 확정한다', async ({ page }) => {
+		await page.goto('/co-logs/@rilog/settings');
+
+		await page.getByRole('textbox', { name: '팀 이름' }).fill('수정 중인 리로그');
+		await page.getByRole('tab', { name: '멤버 관리' }).click();
+
+		const leaveDialog = page.getByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' });
+		await expect(leaveDialog).toContainText('수정 중인 설정은 저장되지 않습니다.');
+		await leaveDialog.getByRole('button', { name: '계속 수정' }).click();
+		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveValue('수정 중인 리로그');
+
+		await page.getByRole('tab', { name: '멤버 관리' }).click();
+		await page.getByRole('button', { name: '이동' }).click();
+		await expect(page.getByRole('heading', { name: '멤버 관리' })).toBeVisible();
+	});
+
+	test('모바일 화면에서 가로로 넘치지 않는다', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/co-logs/@rilog/settings');
+
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	});
+});

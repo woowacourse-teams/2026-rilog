@@ -1,0 +1,187 @@
+import { expect, test } from '@playwright/test';
+
+import type { Page } from '@playwright/test';
+
+const TEST_IMAGE_BYTES = Array.from(
+	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+);
+
+const fillPost = async (page: Page) => {
+	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+	await page.keyboard.type('오늘 배운 내용을 기록합니다.');
+};
+
+const expectBodyImage = async (page: Page) => {
+	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
+};
+
+test.describe('글 작성', () => {
+	test('클립보드 이미지를 본문에 붙여넣는다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await editor.evaluate((element, imageBytes) => {
+			const clipboardData = new DataTransfer();
+			clipboardData.items.add(new File([new Uint8Array(imageBytes)], 'clipboard.png', { type: 'image/png' }));
+			element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }));
+		}, TEST_IMAGE_BYTES);
+
+		await expectBodyImage(page);
+	});
+
+	test('이미지 파일을 본문에 끌어다 놓는다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.evaluate((element, imageBytes) => {
+			const dataTransfer = new DataTransfer();
+			dataTransfer.items.add(new File([new Uint8Array(imageBytes)], 'dropped.png', { type: 'image/png' }));
+			const bounds = element.getBoundingClientRect();
+			element.dispatchEvent(
+				new DragEvent('drop', {
+					dataTransfer,
+					bubbles: true,
+					cancelable: true,
+					clientX: bounds.left + 20,
+					clientY: bounds.top + 20,
+				}),
+			);
+		}, TEST_IMAGE_BYTES);
+
+		await expectBodyImage(page);
+	});
+
+	test('이미지 블록의 파일 선택으로 이미지를 업로드한다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+
+		await page
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles({
+				name: 'selected.png',
+				mimeType: 'image/png',
+				buffer: Buffer.from(TEST_IMAGE_BYTES),
+			});
+
+		await expectBodyImage(page);
+	});
+
+	test('긴 제목은 내부 스크롤 없이 내용 높이만큼 확장된다', async ({ page }) => {
+		await page.goto('/write');
+		const title = page.getByRole('textbox', { name: '게시글 제목' });
+		await title.fill('내용에 맞춰 아래로 계속 확장되는 긴 게시글 제목입니다. '.repeat(6));
+
+		const { height, lineHeight, overflow, scrollHeight } = await title.evaluate((element) => ({
+			height: element.clientHeight,
+			lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+			overflow: getComputedStyle(element).overflowY,
+			scrollHeight: element.scrollHeight,
+		}));
+
+		expect(height).toBeGreaterThan(lineHeight * 2);
+		expect(height).toBeGreaterThanOrEqual(scrollHeight - 1);
+		expect(overflow).toBe('hidden');
+	});
+
+	test('본문 편집기에 접근 가능한 이름과 오류 설명을 연결한다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await expect(editor).toBeVisible();
+
+		await page.getByRole('button', { name: '발행' }).click();
+		const bodyError = page.getByText('내용을 입력해 주세요.');
+		const bodyErrorId = await bodyError.getAttribute('id');
+
+		expect(bodyErrorId).not.toBeNull();
+		await expect(editor).toHaveAttribute('aria-describedby', bodyErrorId!);
+		await editor.fill('본문');
+		await expect(editor).not.toHaveAttribute('aria-describedby');
+	});
+
+	test('발행 설정을 유지하고 mock 발행 후 게시글 URL로 이동한다', async ({ page }) => {
+		await page.goto('/write');
+		await fillPost(page);
+
+		await page.getByRole('button', { name: '발행' }).click();
+		const publishDialog = page.getByRole('dialog', { name: '게시 설정' });
+		await expect(publishDialog).toBeVisible();
+		await publishDialog.getByText('일상', { exact: true }).click();
+		const cologSelect = publishDialog.getByRole('combobox', { name: 'Co-log' });
+		await cologSelect.selectOption({ index: 1 });
+		const selectedCoLogId = await cologSelect.inputValue();
+		await publishDialog.getByRole('button', { name: '취소' }).click();
+		await expect(publishDialog).toBeHidden();
+
+		await page.getByRole('button', { name: '발행' }).click();
+		await expect(publishDialog.getByRole('radio', { name: '일상' })).toBeChecked();
+		await expect(publishDialog.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		await publishDialog.getByRole('button', { name: '발행' }).click();
+		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
+		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();
+
+		await expect(page).toHaveURL(/\/posts\/mock-/);
+	});
+
+	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {
+		await page.goto('/');
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('뒤로 가기 보호');
+
+		await page.goBack();
+		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
+		await expect(confirmDialog).toBeVisible();
+		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
+		await expect(page).toHaveURL('/write');
+
+		await page.goBack();
+		await confirmDialog.getByRole('button', { name: '나가기' }).click();
+		await expect(page).toHaveURL('/feeds');
+	});
+
+	test('같은 origin 링크 이동을 확인하고 취소 또는 계속한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('링크 이탈 보호');
+		await page.evaluate(() => {
+			const link = document.createElement('a');
+			link.href = '/';
+			link.textContent = '홈으로 이동';
+			document.body.append(link);
+		});
+
+		await page.getByRole('link', { name: '홈으로 이동' }).click();
+		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
+		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
+		await expect(page).toHaveURL('/write');
+
+		await page.getByRole('link', { name: '홈으로 이동' }).click();
+		await confirmDialog.getByRole('button', { name: '나가기' }).click();
+		await expect(page).toHaveURL('/feeds');
+	});
+
+	test('작성 중 reload는 브라우저 기본 경고로 보호한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('새로고침 보호');
+		const dialogPromise = page.waitForEvent('dialog');
+		void page.reload().catch(() => undefined);
+		const dialog = await dialogPromise;
+
+		expect(dialog.type()).toBe('beforeunload');
+		await dialog.dismiss();
+	});
+
+	test('mobile viewport에서 작성 화면과 게시 설정이 가로로 넘치지 않는다', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/write');
+		await fillPost(page);
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+		await page.getByRole('button', { name: '발행' }).click();
+		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	});
+});

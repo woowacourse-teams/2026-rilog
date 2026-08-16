@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import CologNavigation from './CologNavigation';
 
 describe('CologNavigation', () => {
-	it('내 코로그 링크와 생성 버튼을 제공한다', () => {
+	it('내 코로그 링크와 생성 링크를 제공한다', () => {
 		render(<CologNavigation />);
 
 		const navigation = screen.getByRole('navigation');
@@ -16,23 +16,23 @@ describe('CologNavigation', () => {
 			expect(link).toHaveAttribute('href');
 			expect(link).toHaveAccessibleName();
 		});
-		expect(within(navigation).getByRole('button')).toBeEnabled();
+		expect(within(navigation).getByRole('link', { name: '코로그 만들기' })).toHaveAttribute('href', '/co-logs/new');
 	});
 
-	it('키보드로 코로그 링크와 생성 버튼에 접근한다', async () => {
+	it('키보드로 코로그 링크와 생성 링크에 접근한다', async () => {
 		const user = userEvent.setup();
 		render(<CologNavigation />);
 		const navigation = screen.getByRole('navigation');
 		const cologLinks = within(navigation).getAllByRole('link');
-		const createButton = within(navigation).getByRole('button');
+		const createLink = within(navigation).getByRole('link', { name: '코로그 만들기' });
 
 		await user.tab();
 		expect(cologLinks[0]).toHaveFocus();
 
-		for (let index = 1; index < cologLinks.length; index += 1) {
+		for (let index = 1; index < cologLinks.length - 1; index += 1) {
 			await user.tab();
 		}
 		await user.tab();
-		expect(createButton).toHaveFocus();
+		expect(createLink).toHaveFocus();
 	});
 });

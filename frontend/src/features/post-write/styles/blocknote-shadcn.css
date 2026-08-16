@@ -1,0 +1,30 @@
+@theme inline {
+	--color-card: var(--surface);
+	--color-card-foreground: var(--text-primary);
+	--color-popover: var(--surface);
+	--color-popover-foreground: var(--text-primary);
+	--color-primary: var(--brand-primary);
+	--color-primary-foreground: var(--on-brand-primary);
+	--color-secondary: var(--surface-hover);
+	--color-secondary-foreground: var(--text-primary);
+	--color-muted: var(--surface-hover);
+	--color-muted-foreground: var(--text-secondary);
+	--color-accent: var(--surface-hover);
+	--color-accent-foreground: var(--text-primary);
+	--color-destructive: var(--danger);
+	--color-destructive-foreground: var(--white);
+	--color-border: var(--border-default);
+	--color-input: var(--border-default);
+	--color-ring: var(--focus-ring);
+}
+
+@layer base {
+	.bn-shadcn * {
+		@apply border-border;
+	}
+
+	.bn-shadcn :is(button, input, select, textarea, [contenteditable='true']):focus-visible {
+		outline: 2px solid var(--focus-ring);
+		box-shadow: none;
+	}
+}
