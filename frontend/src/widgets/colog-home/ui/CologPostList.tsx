@@ -47,7 +47,7 @@ export default function CologPostList({ posts }: CologPostListProps) {
 											size="sm"
 											className="bg-navy-100"
 										/>
-										<span className="flex-1 truncate">{post.author.nickname}</span>
+										<span className="min-w-0 truncate">{post.author.nickname}</span>
 										<span aria-hidden="true">·</span>
 										<time dateTime={post.publishedAt} className="hidden sm:inline">
 											{formatPublishedDate(post.publishedAt)}
