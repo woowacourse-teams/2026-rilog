@@ -27,7 +27,7 @@ public class Slug {
 
     private Slug(String value) {
         validate(value);
-        this.value = value.strip();
+        this.value = value.toLowerCase().strip();
     }
 
     public static Slug from(String value) {

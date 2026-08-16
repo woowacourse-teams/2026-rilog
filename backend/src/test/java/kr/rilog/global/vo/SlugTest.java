@@ -9,10 +9,23 @@ import org.junit.jupiter.api.Test;
 class SlugTest {
 
     @Test
+    @DisplayName("대문자가 들어와도, 슬러그는 소문자로 저장된다.")
+    void shouldApplyLowerCaseInSlug() {
+        // given
+        String upperSlug = "UPPERSLUG";
+
+        // when
+        Slug slug = Slug.from(upperSlug);
+
+        // then
+        Assertions.assertThat(slug.getValue()).isEqualTo(upperSlug.toLowerCase());
+    }
+
+    @Test
     @DisplayName("4-20자 사이이고 허용 문자로 구성된 슬러그는 사용가능하다.")
     void betweenFourToTwentyAndAllowedCharactersSlugIsAvailable() {
         // given
-        String fourLength = "Ab1_";
+        String fourLength = "ab1_";
         String twentyLength = "12345678901234567890";
 
         // when
