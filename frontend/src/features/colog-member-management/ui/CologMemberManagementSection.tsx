@@ -155,7 +155,7 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 				</div>
 
 				<div className="mt-14 min-h-0 flex-1 overflow-auto">
-					<table className="w-full min-w-192 table-fixed border-collapse text-left">
+					<table className="w-full min-w-3xl table-fixed border-collapse text-left">
 						<caption className="sr-only">코로그 멤버 목록</caption>
 						<colgroup>
 							<col className="w-52" />
