@@ -22,9 +22,6 @@ import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBa
 import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
-
-
-
 const DEFAULT_POST_COVER_PATH = '/images/default-post-cover.svg';
 
 type PublishState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
