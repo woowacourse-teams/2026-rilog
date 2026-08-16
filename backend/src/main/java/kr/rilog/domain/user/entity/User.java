@@ -9,6 +9,7 @@ import kr.rilog.global.entity.BaseEntity;
 import kr.rilog.global.vo.Slug;
 import lombok.AccessLevel;
 import lombok.Builder.Default;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 
 import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALREADY_COMPLETED;
 
+@Getter
 @Entity
 @Table(name = "users")
 @SuperBuilder
@@ -86,7 +88,7 @@ public class User extends BaseEntity {
         this.introduction = introduction;
         this.profileImageUrl = profileImageUrl;
         this.githubUrl = githubUrl;
-        this.email = Email.from(email);
+        this.email = toEmailOrNull(email);
         this.onboardingStatus = OnboardingStatus.COMPLETED;
         this.onboardingCompletedAt = LocalDateTime.now();
     }
@@ -95,78 +97,24 @@ public class User extends BaseEntity {
         return this.onboardingStatus == OnboardingStatus.COMPLETED || this.slug != null;
     }
 
-    public Long getId() {
-        return id;
+    private Email toEmailOrNull(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        return Email.from(email);
     }
 
     public String getNickname() {
-        if (nickname == null) {
-            return null;
-        }
-
-        return nickname.getValue();
+        return nickname == null ? null : nickname.getValue();
     }
 
     public String getSlug() {
-        if (slug == null) {
-            return null;
-        }
-
-        return slug.getValue();
-    }
-
-    public String getIntroduction() {
-        return introduction;
-    }
-
-    public Long getGithubId() {
-        return githubId;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public String getGithubUrl() {
-        return githubUrl;
+        return slug == null ? null : slug.getValue();
     }
 
     public String getEmail() {
-        if (email == null) {
-            return null;
-        }
-
-        return email.getValue();
+        return email == null ? null : email.getValue();
     }
 
-    public OnboardingStatus getOnboardingStatus() {
-        return onboardingStatus;
-    }
-
-    public GlobalRole getGlobalRole() {
-        return globalRole;
-    }
-
-    public LocalDateTime getOnboardingCompletedAt() {
-        return onboardingCompletedAt;
-    }
-
-    public abstract static class UserBuilder<C extends User, B extends UserBuilder<C, B>>
-            extends BaseEntity.BaseEntityBuilder<C, B> {
-
-        public B nickname(String nickname) {
-            this.nickname = nickname == null ? null : Nickname.from(nickname);
-            return self();
-        }
-
-        public B slug(String slug) {
-            this.slug = slug == null ? null : Slug.from(slug);
-            return self();
-        }
-
-        public B email(String email) {
-            this.email = email == null ? null : Email.from(email);
-            return self();
-        }
-    }
 }
