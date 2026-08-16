@@ -35,7 +35,7 @@ export default function CologPostList({ posts }: CologPostListProps) {
 								</div>
 
 								<article className="flex min-w-0 flex-col justify-between py-1">
-									<h2 className="line-clamp-2 text-body-2 font-semibold text-text-primary transition-colors duration-200 group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring motion-reduce:transition-none sm:text-body-4">
+									<h2 className="line-clamp-2 text-body-3 font-semibold text-text-primary transition-colors duration-200 group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring motion-reduce:transition-none sm:text-body-4">
 										{post.title}
 									</h2>
 									<div className="flex items-center gap-1.5 text-label-2 text-navy-600">
