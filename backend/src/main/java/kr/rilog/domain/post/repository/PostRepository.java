@@ -44,5 +44,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("postId") Long postId,
             @Param("slug") String slug
     );
-    
+
+    long countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+            Long cologId,
+            PostStatus status,
+            PostVisibility visibility
+    );
+
 }
