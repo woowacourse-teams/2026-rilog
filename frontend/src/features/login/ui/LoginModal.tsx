@@ -1,12 +1,10 @@
 'use client';
 
-import Image, { type StaticImageData } from 'next/image';
 import { useRef } from 'react';
 
+import GitHubIcon from '@/shared/assets/brand/github.svg';
 import Button from '@/shared/ui/button/Button';
 import Modal from '@/shared/ui/modal/Modal';
-
-import githubIcon from '../../../../public/icons/github.svg';
 
 interface LoginModalProps {
 	open: boolean;
@@ -37,14 +35,7 @@ export default function LoginModal({ open, onClose, onGitHubLogin, isPending = f
 				onClick={onGitHubLogin}
 				className="mt-5"
 			>
-				<Image
-					src={githubIcon as StaticImageData}
-					alt=""
-					width={20}
-					height={20}
-					aria-hidden="true"
-					className="size-5 shrink-0 brightness-0 invert"
-				/>
+				<GitHubIcon aria-hidden="true" focusable="false" className="size-5 shrink-0 brightness-0 invert" />
 				GitHub로 계속하기
 			</Button>
 		</Modal>

@@ -1,17 +1,15 @@
-import Image, { type StaticImageData } from 'next/image';
 import { useId } from 'react';
 
 import type { RefObject } from 'react';
 
+import LinkIcon from '@/features/colog-profile-management/assets/link.svg';
+import MailIcon from '@/features/colog-profile-management/assets/mail.svg';
 import type {
 	CologProfileSettingsValue,
 	CologProfileValidationErrors,
 } from '@/features/colog-profile-management/model/colog-profile-settings';
+import GitHubIcon from '@/shared/assets/brand/github.svg';
 import Input from '@/shared/ui/input/Input';
-
-import linkIcon from '../../../../public/icons/colog-profile/link.svg';
-import mailIcon from '../../../../public/icons/colog-profile/mail.svg';
-import githubIcon from '../../../../public/icons/github.svg';
 
 type CologProfileSocialField = 'serviceUrl' | 'githubUrl' | 'email';
 
@@ -59,16 +57,7 @@ export default function CologProfileSocialFields({
 					autoComplete="url"
 					status={errors.serviceUrl === undefined ? 'default' : 'error'}
 					helperText={errors.serviceUrl}
-					left={
-						<Image
-							src={linkIcon as StaticImageData}
-							alt=""
-							width={18}
-							height={18}
-							aria-hidden="true"
-							className="size-4.5 shrink-0"
-						/>
-					}
+					left={<LinkIcon aria-hidden="true" focusable="false" className="size-4.5 shrink-0" />}
 					onChange={(event) => onChange('serviceUrl', event.currentTarget.value)}
 				/>
 				<Input
@@ -84,16 +73,7 @@ export default function CologProfileSocialFields({
 					autoComplete="url"
 					status={errors.githubUrl === undefined ? 'default' : 'error'}
 					helperText={errors.githubUrl}
-					left={
-						<Image
-							src={githubIcon as StaticImageData}
-							alt=""
-							width={18}
-							height={18}
-							aria-hidden="true"
-							className="size-4.5 shrink-0"
-						/>
-					}
+					left={<GitHubIcon aria-hidden="true" focusable="false" className="size-4.5 shrink-0" />}
 					onChange={(event) => onChange('githubUrl', event.currentTarget.value)}
 				/>
 				<Input
@@ -109,16 +89,7 @@ export default function CologProfileSocialFields({
 					autoComplete="email"
 					status={errors.email === undefined ? 'default' : 'error'}
 					helperText={errors.email}
-					left={
-						<Image
-							src={mailIcon as StaticImageData}
-							alt=""
-							width={18}
-							height={18}
-							aria-hidden="true"
-							className="size-4.5 shrink-0"
-						/>
-					}
+					left={<MailIcon aria-hidden="true" focusable="false" className="size-4.5 shrink-0" />}
 					onChange={(event) => onChange('email', event.currentTarget.value)}
 				/>
 			</div>
