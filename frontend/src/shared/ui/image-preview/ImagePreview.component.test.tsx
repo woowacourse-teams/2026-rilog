@@ -22,4 +22,10 @@ describe('ImagePreview', () => {
 		expect(screen.getByRole('img', { name: '기본 프로필 이미지' })).toBeInTheDocument();
 		expect(screen.queryByRole('img', { name: '프로필 이미지 미리보기' })).not.toBeInTheDocument();
 	});
+
+	it('오류 상태면 danger 테두리를 보여준다', () => {
+		render(<ImagePreview src="/profile.png" alt="프로필 이미지 미리보기" status="error" />);
+
+		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' }).parentElement).toHaveClass('border-danger');
+	});
 });

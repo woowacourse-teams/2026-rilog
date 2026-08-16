@@ -4,12 +4,14 @@ import type { ComponentProps, ReactNode } from 'react';
 
 type ImagePreviewShape = 'circle' | 'square' | 'rectangle';
 type ImagePreviewFit = 'cover' | 'contain';
+type ImagePreviewStatus = 'default' | 'error';
 
 interface ImagePreviewProps extends Omit<ComponentProps<typeof Image>, 'alt' | 'className' | 'fill' | 'src'> {
 	alt: string;
 	src?: ComponentProps<typeof Image>['src'];
 	shape?: ImagePreviewShape;
 	fit?: ImagePreviewFit;
+	status?: ImagePreviewStatus;
 	fallback?: ReactNode;
 	className?: string;
 	imageClassName?: string;
@@ -26,11 +28,17 @@ const FIT_CLASS_NAMES: Record<ImagePreviewFit, string> = {
 	contain: 'object-contain',
 };
 
+const STATUS_CLASS_NAMES: Record<ImagePreviewStatus, string> = {
+	default: 'border-border-default',
+	error: 'border-danger',
+};
+
 export default function ImagePreview({
 	alt,
 	src,
 	shape = 'square',
 	fit = 'cover',
+	status = 'default',
 	fallback,
 	className,
 	imageClassName,
@@ -40,7 +48,7 @@ export default function ImagePreview({
 }: ImagePreviewProps) {
 	return (
 		<div
-			className={`relative overflow-hidden border border-border-default bg-surface ${SHAPE_CLASS_NAMES[shape]} ${className ?? ''}`.trim()}
+			className={`relative overflow-hidden border bg-surface ${STATUS_CLASS_NAMES[status]} ${SHAPE_CLASS_NAMES[shape]} ${className ?? ''}`.trim()}
 		>
 			{src ? (
 				<Image

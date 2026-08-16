@@ -6,6 +6,7 @@ export interface CologProfileFormValue extends CologProfile {
 }
 
 export interface CologProfileValidationErrors {
+	logoFile?: string;
 	name?: string;
 	slug?: string;
 	introduction?: string;
@@ -14,12 +15,27 @@ export interface CologProfileValidationErrors {
 	email?: string;
 }
 
+export type CologProfileTextField = Exclude<keyof CologProfileValidationErrors, 'logoFile'>;
+
 export const COLOG_PROFILE_NAME_MIN_LENGTH = 2;
 export const COLOG_PROFILE_NAME_MAX_LENGTH = 20;
 export const COLOG_PROFILE_SLUG_MIN_LENGTH = 4;
 export const COLOG_PROFILE_SLUG_MAX_LENGTH = 20;
 export const COLOG_PROFILE_INTRODUCTION_MAX_LENGTH = 80;
 export const COLOG_PROFILE_SLUG_PATTERN = '[a-z0-9-]+';
+
+export const EMPTY_COLOG_PROFILE_FORM_VALUE: CologProfileFormValue = {
+	name: '',
+	slug: '',
+	introduction: '',
+	logoImageUrl: '',
+	coverImageUrl: '',
+	serviceUrl: '',
+	githubUrl: '',
+	email: '',
+	logoFile: null,
+	coverImageFile: null,
+};
 
 const SLUG_PATTERN = new RegExp(`^(?:${COLOG_PROFILE_SLUG_PATTERN})$`);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,6 +57,8 @@ export const normalizeCologProfileForm = <TValue extends CologProfileFormValue>(
 	...value,
 	name: value.name.trim(),
 	slug: value.slug.trim(),
+	logoImageUrl: value.logoImageUrl.trim(),
+	coverImageUrl: value.coverImageUrl.trim(),
 	serviceUrl: value.serviceUrl.trim(),
 	githubUrl: value.githubUrl.trim(),
 	email: value.email.trim(),
@@ -50,6 +68,13 @@ export const validateCologProfileForm = (value: CologProfileFormValue): CologPro
 	const errors: CologProfileValidationErrors = {};
 	const normalizedName = value.name.trim();
 	const normalizedSlug = value.slug.trim();
+	const normalizedServiceUrl = value.serviceUrl.trim();
+	const normalizedGithubUrl = value.githubUrl.trim();
+	const normalizedEmail = value.email.trim();
+
+	if (value.logoFile === null && value.logoImageUrl.trim() === '') {
+		errors.logoFile = '팀 로고를 등록해 주세요.';
+	}
 
 	if (normalizedName.length < COLOG_PROFILE_NAME_MIN_LENGTH || normalizedName.length > COLOG_PROFILE_NAME_MAX_LENGTH) {
 		errors.name = `팀 이름은 ${COLOG_PROFILE_NAME_MIN_LENGTH}~${COLOG_PROFILE_NAME_MAX_LENGTH}자로 입력해 주세요.`;
@@ -67,15 +92,15 @@ export const validateCologProfileForm = (value: CologProfileFormValue): CologPro
 		errors.introduction = `팀 소개는 ${COLOG_PROFILE_INTRODUCTION_MAX_LENGTH}자 이내로 입력해 주세요.`;
 	}
 
-	if (!isEmptyOrValidHttpUrl(value.serviceUrl.trim())) {
+	if (!isEmptyOrValidHttpUrl(normalizedServiceUrl)) {
 		errors.serviceUrl = '올바른 서비스 URL을 입력해 주세요.';
 	}
 
-	if (!isEmptyOrValidHttpUrl(value.githubUrl.trim())) {
+	if (!isEmptyOrValidHttpUrl(normalizedGithubUrl)) {
 		errors.githubUrl = '올바른 GitHub URL을 입력해 주세요.';
 	}
 
-	if (value.email.trim() !== '' && !EMAIL_PATTERN.test(value.email.trim())) {
+	if (normalizedEmail !== '' && !EMAIL_PATTERN.test(normalizedEmail)) {
 		errors.email = '올바른 이메일 주소를 입력해 주세요.';
 	}
 

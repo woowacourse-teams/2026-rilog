@@ -1,75 +1,35 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useRef, useState } from 'react';
+import { useState } from 'react';
 
-import type { CologCreateValidationErrors, CreateColog } from '../model/colog-create';
+import type { CreateColog } from '../model/colog-create';
 import type { SubmitEvent } from 'react';
 
-import {
-	COLOG_PROFILE_INTRODUCTION_MAX_LENGTH,
-	COLOG_PROFILE_NAME_MAX_LENGTH,
-	COLOG_PROFILE_NAME_MIN_LENGTH,
-	COLOG_PROFILE_SLUG_MAX_LENGTH,
-	COLOG_PROFILE_SLUG_MIN_LENGTH,
-	COLOG_PROFILE_SLUG_PATTERN,
-} from '@/domains/colog/model/colog-profile-form';
+import { useCologProfileForm } from '@/domains/colog/hooks/use-colog-profile-form';
+import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
 import Button from '@/shared/ui/button/Button';
-import Field from '@/shared/ui/field/Field';
-import Input from '@/shared/ui/input/Input';
-import Textarea from '@/shared/ui/textarea/Textarea';
 
 import { mockCreateColog } from '../lib/mock-create-colog';
-import { INITIAL_COLOG_CREATE_VALUE, normalizeCologCreateValue, validateCologCreateValue } from '../model/colog-create';
-
-import CologCreateImageFields from './CologCreateImageFields';
-import CologCreateSocialFields from './CologCreateSocialFields';
+import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';
 
 interface CologCreateFormProps {
 	createColog?: CreateColog;
 	navigate?: (href: string) => void;
 }
 
-type CologCreateTextField = Exclude<keyof CologCreateValidationErrors, 'logoFile'>;
 type CreateState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
 
 const getCologProfilePath = (slug: string) => `/co-logs/@${slug}`;
 
 export default function CologCreateForm({ createColog = mockCreateColog, navigate }: CologCreateFormProps) {
 	const router = useRouter();
-	const introductionErrorId = useId();
-	const logoInputRef = useRef<HTMLInputElement>(null);
-	const nameRef = useRef<HTMLInputElement>(null);
-	const slugRef = useRef<HTMLInputElement>(null);
-	const introductionRef = useRef<HTMLTextAreaElement>(null);
-	const serviceUrlRef = useRef<HTMLInputElement>(null);
-	const githubUrlRef = useRef<HTMLInputElement>(null);
-	const emailRef = useRef<HTMLInputElement>(null);
-
-	const [draft, setDraft] = useState(() => ({ ...INITIAL_COLOG_CREATE_VALUE }));
-	const [errors, setErrors] = useState<CologCreateValidationErrors>({});
+	const form = useCologProfileForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
 	const [createState, setCreateState] = useState<CreateState>({ status: 'idle' });
 	const isCreating = createState.status === 'pending';
 
-	const updateTextField = (field: CologCreateTextField, fieldValue: string) => {
-		setDraft((currentDraft) => ({ ...currentDraft, [field]: fieldValue }));
-		setErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
-		setCreateState({ status: 'idle' });
-	};
-
-	const focusFirstError = (nextErrors: CologCreateValidationErrors) => {
-		const errorFocusOrder = [
-			['logoFile', logoInputRef],
-			['name', nameRef],
-			['slug', slugRef],
-			['introduction', introductionRef],
-			['serviceUrl', serviceUrlRef],
-			['githubUrl', githubUrlRef],
-			['email', emailRef],
-		] as const;
-		const firstInvalidFieldRef = errorFocusOrder.find(([field]) => nextErrors[field] !== undefined)?.[1];
-
-		firstInvalidFieldRef?.current?.focus();
+	const clearCreateError = () => {
+		setCreateState((currentState) => (currentState.status === 'error' ? { status: 'idle' } : currentState));
 	};
 
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -79,22 +39,17 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 			return;
 		}
 
-		const normalizedDraft = normalizeCologCreateValue(draft);
-		const nextErrors = validateCologCreateValue(normalizedDraft);
+		const normalizedValue = form.validate();
 
-		setDraft(normalizedDraft);
-		setErrors(nextErrors);
-
-		if (Object.keys(nextErrors).length > 0) {
+		if (normalizedValue === null) {
 			setCreateState({ status: 'idle' });
-			focusFirstError(nextErrors);
 			return;
 		}
 
 		setCreateState({ status: 'pending' });
 
 		try {
-			const result = await createColog(normalizedDraft);
+			const result = await createColog(normalizedValue);
 			const profilePath = getCologProfilePath(result.slug);
 
 			if (navigate !== undefined) {
@@ -116,118 +71,23 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
-			<CologCreateImageFields
-				logoImageUrl={draft.logoImageUrl}
-				logoFile={draft.logoFile}
-				coverImageUrl={draft.coverImageUrl}
-				coverImageFile={draft.coverImageFile}
-				logoError={errors.logoFile}
-				logoInputRef={logoInputRef}
+			<CologProfileFormFields
+				value={form.value}
+				errors={form.errors}
+				refs={form.refs}
 				disabled={isCreating}
-				onLogoFileChange={(logoFile) => {
-					setDraft((currentDraft) => ({ ...currentDraft, logoFile }));
-					setErrors((currentErrors) => ({ ...currentErrors, logoFile: undefined }));
-					setCreateState({ status: 'idle' });
+				onTextFieldChange={(field, value) => {
+					form.updateTextField(field, value);
+					clearCreateError();
 				}}
-				onCoverImageFileChange={(coverImageFile) => {
-					setDraft((currentDraft) => ({ ...currentDraft, coverImageFile }));
-					setCreateState({ status: 'idle' });
+				onLogoFileChange={(file) => {
+					form.updateLogoFile(file);
+					clearCreateError();
 				}}
-			/>
-
-			<Field label="팀 이름" description="팀 이름은 2~20자 사이로 입력 가능해요.">
-				{({ id, describedBy }) => (
-					<Input
-						ref={nameRef}
-						id={id}
-						aria-describedby={describedBy}
-						name="name"
-						value={draft.name}
-						minLength={COLOG_PROFILE_NAME_MIN_LENGTH}
-						maxLength={COLOG_PROFILE_NAME_MAX_LENGTH}
-						placeholder="예: 리로그"
-						autoComplete="organization"
-						disabled={isCreating}
-						status={errors.name === undefined ? 'default' : 'error'}
-						helperText={errors.name}
-						onChange={(event) => updateTextField('name', event.currentTarget.value)}
-						required
-					/>
-				)}
-			</Field>
-
-			<Field
-				label="팀 고유 아이디"
-				description={
-					<ul className="list-disc pl-5">
-						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
-						<li>영문 소문자와 숫자, 하이픈(-)만 사용할 수 있어요.</li>
-					</ul>
-				}
-			>
-				{({ id, describedBy }) => (
-					<Input
-						ref={slugRef}
-						id={id}
-						aria-describedby={describedBy}
-						name="slug"
-						value={draft.slug}
-						minLength={COLOG_PROFILE_SLUG_MIN_LENGTH}
-						maxLength={COLOG_PROFILE_SLUG_MAX_LENGTH}
-						pattern={COLOG_PROFILE_SLUG_PATTERN}
-						placeholder="team-name"
-						autoCapitalize="none"
-						autoComplete="off"
-						spellCheck={false}
-						disabled={isCreating}
-						status={errors.slug === undefined ? 'default' : 'error'}
-						helperText={errors.slug}
-						left={
-							<span aria-hidden="true" className="-mr-1.5 whitespace-nowrap text-text-secondary">
-								rilog.kr/co-logs/@
-							</span>
-						}
-						onChange={(event) => updateTextField('slug', event.currentTarget.value)}
-						required
-					/>
-				)}
-			</Field>
-
-			<Field label="팀 소개" description="팀을 소개해 보세요.">
-				{({ id, describedBy }) => (
-					<div>
-						<Textarea
-							ref={introductionRef}
-							id={id}
-							aria-describedby={
-								errors.introduction === undefined ? describedBy : `${describedBy} ${introductionErrorId}`
-							}
-							name="introduction"
-							value={draft.introduction}
-							maxLength={COLOG_PROFILE_INTRODUCTION_MAX_LENGTH}
-							size="lg"
-							disabled={isCreating}
-							status={errors.introduction === undefined ? 'default' : 'error'}
-							onChange={(event) => updateTextField('introduction', event.currentTarget.value)}
-							required
-						/>
-						{errors.introduction !== undefined && (
-							<p id={introductionErrorId} className="mt-1 text-label-1 text-danger">
-								{errors.introduction}
-							</p>
-						)}
-					</div>
-				)}
-			</Field>
-
-			<CologCreateSocialFields
-				value={draft}
-				errors={errors}
-				serviceUrlRef={serviceUrlRef}
-				githubUrlRef={githubUrlRef}
-				emailRef={emailRef}
-				disabled={isCreating}
-				onChange={updateTextField}
+				onCoverImageFileChange={(file) => {
+					form.updateCoverImageFile(file);
+					clearCreateError();
+				}}
 			/>
 
 			{createState.status === 'error' && (

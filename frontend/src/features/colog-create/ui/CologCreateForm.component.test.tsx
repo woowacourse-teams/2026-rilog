@@ -18,7 +18,7 @@ const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
 	await user.upload(screen.getByLabelText('팀 로고 변경'), logoFile);
 	await user.type(screen.getByRole('textbox', { name: '팀 이름' }), '  리로그  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
-	await user.type(screen.getByRole('textbox', { name: '팀 소개' }), '함께 성장하는 개발 팀입니다');
+	await user.type(screen.getByRole('textbox', { name: '팀 소개 (선택)' }), '함께 성장하는 개발 팀입니다');
 
 	return logoFile;
 };
@@ -40,13 +40,13 @@ describe('CologCreateForm', () => {
 		expect(screen.getByLabelText('커버 이미지 변경')).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toBeRequired();
-		expect(screen.getByRole('textbox', { name: '팀 소개' })).toBeRequired();
+		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
 		expect(screen.getByRole('group', { name: '소셜 (선택)' })).toHaveAccessibleDescription(
 			'링크를 통해 팀을 표현해 보세요.',
 		);
-		expect(screen.getByRole('textbox', { name: '서비스 링크' })).toHaveAttribute('type', 'url');
-		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).toHaveAttribute('type', 'url');
-		expect(screen.getByRole('textbox', { name: '이메일' })).toHaveAttribute('type', 'email');
+		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: '이메일' })).not.toBeRequired();
 		expect(screen.getByRole('button', { name: '취소' })).toHaveAttribute('type', 'button');
 		expect(screen.getByRole('button', { name: '팀 만들기' })).toHaveAttribute('type', 'submit');
 	});
@@ -64,7 +64,7 @@ describe('CologCreateForm', () => {
 		const user = userEvent.setup();
 		render(<CologCreateForm />);
 
-		const introduction = screen.getByRole('textbox', { name: '팀 소개' });
+		const introduction = screen.getByRole('textbox', { name: '팀 소개 (선택)' });
 		await user.type(introduction, '함께 성장하는 개발 팀입니다');
 
 		expect(introduction).toHaveAccessibleDescription('팀을 소개해 보세요. 15 / 80');
@@ -87,7 +87,7 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByText('팀 로고를 등록해 주세요.')).toBeInTheDocument();
 		expect(screen.getByText('팀 이름은 2~20자로 입력해 주세요.')).toBeInTheDocument();
-		expect(screen.getByText('팀 소개를 입력해 주세요.')).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('border-danger');
 		expect(screen.getByLabelText('팀 로고 변경')).toHaveFocus();
 		expect(createColog).not.toHaveBeenCalled();
 	});
@@ -101,7 +101,6 @@ describe('CologCreateForm', () => {
 		const createColog = vi.fn<CreateColog>().mockResolvedValue({ slug: 'rilog-team' });
 		const { unmount } = render(<CologCreateForm createColog={createColog} navigate={navigate} />);
 		const logoFile = await fillRequiredFields(user);
-		await user.type(screen.getByRole('textbox', { name: '서비스 링크' }), '  https://rilog.kr  ');
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
@@ -111,7 +110,9 @@ describe('CologCreateForm', () => {
 				name: '리로그',
 				slug: 'rilog-team',
 				introduction: '함께 성장하는 개발 팀입니다',
-				serviceUrl: 'https://rilog.kr',
+				serviceUrl: '',
+				githubUrl: '',
+				email: '',
 				logoFile,
 			}),
 		);

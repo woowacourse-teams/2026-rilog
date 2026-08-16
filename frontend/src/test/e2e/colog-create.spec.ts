@@ -35,7 +35,6 @@ test.describe('팀 생성', () => {
 		});
 		await page.getByRole('textbox', { name: '팀 이름' }).fill('리로그 E2E');
 		await page.getByRole('textbox', { name: '팀 고유 아이디' }).fill('rilog-e2e');
-		await page.getByRole('textbox', { name: '팀 소개' }).fill('함께 기록하는 팀입니다.');
 		await page.getByRole('button', { name: '팀 만들기' }).click();
 
 		await expect(page).toHaveURL('/co-logs/@rilog-e2e');

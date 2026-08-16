@@ -1,6 +1,10 @@
 import { useId } from 'react';
 
-import type { CologCreateValidationErrors, CologCreateValue } from '../model/colog-create';
+import type {
+	CologProfileFormValue,
+	CologProfileTextField,
+	CologProfileValidationErrors,
+} from '../model/colog-profile-form';
 import type { RefObject } from 'react';
 
 import GitHubIcon from '@/shared/assets/brand/github.svg';
@@ -8,19 +12,17 @@ import LinkIcon from '@/shared/assets/icons/link.svg';
 import MailIcon from '@/shared/assets/icons/mail.svg';
 import Input from '@/shared/ui/input/Input';
 
-type CologCreateSocialField = 'serviceUrl' | 'githubUrl' | 'email';
-
-interface CologCreateSocialFieldsProps {
-	value: CologCreateValue;
-	errors: CologCreateValidationErrors;
+interface CologProfileSocialFieldsProps {
+	value: CologProfileFormValue;
+	errors: CologProfileValidationErrors;
 	serviceUrlRef: RefObject<HTMLInputElement | null>;
 	githubUrlRef: RefObject<HTMLInputElement | null>;
 	emailRef: RefObject<HTMLInputElement | null>;
 	disabled?: boolean;
-	onChange: (field: CologCreateSocialField, value: string) => void;
+	onChange: (field: CologProfileTextField, value: string) => void;
 }
 
-export default function CologCreateSocialFields({
+export default function CologProfileSocialFields({
 	value,
 	errors,
 	serviceUrlRef,
@@ -28,7 +30,7 @@ export default function CologCreateSocialFields({
 	emailRef,
 	disabled = false,
 	onChange,
-}: CologCreateSocialFieldsProps) {
+}: CologProfileSocialFieldsProps) {
 	const labelId = useId();
 	const descriptionId = `${labelId}-description`;
 
