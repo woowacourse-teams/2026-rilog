@@ -5,6 +5,8 @@ import { mapFullFeedPostResponse } from './map-full-feed-post-response';
 describe('mapFullFeedPostResponse', () => {
 	it('blog id와 user id가 다를 때만 팀 블로그 배지 정보를 만든다', () => {
 		const response = {
+			status: 200,
+			message: 'OK',
 			data: {
 				page: 0,
 				size: 12,
@@ -37,7 +39,10 @@ describe('mapFullFeedPostResponse', () => {
 
 		const page = mapFullFeedPostResponse(response, 0);
 
-		expect(page.items[0]?.colog).toBeNull();
-		expect(page.items[1]?.colog).toEqual({ name: '리로그 팀', logoUrl: null });
+		expect(page.items[0]).toMatchObject({ author: { slug: 'riro' }, colog: null });
+		expect(page.items[1]).toMatchObject({
+			author: { slug: 'riro' },
+			colog: { name: '리로그 팀', slug: 'rilog', logoUrl: null },
+		});
 	});
 });
