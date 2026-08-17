@@ -64,7 +64,7 @@ public class CologService {
     public CologMemberInviteResult inviteMember(Long requesterId, String slug, CologMemberInviteCommand command) {
         Blog colog = getColog(slug);
 
-        BlogMember requesterMember = getActiveMember(slug, requesterId);
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
         requesterMember.validateCanInvite(command.permission());
 
         User invitee = getUser(command.userId());
@@ -92,8 +92,8 @@ public class CologService {
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
-    private BlogMember getActiveMember(String slug, Long userId) {
-        return blogMemberRepository.findByBlogSlugAndUserIdAndStatus(slug, userId, BlogMemberStatus.ACTIVE)
+    private BlogMember getActiveMember(Long blogId, Long userId) {
+        return blogMemberRepository.findByBlogIdAndUserIdAndStatus(blogId, userId, BlogMemberStatus.ACTIVE)
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN));
     }
 

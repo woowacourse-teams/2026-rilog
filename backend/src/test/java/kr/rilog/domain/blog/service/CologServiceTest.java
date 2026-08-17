@@ -197,7 +197,7 @@ class CologServiceTest {
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
         when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogSlugAndUserIdAndStatus(COLOG_SLUG, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
         when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
@@ -259,7 +259,7 @@ class CologServiceTest {
         Blog colog = createColog(admin);
         BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
         when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogSlugAndUserIdAndStatus(COLOG_SLUG, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
         when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
@@ -286,7 +286,7 @@ class CologServiceTest {
         User requester = createOwner();
         Blog colog = createColog(requester);
         when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogSlugAndUserIdAndStatus(COLOG_SLUG, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.empty());
 
         // when - then
@@ -310,7 +310,7 @@ class CologServiceTest {
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
         when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogSlugAndUserIdAndStatus(COLOG_SLUG, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
         when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
