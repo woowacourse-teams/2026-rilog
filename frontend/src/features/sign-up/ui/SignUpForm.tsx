@@ -2,7 +2,8 @@
 
 import { useId, useState } from 'react';
 
-import type { ChangeEvent } from 'react';
+import type { CompleteSignUp } from '../model/sign-up';
+import type { ChangeEvent, SubmitEvent } from 'react';
 
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
@@ -13,28 +14,85 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
+
 const INTRODUCTION_MAX_LENGTH = 80;
 const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
 const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
 
-export default function SignUpForm() {
+const getFormDataText = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
+
+type SignUpState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
+
+interface SignUpFormProps {
+	completeSignUp?: CompleteSignUp;
+	navigate?: (href: string) => void;
+}
+
+export default function SignUpForm({ completeSignUp = mockCompleteSignUp, navigate }: SignUpFormProps) {
 	const profileImageLabelId = useId();
 	const termsAgreementId = useId();
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
 	const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 	const [introduction, setIntroduction] = useState('');
+	const [signUpState, setSignUpState] = useState<SignUpState>({ status: 'idle' });
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
+	const isSigningUp = signUpState.status === 'pending';
+
+	const clearSignUpError = () => {
+		setSignUpState((currentState) => (currentState.status === 'error' ? { status: 'idle' } : currentState));
+	};
 
 	function handleImageChange(file: File | null) {
 		setProfileImageFile(file);
+		clearSignUpError();
 	}
 
 	function handleIntroductionChange(event: ChangeEvent<HTMLTextAreaElement>) {
 		setIntroduction(event.currentTarget.value);
+		clearSignUpError();
 	}
 
+	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+		event.preventDefault();
+
+		if (isSigningUp) {
+			return;
+		}
+
+		if (!event.currentTarget.checkValidity()) {
+			event.currentTarget.reportValidity();
+			return;
+		}
+
+		const formData = new FormData(event.currentTarget);
+		const nickname = getFormDataText(formData.get('nickname')).trim();
+		const slug = getFormDataText(formData.get('slug')).trim();
+
+		setSignUpState({ status: 'pending' });
+
+		try {
+			await completeSignUp({ nickname, slug, introduction: introduction.trim(), profileImageFile });
+
+			if (navigate !== undefined) {
+				navigate('/');
+				return;
+			}
+
+			window.location.replace('/');
+		} catch (error) {
+			setSignUpState({
+				status: 'error',
+				message:
+					error instanceof Error
+						? error.message
+						: '회원가입을 완료하지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.',
+			});
+		}
+	};
+
 	return (
-		<form className="mt-8 flex flex-col gap-8 pb-24">
+		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
 			<div role="group" aria-labelledby={profileImageLabelId} className="flex flex-col gap-3">
 				<p id={profileImageLabelId} className="text-body-2 font-semibold text-text-primary">
 					프로필 이미지 (선택)
@@ -50,7 +108,7 @@ export default function SignUpForm() {
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
 					<div className="flex-1">
-						<ImageUploader onFileChange={handleImageChange} className="bg-white" />
+						<ImageUploader onFileChange={handleImageChange} disabled={isSigningUp} className="bg-white" />
 					</div>
 				</div>
 			</div>
@@ -63,8 +121,10 @@ export default function SignUpForm() {
 						name="nickname"
 						minLength={2}
 						maxLength={20}
+						required
 						placeholder="예: 리로그"
 						autoComplete="nickname"
+						disabled={isSigningUp}
 					/>
 				)}
 			</Field>
@@ -86,6 +146,8 @@ export default function SignUpForm() {
 						minLength={4}
 						maxLength={20}
 						pattern="[A-Za-z0-9_-]+"
+						required
+						disabled={isSigningUp}
 						left={
 							<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
 								rilog.kr/@
@@ -104,6 +166,7 @@ export default function SignUpForm() {
 						value={introduction}
 						maxLength={INTRODUCTION_MAX_LENGTH}
 						onChange={handleIntroductionChange}
+						disabled={isSigningUp}
 					/>
 				)}
 			</Field>
@@ -116,6 +179,7 @@ export default function SignUpForm() {
 					aria-label="[필수] 아래 약관에 동의합니다."
 					aria-describedby={termsAgreementLinksId}
 					required
+					disabled={isSigningUp}
 				/>
 				<span id={termsAgreementLinksId} className="sr-only">
 					이용약관 및 개인정보처리방침
@@ -142,12 +206,24 @@ export default function SignUpForm() {
 				</div>
 			</label>
 
-			<div className="flex justify-end gap-4">
-				<Button variant="secondary" size="lg" className="w-40 bg-white">
+			{signUpState.status === 'error' && (
+				<p className="rounded-md border border-danger bg-background p-3 text-label-2 text-danger" role="alert">
+					{signUpState.message}
+				</p>
+			)}
+
+			<div className="flex flex-col-reverse justify-end gap-4 sm:flex-row">
+				<Button
+					variant="secondary"
+					size="lg"
+					className="w-full bg-white sm:w-40"
+					disabled={isSigningUp}
+					onClick={() => window.history.back()}
+				>
 					취소
 				</Button>
-				<Button type="submit" size="lg" className="w-40">
-					시작하기
+				<Button type="submit" size="lg" className="w-full sm:w-40" isPending={isSigningUp}>
+					{isSigningUp ? '시작하는 중' : '시작하기'}
 				</Button>
 			</div>
 		</form>
