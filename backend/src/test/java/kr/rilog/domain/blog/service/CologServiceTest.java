@@ -11,9 +11,9 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
-import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
-import kr.rilog.domain.blog.service.dto.result.CologProfileResult;
+import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
+import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
@@ -65,6 +65,9 @@ class CologServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private PostRepository postRepository;
+
     private CologService cologService;
 
     @BeforeEach
@@ -73,6 +76,7 @@ class CologServiceTest {
                 blogRepository,
                 blogMemberRepository,
                 userRepository,
+                postRepository,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
@@ -146,27 +150,31 @@ class CologServiceTest {
     }
 
     @Test
-    @DisplayName("팀 slug로 팀 상세 정보를 조회한다")
-    void getDetailFindsCologBySlug() {
+    @DisplayName("팀 slug로 팀 공개 프로필 정보를 조회한다")
+    void getPublicProfileFindsCologBySlug() {
         // given
         User owner = createCompletedOwner();
         Blog colog = createDetailedColog(owner);
         when(blogRepository.findBySlugAndBlogType("rilog-team", BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogMemberRepository.countActiveMembersByBlogId(COLOG_ID)).thenReturn(10L);
+        when(postRepository.countPublicPublishedPostsByCologId(COLOG_ID)).thenReturn(24L);
 
         // when
-        CologDetailResult result = cologService.getDetail("rilog-team");
+        CologPublicProfileResult result = cologService.getPublicProfile("rilog-team");
 
         // then
         assertThat(result)
                 .extracting(
-                        CologDetailResult::id,
-                        CologDetailResult::name,
-                        CologDetailResult::slug,
-                        CologDetailResult::introduction,
-                        CologDetailResult::logoUrl,
-                        CologDetailResult::coverImageUrl,
-                        CologDetailResult::serviceUrl,
-                        CologDetailResult::githubUrl
+                        CologPublicProfileResult::id,
+                        CologPublicProfileResult::name,
+                        CologPublicProfileResult::slug,
+                        CologPublicProfileResult::introduction,
+                        CologPublicProfileResult::logoUrl,
+                        CologPublicProfileResult::coverImageUrl,
+                        CologPublicProfileResult::serviceUrl,
+                        CologPublicProfileResult::githubUrl,
+                        CologPublicProfileResult::memberCount,
+                        CologPublicProfileResult::postCount
                 )
                 .containsExactly(
                         COLOG_ID,
@@ -176,78 +184,27 @@ class CologServiceTest {
                         "https://example.com/logo.png",
                         "https://example.com/cover.png",
                         "https://rilog.example.com",
-                        "https://github.com/rilog"
+                        "https://github.com/rilog",
+                        10L,
+                        24L
                 );
-        assertThat(result.user())
-                .extracting(
-                        CologDetailResult.UserResult::id,
-                        CologDetailResult.UserResult::nickname,
-                        CologDetailResult.UserResult::slug,
-                        CologDetailResult.UserResult::profileImageUrl
-                )
-                .containsExactly(
-                        OWNER_ID,
-                        "리로",
-                        "jinriro",
-                        "https://example.com/profile.png"
-                );
+        verify(blogMemberRepository).countActiveMembersByBlogId(COLOG_ID);
+        verify(postRepository).countPublicPublishedPostsByCologId(COLOG_ID);
     }
 
     @Test
-    @DisplayName("팀 slug에 해당하는 COLOG가 없으면 팀 상세 조회를 거부한다")
-    void getDetailRejectsMissingColog() {
+    @DisplayName("팀 slug에 해당하는 COLOG가 없으면 팀 공개 프로필 조회를 거부한다")
+    void getPublicProfileRejectsMissingColog() {
         // given
         when(blogRepository.findBySlugAndBlogType("unknown-team", BlogType.COLOG)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> cologService.getDetail("unknown-team"))
+        assertThatThrownBy(() -> cologService.getPublicProfile("unknown-team"))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("팀 slug로 팀 프로필 정보를 조회한다")
-    void getProfileFindsCologProfileBySlug() {
-        // given
-        User owner = createCompletedOwner();
-        Blog colog = createDetailedColog(owner);
-        when(blogRepository.findBySlugAndBlogType("rilog-team", BlogType.COLOG)).thenReturn(Optional.of(colog));
-
-        // when
-        CologProfileResult result = cologService.getProfile("rilog-team");
-
-        // then
-        assertThat(result)
-                .extracting(
-                        CologProfileResult::id,
-                        CologProfileResult::name,
-                        CologProfileResult::slug,
-                        CologProfileResult::introduction,
-                        CologProfileResult::logoUrl,
-                        CologProfileResult::coverImageUrl
-                )
-                .containsExactly(
-                        COLOG_ID,
-                        "리로그 팀",
-                        "rilog-team",
-                        "함께 쓰는 기술 블로그",
-                        "https://example.com/logo.png",
-                        "https://example.com/cover.png"
-                );
-    }
-
-    @Test
-    @DisplayName("팀 slug에 해당하는 COLOG가 없으면 팀 프로필 조회를 거부한다")
-    void getProfileRejectsMissingColog() {
-        // given
-        when(blogRepository.findBySlugAndBlogType("unknown-team", BlogType.COLOG)).thenReturn(Optional.empty());
-
-        // when - then
-        assertThatThrownBy(() -> cologService.getProfile("unknown-team"))
-                .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(BLOG_NOT_FOUND);
+        verify(blogMemberRepository, never()).countActiveMembersByBlogId(COLOG_ID);
+        verify(postRepository, never()).countPublicPublishedPostsByCologId(COLOG_ID);
     }
 
     @Test
