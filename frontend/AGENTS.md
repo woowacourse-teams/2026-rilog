@@ -76,8 +76,9 @@
 - TanStack Query resource query는 `src/api/<resource>/queries/<concern>/` 관심사별 디렉터리 안에 options, client hook, server prefetch를 함께 둔다.
     - `query-options.ts`: `'use client'` 없이 query key, query function, pagination과 같은 단일 query 설정을 제공한다.
     - `use-query.ts`: `'use client'` 경계에서 위 options를 `useQuery` 또는 `useInfiniteQuery`에 전달한다.
-    - `prefetch.ts`: `'use client'` 없이 같은 options를 `QueryClient.prefetchQuery` 또는 `prefetchInfiniteQuery`에 전달한다. QueryClient를 내부에서 생성하지 않는다.
+    - `prefetch-query.ts`: `'use client'` 없이 같은 options를 `QueryClient.prefetchQuery` 또는 `prefetchInfiniteQuery`에 전달한다. QueryClient를 내부에서 생성하지 않는다.
 - query options factory는 client hook과 server prefetch가 공유하는 단일 출처다. options 파일에는 React import나 `'use client'`를 넣지 않는다.
+- `api.ts`, `use-query.ts`, `prefetch-query.ts`, `keys.ts`처럼 파일명이 짧아도 export 함수와 key factory 이름에는 resource와 concern을 포함한다. 예: `readFullFeedPosts`, `useFullFeedPostsQuery`, `prefetchFullFeedPostsQuery`, `feedsQueryKeys`.
 - query가 API DTO를 도메인 모델로 변환해야 하면 `features`의 얇은 consumer hook이 API query hook의 `select`를 주입한다. mapper와 projection은 `features`에 두되 query key, query function, pagination, prefetch의 소유권은 `src/api` query에 둔다.
 - mutation은 관심사별 `mutations/use-<concern>-mutation.ts` 파일에 둔다. mutation options가 한 hook에서만 사용되면 해당 파일에 colocate하고, 여러 소비자나 순수 테스트에서 재사용할 때만 별도 `mutation-options.ts`로 분리한다. mutation에는 query와 같은 SSR prefetch 파일을 만들지 않는다.
 - resource 전반에 공통으로 적용되는 cache invalidate/update는 mutation hook 안에 둔다.

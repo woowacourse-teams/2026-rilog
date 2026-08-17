@@ -14,7 +14,7 @@ interface UseFullFeedPostsQueryOptions<TData> {
 	select?: (data: InfiniteData<ApiResponse<FullFeedPostResponse>, unknown>) => TData;
 }
 
-export const useQuery = <TData = InfiniteData<ApiResponse<FullFeedPostResponse>, unknown>>({
+export const useFullFeedPostsQuery = <TData = InfiniteData<ApiResponse<FullFeedPostResponse>, unknown>>({
 	size,
 	isEnabled = true,
 	select,

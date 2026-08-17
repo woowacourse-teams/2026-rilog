@@ -6,7 +6,7 @@ import type { InfiniteData } from '@tanstack/react-query';
 
 import type { PostFeedPage } from '@/domains/post/model/post-feed';
 
-import { useQuery } from '@/api/feeds/queries/full-feed-posts/use-query';
+import { useFullFeedPostsQuery } from '@/api/feeds/queries/full-feed-posts/use-query';
 
 import { mapFullFeedPostResponse } from '../lib/map-full-feed-post-response';
 
@@ -21,4 +21,5 @@ const selectPostFeed = (
 	pages: data.pages.map((page) => mapFullFeedPostResponse(page, page.data?.page ?? 0)),
 });
 
-export const usePostFeed = ({ isEnabled }: UsePostFeedOptions) => useQuery({ isEnabled, select: selectPostFeed });
+export const usePostFeed = ({ isEnabled }: UsePostFeedOptions) =>
+	useFullFeedPostsQuery({ isEnabled, select: selectPostFeed });

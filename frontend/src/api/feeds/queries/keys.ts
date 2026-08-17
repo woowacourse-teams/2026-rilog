@@ -1,4 +1,4 @@
-export const keys = {
+export const feedsQueryKeys = {
 	all: ['feeds'] as const,
-	fullPosts: (size: number) => [...keys.all, 'posts', 'full', { size }] as const,
+	fullFeedPosts: (size: number) => [...feedsQueryKeys.all, 'posts', 'full', { size }] as const,
 };

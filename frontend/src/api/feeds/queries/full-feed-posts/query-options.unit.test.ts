@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { readFullFeedPosts } from '../../api';
-import { keys } from '../keys';
+import { feedsQueryKeys } from '../keys';
 
 import { fullFeedPostsQueryOptions } from './query-options';
 
@@ -16,7 +16,7 @@ describe('fullFeedPostsQueryOptions', () => {
 		});
 		const options = fullFeedPostsQueryOptions();
 
-		expect(options.queryKey).toEqual(keys.fullPosts(12));
+		expect(options.queryKey).toEqual(feedsQueryKeys.fullFeedPosts(12));
 		expect(options.initialPageParam).toBe(0);
 
 		await options.queryFn?.({ pageParam: 0 } as never);

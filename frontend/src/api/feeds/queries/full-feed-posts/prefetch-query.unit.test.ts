@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { prefetch } from './prefetch';
+import { prefetchFullFeedPostsQuery } from './prefetch-query';
 
 describe('prefetchFullFeedPostsQuery', () => {
 	it('전달받은 QueryClient에 공용 query options로 prefetch한다', async () => {
 		const prefetchInfiniteQuery = vi.fn().mockResolvedValue(undefined);
 		const queryClient = { prefetchInfiniteQuery };
 
-		await prefetch(queryClient as never);
+		await prefetchFullFeedPostsQuery(queryClient as never);
 
 		expect(prefetchInfiniteQuery).toHaveBeenCalledOnce();
 		expect(prefetchInfiniteQuery.mock.calls[0]?.[0]).toMatchObject({

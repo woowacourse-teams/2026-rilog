@@ -9,7 +9,7 @@ import type { ApiResponse } from '@/api/shared.types';
 import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed';
 
 import { readFullFeedPosts } from '@/api/feeds/api';
-import { keys } from '@/api/feeds/queries/keys';
+import { feedsQueryKeys } from '@/api/feeds/queries/keys';
 
 import PostFeedGrid from './PostFeedGrid';
 
@@ -78,7 +78,7 @@ const renderGrid = ({ initialPage, ...props }: RenderGridProps = {}) => {
 	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 	if (initialPage !== undefined) {
-		queryClient.setQueryData(keys.fullPosts(12), {
+		queryClient.setQueryData(feedsQueryKeys.fullFeedPosts(12), {
 			pages: [toApiResponse(initialPage)],
 			pageParams: [initialPage.page],
 		});

@@ -5,14 +5,14 @@ import { Suspense } from 'react';
 import PostFeedGrid from '@/features/post-feed/ui/PostFeedGrid';
 import PostFeedSkeleton from '@/features/post-feed/ui/PostFeedSkeleton';
 
-import { prefetch } from '@/api/feeds/queries/full-feed-posts/prefetch';
+import { prefetchFullFeedPostsQuery } from '@/api/feeds/queries/full-feed-posts/prefetch-query';
 import { fullFeedPostsQueryOptions } from '@/api/feeds/queries/full-feed-posts/query-options';
 
 async function PostFeedContent() {
 	const queryClient = new QueryClient();
 	const queryOptions = fullFeedPostsQueryOptions();
 
-	await prefetch(queryClient);
+	await prefetchFullFeedPostsQuery(queryClient);
 
 	const initialRequestFailed = queryClient.getQueryState(queryOptions.queryKey)?.status === 'error';
 
