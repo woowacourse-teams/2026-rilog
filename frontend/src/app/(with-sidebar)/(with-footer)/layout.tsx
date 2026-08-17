@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
 
-import FooterShell from '@/widgets/app-shell/FooterShell';
+import Footer from '@/widgets/footer/Footer';
 
-export default function FooterShellLayout({ children }: Readonly<{ children: ReactNode }>) {
-	return <FooterShell>{children}</FooterShell>;
+export default function FooterLayout({ children }: Readonly<{ children: ReactNode }>) {
+	return (
+		<div className="flex min-h-dvh flex-col">
+			<div className="flex-1">{children}</div>
+			<Footer />
+		</div>
+	);
 }
