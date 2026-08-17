@@ -18,6 +18,22 @@ const expectBodyImage = async (page: Page) => {
 };
 
 test.describe('글 작성', () => {
+	test('512px 미만 모바일 화면에서 발행 버튼을 하단에 고정한다', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 500 });
+		await page.goto('/write');
+		const publishButton = page.getByRole('button', { name: '발행' });
+
+		const expectButtonAtViewportBottom = async () => {
+			const buttonBox = await publishButton.boundingBox();
+			expect(buttonBox).not.toBeNull();
+			expect(500 - (buttonBox!.y + buttonBox!.height)).toBeLessThanOrEqual(16);
+		};
+
+		await expectButtonAtViewportBottom();
+		await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+		await expectButtonAtViewportBottom();
+	});
+
 	test('클립보드 이미지를 본문에 붙여넣는다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });

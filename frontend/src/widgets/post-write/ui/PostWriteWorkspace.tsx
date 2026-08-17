@@ -261,7 +261,7 @@ export default function PostWriteWorkspace({
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
 			<WritePublishActionBar isEditorReady={isEditorReady} onPublish={handleOpenPublishSettings} />
-			<main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-8 sm:py-16">
+			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
 				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
 					<PostTitleField
 						value={title}
