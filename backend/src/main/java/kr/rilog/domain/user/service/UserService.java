@@ -3,9 +3,11 @@ package kr.rilog.domain.user.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
+import kr.rilog.global.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +25,13 @@ public class UserService {
     private final BlogRepository blogRepository;
 
     public void validateDuplicatedNickname(String nickname) {
-        if (userRepository.existsByNickname(nickname)) {
+        if (userRepository.existsByNickname(Nickname.from(nickname))) {
             throw new UserException(NICKNAME_DUPLICATED);
         }
     }
 
     public void validateDuplicatedSlug(String slug) {
-        if (userRepository.existsBySlug(slug)) {
+        if (userRepository.existsBySlug(Slug.from(slug))) {
             throw new UserException(SLUG_DUPLICATED);
         }
     }

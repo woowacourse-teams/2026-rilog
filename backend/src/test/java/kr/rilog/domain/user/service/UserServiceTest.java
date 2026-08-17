@@ -5,9 +5,11 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -37,11 +39,11 @@ class UserServiceTest {
     @DisplayName("중복되지 않은 닉네임은 검증을 통과한다")
     void validateDuplicatedNicknamePassesWhenNicknameDoesNotExist() {
         // given
-        String nickname = "러로";
+        Nickname nickname = Nickname.from("러로");
         when(userRepository.existsByNickname(nickname)).thenReturn(false);
 
         // when - then
-        assertThatCode(() -> userService.validateDuplicatedNickname(nickname))
+        assertThatCode(() -> userService.validateDuplicatedNickname(nickname.getValue()))
                 .doesNotThrowAnyException();
         verify(userRepository).existsByNickname(nickname);
     }
@@ -50,11 +52,11 @@ class UserServiceTest {
     @DisplayName("중복된 닉네임이면 예외가 발생한다")
     void validateDuplicatedNicknameThrowsWhenNicknameExists() {
         // given
-        String nickname = "러로";
+        Nickname nickname = Nickname.from("러로");
         when(userRepository.existsByNickname(nickname)).thenReturn(true);
 
         // when - then
-        assertThatThrownBy(() -> userService.validateDuplicatedNickname(nickname))
+        assertThatThrownBy(() -> userService.validateDuplicatedNickname(nickname.getValue()))
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
                 .isEqualTo(NICKNAME_DUPLICATED);
@@ -65,11 +67,11 @@ class UserServiceTest {
     @DisplayName("중복되지 않은 슬러그는 검증을 통과한다")
     void validateDuplicatedSlugPassesWhenSlugDoesNotExist() {
         // given
-        String slug = "ri_log-01";
+        Slug slug = Slug.from("ri_log-01");
         when(userRepository.existsBySlug(slug)).thenReturn(false);
 
         // when - then
-        assertThatCode(() -> userService.validateDuplicatedSlug(slug))
+        assertThatCode(() -> userService.validateDuplicatedSlug(slug.getValue()))
                 .doesNotThrowAnyException();
         verify(userRepository).existsBySlug(slug);
     }
@@ -78,11 +80,11 @@ class UserServiceTest {
     @DisplayName("중복된 슬러그이면 예외가 발생한다")
     void validateDuplicatedSlugThrowsWhenSlugExists() {
         // given
-        String slug = "ri_log-01";
+        Slug slug = Slug.from("ri_log-01");
         when(userRepository.existsBySlug(slug)).thenReturn(true);
 
         // when - then
-        assertThatThrownBy(() -> userService.validateDuplicatedSlug(slug))
+        assertThatThrownBy(() -> userService.validateDuplicatedSlug(slug.getValue()))
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
                 .isEqualTo(SLUG_DUPLICATED);
@@ -100,8 +102,8 @@ class UserServiceTest {
                 .build();
         OnboardingCompleteCommand command = command();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByNickname("러로")).thenReturn(false);
-        when(userRepository.existsBySlug("ri_log-01")).thenReturn(false);
+        when(userRepository.existsByNickname(Nickname.from("러로"))).thenReturn(false);
+        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.empty());
 
@@ -141,8 +143,8 @@ class UserServiceTest {
                 .onboardingStatus(OnboardingStatus.PENDING)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByNickname("러로")).thenReturn(false);
-        when(userRepository.existsBySlug("ri_log-01")).thenReturn(false);
+        when(userRepository.existsByNickname(Nickname.from("러로"))).thenReturn(false);
+        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.empty());
 
@@ -185,8 +187,8 @@ class UserServiceTest {
                 .onboardingStatus(OnboardingStatus.PENDING)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByNickname("러로")).thenReturn(false);
-        when(userRepository.existsBySlug("ri_log-01")).thenReturn(false);
+        when(userRepository.existsByNickname(Nickname.from("러로"))).thenReturn(false);
+        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.of(Blog.createRilog(user)));
 
@@ -218,7 +220,7 @@ class UserServiceTest {
         User user = User.builder()
                 .id(1L)
                 .githubId(100L)
-                .slug("jinriro")
+                .slug(Slug.from("jinriro"))
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -228,8 +230,8 @@ class UserServiceTest {
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
                 .isEqualTo(ONBOARDING_ALREADY_COMPLETED);
-        verify(userRepository, never()).existsByNickname(any(String.class));
-        verify(userRepository, never()).existsBySlug(any(String.class));
+        verify(userRepository, never()).existsByNickname(any(Nickname.class));
+        verify(userRepository, never()).existsBySlug(any(Slug.class));
         verify(userRepository, never()).saveAndFlush(any(User.class));
     }
 
@@ -243,7 +245,7 @@ class UserServiceTest {
                 .onboardingStatus(OnboardingStatus.PENDING)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByNickname("러로")).thenReturn(true);
+        when(userRepository.existsByNickname(Nickname.from("러로"))).thenReturn(true);
 
         // when - then
         assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
@@ -263,8 +265,8 @@ class UserServiceTest {
                 .onboardingStatus(OnboardingStatus.PENDING)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByNickname("러로")).thenReturn(false);
-        when(userRepository.existsBySlug("ri_log-01")).thenReturn(true);
+        when(userRepository.existsByNickname(Nickname.from("러로"))).thenReturn(false);
+        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(true);
 
         // when - then
         assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))

@@ -2,8 +2,11 @@ package kr.rilog.domain.user.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.user.entity.vo.Email;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.entity.BaseEntity;
+import kr.rilog.global.vo.Slug;
 import lombok.AccessLevel;
 import lombok.Builder.Default;
 import lombok.Getter;
@@ -27,11 +30,11 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 20, unique = true)
-    private String nickname;
+    @Embedded
+    private Nickname nickname;
 
-    @Column(length = 50, unique = true)
-    private String slug;
+    @Embedded
+    private Slug slug;
 
     @Column(length = 80)
     private String introduction;
@@ -45,8 +48,8 @@ public class User extends BaseEntity {
     @Column(length = 512)
     private String githubUrl;
 
-    @Column(length = 256)
-    private String email;
+    @Embedded
+    private Email email;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -80,12 +83,12 @@ public class User extends BaseEntity {
             throw new UserException(ONBOARDING_ALREADY_COMPLETED);
         }
 
-        this.nickname = nickname;
-        this.slug = slug;
+        this.nickname = Nickname.from(nickname);
+        this.slug = Slug.from(slug);
         this.introduction = introduction;
         this.profileImageUrl = profileImageUrl;
         this.githubUrl = githubUrl;
-        this.email = email;
+        this.email = toEmailOrNull(email);
         this.onboardingStatus = OnboardingStatus.COMPLETED;
         this.onboardingCompletedAt = LocalDateTime.now();
     }
@@ -93,4 +96,25 @@ public class User extends BaseEntity {
     public boolean isOnboardingCompleted() {
         return this.onboardingStatus == OnboardingStatus.COMPLETED || this.slug != null;
     }
+
+    private Email toEmailOrNull(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        return Email.from(email);
+    }
+
+    public String getNickname() {
+        return nickname == null ? null : nickname.getValue();
+    }
+
+    public String getSlug() {
+        return slug == null ? null : slug.getValue();
+    }
+
+    public String getEmail() {
+        return email == null ? null : email.getValue();
+    }
+
 }

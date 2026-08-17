@@ -52,7 +52,7 @@ export default function SignUpForm() {
 						shape="circle"
 						fit={previewUrl.startsWith('blob:') ? 'cover' : 'contain'}
 						sizes="100px"
-						className="size-[100px] shrink-0 bg-background"
+						className="size-25 shrink-0 bg-background"
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
 					<div className="flex-1">

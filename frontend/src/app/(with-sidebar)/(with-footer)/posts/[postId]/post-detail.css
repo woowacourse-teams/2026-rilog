@@ -72,16 +72,17 @@
 
 .post-detail-body .bn-block-content[data-content-type='heading'] {
 	align-items: baseline;
-	padding-bottom: 0.3em;
 	letter-spacing: -0.015em;
 }
 
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='1'] {
 	padding-top: 1.6em;
+	padding-bottom: 0.6em;
 }
 
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='2'] {
 	padding-top: 1.4em;
+	padding-bottom: 0.5em;
 	font-size: var(--text-title-2);
 }
 
@@ -91,6 +92,7 @@
 
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='3'] {
 	padding-top: 1.2em;
+	padding-bottom: 0.4em;
 	font-size: var(--text-title-1);
 }
 

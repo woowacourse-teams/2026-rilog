@@ -12,9 +12,11 @@ import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.service.UserService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -197,8 +199,8 @@ class OnboardingControllerTest {
         return User.builder()
                 .id(1L)
                 .githubId(100L)
-                .nickname("러로")
-                .slug("ri_log-01")
+                .nickname(Nickname.from("러로"))
+                .slug(Slug.from("ri_log-01"))
                 .globalRole(GlobalRole.USER)
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();

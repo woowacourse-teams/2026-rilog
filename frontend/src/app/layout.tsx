@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQueryCacheSubscriber';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
-import Footer from '@/widgets/footer/Footer';
 
 import './globals.css';
 
@@ -21,6 +20,9 @@ const pretendard = localFont({
 export const metadata: Metadata = {
 	title: 'Rilog',
 	description: '기록을 작성하고 함께 나누는 공간',
+	icons: {
+		icon: '/brand/favicon.png',
+	},
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -33,7 +35,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
 						{children}
 					</LoginModalProvider>
 				</QueryProvider>
-				<Footer />
 			</body>
 		</html>
 	);

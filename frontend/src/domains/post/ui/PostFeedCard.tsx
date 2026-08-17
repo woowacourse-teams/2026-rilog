@@ -41,7 +41,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 								src={post.author.profileImageUrl ?? undefined}
 								fallback={post.author.nickname.slice(0, 1)}
 								label={`${post.author.nickname} 프로필`}
-								size="md"
+								size="sm"
 							/>
 							<span className="min-w-0 truncate font-medium">{post.author.nickname}</span>
 							<span aria-hidden="true">·</span>

@@ -2,9 +2,11 @@ package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +34,7 @@ class UserQueryServiceTest {
         // given
         UserQueryService userQueryService = new UserQueryService(userRepository);
         User user = completedUser();
-        when(userRepository.findBySlugAndOnboardingStatus("jinriro", OnboardingStatus.COMPLETED))
+        when(userRepository.findBySlugAndOnboardingStatus(Slug.from("jinriro"), OnboardingStatus.COMPLETED))
                 .thenReturn(Optional.of(user));
 
         // when
@@ -59,7 +61,7 @@ class UserQueryServiceTest {
     void getUserInfoRejectsMissingCompletedUser() {
         // given
         UserQueryService userQueryService = new UserQueryService(userRepository);
-        when(userRepository.findBySlugAndOnboardingStatus("pending-user", OnboardingStatus.COMPLETED))
+        when(userRepository.findBySlugAndOnboardingStatus(Slug.from("pending-user"), OnboardingStatus.COMPLETED))
                 .thenReturn(Optional.empty());
 
         // when - then
@@ -73,10 +75,11 @@ class UserQueryServiceTest {
         return User.builder()
                 .id(1L)
                 .githubId(100L)
-                .nickname("리로")
-                .slug("jinriro")
+                .nickname(Nickname.from("리로"))
+                .slug(Slug.from("jinriro"))
                 .profileImageUrl("https://example.com/profile.png")
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
     }
+
 }
