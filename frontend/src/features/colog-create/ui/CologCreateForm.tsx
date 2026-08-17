@@ -55,7 +55,7 @@ export default function CologCreateForm() {
 	}
 
 	return (
-		<form className="mt-8 flex flex-col gap-8 pb-24">
+		<form className="mt-8 flex flex-col gap-8">
 			<div role="group" aria-labelledby={logoLabelId} className="flex max-w-[286px] flex-col gap-3">
 				<p id={logoLabelId} className="text-body-2 font-semibold text-text-primary">
 					팀 로고

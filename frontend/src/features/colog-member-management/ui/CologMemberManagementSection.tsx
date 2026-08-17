@@ -102,7 +102,7 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 	};
 
 	return (
-		<section aria-labelledby="member-management-title" className="h-full min-h-0 pb-24">
+		<section aria-labelledby="member-management-title" className="h-full min-h-0">
 			<form className="flex h-full min-h-0 flex-col" onSubmit={handleSave}>
 				<div className="flex shrink-0 flex-wrap items-end justify-between gap-6">
 					<div>
@@ -155,7 +155,7 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 				</div>
 
 				<div className="mt-14 min-h-0 flex-1 overflow-auto">
-					<table className="w-full min-w-192 table-fixed border-collapse text-left">
+					<table className="w-full min-w-3xl table-fixed border-collapse text-left">
 						<caption className="sr-only">코로그 멤버 목록</caption>
 						<colgroup>
 							<col className="w-52" />
