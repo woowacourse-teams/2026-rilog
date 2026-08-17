@@ -3,7 +3,6 @@ package kr.rilog.domain.blog.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
-import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -25,7 +24,6 @@ import java.time.LocalDateTime;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -63,15 +61,14 @@ public class CologService {
     }
 
     @Transactional
-    public CologMemberInviteResult inviteMember(Long requesterId, Long cologId, CologMemberInviteCommand command) {
-        Blog colog = getColog(cologId);
-        User requester = getUser(requesterId);
-        BlogMember requesterMember = getActiveMember(cologId, requester.getId());
-        validateInvitePermission(requesterMember);
-        validateAssignablePermission(command.permission());
+    public CologMemberInviteResult inviteMember(Long requesterId, String slug, CologMemberInviteCommand command) {
+        Blog colog = getColog(slug);
+
+        BlogMember requesterMember = getActiveMember(slug, requesterId);
+        requesterMember.validateCanInvite(command.permission());
 
         User invitee = getUser(command.userId());
-        validateNotActiveMember(cologId, invitee.getId());
+        validateNotActiveMember(slug, invitee.getId());
 
         BlogMember member = BlogMember.invite(
                 colog,
@@ -90,30 +87,18 @@ public class CologService {
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
     }
 
-    private Blog getColog(Long cologId) {
-        return blogRepository.findByIdAndBlogType(cologId, BlogType.COLOG)
+    private Blog getColog(String slug) {
+        return blogRepository.findBySlugAndBlogType(slug, BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
-    private BlogMember getActiveMember(Long cologId, Long userId) {
-        return blogMemberRepository.findByBlogIdAndUserIdAndStatus(cologId, userId, BlogMemberStatus.ACTIVE)
+    private BlogMember getActiveMember(String slug, Long userId) {
+        return blogMemberRepository.findByBlogSlugAndUserIdAndStatus(slug, userId, BlogMemberStatus.ACTIVE)
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN));
     }
 
-    private void validateInvitePermission(BlogMember member) {
-        if (member.getPermission() != BlogPermission.OWNER && member.getPermission() != BlogPermission.ADMIN) {
-            throw new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN);
-        }
-    }
-
-    private void validateAssignablePermission(BlogPermission permission) {
-        if (permission != BlogPermission.ADMIN && permission != BlogPermission.MEMBER) {
-            throw new BlogException(BLOG_MEMBER_PERMISSION_INVALID);
-        }
-    }
-
-    private void validateNotActiveMember(Long cologId, Long userId) {
-        if (blogMemberRepository.existsByBlogIdAndUserIdAndStatus(cologId, userId, BlogMemberStatus.ACTIVE)) {
+    private void validateNotActiveMember(String slug, Long userId) {
+        if (blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(slug, userId, BlogMemberStatus.ACTIVE)) {
             throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
         }
     }

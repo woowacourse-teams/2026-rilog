@@ -82,8 +82,8 @@ public class PostService {
     }
 
     private void validateCologMember(Blog colog, User writer) {
-        boolean activeMember = blogMemberRepository.existsByBlogIdAndUserIdAndStatus(
-                colog.getId(),
+        boolean activeMember = blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(
+                colog.getSlug(),
                 writer.getId(),
                 BlogMemberStatus.ACTIVE
         );
@@ -105,11 +105,6 @@ public class PostService {
     private Blog getRilog(User writer) {
         return blogRepository.findRilogByOwnerId(writer.getId())
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
-    }
-
-    private Post getPost(Long postId) {
-        return postRepository.findDetailById(postId)
-                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 
     private Post getPost(String slug, Long postId) {

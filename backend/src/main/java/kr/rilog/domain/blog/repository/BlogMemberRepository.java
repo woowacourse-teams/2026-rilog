@@ -13,9 +13,9 @@ import java.util.Optional;
 @Repository
 public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
 
-    Optional<BlogMember> findByBlogIdAndUserIdAndStatus(Long blogId, Long userId, BlogMemberStatus status);
+    Optional<BlogMember> findByBlogSlugAndUserIdAndStatus(String slug, Long userId, BlogMemberStatus status);
 
-    boolean existsByBlogIdAndUserIdAndStatus(Long blogId, Long userId, BlogMemberStatus status);
+    boolean existsByBlogSlugAndUserIdAndStatus(String slug, Long userId, BlogMemberStatus status);
 
     @Query("""
             SELECT COUNT(blogMember)
