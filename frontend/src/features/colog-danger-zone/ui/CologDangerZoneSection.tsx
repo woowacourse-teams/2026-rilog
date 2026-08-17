@@ -18,7 +18,7 @@ export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZone
 	};
 
 	return (
-		<section aria-labelledby="danger-settings-title" className="h-full min-h-0 overflow-y-auto pb-24">
+		<section aria-labelledby="danger-settings-title" className="h-full min-h-0 overflow-y-auto">
 			<h1 id="danger-settings-title" className="text-heading-3 font-bold text-text-primary">
 				위험 영역
 			</h1>

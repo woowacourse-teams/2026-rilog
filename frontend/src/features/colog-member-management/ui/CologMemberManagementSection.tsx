@@ -102,7 +102,7 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 	};
 
 	return (
-		<section aria-labelledby="member-management-title" className="h-full min-h-0 pb-24">
+		<section aria-labelledby="member-management-title" className="h-full min-h-0">
 			<form className="flex h-full min-h-0 flex-col" onSubmit={handleSave}>
 				<div className="flex shrink-0 flex-wrap items-end justify-between gap-6">
 					<div>
