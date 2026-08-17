@@ -104,7 +104,7 @@ describe('CologCreateForm', () => {
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/co-logs/@rilog-team'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team'));
 		expect(createColog).toHaveBeenCalledWith(
 			expect.objectContaining({
 				name: '리로그',
@@ -151,7 +151,7 @@ describe('CologCreateForm', () => {
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/co-logs/@rilog-team'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team'));
 		expect(createColog).toHaveBeenCalledTimes(2);
 
 		unmount();

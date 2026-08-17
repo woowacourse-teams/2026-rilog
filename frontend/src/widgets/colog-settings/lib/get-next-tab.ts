@@ -1,4 +1,6 @@
-export type SettingsTab = 'profile' | 'members' | 'danger';
+import type { CologSettingsTab } from '@/shared/routes/app-routes';
+
+export type SettingsTab = CologSettingsTab;
 
 export interface SettingsTabItem {
 	id: SettingsTab;

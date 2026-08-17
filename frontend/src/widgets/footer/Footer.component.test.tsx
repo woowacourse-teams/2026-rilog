@@ -10,7 +10,7 @@ describe('Footer', () => {
 		const footer = screen.getByRole('contentinfo');
 
 		const homeLink = within(footer).getByRole('link', { name: 'Rilog 홈' });
-		expect(homeLink).toHaveAttribute('href', '/');
+		expect(homeLink).toHaveAttribute('href', '/feeds');
 		expect(homeLink.querySelector('img')).toHaveAttribute('src', '/brand/logo.svg');
 		expect(within(footer).getByText('기록을 작성하고 함께 나누는 공간')).toBeInTheDocument();
 		expect(within(footer).getByRole('navigation', { name: '정책' })).toBeInTheDocument();

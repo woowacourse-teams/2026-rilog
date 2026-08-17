@@ -10,7 +10,7 @@ describe('SidebarBrand', () => {
 		render(<SidebarHeader />);
 
 		const brandLink = screen.getByRole('link');
-		expect(brandLink).toHaveAttribute('href', '/');
+		expect(brandLink).toHaveAttribute('href', '/feeds');
 		expect(brandLink).toHaveTextContent('Rilog.');
 
 		await user.tab();

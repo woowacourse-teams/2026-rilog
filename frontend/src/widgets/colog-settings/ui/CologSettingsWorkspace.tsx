@@ -6,14 +6,31 @@ import type { SettingsTab } from '../lib/get-next-tab';
 
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
+import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
+import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
 
-export default function CologSettingsWorkspace() {
-	const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-	const commitTabChange = useCallback((nextTab: SettingsTab) => setActiveTab(nextTab), []);
+interface CologSettingsWorkspaceProps {
+	slug?: string;
+	initialTab?: SettingsTab;
+}
+
+export default function CologSettingsWorkspace({
+	slug = 'rilog',
+	initialTab = 'profile',
+}: CologSettingsWorkspaceProps) {
+	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
+	const commitTabChange = useCallback(
+		(nextTab: SettingsTab) => {
+			setActiveTab(nextTab);
+			window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, nextTab));
+		},
+		[slug],
+	);
 	const { isLeaveModalOpen, onDirtyChange, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
 		activeTab,
 		onTabChange: commitTabChange,
@@ -23,7 +40,12 @@ export default function CologSettingsWorkspace() {
 		<>
 			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
 				{activeTab === 'profile' && (
-					<CologProfileSection onDirtyChange={onDirtyChange} onTabChangeRequest={onTabChangeRequest} />
+					<CologProfileSection
+						initialProfile={savedProfile}
+						onDirtyChange={onDirtyChange}
+						onSave={setSavedProfile}
+						onTabChangeRequest={onTabChangeRequest}
+					/>
 				)}
 				{activeTab === 'members' && (
 					<CologMemberManagementSection onDirtyChange={onDirtyChange} onTabChangeRequest={onTabChangeRequest} />

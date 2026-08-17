@@ -12,7 +12,7 @@ describe('AuthenticatedSidebarFooter', () => {
 		const logoutButton = screen.getByRole('button');
 
 		expect(writeLink).toHaveAttribute('href', '/write');
-		expect(profileLink).toHaveAttribute('href', '/profile');
+		expect(profileLink).toHaveAttribute('href', '/@jetproc');
 		expect(profileLink).toHaveAccessibleName();
 		expect(logoutButton).toBeEnabled();
 	});

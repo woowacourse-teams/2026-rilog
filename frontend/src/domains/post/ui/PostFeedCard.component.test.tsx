@@ -12,6 +12,7 @@ const PERSONAL_POST: PostFeedItem = {
 	publishedAt: '2026-08-04T23:59:59',
 	author: {
 		nickname: '리로거',
+		slug: 'rilogger',
 		profileImageUrl: null,
 	},
 	colog: null,
@@ -21,7 +22,7 @@ describe('PostFeedCard', () => {
 	it('게시글 제목을 이름으로 갖는 상세 링크와 작성 정보를 제공한다', () => {
 		render(<PostFeedCard post={PERSONAL_POST} />);
 
-		expect(screen.getByRole('link', { name: /함께 기록하는 방법/ })).toHaveAttribute('href', '/posts/17');
+		expect(screen.getByRole('link', { name: /함께 기록하는 방법/ })).toHaveAttribute('href', '/@rilogger/posts/17');
 		expect(screen.getByText('리로거')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '리로거 프로필' })).toHaveTextContent('리');
 		expect(screen.getByText('2026년 8월 4일')).toHaveAttribute('datetime', PERSONAL_POST.publishedAt);
@@ -68,7 +69,7 @@ describe('PostFeedCard', () => {
 			<PostFeedCard
 				post={{
 					...PERSONAL_POST,
-					colog: { name: '리로그 팀', logoUrl: null },
+					colog: { name: '리로그 팀', slug: 'rilog-team', logoUrl: null },
 				}}
 			/>,
 		);

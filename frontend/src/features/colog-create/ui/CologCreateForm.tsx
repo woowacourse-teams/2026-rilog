@@ -8,6 +8,7 @@ import type { SubmitEvent } from 'react';
 
 import { useCologProfileForm } from '@/domains/colog/hooks/use-colog-profile-form';
 import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
+import { buildCologHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 
 import { mockCreateColog } from '../lib/mock-create-colog';
@@ -19,8 +20,6 @@ interface CologCreateFormProps {
 }
 
 type CreateState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
-
-const getCologProfilePath = (slug: string) => `/co-logs/@${slug}`;
 
 export default function CologCreateForm({ createColog = mockCreateColog, navigate }: CologCreateFormProps) {
 	const router = useRouter();
@@ -50,7 +49,7 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 
 		try {
 			const result = await createColog(normalizedValue);
-			const profilePath = getCologProfilePath(result.slug);
+			const profilePath = buildCologHomePath(result.slug);
 
 			if (navigate !== undefined) {
 				navigate(profilePath);

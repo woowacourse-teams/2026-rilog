@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Block } from '@blocknote/core';
 import type { ComponentType } from 'react';
 
-import { buildPostDetailPath } from '@/domains/post/lib/build-post-detail-path';
 import { COLOG_OPTIONS_MOCK } from '@/features/post-write/lib/mock-colog-options';
 import { mockPublishPost } from '@/features/post-write/lib/mock-publish-post';
 import { mockUploadPostBodyFile } from '@/features/post-write/lib/mock-upload-post-body-file';
@@ -20,6 +19,7 @@ import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
 import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
+import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 const DEFAULT_POST_COVER_PATH = '/images/default-post-cover.svg';
@@ -211,7 +211,7 @@ export default function PostWriteWorkspace({
 				settings: publicationSettings,
 			});
 			// 이동 경로를 먼저 검증해 실패 시 모달과 이탈 보호 상태를 그대로 유지
-			const postDetailPath = buildPostDetailPath(result.postId);
+			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
 
 			// 발행 성공 후에는 작성 페이지를 떠나도 확인 모달이 뜨지 않도록 history guard 표시 해제
 			clearGuardEntry();

@@ -10,7 +10,7 @@ const MOCK_API_DELAY_MS = 250;
 // UI 상태를 바꿔 확인할 때 이 값만 'success' | 'empty' | 'error' 중 하나로 변경
 export const ACTIVE_MOCK_POST_FEED_SCENARIO: MockPostFeedScenario = 'success';
 
-export const MOCK_POST_FEED_ITEMS: PostFeedItem[] = [
+const MOCK_POST_FEED_ITEM_VALUES = [
 	{
 		id: 1,
 		title: 'React 19에서 달라진 렌더링 흐름 이해하기',
@@ -299,7 +299,13 @@ export const MOCK_POST_FEED_ITEMS: PostFeedItem[] = [
 		author: { nickname: '해나', profileImageUrl: null },
 		colog: null,
 	},
-];
+] as const;
+
+export const MOCK_POST_FEED_ITEMS: PostFeedItem[] = MOCK_POST_FEED_ITEM_VALUES.map((item) => ({
+	...item,
+	author: { ...item.author, slug: `author-${item.id}` },
+	colog: item.colog === null ? null : { ...item.colog, slug: `colog-${item.id}` },
+}));
 
 export const createMockPostFeedPage = (
 	page: number,

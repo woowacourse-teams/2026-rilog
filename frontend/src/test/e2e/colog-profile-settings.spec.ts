@@ -1,18 +1,31 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('팀 프로필 설정', () => {
+	test('설정 탭 query가 없으면 프로필 탭으로 이동한다', async ({ page }) => {
+		await page.goto('/@rilog/settings');
+
+		await expect(page).toHaveURL('/@rilog/settings?tab=profile');
+		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
+	});
+
+	test('잘못된 설정 탭 query는 프로필 탭으로 이동한다', async ({ page }) => {
+		await page.goto('/@rilog/settings?tab=mebers');
+
+		await expect(page).toHaveURL('/@rilog/settings?tab=profile');
+		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
+	});
+
 	test('프로필 탭과 저장된 mock 프로필을 기본으로 제공한다', async ({ page }) => {
-		await page.goto('/co-logs/@rilog/settings');
+		await page.goto('/@rilog/settings?tab=profile');
 
 		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
 		await expect(page.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveValue('rilog');
-		await expect(page.getByRole('link', { name: '코로그로 돌아가기' })).toHaveAttribute('href', '/co-logs/%40rilog');
 		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
 	});
 
 	test('프로필을 저장하면 탭을 왕복해도 저장값을 유지한다', async ({ page }) => {
-		await page.goto('/co-logs/@rilog/settings');
+		await page.goto('/@rilog/settings?tab=profile');
 
 		const nameInput = page.getByRole('textbox', { name: '팀 이름' });
 		await nameInput.fill('새 리로그');
@@ -25,7 +38,7 @@ test.describe('팀 프로필 설정', () => {
 	});
 
 	test('저장하지 않은 프로필의 탭 이동을 취소하거나 확정한다', async ({ page }) => {
-		await page.goto('/co-logs/@rilog/settings');
+		await page.goto('/@rilog/settings?tab=profile');
 
 		await page.getByRole('textbox', { name: '팀 이름' }).fill('수정 중인 리로그');
 		await page.getByRole('tab', { name: '멤버 관리' }).click();
@@ -42,7 +55,7 @@ test.describe('팀 프로필 설정', () => {
 
 	test('모바일 화면에서 가로로 넘치지 않는다', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
-		await page.goto('/co-logs/@rilog/settings');
+		await page.goto('/@rilog/settings?tab=members');
 
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 	});
