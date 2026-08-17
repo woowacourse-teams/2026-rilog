@@ -6,7 +6,6 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
-import kr.rilog.domain.post.controller.dto.response.PostDetailResponseV2;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -52,24 +51,18 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    public PostDetailResponse readPost(Long postId, Long requesterId) {
-        Post post = getPost(postId);
-        post.validateReadableBy(requesterId);
-        return PostDetailResponse.from(post);
-    }
-    
-    public PostDetailResponseV2 readPostOfBlogs(String slug, Long postId, Long requesterId) {
+    public PostDetailResponse readPostOfBlogs(String slug, Long postId, Long requesterId) {
         Post post = getPost(slug, postId);
         post.validateReadableBy(requesterId);
 
         if (!post.isCologAffiliated()) {
-            return PostDetailResponseV2.fromRilog(post);
+            return PostDetailResponse.fromRilog(post);
         }
 
         Blog colog = post.getColog();
         long memberCount = getMemberCount(colog);
         long postCount = getPostCount(colog);
-        return PostDetailResponseV2.fromColog(post, memberCount, postCount);
+        return PostDetailResponse.fromColog(post, memberCount, postCount);
     }
 
     public TotalPostsCountResponse readPostsCount() {

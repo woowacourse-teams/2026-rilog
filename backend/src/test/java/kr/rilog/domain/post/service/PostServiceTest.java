@@ -7,6 +7,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.affiliation.CologPostAffiliationResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -227,60 +228,93 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("공개 게시글은 로그인하지 않아도 조회할 수 있다")
-    void readPublicPostAllowsAnonymousUser() {
+    @DisplayName("개인 블로그의 공개 게시글은 로그인하지 않아도 조회할 수 있다")
+    void readPublicRilogPostAllowsAnonymousUser() {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(publicPost));
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+                .thenReturn(Optional.of(publicPost));
 
         // when
-        PostDetailResponse response = postService.readPost(POST_ID, null);
+        PostDetailResponse response = postService.readPostOfBlogs(RILOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
+        assertThat(response.affiliation().type()).isEqualTo(BlogType.RILOG);
     }
 
     @Test
-    @DisplayName("비공개 게시글은 로그인하지 않으면 조회할 수 없다")
-    void readPrivatePostRejectsAnonymousUser() {
+    @DisplayName("팀 블로그 게시글을 조회하면 활성 멤버 수와 공개 게시글 수를 포함한다")
+    void readCologPostContainsMemberAndPostCounts() {
+        // given
+        User writer = createWriter();
+        Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, COLOG_SLUG))
+                .thenReturn(Optional.of(cologPost));
+        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(3L);
+        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+                COLOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC
+        )).thenReturn(5L);
+
+        // when
+        PostDetailResponse response = postService.readPostOfBlogs(COLOG_SLUG, POST_ID, null);
+
+        // then
+        assertThat(response.affiliation())
+                .isInstanceOfSatisfying(CologPostAffiliationResponse.class, affiliation -> {
+                    assertThat(affiliation.type()).isEqualTo(BlogType.COLOG);
+                    assertThat(affiliation.memberCount()).isEqualTo(3L);
+                    assertThat(affiliation.postCount()).isEqualTo(5L);
+                });
+    }
+
+    @Test
+    @DisplayName("블로그의 비공개 게시글은 로그인하지 않으면 조회할 수 없다")
+    void readPrivateBlogPostRejectsAnonymousUser() {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(privatePost));
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+                .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPost(POST_ID, null))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(RILOG_SLUG, POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
     }
 
     @Test
-    @DisplayName("비공개 게시글은 작성자만 조회할 수 있다")
-    void readPrivatePostAllowsOnlyWriter() {
+    @DisplayName("블로그의 비공개 게시글은 작성자가 조회할 수 있다")
+    void readPrivateBlogPostAllowsWriter() {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(privatePost));
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+                .thenReturn(Optional.of(privatePost));
 
         // when
-        PostDetailResponse response = postService.readPost(POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readPostOfBlogs(RILOG_SLUG, POST_ID, WRITER_ID);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
     }
 
     @Test
-    @DisplayName("비공개 게시글은 작성자가 아니면 조회할 수 없다")
-    void readPrivatePostRejectsNonWriter() {
+    @DisplayName("블로그의 비공개 게시글은 작성자가 아닌 사용자가 조회할 수 없다")
+    void readPrivateBlogPostRejectsNonWriter() {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailById(POST_ID)).thenReturn(Optional.of(privatePost));
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+                .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPost(POST_ID, 999L))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(RILOG_SLUG, POST_ID, 999L))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
@@ -328,6 +362,21 @@ class PostServiceTest {
                 .id(POST_ID)
                 .user(writer)
                 .rilog(createRilog(writer))
+                .title("게시글 제목")
+                .content(content)
+                .category(Category.TECH)
+                .status(PostStatus.PUBLISHED)
+                .visibility(visibility)
+                .thumbnailUrl("https://example.com/thumbnail.png")
+                .build();
+    }
+
+    private Post createCologPost(User writer, PostVisibility visibility) {
+        return Post.builder()
+                .id(POST_ID)
+                .user(writer)
+                .rilog(null)
+                .colog(createColog())
                 .title("게시글 제목")
                 .content(content)
                 .category(Category.TECH)

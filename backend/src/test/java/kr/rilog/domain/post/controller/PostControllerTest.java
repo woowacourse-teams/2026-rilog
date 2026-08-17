@@ -9,7 +9,7 @@ import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
-import kr.rilog.domain.post.controller.dto.response.PostDetailResponseV2;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.affiliation.RilogPostAffiliationResponse;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -96,14 +96,14 @@ class PostControllerTest {
                 .build();
     }
 
-    private PostDetailResponseV2 response() {
-        return new PostDetailResponseV2(
+    private PostDetailResponse response() {
+        return new PostDetailResponse(
                 "게시글 제목",
                 null,
                 null,
                 "https://example.com/thumbnail.png",
                 "기술",
-                new PostDetailResponseV2.AuthorResponse(
+                new PostDetailResponse.AuthorResponse(
                         "작성자",
                         7L,
                         "writer",

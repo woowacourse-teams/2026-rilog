@@ -37,12 +37,12 @@ public class PostController implements PostApiSpec {
 
     @OptionalAuthGuard
     @GetMapping("/blogs/{slug}/posts/{postId}")
-    public ApiResponse<PostDetailResponseV2> getPostDetails(
+    public ApiResponse<PostDetailResponse> getPostDetails(
             @PathVariable String slug,
             @PathVariable Long postId,
             @NullableLoginUserId Long requesterId
     ) {
-        PostDetailResponseV2 data = postService.readPostOfBlogs(slug, postId, requesterId);
+        PostDetailResponse data = postService.readPostOfBlogs(slug, postId, requesterId);
         return ApiResponse.response(HttpStatus.OK, "게시글 상세 조회에 성공했습니다.", data);
     }
 

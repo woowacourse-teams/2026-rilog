@@ -10,7 +10,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
-import kr.rilog.domain.post.controller.dto.response.PostDetailResponseV2;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.global.response.ApiResponse;
@@ -65,7 +65,7 @@ public interface PostApiSpec {
                     }
             )
     )
-    ApiResponse<PostDetailResponseV2> getPostDetails(
+    ApiResponse<PostDetailResponse> getPostDetails(
             @Parameter(description = "게시글이 소속된 블로그 slug", example = "jetproc")
             @PathVariable String slug,
             @Parameter(description = "게시글 ID", example = "1")
