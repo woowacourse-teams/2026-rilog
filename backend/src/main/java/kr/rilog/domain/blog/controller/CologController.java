@@ -25,7 +25,7 @@ public class CologController implements CologApiSpec {
 
     private final CologService cologService;
 
-    @GetMapping("/blogs/{slug}")
+    @GetMapping("/blogs/@{slug}")
     public ApiResponse<CologPublicProfileResponse> getPublicProfile(@PathVariable("slug") String slug) {
         CologPublicProfileResult result = cologService.getPublicProfile(slug);
         CologPublicProfileResponse data = CologPublicProfileResponse.from(result);

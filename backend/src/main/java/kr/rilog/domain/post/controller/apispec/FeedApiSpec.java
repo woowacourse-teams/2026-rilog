@@ -22,7 +22,7 @@ public interface FeedApiSpec {
     );
 
     @Operation(
-            description = "공개 블로그 게시글 목록 조회 API",
+            description = "공개 블로그 게시글 목록 조회 API입니다. @slug 경로로 개인/팀 블로그 게시글 목록을 조회합니다.",
             summary = "공개 블로그 게시글 목록 조회 API"
     )
     ApiResponse<PublicBlogFeedPostResponse> getPublicBlogPosts(
