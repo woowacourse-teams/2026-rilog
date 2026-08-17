@@ -12,6 +12,8 @@ vi.mock('../../api', () => ({
 describe('fullFeedPostsQueryOptions', () => {
 	it('query와 prefetch가 공유할 pagination 설정과 query key를 제공한다', async () => {
 		vi.mocked(readFullFeedPosts).mockResolvedValue({
+			status: 200,
+			message: 'OK',
 			data: { page: 0, size: 12, numberOfElements: 0, hasNext: false, posts: [] },
 		});
 		const options = fullFeedPostsQueryOptions();
@@ -23,7 +25,7 @@ describe('fullFeedPostsQueryOptions', () => {
 		expect(readFullFeedPosts).toHaveBeenCalledWith({ page: 0, size: 12 });
 		expect(
 			options.getNextPageParam?.(
-				{ data: { page: 2, size: 12, numberOfElements: 0, posts: [], hasNext: true } },
+				{ status: 200, message: 'OK', data: { page: 2, size: 12, numberOfElements: 0, posts: [], hasNext: true } },
 				[],
 				2,
 				[],
@@ -31,7 +33,7 @@ describe('fullFeedPostsQueryOptions', () => {
 		).toBe(3);
 		expect(
 			options.getNextPageParam?.(
-				{ data: { page: 2, size: 12, numberOfElements: 0, posts: [], hasNext: false } },
+				{ status: 200, message: 'OK', data: { page: 2, size: 12, numberOfElements: 0, posts: [], hasNext: false } },
 				[],
 				2,
 				[],

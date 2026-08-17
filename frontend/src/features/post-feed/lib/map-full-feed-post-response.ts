@@ -6,12 +6,22 @@ import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed'
 const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 	const { blog, postId, publishedAt, thumbnailUrl, title, user } = post;
 
-	if (postId === undefined || title === undefined || publishedAt === undefined || user?.nickname === undefined) {
+	if (
+		postId === undefined ||
+		title === undefined ||
+		publishedAt === undefined ||
+		user?.nickname === undefined ||
+		user.slug === undefined
+	) {
 		return null;
 	}
 
 	const isTeamBlogPost =
 		blog?.blogId !== undefined && user.userId !== undefined && blog.blogId !== user.userId && blog.name !== undefined;
+
+	if (isTeamBlogPost && blog.slug === undefined) {
+		return null;
+	}
 
 	return {
 		id: postId,
@@ -20,11 +30,13 @@ const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 		publishedAt,
 		author: {
 			nickname: user.nickname,
+			slug: user.slug,
 			profileImageUrl: user.profileImageUrl || null,
 		},
 		colog: isTeamBlogPost
 			? {
 					name: blog.name,
+					slug: blog.slug,
 					logoUrl: blog.profileUrl || null,
 				}
 			: null,
