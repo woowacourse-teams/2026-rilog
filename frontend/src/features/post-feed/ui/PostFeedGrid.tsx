@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { PostFeedPage } from '@/domains/post/model/post-feed';
 import PostFeedCard from '@/domains/post/ui/PostFeedCard';
 import Button from '@/shared/ui/button/Button';
 
@@ -13,21 +12,22 @@ import { usePostFeed } from '../model/use-post-feed';
 import PostFeedSkeleton from './PostFeedSkeleton';
 
 interface PostFeedGridProps {
-	initialPage?: PostFeedPage;
 	initialRequestFailed?: boolean;
 }
 
 const POST_FEED_CONTENT_ID = 'post-feed-content';
 
-export default function PostFeedGrid({ initialPage, initialRequestFailed = false }: PostFeedGridProps) {
+export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedGridProps) {
 	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
 	const sentinelRef = useRef<HTMLDivElement>(null);
-	const query = usePostFeed({ initialPage, isEnabled: isQueryEnabled });
+	const query = usePostFeed({ isEnabled: isQueryEnabled });
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
+
 	const posts = useMemo(
 		() => deduplicatePostFeedItems(query.data?.pages.flatMap((page) => page.items) ?? []),
 		[query.data?.pages],
 	);
+
 	const hasInitialError = (!isQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
 	usePostFeedEntryAutoScroll({
 		isReady: hasInitialError || !query.isPending,
