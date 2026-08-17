@@ -1,16 +1,14 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
-import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.TeamFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
-import kr.rilog.domain.post.repository.projection.TeamFeedPostRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -38,27 +36,38 @@ public class FeedService {
         return FullFeedPostResponse.from(feed);
     }
 
-    public TeamFeedPostResponse readCologPosts(
-            String cologSlug,
-            int page,
-            int size
-    ) {
-        Blog colog = getColog(cologSlug);
+    public PublicBlogFeedPostResponse readPublicBlogPosts(String slug, int page, int size) {
+        Blog blog = getBlog(slug);
         PageRequest pageable = PageRequest.of(page, size);
 
-        Slice<TeamFeedPostRow> posts = postFeedQueryRepository.findTeamPosts(
+        Slice<PostFullFeedRow> posts = blog.isColog()
+                ? readPublicCologPosts(blog, pageable)
+                : readPublicRilogPosts(blog, pageable);
+
+        return PublicBlogFeedPostResponse.from(blog.getBlogType(), posts);
+    }
+
+    private Blog getBlog(String slug) {
+        return blogRepository.findBySlugAndDeletedAtIsNull(slug)
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
+    }
+
+    private Slice<PostFullFeedRow> readPublicCologPosts(Blog colog, PageRequest pageable) {
+        return postFeedQueryRepository.findPublicCologPosts(
                 colog.getId(),
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 pageable
         );
-
-        return TeamFeedPostResponse.from(posts);
     }
 
-    private Blog getColog(String cologSlug) {
-        return blogRepository.findBySlugAndBlogType(cologSlug, BlogType.COLOG)
-                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
+    private Slice<PostFullFeedRow> readPublicRilogPosts(Blog rilog, PageRequest pageable) {
+        return postFeedQueryRepository.findPublicRilogPosts(
+                rilog.getId(),
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC,
+                pageable
+        );
     }
 
 }

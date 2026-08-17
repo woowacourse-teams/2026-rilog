@@ -4,7 +4,6 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
-import kr.rilog.domain.post.repository.projection.TeamFeedPostRow;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,7 +32,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 colog.id,
                 colog.name,
                 colog.slug,
-                colog.coverImageUrl
+                colog.logoUrl
             )
             FROM Post p
             JOIN p.user author
@@ -50,28 +49,69 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
     );
 
     @Query("""
-            SELECT new kr.rilog.domain.post.repository.projection.TeamFeedPostRow(
+            SELECT new kr.rilog.domain.post.repository.projection.PostFullFeedRow(
                 post.id,
                 post.title,
                 post.thumbnailUrl,
                 post.category,
-                post.status,
                 post.visibility,
                 post.publishedAt,
+
                 author.id,
                 author.nickname.value,
                 author.slug.value,
-                author.profileImageUrl
+                author.profileImageUrl,
+
+                colog.id,
+                colog.name,
+                colog.slug,
+                colog.logoUrl
             )
             FROM Post post
             JOIN post.user author
+            LEFT JOIN post.colog colog
+            WHERE post.rilog.id = :rilogId
+              AND post.status = :status
+              AND post.visibility = :visibility
+              AND post.deletedAt IS NULL
+            ORDER BY post.publishedAt DESC, post.id DESC
+            """)
+    Slice<PostFullFeedRow> findPublicRilogPosts(
+            @Param("rilogId") Long rilogId,
+            @Param("status") PostStatus status,
+            @Param("visibility") PostVisibility visibility,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT new kr.rilog.domain.post.repository.projection.PostFullFeedRow(
+                post.id,
+                post.title,
+                post.thumbnailUrl,
+                post.category,
+                post.visibility,
+                post.publishedAt,
+
+                author.id,
+                author.nickname.value,
+                author.slug.value,
+                author.profileImageUrl,
+
+                colog.id,
+                colog.name,
+                colog.slug,
+                colog.logoUrl
+            )
+            FROM Post post
+            JOIN post.user author
+            JOIN post.colog colog
             WHERE post.colog.id = :cologId
               AND post.status = :status
               AND post.visibility = :visibility
               AND post.deletedAt IS NULL
             ORDER BY post.publishedAt DESC, post.id DESC
             """)
-    Slice<TeamFeedPostRow> findTeamPosts(
+    Slice<PostFullFeedRow> findPublicCologPosts(
             @Param("cologId") Long cologId,
             @Param("status") PostStatus status,
             @Param("visibility") PostVisibility visibility,

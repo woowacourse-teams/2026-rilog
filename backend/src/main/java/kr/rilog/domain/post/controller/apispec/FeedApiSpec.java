@@ -1,9 +1,10 @@
 package kr.rilog.domain.post.controller.apispec;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.TeamFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,11 +22,12 @@ public interface FeedApiSpec {
     );
 
     @Operation(
-            description = "팀 피드 게시물 목록 조회 API",
-            summary = "팀 피드 게시물 목록 조회 API"
+            description = "공개 블로그 게시글 목록 조회 API입니다. @slug 경로로 개인/팀 블로그 게시글 목록을 조회합니다.",
+            summary = "공개 블로그 게시글 목록 조회 API"
     )
-    ApiResponse<TeamFeedPostResponse> getTeamPosts(
-            @PathVariable String cologSlug,
+    ApiResponse<PublicBlogFeedPostResponse> getPublicBlogPosts(
+            @Parameter(description = "공개 블로그 slug", example = "rilog-team")
+            @PathVariable String slug,
             @RequestParam int page,
             @RequestParam int size
     );

@@ -5,7 +5,7 @@ import kr.rilog.domain.blog.entity.Blog;
 public record MyCologResponse(
         Long cologId,
         String slug,
-        String cologName,
+        String name,
         String logoUrl
 ) {
 
