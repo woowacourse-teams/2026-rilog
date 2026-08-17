@@ -2,7 +2,6 @@
 
 import { useId, useState } from 'react';
 
-import type { CompleteSignUp } from '../model/sign-up';
 import type { ChangeEvent, SubmitEvent } from 'react';
 
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
@@ -15,6 +14,15 @@ import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
+import {
+	type CompleteSignUp,
+	SIGN_UP_NICKNAME_MAX_LENGTH,
+	SIGN_UP_NICKNAME_MIN_LENGTH,
+	SIGN_UP_SLUG_MAX_LENGTH,
+	SIGN_UP_SLUG_MIN_LENGTH,
+	SIGN_UP_SLUG_PATTERN,
+	validateSignUpFields,
+} from '../model/sign-up';
 
 const INTRODUCTION_MAX_LENGTH = 80;
 const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
@@ -24,9 +32,13 @@ const getFormDataText = (value: FormDataEntryValue | null) => (typeof value === 
 
 type SignUpState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
 
+interface SignUpNavigateOptions {
+	replace?: boolean;
+}
+
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
-	navigate?: (href: string) => void;
+	navigate?: (href: string, options?: SignUpNavigateOptions) => void;
 }
 
 export default function SignUpForm({ completeSignUp = mockCompleteSignUp, navigate }: SignUpFormProps) {
@@ -53,6 +65,11 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 		clearSignUpError();
 	}
 
+	function handleRequiredTextChange(event: ChangeEvent<HTMLInputElement>) {
+		event.currentTarget.setCustomValidity('');
+		clearSignUpError();
+	}
+
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
@@ -60,14 +77,24 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 			return;
 		}
 
+		const formData = new FormData(event.currentTarget);
+		const nickname = getFormDataText(formData.get('nickname')).trim();
+		const slug = getFormDataText(formData.get('slug')).trim();
+		const validationErrors = validateSignUpFields({ nickname, slug });
+		const nicknameInput = event.currentTarget.elements.namedItem('nickname');
+		const slugInput = event.currentTarget.elements.namedItem('slug');
+
+		if (nicknameInput instanceof HTMLInputElement) {
+			nicknameInput.setCustomValidity(validationErrors.nickname ?? '');
+		}
+		if (slugInput instanceof HTMLInputElement) {
+			slugInput.setCustomValidity(validationErrors.slug ?? '');
+		}
+
 		if (!event.currentTarget.checkValidity()) {
 			event.currentTarget.reportValidity();
 			return;
 		}
-
-		const formData = new FormData(event.currentTarget);
-		const nickname = getFormDataText(formData.get('nickname')).trim();
-		const slug = getFormDataText(formData.get('slug')).trim();
 
 		setSignUpState({ status: 'pending' });
 
@@ -119,12 +146,13 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 						id={id}
 						aria-describedby={describedBy}
 						name="nickname"
-						minLength={2}
-						maxLength={20}
+						minLength={SIGN_UP_NICKNAME_MIN_LENGTH}
+						maxLength={SIGN_UP_NICKNAME_MAX_LENGTH}
 						required
 						placeholder="예: 리로그"
 						autoComplete="nickname"
 						disabled={isSigningUp}
+						onChange={handleRequiredTextChange}
 					/>
 				)}
 			</Field>
@@ -143,11 +171,12 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 						id={id}
 						aria-describedby={describedBy}
 						name="slug"
-						minLength={4}
-						maxLength={20}
-						pattern="[A-Za-z0-9_-]+"
+						minLength={SIGN_UP_SLUG_MIN_LENGTH}
+						maxLength={SIGN_UP_SLUG_MAX_LENGTH}
+						pattern={SIGN_UP_SLUG_PATTERN}
 						required
 						disabled={isSigningUp}
+						onChange={handleRequiredTextChange}
 						left={
 							<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
 								rilog.kr/@
@@ -180,6 +209,7 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 					aria-describedby={termsAgreementLinksId}
 					required
 					disabled={isSigningUp}
+					onChange={clearSignUpError}
 				/>
 				<span id={termsAgreementLinksId} className="sr-only">
 					이용약관 및 개인정보처리방침
