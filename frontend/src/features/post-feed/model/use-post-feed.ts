@@ -1,12 +1,12 @@
 'use client';
 
-import type { FullFeedPostResponse } from '@/api/feeds/feeds.types';
-import type { ApiResponse } from '@/api/types';
+import type { FullFeedPostResponse } from '@/api/feeds/types';
+import type { ApiResponse } from '@/api/shared.types';
 import type { InfiniteData } from '@tanstack/react-query';
 
 import type { PostFeedPage } from '@/domains/post/model/post-feed';
 
-import { useFullFeedPostsQuery } from '@/api/feeds/queries/full-feed-posts/use-full-feed-posts-query';
+import { useQuery } from '@/api/feeds/queries/full-feed-posts/use-query';
 
 import { mapFullFeedPostResponse } from '../lib/map-full-feed-post-response';
 
@@ -21,5 +21,4 @@ const selectPostFeed = (
 	pages: data.pages.map((page) => mapFullFeedPostResponse(page, page.data?.page ?? 0)),
 });
 
-export const usePostFeed = ({ isEnabled }: UsePostFeedOptions) =>
-	useFullFeedPostsQuery({ isEnabled, select: selectPostFeed });
+export const usePostFeed = ({ isEnabled }: UsePostFeedOptions) => useQuery({ isEnabled, select: selectPostFeed });

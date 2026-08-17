@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { readFullFeedPosts } from '../../feeds.apis';
-import { feedsKeys } from '../../feeds.keys';
+import { readFullFeedPosts } from '../../api';
+import { keys } from '../keys';
 
-import { fullFeedPostsQueryOptions } from './full-feed-posts-query-options';
+import { fullFeedPostsQueryOptions } from './query-options';
 
-vi.mock('../../feeds.apis', () => ({
+vi.mock('../../api', () => ({
 	readFullFeedPosts: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ describe('fullFeedPostsQueryOptions', () => {
 		});
 		const options = fullFeedPostsQueryOptions();
 
-		expect(options.queryKey).toEqual(feedsKeys.fullPosts(12));
+		expect(options.queryKey).toEqual(keys.fullPosts(12));
 		expect(options.initialPageParam).toBe(0);
 
 		await options.queryFn?.({ pageParam: 0 } as never);

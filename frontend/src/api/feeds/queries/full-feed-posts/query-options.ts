@@ -1,20 +1,20 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 
-import type { FullFeedPostResponse } from '../../feeds.types';
-import type { ApiResponse } from '@/api/types';
+import type { FullFeedPostResponse } from '../../types';
+import type { ApiResponse } from '@/api/shared.types';
 
-import { readFullFeedPosts } from '../../feeds.apis';
-import { feedsKeys } from '../../feeds.keys';
+import { readFullFeedPosts } from '../../api';
+import { keys } from '../keys';
 
 export const FULL_FEED_POSTS_PAGE_SIZE = 12;
 
-export interface FullFeedPostsQueryOptions {
+export interface QueryOptions {
 	size?: number;
 }
 
-export const fullFeedPostsQueryOptions = ({ size = FULL_FEED_POSTS_PAGE_SIZE }: FullFeedPostsQueryOptions = {}) =>
+export const fullFeedPostsQueryOptions = ({ size = FULL_FEED_POSTS_PAGE_SIZE }: QueryOptions = {}) =>
 	infiniteQueryOptions<ApiResponse<FullFeedPostResponse>>({
-		queryKey: feedsKeys.fullPosts(size),
+		queryKey: keys.fullPosts(size),
 		queryFn: ({ pageParam }) => readFullFeedPosts({ page: Number(pageParam), size }),
 		initialPageParam: 0,
 		getNextPageParam: (lastPage) =>

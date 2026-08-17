@@ -2,11 +2,11 @@
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import type { FullFeedPostResponse } from '@/api/feeds/feeds.types';
-import type { ApiResponse } from '@/api/types';
+import type { FullFeedPostResponse } from '@/api/feeds/types';
+import type { ApiResponse } from '@/api/shared.types';
 import type { InfiniteData } from '@tanstack/react-query';
 
-import { fullFeedPostsQueryOptions } from './full-feed-posts-query-options';
+import { fullFeedPostsQueryOptions } from './query-options';
 
 interface UseFullFeedPostsQueryOptions<TData> {
 	size?: number;
@@ -14,7 +14,7 @@ interface UseFullFeedPostsQueryOptions<TData> {
 	select?: (data: InfiniteData<ApiResponse<FullFeedPostResponse>, unknown>) => TData;
 }
 
-export const useFullFeedPostsQuery = <TData = InfiniteData<ApiResponse<FullFeedPostResponse>, unknown>>({
+export const useQuery = <TData = InfiniteData<ApiResponse<FullFeedPostResponse>, unknown>>({
 	size,
 	isEnabled = true,
 	select,

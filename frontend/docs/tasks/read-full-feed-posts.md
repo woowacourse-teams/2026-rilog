@@ -67,22 +67,27 @@ Swagger operation:
 `/v1` 다음 첫 path segment가 `feeds`이므로 다음 위치에 구현한다.
 
 ```text
-src/shared/api/feeds/
-├── feeds.apis.ts
-├── feeds.types.ts
-├── feeds.keys.ts
-└── queries/
-    └── useFullFeedPostsQuery.ts
+src/api/
+├── shared.types.ts
+└── feeds/
+    ├── api.ts
+    ├── types.ts
+    └── queries/
+        ├── keys.ts
+        └── full-feed-posts/
+            ├── query-options.ts
+            ├── use-query.ts
+            └── prefetch.ts
 ```
 
 저장소에 더 구체적이고 일관된 명명 convention이 이미 있다면 개별 파일명은 그 convention에 맞춘다. 기존 `feeds` 파일이 있으면 중복 생성하지 말고 재사용한다.
 
 - `index.ts`나 다른 barrel export를 추가하지 않는다.
-- framework-independent raw HTTP 함수는 `feeds.apis.ts`에 둔다.
-- 이 operation에 필요한 공유 request/response 타입은 `feeds.types.ts`에 둔다. 기존 generic API response 타입이 있으면 재사용한다.
-- 안정적인 query-key factory는 `feeds.keys.ts`에 둔다.
-- query option factory와 hook은 `queries/useFullFeedPostsQuery.ts`에 함께 둔다.
-- React와 TanStack Query import를 `feeds.apis.ts`에 넣지 않는다.
+- framework-independent raw HTTP 함수는 `api.ts`에 둔다.
+- 이 operation에 필요한 resource request/response 타입은 `types.ts`에 둔다. 기존 generic API response wrapper는 `src/api/shared.types.ts`에서 재사용한다.
+- 안정적인 query-key factory는 `queries/keys.ts`에 둔다.
+- query option factory, client hook, server prefetch는 `queries/full-feed-posts/` 안의 `query-options.ts`, `use-query.ts`, `prefetch.ts`에 둔다.
+- React와 TanStack Query import를 `api.ts`에 넣지 않는다.
 - 기존 HTTP client의 인증, base URL, query serialization, error와 response unwrapping 동작을 재사용한다.
 - 이 endpoint 하나를 위해 generic API repository나 generic query-hook builder를 도입하지 않는다.
 

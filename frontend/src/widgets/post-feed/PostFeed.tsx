@@ -1,4 +1,3 @@
-
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { Suspense } from 'react';
@@ -6,14 +5,14 @@ import { Suspense } from 'react';
 import PostFeedGrid from '@/features/post-feed/ui/PostFeedGrid';
 import PostFeedSkeleton from '@/features/post-feed/ui/PostFeedSkeleton';
 
-import { fullFeedPostsQueryOptions } from '@/api/feeds/queries/full-feed-posts/full-feed-posts-query-options';
-import { prefetchFullFeedPostsQuery } from '@/api/feeds/queries/full-feed-posts/prefetch-full-feed-posts-query';
+import { prefetch } from '@/api/feeds/queries/full-feed-posts/prefetch';
+import { fullFeedPostsQueryOptions } from '@/api/feeds/queries/full-feed-posts/query-options';
 
 async function PostFeedContent() {
 	const queryClient = new QueryClient();
 	const queryOptions = fullFeedPostsQueryOptions();
 
-	await prefetchFullFeedPostsQuery(queryClient);
+	await prefetch(queryClient);
 
 	const initialRequestFailed = queryClient.getQueryState(queryOptions.queryKey)?.status === 'error';
 

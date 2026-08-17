@@ -6,9 +6,9 @@ TanStack Query 설정을 client hook과 server prefetch가 공유하도록 query
 
 ## 범위
 
-- `src/api/<resource>/queries/<concern>/` 관심사 디렉터리 안에 query options, client hook, server prefetch 배치
+- `src/api/<resource>/queries/keys.ts`와 `queries/<concern>/` 관심사 디렉터리 안에 query options, client hook, server prefetch 배치
 - mutation은 관심사별 mutation 파일에 options와 hook을 colocate
-- 전체 피드 조회 query를 `src/api/feeds/queries/full-feed-posts/` 구조로 이전
+- 전체 피드 조회 query를 `src/api/feeds/queries/full-feed-posts/{query-options.ts,use-query.ts,prefetch.ts}` 구조로 이전
 - 전체 피드의 서버 prefetch와 `HydrationBoundary` hydration 연결
 - 팀 블로그 배지 판단을 API DTO mapper 내부에서 처리
 

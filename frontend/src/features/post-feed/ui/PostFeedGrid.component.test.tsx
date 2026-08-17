@@ -3,17 +3,17 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FullFeedPostResponse, PostItemResponse } from '@/api/feeds/feeds.types';
-import type { ApiResponse } from '@/api/types';
+import type { FullFeedPostResponse, PostItemResponse } from '@/api/feeds/types';
+import type { ApiResponse } from '@/api/shared.types';
 
 import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed';
 
-import { readFullFeedPosts } from '@/api/feeds/feeds.apis';
-import { feedsKeys } from '@/api/feeds/feeds.keys';
+import { readFullFeedPosts } from '@/api/feeds/api';
+import { keys } from '@/api/feeds/queries/keys';
 
 import PostFeedGrid from './PostFeedGrid';
 
-vi.mock('@/api/feeds/feeds.apis', () => ({
+vi.mock('@/api/feeds/api', () => ({
 	readFullFeedPosts: vi.fn(),
 }));
 
@@ -78,7 +78,7 @@ const renderGrid = ({ initialPage, ...props }: RenderGridProps = {}) => {
 	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 	if (initialPage !== undefined) {
-		queryClient.setQueryData(feedsKeys.fullPosts(12), {
+		queryClient.setQueryData(keys.fullPosts(12), {
 			pages: [toApiResponse(initialPage)],
 			pageParams: [initialPage.page],
 		});
