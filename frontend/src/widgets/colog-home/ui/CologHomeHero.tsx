@@ -5,7 +5,7 @@ import LinkIcon from '@/shared/assets/icons/link.svg';
 import MailIcon from '@/shared/assets/icons/mail.svg';
 import MeatballIcon from '@/shared/assets/icons/meatball.svg';
 import Button from '@/shared/ui/button/Button';
-import { getServiceUrlLabel } from '@/widgets/colog-home/lib/getServiceUrlLabel';
+import { getServiceUrlLabel } from '@/widgets/colog-home/lib/get-service-url-label';
 
 interface CologHomeHeroProps {
 	profile: CologProfile;
