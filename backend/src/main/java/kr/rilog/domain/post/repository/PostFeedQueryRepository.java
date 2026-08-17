@@ -26,8 +26,8 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 p.publishedAt,
             
                 author.id,
-                author.nickname,
-                author.slug,
+                author.nickname.value,
+                author.slug.value,
                 author.profileImageUrl,
             
                 colog.id,
@@ -59,8 +59,8 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 post.visibility,
                 post.publishedAt,
                 author.id,
-                author.nickname,
-                author.slug,
+                author.nickname.value,
+                author.slug.value,
                 author.profileImageUrl
             )
             FROM Post post

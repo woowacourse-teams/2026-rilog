@@ -46,8 +46,8 @@ export default function SignUpForm() {
 						shape="circle"
 						fit={profileImageFile === null ? 'contain' : 'cover'}
 						sizes="100px"
-						className="size-[100px] shrink-0 bg-background"
-						imageClassName={profileImageFile === null ? 'px-5 py-4' : undefined}
+						className="size-25 shrink-0 bg-background"
+						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
 					<div className="flex-1">
 						<ImageUploader onFileChange={handleImageChange} className="bg-white" />

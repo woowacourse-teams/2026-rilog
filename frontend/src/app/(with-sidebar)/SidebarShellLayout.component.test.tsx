@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 
-import SidebarLayout from './layout';
+import SidebarShellLayout from './layout';
 
-describe('SidebarLayout', () => {
+describe('SidebarShellLayout', () => {
 	it('로그인 사이드바와 페이지 콘텐츠를 함께 조립한다', () => {
 		render(
 			<LoginModalProvider>
-				<SidebarLayout>
+				<SidebarShellLayout>
 					<main>페이지 콘텐츠</main>
-				</SidebarLayout>
+				</SidebarShellLayout>
 			</LoginModalProvider>,
 		);
 

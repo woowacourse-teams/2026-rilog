@@ -51,10 +51,18 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    public PostDetailResponse readPost(Long postId, Long requesterId) {
-        Post post = getPost(postId);
+    public PostDetailResponse readPostOfBlogs(String slug, Long postId, Long requesterId) {
+        Post post = getPost(slug, postId);
         post.validateReadableBy(requesterId);
-        return PostDetailResponse.from(post);
+
+        if (!post.isCologAffiliated()) {
+            return PostDetailResponse.fromRilog(post);
+        }
+
+        Blog colog = post.getColog();
+        long memberCount = getMemberCount(colog);
+        long postCount = getPostCount(colog);
+        return PostDetailResponse.fromColog(post, memberCount, postCount);
     }
 
     public TotalPostsCountResponse readPostsCount() {
@@ -102,6 +110,23 @@ public class PostService {
     private Post getPost(Long postId) {
         return postRepository.findDetailById(postId)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+
+    private Post getPost(String slug, Long postId) {
+        return postRepository.findDetailByIdAndBlogSlug(postId, slug)
+                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+
+    private long getPostCount(Blog colog) {
+        return postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+                colog.getId(),
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC
+        );
+    }
+
+    private long getMemberCount(Blog colog) {
+        return blogMemberRepository.countActiveMembers(colog.getId(), BlogMemberStatus.ACTIVE);
     }
 
 }

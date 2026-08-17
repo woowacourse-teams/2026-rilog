@@ -10,6 +10,8 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -142,8 +144,8 @@ class BlogMemberServiceTest {
     private User createUser(Long id, String nickname, String slug, String profileImageUrl) {
         return User.builder()
                 .id(id)
-                .nickname(nickname)
-                .slug(slug)
+                .nickname(Nickname.from(nickname))
+                .slug(Slug.from(slug))
                 .profileImageUrl(profileImageUrl)
                 .githubId(id * 100)
                 .build();

@@ -20,7 +20,7 @@ export default async function PostDetail({ post }: PostDetailProps) {
 		<main className="min-h-dvh bg-background">
 			<PostDetailHero title={post.title} thumbnailImageUrl={post.thumbnailImageUrl} />
 
-			<div className="px-5 pb-32 sm:px-8">
+			<div className="px-5 sm:px-8">
 				<div className="mx-auto max-w-2xl aside-right:-translate-x-8.75">
 					<PostDetailHeader title={post.title} publishedAt={post.publishedAt} author={post.author} />
 					{post.colog === null ? null : <PostDetailCoLogSummary colog={post.colog} />}

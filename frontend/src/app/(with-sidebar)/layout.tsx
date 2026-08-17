@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import Sidebar from '@/widgets/sidebar/Sidebar';
 
-export default function SidebarLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function SidebarLAyout({ children }: Readonly<{ children: ReactNode }>) {
 	return (
 		<div className="min-h-dvh bg-background">
 			<Sidebar />

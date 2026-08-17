@@ -41,10 +41,32 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 
 		const normalizedValue = form.validate();
 
-		if (normalizedValue === null) {
-			setCreateState({ status: 'idle' });
-			return;
-		}
+	return (
+		<form className="mt-8 flex flex-col gap-8">
+			<div role="group" aria-labelledby={logoLabelId} className="flex max-w-[286px] flex-col gap-3">
+				<p id={logoLabelId} className="text-body-2 font-semibold text-text-primary">
+					팀 로고
+				</p>
+				<div className="flex items-end gap-4">
+					<ImagePreview
+						src={logoPreviewUrl}
+						alt="팀 로고 미리보기"
+						fit={logoPreviewUrl.startsWith('blob:') ? 'cover' : 'contain'}
+						sizes="100px"
+						className="size-[100px] shrink-0"
+						imageClassName={logoPreviewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
+					/>
+					<div className="flex-1">
+						<ImageUploader
+							name="logoFile"
+							buttonLabel="팀 로고 변경"
+							onFileChange={handleLogoChange}
+							className="bg-white"
+							required
+						/>
+					</div>
+				</div>
+			</div>
 
 		setCreateState({ status: 'pending' });
 
