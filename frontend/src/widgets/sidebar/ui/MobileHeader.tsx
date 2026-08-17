@@ -28,7 +28,7 @@ export default function MobileHeader({ isAuthenticated = false }: MobileBottomNa
 			</Link>
 
 			{isAuthenticated ? (
-				<UserAvatar fallback="P" size="lg" />
+				<UserAvatar fallback="P" size="lg" hasBorder />
 			) : (
 				<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
 					로그인
