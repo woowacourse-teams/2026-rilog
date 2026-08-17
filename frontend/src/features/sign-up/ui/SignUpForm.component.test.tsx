@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -76,5 +76,73 @@ describe('SignUpForm', () => {
 
 		expect(agreement).toBeChecked();
 		expect(agreement).toBeValid();
+	});
+
+	it('유효한 온보딩 정보를 제출하고 replace 옵션으로 이동한다', async () => {
+		const user = userEvent.setup();
+		const completeSignUp = vi.fn().mockResolvedValue({ slug: 'ri_log-01' });
+		const navigate = vi.fn();
+		render(<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />);
+
+		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
+		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log-01');
+		await user.type(screen.getByRole('textbox', { name: '한 줄 소개' }), ' 함께 기록해요 ');
+		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
+		await user.click(screen.getByRole('button', { name: '시작하기' }));
+
+		await waitFor(() => {
+			expect(completeSignUp).toHaveBeenCalledWith({
+				nickname: '리로그',
+				slug: 'Ri_log-01',
+				introduction: '함께 기록해요',
+				profileImageFile: null,
+			});
+			expect(navigate).toHaveBeenCalledWith('/', { replace: true });
+		});
+	});
+
+	it('고유 아이디에 허용되지 않은 특수문자가 있으면 제출하지 않는다', async () => {
+		const user = userEvent.setup();
+		const completeSignUp = vi.fn();
+		render(<SignUpForm completeSignUp={completeSignUp} navigate={vi.fn()} />);
+
+		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(slug, 'ri.log');
+		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
+		await user.click(screen.getByRole('button', { name: '시작하기' }));
+
+		expect(slug).toBeInvalid();
+		expect(completeSignUp).not.toHaveBeenCalled();
+	});
+
+	it('가입 실패 후 입력을 수정하면 이전 오류를 제거한다', async () => {
+		const user = userEvent.setup();
+		const completeSignUp = vi.fn().mockRejectedValue(new Error('이미 사용 중인 정보입니다.'));
+		render(<SignUpForm completeSignUp={completeSignUp} />);
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		const agreement = screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' });
+		const submitButton = screen.getByRole('button', { name: '시작하기' });
+
+		await user.type(nickname, '리로그');
+		await user.type(slug, 'rilog');
+		await user.click(agreement);
+		await user.click(submitButton);
+		expect(await screen.findByRole('alert')).toHaveTextContent('이미 사용 중인 정보입니다.');
+
+		await user.type(nickname, '수정');
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+		await user.click(submitButton);
+		expect(await screen.findByRole('alert')).toBeInTheDocument();
+		await user.type(slug, '2');
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+		await user.click(submitButton);
+		expect(await screen.findByRole('alert')).toBeInTheDocument();
+		await user.click(agreement);
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 });
