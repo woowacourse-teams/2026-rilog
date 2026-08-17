@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostSummary } from '@/domains/post/model/post-summary';
+import PostFeedImage from '@/domains/post/ui/PostFeedImage';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 
 interface CologPostListProps {
@@ -21,10 +22,20 @@ export default function CologPostList({ posts }: CologPostListProps) {
 								href={`/posts/${post.id}`}
 								className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 							>
-								<div className="aspect-[3/2] h-24 rounded-lg bg-brand-primary p-2 sm:h-27">{/* 썸네일 이미지 */}</div>
+								<div className="relative aspect-[3/2] h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">
+									<PostFeedImage
+										src={post.thumbnailUrl}
+										alt={`${post.title} 썸네일`}
+										width={640}
+										height={360}
+										className="size-full object-cover"
+										fallbackClassName="object-contain p-5"
+										isScaledOnInteraction
+									/>
+								</div>
 
 								<article className="flex min-w-0 flex-col justify-between py-1">
-									<h2 className="line-clamp-2 text-body-2 font-semibold text-text-primary transition-colors group-hover:text-focus-ring sm:text-body-4">
+									<h2 className="line-clamp-2 text-body-3 font-semibold text-text-primary transition-colors duration-200 group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring motion-reduce:transition-none sm:text-body-4">
 										{post.title}
 									</h2>
 									<div className="flex items-center gap-1.5 text-label-2 text-navy-600">
@@ -35,9 +46,14 @@ export default function CologPostList({ posts }: CologPostListProps) {
 											size="sm"
 											className="bg-navy-100"
 										/>
-										<span>{post.author.nickname}</span>
+										<span className="min-w-0 truncate">{post.author.nickname}</span>
 										<span aria-hidden="true">·</span>
-										<time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
+										<time dateTime={post.publishedAt} className="hidden sm:inline">
+											{formatPublishedDate(post.publishedAt)}
+										</time>
+										<time dateTime={post.publishedAt} aria-hidden={true} className="sm:hidden">
+											{formatPublishedDate(post.publishedAt, true)}
+										</time>
 									</div>
 								</article>
 							</Link>

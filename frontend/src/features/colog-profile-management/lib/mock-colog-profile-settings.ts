@@ -6,9 +6,9 @@ export const MOCK_COLOG_PROFILE_SETTINGS: CologProfileSettingsValue = {
 	introduction: '러로의 리로그 세상',
 	logoImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '/images/team-cover-placeholder.svg',
-	serviceUrl: '',
-	githubUrl: '',
-	email: '',
+	serviceUrl: 'https://rilog.kr',
+	githubUrl: 'https://github.com/woowacourse-teams',
+	email: 'team@rilog.kr',
 	logoFile: null,
 	coverImageFile: null,
 };

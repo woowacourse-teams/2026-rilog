@@ -1,25 +1,25 @@
 import { useId } from 'react';
 
+import type {
+	CologProfileFormValue,
+	CologProfileTextField,
+	CologProfileValidationErrors,
+} from '../model/colog-profile-form';
 import type { RefObject } from 'react';
 
-import type {
-	CologProfileSettingsValue,
-	CologProfileValidationErrors,
-} from '@/features/colog-profile-management/model/colog-profile-settings';
 import GitHubIcon from '@/shared/assets/brand/github.svg';
 import LinkIcon from '@/shared/assets/icons/link.svg';
 import MailIcon from '@/shared/assets/icons/mail.svg';
 import Input from '@/shared/ui/input/Input';
 
-type CologProfileSocialField = 'serviceUrl' | 'githubUrl' | 'email';
-
 interface CologProfileSocialFieldsProps {
-	value: CologProfileSettingsValue;
+	value: CologProfileFormValue;
 	errors: CologProfileValidationErrors;
 	serviceUrlRef: RefObject<HTMLInputElement | null>;
 	githubUrlRef: RefObject<HTMLInputElement | null>;
 	emailRef: RefObject<HTMLInputElement | null>;
-	onChange: (field: CologProfileSocialField, value: string) => void;
+	disabled?: boolean;
+	onChange: (field: CologProfileTextField, value: string) => void;
 }
 
 export default function CologProfileSocialFields({
@@ -28,6 +28,7 @@ export default function CologProfileSocialFields({
 	serviceUrlRef,
 	githubUrlRef,
 	emailRef,
+	disabled = false,
 	onChange,
 }: CologProfileSocialFieldsProps) {
 	const labelId = useId();
@@ -55,6 +56,7 @@ export default function CologProfileSocialFields({
 					maxLength={512}
 					placeholder="https://"
 					autoComplete="url"
+					disabled={disabled}
 					status={errors.serviceUrl === undefined ? 'default' : 'error'}
 					helperText={errors.serviceUrl}
 					left={<LinkIcon aria-hidden="true" focusable="false" className="size-4.5 shrink-0" />}
@@ -71,6 +73,7 @@ export default function CologProfileSocialFields({
 					maxLength={512}
 					placeholder="https://"
 					autoComplete="url"
+					disabled={disabled}
 					status={errors.githubUrl === undefined ? 'default' : 'error'}
 					helperText={errors.githubUrl}
 					left={<GitHubIcon aria-hidden="true" focusable="false" className="size-4.5 shrink-0" />}
@@ -87,6 +90,7 @@ export default function CologProfileSocialFields({
 					maxLength={512}
 					placeholder="team@rilog.kr"
 					autoComplete="email"
+					disabled={disabled}
 					status={errors.email === undefined ? 'default' : 'error'}
 					helperText={errors.email}
 					left={<MailIcon aria-hidden="true" focusable="false" className="size-4.5 shrink-0" />}

@@ -38,9 +38,17 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
               AND user.deletedAt IS NULL
             ORDER BY blogMember.joinedAt ASC, blogMember.id ASC
             """)
-    List<BlogMember> findAllWithUserByBlogIdAndStatus(
-            @Param("blogId") Long blogId,
-            @Param("status") BlogMemberStatus status
-    );
+    List<BlogMember> findAllWithUserByBlogIdAndStatus(@Param("blogId") Long blogId, @Param("status") BlogMemberStatus status);
+
+    @Query("""
+            SELECT COUNT(bm.id)
+            FROM BlogMember bm
+            JOIN bm.user u
+            WHERE bm.blog.id = :blogId
+              AND bm.status = :status
+              AND bm.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+            """)
+    long countActiveMembers(@Param("blogId") Long blogId, @Param("status") BlogMemberStatus status);
 
 }

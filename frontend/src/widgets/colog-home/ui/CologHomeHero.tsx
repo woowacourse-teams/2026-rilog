@@ -30,7 +30,7 @@ export default function CologHomeHero({ profile }: CologHomeHeroProps) {
 			<h1 className="mt-2.5 max-w-full text-title-2 font-semibold break-words sm:text-title-3">{profile.name}</h1>
 			{hasIntroduction || hasServiceUrl ? (
 				<p className="mt-2 max-w-sm text-label-2 text-navy-200 sm:mt-2.5 sm:max-w-lg sm:text-body-1">
-					{hasIntroduction ? profile.introduction.repeat(10) : null}
+					{hasIntroduction ? profile.introduction : null}
 					{hasIntroduction && hasServiceUrl ? <br /> : null}
 					{hasServiceUrl ? (
 						<a

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 
 import type { ChangeEvent } from 'react';
 
+import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Checkbox from '@/shared/ui/checkbox/Checkbox';
 import Field from '@/shared/ui/field/Field';
@@ -20,19 +21,12 @@ export default function SignUpForm() {
 	const profileImageLabelId = useId();
 	const termsAgreementId = useId();
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
-	const [previewUrl, setPreviewUrl] = useState('/images/profile-placeholder.svg');
+	const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 	const [introduction, setIntroduction] = useState('');
-
-	useEffect(() => {
-		return () => {
-			if (previewUrl.startsWith('blob:')) {
-				URL.revokeObjectURL(previewUrl);
-			}
-		};
-	}, [previewUrl]);
+	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
 
 	function handleImageChange(file: File | null) {
-		setPreviewUrl(file ? URL.createObjectURL(file) : '/images/profile-placeholder.svg');
+		setProfileImageFile(file);
 	}
 
 	function handleIntroductionChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -50,9 +44,9 @@ export default function SignUpForm() {
 						src={previewUrl}
 						alt="프로필 이미지 미리보기"
 						shape="circle"
-						fit={previewUrl.startsWith('blob:') ? 'cover' : 'contain'}
+						fit={profileImageFile === null ? 'contain' : 'cover'}
 						sizes="100px"
-						className="size-[100px] shrink-0 bg-background"
+						className="size-25 shrink-0 bg-background"
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
 					<div className="flex-1">

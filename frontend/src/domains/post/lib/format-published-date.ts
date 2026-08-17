@@ -1,6 +1,6 @@
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:T|$)/;
 
-export const formatPublishedDate = (publishedAt: string): string => {
+export function formatPublishedDate(publishedAt: string, isMobile = false): string {
 	const match = DATE_PATTERN.exec(publishedAt);
 
 	if (match === null) {
@@ -9,5 +9,9 @@ export const formatPublishedDate = (publishedAt: string): string => {
 
 	const [, year, month, day] = match;
 
+	if (isMobile) {
+		return `${year}.${Number(month)}.${Number(day)}`;
+	}
+
 	return `${year}년 ${Number(month)}월 ${Number(day)}일`;
-};
+}

@@ -60,6 +60,41 @@
 	outline-offset: 2px;
 }
 
+/* 리스트 아이템이면 기본적으로 위아래 여백 부여 */
+.post-write-blocknote
+	.bn-block-outer:has(
+		> .bn-block > .bn-block-content:is([data-content-type='bulletListItem'], [data-content-type='numberedListItem'])
+	) {
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+/* 바로 앞 형제가 같은 타입의 리스트 아이템이면 padding-top 축소 */
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem'])
+	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem']) {
+	padding-top: 0;
+}
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem'])
+	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem']) {
+	padding-top: 0;
+}
+
+/* 바로 다음 형제가 같은 타입의 리스트 아이템이면 padding-bottom 축소 */
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem']):has(
+		+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='bulletListItem']
+	) {
+	padding-bottom: 0;
+}
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem']):has(
+		+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='numberedListItem']
+	) {
+	padding-bottom: 0;
+}
+
 @media (max-width: 40rem) {
 	.post-write-blocknote .bn-editor {
 		min-height: 18rem;

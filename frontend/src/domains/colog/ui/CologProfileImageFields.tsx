@@ -1,49 +1,45 @@
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
 
+import type { RefObject } from 'react';
+
+import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
+
+const LOGO_PLACEHOLDER_URL = '/images/profile-placeholder.svg';
+const COVER_PLACEHOLDER_URL = '/images/team-cover-placeholder.svg';
 
 interface CologProfileImageFieldsProps {
 	logoImageUrl: string;
 	logoFile: File | null;
 	coverImageUrl: string;
 	coverImageFile: File | null;
+	logoError?: string;
+	logoInputRef: RefObject<HTMLInputElement | null>;
+	disabled?: boolean;
 	onLogoFileChange: (file: File | null) => void;
 	onCoverImageFileChange: (file: File | null) => void;
 }
-
-const useImagePreviewUrl = (file: File | null, fallbackUrl: string) => {
-	const [previewUrl, setPreviewUrl] = useState(fallbackUrl);
-
-	useEffect(() => {
-		if (file === null) {
-			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setPreviewUrl(fallbackUrl);
-			return;
-		}
-
-		const objectUrl = URL.createObjectURL(file);
-		// object URL 생성·해제와 화면 갱신을 하나의 생명주기로 묶는다.
-		setPreviewUrl(objectUrl);
-
-		return () => URL.revokeObjectURL(objectUrl);
-	}, [fallbackUrl, file]);
-
-	return previewUrl;
-};
 
 export default function CologProfileImageFields({
 	logoImageUrl,
 	logoFile,
 	coverImageUrl,
 	coverImageFile,
+	logoError,
+	logoInputRef,
+	disabled = false,
 	onLogoFileChange,
 	onCoverImageFileChange,
 }: CologProfileImageFieldsProps) {
 	const logoLabelId = useId();
+	const logoErrorId = `${logoLabelId}-error`;
 	const coverLabelId = useId();
-	const logoPreviewUrl = useImagePreviewUrl(logoFile, logoImageUrl);
-	const coverPreviewUrl = useImagePreviewUrl(coverImageFile, coverImageUrl);
+	const logoFallbackUrl = logoImageUrl || LOGO_PLACEHOLDER_URL;
+	const coverFallbackUrl = coverImageUrl || COVER_PLACEHOLDER_URL;
+	const logoPreviewUrl = useImagePreviewUrl(logoFile, logoFallbackUrl);
+	const coverPreviewUrl = useImagePreviewUrl(coverImageFile, coverFallbackUrl);
+	const hasCustomLogo = logoFile !== null || (logoImageUrl !== '' && logoImageUrl !== LOGO_PLACEHOLDER_URL);
 
 	return (
 		<>
@@ -55,22 +51,33 @@ export default function CologProfileImageFields({
 					<ImagePreview
 						src={logoPreviewUrl}
 						alt="팀 로고 미리보기"
-						fit={logoFile === null ? 'contain' : 'cover'}
+						fit={hasCustomLogo ? 'cover' : 'contain'}
+						status={logoError === undefined ? 'default' : 'error'}
 						loading="eager"
 						sizes="100px"
 						className="size-25 shrink-0"
-						imageClassName={logoFile === null ? 'px-5 py-4' : undefined}
+						imageClassName={hasCustomLogo ? undefined : 'px-5 py-4'}
 					/>
 					<div className="w-full sm:flex-1">
 						<ImageUploader
+							ref={logoInputRef}
 							name="logoFile"
 							buttonLabel="팀 로고 변경"
+							aria-describedby={logoError === undefined ? undefined : logoErrorId}
+							aria-invalid={logoError === undefined ? undefined : true}
+							disabled={disabled}
 							onFileChange={onLogoFileChange}
 							fullWidth
 							className="sm:w-44"
+							required={logoImageUrl.trim() === ''}
 						/>
 					</div>
 				</div>
+				{logoError !== undefined && (
+					<p id={logoErrorId} className="text-label-1 text-danger">
+						{logoError}
+					</p>
+				)}
 			</div>
 
 			<div role="group" aria-labelledby={coverLabelId} className="flex flex-col gap-3">
@@ -91,6 +98,7 @@ export default function CologProfileImageFields({
 						<ImageUploader
 							name="coverImageFile"
 							buttonLabel="커버 이미지 변경"
+							disabled={disabled}
 							onFileChange={onCoverImageFileChange}
 							fullWidth
 							className="sm:w-44"

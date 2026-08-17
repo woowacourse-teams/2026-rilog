@@ -6,6 +6,7 @@ export interface PostAuthorSummary {
 export interface PostSummary {
 	id: number;
 	title: string;
+	thumbnailUrl: string | null;
 	publishedAt: string;
 	author: PostAuthorSummary;
 }
