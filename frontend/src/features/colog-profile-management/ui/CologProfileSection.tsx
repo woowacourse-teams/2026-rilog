@@ -9,12 +9,16 @@ import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
 import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
 import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/model/colog-profile-settings';
 import Button from '@/shared/ui/button/Button';
+import PageShell from '@/shared/ui/page-shell/PageShell';
+import type { SettingsTab } from '@/widgets/colog-settings/lib/get-next-tab';
+import CologSettingsHeader from '@/widgets/colog-settings/ui/CologSettingsHeader';
 
 interface CologProfileSectionProps {
 	onDirtyChange?: (isDirty: boolean) => void;
+	onTabChangeRequest?: (nextTab: SettingsTab) => void;
 }
 
-export default function CologProfileSection({ onDirtyChange }: CologProfileSectionProps) {
+export default function CologProfileSection({ onDirtyChange, onTabChangeRequest }: CologProfileSectionProps) {
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
 	const form = useCologProfileForm({ initialValue: savedProfile });
 	const isDirty = !isCologProfileSettingsEqual(form.value, savedProfile);
@@ -42,34 +46,44 @@ export default function CologProfileSection({ onDirtyChange }: CologProfileSecti
 	};
 
 	return (
-		<section aria-labelledby="profile-settings-title" className="flex h-full min-h-0 flex-col">
-			<form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
-				<div className="min-h-0 flex-1 overflow-y-auto px-0.5">
-					<div className="-mx-0.5">
-						<h1 id="profile-settings-title" className="text-heading-3 font-bold text-text-primary">
-							프로필
-						</h1>
-						<p className="mt-0.5 text-body-1 text-text-secondary">팀의 기본 정보와 소개를 관리합니다.</p>
+		<PageShell
+			isHeaderSticky
+			header={
+				<CologSettingsHeader
+					activeTab="profile"
+					title="프로필"
+					description="팀의 기본 정보와 소개를 관리합니다."
+					onTabChangeRequest={onTabChangeRequest}
+					actions={
+						<Button
+							form="profile-settings-form"
+							type="submit"
+							size="md"
+							className="w-full max-w-40 sm:max-w-60 md:max-w-none lg:w-30 lg:max-w-none"
+							disabled={!isDirty}
+						>
+							변경사항 저장
+						</Button>
+					}
+				/>
+			}
+		>
+			<section className="px-6 sm:px-8 lg:px-0">
+				<form id="profile-settings-form" noValidate onSubmit={handleSubmit}>
+					<div className="px-0.5">
+						<div className="flex flex-col gap-8">
+							<CologProfileFormFields
+								value={form.value}
+								errors={form.errors}
+								refs={form.refs}
+								onTextFieldChange={form.updateTextField}
+								onLogoFileChange={form.updateLogoFile}
+								onCoverImageFileChange={form.updateCoverImageFile}
+							/>
+						</div>
 					</div>
-
-					<div className="mt-12 flex flex-col gap-8">
-						<CologProfileFormFields
-							value={form.value}
-							errors={form.errors}
-							refs={form.refs}
-							onTextFieldChange={form.updateTextField}
-							onLogoFileChange={form.updateLogoFile}
-							onCoverImageFileChange={form.updateCoverImageFile}
-						/>
-					</div>
-				</div>
-
-				<div className="flex shrink-0 justify-end bg-background py-6">
-					<Button type="submit" size="lg" className="w-full sm:w-48" disabled={!isDirty}>
-						변경사항 저장
-					</Button>
-				</div>
-			</form>
-		</section>
+				</form>
+			</section>
+		</PageShell>
 	);
 }
