@@ -1,9 +1,9 @@
-package kr.rilog.domain.post.controller.dto.response.affiliation;
+package kr.rilog.domain.post.controller.dto.response.owner;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 
-public record CologPostAffiliationResponse(
+public record CologOwnerResponse(
         BlogType type,
         Long blogId,
         String slug,
@@ -12,14 +12,14 @@ public record CologPostAffiliationResponse(
         String coverImageUrl,
         long memberCount,
         long postCount
-) implements PostBlogAffiliationResponse {
+) implements PostOwnerResponse {
 
-    public static CologPostAffiliationResponse of(
+    public static CologOwnerResponse of(
             Blog colog,
             long memberCount,
             long postCount
     ) {
-        return new CologPostAffiliationResponse(
+        return new CologOwnerResponse(
                 BlogType.COLOG,
                 colog.getId(),
                 colog.getSlug(),

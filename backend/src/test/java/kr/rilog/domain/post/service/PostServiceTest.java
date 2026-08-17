@@ -7,7 +7,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
-import kr.rilog.domain.post.controller.dto.response.affiliation.CologPostAffiliationResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -241,7 +241,7 @@ class PostServiceTest {
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
-        assertThat(response.affiliation().type()).isEqualTo(BlogType.RILOG);
+        assertThat(response.owner().type()).isEqualTo(BlogType.RILOG);
     }
 
     @Test
@@ -264,8 +264,8 @@ class PostServiceTest {
         PostDetailResponse response = postService.readPostOfBlogs(COLOG_SLUG, POST_ID, null);
 
         // then
-        assertThat(response.affiliation())
-                .isInstanceOfSatisfying(CologPostAffiliationResponse.class, affiliation -> {
+        assertThat(response.owner())
+                .isInstanceOfSatisfying(CologOwnerResponse.class, affiliation -> {
                     assertThat(affiliation.type()).isEqualTo(BlogType.COLOG);
                     assertThat(affiliation.memberCount()).isEqualTo(3L);
                     assertThat(affiliation.postCount()).isEqualTo(5L);

@@ -10,7 +10,7 @@ import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
-import kr.rilog.domain.post.controller.dto.response.affiliation.RilogPostAffiliationResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -109,7 +109,7 @@ class PostControllerTest {
                         "writer",
                         "https://example.com/profile.png"
                 ),
-                new RilogPostAffiliationResponse(
+                new RilogOwnerResponse(
                         BlogType.RILOG,
                         1L,
                         BLOG_SLUG,

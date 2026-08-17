@@ -1,8 +1,8 @@
 package kr.rilog.domain.post.controller.dto.response;
 
-import kr.rilog.domain.post.controller.dto.response.affiliation.CologPostAffiliationResponse;
-import kr.rilog.domain.post.controller.dto.response.affiliation.PostBlogAffiliationResponse;
-import kr.rilog.domain.post.controller.dto.response.affiliation.RilogPostAffiliationResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.user.entity.User;
 import tools.jackson.databind.JsonNode;
@@ -16,7 +16,7 @@ public record PostDetailResponse(
         String thumbnailImageUrl,
         String category,
         AuthorResponse author,
-        PostBlogAffiliationResponse affiliation
+        PostOwnerResponse owner
 ) {
 
     public static PostDetailResponse fromRilog(Post post) {
@@ -27,7 +27,7 @@ public record PostDetailResponse(
                 post.getThumbnailUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
-                RilogPostAffiliationResponse.from(post.getRilog())
+                RilogOwnerResponse.from(post.getRilog())
         );
     }
 
@@ -39,7 +39,7 @@ public record PostDetailResponse(
                 post.getThumbnailUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
-                CologPostAffiliationResponse.of(post.getColog(), memberCount, postCount)
+                CologOwnerResponse.of(post.getColog(), memberCount, postCount)
         );
     }
 
