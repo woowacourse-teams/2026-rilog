@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { APP_ROUTES } from '@/shared/routes/app-routes';
+
 const LINK_CLASS_NAME =
 	'rounded-sm transition-[color,opacity,transform] duration-200 hover:text-brand-primary-hover active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transform-none';
 
@@ -17,7 +19,7 @@ export default function Footer() {
 				<div className="flex flex-col items-start gap-0.5 sm:col-start-1 sm:row-span-3 sm:self-start">
 					<Link
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center hover:opacity-75`}
-						href="/"
+						href={APP_ROUTES.feeds}
 						aria-label="Rilog 홈"
 					>
 						<Image src="/brand/logo.svg" alt="Rilog." width={85} height={32} priority />

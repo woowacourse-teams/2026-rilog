@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
+import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 
 interface MobileBottomNavigationProps {
@@ -15,7 +16,7 @@ interface MobileBottomNavigationProps {
 export default function MobileHeader({ isAuthenticated = false }: MobileBottomNavigationProps) {
 	const pathname = usePathname() ?? '';
 	const handleLoginClick = useAuthAction({ isAuthenticated });
-	const isFeedCurrent = pathname === '/feeds' || pathname.startsWith('/posts/');
+	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
 
 	return (
 		<nav
@@ -23,7 +24,7 @@ export default function MobileHeader({ isAuthenticated = false }: MobileBottomNa
 			data-mobile-header
 			className="flex h-16 w-full items-center justify-between border-b border-border-default bg-white px-5"
 		>
-			<Link href="/feeds" aria-current={isFeedCurrent ? 'page' : undefined}>
+			<Link href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
 				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={32} priority />
 			</Link>
 

@@ -117,7 +117,7 @@ export default function CologProfileFormFields({
 						helperText={errors.slug}
 						left={
 							<span aria-hidden="true" className="-mr-1.5 whitespace-nowrap text-text-secondary">
-								rilog.kr/co-logs/@
+								rilog.kr/@
 							</span>
 						}
 						onChange={(event) => onTextFieldChange('slug', event.currentTarget.value)}

@@ -140,7 +140,7 @@ test.describe('글 작성', () => {
 		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
 		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();
 
-		await expect(page).toHaveURL(/\/posts\/mock-/);
+		await expect(page).toHaveURL(/\/@rilog\/posts\/mock-/);
 	});
 
 	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {
@@ -169,12 +169,20 @@ test.describe('글 작성', () => {
 			document.body.append(link);
 		});
 
-		await page.getByRole('link', { name: '홈으로 이동' }).click();
+		const homeLink = page.getByRole('link', { name: '홈으로 이동' });
+		const clickHomeLink = () =>
+			homeLink.evaluate((element) => {
+				if (element instanceof HTMLAnchorElement) {
+					element.click();
+				}
+			});
+
+		await clickHomeLink();
 		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
 		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
 		await expect(page).toHaveURL('/write');
 
-		await page.getByRole('link', { name: '홈으로 이동' }).click();
+		await clickHomeLink();
 		await confirmDialog.getByRole('button', { name: '나가기' }).click();
 		await expect(page).toHaveURL('/feeds');
 	});

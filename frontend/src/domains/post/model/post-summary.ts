@@ -1,5 +1,6 @@
 export interface PostAuthorSummary {
 	nickname: string;
+	slug: string;
 	profileImageUrl: string | null;
 }
 

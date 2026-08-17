@@ -23,6 +23,7 @@ export const MOCK_COLOG_HOME_POSTS = Array.from({ length: 5 }, (_, index) => ({
 	publishedAt: '2024-05-20',
 	author: {
 		nickname: '김지연',
+		slug: 'kim-jiyeon',
 		profileImageUrl: null,
 	},
 })) satisfies PostSummary[];

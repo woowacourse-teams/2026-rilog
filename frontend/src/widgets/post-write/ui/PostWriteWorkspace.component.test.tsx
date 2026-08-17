@@ -147,10 +147,10 @@ describe('PostWriteWorkspace', () => {
 		const historyBackSpy = vi.spyOn(window.history, 'back');
 		historyBackSpy.mockClear();
 		replaceMock.mockClear();
-		let resolvePublish: ((value: { postId: string }) => void) | undefined;
+		let resolvePublish: ((value: { postId: string; slug: string }) => void) | undefined;
 		const publishPost: PublishPost = vi.fn(
 			() =>
-				new Promise<{ postId: string }>((resolve) => {
+				new Promise<{ postId: string; slug: string }>((resolve) => {
 					resolvePublish = resolve;
 				}),
 		);
@@ -168,8 +168,8 @@ describe('PostWriteWorkspace', () => {
 		expect(dialog).toBeInTheDocument();
 		expect(publishPost).toHaveBeenCalledOnce();
 
-		resolvePublish?.({ postId: 'post/40' });
-		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/posts/post%2F40'));
+		resolvePublish?.({ postId: 'post/40', slug: 'rilog' });
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog/posts/post%2F40'));
 		expect(historyBackSpy).not.toHaveBeenCalled();
 		historyBackSpy.mockRestore();
 	});
@@ -177,7 +177,7 @@ describe('PostWriteWorkspace', () => {
 	it('발행 결과의 게시글 ID가 잘못되면 모달과 이탈 보호를 유지한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
-		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '   ' });
+		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '   ', slug: 'rilog' });
 		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -199,7 +199,7 @@ describe('PostWriteWorkspace', () => {
 		const publishPost: PublishPost = vi
 			.fn<PublishPost>()
 			.mockRejectedValueOnce(new Error('failed'))
-			.mockResolvedValueOnce({ postId: 'retry-success' });
+			.mockResolvedValueOnce({ postId: 'retry-success', slug: 'rilog' });
 		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -210,7 +210,7 @@ describe('PostWriteWorkspace', () => {
 		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/retry-success'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/retry-success'));
 		expect(publishPost).toHaveBeenCalledTimes(2);
 	});
 
@@ -220,7 +220,7 @@ describe('PostWriteWorkspace', () => {
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
 		const navigate = vi.fn();
-		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: 'with-cover' });
+		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: 'with-cover', slug: 'rilog' });
 		const { unmount } = render(
 			<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />,
 		);
@@ -231,7 +231,7 @@ describe('PostWriteWorkspace', () => {
 		await selectFirstCoLog(user);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/with-cover'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/with-cover'));
 		expect(publishPost).toHaveBeenCalledOnce();
 		expect(publishPost.mock.calls[0]?.[0].settings.representativeImage).toBe(coverImage);
 		unmount();

@@ -16,7 +16,7 @@ describe('CologNavigation', () => {
 			expect(link).toHaveAttribute('href');
 			expect(link).toHaveAccessibleName();
 		});
-		expect(within(navigation).getByRole('link', { name: '코로그 만들기' })).toHaveAttribute('href', '/co-logs/new');
+		expect(within(navigation).getByRole('link', { name: '코로그 만들기' })).toHaveAttribute('href', '/co-logs/create');
 	});
 
 	it('키보드로 코로그 링크와 생성 링크에 접근한다', async () => {

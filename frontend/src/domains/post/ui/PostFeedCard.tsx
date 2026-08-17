@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostFeedItem } from '@/domains/post/model/post-feed';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 import PostFeedCologBadge from './PostFeedCologBadge';
 import PostFeedImage from './PostFeedImage';
@@ -12,10 +13,12 @@ interface PostFeedCardProps {
 }
 
 export default function PostFeedCard({ post }: PostFeedCardProps) {
+	const ownerSlug = post.colog?.slug ?? post.author.slug;
+
 	return (
 		<li className="[contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
 			<Link
-				href={`/posts/${post.id}`}
+				href={buildPostDetailPath(ownerSlug, String(post.id))}
 				className="group relative z-0 block h-full rounded-xl hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring active:z-10"
 			>
 				<article className="flex h-full flex-col">
