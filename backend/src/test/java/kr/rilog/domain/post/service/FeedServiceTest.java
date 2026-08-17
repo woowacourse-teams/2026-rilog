@@ -115,7 +115,7 @@ class FeedServiceTest {
                 createFeedRow(2L),
                 createCologFeedRow(1L)
         );
-        when(blogRepository.findBySlug(RILOG_SLUG)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
         when(postFeedQueryRepository.findPublicRilogPosts(
                 RILOG_ID,
                 PostStatus.PUBLISHED,
@@ -155,7 +155,7 @@ class FeedServiceTest {
                 createCologFeedRow(2L),
                 createCologFeedRow(1L)
         );
-        when(blogRepository.findBySlug(COLOG_SLUG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
         when(postFeedQueryRepository.findPublicCologPosts(
                 COLOG_ID,
                 PostStatus.PUBLISHED,
@@ -182,10 +182,10 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 공개 블로그의 게시글 목록을 조회하면 게시글을 조회하지 않고 예외가 발생한다")
+    @DisplayName("존재하지 않거나 삭제된 공개 블로그의 게시글 목록을 조회하면 게시글을 조회하지 않고 예외가 발생한다")
     void readPublicBlogPostsThrowsExceptionWhenBlogDoesNotExist() {
         // given
-        when(blogRepository.findBySlug("unknown")).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndDeletedAtIsNull("unknown")).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> feedService.readPublicBlogPosts("unknown", PAGE, SIZE))

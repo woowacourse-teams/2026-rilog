@@ -7,6 +7,7 @@ import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
+import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -27,6 +28,45 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class BlogControllerTest {
+
+    @Test
+    @DisplayName("GET /v1/blogs/@{slug}는 블로그 컨트롤러에서 공개 프로필 정보를 조회한다")
+    void getPublicProfileReturnsBlogProfile() throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        when(blogService.getPublicProfile("rilog-team"))
+                .thenReturn(new CologPublicProfileResult(
+                        2L,
+                        "리로그 팀",
+                        "rilog-team",
+                        "함께 쓰는 기술 블로그",
+                        "https://example.com/logo.png",
+                        "https://example.com/cover.png",
+                        "https://rilog.example.com",
+                        "https://github.com/rilog",
+                        10L,
+                        24L
+                ));
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/blogs/@{slug}", "rilog-team"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.type").value("COLOG"))
+                .andExpect(jsonPath("$.data.id").value(2L))
+                .andExpect(jsonPath("$.data.name").value("리로그 팀"))
+                .andExpect(jsonPath("$.data.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.introduction").value("함께 쓰는 기술 블로그"))
+                .andExpect(jsonPath("$.data.logoUrl").value("https://example.com/logo.png"))
+                .andExpect(jsonPath("$.data.coverImageUrl").value("https://example.com/cover.png"))
+                .andExpect(jsonPath("$.data.serviceUrl").value("https://rilog.example.com"))
+                .andExpect(jsonPath("$.data.githubUrl").value("https://github.com/rilog"))
+                .andExpect(jsonPath("$.data.memberCount").value(10L))
+                .andExpect(jsonPath("$.data.postCount").value(24L))
+                .andExpect(jsonPath("$.data.user").doesNotExist());
+
+        verify(blogService).getPublicProfile("rilog-team");
+    }
 
     @Test
     @DisplayName("GET /v1/users/me/cologs/preview는 인증된 사용자의 팀 목록을 조회한다")

@@ -48,7 +48,7 @@ public class FeedService {
     }
 
     private Blog getBlog(String slug) {
-        return blogRepository.findBySlug(slug)
+        return blogRepository.findBySlugAndDeletedAtIsNull(slug)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
