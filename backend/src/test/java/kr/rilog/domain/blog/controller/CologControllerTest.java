@@ -108,7 +108,7 @@ class CologControllerTest {
                                   "name": "리로그 팀",
                                   "slug": "rilog-team",
                                   "introduction": "함께 쓰는 기술 블로그",
-                                  "logoUrl": "https://example.com/logo.png",
+                                  "profileImageUrl": "https://example.com/logo.png",
                                   "coverImageUrl": "https://example.com/cover.png",
                                   "serviceUrl": "https://rilog.example.com",
                                   "githubUrl": "https://github.com/rilog"

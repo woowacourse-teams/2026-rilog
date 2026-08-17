@@ -91,7 +91,7 @@ class CologServiceTest {
                     .name(colog.getName())
                     .slug(colog.getSlug())
                     .introduction(colog.getIntroduction())
-                    .logoUrl(colog.getLogoUrl())
+                    .profileImageUrl(colog.getProfileImageUrl())
                     .coverImageUrl(colog.getCoverImageUrl())
                     .serviceUrl(colog.getServiceUrl())
                     .githubUrl(colog.getGithubUrl())
@@ -112,7 +112,7 @@ class CologServiceTest {
                 .extracting(
                         Blog::getOwner,
                         Blog::getSlug,
-                        Blog::getLogoUrl,
+                        Blog::getProfileImageUrl,
                         Blog::getServiceUrl,
                         Blog::getGithubUrl,
                         Blog::getBlogType
@@ -424,7 +424,7 @@ class CologServiceTest {
                 .name("리로그 팀")
                 .slug("rilog-team")
                 .introduction("함께 쓰는 기술 블로그")
-                .logoUrl("https://example.com/logo.png")
+                .profileImageUrl("https://example.com/logo.png")
                 .coverImageUrl("https://example.com/cover.png")
                 .serviceUrl("https://rilog.example.com")
                 .githubUrl("https://github.com/rilog")

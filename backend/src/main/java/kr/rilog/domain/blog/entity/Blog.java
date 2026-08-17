@@ -43,7 +43,7 @@ public class Blog extends BaseEntity {
     private BlogType blogType;
 
     @Column(length = 512)
-    private String logoUrl;
+    private String profileImageUrl;
 
     @Column(length = 512)
     private String coverImageUrl;
@@ -72,7 +72,7 @@ public class Blog extends BaseEntity {
                 .name(name)
                 .slug(slug)
                 .introduction(introduction)
-                .logoUrl(logoUrl)
+                .profileImageUrl(logoUrl)
                 .coverImageUrl(coverImageUrl)
                 .serviceUrl(serviceUrl)
                 .githubUrl(githubUrl)
@@ -86,7 +86,7 @@ public class Blog extends BaseEntity {
                 .name(owner.getNickname())
                 .slug(owner.getSlug())
                 .introduction(owner.getIntroduction())
-                .logoUrl(owner.getProfileImageUrl())
+                .profileImageUrl(owner.getProfileImageUrl())
                 .email(owner.getEmail())
                 .githubUrl(owner.getGithubUrl())
                 .blogType(BlogType.RILOG)

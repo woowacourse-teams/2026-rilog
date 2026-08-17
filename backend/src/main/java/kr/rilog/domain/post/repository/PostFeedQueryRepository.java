@@ -19,7 +19,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             SELECT new kr.rilog.domain.post.repository.projection.PostFullFeedRow(
                 p.id,
                 p.title,
-                p.thumbnailUrl,
+                p.thumbnailImageUrl,
                 p.category,
                 p.visibility,
                 p.publishedAt,
@@ -29,13 +29,15 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 author.slug.value,
                 author.profileImageUrl,
             
-                colog.id,
-                colog.name,
-                colog.slug,
-                colog.logoUrl
+                CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.slug ELSE rilog.slug END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.name ELSE rilog.name END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.profileImageUrl ELSE rilog.profileImageUrl END
             )
             FROM Post p
             JOIN p.user author
+            JOIN p.rilog rilog
             LEFT JOIN p.colog colog
             WHERE p.status = :status
               AND p.visibility = :visibility
@@ -52,7 +54,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             SELECT new kr.rilog.domain.post.repository.projection.PostFullFeedRow(
                 post.id,
                 post.title,
-                post.thumbnailUrl,
+                post.thumbnailImageUrl,
                 post.category,
                 post.visibility,
                 post.publishedAt,
@@ -62,13 +64,15 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 author.slug.value,
                 author.profileImageUrl,
 
-                colog.id,
-                colog.name,
-                colog.slug,
-                colog.logoUrl
+                CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.slug ELSE rilog.slug END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.name ELSE rilog.name END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.profileImageUrl ELSE rilog.profileImageUrl END
             )
             FROM Post post
             JOIN post.user author
+            JOIN post.rilog rilog
             LEFT JOIN post.colog colog
             WHERE post.rilog.id = :rilogId
               AND post.status = :status
@@ -87,7 +91,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             SELECT new kr.rilog.domain.post.repository.projection.PostFullFeedRow(
                 post.id,
                 post.title,
-                post.thumbnailUrl,
+                post.thumbnailImageUrl,
                 post.category,
                 post.visibility,
                 post.publishedAt,
@@ -97,10 +101,11 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 author.slug.value,
                 author.profileImageUrl,
 
+                colog.blogType,
                 colog.id,
-                colog.name,
                 colog.slug,
-                colog.logoUrl
+                colog.name,
+                colog.profileImageUrl
             )
             FROM Post post
             JOIN post.user author

@@ -57,7 +57,7 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.data.name").value("리로그 팀"))
                 .andExpect(jsonPath("$.data.slug").value("rilog-team"))
                 .andExpect(jsonPath("$.data.introduction").value("함께 쓰는 기술 블로그"))
-                .andExpect(jsonPath("$.data.logoUrl").value("https://example.com/logo.png"))
+                .andExpect(jsonPath("$.data.profileImageUrl").value("https://example.com/logo.png"))
                 .andExpect(jsonPath("$.data.coverImageUrl").value("https://example.com/cover.png"))
                 .andExpect(jsonPath("$.data.serviceUrl").value("https://rilog.example.com"))
                 .andExpect(jsonPath("$.data.githubUrl").value("https://github.com/rilog"))
@@ -84,7 +84,7 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.data[0].cologId").value(1L))
                 .andExpect(jsonPath("$.data[0].slug").value("rilog-team"))
                 .andExpect(jsonPath("$.data[0].name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data[0].logoUrl").value("https://example.com/logo.png"));
+                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/logo.png"));
 
         verify(blogService).getMyCologsPreview(7L);
     }

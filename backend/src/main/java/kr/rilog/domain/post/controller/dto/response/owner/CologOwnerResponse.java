@@ -8,7 +8,7 @@ public record CologOwnerResponse(
         Long blogId,
         String slug,
         String name,
-        String logoImageUrl,
+        String profileImageUrl,
         String coverImageUrl,
         long memberCount,
         long postCount
@@ -24,7 +24,7 @@ public record CologOwnerResponse(
                 colog.getId(),
                 colog.getSlug(),
                 colog.getName(),
-                colog.getLogoUrl(),
+                colog.getProfileImageUrl(),
                 colog.getCoverImageUrl(),
                 memberCount,
                 postCount

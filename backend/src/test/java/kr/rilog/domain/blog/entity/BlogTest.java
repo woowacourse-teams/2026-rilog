@@ -68,7 +68,7 @@ class BlogTest {
                         Blog::getName,
                         Blog::getSlug,
                         Blog::getIntroduction,
-                        Blog::getLogoUrl,
+                        Blog::getProfileImageUrl,
                         Blog::getCoverImageUrl,
                         Blog::getServiceUrl,
                         Blog::getGithubUrl,
