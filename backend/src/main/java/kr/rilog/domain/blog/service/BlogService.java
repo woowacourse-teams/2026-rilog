@@ -24,7 +24,7 @@ public class BlogService {
     private final PostRepository postRepository;
 
     public CologPublicProfileResult getPublicProfile(String slug) {
-        Blog colog = blogRepository.findBySlugAndBlogType(slug, BlogType.COLOG)
+        Blog colog = blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
 
         long memberCount = blogMemberRepository.countActiveMembersByBlogId(colog.getId());

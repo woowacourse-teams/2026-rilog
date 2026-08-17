@@ -3,6 +3,7 @@ package kr.rilog.domain.blog.entity;
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -11,6 +12,11 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+
+import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.*;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
 
 @Getter
 @Entity
@@ -48,8 +54,8 @@ public class BlogMember extends BaseEntity {
         return BlogMember.builder()
                 .blog(blog)
                 .user(user)
-                .permission(BlogPermission.OWNER)
-                .status(BlogMemberStatus.ACTIVE)
+                .permission(OWNER)
+                .status(ACTIVE)
                 .joinedAt(joinedAt)
                 .build();
     }
@@ -66,9 +72,19 @@ public class BlogMember extends BaseEntity {
                 .user(user)
                 .blogRole(blogRole)
                 .permission(permission)
-                .status(BlogMemberStatus.ACTIVE)
+                .status(ACTIVE)
                 .joinedAt(joinedAt)
                 .build();
+    }
+
+    public void validateCanInvite(BlogPermission inviteePermission) {
+        if (status != ACTIVE || permission != OWNER && permission != ADMIN) {
+            throw new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN);
+        }
+
+        if (inviteePermission != ADMIN && inviteePermission != MEMBER) {
+            throw new BlogException(BLOG_MEMBER_PERMISSION_INVALID);
+        }
     }
 
 }

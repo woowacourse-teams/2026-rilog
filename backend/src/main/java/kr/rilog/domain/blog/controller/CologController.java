@@ -36,14 +36,14 @@ public class CologController implements CologApiSpec {
     }
 
     @AuthGuard
-    @PostMapping("/cologs/{cologId}/members")
+    @PostMapping("/cologs/{slug}/members")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CologMemberInviteResponse> inviteMember(
             @LoginUserId Long requesterId,
-            @PathVariable("cologId") Long cologId,
+            @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
     ) {
-        CologMemberInviteResult result = cologService.inviteMember(requesterId, cologId, request.toCommand());
+        CologMemberInviteResult result = cologService.inviteMember(requesterId, slug, request.toCommand());
         CologMemberInviteResponse data = CologMemberInviteResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "팀 멤버가 초대되었습니다.", data);
     }

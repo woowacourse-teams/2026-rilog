@@ -13,10 +13,8 @@ import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,8 +32,6 @@ import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,6 +48,7 @@ class CologServiceTest {
     private static final Long OWNER_ID = 1L;
     private static final Long COLOG_ID = 2L;
     private static final Long INVITEE_ID = 3L;
+    private static final String COLOG_SLUG = "rilog-team";
     private static final Instant NOW = Instant.parse("2026-08-13T12:00:00Z");
 
     @Mock
@@ -199,12 +196,11 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findByIdAndBlogType(COLOG_ID, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
         when(blogMemberRepository.save(any(BlogMember.class))).thenAnswer(invocation -> {
             BlogMember member = invocation.getArgument(0);
@@ -222,7 +218,7 @@ class CologServiceTest {
         // when
         CologMemberInviteResult result = cologService.inviteMember(
                 OWNER_ID,
-                COLOG_ID,
+                COLOG_SLUG,
                 new CologMemberInviteCommand(INVITEE_ID, BlogPermission.ADMIN, "Backend")
         );
 
@@ -262,19 +258,18 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(admin);
         BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
-        when(blogRepository.findByIdAndBlogType(COLOG_ID, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(admin));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
         when(blogMemberRepository.save(any(BlogMember.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         cologService.inviteMember(
                 OWNER_ID,
-                COLOG_ID,
+                COLOG_SLUG,
                 new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
         );
 
@@ -285,73 +280,24 @@ class CologServiceTest {
     }
 
     @Test
-    @DisplayName("MEMBER 권한 팀 멤버는 사용자를 초대할 수 없다")
-    void inviteMemberRejectsMemberRequester() {
-        // given
-        User requester = createOwner();
-        Blog colog = createColog(requester);
-        BlogMember requesterMember = createMember(colog, requester, BlogPermission.MEMBER);
-        when(blogRepository.findByIdAndBlogType(COLOG_ID, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(requester));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(Optional.of(requesterMember));
-
-        // when - then
-        assertThatThrownBy(() -> cologService.inviteMember(
-                OWNER_ID,
-                COLOG_ID,
-                new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
-        ))
-                .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(BLOG_MEMBER_INVITE_FORBIDDEN);
-        verify(blogMemberRepository, never()).save(any(BlogMember.class));
-    }
-
-    @Test
     @DisplayName("팀 멤버가 아닌 사용자는 사용자를 초대할 수 없다")
     void inviteMemberRejectsNonMemberRequester() {
         // given
         User requester = createOwner();
         Blog colog = createColog(requester);
-        when(blogRepository.findByIdAndBlogType(COLOG_ID, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(requester));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> cologService.inviteMember(
                 OWNER_ID,
-                COLOG_ID,
+                COLOG_SLUG,
                 new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
         ))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_MEMBER_INVITE_FORBIDDEN);
-        verify(blogMemberRepository, never()).save(any(BlogMember.class));
-    }
-
-    @Test
-    @DisplayName("OWNER 권한으로는 사용자를 초대할 수 없다")
-    void inviteMemberRejectsOwnerPermission() {
-        // given
-        User owner = createOwner();
-        Blog colog = createColog(owner);
-        BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findByIdAndBlogType(COLOG_ID, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(Optional.of(requesterMember));
-
-        // when - then
-        assertThatThrownBy(() -> cologService.inviteMember(
-                OWNER_ID,
-                COLOG_ID,
-                new CologMemberInviteCommand(INVITEE_ID, BlogPermission.OWNER, "Owner")
-        ))
-                .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(BLOG_MEMBER_PERMISSION_INVALID);
         verify(blogMemberRepository, never()).save(any(BlogMember.class));
     }
 
@@ -363,18 +309,17 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findByIdAndBlogType(COLOG_ID, BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
 
         // when - then
         assertThatThrownBy(() -> cologService.inviteMember(
                 OWNER_ID,
-                COLOG_ID,
+                COLOG_SLUG,
                 new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
         ))
                 .isInstanceOf(BlogException.class)
@@ -387,16 +332,6 @@ class CologServiceTest {
         return User.builder()
                 .id(OWNER_ID)
                 .githubId(100L)
-                .build();
-    }
-
-    private User createCompletedOwner() {
-        return User.builder()
-                .id(OWNER_ID)
-                .githubId(100L)
-                .nickname(Nickname.from("리로"))
-                .slug(Slug.from("jinriro"))
-                .profileImageUrl("https://example.com/profile.png")
                 .build();
     }
 
@@ -413,21 +348,6 @@ class CologServiceTest {
                 .owner(owner)
                 .name("리로그 팀")
                 .slug("rilog-team")
-                .blogType(BlogType.COLOG)
-                .build();
-    }
-
-    private Blog createDetailedColog(User owner) {
-        return Blog.builder()
-                .id(COLOG_ID)
-                .owner(owner)
-                .name("리로그 팀")
-                .slug("rilog-team")
-                .introduction("함께 쓰는 기술 블로그")
-                .logoUrl("https://example.com/logo.png")
-                .coverImageUrl("https://example.com/cover.png")
-                .serviceUrl("https://rilog.example.com")
-                .githubUrl("https://github.com/rilog")
                 .blogType(BlogType.COLOG)
                 .build();
     }

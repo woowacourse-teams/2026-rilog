@@ -85,12 +85,12 @@ class PostServiceTest {
         PostSaveCommand command = createCommand();
         Post savedPost = Post.builder().id(POST_ID).build();
 
-        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        PostPublishResult result = postService.publish(command, RILOG_ID, WRITER_ID);
+        PostPublishResult result = postService.publish(command, RILOG_SLUG, WRITER_ID);
 
         // then
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -113,15 +113,15 @@ class PostServiceTest {
         PostSaveCommand command = createCommand();
         Post savedPost = Post.builder().id(POST_ID).build();
 
-        when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.of(rilog));
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        PostPublishResult result = postService.publish(command, COLOG_ID, WRITER_ID);
+        PostPublishResult result = postService.publish(command, COLOG_SLUG, WRITER_ID);
 
         // then
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -140,13 +140,13 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Blog colog = createColog();
-        when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_ID, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_SLUG, WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(COLOG_POST_PUBLISH_FORBIDDEN);
@@ -158,10 +158,10 @@ class PostServiceTest {
     @DisplayName("발행할 블로그가 존재하지 않으면 게시글 발행에 실패한다")
     void publishFailsWhenPublishingBlogDoesNotExist() {
         // given
-        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);
@@ -174,11 +174,11 @@ class PostServiceTest {
         // given
         User rilogOwner = createWriter();
         Blog rilog = createRilog(rilogOwner);
-        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
                 .isInstanceOf(UserException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(USER_NOT_FOUND);
@@ -191,14 +191,14 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Blog colog = createColog();
-        when(blogRepository.findById(COLOG_ID)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_ID, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_SLUG, WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_NOT_FOUND);
@@ -216,11 +216,11 @@ class PostServiceTest {
                 .githubId(200L)
                 .build();
         Blog rilog = createRilog(rilogOwner);
-        when(blogRepository.findById(RILOG_ID)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_ID, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);

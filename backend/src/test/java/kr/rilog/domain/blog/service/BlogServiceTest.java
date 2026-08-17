@@ -57,7 +57,7 @@ class BlogServiceTest {
         // given
         User owner = createCompletedOwner();
         Blog colog = createDetailedColog(owner);
-        when(blogRepository.findBySlugAndBlogType("rilog-team", BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull("rilog-team", BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.countActiveMembersByBlogId(COLOG_ID)).thenReturn(10L);
         when(postRepository.countPublicPublishedPostsByCologId(COLOG_ID)).thenReturn(24L);
 
@@ -98,7 +98,7 @@ class BlogServiceTest {
     @DisplayName("팀 slug에 해당하는 COLOG가 없으면 공개 프로필 조회를 거부한다")
     void getPublicProfileRejectsMissingColog() {
         // given
-        when(blogRepository.findBySlugAndBlogType("unknown-team", BlogType.COLOG)).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull("unknown-team", BlogType.COLOG)).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> blogService.getPublicProfile("unknown-team"))

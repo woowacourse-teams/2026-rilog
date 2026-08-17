@@ -123,19 +123,19 @@ class CologControllerTest {
     }
 
     @Test
-    @DisplayName("POST /v1/cologs/{cologId}/members는 로그인 사용자의 팀 멤버 초대를 처리한다")
+    @DisplayName("POST /v1/cologs/{slug}/members는 로그인 사용자의 팀 멤버 초대를 처리한다")
     void inviteMemberInvitesCologMemberForLoginUser() throws Exception {
         // given
         CologService cologService = mock(CologService.class);
         CologMemberInviteCommand command = new CologMemberInviteCommand(10L, BlogPermission.MEMBER, "Backend");
-        when(cologService.inviteMember(1L, 2L, command))
+        when(cologService.inviteMember(1L, "rilog-team", command))
                 .thenReturn(new CologMemberInviteResult(3L, 10L, BlogPermission.MEMBER, "Backend"));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(1L))
                 .build();
 
         // when - then
-        mockMvc.perform(post("/v1/cologs/{cologId}/members", 2L)
+        mockMvc.perform(post("/v1/cologs/{slug}/members", "rilog-team")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -150,7 +150,7 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.permission").value("MEMBER"))
                 .andExpect(jsonPath("$.data.blogRole").value("Backend"));
 
-        verify(cologService).inviteMember(1L, 2L, command);
+        verify(cologService).inviteMember(1L, "rilog-team", command);
     }
 
     private record FixedLoginUserIdArgumentResolver(Long userId) implements HandlerMethodArgumentResolver {
