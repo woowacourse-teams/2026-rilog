@@ -8,13 +8,17 @@ import { useCologProfileForm } from '@/domains/colog/hooks/use-colog-profile-for
 import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
 import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
 import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/model/colog-profile-settings';
+import Button from '@/shared/ui/button/Button';
+import PageShell from '@/shared/ui/page-shell/PageShell';
+import type { SettingsTab } from '@/widgets/colog-settings/lib/get-next-tab';
+import CologSettingsHeader from '@/widgets/colog-settings/ui/CologSettingsHeader';
 
 interface CologProfileSectionProps {
 	onDirtyChange?: (isDirty: boolean) => void;
-	showHeading?: boolean;
+	onTabChangeRequest?: (nextTab: SettingsTab) => void;
 }
 
-export default function CologProfileSection({ onDirtyChange, showHeading = true }: CologProfileSectionProps) {
+export default function CologProfileSection({ onDirtyChange, onTabChangeRequest }: CologProfileSectionProps) {
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
 	const form = useCologProfileForm({ initialValue: savedProfile });
 	const isDirty = !isCologProfileSettingsEqual(form.value, savedProfile);
@@ -42,29 +46,44 @@ export default function CologProfileSection({ onDirtyChange, showHeading = true 
 	};
 
 	return (
-		<section aria-labelledby="profile-settings-title">
-			<form id="profile-settings-form" noValidate onSubmit={handleSubmit}>
-				<div className="px-0.5">
-					{showHeading && (
-						<div className="mb-8">
-							<h1 id="profile-settings-title" className="text-heading-3 font-bold text-text-primary">
-								프로필
-							</h1>
-							<p className="mt-0.5 text-body-1 text-text-secondary">팀의 기본 정보와 소개를 관리합니다.</p>
+		<PageShell
+			isHeaderSticky
+			header={
+				<CologSettingsHeader
+					activeTab="profile"
+					title="프로필"
+					description="팀의 기본 정보와 소개를 관리합니다."
+					onTabChangeRequest={onTabChangeRequest}
+					actions={
+						<Button
+							form="profile-settings-form"
+							type="submit"
+							size="md"
+							className="w-full max-w-40 sm:max-w-60 md:max-w-none lg:w-30 lg:max-w-none"
+							disabled={!isDirty}
+						>
+							변경사항 저장
+						</Button>
+					}
+				/>
+			}
+		>
+			<section className="px-6 sm:px-8 lg:px-0">
+				<form id="profile-settings-form" noValidate onSubmit={handleSubmit}>
+					<div className="px-0.5">
+						<div className="flex flex-col gap-8">
+							<CologProfileFormFields
+								value={form.value}
+								errors={form.errors}
+								refs={form.refs}
+								onTextFieldChange={form.updateTextField}
+								onLogoFileChange={form.updateLogoFile}
+								onCoverImageFileChange={form.updateCoverImageFile}
+							/>
 						</div>
-					)}
-					<div className="flex flex-col gap-8">
-						<CologProfileFormFields
-							value={form.value}
-							errors={form.errors}
-							refs={form.refs}
-							onTextFieldChange={form.updateTextField}
-							onLogoFileChange={form.updateLogoFile}
-							onCoverImageFileChange={form.updateCoverImageFile}
-						/>
 					</div>
-				</div>
-			</form>
-		</section>
+				</form>
+			</section>
+		</PageShell>
 	);
 }

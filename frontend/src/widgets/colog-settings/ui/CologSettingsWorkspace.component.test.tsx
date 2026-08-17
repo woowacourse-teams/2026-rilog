@@ -47,7 +47,6 @@ describe('CologSettingsWorkspace', () => {
 
 		const profileTab = screen.getByRole('tab', { name: '프로필' });
 		const memberTab = screen.getByRole('tab', { name: '멤버 관리' });
-		const dangerTab = screen.getByRole('tab', { name: '위험 영역' });
 
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', profileTab.getAttribute('aria-controls'));
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', profileTab.id);
@@ -57,9 +56,10 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', memberTab.id);
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 
-		await user.click(dangerTab);
-		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', dangerTab.getAttribute('aria-controls'));
-		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', dangerTab.id);
+		await user.click(screen.getByRole('tab', { name: '위험 영역' }));
+		const activeDangerTab = screen.getByRole('tab', { name: '위험 영역' });
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', activeDangerTab.getAttribute('aria-controls'));
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', activeDangerTab.id);
 		expect(screen.getByRole('heading', { name: '위험 영역' })).toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '프로필' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '멤버 관리' })).not.toBeInTheDocument();
