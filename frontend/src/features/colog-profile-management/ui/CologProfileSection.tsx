@@ -7,6 +7,7 @@ import type { SubmitEvent } from 'react';
 import { useCologProfileForm } from '@/domains/colog/hooks/use-colog-profile-form';
 import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
 import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
+import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/model/colog-profile-settings';
 import Button from '@/shared/ui/button/Button';
 import PageShell from '@/shared/ui/page-shell/PageShell';
@@ -14,12 +15,19 @@ import type { SettingsTab } from '@/widgets/colog-settings/lib/get-next-tab';
 import CologSettingsHeader from '@/widgets/colog-settings/ui/CologSettingsHeader';
 
 interface CologProfileSectionProps {
+	initialProfile?: CologProfileSettingsValue;
 	onDirtyChange?: (isDirty: boolean) => void;
+	onSave?: (profile: CologProfileSettingsValue) => void;
 	onTabChangeRequest?: (nextTab: SettingsTab) => void;
 }
 
-export default function CologProfileSection({ onDirtyChange, onTabChangeRequest }: CologProfileSectionProps) {
-	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
+export default function CologProfileSection({
+	initialProfile = MOCK_COLOG_PROFILE_SETTINGS,
+	onDirtyChange,
+	onSave,
+	onTabChangeRequest,
+}: CologProfileSectionProps) {
+	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 	const form = useCologProfileForm({ initialValue: savedProfile });
 	const isDirty = !isCologProfileSettingsEqual(form.value, savedProfile);
 
@@ -43,6 +51,7 @@ export default function CologProfileSection({ onDirtyChange, onTabChangeRequest 
 		}
 
 		setSavedProfile(normalizedValue);
+		onSave?.(normalizedValue);
 	};
 
 	return (
