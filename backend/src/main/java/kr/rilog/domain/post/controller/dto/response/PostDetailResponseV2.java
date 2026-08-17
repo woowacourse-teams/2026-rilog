@@ -39,7 +39,7 @@ public record PostDetailResponseV2(
                 post.getThumbnailUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
-                CologPostAffiliationResponse.of(post.getRilog(), memberCount, postCount)
+                CologPostAffiliationResponse.of(post.getColog(), memberCount, postCount)
         );
     }
 
