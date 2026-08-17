@@ -8,9 +8,8 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
-import kr.rilog.domain.blog.controller.dto.response.CologDetailResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
-import kr.rilog.domain.blog.controller.dto.response.CologProfileResponse;
+import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,27 +18,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface CologApiSpec {
 
     @Operation(
-            summary = "팀 상세 조회 API",
-            description = "팀 블로그 상세 화면에서 사용할 팀 정보를 slug 기준으로 조회합니다."
+            summary = "공개 팀 프로필 조회 API",
+            description = "공개 프로필 화면에서 사용할 팀 정보를 @slug 기준으로 조회합니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
-            description = "팀 상세 조회 성공"
+            description = "공개 팀 프로필 조회 성공"
     )
-    ApiResponse<CologDetailResponse> getDetail(
-            @Parameter(description = "팀 블로그 slug", example = "rilog-team")
-            @PathVariable("slug") String slug
-    );
-
-    @Operation(
-            summary = "팀 프로필 조회 API",
-            description = "팀 블로그 프로필 영역에서 사용할 최소 정보를 slug 기준으로 조회합니다."
-    )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "팀 프로필 조회 성공"
-    )
-    ApiResponse<CologProfileResponse> getProfile(
+    ApiResponse<CologPublicProfileResponse> getPublicProfile(
             @Parameter(description = "팀 블로그 slug", example = "rilog-team")
             @PathVariable("slug") String slug
     );
