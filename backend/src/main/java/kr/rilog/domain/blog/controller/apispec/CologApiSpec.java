@@ -19,7 +19,7 @@ public interface CologApiSpec {
 
     @Operation(
             summary = "공개 팀 프로필 조회 API",
-            description = "공개 프로필 화면에서 사용할 팀 정보를 @slug 기준으로 조회합니다."
+            description = "공개 프로필 화면에서 사용할 팀 정보를 blog slug 기준으로 조회합니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",

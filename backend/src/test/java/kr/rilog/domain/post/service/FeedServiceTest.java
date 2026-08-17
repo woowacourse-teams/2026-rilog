@@ -5,13 +5,12 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.TeamFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
-import kr.rilog.domain.post.repository.projection.TeamFeedPostRow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,9 @@ class FeedServiceTest {
 
     private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long COLOG_ID = 1L;
+    private static final Long RILOG_ID = 2L;
     private static final String COLOG_SLUG = "team-colog";
+    private static final String RILOG_SLUG = "writer";
     private static final int PAGE = 1;
     private static final int SIZE = 2;
 
@@ -105,72 +106,89 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("팀 피드는 해당 팀의 발행된 공개 게시글을 요청한 페이지 조건으로 조회한다")
-    void readCologPostsRequestsPublishedPublicPostsOfColog() {
+    @DisplayName("공개 블로그 게시글 목록은 RILOG slug로 작성자의 공개 게시글을 조회한다")
+    void readPublicBlogPostsRequestsPublishedPublicPostsOfRilog() {
         // given
-        Blog colog = createColog();
+        Blog rilog = createRilog();
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG))
-                .thenReturn(Optional.of(colog));
-        when(postFeedQueryRepository.findTeamPosts(
-                COLOG_ID,
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC,
-                pageable
-        )).thenReturn(new SliceImpl<>(List.of(), pageable, false));
-
-        // when
-        feedService.readCologPosts(COLOG_SLUG, PAGE, SIZE);
-
-        // then
-        verify(blogRepository).findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG);
-        verify(postFeedQueryRepository).findTeamPosts(
-                COLOG_ID,
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC,
-                pageable
+        List<PostFullFeedRow> rows = List.of(
+                createFeedRow(2L),
+                createCologFeedRow(1L)
         );
-    }
-
-    @Test
-    @DisplayName("팀 피드 조회 결과에 게시글 순서와 다음 페이지 여부가 반영된다")
-    void readCologPostsReturnsPostsAndPagination() {
-        // given
-        Blog colog = createColog();
-        PageRequest pageable = PageRequest.of(PAGE, SIZE);
-        List<TeamFeedPostRow> rows = List.of(
-                createTeamFeedRow(2L),
-                createTeamFeedRow(1L)
-        );
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG))
-                .thenReturn(Optional.of(colog));
-        when(postFeedQueryRepository.findTeamPosts(
-                COLOG_ID,
+        when(blogRepository.findBySlug(RILOG_SLUG)).thenReturn(Optional.of(rilog));
+        when(postFeedQueryRepository.findPublicRilogPosts(
+                RILOG_ID,
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 pageable
         )).thenReturn(new SliceImpl<>(rows, pageable, true));
 
         // when
-        TeamFeedPostResponse response = feedService.readCologPosts(COLOG_SLUG, PAGE, SIZE);
+        PublicBlogFeedPostResponse response = feedService.readPublicBlogPosts(RILOG_SLUG, PAGE, SIZE);
 
         // then
+        assertThat(response.type()).isEqualTo("RILOG");
         assertThat(response.posts())
-                .extracting(TeamFeedPostResponse.PostItemResponse::postId)
+                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
+        assertThat(response.posts().get(0).colog()).isNull();
+        assertThat(response.posts().get(1).colog())
+                .extracting(PublicBlogFeedPostResponse.CologResponse::slug)
+                .isEqualTo(COLOG_SLUG);
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.hasNext()).isTrue();
+        verify(postFeedQueryRepository).findPublicRilogPosts(
+                RILOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC,
+                pageable
+        );
     }
 
     @Test
-    @DisplayName("존재하지 않는 팀의 피드를 조회하면 게시글을 조회하지 않고 예외가 발생한다")
-    void readCologPostsThrowsExceptionWhenCologDoesNotExist() {
+    @DisplayName("공개 블로그 게시글 목록은 COLOG slug로 팀의 공개 게시글을 조회한다")
+    void readPublicBlogPostsRequestsPublishedPublicPostsOfColog() {
         // given
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG))
-                .thenReturn(Optional.empty());
+        Blog colog = createColog();
+        PageRequest pageable = PageRequest.of(PAGE, SIZE);
+        List<PostFullFeedRow> rows = List.of(
+                createCologFeedRow(2L),
+                createCologFeedRow(1L)
+        );
+        when(blogRepository.findBySlug(COLOG_SLUG)).thenReturn(Optional.of(colog));
+        when(postFeedQueryRepository.findPublicCologPosts(
+                COLOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC,
+                pageable
+        )).thenReturn(new SliceImpl<>(rows, pageable, false));
+
+        // when
+        PublicBlogFeedPostResponse response = feedService.readPublicBlogPosts(COLOG_SLUG, PAGE, SIZE);
+
+        // then
+        assertThat(response.type()).isEqualTo("COLOG");
+        assertThat(response.posts())
+                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(2L, 1L);
+        assertThat(response.size()).isEqualTo(SIZE);
+        assertThat(response.hasNext()).isFalse();
+        verify(postFeedQueryRepository).findPublicCologPosts(
+                COLOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC,
+                pageable
+        );
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 공개 블로그의 게시글 목록을 조회하면 게시글을 조회하지 않고 예외가 발생한다")
+    void readPublicBlogPostsThrowsExceptionWhenBlogDoesNotExist() {
+        // given
+        when(blogRepository.findBySlug("unknown")).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> feedService.readCologPosts(COLOG_SLUG, PAGE, SIZE))
+        assertThatThrownBy(() -> feedService.readPublicBlogPosts("unknown", PAGE, SIZE))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);
@@ -204,19 +222,30 @@ class FeedServiceTest {
                 .build();
     }
 
-    private TeamFeedPostRow createTeamFeedRow(Long postId) {
-        return new TeamFeedPostRow(
+    private Blog createRilog() {
+        return Blog.builder()
+                .id(RILOG_ID)
+                .slug(RILOG_SLUG)
+                .blogType(BlogType.RILOG)
+                .build();
+    }
+
+    private PostFullFeedRow createCologFeedRow(Long postId) {
+        return new PostFullFeedRow(
                 postId,
                 "팀 게시글 제목",
                 "https://example.com/team-thumbnail.png",
                 Category.TECH,
-                PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 LocalDateTime.of(2026, 8, 13, 12, 0),
                 1L,
                 "작성자",
                 "writer",
-                "https://example.com/profile.png"
+                "https://example.com/profile.png",
+                COLOG_ID,
+                "팀 블로그",
+                COLOG_SLUG,
+                "https://example.com/colog-logo.png"
         );
     }
 

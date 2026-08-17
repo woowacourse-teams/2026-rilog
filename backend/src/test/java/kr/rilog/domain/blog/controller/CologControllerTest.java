@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CologControllerTest {
 
     @Test
-    @DisplayName("GET /v1/@{slug}는 팀 공개 프로필 정보를 조회한다")
+    @DisplayName("GET /v1/blogs/{slug}는 팀 공개 프로필 정보를 조회한다")
     void getPublicProfileReturnsCologProfile() throws Exception {
         // given
         CologService cologService = mock(CologService.class);
@@ -51,7 +51,7 @@ class CologControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/@{slug}", "rilog-team"))
+        mockMvc.perform(get("/v1/blogs/{slug}", "rilog-team"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.id").value(2L))
@@ -67,6 +67,19 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.user").doesNotExist());
 
         verify(cologService).getPublicProfile("rilog-team");
+    }
+
+    @Test
+    @DisplayName("이전 공개 프로필 조회 경로는 제공하지 않는다")
+    void oldPublicProfilePathIsRemoved() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+                .build();
+
+        // when - then
+        mockMvc.perform(get("/v1/@{slug}", "rilog-team"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

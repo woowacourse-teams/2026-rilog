@@ -2,7 +2,7 @@ package kr.rilog.domain.post.controller;
 
 import kr.rilog.domain.post.controller.apispec.FeedApiSpec;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.TeamFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.domain.post.service.FeedService;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +25,14 @@ public class FeedController implements FeedApiSpec {
         return ApiResponse.response(HttpStatus.OK, "전체피드의 게시물 목록 조회에 성공했습니다.", data);
     }
 
-    @GetMapping("/cologs/{cologSlug}/posts")
-    public ApiResponse<TeamFeedPostResponse> getTeamPosts(
-            @PathVariable String cologSlug,
+    @GetMapping("/blogs/{slug}/posts")
+    public ApiResponse<PublicBlogFeedPostResponse> getPublicBlogPosts(
+            @PathVariable String slug,
             @RequestParam int page,
             @RequestParam int size
     ) {
-        TeamFeedPostResponse data = feedService.readCologPosts(cologSlug, page, size);
-        return ApiResponse.response(HttpStatus.OK, "팀피드의 게시물 목록 조회에 성공했습니다.", data);
+        PublicBlogFeedPostResponse data = feedService.readPublicBlogPosts(slug, page, size);
+        return ApiResponse.response(HttpStatus.OK, "공개 블로그 게시글 목록 조회에 성공했습니다.", data);
     }
 
 }
