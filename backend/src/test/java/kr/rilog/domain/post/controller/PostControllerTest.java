@@ -46,7 +46,7 @@ class PostControllerTest {
         mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.affiliation.type").value("RILOG"));
+                .andExpect(jsonPath("$.data.owner.type").value("RILOG"));
 
         verify(postService).readPostOfBlogs(BLOG_SLUG, POST_ID, null);
     }
