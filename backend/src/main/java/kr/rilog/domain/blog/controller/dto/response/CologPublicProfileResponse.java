@@ -1,10 +1,13 @@
 package kr.rilog.domain.blog.controller.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import kr.rilog.domain.blog.service.dto.result.CologDetailResult;
+import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 
-@Schema(description = "팀 상세 조회 응답")
-public record CologDetailResponse(
+@Schema(description = "공개 팀 프로필 조회 응답")
+public record CologPublicProfileResponse(
+
+        @Schema(description = "공개 프로필 타입", example = "COLOG")
+        String type,
 
         @Schema(description = "팀 블로그 ID", example = "1")
         Long id,
@@ -30,12 +33,18 @@ public record CologDetailResponse(
         @Schema(description = "팀 GitHub URL", example = "https://github.com/rilog")
         String githubUrl,
 
-        @Schema(description = "팀 생성 사용자 정보")
-        UserResponse user
+        @Schema(description = "팀 활성 멤버 수", example = "10")
+        long memberCount,
+
+        @Schema(description = "팀 공개 게시글 수", example = "24")
+        long postCount
 ) {
 
-    public static CologDetailResponse from(CologDetailResult result) {
-        return new CologDetailResponse(
+    private static final String TYPE = "COLOG";
+
+    public static CologPublicProfileResponse from(CologPublicProfileResult result) {
+        return new CologPublicProfileResponse(
+                TYPE,
                 result.id(),
                 result.name(),
                 result.slug(),
@@ -44,32 +53,8 @@ public record CologDetailResponse(
                 result.coverImageUrl(),
                 result.serviceUrl(),
                 result.githubUrl(),
-                UserResponse.from(result.user())
+                result.memberCount(),
+                result.postCount()
         );
-    }
-
-    public record UserResponse(
-
-            @Schema(description = "사용자 ID", example = "1")
-            Long id,
-
-            @Schema(description = "사용자 닉네임", example = "리로")
-            String nickname,
-
-            @Schema(description = "사용자 slug", example = "jinriro")
-            String slug,
-
-            @Schema(description = "사용자 프로필 이미지 URL", example = "https://example.com/profile.png")
-            String profileImageUrl
-    ) {
-
-        public static UserResponse from(CologDetailResult.UserResult result) {
-            return new UserResponse(
-                    result.id(),
-                    result.nickname(),
-                    result.slug(),
-                    result.profileImageUrl()
-            );
-        }
     }
 }
