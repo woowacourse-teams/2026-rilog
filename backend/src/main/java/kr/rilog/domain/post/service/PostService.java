@@ -38,8 +38,8 @@ public class PostService {
     private final UserRepository userRepository;
 
     @Transactional
-    public PostPublishResult publish(PostSaveCommand command, Long blogId, Long requesterId) {
-        Blog publishingBlog = getBlog(blogId);
+    public PostPublishResult publish(PostSaveCommand command, String slug, Long requesterId) {
+        Blog publishingBlog = getBlog(slug);
         User writer = getUser(requesterId);
 
         Post post = publishingBlog.isColog()
@@ -97,8 +97,8 @@ public class PostService {
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
     }
 
-    private Blog getBlog(Long blogId) {
-        return blogRepository.findById(blogId)
+    private Blog getBlog(String slug) {
+        return blogRepository.findBySlugAndDeletedAtIsNull(slug)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
