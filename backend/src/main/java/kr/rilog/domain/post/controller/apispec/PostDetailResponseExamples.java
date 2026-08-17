@@ -21,7 +21,7 @@ final class PostDetailResponseExamples {
                   "slug": "jetproc",
                   "profileImageUrl": null
                 },
-                "affiliation": {
+                "owner": {
                   "type": "RILOG",
                   "blogId": 3,
                   "slug": "jetproc",
@@ -51,7 +51,7 @@ final class PostDetailResponseExamples {
                   "slug": "jetproc",
                   "profileImageUrl": null
                 },
-                "affiliation": {
+                "owner": {
                   "type": "COLOG",
                   "blogId": 5,
                   "slug": "rilog",
