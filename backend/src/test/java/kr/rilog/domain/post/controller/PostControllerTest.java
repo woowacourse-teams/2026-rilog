@@ -8,7 +8,9 @@ import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -30,49 +32,51 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PostControllerTest {
 
     private static final Long POST_ID = 1L;
+    private static final String BLOG_SLUG = "writer";
 
     @Test
-    @DisplayName("공개 게시글 상세 조회는 로그인하지 않아도 가능하다")
-    void getPostAllowsAnonymousUser() throws Exception {
+    @DisplayName("블로그의 공개 게시글 상세 조회는 로그인하지 않아도 가능하다")
+    void getPostDetailsAllowsAnonymousUser() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPost(POST_ID, null)).thenReturn(response());
+        when(postService.readPostOfBlogs(BLOG_SLUG, POST_ID, null)).thenReturn(response());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200));
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.owner.type").value("RILOG"));
 
-        verify(postService).readPost(POST_ID, null);
+        verify(postService).readPostOfBlogs(BLOG_SLUG, POST_ID, null);
     }
 
     @Test
-    @DisplayName("게시글 상세 조회에 Access Token이 있으면 로그인 사용자 ID를 전달한다")
-    void getPostPassesRequesterIdWhenAccessTokenExists() throws Exception {
+    @DisplayName("블로그 게시글 상세 조회에 Access Token이 있으면 로그인 사용자 ID를 전달한다")
+    void getPostDetailsPassesRequesterIdWhenAccessTokenExists() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPost(POST_ID, 7L)).thenReturn(response());
+        when(postService.readPostOfBlogs(BLOG_SLUG, POST_ID, 7L)).thenReturn(response());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/posts/{postId}", POST_ID)
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200));
 
-        verify(postService).readPost(POST_ID, 7L);
+        verify(postService).readPostOfBlogs(BLOG_SLUG, POST_ID, 7L);
     }
 
     @Test
-    @DisplayName("게시글 상세 조회에 잘못된 Authorization 헤더가 있으면 요청을 거부한다")
-    void getPostRejectsInvalidAuthorizationHeader() throws Exception {
+    @DisplayName("블로그 게시글 상세 조회에 잘못된 Authorization 헤더가 있으면 요청을 거부한다")
+    void getPostDetailsRejectsInvalidAuthorizationHeader() throws Exception {
         // given
         PostService postService = mock(PostService.class);
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/posts/{postId}", POST_ID)
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
                         .header(HttpHeaders.AUTHORIZATION, "Basic access-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
@@ -103,6 +107,13 @@ class PostControllerTest {
                         "작성자",
                         7L,
                         "writer",
+                        "https://example.com/profile.png"
+                ),
+                new RilogOwnerResponse(
+                        BlogType.RILOG,
+                        1L,
+                        BLOG_SLUG,
+                        "작성자 블로그",
                         "https://example.com/profile.png"
                 )
         );

@@ -37,4 +37,28 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("postId") Long postId
     );
 
+    @Query("""
+        SELECT p
+        FROM Post p
+        JOIN FETCH p.user u
+        LEFT JOIN FETCH p.rilog r
+        LEFT JOIN FETCH p.colog c
+        WHERE p.id = :postId
+          AND p.deletedAt IS NULL
+          AND (
+                r.slug = :slug
+                OR c.slug = :slug
+              )
+        """)
+    Optional<Post> findDetailByIdAndBlogSlug(
+            @Param("postId") Long postId,
+            @Param("slug") String slug
+    );
+
+    long countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+            Long cologId,
+            PostStatus status,
+            PostVisibility visibility
+    );
+
 }
