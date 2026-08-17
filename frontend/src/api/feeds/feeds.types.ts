@@ -14,7 +14,7 @@ export interface BlogResponse {
 	blogId: number;
 	name: string;
 	slug: string;
-	profileImageUrl: string;
+	profileUrl: string;
 }
 
 export interface PostItemResponse {
