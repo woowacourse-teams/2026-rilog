@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import SignUpForm from './SignUpForm';
 
@@ -43,6 +43,24 @@ describe('SignUpForm', () => {
 		await user.type(introduction, '함께 기록해요');
 
 		expect(introduction).toHaveAccessibleDescription('나를 소개하는 문장을 입력하세요. 7 / 80');
+	});
+
+	it('선택한 프로필 이미지를 미리 보고 unmount 때 object URL을 해제한다', async () => {
+		const createObjectUrl = vi.fn(() => 'blob:profile-image');
+		const revokeObjectUrl = vi.fn();
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
+		const user = userEvent.setup();
+		const { unmount } = render(<SignUpForm />);
+
+		await user.upload(
+			screen.getByLabelText('이미지 변경'),
+			new File(['profile'], 'profile.png', { type: 'image/png' }),
+		);
+
+		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute('src', 'blob:profile-image');
+		unmount();
+		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');
+		vi.unstubAllGlobals();
 	});
 
 	it('이용약관 및 개인정보처리방침 동의를 선택할 수 있다', async () => {

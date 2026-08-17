@@ -22,6 +22,11 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
+		expect(screen.getByLabelText('팀 로고 변경')).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: '이메일' })).not.toBeRequired();
 		expect(screen.queryByRole('table', { name: '코로그 멤버 목록' })).not.toBeInTheDocument();
 	});
 

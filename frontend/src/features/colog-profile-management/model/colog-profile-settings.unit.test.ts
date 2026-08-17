@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CologProfileSettingsValue } from './colog-profile-settings';
 
 import {
-	areCologProfileSettingsEqual,
+	isCologProfileSettingsEqual,
 	normalizeCologProfileSettings,
 	validateCologProfileSettings,
 } from './colog-profile-settings';
@@ -37,19 +37,27 @@ describe('validateCologProfileSettings', () => {
 		});
 	});
 
-	it('팀 소개와 소셜 정보는 비어 있을 수 있다', () => {
+	it('팀 소개와 커버 이미지는 비어 있을 수 있고 기존 로고 URL을 유효하게 판단한다', () => {
 		expect(
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
 				introduction: '',
-				serviceUrl: '',
-				githubUrl: '',
-				email: '',
+				coverImageUrl: '',
 			}),
 		).toEqual({});
 	});
 
-	it('선택 소셜 정보는 비어 있을 수 있고 입력했다면 형식을 검사한다', () => {
+	it('로고 URL과 새 파일이 모두 없으면 필수 오류를 반환한다', () => {
+		expect(
+			validateCologProfileSettings({
+				...VALID_SETTINGS,
+				logoImageUrl: '',
+				logoFile: null,
+			}),
+		).toEqual({ logoFile: '팀 로고를 등록해 주세요.' });
+	});
+
+	it('선택 소셜 정보는 빈 값을 허용하고 입력하면 형식을 검사한다', () => {
 		expect(
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
@@ -84,7 +92,7 @@ describe('normalizeCologProfileSettings', () => {
 			name: '  리로그  ',
 			slug: '  rilog  ',
 			serviceUrl: '  https://rilog.kr  ',
-			githubUrl: '  ',
+			githubUrl: '  https://github.com/woowacourse-teams  ',
 			email: '  team@rilog.kr  ',
 		});
 
@@ -92,18 +100,18 @@ describe('normalizeCologProfileSettings', () => {
 			name: '리로그',
 			slug: 'rilog',
 			serviceUrl: 'https://rilog.kr',
-			githubUrl: '',
+			githubUrl: 'https://github.com/woowacourse-teams',
 			email: 'team@rilog.kr',
 		});
 	});
 });
 
-describe('areCologProfileSettingsEqual', () => {
+describe('isCologProfileSettingsEqual', () => {
 	it('텍스트와 선택한 파일까지 같은 경우에만 동일한 설정으로 판단한다', () => {
-		expect(areCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS })).toBe(true);
-		expect(areCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS, name: '새 팀' })).toBe(false);
+		expect(isCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS })).toBe(true);
+		expect(isCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS, name: '새 팀' })).toBe(false);
 		expect(
-			areCologProfileSettingsEqual(VALID_SETTINGS, {
+			isCologProfileSettingsEqual(VALID_SETTINGS, {
 				...VALID_SETTINGS,
 				logoFile: new File(['logo'], 'logo.png', { type: 'image/png' }),
 			}),
