@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-import type { FormEvent } from 'react';
+import type { FormEvent, RefObject } from 'react';
 
 import type { CologMemberPermission } from '@/domains/colog/model/colog-member';
-import Button from '@/shared/ui/button/Button';
+
 
 import { MOCK_COLOG_MEMBERS } from '../lib/mock-colog-members';
 
@@ -23,11 +23,27 @@ interface CologMemberDraftChange {
 	blogRole?: string;
 }
 
-interface CologMemberManagementSectionProps {
-	onDirtyChange?: (isDirty: boolean) => void;
+interface CologMemberActions {
+	startEditing: () => void;
+	cancelEditing: () => void;
+	openInvite: () => void;
 }
 
-export default function CologMemberManagementSection({ onDirtyChange }: CologMemberManagementSectionProps) {
+interface CologMemberManagementSectionProps {
+	onDirtyChange?: (isDirty: boolean) => void;
+	actionsRef?: RefObject<CologMemberActions | null>;
+	onEditingChange?: (isEditing: boolean) => void;
+	onDraftChange?: (hasDraft: boolean) => void;
+	showHeading?: boolean;
+}
+
+export default function CologMemberManagementSection({
+	onDirtyChange,
+	actionsRef,
+	onEditingChange,
+	onDraftChange,
+	showHeading = true,
+}: CologMemberManagementSectionProps) {
 	const [members, setMembers] = useState(() => MOCK_COLOG_MEMBERS.map((member) => ({ ...member })));
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
@@ -40,7 +56,12 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 
 	useEffect(() => {
 		onDirtyChange?.(draftMembers.length > 0);
-	}, [draftMembers.length, onDirtyChange]);
+		onDraftChange?.(draftMembers.length > 0);
+	}, [draftMembers.length, onDirtyChange, onDraftChange]);
+
+	useEffect(() => {
+		onEditingChange?.(isEditing);
+	}, [isEditing, onEditingChange]);
 
 	const handleStartEditing = () => {
 		setDraftMembers([]);
@@ -101,11 +122,23 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 		updateDraftMember(memberId, { blogRole });
 	};
 
+	useEffect(() => {
+		if (actionsRef === undefined) {
+			return;
+		}
+
+		actionsRef.current = {
+			startEditing: handleStartEditing,
+			cancelEditing: handleCancelEditing,
+			openInvite: () => setIsInviteModalOpen(true),
+		};
+	}, [actionsRef, draftMembers]);
+
 	return (
-		<section aria-labelledby="member-management-title" className="h-full min-h-0">
-			<form className="flex h-full min-h-0 flex-col" onSubmit={handleSave}>
-				<div className="flex shrink-0 flex-wrap items-end justify-between gap-6">
-					<div>
+		<section aria-labelledby={showHeading ? 'member-management-title' : 'members-settings-title'}>
+			<form id="member-settings-form" onSubmit={handleSave}>
+				{showHeading && (
+					<div className="mb-8">
 						<h1 id="member-management-title" className="text-heading-3 font-bold text-text-primary">
 							멤버 관리
 						</h1>
@@ -113,49 +146,10 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 							팀 멤버의 프로필, 역할, 권한과 참여 상태를 관리합니다.
 						</p>
 					</div>
+				)}
 
-					<div className="flex gap-2">
-						{isEditing ? (
-							<>
-								<Button
-									type="button"
-									variant="secondary"
-									size="md"
-									className="w-30 px-2 text-label-1"
-									onClick={handleCancelEditing}
-								>
-									취소
-								</Button>
-								<Button type="submit" size="md" className="w-30 px-2 text-label-1" disabled={draftMembers.length === 0}>
-									저장
-								</Button>
-							</>
-						) : (
-							<>
-								<Button
-									type="button"
-									variant="secondary"
-									size="md"
-									className="w-30 px-2 text-label-1"
-									onClick={handleStartEditing}
-								>
-									멤버 정보 수정
-								</Button>
-								<Button
-									type="button"
-									size="md"
-									className="w-30 px-2 text-label-1"
-									onClick={() => setIsInviteModalOpen(true)}
-								>
-									+ 멤버 초대
-								</Button>
-							</>
-						)}
-					</div>
-				</div>
-
-				<div className="mt-14 min-h-0 flex-1 overflow-auto">
-					<table className="w-full min-w-3xl table-fixed border-collapse text-left">
+				<div className="overflow-x-auto">
+					<table className="w-full min-w-3xl table-fixed border-collapse overflow-x-auto text-left">
 						<caption className="sr-only">코로그 멤버 목록</caption>
 						<colgroup>
 							<col className="w-52" />
@@ -164,7 +158,7 @@ export default function CologMemberManagementSection({ onDirtyChange }: CologMem
 							<col className="w-37" />
 							<col className="w-24" />
 						</colgroup>
-						<thead className="sticky top-0 z-10 bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
+						<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
 							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
 								<th scope="col" className="pl-6 font-semibold">
 									멤버

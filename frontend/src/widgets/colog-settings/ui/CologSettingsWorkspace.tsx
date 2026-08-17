@@ -3,75 +3,84 @@
 import { useCallback, useRef, useState } from 'react';
 
 import type { SettingsTab } from '../lib/get-next-tab';
-import type { KeyboardEvent } from 'react';
 
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
-import { getNextTab, SETTINGS_TABS } from '../lib/get-next-tab';
 
-import SettingsTabButton from './SettingsTabButton';
+import CologSettingsHeader from './CologSettingsHeader';
 
-export default function CologSettingsWorkspace() {
+interface CologMemberActions {
+	startEditing: () => void;
+	cancelEditing: () => void;
+	openInvite: () => void;
+}
+
+interface CologSettingsWorkspaceProps {
+	slug?: string;
+}
+
+export default function CologSettingsWorkspace({ slug }: CologSettingsWorkspaceProps) {
 	const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-	const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({});
+	const [isProfileDirty, setIsProfileDirty] = useState(false);
+	const [isMemberEditing, setIsMemberEditing] = useState(false);
+	const [hasMemberDraft, setHasMemberDraft] = useState(false);
+	const memberActionsRef = useRef<CologMemberActions | null>(null);
 
-	const commitTabChange = useCallback((nextTab: SettingsTab) => {
-		setActiveTab(nextTab);
-		tabRefs.current[nextTab]?.focus();
-	}, []);
-
+	const commitTabChange = useCallback((nextTab: SettingsTab) => setActiveTab(nextTab), []);
 	const { isLeaveModalOpen, onDirtyChange, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
 		activeTab,
 		onTabChange: commitTabChange,
 	});
-
-	const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentTab: SettingsTab) => {
-		const nextTab = getNextTab(currentTab, event.key);
-
-		if (nextTab === null) {
-			return;
-		}
-
-		event.preventDefault();
-		onTabChangeRequest(nextTab);
-	};
+	const handleProfileDirtyChange = useCallback(
+		(isDirty: boolean) => {
+			setIsProfileDirty(isDirty);
+			onDirtyChange(isDirty);
+		},
+		[onDirtyChange],
+	);
 
 	return (
-		<div className="flex h-full min-h-0 flex-col overflow-hidden px-6 pt-4 sm:px-8 md:px-0">
-			<div role="tablist" aria-label="팀 설정" className="flex shrink-0 gap-2">
-				{SETTINGS_TABS.map((tab) => {
-					const isActive = tab.id === activeTab;
-
-					return (
-						<SettingsTabButton
-							key={tab.id}
-							tab={tab}
-							isActive={isActive}
-							ref={(element) => {
-								tabRefs.current[tab.id] = element;
-							}}
-							onClick={() => onTabChangeRequest(tab.id)}
-							onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
-						/>
-					);
-				})}
-			</div>
-
+		<PageShell
+			isHeaderSticky
+			header={
+				<CologSettingsHeader
+					slug={slug}
+					activeTab={activeTab}
+					isProfileDirty={isProfileDirty}
+					isMemberEditing={isMemberEditing}
+					hasMemberDraft={hasMemberDraft}
+					onTabChangeRequest={onTabChangeRequest}
+					onMemberEdit={() => memberActionsRef.current?.startEditing()}
+					onMemberCancel={() => memberActionsRef.current?.cancelEditing()}
+					onMemberInvite={() => memberActionsRef.current?.openInvite()}
+				/>
+			}
+		>
 			<div
 				id={`settings-panel-${activeTab}`}
 				role="tabpanel"
 				aria-labelledby={`settings-tab-${activeTab}`}
-				className="min-h-0 flex-1 pt-10"
+				className="px-6 sm:px-8 lg:px-0"
 			>
-				{activeTab === 'profile' && <CologProfileSection onDirtyChange={onDirtyChange} />}
-				{activeTab === 'members' && <CologMemberManagementSection onDirtyChange={onDirtyChange} />}
-				{activeTab === 'danger' && <CologDangerZoneSection />}
+				{activeTab === 'profile' && (
+					<CologProfileSection onDirtyChange={handleProfileDirtyChange} showHeading={false} />
+				)}
+				{activeTab === 'members' && (
+					<CologMemberManagementSection
+						onDirtyChange={onDirtyChange}
+						actionsRef={memberActionsRef}
+						onEditingChange={setIsMemberEditing}
+						onDraftChange={setHasMemberDraft}
+						showHeading={false}
+					/>
+				)}
+				{activeTab === 'danger' && <CologDangerZoneSection showHeading={false} />}
 			</div>
-
 			<ConfirmModal
 				open={isLeaveModalOpen}
 				title="변경 사항을 저장하지 않고 이동할까요?"
@@ -82,6 +91,6 @@ export default function CologSettingsWorkspace() {
 				onConfirm={onLeaveConfirm}
 				onCancel={onLeaveCancel}
 			/>
-		</div>
+		</PageShell>
 	);
 }

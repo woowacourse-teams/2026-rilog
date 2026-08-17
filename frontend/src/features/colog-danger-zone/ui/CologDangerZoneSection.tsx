@@ -7,9 +7,10 @@ import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface CologDangerZoneSectionProps {
 	onDeleteTeam?: () => void;
+	showHeading?: boolean;
 }
 
-export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZoneSectionProps) {
+export default function CologDangerZoneSection({ onDeleteTeam, showHeading = true }: CologDangerZoneSectionProps) {
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
 	const handleDeleteConfirm = () => {
@@ -18,14 +19,12 @@ export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZone
 	};
 
 	return (
-		<section aria-labelledby="danger-settings-title" className="h-full min-h-0 overflow-y-auto">
-			<h1 id="danger-settings-title" className="text-heading-3 font-bold text-text-primary">
-				위험 영역
-			</h1>
-			<p className="mt-0.5 text-body-1 text-text-secondary">
-				되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.
-			</p>
-
+		<section aria-labelledby="danger-settings-title">
+			{showHeading && (
+				<h1 id="danger-settings-title" className="text-heading-3 font-bold text-text-primary">
+					위험 영역
+				</h1>
+			)}
 			<div className="mt-2.5 rounded-lg bg-danger-soft px-6 py-10 sm:px-12 md:min-h-75 md:px-16 md:py-18">
 				<h2 className="text-title-1 font-bold text-danger">팀 삭제</h2>
 				<p className="mt-3 text-body-1 text-text-primary">
@@ -34,7 +33,7 @@ export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZone
 				<Button
 					type="button"
 					variant="danger"
-					size="lg"
+					size="md"
 					className="mt-9 w-45"
 					onClick={() => setIsDeleteModalOpen(true)}
 				>
