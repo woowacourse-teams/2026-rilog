@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import CologAvatar from '@/domains/colog/ui/CologAvatar';
 import type { PostDetailCoLog } from '@/domains/post/model/post-detail';
+import { buildCologHomePath } from '@/shared/routes/app-routes';
 
 interface PostDetailCoLogSummaryProps {
 	colog: PostDetailCoLog;
@@ -12,7 +13,7 @@ export default function PostDetailCoLogSummary({ colog }: PostDetailCoLogSummary
 		<section aria-label="Colog 정보" className="border-t border-border-default py-3">
 			<div className="flex items-center gap-3">
 				<Link
-					href={`/cologs/${colog.slug}`}
+					href={buildCologHomePath(colog.slug)}
 					className="flex min-w-0 flex-1 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
 					<CologAvatar fallback={colog.name.slice(0, 1)} label={`${colog.name} 로고`} size="lg" />

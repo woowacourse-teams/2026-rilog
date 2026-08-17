@@ -5,7 +5,7 @@ interface PageShellProps {
 	leftAside?: ReactNode;
 	rightAside?: ReactNode;
 	fullHeaderWidth?: boolean;
-	isViewportConstrained?: boolean;
+	isHeaderSticky?: boolean;
 	children: ReactNode;
 }
 
@@ -14,20 +14,21 @@ export default function PageShell({
 	leftAside,
 	rightAside,
 	fullHeaderWidth = false,
-	isViewportConstrained = false,
+	isHeaderSticky = false,
 	children,
 }: PageShellProps) {
 	const hasLeftAside = leftAside != null;
 	const hasRightAside = rightAside != null;
 	const hasAside = hasLeftAside || hasRightAside;
-	const pageClassName = [
-		'page-shell flex w-full flex-col',
-		isViewportConstrained ? 'h-dvh overflow-hidden' : 'min-h-screen',
+	const pageClassName = ['page-shell flex w-full flex-col'].filter(Boolean).join(' ');
+	const headerClassName = [
+		'page-shell-header',
+		fullHeaderWidth && 'page-shell-header-full',
+		isHeaderSticky && 'page-shell-header-sticky',
 	]
 		.filter(Boolean)
 		.join(' ');
-	const headerClassName = `page-shell-header ${fullHeaderWidth ? 'page-shell-header-full' : ''}`.trim();
-	const contentClassName = ['page-shell-content flex-1', isViewportConstrained && 'min-h-0'].filter(Boolean).join(' ');
+	const contentClassName = ['page-shell-content flex-1'].filter(Boolean).join(' ');
 
 	return (
 		<div className={pageClassName}>
@@ -36,7 +37,7 @@ export default function PageShell({
 			</header>
 			<div className={contentClassName} data-has-aside={hasAside}>
 				{hasLeftAside && <aside className="page-shell-aside page-shell-aside-left">{leftAside}</aside>}
-				<main className={`page-shell-main ${isViewportConstrained ? 'min-h-0 overflow-hidden' : ''}`}>{children}</main>
+				<main className="page-shell-main">{children}</main>
 				{hasRightAside && <aside className="page-shell-aside page-shell-aside-right">{rightAside}</aside>}
 			</div>
 		</div>

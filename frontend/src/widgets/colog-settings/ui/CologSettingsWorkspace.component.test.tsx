@@ -14,6 +14,7 @@ vi.mock('next/navigation', () => ({
 describe('CologSettingsWorkspace', () => {
 	beforeEach(() => {
 		replaceMock.mockClear();
+		window.history.replaceState(null, '', '/');
 	});
 
 	it('프로필 탭을 기본으로 표시한다', () => {
@@ -28,6 +29,16 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '이메일' })).not.toBeRequired();
 		expect(screen.queryByRole('table', { name: '코로그 멤버 목록' })).not.toBeInTheDocument();
+	});
+
+	it('URL로 선택한 탭을 표시하고 탭 변경을 query에 반영한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" initialTab="members" />);
+
+		expect(screen.getByRole('tab', { name: '멤버 관리' })).toHaveAttribute('aria-selected', 'true');
+		await user.click(screen.getByRole('tab', { name: '위험 영역' }));
+
+		expect(window.location.pathname + window.location.search).toBe('/@team-rilog/settings?tab=danger');
 	});
 
 	it('탭을 선택하면 해당 설정 내용을 조건부 렌더링한다', async () => {
@@ -47,7 +58,6 @@ describe('CologSettingsWorkspace', () => {
 
 		const profileTab = screen.getByRole('tab', { name: '프로필' });
 		const memberTab = screen.getByRole('tab', { name: '멤버 관리' });
-		const dangerTab = screen.getByRole('tab', { name: '위험 영역' });
 
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', profileTab.getAttribute('aria-controls'));
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', profileTab.id);
@@ -57,9 +67,10 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', memberTab.id);
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 
-		await user.click(dangerTab);
-		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', dangerTab.getAttribute('aria-controls'));
-		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', dangerTab.id);
+		await user.click(screen.getByRole('tab', { name: '위험 영역' }));
+		const activeDangerTab = screen.getByRole('tab', { name: '위험 영역' });
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('id', activeDangerTab.getAttribute('aria-controls'));
+		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', activeDangerTab.id);
 		expect(screen.getByRole('heading', { name: '위험 영역' })).toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '프로필' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '멤버 관리' })).not.toBeInTheDocument();
@@ -89,6 +100,9 @@ describe('CologSettingsWorkspace', () => {
 
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 		expect(screen.queryByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole('tab', { name: '프로필' }));
+		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('새 리로그');
 	});
 
 	it('저장하지 않은 프로필은 탭 이동을 확인하고 취소하면 유지한다', async () => {
@@ -217,7 +231,7 @@ describe('CologSettingsWorkspace', () => {
 		const user = userEvent.setup();
 		render(
 			<>
-				<Link href="/co-logs/@rilog">코로그로 돌아가기</Link>
+				<Link href="/@rilog">코로그로 돌아가기</Link>
 				<CologSettingsWorkspace />
 			</>,
 		);
@@ -231,7 +245,7 @@ describe('CologSettingsWorkspace', () => {
 		expect(replaceMock).not.toHaveBeenCalled();
 
 		await user.click(screen.getByRole('button', { name: '이동' }));
-		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/co-logs/@rilog'));
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog'));
 	});
 
 	it('수정 사항이 있을 때만 beforeunload 기본 경고를 요청한다', async () => {

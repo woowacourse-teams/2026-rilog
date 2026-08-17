@@ -9,7 +9,7 @@ const createItem = (id: number): PostFeedItem => ({
 	title: `글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-14T09:00:00',
-	author: { nickname: '작성자', profileImageUrl: null },
+	author: { nickname: '작성자', slug: 'author', profileImageUrl: null },
 	colog: null,
 });
 

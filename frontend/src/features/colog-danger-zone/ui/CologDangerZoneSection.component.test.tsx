@@ -8,7 +8,6 @@ describe('CologDangerZoneSection', () => {
 	it('팀 삭제의 영향과 되돌릴 수 없음을 안내한다', () => {
 		render(<CologDangerZoneSection />);
 
-		expect(screen.getByRole('heading', { level: 1, name: '위험 영역' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: '팀 삭제' })).toBeInTheDocument();
 		expect(screen.getByText(/게시글은 작성자 개인 글로 전환/)).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '팀 영구 삭제' })).toBeInTheDocument();

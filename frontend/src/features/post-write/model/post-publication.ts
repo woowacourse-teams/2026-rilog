@@ -20,6 +20,7 @@ export interface PublishPostCommand {
 
 export interface PublishPostResult {
 	postId: string;
+	slug: string;
 }
 
 export type PublishPost = (command: PublishPostCommand) => Promise<PublishPostResult>;

@@ -4,12 +4,14 @@ import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostSummary } from '@/domains/post/model/post-summary';
 import PostFeedImage from '@/domains/post/ui/PostFeedImage';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface CologPostListProps {
+	slug: string;
 	posts: readonly PostSummary[];
 }
 
-export default function CologPostList({ posts }: CologPostListProps) {
+export default function CologPostList({ slug, posts }: CologPostListProps) {
 	return (
 		<section aria-label="코로그 게시글" className="min-w-0">
 			{posts.length === 0 ? (
@@ -19,7 +21,7 @@ export default function CologPostList({ posts }: CologPostListProps) {
 					{posts.map((post) => (
 						<li key={post.id}>
 							<Link
-								href={`/posts/${post.id}`}
+								href={buildPostDetailPath(slug, String(post.id))}
 								className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 							>
 								<div className="relative aspect-[3/2] h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">

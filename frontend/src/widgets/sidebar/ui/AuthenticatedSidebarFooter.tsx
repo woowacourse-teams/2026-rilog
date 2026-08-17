@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 import LogOutIcon from '@/widgets/sidebar/assets/log-out.svg';
@@ -17,7 +18,7 @@ export default function AuthenticatedSidebarFooter() {
 	return (
 		<>
 			<div className="w-full shrink-0 px-3 pb-3">
-				<ButtonLink href="/write" fullWidth className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}>
+				<ButtonLink href={APP_ROUTES.write} fullWidth className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}>
 					<WriteIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					<span className={EXPANDED_TEXT_CLASS_NAME}>글쓰기</span>
 				</ButtonLink>
@@ -26,7 +27,7 @@ export default function AuthenticatedSidebarFooter() {
 			<footer className="w-full shrink-0 border-t border-border-default p-3">
 				<div className="flex w-full items-center gap-1 rounded-xl bg-transparent p-1.5 transition-colors group-focus-within:bg-surface-hover group-hover:bg-surface-hover">
 					<Link
-						href="/profile"
+						href={buildCologHomePath('jetproc')}
 						aria-label="파라디 @JetProc"
 						className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg group-focus-within:justify-start group-hover:justify-start ${FOCUS_CLASS_NAME}`}
 					>

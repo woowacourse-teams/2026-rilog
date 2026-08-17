@@ -53,3 +53,10 @@
 .page-shell-header-full {
 	max-width: none;
 }
+
+.page-shell-header-sticky {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	background: var(--background);
+}
