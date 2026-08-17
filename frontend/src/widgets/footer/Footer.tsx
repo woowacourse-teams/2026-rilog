@@ -27,7 +27,7 @@ export default function Footer() {
 
 				<nav
 					aria-label="정책"
-					className="flex flex-wrap items-center gap-x-5 text-caption-1 font-semibold sm:col-start-2 sm:row-start-1 sm:flex-col sm:items-end sm:gap-x-0"
+					className="hidden flex-wrap items-center gap-x-5 text-caption-1 font-semibold sm:col-start-2 sm:row-start-1 sm:flex sm:flex-col sm:items-end sm:gap-x-0"
 				>
 					<Link
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-0 sm:py-0.5`}
