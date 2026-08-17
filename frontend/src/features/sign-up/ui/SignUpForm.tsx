@@ -75,7 +75,7 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 			await completeSignUp({ nickname, slug, introduction: introduction.trim(), profileImageFile });
 
 			if (navigate !== undefined) {
-				navigate('/');
+				navigate('/', { replace: true });
 				return;
 			}
 
