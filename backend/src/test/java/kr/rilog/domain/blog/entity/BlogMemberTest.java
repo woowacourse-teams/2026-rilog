@@ -3,13 +3,18 @@ package kr.rilog.domain.blog.entity;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BlogMemberTest {
 
@@ -99,5 +104,65 @@ class BlogMemberTest {
                         BlogMemberStatus.ACTIVE,
                         joinedAt
                 );
+    }
+
+    @Test
+    @DisplayName("활성 OWNER와 ADMIN 멤버는 사용자를 초대할 수 있다")
+    void validateCanInviteAllowsActiveOwnerAndAdmin() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when - then
+        assertThatCode(() -> owner.validateCanInvite(BlogPermission.ADMIN))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> admin.validateCanInvite(BlogPermission.MEMBER))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("MEMBER 권한의 팀 멤버는 사용자를 초대할 수 없다")
+    void validateCanInviteRejectsMemberPermission() {
+        // given
+        BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when - then
+        assertThatThrownBy(() -> member.validateCanInvite(BlogPermission.MEMBER))
+                .isInstanceOf(BlogException.class)
+                .extracting("errorInformation")
+                .isEqualTo(BLOG_MEMBER_INVITE_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("활성 상태가 아닌 팀 멤버는 사용자를 초대할 수 없다")
+    void validateCanInviteRejectsInactiveMember() {
+        // given
+        BlogMember member = createMember(BlogPermission.OWNER, BlogMemberStatus.LEFT);
+
+        // when - then
+        assertThatThrownBy(() -> member.validateCanInvite(BlogPermission.MEMBER))
+                .isInstanceOf(BlogException.class)
+                .extracting("errorInformation")
+                .isEqualTo(BLOG_MEMBER_INVITE_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("초대받는 사용자에게 OWNER 권한을 부여할 수 없다")
+    void validateCanInviteRejectsOwnerPermissionForInvitee() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+
+        // when - then
+        assertThatThrownBy(() -> owner.validateCanInvite(BlogPermission.OWNER))
+                .isInstanceOf(BlogException.class)
+                .extracting("errorInformation")
+                .isEqualTo(BLOG_MEMBER_PERMISSION_INVALID);
+    }
+
+    private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {
+        return BlogMember.builder()
+                .permission(permission)
+                .status(status)
+                .build();
     }
 }
