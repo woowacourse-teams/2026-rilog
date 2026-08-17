@@ -18,14 +18,14 @@ public record PostFullFeedRow(
         String authorSlug,
         String authorProfileImageUrl,
 
-        Long cologId,
-        String cologName,
-        String cologSlug,
-        String cologLogoUrl
+        Long blogId,
+        String name,
+        String slug,
+        String profileUrl
 ) {
 
     public boolean isTeamPost() {
-        return cologId != null;
+        return blogId != null;
     }
 
 }

@@ -40,7 +40,7 @@ class FeedControllerTest {
                                         "writer",
                                         "https://example.com/profile.png"
                                 ),
-                                new PublicBlogFeedPostResponse.CologResponse(
+                                new PublicBlogFeedPostResponse.BlogResponse(
                                         2L,
                                         "리로그 팀",
                                         "rilog-team",
@@ -63,7 +63,7 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[0].postId").value(10L))
                 .andExpect(jsonPath("$.data.posts[0].user.slug").value("writer"))
-                .andExpect(jsonPath("$.data.posts[0].colog.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.posts[0].blog.slug").value("rilog-team"))
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.size").value(2))
                 .andExpect(jsonPath("$.data.hasNext").value(false));

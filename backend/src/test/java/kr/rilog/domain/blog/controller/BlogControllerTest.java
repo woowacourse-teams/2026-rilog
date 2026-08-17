@@ -83,7 +83,7 @@ class BlogControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].cologId").value(1L))
                 .andExpect(jsonPath("$.data[0].slug").value("rilog-team"))
-                .andExpect(jsonPath("$.data[0].cologName").value("리로그 팀"))
+                .andExpect(jsonPath("$.data[0].name").value("리로그 팀"))
                 .andExpect(jsonPath("$.data[0].logoUrl").value("https://example.com/logo.png"));
 
         verify(blogService).getMyCologsPreview(7L);

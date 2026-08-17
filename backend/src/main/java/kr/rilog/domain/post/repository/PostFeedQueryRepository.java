@@ -32,7 +32,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 colog.id,
                 colog.name,
                 colog.slug,
-                colog.coverImageUrl
+                colog.logoUrl
             )
             FROM Post p
             JOIN p.user author

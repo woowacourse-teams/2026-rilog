@@ -131,9 +131,9 @@ class FeedServiceTest {
         assertThat(response.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
-        assertThat(response.posts().get(0).colog()).isNull();
-        assertThat(response.posts().get(1).colog())
-                .extracting(PublicBlogFeedPostResponse.CologResponse::slug)
+        assertThat(response.posts().get(0).blog()).isNull();
+        assertThat(response.posts().get(1).blog())
+                .extracting(PublicBlogFeedPostResponse.BlogResponse::slug)
                 .isEqualTo(COLOG_SLUG);
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.hasNext()).isTrue();

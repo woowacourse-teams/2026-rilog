@@ -51,7 +51,7 @@ public record PublicBlogFeedPostResponse(
             String visibility,
             LocalDateTime publishedAt,
             AuthorResponse user,
-            CologResponse colog
+            BlogResponse blog
     ) {
 
         private static PostItemResponse from(PostFullFeedRow row) {
@@ -69,11 +69,11 @@ public record PublicBlogFeedPostResponse(
                             row.authorProfileImageUrl()
                     ),
                     row.isTeamPost()
-                            ? new CologResponse(
-                            row.cologId(),
-                            row.cologName(),
-                            row.cologSlug(),
-                            row.cologLogoUrl()
+                            ? new BlogResponse(
+                            row.blogId(),
+                            row.name(),
+                            row.slug(),
+                            row.profileUrl()
                     )
                             : null
             );
@@ -88,11 +88,11 @@ public record PublicBlogFeedPostResponse(
     ) {
     }
 
-    public record CologResponse(
-            Long cologId,
+    public record BlogResponse(
+            Long blogId,
             String name,
             String slug,
-            String logoUrl
+            String profileUrl
     ) {
     }
 
