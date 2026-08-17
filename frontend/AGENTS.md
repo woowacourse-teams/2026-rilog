@@ -5,13 +5,15 @@
 ## 기술 기준
 
 - Next.js App Router와 TypeScript strict를 사용한다.
-- Server Component가 기본이다. 이벤트, 브라우저 API, 로컬 상태 또는 Client hook이 필요한 가장 작은 leaf 경계에만 `'use client'`를 둔다.
+- Server Component가 기본이다. 이벤트, 브라우저 API, 로컬 상태 또는 Client hook이 필요한 가장 작은 leaf 경계에만
+  `'use client'`를 둔다.
 - Tailwind semantic token과 공통 UI를 우선 사용한다.
 - ky는 HTTP 전송과 오류 정규화, TanStack Query는 Client Component의 원격 상태 cache와 mutation을 담당한다.
 - 별도 전역 상태 라이브러리는 초기 도입하지 않는다. 로컬 state, URL, TanStack Query로 해결되지 않는 반복 사례가 생기면 ADR로 검토한다.
 
 ## 구조
 
+- `api`: API 모듈
 - `app`: route, layout, metadata와 페이지 조립
 - `widgets`: 여러 feature/domain을 조합한 큰 UI
 - `features`: 사용자 행동과 유스케이스
@@ -38,14 +40,16 @@
 ### TypeScript 타입 선언
 
 - 이름을 가진 객체 계약은 `interface`를 기본으로 한다.
-- union, tuple, 함수 타입, primitive alias, mapped/conditional type처럼 `interface`로 표현할 수 없거나 `type`이 더 명확한 경우에는 `type`을 사용한다.
+- union, tuple, 함수 타입, primitive alias, mapped/conditional type처럼 `interface`로 표현할 수 없거나
+  `type`이 더 명확한 경우에는 `type`을 사용한다.
 - 위 허용 범주에는 별도 근거를 요구하지 않는다. 객체 계약을 예외적으로 type alias로 선언할 때만 이슈 또는 PR에 근거를 기록한다.
 
 ### 내부 import 경로
 
 - 같은 모듈 내부에서는 상대 경로를 허용한다. 상대 경로 사용은 의무가 아니며 `@/*` 절대 경로도 사용할 수 있다.
 - 모듈 경계를 넘는 내부 참조는 `@/*` 절대 경로를 사용한다.
-- 모듈 경계는 `app`의 route segment 또는 공통 조립 영역, `features/<slice>`, `domains/<domain>`, `widgets/<widget>`, `shared/<module>`, `shared/ui/<component>`, `test`로 본다.
+- 모듈 경계는 `app`의 route segment 또는 공통 조립 영역, `features/<slice>`, `domains/<domain>`,
+  `widgets/<widget>`, `shared/<module>`, `shared/ui/<component>`, `test`로 본다.
 - 외부 package import와 CSS 파일 내부의 `@import`에는 이 규칙을 적용하지 않는다.
 - VS Code workspace는 자동 import에서 non-relative 경로를 우선하도록 설정하지만, 에디터 동작이 아니라 코드의 모듈 경계를 기준으로 리뷰한다.
 
@@ -54,6 +58,34 @@
 - 프로젝트 내부 모듈에는 재수출을 위한 `index.ts` 배럴을 만들지 않고 실제 파일 경로에서 직접 import한다.
 - `export *`와 `@/shared`, `@/features` 같은 root mega-barrel을 사용하지 않는다.
 - 외부 package 분리, 반복적인 내부 파일 이동, 명시적인 public API 관리 필요가 생기면 별도 이슈 또는 ADR에서 배럴 도입을 다시 검토한다.
+
+## API Architecture
+
+- API 구현 작업을 시작할 때 먼저
+  `docs/tasks/`를 검색한다. 요청 endpoint, operation ID 또는 resource 이름과 일치하는 task 문서가 있으면 해당 문서를 읽고 acceptance criteria와 scope를 따른다.
+- API task 문서가 여러 개 일치하면 가장 구체적인 문서를 우선하고, 적용한 문서 경로를 작업 계획과 완료 보고에 명시한다. 일치하는 문서가 없으면 아래 API Architecture 규칙과 기존 코드 convention을 기준으로 진행한다.
+- API 모듈은 `src/api` 아래에 둔다.
+- 백엔드 endpoint의 `/v1` 다음 첫 번째 path segment를 기준으로 모듈을 그룹화한다.
+    - `/v1/blogs/...`는 `src/api/blogs`에 둔다.
+    - `/v1/feeds/...`는 `src/api/feeds`에 둔다.
+- API 모듈도 위의 배럴 export 금지 규칙을 따른다. `index.ts`를 만들지 않고 필요한 파일 경로에서 직접 import한다.
+- React와 TanStack Query에 의존하지 않는 raw HTTP 함수는 `{resource}.apis.ts`에 둔다.
+    - 기존 HTTP client, base URL 처리, response wrapper, 인증과 오류 처리 방식을 재사용한다.
+- API 함수, query/mutation hook 또는 consumer가 공유하는 타입은 `{resource}.types.ts`에 둔다.
+- query key factory는 `{resource}.keys.ts`에 둔다. 반환 데이터에 영향을 주는 모든 parameter를 query key에 포함한다.
+- TanStack Query hook은 다음 경로에 둔다.
+    - query: `queries/use~Query.ts`
+    - mutation: `mutations/use~Mutation.ts`
+- query option factory는 해당 query hook 파일에 colocate하고 query key와 query function 설정의 단일 출처로 사용한다.
+- resource 전반에 공통으로 적용되는 cache invalidate/update는 mutation hook 안에 둔다.
+- 페이지 또는 feature 전용 후속 동작은 `mutate`/`mutateAsync` 호출 시 `onSuccess` 또는
+  `onError` callback으로 전달하고 shared mutation hook에 포함하지 않는다.
+- 모든 raw API 함수에 query 또는 mutation hook을 기계적으로 만들지 않는다. TanStack Query로 소비하거나 구체적인 사용 사례가 있을 때만 추가한다.
+- 목록 API라는 이유만으로 hook 종류를 정하지 않는다. 실제 pagination contract와 소비 방식에 따라 `useQuery` 또는
+  `useInfiniteQuery`를 선택한다.
+- 기존 저장소의 HTTP client, TypeScript, import, 오류 처리, 테스트 convention이 더 구체적이면 해당 convention을 따른다.
+- 단일 endpoint를 위해 generic API repository, generic query-hook builder 같은 과도한 추상화를 도입하지 않는다. 반복되는 요구가 확인되기 전에는 resource에 한정된 작은 함수와 타입을 우선한다.
+- Swagger와 기존 코드에서 확인되지 않은 parameter, response field, nullability, enum, pagination 또는 인증 동작을 추측하지 않는다.
 
 ## 테스트
 
