@@ -12,7 +12,7 @@ export default function Footer() {
 	const currentYear = new Date().getFullYear();
 
 	return (
-		<footer className="bg-surface-hover text-text-primary sm:ml-17.5">
+		<footer className="bg-surface-hover text-text-primary">
 			<div className="grid grid-cols-1 gap-y-3 px-5 py-6 sm:h-25 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-rows-[auto_1fr_auto] sm:gap-x-20 sm:gap-y-1 sm:px-8 sm:py-3 md:gap-x-36 md:px-16">
 				<div className="flex flex-col items-start gap-0.5 sm:col-start-1 sm:row-span-3 sm:self-start">
 					<Link
