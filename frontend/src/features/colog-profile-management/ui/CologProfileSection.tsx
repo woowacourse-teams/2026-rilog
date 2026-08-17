@@ -7,9 +7,8 @@ import type { SubmitEvent } from 'react';
 import { useCologProfileForm } from '@/domains/colog/hooks/use-colog-profile-form';
 import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
 import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
+import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/model/colog-profile-settings';
 import Button from '@/shared/ui/button/Button';
-
-import { areCologProfileSettingsEqual } from '../model/colog-profile-settings';
 
 interface CologProfileSectionProps {
 	onDirtyChange?: (isDirty: boolean) => void;
@@ -18,7 +17,7 @@ interface CologProfileSectionProps {
 export default function CologProfileSection({ onDirtyChange }: CologProfileSectionProps) {
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
 	const form = useCologProfileForm({ initialValue: savedProfile });
-	const isDirty = !areCologProfileSettingsEqual(form.value, savedProfile);
+	const isDirty = !isCologProfileSettingsEqual(form.value, savedProfile);
 
 	useEffect(() => {
 		onDirtyChange?.(isDirty);

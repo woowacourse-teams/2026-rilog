@@ -1,7 +1,7 @@
 import type { CologProfile } from '@/domains/colog/model/colog-info';
 import type { CologProfileValidationErrors } from '@/domains/colog/model/colog-profile-form';
 import {
-	areCologProfileFormsEqual,
+	isCologProfileFormsEqual,
 	normalizeCologProfileForm,
 	validateCologProfileForm,
 } from '@/domains/colog/model/colog-profile-form';
@@ -27,5 +27,5 @@ export const normalizeCologProfileSettings = (value: CologProfileSettingsValue):
 export const validateCologProfileSettings = (value: CologProfileSettingsValue): CologProfileValidationErrors =>
 	validateCologProfileForm(value);
 
-export const areCologProfileSettingsEqual = (left: CologProfileSettingsValue, right: CologProfileSettingsValue) =>
-	areCologProfileFormsEqual(left, right);
+export const isCologProfileSettingsEqual = (left: CologProfileSettingsValue, right: CologProfileSettingsValue) =>
+	isCologProfileFormsEqual(left, right);

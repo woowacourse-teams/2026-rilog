@@ -107,7 +107,7 @@ export const validateCologProfileForm = (value: CologProfileFormValue): CologPro
 	return errors;
 };
 
-export const areCologProfileFormsEqual = (left: CologProfileFormValue, right: CologProfileFormValue) =>
+export const isCologProfileFormsEqual = (left: CologProfileFormValue, right: CologProfileFormValue) =>
 	left.name === right.name &&
 	left.slug === right.slug &&
 	left.introduction === right.introduction &&

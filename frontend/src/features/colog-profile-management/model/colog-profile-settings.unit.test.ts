@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CologProfileSettingsValue } from './colog-profile-settings';
 
 import {
-	areCologProfileSettingsEqual,
+	isCologProfileSettingsEqual,
 	normalizeCologProfileSettings,
 	validateCologProfileSettings,
 } from './colog-profile-settings';
@@ -106,12 +106,12 @@ describe('normalizeCologProfileSettings', () => {
 	});
 });
 
-describe('areCologProfileSettingsEqual', () => {
+describe('isCologProfileSettingsEqual', () => {
 	it('텍스트와 선택한 파일까지 같은 경우에만 동일한 설정으로 판단한다', () => {
-		expect(areCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS })).toBe(true);
-		expect(areCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS, name: '새 팀' })).toBe(false);
+		expect(isCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS })).toBe(true);
+		expect(isCologProfileSettingsEqual(VALID_SETTINGS, { ...VALID_SETTINGS, name: '새 팀' })).toBe(false);
 		expect(
-			areCologProfileSettingsEqual(VALID_SETTINGS, {
+			isCologProfileSettingsEqual(VALID_SETTINGS, {
 				...VALID_SETTINGS,
 				logoFile: new File(['logo'], 'logo.png', { type: 'image/png' }),
 			}),
