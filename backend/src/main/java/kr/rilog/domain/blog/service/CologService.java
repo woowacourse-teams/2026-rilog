@@ -88,7 +88,7 @@ public class CologService {
     }
 
     private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogType(slug, BlogType.COLOG)
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 

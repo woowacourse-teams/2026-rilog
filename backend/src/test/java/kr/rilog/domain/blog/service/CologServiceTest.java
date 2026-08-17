@@ -196,7 +196,7 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
@@ -258,7 +258,7 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(admin);
         BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
@@ -285,7 +285,7 @@ class CologServiceTest {
         // given
         User requester = createOwner();
         Blog colog = createColog(requester);
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.empty());
 
@@ -309,7 +309,7 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findBySlugAndBlogType(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));

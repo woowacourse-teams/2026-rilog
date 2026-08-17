@@ -21,7 +21,7 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
             """)
     Optional<Blog> findRilogByOwnerId(@Param("ownerId") Long ownerId);
 
-    Optional<Blog> findBySlugAndBlogType(String slug, BlogType blogType);
+    Optional<Blog> findBySlugAndBlogTypeAndDeletedAtIsNull(String slug, BlogType blogType);
 
     Optional<Blog> findByIdAndBlogType(Long id, BlogType blogType);
 

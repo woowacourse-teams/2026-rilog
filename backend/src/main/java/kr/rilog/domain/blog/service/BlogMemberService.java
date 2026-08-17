@@ -1,7 +1,6 @@
 package kr.rilog.domain.blog.service;
 
 import kr.rilog.domain.blog.entity.Blog;
-import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
@@ -33,7 +32,7 @@ public class BlogMemberService {
     }
 
     private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogType(slug, BlogType.COLOG)
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
