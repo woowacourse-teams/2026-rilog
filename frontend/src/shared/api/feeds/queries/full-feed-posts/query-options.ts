@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 
 import type { FullFeedPostResponse } from '../../types';
-import type { ApiResponse } from '@/api/shared.types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 import { readFullFeedPosts } from '../../api';
 import { feedsQueryKeys } from '../keys';
