@@ -68,7 +68,7 @@ class BlogMemberServiceTest {
                 "Frontend",
                 LocalDateTime.of(2026, 8, 13, 13, 0)
         );
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findAllWithUserByBlogIdAndStatus(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(List.of(ownerMember, member));
 
@@ -105,7 +105,7 @@ class BlogMemberServiceTest {
     @DisplayName("팀 slug가 존재하지 않으면 멤버 목록 조회를 거부한다")
     void getCologMembersRejectsMissingColog() {
         // given
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> blogMemberService.getCologMembers(COLOG_SLUG))
@@ -117,7 +117,7 @@ class BlogMemberServiceTest {
     private Blog createColog() {
         return Blog.builder()
                 .id(COLOG_ID)
-                .slug(COLOG_SLUG)
+                .slug(Slug.from(COLOG_SLUG))
                 .name("리로그 팀")
                 .blogType(BlogType.COLOG)
                 .build();

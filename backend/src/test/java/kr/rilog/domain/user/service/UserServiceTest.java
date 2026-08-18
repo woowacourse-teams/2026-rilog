@@ -190,7 +190,7 @@ class UserServiceTest {
         when(userRepository.existsByNickname(Nickname.from("러로"))).thenReturn(false);
         when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.of(Blog.createRilog(user)));
+        when(blogRepository.findRilogByOwnerId(1L)).thenAnswer(invocation -> Optional.of(Blog.createRilog(user)));
 
         // when
         userService.completeOnboarding(1L, command());

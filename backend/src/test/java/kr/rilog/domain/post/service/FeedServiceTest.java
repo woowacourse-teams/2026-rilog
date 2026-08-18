@@ -11,6 +11,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -124,7 +125,7 @@ class FeedServiceTest {
                 createFeedRow(2L),
                 createCologFeedRow(1L)
         );
-        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
         when(postFeedQueryRepository.findPublicRilogPosts(
                 RILOG_ID,
                 PostStatus.PUBLISHED,
@@ -172,7 +173,7 @@ class FeedServiceTest {
                 createCologFeedRow(2L),
                 createCologFeedRow(1L)
         );
-        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(postFeedQueryRepository.findPublicCologPosts(
                 COLOG_ID,
                 PostStatus.PUBLISHED,
@@ -211,7 +212,7 @@ class FeedServiceTest {
     @DisplayName("존재하지 않거나 삭제된 공개 블로그의 게시글 목록을 조회하면 게시글을 조회하지 않고 예외가 발생한다")
     void readPublicBlogPostsThrowsExceptionWhenBlogDoesNotExist() {
         // given
-        when(blogRepository.findBySlugAndDeletedAtIsNull("unknown")).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("unknown"))).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> feedService.readPublicBlogPosts("unknown", PAGE, SIZE))
@@ -244,7 +245,7 @@ class FeedServiceTest {
     private Blog createColog() {
         return Blog.builder()
                 .id(COLOG_ID)
-                .slug(COLOG_SLUG)
+                .slug(Slug.from(COLOG_SLUG))
                 .blogType(BlogType.COLOG)
                 .build();
     }
@@ -252,7 +253,7 @@ class FeedServiceTest {
     private Blog createRilog() {
         return Blog.builder()
                 .id(RILOG_ID)
-                .slug(RILOG_SLUG)
+                .slug(Slug.from(RILOG_SLUG))
                 .blogType(BlogType.RILOG)
                 .build();
     }

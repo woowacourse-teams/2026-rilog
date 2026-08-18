@@ -2,6 +2,7 @@ package kr.rilog.domain.blog.repository;
 
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.global.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +16,7 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
 
     Optional<BlogMember> findByBlogIdAndUserIdAndStatus(Long blogId, Long userId, BlogMemberStatus status);
 
-    boolean existsByBlogSlugAndUserIdAndStatus(String slug, Long userId, BlogMemberStatus status);
+    boolean existsByBlogSlugAndUserIdAndStatus(Slug slug, Long userId, BlogMemberStatus status);
 
     @Query("""
             SELECT COUNT(blogMember)

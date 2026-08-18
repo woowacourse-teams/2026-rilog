@@ -19,6 +19,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -85,7 +86,7 @@ class PostServiceTest {
         PostSaveCommand command = createCommand();
         Post savedPost = Post.builder().id(POST_ID).build();
 
-        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
@@ -113,9 +114,9 @@ class PostServiceTest {
         PostSaveCommand command = createCommand();
         Post savedPost = Post.builder().id(POST_ID).build();
 
-        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.of(rilog));
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
@@ -140,9 +141,9 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Blog colog = createColog();
-        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
 
         // when - then
@@ -158,7 +159,7 @@ class PostServiceTest {
     @DisplayName("발행할 블로그가 존재하지 않으면 게시글 발행에 실패한다")
     void publishFailsWhenPublishingBlogDoesNotExist() {
         // given
-        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
@@ -174,7 +175,7 @@ class PostServiceTest {
         // given
         User rilogOwner = createWriter();
         Blog rilog = createRilog(rilogOwner);
-        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
@@ -191,9 +192,9 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Blog colog = createColog();
-        when(blogRepository.findBySlugAndDeletedAtIsNull(COLOG_SLUG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 
@@ -216,7 +217,7 @@ class PostServiceTest {
                 .githubId(200L)
                 .build();
         Blog rilog = createRilog(rilogOwner);
-        when(blogRepository.findBySlugAndDeletedAtIsNull(RILOG_SLUG)).thenReturn(Optional.of(rilog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
 
         // when - then
@@ -233,7 +234,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
                 .thenReturn(Optional.of(publicPost));
 
         // when
@@ -250,7 +251,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, COLOG_SLUG))
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(COLOG_SLUG)))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -278,7 +279,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
@@ -294,7 +295,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
                 .thenReturn(Optional.of(privatePost));
 
         // when
@@ -310,7 +311,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, RILOG_SLUG))
+        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
@@ -332,7 +333,7 @@ class PostServiceTest {
                 .id(RILOG_ID)
                 .owner(owner)
                 .name("작성자 블로그")
-                .slug(RILOG_SLUG)
+                .slug(Slug.from(RILOG_SLUG))
                 .blogType(BlogType.RILOG)
                 .build();
     }
@@ -342,7 +343,7 @@ class PostServiceTest {
                 .id(COLOG_ID)
                 .owner(createWriter())
                 .name("팀 블로그")
-                .slug(COLOG_SLUG)
+                .slug(Slug.from(COLOG_SLUG))
                 .blogType(BlogType.COLOG)
                 .build();
     }

@@ -14,6 +14,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.global.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -88,7 +89,7 @@ public class CologService {
     }
 
     private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
@@ -98,13 +99,13 @@ public class CologService {
     }
 
     private void validateNotActiveMember(String slug, Long userId) {
-        if (blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(slug, userId, BlogMemberStatus.ACTIVE)) {
+        if (blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(slug), userId, BlogMemberStatus.ACTIVE)) {
             throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
         }
     }
 
     private void validateSlugUnique(String slug) {
-        if (blogRepository.existsBySlug(slug)) {
+        if (blogRepository.existsBySlug(Slug.from(slug))) {
             throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
         }
     }

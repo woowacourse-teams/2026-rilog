@@ -1,12 +1,13 @@
 package kr.rilog.domain.post.repository;
 
 
-import org.springframework.data.repository.query.Param;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.global.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -52,7 +53,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         """)
     Optional<Post> findDetailByIdAndBlogSlug(
             @Param("postId") Long postId,
-            @Param("slug") String slug
+            @Param("slug") Slug slug
     );
 
     long countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(

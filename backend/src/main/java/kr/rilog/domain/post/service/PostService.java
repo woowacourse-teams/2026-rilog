@@ -17,6 +17,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.global.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,7 +84,7 @@ public class PostService {
 
     private void validateCologMember(Blog colog, User writer) {
         boolean activeMember = blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(
-                colog.getSlug(),
+                Slug.from(colog.getSlug()),
                 writer.getId(),
                 BlogMemberStatus.ACTIVE
         );
@@ -98,7 +99,7 @@ public class PostService {
     }
 
     private Blog getBlog(String slug) {
-        return blogRepository.findBySlugAndDeletedAtIsNull(slug)
+        return blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(slug))
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
@@ -108,7 +109,7 @@ public class PostService {
     }
 
     private Post getPost(String slug, Long postId) {
-        return postRepository.findDetailByIdAndBlogSlug(postId, slug)
+        return postRepository.findDetailByIdAndBlogSlug(postId, Slug.from(slug))
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 

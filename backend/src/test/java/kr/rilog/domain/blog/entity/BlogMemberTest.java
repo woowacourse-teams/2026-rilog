@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +31,7 @@ class BlogMemberTest {
                 .id(2L)
                 .owner(owner)
                 .name("리로그 팀")
-                .slug("rilog-team")
+                .slug(Slug.from("rilog-team"))
                 .blogType(BlogType.COLOG)
                 .build();
         LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);
@@ -72,7 +73,7 @@ class BlogMemberTest {
                 .id(2L)
                 .owner(owner)
                 .name("리로그 팀")
-                .slug("rilog-team")
+                .slug(Slug.from("rilog-team"))
                 .blogType(BlogType.COLOG)
                 .build();
         LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);

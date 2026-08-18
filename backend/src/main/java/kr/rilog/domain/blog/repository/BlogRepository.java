@@ -2,6 +2,7 @@ package kr.rilog.domain.blog.repository;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.global.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,13 +22,13 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
             """)
     Optional<Blog> findRilogByOwnerId(@Param("ownerId") Long ownerId);
 
-    Optional<Blog> findBySlugAndBlogTypeAndDeletedAtIsNull(String slug, BlogType blogType);
+    Optional<Blog> findBySlugAndBlogTypeAndDeletedAtIsNull(Slug slug, BlogType blogType);
 
     Optional<Blog> findByIdAndBlogType(Long id, BlogType blogType);
 
-    Optional<Blog> findBySlugAndDeletedAtIsNull(String slug);
+    Optional<Blog> findBySlugAndDeletedAtIsNull(Slug slug);
 
-    boolean existsBySlug(String slug);
+    boolean existsBySlug(Slug slug);
 
     @Query("""
             SELECT blogMember.blog
