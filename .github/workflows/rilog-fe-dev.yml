@@ -96,24 +96,31 @@ jobs:
 
       - name: Deploy to Server
         run: |
+          # 1. nvm 및 환경 변수 로드 (이 부분을 추가하세요!)
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          
+          # nvm이 정상적으로 로드되었는지 확인 (선택 사항)
+          nvm use 24 # 설정한 노드 버전에 맞게 수정하세요.
+
           # Node.js, pnpm, pm2가 전역(sudo)으로 설치되었으므로 별도 환경 세팅 없이 바로 실행
           if ! command -v pnpm &> /dev/null; then
-             echo "에러: pnpm 명령어를 찾을 수 없습니다. 전역 설치 경로가 PATH에 없는지 확인해주세요."
-             exit 1
+            echo "에러: pnpm 명령어를 찾을 수 없습니다. 전역 설치 경로가 PATH에 없는지 확인해주세요."
+            exit 1
           fi
 
           TARGET_DIR="/home/ubuntu/rilog-next"
-          
-          # 1. 대상 디렉터리 생성 및 압축 해제
+
+          # 대상 디렉터리 생성 및 압축 해제
           mkdir -p $TARGET_DIR
           tar -xzf /tmp/rilog-fe/fe-build.tar.gz -C $TARGET_DIR
           rm -rf /tmp/rilog-fe
-          
+
           cd $TARGET_DIR
-          
-          # 2. 의존성 설치 (전역 pnpm 사용)
+
+          # 의존성 설치 (전역 pnpm 사용)
           pnpm install --prod --frozen-lockfile
-          
-          # 3. pm2 재시작
+
+          # pm2 재시작
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
