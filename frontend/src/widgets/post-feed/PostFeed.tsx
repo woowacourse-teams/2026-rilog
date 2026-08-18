@@ -1,15 +1,26 @@
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { Suspense } from 'react';
 
-import { fetchMockPostFeedPage } from '@/features/post-feed/model/post-feed.mock';
 import PostFeedGrid from '@/features/post-feed/ui/PostFeedGrid';
 import PostFeedSkeleton from '@/features/post-feed/ui/PostFeedSkeleton';
 
-async function PostFeedContent() {
-	// TODO(API 연동): 서버에서 실제 전체 피드 첫 페이지를 조회하도록 교체
-	const initialPage = await fetchMockPostFeedPage(0).catch(() => null);
+import { prefetchFullFeedPostsQuery } from '@/shared/api/feeds/queries/full-feed-posts/prefetch-query';
+import { fullFeedPostsQueryOptions } from '@/shared/api/feeds/queries/full-feed-posts/query-options';
 
-	return initialPage === null ? <PostFeedGrid initialRequestFailed /> : <PostFeedGrid initialPage={initialPage} />;
+async function PostFeedContent() {
+	const queryClient = new QueryClient();
+	const queryOptions = fullFeedPostsQueryOptions();
+
+	await prefetchFullFeedPostsQuery(queryClient);
+
+	const initialRequestFailed = queryClient.getQueryState(queryOptions.queryKey)?.status === 'error';
+
+	return (
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<PostFeedGrid initialRequestFailed={initialRequestFailed} />
+		</HydrationBoundary>
+	);
 }
 
 export default function PostFeed() {

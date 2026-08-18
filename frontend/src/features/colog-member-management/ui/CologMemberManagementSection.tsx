@@ -168,7 +168,7 @@ export default function CologMemberManagementSection({
 		>
 			<section className="px-6 sm:px-8 lg:px-0">
 				<form id="member-settings-form" onSubmit={handleSave}>
-					<div className="overflow-x-auto overflow-y-hidden overscroll-x-contain">
+					<div className="overflow-x-auto overflow-y-hidden overscroll-x-contain [contain:paint]">
 						<table className="w-full min-w-3xl table-fixed border-collapse text-left">
 							<caption className="sr-only">코로그 멤버 목록</caption>
 							<colgroup>

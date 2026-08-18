@@ -42,7 +42,7 @@ describe('MobileHeader', () => {
 	});
 
 	it('로그인 사용자에게 아바타를 표시하고 게시글에서도 피드 링크를 현재 위치로 표시한다', () => {
-		navigationMock.pathname = '/posts/17';
+		navigationMock.pathname = '/@rilog/posts/17';
 		renderHeader(true);
 
 		const feedLink = screen.getByRole('link', { name: 'Rilog.' });

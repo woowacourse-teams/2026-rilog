@@ -24,13 +24,13 @@ public class PostController implements PostApiSpec {
 
     @AuthGuard
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/blogs/{blogId}/posts")
+    @PostMapping("/blogs/{slug}/posts")
     public ApiResponse<PostPublishResponse> create(
-            @PathVariable Long blogId,
+            @PathVariable String slug,
             @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
     ) {
-        PostPublishResult result = postService.publish(request.toCommand(), blogId, requesterId);
+        PostPublishResult result = postService.publish(request.toCommand(), slug, requesterId);
         PostPublishResponse data = PostPublishResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "게시글이 발행되었습니다.", data);
     }

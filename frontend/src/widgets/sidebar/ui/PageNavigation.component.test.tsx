@@ -12,7 +12,7 @@ describe('PageNavigation', () => {
 		const [feedLink, cologLink] = within(navigation).getAllByRole('link');
 
 		expect(feedLink).toHaveAttribute('aria-current', 'page');
-		expect(cologLink).toHaveAttribute('href', '/cologs');
+		expect(cologLink).toHaveAttribute('href', '/@rilog');
 		expect(feedLink).toHaveAccessibleName();
 		expect(cologLink).toHaveAccessibleName();
 	});

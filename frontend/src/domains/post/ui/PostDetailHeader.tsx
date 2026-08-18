@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostDetailAuthor } from '@/domains/post/model/post-detail';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { buildCologHomePath } from '@/shared/routes/app-routes';
 
 interface PostDetailHeaderProps {
 	title: string;
@@ -19,7 +20,7 @@ export default function PostDetailHeader({ title, publishedAt, author }: PostDet
 
 			<div className="mt-7 flex items-center gap-3 text-label-2 text-text-secondary">
 				<Link
-					href={`/users/${author.slug}`}
+					href={buildCologHomePath(author.slug)}
 					className="flex items-center gap-2 rounded-full transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
 					<UserAvatar fallback={author.nickname.slice(0, 1)} label={`${author.nickname} 프로필`} size="md" />

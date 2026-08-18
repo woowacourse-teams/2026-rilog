@@ -39,7 +39,8 @@ public interface CologApiSpec {
     )
     ApiResponse<CologMemberInviteResponse> inviteMember(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
-            @PathVariable("cologId") Long cologId,
+            @Parameter(description = "멤버를 초대할 팀 블로그 slug", example = "rilog-team")
+            @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
     );
 

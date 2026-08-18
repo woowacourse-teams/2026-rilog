@@ -2,6 +2,7 @@ import type { PostSummary } from './post-summary';
 
 export interface PostFeedColog {
 	name: string;
+	slug: string;
 	logoUrl: string | null;
 }
 

@@ -11,5 +11,6 @@ export const mockPublishPost: PublishPost = async () => {
 
 	return {
 		postId: `mock-${crypto.randomUUID()}`,
+		slug: 'rilog',
 	};
 };

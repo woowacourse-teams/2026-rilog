@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('팀 위험 영역에서 영구 삭제의 영향을 확인하고 취소한다', async ({ page }) => {
-	await page.goto('/co-logs/rilog/settings');
+	await page.goto('/@rilog/settings?tab=danger');
 	await page.getByRole('tab', { name: '위험 영역' }).click();
 
 	await expect(page.getByRole('heading', { name: '팀 삭제' })).toBeVisible();
