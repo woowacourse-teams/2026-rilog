@@ -95,6 +95,7 @@ jobs:
           path: /tmp/rilog-fe
 
       - name: Deploy to Server
+        shell: bash -il {0}
         run: |
           # Node.js와 pnpm이 전역 설치되어 있으므로 바로 버전 확인 (로그용)
           echo "🟢 Node 버전: $(node -v)"
