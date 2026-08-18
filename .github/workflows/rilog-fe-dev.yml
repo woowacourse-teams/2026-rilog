@@ -84,8 +84,8 @@ jobs:
     name: Deploy Rilog FE Dev
     runs-on: [ self-hosted, frontend ] # frontend 라벨로 분기
     needs: build
-    # 병합(Push) 이벤트이거나 수동 실행(workflow_dispatch)일 때 배포 수행
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # 테스트를 위해 임시로 PR(pull_request) 업데이트 시에도 배포되도록 허용
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
 
     steps:
       - name: Download Build Artifacts
