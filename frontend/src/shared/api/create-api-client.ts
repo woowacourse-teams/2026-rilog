@@ -107,7 +107,7 @@ export const createApiClient = ({
 						return;
 					}
 
-					const errorDetail = await readErrorDetail(response);
+					const errorDetail = await readErrorDetail(response.clone());
 					if (errorDetail?.errorCode !== API_ERROR_CODES.EXPIRED_ACCESS_TOKEN) {
 						return;
 					}

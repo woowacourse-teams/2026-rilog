@@ -19,7 +19,10 @@ afterEach(() => {
 
 describe('AuthenticatedQueryCacheSubscriber', () => {
 	it('token 갱신 실패 시 인증 query cache를 제거하고 구독을 정리한다', async () => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createUnauthorizedResponse()));
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockImplementation(() => Promise.resolve(createUnauthorizedResponse())),
+		);
 		const queryClient = new QueryClient();
 		const currentUserQueryKey = [...authenticatedQueryKeys.all, 'current-user'] as const;
 		const postsQueryKey = ['posts'] as const;

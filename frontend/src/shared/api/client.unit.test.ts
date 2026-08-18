@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
 import { createEmptyResponse, createUnauthorizedResponse } from '@/test/fixtures/api-response';
 
-import { client, subscribeTokenRefreshFailure } from './client';
+import { apiClient, subscribeTokenRefreshFailure } from './client';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -19,7 +19,7 @@ describe('apiClient', () => {
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
 
-		await client.get('posts');
+		await apiClient.get('posts');
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.url).toBe('https://api.rilog.test/posts');
@@ -32,7 +32,7 @@ describe('apiClient', () => {
 		const listener = vi.fn();
 		const unsubscribe = subscribeTokenRefreshFailure(listener);
 
-		await expect(client.get('posts')).rejects.toMatchObject({
+		await expect(apiClient.get('posts')).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
