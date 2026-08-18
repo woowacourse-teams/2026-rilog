@@ -96,6 +96,15 @@ jobs:
 
       - name: Deploy to Server
         run: |
+          # 0. 비대화형(non-interactive) 셸에서도 nvm을 로드하여 npm/node를 찾을 수 있도록 환경 설정
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          
+          if ! command -v npm &> /dev/null; then
+             echo "에러: npm 명령어를 찾을 수 없습니다. EC2 서버에 Node.js가 설치되어 있는지 확인해주세요!"
+             exit 1
+          fi
+
           TARGET_DIR="/home/ubuntu/rilog-next"
           
           # 1. 대상 디렉터리 생성 및 압축 해제
@@ -105,7 +114,7 @@ jobs:
           
           cd $TARGET_DIR
           
-          # 2. EC2 서버에서 의존성 설치 (실행 환경 호환성 문제 우회)
+          # 2. EC2 서버에서 의존성 설치
           npm install -g pnpm@11.21.0
           pnpm install --prod --frozen-lockfile
           
