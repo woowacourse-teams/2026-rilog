@@ -34,4 +34,24 @@ describe('normalizeApiError', () => {
 	it('응답이 없는 오류는 network 오류로 정규화한다', () => {
 		expect(normalizeApiError(new TypeError('Failed to fetch'))).toMatchObject({ kind: 'network' });
 	});
+
+	it('ErrorDetail 규격을 따르지 않는 HTTP 에러(예: 502 Bad Gateway)는 http 오류로 정규화한다', async () => {
+		const client = ky.create({
+			fetch: vi.fn().mockResolvedValue(
+				new Response('<html>502 Bad Gateway</html>', {
+					headers: { 'Content-Type': 'text/html' },
+					status: 502,
+				}),
+			),
+		});
+
+		const error = await client.get('https://api.rilog.test/posts').catch(normalizeApiError);
+
+		expect(error).toMatchObject({
+			kind: 'http',
+		});
+		if (error && typeof error === 'object' && 'response' in error) {
+			expect(error.response.status).toBe(502);
+		}
+	});
 });

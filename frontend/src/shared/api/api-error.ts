@@ -11,8 +11,10 @@ export type NormalizedApiError =
 			category: ReturnType<typeof getApiErrorKind>;
 			response: Response;
 	  }
+	| { kind: 'http'; response: Response; cause: HTTPError }
 	| { kind: 'timeout'; cause: TimeoutError }
-	| { kind: 'network' | 'unknown'; cause: unknown };
+	| { kind: 'network'; cause: TypeError }
+	| { kind: 'unknown'; cause: unknown };
 
 export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 	if (typeof value !== 'object' || value === null) {
@@ -30,13 +32,16 @@ export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 };
 
 export const normalizeApiError = (error: unknown): NormalizedApiError => {
-	if (error instanceof HTTPError && isErrorDetail(error.data)) {
-		return {
-			kind: 'api',
-			detail: error.data,
-			category: getApiErrorKind(error.data.errorCode),
-			response: error.response,
-		};
+	if (error instanceof HTTPError) {
+		if (isErrorDetail(error.data)) {
+			return {
+				kind: 'api',
+				detail: error.data,
+				category: getApiErrorKind(error.data.errorCode),
+				response: error.response,
+			};
+		}
+		return { kind: 'http', response: error.response, cause: error };
 	}
 
 	if (error instanceof TimeoutError) {
