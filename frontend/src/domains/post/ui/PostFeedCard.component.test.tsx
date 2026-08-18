@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { PostFeedItem } from '@/domains/post/model/post-feed';
+import type { PostFeedItem } from '@/domains/post/model/post';
 
 import PostFeedCard from './PostFeedCard';
 
@@ -11,11 +11,12 @@ const PERSONAL_POST: PostFeedItem = {
 	thumbnailUrl: 'https://images.rilog.test/post.png',
 	publishedAt: '2026-08-04T23:59:59',
 	author: {
+		id: 1,
 		nickname: '리로거',
 		slug: 'rilogger',
 		profileImageUrl: null,
 	},
-	colog: null,
+	blog: { id: 1, name: '리로거', slug: 'rilogger', type: 'RILOG', profileImageUrl: null },
 };
 
 describe('PostFeedCard', () => {
@@ -69,7 +70,7 @@ describe('PostFeedCard', () => {
 			<PostFeedCard
 				post={{
 					...PERSONAL_POST,
-					colog: { name: '리로그 팀', slug: 'rilog-team', logoUrl: null },
+					blog: { id: 1, name: '리로그 팀', slug: 'rilog-team', type: 'COLOG', profileImageUrl: null },
 				}}
 			/>,
 		);

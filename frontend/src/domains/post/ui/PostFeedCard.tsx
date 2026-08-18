@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
-import type { PostFeedItem } from '@/domains/post/model/post-feed';
+import type { PostFeedItem } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
@@ -13,12 +13,10 @@ interface PostFeedCardProps {
 }
 
 export default function PostFeedCard({ post }: PostFeedCardProps) {
-	const ownerSlug = post.colog?.slug ?? post.author.slug;
-
 	return (
 		<li className="[contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
 			<Link
-				href={buildPostDetailPath(ownerSlug, String(post.id))}
+				href={buildPostDetailPath(post.blog.slug, String(post.id))}
 				className="group relative z-0 block h-full rounded-xl hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring active:z-10"
 			>
 				<article className="flex h-full flex-col">
@@ -32,7 +30,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 							fallbackClassName="object-contain p-10 sm:p-12"
 							isScaledOnInteraction
 						/>
-						{post.colog !== null && <PostFeedCologBadge colog={post.colog} />}
+						{post.blog.type === 'COLOG' && <PostFeedCologBadge colog={post.blog} />}
 					</div>
 
 					<div className="mt-4 flex flex-1 flex-col">

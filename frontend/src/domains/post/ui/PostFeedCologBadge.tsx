@@ -1,10 +1,11 @@
-import type { PostFeedColog } from '@/domains/post/model/post-feed';
+import type { CologBlog } from '@/domains/blog/model/blog';
 
 import PostFeedImage from './PostFeedImage';
 
 interface PostFeedCologBadgeProps {
-	colog: PostFeedColog;
-	//추후 chapter 들어올 예정
+	// 추후 챕터까지 추가
+	// colog: Pick<CologBlog, 'profileImageUrl' | 'name' | 'chapter'>;
+	colog: Pick<CologBlog, 'profileImageUrl' | 'name'>;
 }
 
 export default function PostFeedCologBadge({ colog }: PostFeedCologBadgeProps) {
@@ -12,7 +13,7 @@ export default function PostFeedCologBadge({ colog }: PostFeedCologBadgeProps) {
 		<span className="absolute top-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-md border border-border-default bg-surface py-1 pr-2.5 pl-1.5 text-caption-2 font-semibold text-text-primary shadow-sm">
 			<span className="size-5 shrink-0 overflow-hidden rounded-full bg-background">
 				<PostFeedImage
-					src={colog.logoUrl}
+					src={colog.profileImageUrl}
 					alt={colog.name}
 					width={20}
 					height={20}
