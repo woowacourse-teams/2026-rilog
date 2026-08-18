@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
-import { findFirstBodyImageUrl, resolveRepresentativeImagePreview } from './representative-image';
+import { findFirstBodyImageUrl, resolveRepresentativeImagePreview } from './resolve-representative-image';
 
 interface TestBlockInput {
 	type?: string;

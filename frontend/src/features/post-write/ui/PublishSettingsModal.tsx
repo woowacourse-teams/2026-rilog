@@ -6,13 +6,13 @@ import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
 import type { ChangeEvent } from 'react';
 
-import type { CologSummary } from '@/domains/colog/model/colog-info';
-import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post-category';
+import type { CologOption } from '@/domains/blog/model/colog';
+import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import Button from '@/shared/ui/button/Button';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Modal from '@/shared/ui/modal/Modal';
 
-import { resolveRepresentativeImagePreview } from '../model/representative-image';
+import { resolveRepresentativeImagePreview } from '../lib/resolve-representative-image';
 
 interface PublishSettingsModalProps {
 	open: boolean;
@@ -21,7 +21,7 @@ interface PublishSettingsModalProps {
 	selectedImageUrl: string | null;
 	bodyBlocks: Block[];
 	defaultImageUrl: string;
-	cologOptions: CologSummary[];
+	cologOptions: CologOption[];
 	cologError?: string;
 	publishError?: string;
 	isPublishing: boolean;

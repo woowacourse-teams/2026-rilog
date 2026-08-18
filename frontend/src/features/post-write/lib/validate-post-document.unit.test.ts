@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
-import { isMeaningfulPostBody, validatePostDocument } from './post-write-validation';
+import { isMeaningfulPostBody, validatePostDocument } from './validate-post-document';
 
 interface TestBlockInput {
 	type?: string;
