@@ -46,12 +46,12 @@ public record PublicBlogFeedPostResponse(
     public record PostItemResponse(
             Long postId,
             String title,
-            String thumbnailUrl,
+            String thumbnailImageUrl,
             String category,
             String visibility,
             LocalDateTime publishedAt,
-            AuthorResponse user,
-            BlogResponse blog
+            AuthorResponse author,
+            OwnerResponse owner
     ) {
 
         private static PostItemResponse from(PostFullFeedRow row) {
@@ -68,31 +68,31 @@ public record PublicBlogFeedPostResponse(
                             row.authorSlug(),
                             row.authorProfileImageUrl()
                     ),
-                    row.isTeamPost()
-                            ? new BlogResponse(
-                            row.blogId(),
-                            row.name(),
-                            row.slug(),
-                            row.profileUrl()
+                    new OwnerResponse(
+                            row.ownerType(),
+                            row.ownerId(),
+                            row.ownerSlug(),
+                            row.ownerName(),
+                            row.ownerProfileImageUrl()
                     )
-                            : null
             );
         }
     }
 
     public record AuthorResponse(
             Long userId,
-            String nickname,
+            String name,
             String slug,
             String profileImageUrl
     ) {
     }
 
-    public record BlogResponse(
+    public record OwnerResponse(
+            BlogType type,
             Long blogId,
-            String name,
             String slug,
-            String profileUrl
+            String name,
+            String profileImageUrl
     ) {
     }
 

@@ -23,11 +23,11 @@ public record PostPublishRequest(
         @NotNull(message = "공개 범위는 필수입니다.")
         PostVisibility visibility,
 
-        @Size(max = 512, message = "썸네일 URL은 512자 이하여야 합니다.")
-        String thumbnailUrl,
+        @Size(max = 512, message = "썸네일 이미지 URL은 512자 이하여야 합니다.")
+        String thumbnailImageUrl,
 
-        @Size(max = 512, message = "로고 URL은 512자 이하여야 합니다.")
-        String logoUrl
+        @Size(max = 512, message = "프로필 이미지 URL은 512자 이하여야 합니다.")
+        String profileImageUrl
 
 ) {
 
@@ -37,7 +37,7 @@ public record PostPublishRequest(
                 content,
                 category,
                 visibility,
-                thumbnailUrl
+                thumbnailImageUrl
         );
     }
 

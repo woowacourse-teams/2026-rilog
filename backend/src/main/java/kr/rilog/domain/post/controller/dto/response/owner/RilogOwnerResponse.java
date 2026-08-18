@@ -17,7 +17,7 @@ public record RilogOwnerResponse(
                 rilog.getId(),
                 rilog.getSlug(),
                 rilog.getName(),
-                rilog.getLogoUrl()
+                rilog.getProfileImageUrl()
         );
     }
 }

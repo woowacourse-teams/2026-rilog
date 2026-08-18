@@ -99,6 +99,9 @@ class FeedServiceTest {
         assertThat(response.posts())
                 .extracting(FullFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
+        assertThat(response.posts())
+                .extracting(post -> post.owner().type())
+                .containsExactly(BlogType.RILOG, BlogType.RILOG);
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.numberOfElements()).isEqualTo(rows.size());
@@ -131,10 +134,15 @@ class FeedServiceTest {
         assertThat(response.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
-        assertThat(response.posts().get(0).blog()).isNull();
-        assertThat(response.posts().get(1).blog())
-                .extracting(PublicBlogFeedPostResponse.BlogResponse::slug)
-                .isEqualTo(COLOG_SLUG);
+        assertThat(response.posts().get(0).owner())
+                .extracting(PublicBlogFeedPostResponse.OwnerResponse::type)
+                .isEqualTo(BlogType.RILOG);
+        assertThat(response.posts().get(1).owner())
+                .extracting(
+                        PublicBlogFeedPostResponse.OwnerResponse::type,
+                        PublicBlogFeedPostResponse.OwnerResponse::slug
+                )
+                .containsExactly(BlogType.COLOG, COLOG_SLUG);
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.hasNext()).isTrue();
         verify(postFeedQueryRepository).findPublicRilogPosts(
@@ -171,6 +179,9 @@ class FeedServiceTest {
         assertThat(response.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
+        assertThat(response.posts())
+                .extracting(post -> post.owner().type())
+                .containsExactly(BlogType.COLOG, BlogType.COLOG);
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.hasNext()).isFalse();
         verify(postFeedQueryRepository).findPublicCologPosts(
@@ -207,10 +218,11 @@ class FeedServiceTest {
                 "작성자",
                 "writer",
                 "https://example.com/profile.png",
-                null,
-                null,
-                null,
-                null
+                BlogType.RILOG,
+                RILOG_ID,
+                RILOG_SLUG,
+                "작성자",
+                "https://example.com/profile.png"
         );
     }
 
@@ -242,9 +254,10 @@ class FeedServiceTest {
                 "작성자",
                 "writer",
                 "https://example.com/profile.png",
+                BlogType.COLOG,
                 COLOG_ID,
-                "팀 블로그",
                 COLOG_SLUG,
+                "팀 블로그",
                 "https://example.com/colog-logo.png"
         );
     }

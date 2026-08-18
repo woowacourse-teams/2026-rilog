@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.repository.projection;
 
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 
@@ -18,14 +19,10 @@ public record PostFullFeedRow(
         String authorSlug,
         String authorProfileImageUrl,
 
-        Long blogId,
-        String name,
-        String slug,
-        String profileUrl
+        BlogType ownerType,
+        Long ownerId,
+        String ownerSlug,
+        String ownerName,
+        String ownerProfileImageUrl
 ) {
-
-    public boolean isTeamPost() {
-        return blogId != null;
-    }
-
 }

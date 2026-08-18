@@ -21,10 +21,10 @@ public record CologPublicProfileResponse(
         @Schema(description = "팀 소개", example = "함께 쓰는 기술 블로그")
         String introduction,
 
-        @Schema(description = "팀 로고 이미지 URL", example = "https://example.com/logo.png")
-        String logoUrl,
+        @Schema(description = "팀 프로필 이미지 URL", example = "https://example.com/profileImage.png")
+        String profileImageUrl,
 
-        @Schema(description = "팀 커버 이미지 URL", example = "https://example.com/cover.png")
+        @Schema(description = "팀 커버 이미지 URL", example = "https://example.com/coverImage.png")
         String coverImageUrl,
 
         @Schema(description = "팀 서비스 URL", example = "https://rilog.example.com")
@@ -49,7 +49,7 @@ public record CologPublicProfileResponse(
                 result.name(),
                 result.slug(),
                 result.introduction(),
-                result.logoUrl(),
+                result.profileImageUrl(),
                 result.coverImageUrl(),
                 result.serviceUrl(),
                 result.githubUrl(),

@@ -6,7 +6,7 @@ public record MyCologResponse(
         Long cologId,
         String slug,
         String name,
-        String logoUrl
+        String profileImageUrl
 ) {
 
     public static MyCologResponse of(Blog blog) {
@@ -14,7 +14,7 @@ public record MyCologResponse(
                 blog.getId(),
                 blog.getSlug(),
                 blog.getName(),
-                blog.getLogoUrl()
+                blog.getProfileImageUrl()
         );
     }
 

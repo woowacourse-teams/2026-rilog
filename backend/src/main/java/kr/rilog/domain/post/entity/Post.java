@@ -70,7 +70,7 @@ public class Post extends BaseEntity {
     private PostVisibility visibility;
 
     @Column(length = 512)
-    private String thumbnailUrl;
+    private String thumbnailImageUrl;
 
     private LocalDateTime publishedAt;
 
@@ -91,7 +91,7 @@ public class Post extends BaseEntity {
                 .content(detail.content())
                 .category(detail.category())
                 .visibility(detail.visibility())
-                .thumbnailUrl(detail.thumbnailUrl())
+                .thumbnailImageUrl(detail.thumbnailUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
@@ -110,7 +110,7 @@ public class Post extends BaseEntity {
                 .content(detail.content())
                 .category(detail.category())
                 .visibility(detail.visibility())
-                .thumbnailUrl(detail.thumbnailUrl())
+                .thumbnailImageUrl(detail.thumbnailUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
                 .build();
