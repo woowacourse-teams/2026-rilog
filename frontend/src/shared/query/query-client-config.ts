@@ -3,11 +3,11 @@ import type { NormalizedApiError } from '@/shared/api/api-error';
 export const isRetryableError = (error: unknown): boolean => {
 	const apiError = error as NormalizedApiError;
 
-	if (apiError.kind === 'network' || apiError.kind === 'timeout') {
+	if (apiError.type === 'network' || apiError.type === 'timeout') {
 		return true;
 	}
 
-	if (apiError.kind === 'http' || apiError.kind === 'api') {
+	if (apiError.type === 'http' || apiError.type === 'api') {
 		return apiError.response.status >= 500 && apiError.response.status < 600;
 	}
 
@@ -17,7 +17,7 @@ export const isRetryableError = (error: unknown): boolean => {
 export const globalMutationErrorHandler = (error: Error, consoleError = console.error): void => {
 	const apiError = error as unknown as NormalizedApiError;
 	// REQUEST_VALIDATION_FAILED (필드 오류)는 지역(form) mutation onError에 위임합니다.
-	if (apiError.kind === 'api' && apiError.category === 'field') {
+	if (apiError.type === 'api' && apiError.kind === 'field') {
 		return;
 	}
 

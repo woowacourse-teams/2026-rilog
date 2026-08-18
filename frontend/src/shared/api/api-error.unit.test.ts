@@ -27,14 +27,14 @@ describe('normalizeApiError', () => {
 		const error = await client.get('https://api.rilog.test/posts').catch(normalizeApiError);
 
 		expect(error).toMatchObject({
-			kind: 'api',
-			category: 'field',
+			type: 'api',
+			kind: 'field',
 			detail: { errorCode: API_ERROR_CODES.REQUEST_VALIDATION_FAILED, invalidParams: [{ name: 'slug' }] },
 		});
 	});
 
 	it('응답이 없는 오류는 network 오류로 정규화한다', () => {
-		expect(normalizeApiError(new TypeError('Failed to fetch'))).toMatchObject({ kind: 'network' });
+		expect(normalizeApiError(new TypeError('Failed to fetch'))).toMatchObject({ type: 'network' });
 	});
 
 	it('ErrorDetail 규격을 따르지 않는 HTTP 에러(예: 502 Bad Gateway)는 http 오류로 정규화한다', async () => {
@@ -50,7 +50,7 @@ describe('normalizeApiError', () => {
 		const error = await client.get('https://api.rilog.test/posts').catch(normalizeApiError);
 
 		expect(error).toMatchObject({
-			kind: 'http',
+			type: 'http',
 		});
 		if (error && typeof error === 'object' && 'response' in error) {
 			expect(error.response.status).toBe(502);
@@ -61,8 +61,8 @@ describe('normalizeApiError', () => {
 describe('getFieldErrors', () => {
 	it('REQUEST_VALIDATION_FAILED 에러의 invalidParams를 필드별 에러 객체로 매핑한다', () => {
 		const error = {
-			kind: 'api',
-			category: 'field',
+			type: 'api',
+			kind: 'field',
 			detail: {
 				status: 400,
 				error: 'BAD_REQUEST',
@@ -86,8 +86,8 @@ describe('getFieldErrors', () => {
 
 	it('필드 에러가 아니면 null을 반환한다', () => {
 		const error = {
-			kind: 'api',
-			category: 'auth',
+			type: 'api',
+			kind: 'auth',
 			detail: {
 				errorCode: API_ERROR_CODES.EXPIRED_ACCESS_TOKEN,
 				invalidParams: null,

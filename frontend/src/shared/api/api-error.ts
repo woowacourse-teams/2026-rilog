@@ -6,15 +6,15 @@ import { getApiErrorKind } from './error-codes';
 
 export type NormalizedApiError =
 	| {
-			kind: 'api';
+			type: 'api';
 			detail: ErrorDetail;
-			category: ReturnType<typeof getApiErrorKind>;
+			kind: ReturnType<typeof getApiErrorKind>;
 			response: Response;
 	  }
-	| { kind: 'http'; response: Response; cause: HTTPError }
-	| { kind: 'timeout'; cause: TimeoutError }
-	| { kind: 'network'; cause: TypeError }
-	| { kind: 'unknown'; cause: unknown };
+	| { type: 'http'; response: Response; cause: HTTPError }
+	| { type: 'timeout'; cause: TimeoutError }
+	| { type: 'network'; cause: TypeError }
+	| { type: 'unknown'; cause: unknown };
 
 export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 	if (typeof value !== 'object' || value === null) {
@@ -35,24 +35,24 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 	if (error instanceof HTTPError) {
 		if (isErrorDetail(error.data)) {
 			return {
-				kind: 'api',
+				type: 'api',
 				detail: error.data,
-				category: getApiErrorKind(error.data.errorCode),
+				kind: getApiErrorKind(error.data.errorCode),
 				response: error.response,
 			};
 		}
-		return { kind: 'http', response: error.response, cause: error };
+		return { type: 'http', response: error.response, cause: error };
 	}
 
 	if (error instanceof TimeoutError) {
-		return { kind: 'timeout', cause: error };
+		return { type: 'timeout', cause: error };
 	}
 
 	if (error instanceof TypeError) {
-		return { kind: 'network', cause: error };
+		return { type: 'network', cause: error };
 	}
 
-	return { kind: 'unknown', cause: error };
+	return { type: 'unknown', cause: error };
 };
 
 /**
@@ -60,7 +60,7 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
  * 에러가 필드 오류가 아니거나 파라미터가 없으면 null을 반환합니다.
  */
 export const getFieldErrors = (error: NormalizedApiError): Record<string, string> | null => {
-	if (error.kind !== 'api' || error.category !== 'field' || !error.detail.invalidParams) {
+	if (error.type !== 'api' || error.kind !== 'field' || !error.detail.invalidParams) {
 		return null;
 	}
 
