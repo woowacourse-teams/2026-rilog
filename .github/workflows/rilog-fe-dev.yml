@@ -1,6 +1,8 @@
 name: rilog-fe-dev.yml
 
 on:
+  # 수동으로 워크플로우를 실행하여 인프라 세팅을 테스트할 수 있도록 추가
+  workflow_dispatch:
   # develop 브랜치에 코드가 병합(Push)될 때 배포 실행
   push:
     branches: [ "develop" ]
