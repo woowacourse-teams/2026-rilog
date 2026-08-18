@@ -2,7 +2,7 @@
 
 import type { InfiniteData } from '@tanstack/react-query';
 
-import type { PostFeedPage } from '@/domains/post/model/post-feed';
+import type { PostFeedPage } from '@/domains/post/model/post';
 import { useFullFeedPostsQuery } from '@/shared/api/feeds/queries/full-feed-posts/use-query';
 import type { FullFeedPostResponse } from '@/shared/api/feeds/types';
 import type { ApiResponse } from '@/shared/api/shared.types';

@@ -5,9 +5,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import PostFeedCard from '@/domains/post/ui/PostFeedCard';
 import Button from '@/shared/ui/button/Button';
 
+import { usePostFeed } from '../hooks/use-post-feed';
 import { usePostFeedEntryAutoScroll } from '../hooks/use-post-feed-entry-auto-scroll';
 import { deduplicatePostFeedItems } from '../lib/deduplicate-post-feed-items';
-import { usePostFeed } from '../model/use-post-feed';
 
 import PostFeedSkeleton from './PostFeedSkeleton';
 
