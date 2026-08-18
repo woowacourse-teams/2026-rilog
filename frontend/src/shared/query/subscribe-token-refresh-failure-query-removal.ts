@@ -1,6 +1,6 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 
-import { subscribeTokenRefreshFailure } from '@/shared/api/api-client';
+import { subscribeTokenRefreshFailure } from '@/shared/api/client';
 
 interface SubscribeTokenRefreshFailureQueryRemovalOptions {
 	exact?: boolean;
