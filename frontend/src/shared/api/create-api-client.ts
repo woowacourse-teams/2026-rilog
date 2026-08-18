@@ -2,6 +2,11 @@ import ky from 'ky';
 
 import type { Hooks, KyInstance, Options } from 'ky';
 
+import type { ErrorDetail } from '@/shared/api/shared.types';
+
+import { isErrorDetail } from './api-error';
+import { API_ERROR_CODES } from './error-codes';
+
 interface TokenProvider {
 	getAccessToken: () => string | null;
 	refreshAccessToken: () => Promise<string | null>;
@@ -19,6 +24,15 @@ const ANONYMOUS_TOKEN_PROVIDER: TokenProvider = {
 };
 
 const isBrowser = () => typeof window !== 'undefined';
+
+const readErrorDetail = async (response: Response): Promise<ErrorDetail | null> => {
+	try {
+		const body: unknown = await response.json();
+		return isErrorDetail(body) ? body : null;
+	} catch {
+		return null;
+	}
+};
 
 const ensureRefreshRetry = (retry: Options['retry']): Options['retry'] => {
 	if (typeof retry === 'number') {
@@ -89,12 +103,16 @@ export const createApiClient = ({
 			afterResponse: [
 				...(hooks?.afterResponse ?? []),
 				async ({ request, response, retryCount }) => {
-					// TODO: 401/403 에러 코드 백엔드와 논의 필요
 					if (!isBrowser() || response.status !== 401 || retryCount > 0) {
 						return;
 					}
 
-					// 클라이언트 사이드에서 토큰 만료로 인한 첫 실패 시 토큰 재발급
+					const errorDetail = await readErrorDetail(response);
+					if (errorDetail?.errorCode !== API_ERROR_CODES.EXPIRED_ACCESS_TOKEN) {
+						return;
+					}
+
+					// 만료된 access token에 한해 클라이언트에서 한 번만 재발급 후 재시도한다.
 					const accessToken = await refreshAccessToken();
 
 					if (accessToken === null) {

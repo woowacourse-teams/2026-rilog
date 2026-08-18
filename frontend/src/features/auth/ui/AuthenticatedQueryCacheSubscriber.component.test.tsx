@@ -8,10 +8,9 @@ vi.hoisted(() => {
 
 import { apiClient } from '@/shared/api/api-client';
 import { authenticatedQueryKeys } from '@/shared/query/authenticated-query-keys';
+import { createUnauthorizedResponse } from '@/test/fixtures/api-response';
 
 import AuthenticatedQueryCacheSubscriber from './AuthenticatedQueryCacheSubscriber';
-
-const createResponse = (status: number) => new Response(null, { status });
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -20,7 +19,7 @@ afterEach(() => {
 
 describe('AuthenticatedQueryCacheSubscriber', () => {
 	it('token 갱신 실패 시 인증 query cache를 제거하고 구독을 정리한다', async () => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createResponse(401)));
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createUnauthorizedResponse()));
 		const queryClient = new QueryClient();
 		const currentUserQueryKey = [...authenticatedQueryKeys.all, 'current-user'] as const;
 		const postsQueryKey = ['posts'] as const;
