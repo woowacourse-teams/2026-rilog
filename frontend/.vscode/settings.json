@@ -1,4 +1,8 @@
 {
 	"css.lint.unknownAtRules": "ignore",
-	"js/ts.preferences.importModuleSpecifier": "non-relative"
+	"js/ts.preferences.importModuleSpecifier": "non-relative",
+	"eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit"
+	}
 }
