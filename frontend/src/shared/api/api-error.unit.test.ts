@@ -1,6 +1,8 @@
 import ky from 'ky';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { NormalizedApiError } from './api-error';
+
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
 
 import { getFieldErrors, normalizeApiError } from './api-error';
@@ -74,8 +76,8 @@ describe('getFieldErrors', () => {
 			response: new Response(),
 		} as const;
 
-		const result = getFieldErrors(error as any);
-		
+		const result = getFieldErrors(error as unknown as NormalizedApiError);
+
 		expect(result).toEqual({
 			title: '제목은 필수입니다.',
 			slug: '공백일 수 없습니다.',
@@ -92,6 +94,6 @@ describe('getFieldErrors', () => {
 			},
 		};
 
-		expect(getFieldErrors(error as any)).toBeNull();
+		expect(getFieldErrors(error as unknown as NormalizedApiError)).toBeNull();
 	});
 });
