@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 
+import type { Block } from '@blocknote/core';
+
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post-detail';
 import { readBlogPostDetail } from '@/shared/api/blogs/api';
 import type { PostDetailResponse } from '@/shared/api/blogs/types';
@@ -15,7 +17,7 @@ interface PostDetailPageProps {
 
 const mapBlogPostDetailResponse = (response: PostDetailResponse): PostDetailModel => ({
 	title: response.title,
-	content: Array.isArray(response.content) ? response.content : [],
+	content: Array.isArray(response.content) ? (response.content as Block[]) : [],
 	publishedAt: response.publishedAt,
 	thumbnailImageUrl: response.thumbnailImageUrl,
 	author: {
