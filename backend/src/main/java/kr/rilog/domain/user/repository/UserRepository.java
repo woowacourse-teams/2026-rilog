@@ -3,7 +3,7 @@ package kr.rilog.domain.user.repository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

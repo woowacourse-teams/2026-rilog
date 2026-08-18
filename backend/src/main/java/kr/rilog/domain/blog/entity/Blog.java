@@ -5,7 +5,6 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
-import kr.rilog.global.vo.Slug;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

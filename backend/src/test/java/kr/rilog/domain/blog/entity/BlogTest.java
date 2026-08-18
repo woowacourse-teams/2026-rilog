@@ -3,7 +3,6 @@ package kr.rilog.domain.blog.entity;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.global.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

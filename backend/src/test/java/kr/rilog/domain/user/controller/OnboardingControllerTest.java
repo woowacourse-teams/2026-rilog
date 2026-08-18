@@ -16,7 +16,7 @@ import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.service.UserService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;

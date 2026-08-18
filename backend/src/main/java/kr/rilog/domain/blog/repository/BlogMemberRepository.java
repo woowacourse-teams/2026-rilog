@@ -2,7 +2,7 @@ package kr.rilog.domain.blog.repository;
 
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

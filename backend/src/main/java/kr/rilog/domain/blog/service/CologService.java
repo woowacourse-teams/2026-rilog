@@ -14,7 +14,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -23,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_ALREADY_EXISTS;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -67,6 +64,10 @@ public class CologService {
 
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
         requesterMember.validateCanInvite(command.permission());
+        /**
+         * 실제 도메인로직, 비즈니스 로직이 수행되고 있는 지 판단은 도메인 단위 테스트 or 서비스 통합테스트
+         * 실제로 그 부분을 호출하고 있는지는 모킹으로 빠르게?
+         * */
 
         User invitee = getUser(command.userId());
         validateNotActiveMember(slug, invitee.getId());

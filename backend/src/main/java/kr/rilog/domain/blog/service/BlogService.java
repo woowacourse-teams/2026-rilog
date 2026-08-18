@@ -8,7 +8,7 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

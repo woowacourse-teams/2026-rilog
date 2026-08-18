@@ -11,7 +11,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -17,7 +17,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

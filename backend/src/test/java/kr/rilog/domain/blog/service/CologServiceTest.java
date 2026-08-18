@@ -15,7 +15,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

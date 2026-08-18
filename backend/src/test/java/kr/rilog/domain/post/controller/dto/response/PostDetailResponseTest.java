@@ -6,7 +6,7 @@ import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
