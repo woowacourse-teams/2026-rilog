@@ -18,8 +18,10 @@ export const fullFeedPostsQueryOptions = ({ size = FULL_FEED_POSTS_PAGE_SIZE }: 
 		queryKey: feedsQueryKeys.fullFeedPosts(size),
 		queryFn: ({ pageParam }) => readFullFeedPosts({ page: Number(pageParam), size }),
 		initialPageParam: 0,
-		getNextPageParam: (lastPage) =>
-			lastPage.data?.hasNext === true && lastPage.data.page !== undefined ? lastPage.data.page + 1 : undefined,
+		getNextPageParam: (lastPage) => {
+			const page = lastPage?.data?.page;
+			return lastPage?.data?.hasNext === true && page !== undefined ? page + 1 : undefined;
+		},
 		staleTime: 60_000,
 		retry: false,
 	});

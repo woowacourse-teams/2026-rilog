@@ -34,17 +34,35 @@ const createPage = (items: PostFeedItem[], page = 0, hasNext = false): PostFeedP
 const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	postId: post.id,
 	title: post.title,
-	thumbnailUrl: post.thumbnailUrl ?? '',
+	thumbnailImageUrl: post.thumbnailUrl ?? null,
 	category: 'TECH',
 	visibility: 'PUBLIC',
 	publishedAt: post.publishedAt,
-	user: { userId: post.id, nickname: post.author.nickname, slug: `user-${post.id}`, profileImageUrl: '' },
-	blog: {
-		blogId: post.colog === null ? post.id : post.id + 1000,
-		name: post.colog?.name ?? '개인 블로그',
-		slug: `blog-${post.id}`,
-		profileUrl: post.colog?.logoUrl ?? '',
+	author: {
+		userId: post.id,
+		name: post.author.nickname,
+		nickname: post.author.nickname,
+		slug: post.author.slug,
+		profileImageUrl: post.author.profileImageUrl,
 	},
+	owner: post.colog
+		? {
+				type: 'COLOG',
+				blogId: post.id + 1000,
+				name: post.colog.name,
+				slug: post.colog.slug,
+				logoImageUrl: post.colog.logoUrl,
+				coverImageUrl: null,
+				memberCount: 1,
+				postCount: 1,
+			}
+		: {
+				type: 'RILOG',
+				blogId: post.id,
+				name: '개인 블로그',
+				slug: `blog-${post.id}`,
+				profileImageUrl: null,
+			},
 });
 
 const toApiResponse = (page: PostFeedPage): ApiResponse<FullFeedPostResponse> => ({

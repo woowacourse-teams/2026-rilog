@@ -3,40 +3,40 @@ import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
-	const { blog, postId, publishedAt, thumbnailUrl, title, user } = post;
+	const { author, owner, postId, publishedAt, thumbnailImageUrl, title } = post;
+	const authorName = author?.name ?? author?.nickname ?? null;
 
 	if (
 		postId === undefined ||
 		title === undefined ||
 		publishedAt === undefined ||
-		user?.nickname === undefined ||
-		user.slug === undefined
+		authorName === null ||
+		author?.slug === undefined
 	) {
 		return null;
 	}
 
-	const isTeamBlogPost =
-		blog?.blogId !== undefined && user.userId !== undefined && blog.blogId !== user.userId && blog.name !== undefined;
+	const isTeamBlogPost = owner?.type === 'COLOG';
 
-	if (isTeamBlogPost && blog.slug === undefined) {
+	if (isTeamBlogPost && (owner?.slug === undefined || owner?.name === undefined)) {
 		return null;
 	}
 
 	return {
 		id: postId,
 		title,
-		thumbnailUrl: thumbnailUrl || null,
+		thumbnailUrl: thumbnailImageUrl || null,
 		publishedAt,
 		author: {
-			nickname: user.nickname,
-			slug: user.slug,
-			profileImageUrl: user.profileImageUrl || null,
+			nickname: authorName,
+			slug: author.slug,
+			profileImageUrl: author.profileImageUrl || null,
 		},
 		colog: isTeamBlogPost
 			? {
-					name: blog.name,
-					slug: blog.slug,
-					logoUrl: blog.profileUrl || null,
+					name: owner.name,
+					slug: owner.slug,
+					logoUrl: owner.logoImageUrl || null,
 				}
 			: null,
 	};

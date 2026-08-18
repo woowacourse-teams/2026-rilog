@@ -5,27 +5,43 @@ export interface FullFeedPostsRequest {
 
 export interface AuthorResponse {
 	userId: number;
-	nickname: string;
+	name?: string;
+	nickname?: string;
 	slug: string;
-	profileImageUrl: string;
+	profileImageUrl: string | null;
 }
 
-export interface BlogResponse {
+interface BaseOwnerResponse {
+	type: 'COLOG' | 'RILOG';
 	blogId: number;
-	name: string;
 	slug: string;
-	profileUrl: string;
+	name: string;
 }
+
+export interface RilogOwnerResponse extends BaseOwnerResponse {
+	type: 'RILOG';
+	profileImageUrl: string | null;
+}
+
+export interface CologOwnerResponse extends BaseOwnerResponse {
+	type: 'COLOG';
+	logoImageUrl: string | null;
+	coverImageUrl: string | null;
+	memberCount: number;
+	postCount: number;
+}
+
+export type PostOwnerResponse = RilogOwnerResponse | CologOwnerResponse;
 
 export interface PostItemResponse {
 	postId: number;
 	title: string;
-	thumbnailUrl: string;
+	thumbnailImageUrl: string | null;
 	category: string;
 	visibility: string;
 	publishedAt: string;
-	user: AuthorResponse;
-	blog: BlogResponse;
+	author: AuthorResponse;
+	owner: PostOwnerResponse;
 }
 
 export interface FullFeedPostResponse {
