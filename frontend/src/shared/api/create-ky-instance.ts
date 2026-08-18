@@ -87,8 +87,8 @@ export const createKyInstance = ({
 		hooks: {
 			...hooks,
 			beforeRequest: [
-				({ request, options: requestOptions }) => {
-					if (!isBrowser() || requestOptions.context.requiresAuth !== true) {
+				({ request }) => {
+					if (!isBrowser()) {
 						return;
 					}
 
@@ -102,8 +102,8 @@ export const createKyInstance = ({
 			],
 			afterResponse: [
 				...(hooks?.afterResponse ?? []),
-				async ({ request, options: requestOptions, response, retryCount }) => {
-					if (!isBrowser() || response.status !== 401 || requestOptions.context.requiresAuth !== true) {
+				async ({ request, response, retryCount }) => {
+					if (!isBrowser() || response.status !== 401) {
 						return;
 					}
 

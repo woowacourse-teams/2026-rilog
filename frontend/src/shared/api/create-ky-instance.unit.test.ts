@@ -24,7 +24,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		await client.get(API_URL, { context: { requiresAuth: true } });
+		await client.get(API_URL);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.headers.get('Authorization')).toBe('Bearer access-token');
@@ -42,7 +42,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toMatchObject({
+		await expect(client.get(API_URL)).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
@@ -69,7 +69,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		const response = await client.get(API_URL, { context: { requiresAuth: true } });
+		const response = await client.get(API_URL);
 
 		const initialRequest = fetchMock.mock.calls[0]?.[0] as Request;
 		const retriedRequest = fetchMock.mock.calls[1]?.[0] as Request;
@@ -92,7 +92,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toMatchObject({
+		await expect(client.get(API_URL)).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
@@ -114,7 +114,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toMatchObject({
+		await expect(client.get(API_URL)).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
@@ -145,7 +145,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		const requests = Promise.all([client.get(API_URL, { context: { requiresAuth: true } }), client.get(API_URL, { context: { requiresAuth: true } })]);
+		const requests = Promise.all([client.get(API_URL), client.get(API_URL)]);
 		await vi.waitFor(() => {
 			expect(refreshAccessToken).toHaveBeenCalledOnce();
 		});
@@ -176,7 +176,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		const requests = Promise.allSettled([client.get(API_URL, { context: { requiresAuth: true } }), client.get(API_URL, { context: { requiresAuth: true } })]);
+		const requests = Promise.allSettled([client.get(API_URL), client.get(API_URL)]);
 		await vi.waitFor(() => {
 			expect(refreshAccessToken).toHaveBeenCalledOnce();
 		});
@@ -201,7 +201,7 @@ describe('createKyInstance', () => {
 			},
 		});
 
-		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toThrow('network error');
+		await expect(client.get(API_URL)).rejects.toThrow('network error');
 
 		expect(onTokenRefreshFailure).not.toHaveBeenCalled();
 	});

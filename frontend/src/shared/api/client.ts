@@ -1,5 +1,3 @@
-import type { Options } from 'ky';
-
 import { normalizeApiError } from './api-error';
 import { createKyInstance } from './create-ky-instance';
 
@@ -52,20 +50,14 @@ export const apiRequest = async <T>(fn: () => Promise<T>): Promise<T> => {
  * // JSON 응답의 일반적인 경우
  * const team = await apiClient.get<Team>(`teams/${id}`);
  */
-export interface ApiClientOptions extends Omit<Options, 'context'> {
-	context?: {
-		requiresAuth?: boolean;
-		[key: string]: unknown;
-	};
-}
 
 export const apiClient = {
-	get: <T>(url: string, options?: ApiClientOptions) =>
-		apiRequest(() => kyInstance.get(url, options as Options).json<T>()),
-	post: <T>(url: string, options?: ApiClientOptions) =>
-		apiRequest(() => kyInstance.post(url, options as Options).json<T>()),
-	put: <T>(url: string, options?: ApiClientOptions) =>
-		apiRequest(() => kyInstance.put(url, options as Options).json<T>()),
-	delete: <T>(url: string, options?: ApiClientOptions) =>
-		apiRequest(() => kyInstance.delete(url, options as Options).json<T>()),
+	get: <T>(url: string, options?: Parameters<typeof kyInstance.get>[1]) =>
+		apiRequest(() => kyInstance.get(url, options).json<T>()),
+	post: <T>(url: string, options?: Parameters<typeof kyInstance.post>[1]) =>
+		apiRequest(() => kyInstance.post(url, options).json<T>()),
+	put: <T>(url: string, options?: Parameters<typeof kyInstance.put>[1]) =>
+		apiRequest(() => kyInstance.put(url, options).json<T>()),
+	delete: <T>(url: string, options?: Parameters<typeof kyInstance.delete>[1]) =>
+		apiRequest(() => kyInstance.delete(url, options).json<T>()),
 };
