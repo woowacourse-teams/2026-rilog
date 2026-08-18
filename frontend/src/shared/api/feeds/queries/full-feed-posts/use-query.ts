@@ -2,8 +2,8 @@
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import type { FullFeedPostResponse } from '@/api/feeds/types';
-import type { ApiResponse } from '@/api/shared.types';
+import type { FullFeedPostResponse } from '@/shared/api/feeds/types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 import type { InfiniteData } from '@tanstack/react-query';
 
 import { fullFeedPostsQueryOptions } from './query-options';

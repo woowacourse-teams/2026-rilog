@@ -1,5 +1,5 @@
 import type { FullFeedPostResponse, FullFeedPostsRequest } from './types';
-import type { ApiResponse } from '@/api/shared.types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 import { apiClient } from '@/shared/api/api-client';
 

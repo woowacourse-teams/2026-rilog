@@ -1,5 +1,5 @@
-import type { FullFeedPostResponse, PostItemResponse } from '@/api/feeds/types';
-import type { ApiResponse } from '@/api/shared.types';
+import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed';
 

@@ -3,13 +3,13 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FullFeedPostResponse, PostItemResponse } from '@/api/feeds/types';
-import type { ApiResponse } from '@/api/shared.types';
+import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed';
 
-import { readFullFeedPosts } from '@/api/feeds/api';
-import { feedsQueryKeys } from '@/api/feeds/queries/keys';
+import { readFullFeedPosts } from '@/shared/api/feeds/api';
+import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 
 import PostFeedGrid from './PostFeedGrid';
 
