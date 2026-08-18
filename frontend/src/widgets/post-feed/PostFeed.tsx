@@ -4,7 +4,6 @@ import { Suspense } from 'react';
 
 import PostFeedGrid from '@/features/post-feed/ui/PostFeedGrid';
 import PostFeedSkeleton from '@/features/post-feed/ui/PostFeedSkeleton';
-
 import { prefetchFullFeedPostsQuery } from '@/shared/api/feeds/queries/full-feed-posts/prefetch-query';
 import { fullFeedPostsQueryOptions } from '@/shared/api/feeds/queries/full-feed-posts/query-options';
 

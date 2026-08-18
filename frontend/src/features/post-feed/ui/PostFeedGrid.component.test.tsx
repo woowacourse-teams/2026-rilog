@@ -3,13 +3,11 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/types';
-import type { ApiResponse } from '@/shared/api/shared.types';
-
 import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed';
-
 import { readFullFeedPosts } from '@/shared/api/feeds/api';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
+import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 import PostFeedGrid from './PostFeedGrid';
 
@@ -103,11 +101,12 @@ describe('PostFeedGrid', () => {
 			root = null;
 			rootMargin = '';
 			thresholds = [];
-			takeRecords = () => [];
 
 			constructor(callback: IntersectionObserverCallback) {
 				observerCallback = callback;
 			}
+
+			takeRecords = () => [];
 		}
 
 		vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);

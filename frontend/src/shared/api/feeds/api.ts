@@ -1,7 +1,7 @@
 import type { FullFeedPostResponse, FullFeedPostsRequest } from './types';
-import type { ApiResponse } from '@/shared/api/shared.types';
 
 import { apiClient } from '@/shared/api/api-client';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 export const readFullFeedPosts = ({ page, size }: FullFeedPostsRequest) =>
 	apiClient
