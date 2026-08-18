@@ -5,9 +5,10 @@ export interface BlogDetailRequest {
 
 export interface AuthorResponse {
 	userId: number;
-	nickname: string;
+	name?: string;
+	nickname?: string;
 	slug: string;
-	profileImageUrl: string;
+	profileImageUrl: string | null;
 }
 
 interface BaseOwnerResponse {
@@ -19,13 +20,13 @@ interface BaseOwnerResponse {
 
 export interface RilogOwnerResponse extends BaseOwnerResponse {
 	type: 'RILOG';
-	profileImageUrl: string;
+	profileImageUrl: string | null;
 }
 
 export interface CologOwnerResponse extends BaseOwnerResponse {
 	type: 'COLOG';
-	logoImageUrl: string;
-	coverImageUrl: string;
+	logoImageUrl: string | null;
+	coverImageUrl: string | null;
 	memberCount: number;
 	postCount: number;
 }

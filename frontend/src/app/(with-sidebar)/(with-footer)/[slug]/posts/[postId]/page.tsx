@@ -13,26 +13,30 @@ interface PostDetailPageProps {
 	params: Promise<{ slug: string; postId: string }>;
 }
 
-const mapBlogPostDetailResponse = (response: PostDetailResponse): PostDetailModel => ({
-	title: response.title,
-	content: Array.isArray(response.content) ? response.content : [],
-	publishedAt: response.publishedAt,
-	thumbnailImageUrl: response.thumbnailImageUrl,
-	author: {
-		nickname: response.author.nickname,
-		slug: response.author.slug,
-	},
-	colog:
-		response.owner.type === 'COLOG'
-			? {
-					name: response.owner.name,
-					slug: response.owner.slug,
-					description: '',
-					memberCount: response.owner.memberCount,
-					postCount: response.owner.postCount,
-				}
-			: null,
-});
+const mapBlogPostDetailResponse = (response: PostDetailResponse): PostDetailModel => {
+	const authorName: string = response.author.name || response.author.nickname || '알 수 없음';
+
+	return {
+		title: response.title,
+		content: (Array.isArray(response.content) ? response.content : []) as never[],
+		publishedAt: response.publishedAt,
+		thumbnailImageUrl: response.thumbnailImageUrl,
+		author: {
+			nickname: authorName,
+			slug: response.author.slug,
+		},
+		colog:
+			response.owner.type === 'COLOG'
+				? {
+						name: response.owner.name,
+						slug: response.owner.slug,
+						description: '',
+						memberCount: response.owner.memberCount,
+						postCount: response.owner.postCount,
+					}
+				: null,
+	};
+};
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
 	const { slug, postId } = await params;
