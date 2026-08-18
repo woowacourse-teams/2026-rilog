@@ -12,7 +12,7 @@ interface TokenProvider {
 	refreshAccessToken: () => Promise<string | null>;
 }
 
-interface CreateApiClientOptions extends Omit<Options, 'hooks'> {
+interface CreateKyInstanceOptions extends Omit<Options, 'hooks'> {
 	hooks?: Hooks;
 	onTokenRefreshFailure?: () => void;
 	tokenProvider?: TokenProvider;
@@ -49,13 +49,13 @@ const ensureRefreshRetry = (retry: Options['retry']): Options['retry'] => {
 	};
 };
 
-export const createApiClient = ({
+export const createKyInstance = ({
 	hooks,
 	onTokenRefreshFailure,
 	retry,
 	tokenProvider = ANONYMOUS_TOKEN_PROVIDER,
 	...options
-}: CreateApiClientOptions = {}): KyInstance => {
+}: CreateKyInstanceOptions = {}): KyInstance => {
 	let refreshPromise: Promise<string | null> | null = null;
 
 	const refreshAccessToken = () => {
@@ -87,8 +87,8 @@ export const createApiClient = ({
 		hooks: {
 			...hooks,
 			beforeRequest: [
-				({ request }) => {
-					if (!isBrowser()) {
+				({ request, options: requestOptions }) => {
+					if (!isBrowser() || requestOptions.context.requiresAuth !== true) {
 						return;
 					}
 
@@ -102,8 +102,8 @@ export const createApiClient = ({
 			],
 			afterResponse: [
 				...(hooks?.afterResponse ?? []),
-				async ({ request, response, retryCount }) => {
-					if (!isBrowser() || response.status !== 401) {
+				async ({ request, options: requestOptions, response, retryCount }) => {
+					if (!isBrowser() || response.status !== 401 || requestOptions.context.requiresAuth !== true) {
 						return;
 					}
 

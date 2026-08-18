@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
 import { createUnauthorizedResponse, createEmptyResponse } from '@/test/fixtures/api-response';
 
-import { createApiClient } from './create-api-client';
+import { createKyInstance } from './create-ky-instance';
 
 const API_URL = 'https://api.rilog.test/posts';
 
@@ -12,19 +12,19 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe('createApiClient', () => {
+describe('createKyInstance', () => {
 	it('CSR 요청에 access token을 자동으로 설정한다', async () => {
 		vi.stubGlobal('window', {});
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
-		const client = createApiClient({
+		const client = createKyInstance({
 			tokenProvider: {
 				getAccessToken: () => 'access-token',
 				refreshAccessToken: vi.fn(),
 			},
 		});
 
-		await client.get(API_URL);
+		await client.get(API_URL, { context: { requiresAuth: true } });
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.headers.get('Authorization')).toBe('Bearer access-token');
@@ -35,14 +35,14 @@ describe('createApiClient', () => {
 		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
 		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse());
 		vi.stubGlobal('fetch', fetchMock);
-		const client = createApiClient({
+		const client = createKyInstance({
 			tokenProvider: {
 				getAccessToken,
 				refreshAccessToken,
 			},
 		});
 
-		await expect(client.get(API_URL)).rejects.toMatchObject({
+		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
@@ -61,7 +61,7 @@ describe('createApiClient', () => {
 			.mockResolvedValueOnce(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
 		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
-		const client = createApiClient({
+		const client = createKyInstance({
 			retry: 0,
 			tokenProvider: {
 				getAccessToken: () => 'expired-token',
@@ -69,7 +69,7 @@ describe('createApiClient', () => {
 			},
 		});
 
-		const response = await client.get(API_URL);
+		const response = await client.get(API_URL, { context: { requiresAuth: true } });
 
 		const initialRequest = fetchMock.mock.calls[0]?.[0] as Request;
 		const retriedRequest = fetchMock.mock.calls[1]?.[0] as Request;
@@ -85,14 +85,14 @@ describe('createApiClient', () => {
 		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse(API_ERROR_CODES.INVALID_ACCESS_TOKEN));
 		vi.stubGlobal('fetch', fetchMock);
 		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
-		const client = createApiClient({
+		const client = createKyInstance({
 			tokenProvider: {
 				getAccessToken: () => 'invalid-token',
 				refreshAccessToken,
 			},
 		});
 
-		await expect(client.get(API_URL)).rejects.toMatchObject({
+		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
@@ -106,7 +106,7 @@ describe('createApiClient', () => {
 		vi.stubGlobal('fetch', fetchMock);
 		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
 		const onTokenRefreshFailure = vi.fn();
-		const client = createApiClient({
+		const client = createKyInstance({
 			onTokenRefreshFailure,
 			tokenProvider: {
 				getAccessToken: () => 'expired-token',
@@ -114,7 +114,7 @@ describe('createApiClient', () => {
 			},
 		});
 
-		await expect(client.get(API_URL)).rejects.toMatchObject({
+		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toMatchObject({
 			response: { status: 401 },
 		});
 
@@ -138,14 +138,14 @@ describe('createApiClient', () => {
 					resolveRefresh = resolve;
 				}),
 		);
-		const client = createApiClient({
+		const client = createKyInstance({
 			tokenProvider: {
 				getAccessToken: () => 'expired-token',
 				refreshAccessToken,
 			},
 		});
 
-		const requests = Promise.all([client.get(API_URL), client.get(API_URL)]);
+		const requests = Promise.all([client.get(API_URL, { context: { requiresAuth: true } }), client.get(API_URL, { context: { requiresAuth: true } })]);
 		await vi.waitFor(() => {
 			expect(refreshAccessToken).toHaveBeenCalledOnce();
 		});
@@ -168,7 +168,7 @@ describe('createApiClient', () => {
 				}),
 		);
 		const onTokenRefreshFailure = vi.fn();
-		const client = createApiClient({
+		const client = createKyInstance({
 			onTokenRefreshFailure,
 			tokenProvider: {
 				getAccessToken: () => 'expired-token',
@@ -176,7 +176,7 @@ describe('createApiClient', () => {
 			},
 		});
 
-		const requests = Promise.allSettled([client.get(API_URL), client.get(API_URL)]);
+		const requests = Promise.allSettled([client.get(API_URL, { context: { requiresAuth: true } }), client.get(API_URL, { context: { requiresAuth: true } })]);
 		await vi.waitFor(() => {
 			expect(refreshAccessToken).toHaveBeenCalledOnce();
 		});
@@ -193,7 +193,7 @@ describe('createApiClient', () => {
 		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN));
 		vi.stubGlobal('fetch', fetchMock);
 		const onTokenRefreshFailure = vi.fn();
-		const client = createApiClient({
+		const client = createKyInstance({
 			onTokenRefreshFailure,
 			tokenProvider: {
 				getAccessToken: () => 'expired-token',
@@ -201,7 +201,7 @@ describe('createApiClient', () => {
 			},
 		});
 
-		await expect(client.get(API_URL)).rejects.toThrow('network error');
+		await expect(client.get(API_URL, { context: { requiresAuth: true } })).rejects.toThrow('network error');
 
 		expect(onTokenRefreshFailure).not.toHaveBeenCalled();
 	});
