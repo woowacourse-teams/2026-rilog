@@ -11,7 +11,7 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 
 import PostFeedGrid from './PostFeedGrid';
 
-vi.mock('@/api/feeds/api', () => ({
+vi.mock('@/shared/api/feeds/api', () => ({
 	readFullFeedPosts: vi.fn(),
 }));
 
@@ -119,11 +119,12 @@ describe('PostFeedGrid', () => {
 			root = null;
 			rootMargin = '';
 			thresholds = [];
-			takeRecords = () => [];
 
 			constructor(callback: IntersectionObserverCallback) {
 				observerCallback = callback;
 			}
+
+			takeRecords = () => [];
 		}
 
 		vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);

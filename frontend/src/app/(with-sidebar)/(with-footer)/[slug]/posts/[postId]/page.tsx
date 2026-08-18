@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 
+import type { Block } from '@blocknote/core';
+
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post-detail';
 import { readBlogPostDetail } from '@/shared/api/blogs/api';
 import type { PostDetailResponse } from '@/shared/api/blogs/types';
@@ -18,7 +20,7 @@ const mapBlogPostDetailResponse = (response: PostDetailResponse): PostDetailMode
 
 	return {
 		title: response.title,
-		content: (Array.isArray(response.content) ? response.content : []) as never[],
+		content: Array.isArray(response.content) ? (response.content as Block[]) : [],
 		publishedAt: response.publishedAt,
 		thumbnailImageUrl: response.thumbnailImageUrl,
 		author: {
