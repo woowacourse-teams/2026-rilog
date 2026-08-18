@@ -100,8 +100,14 @@ class FeedServiceTest {
                 .extracting(FullFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
         assertThat(response.posts())
+                .extracting(post -> post.author().nickname())
+                .containsExactly("작성자", "작성자");
+        assertThat(response.posts())
                 .extracting(post -> post.owner().type())
                 .containsExactly(BlogType.RILOG, BlogType.RILOG);
+        assertThat(response.posts())
+                .extracting(post -> post.owner().name())
+                .containsExactly("작성자", "작성자");
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.numberOfElements()).isEqualTo(rows.size());
@@ -134,6 +140,9 @@ class FeedServiceTest {
         assertThat(response.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
+        assertThat(response.posts())
+                .extracting(post -> post.author().nickname())
+                .containsExactly("작성자", "작성자");
         assertThat(response.posts().get(0).owner())
                 .extracting(PublicBlogFeedPostResponse.OwnerResponse::type)
                 .isEqualTo(BlogType.RILOG);
@@ -180,8 +189,14 @@ class FeedServiceTest {
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
         assertThat(response.posts())
+                .extracting(post -> post.author().nickname())
+                .containsExactly("작성자", "작성자");
+        assertThat(response.posts())
                 .extracting(post -> post.owner().type())
                 .containsExactly(BlogType.COLOG, BlogType.COLOG);
+        assertThat(response.posts())
+                .extracting(post -> post.owner().name())
+                .containsExactly("팀 블로그", "팀 블로그");
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.hasNext()).isFalse();
         verify(postFeedQueryRepository).findPublicCologPosts(
