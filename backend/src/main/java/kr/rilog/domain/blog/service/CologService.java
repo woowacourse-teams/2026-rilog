@@ -70,7 +70,7 @@ public class CologService {
          * */
 
         User invitee = getUser(command.userId());
-        validateNotActiveMember(slug, invitee.getId());
+        validateNotActiveMember(colog.getId(), invitee.getId());
 
         BlogMember member = BlogMember.invite(
                 colog,
@@ -99,8 +99,8 @@ public class CologService {
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN));
     }
 
-    private void validateNotActiveMember(String slug, Long userId) {
-        if (blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(slug), userId, BlogMemberStatus.ACTIVE)) {
+    private void validateNotActiveMember(Long blodIg, Long userId) {
+        if (blogMemberRepository.existsByBlogIdAndUserIdAndStatus(blodIg, userId, BlogMemberStatus.ACTIVE)) {
             throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
         }
     }

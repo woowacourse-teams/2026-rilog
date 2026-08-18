@@ -116,7 +116,7 @@ class PostServiceTest {
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.of(rilog));
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
@@ -143,7 +143,7 @@ class PostServiceTest {
         Blog colog = createColog();
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
 
         // when - then
@@ -194,7 +194,7 @@ class PostServiceTest {
         Blog colog = createColog();
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), WRITER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 

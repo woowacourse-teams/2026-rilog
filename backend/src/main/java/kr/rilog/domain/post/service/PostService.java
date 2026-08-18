@@ -83,8 +83,8 @@ public class PostService {
     }
 
     private void validateCologMember(Blog colog, User writer) {
-        boolean activeMember = blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(
-                Slug.from(colog.getSlug()),
+        boolean activeMember = blogMemberRepository.existsByBlogIdAndUserIdAndStatus(
+                colog.getId(),
                 writer.getId(),
                 BlogMemberStatus.ACTIVE
         );

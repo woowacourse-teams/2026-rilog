@@ -201,7 +201,7 @@ class CologServiceTest {
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
         when(blogMemberRepository.save(any(BlogMember.class))).thenAnswer(invocation -> {
             BlogMember member = invocation.getArgument(0);
@@ -263,7 +263,7 @@ class CologServiceTest {
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
         when(blogMemberRepository.save(any(BlogMember.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -314,7 +314,7 @@ class CologServiceTest {
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(Slug.from(COLOG_SLUG), INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
 
         // when - then
