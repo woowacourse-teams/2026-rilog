@@ -100,12 +100,14 @@ describe('createApiClient', () => {
 		expect(fetchMock).toHaveBeenCalledOnce();
 	});
 
-	it('재시도도 401이면 token을 다시 갱신하지 않는다', async () => {
+	it('갱신 후 재시도도 401이면 token을 다시 갱신하지 않고 실패 이벤트를 발행한다', async () => {
 		vi.stubGlobal('window', {});
 		const fetchMock = vi.fn(() => Promise.resolve(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN)));
 		vi.stubGlobal('fetch', fetchMock);
 		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
+		const onTokenRefreshFailure = vi.fn();
 		const client = createApiClient({
+			onTokenRefreshFailure,
 			tokenProvider: {
 				getAccessToken: () => 'expired-token',
 				refreshAccessToken,
@@ -117,6 +119,7 @@ describe('createApiClient', () => {
 		});
 
 		expect(refreshAccessToken).toHaveBeenCalledOnce();
+		expect(onTokenRefreshFailure).toHaveBeenCalledOnce();
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 

@@ -103,7 +103,12 @@ export const createApiClient = ({
 			afterResponse: [
 				...(hooks?.afterResponse ?? []),
 				async ({ request, response, retryCount }) => {
-					if (!isBrowser() || response.status !== 401 || retryCount > 0) {
+					if (!isBrowser() || response.status !== 401) {
+						return;
+					}
+
+					if (retryCount > 0) {
+						onTokenRefreshFailure?.();
 						return;
 					}
 
