@@ -17,5 +17,5 @@ export const createUnauthorizedResponse = (
 };
 
 export const createEmptyResponse = (status: number = 200) => {
-	return new Response(null, { status });
+	return new Response('{}', { headers: { 'Content-Type': 'application/json' }, status });
 };

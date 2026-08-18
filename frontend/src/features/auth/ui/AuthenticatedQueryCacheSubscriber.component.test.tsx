@@ -6,7 +6,7 @@ vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
 });
 
-import { apiClient } from '@/shared/api/api-client';
+import { apiClient } from '@/shared/api/client';
 import { authenticatedQueryKeys } from '@/shared/query/authenticated-query-keys';
 import { createUnauthorizedResponse } from '@/test/fixtures/api-response';
 
