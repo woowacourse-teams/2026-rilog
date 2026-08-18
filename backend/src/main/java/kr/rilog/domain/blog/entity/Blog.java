@@ -32,8 +32,8 @@ public class Blog extends BaseEntity {
     @Column(length = 20, nullable = false)
     private String name; // NOTE - 팀블로그명 or 개인블로그명(사용자명)
 
-    @Column(length = 20, nullable = false, unique = true, updatable = false)
-    private String slug;
+    @Embedded
+    private Slug slug;
 
     @Column(length = 80)
     private String introduction;
@@ -70,7 +70,7 @@ public class Blog extends BaseEntity {
         return Blog.builder()
                 .owner(owner)
                 .name(name)
-                .slug(slug)
+                .slug(Slug.from(slug))
                 .introduction(introduction)
                 .profileImageUrl(logoUrl)
                 .coverImageUrl(coverImageUrl)
@@ -84,7 +84,7 @@ public class Blog extends BaseEntity {
         return Blog.builder()
                 .owner(owner)
                 .name(owner.getNickname())
-                .slug(owner.getSlug())
+                .slug(Slug.from(owner.getSlug()))
                 .introduction(owner.getIntroduction())
                 .profileImageUrl(owner.getProfileImageUrl())
                 .email(owner.getEmail())
@@ -109,6 +109,10 @@ public class Blog extends BaseEntity {
         }
 
         return owner == user || owner.getId() != null && Objects.equals(owner.getId(), user.getId());
+    }
+
+    public String getSlug() {
+        return slug == null ? null : slug.getValue();
     }
 
 }

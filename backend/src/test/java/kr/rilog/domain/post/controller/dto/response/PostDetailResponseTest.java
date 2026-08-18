@@ -6,6 +6,7 @@ import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.blog.entity.Slug;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ class PostDetailResponseTest {
         Blog rilog = Blog.builder()
                 .id(10L)
                 .owner(writer)
-                .slug("writer-rilog")
+                .slug(Slug.from("writer-rilog"))
                 .name("작성자 Rilog")
                 .blogType(BlogType.RILOG)
                 .build();
@@ -57,7 +58,7 @@ class PostDetailResponseTest {
         Blog colog = Blog.builder()
                 .id(20L)
                 .owner(writer)
-                .slug("team-colog")
+                .slug(Slug.from("team-colog"))
                 .name("Rilog 팀")
                 .blogType(BlogType.COLOG)
                 .build();

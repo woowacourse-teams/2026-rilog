@@ -30,7 +30,7 @@ class BlogMemberTest {
                 .id(2L)
                 .owner(owner)
                 .name("리로그 팀")
-                .slug("rilog-team")
+                .slug(Slug.from("rilog-team"))
                 .blogType(BlogType.COLOG)
                 .build();
         LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);
@@ -72,7 +72,7 @@ class BlogMemberTest {
                 .id(2L)
                 .owner(owner)
                 .name("리로그 팀")
-                .slug("rilog-team")
+                .slug(Slug.from("rilog-team"))
                 .blogType(BlogType.COLOG)
                 .build();
         LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);

@@ -10,7 +10,7 @@ import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.global.vo.Slug;
+import kr.rilog.domain.blog.entity.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class BlogServiceTest {
         // given
         User owner = createCompletedOwner();
         Blog colog = createDetailedColog(owner);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull("rilog-team", BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from("rilog-team"), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.countActiveMembersByBlogId(COLOG_ID)).thenReturn(10L);
         when(postRepository.countPublicPublishedPostsByCologId(COLOG_ID)).thenReturn(24L);
 
@@ -98,7 +98,7 @@ class BlogServiceTest {
     @DisplayName("팀 slug에 해당하는 COLOG가 없으면 공개 프로필 조회를 거부한다")
     void getPublicProfileRejectsMissingColog() {
         // given
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull("unknown-team", BlogType.COLOG)).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from("unknown-team"), BlogType.COLOG)).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> blogService.getPublicProfile("unknown-team"))
@@ -145,7 +145,7 @@ class BlogServiceTest {
     private Blog createColog(Long id, String slug, String name, String logoUrl) {
         return Blog.builder()
                 .id(id)
-                .slug(slug)
+                .slug(Slug.from(slug))
                 .name(name)
                 .profileImageUrl(logoUrl)
                 .blogType(BlogType.COLOG)
@@ -157,7 +157,7 @@ class BlogServiceTest {
                 .id(COLOG_ID)
                 .owner(owner)
                 .name("리로그 팀")
-                .slug("rilog-team")
+                .slug(Slug.from("rilog-team"))
                 .introduction("함께 쓰는 기술 블로그")
                 .profileImageUrl("https://example.com/logo.png")
                 .coverImageUrl("https://example.com/cover.png")

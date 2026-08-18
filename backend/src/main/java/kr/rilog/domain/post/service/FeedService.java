@@ -9,6 +9,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
+import kr.rilog.domain.blog.entity.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -48,7 +49,7 @@ public class FeedService {
     }
 
     private Blog getBlog(String slug) {
-        return blogRepository.findBySlugAndDeletedAtIsNull(slug)
+        return blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(slug))
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 

@@ -14,6 +14,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.blog.entity.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_ALREADY_EXISTS;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -66,9 +64,13 @@ public class CologService {
 
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
         requesterMember.validateCanInvite(command.permission());
+        /**
+         * 실제 도메인로직, 비즈니스 로직이 수행되고 있는 지 판단은 도메인 단위 테스트 or 서비스 통합테스트
+         * 실제로 그 부분을 호출하고 있는지는 모킹으로 빠르게?
+         * */
 
         User invitee = getUser(command.userId());
-        validateNotActiveMember(slug, invitee.getId());
+        validateNotActiveMember(colog.getId(), invitee.getId());
 
         BlogMember member = BlogMember.invite(
                 colog,
@@ -88,7 +90,7 @@ public class CologService {
     }
 
     private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
@@ -97,14 +99,14 @@ public class CologService {
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN));
     }
 
-    private void validateNotActiveMember(String slug, Long userId) {
-        if (blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(slug, userId, BlogMemberStatus.ACTIVE)) {
+    private void validateNotActiveMember(Long blodIg, Long userId) {
+        if (blogMemberRepository.existsByBlogIdAndUserIdAndStatus(blodIg, userId, BlogMemberStatus.ACTIVE)) {
             throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
         }
     }
 
     private void validateSlugUnique(String slug) {
-        if (blogRepository.existsBySlug(slug)) {
+        if (blogRepository.existsBySlug(Slug.from(slug))) {
             throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
         }
     }

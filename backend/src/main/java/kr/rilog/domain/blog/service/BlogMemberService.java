@@ -7,6 +7,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
+import kr.rilog.domain.blog.entity.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,7 @@ public class BlogMemberService {
     }
 
     private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 

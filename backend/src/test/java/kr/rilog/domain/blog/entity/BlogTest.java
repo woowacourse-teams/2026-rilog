@@ -99,7 +99,7 @@ class BlogTest {
                 .id(1L)
                 .owner(owner)
                 .name("개인 블로그")
-                .slug("rilog")
+                .slug(Slug.from("rilog"))
                 .blogType(BlogType.RILOG)
                 .build();
     }

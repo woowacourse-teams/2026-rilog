@@ -15,6 +15,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.blog.entity.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,14 +80,14 @@ class CologServiceTest {
         User owner = createOwner();
         CologCreateCommand command = createCommand();
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
-        when(blogRepository.existsBySlug("rilog-team")).thenReturn(false);
+        when(blogRepository.existsBySlug(Slug.from("rilog-team"))).thenReturn(false);
         when(blogRepository.saveAndFlush(any(Blog.class))).thenAnswer(invocation -> {
             Blog colog = invocation.getArgument(0);
             return Blog.builder()
                     .id(COLOG_ID)
                     .owner(colog.getOwner())
                     .name(colog.getName())
-                    .slug(colog.getSlug())
+                    .slug(Slug.from(colog.getSlug()))
                     .introduction(colog.getIntroduction())
                     .profileImageUrl(colog.getProfileImageUrl())
                     .coverImageUrl(colog.getCoverImageUrl())
@@ -145,7 +146,7 @@ class CologServiceTest {
     void createRejectsDuplicateSlug() {
         // given
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(createOwner()));
-        when(blogRepository.existsBySlug("rilog-team")).thenReturn(true);
+        when(blogRepository.existsBySlug(Slug.from("rilog-team"))).thenReturn(true);
 
         // when - then
         assertThatThrownBy(() -> cologService.create(OWNER_ID, createCommand()))
@@ -161,7 +162,7 @@ class CologServiceTest {
     void createRejectsConcurrentDuplicateSlug() {
         // given
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(createOwner()));
-        when(blogRepository.existsBySlug("rilog-team")).thenReturn(false);
+        when(blogRepository.existsBySlug(Slug.from("rilog-team"))).thenReturn(false);
         when(blogRepository.saveAndFlush(any(Blog.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate slug"));
 
@@ -196,11 +197,11 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
         when(blogMemberRepository.save(any(BlogMember.class))).thenAnswer(invocation -> {
             BlogMember member = invocation.getArgument(0);
@@ -258,11 +259,11 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(admin);
         BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(false);
         when(blogMemberRepository.save(any(BlogMember.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -285,7 +286,7 @@ class CologServiceTest {
         // given
         User requester = createOwner();
         Blog colog = createColog(requester);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.empty());
 
@@ -309,11 +310,11 @@ class CologServiceTest {
         User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(COLOG_SLUG, BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
-        when(blogMemberRepository.existsByBlogSlugAndUserIdAndStatus(COLOG_SLUG, INVITEE_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(true);
 
         // when - then
@@ -347,7 +348,7 @@ class CologServiceTest {
                 .id(COLOG_ID)
                 .owner(owner)
                 .name("리로그 팀")
-                .slug("rilog-team")
+                .slug(Slug.from("rilog-team"))
                 .blogType(BlogType.COLOG)
                 .build();
     }
