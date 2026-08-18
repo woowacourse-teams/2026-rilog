@@ -96,42 +96,24 @@ jobs:
 
       - name: Deploy to Server
         run: |
-          # 1. 경로 하드코딩 (러너의 $HOME 변수 덮어쓰기 방지)
-          export NVM_DIR="/home/ubuntu/.nvm"
-          
-          # 2. nvm.sh 안전하게 불러오기
-          # (nvm 내부의 사소한 경고 때문에 스크립트가 강제 종료되는 것을 막기 위해 set +e 사용)
-          set +e
-          if [ -s "$NVM_DIR/nvm.sh" ]; then
-            \. "$NVM_DIR/nvm.sh"
-          else
-            echo "❌ nvm.sh 파일을 찾지 못했습니다. 경로: $NVM_DIR/nvm.sh"
-            exit 1
+          # Node.js, pnpm, pm2가 전역(sudo)으로 설치되었으므로 별도 환경 세팅 없이 바로 실행
+          if ! command -v pnpm &> /dev/null; then
+             echo "에러: pnpm 명령어를 찾을 수 없습니다. 전역 설치 경로가 PATH에 없는지 확인해주세요."
+             exit 1
           fi
-          set -e
-          
-          # 3. Node 24 버전 강제 설치 및 활성화
-          nvm install 24
-          nvm use 24
-          
-          # 확인용 로그
-          echo "✅ Node version: $(node -v)"
-          echo "✅ NPM version: $(npm -v)"
-          
+
           TARGET_DIR="/home/ubuntu/rilog-next"
           
-          # 4. 대상 디렉터리 생성 및 압축 해제
+          # 1. 대상 디렉터리 생성 및 압축 해제
           mkdir -p $TARGET_DIR
           tar -xzf /tmp/rilog-fe/fe-build.tar.gz -C $TARGET_DIR
           rm -rf /tmp/rilog-fe
           
           cd $TARGET_DIR
           
-          # 5. 활성화된 Node 24 버전에 전역 패키지 설치
-          npm install -g pnpm@11.21.0 pm2
-          
-          # 6. 의존성 설치 및 PM2 실행
+          # 2. 의존성 설치 (전역 pnpm 사용)
           pnpm install --prod --frozen-lockfile
           
+          # 3. pm2 재시작
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
