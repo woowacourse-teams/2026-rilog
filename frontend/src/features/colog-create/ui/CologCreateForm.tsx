@@ -6,13 +6,14 @@ import { useState } from 'react';
 import type { CreateColog } from '../model/colog-create';
 import type { SubmitEvent } from 'react';
 
-import { useCologProfileForm } from '@/domains/colog/hooks/use-colog-profile-form';
-import CologProfileFormFields from '@/domains/colog/ui/CologProfileFormFields';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 
+import { useCologCreateForm } from '../hooks/use-colog-create-form';
 import { mockCreateColog } from '../lib/mock-create-colog';
 import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';
+
+import CologCreateFormFields from './CologCreateFormFields';
 
 interface CologCreateFormProps {
 	createColog?: CreateColog;
@@ -23,7 +24,7 @@ type CreateState = { status: 'idle' } | { status: 'pending' } | { status: 'error
 
 export default function CologCreateForm({ createColog = mockCreateColog, navigate }: CologCreateFormProps) {
 	const router = useRouter();
-	const form = useCologProfileForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
+	const form = useCologCreateForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
 	const [createState, setCreateState] = useState<CreateState>({ status: 'idle' });
 	const isCreating = createState.status === 'pending';
 
@@ -45,6 +46,7 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 			return;
 		}
 
+		form.setValue(normalizedValue);
 		setCreateState({ status: 'pending' });
 
 		try {
@@ -70,7 +72,7 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
-			<CologProfileFormFields
+			<CologCreateFormFields
 				value={form.value}
 				errors={form.errors}
 				refs={form.refs}

@@ -1,12 +1,11 @@
-import type { CologProfile } from '@/domains/colog/model/colog-info';
-import type { CologMemberSummary } from '@/domains/colog/model/colog-member-summary';
-import type { PostSummary } from '@/domains/post/model/post-summary';
+import type { CologMemberSummary, CologProfile } from '@/domains/blog/model/colog';
+import type { PostSummary } from '@/domains/post/model/post';
 
 export const MOCK_COLOG_HOME_PROFILE = {
 	name: '리로그',
 	slug: 'rilog',
-	introduction: 'React와 클린 아키텍처를 함께 공부합니다.',
-	logoImageUrl: '',
+	description: 'React와 클린 아키텍처를 함께 공부합니다.',
+	profileImageUrl: '',
 	coverImageUrl: '',
 	serviceUrl: 'https://www.rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
@@ -22,6 +21,7 @@ export const MOCK_COLOG_HOME_POSTS = Array.from({ length: 5 }, (_, index) => ({
 	thumbnailUrl: index === 1 ? null : '/images/default-post-cover.svg',
 	publishedAt: '2024-05-20',
 	author: {
+		id: 1,
 		nickname: '김지연',
 		slug: 'kim-jiyeon',
 		profileImageUrl: null,
@@ -42,6 +42,7 @@ export const MOCK_COLOG_HOME_MEMBERS = [
 	'오리로그',
 ].map((nickname, index) => ({
 	id: index + 1,
+	slug: `member-${index + 1}`,
 	nickname,
 	profileImageUrl: null,
 })) satisfies CologMemberSummary[];

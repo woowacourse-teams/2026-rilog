@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CologProfileSettingsValue } from './colog-profile-settings';
+import type { CologProfileSettingsValue } from '../model/colog-profile-settings';
 
 import {
 	isCologProfileSettingsEqual,
 	normalizeCologProfileSettings,
 	validateCologProfileSettings,
-} from './colog-profile-settings';
+} from './validate-colog-profile-settings';
 
 const VALID_SETTINGS: CologProfileSettingsValue = {
 	name: '리로그',
 	slug: 'rilog-team',
-	introduction: '함께 기록하는 팀입니다.',
-	logoImageUrl: '/images/profile-placeholder.svg',
+	description: '함께 기록하는 팀입니다.',
+	profileImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '/images/team-cover-placeholder.svg',
 	serviceUrl: 'https://rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams',
@@ -28,12 +28,12 @@ describe('validateCologProfileSettings', () => {
 				...VALID_SETTINGS,
 				name: 'R',
 				slug: 'Rilog_team',
-				introduction: '가'.repeat(81),
+				description: '가'.repeat(81),
 			}),
 		).toEqual({
 			name: '팀 이름은 2~20자로 입력해 주세요.',
 			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.',
-			introduction: '팀 소개는 80자 이내로 입력해 주세요.',
+			description: '팀 소개는 80자 이내로 입력해 주세요.',
 		});
 	});
 
@@ -41,7 +41,7 @@ describe('validateCologProfileSettings', () => {
 		expect(
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
-				introduction: '',
+				description: '',
 				coverImageUrl: '',
 			}),
 		).toEqual({});
@@ -51,7 +51,7 @@ describe('validateCologProfileSettings', () => {
 		expect(
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
-				logoImageUrl: '',
+				profileImageUrl: '',
 				logoFile: null,
 			}),
 		).toEqual({ logoFile: '팀 로고를 등록해 주세요.' });

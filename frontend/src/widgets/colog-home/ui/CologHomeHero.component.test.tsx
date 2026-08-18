@@ -1,15 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { CologProfile } from '@/domains/colog/model/colog-info';
+import type { CologProfile } from '@/domains/blog/model/colog';
 
 import CologHomeHero from './CologHomeHero';
 
 const COLOG_PROFILE_FIXTURE: CologProfile = {
 	name: '프론트엔드 연구소',
 	slug: 'frontend-lab',
-	introduction: '사용자 경험을 함께 연구합니다.',
-	logoImageUrl: '/images/frontend-lab-logo.png',
+	description: '사용자 경험을 함께 연구합니다.',
+	profileImageUrl: '/images/frontend-lab-logo.png',
 	coverImageUrl: '/images/frontend-lab-cover.png',
 	serviceUrl: 'https://frontend-lab.example.com',
 	githubUrl: 'https://github.com/frontend-lab',
@@ -43,7 +43,7 @@ describe('CologHomeHero', () => {
 			<CologHomeHero
 				profile={{
 					...COLOG_PROFILE_FIXTURE,
-					introduction: '',
+					description: '',
 					serviceUrl: '',
 					githubUrl: '',
 					email: '',

@@ -1,9 +1,8 @@
-import type { CologMember } from '@/domains/colog/model/colog-member';
+import type { CologMember } from '@/domains/blog/model/colog';
 
 export const MOCK_COLOG_MEMBERS: CologMember[] = [
 	{
 		id: 1,
-		userId: 101,
 		nickname: '김지연',
 		slug: 'jiyeon',
 		profileImageUrl: '',
@@ -13,7 +12,6 @@ export const MOCK_COLOG_MEMBERS: CologMember[] = [
 	},
 	{
 		id: 2,
-		userId: 102,
 		nickname: '박서준',
 		slug: 'seojun12',
 		profileImageUrl: '',
@@ -23,7 +21,6 @@ export const MOCK_COLOG_MEMBERS: CologMember[] = [
 	},
 	{
 		id: 3,
-		userId: 103,
 		nickname: '이지은',
 		slug: 'jieun023',
 		profileImageUrl: '',
@@ -33,7 +30,6 @@ export const MOCK_COLOG_MEMBERS: CologMember[] = [
 	},
 	{
 		id: 4,
-		userId: 104,
 		nickname: '최우나',
 		slug: 'woooona',
 		profileImageUrl: '',
@@ -43,7 +39,6 @@ export const MOCK_COLOG_MEMBERS: CologMember[] = [
 	},
 	{
 		id: 5,
-		userId: 105,
 		nickname: '정인서',
 		slug: 'inwest',
 		profileImageUrl: '',
@@ -53,7 +48,6 @@ export const MOCK_COLOG_MEMBERS: CologMember[] = [
 	},
 	{
 		id: 6,
-		userId: 106,
 		nickname: '이재현',
 		slug: 'jhhhhh',
 		profileImageUrl: '',

@@ -1,13 +1,13 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { CologMemberSummary } from '@/domains/colog/model/colog-member-summary';
+import type { CologMemberSummary } from '@/domains/blog/model/colog';
 
 import CologMemberList from './CologMemberList';
 
 const MEMBER_FIXTURES: CologMemberSummary[] = [
-	{ id: 1, nickname: '새봄', profileImageUrl: '/images/saebom.png' },
-	{ id: 2, nickname: '여름', profileImageUrl: null },
+	{ id: 1, slug: 'saebom', nickname: '새봄', profileImageUrl: 'https://images.rilog.test/saebom.png' },
+	{ id: 2, slug: 'yeoreum', nickname: '여름', profileImageUrl: null },
 ];
 
 describe('CologMemberList', () => {

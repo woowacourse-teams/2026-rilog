@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CologCreateValue } from './colog-create';
+import type { CologCreateValue } from '../model/colog-create';
 
-import { normalizeCologCreateValue, validateCologCreateValue } from './colog-create';
+import { normalizeCologCreateValue, validateCologCreateValue } from './validate-colog-create';
 
 const VALID_VALUE: CologCreateValue = {
 	name: '리로그',
 	slug: 'rilog-team',
-	introduction: '함께 기록하는 팀입니다.',
-	logoImageUrl: '/images/profile-placeholder.svg',
+	description: '함께 기록하는 팀입니다.',
+	profileImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '/images/team-cover-placeholder.svg',
 	serviceUrl: 'https://rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams',
@@ -24,7 +24,7 @@ describe('validateCologCreateValue', () => {
 				...VALID_VALUE,
 				name: 'R',
 				slug: 'Rilog_team',
-				logoImageUrl: '',
+				profileImageUrl: '',
 				serviceUrl: '',
 				githubUrl: '',
 				email: '',
@@ -40,7 +40,7 @@ describe('validateCologCreateValue', () => {
 		expect(
 			validateCologCreateValue({
 				...VALID_VALUE,
-				introduction: '',
+				description: '',
 				coverImageUrl: '',
 			}),
 		).toEqual({});
@@ -69,7 +69,7 @@ describe('normalizeCologCreateValue', () => {
 				...VALID_VALUE,
 				name: '  리로그  ',
 				slug: '  rilog-team  ',
-				logoImageUrl: '  https://cdn.rilog.kr/logo.png  ',
+				profileImageUrl: '  https://cdn.rilog.kr/logo.png  ',
 				serviceUrl: '  https://rilog.kr  ',
 				githubUrl: '  https://github.com/woowacourse-teams  ',
 				email: '  team@rilog.kr  ',
@@ -77,7 +77,7 @@ describe('normalizeCologCreateValue', () => {
 		).toMatchObject({
 			name: '리로그',
 			slug: 'rilog-team',
-			logoImageUrl: 'https://cdn.rilog.kr/logo.png',
+			profileImageUrl: 'https://cdn.rilog.kr/logo.png',
 			serviceUrl: 'https://rilog.kr',
 			githubUrl: 'https://github.com/woowacourse-teams',
 			email: 'team@rilog.kr',
