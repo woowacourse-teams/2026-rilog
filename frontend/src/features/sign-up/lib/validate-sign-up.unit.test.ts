@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateSignUpFields } from './sign-up';
+import { validateSignUpFields } from './validate-sign-up';
 
 describe('validateSignUpFields', () => {
 	it('닉네임은 문자 종류와 관계없이 2~20자를 허용한다', () => {

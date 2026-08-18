@@ -58,6 +58,14 @@ describe('SignUpForm', () => {
 		);
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute('src', 'blob:profile-image');
+
+		await user.click(screen.getByRole('button', { name: '기본 이미지로 변경' }));
+		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'/images/profile-placeholder.svg',
+		);
+		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');
 		vi.unstubAllGlobals();
@@ -94,7 +102,7 @@ describe('SignUpForm', () => {
 			expect(completeSignUp).toHaveBeenCalledWith({
 				nickname: '리로그',
 				slug: 'Ri_log-01',
-				introduction: '함께 기록해요',
+				description: '함께 기록해요',
 				profileImageFile: null,
 			});
 			expect(navigate).toHaveBeenCalledWith('/', { replace: true });

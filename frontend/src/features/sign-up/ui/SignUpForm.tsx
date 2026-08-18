@@ -1,8 +1,8 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId } from 'react';
 
-import type { ChangeEvent, SubmitEvent } from 'react';
+import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
@@ -13,28 +13,20 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+import { useSignUpForm } from '../hooks/use-sign-up-form';
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
 import {
 	type CompleteSignUp,
+	SIGN_UP_DESCRIPTION_MAX_LENGTH,
 	SIGN_UP_NICKNAME_MAX_LENGTH,
 	SIGN_UP_NICKNAME_MIN_LENGTH,
 	SIGN_UP_SLUG_MAX_LENGTH,
 	SIGN_UP_SLUG_MIN_LENGTH,
 	SIGN_UP_SLUG_PATTERN,
-	validateSignUpFields,
 } from '../model/sign-up';
 
-const INTRODUCTION_MAX_LENGTH = 80;
 const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
 const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
-
-const getFormDataText = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
-
-type SignUpState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
-
-interface SignUpNavigateOptions {
-	replace?: boolean;
-}
 
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
@@ -45,78 +37,20 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 	const profileImageLabelId = useId();
 	const termsAgreementId = useId();
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
-	const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-	const [introduction, setIntroduction] = useState('');
-	const [signUpState, setSignUpState] = useState<SignUpState>({ status: 'idle' });
+
+	const {
+		profileImageFile,
+		description,
+		signUpState,
+		isSigningUp,
+		clearSignUpError,
+		handleImageChange,
+		handleDescriptionChange,
+		handleRequiredTextChange,
+		handleSubmit,
+	} = useSignUpForm({ completeSignUp, navigate });
+
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
-	const isSigningUp = signUpState.status === 'pending';
-
-	const clearSignUpError = () => {
-		setSignUpState((currentState) => (currentState.status === 'error' ? { status: 'idle' } : currentState));
-	};
-
-	function handleImageChange(file: File | null) {
-		setProfileImageFile(file);
-		clearSignUpError();
-	}
-
-	function handleIntroductionChange(event: ChangeEvent<HTMLTextAreaElement>) {
-		setIntroduction(event.currentTarget.value);
-		clearSignUpError();
-	}
-
-	function handleRequiredTextChange(event: ChangeEvent<HTMLInputElement>) {
-		event.currentTarget.setCustomValidity('');
-		clearSignUpError();
-	}
-
-	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-		event.preventDefault();
-
-		if (isSigningUp) {
-			return;
-		}
-
-		const formData = new FormData(event.currentTarget);
-		const nickname = getFormDataText(formData.get('nickname')).trim();
-		const slug = getFormDataText(formData.get('slug')).trim();
-		const validationErrors = validateSignUpFields({ nickname, slug });
-		const nicknameInput = event.currentTarget.elements.namedItem('nickname');
-		const slugInput = event.currentTarget.elements.namedItem('slug');
-
-		if (nicknameInput instanceof HTMLInputElement) {
-			nicknameInput.setCustomValidity(validationErrors.nickname ?? '');
-		}
-		if (slugInput instanceof HTMLInputElement) {
-			slugInput.setCustomValidity(validationErrors.slug ?? '');
-		}
-
-		if (!event.currentTarget.checkValidity()) {
-			event.currentTarget.reportValidity();
-			return;
-		}
-
-		setSignUpState({ status: 'pending' });
-
-		try {
-			await completeSignUp({ nickname, slug, introduction: introduction.trim(), profileImageFile });
-
-			if (navigate !== undefined) {
-				navigate('/', { replace: true });
-				return;
-			}
-
-			window.location.replace('/');
-		} catch (error) {
-			setSignUpState({
-				status: 'error',
-				message:
-					error instanceof Error
-						? error.message
-						: '회원가입을 완료하지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.',
-			});
-		}
-	};
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
@@ -134,8 +68,19 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 						className="size-25 shrink-0 bg-background"
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
-					<div className="flex-1">
+					<div className="flex flex-1 flex-wrap items-center gap-2">
 						<ImageUploader onFileChange={handleImageChange} disabled={isSigningUp} className="bg-white" />
+						{profileImageFile !== null && (
+							<Button
+								type="button"
+								variant="secondary"
+								size="md"
+								disabled={isSigningUp}
+								onClick={() => handleImageChange(null)}
+							>
+								기본 이미지로 변경
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>
@@ -191,10 +136,10 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 					<Textarea
 						id={id}
 						aria-describedby={describedBy}
-						name="introduction"
-						value={introduction}
-						maxLength={INTRODUCTION_MAX_LENGTH}
-						onChange={handleIntroductionChange}
+						name="description"
+						value={description}
+						maxLength={SIGN_UP_DESCRIPTION_MAX_LENGTH}
+						onChange={handleDescriptionChange}
 						disabled={isSigningUp}
 					/>
 				)}
