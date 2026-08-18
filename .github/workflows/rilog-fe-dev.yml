@@ -97,7 +97,8 @@ jobs:
       - name: Deploy to Server
         run: |
           # 0. 비대화형(non-interactive) 셸에서도 nvm을 로드하여 npm/node를 찾을 수 있도록 환경 설정
-          export NVM_DIR="$HOME/.nvm"
+          # (GitHub Actions는 $HOME 변수를 임시 디렉터리로 덮어씌우므로 절대 경로 사용)
+          export NVM_DIR="/home/ubuntu/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           
           if ! command -v npm &> /dev/null; then
@@ -119,6 +120,6 @@ jobs:
           pnpm install --prod --frozen-lockfile
           
           # 3. pm2 재시작
-          # ecosystem.config.cjs를 사용해 프로세스 리로드 (update-env로 환경변수 갱신 보장)
+          # pm2 역시 글로벌 설치되어 있어야 합니다. (npm install -g pm2)
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
