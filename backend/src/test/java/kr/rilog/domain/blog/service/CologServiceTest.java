@@ -88,7 +88,7 @@ class CologServiceTest {
                     .name(colog.getName())
                     .slug(colog.getSlug())
                     .introduction(colog.getIntroduction())
-                    .logoUrl(colog.getLogoUrl())
+                    .profileImageUrl(colog.getProfileImageUrl())
                     .coverImageUrl(colog.getCoverImageUrl())
                     .serviceUrl(colog.getServiceUrl())
                     .githubUrl(colog.getGithubUrl())
@@ -109,7 +109,7 @@ class CologServiceTest {
                 .extracting(
                         Blog::getOwner,
                         Blog::getSlug,
-                        Blog::getLogoUrl,
+                        Blog::getProfileImageUrl,
                         Blog::getServiceUrl,
                         Blog::getGithubUrl,
                         Blog::getBlogType

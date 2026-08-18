@@ -367,7 +367,7 @@ class PostServiceTest {
                 .category(Category.TECH)
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)
-                .thumbnailUrl("https://example.com/thumbnail.png")
+                .thumbnailImageUrl("https://example.com/thumbnail.png")
                 .build();
     }
 
@@ -382,7 +382,7 @@ class PostServiceTest {
                 .category(Category.TECH)
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)
-                .thumbnailUrl("https://example.com/thumbnail.png")
+                .thumbnailImageUrl("https://example.com/thumbnail.png")
                 .build();
     }
 

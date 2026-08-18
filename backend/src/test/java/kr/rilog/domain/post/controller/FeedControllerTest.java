@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.controller;
 
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.domain.post.service.FeedService;
 import org.junit.jupiter.api.DisplayName;
@@ -40,10 +41,11 @@ class FeedControllerTest {
                                         "writer",
                                         "https://example.com/profile.png"
                                 ),
-                                new PublicBlogFeedPostResponse.BlogResponse(
+                                new PublicBlogFeedPostResponse.OwnerResponse(
+                                        BlogType.COLOG,
                                         2L,
-                                        "리로그 팀",
                                         "rilog-team",
+                                        "리로그 팀",
                                         "https://example.com/logo.png"
                                 )
                         )),
@@ -62,8 +64,9 @@ class FeedControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[0].postId").value(10L))
-                .andExpect(jsonPath("$.data.posts[0].user.slug").value("writer"))
-                .andExpect(jsonPath("$.data.posts[0].blog.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.posts[0].author.slug").value("writer"))
+                .andExpect(jsonPath("$.data.posts[0].owner.type").value("COLOG"))
+                .andExpect(jsonPath("$.data.posts[0].owner.slug").value("rilog-team"))
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.size").value(2))
                 .andExpect(jsonPath("$.data.hasNext").value(false));

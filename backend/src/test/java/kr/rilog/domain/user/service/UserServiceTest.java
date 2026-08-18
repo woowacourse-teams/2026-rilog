@@ -160,7 +160,7 @@ class UserServiceTest {
                         Blog::getName,
                         Blog::getSlug,
                         Blog::getIntroduction,
-                        Blog::getLogoUrl,
+                        Blog::getProfileImageUrl,
                         Blog::getGithubUrl,
                         Blog::getEmail,
                         Blog::getBlogType

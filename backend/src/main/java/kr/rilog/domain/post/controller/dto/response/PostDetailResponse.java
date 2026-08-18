@@ -24,7 +24,7 @@ public record PostDetailResponse(
                 post.getTitle(),
                 post.getContent(),
                 post.getPublishedAt(),
-                post.getThumbnailUrl(),
+                post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
                 RilogOwnerResponse.from(post.getRilog())
@@ -36,7 +36,7 @@ public record PostDetailResponse(
                 post.getTitle(),
                 post.getContent(),
                 post.getPublishedAt(),
-                post.getThumbnailUrl(),
+                post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
                 CologOwnerResponse.of(post.getColog(), memberCount, postCount)
