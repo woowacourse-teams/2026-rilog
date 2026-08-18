@@ -81,7 +81,7 @@ public record PublicBlogFeedPostResponse(
 
     public record AuthorResponse(
             Long userId,
-            String name,
+            String nickname,
             String slug,
             String profileImageUrl
     ) {
