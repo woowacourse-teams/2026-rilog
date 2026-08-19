@@ -8,7 +8,6 @@ export const MOCK_COLOG_HOME_PROFILE = {
 	coverImageUrl: '',
 	serviceUrl: 'https://www.rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
-	email: 'contact@rilog.dev',
 } satisfies CologProfile;
 
 export const MOCK_COLOG_HOME_MEMBERS = [

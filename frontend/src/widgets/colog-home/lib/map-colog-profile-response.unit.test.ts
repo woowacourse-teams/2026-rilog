@@ -30,7 +30,6 @@ describe('mapCologProfileResponse', () => {
 			coverImageUrl: 'https://example.com/cover.png',
 			serviceUrl: 'https://rilog.example.com',
 			githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
-			email: undefined,
 		});
 	});
 
@@ -59,7 +58,6 @@ describe('mapCologProfileResponse', () => {
 			coverImageUrl: null,
 			serviceUrl: undefined,
 			githubUrl: undefined,
-			email: undefined,
 		});
 	});
 });

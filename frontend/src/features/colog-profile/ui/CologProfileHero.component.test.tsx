@@ -13,7 +13,6 @@ const COLOG_PROFILE_FIXTURE: CologProfile = {
 	coverImageUrl: '/images/frontend-lab-cover.png',
 	serviceUrl: 'https://frontend-lab.example.com',
 	githubUrl: 'https://github.com/frontend-lab',
-	email: 'hello@frontend-lab.example.com',
 };
 
 describe('CologHomeHero', () => {
@@ -31,10 +30,6 @@ describe('CologHomeHero', () => {
 			'href',
 			'https://github.com/frontend-lab',
 		);
-		expect(screen.getByRole('link', { name: '프론트엔드 연구소 이메일' })).toHaveAttribute(
-			'href',
-			'mailto:hello@frontend-lab.example.com',
-		);
 		expect(screen.getByRole('button', { name: '프론트엔드 연구소 코로그 메뉴 열기' })).toBeInTheDocument();
 	});
 
@@ -46,7 +41,6 @@ describe('CologHomeHero', () => {
 					description: '',
 					serviceUrl: '',
 					githubUrl: '',
-					email: '',
 				}}
 			/>,
 		);

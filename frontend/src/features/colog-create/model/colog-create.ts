@@ -23,7 +23,6 @@ export const INITIAL_COLOG_CREATE_VALUE: CologCreateValue = {
 	coverImageUrl: '',
 	serviceUrl: '',
 	githubUrl: '',
-	email: '',
 	logoFile: null,
 	coverImageFile: null,
 };

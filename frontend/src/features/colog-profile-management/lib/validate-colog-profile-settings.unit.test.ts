@@ -16,7 +16,6 @@ const VALID_SETTINGS: CologProfileSettingsValue = {
 	coverImageUrl: '/images/team-cover-placeholder.svg',
 	serviceUrl: 'https://rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams',
-	email: 'team@rilog.kr',
 	logoFile: null,
 	coverImageFile: null,
 };
@@ -63,11 +62,9 @@ describe('validateCologProfileSettings', () => {
 				...VALID_SETTINGS,
 				serviceUrl: '',
 				githubUrl: 'github',
-				email: 'rilog',
 			}),
 		).toEqual({
 			githubUrl: '올바른 GitHub URL을 입력해 주세요.',
-			email: '올바른 이메일 주소를 입력해 주세요.',
 		});
 	});
 
@@ -79,7 +76,6 @@ describe('validateCologProfileSettings', () => {
 				slug: '  rilog-team  ',
 				serviceUrl: '  https://rilog.kr  ',
 				githubUrl: '  https://github.com/woowacourse-teams  ',
-				email: '  team@rilog.kr  ',
 			}),
 		).toEqual({});
 	});
@@ -93,7 +89,6 @@ describe('normalizeCologProfileSettings', () => {
 			slug: '  rilog  ',
 			serviceUrl: '  https://rilog.kr  ',
 			githubUrl: '  https://github.com/woowacourse-teams  ',
-			email: '  team@rilog.kr  ',
 		});
 
 		expect(normalizedSettings).toMatchObject({
@@ -101,7 +96,6 @@ describe('normalizeCologProfileSettings', () => {
 			slug: 'rilog',
 			serviceUrl: 'https://rilog.kr',
 			githubUrl: 'https://github.com/woowacourse-teams',
-			email: 'team@rilog.kr',
 		});
 	});
 });

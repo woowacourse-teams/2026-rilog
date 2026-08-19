@@ -13,7 +13,6 @@ export interface CologCreateFormRefs {
 	description: RefObject<HTMLTextAreaElement | null>;
 	serviceUrl: RefObject<HTMLInputElement | null>;
 	githubUrl: RefObject<HTMLInputElement | null>;
-	email: RefObject<HTMLInputElement | null>;
 }
 
 interface UseCologCreateFormOptions {
@@ -30,7 +29,6 @@ export function useCologCreateForm(options: UseCologCreateFormOptions = {}) {
 	const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
 	const serviceUrlRef = useRef<HTMLInputElement | null>(null);
 	const githubUrlRef = useRef<HTMLInputElement | null>(null);
-	const emailRef = useRef<HTMLInputElement | null>(null);
 
 	const refs: CologCreateFormRefs = useMemo(
 		() => ({
@@ -40,7 +38,6 @@ export function useCologCreateForm(options: UseCologCreateFormOptions = {}) {
 			description: descriptionRef,
 			serviceUrl: serviceUrlRef,
 			githubUrl: githubUrlRef,
-			email: emailRef,
 		}),
 		[],
 	);
