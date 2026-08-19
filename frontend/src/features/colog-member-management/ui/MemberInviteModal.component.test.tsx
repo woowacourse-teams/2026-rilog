@@ -5,6 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MemberInviteModal from './MemberInviteModal';
 
+vi.hoisted(() => {
+	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
+});
+
 describe('MemberInviteModal', () => {
 	let queryClient: QueryClient;
 
@@ -17,22 +21,28 @@ describe('MemberInviteModal', () => {
 			},
 		});
 
-		vi.spyOn(queryClient, 'fetchQuery').mockImplementation(async (options: any) => {
-			const slug = options.queryKey[2];
-			if (slug === 'jetproc') {
-				return {
-					status: 0,
-					message: 'OK',
-					data: {
-						id: 1,
-						slug: 'jetproc',
-						nickname: '김지연',
-						profileImageUrl: '',
-					},
-				};
+		const fetchMock = vi.fn().mockImplementation((...args: any[]) => {
+			const urlStr = String(args[0]?.url || args[0]);
+			if (urlStr.includes('unknown')) {
+				return Promise.resolve(new Response('Not found', { status: 404 }));
 			}
-			throw new Error('Not found');
+			return Promise.resolve(
+				new Response(
+					JSON.stringify({
+						status: 0,
+						message: 'OK',
+						data: {
+							id: 1,
+							slug: 'jetproc',
+							nickname: '김지연',
+							profileImageUrl: '',
+						},
+					}),
+					{ headers: { 'Content-Type': 'application/json' }, status: 200 }
+				)
+			);
 		});
+		vi.stubGlobal('fetch', fetchMock);
 	});
 
 	afterEach(() => {

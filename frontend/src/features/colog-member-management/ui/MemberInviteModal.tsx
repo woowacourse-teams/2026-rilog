@@ -1,7 +1,6 @@
 'use client';
 
 
-import { useQueryClient } from '@tanstack/react-query';
 import { useId, useRef, useState } from 'react';
 
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
@@ -12,8 +11,7 @@ import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
 
-
-import { userBySlugQueryOptions } from '@/api/users/queries/user-by-slug/query-options';
+import { useReadUserBySlugMutation } from '@/api/users/mutations/use-read-user-by-slug-mutation';
 
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
@@ -32,6 +30,8 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 	const [candidates, setCandidates] = useState<MemberInviteCandidate[]>([]);
 	const [errorMessage, setErrorMessage] = useState<string>();
 
+	const { mutateAsync: readUserBySlug, isPending } = useReadUserBySlugMutation();
+
 	const reset = () => {
 		setSlugInput('');
 		setCandidates([]);
@@ -42,9 +42,6 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 		reset();
 		onClose();
 	};
-
-	const queryClient = useQueryClient();
-	const [isPending, setIsPending] = useState(false);
 
 	const handleAddCandidate = async () => {
 		const normalizedSlug = slugInput.trim().replace(/^@/, '');
@@ -59,11 +56,10 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 			return;
 		}
 
-		setIsPending(true);
 		setErrorMessage(undefined);
 
 		try {
-			const response = await queryClient.fetchQuery(userBySlugQueryOptions(normalizedSlug));
+			const response = await readUserBySlug(normalizedSlug);
 			const user = response.data;
 
 			if (user) {
@@ -80,8 +76,6 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 			}
 		} catch {
 			setErrorMessage('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
-		} finally {
-			setIsPending(false);
 		}
 	};
 
@@ -155,7 +149,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 							className="shrink-0 px-5"
 							disabled={!slugInput.trim()}
 							isPending={isPending}
-							onClick={handleAddCandidate}
+							onClick={() => void handleAddCandidate()}
 						>
 							추가
 						</Button>
