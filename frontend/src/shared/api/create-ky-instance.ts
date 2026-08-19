@@ -86,7 +86,17 @@ export const createKyInstance = ({
 		retry: ensureRefreshRetry(retry),
 		hooks: {
 			...hooks,
+			beforeError: [
+				({ request, error }) => {
+					console.error(`[ky error] ${request.method} ${request.url} - ${error.message}`);
+					return error;
+				},
+				...(hooks?.beforeError ?? []),
+			],
 			beforeRequest: [
+				({ request }) => {
+					console.log(`[ky request] ${request.method} ${request.url}`);
+				},
 				({ request }) => {
 					if (!isBrowser()) {
 						return;
@@ -101,6 +111,9 @@ export const createKyInstance = ({
 				...(hooks?.beforeRequest ?? []),
 			],
 			afterResponse: [
+				({ request, response }) => {
+					console.log(`[ky response] ${request.method} ${request.url} - ${response.status}`);
+				},
 				...(hooks?.afterResponse ?? []),
 				async ({ request, response, retryCount }) => {
 					if (!isBrowser() || response.status !== 401) {

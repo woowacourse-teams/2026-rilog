@@ -1,7 +1,7 @@
-import Link from 'next/link';
-
 import type { LinkProps } from 'next/link';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
+
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 type SidebarNavigationLinkSize = 'sm' | 'md';
 
@@ -34,7 +34,7 @@ export default function SidebarNavigationLink({
 	...linkProps
 }: SidebarNavigationLinkProps) {
 	return (
-		<Link
+		<CustomLink
 			{...linkProps}
 			aria-label={accessibilityLabel ?? label}
 			aria-current={isCurrent ? 'page' : undefined}
@@ -49,6 +49,6 @@ export default function SidebarNavigationLink({
 					{badge}
 				</span>
 			)}
-		</Link>
+		</CustomLink>
 	);
 }

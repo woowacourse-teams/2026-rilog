@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
@@ -26,7 +26,7 @@ export default function AuthenticatedSidebarFooter() {
 
 			<footer className="w-full shrink-0 border-t border-border-default p-3">
 				<div className="flex w-full items-center gap-1 rounded-xl bg-transparent p-1.5 transition-colors group-focus-within:bg-surface-hover group-hover:bg-surface-hover">
-					<Link
+					<CustomLink
 						href={buildCologHomePath('jetproc')}
 						aria-label="파라디 @JetProc"
 						className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg group-focus-within:justify-start group-hover:justify-start ${FOCUS_CLASS_NAME}`}
@@ -36,7 +36,7 @@ export default function AuthenticatedSidebarFooter() {
 							<strong className="block truncate text-label-2 font-semibold text-text-primary">파라디</strong>
 							<span className="block truncate text-caption-1 text-text-secondary">@JetProc</span>
 						</span>
-					</Link>
+					</CustomLink>
 					<Button
 						aria-label="로그아웃"
 						size="icon"

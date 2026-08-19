@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 import { usePathname } from 'next/navigation';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
@@ -24,9 +24,9 @@ export default function MobileHeader({ isAuthenticated = false }: MobileBottomNa
 			data-mobile-header
 			className="flex h-16 w-full items-center justify-between border-b border-border-default bg-white px-5"
 		>
-			<Link href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
+			<CustomLink href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
 				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={32} priority />
-			</Link>
+			</CustomLink>
 
 			{isAuthenticated ? (
 				<UserAvatar fallback="P" size="lg" hasBorder />
