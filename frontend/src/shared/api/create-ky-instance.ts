@@ -2,9 +2,6 @@ import ky from 'ky';
 
 import type { Hooks, KyInstance, Options } from 'ky';
 
-import type { ErrorDetail } from '@/shared/api/shared.types';
-
-import { isErrorDetail } from './api-error';
 import { API_ERROR_CODES } from './error-codes';
 
 interface TokenProvider {
@@ -12,7 +9,12 @@ interface TokenProvider {
 	refreshAccessToken: () => Promise<string | null>;
 }
 
+export interface RequestAuthOptions {
+	skipAuth?: boolean;
+}
+
 interface CreateKyInstanceOptions extends Omit<Options, 'hooks'> {
+	baseUrl?: string;
 	hooks?: Hooks;
 	onTokenRefreshFailure?: () => void;
 	tokenProvider?: TokenProvider;
@@ -25,12 +27,17 @@ const ANONYMOUS_TOKEN_PROVIDER: TokenProvider = {
 
 const isBrowser = () => typeof window !== 'undefined';
 
-const readErrorDetail = async (response: Response): Promise<ErrorDetail | null> => {
+const isExpiredTokenResponse = async (response: Response): Promise<boolean> => {
 	try {
 		const body: unknown = await response.json();
-		return isErrorDetail(body) ? body : null;
+		return (
+			typeof body === 'object' &&
+			body !== null &&
+			'errorCode' in body &&
+			body.errorCode === API_ERROR_CODES.EXPIRED_ACCESS_TOKEN
+		);
 	} catch {
-		return null;
+		return false;
 	}
 };
 
@@ -57,6 +64,7 @@ export const createKyInstance = ({
 	...options
 }: CreateKyInstanceOptions = {}): KyInstance => {
 	let refreshPromise: Promise<string | null> | null = null;
+	const resolvedBaseUrl = typeof options.baseUrl === 'string' ? options.baseUrl : undefined;
 
 	const refreshAccessToken = () => {
 		if (refreshPromise !== null) {
@@ -81,6 +89,8 @@ export const createKyInstance = ({
 		return currentRefreshPromise;
 	};
 
+	const getApiBase = (): string | undefined => resolvedBaseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+
 	return ky.create({
 		...options,
 		retry: ensureRefreshRetry(retry),
@@ -97,8 +107,18 @@ export const createKyInstance = ({
 				({ request }) => {
 					console.log(`[ky request] ${request.method} ${request.url}`);
 				},
-				({ request }) => {
+				({ request, options: requestOptions }) => {
 					if (!isBrowser()) {
+						return;
+					}
+
+					const skipAuth = Boolean((requestOptions as unknown as { skipAuth?: boolean } | undefined)?.skipAuth);
+					if (skipAuth) {
+						return;
+					}
+
+					const apiBase = getApiBase();
+					if (apiBase && !request.url.startsWith(apiBase)) {
 						return;
 					}
 
@@ -115,8 +135,18 @@ export const createKyInstance = ({
 					console.log(`[ky response] ${request.method} ${request.url} - ${response.status}`);
 				},
 				...(hooks?.afterResponse ?? []),
-				async ({ request, response, retryCount }) => {
+				async ({ request, response, retryCount, options: requestOptions }) => {
 					if (!isBrowser() || response.status !== 401) {
+						return;
+					}
+
+					const skipAuth = Boolean((requestOptions as unknown as { skipAuth?: boolean } | undefined)?.skipAuth);
+					if (skipAuth) {
+						return;
+					}
+
+					const apiBase = getApiBase();
+					if (apiBase && !request.url.startsWith(apiBase)) {
 						return;
 					}
 
@@ -125,8 +155,8 @@ export const createKyInstance = ({
 						return;
 					}
 
-					const errorDetail = await readErrorDetail(response.clone());
-					if (errorDetail?.errorCode !== API_ERROR_CODES.EXPIRED_ACCESS_TOKEN) {
+					const isExpiredToken = await isExpiredTokenResponse(response.clone());
+					if (!isExpiredToken) {
 						return;
 					}
 
