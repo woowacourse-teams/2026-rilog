@@ -1,30 +1,41 @@
+'use client';
+
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
+import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
 import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME } from './sidebar-class-names';
 import SidebarNavigationLink from './SidebarNavigationLink';
 
-const TEAMS = [
-	{ slug: 'toss-tech', monogram: 'T', name: '토스 테크', avatarTone: 'subtle' },
-	{ slug: 'woowacourse', monogram: 'W', name: '우아한테크코스', avatarTone: 'strong' },
-	{ slug: 'baemin', monogram: 'B', name: '배달의 민족', avatarTone: 'subtle' },
-	{ slug: 'andromeda', monogram: 'A', name: '안드로메다', avatarTone: 'strong' },
-] as const;
-
 export default function CologNavigation() {
+	const { data: myCologsResponse, isPending } = useMyCologsPreviewQuery();
+	const myCologs = myCologsResponse?.data ?? [];
+
 	return (
 		<nav aria-label="내 코로그">
 			<ul className="mt-2 flex w-full flex-col gap-0.5">
-				{TEAMS.map((team) => (
-					<li key={team.slug} className="w-full">
-						<SidebarNavigationLink
-							href={buildCologHomePath(team.slug)}
-							icon={<CologAvatar fallback={team.monogram} size="md" tone={team.avatarTone} />}
-							label={team.name}
-						/>
-					</li>
-				))}
+				{isPending ? (
+					<li className="px-2 py-1 text-xs text-text-secondary">로딩 중...</li>
+				) : (
+					myCologs.map((colog) => (
+						<li key={colog.cologId} className="w-full">
+							<SidebarNavigationLink
+								href={buildCologHomePath(colog.slug)}
+								icon={
+									<CologAvatar
+										fallback={colog.name.charAt(0)}
+										src={colog.logoUrl ?? undefined}
+										size="md"
+										// TODO: 추후 톤이나 색상 정책 적용
+										tone="strong"
+									/>
+								}
+								label={colog.name}
+							/>
+						</li>
+					))
+				)}
 			</ul>
 			<ButtonLink
 				href={APP_ROUTES.cologCreate}
