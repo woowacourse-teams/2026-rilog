@@ -94,43 +94,26 @@ jobs:
           name: fe-build-artifact
           path: /tmp/rilog-fe
 
-      # ======== [추가할 부분] ========
-      # 서버(EC2)에 Node가 없어도, GitHub Actions가 알아서 이 스텝에서 Node 24와 pnpm을 세팅해 줍니다!
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 11.21.0
-      # ===============================
-
       - name: Deploy to Server
-        env:
-          RUNNER_TRACKING_ID: ""
-        shell: bash
         run: |
-          set -euo pipefail
-
-          # ❌ 문제의 원인이었던 nvm 관련 코드 싹 제거 완료
-
-          echo "🟢 Node 버전: $(node -v)"
-          echo "🟢 pnpm 버전: $(pnpm -v)"
-
-          # pm2 없으면 설치
-          command -v pm2 >/dev/null || npm install -g pm2
-
           TARGET_DIR="/home/ubuntu/rilog-next"
+          
+          # 0. 이전 빌드 산출물 정리 (node_modules는 재사용해서 install 속도 확보)
+          mkdir -p $TARGET_DIR
+          rm -rf $TARGET_DIR/.next $TARGET_DIR/public
+          
+          # 1. 대상 디렉터리 생성 및 압축 해제
           mkdir -p $TARGET_DIR
           tar -xzf /tmp/rilog-fe/fe-build.tar.gz -C $TARGET_DIR
           rm -rf /tmp/rilog-fe
-
+          
           cd $TARGET_DIR
           
-          # 의존성 설치
+          # 2. EC2 서버에서 의존성 설치 (실행 환경 호환성 문제 우회)
+          npm install -g pnpm@11.21.0
           pnpm install --prod --frozen-lockfile
-
-          # pm2 실행
+          
+          # 3. pm2 재시작
+          # ecosystem.config.cjs를 사용해 프로세스 리로드 (update-env로 환경변수 갱신 보장)
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
