@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import { renderWithQuery } from '@/test/render-with-query';
 
@@ -8,16 +9,18 @@ import Sidebar from './Sidebar';
 
 vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
 	useMyCologsPreviewQuery: vi.fn(() => ({
-		data: { data: [] },
+		data: [],
 		isPending: false,
 	})),
 }));
 
-function renderSidebar(isAuthenticated?: boolean) {
+function renderSidebar(isAuthenticated = false) {
 	return renderWithQuery(
-		<LoginModalProvider>
-			<Sidebar isAuthenticated={isAuthenticated} />
-		</LoginModalProvider>,
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<LoginModalProvider>
+				<Sidebar />
+			</LoginModalProvider>
+		</AUTH_CONTEXT.Provider>,
 	);
 }
 

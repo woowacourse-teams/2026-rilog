@@ -5,12 +5,13 @@ import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-pr
 import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
+import { mapMyCologsPreviewResponse } from '../lib/map-my-cologs-preview-response';
+
 import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME } from './sidebar-class-names';
 import SidebarNavigationLink from './SidebarNavigationLink';
 
 export default function CologNavigation() {
-	const { data: myCologsResponse, isPending } = useMyCologsPreviewQuery();
-	const myCologs = myCologsResponse?.data ?? [];
+	const { data: myCologs, isPending } = useMyCologsPreviewQuery({ select: mapMyCologsPreviewResponse });
 
 	return (
 		<nav aria-label="내 코로그">
@@ -18,8 +19,8 @@ export default function CologNavigation() {
 				{isPending ? (
 					<li className="px-2 py-1 text-xs text-text-secondary">로딩 중...</li>
 				) : (
-					myCologs.map((colog) => (
-						<li key={colog.cologId} className="w-full">
+					myCologs?.map((colog) => (
+						<li key={colog.id} className="w-full">
 							<SidebarNavigationLink
 								href={buildCologHomePath(colog.slug)}
 								icon={

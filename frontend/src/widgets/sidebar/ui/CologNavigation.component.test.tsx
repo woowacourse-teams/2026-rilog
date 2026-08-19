@@ -6,15 +6,12 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import CologNavigation from './CologNavigation';
 
-
 vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
 	useMyCologsPreviewQuery: vi.fn(() => ({
-		data: {
-			data: [
-				{ cologId: 1, slug: 'test-colog', name: '테스트 코로그', logoUrl: null },
-				{ cologId: 2, slug: 'another-colog', name: '다른 코로그', logoUrl: null },
-			],
-		},
+		data: [
+			{ id: 1, slug: 'test-colog', name: '테스트 코로그', logoUrl: null },
+			{ id: 2, slug: 'another-colog', name: '다른 코로그', logoUrl: null },
+		],
 		isPending: false,
 	})),
 }));
