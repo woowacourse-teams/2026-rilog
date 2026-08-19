@@ -1,12 +1,27 @@
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import { renderWithQuery } from '@/test/render-with-query';
 
 import CologNavigation from './CologNavigation';
 
+
+vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
+	useMyCologsPreviewQuery: vi.fn(() => ({
+		data: {
+			data: [
+				{ cologId: 1, slug: 'test-colog', name: '테스트 코로그', logoUrl: null },
+				{ cologId: 2, slug: 'another-colog', name: '다른 코로그', logoUrl: null },
+			],
+		},
+		isPending: false,
+	})),
+}));
+
 describe('CologNavigation', () => {
 	it('내 코로그 링크와 생성 링크를 제공한다', () => {
-		render(<CologNavigation />);
+		renderWithQuery(<CologNavigation />);
 
 		const navigation = screen.getByRole('navigation');
 		const cologLinks = within(navigation).getAllByRole('link');
@@ -21,7 +36,7 @@ describe('CologNavigation', () => {
 
 	it('키보드로 코로그 링크와 생성 링크에 접근한다', async () => {
 		const user = userEvent.setup();
-		render(<CologNavigation />);
+		renderWithQuery(<CologNavigation />);
 		const navigation = screen.getByRole('navigation');
 		const cologLinks = within(navigation).getAllByRole('link');
 		const createLink = within(navigation).getByRole('link', { name: '코로그 만들기' });
