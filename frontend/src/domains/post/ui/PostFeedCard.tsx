@@ -19,6 +19,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 		<li className="[contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
 			<Link
 				href={buildPostDetailPath(ownerSlug, String(post.id))}
+				prefetch={false}
 				className="group relative z-0 block h-full rounded-xl hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring active:z-10"
 			>
 				<article className="flex h-full flex-col">
