@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static kr.rilog.domain.user.exception.UserErrorInformation.NICKNAME_DUPLICATED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 
-public class UserServiceIntegrationTest extends ServiceSupport {
+class UserServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private UserRepository userRepository;
@@ -32,10 +32,11 @@ public class UserServiceIntegrationTest extends ServiceSupport {
     void validateDuplicatedNickname() {
         // given
         String duplicatedNickname = "duplicatedNickname";
-        userRepository.save(completedUser(duplicatedNickname));
+        String slug = "koreaioi";
+        userRepository.save(completedUser(duplicatedNickname, slug));
 
         // when & then
-        Assertions.assertThatThrownBy(() -> userService.validateDuplicatedSlug(duplicatedNickname))
+        Assertions.assertThatThrownBy(() -> userService.validateDuplicatedNickname(duplicatedNickname))
                 .isInstanceOf(UserException.class)
                 .hasMessage(NICKNAME_DUPLICATED.getMessage());
     }
@@ -45,7 +46,8 @@ public class UserServiceIntegrationTest extends ServiceSupport {
     void validateDuplicatedSlug() {
         // given
         String duplicatedSlug = "duplicatedSlug";
-        userRepository.save(completedUser(duplicatedSlug));
+        String nickname = "songsong";
+        userRepository.save(completedUser(nickname, duplicatedSlug));
 
         // when & then
         Assertions.assertThatThrownBy(() -> userService.validateDuplicatedSlug(duplicatedSlug))
@@ -53,10 +55,10 @@ public class UserServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(SLUG_DUPLICATED.getMessage());
     }
 
-    private User completedUser(String slug) {
+    private User completedUser(String nickname, String slug) {
         return User.builder()
                 .githubId(100L)
-                .nickname(Nickname.from("리로"))
+                .nickname(Nickname.from(nickname))
                 .slug(Slug.from(slug))
                 .profileImageUrl("https://example.com/profile.png")
                 .onboardingStatus(OnboardingStatus.COMPLETED)
