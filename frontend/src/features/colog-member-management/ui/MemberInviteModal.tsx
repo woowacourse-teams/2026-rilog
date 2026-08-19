@@ -1,5 +1,6 @@
 'use client';
 
+
 import { useId, useRef, useState } from 'react';
 
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
@@ -9,7 +10,8 @@ import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
-import { mockFindMemberInviteCandidate } from '../lib/mock-find-member-invite-candidate';
+
+import { useReadUserBySlugMutation } from '@/api/users/mutations/use-read-user-by-slug-mutation';
 
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
@@ -28,6 +30,8 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 	const [candidates, setCandidates] = useState<MemberInviteCandidate[]>([]);
 	const [errorMessage, setErrorMessage] = useState<string>();
 
+	const { mutateAsync: readUserBySlug, isPending } = useReadUserBySlugMutation();
+
 	const reset = () => {
 		setSlugInput('');
 		setCandidates([]);
@@ -39,7 +43,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 		onClose();
 	};
 
-	const handleAddCandidate = () => {
+	const handleAddCandidate = async () => {
 		const normalizedSlug = slugInput.trim().replace(/^@/, '');
 
 		if (!normalizedSlug) {
@@ -52,17 +56,27 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 			return;
 		}
 
-		const candidate = mockFindMemberInviteCandidate(normalizedSlug);
-
-		if (candidate === null) {
-			setErrorMessage('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
-			return;
-		}
-
-		setCandidates((currentCandidates) => [...currentCandidates, candidate]);
-		setSlugInput('');
 		setErrorMessage(undefined);
-		inputRef.current?.focus();
+
+		try {
+			const response = await readUserBySlug(normalizedSlug);
+			const user = response.data;
+
+			if (user) {
+				setCandidates((currentCandidates) => [
+					...currentCandidates,
+					{
+						slug: user.slug,
+						nickname: user.nickname,
+						profileImageUrl: user.profileImageUrl,
+					},
+				]);
+				setSlugInput('');
+				inputRef.current?.focus();
+			}
+		} catch {
+			setErrorMessage('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
+		}
 	};
 
 	const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -71,7 +85,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 		}
 
 		event.preventDefault();
-		handleAddCandidate();
+		void handleAddCandidate();
 	};
 
 	const handleRemoveCandidate = (slug: string) => {
@@ -134,7 +148,8 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 							size="md"
 							className="shrink-0 px-5"
 							disabled={!slugInput.trim()}
-							onClick={handleAddCandidate}
+							isPending={isPending}
+							onClick={() => void handleAddCandidate()}
 						>
 							추가
 						</Button>
