@@ -1,6 +1,13 @@
-import type { CologBlog } from '@/domains/blog/model/blog';
+export interface MyCologPreviewResponse {
+	cologId: number;
+	slug: string;
+	name: string;
+	profileImageUrl: string;
+}
 
-export interface MyCologPreviewResponse extends Pick<CologBlog, 'slug' | 'name'> {
-	cologId: CologBlog['id'];
-	logoUrl: CologBlog['profileImageUrl'];
+export interface MyInfoResponse {
+	id: number;
+	slug: string;
+	nickname: string;
+	profileImageUrl: string | null;
 }

@@ -9,7 +9,7 @@ import Sidebar from './Sidebar';
 
 vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
 	useMyCologsPreviewQuery: vi.fn(() => ({
-		data: { data: [] },
+		data: [],
 		isPending: false,
 	})),
 }));

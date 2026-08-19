@@ -1,12 +1,36 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
+vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
+	useMyInfoQuery: vi.fn(() => ({
+		data: {
+			data: {
+				id: 1,
+				slug: 'jetproc',
+				nickname: '파라디',
+				profileImageUrl: null,
+			},
+		},
+	})),
+}));
+
+function renderFooter() {
+	return renderWithQuery(
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<AuthenticatedSidebarFooter />
+		</AUTH_CONTEXT.Provider>,
+	);
+}
+
 describe('AuthenticatedSidebarFooter', () => {
 	it('글쓰기와 프로필 진입점, 로그아웃 버튼을 제공한다', () => {
-		render(<AuthenticatedSidebarFooter />);
+		renderFooter();
 
 		const [writeLink, profileLink] = screen.getAllByRole('link');
 		const logoutButton = screen.getByRole('button');
@@ -19,7 +43,7 @@ describe('AuthenticatedSidebarFooter', () => {
 
 	it('키보드로 푸터 링크와 로그아웃 버튼을 순차적으로 이동한다', async () => {
 		const user = userEvent.setup();
-		render(<AuthenticatedSidebarFooter />);
+		renderFooter();
 		const [writeLink, profileLink] = screen.getAllByRole('link');
 		const logoutButton = screen.getByRole('button');
 
