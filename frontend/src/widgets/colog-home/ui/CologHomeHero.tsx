@@ -1,84 +1,28 @@
-import type { CologProfile } from '@/domains/blog/model/colog';
-import CologAvatar from '@/domains/blog/ui/CologAvatar';
-import GitHubIcon from '@/shared/assets/brand/github.svg';
-import LinkIcon from '@/shared/assets/icons/link.svg';
-import MailIcon from '@/shared/assets/icons/mail.svg';
-import MeatballIcon from '@/shared/assets/icons/meatball.svg';
-import Button from '@/shared/ui/button/Button';
-import { getServiceUrlLabel } from '@/widgets/colog-home/lib/get-service-url-label';
+import { notFound } from 'next/navigation';
+
+import { readBlogPublicProfile } from '@/shared/api/blogs/api';
+
+import { mapCologProfileResponse } from '../lib/map-colog-profile-response';
+import CologProfileHero from '@/features/colog-profile/ui/CologProfileHero';
 
 interface CologHomeHeroProps {
-	profile: CologProfile;
+	slug: string;
 }
 
-export default function CologHomeHero({ profile }: CologHomeHeroProps) {
-	const serviceUrl = profile.serviceUrl?.trim() ?? '';
-	const githubUrl = profile.githubUrl?.trim() ?? '';
-	const email = profile.email?.trim() ?? '';
-	const hasDescription = (profile.description?.trim() ?? '') !== '';
-	const hasServiceUrl = serviceUrl !== '';
-	const hasGitHubUrl = githubUrl !== '';
-	const hasEmail = email !== '';
+export default async function CologHomeHero({ slug }: CologHomeHeroProps) {
+	let profileResponse;
 
-	return (
-		<div className="relative flex min-h-96 flex-col items-center justify-center bg-brand-primary px-5 py-12 text-center text-text-on-dark sm:min-h-112 sm:px-6 sm:py-14 md:min-h-128 md:py-16">
-			<CologAvatar
-				src={profile.profileImageUrl || undefined}
-				fallback={profile.name.slice(0, 1)}
-				label={`${profile.name} 코로그 로고`}
-				size="max"
-				className="size-32! sm:size-40! md:size-45!"
-			/>
+	try {
+		profileResponse = await readBlogPublicProfile({ slug });
+	} catch {
+		notFound();
+	}
 
-			<h1 className="mt-2.5 max-w-full text-title-2 font-semibold break-words sm:text-title-3">{profile.name}</h1>
-			{hasDescription || hasServiceUrl ? (
-				<p className="mt-2 max-w-sm text-label-2 text-navy-200 sm:mt-2.5 sm:max-w-lg sm:text-body-1">
-					{hasDescription ? profile.description : null}
-					{hasDescription && hasServiceUrl ? <br /> : null}
-					{hasServiceUrl ? (
-						<a
-							href={serviceUrl}
-							className="inline-flex max-w-full items-center gap-1 rounded-sm underline-offset-4 hover:text-text-on-dark hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-						>
-							<LinkIcon aria-hidden="true" focusable="false" className="size-4 shrink-0 sm:size-4.5" />
-							<span className="truncate">{getServiceUrlLabel(serviceUrl)}</span>
-						</a>
-					) : null}
-				</p>
-			) : null}
+	if (!profileResponse?.data) {
+		notFound();
+	}
 
-			{hasGitHubUrl || hasEmail ? (
-				<div className="mt-2 flex items-center gap-0.5 text-navy-200 sm:mt-2.5 sm:gap-1">
-					{hasGitHubUrl ? (
-						<a
-							href={githubUrl}
-							target="_blank"
-							rel="noreferrer"
-							aria-label={`${profile.name} GitHub`}
-							className="flex size-8 items-center justify-center rounded-sm transition-colors hover:text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:size-9"
-						>
-							<GitHubIcon aria-hidden="true" focusable="false" className="size-5 fill-current sm:size-6" />
-						</a>
-					) : null}
-					{hasEmail ? (
-						<a
-							href={`mailto:${email}`}
-							aria-label={`${profile.name} 이메일`}
-							className="flex size-8 items-center justify-center rounded-sm transition-colors hover:text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:size-9"
-						>
-							<MailIcon aria-hidden="true" focusable="false" className="size-5 sm:size-6" />
-						</a>
-					) : null}
-				</div>
-			) : null}
+	const profile = mapCologProfileResponse(profileResponse.data);
 
-			<Button
-				size="icon"
-				aria-label={`${profile.name} 코로그 메뉴 열기`}
-				className="absolute top-5 right-5 bg-transparent sm:top-8 md:top-20 md:right-15"
-			>
-				<MeatballIcon aria-hidden="true" focusable="false" className="size-6" />
-			</Button>
-		</div>
-	);
+	return <CologProfileHero profile={profile} />;
 }

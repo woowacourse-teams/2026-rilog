@@ -60,3 +60,29 @@ export interface CologPublicProfileResponse {
 export interface BlogPublicProfileRequest {
 	slug: string;
 }
+
+export interface PostItemResponse {
+	postId: number;
+	title: string;
+	thumbnailImageUrl: string | null;
+	category: string;
+	visibility: string;
+	publishedAt: string;
+	author: AuthorResponse;
+	owner: PostOwnerResponse;
+}
+
+export interface PublicBlogFeedPostResponse {
+	type: 'COLOG' | 'RILOG';
+	posts: PostItemResponse[];
+	page: number;
+	size: number;
+	numberOfElements: number;
+	hasNext: boolean;
+}
+
+export interface PublicBlogFeedPostsRequest {
+	slug: string;
+	page: number;
+	size: number;
+}

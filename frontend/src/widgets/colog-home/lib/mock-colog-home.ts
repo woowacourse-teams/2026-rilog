@@ -1,5 +1,4 @@
 import type { CologMemberSummary, CologProfile } from '@/domains/blog/model/colog';
-import type { PostSummary } from '@/domains/post/model/post';
 
 export const MOCK_COLOG_HOME_PROFILE = {
 	name: '리로그',
@@ -11,22 +10,6 @@ export const MOCK_COLOG_HOME_PROFILE = {
 	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
 	email: 'contact@rilog.dev',
 } satisfies CologProfile;
-
-export const MOCK_COLOG_HOME_POSTS = Array.from({ length: 5 }, (_, index) => ({
-	id: index + 1,
-	title:
-		index === 0
-			? '컴포넌트 시스템, 이렇게 도입했어요'
-			: '컴포넌트 시스템, 이렇게 도입했어요 두 줄일 땐 이렇게 표시됩니다 세 줄은 표시되지 않아요',
-	thumbnailUrl: index === 1 ? null : '/images/default-post-cover.svg',
-	publishedAt: '2024-05-20',
-	author: {
-		id: 1,
-		nickname: '김지연',
-		slug: 'kim-jiyeon',
-		profileImageUrl: null,
-	},
-})) satisfies PostSummary[];
 
 export const MOCK_COLOG_HOME_MEMBERS = [
 	'김지연',
