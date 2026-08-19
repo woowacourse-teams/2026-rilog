@@ -94,6 +94,15 @@ jobs:
           name: fe-build-artifact
           path: /tmp/rilog-fe
 
+      - name: Debug env
+        shell: bash -il {0}
+        run: |
+          echo "HOME=$HOME"
+          echo "NVM_DIR=${NVM_DIR:-<unset>}"
+          whoami
+          ls -la /home/ubuntu/.nvm/nvm.sh || echo "파일 없음"
+          ls -la "$HOME" 2>/dev/null || echo "HOME 디렉토리 자체가 이상함"
+          
       - name: Deploy to Server
         shell: bash -il {0}
         run: |
