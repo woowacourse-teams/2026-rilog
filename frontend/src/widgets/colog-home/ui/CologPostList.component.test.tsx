@@ -1,9 +1,12 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { PostSummary } from '@/domains/post/model/post';
 
+import { usePublicBlogPosts } from '../hooks/use-public-blog-posts';
 import CologPostList from './CologPostList';
+
+vi.mock('../hooks/use-public-blog-posts');
 
 const POST_FIXTURES: PostSummary[] = [
 	{
@@ -24,7 +27,17 @@ const POST_FIXTURES: PostSummary[] = [
 
 describe('CologPostList', () => {
 	it('전달받은 게시글만 렌더링한다', () => {
-		render(<CologPostList slug="rilog" posts={POST_FIXTURES} />);
+		vi.mocked(usePublicBlogPosts).mockReturnValue({
+			data: { pages: [{ items: POST_FIXTURES, page: 0, hasNext: false }] },
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			isFetchNextPageError: false,
+			isPending: false,
+			isError: false,
+		} as any);
+
+		render(<CologPostList slug="rilog" />);
 
 		const postSection = screen.getByRole('region', { name: '코로그 게시글' });
 		expect(within(postSection).getAllByRole('link')).toHaveLength(2);
@@ -44,7 +57,17 @@ describe('CologPostList', () => {
 	});
 
 	it('게시글이 없으면 빈 상태를 제공한다', () => {
-		render(<CologPostList slug="rilog" posts={[]} />);
+		vi.mocked(usePublicBlogPosts).mockReturnValue({
+			data: { pages: [{ items: [], page: 0, hasNext: false }] },
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			isFetchNextPageError: false,
+			isPending: false,
+			isError: false,
+		} as any);
+
+		render(<CologPostList slug="rilog" />);
 
 		expect(screen.getByText('아직 작성된 게시글이 없습니다.')).toBeInTheDocument();
 	});

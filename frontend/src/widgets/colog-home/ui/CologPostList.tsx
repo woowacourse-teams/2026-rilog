@@ -1,17 +1,91 @@
-import CustomLink from '@/shared/ui/link/CustomLink';
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
-import type { PostSummary } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { deduplicatePostFeedItems } from '@/features/post-feed/lib/deduplicate-post-feed-items';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
+import Button from '@/shared/ui/button/Button';
+import CustomLink from '@/shared/ui/link/CustomLink';
+
+import { usePublicBlogPosts } from '../hooks/use-public-blog-posts';
 
 interface CologPostListProps {
 	slug: string;
-	posts: readonly PostSummary[];
+	initialRequestFailed?: boolean;
 }
 
-export default function CologPostList({ slug, posts }: CologPostListProps) {
+export default function CologPostList({ slug, initialRequestFailed = false }: CologPostListProps) {
+	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
+	const sentinelRef = useRef<HTMLDivElement>(null);
+	const query = usePublicBlogPosts({ slug, isEnabled: isQueryEnabled });
+	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
+
+	const posts = useMemo(
+		() => deduplicatePostFeedItems(query.data?.pages.flatMap((page) => page.items) ?? []),
+		[query.data?.pages],
+	);
+
+	const hasInitialError = (!isQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
+
+	useEffect(() => {
+		const sentinel = sentinelRef.current;
+
+		if (sentinel === null || !hasNextPage || isFetchingNextPage || isFetchNextPageError) {
+			return;
+		}
+
+		let hasRequestedNextPage = false;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting && !hasRequestedNextPage) {
+					hasRequestedNextPage = true;
+					observer.disconnect();
+					void fetchNextPage();
+				}
+			},
+			{ rootMargin: '300px 0px' },
+		);
+
+		observer.observe(sentinel);
+
+		return () => {
+			observer.disconnect();
+		};
+	}, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError]);
+
+	if (hasInitialError) {
+		return (
+			<section aria-label="코로그 게시글 에러" className="min-w-0">
+				<div className="flex min-h-32 flex-col items-center justify-center gap-5 text-center" role="alert">
+					<p className="text-body-2 text-text-secondary">게시글 목록을 불러오지 못했어요.</p>
+					<Button
+						variant="secondary"
+						onClick={() => {
+							if (!isQueryEnabled) {
+								setIsQueryEnabled(true);
+								return;
+							}
+							void query.refetch();
+						}}
+					>
+						다시 시도
+					</Button>
+				</div>
+			</section>
+		);
+	}
+
+	if (query.isPending) {
+		return (
+			<section aria-label="코로그 게시글 로딩 중" className="min-w-0">
+				<p className="text-body-2 text-text-secondary">게시글을 불러오는 중입니다...</p>
+			</section>
+		);
+	}
+
 	return (
 		<section aria-label="코로그 게시글" className="min-w-0">
 			{posts.length === 0 ? (
@@ -22,10 +96,9 @@ export default function CologPostList({ slug, posts }: CologPostListProps) {
 						<li key={post.id}>
 							<CustomLink
 								href={buildPostDetailPath(slug, String(post.id))}
-
 								className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 							>
-								<div className="relative aspect-[3/2] h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">
+								<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">
 									<PostFeedImage
 										src={post.thumbnailUrl}
 										alt={`${post.title} 썸네일`}
@@ -63,6 +136,21 @@ export default function CologPostList({ slug, posts }: CologPostListProps) {
 						</li>
 					))}
 				</ul>
+			)}
+
+			<div ref={sentinelRef} aria-hidden="true" className="h-px" />
+			{(query.isFetchingNextPage || query.isFetchNextPageError) && (
+				<div className="mt-8 flex min-h-10 items-center justify-center text-center" aria-live="polite">
+					{query.isFetchingNextPage && <p className="text-body-1 text-text-secondary">게시글을 더 불러오는 중...</p>}
+					{query.isFetchNextPageError && (
+						<div className="flex flex-col items-center gap-3">
+							<p className="text-body-1 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
+							<Button variant="secondary" onClick={() => void query.fetchNextPage()}>
+								다시 시도
+							</Button>
+						</div>
+					)}
+				</div>
 			)}
 		</section>
 	);
