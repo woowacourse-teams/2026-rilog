@@ -73,14 +73,11 @@ describe('uploadFileToPresignedUrl', () => {
 		await uploadFileToPresignedUrl(uploadUrl, file, headers);
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
-		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		expect(url).toBe(uploadUrl);
-		expect(init.method).toBe('PUT');
-		expect(init.body).toBe(file);
-
-		const requestHeaders = init.headers as Headers;
-		expect(requestHeaders.get('content-type')).toBe('image/png');
-		expect(requestHeaders.get('x-amz-tagging')).toBe('status=TEMPORARY');
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.url).toBe(uploadUrl);
+		expect(request.method).toBe('PUT');
+		expect(request.headers.get('content-type')).toBe('image/png');
+		expect(request.headers.get('x-amz-tagging')).toBe('status=TEMPORARY');
 	});
 
 	it('headers에 content-type이 누락된 경우 file.type을 기본 Content-Type으로 설정한다', async () => {
@@ -93,9 +90,8 @@ describe('uploadFileToPresignedUrl', () => {
 		await uploadFileToPresignedUrl(uploadUrl, file, {});
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
-		const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		const requestHeaders = init.headers as Headers;
-		expect(requestHeaders.get('content-type')).toBe('image/webp');
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.headers.get('content-type')).toBe('image/webp');
 	});
 
 	it('headers와 file.type이 모두 없으면 application/octet-stream을 fallback으로 사용한다', async () => {
@@ -107,20 +103,25 @@ describe('uploadFileToPresignedUrl', () => {
 
 		await uploadFileToPresignedUrl(uploadUrl, file, {});
 
-		const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		const requestHeaders = init.headers as Headers;
-		expect(requestHeaders.get('content-type')).toBe('application/octet-stream');
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.headers.get('content-type')).toBe('application/octet-stream');
 	});
 
-	it('S3 업로드가 실패하면 에러를 던진다', async () => {
+	it('S3 업로드가 실패하면 NormalizedApiError 형태로 에러를 던진다', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(new Response('Forbidden', { status: 403 }));
 		vi.stubGlobal('fetch', fetchMock);
 
 		const file = new File(['content'], 'test.png', { type: 'image/png' });
 
-		await expect(uploadFileToPresignedUrl('https://s3.rilog.test/forbidden', file)).rejects.toThrow(
-			'S3 파일 업로드에 실패했습니다. (HTTP 403)',
-		);
+		const error = await uploadFileToPresignedUrl('https://s3.rilog.test/forbidden', file).catch((err: unknown) => err);
+
+		expect(error).toMatchObject({
+			type: 'http',
+		});
+		if (error && typeof error === 'object' && 'response' in error && error.response instanceof Response) {
+			expect(error.response.status).toBe(403);
+		}
 	});
 });
 

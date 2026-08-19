@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/api/client';
+import { apiClient, apiRequest, kyInstance } from '@/shared/api/client';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type {
 	PresignedUrlCreateRequest,
@@ -26,15 +26,12 @@ export const uploadFileToPresignedUrl = async (
 		requestHeaders.set('content-type', file.type || 'application/octet-stream');
 	}
 
-	const response = await fetch(uploadUrl, {
-		method: 'PUT',
-		headers: requestHeaders,
-		body: file,
-	});
-
-	if (!response.ok) {
-		throw new Error(`S3 파일 업로드에 실패했습니다. (HTTP ${response.status})`);
-	}
+	await apiRequest(() =>
+		kyInstance.put(uploadUrl, {
+			headers: requestHeaders,
+			body: file,
+		}),
+	);
 };
 
 export const uploadFileWithPresignedUrl = async ({

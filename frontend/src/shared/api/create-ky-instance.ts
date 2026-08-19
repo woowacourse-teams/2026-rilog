@@ -12,6 +12,10 @@ interface TokenProvider {
 	refreshAccessToken: () => Promise<string | null>;
 }
 
+export interface RequestAuthOptions {
+	skipAuth?: boolean;
+}
+
 interface CreateKyInstanceOptions extends Omit<Options, 'hooks'> {
 	hooks?: Hooks;
 	onTokenRefreshFailure?: () => void;
@@ -57,6 +61,12 @@ export const createKyInstance = ({
 	...options
 }: CreateKyInstanceOptions = {}): KyInstance => {
 	let refreshPromise: Promise<string | null> | null = null;
+	const resolvedBaseUrl: string | undefined =
+		typeof options.baseUrl === 'string'
+			? options.baseUrl
+			: options.baseUrl instanceof URL
+				? options.baseUrl.toString()
+				: undefined;
 
 	const refreshAccessToken = () => {
 		if (refreshPromise !== null) {
@@ -81,14 +91,26 @@ export const createKyInstance = ({
 		return currentRefreshPromise;
 	};
 
+	const getApiBase = (): string | undefined => resolvedBaseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+
 	return ky.create({
 		...options,
 		retry: ensureRefreshRetry(retry),
 		hooks: {
 			...hooks,
 			beforeRequest: [
-				({ request }) => {
+				({ request, options: requestOptions }) => {
 					if (!isBrowser()) {
+						return;
+					}
+
+					const skipAuth = Boolean((requestOptions as unknown as { skipAuth?: boolean } | undefined)?.skipAuth);
+					if (skipAuth) {
+						return;
+					}
+
+					const apiBase = getApiBase();
+					if (apiBase && !request.url.startsWith(apiBase)) {
 						return;
 					}
 
@@ -102,8 +124,18 @@ export const createKyInstance = ({
 			],
 			afterResponse: [
 				...(hooks?.afterResponse ?? []),
-				async ({ request, response, retryCount }) => {
+				async ({ request, response, retryCount, options: requestOptions }) => {
 					if (!isBrowser() || response.status !== 401) {
+						return;
+					}
+
+					const skipAuth = Boolean((requestOptions as unknown as { skipAuth?: boolean } | undefined)?.skipAuth);
+					if (skipAuth) {
+						return;
+					}
+
+					const apiBase = getApiBase();
+					if (apiBase && !request.url.startsWith(apiBase)) {
 						return;
 					}
 
