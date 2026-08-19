@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { readBlogPostDetail } from './api';
+import { readBlogPostDetail, readBlogPublicProfile } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -77,5 +77,50 @@ describe('readBlogPostDetail', () => {
 		expect(fetchMock.mock.calls[0]?.[0]).toBeInstanceOf(Request);
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/ai-collective/posts/20');
+	});
+});
+
+describe('readBlogPublicProfile', () => {
+	it('블로그 slug를 경로로 전달하여 공개 프로필을 조회한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '공개 프로필 조회에 성공했습니다.',
+			data: {
+				type: 'COLOG',
+				id: 1,
+				name: '리로그 팀',
+				slug: 'rilog-team',
+				introduction: '함께 쓰는 기술 블로그',
+				profileImageUrl: 'https://example.com/profileImage.png',
+				coverImageUrl: 'https://example.com/coverImage.png',
+				serviceUrl: 'https://rilog.example.com',
+				githubUrl: 'https://github.com/rilog',
+				memberCount: 10,
+				postCount: 24,
+			},
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readBlogPublicProfile({ slug: 'rilog-team' })).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/@rilog-team');
+	});
+
+	it('slug에 @ 접두사가 붙어 있어도 중복 없이 @slug 형태로 요청한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '공개 프로필 조회에 성공했습니다.',
+			data: null,
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await readBlogPublicProfile({ slug: '@rilog-team' });
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/@rilog-team');
 	});
 });
