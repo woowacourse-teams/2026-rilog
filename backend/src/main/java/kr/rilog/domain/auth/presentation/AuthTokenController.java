@@ -3,6 +3,7 @@ package kr.rilog.domain.auth.presentation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenLogoutService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationResult;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotator;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
@@ -22,6 +23,7 @@ import static kr.rilog.domain.auth.exception.AuthErrorInformation.REFRESH_TOKEN_
 public class AuthTokenController {
 
     private final RefreshTokenRotator refreshTokenRotator;
+    private final RefreshTokenLogoutService refreshTokenLogoutService;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
     private final RefreshTokenProperties properties;
 
@@ -37,10 +39,32 @@ public class AuthTokenController {
                 .build();
     }
 
+    @PostMapping("/v1/auth/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        RefreshToken refreshToken = refreshTokenFromOrNull(request);
+        if (refreshToken != null) {
+            refreshTokenLogoutService.logout(refreshToken);
+        }
+
+        ResponseCookie expiredCookie = refreshTokenCookieFactory.expire();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+                .build();
+    }
+
     private RefreshToken refreshTokenFrom(HttpServletRequest request) {
+        RefreshToken refreshToken = refreshTokenFromOrNull(request);
+        if (refreshToken != null) {
+            return refreshToken;
+        }
+
+        throw new AuthException(REFRESH_TOKEN_MISSING);
+    }
+
+    private RefreshToken refreshTokenFromOrNull(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
-            throw new AuthException(REFRESH_TOKEN_MISSING);
+            return null;
         }
 
         for (Cookie cookie : cookies) {
@@ -49,6 +73,6 @@ public class AuthTokenController {
             }
         }
 
-        throw new AuthException(REFRESH_TOKEN_MISSING);
+        return null;
     }
 }
