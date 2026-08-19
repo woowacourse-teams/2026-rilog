@@ -19,3 +19,11 @@ export const handleGitHubCallback = async (params: GitHubCallbackParams) => {
 		accessToken,
 	};
 };
+
+export const logoutAuth = async () => {
+	return await apiRequest(() =>
+		kyInstance.post('v1/auth/logout', {
+			credentials: 'include',
+		})
+	);
+};

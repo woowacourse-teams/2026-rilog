@@ -1,5 +1,7 @@
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { useAuth } from '@/features/auth/model/use-auth';
+
+import { useLogoutMutation } from '@/shared/api/auth/mutations/use-logout-mutation';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -20,6 +22,15 @@ import {
 export default function AuthenticatedSidebarFooter() {
 	const { logout } = useAuth();
 	const { data: user } = useMyInfoQuery({ select: mapMyInfoResponse });
+	const { mutate: executeLogout } = useLogoutMutation();
+
+	const handleLogout = () => {
+		executeLogout(undefined, {
+			onSettled: () => {
+				logout();
+			},
+		});
+	};
 
 	const nickname = user?.nickname ?? '알 수 없음';
 	const slug = user?.slug ?? '';
@@ -50,7 +61,7 @@ export default function AuthenticatedSidebarFooter() {
 					</CustomLink>
 					<Button
 						aria-label="로그아웃"
-						onClick={logout}
+						onClick={handleLogout}
 						size="icon"
 						variant="ghost"
 						className={`hidden! shrink-0 items-center justify-center group-focus-within:flex! group-hover:flex! ${FOCUS_CLASS_NAME}`}
