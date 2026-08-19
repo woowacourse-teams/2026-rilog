@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useId } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
@@ -61,6 +62,8 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		return { slug: value.slug };
 	};
 
+	const router = useRouter();
+
 	const {
 		profileImageFile,
 		description,
@@ -71,7 +74,10 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		handleDescriptionChange,
 		handleRequiredTextChange,
 		handleSubmit,
-	} = useSignUpForm({ completeSignUp: completeSignUp ?? handleCompleteSignUp, navigate });
+	} = useSignUpForm({
+		completeSignUp: completeSignUp ?? handleCompleteSignUp,
+		navigate: navigate ?? ((href) => router.replace(href)),
+	});
 
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
 
