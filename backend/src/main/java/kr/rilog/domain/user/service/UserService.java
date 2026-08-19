@@ -8,6 +8,7 @@ import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.user.service.dto.result.UserInfoResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,11 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BlogRepository blogRepository;
+
+    public UserInfoResult getUserInformation(Long userId) {
+        User user = getUser(userId);
+        return UserInfoResult.from(user);
+    }
 
     public void validateDuplicatedNickname(String nickname) {
         if (userRepository.existsByNickname(Nickname.from(nickname))) {
@@ -68,6 +74,11 @@ public class UserService {
         }
 
         blogRepository.save(Blog.createRilog(user));
+    }
+
+    private User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(USER_NOT_FOUND));
     }
 
 }
