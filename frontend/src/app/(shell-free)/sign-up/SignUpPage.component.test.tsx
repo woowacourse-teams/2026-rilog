@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+
+import { renderWithQuery as render } from '@/test/render-with-query';
 
 import SignUpPage from './page';
 

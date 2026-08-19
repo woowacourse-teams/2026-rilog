@@ -4,6 +4,8 @@ import { useId } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
+import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
+import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Checkbox from '@/shared/ui/checkbox/Checkbox';
@@ -14,7 +16,6 @@ import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
 import { useSignUpForm } from '../hooks/use-sign-up-form';
-import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
 import {
 	type CompleteSignUp,
 	SIGN_UP_DESCRIPTION_MAX_LENGTH,
@@ -33,10 +34,32 @@ interface SignUpFormProps {
 	navigate?: (href: string, options?: SignUpNavigateOptions) => void;
 }
 
-export default function SignUpForm({ completeSignUp = mockCompleteSignUp, navigate }: SignUpFormProps) {
+export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps) {
 	const profileImageLabelId = useId();
 	const termsAgreementId = useId();
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
+
+	const { mutateAsync: onboard } = useOnboardingMutation();
+	const { mutateAsync: uploadFile } = useUploadFileMutation();
+
+	const handleCompleteSignUp: CompleteSignUp = async (value) => {
+		let profileImageUrl = '';
+		if (value.profileImageFile) {
+			const uploadRes = await uploadFile({ file: value.profileImageFile, type: 'IMAGE' });
+			profileImageUrl = uploadRes.objectKey;
+		}
+
+		await onboard({
+			nickname: value.nickname,
+			slug: value.slug,
+			introduction: value.description,
+			profileImageUrl,
+			githubUrl: '',
+			email: '',
+		});
+
+		return { slug: value.slug };
+	};
 
 	const {
 		profileImageFile,
@@ -48,7 +71,7 @@ export default function SignUpForm({ completeSignUp = mockCompleteSignUp, naviga
 		handleDescriptionChange,
 		handleRequiredTextChange,
 		handleSubmit,
-	} = useSignUpForm({ completeSignUp, navigate });
+	} = useSignUpForm({ completeSignUp: completeSignUp ?? handleCompleteSignUp, navigate });
 
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
 
