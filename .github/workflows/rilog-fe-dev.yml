@@ -94,6 +94,11 @@ jobs:
           name: fe-build-artifact
           path: /tmp/rilog-fe
 
+      - name: Setup Node PATH
+        run: |
+          NODE_BIN=$(find $HOME/.nvm/versions/node -maxdepth 1 -type d | sort -V | tail -1)/bin
+          echo "$NODE_BIN" >> $GITHUB_PATH
+
       - name: Deploy to Server
         run: |
           TARGET_DIR="/home/ubuntu/rilog-next"
