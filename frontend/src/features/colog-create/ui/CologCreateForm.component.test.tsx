@@ -4,13 +4,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CreateColog } from '../model/colog-create';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createColog } from '@/shared/api/cologs/api';
+import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
 import CologCreateForm from './CologCreateForm';
 
 const { backMock, replaceMock } = vi.hoisted(() => ({ backMock: vi.fn(), replaceMock: vi.fn() }));
 
+vi.mock('@/shared/api/cologs/api');
+vi.mock('@/shared/api/uploads/api');
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: backMock, replace: replaceMock }),
 }));
+
+const renderWithClient = (ui: React.ReactElement) => {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			mutations: { retry: false },
+		},
+	});
+	return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+};
 
 const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
 	const logoFile = new File(['logo'], 'logo.png', { type: 'image/png' });
@@ -27,10 +41,11 @@ describe('CologCreateForm', () => {
 	beforeEach(() => {
 		backMock.mockClear();
 		replaceMock.mockClear();
+		vi.clearAllMocks();
 	});
 
 	it('팀 생성에 필요한 입력과 action을 제공한다', () => {
-		render(<CologCreateForm />);
+		renderWithClient(<CologCreateForm />);
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 커버 이미지 미리보기' })).toBeInTheDocument();
@@ -52,7 +67,7 @@ describe('CologCreateForm', () => {
 
 	it('취소하면 브라우저의 이전 경로로 이동한다', async () => {
 		const user = userEvent.setup();
-		render(<CologCreateForm />);
+		renderWithClient(<CologCreateForm />);
 
 		await user.click(screen.getByRole('button', { name: '취소' }));
 
@@ -64,7 +79,7 @@ describe('CologCreateForm', () => {
 		const revokeObjectUrl = vi.fn();
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
-		const { unmount } = render(<CologCreateForm />);
+		const { unmount } = renderWithClient(<CologCreateForm />);
 
 		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
 
@@ -88,7 +103,7 @@ describe('CologCreateForm', () => {
 
 	it('팀 소개의 글자 수를 입력에 맞춰 안내한다', async () => {
 		const user = userEvent.setup();
-		render(<CologCreateForm />);
+		renderWithClient(<CologCreateForm />);
 
 		const introduction = screen.getByRole('textbox', { name: '팀 소개 (선택)' });
 		await user.type(introduction, '함께 성장하는 개발 팀입니다');
@@ -97,7 +112,7 @@ describe('CologCreateForm', () => {
 	});
 
 	it('팀 이름과 고유 아이디의 입력 규칙을 제공한다', () => {
-		render(<CologCreateForm />);
+		renderWithClient(<CologCreateForm />);
 
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('minlength', '2');
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('maxlength', '20');
@@ -106,8 +121,8 @@ describe('CologCreateForm', () => {
 
 	it('유효하지 않은 제출은 오류를 안내하고 첫 번째 오류 입력으로 focus한다', async () => {
 		const user = userEvent.setup();
-		const createColog = vi.fn<CreateColog>();
-		render(<CologCreateForm createColog={createColog} />);
+		
+		renderWithClient(<CologCreateForm />);
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
@@ -124,8 +139,9 @@ describe('CologCreateForm', () => {
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
 		const navigate = vi.fn();
-		const createColog = vi.fn<CreateColog>().mockResolvedValue({ slug: 'rilog-team' });
-		const { unmount } = render(<CologCreateForm createColog={createColog} navigate={navigate} />);
+		vi.mocked(createColog).mockResolvedValue({ status: 201, message: '', data: { id: 1, name: '리로그', slug: 'rilog-team' } });
+		vi.mocked(uploadFileWithPresignedUrl).mockResolvedValue({ objectKey: 'image.png' } as any);
+		const { unmount } = renderWithClient(<CologCreateForm navigate={navigate} />);
 		const logoFile = await fillRequiredFields(user);
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
@@ -135,10 +151,10 @@ describe('CologCreateForm', () => {
 			expect.objectContaining({
 				name: '리로그',
 				slug: 'rilog-team',
-				description: '함께 성장하는 개발 팀입니다',
-				serviceUrl: '',
-				githubUrl: '',
-				logoFile,
+				introduction: '함께 성장하는 개발 팀입니다',
+				serviceUrl: undefined,
+				githubUrl: undefined,
+				profileImageUrl: 'image.png',
 			}),
 		);
 
@@ -154,14 +170,13 @@ describe('CologCreateForm', () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
 		let rejectCreate: ((reason: Error) => void) | undefined;
-		const firstAttempt = new Promise<{ slug: string }>((_resolve, reject) => {
+		const firstAttempt = new Promise<any>((_resolve, reject) => {
 			rejectCreate = reject;
 		});
-		const createColog = vi
-			.fn<CreateColog>()
+		vi.mocked(createColog)
 			.mockReturnValueOnce(firstAttempt)
-			.mockResolvedValueOnce({ slug: 'rilog-team' });
-		const { unmount } = render(<CologCreateForm createColog={createColog} navigate={navigate} />);
+			.mockResolvedValueOnce({ status: 201, message: '', data: { id: 1, name: '리로그', slug: 'rilog-team' } });
+		const { unmount } = renderWithClient(<CologCreateForm navigate={navigate} />);
 		await fillRequiredFields(user);
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
