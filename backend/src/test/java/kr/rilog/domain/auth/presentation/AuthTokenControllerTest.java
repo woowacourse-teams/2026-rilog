@@ -131,8 +131,7 @@ class AuthTokenControllerTest {
         return MockMvcBuilders.standaloneSetup(new AuthTokenController(
                         refreshTokenRotator,
                         refreshTokenLogoutService,
-                        new RefreshTokenCookieFactory(properties),
-                        properties
+                        new RefreshTokenCookieFactory(properties)
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
