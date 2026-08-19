@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PostSummary } from '@/domains/post/model/post';
 
 import { usePublicBlogPosts } from '../hooks/use-public-blog-posts';
-import CologPostList from './CologPostList';
+
+import CologPostFeed from './CologPostFeed';
 
 vi.mock('../hooks/use-public-blog-posts');
 
@@ -25,7 +26,7 @@ const POST_FIXTURES: PostSummary[] = [
 	},
 ];
 
-describe('CologPostList', () => {
+describe('CologPostFeed', () => {
 	it('전달받은 게시글만 렌더링한다', () => {
 		vi.mocked(usePublicBlogPosts).mockReturnValue({
 			data: { pages: [{ items: POST_FIXTURES, page: 0, hasNext: false }] },
@@ -37,7 +38,7 @@ describe('CologPostList', () => {
 			isError: false,
 		} as any);
 
-		render(<CologPostList slug="rilog" />);
+		render(<CologPostFeed slug="rilog" />);
 
 		const postSection = screen.getByRole('region', { name: '코로그 게시글' });
 		expect(within(postSection).getAllByRole('link')).toHaveLength(2);
@@ -67,7 +68,7 @@ describe('CologPostList', () => {
 			isError: false,
 		} as any);
 
-		render(<CologPostList slug="rilog" />);
+		render(<CologPostFeed slug="rilog" />);
 
 		expect(screen.getByText('아직 작성된 게시글이 없습니다.')).toBeInTheDocument();
 	});
