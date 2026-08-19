@@ -7,6 +7,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.user.service.dto.result.UserInfoResult;
 import kr.rilog.support.ServiceSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,24 @@ class UserServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private UserService userService;
+
+    @Test
+    @DisplayName("userId로 등록된 사용자를 조회할 수 있다.")
+    void getUserInformationById() {
+        // given
+        String nickname = "songsong";
+        String slug = "koreaioi";
+        User saved = userRepository.save(completedUser(nickname, slug));
+        UserInfoResult expected = UserInfoResult.from(saved);
+
+        // when
+        UserInfoResult actual = userService.getUserInformation(saved.getId());
+
+        // then
+        Assertions.assertThat(actual)
+                .usingRecursiveComparison()
+                .isEqualTo(expected);
+    }
 
     @Test
     @DisplayName("이미 사용중인 닉네임을 검사하면 중복 예외가 발생한다.")
