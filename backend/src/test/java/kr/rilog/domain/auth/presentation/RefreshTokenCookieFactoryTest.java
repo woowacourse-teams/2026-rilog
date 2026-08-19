@@ -49,4 +49,24 @@ class RefreshTokenCookieFactoryTest {
                 .contains("Secure")
                 .contains("SameSite=None");
     }
+
+    @Test
+    @DisplayName("Refresh Token 만료 쿠키는 값을 비우고 Max-Age를 0으로 설정한다")
+    void expireBuildsExpiredCookie() {
+        // given
+        RefreshTokenCookieFactory cookieFactory = new RefreshTokenCookieFactory(
+                RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax")
+        );
+
+        // when
+        ResponseCookie cookie = cookieFactory.expire();
+
+        // then
+        assertThat(cookie.toString())
+                .contains("refresh_token=")
+                .contains("Path=/v1/auth")
+                .contains("Max-Age=0")
+                .contains("HttpOnly")
+                .contains("SameSite=Lax");
+    }
 }

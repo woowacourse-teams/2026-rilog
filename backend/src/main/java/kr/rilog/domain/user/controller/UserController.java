@@ -2,6 +2,7 @@ package kr.rilog.domain.user.controller;
 
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.user.service.UserService;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.user.controller.apispec.UserApiSpec;
@@ -25,12 +26,20 @@ public class UserController implements UserApiSpec {
     private final UserService userService;
     private final UserQueryService userQueryService;
 
-    @GetMapping("/users/{slug}")
     @AuthGuard
+    @GetMapping("/users/{slug}")
     public ApiResponse<UserInfoResponse> getUserInfo(@PathVariable("slug") String slug) {
         UserInfoResult result = userQueryService.getUserInfo(slug);
         UserInfoResponse data = UserInfoResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "유저 정보 조회에 성공했습니다.", data);
+    }
+
+    @AuthGuard
+    @GetMapping("/users/me")
+    public ApiResponse<UserInfoResponse> getMyUserInfo(@LoginUserId Long userId) {
+        UserInfoResult result = userService.getUserInformation(userId);
+        UserInfoResponse data = UserInfoResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "나의 유저 정보 조회에 성공했습니다.", data);
     }
 
     @GetMapping("/availability/nickname")

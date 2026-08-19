@@ -2,14 +2,16 @@
 
 import { useCallback } from 'react';
 
+import { useAuth } from '@/features/auth/model/use-auth';
+
 import { useLoginModal } from './use-login-modal';
 
 interface UseAuthActionOptions {
-	isAuthenticated: boolean;
 	action?: () => void;
 }
 
-export const useAuthAction = ({ isAuthenticated, action }: UseAuthActionOptions) => {
+export const useAuthAction = ({ action }: UseAuthActionOptions = {}) => {
+	const { isAuthenticated } = useAuth();
 	const login = useLoginModal();
 
 	return useCallback(() => {

@@ -1,5 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
+import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,12 +39,12 @@ class RedisOAuthLoginAttemptStoreTest {
         Duration ttl = Duration.ofMinutes(5);
 
         // when
-        store.save(SocialLoginProvider.GITHUB, state, ttl);
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt(state, "/feeds"), ttl);
 
         // then
         verify(valueOperations).set(
                 "oauth:github:state:" + sha256Hex(state),
-                "pending",
+                "/feeds",
                 ttl
         );
     }
@@ -56,13 +57,13 @@ class RedisOAuthLoginAttemptStoreTest {
         RedisOAuthLoginAttemptStore store = new RedisOAuthLoginAttemptStore(redisTemplate);
         String state = "plain-oauth-state";
         String redisKey = "oauth:github:state:" + sha256Hex(state);
-        when(valueOperations.getAndDelete(redisKey)).thenReturn("pending");
+        when(valueOperations.getAndDelete(redisKey)).thenReturn("/feeds");
 
         // when
-        boolean consumed = store.consume(SocialLoginProvider.GITHUB, state);
+        java.util.Optional<OAuthLoginAttempt> consumed = store.consume(SocialLoginProvider.GITHUB, state);
 
         // then
-        assertThat(consumed).isTrue();
+        assertThat(consumed).contains(new OAuthLoginAttempt(state, "/feeds"));
         verify(valueOperations).getAndDelete(redisKey);
         verify(valueOperations, never()).get(redisKey);
         verify(redisTemplate, never()).delete(redisKey);
@@ -79,10 +80,10 @@ class RedisOAuthLoginAttemptStoreTest {
         when(valueOperations.getAndDelete(redisKey)).thenReturn(null);
 
         // when
-        boolean consumed = store.consume(SocialLoginProvider.GITHUB, state);
+        java.util.Optional<OAuthLoginAttempt> consumed = store.consume(SocialLoginProvider.GITHUB, state);
 
         // then
-        assertThat(consumed).isFalse();
+        assertThat(consumed).isEmpty();
         verify(valueOperations).getAndDelete(redisKey);
     }
 

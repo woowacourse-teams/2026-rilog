@@ -3,6 +3,7 @@ package kr.rilog.domain.auth.presentation;
 import jakarta.servlet.http.Cookie;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenLogoutService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationResult;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotator;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
@@ -20,6 +21,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -68,7 +70,57 @@ class AuthTokenControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("REFRESH_TOKEN_MISSING"));
     }
 
+    @Test
+    @DisplayName("POST /v1/auth/logout은 Refresh Token 세션을 폐기하고 만료 쿠키를 내려준다")
+    void logoutRevokesRefreshSessionAndExpiresCookie() throws Exception {
+        // given
+        RefreshTokenLogoutService refreshTokenLogoutService = mock(RefreshTokenLogoutService.class);
+        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotator.class), refreshTokenLogoutService);
+
+        // when - then
+        mockMvc.perform(post("/v1/auth/logout")
+                        .cookie(new Cookie("refresh_token", "old-refresh-token")))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+                        containsString("refresh_token="),
+                        containsString("Path=/v1/auth"),
+                        containsString("Max-Age=0"),
+                        containsString("HttpOnly"),
+                        containsString("SameSite=Lax")
+                )));
+
+        verify(refreshTokenLogoutService).logout(RefreshToken.of("old-refresh-token"));
+    }
+
+    @Test
+    @DisplayName("POST /v1/auth/logout은 Refresh Token 쿠키가 없어도 만료 쿠키를 내려준다")
+    void logoutWithoutRefreshTokenCookieExpiresCookie() throws Exception {
+        // given
+        RefreshTokenLogoutService refreshTokenLogoutService = mock(RefreshTokenLogoutService.class);
+        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotator.class), refreshTokenLogoutService);
+
+        // when - then
+        mockMvc.perform(post("/v1/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+                        containsString("refresh_token="),
+                        containsString("Path=/v1/auth"),
+                        containsString("Max-Age=0"),
+                        containsString("HttpOnly"),
+                        containsString("SameSite=Lax")
+                )));
+
+        verifyNoInteractions(refreshTokenLogoutService);
+    }
+
     private MockMvc mockMvc(RefreshTokenRotator refreshTokenRotator) {
+        return mockMvc(refreshTokenRotator, mock(RefreshTokenLogoutService.class));
+    }
+
+    private MockMvc mockMvc(
+            RefreshTokenRotator refreshTokenRotator,
+            RefreshTokenLogoutService refreshTokenLogoutService
+    ) {
         RefreshTokenProperties properties = RefreshTokenProperties.of(
                 Duration.ofDays(14),
                 "refresh_token",
@@ -78,8 +130,8 @@ class AuthTokenControllerTest {
         );
         return MockMvcBuilders.standaloneSetup(new AuthTokenController(
                         refreshTokenRotator,
-                        new RefreshTokenCookieFactory(properties),
-                        properties
+                        refreshTokenLogoutService,
+                        new RefreshTokenCookieFactory(properties)
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

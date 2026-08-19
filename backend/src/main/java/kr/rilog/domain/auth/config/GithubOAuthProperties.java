@@ -18,7 +18,7 @@ public record GithubOAuthProperties(
         Duration readTimeout
 ) {
 
-    private static final URI DEFAULT_CALLBACK_URI = URI.create("http://localhost:8080/v1/auth/github/callback");
+    private static final URI DEFAULT_CALLBACK_URI = URI.create("http://localhost:5173/auth/github/callback");
     private static final URI DEFAULT_TOKEN_URI = URI.create("https://github.com/login/oauth/access_token");
     private static final URI DEFAULT_USER_URI = URI.create("https://api.github.com/user");
     private static final Duration DEFAULT_STATE_TTL = Duration.ofMinutes(5);
