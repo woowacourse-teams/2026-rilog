@@ -2,8 +2,8 @@ import Link from 'next/link';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostSummary } from '@/domains/post/model/post';
-import PostFeedImage from '@/domains/post/ui/PostFeedImage';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface CologPostListProps {
