@@ -24,7 +24,6 @@ export interface CologBlog extends BaseBlog {
 	coverImageUrl: string | null;
 	serviceUrl?: string;
 	githubUrl?: string;
-	email?: string;
 	members?: CologMember[];
 	posts?: PostSummary[];
 	memberCount?: number;

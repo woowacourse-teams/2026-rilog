@@ -10,7 +10,6 @@ import {
 } from '@/domains/blog/model/colog';
 
 const URL_PATTERN = /^https?:\/\//i;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const normalizeCologProfileSettings = (value: CologProfileSettingsValue): CologProfileSettingsValue => ({
 	...value,
@@ -21,7 +20,6 @@ export const normalizeCologProfileSettings = (value: CologProfileSettingsValue):
 	coverImageUrl: (value.coverImageUrl ?? '').trim(),
 	serviceUrl: (value.serviceUrl ?? '').trim(),
 	githubUrl: (value.githubUrl ?? '').trim(),
-	email: (value.email ?? '').trim(),
 });
 
 export const validateCologProfileSettings = (value: CologProfileSettingsValue): CologProfileValidationErrors => {
@@ -61,11 +59,6 @@ export const validateCologProfileSettings = (value: CologProfileSettingsValue): 
 		errors.githubUrl = '올바른 GitHub URL을 입력해 주세요.';
 	}
 
-	const email = normalized.email ?? '';
-	if (email.length > 0 && !EMAIL_PATTERN.test(email)) {
-		errors.email = '올바른 이메일 주소를 입력해 주세요.';
-	}
-
 	return errors;
 };
 
@@ -78,7 +71,6 @@ export const isCologProfileSettingsEqual = (
 	(left.description ?? '') === (right.description ?? '') &&
 	(left.serviceUrl ?? '') === (right.serviceUrl ?? '') &&
 	(left.githubUrl ?? '') === (right.githubUrl ?? '') &&
-	(left.email ?? '') === (right.email ?? '') &&
 	(left.profileImageUrl ?? '') === (right.profileImageUrl ?? '') &&
 	(left.coverImageUrl ?? '') === (right.coverImageUrl ?? '') &&
 	left.logoFile === right.logoFile &&

@@ -27,7 +27,6 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
-		expect(screen.getByRole('textbox', { name: '이메일' })).not.toBeRequired();
 		expect(screen.queryByRole('table', { name: '코로그 멤버 목록' })).not.toBeInTheDocument();
 	});
 

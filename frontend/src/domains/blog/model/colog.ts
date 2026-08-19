@@ -30,5 +30,5 @@ export type CologOption = Pick<CologBlog, 'id' | 'slug' | 'name'>;
 
 export type CologProfile = Pick<
 	CologBlog,
-	'name' | 'slug' | 'description' | 'profileImageUrl' | 'coverImageUrl' | 'serviceUrl' | 'githubUrl' | 'email'
+	'name' | 'slug' | 'description' | 'profileImageUrl' | 'coverImageUrl' | 'serviceUrl' | 'githubUrl'
 >;

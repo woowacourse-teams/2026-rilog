@@ -2,7 +2,6 @@ import type { CologProfile } from '@/domains/blog/model/colog';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import GitHubIcon from '@/shared/assets/brand/github.svg';
 import LinkIcon from '@/shared/assets/icons/link.svg';
-import MailIcon from '@/shared/assets/icons/mail.svg';
 import MeatballIcon from '@/shared/assets/icons/meatball.svg';
 import Button from '@/shared/ui/button/Button';
 import { getServiceUrlLabel } from '@/widgets/colog-home/lib/get-service-url-label';
@@ -14,11 +13,9 @@ interface CologHomeHeroProps {
 export default function CologHomeHero({ profile }: CologHomeHeroProps) {
 	const serviceUrl = profile.serviceUrl?.trim() ?? '';
 	const githubUrl = profile.githubUrl?.trim() ?? '';
-	const email = profile.email?.trim() ?? '';
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
 	const hasServiceUrl = serviceUrl !== '';
 	const hasGitHubUrl = githubUrl !== '';
-	const hasEmail = email !== '';
 
 	return (
 		<div className="relative flex min-h-96 flex-col items-center justify-center bg-brand-primary px-5 py-12 text-center text-text-on-dark sm:min-h-112 sm:px-6 sm:py-14 md:min-h-128 md:py-16">
@@ -47,28 +44,17 @@ export default function CologHomeHero({ profile }: CologHomeHeroProps) {
 				</p>
 			) : null}
 
-			{hasGitHubUrl || hasEmail ? (
+			{hasGitHubUrl ? (
 				<div className="mt-2 flex items-center gap-0.5 text-navy-200 sm:mt-2.5 sm:gap-1">
-					{hasGitHubUrl ? (
-						<a
-							href={githubUrl}
-							target="_blank"
-							rel="noreferrer"
-							aria-label={`${profile.name} GitHub`}
-							className="flex size-8 items-center justify-center rounded-sm transition-colors hover:text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:size-9"
-						>
-							<GitHubIcon aria-hidden="true" focusable="false" className="size-5 fill-current sm:size-6" />
-						</a>
-					) : null}
-					{hasEmail ? (
-						<a
-							href={`mailto:${email}`}
-							aria-label={`${profile.name} 이메일`}
-							className="flex size-8 items-center justify-center rounded-sm transition-colors hover:text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:size-9"
-						>
-							<MailIcon aria-hidden="true" focusable="false" className="size-5 sm:size-6" />
-						</a>
-					) : null}
+					<a
+						href={githubUrl}
+						target="_blank"
+						rel="noreferrer"
+						aria-label={`${profile.name} GitHub`}
+						className="flex size-8 items-center justify-center rounded-sm transition-colors hover:text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:size-9"
+					>
+						<GitHubIcon aria-hidden="true" focusable="false" className="size-5 fill-current sm:size-6" />
+					</a>
 				</div>
 			) : null}
 

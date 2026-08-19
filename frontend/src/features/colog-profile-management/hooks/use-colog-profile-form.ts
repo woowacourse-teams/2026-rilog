@@ -26,7 +26,6 @@ export function useCologProfileForm(options: UseCologProfileFormOptions = {}) {
 	const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
 	const serviceUrlRef = useRef<HTMLInputElement | null>(null);
 	const githubUrlRef = useRef<HTMLInputElement | null>(null);
-	const emailRef = useRef<HTMLInputElement | null>(null);
 
 	const refs: CologProfileFormRefs = useMemo(
 		() => ({
@@ -36,7 +35,6 @@ export function useCologProfileForm(options: UseCologProfileFormOptions = {}) {
 			description: descriptionRef,
 			serviceUrl: serviceUrlRef,
 			githubUrl: githubUrlRef,
-			email: emailRef,
 		}),
 		[],
 	);

@@ -8,7 +8,6 @@ export const MOCK_COLOG_PROFILE_SETTINGS: CologProfileSettingsValue = {
 	coverImageUrl: '/images/team-cover-placeholder.svg',
 	serviceUrl: 'https://rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams',
-	email: 'team@rilog.kr',
 	logoFile: null,
 	coverImageFile: null,
 };

@@ -18,7 +18,6 @@ export interface CologProfileFormRefs {
 	description: RefObject<HTMLTextAreaElement | null>;
 	serviceUrl: RefObject<HTMLInputElement | null>;
 	githubUrl: RefObject<HTMLInputElement | null>;
-	email: RefObject<HTMLInputElement | null>;
 }
 
 export const EMPTY_COLOG_PROFILE_SETTINGS_VALUE: CologProfileSettingsValue = {
@@ -29,7 +28,6 @@ export const EMPTY_COLOG_PROFILE_SETTINGS_VALUE: CologProfileSettingsValue = {
 	coverImageUrl: '',
 	serviceUrl: '',
 	githubUrl: '',
-	email: '',
 	logoFile: null,
 	coverImageFile: null,
 };

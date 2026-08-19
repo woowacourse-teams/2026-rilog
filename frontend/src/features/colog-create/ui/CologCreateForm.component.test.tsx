@@ -46,7 +46,6 @@ describe('CologCreateForm', () => {
 		);
 		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
-		expect(screen.getByRole('textbox', { name: '이메일' })).not.toBeRequired();
 		expect(screen.getByRole('button', { name: '취소' })).toHaveAttribute('type', 'button');
 		expect(screen.getByRole('button', { name: '팀 만들기' })).toHaveAttribute('type', 'submit');
 	});
@@ -139,7 +138,6 @@ describe('CologCreateForm', () => {
 				description: '함께 성장하는 개발 팀입니다',
 				serviceUrl: '',
 				githubUrl: '',
-				email: '',
 				logoFile,
 			}),
 		);

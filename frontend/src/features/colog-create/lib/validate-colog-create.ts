@@ -10,7 +10,6 @@ import {
 } from '@/domains/blog/model/colog';
 
 const URL_PATTERN = /^https?:\/\//i;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const normalizeCologCreateValue = (value: CologCreateValue): CologCreateValue => ({
 	...value,
@@ -21,7 +20,6 @@ export const normalizeCologCreateValue = (value: CologCreateValue): CologCreateV
 	coverImageUrl: (value.coverImageUrl ?? '').trim(),
 	serviceUrl: (value.serviceUrl ?? '').trim(),
 	githubUrl: (value.githubUrl ?? '').trim(),
-	email: (value.email ?? '').trim(),
 });
 
 export const validateCologCreateValue = (value: CologCreateValue): CologProfileValidationErrors => {
@@ -59,11 +57,6 @@ export const validateCologCreateValue = (value: CologCreateValue): CologProfileV
 	const githubUrl = normalized.githubUrl ?? '';
 	if (githubUrl.length > 0 && !URL_PATTERN.test(githubUrl)) {
 		errors.githubUrl = '올바른 GitHub URL을 입력해 주세요.';
-	}
-
-	const email = normalized.email ?? '';
-	if (email.length > 0 && !EMAIL_PATTERN.test(email)) {
-		errors.email = '올바른 이메일 주소를 입력해 주세요.';
 	}
 
 	return errors;
