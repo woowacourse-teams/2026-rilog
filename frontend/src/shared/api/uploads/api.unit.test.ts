@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { PreSignedUrlCreateRequest, PresignedUrlCreateResponse } from './types';
+import type { PresignedUrlCreateRequest, PresignedUrlCreateResponse } from './types';
 
 import { createPresignedUrl, uploadFileToPresignedUrl, uploadFileWithPresignedUrl } from './api';
 
@@ -42,7 +42,7 @@ describe('createPresignedUrl', () => {
 		});
 		vi.stubGlobal('fetch', fetchMock);
 
-		const requestPayload: PreSignedUrlCreateRequest = {
+		const requestPayload: PresignedUrlCreateRequest = {
 			fileName: 'avatar.png',
 			contentType: 'image/png',
 			size: 1024,
@@ -81,6 +81,35 @@ describe('uploadFileToPresignedUrl', () => {
 		const requestHeaders = init.headers as Headers;
 		expect(requestHeaders.get('content-type')).toBe('image/png');
 		expect(requestHeaders.get('x-amz-tagging')).toBe('status=TEMPORARY');
+	});
+
+	it('headers에 content-type이 누락된 경우 file.type을 기본 Content-Type으로 설정한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File(['dummy-content'], 'test.webp', { type: 'image/webp' });
+		const uploadUrl = 'https://s3.rilog.test/upload/test.webp';
+
+		await uploadFileToPresignedUrl(uploadUrl, file, {});
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+		const requestHeaders = init.headers as Headers;
+		expect(requestHeaders.get('content-type')).toBe('image/webp');
+	});
+
+	it('headers와 file.type이 모두 없으면 application/octet-stream을 fallback으로 사용한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File(['dummy-content'], 'test.bin', { type: '' });
+		const uploadUrl = 'https://s3.rilog.test/upload/test.bin';
+
+		await uploadFileToPresignedUrl(uploadUrl, file, {});
+
+		const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+		const requestHeaders = init.headers as Headers;
+		expect(requestHeaders.get('content-type')).toBe('application/octet-stream');
 	});
 
 	it('S3 업로드가 실패하면 에러를 던진다', async () => {

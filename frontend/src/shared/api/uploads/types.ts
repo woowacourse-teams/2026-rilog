@@ -1,6 +1,6 @@
 export type UploadType = 'IMAGE' | 'FILE';
 
-export interface PreSignedUrlCreateRequest {
+export interface PresignedUrlCreateRequest {
 	fileName: string;
 	contentType: string;
 	size: number;
