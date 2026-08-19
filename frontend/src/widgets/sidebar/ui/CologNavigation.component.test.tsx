@@ -6,7 +6,6 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import CologNavigation from './CologNavigation';
 
-
 vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
 	useMyCologsPreviewQuery: vi.fn(() => ({
 		data: {

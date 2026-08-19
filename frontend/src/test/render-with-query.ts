@@ -5,7 +5,6 @@ import { createElement } from 'react';
 import type { RenderOptions } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-
 // 테스트용 QueryClient -> 재시도 없이 즉시 실패
 export const createTestQueryClient = () =>
 	new QueryClient({
