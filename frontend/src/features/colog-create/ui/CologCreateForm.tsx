@@ -1,36 +1,27 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
-import type { CreateColog } from '../model/colog-create';
 import type { SubmitEvent } from 'react';
 
+import { useCreateCologMutation } from '@/shared/api/cologs/mutations/use-create-colog-mutation';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 
 import { useCologCreateForm } from '../hooks/use-colog-create-form';
-import { mockCreateColog } from '../lib/mock-create-colog';
 import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';
 
 import CologCreateFormFields from './CologCreateFormFields';
 
 interface CologCreateFormProps {
-	createColog?: CreateColog;
 	navigate?: (href: string) => void;
 }
 
-type CreateState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
-
-export default function CologCreateForm({ createColog = mockCreateColog, navigate }: CologCreateFormProps) {
+export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	const router = useRouter();
 	const form = useCologCreateForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
-	const [createState, setCreateState] = useState<CreateState>({ status: 'idle' });
-	const isCreating = createState.status === 'pending';
-
-	const clearCreateError = () => {
-		setCreateState((currentState) => (currentState.status === 'error' ? { status: 'idle' } : currentState));
-	};
+	
+	const { mutateAsync: createColog, isPending: isCreating, error, reset: clearCreateError } = useCreateCologMutation();
 
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -42,16 +33,20 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 		const normalizedValue = form.validate();
 
 		if (normalizedValue === null) {
-			setCreateState({ status: 'idle' });
 			return;
 		}
 
 		form.setValue(normalizedValue);
-		setCreateState({ status: 'pending' });
 
 		try {
-			const result = await createColog(normalizedValue);
-			const profilePath = buildCologHomePath(result.slug);
+			const response = await createColog(normalizedValue);
+			const data = response.data;
+			
+			if (!data) {
+				throw new Error('팀을 만들지 못했습니다. 다시 시도해 주세요.');
+			}
+			
+			const profilePath = buildCologHomePath(data.slug);
 
 			if (navigate !== undefined) {
 				navigate(profilePath);
@@ -59,16 +54,12 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 			}
 
 			router.replace(profilePath);
-		} catch (error) {
-			setCreateState({
-				status: 'error',
-				message:
-					error instanceof Error
-						? error.message
-						: '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.',
-			});
+		} catch {
+			// useMutation internally catches and exposes the error via the `error` state.
 		}
 	};
+
+	const errorMessage = error?.message || '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
@@ -91,9 +82,9 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 				}}
 			/>
 
-			{createState.status === 'error' && (
+			{error !== null && (
 				<p className="rounded-md border border-danger bg-background p-3 text-label-2 text-danger" role="alert">
-					{createState.message}
+					{errorMessage}
 				</p>
 			)}
 
@@ -114,3 +105,4 @@ export default function CologCreateForm({ createColog = mockCreateColog, navigat
 		</form>
 	);
 }
+
