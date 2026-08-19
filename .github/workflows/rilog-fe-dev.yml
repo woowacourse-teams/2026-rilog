@@ -97,7 +97,18 @@ jobs:
       - name: Deploy to Server
         shell: bash -il {0}
         run: |
-          # Node.js와 pnpm이 전역 설치되어 있으므로 바로 버전 확인 (로그용)
+          # nvm은 non-login/non-interactive 셸에서는 자동 로드되지 않으므로 명시적으로 source
+          # HOME, NVM_DIR은 actions-runner/.env 에 고정되어 있음 (systemd 서비스 컨텍스트 대비)
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+          # 서버에 미리 설치해둔 Node 버전 사용 (package.json engines 기준과 맞출 것)
+          nvm use 24 || nvm install 24
+
+          # pnpm은 corepack으로 관리 (전역 설치본과의 경로 충돌 방지)
+          corepack enable
+          corepack prepare pnpm@11.21.0 --activate
+
           echo "🟢 Node 버전: $(node -v)"
           echo "🟢 pnpm 버전: $(pnpm -v)"
 
@@ -110,7 +121,7 @@ jobs:
 
           cd $TARGET_DIR
 
-          # 의존성 설치 (전역 pnpm 사용)
+          # 의존성 설치
           pnpm install --prod --frozen-lockfile
 
           # pm2 재시작
