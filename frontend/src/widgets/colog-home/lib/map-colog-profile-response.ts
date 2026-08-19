@@ -9,5 +9,4 @@ export const mapCologProfileResponse = (response: CologPublicProfileResponse): C
 	coverImageUrl: response.coverImageUrl,
 	serviceUrl: response.serviceUrl ?? undefined,
 	githubUrl: response.githubUrl ?? undefined,
-	email: undefined,
 });

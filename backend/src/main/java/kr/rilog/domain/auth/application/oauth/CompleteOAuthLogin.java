@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,7 +46,7 @@ public class CompleteOAuthLogin {
                 ));
     }
 
-    public User complete(SocialLoginProvider provider, String code, String state) {
+    public OAuthLoginResult complete(SocialLoginProvider provider, String code, String state) {
         if (!StringUtils.hasText(code) || !StringUtils.hasText(state)) {
             throw new AuthException(OAUTH_CALLBACK_PARAMETER_MISSING);
         }
@@ -53,14 +54,15 @@ public class CompleteOAuthLogin {
         OAuthAccessTokenClient accessTokenClient = accessTokenClient(provider);
         OAuthUserClient userClient = userClient(provider);
 
-        boolean consumed = loginAttemptStore.consume(provider, state);
-        if (!consumed) {
+        Optional<OAuthLoginAttempt> attempt = loginAttemptStore.consume(provider, state);
+        if (attempt.isEmpty()) {
             throw new AuthException(INVALID_OAUTH_STATE);
         }
 
         OAuthAccessToken accessToken = accessTokenClient.exchange(code);
         SocialLoginUser socialLoginUser = userClient.getUser(accessToken);
-        return loginUserService.findOrCreate(socialLoginUser);
+        User user = loginUserService.findOrCreate(socialLoginUser);
+        return new OAuthLoginResult(user, attempt.get().redirectUrl());
     }
 
     private OAuthAccessTokenClient accessTokenClient(SocialLoginProvider provider) {

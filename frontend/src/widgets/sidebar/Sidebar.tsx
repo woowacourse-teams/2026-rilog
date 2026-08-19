@@ -1,3 +1,6 @@
+'use client';
+
+import { useAuth } from '@/features/auth/model/use-auth';
 import Divider from '@/shared/ui/divider/Divider';
 
 import AuthenticatedSidebarFooter from './ui/AuthenticatedSidebarFooter';
@@ -6,11 +9,9 @@ import GuestSidebarFooter from './ui/GuestSidebarFooter';
 import PageNavigation from './ui/PageNavigation';
 import SidebarHeader from './ui/SidebarHeader';
 
-interface SidebarProps {
-	isAuthenticated?: boolean;
-}
+export default function Sidebar() {
+	const { isAuthenticated } = useAuth();
 
-export default function Sidebar({ isAuthenticated }: SidebarProps) {
 	return (
 		<aside
 			aria-label="사이드바"

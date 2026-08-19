@@ -1,5 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
+import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
 import lombok.RequiredArgsConstructor;
@@ -11,26 +12,27 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
     private static final String KEY_PREFIX_FORMAT = "oauth:%s:state:";
-    private static final String PENDING_VALUE = "pending";
     private static final char[] HEX = "0123456789abcdef".toCharArray();
 
     private final StringRedisTemplate redisTemplate;
 
     @Override
-    public void save(SocialLoginProvider provider, String state, Duration ttl) {
-        redisTemplate.opsForValue().set(keyOf(provider, state), PENDING_VALUE, ttl);
+    public void save(SocialLoginProvider provider, OAuthLoginAttempt attempt, Duration ttl) {
+        redisTemplate.opsForValue().set(keyOf(provider, attempt.state()), attempt.redirectUrl(), ttl);
     }
 
     @Override
-    public boolean consume(SocialLoginProvider provider, String state) {
-        String value = redisTemplate.opsForValue().getAndDelete(keyOf(provider, state));
-        return PENDING_VALUE.equals(value);
+    public Optional<OAuthLoginAttempt> consume(SocialLoginProvider provider, String state) {
+        String redirectUrl = redisTemplate.opsForValue().getAndDelete(keyOf(provider, state));
+        return Optional.ofNullable(redirectUrl)
+                .map(value -> new OAuthLoginAttempt(state, value));
     }
 
     private String keyOf(SocialLoginProvider provider, String state) {

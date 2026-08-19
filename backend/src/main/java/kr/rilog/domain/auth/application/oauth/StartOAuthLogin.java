@@ -4,6 +4,7 @@ import kr.rilog.domain.auth.application.port.oauth.OAuthAuthorizationUrlProvider
 import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.exception.AuthException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.security.SecureRandom;
@@ -13,12 +14,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static kr.rilog.domain.auth.exception.AuthErrorInformation.INVALID_OAUTH_REDIRECT_URL;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.OAUTH_PROVIDER_UNSUPPORTED;
 
 @Service
 public class StartOAuthLogin {
 
     private static final int STATE_BYTE_LENGTH = 32;
+    private static final String DEFAULT_REDIRECT_URL = "/";
 
     private final OAuthLoginAttemptStore loginAttemptStore;
     private final Map<SocialLoginProvider, OAuthAuthorizationUrlProvider> authorizationUrlProviders;
@@ -36,13 +39,35 @@ public class StartOAuthLogin {
                 ));
     }
 
-    public URI start(SocialLoginProvider provider) {
+    public URI start(SocialLoginProvider provider, String redirectUrl) {
         OAuthAuthorizationUrlProvider authorizationUrlProvider = authorizationUrlProvider(provider);
 
         String state = generateState();
-        loginAttemptStore.save(provider, state, authorizationUrlProvider.stateTtl());
+        OAuthLoginAttempt attempt = new OAuthLoginAttempt(state, normalizeRedirectUrl(redirectUrl));
+        loginAttemptStore.save(provider, attempt, authorizationUrlProvider.stateTtl());
 
         return authorizationUrlProvider.createAuthorizationUri(state);
+    }
+
+    private String normalizeRedirectUrl(String redirectUrl) {
+        if (!StringUtils.hasText(redirectUrl)) {
+            return DEFAULT_REDIRECT_URL;
+        }
+        if (!redirectUrl.startsWith("/")
+                || redirectUrl.startsWith("//")
+                || containsLineBreak(redirectUrl)
+                || containsBackslash(redirectUrl)) {
+            throw new AuthException(INVALID_OAUTH_REDIRECT_URL);
+        }
+        return redirectUrl;
+    }
+
+    private boolean containsLineBreak(String value) {
+        return value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0;
+    }
+
+    private boolean containsBackslash(String value) {
+        return value.indexOf('\\') >= 0;
     }
 
     private OAuthAuthorizationUrlProvider authorizationUrlProvider(SocialLoginProvider provider) {

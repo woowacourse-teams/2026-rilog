@@ -11,6 +11,7 @@ public enum AuthErrorInformation implements ErrorInformation {
 
     OAUTH_CALLBACK_PARAMETER_MISSING(HttpStatus.BAD_REQUEST, "OAuth callback 요청 값이 올바르지 않습니다."),
     INVALID_OAUTH_STATE(HttpStatus.BAD_REQUEST, "OAuth state가 유효하지 않습니다."),
+    INVALID_OAUTH_REDIRECT_URL(HttpStatus.BAD_REQUEST, "OAuth redirectUrl은 서비스 내부 경로여야 합니다."),
     OAUTH_REQUEST_FAILED(HttpStatus.BAD_REQUEST, "OAuth 인증 요청이 실패했습니다."),
     OAUTH_PROVIDER_UNSUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 OAuth provider입니다."),
 

@@ -1,15 +1,26 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import Sidebar from './Sidebar';
 
-function renderSidebar(isAuthenticated?: boolean) {
-	return render(
-		<LoginModalProvider>
-			<Sidebar isAuthenticated={isAuthenticated} />
-		</LoginModalProvider>,
+vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
+	useMyCologsPreviewQuery: vi.fn(() => ({
+		data: [],
+		isPending: false,
+	})),
+}));
+
+function renderSidebar(isAuthenticated = false) {
+	return renderWithQuery(
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<LoginModalProvider>
+				<Sidebar />
+			</LoginModalProvider>
+		</AUTH_CONTEXT.Provider>,
 	);
 }
 

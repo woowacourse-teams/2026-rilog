@@ -206,22 +206,6 @@ export default function CologCreateFormFields({
 					)}
 				</Field>
 
-				<Field label="이메일">
-					{({ id, describedBy }) => (
-						<Input
-							id={id}
-							aria-describedby={describedBy}
-							ref={refs.email}
-							type="email"
-							value={value.email ?? ''}
-							disabled={disabled}
-							placeholder="team@example.com"
-							status={errors.email !== undefined ? 'error' : 'default'}
-							helperText={errors.email}
-							onChange={(event) => onTextFieldChange('email', event.target.value)}
-						/>
-					)}
-				</Field>
 			</fieldset>
 		</div>
 	);

@@ -1,8 +1,9 @@
 import type {
 	BlogDetailRequest,
-	BlogPublicProfileRequest,
 	CologPublicProfileResponse,
 	PostDetailResponse,
+	PublicBlogFeedPostResponse,
+	PublicBlogFeedPostsRequest,
 } from '@/shared/api/blogs/types';
 import { apiClient } from '@/shared/api/client';
 import type { ApiResponse } from '@/shared/api/shared.types';
@@ -16,8 +17,22 @@ export const readBlogPostDetail = ({ slug, postId }: BlogDetailRequest) => {
 	);
 };
 
-export const readBlogPublicProfile = ({ slug }: BlogPublicProfileRequest) => {
+export const readBlogPublicProfile = ({ slug }: { slug: string }): Promise<ApiResponse<CologPublicProfileResponse>> => {
 	const normalizedSlug = stripAtPrefix(slug);
 
 	return apiClient.get<ApiResponse<CologPublicProfileResponse>>(`v1/blogs/@${encodeURIComponent(normalizedSlug)}`);
+};
+
+export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsRequest) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.get<ApiResponse<PublicBlogFeedPostResponse>>(
+		`v1/blogs/@${encodeURIComponent(normalizedSlug)}/posts`,
+		{
+			searchParams: {
+				page,
+				size,
+			},
+		},
+	);
 };
