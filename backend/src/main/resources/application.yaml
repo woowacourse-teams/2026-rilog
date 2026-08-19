@@ -22,7 +22,7 @@ github:
   oauth:
     client-id: ${GITHUB_CLIENT_ID:}
     client-secret: ${GITHUB_CLIENT_SECRET:}
-    callback-uri: ${GITHUB_CALLBACK_URI:http://localhost:8080/v1/auth/github/callback}
+    callback-uri: ${GITHUB_CALLBACK_URI:http://localhost:5173/auth/github/callback}
     state-ttl: 5m
     scope: read:user,user:email
     token-uri: https://github.com/login/oauth/access_token

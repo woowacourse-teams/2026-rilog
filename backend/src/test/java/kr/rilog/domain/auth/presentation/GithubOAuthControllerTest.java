@@ -2,6 +2,7 @@ package kr.rilog.domain.auth.presentation;
 
 import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
+import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
@@ -34,16 +35,21 @@ import kr.rilog.domain.blog.entity.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
@@ -51,6 +57,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,19 +65,31 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class GithubOAuthControllerTest {
 
     @Test
-    @DisplayName("GET /v1/auth/github는 GitHub 인증 페이지로 redirect한다")
+    @DisplayName("GET /v1/auth/github는 redirectUrl을 state와 함께 저장하고 GitHub 인증 페이지로 redirect한다")
     void startGithubLoginRedirectsToGithubAuthorizationPage() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
         MockMvc mockMvc = mockMvc(store);
 
-        // when - then
-        mockMvc.perform(get("/v1/auth/github"))
+        // when
+        MvcResult result = mockMvc.perform(get("/v1/auth/github")
+                        .queryParam("redirectUrl", "/feeds"))
                 .andExpect(status().isFound())
                 .andExpect(header().string(
                         "Location",
                         startsWith("https://github.com/login/oauth/authorize?")
-                ));
+                ))
+                .andReturn();
+
+        // then
+        String location = result.getResponse().getHeader(HttpHeaders.LOCATION);
+        String state = UriComponentsBuilder.fromUriString(location)
+                .build()
+                .getQueryParams()
+                .getFirst("state");
+        assertThat(store.find(SocialLoginProvider.GITHUB, state))
+                .map(OAuthLoginAttempt::redirectUrl)
+                .contains("/feeds");
     }
 
     @Test
@@ -78,16 +97,18 @@ class GithubOAuthControllerTest {
     void callbackIssuesOnlyOnboardingTokenForPendingUser() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store);
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("code", "github-code")
-                        .queryParam("state", "valid-state"))
-                .andExpect(status().isNoContent())
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer onboarding-token:1"))
-                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
+                .andExpect(jsonPath("$.data.onboardingStatus").value("PENDING"))
+                .andExpect(jsonPath("$.data.redirectUrl").value("/feeds"));
     }
 
     @Test
@@ -95,7 +116,7 @@ class GithubOAuthControllerTest {
     void callbackIssuesAccessTokenAndRefreshTokenForCompletedUser() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/posts/1"), Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
@@ -104,10 +125,10 @@ class GithubOAuthControllerTest {
                 .build());
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("code", "github-code")
-                        .queryParam("state", "valid-state"))
-                .andExpect(status().isNoContent())
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-token:1:USER:jinriro"))
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
                         containsString("refresh_token=raw-refresh-token"),
@@ -115,7 +136,9 @@ class GithubOAuthControllerTest {
                         containsString("Max-Age=1209600"),
                         containsString("HttpOnly"),
                         containsString("SameSite=Lax")
-                )));
+                )))
+                .andExpect(jsonPath("$.data.onboardingStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.redirectUrl").value("/posts/1"));
     }
 
     @Test
@@ -123,7 +146,7 @@ class GithubOAuthControllerTest {
     void callbackIssuesAccessTokenWithUserRole() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
@@ -133,10 +156,10 @@ class GithubOAuthControllerTest {
                 .build());
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("code", "github-code")
-                        .queryParam("state", "valid-state"))
-                .andExpect(status().isNoContent())
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-token:1:ADMIN:jinriro"));
     }
 
@@ -145,7 +168,7 @@ class GithubOAuthControllerTest {
     void callbackDoesNotIssueOnboardingTokenForCompletedUser() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store, User.builder()
                 .id(1L)
                 .githubId(1L)
@@ -154,10 +177,10 @@ class GithubOAuthControllerTest {
                 .build());
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("code", "github-code")
-                        .queryParam("state", "valid-state"))
-                .andExpect(status().isNoContent())
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-token:1:USER:jinriro"));
     }
 
@@ -166,12 +189,17 @@ class GithubOAuthControllerTest {
     void callbackRejectsMissingCodeOrState() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store);
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("state", "valid-state"))
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "state": "valid-state"
+                                }
+                                """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("OAUTH_CALLBACK_PARAMETER_MISSING"));
     }
@@ -181,18 +209,18 @@ class GithubOAuthControllerTest {
     void callbackRejectsReusedState() throws Exception {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         MockMvc mockMvc = mockMvc(store);
 
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("code", "github-code")
-                        .queryParam("state", "valid-state"))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk());
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                        .queryParam("code", "github-code")
-                        .queryParam("state", "valid-state"))
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_OAUTH_STATE"));
     }
@@ -204,9 +232,14 @@ class GithubOAuthControllerTest {
         MockMvc mockMvc = mockMvc(new InMemoryOAuthLoginAttemptStore());
 
         // when - then
-        mockMvc.perform(get("/v1/auth/github/callback")
-                .queryParam("error", "access_denied")
-                .queryParam("state", "valid-state"))
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "error": "access_denied",
+                                  "state": "valid-state"
+                                }
+                                """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("OAUTH_REQUEST_FAILED"));
     }
@@ -225,7 +258,7 @@ class GithubOAuthControllerTest {
         GithubOAuthProperties properties = GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
-                URI.create("http://localhost:8080/v1/auth/github/callback"),
+                URI.create("https://www.rilog.kr/auth/github/callback"),
                 Duration.ofMinutes(5),
                 "read:user,user:email"
         );
@@ -269,18 +302,31 @@ class GithubOAuthControllerTest {
         );
     }
 
+    private static String callbackRequest(String code, String state) {
+        return """
+                {
+                  "code": "%s",
+                  "state": "%s"
+                }
+                """.formatted(code, state);
+    }
+
     private static class InMemoryOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
-        private final Set<String> states = new HashSet<>();
+        private final Map<String, OAuthLoginAttempt> attempts = new HashMap<>();
 
         @Override
-        public void save(SocialLoginProvider provider, String state, Duration ttl) {
-            states.add(key(provider, state));
+        public void save(SocialLoginProvider provider, OAuthLoginAttempt attempt, Duration ttl) {
+            attempts.put(key(provider, attempt.state()), attempt);
         }
 
         @Override
-        public boolean consume(SocialLoginProvider provider, String state) {
-            return states.remove(key(provider, state));
+        public Optional<OAuthLoginAttempt> consume(SocialLoginProvider provider, String state) {
+            return Optional.ofNullable(attempts.remove(key(provider, state)));
+        }
+
+        public Optional<OAuthLoginAttempt> find(SocialLoginProvider provider, String state) {
+            return Optional.ofNullable(attempts.get(key(provider, state)));
         }
 
         private String key(SocialLoginProvider provider, String state) {
