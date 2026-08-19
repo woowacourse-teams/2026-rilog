@@ -18,7 +18,6 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATE
 
 public class UserServiceIntegrationTest extends ServiceSupport {
 
-
     @Autowired
     private UserRepository userRepository;
 
