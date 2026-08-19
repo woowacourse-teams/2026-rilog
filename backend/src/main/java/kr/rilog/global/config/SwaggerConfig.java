@@ -5,11 +5,19 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.LoginUserSlug;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class OpenApiConfig {
+public class SwaggerConfig {
+
+    static {
+        SpringDocUtils.getConfig().addAnnotationsToIgnore(LoginUserId.class);
+        SpringDocUtils.getConfig().addAnnotationsToIgnore(LoginUserSlug.class);
+    }
 
     @Bean
     public OpenAPI openAPI() {
