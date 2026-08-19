@@ -94,36 +94,29 @@ jobs:
           name: fe-build-artifact
           path: /tmp/rilog-fe
 
-      - name: Debug env
-        shell: bash -il {0}
-        run: |
-          echo "HOME=$HOME"
-          echo "NVM_DIR=${NVM_DIR:-<unset>}"
-          whoami
-          ls -la /home/ubuntu/.nvm/nvm.sh || echo "파일 없음"
-          ls -la "$HOME" 2>/dev/null || echo "HOME 디렉토리 자체가 이상함"
-          
+      # ======== [추가할 부분] ========
+      # 서버(EC2)에 Node가 없어도, GitHub Actions가 알아서 이 스텝에서 Node 24와 pnpm을 세팅해 줍니다!
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.21.0
+      # ===============================
+
       - name: Deploy to Server
-        shell: bash -il {0}
+        shell: bash
         run: |
           set -euo pipefail
 
-          export NVM_DIR="$HOME/.nvm"
-          if [ ! -s "$NVM_DIR/nvm.sh" ]; then
-            echo "❌ nvm.sh를 찾을 수 없습니다: $NVM_DIR/nvm.sh"
-            exit 1
-          fi
-          \. "$NVM_DIR/nvm.sh"
-
-          nvm use 24
-
-          corepack enable
-          corepack prepare pnpm@11.21.0 --activate
+          # ❌ 문제의 원인이었던 nvm 관련 코드 싹 제거 완료
 
           echo "🟢 Node 버전: $(node -v)"
           echo "🟢 pnpm 버전: $(pnpm -v)"
 
-          # pm2 없으면 설치 (있으면 스킵되므로 매번 실행해도 안전)
+          # pm2 없으면 설치
           command -v pm2 >/dev/null || npm install -g pm2
 
           TARGET_DIR="/home/ubuntu/rilog-next"
@@ -132,7 +125,10 @@ jobs:
           rm -rf /tmp/rilog-fe
 
           cd $TARGET_DIR
+          
+          # 의존성 설치
           pnpm install --prod --frozen-lockfile
 
+          # pm2 실행
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
