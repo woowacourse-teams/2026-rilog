@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+
 import LoginModalProvider from './LoginModalProvider';
 import { useAuthAction } from './use-auth-action';
 import { useLoginModal } from './use-login-modal';
@@ -11,8 +13,6 @@ function LoginButton() {
 
 	return <button onClick={login}>로그인 열기</button>;
 }
-
-import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 
 function AuthActionButton({ action }: { action: () => void }) {
 	const handleClick = useAuthAction({ action });
@@ -39,11 +39,11 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn() }}>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
-			</AUTH_CONTEXT.Provider>
+			</AUTH_CONTEXT.Provider>,
 		);
 
 		await user.click(screen.getByRole('button', { name: '인증 필요 action' }));
@@ -56,11 +56,11 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, setIsAuthenticated: vi.fn() }}>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
-			</AUTH_CONTEXT.Provider>
+			</AUTH_CONTEXT.Provider>,
 		);
 
 		await user.click(screen.getByRole('button', { name: '인증 필요 action' }));

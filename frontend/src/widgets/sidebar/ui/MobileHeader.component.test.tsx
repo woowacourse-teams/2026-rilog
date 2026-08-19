@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 
 import MobileHeader from './MobileHeader';
@@ -12,15 +13,13 @@ vi.mock('next/navigation', () => ({
 	usePathname: () => navigationMock.pathname,
 }));
 
-import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
-
 function renderHeader(isAuthenticated = false) {
 	return render(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated: vi.fn() }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
 			<LoginModalProvider>
 				<MobileHeader />
 			</LoginModalProvider>
-		</AUTH_CONTEXT.Provider>
+		</AUTH_CONTEXT.Provider>,
 	);
 }
 
