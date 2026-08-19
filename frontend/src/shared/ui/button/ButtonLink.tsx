@@ -1,9 +1,9 @@
-import Link from 'next/link';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
+import type { LinkProps } from 'next/link';
+
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import type { ButtonSize, ButtonVariant } from './button.styles';
-import type { LinkProps } from 'next/link';
-import type { ComponentPropsWithRef, ReactNode } from 'react';
-
 import { getButtonClassName } from './button.styles';
 
 interface ButtonLinkProps extends LinkProps, Omit<ComponentPropsWithRef<'a'>, 'children' | 'href'> {
@@ -22,8 +22,8 @@ export default function ButtonLink({
 	...linkProps
 }: ButtonLinkProps) {
 	return (
-		<Link {...linkProps} className={getButtonClassName({ className, fullWidth, size, variant })}>
+		<CustomLink {...linkProps} className={getButtonClassName({ className, fullWidth, size, variant })}>
 			{children}
-		</Link>
+		</CustomLink>
 	);
 }
