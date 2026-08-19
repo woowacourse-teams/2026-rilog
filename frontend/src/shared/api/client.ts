@@ -1,3 +1,5 @@
+import { tokenProvider } from '@/features/auth/model/token-provider';
+
 import { normalizeApiError } from './api-error';
 import { createKyInstance } from './create-ky-instance';
 
@@ -19,10 +21,11 @@ export const subscribeTokenRefreshFailure = (listener: TokenRefreshFailureListen
 	};
 };
 
-// TODO: 로그인 api 연동 후 tokenProvider 추가
+// TODO: 로그인 api 연동 후 tokenProvider 실제 구현으로 교체
 export const kyInstance = createKyInstance({
 	baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
 	onTokenRefreshFailure: publishTokenRefreshFailure,
+	tokenProvider,
 });
 
 /**
