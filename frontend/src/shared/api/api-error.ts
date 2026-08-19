@@ -1,6 +1,6 @@
 import { HTTPError, TimeoutError } from 'ky';
 
-import type { ErrorDetail } from '@/shared/api/shared.types';
+import type { ErrorDetail } from './shared.types';
 
 import { getApiErrorKind } from './error-codes';
 
