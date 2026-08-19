@@ -1,4 +1,4 @@
-import type { CologMemberSummary } from '@/domains/colog/model/colog-member-summary';
+import type { CologMemberSummary } from '@/domains/blog/model/colog';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 
 interface CologMemberListProps {

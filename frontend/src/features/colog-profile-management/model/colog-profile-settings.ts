@@ -1,31 +1,35 @@
-import type { CologProfile } from '@/domains/colog/model/colog-info';
-import type { CologProfileValidationErrors } from '@/domains/colog/model/colog-profile-form';
-import {
-	isCologProfileFormsEqual,
-	normalizeCologProfileForm,
-	validateCologProfileForm,
-} from '@/domains/colog/model/colog-profile-form';
+import type { RefObject } from 'react';
 
-export type { CologProfileValidationErrors } from '@/domains/colog/model/colog-profile-form';
-export {
-	COLOG_PROFILE_INTRODUCTION_MAX_LENGTH,
-	COLOG_PROFILE_NAME_MAX_LENGTH,
-	COLOG_PROFILE_NAME_MIN_LENGTH,
-	COLOG_PROFILE_SLUG_MAX_LENGTH,
-	COLOG_PROFILE_SLUG_MIN_LENGTH,
-	COLOG_PROFILE_SLUG_PATTERN,
-} from '@/domains/colog/model/colog-profile-form';
+import type { CologProfile } from '@/domains/blog/model/colog';
+
+export type CologProfileTextField = keyof Omit<CologProfile, 'profileImageUrl' | 'coverImageUrl'>;
+
+export type CologProfileValidationErrors = Partial<Record<CologProfileTextField | 'logoFile', string>>;
 
 export interface CologProfileSettingsValue extends CologProfile {
 	logoFile: File | null;
 	coverImageFile: File | null;
 }
 
-export const normalizeCologProfileSettings = (value: CologProfileSettingsValue): CologProfileSettingsValue =>
-	normalizeCologProfileForm(value);
+export interface CologProfileFormRefs {
+	logoFile: RefObject<HTMLInputElement | null>;
+	name: RefObject<HTMLInputElement | null>;
+	slug: RefObject<HTMLInputElement | null>;
+	description: RefObject<HTMLTextAreaElement | null>;
+	serviceUrl: RefObject<HTMLInputElement | null>;
+	githubUrl: RefObject<HTMLInputElement | null>;
+	email: RefObject<HTMLInputElement | null>;
+}
 
-export const validateCologProfileSettings = (value: CologProfileSettingsValue): CologProfileValidationErrors =>
-	validateCologProfileForm(value);
-
-export const isCologProfileSettingsEqual = (left: CologProfileSettingsValue, right: CologProfileSettingsValue) =>
-	isCologProfileFormsEqual(left, right);
+export const EMPTY_COLOG_PROFILE_SETTINGS_VALUE: CologProfileSettingsValue = {
+	name: '',
+	slug: '',
+	description: '',
+	profileImageUrl: '',
+	coverImageUrl: '',
+	serviceUrl: '',
+	githubUrl: '',
+	email: '',
+	logoFile: null,
+	coverImageFile: null,
+};

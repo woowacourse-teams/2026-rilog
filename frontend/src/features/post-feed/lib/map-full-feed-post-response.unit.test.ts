@@ -51,10 +51,13 @@ describe('mapFullFeedPostResponse', () => {
 
 		const page = mapFullFeedPostResponse(response, 0);
 
-		expect(page.items[0]).toMatchObject({ author: { nickname: '리로', slug: 'riro' }, colog: null });
+		expect(page.items[0]).toMatchObject({
+			author: { id: 10, nickname: '리로', slug: 'riro' },
+			blog: { id: 10, name: '리로', slug: 'riro', type: 'RILOG' },
+		});
 		expect(page.items[1]).toMatchObject({
-			author: { nickname: '리로', slug: 'riro' },
-			colog: { name: '리로그 팀', slug: 'rilog', logoUrl: null },
+			author: { id: 10, nickname: '리로', slug: 'riro' },
+			blog: { id: 20, name: '리로그 팀', slug: 'rilog', type: 'COLOG' },
 		});
 	});
 });

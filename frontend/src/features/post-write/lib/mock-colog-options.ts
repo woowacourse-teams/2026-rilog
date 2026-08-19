@@ -1,6 +1,6 @@
-import type { CologSummary } from '@/domains/colog/model/colog-info';
+import type { CologOption } from '@/domains/blog/model/colog';
 
-export const COLOG_OPTIONS_MOCK: CologSummary[] = [
+export const COLOG_OPTIONS_MOCK: CologOption[] = [
 	{ id: 1, slug: 'woowacourse-study', name: '우아한테크코스 스터디' },
 	{ id: 2, slug: 'salmon-bus', name: '연어' },
 	{ id: 3, slug: 'rilog', name: 'Rilog.' },

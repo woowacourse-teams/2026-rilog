@@ -1,8 +1,8 @@
-import type { CologMember, CologMemberPermission } from '@/domains/colog/model/colog-member';
+import type { CologMember, CologMemberPermission } from '@/domains/blog/model/colog';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import Input from '@/shared/ui/input/Input';
 
-const PERMISSION_LABELS: Record<CologMember['permission'], string> = {
+const PERMISSION_LABELS: Record<CologMemberPermission, string> = {
 	OWNER: 'Owner',
 	ADMIN: 'Admin',
 	MEMBER: 'Member',
@@ -15,35 +15,19 @@ const JOINED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
 	timeZone: 'Asia/Seoul',
 });
 
-interface BaseCologMemberRowProps {
+interface CologMemberRowProps {
 	member: CologMember;
+	isEditing?: boolean;
+	onPermissionChange?: (memberId: number, permission: CologMemberPermission) => void;
+	onBlogRoleChange?: (memberId: number, blogRole: string) => void;
 }
 
-interface ReadOnlyCologMemberRowProps extends BaseCologMemberRowProps {
-	isEditing?: false;
-}
-
-interface EditableCologMemberRowProps extends BaseCologMemberRowProps {
-	isEditing: true;
-	onPermissionChange: (memberId: number, permission: CologMemberPermission) => void;
-	onBlogRoleChange: (memberId: number, blogRole: string) => void;
-}
-
-type CologMemberRowProps = ReadOnlyCologMemberRowProps | EditableCologMemberRowProps;
-
-interface PermissionOption {
-	value: CologMemberPermission;
-	label: string;
-}
-
-const PERMISSION_OPTIONS: PermissionOption[] = [
-	{ value: 'OWNER', label: 'Owner' },
-	{ value: 'ADMIN', label: 'Admin' },
-	{ value: 'MEMBER', label: 'Member' },
-];
-
-export default function CologMemberRow(props: CologMemberRowProps) {
-	const { member } = props;
+export default function CologMemberRow({
+	member,
+	isEditing = false,
+	onPermissionChange,
+	onBlogRoleChange,
+}: CologMemberRowProps) {
 	const joinedAt = JOINED_AT_FORMATTER.format(new Date(member.joinedAt)).replace(/\.$/, '');
 
 	return (
@@ -64,16 +48,16 @@ export default function CologMemberRow(props: CologMemberRowProps) {
 				</div>
 			</td>
 			<td className="px-2 py-3 text-body-1 font-semibold text-brand-primary">
-				{props.isEditing ? (
+				{isEditing ? (
 					<select
 						aria-label={`${member.nickname} 권한`}
 						value={member.permission}
-						onChange={(event) => props.onPermissionChange(member.id, event.target.value as CologMemberPermission)}
+						onChange={(event) => onPermissionChange?.(member.id, event.target.value as CologMemberPermission)}
 						className="h-height-md w-full rounded-md border border-border-default bg-white px-3 text-label-2 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-focus-ring"
 					>
-						{PERMISSION_OPTIONS.map((option) => (
-							<option key={option.value} value={option.value}>
-								{option.label}
+						{Object.entries(PERMISSION_LABELS).map(([value, label]) => (
+							<option key={value} value={value}>
+								{label}
 							</option>
 						))}
 					</select>
@@ -82,11 +66,11 @@ export default function CologMemberRow(props: CologMemberRowProps) {
 				)}
 			</td>
 			<td className="px-2 py-3 text-body-1 text-text-primary">
-				{props.isEditing ? (
+				{isEditing ? (
 					<Input
 						aria-label={`${member.nickname} 역할`}
 						value={member.blogRole}
-						onChange={(event) => props.onBlogRoleChange(member.id, event.target.value)}
+						onChange={(event) => onBlogRoleChange?.(member.id, event.target.value)}
 						className="px-3"
 					/>
 				) : (

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { PostSummary } from '@/domains/post/model/post-summary';
+import type { PostSummary } from '@/domains/post/model/post';
 
 import CologPostList from './CologPostList';
 
@@ -11,14 +11,14 @@ const POST_FIXTURES: PostSummary[] = [
 		title: '접근 가능한 인터페이스 만들기',
 		thumbnailUrl: 'https://images.rilog.test/post.png',
 		publishedAt: '2026-08-16',
-		author: { nickname: '새봄', slug: 'saebom', profileImageUrl: '/images/saebom.png' },
+		author: { id: 1, nickname: '새봄', slug: 'saebom', profileImageUrl: '/images/saebom.png' },
 	},
 	{
 		id: 102,
 		title: '디자인 토큰 운영 기록',
 		thumbnailUrl: null,
 		publishedAt: '2026-08-15',
-		author: { nickname: '여름', slug: 'summer', profileImageUrl: null },
+		author: { id: 2, nickname: '여름', slug: 'summer', profileImageUrl: null },
 	},
 ];
 

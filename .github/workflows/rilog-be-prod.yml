@@ -75,7 +75,7 @@ jobs:
 
   deploy:
     name: Deploy Rilog Prod
-    runs-on: [ self-hosted, rilog-be-prod ]
+    runs-on: [ self-hosted, Linux, ARM64, backend-prod ]
     needs: build
     if: github.event_name == 'push'
     environment: production

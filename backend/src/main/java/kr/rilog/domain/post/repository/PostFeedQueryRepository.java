@@ -31,7 +31,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             
                 CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.slug ELSE rilog.slug END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.name ELSE rilog.name END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profileImageUrl ELSE rilog.profileImageUrl END
             )
@@ -66,7 +66,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
 
                 CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.slug ELSE rilog.slug END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.name ELSE rilog.name END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profileImageUrl ELSE rilog.profileImageUrl END
             )
@@ -103,7 +103,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
 
                 colog.blogType,
                 colog.id,
-                colog.slug,
+                colog.slug.value,
                 colog.name,
                 colog.profileImageUrl
             )
