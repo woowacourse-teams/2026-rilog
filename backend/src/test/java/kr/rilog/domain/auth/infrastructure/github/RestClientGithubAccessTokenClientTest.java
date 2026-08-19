@@ -42,7 +42,7 @@ class RestClientGithubAccessTokenClientTest {
         expectedForm.add("client_id", "github-client-id");
         expectedForm.add("client_secret", "github-client-secret");
         expectedForm.add("code", "github-code");
-        expectedForm.add("redirect_uri", "http://localhost:8080/v1/auth/github/callback");
+        expectedForm.add("redirect_uri", "http://localhost:5173/auth/github/callback");
 
         server.expect(requestTo("https://github.example/login/oauth/access_token"))
                 .andExpect(method(HttpMethod.POST))
@@ -123,7 +123,7 @@ class RestClientGithubAccessTokenClientTest {
         return GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
-                URI.create("http://localhost:8080/v1/auth/github/callback"),
+                URI.create("http://localhost:5173/auth/github/callback"),
                 Duration.ofMinutes(5),
                 "read:user,user:email",
                 URI.create("https://github.example/login/oauth/access_token"),

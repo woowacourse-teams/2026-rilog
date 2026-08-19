@@ -13,9 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,7 +37,7 @@ class CompleteOAuthLoginTest {
         // given
         User loginUser = loginUser();
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         RecordingOAuthAccessTokenClient accessTokenClient = new RecordingOAuthAccessTokenClient();
         RecordingOAuthUserClient userClient = new RecordingOAuthUserClient();
         when(loginUserService.findOrCreate(any(SocialLoginUser.class))).thenReturn(loginUser);
@@ -48,10 +49,11 @@ class CompleteOAuthLoginTest {
         );
 
         // when
-        User user = completeOAuthLogin.complete(SocialLoginProvider.GITHUB, "github-code", "valid-state");
+        OAuthLoginResult result = completeOAuthLogin.complete(SocialLoginProvider.GITHUB, "github-code", "valid-state");
 
         // then
-        assertThat(user).isSameAs(loginUser);
+        assertThat(result.user()).isSameAs(loginUser);
+        assertThat(result.redirectUrl()).isEqualTo("/feeds");
         assertThat(accessTokenClient.requestedCode).isEqualTo("github-code");
         assertThat(userClient.requestedAccessToken).isEqualTo("github-access-token");
         verify(loginUserService).findOrCreate(new SocialLoginUser(
@@ -72,7 +74,7 @@ class CompleteOAuthLoginTest {
     void completeRejectsMissingCode() {
         // given
         InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
-        store.save(SocialLoginProvider.GITHUB, "valid-state", Duration.ofMinutes(5));
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
         CompleteOAuthLogin completeOAuthLogin = new CompleteOAuthLogin(
                 store,
                 List.of(new RecordingOAuthAccessTokenClient()),
@@ -158,16 +160,16 @@ class CompleteOAuthLoginTest {
 
     private static class InMemoryOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
-        private final Set<String> states = new HashSet<>();
+        private final Map<String, OAuthLoginAttempt> attempts = new HashMap<>();
 
         @Override
-        public void save(SocialLoginProvider provider, String state, Duration ttl) {
-            states.add(key(provider, state));
+        public void save(SocialLoginProvider provider, OAuthLoginAttempt attempt, Duration ttl) {
+            attempts.put(key(provider, attempt.state()), attempt);
         }
 
         @Override
-        public boolean consume(SocialLoginProvider provider, String state) {
-            return states.remove(key(provider, state));
+        public Optional<OAuthLoginAttempt> consume(SocialLoginProvider provider, String state) {
+            return Optional.ofNullable(attempts.remove(key(provider, state)));
         }
 
         private String key(SocialLoginProvider provider, String state) {

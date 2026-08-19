@@ -34,7 +34,7 @@ class GithubOAuthAuthorizationUrlProviderTest {
         assertThat(redirectUri.getHost()).isEqualTo("github.com");
         assertThat(redirectUri.getPath()).isEqualTo("/login/oauth/authorize");
         assertThat(queryParams.getFirst("client_id")).isEqualTo("github-client-id");
-        assertThat(queryParams.getFirst("redirect_uri")).isEqualTo("http://localhost:8080/v1/auth/github/callback");
+        assertThat(queryParams.getFirst("redirect_uri")).isEqualTo("http://localhost:5173/auth/github/callback");
         assertThat(queryParams.getFirst("scope")).isEqualTo("read:user,user:email");
         assertThat(queryParams.getFirst("state")).isEqualTo("oauth-state");
     }
@@ -43,7 +43,7 @@ class GithubOAuthAuthorizationUrlProviderTest {
         return GithubOAuthProperties.of(
                 "github-client-id",
                 "github-client-secret",
-                URI.create("http://localhost:8080/v1/auth/github/callback"),
+                URI.create("http://localhost:5173/auth/github/callback"),
                 Duration.ofMinutes(5),
                 "read:user,user:email"
         );
