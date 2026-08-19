@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
 
+import { MOCK_COLOG_HOME_MEMBERS } from '@/features/colog-members/lib/mock-colog-home';
+import CologMemberList from '@/features/colog-members/ui/CologMemberList';
 import { hasCologSlugPrefix } from '@/shared/routes/app-routes';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import CologHomeHero from '@/widgets/colog-home/ui/CologHomeHero';
 import CologPostList from '@/widgets/colog-home/ui/CologPostList';
-import { MOCK_COLOG_HOME_MEMBERS } from '@/features/colog-members/lib/mock-colog-home';
-import CologMemberList from '@/features/colog-members/ui/CologMemberList';
 
 interface CologHomePageProps {
 	params: Promise<{ slug: string }>;
