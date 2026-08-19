@@ -205,4 +205,42 @@ describe('createKyInstance', () => {
 
 		expect(onTokenRefreshFailure).not.toHaveBeenCalled();
 	});
+
+	it('API base URL과 다른 외부 도메인 URL 요청에는 Authorization 토큰을 설정하지 않는다', async () => {
+		vi.stubGlobal('window', {});
+		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
+		vi.stubGlobal('fetch', fetchMock);
+		const client = createKyInstance({
+			baseUrl: 'https://api.rilog.test',
+			tokenProvider: {
+				getAccessToken: () => 'secret-token',
+				refreshAccessToken: vi.fn(),
+			},
+		});
+
+		await client.put('https://s3.amazonaws.com/uploads/file.png');
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.headers.has('Authorization')).toBe(false);
+	});
+
+	it('skipAuth 옵션이 지정된 경우 Authorization 토큰을 설정하지 않는다', async () => {
+		vi.stubGlobal('window', {});
+		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
+		vi.stubGlobal('fetch', fetchMock);
+		const client = createKyInstance({
+			baseUrl: 'https://api.rilog.test',
+			tokenProvider: {
+				getAccessToken: () => 'secret-token',
+				refreshAccessToken: vi.fn(),
+			},
+		});
+
+		await client.get('https://api.rilog.test/public', {
+			skipAuth: true,
+		} as never);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.headers.has('Authorization')).toBe(false);
+	});
 });

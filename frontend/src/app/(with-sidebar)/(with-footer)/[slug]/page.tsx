@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation';
 
+import { readBlogPublicProfile } from '@/shared/api/blogs/api';
 import { hasCologSlugPrefix } from '@/shared/routes/app-routes';
 import PageShell from '@/shared/ui/page-shell/PageShell';
-import {
-	MOCK_COLOG_HOME_MEMBERS,
-	MOCK_COLOG_HOME_POSTS,
-	MOCK_COLOG_HOME_PROFILE,
-} from '@/widgets/colog-home/lib/mock-colog-home';
+import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
+import { mapCologProfileResponse } from '@/widgets/colog-home/lib/map-colog-profile-response';
+import { MOCK_COLOG_HOME_MEMBERS, MOCK_COLOG_HOME_POSTS } from '@/widgets/colog-home/lib/mock-colog-home';
 import CologHomeHero from '@/widgets/colog-home/ui/CologHomeHero';
 import CologMemberList from '@/widgets/colog-home/ui/CologMemberList';
 import CologPostList from '@/widgets/colog-home/ui/CologPostList';
@@ -21,12 +20,26 @@ export default async function CologHomePage({ params }: CologHomePageProps) {
 		notFound();
 	}
 
-	// TODO(API 연동): params.slug에서 @를 없앤 값으로 코로그 홈 데이터를 조회한다.
-	// 조회 실패하면 not found
+	const normalizedSlug = stripAtPrefix(slug);
+
+	let profileData;
+	try {
+		const response = await readBlogPublicProfile({ slug: normalizedSlug });
+		profileData = response.data;
+	} catch {
+		notFound();
+	}
+
+	if (!profileData) {
+		notFound();
+	}
+
+	const profile = mapCologProfileResponse(profileData);
+
 	return (
 		<PageShell
 			fullHeaderWidth
-			header={<CologHomeHero profile={MOCK_COLOG_HOME_PROFILE} />}
+			header={<CologHomeHero profile={profile} />}
 			rightAside={
 				<div className="py-11">
 					<CologMemberList members={MOCK_COLOG_HOME_MEMBERS} />

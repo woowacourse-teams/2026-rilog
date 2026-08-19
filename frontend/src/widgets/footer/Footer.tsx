@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 
@@ -17,13 +17,13 @@ export default function Footer() {
 		<footer className="bg-surface-hover text-text-primary">
 			<div className="grid grid-cols-1 gap-y-3 px-5 py-6 sm:h-25 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-rows-[auto_1fr_auto] sm:gap-x-20 sm:gap-y-1 sm:px-8 sm:py-3 md:gap-x-36 md:px-16">
 				<div className="flex flex-col items-start gap-0.5 sm:col-start-1 sm:row-span-3 sm:self-start">
-					<Link
+					<CustomLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center hover:opacity-75`}
 						href={APP_ROUTES.feeds}
 						aria-label="Rilog 홈"
 					>
 						<Image src="/brand/logo.svg" alt="Rilog." width={85} height={32} priority />
-					</Link>
+					</CustomLink>
 					<p className="w-max text-caption-2 font-medium">기록을 작성하고 함께 나누는 공간</p>
 				</div>
 
@@ -31,18 +31,18 @@ export default function Footer() {
 					aria-label="정책"
 					className="hidden flex-wrap items-center gap-x-5 text-caption-1 font-semibold sm:col-start-2 sm:row-start-1 sm:flex sm:flex-col sm:items-end sm:gap-x-0"
 				>
-					<Link
+					<CustomLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-0 sm:py-0.5`}
 						href="/privacy"
 					>
 						개인정보처리방침
-					</Link>
-					<Link
+					</CustomLink>
+					<CustomLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-0 sm:py-0.5`}
 						href="/terms"
 					>
 						이용약관
-					</Link>
+					</CustomLink>
 				</nav>
 
 				<section

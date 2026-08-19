@@ -42,3 +42,21 @@ export interface PostDetailResponse {
 	author: AuthorResponse;
 	owner: PostOwnerResponse;
 }
+
+export interface CologPublicProfileResponse {
+	type: string;
+	id: number;
+	name: string;
+	slug: string;
+	introduction: string | null;
+	profileImageUrl: string | null;
+	coverImageUrl: string | null;
+	serviceUrl: string | null;
+	githubUrl: string | null;
+	memberCount: number;
+	postCount: number;
+}
+
+export interface BlogPublicProfileRequest {
+	slug: string;
+}

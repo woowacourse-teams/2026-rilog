@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { User } from '@/domains/user/model/user';
@@ -19,7 +19,7 @@ export default function PostDetailHeader({ title, publishedAt, author }: PostDet
 			</h1>
 
 			<div className="mt-7 flex items-center gap-3 text-label-2 text-text-secondary">
-				<Link
+				<CustomLink
 					href={buildCologHomePath(author.slug)}
 					className="flex items-center gap-2 rounded-full transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
@@ -30,7 +30,7 @@ export default function PostDetailHeader({ title, publishedAt, author }: PostDet
 						size="md"
 					/>
 					<span>{author.nickname}</span>
-				</Link>
+				</CustomLink>
 				<span aria-hidden="true">·</span>
 				<time dateTime={publishedAt}>{formatPublishedDate(publishedAt)}</time>
 			</div>
