@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { handleGitHubCallback } from '@/api/auth/api';
+import { tokenProvider } from '@/features/auth/model/token-provider';
+import { handleGitHubCallback } from '@/shared/api/auth/api';
 
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
@@ -22,10 +23,15 @@ export default function GitHubCallbackHandler() {
 		const processCallback = async () => {
 			try {
 				const response = await handleGitHubCallback({ code, state, error });
-				const data = response?.data;
+				const data = response?.data?.data;
+				const accessToken = response?.accessToken;
 
 				if (!data) {
 					throw new Error('No data received');
+				}
+
+				if (accessToken) {
+					tokenProvider.setAccessToken(accessToken);
 				}
 
 				if (data.onboardingStatus === 'PENDING') {
