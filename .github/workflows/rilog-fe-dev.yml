@@ -61,7 +61,7 @@ jobs:
 
       - name: Create .env file for Build
         env:
-          ENV_SECRET: ${{ secrets.ENV_DEV }}
+          ENV_SECRET: ${{ secrets.ENV_DEV_FE }}
         run: |
           echo "$ENV_SECRET" > .env
 
