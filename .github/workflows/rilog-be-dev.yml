@@ -73,7 +73,7 @@ jobs:
 
   deploy:
     name: Deploy Rilog Dev
-    runs-on: self-hosted
+    runs-on: [ self-hosted, Linux, ARM64, backend-dev ]
     needs: build
     if: github.event_name == 'push'
 
