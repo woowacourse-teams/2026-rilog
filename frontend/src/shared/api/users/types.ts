@@ -11,3 +11,12 @@ export interface MyInfoResponse {
 	nickname: string;
 	profileImageUrl: string | null;
 }
+
+export interface OnboardingRequest {
+	nickname: string;
+	slug: string;
+	introduction: string;
+	profileImageUrl: string;
+	githubUrl: string;
+	email: string;
+}

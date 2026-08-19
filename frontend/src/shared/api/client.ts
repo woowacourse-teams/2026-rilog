@@ -61,6 +61,8 @@ export const apiClient = {
 		apiRequest(() => kyInstance.post(url, options).json<T>()),
 	put: <T>(url: string, options?: Parameters<typeof kyInstance.put>[1]) =>
 		apiRequest(() => kyInstance.put(url, options).json<T>()),
+	patch: <T>(url: string, options?: Parameters<typeof kyInstance.put>[1]) =>
+		apiRequest(() => kyInstance.patch(url, options).json<T>()),
 	delete: <T>(url: string, options?: Parameters<typeof kyInstance.delete>[1]) =>
 		apiRequest(() => kyInstance.delete(url, options).json<T>()),
 };
