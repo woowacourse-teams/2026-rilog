@@ -97,33 +97,33 @@ jobs:
       - name: Deploy to Server
         shell: bash -il {0}
         run: |
-          # nvm은 non-login/non-interactive 셸에서는 자동 로드되지 않으므로 명시적으로 source
-          # HOME, NVM_DIR은 actions-runner/.env 에 고정되어 있음 (systemd 서비스 컨텍스트 대비)
+          set -euo pipefail
+
           export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+            echo "❌ nvm.sh를 찾을 수 없습니다: $NVM_DIR/nvm.sh"
+            exit 1
+          fi
+          \. "$NVM_DIR/nvm.sh"
 
-          # 서버에 미리 설치해둔 Node 버전 사용 (package.json engines 기준과 맞출 것)
-          nvm use 24 || nvm install 24
+          nvm use 24
 
-          # pnpm은 corepack으로 관리 (전역 설치본과의 경로 충돌 방지)
           corepack enable
           corepack prepare pnpm@11.21.0 --activate
 
           echo "🟢 Node 버전: $(node -v)"
           echo "🟢 pnpm 버전: $(pnpm -v)"
 
-          TARGET_DIR="/home/ubuntu/rilog-next"
+          # pm2 없으면 설치 (있으면 스킵되므로 매번 실행해도 안전)
+          command -v pm2 >/dev/null || npm install -g pm2
 
-          # 대상 디렉터리 생성 및 압축 해제
+          TARGET_DIR="/home/ubuntu/rilog-next"
           mkdir -p $TARGET_DIR
           tar -xzf /tmp/rilog-fe/fe-build.tar.gz -C $TARGET_DIR
           rm -rf /tmp/rilog-fe
 
           cd $TARGET_DIR
-
-          # 의존성 설치
           pnpm install --prod --frozen-lockfile
 
-          # pm2 재시작
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
