@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import type { CologSummary } from '@/domains/blog/model/colog';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
@@ -12,7 +12,7 @@ export default function PostDetailCoLogSummary({ colog }: PostDetailCoLogSummary
 	return (
 		<section aria-label="Colog 정보" className="border-t border-border-default py-3">
 			<div className="flex items-center gap-3">
-				<Link
+				<CustomLink
 					href={buildCologHomePath(colog.slug)}
 					className="flex min-w-0 flex-1 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
@@ -28,7 +28,7 @@ export default function PostDetailCoLogSummary({ colog }: PostDetailCoLogSummary
 							<span className="mt-0.5 block truncate text-caption-2 text-text-secondary">{colog.description}</span>
 						) : null}
 					</span>
-				</Link>
+				</CustomLink>
 
 				<dl className="hidden shrink-0 grid-cols-2 gap-5 text-left sm:grid">
 					<div>

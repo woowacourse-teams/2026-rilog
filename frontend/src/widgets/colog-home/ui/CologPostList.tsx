@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostSummary } from '@/domains/post/model/post';
@@ -20,9 +20,9 @@ export default function CologPostList({ slug, posts }: CologPostListProps) {
 				<ul className="flex flex-col gap-7">
 					{posts.map((post) => (
 						<li key={post.id}>
-							<Link
+							<CustomLink
 								href={buildPostDetailPath(slug, String(post.id))}
-								prefetch={false}
+
 								className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 							>
 								<div className="relative aspect-[3/2] h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">
@@ -59,7 +59,7 @@ export default function CologPostList({ slug, posts }: CologPostListProps) {
 										</time>
 									</div>
 								</article>
-							</Link>
+							</CustomLink>
 						</li>
 					))}
 				</ul>

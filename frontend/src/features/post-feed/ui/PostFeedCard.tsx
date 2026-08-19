@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostFeedItem } from '@/domains/post/model/post';
@@ -15,9 +15,9 @@ interface PostFeedCardProps {
 export default function PostFeedCard({ post }: PostFeedCardProps) {
 	return (
 		<li className="[contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
-			<Link
+			<CustomLink
 				href={buildPostDetailPath(post.blog.slug, String(post.id))}
-				prefetch={false}
+
 				className="group relative z-0 block h-full rounded-xl hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring active:z-10"
 			>
 				<article className="flex h-full flex-col">
@@ -53,7 +53,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 						</div>
 					</div>
 				</article>
-			</Link>
+			</CustomLink>
 		</li>
 	);
 }
