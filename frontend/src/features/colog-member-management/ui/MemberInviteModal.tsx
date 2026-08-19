@@ -1,5 +1,7 @@
 'use client';
 
+
+import { useQueryClient } from '@tanstack/react-query';
 import { useId, useRef, useState } from 'react';
 
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
@@ -9,7 +11,9 @@ import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
-import { mockFindMemberInviteCandidate } from '../lib/mock-find-member-invite-candidate';
+
+
+import { userBySlugQueryOptions } from '@/api/users/queries/user-by-slug/query-options';
 
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
@@ -39,7 +43,10 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 		onClose();
 	};
 
-	const handleAddCandidate = () => {
+	const queryClient = useQueryClient();
+	const [isPending, setIsPending] = useState(false);
+
+	const handleAddCandidate = async () => {
 		const normalizedSlug = slugInput.trim().replace(/^@/, '');
 
 		if (!normalizedSlug) {
@@ -52,17 +59,30 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 			return;
 		}
 
-		const candidate = mockFindMemberInviteCandidate(normalizedSlug);
-
-		if (candidate === null) {
-			setErrorMessage('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
-			return;
-		}
-
-		setCandidates((currentCandidates) => [...currentCandidates, candidate]);
-		setSlugInput('');
+		setIsPending(true);
 		setErrorMessage(undefined);
-		inputRef.current?.focus();
+
+		try {
+			const response = await queryClient.fetchQuery(userBySlugQueryOptions(normalizedSlug));
+			const user = response.data;
+
+			if (user) {
+				setCandidates((currentCandidates) => [
+					...currentCandidates,
+					{
+						slug: user.slug,
+						nickname: user.nickname,
+						profileImageUrl: user.profileImageUrl,
+					},
+				]);
+				setSlugInput('');
+				inputRef.current?.focus();
+			}
+		} catch {
+			setErrorMessage('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
+		} finally {
+			setIsPending(false);
+		}
 	};
 
 	const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -71,7 +91,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 		}
 
 		event.preventDefault();
-		handleAddCandidate();
+		void handleAddCandidate();
 	};
 
 	const handleRemoveCandidate = (slug: string) => {
@@ -134,6 +154,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 							size="md"
 							className="shrink-0 px-5"
 							disabled={!slugInput.trim()}
+							isPending={isPending}
 							onClick={handleAddCandidate}
 						>
 							추가

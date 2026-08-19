@@ -1,12 +1,51 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MemberInviteModal from './MemberInviteModal';
 
 describe('MemberInviteModal', () => {
+	let queryClient: QueryClient;
+
+	beforeEach(() => {
+		queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		vi.spyOn(queryClient, 'fetchQuery').mockImplementation(async (options: any) => {
+			const slug = options.queryKey[2];
+			if (slug === 'jetproc') {
+				return {
+					status: 0,
+					message: 'OK',
+					data: {
+						id: 1,
+						slug: 'jetproc',
+						nickname: '김지연',
+						profileImageUrl: '',
+					},
+				};
+			}
+			throw new Error('Not found');
+		});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+		queryClient.clear();
+	});
+
+	const renderWithProvider = (ui: React.ReactElement) =>
+		render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+
 	it('고유 아이디 입력에 초기 focus를 주고 빈 상태를 표시한다', () => {
-		render(<MemberInviteModal open onClose={vi.fn()} />);
+		renderWithProvider(<MemberInviteModal open onClose={vi.fn()} />);
 
 		const dialog = screen.getByRole('dialog', { name: '멤버 초대' });
 
@@ -18,12 +57,12 @@ describe('MemberInviteModal', () => {
 
 	it('Enter로 멤버를 추가하고 목록에서 제거한다', async () => {
 		const user = userEvent.setup();
-		render(<MemberInviteModal open onClose={vi.fn()} />);
+		renderWithProvider(<MemberInviteModal open onClose={vi.fn()} />);
 
 		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
 		await user.type(input, '@jetproc{Enter}');
 
-		expect(screen.getByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('김지연');
+		expect(await screen.findByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('김지연');
 		expect(screen.getByRole('button', { name: '초대' })).toBeEnabled();
 
 		await user.click(screen.getByRole('button', { name: '김지연 초대 목록에서 제거' }));
@@ -33,14 +72,20 @@ describe('MemberInviteModal', () => {
 
 	it('존재하지 않거나 중복된 고유 아이디에 오류를 안내한다', async () => {
 		const user = userEvent.setup();
-		render(<MemberInviteModal open onClose={vi.fn()} />);
+		renderWithProvider(<MemberInviteModal open onClose={vi.fn()} />);
 
 		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
+		
+		// 없는 유저인 경우 (API 에러)
 		await user.type(input, '@unknown{Enter}');
 		expect(screen.getByText('해당 고유 아이디의 사용자를 찾을 수 없습니다.')).toBeInTheDocument();
 
 		await user.clear(input);
-		await user.type(input, '@jetproc{Enter}@jetproc{Enter}');
+		// 중복된 경우
+		await user.type(input, '@jetproc{Enter}');
+		await screen.findByRole('list', { name: '추가할 멤버 정보' });
+		
+		await user.type(input, '@jetproc{Enter}');
 		expect(screen.getByText('이미 추가한 멤버입니다.')).toBeInTheDocument();
 	});
 
@@ -48,9 +93,11 @@ describe('MemberInviteModal', () => {
 		const user = userEvent.setup();
 		const onClose = vi.fn();
 		const onInvite = vi.fn();
-		render(<MemberInviteModal open onClose={onClose} onInvite={onInvite} />);
+		renderWithProvider(<MemberInviteModal open onClose={onClose} onInvite={onInvite} />);
 
 		await user.type(screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' }), '@jetproc{Enter}');
+		await screen.findByRole('list', { name: '추가할 멤버 정보' });
+
 		await user.click(screen.getByRole('button', { name: '초대' }));
 
 		expect(onInvite).toHaveBeenCalledWith([
