@@ -7,12 +7,12 @@ import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard
 
 interface UseSettingsLeaveGuardOptions {
 	activeTab: SettingsTab;
+	isDirty: boolean;
 	onTabChange: (nextTab: SettingsTab) => void;
 }
 
 interface UseSettingsLeaveGuardResult {
 	isLeaveModalOpen: boolean;
-	onDirtyChange: (isDirty: boolean) => void;
 	onTabChangeRequest: (nextTab: SettingsTab) => void;
 	onLeaveCancel: () => void;
 	onLeaveConfirm: () => void;
@@ -20,10 +20,10 @@ interface UseSettingsLeaveGuardResult {
 
 export const useSettingsLeaveGuard = ({
 	activeTab,
+	isDirty,
 	onTabChange,
 }: UseSettingsLeaveGuardOptions): UseSettingsLeaveGuardResult => {
 	const router = useRouter();
-	const [isDirty, setIsDirty] = useState(false);
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 	const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
 
@@ -44,16 +44,6 @@ export const useSettingsLeaveGuard = ({
 		onNavigationAttempt: handleNavigationAttempt,
 		onReplace: replaceNavigation,
 	});
-
-	const handleDirtyChange = useCallback(
-		(nextIsDirty: boolean) => {
-			setIsDirty(nextIsDirty);
-			if (!nextIsDirty) {
-				clearGuardEntry();
-			}
-		},
-		[clearGuardEntry],
-	);
 
 	const handleTabChangeRequest = useCallback(
 		(nextTab: SettingsTab) => {
@@ -83,7 +73,6 @@ export const useSettingsLeaveGuard = ({
 
 		setPendingTab(null);
 		setIsLeaveModalOpen(false);
-		setIsDirty(false);
 
 		if (nextTab !== null) {
 			clearGuardEntry();
@@ -96,7 +85,6 @@ export const useSettingsLeaveGuard = ({
 
 	return {
 		isLeaveModalOpen,
-		onDirtyChange: handleDirtyChange,
 		onTabChangeRequest: handleTabChangeRequest,
 		onLeaveCancel: handleLeaveCancel,
 		onLeaveConfirm: handleLeaveConfirm,

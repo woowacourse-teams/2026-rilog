@@ -1,6 +1,6 @@
 import type { Block } from '@blocknote/core';
 
-import type { PostCategory } from '@/domains/post/model/post-category';
+import type { PostCategory } from '@/domains/post/model/post';
 
 export interface EditorDocument {
 	title: string;

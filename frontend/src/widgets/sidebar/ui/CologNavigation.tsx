@@ -1,4 +1,4 @@
-import CologAvatar from '@/domains/colog/ui/CologAvatar';
+import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 

@@ -60,6 +60,33 @@ describe('CologCreateForm', () => {
 		expect(backMock).toHaveBeenCalledOnce();
 	});
 
+	it('로고를 등록하면 기본 이미지로 변경할 수 있는 버튼을 제공하고 클릭 시 초기화한다', async () => {
+		const createObjectUrl = vi.fn(() => 'blob:logo');
+		const revokeObjectUrl = vi.fn();
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
+		const user = userEvent.setup();
+		const { unmount } = render(<CologCreateForm />);
+
+		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+
+		await user.upload(screen.getByLabelText('팀 로고 변경'), new File(['logo'], 'logo.png', { type: 'image/png' }));
+
+		const resetButton = screen.getByRole('button', { name: '기본 이미지로 변경' });
+		expect(resetButton).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute('src', 'blob:logo');
+
+		await user.click(resetButton);
+		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute(
+			'src',
+			'/images/profile-placeholder.svg',
+		);
+		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+
+		unmount();
+		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:logo');
+		vi.unstubAllGlobals();
+	});
+
 	it('팀 소개의 글자 수를 입력에 맞춰 안내한다', async () => {
 		const user = userEvent.setup();
 		render(<CologCreateForm />);
@@ -109,7 +136,7 @@ describe('CologCreateForm', () => {
 			expect.objectContaining({
 				name: '리로그',
 				slug: 'rilog-team',
-				introduction: '함께 성장하는 개발 팀입니다',
+				description: '함께 성장하는 개발 팀입니다',
 				serviceUrl: '',
 				githubUrl: '',
 				email: '',

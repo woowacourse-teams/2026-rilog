@@ -3,7 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post-feed';
+import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post';
 import { readFullFeedPosts } from '@/shared/api/feeds/api';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/types';
@@ -22,8 +22,8 @@ const createPost = (id: number): PostFeedItem => ({
 	title: `게시글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-14T09:00:00',
-	author: { nickname: '작성자', slug: 'author', profileImageUrl: null },
-	colog: null,
+	author: { id: 1, nickname: '작성자', slug: 'author', profileImageUrl: null },
+	blog: { id, name: '작성자', slug: 'author', type: 'RILOG', profileImageUrl: null },
 });
 
 const createPosts = (startId: number, count: number) =>
@@ -39,19 +39,19 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	visibility: 'PUBLIC',
 	publishedAt: post.publishedAt,
 	author: {
-		userId: post.id,
+		userId: post.author.id,
 		name: post.author.nickname,
 		nickname: post.author.nickname,
 		slug: post.author.slug,
 		profileImageUrl: post.author.profileImageUrl,
 	},
-	owner: post.colog
+	owner: post.blog
 		? {
 				type: 'COLOG',
-				blogId: post.id + 1000,
-				name: post.colog.name,
-				slug: post.colog.slug,
-				logoImageUrl: post.colog.logoUrl,
+				blogId: post.blog.id,
+				name: post.blog.name,
+				slug: post.blog.slug,
+				logoImageUrl: post.blog.profileImageUrl ?? null,
 				coverImageUrl: null,
 				memberCount: 1,
 				postCount: 1,
