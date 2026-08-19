@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { useAuth } from '@/features/auth/model/use-auth';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { MyCologPreviewResponse } from '@/shared/api/users/types';
 
@@ -15,9 +16,12 @@ interface UseMyCologsPreviewQueryOptions<TData> {
 export const useMyCologsPreviewQuery = <TData = ApiResponse<MyCologPreviewResponse[]>>({
 	isEnabled = true,
 	select,
-}: UseMyCologsPreviewQueryOptions<TData> = {}) =>
-	useQuery({
+}: UseMyCologsPreviewQueryOptions<TData> = {}) => {
+	const { isAuthenticated } = useAuth();
+
+	return useQuery({
 		...myCologsPreviewQueryOptions(),
-		enabled: isEnabled,
+		enabled: isEnabled && isAuthenticated,
 		select,
 	});
+};
