@@ -53,7 +53,10 @@ public class StartOAuthLogin {
         if (!StringUtils.hasText(redirectUrl)) {
             return DEFAULT_REDIRECT_URL;
         }
-        if (!redirectUrl.startsWith("/") || redirectUrl.startsWith("//") || containsLineBreak(redirectUrl)) {
+        if (!redirectUrl.startsWith("/")
+                || redirectUrl.startsWith("//")
+                || containsLineBreak(redirectUrl)
+                || containsBackslash(redirectUrl)) {
             throw new AuthException(INVALID_OAUTH_REDIRECT_URL);
         }
         return redirectUrl;
@@ -61,6 +64,10 @@ public class StartOAuthLogin {
 
     private boolean containsLineBreak(String value) {
         return value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0;
+    }
+
+    private boolean containsBackslash(String value) {
+        return value.indexOf('\\') >= 0;
     }
 
     private OAuthAuthorizationUrlProvider authorizationUrlProvider(SocialLoginProvider provider) {

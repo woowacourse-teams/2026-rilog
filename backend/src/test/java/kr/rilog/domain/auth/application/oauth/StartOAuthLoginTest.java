@@ -108,6 +108,22 @@ class StartOAuthLoginTest {
                 .isEqualTo(AuthErrorInformation.INVALID_OAUTH_REDIRECT_URL);
     }
 
+    @Test
+    @DisplayName("백슬래시를 포함한 redirectUrl은 거부한다")
+    void startRejectsRedirectUrlContainingBackslash() {
+        // given
+        StartOAuthLogin startOAuthLogin = new StartOAuthLogin(
+                new RecordingOAuthLoginAttemptStore(),
+                List.of(new StubOAuthAuthorizationUrlProvider())
+        );
+
+        // when - then
+        assertThatThrownBy(() -> startOAuthLogin.start(SocialLoginProvider.GITHUB, "/\\evil.com"))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.INVALID_OAUTH_REDIRECT_URL);
+    }
+
     private static class RecordingOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
         private SocialLoginProvider savedProvider;
