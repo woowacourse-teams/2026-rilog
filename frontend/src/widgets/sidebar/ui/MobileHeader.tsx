@@ -1,21 +1,19 @@
 'use client';
 
 import Image from 'next/image';
-import CustomLink from '@/shared/ui/link/CustomLink';
 import { usePathname } from 'next/navigation';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
-interface MobileBottomNavigationProps {
-	isAuthenticated?: boolean;
-}
-
-export default function MobileHeader({ isAuthenticated = false }: MobileBottomNavigationProps) {
+export default function MobileHeader() {
+	const { isAuthenticated } = useAuth();
 	const pathname = usePathname() ?? '';
-	const handleLoginClick = useAuthAction({ isAuthenticated });
+	const handleLoginClick = useAuthAction();
 	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
 
 	return (

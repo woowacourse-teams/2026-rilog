@@ -12,13 +12,10 @@ function LoginButton() {
 	return <button onClick={login}>로그인 열기</button>;
 }
 
-interface AuthActionButtonProps {
-	isAuthenticated: boolean;
-	action: () => void;
-}
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 
-function AuthActionButton({ isAuthenticated, action }: AuthActionButtonProps) {
-	const handleClick = useAuthAction({ isAuthenticated, action });
+function AuthActionButton({ action }: { action: () => void }) {
+	const handleClick = useAuthAction({ action });
 
 	return <button onClick={handleClick}>인증 필요 action</button>;
 }
@@ -42,9 +39,11 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<LoginModalProvider>
-				<AuthActionButton isAuthenticated={false} action={action} />
-			</LoginModalProvider>,
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn() }}>
+				<LoginModalProvider>
+					<AuthActionButton action={action} />
+				</LoginModalProvider>
+			</AUTH_CONTEXT.Provider>
 		);
 
 		await user.click(screen.getByRole('button', { name: '인증 필요 action' }));
@@ -57,9 +56,11 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<LoginModalProvider>
-				<AuthActionButton isAuthenticated action={action} />
-			</LoginModalProvider>,
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, setIsAuthenticated: vi.fn() }}>
+				<LoginModalProvider>
+					<AuthActionButton action={action} />
+				</LoginModalProvider>
+			</AUTH_CONTEXT.Provider>
 		);
 
 		await user.click(screen.getByRole('button', { name: '인증 필요 action' }));

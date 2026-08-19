@@ -12,11 +12,15 @@ vi.mock('next/navigation', () => ({
 	usePathname: () => navigationMock.pathname,
 }));
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+
 function renderHeader(isAuthenticated = false) {
 	return render(
-		<LoginModalProvider>
-			<MobileHeader isAuthenticated={isAuthenticated} />
-		</LoginModalProvider>,
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated: vi.fn() }}>
+			<LoginModalProvider>
+				<MobileHeader />
+			</LoginModalProvider>
+		</AUTH_CONTEXT.Provider>
 	);
 }
 

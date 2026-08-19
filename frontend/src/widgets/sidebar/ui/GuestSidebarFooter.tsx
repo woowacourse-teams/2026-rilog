@@ -7,7 +7,7 @@ import LogInIcon from '@/widgets/sidebar/assets/log-in.svg';
 import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME, SIDEBAR_GLYPH_CLASS_NAME } from './sidebar-class-names';
 
 export default function GuestSidebarFooter() {
-	const handleLoginClick = useAuthAction({ isAuthenticated: false });
+	const handleLoginClick = useAuthAction();
 
 	return (
 		<footer className="w-full shrink-0 border-t border-border-default p-3">
