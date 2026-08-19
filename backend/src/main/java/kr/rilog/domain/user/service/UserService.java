@@ -30,18 +30,6 @@ public class UserService {
         return UserInfoResult.from(user);
     }
 
-    public void validateDuplicatedNickname(String nickname) {
-        if (userRepository.existsByNickname(Nickname.from(nickname))) {
-            throw new UserException(NICKNAME_DUPLICATED);
-        }
-    }
-
-    public void validateDuplicatedSlug(String slug) {
-        if (userRepository.existsBySlug(Slug.from(slug))) {
-            throw new UserException(SLUG_DUPLICATED);
-        }
-    }
-
     @Transactional
     public User completeOnboarding(Long userId, OnboardingCompleteCommand command) {
         User user = userRepository.findById(userId)
@@ -66,6 +54,18 @@ public class UserService {
         User completedUser = userRepository.saveAndFlush(user);
         createRilogIfAbsent(completedUser);
         return completedUser;
+    }
+
+    public void validateDuplicatedNickname(String nickname) {
+        if (userRepository.existsByNickname(Nickname.from(nickname))) {
+            throw new UserException(NICKNAME_DUPLICATED);
+        }
+    }
+
+    public void validateDuplicatedSlug(String slug) {
+        if (userRepository.existsBySlug(Slug.from(slug))) {
+            throw new UserException(SLUG_DUPLICATED);
+        }
     }
 
     private void createRilogIfAbsent(User user) {
