@@ -64,10 +64,6 @@ public class CologService {
 
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
         requesterMember.validateCanInvite(command.permission());
-        /**
-         * 실제 도메인로직, 비즈니스 로직이 수행되고 있는 지 판단은 도메인 단위 테스트 or 서비스 통합테스트
-         * 실제로 그 부분을 호출하고 있는지는 모킹으로 빠르게?
-         * */
 
         User invitee = getUser(command.userId());
         validateNotActiveMember(colog.getId(), invitee.getId());
