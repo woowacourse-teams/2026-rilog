@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import FeedsPage from './page';
+import FeedsPage, { dynamic } from './page';
 
 vi.mock('@/widgets/post-feed/PostFeed', () => ({
 	default: () => (
@@ -13,6 +13,10 @@ vi.mock('@/widgets/post-feed/PostFeed', () => ({
 }));
 
 describe('FeedsPage', () => {
+	it('최신 피드를 위해 동적으로 렌더링한다', () => {
+		expect(dynamic).toBe('force-dynamic');
+	});
+
 	it('피드 경로에서 홈 피드 위젯을 조립한다', () => {
 		render(<FeedsPage />);
 
