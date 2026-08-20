@@ -20,7 +20,10 @@ interface CologCreateFormFieldsProps {
 	errors: CologProfileValidationErrors;
 	refs: CologCreateFormRefs;
 	disabled?: boolean;
+	slugAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
+	slugAvailabilityMessage?: string;
 	onTextFieldChange: (field: CologProfileTextField, nextValue: string) => void;
+	onSlugAvailabilityCheck: () => void;
 	onLogoFileChange: (file: File | null) => void;
 	onCoverImageFileChange: (file: File | null) => void;
 }
@@ -30,7 +33,10 @@ export default function CologCreateFormFields({
 	errors,
 	refs,
 	disabled = false,
+	slugAvailabilityStatus = 'idle',
+	slugAvailabilityMessage,
 	onTextFieldChange,
+	onSlugAvailabilityCheck,
 	onLogoFileChange,
 	onCoverImageFileChange,
 }: CologCreateFormFieldsProps) {
@@ -39,6 +45,7 @@ export default function CologCreateFormFields({
 	const hasLogoError = errors.logoFile !== undefined;
 	const hasCustomLogo = value.logoFile !== null || Boolean(value.profileImageUrl);
 	const hasCustomCover = value.coverImageFile !== null || Boolean(value.coverImageUrl);
+	const hasSlugError = errors.slug !== undefined || slugAvailabilityStatus === 'error';
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -131,21 +138,33 @@ export default function CologCreateFormFields({
 
 			<Field label="팀 고유 아이디" description="팀 페이지 URL에 사용될 고유한 식별자입니다.">
 				{({ id, describedBy }) => (
-					<Input
-						id={id}
-						aria-describedby={describedBy}
-						ref={refs.slug}
-						value={value.slug}
-						disabled={disabled}
-						required
-						minLength={COLOG_SLUG_MIN_LENGTH}
-						maxLength={COLOG_NAME_MAX_LENGTH}
-						pattern="[a-z0-9-]+"
-						placeholder="예: rilog-fe"
-						status={errors.slug !== undefined ? 'error' : 'default'}
-						helperText={errors.slug}
-						onChange={(event) => onTextFieldChange('slug', event.target.value)}
-					/>
+					<div className="flex items-start gap-2">
+						<Input
+							id={id}
+							aria-describedby={describedBy}
+							ref={refs.slug}
+							value={value.slug}
+							disabled={disabled || slugAvailabilityStatus === 'pending'}
+							required
+							minLength={COLOG_SLUG_MIN_LENGTH}
+							maxLength={COLOG_NAME_MAX_LENGTH}
+							pattern="[a-z0-9-]+"
+							placeholder="예: rilog-fe"
+							status={hasSlugError ? 'error' : slugAvailabilityStatus === 'success' ? 'success' : 'default'}
+							helperText={errors.slug ?? slugAvailabilityMessage}
+							onChange={(event) => onTextFieldChange('slug', event.target.value)}
+						/>
+						<Button
+							variant="secondary"
+							className="shrink-0 bg-white whitespace-nowrap"
+							aria-label="팀 고유 아이디 중복 확인"
+							disabled={disabled}
+							isPending={slugAvailabilityStatus === 'pending'}
+							onClick={onSlugAvailabilityCheck}
+						>
+							{slugAvailabilityStatus === 'pending' ? '확인 중' : '중복 확인'}
+						</Button>
+					</div>
 				)}
 			</Field>
 
@@ -205,7 +224,6 @@ export default function CologCreateFormFields({
 						/>
 					)}
 				</Field>
-
 			</fieldset>
 		</div>
 	);

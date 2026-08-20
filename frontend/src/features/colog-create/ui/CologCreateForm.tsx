@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 
 import type { SubmitEvent } from 'react';
 
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
 import { useCreateCologMutation } from '@/shared/api/cologs/mutations/use-create-colog-mutation';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -20,8 +22,24 @@ interface CologCreateFormProps {
 export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	const router = useRouter();
 	const form = useCologCreateForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
-	
+
 	const { mutateAsync: createColog, isPending: isCreating, error, reset: clearCreateError } = useCreateCologMutation();
+	const slugAvailability = useCheckSlugAvailabilityMutation();
+
+	const handleSlugAvailabilityCheck = async () => {
+		const normalizedSlug = form.validateSlug();
+		if (normalizedSlug === null) {
+			return;
+		}
+
+		form.setValue({ ...form.value, slug: normalizedSlug });
+
+		try {
+			await slugAvailability.mutateAsync(normalizedSlug);
+		} catch {
+			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
+		}
+	};
 
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -41,11 +59,11 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		try {
 			const response = await createColog(normalizedValue);
 			const data = response.data;
-			
+
 			if (!data) {
 				throw new Error('팀을 만들지 못했습니다. 다시 시도해 주세요.');
 			}
-			
+
 			const profilePath = buildCologHomePath(data.slug);
 
 			if (navigate !== undefined) {
@@ -60,6 +78,11 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	};
 
 	const errorMessage = error?.message || '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
+	const slugAvailabilityMessage = slugAvailability.isSuccess
+		? slugAvailability.data.message
+		: slugAvailability.isError
+			? getApiErrorMessage(slugAvailability.error, '고유 아이디 중복 확인에 실패했습니다.')
+			: undefined;
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
@@ -68,10 +91,16 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 				errors={form.errors}
 				refs={form.refs}
 				disabled={isCreating}
+				slugAvailabilityStatus={slugAvailability.status}
+				slugAvailabilityMessage={slugAvailabilityMessage}
 				onTextFieldChange={(field, value) => {
 					form.updateTextField(field, value);
+					if (field === 'slug') {
+						slugAvailability.reset();
+					}
 					clearCreateError();
 				}}
+				onSlugAvailabilityCheck={() => void handleSlugAvailabilityCheck()}
 				onLogoFileChange={(file) => {
 					form.updateLogoFile(file);
 					clearCreateError();
@@ -105,4 +134,3 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		</form>
 	);
 }
-

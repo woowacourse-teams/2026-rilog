@@ -5,7 +5,7 @@ import type { NormalizedApiError } from './api-error';
 
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
 
-import { getFieldErrors, normalizeApiError } from './api-error';
+import { getApiErrorMessage, getFieldErrors, normalizeApiError } from './api-error';
 
 describe('normalizeApiError', () => {
 	it('서버 오류 본문을 코드와 처리 범주를 포함한 API 오류로 정규화한다', async () => {
@@ -95,5 +95,32 @@ describe('getFieldErrors', () => {
 		};
 
 		expect(getFieldErrors(error as unknown as NormalizedApiError)).toBeNull();
+	});
+});
+
+describe('getApiErrorMessage', () => {
+	it('정규화된 API 오류의 서버 메시지를 반환한다', () => {
+		expect(
+			getApiErrorMessage(
+				{
+					type: 'api',
+					detail: {
+						status: 404,
+						error: 'NOT_FOUND',
+						errorCode: 'SLUG_DUPLICATED',
+						message: '중복되는 슬러그입니다.',
+						invalidParams: null,
+					},
+				},
+				'중복 확인에 실패했습니다.',
+			),
+		).toBe('중복되는 슬러그입니다.');
+	});
+
+	it('서버 메시지가 없는 오류에는 Error 메시지 또는 fallback을 사용한다', () => {
+		expect(getApiErrorMessage(new Error('네트워크 요청에 실패했습니다.'), '다시 시도해 주세요.')).toBe(
+			'네트워크 요청에 실패했습니다.',
+		);
+		expect(getApiErrorMessage(null, '다시 시도해 주세요.')).toBe('다시 시도해 주세요.');
 	});
 });

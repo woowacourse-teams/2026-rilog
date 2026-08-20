@@ -6,7 +6,7 @@ import { useId, useRef } from 'react';
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
 import { useAuth } from '@/features/auth/model/use-auth';
-import type { NormalizedApiError } from '@/shared/api/api-error';
+import { getApiErrorMessage } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
@@ -34,18 +34,6 @@ import {
 
 const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
 const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
-
-const getAvailabilityErrorMessage = (error: unknown, fallbackMessage: string) => {
-	if (typeof error === 'object' && error !== null) {
-		const normalizedError = error as NormalizedApiError;
-
-		if (normalizedError.type === 'api') {
-			return normalizedError.detail.message;
-		}
-	}
-
-	return error instanceof Error ? error.message : fallbackMessage;
-};
 
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
@@ -114,12 +102,12 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const nicknameAvailabilityMessage = nicknameAvailability.isSuccess
 		? nicknameAvailability.data.message
 		: nicknameAvailability.isError
-			? getAvailabilityErrorMessage(nicknameAvailability.error, '닉네임 중복 확인에 실패했습니다.')
+			? getApiErrorMessage(nicknameAvailability.error, '닉네임 중복 확인에 실패했습니다.')
 			: undefined;
 	const slugAvailabilityMessage = slugAvailability.isSuccess
 		? slugAvailability.data.message
 		: slugAvailability.isError
-			? getAvailabilityErrorMessage(slugAvailability.error, '고유 아이디 중복 확인에 실패했습니다.')
+			? getApiErrorMessage(slugAvailability.error, '고유 아이디 중복 확인에 실패했습니다.')
 			: undefined;
 
 	const handleNicknameChange = (event: React.ChangeEvent<HTMLInputElement>) => {

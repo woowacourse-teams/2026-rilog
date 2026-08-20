@@ -11,10 +11,26 @@ import {
 
 const URL_PATTERN = /^https?:\/\//i;
 
+export const normalizeCologSlug = (slug: string): string => slug.trim().toLowerCase();
+
+export const validateCologSlug = (slug: string): string | undefined => {
+	const normalizedSlug = normalizeCologSlug(slug);
+
+	if (
+		normalizedSlug.length < COLOG_SLUG_MIN_LENGTH ||
+		normalizedSlug.length > COLOG_SLUG_MAX_LENGTH ||
+		!COLOG_SLUG_PATTERN.test(normalizedSlug)
+	) {
+		return `고유 아이디는 ${COLOG_SLUG_MIN_LENGTH}~${COLOG_SLUG_MAX_LENGTH}자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.`;
+	}
+
+	return undefined;
+};
+
 export const normalizeCologCreateValue = (value: CologCreateValue): CologCreateValue => ({
 	...value,
 	name: value.name.trim(),
-	slug: value.slug.trim().toLowerCase(),
+	slug: normalizeCologSlug(value.slug),
 	description: (value.description ?? '').trim(),
 	profileImageUrl: (value.profileImageUrl ?? '').trim(),
 	coverImageUrl: (value.coverImageUrl ?? '').trim(),
@@ -36,12 +52,9 @@ export const validateCologCreateValue = (value: CologCreateValue): CologProfileV
 		errors.name = `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
 	}
 
-	if (
-		normalized.slug.length < COLOG_SLUG_MIN_LENGTH ||
-		normalized.slug.length > COLOG_SLUG_MAX_LENGTH ||
-		!COLOG_SLUG_PATTERN.test(normalized.slug)
-	) {
-		errors.slug = `고유 아이디는 ${COLOG_SLUG_MIN_LENGTH}~${COLOG_SLUG_MAX_LENGTH}자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.`;
+	const slugError = validateCologSlug(normalized.slug);
+	if (slugError !== undefined) {
+		errors.slug = slugError;
 	}
 
 	const description = normalized.description ?? '';
