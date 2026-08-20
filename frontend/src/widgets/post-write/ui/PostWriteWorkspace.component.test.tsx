@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useEffect, useImperativeHandle, useRef } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
@@ -60,6 +60,10 @@ beforeEach(() => {
 	});
 });
 
+afterEach(() => {
+	vi.unstubAllEnvs();
+});
+
 const createParagraph = (text = ''): Block => ({
 	id: 'paragraph',
 	type: 'paragraph',
@@ -92,6 +96,28 @@ function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps
 				onChange(blocksRef.current);
 			}}
 		/>
+	);
+}
+
+function BodyImageUploadEditor({ onReady, uploadFile }: PostEditorProps) {
+	const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+
+	useEffect(() => {
+		onReady([createParagraph('이미지 본문')]);
+	}, [onReady]);
+
+	return (
+		<>
+			<button
+				type="button"
+				onClick={() => {
+					void uploadFile(new File(['body-image'], 'body.png', { type: 'image/png' })).then(setUploadedImageUrl);
+				}}
+			>
+				본문 이미지 업로드
+			</button>
+			<output>{uploadedImageUrl}</output>
+		</>
 	);
 }
 
@@ -145,6 +171,21 @@ describe('PostWriteWorkspace', () => {
 
 		expect(screen.getByRole('option', { name: '내 블로그' })).toHaveValue('10');
 		expect(screen.getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
+	});
+
+	it('본문 이미지를 스토리지에 업로드하고 완성된 URL을 에디터에 전달한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
+		uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/body-image.png' });
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={BodyImageUploadEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '본문 이미지 업로드' }));
+
+		expect(await screen.findByText('https://images.rilog.test/posts/body-image.png')).toBeInTheDocument();
+		expect(uploadRepresentativeImageMock).toHaveBeenCalledWith({
+			file: expect.objectContaining({ name: 'body.png', type: 'image/png' }),
+			type: 'IMAGE',
+		});
 	});
 
 	it('모달을 닫았다 열어도 게시 설정을 유지하고 backdrop으로 닫히지 않는다', async () => {

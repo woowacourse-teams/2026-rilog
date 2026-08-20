@@ -1,9 +1,8 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { mockUploadPostBodyFile } from '@/features/post-write/lib/mock-upload-post-body-file';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
@@ -16,6 +15,7 @@ import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+import { getImageUrl } from '@/shared/utils/get-image-url';
 
 import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 
@@ -31,13 +31,22 @@ interface PostWriteWorkspaceProps {
 export default function PostWriteWorkspace({
 	editorComponent = DynamicBlockNoteEditor,
 	publishPost,
-	uploadFile = mockUploadPostBodyFile,
+	uploadFile,
 	navigate,
 }: PostWriteWorkspaceProps) {
 	const { data: myInfoResponse } = useMyInfoQuery();
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
-	const { mutateAsync: uploadRepresentativeImage } = useUploadFileMutation();
+	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
+	const uploadPostBodyFileWithApi = useCallback<UploadPostBodyFile>(
+		async (file) => {
+			const { objectKey } = await uploadFileToStorage({ file, type: 'IMAGE' });
+
+			return getImageUrl(objectKey);
+		},
+		[uploadFileToStorage],
+	);
+	const resolvedUploadFile = uploadFile ?? uploadPostBodyFileWithApi;
 
 	const myInfo = myInfoResponse?.data;
 	const cologOptions = useMemo(() => {
@@ -56,7 +65,7 @@ export default function PostWriteWorkspace({
 			settings.representativeImage === null
 				? null
 				: (
-						await uploadRepresentativeImage({
+						await uploadFileToStorage({
 							file: settings.representativeImage,
 							type: 'IMAGE',
 						})
@@ -131,7 +140,7 @@ export default function PostWriteWorkspace({
 						error={documentErrors.body}
 						onReady={handleEditorReady}
 						onChange={handleEditorChange}
-						uploadFile={uploadFile}
+						uploadFile={resolvedUploadFile}
 					/>
 				</div>
 			</main>

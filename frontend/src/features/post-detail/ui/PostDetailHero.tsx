@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { getImageUrl } from '@/shared/utils/get-image-url';
+
 interface PostDetailHeroProps {
 	title: string;
 	thumbnailImageUrl: string | null;
@@ -10,7 +12,8 @@ interface PostDetailHeroProps {
 
 export default function PostDetailHero({ title, thumbnailImageUrl }: PostDetailHeroProps) {
 	const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-	const hasFallback = thumbnailImageUrl === null || failedImageUrl === thumbnailImageUrl;
+	const imageUrl = getImageUrl(thumbnailImageUrl);
+	const hasFallback = imageUrl === '' || failedImageUrl === imageUrl;
 
 	return (
 		<figure
@@ -19,13 +22,13 @@ export default function PostDetailHero({ title, thumbnailImageUrl }: PostDetailH
 		>
 			{hasFallback ? null : (
 				<Image
-					src={thumbnailImageUrl}
+					src={imageUrl}
 					alt={title}
 					fill
 					priority
 					sizes="(max-width: 768px) 100vw, calc(100vw - 4.375rem)"
 					className="object-cover"
-					onError={() => setFailedImageUrl(thumbnailImageUrl)}
+					onError={() => setFailedImageUrl(imageUrl)}
 				/>
 			)}
 		</figure>
