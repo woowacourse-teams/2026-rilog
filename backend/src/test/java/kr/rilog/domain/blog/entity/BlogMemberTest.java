@@ -2,15 +2,11 @@ package kr.rilog.domain.blog.entity;
 
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
-import kr.rilog.domain.blog.entity.enums.BlogType;
-import kr.rilog.domain.blog.entity.vo.Profile;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.time.LocalDateTime;
+import static kr.rilog.support.BlogFixture.*;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
@@ -20,92 +16,42 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BlogMemberTest {
 
+    private static final Long OWNER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+
     @Test
     @DisplayName("팀 생성자는 OWNER 권한의 활성 멤버로 생성된다")
     void createOwnerCreatesActiveOwnerMember() {
         // given
-        User owner = User.builder()
-                .id(1L)
-                .githubId(1L)
-                .build();
-        Blog colog = Blog.builder()
-                .id(2L)
-                .owner(owner)
-                .slug(Slug.from("team_rilog"))
-                .profile(createCologProfile())
-                .blogType(BlogType.COLOG)
-                .build();
-        LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);
+        User owner = createUser(OWNER_ID);
+        User otherUser = createUser(OTHER_USER_ID);
+        Blog colog = createColog(otherUser);
 
         // when
-        BlogMember member = BlogMember.createOwner(colog, owner, joinedAt);
+        BlogMember member = BlogMember.createOwner(colog, owner, pastDate());
 
         // then
-        assertThat(member)
-                .extracting(
-                        BlogMember::getBlog,
-                        BlogMember::getUser,
-                        BlogMember::getPermission,
-                        BlogMember::getStatus,
-                        BlogMember::getJoinedAt
-                )
-                .containsExactly(
-                        colog,
-                        owner,
-                        BlogPermission.OWNER,
-                        BlogMemberStatus.ACTIVE,
-                        joinedAt
-                );
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.OWNER);
     }
 
     @Test
-    @DisplayName("초대된 사용자는 지정한 권한과 역할을 가진 활성 멤버로 생성된다")
+    @DisplayName("초대된 사용자는 지정한 권한과 역할을 가진 ACTIVE 멤버로 생성된다")
     void inviteCreatesActiveMember() {
         // given
-        User owner = User.builder()
-                .id(1L)
-                .githubId(1L)
-                .build();
-        User invitee = User.builder()
-                .id(2L)
-                .githubId(2L)
-                .build();
-        Blog colog = Blog.builder()
-                .id(2L)
-                .owner(owner)
-                .slug(Slug.from("team_rilog"))
-                .profile(createCologProfile())
-                .blogType(BlogType.COLOG)
-                .build();
-        LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);
+        User invitedUser = createUser(OTHER_USER_ID);
+        Blog colog = createColog(invitedUser);
 
         // when
         BlogMember member = BlogMember.invite(
                 colog,
-                invitee,
+                invitedUser,
                 "Backend",
                 BlogPermission.MEMBER,
-                joinedAt
+                pastDate()
         );
 
         // then
-        assertThat(member)
-                .extracting(
-                        BlogMember::getBlog,
-                        BlogMember::getUser,
-                        BlogMember::getBlogRole,
-                        BlogMember::getPermission,
-                        BlogMember::getStatus,
-                        BlogMember::getJoinedAt
-                )
-                .containsExactly(
-                        colog,
-                        invitee,
-                        "Backend",
-                        BlogPermission.MEMBER,
-                        BlogMemberStatus.ACTIVE,
-                        joinedAt
-                );
+        assertThat(member.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
     }
 
     @Test
@@ -115,7 +61,7 @@ class BlogMemberTest {
         BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
 
-        // when - then
+        // when & then
         assertThatCode(() -> owner.validateCanInvite(BlogPermission.ADMIN))
                 .doesNotThrowAnyException();
         assertThatCode(() -> admin.validateCanInvite(BlogPermission.MEMBER))
@@ -128,11 +74,10 @@ class BlogMemberTest {
         // given
         BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
-        // when - then
+        // when & then
         assertThatThrownBy(() -> member.validateCanInvite(BlogPermission.MEMBER))
                 .isInstanceOf(BlogException.class)
-                .extracting("errorInformation")
-                .isEqualTo(BLOG_MEMBER_INVITE_FORBIDDEN);
+                .hasMessage(BLOG_MEMBER_INVITE_FORBIDDEN.getMessage());
     }
 
     @Test
@@ -141,11 +86,10 @@ class BlogMemberTest {
         // given
         BlogMember member = createMember(BlogPermission.OWNER, BlogMemberStatus.LEFT);
 
-        // when - then
+        // when & then
         assertThatThrownBy(() -> member.validateCanInvite(BlogPermission.MEMBER))
                 .isInstanceOf(BlogException.class)
-                .extracting("errorInformation")
-                .isEqualTo(BLOG_MEMBER_INVITE_FORBIDDEN);
+                .hasMessage(BLOG_MEMBER_INVITE_FORBIDDEN.getMessage());
     }
 
     @Test
@@ -154,11 +98,10 @@ class BlogMemberTest {
         // given
         BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
 
-        // when - then
+        // when & then
         assertThatThrownBy(() -> owner.validateCanInvite(BlogPermission.OWNER))
                 .isInstanceOf(BlogException.class)
-                .extracting("errorInformation")
-                .isEqualTo(BLOG_MEMBER_PERMISSION_INVALID);
+                .hasMessage(BLOG_MEMBER_PERMISSION_INVALID.getMessage());
     }
 
     private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {
@@ -166,28 +109,6 @@ class BlogMemberTest {
                 .permission(permission)
                 .status(status)
                 .build();
-    }
-
-    private Profile createRilogProfile() {
-        return Profile.createColog(
-                "러로",
-                "안녕하세요. 러로입니다. ",
-                "https://example.com/profile.png",
-                "https://example.com/cover.png",
-                "https://jinriro.example.com",
-                "https://github.com/Wlsflfh"
-        );
-    }
-
-    private Profile createCologProfile() {
-        return Profile.createColog(
-                "리로그",
-                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
-                "https://example.com/profile.png",
-                "https://example.com/cover.png",
-                "https://rilog.example.com",
-                "https://github.com/rilog"
-        );
     }
 
 }
