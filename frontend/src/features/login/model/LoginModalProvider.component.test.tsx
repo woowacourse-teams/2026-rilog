@@ -39,9 +39,7 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider
-				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
-			>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
@@ -58,9 +56,7 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider
-				value={{ isAuthenticated: true, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
-			>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true }}>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>

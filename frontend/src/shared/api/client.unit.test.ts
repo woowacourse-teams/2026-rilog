@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { tokenManager } from '@/shared/api/auth/token-manager';
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
 import { createEmptyResponse, createUnauthorizedResponse } from '@/test/fixtures/api-response';
 
-import { apiClient, subscribeTokenRefreshFailure } from './client';
+import { apiClient } from './client';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -31,7 +32,7 @@ describe('apiClient', () => {
 		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN));
 		vi.stubGlobal('fetch', fetchMock);
 		const listener = vi.fn();
-		const unsubscribe = subscribeTokenRefreshFailure(listener);
+		const unsubscribe = tokenManager.subscribeLogout(listener);
 
 		await expect(apiClient.get('posts')).rejects.toMatchObject({
 			response: { status: 401 },

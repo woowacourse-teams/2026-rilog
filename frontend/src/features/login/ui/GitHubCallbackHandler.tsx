@@ -3,14 +3,12 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { useAuth } from '@/features/auth/model/use-auth';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
-	const { setIsAuthenticated } = useAuth();
 	const processed = useRef(false);
 
 	useEffect(() => {
@@ -33,8 +31,7 @@ export default function GitHubCallbackHandler() {
 				}
 
 				if (accessToken) {
-					tokenManager.setToken(accessToken);
-					setIsAuthenticated(true);
+					await tokenManager.publishLogin(accessToken);
 				}
 
 				if (data.onboardingStatus === 'PENDING') {
@@ -51,7 +48,7 @@ export default function GitHubCallbackHandler() {
 		};
 
 		void processCallback();
-	}, [searchParams, router, setIsAuthenticated]);
+	}, [searchParams, router]);
 
 	return (
 		<div className="flex min-h-screen items-center justify-center">

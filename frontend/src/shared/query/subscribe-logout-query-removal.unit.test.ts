@@ -5,7 +5,7 @@ import { apiClient } from '@/shared/api/client';
 import { createUnauthorizedResponse } from '@/test/fixtures/api-response';
 
 import { authenticatedQueryKeys } from './authenticated-query-keys';
-import { subscribeTokenRefreshFailureQueryRemoval } from './subscribe-token-refresh-failure-query-removal';
+import { subscribeLogoutQueryRemoval } from './subscribe-logout-query-removal';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -16,8 +16,8 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe('subscribeTokenRefreshFailureQueryRemoval', () => {
-	it('token 갱신 실패 시 지정한 query cache만 제거한다', async () => {
+describe('subscribeLogoutQueryRemoval', () => {
+	it('logout 이벤트 발생 시 지정한 query cache만 제거한다', async () => {
 		vi.stubGlobal('window', {});
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createUnauthorizedResponse()));
 		const queryClient = new QueryClient();
@@ -25,7 +25,7 @@ describe('subscribeTokenRefreshFailureQueryRemoval', () => {
 		const postsQueryKey = ['posts'] as const;
 		queryClient.setQueryData(currentUserQueryKey, { id: 1 });
 		queryClient.setQueryData(postsQueryKey, [{ id: 1 }]);
-		const unsubscribe = subscribeTokenRefreshFailureQueryRemoval({
+		const unsubscribe = subscribeLogoutQueryRemoval({
 			queryClient,
 			queryKey: currentUserQueryKey,
 		});

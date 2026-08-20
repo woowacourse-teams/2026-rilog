@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
@@ -11,9 +11,7 @@ describe('GuestSidebarFooter', () => {
 	it('로그인 버튼을 누르면 로그인 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(
-			<AUTH_CONTEXT.Provider
-				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
-			>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
 				<LoginModalProvider>
 					<GuestSidebarFooter />
 				</LoginModalProvider>

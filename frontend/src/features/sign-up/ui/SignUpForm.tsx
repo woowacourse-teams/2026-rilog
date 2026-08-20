@@ -5,7 +5,6 @@ import { useId } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
-import { useAuth } from '@/features/auth/model/use-auth';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
@@ -17,7 +16,6 @@ import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
-
 
 import { useSignUpForm } from '../hooks/use-sign-up-form';
 import {
@@ -46,8 +44,6 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const { mutateAsync: onboard } = useOnboardingMutation();
 	const { mutateAsync: uploadFile } = useUploadFileMutation();
 
-	const { setIsAuthenticated } = useAuth();
-
 	const handleCompleteSignUp: CompleteSignUp = async (value) => {
 		let profileImageUrl = '';
 		if (value.profileImageFile) {
@@ -66,7 +62,6 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 		if (response.accessToken) {
 			tokenManager.setToken(response.accessToken);
-			setIsAuthenticated(true);
 		}
 
 		return { slug: value.slug };

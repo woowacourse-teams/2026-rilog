@@ -1,6 +1,4 @@
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import { useAuth } from '@/features/auth/model/use-auth';
-
 import { useLogoutMutation } from '@/shared/api/auth/mutations/use-logout-mutation';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
@@ -20,16 +18,11 @@ import {
 } from './sidebar-class-names';
 
 export default function AuthenticatedSidebarFooter() {
-	const { logout } = useAuth();
 	const { data: user } = useMyInfoQuery({ select: mapMyInfoResponse });
 	const { mutate: executeLogout } = useLogoutMutation();
 
 	const handleLogout = () => {
-		executeLogout(undefined, {
-			onSettled: () => {
-				logout();
-			},
-		});
+		executeLogout();
 	};
 
 	const nickname = user?.nickname ?? '알 수 없음';

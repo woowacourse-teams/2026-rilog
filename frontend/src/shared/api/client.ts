@@ -9,8 +9,6 @@ export const kyInstance = createKyInstance({
 	tokenManager,
 });
 
-export const subscribeTokenRefreshFailure = (listener: () => void) => tokenManager.subscribeLogout(listener);
-
 /**
  * 범용 API 요청 wrapper
  * 넘겨받은 프로미스(fn)를 실행하고, 발생한 에러를 NormalizedApiError 형태로 변환해 던집니다.
