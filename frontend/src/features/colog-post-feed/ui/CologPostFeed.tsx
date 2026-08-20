@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { deduplicatePostFeedItems } from '@/features/post-feed/lib/deduplicate-post-feed-items';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
@@ -99,11 +100,11 @@ export default function CologPostFeed({ slug, initialRequestFailed = false }: Co
 								<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">
 									<PostFeedImage
 										src={post.thumbnailUrl}
+										fallbackSrc={POST_THUMBNAIL_FALLBACK_URL}
 										alt={`${post.title} 썸네일`}
 										width={640}
 										height={360}
 										className="size-full object-cover"
-										fallbackClassName="object-contain p-5"
 										isScaledOnInteraction
 									/>
 								</div>

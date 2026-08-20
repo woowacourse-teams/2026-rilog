@@ -42,6 +42,7 @@ describe('PostFeedCard', () => {
 		const avatar = screen.getByRole('img', { name: '리로거 프로필' });
 
 		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://images.rilog.test/profile.png');
+		expect(avatar).toHaveClass('border', 'border-border-default');
 	});
 
 	it('썸네일을 불러오지 못하면 팀 커버 기본 이미지를 표시한다', () => {
@@ -59,6 +60,15 @@ describe('PostFeedCard', () => {
 		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')).toContain(
 			encodeURIComponent('/images/team-cover-placeholder.png'),
 		);
+		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' })).not.toHaveClass(
+			'object-contain',
+			'p-10',
+			'sm:p-12',
+		);
+		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).parentElement).not.toHaveClass(
+			'border',
+			'border-border-default',
+		);
 	});
 
 	it('Colog 글에만 팀 이름 배지를 표시한다', () => {
@@ -70,7 +80,13 @@ describe('PostFeedCard', () => {
 			<PostFeedCard
 				post={{
 					...PERSONAL_POST,
-					blog: { id: 1, name: '리로그 팀', slug: 'rilog-team', type: 'COLOG', profileImageUrl: null },
+					blog: {
+						id: 1,
+						name: '리로그 팀',
+						slug: 'rilog-team',
+						type: 'COLOG',
+						profileImageUrl: 'https://images.rilog.test/team.png',
+					},
 				}}
 			/>,
 		);
@@ -79,6 +95,13 @@ describe('PostFeedCard', () => {
 		const cologLogoUrl = screen.getByRole('img', { name: '리로그 팀' }).getAttribute('src');
 		const parsedCologLogoUrl = new URL(cologLogoUrl!, 'http://localhost');
 
-		expect(parsedCologLogoUrl.searchParams.get('url') ?? parsedCologLogoUrl.pathname).toBe('/brand/logo.svg');
+		expect(parsedCologLogoUrl.searchParams.get('url') ?? parsedCologLogoUrl.href).toContain(
+			'https://images.rilog.test/team.png',
+		);
+		expect(screen.getByRole('img', { name: '리로그 팀' }).parentElement).toHaveClass(
+			'rounded-md',
+			'border',
+			'border-border-default',
+		);
 	});
 });

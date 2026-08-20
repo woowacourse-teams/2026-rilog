@@ -53,8 +53,15 @@ describe('CologPostFeed', () => {
 		);
 		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).toHaveAttribute(
 			'src',
-			expect.stringContaining('/brand/logo.svg'),
+			expect.stringContaining(encodeURIComponent('/images/team-cover-placeholder.png')),
 		);
+		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).not.toHaveClass(
+			'object-contain',
+			'p-5',
+		);
+		expect(
+			within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' }).parentElement,
+		).not.toHaveClass('border', 'border-border-default');
 	});
 
 	it('게시글이 없으면 빈 상태를 제공한다', () => {

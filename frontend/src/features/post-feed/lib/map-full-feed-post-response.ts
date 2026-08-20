@@ -26,7 +26,7 @@ const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 					name: owner.name,
 					slug: owner.slug,
 					type: 'COLOG',
-					profileImageUrl: owner.logoImageUrl || null,
+					profileImageUrl: owner.profileImageUrl || null,
 				}
 			: {
 					id: owner.blogId ?? 0,

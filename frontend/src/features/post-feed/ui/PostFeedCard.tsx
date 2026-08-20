@@ -30,7 +30,6 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
 							width={640}
 							height={360}
 							className="size-full object-cover"
-							fallbackClassName="object-contain p-10 sm:p-12"
 							isScaledOnInteraction
 						/>
 						{post.blog.type === 'COLOG' && <PostFeedCologBadge colog={post.blog} />}
