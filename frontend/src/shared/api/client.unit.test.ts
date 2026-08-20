@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe('apiClient', () => {
-	it('설정된 API base URL을 사용하는 전역 client를 제공한다', async () => {
+	it('설정된 API base URL을 사용하고 쿠키를 포함하는 전역 client를 제공한다', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
 
@@ -23,6 +23,7 @@ describe('apiClient', () => {
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.url).toBe('https://api.rilog.test/posts');
+		expect(request.credentials).toBe('include');
 	});
 
 	it('token 갱신 실패를 구독자에게 알린다', async () => {
