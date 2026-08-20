@@ -56,25 +56,6 @@ public class Profile {
             String profileImageUrl,
             String coverImageUrl,
             String serviceUrl,
-            String githubUrl
-    ) {
-        return new Profile(
-                name,
-                introduction,
-                profileImageUrl,
-                coverImageUrl,
-                null,
-                serviceUrl,
-                githubUrl
-        );
-    }
-
-    public static Profile createColog(
-            String name,
-            String introduction,
-            String profileImageUrl,
-            String coverImageUrl,
-            String serviceUrl,
             String githubUrl,
             String email
     ) {

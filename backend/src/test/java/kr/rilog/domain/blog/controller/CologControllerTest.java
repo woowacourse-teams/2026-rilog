@@ -92,7 +92,8 @@ class CologControllerTest {
                 "https://example.com/logo.png",
                 "https://example.com/cover.png",
                 "https://rilog.example.com",
-                "https://github.com/rilog"
+                "https://github.com/rilog",
+                "test@test.com"
         );
         when(cologService.create(1L, command))
                 .thenReturn(new CologCreateResult(2L, "리로그 팀", "rilog-team"));
@@ -111,7 +112,8 @@ class CologControllerTest {
                                   "profileImageUrl": "https://example.com/logo.png",
                                   "coverImageUrl": "https://example.com/cover.png",
                                   "serviceUrl": "https://rilog.example.com",
-                                  "githubUrl": "https://github.com/rilog"
+                                  "githubUrl": "https://github.com/rilog",
+                                  "email": "test@test.com"
                                 }
                                 """))
                 .andExpect(status().isCreated())

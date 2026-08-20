@@ -164,7 +164,8 @@ class CologServiceIntegrationTest extends ServiceSupport {
                         "https://example.com/profile.png",
                         "https://example.com/cover.png",
                         "https://rilog.example.com",
-                        "https://github.com/rilog"
+                        "https://github.com/rilog",
+                        "test@test.com"
                 )
         );
     }
