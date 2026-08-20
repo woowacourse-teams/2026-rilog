@@ -9,7 +9,7 @@ import PublishSettingsModal from './PublishSettingsModal';
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
 	postTitle: '게시글 제목',
-	settings: { category: 'IT', blogId: null, representativeImage: null },
+	settings: { category: 'IT', blog: null, representativeImage: null },
 	selectedImageUrl: null,
 	bodyBlocks: [],
 	defaultImageUrl: '/images/default-post-cover.svg',
@@ -36,13 +36,15 @@ describe('PublishSettingsModal', () => {
 			onCoLogChange: handleCoLogChange,
 		});
 
-		await waitFor(() => expect(handleCoLogChange).toHaveBeenCalledWith(9));
+		await waitFor(() =>
+			expect(handleCoLogChange).toHaveBeenCalledWith({ id: 9, slug: 'only-colog', name: '유일한 Co-log' }),
+		);
 	});
 
 	it('기존 Co-log 선택값은 자동 선택으로 덮어쓰지 않는다', () => {
 		const handleCoLogChange = vi.fn();
 		renderModal({
-			settings: { ...DEFAULT_PROPS.settings, blogId: 4 },
+			settings: { ...DEFAULT_PROPS.settings, blog: { id: 4, slug: 'selected-colog', name: '선택된 Co-log' } },
 			cologOptions: [{ id: 9, slug: 'only-colog', name: '유일한 Co-log' }],
 			onCoLogChange: handleCoLogChange,
 		});

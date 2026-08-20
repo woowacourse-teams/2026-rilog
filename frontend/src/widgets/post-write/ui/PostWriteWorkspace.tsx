@@ -1,9 +1,8 @@
 'use client';
 
 import type { ComponentType } from 'react';
+import { useMemo } from 'react';
 
-import { COLOG_OPTIONS_MOCK } from '@/features/post-write/lib/mock-colog-options';
-import { mockPublishPost } from '@/features/post-write/lib/mock-publish-post';
 import { mockUploadPostBodyFile } from '@/features/post-write/lib/mock-upload-post-body-file';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
@@ -12,6 +11,10 @@ import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
+import { usePublishPostMutation } from '@/shared/api/blogs/mutations/use-publish-post-mutation';
+import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
+import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
+import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
@@ -27,10 +30,61 @@ interface PostWriteWorkspaceProps {
 
 export default function PostWriteWorkspace({
 	editorComponent = DynamicBlockNoteEditor,
-	publishPost = mockPublishPost,
+	publishPost,
 	uploadFile = mockUploadPostBodyFile,
 	navigate,
 }: PostWriteWorkspaceProps) {
+	const { data: myInfoResponse } = useMyInfoQuery();
+	const { data: myCologsResponse } = useMyCologsPreviewQuery();
+	const { mutateAsync: uploadRepresentativeImage } = useUploadFileMutation();
+	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
+
+	const myInfo = myInfoResponse?.data;
+	const cologOptions = useMemo(() => {
+		const personalBlog = myInfo === undefined ? [] : [{ id: myInfo.id, slug: myInfo.slug, name: '내 블로그' }];
+		const teamBlogs = myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
+
+		return [...personalBlog, ...teamBlogs];
+	}, [myCologsResponse?.data, myInfo]);
+
+	const publishPostWithApi: PublishPost = async ({ document, settings }) => {
+		if (settings.blog === null) {
+			throw new Error('Co-log를 선택해 주세요.');
+		}
+
+		const thumbnailImageUrl =
+			settings.representativeImage === null
+				? null
+				: (
+						await uploadRepresentativeImage({
+							file: settings.representativeImage,
+							type: 'IMAGE',
+						})
+					).objectKey;
+
+		const response = await requestPostPublication({
+			slug: settings.blog.slug,
+			request: {
+				title: document.title,
+				content: document.blocks,
+				category: settings.category === 'IT' ? 'TECH' : settings.category,
+				// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
+				visibility: 'PUBLIC',
+				thumbnailImageUrl,
+				profileImageUrl: myInfo?.profileImageUrl ?? null,
+			},
+		});
+
+		if (response.data === undefined) {
+			throw new Error('발행 응답에 게시글 정보가 없습니다.');
+		}
+
+		return {
+			postId: String(response.data.postId),
+			slug: response.data.slug,
+		};
+	};
+
 	const {
 		titleRef,
 		editorRef,
@@ -56,7 +110,7 @@ export default function PostWriteWorkspace({
 		handleClosePublishSettings,
 		handleCancelLeave,
 		handleConfirmLeave,
-	} = usePostWriteWorkspace({ publishPost, navigate });
+	} = usePostWriteWorkspace({ publishPost: publishPost ?? publishPostWithApi, navigate });
 
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
@@ -89,7 +143,7 @@ export default function PostWriteWorkspace({
 				selectedImageUrl={selectedImageUrl}
 				bodyBlocks={publicationBlocks}
 				defaultImageUrl={DEFAULT_POST_COVER_PATH}
-				cologOptions={COLOG_OPTIONS_MOCK}
+				cologOptions={cologOptions}
 				cologError={cologError}
 				publishError={publishError}
 				isPublishing={isPublishing}
