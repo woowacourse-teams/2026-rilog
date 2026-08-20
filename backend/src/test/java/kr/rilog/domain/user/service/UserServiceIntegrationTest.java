@@ -2,7 +2,6 @@ package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.vo.Profile;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -58,6 +57,34 @@ class UserServiceIntegrationTest extends ServiceSupport {
     void getUserInformationThrowsWhenUserDoesNotExist() {
         // when & then
         assertThatThrownBy(() -> userService.getUserInformation(Long.MIN_VALUE))
+                .isInstanceOf(UserException.class)
+                .hasMessage(USER_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("슬러그로 온보딩을 완료한 사용자 정보를 조회한다.")
+    void getUserInfoReturnsCompletedUserBySlug() {
+        // given
+        User savedUser = userRepository.saveAndFlush(
+                UserFixture.completedWithNicknameAndSlug("러로", "ri_log-01")
+        );
+        UserInfoResult expected = UserInfoResult.from(savedUser);
+
+        // when
+        UserInfoResult result = userService.getUserInfo("ri_log-01");
+
+        // then
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("슬러그에 해당하는 온보딩 완료 사용자가 없으면 예외가 발생한다.")
+    void getUserInfoThrowsWhenCompletedUserDoesNotExist() {
+        // given
+        userRepository.saveAndFlush(UserFixture.pending());
+
+        // when & then
+        assertThatThrownBy(() -> userService.getUserInfo("pending-user"))
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
     }
@@ -237,21 +264,6 @@ class UserServiceIntegrationTest extends ServiceSupport {
                 "https://github.com/rilog",
                 "rilog@example.com"
         );
-    }
-
-    private Blog existingRilog(User owner) {
-        return Blog.builder()
-                .owner(owner)
-                .slug(Slug.from("existing-rilog"))
-                .profile(Profile.createRilog(
-                        "기존 Rilog",
-                        null,
-                        null,
-                        null,
-                        null
-                ))
-                .blogType(RILOG)
-                .build();
     }
 
 }
