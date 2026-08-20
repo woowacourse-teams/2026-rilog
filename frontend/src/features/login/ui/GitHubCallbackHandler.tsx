@@ -3,8 +3,10 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
+import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { APP_ROUTES } from '@/shared/routes/app-routes';
 
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
@@ -35,13 +37,16 @@ export default function GitHubCallbackHandler() {
 				}
 
 				if (data.onboardingStatus === 'PENDING') {
-					router.replace('/sign-up');
+					startSignUpFlow();
+					router.replace(APP_ROUTES.signUp);
 				} else {
+					clearSignUpFlow();
 					const redirectUrl = localStorage.getItem('postLoginRedirect') || '/';
 					localStorage.removeItem('postLoginRedirect');
 					router.replace(redirectUrl);
 				}
 			} catch (err) {
+				clearSignUpFlow();
 				console.error('GitHub login failed:', err);
 				router.replace('/');
 			}

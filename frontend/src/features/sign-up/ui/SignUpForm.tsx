@@ -5,6 +5,7 @@ import { useId } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
+import { clearSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
@@ -85,6 +86,10 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	});
 
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
+	const handleCancel = () => {
+		clearSignUpFlow();
+		window.history.back();
+	};
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
@@ -227,7 +232,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 					size="lg"
 					className="w-full bg-white sm:w-40"
 					disabled={isSigningUp}
-					onClick={() => window.history.back()}
+					onClick={handleCancel}
 				>
 					취소
 				</Button>

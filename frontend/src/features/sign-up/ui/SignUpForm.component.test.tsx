@@ -1,9 +1,11 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { renderWithQuery as render } from '@/test/render-with-query';
+
+import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-session';
 
 import SignUpForm from './SignUpForm';
 
@@ -12,6 +14,10 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('SignUpForm', () => {
+	beforeEach(() => {
+		sessionStorage.clear();
+	});
+
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
 		return render(
 			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
@@ -105,6 +111,7 @@ describe('SignUpForm', () => {
 		const user = userEvent.setup();
 		const completeSignUp = vi.fn().mockResolvedValue({ slug: 'ri_log-01' });
 		const navigate = vi.fn();
+		startSignUpFlow();
 		renderSignUpForm({ completeSignUp, navigate });
 
 		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
@@ -122,6 +129,20 @@ describe('SignUpForm', () => {
 			});
 			expect(navigate).toHaveBeenCalledWith('/', { replace: true });
 		});
+		expect(hasActiveSignUpFlow()).toBe(false);
+	});
+
+	it('취소하면 회원가입 흐름을 제거하고 이전 페이지로 이동한다', async () => {
+		const user = userEvent.setup();
+		const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+		startSignUpFlow();
+		renderSignUpForm();
+
+		await user.click(screen.getByRole('button', { name: '취소' }));
+
+		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(historyBack).toHaveBeenCalledOnce();
+		historyBack.mockRestore();
 	});
 
 	it('고유 아이디에 허용되지 않은 특수문자가 있으면 제출하지 않는다', async () => {

@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 
 import AlertModal from '@/shared/ui/modal/AlertModal';
 
-type AccessFeedbackReason = 'auth-required' | 'forbidden';
+type AccessFeedbackReason = 'auth-required' | 'forbidden' | 'sign-up-unavailable';
 
 interface AccessFeedbackProps {
 	isOpen: boolean;
@@ -21,6 +21,10 @@ const ACCESS_FEEDBACK_CONTENT = {
 	forbidden: {
 		title: '접근 권한이 없는 페이지입니다.',
 		description: '페이지를 이용할 권한이 있는지 확인해 주세요.',
+	},
+	'sign-up-unavailable': {
+		title: '회원가입을 진행할 수 없습니다.',
+		description: '회원가입은 처음 로그인한 사용자만 진행할 수 있습니다.',
 	},
 } as const;
 

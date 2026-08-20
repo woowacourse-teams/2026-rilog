@@ -6,6 +6,7 @@ import type { CompleteSignUp } from '../model/sign-up';
 import type { ChangeEvent, SubmitEvent } from 'react';
 
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
+import { clearSignUpFlow } from '../lib/sign-up-flow-session';
 import { validateSignUpFields } from '../lib/validate-sign-up';
 
 const getFormDataText = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
@@ -77,6 +78,7 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 
 		try {
 			await completeSignUp({ nickname, slug, description: description.trim(), profileImageFile });
+			clearSignUpFlow();
 
 			if (navigate !== undefined) {
 				navigate('/', { replace: true });
