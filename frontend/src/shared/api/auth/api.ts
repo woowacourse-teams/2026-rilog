@@ -1,4 +1,4 @@
-import ky from 'ky';
+
 
 import type { AuthResponse, GitHubCallbackParams } from './types';
 
@@ -30,22 +30,3 @@ export const logoutAuth = async () => {
 	);
 };
 
-export const refreshAuthToken = async (): Promise<string | null> => {
-	const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || '';
-
-	try {
-		const response = await ky.post(`${baseUrl}/v1/auth/token/refresh`, {
-			credentials: 'include',
-			throwHttpErrors: false,
-		});
-
-		if (response.ok) {
-			const authHeader = response.headers.get('Authorization');
-			return authHeader ? authHeader.replace('Bearer ', '') : null;
-		}
-	} catch (error) {
-		console.error('[tokenProvider] Failed to refresh token request:', error);
-	}
-
-	return null;
-};

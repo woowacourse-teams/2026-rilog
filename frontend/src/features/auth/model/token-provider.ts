@@ -1,4 +1,4 @@
-import { refreshAuthToken } from '@/shared/api/auth/api';
+import { refreshAuthToken } from '@/shared/api/auth/refresh';
 
 let memoryAccessToken: string | null = null;
 
