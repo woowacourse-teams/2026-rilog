@@ -1,5 +1,6 @@
-import AuthRequiredFeedback from '@/features/auth/ui/AuthRequiredFeedback';
+import AccessFeedback from '@/features/auth/ui/AccessFeedback';
 import { PROXY_AUTH_REQUIRED_NOTICE, PROXY_NOTICE_QUERY_KEY } from '@/shared/api/proxy/constants';
+import { APP_ROUTES } from '@/shared/routes/app-routes';
 import PostFeed from '@/widgets/post-feed/PostFeed';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export default async function FeedsPage({ searchParams }: FeedsPageProps) {
 
 	return (
 		<main className="min-h-screen">
-			<AuthRequiredFeedback isOpen={isAuthRequired} />
+			<AccessFeedback isOpen={isAuthRequired} reason="auth-required" redirectPath={APP_ROUTES.feeds} />
 			<PostFeed />
 		</main>
 	);

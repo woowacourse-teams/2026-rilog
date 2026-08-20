@@ -39,7 +39,7 @@ const createMemberResponse = (permission: 'OWNER' | 'ADMIN' | 'MEMBER') => ({
 	],
 });
 
-describe('useCologSettingsAccess', () => {
+describe('useCologSettingsAccess hook', () => {
 	beforeEach(() => {
 		useAuthMock.mockReturnValue({ isAuthenticated: true, isInitialized: true });
 		useMyInfoQueryMock.mockReturnValue({
@@ -79,11 +79,11 @@ describe('useCologSettingsAccess', () => {
 		expect(result.current).toBe('authorized');
 	});
 
-	it('guest와 MEMBER에게 접근을 허용하지 않는다', async () => {
+	it('guest는 unauthenticated, MEMBER는 forbidden 상태를 반환한다', async () => {
 		useAuthMock.mockReturnValue({ isAuthenticated: false, isInitialized: true });
 		const { result, rerender } = renderHook(() => useCologSettingsAccess('rilog'));
 
-		await waitFor(() => expect(result.current).toBe('unauthorized'));
+		await waitFor(() => expect(result.current).toBe('unauthenticated'));
 
 		useAuthMock.mockReturnValue({ isAuthenticated: true, isInitialized: true });
 		useCologMembersQueryMock.mockReturnValue({
@@ -93,7 +93,7 @@ describe('useCologSettingsAccess', () => {
 		});
 		rerender();
 
-		expect(result.current).toBe('unauthorized');
+		expect(result.current).toBe('forbidden');
 	});
 
 	it('사용자 또는 멤버 정보를 조회하는 동안 checking 상태를 반환한다', async () => {

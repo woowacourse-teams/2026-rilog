@@ -35,7 +35,7 @@ describe('CologSettingsButton', () => {
 		expect(pushMock).toHaveBeenCalledWith('/@rilog/settings?tab=profile');
 	});
 
-	it.each(['initializing', 'checking', 'unauthorized', 'error'] as const)(
+	it.each(['initializing', 'checking', 'unauthenticated', 'forbidden', 'error'] as const)(
 		'%s 상태에서는 설정 버튼을 렌더링하지 않는다',
 		(status) => {
 			useCologSettingsAccessMock.mockReturnValue(status);

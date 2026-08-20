@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CologSettingsAccessStatus } from '../hooks/use-colog-settings-access';
@@ -51,8 +52,9 @@ describe('CologSettingsAccessGuard', () => {
 		expect(replaceMock).not.toHaveBeenCalled();
 	});
 
-	it('권한이 없으면 설정 내용을 노출하지 않고 코로그 홈으로 이동한다', async () => {
-		useCologSettingsAccessMock.mockReturnValue('unauthorized');
+	it('인증되지 않았으면 로그인 필요 안내 후 코로그 홈으로 이동한다', async () => {
+		const user = userEvent.setup();
+		useCologSettingsAccessMock.mockReturnValue('unauthenticated');
 
 		render(
 			<CologSettingsAccessGuard slug="@rilog">
@@ -61,7 +63,25 @@ describe('CologSettingsAccessGuard', () => {
 		);
 
 		expect(screen.queryByText('설정 내용')).not.toBeInTheDocument();
-		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog'));
+		expect(screen.getByRole('alertdialog', { name: '로그인이 필요한 페이지입니다.' })).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '확인' }));
+		expect(replaceMock).toHaveBeenCalledWith('/@rilog', { scroll: false });
+	});
+
+	it('설정 권한이 없으면 권한 안내 후 코로그 홈으로 이동한다', async () => {
+		const user = userEvent.setup();
+		useCologSettingsAccessMock.mockReturnValue('forbidden');
+
+		render(
+			<CologSettingsAccessGuard slug="@rilog">
+				<div>설정 내용</div>
+			</CologSettingsAccessGuard>,
+		);
+
+		expect(screen.queryByText('설정 내용')).not.toBeInTheDocument();
+		expect(screen.getByRole('alertdialog', { name: '접근 권한이 없는 페이지입니다.' })).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '확인' }));
+		expect(replaceMock).toHaveBeenCalledWith('/@rilog', { scroll: false });
 	});
 
 	it('권한 조회가 실패하면 설정 내용을 숨기고 복귀 수단을 제공한다', () => {
@@ -80,6 +100,7 @@ describe('CologSettingsAccessGuard', () => {
 	});
 
 	it('권한이 사라지면 렌더링 중인 설정 내용을 제거하고 홈으로 이동한다', async () => {
+		const user = userEvent.setup();
 		useCologSettingsAccessMock.mockReturnValue('authorized');
 		const { rerender } = render(
 			<CologSettingsAccessGuard slug="rilog">
@@ -87,7 +108,7 @@ describe('CologSettingsAccessGuard', () => {
 			</CologSettingsAccessGuard>,
 		);
 
-		useCologSettingsAccessMock.mockReturnValue('unauthorized');
+		useCologSettingsAccessMock.mockReturnValue('forbidden');
 		rerender(
 			<CologSettingsAccessGuard slug="rilog">
 				<div>설정 내용</div>
@@ -95,6 +116,7 @@ describe('CologSettingsAccessGuard', () => {
 		);
 
 		expect(screen.queryByText('설정 내용')).not.toBeInTheDocument();
-		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog'));
+		await user.click(screen.getByRole('button', { name: '확인' }));
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog', { scroll: false }));
 	});
 });

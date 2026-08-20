@@ -6,7 +6,8 @@ import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 
 import { canAccessCologSettings } from '../lib/can-access-colog-settings';
 
-export type CologSettingsAccessStatus = 'initializing' | 'checking' | 'authorized' | 'unauthorized' | 'error';
+export type CologSettingsAccessStatus =
+	'initializing' | 'checking' | 'authorized' | 'unauthenticated' | 'forbidden' | 'error';
 
 export const useCologSettingsAccess = (slug: string): CologSettingsAccessStatus => {
 	const { isAuthenticated, isInitialized } = useAuth();
@@ -18,7 +19,7 @@ export const useCologSettingsAccess = (slug: string): CologSettingsAccessStatus 
 	}
 
 	if (!isAuthenticated) {
-		return 'unauthorized';
+		return 'unauthenticated';
 	}
 
 	if (myInfoQuery.isPending || membersQuery.isPending) {
@@ -36,5 +37,5 @@ export const useCologSettingsAccess = (slug: string): CologSettingsAccessStatus 
 		return 'error';
 	}
 
-	return canAccessCologSettings(currentUser.id, members) ? 'authorized' : 'unauthorized';
+	return canAccessCologSettings(currentUser.id, members) ? 'authorized' : 'forbidden';
 };
