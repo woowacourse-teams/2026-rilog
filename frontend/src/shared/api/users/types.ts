@@ -1,3 +1,5 @@
+import type { User } from '@/domains/user/model/user';
+
 export interface MyCologPreviewResponse {
 	cologId: number;
 	slug: string;
@@ -11,3 +13,9 @@ export interface MyInfoResponse {
 	nickname: string;
 	profileImageUrl: string | null;
 }
+
+export interface ReadUserBySlugRequest {
+	slug: string;
+}
+
+export type ReadUserBySlugResponse = User;

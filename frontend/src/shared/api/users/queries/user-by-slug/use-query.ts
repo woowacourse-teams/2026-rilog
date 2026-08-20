@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import type { ReadUserBySlugResponse } from '@/api/users/types';
+import type { ReadUserBySlugResponse } from '@/shared/api/users/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 import { userBySlugQueryOptions } from './query-options';
