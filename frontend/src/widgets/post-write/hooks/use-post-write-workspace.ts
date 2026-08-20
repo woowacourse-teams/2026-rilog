@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Block } from '@blocknote/core';
 
 import type { PostCategory } from '@/domains/post/model/post';
-import { mockPublishPost } from '@/features/post-write/lib/mock-publish-post';
+import type { CologOption } from '@/domains/blog/model/colog';
 import { validatePostDocument } from '@/features/post-write/lib/validate-post-document';
 import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
 import type { PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
@@ -17,17 +17,17 @@ import { buildPostDetailPath } from '@/shared/routes/app-routes';
 type PublishState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
 
 interface UsePostWriteWorkspaceOptions {
-	publishPost?: PublishPost;
+	publishPost: PublishPost;
 	navigate?: (href: string) => void;
 }
 
 const INITIAL_PUBLICATION_SETTINGS: PublicationSettings = {
 	category: 'IT',
-	blogId: null,
+	blog: null,
 	representativeImage: null,
 };
 
-export function usePostWriteWorkspace({ publishPost = mockPublishPost, navigate }: UsePostWriteWorkspaceOptions = {}) {
+export function usePostWriteWorkspace({ publishPost, navigate }: UsePostWriteWorkspaceOptions) {
 	const router = useRouter();
 
 	const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -137,8 +137,8 @@ export function usePostWriteWorkspace({ publishPost = mockPublishPost, navigate 
 		setPublicationSettings((currentSettings) => ({ ...currentSettings, category }));
 	};
 
-	const handleCoLogChange = (blogId: number | null) => {
-		setPublicationSettings((currentSettings) => ({ ...currentSettings, blogId }));
+	const handleCoLogChange = (blog: CologOption | null) => {
+		setPublicationSettings((currentSettings) => ({ ...currentSettings, blog }));
 		setCologError(undefined);
 	};
 
@@ -147,7 +147,7 @@ export function usePostWriteWorkspace({ publishPost = mockPublishPost, navigate 
 			return;
 		}
 
-		if (publicationSettings.blogId === null) {
+		if (publicationSettings.blog === null) {
 			setCologError('Co-log를 선택해 주세요.');
 			return;
 		}

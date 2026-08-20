@@ -8,7 +8,7 @@ interface WebpackConfigWithRules {
 
 const nextConfig: NextConfig = {
 	agentRules: false,
-	serverExternalPackages: ['@blocknote/server-util'],
+	serverExternalPackages: ['@blocknote/core', '@blocknote/react', '@blocknote/server-util'],
 	redirects() {
 		return [
 			{

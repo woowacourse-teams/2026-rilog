@@ -29,7 +29,7 @@ interface PublishSettingsModalProps {
 	isPublishing: boolean;
 	onClose: () => void;
 	onCategoryChange: (category: PostCategory) => void;
-	onCoLogChange: (blogId: number | null) => void;
+	onCoLogChange: (blog: CologOption | null) => void;
 	onImageChange: (file: File | null) => void;
 	onPublish: () => void;
 }
@@ -60,19 +60,19 @@ export default function PublishSettingsModal({
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
-	// 선택 가능한 Co-log가 하나뿐일 때 자동 선택할 blog ID
-	const onlyBlogId = cologOptions.length === 1 ? cologOptions[0]?.id : undefined;
+	// 선택 가능한 Co-log가 하나뿐일 때 자동 선택할 blog
+	const onlyBlog = cologOptions.length === 1 ? cologOptions[0] : undefined;
 
 	// 모달을 열었을 때 유일한 Co-log가 있고 기존 선택값이 없다면 자동 선택
 	useEffect(() => {
-		if (open && settings.blogId === null && onlyBlogId !== undefined) {
-			onCoLogChange(onlyBlogId);
+		if (open && settings.blog === null && onlyBlog !== undefined) {
+			onCoLogChange(onlyBlog);
 		}
-	}, [onlyBlogId, onCoLogChange, open, settings.blogId]);
+	}, [onlyBlog, onCoLogChange, open, settings.blog]);
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
 	const handleSubmit = () => {
-		if (settings.blogId === null) {
+		if (settings.blog === null) {
 			cologSelectRef.current?.focus();
 		}
 
@@ -106,7 +106,7 @@ export default function PublishSettingsModal({
 							<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
 								대표 이미지
 							</h3>
-							<p className="mt-1 text-caption-1 text-text-secondary">선택하지 않으면 본문의 첫 이미지를 사용합니다.</p>
+							<p className="mt-1 text-caption-1 text-text-secondary">직접 선택한 이미지만 대표 이미지로 저장됩니다.</p>
 							<div
 								className={`mt-4 grid gap-2 ${settings.representativeImage === null ? 'grid-cols-1' : 'grid-cols-2'}`}
 							>
@@ -176,14 +176,15 @@ export default function PublishSettingsModal({
 							<select
 								ref={cologSelectRef}
 								id="post-colog"
-								value={settings.blogId ?? ''}
+								value={settings.blog?.id ?? ''}
 								disabled={isPublishing}
 								aria-invalid={cologError !== undefined}
 								aria-describedby={cologError === undefined ? undefined : cologErrorId}
 								className="mt-4 h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
 								onChange={(event) => {
 									const selectedValue = event.currentTarget.value;
-									onCoLogChange(selectedValue.length === 0 ? null : Number(selectedValue));
+									const selectedBlog = cologOptions.find((option) => option.id === Number(selectedValue));
+									onCoLogChange(selectedBlog ?? null);
 								}}
 							>
 								<option value="">Co-log를 선택하세요</option>
