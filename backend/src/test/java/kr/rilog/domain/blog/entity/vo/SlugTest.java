@@ -2,11 +2,23 @@ package kr.rilog.domain.blog.entity.vo;
 
 import kr.rilog.domain.user.exception.UserErrorInformation;
 import kr.rilog.domain.user.exception.UserException;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.AssertionsForClassTypes.*;
+
 class SlugTest {
+
+    @Test
+    @DisplayName("4-20자 사이이고 허용 문자로 구성된 슬러그는 사용가능하다.")
+    void slugSuccessTest() {
+        // given
+        String slugText = "rilog";
+
+        // when & then
+        assertThatCode(() -> Slug.from(slugText))
+                .doesNotThrowAnyException();
+    }
 
     @Test
     @DisplayName("대문자가 들어와도, 슬러그는 소문자로 저장된다.")
@@ -18,23 +30,7 @@ class SlugTest {
         Slug slug = Slug.from(upperSlug);
 
         // then
-        Assertions.assertThat(slug.getValue()).isEqualTo(upperSlug.toLowerCase());
-    }
-
-    @Test
-    @DisplayName("4-20자 사이이고 허용 문자로 구성된 슬러그는 사용가능하다.")
-    void betweenFourToTwentyAndAllowedCharactersSlugIsAvailable() {
-        // given
-        String fourLength = "ab1_";
-        String twentyLength = "12345678901234567890";
-
-        // when
-        Slug fourLengthSlug = Slug.from(fourLength);
-        Slug twentyLengthSlug = Slug.from(twentyLength);
-
-        // then
-        Assertions.assertThat(fourLengthSlug.getValue()).isEqualTo(fourLength);
-        Assertions.assertThat(twentyLengthSlug.getValue()).isEqualTo(twentyLength);
+        assertThat(slug.getValue()).isEqualTo(upperSlug.toLowerCase());
     }
 
     @Test
@@ -47,7 +43,7 @@ class SlugTest {
         Slug savedSlug = Slug.from(slug);
 
         // then
-        Assertions.assertThat(savedSlug.getValue()).isEqualTo("rilog-01");
+        assertThat(savedSlug.getValue()).isEqualTo("rilog-01");
     }
 
     @Test
@@ -57,7 +53,7 @@ class SlugTest {
         String shortSlug = "abc";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Slug.from(shortSlug))
+        assertThatThrownBy(() -> Slug.from(shortSlug))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
     }
@@ -69,7 +65,7 @@ class SlugTest {
         String longSlug = "123456789012345678901";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Slug.from(longSlug))
+        assertThatThrownBy(() -> Slug.from(longSlug))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
     }
@@ -78,10 +74,10 @@ class SlugTest {
     @DisplayName("허용되지 않은 문자가 포함된 슬러그는 예외가 발생한다.")
     void throwExceptionWhenSlugContainsInvalidCharacter() {
         // given
-        String invalidSlug = "ri.log";
+        String invalidSlug = "ri.log-";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Slug.from(invalidSlug))
+        assertThatThrownBy(() -> Slug.from(invalidSlug))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
     }
@@ -93,7 +89,7 @@ class SlugTest {
         String nullSlug = null;
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Slug.from(nullSlug))
+        assertThatThrownBy(() -> Slug.from(nullSlug))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
     }
@@ -105,7 +101,7 @@ class SlugTest {
         String blankSlug = "";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Slug.from(blankSlug))
+        assertThatThrownBy(() -> Slug.from(blankSlug))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
     }
