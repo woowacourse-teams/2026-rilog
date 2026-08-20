@@ -42,7 +42,7 @@ auth:
     cookie-name: refresh_token
     cookie-path: /v1/auth
     cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
-    cookie-same-site: Lax
+    cookie-same-site: ${REFRESH_TOKEN_SAME_SITE_OPTION:Lax}
 
 aws:
   s3:
