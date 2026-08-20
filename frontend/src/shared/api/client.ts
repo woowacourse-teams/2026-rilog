@@ -1,33 +1,15 @@
-import { tokenProvider } from '@/features/auth/model/token-provider';
+import { tokenManager } from '@/shared/api/auth/token-manager';
 
 import { normalizeApiError } from './api-error';
 import { createKyInstance } from './create-ky-instance';
 
-type TokenRefreshFailureListener = () => void;
-
-const tokenRefreshFailureListeners = new Set<TokenRefreshFailureListener>();
-
-const publishTokenRefreshFailure = () => {
-	tokenRefreshFailureListeners.forEach((listener) => {
-		listener();
-	});
-};
-
-export const subscribeTokenRefreshFailure = (listener: TokenRefreshFailureListener) => {
-	tokenRefreshFailureListeners.add(listener);
-
-	return () => {
-		tokenRefreshFailureListeners.delete(listener);
-	};
-};
-
-// TODO: 로그인 api 연동 후 tokenProvider 실제 구현으로 교체
 export const kyInstance = createKyInstance({
 	baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
 	credentials: 'include',
-	onTokenRefreshFailure: publishTokenRefreshFailure,
-	tokenProvider,
+	tokenManager,
 });
+
+export const subscribeTokenRefreshFailure = (listener: () => void) => tokenManager.subscribeLogout(listener);
 
 /**
  * 범용 API 요청 wrapper
@@ -62,6 +44,8 @@ export const apiClient = {
 		apiRequest(() => kyInstance.post(url, options).json<T>()),
 	put: <T>(url: string, options?: Parameters<typeof kyInstance.put>[1]) =>
 		apiRequest(() => kyInstance.put(url, options).json<T>()),
+	patch: <T>(url: string, options?: Parameters<typeof kyInstance.put>[1]) =>
+		apiRequest(() => kyInstance.patch(url, options).json<T>()),
 	delete: <T>(url: string, options?: Parameters<typeof kyInstance.delete>[1]) =>
 		apiRequest(() => kyInstance.delete(url, options).json<T>()),
 };

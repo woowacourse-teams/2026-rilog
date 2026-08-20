@@ -8,16 +8,21 @@ import { renderWithQuery } from '@/test/render-with-query';
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
 vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
-	useMyInfoQuery: vi.fn(() => ({
-		data: {
+	useMyInfoQuery: vi.fn(({ select }) => {
+		const response = {
+			status: 200,
+			message: 'OK',
 			data: {
 				id: 1,
 				slug: 'jetproc',
 				nickname: '파라디',
 				profileImageUrl: null,
 			},
-		},
-	})),
+		};
+		return {
+			data: select ? select(response) : response,
+		};
+	}),
 }));
 
 function renderFooter() {

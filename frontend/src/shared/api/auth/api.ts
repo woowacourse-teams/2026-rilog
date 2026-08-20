@@ -1,3 +1,5 @@
+
+
 import type { AuthResponse, GitHubCallbackParams } from './types';
 
 import { apiRequest, kyInstance } from '@/shared/api/client';
@@ -7,7 +9,7 @@ export const handleGitHubCallback = async (params: GitHubCallbackParams) => {
 	const response = await apiRequest(() =>
 		kyInstance.post('v1/auth/github/callback', {
 			json: params,
-		})
+		}),
 	);
 
 	const data = await response.json<ApiResponse<AuthResponse>>();
@@ -19,3 +21,12 @@ export const handleGitHubCallback = async (params: GitHubCallbackParams) => {
 		accessToken,
 	};
 };
+
+export const logoutAuth = async () => {
+	return await apiRequest(() =>
+		kyInstance.post('v1/auth/logout', {
+			credentials: 'include',
+		}),
+	);
+};
+

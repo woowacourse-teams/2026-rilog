@@ -1,6 +1,7 @@
 import type { ComponentPropsWithRef } from 'react';
 
 import Avatar from '@/shared/ui/avatar/Avatar';
+import { getImageUrl } from '@/shared/utils/get-image-url';
 
 type CologAvatarSize = 'sm' | 'md' | 'lg' | 'max';
 type CologAvatarTone = 'subtle' | 'strong';
@@ -22,10 +23,11 @@ const TONE_CLASS_NAMES: Record<CologAvatarTone, string> = {
 	strong: 'bg-navy-200 text-navy-800',
 };
 
-export default function CologAvatar({ className, size = 'md', tone = 'strong', ...avatarProps }: CologAvatarProps) {
+export default function CologAvatar({ className, size = 'md', tone = 'strong', src, ...avatarProps }: CologAvatarProps) {
 	return (
 		<Avatar
 			{...avatarProps}
+			src={getImageUrl(src) || undefined}
 			className={`font-bold ${SIZE_CLASS_NAMES[size]} ${TONE_CLASS_NAMES[tone]} ${className ?? ''}`.trim()}
 		/>
 	);

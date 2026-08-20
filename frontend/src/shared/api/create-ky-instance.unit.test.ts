@@ -18,9 +18,9 @@ describe('createKyInstance', () => {
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
 		const client = createKyInstance({
-			tokenProvider: {
-				getAccessToken: () => 'access-token',
-				refreshAccessToken: vi.fn(),
+			tokenManager: {
+				getToken: () => 'access-token',
+				refresh: vi.fn(),
 			},
 		});
 
@@ -31,14 +31,14 @@ describe('createKyInstance', () => {
 	});
 
 	it('SSR 요청에는 token을 조회하거나 설정하지 않는다', async () => {
-		const getAccessToken = vi.fn(() => 'access-token');
-		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
+		const getToken = vi.fn(() => 'access-token');
+		const refresh = vi.fn().mockResolvedValue('refreshed-token');
 		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse());
 		vi.stubGlobal('fetch', fetchMock);
 		const client = createKyInstance({
-			tokenProvider: {
-				getAccessToken,
-				refreshAccessToken,
+			tokenManager: {
+				getToken,
+				refresh,
 			},
 		});
 
@@ -47,8 +47,8 @@ describe('createKyInstance', () => {
 		});
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
-		expect(getAccessToken).not.toHaveBeenCalled();
-		expect(refreshAccessToken).not.toHaveBeenCalled();
+		expect(getToken).not.toHaveBeenCalled();
+		expect(refresh).not.toHaveBeenCalled();
 		expect(request.headers.has('Authorization')).toBe(false);
 		expect(fetchMock).toHaveBeenCalledOnce();
 	});
@@ -60,12 +60,12 @@ describe('createKyInstance', () => {
 			.mockResolvedValueOnce(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN))
 			.mockResolvedValueOnce(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
-		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
+		const refresh = vi.fn().mockResolvedValue('refreshed-token');
 		const client = createKyInstance({
 			retry: 0,
-			tokenProvider: {
-				getAccessToken: () => 'expired-token',
-				refreshAccessToken,
+			tokenManager: {
+				getToken: () => 'expired-token',
+				refresh,
 			},
 		});
 
@@ -74,7 +74,7 @@ describe('createKyInstance', () => {
 		const initialRequest = fetchMock.mock.calls[0]?.[0] as Request;
 		const retriedRequest = fetchMock.mock.calls[1]?.[0] as Request;
 		expect(response.status).toBe(200);
-		expect(refreshAccessToken).toHaveBeenCalledOnce();
+		expect(refresh).toHaveBeenCalledOnce();
 		expect(initialRequest.headers.get('Authorization')).toBe('Bearer expired-token');
 		expect(retriedRequest.headers.get('Authorization')).toBe('Bearer refreshed-token');
 		expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -84,11 +84,11 @@ describe('createKyInstance', () => {
 		vi.stubGlobal('window', {});
 		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse(API_ERROR_CODES.INVALID_ACCESS_TOKEN));
 		vi.stubGlobal('fetch', fetchMock);
-		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
+		const refresh = vi.fn().mockResolvedValue('refreshed-token');
 		const client = createKyInstance({
-			tokenProvider: {
-				getAccessToken: () => 'invalid-token',
-				refreshAccessToken,
+			tokenManager: {
+				getToken: () => 'invalid-token',
+				refresh,
 			},
 		});
 
@@ -96,114 +96,8 @@ describe('createKyInstance', () => {
 			response: { status: 401 },
 		});
 
-		expect(refreshAccessToken).not.toHaveBeenCalled();
+		expect(refresh).not.toHaveBeenCalled();
 		expect(fetchMock).toHaveBeenCalledOnce();
-	});
-
-	it('갱신 후 재시도도 401이면 token을 다시 갱신하지 않고 실패 이벤트를 발행한다', async () => {
-		vi.stubGlobal('window', {});
-		const fetchMock = vi.fn(() => Promise.resolve(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN)));
-		vi.stubGlobal('fetch', fetchMock);
-		const refreshAccessToken = vi.fn().mockResolvedValue('refreshed-token');
-		const onTokenRefreshFailure = vi.fn();
-		const client = createKyInstance({
-			onTokenRefreshFailure,
-			tokenProvider: {
-				getAccessToken: () => 'expired-token',
-				refreshAccessToken,
-			},
-		});
-
-		await expect(client.get(API_URL)).rejects.toMatchObject({
-			response: { status: 401 },
-		});
-
-		expect(refreshAccessToken).toHaveBeenCalledOnce();
-		expect(onTokenRefreshFailure).toHaveBeenCalledOnce();
-		expect(fetchMock).toHaveBeenCalledTimes(2);
-	});
-
-	it('동시에 발생한 401 요청은 하나의 token 갱신 결과를 공유한다', async () => {
-		vi.stubGlobal('window', {});
-		const fetchMock = vi
-			.fn()
-			.mockResolvedValueOnce(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN))
-			.mockResolvedValueOnce(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN))
-			.mockResolvedValue(createEmptyResponse());
-		vi.stubGlobal('fetch', fetchMock);
-		let resolveRefresh: ((token: string) => void) | undefined;
-		const refreshAccessToken = vi.fn(
-			() =>
-				new Promise<string>((resolve) => {
-					resolveRefresh = resolve;
-				}),
-		);
-		const client = createKyInstance({
-			tokenProvider: {
-				getAccessToken: () => 'expired-token',
-				refreshAccessToken,
-			},
-		});
-
-		const requests = Promise.all([client.get(API_URL), client.get(API_URL)]);
-		await vi.waitFor(() => {
-			expect(refreshAccessToken).toHaveBeenCalledOnce();
-		});
-		resolveRefresh?.('refreshed-token');
-		await requests;
-
-		expect(refreshAccessToken).toHaveBeenCalledOnce();
-		expect(fetchMock).toHaveBeenCalledTimes(4);
-	});
-
-	it('공유한 token 갱신 결과가 null이면 실패를 한 번 알린다', async () => {
-		vi.stubGlobal('window', {});
-		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN));
-		vi.stubGlobal('fetch', fetchMock);
-		let resolveRefresh: ((token: string | null) => void) | undefined;
-		const refreshAccessToken = vi.fn(
-			() =>
-				new Promise<string | null>((resolve) => {
-					resolveRefresh = resolve;
-				}),
-		);
-		const onTokenRefreshFailure = vi.fn();
-		const client = createKyInstance({
-			onTokenRefreshFailure,
-			tokenProvider: {
-				getAccessToken: () => 'expired-token',
-				refreshAccessToken,
-			},
-		});
-
-		const requests = Promise.allSettled([client.get(API_URL), client.get(API_URL)]);
-		await vi.waitFor(() => {
-			expect(refreshAccessToken).toHaveBeenCalledOnce();
-		});
-		resolveRefresh?.(null);
-		const results = await requests;
-
-		expect(results.every(({ status }) => status === 'rejected')).toBe(true);
-		expect(onTokenRefreshFailure).toHaveBeenCalledOnce();
-		expect(fetchMock).toHaveBeenCalledTimes(2);
-	});
-
-	it('token 갱신 요청 자체의 오류는 만료 실패로 알리지 않는다', async () => {
-		vi.stubGlobal('window', {});
-		const fetchMock = vi.fn().mockResolvedValue(createUnauthorizedResponse(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN));
-		vi.stubGlobal('fetch', fetchMock);
-		const onTokenRefreshFailure = vi.fn();
-		const client = createKyInstance({
-			onTokenRefreshFailure,
-			tokenProvider: {
-				getAccessToken: () => 'expired-token',
-				refreshAccessToken: vi.fn().mockRejectedValue(new TypeError('network error')),
-			},
-		});
-
-		await expect(client.get(API_URL)).rejects.toThrow('network error');
-
-		expect(onTokenRefreshFailure).not.toHaveBeenCalled();
 	});
 
 	it('API base URL과 다른 외부 도메인 URL 요청에는 Authorization 토큰을 설정하지 않는다', async () => {
@@ -212,9 +106,9 @@ describe('createKyInstance', () => {
 		vi.stubGlobal('fetch', fetchMock);
 		const client = createKyInstance({
 			baseUrl: 'https://api.rilog.test',
-			tokenProvider: {
-				getAccessToken: () => 'secret-token',
-				refreshAccessToken: vi.fn(),
+			tokenManager: {
+				getToken: () => 'secret-token',
+				refresh: vi.fn(),
 			},
 		});
 
@@ -230,9 +124,9 @@ describe('createKyInstance', () => {
 		vi.stubGlobal('fetch', fetchMock);
 		const client = createKyInstance({
 			baseUrl: 'https://api.rilog.test',
-			tokenProvider: {
-				getAccessToken: () => 'secret-token',
-				refreshAccessToken: vi.fn(),
+			tokenManager: {
+				getToken: () => 'secret-token',
+				refresh: vi.fn(),
 			},
 		});
 

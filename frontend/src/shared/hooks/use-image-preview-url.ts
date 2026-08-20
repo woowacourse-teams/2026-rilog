@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { getImageUrl } from '@/shared/utils/get-image-url';
+
 export const useImagePreviewUrl = (file: File | null, fallbackUrl: string) => {
 	const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
@@ -18,5 +20,5 @@ export const useImagePreviewUrl = (file: File | null, fallbackUrl: string) => {
 		return () => URL.revokeObjectURL(nextObjectUrl);
 	}, [file]);
 
-	return objectUrl ?? fallbackUrl;
+	return objectUrl ?? getImageUrl(fallbackUrl);
 };
