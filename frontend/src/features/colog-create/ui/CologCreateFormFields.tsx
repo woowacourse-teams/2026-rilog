@@ -83,10 +83,13 @@ export default function CologCreateFormFields({
 				{({ id }) => (
 					<div id={id} className="flex flex-col gap-3">
 						<ImagePreview
-							src={coverImagePreviewUrl || '/images/team-cover-placeholder.svg'}
+							src={coverImagePreviewUrl || undefined}
 							alt="팀 커버 이미지 미리보기"
 							shape="rectangle"
 							className="h-32 w-full sm:h-40"
+							fallback={
+								<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-brand-primary" />
+							}
 						/>
 						<div className="flex flex-wrap items-center gap-2">
 							<ImageUploader

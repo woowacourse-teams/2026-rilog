@@ -58,7 +58,11 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('API 리로그');
-		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveValue('team-rilog');
+		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
+		expect(slugInput).toHaveValue('team-rilog');
+		expect(slugInput).toBeDisabled();
+		expect(slugInput).toHaveAccessibleDescription('팀 고유 아이디는 변경할 수 없습니다.');
+		expect(screen.getByText('rilog.kr/@')).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).toHaveValue('API에서 조회한 팀 소개');
 		expect(screen.getByLabelText('팀 로고 변경')).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();

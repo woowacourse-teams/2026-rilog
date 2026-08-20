@@ -48,7 +48,7 @@ describe('CologCreateForm', () => {
 		renderWithClient(<CologCreateForm />);
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '팀 커버 이미지 미리보기' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
 		expect(screen.getByLabelText('팀 로고 추가')).toHaveAttribute('type', 'file');
 		expect(screen.getByLabelText('팀 로고 추가')).toBeRequired();
 		expect(screen.getByLabelText('커버 이미지 추가')).toHaveAttribute('type', 'file');

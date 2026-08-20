@@ -26,6 +26,7 @@ describe('CologProfileImageFields', () => {
 
 		expect(screen.getByLabelText('팀 로고 추가')).toHaveAttribute('type', 'file');
 		expect(screen.getByLabelText('커버 이미지 추가')).toHaveAttribute('type', 'file');
+		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 	});
 
