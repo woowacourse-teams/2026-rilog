@@ -1,6 +1,5 @@
 package kr.rilog.domain.post.entity;
 
-import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.user.entity.User;
@@ -8,13 +7,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
+import static kr.rilog.support.BlogFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PostTest {
 
-    private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long WRITER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
 
@@ -24,7 +23,7 @@ class PostTest {
         // given
         Post post = createPost(PostVisibility.PUBLIC);
 
-        // when - then
+        // when & then
         assertThatCode(() -> post.validateReadableBy(null))
                 .doesNotThrowAnyException();
     }
@@ -35,7 +34,7 @@ class PostTest {
         // given
         Post post = createPost(PostVisibility.PRIVATE);
 
-        // when - then
+        // when & then
         assertThatCode(() -> post.validateReadableBy(WRITER_ID))
                 .doesNotThrowAnyException();
     }
@@ -46,11 +45,10 @@ class PostTest {
         // given
         Post post = createPost(PostVisibility.PRIVATE);
 
-        // when - then
+        // when & then
         assertThatThrownBy(() -> post.validateReadableBy(null))
                 .isInstanceOf(PostException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
 
     @Test
@@ -59,54 +57,56 @@ class PostTest {
         // given
         Post post = createPost(PostVisibility.PRIVATE);
 
-        // when - then
+        // when & then
         assertThatThrownBy(() -> post.validateReadableBy(OTHER_USER_ID))
                 .isInstanceOf(PostException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
 
     @Test
     @DisplayName("Colog가 연결된 게시글은 Colog 소속이다")
     void postWithCologIsCologAffiliated() {
         // given
-        Post post = Post.builder()
-                .colog(Blog.builder().id(1L).build())
-                .build();
+        Post post = createCologPost();
 
-        // when
-        boolean cologAffiliated = post.isCologAffiliated();
-
-        // then
-        assertThat(cologAffiliated).isTrue();
+        // when & then
+        assertThat(post.isCologAffiliated()).isTrue();
     }
 
     @Test
     @DisplayName("Colog가 연결되지 않은 게시글은 Colog 소속이 아니다")
     void postWithoutCologIsNotCologAffiliated() {
         // given
-        Post post = Post.builder()
+        Post post = createRilogPost();
+
+        // when & then
+        assertThat(post.isCologAffiliated()).isFalse();
+    }
+
+    private Post createRilogPost() {
+        User author = createUser(WRITER_ID);
+        return Post.builder()
+                .user(author)
+                .rilog(createRilog(author))
                 .colog(null)
+                .visibility(PostVisibility.PUBLIC)
                 .build();
+    }
 
-        // when
-        boolean cologAffiliated = post.isCologAffiliated();
-
-        // then
-        assertThat(cologAffiliated).isFalse();
+    private Post createCologPost() {
+        User author = createUser(WRITER_ID);
+        return Post.builder()
+                .user(createUser(WRITER_ID))
+                .rilog(createRilog(author))
+                .colog(createColog(author))
+                .visibility(PostVisibility.PUBLIC)
+                .build();
     }
 
     private Post createPost(PostVisibility visibility) {
         return Post.builder()
                 .user(createUser(WRITER_ID))
                 .visibility(visibility)
-                .build();
-    }
-
-    private User createUser(Long id) {
-        return User.builder()
-                .id(id)
-                .githubId(id)
                 .build();
     }
 

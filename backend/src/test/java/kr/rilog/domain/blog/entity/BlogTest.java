@@ -1,14 +1,13 @@
 package kr.rilog.domain.blog.entity;
 
 import kr.rilog.domain.blog.entity.enums.BlogType;
-import kr.rilog.domain.blog.entity.vo.Profile;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.support.BlogFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,7 +40,7 @@ class BlogTest {
         Blog colog = Blog.createColog(
                 owner,
                 "team_rilog",
-                createCologProfile()
+                cologProfile()
         );
 
         // then
@@ -76,45 +75,6 @@ class BlogTest {
         assertThatThrownBy(() -> blog.validateIsOwner(user))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
-    }
-
-    private User createUser(Long id) {
-        return User.builder()
-                .id(id)
-                .slug(Slug.from("rilog"))
-                .build();
-    }
-
-    private Blog createRilog(User owner) {
-        return Blog.builder()
-                .id(1L)
-                .owner(owner)
-                .slug(Slug.from("rilog"))
-                .profile(createRilogProfile())
-                .blogType(BlogType.RILOG)
-                .build();
-    }
-
-    private Profile createRilogProfile() {
-        return Profile.createColog(
-                "러로",
-                "안녕하세요. 러로입니다. ",
-                "https://example.com/profile.png",
-                "https://example.com/cover.png",
-                "https://jinriro.example.com",
-                "https://github.com/Wlsflfh"
-        );
-    }
-
-    private Profile createCologProfile() {
-        return Profile.createColog(
-                "리로그",
-                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
-                "https://example.com/profile.png",
-                "https://example.com/cover.png",
-                "https://rilog.example.com",
-                "https://github.com/rilog"
-        );
     }
 
 }
