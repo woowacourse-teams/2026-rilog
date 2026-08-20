@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -24,10 +24,11 @@ describe('CologProfileImageFields', () => {
 			<CologProfileImageFields value={DEFAULT_VALUE} onLogoFileChange={vi.fn()} onCoverImageFileChange={vi.fn()} />,
 		);
 
-		expect(screen.getByLabelText('팀 로고 추가')).toHaveAttribute('type', 'file');
-		expect(screen.getByLabelText('커버 이미지 추가')).toHaveAttribute('type', 'file');
+		expect(screen.getByText('팀 로고 추가')).toBeInTheDocument();
+		expect(screen.getByText('커버 이미지 추가')).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('rounded-lg');
 		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
+		expect(screen.getByText('커버 이미지 추가').closest('details')).toHaveClass('absolute', 'right-3', 'bottom-3');
 	});
 
 	it('선택된 이미지를 기본 이미지로 되돌린다', async () => {
@@ -42,11 +43,13 @@ describe('CologProfileImageFields', () => {
 			/>,
 		);
 
-		expect(screen.getByLabelText('팀 로고 변경')).toBeInTheDocument();
-		expect(screen.getByLabelText('커버 이미지 변경')).toBeInTheDocument();
-		const resetButtons = screen.getAllByRole('button', { name: '기본 이미지로 되돌리기' });
-		await user.click(resetButtons[0]!);
-		await user.click(resetButtons[1]!);
+		const logoMenu = screen.getByText('팀 로고 변경').closest('details')!;
+		await user.click(screen.getByText('팀 로고 변경'));
+		await user.click(within(logoMenu).getByRole('button', { name: '기본 이미지로 되돌리기' }));
+
+		const coverMenu = screen.getByText('커버 이미지 변경').closest('details')!;
+		await user.click(screen.getByText('커버 이미지 변경'));
+		await user.click(within(coverMenu).getByRole('button', { name: '기본 이미지로 되돌리기' }));
 
 		expect(onLogoFileChange).toHaveBeenCalledWith(null);
 		expect(onCoverImageFileChange).toHaveBeenCalledWith(null);

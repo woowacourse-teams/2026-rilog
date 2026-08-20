@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,10 +29,10 @@ const renderWithClient = (ui: React.ReactElement) => {
 const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
 	const logoFile = new File(['logo'], 'logo.png', { type: 'image/png' });
 
-	await user.upload(screen.getByLabelText('팀 로고 추가'), logoFile);
+	await user.upload(screen.getByLabelText('팀 로고 변경'), logoFile);
 	await user.type(screen.getByRole('textbox', { name: '팀 이름' }), '  리로그  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
-	await user.type(screen.getByRole('textbox', { name: '팀 소개 (선택)' }), '함께 성장하는 개발 팀입니다');
+	await user.type(screen.getByRole('textbox', { name: '팀 소개' }), '함께 성장하는 개발 팀입니다');
 
 	return logoFile;
 };
@@ -49,15 +49,25 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
-		expect(screen.getByLabelText('팀 로고 추가')).toHaveAttribute('type', 'file');
-		expect(screen.getByLabelText('팀 로고 추가')).toBeRequired();
-		expect(screen.getByLabelText('커버 이미지 추가')).toHaveAttribute('type', 'file');
-		expect(screen.getByLabelText('커버 이미지 추가')).not.toBeRequired();
+		expect(screen.getByLabelText('팀 로고 변경')).toBeRequired();
+		expect(screen.getByLabelText('커버 이미지 변경')).not.toBeRequired();
+		for (const label of ['팀 로고', '팀 이름', '팀 고유 아이디']) {
+			const fieldLabel = screen.getByText(label).closest('label')!;
+			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
+		}
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toBeRequired();
-		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
-		expect(screen.getByRole('group', { name: '소셜 (선택)' })).toHaveAccessibleDescription(
-			'링크를 통해 팀을 표현해 보세요.',
+		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();
+		expect(screen.getByRole('group', { name: '소셜' })).toHaveAccessibleDescription('링크를 통해 팀을 표현해 보세요.');
+		expect(screen.queryByText('(선택)')).not.toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' }).parentElement).toHaveTextContent('rilog.kr/@');
+		expect(screen.getByRole('textbox', { name: '서비스 링크' }).parentElement?.querySelector('img')).toHaveAttribute(
+			'src',
+			'/icons/form/link.svg',
+		);
+		expect(screen.getByRole('textbox', { name: 'GitHub 링크' }).parentElement?.querySelector('img')).toHaveAttribute(
+			'src',
+			'/icons/form/github.svg',
 		);
 		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
@@ -81,20 +91,16 @@ describe('CologCreateForm', () => {
 		const user = userEvent.setup();
 		const { unmount } = renderWithClient(<CologCreateForm />);
 
-		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
+		await user.upload(screen.getByLabelText('팀 로고 변경'), new File(['logo'], 'logo.png', { type: 'image/png' }));
 
-		await user.upload(screen.getByLabelText('팀 로고 추가'), new File(['logo'], 'logo.png', { type: 'image/png' }));
-
-		const resetButton = screen.getByRole('button', { name: '기본 이미지로 되돌리기' });
-		expect(resetButton).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute('src', 'blob:logo');
 
-		await user.click(resetButton);
+		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('rounded-lg');
+		await user.click(screen.getByRole('button', { name: '팀 로고 제거' }));
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute(
 			'src',
 			'/images/profile-placeholder.svg',
 		);
-		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:logo');
@@ -105,7 +111,7 @@ describe('CologCreateForm', () => {
 		const user = userEvent.setup();
 		renderWithClient(<CologCreateForm />);
 
-		const introduction = screen.getByRole('textbox', { name: '팀 소개 (선택)' });
+		const introduction = screen.getByRole('textbox', { name: '팀 소개' });
 		await user.type(introduction, '함께 성장하는 개발 팀입니다');
 
 		expect(introduction).toHaveAccessibleDescription('팀을 소개해 보세요. 15 / 80');
@@ -129,7 +135,7 @@ describe('CologCreateForm', () => {
 		expect(screen.getByText('팀 로고를 등록해 주세요.')).toBeInTheDocument();
 		expect(screen.getByText('팀 이름은 2~20자로 입력해 주세요.')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('border-danger');
-		expect(screen.getByLabelText('팀 로고 추가')).toHaveFocus();
+		expect(screen.getByLabelText('팀 로고 변경')).toHaveFocus();
 		expect(createColog).not.toHaveBeenCalled();
 	});
 

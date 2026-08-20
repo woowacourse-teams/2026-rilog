@@ -13,8 +13,8 @@ import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Checkbox from '@/shared/ui/checkbox/Checkbox';
 import Field from '@/shared/ui/field/Field';
+import ImageEditMenu from '@/shared/ui/image-edit-menu/ImageEditMenu';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
-import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
@@ -108,25 +108,13 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 						className="size-25 shrink-0 bg-background"
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
-					<div className="flex flex-1 flex-wrap items-center gap-2">
-						<ImageUploader
-							buttonLabel={profileImageFile === null ? '프로필 이미지 추가' : '프로필 이미지 변경'}
-							onFileChange={handleImageChange}
-							disabled={isSigningUp}
-							className="bg-white"
-						/>
-						{profileImageFile !== null && (
-							<Button
-								type="button"
-								variant="secondary"
-								size="md"
-								disabled={isSigningUp}
-								onClick={() => handleImageChange(null)}
-							>
-								기본 이미지로 되돌리기
-							</Button>
-						)}
-					</div>
+					<ImageEditMenu
+						imageLabel="프로필 이미지"
+						hasImage={profileImageFile !== null}
+						disabled={isSigningUp}
+						onFileChange={handleImageChange}
+						onReset={() => handleImageChange(null)}
+					/>
 				</div>
 			</div>
 

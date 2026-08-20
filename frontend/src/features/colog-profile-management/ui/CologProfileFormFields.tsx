@@ -46,7 +46,7 @@ export default function CologProfileFormFields({
 				onCoverImageFileChange={onCoverImageFileChange}
 			/>
 
-			<Field label="팀 이름" description="서비스에 표시될 팀의 이름입니다.">
+			<Field label="팀 이름" description="서비스에 표시될 팀의 이름입니다." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -65,7 +65,7 @@ export default function CologProfileFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 고유 아이디" description="팀 고유 아이디는 변경할 수 없습니다.">
+			<Field label="팀 고유 아이디" description="팀 고유 아이디는 변경할 수 없습니다." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -82,7 +82,7 @@ export default function CologProfileFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 소개 (선택)" description="팀을 소개해 보세요.">
+			<Field label="팀 소개" description="팀을 소개해 보세요.">
 				{({ id, describedBy }) => (
 					<div>
 						<Textarea
