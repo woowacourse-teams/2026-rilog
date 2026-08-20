@@ -1,8 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
 
-import { buildCologSettingsPath, hasCologSlugPrefix, parseCologSettingsTab } from '@/shared/routes/app-routes';
-import { readCologMembers } from '@/shared/api/cologs/api';
 import { mapCologMemberResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
+import CologSettingsAccessGuard from '@/features/colog-settings-access/ui/CologSettingsAccessGuard';
+import { readCologMembers } from '@/shared/api/cologs/api';
+import { buildCologSettingsPath, hasCologSlugPrefix, parseCologSettingsTab } from '@/shared/routes/app-routes';
 import CologSettingsWorkspace from '@/widgets/colog-settings/ui/CologSettingsWorkspace';
 
 interface CologSettingsPageProps {
@@ -35,5 +36,9 @@ export default async function CologSettingsPage({ params, searchParams }: CologS
 		// 실패 시 기본 처리 (임시)
 	}
 
-	return <CologSettingsWorkspace slug={slug} initialTab={initialTab} initialMembers={initialMembers} />;
+	return (
+		<CologSettingsAccessGuard slug={slug}>
+			<CologSettingsWorkspace slug={slug} initialTab={initialTab} initialMembers={initialMembers} />
+		</CologSettingsAccessGuard>
+	);
 }

@@ -13,9 +13,11 @@ vi.mock('next/navigation', () => ({
 describe('SignUpPage', () => {
 	it('프로필 설정 페이지 제목을 안내한다', () => {
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
+			>
 				<SignUpPage />
-			</AUTH_CONTEXT.Provider>
+			</AUTH_CONTEXT.Provider>,
 		);
 
 		expect(screen.getByRole('heading', { name: '프로필 설정' })).toBeInTheDocument();

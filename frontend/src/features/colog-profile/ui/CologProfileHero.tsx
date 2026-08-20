@@ -1,16 +1,17 @@
+import type { ReactNode } from 'react';
+
 import type { CologProfile } from '@/domains/blog/model/colog';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
+import { getServiceUrlLabel } from '@/features/colog-profile/lib/get-service-url-label';
 import GitHubIcon from '@/shared/assets/brand/github.svg';
 import LinkIcon from '@/shared/assets/icons/link.svg';
-import MeatballIcon from '@/shared/assets/icons/meatball.svg';
-import Button from '@/shared/ui/button/Button';
-import { getServiceUrlLabel } from '@/features/colog-profile/lib/get-service-url-label';
 
 interface CologProfileHeroProps {
+	action?: ReactNode;
 	profile: CologProfile;
 }
 
-export default function CologProfileHero({ profile }: CologProfileHeroProps) {
+export default function CologProfileHero({ action, profile }: CologProfileHeroProps) {
 	const serviceUrl = profile.serviceUrl?.trim() ?? '';
 	const githubUrl = profile.githubUrl?.trim() ?? '';
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
@@ -58,13 +59,7 @@ export default function CologProfileHero({ profile }: CologProfileHeroProps) {
 				</div>
 			) : null}
 
-			<Button
-				size="icon"
-				aria-label={`${profile.name} 코로그 메뉴 열기`}
-				className="absolute top-5 right-5 bg-transparent sm:top-8 md:top-20 md:right-15"
-			>
-				<MeatballIcon aria-hidden="true" focusable="false" className="size-6" />
-			</Button>
+			{action ? <div className="absolute top-5 right-5 sm:top-8 md:top-20 md:right-15">{action}</div> : null}
 		</div>
 	);
 }

@@ -27,7 +27,9 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 
 function renderFooter() {
 	return renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+		<AUTH_CONTEXT.Provider
+			value={{ isAuthenticated: true, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
+		>
 			<AuthenticatedSidebarFooter />
 		</AUTH_CONTEXT.Provider>,
 	);
