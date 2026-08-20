@@ -164,7 +164,7 @@ export default function CologSettingsWorkspace({
 		>
 			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
 				{activeTab === 'profile' && <CologProfileSection form={profileForm} onSubmit={handleProfileSubmit} />}
-				{activeTab === 'members' && <CologMemberManagementSection drafts={memberDrafts} />}
+				{activeTab === 'members' && <CologMemberManagementSection slug={slug} drafts={memberDrafts} />}
 				{activeTab === 'danger' && <CologDangerZoneSection />}
 			</div>
 

@@ -66,6 +66,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 				setCandidates((currentCandidates) => [
 					...currentCandidates,
 					{
+						userId: user.id,
 						slug: user.slug,
 						nickname: user.nickname,
 						profileImageUrl: user.profileImageUrl,

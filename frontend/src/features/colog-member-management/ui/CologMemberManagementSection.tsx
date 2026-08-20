@@ -1,15 +1,19 @@
 'use client';
 
+import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
+
+import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 
 import CologMemberRow from './CologMemberRow';
 import MemberInviteModal from './MemberInviteModal';
 
 interface CologMemberManagementSectionProps {
+	slug: string;
 	drafts: ReturnType<typeof useCologMemberDrafts>;
 }
 
-export default function CologMemberManagementSection({ drafts }: CologMemberManagementSectionProps) {
+export default function CologMemberManagementSection({ slug, drafts }: CologMemberManagementSectionProps) {
 	const {
 		displayedMembers,
 		isEditing,
@@ -19,6 +23,28 @@ export default function CologMemberManagementSection({ drafts }: CologMemberMana
 		handlePermissionChange,
 		handleBlogRoleChange,
 	} = drafts;
+
+	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
+
+	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
+		const results = await Promise.allSettled(
+			candidates.map((candidate) =>
+				inviteMember({
+					slug,
+					request: {
+						userId: candidate.userId,
+						permission: 'MEMBER',
+					},
+				}),
+			),
+		);
+
+		const hasSuccess = results.some((result) => result.status === 'fulfilled');
+
+		if (hasSuccess) {
+			window.location.reload();
+		}
+	};
 
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
@@ -71,7 +97,7 @@ export default function CologMemberManagementSection({ drafts }: CologMemberMana
 				</div>
 			</form>
 
-			<MemberInviteModal open={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
+			<MemberInviteModal open={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} onInvite={handleInvite} />
 		</section>
 	);
 }
