@@ -48,4 +48,5 @@ aws:
   s3:
     bucket: ${AWS_S3_BUCKET}
     region: ${AWS_REGION:ap-northeast-2}
+    root-directory: ${AWS_S3_DIRECTORY}
     presigned-url-expiration-minutes: 10
