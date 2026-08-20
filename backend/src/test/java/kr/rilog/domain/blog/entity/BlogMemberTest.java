@@ -3,6 +3,7 @@ package kr.rilog.domain.blog.entity;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -29,8 +30,7 @@ class BlogMemberTest {
         Blog colog = Blog.builder()
                 .id(2L)
                 .owner(owner)
-                .name("리로그 팀")
-                .slug(Slug.from("rilog-team"))
+                .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
         LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);
@@ -71,8 +71,7 @@ class BlogMemberTest {
         Blog colog = Blog.builder()
                 .id(2L)
                 .owner(owner)
-                .name("리로그 팀")
-                .slug(Slug.from("rilog-team"))
+                .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
         LocalDateTime joinedAt = LocalDateTime.of(2026, 8, 13, 12, 0);
@@ -165,4 +164,29 @@ class BlogMemberTest {
                 .status(status)
                 .build();
     }
+
+    private Profile createRilogProfile() {
+        return Profile.createColog(
+                "러로",
+                "jinriro",
+                "안녕하세요. 러로입니다. ",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://jinriro.example.com",
+                "https://github.com/Wlsflfh"
+        );
+    }
+
+    private Profile createCologProfile() {
+        return Profile.createColog(
+                "리로그",
+                "team_rilog",
+                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://rilog.example.com",
+                "https://github.com/rilog"
+        );
+    }
+
 }
