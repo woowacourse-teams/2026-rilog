@@ -1,4 +1,10 @@
-import type { CologCreateRequest, CologCreateResponse, CologMemberInviteRequest, CologMemberInviteResponse } from './types';
+import type {
+	BlogMemberResponse,
+	CologCreateRequest,
+	CologCreateResponse,
+	CologMemberInviteRequest,
+	CologMemberInviteResponse,
+} from './types';
 
 import { apiClient } from '@/shared/api/client';
 import type { ApiResponse } from '@/shared/api/shared.types';
@@ -14,4 +20,10 @@ export const inviteCologMember = (slug: string, request: CologMemberInviteReques
 		`v1/cologs/${encodeURIComponent(normalizedSlug)}/members`,
 		{ json: request },
 	);
+};
+
+export const readCologMembers = (slug: string) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.get<ApiResponse<BlogMemberResponse[]>>(`v1/cologs/${encodeURIComponent(normalizedSlug)}/members`);
 };

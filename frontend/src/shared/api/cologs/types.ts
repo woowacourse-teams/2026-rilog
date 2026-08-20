@@ -26,3 +26,14 @@ export interface CologMemberInviteResponse {
 	permission: 'OWNER' | 'ADMIN' | 'MEMBER';
 	blogRole: string;
 }
+
+export interface BlogMemberResponse {
+	id: number;
+	userId: number;
+	nickname: string;
+	slug: string;
+	profileImageUrl: string | null;
+	permission: 'OWNER' | 'ADMIN' | 'MEMBER';
+	blogRole: string;
+	joinedAt: string;
+}
