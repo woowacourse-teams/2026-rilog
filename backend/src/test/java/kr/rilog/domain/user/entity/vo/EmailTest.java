@@ -2,23 +2,24 @@ package kr.rilog.domain.user.entity.vo;
 
 import kr.rilog.domain.user.exception.UserErrorInformation;
 import kr.rilog.domain.user.exception.UserException;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 class EmailTest {
 
     @Test
     @DisplayName("이메일 형식이고 256자 이하인 이메일은 사용가능하다.")
-    void emailFormatAndUnderThanTwoHundredFiftySixEmailIsAvailable() {
+    void emailSuccessTest() {
         // given
         String email = "riro@example.com";
 
-        // when
-        Email savedEmail = Email.from(email);
-
-        // then
-        Assertions.assertThat(savedEmail.getValue()).isEqualTo(email);
+        // when & then
+        assertThatCode(() -> Email.from(email))
+                .doesNotThrowAnyException();
     }
 
     @Test
@@ -31,7 +32,7 @@ class EmailTest {
         Email savedEmail = Email.from(email);
 
         // then
-        Assertions.assertThat(savedEmail.getValue()).isEqualTo("riro@example.com");
+        assertThat(savedEmail.getValue()).isEqualTo("riro@example.com");
     }
 
     @Test
@@ -41,7 +42,7 @@ class EmailTest {
         String invalidEmail = "riro.example.com";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Email.from(invalidEmail))
+        assertThatThrownBy(() -> Email.from(invalidEmail))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_EMAIL.getMessage());
     }
@@ -53,7 +54,7 @@ class EmailTest {
         String longEmail = "a".repeat(245) + "@example.com";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Email.from(longEmail))
+        assertThatThrownBy(() -> Email.from(longEmail))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_EMAIL.getMessage());
     }
@@ -65,7 +66,7 @@ class EmailTest {
         String nullEmail = null;
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Email.from(nullEmail))
+        assertThatThrownBy(() -> Email.from(nullEmail))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_EMAIL.getMessage());
     }
@@ -77,7 +78,7 @@ class EmailTest {
         String blankEmail = "";
 
         // when & then
-        Assertions.assertThatThrownBy(() -> Email.from(blankEmail))
+        assertThatThrownBy(() -> Email.from(blankEmail))
                 .isInstanceOf(UserException.class)
                 .hasMessage(UserErrorInformation.INVALID_EMAIL.getMessage());
     }
