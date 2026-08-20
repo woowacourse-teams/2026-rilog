@@ -26,7 +26,7 @@ describe('SignUpForm', () => {
 		renderSignUpForm();
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
-		expect(screen.getByLabelText('이미지 변경')).toHaveAttribute('type', 'file');
+		expect(screen.getByLabelText('프로필 이미지 추가')).toHaveAttribute('type', 'file');
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();
@@ -70,18 +70,18 @@ describe('SignUpForm', () => {
 		const { unmount } = renderSignUpForm();
 
 		await user.upload(
-			screen.getByLabelText('이미지 변경'),
+			screen.getByLabelText('프로필 이미지 추가'),
 			new File(['profile'], 'profile.png', { type: 'image/png' }),
 		);
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute('src', 'blob:profile-image');
 
-		await user.click(screen.getByRole('button', { name: '기본 이미지로 변경' }));
+		await user.click(screen.getByRole('button', { name: '기본 이미지로 되돌리기' }));
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			'/images/profile-placeholder.svg',
 		);
-		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');

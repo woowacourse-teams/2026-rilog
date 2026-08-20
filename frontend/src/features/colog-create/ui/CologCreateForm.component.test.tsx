@@ -29,7 +29,7 @@ const renderWithClient = (ui: React.ReactElement) => {
 const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
 	const logoFile = new File(['logo'], 'logo.png', { type: 'image/png' });
 
-	await user.upload(screen.getByLabelText('팀 로고 변경'), logoFile);
+	await user.upload(screen.getByLabelText('팀 로고 추가'), logoFile);
 	await user.type(screen.getByRole('textbox', { name: '팀 이름' }), '  리로그  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 소개 (선택)' }), '함께 성장하는 개발 팀입니다');
@@ -49,10 +49,10 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 커버 이미지 미리보기' })).toBeInTheDocument();
-		expect(screen.getByLabelText('팀 로고 변경')).toHaveAttribute('type', 'file');
-		expect(screen.getByLabelText('팀 로고 변경')).toBeRequired();
-		expect(screen.getByLabelText('커버 이미지 변경')).toHaveAttribute('type', 'file');
-		expect(screen.getByLabelText('커버 이미지 변경')).not.toBeRequired();
+		expect(screen.getByLabelText('팀 로고 추가')).toHaveAttribute('type', 'file');
+		expect(screen.getByLabelText('팀 로고 추가')).toBeRequired();
+		expect(screen.getByLabelText('커버 이미지 추가')).toHaveAttribute('type', 'file');
+		expect(screen.getByLabelText('커버 이미지 추가')).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
@@ -74,18 +74,18 @@ describe('CologCreateForm', () => {
 		expect(backMock).toHaveBeenCalledOnce();
 	});
 
-	it('로고를 등록하면 기본 이미지로 변경할 수 있는 버튼을 제공하고 클릭 시 초기화한다', async () => {
+	it('로고를 등록하면 기본 이미지로 되돌릴 수 있고 클릭 시 초기화한다', async () => {
 		const createObjectUrl = vi.fn(() => 'blob:logo');
 		const revokeObjectUrl = vi.fn();
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
 		const { unmount } = renderWithClient(<CologCreateForm />);
 
-		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
-		await user.upload(screen.getByLabelText('팀 로고 변경'), new File(['logo'], 'logo.png', { type: 'image/png' }));
+		await user.upload(screen.getByLabelText('팀 로고 추가'), new File(['logo'], 'logo.png', { type: 'image/png' }));
 
-		const resetButton = screen.getByRole('button', { name: '기본 이미지로 변경' });
+		const resetButton = screen.getByRole('button', { name: '기본 이미지로 되돌리기' });
 		expect(resetButton).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute('src', 'blob:logo');
 
@@ -94,7 +94,7 @@ describe('CologCreateForm', () => {
 			'src',
 			'/images/profile-placeholder.svg',
 		);
-		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:logo');
@@ -121,7 +121,7 @@ describe('CologCreateForm', () => {
 
 	it('유효하지 않은 제출은 오류를 안내하고 첫 번째 오류 입력으로 focus한다', async () => {
 		const user = userEvent.setup();
-		
+
 		renderWithClient(<CologCreateForm />);
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
@@ -129,7 +129,7 @@ describe('CologCreateForm', () => {
 		expect(screen.getByText('팀 로고를 등록해 주세요.')).toBeInTheDocument();
 		expect(screen.getByText('팀 이름은 2~20자로 입력해 주세요.')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('border-danger');
-		expect(screen.getByLabelText('팀 로고 변경')).toHaveFocus();
+		expect(screen.getByLabelText('팀 로고 추가')).toHaveFocus();
 		expect(createColog).not.toHaveBeenCalled();
 	});
 
@@ -139,7 +139,11 @@ describe('CologCreateForm', () => {
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
 		const navigate = vi.fn();
-		vi.mocked(createColog).mockResolvedValue({ status: 201, message: '', data: { id: 1, name: '리로그', slug: 'rilog-team' } });
+		vi.mocked(createColog).mockResolvedValue({
+			status: 201,
+			message: '',
+			data: { id: 1, name: '리로그', slug: 'rilog-team' },
+		});
 		vi.mocked(uploadFileWithPresignedUrl).mockResolvedValue({ objectKey: 'image.png' } as any);
 		const { unmount } = renderWithClient(<CologCreateForm navigate={navigate} />);
 		const logoFile = await fillRequiredFields(user);

@@ -18,7 +18,6 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
-
 import { useSignUpForm } from '../hooks/use-sign-up-form';
 import {
 	type CompleteSignUp,
@@ -108,7 +107,12 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
 					<div className="flex flex-1 flex-wrap items-center gap-2">
-						<ImageUploader onFileChange={handleImageChange} disabled={isSigningUp} className="bg-white" />
+						<ImageUploader
+							buttonLabel={profileImageFile === null ? '프로필 이미지 추가' : '프로필 이미지 변경'}
+							onFileChange={handleImageChange}
+							disabled={isSigningUp}
+							className="bg-white"
+						/>
 						{profileImageFile !== null && (
 							<Button
 								type="button"
@@ -117,7 +121,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 								disabled={isSigningUp}
 								onClick={() => handleImageChange(null)}
 							>
-								기본 이미지로 변경
+								기본 이미지로 되돌리기
 							</Button>
 						)}
 					</div>

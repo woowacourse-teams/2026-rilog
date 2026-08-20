@@ -49,7 +49,7 @@ export default function CologProfileImageFields({
 								<ImageUploader
 									ref={logoInputRef}
 									required={isLogoRequired}
-									buttonLabel="팀 로고 변경"
+									buttonLabel={hasCustomLogo ? '팀 로고 변경' : '팀 로고 추가'}
 									disabled={disabled}
 									onFileChange={(file) => onLogoFileChange(file)}
 								/>
@@ -61,7 +61,7 @@ export default function CologProfileImageFields({
 										disabled={disabled}
 										onClick={() => onLogoFileChange(null)}
 									>
-										기본 이미지로 변경
+										기본 이미지로 되돌리기
 									</Button>
 								)}
 							</div>
@@ -82,7 +82,7 @@ export default function CologProfileImageFields({
 						/>
 						<div className="flex flex-wrap items-center gap-2">
 							<ImageUploader
-								buttonLabel="커버 이미지 변경"
+								buttonLabel={hasCustomCover ? '커버 이미지 변경' : '커버 이미지 추가'}
 								disabled={disabled}
 								onFileChange={(file) => onCoverImageFileChange(file)}
 							/>
@@ -94,7 +94,7 @@ export default function CologProfileImageFields({
 									disabled={disabled}
 									onClick={() => onCoverImageFileChange(null)}
 								>
-									기본 이미지로 변경
+									기본 이미지로 되돌리기
 								</Button>
 							)}
 						</div>
