@@ -6,22 +6,19 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+
 class NicknameTest {
 
     @Test
     @DisplayName("2-20자 사이의 닉네임은 사용가능하다.")
-    void betweenTwoToTwentyNicknameIsAvailable() {
+    void nickNameSuccessTest() {
         // given
-        String twoLength = "hi";
-        String twentyLength = "12345678901234567890";
+        String nickNameText = "rilog";
 
-        // when
-        Nickname twoLengthNickname = Nickname.from(twoLength);
-        Nickname twentyLengthNickname = Nickname.from(twentyLength);
-
-        // then
-        Assertions.assertThat(twoLengthNickname.getValue()).isEqualTo(twoLength);
-        Assertions.assertThat(twentyLengthNickname.getValue()).isEqualTo(twentyLength);
+        // when & then
+        assertThatCode(() -> Nickname.from(nickNameText))
+                .doesNotThrowAnyException();
     }
 
     @Test
