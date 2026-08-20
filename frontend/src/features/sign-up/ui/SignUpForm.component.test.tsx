@@ -1,8 +1,9 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import SignUpForm from './SignUpForm';
@@ -11,7 +12,16 @@ vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
 }));
 
+vi.mock('@/shared/api/availability/api', () => ({
+	checkNicknameAvailability: vi.fn(),
+	checkSlugAvailability: vi.fn(),
+}));
+
 describe('SignUpForm', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
 		return render(
 			<AUTH_CONTEXT.Provider
@@ -29,6 +39,8 @@ describe('SignUpForm', () => {
 		expect(screen.getByLabelText('이미지 변경')).toHaveAttribute('type', 'file');
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '닉네임 중복 확인' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '고유 아이디 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();
 		expect(
 			screen.getByRole('checkbox', {
@@ -50,6 +62,86 @@ describe('SignUpForm', () => {
 			expect(link).toHaveAttribute('target', '_blank');
 			expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 		});
+	});
+
+	it('닉네임과 고유 아이디 중복 확인을 요청하고 사용 가능 상태를 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
+		vi.mocked(checkSlugAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 슬러그입니다.',
+			data: null,
+		});
+		renderSignUpForm();
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(nickname, '리로그');
+		await user.type(slug, 'rilog');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		await waitFor(() => {
+			expect(checkNicknameAvailability).toHaveBeenCalledWith({ nickname: '리로그' });
+			expect(checkSlugAvailability).toHaveBeenCalledWith({ slug: 'rilog' });
+		});
+		expect(nickname).toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+		expect(slug).toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
+
+		await user.type(nickname, '팀');
+		expect(nickname).not.toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+	});
+
+	it('중복 확인 중인 입력과 버튼을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		let resolveAvailabilityCheck: (() => void) | undefined;
+		vi.mocked(checkNicknameAvailability).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveAvailabilityCheck = () => resolve({ status: 200, message: '사용가능한 닉네임입니다.', data: null });
+				}),
+		);
+		renderSignUpForm();
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const checkButton = screen.getByRole('button', { name: '닉네임 중복 확인' });
+		await user.type(nickname, '리로그');
+		await user.click(checkButton);
+
+		expect(nickname).toBeDisabled();
+		expect(checkButton).toBeDisabled();
+		expect(checkButton).toHaveAttribute('aria-busy', 'true');
+
+		resolveAvailabilityCheck?.();
+		await waitFor(() => expect(checkButton).toBeEnabled());
+	});
+
+	it('중복된 고유 아이디 오류를 입력 상태와 메시지로 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(checkSlugAvailability).mockRejectedValue({
+			type: 'api',
+			kind: 'conflict',
+			detail: {
+				status: 404,
+				error: 'NOT_FOUND',
+				errorCode: 'SLUG_DUPLICATED',
+				message: '중복되는 슬러그입니다.',
+				invalidParams: null,
+			},
+			response: new Response(null, { status: 404 }),
+		});
+		renderSignUpForm();
+
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(slug, 'rilog');
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		await waitFor(() => expect(slug).toBeInvalid());
+		expect(slug).toHaveAccessibleDescription(/중복되는 슬러그입니다\./);
 	});
 
 	it('한 줄 소개의 글자 수를 입력에 맞춰 안내한다', async () => {

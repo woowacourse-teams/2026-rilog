@@ -1,12 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
 import { useAuth } from '@/features/auth/model/use-auth';
+import type { NormalizedApiError } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
+import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
@@ -17,7 +20,6 @@ import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
-
 
 import { useSignUpForm } from '../hooks/use-sign-up-form';
 import {
@@ -33,6 +35,18 @@ import {
 const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
 const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
 
+const getAvailabilityErrorMessage = (error: unknown, fallbackMessage: string) => {
+	if (typeof error === 'object' && error !== null) {
+		const normalizedError = error as NormalizedApiError;
+
+		if (normalizedError.type === 'api') {
+			return normalizedError.detail.message;
+		}
+	}
+
+	return error instanceof Error ? error.message : fallbackMessage;
+};
+
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
 	navigate?: (href: string, options?: SignUpNavigateOptions) => void;
@@ -42,9 +56,13 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const profileImageLabelId = useId();
 	const termsAgreementId = useId();
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
+	const nicknameInputRef = useRef<HTMLInputElement>(null);
+	const slugInputRef = useRef<HTMLInputElement>(null);
 
 	const { mutateAsync: onboard } = useOnboardingMutation();
 	const { mutateAsync: uploadFile } = useUploadFileMutation();
+	const nicknameAvailability = useCheckNicknameAvailabilityMutation();
+	const slugAvailability = useCheckSlugAvailabilityMutation();
 
 	const { setIsAuthenticated } = useAuth();
 
@@ -90,6 +108,52 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	});
 
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
+	const nicknameAvailabilityMessage = nicknameAvailability.isSuccess
+		? nicknameAvailability.data.message
+		: nicknameAvailability.isError
+			? getAvailabilityErrorMessage(nicknameAvailability.error, '닉네임 중복 확인에 실패했습니다.')
+			: undefined;
+	const slugAvailabilityMessage = slugAvailability.isSuccess
+		? slugAvailability.data.message
+		: slugAvailability.isError
+			? getAvailabilityErrorMessage(slugAvailability.error, '고유 아이디 중복 확인에 실패했습니다.')
+			: undefined;
+
+	const handleNicknameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		nicknameAvailability.reset();
+		handleRequiredTextChange(event);
+	};
+
+	const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		slugAvailability.reset();
+		handleRequiredTextChange(event);
+	};
+
+	const handleNicknameAvailabilityCheck = async () => {
+		const input = nicknameInputRef.current;
+		if (!input || !input.reportValidity()) {
+			return;
+		}
+
+		try {
+			await nicknameAvailability.mutateAsync(input.value.trim());
+		} catch {
+			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
+		}
+	};
+
+	const handleSlugAvailabilityCheck = async () => {
+		const input = slugInputRef.current;
+		if (!input || !input.reportValidity()) {
+			return;
+		}
+
+		try {
+			await slugAvailability.mutateAsync(input.value.trim());
+		} catch {
+			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
+		}
+	};
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
@@ -126,18 +190,33 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 			<Field label="닉네임" description="닉네임은 2~20자 사이로 입력 가능해요.">
 				{({ id, describedBy }) => (
-					<Input
-						id={id}
-						aria-describedby={describedBy}
-						name="nickname"
-						minLength={SIGN_UP_NICKNAME_MIN_LENGTH}
-						maxLength={SIGN_UP_NICKNAME_MAX_LENGTH}
-						required
-						placeholder="예: 리로그"
-						autoComplete="nickname"
-						disabled={isSigningUp}
-						onChange={handleRequiredTextChange}
-					/>
+					<div className="flex items-start gap-2">
+						<Input
+							ref={nicknameInputRef}
+							id={id}
+							aria-describedby={describedBy}
+							name="nickname"
+							minLength={SIGN_UP_NICKNAME_MIN_LENGTH}
+							maxLength={SIGN_UP_NICKNAME_MAX_LENGTH}
+							required
+							placeholder="예: 리로그"
+							autoComplete="nickname"
+							disabled={isSigningUp || nicknameAvailability.isPending}
+							onChange={handleNicknameChange}
+							status={nicknameAvailability.isError ? 'error' : nicknameAvailability.isSuccess ? 'success' : 'default'}
+							helperText={nicknameAvailabilityMessage}
+						/>
+						<Button
+							variant="secondary"
+							className="shrink-0 bg-white whitespace-nowrap"
+							aria-label="닉네임 중복 확인"
+							disabled={isSigningUp}
+							isPending={nicknameAvailability.isPending}
+							onClick={() => void handleNicknameAvailabilityCheck()}
+						>
+							{nicknameAvailability.isPending ? '확인 중' : '중복 확인'}
+						</Button>
+					</div>
 				)}
 			</Field>
 
@@ -151,22 +230,37 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 				}
 			>
 				{({ id, describedBy }) => (
-					<Input
-						id={id}
-						aria-describedby={describedBy}
-						name="slug"
-						minLength={SIGN_UP_SLUG_MIN_LENGTH}
-						maxLength={SIGN_UP_SLUG_MAX_LENGTH}
-						pattern={SIGN_UP_SLUG_PATTERN}
-						required
-						disabled={isSigningUp}
-						onChange={handleRequiredTextChange}
-						left={
-							<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
-								rilog.kr/@
-							</span>
-						}
-					/>
+					<div className="flex items-start gap-2">
+						<Input
+							ref={slugInputRef}
+							id={id}
+							aria-describedby={describedBy}
+							name="slug"
+							minLength={SIGN_UP_SLUG_MIN_LENGTH}
+							maxLength={SIGN_UP_SLUG_MAX_LENGTH}
+							pattern={SIGN_UP_SLUG_PATTERN}
+							required
+							disabled={isSigningUp || slugAvailability.isPending}
+							onChange={handleSlugChange}
+							status={slugAvailability.isError ? 'error' : slugAvailability.isSuccess ? 'success' : 'default'}
+							helperText={slugAvailabilityMessage}
+							left={
+								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
+									rilog.kr/@
+								</span>
+							}
+						/>
+						<Button
+							variant="secondary"
+							className="shrink-0 bg-white whitespace-nowrap"
+							aria-label="고유 아이디 중복 확인"
+							disabled={isSigningUp}
+							isPending={slugAvailability.isPending}
+							onClick={() => void handleSlugAvailabilityCheck()}
+						>
+							{slugAvailability.isPending ? '확인 중' : '중복 확인'}
+						</Button>
+					</div>
 				)}
 			</Field>
 
