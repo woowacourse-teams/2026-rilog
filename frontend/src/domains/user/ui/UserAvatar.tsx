@@ -1,6 +1,7 @@
 import type { ComponentPropsWithRef } from 'react';
 
 import Avatar from '@/shared/ui/avatar/Avatar';
+import { getImageUrl } from '@/shared/utils/get-image-url';
 
 type UserAvatarSize = 'sm' | 'md' | 'lg';
 type UserAvatarTone = 'subtle' | 'strong';
@@ -26,7 +27,7 @@ export default function UserAvatar({ className, size = 'md', tone = 'strong', sr
 	return (
 		<Avatar
 			{...avatarProps}
-			src={src ?? undefined}
+			src={getImageUrl(src) || undefined}
 			className={`font-bold ${SIZE_CLASS_NAMES[size]} ${TONE_CLASS_NAMES[tone]} ${className ?? ''}`.trim()}
 		/>
 	);
