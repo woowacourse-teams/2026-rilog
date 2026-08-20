@@ -1,21 +1,21 @@
-name: rilog-fe-dev.yml
+name: rilog-fe-prod.yml
 
 on:
   # 수동으로 워크플로우를 실행하여 인프라 세팅을 테스트할 수 있도록 추가
   workflow_dispatch:
   # production 브랜치에 코드가 병합(Push)될 때 배포 실행
   push:
-    branches: [ "develop" ]
+    branches: [ "production" ]
     paths:
       - "frontend/**"
-      - ".github/workflows/rilog-fe-dev.yml"
+      - ".github/workflows/rilog-fe-prod.yml"
   
   # PR 생성/업데이트 시에는 빌드(build) Job까지만 실행하여 사전 검증
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "production" ]
     paths:
       - "frontend/**"
-      - ".github/workflows/rilog-fe-dev.yml"
+      - ".github/workflows/rilog-fe-prod.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Rilog FE Dev
+    name: Build Rilog FE PROD
     runs-on: ubuntu-latest
 
     defaults:
@@ -61,7 +61,7 @@ jobs:
 
       - name: Create .env file for Build
         env:
-          ENV_SECRET: ${{ secrets.ENV_DEV_FE }}
+          ENV_SECRET: ${{ secrets.ENV_PROD_FE }}
         run: |
           echo "$ENV_SECRET" > .env
 
@@ -81,10 +81,10 @@ jobs:
           retention-days: 1
 
   deploy:
-    name: Deploy Rilog FE Dev
+    name: Deploy Rilog FE PROD
     runs-on: [ self-hosted, frontend ] # frontend 라벨로 분기
     needs: build
-    #    if: github.event_name == 'push'
+    if: github.event_name == 'push'
 
     steps:
       - name: Download Build Artifacts
