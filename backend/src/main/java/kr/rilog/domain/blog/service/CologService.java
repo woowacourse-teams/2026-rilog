@@ -43,6 +43,7 @@ public class CologService {
 
         Blog colog = Blog.createColog(
                 owner,
+                command.slug(),
                 command.toProfile()
         );
         Blog savedColog = saveColog(colog);

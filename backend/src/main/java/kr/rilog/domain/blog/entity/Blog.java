@@ -3,6 +3,7 @@ package kr.rilog.domain.blog.entity;
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
@@ -31,15 +32,19 @@ public class Blog extends BaseEntity {
     private User owner;
 
     @Embedded
+    private Slug slug;
+
+    @Embedded
     private Profile profile;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BlogType blogType;
 
-    public static Blog createColog(User owner, Profile profile) {
+    public static Blog createColog(User owner, String slug, Profile profile) {
         return Blog.builder()
                 .owner(owner)
+                .slug(Slug.from(slug))
                 .profile(profile)
                 .blogType(BlogType.COLOG)
                 .build();
@@ -48,9 +53,9 @@ public class Blog extends BaseEntity {
     public static Blog createRilog(User owner) {
         return Blog.builder()
                 .owner(owner)
+                .slug(Slug.from(owner.getSlug()))
                 .profile(Profile.createRilog(
                         owner.getNickname(),
-                        owner.getSlug(),
                         owner.getIntroduction(),
                         owner.getProfileImageUrl(),
                         owner.getEmail(),
@@ -83,7 +88,7 @@ public class Blog extends BaseEntity {
     }
 
     public String getSlug() {
-        return profile == null ? null : profile.getSlug();
+        return slug == null ? null : slug.getValue();
     }
 
     public String getIntroduction() {

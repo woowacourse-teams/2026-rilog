@@ -3,6 +3,7 @@ package kr.rilog.domain.post.controller.dto.response;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
@@ -50,6 +51,7 @@ class PostDetailResponseTest {
         Blog rilog = Blog.builder()
                 .id(10L)
                 .owner(writer)
+                .slug(Slug.from("writer-rilog"))
                 .profile(createRilogProfile())
                 .blogType(BlogType.RILOG)
                 .build();
@@ -57,6 +59,7 @@ class PostDetailResponseTest {
         Blog colog = Blog.builder()
                 .id(20L)
                 .owner(writer)
+                .slug(Slug.from("team-colog"))
                 .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
@@ -73,7 +76,6 @@ class PostDetailResponseTest {
     private Profile createRilogProfile() {
         return Profile.createColog(
                 "러로",
-                "jinriro",
                 "안녕하세요. 러로입니다. ",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
@@ -85,7 +87,6 @@ class PostDetailResponseTest {
     private Profile createCologProfile() {
         return Profile.createColog(
                 "리로그",
-                "team_rilog",
                 "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",

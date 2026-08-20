@@ -118,6 +118,7 @@ class BlogMemberServiceTest {
     private Blog createColog() {
         return Blog.builder()
                 .id(COLOG_ID)
+                .slug(Slug.from(COLOG_SLUG))
                 .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
@@ -154,7 +155,6 @@ class BlogMemberServiceTest {
     private Profile createRilogProfile() {
         return Profile.createColog(
                 "러로",
-                "jinriro",
                 "안녕하세요. 러로입니다. ",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
@@ -166,7 +166,6 @@ class BlogMemberServiceTest {
     private Profile createCologProfile() {
         return Profile.createColog(
                 "리로그",
-                "team_rilog",
                 "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",

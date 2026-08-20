@@ -15,9 +15,6 @@ public class Profile {
     @Column(length = 20, nullable = false)
     private String name; // NOTE - 팀블로그명 or 개인블로그명(사용자명)
 
-    @Embedded
-    private Slug slug;
-
     @Column(length = 80)
     private String introduction;
 
@@ -38,7 +35,6 @@ public class Profile {
 
     private Profile(
             String name,
-            Slug slug,
             String introduction,
             String profileImageUrl,
             String coverImageUrl,
@@ -47,7 +43,6 @@ public class Profile {
             String githubUrl
     ) {
         this.name = name;
-        this.slug = slug;
         this.introduction = introduction;
         this.profileImageUrl = profileImageUrl;
         this.coverImageUrl = coverImageUrl;
@@ -58,7 +53,6 @@ public class Profile {
 
     public static Profile createColog(
             String name,
-            String slug,
             String introduction,
             String profileImageUrl,
             String coverImageUrl,
@@ -67,7 +61,6 @@ public class Profile {
     ) {
         return new Profile(
                 name,
-                Slug.from(slug),
                 introduction,
                 profileImageUrl,
                 coverImageUrl,
@@ -79,7 +72,6 @@ public class Profile {
 
     public static Profile createRilog(
             String name,
-            String slug,
             String introduction,
             String profileImageUrl,
             String email,
@@ -88,7 +80,6 @@ public class Profile {
 
         return new Profile(
                 name,
-                Slug.from(slug),
                 introduction,
                 profileImageUrl,
                 null,
@@ -96,10 +87,6 @@ public class Profile {
                 null,
                 githubUrl
         );
-    }
-
-    public String getSlug() {
-        return slug == null ? null : slug.getValue();
     }
 
 }

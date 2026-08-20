@@ -25,7 +25,7 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     @Query("""
             SELECT blog
             FROM Blog blog
-            WHERE blog.profile.slug = :slug
+            WHERE blog.slug = :slug
               AND blog.blogType = :blogType
               AND blog.deletedAt IS NULL
             """)
@@ -39,7 +39,7 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     @Query("""
             SELECT blog
             FROM Blog blog
-            WHERE blog.profile.slug = :slug
+            WHERE blog.slug = :slug
               AND blog.deletedAt IS NULL
             """)
     Optional<Blog> findBySlugAndDeletedAtIsNull(@Param("slug") Slug slug);
@@ -47,7 +47,7 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     @Query("""
             SELECT CASE WHEN COUNT(blog) > 0 THEN true ELSE false END
             FROM Blog blog
-            WHERE blog.profile.slug = :slug
+            WHERE blog.slug = :slug
             """)
     boolean existsBySlug(@Param("slug") Slug slug);
 

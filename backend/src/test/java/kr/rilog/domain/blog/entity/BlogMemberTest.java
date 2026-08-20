@@ -4,6 +4,7 @@ import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,7 @@ class BlogMemberTest {
         Blog colog = Blog.builder()
                 .id(2L)
                 .owner(owner)
+                .slug(Slug.from("team_rilog"))
                 .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
@@ -71,6 +73,7 @@ class BlogMemberTest {
         Blog colog = Blog.builder()
                 .id(2L)
                 .owner(owner)
+                .slug(Slug.from("team_rilog"))
                 .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
@@ -168,7 +171,6 @@ class BlogMemberTest {
     private Profile createRilogProfile() {
         return Profile.createColog(
                 "러로",
-                "jinriro",
                 "안녕하세요. 러로입니다. ",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
@@ -180,7 +182,6 @@ class BlogMemberTest {
     private Profile createCologProfile() {
         return Profile.createColog(
                 "리로그",
-                "team_rilog",
                 "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",

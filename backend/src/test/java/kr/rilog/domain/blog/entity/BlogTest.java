@@ -40,6 +40,7 @@ class BlogTest {
         // when
         Blog colog = Blog.createColog(
                 owner,
+                "team_rilog",
                 createCologProfile()
         );
 
@@ -88,6 +89,7 @@ class BlogTest {
         return Blog.builder()
                 .id(1L)
                 .owner(owner)
+                .slug(Slug.from("rilog"))
                 .profile(createRilogProfile())
                 .blogType(BlogType.RILOG)
                 .build();
@@ -96,7 +98,6 @@ class BlogTest {
     private Profile createRilogProfile() {
         return Profile.createColog(
                 "러로",
-                "jinriro",
                 "안녕하세요. 러로입니다. ",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
@@ -108,7 +109,6 @@ class BlogTest {
     private Profile createCologProfile() {
         return Profile.createColog(
                 "리로그",
-                "team_rilog",
                 "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",

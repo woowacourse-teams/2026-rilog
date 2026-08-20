@@ -15,7 +15,6 @@ public record CologCreateCommand(
     public Profile toProfile() {
         return Profile.createColog(
                 name,
-                slug,
                 introduction,
                 profileImageUrl,
                 coverImageUrl,
