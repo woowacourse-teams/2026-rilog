@@ -55,7 +55,7 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 						<colgroup>
 							<col className="w-52" />
 							<col className="w-31" />
-							<col className="w-40" />
+							{/* <col className="w-40" /> */}
 							<col className="w-37" />
 							<col className="w-24" />
 						</colgroup>
@@ -67,9 +67,9 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 								<th scope="col" className="px-2 font-semibold">
 									권한
 								</th>
-								<th scope="col" className="px-2 font-semibold">
+								{/* <th scope="col" className="px-2 font-semibold">
 									역할
-								</th>
+								</th> */}
 								<th scope="col" className="px-2 font-semibold">
 									가입일
 								</th>
