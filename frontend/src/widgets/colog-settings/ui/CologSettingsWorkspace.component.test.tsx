@@ -4,31 +4,98 @@ import { renderWithQuery as render } from '@/test/render-with-query';
 import Link from 'next/link';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
+import { renderWithQuery as render } from '@/test/render-with-query';
+
 import CologSettingsWorkspace from './CologSettingsWorkspace';
 
-const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+const { refetchProfileMock, replaceMock, useBlogPublicProfileQueryMock } = vi.hoisted(() => ({
+	refetchProfileMock: vi.fn(),
+	replaceMock: vi.fn(),
+	useBlogPublicProfileQueryMock: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ replace: replaceMock }),
 }));
 
+vi.mock('@/shared/api/blogs/queries/public-profile/use-query', () => ({
+	useBlogPublicProfileQuery: useBlogPublicProfileQueryMock,
+}));
+
+const PROFILE_SETTINGS: CologProfileSettingsValue = {
+	name: 'API 리로그',
+	slug: 'team-rilog',
+	description: 'API에서 조회한 팀 소개',
+	profileImageUrl: 'https://example.com/profile.png',
+	coverImageUrl: 'https://example.com/cover.png',
+	serviceUrl: 'https://rilog.example.com',
+	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
+	logoFile: null,
+	coverImageFile: null,
+};
+
 describe('CologSettingsWorkspace', () => {
 	beforeEach(() => {
+		refetchProfileMock.mockClear();
 		replaceMock.mockClear();
+		useBlogPublicProfileQueryMock.mockReset();
+		useBlogPublicProfileQueryMock.mockReturnValue({
+			data: PROFILE_SETTINGS,
+			isError: false,
+			isPending: false,
+			refetch: refetchProfileMock,
+		});
 		window.history.replaceState(null, '', '/');
 	});
 
-	it('프로필 탭을 기본으로 표시한다', () => {
-		render(<CologSettingsWorkspace />);
+	it('조회한 코로그 프로필을 폼 초기값으로 표시한다', () => {
+		render(<CologSettingsWorkspace slug="team-rilog" />);
 
+		expect(useBlogPublicProfileQueryMock).toHaveBeenCalledWith({
+			slug: 'team-rilog',
+			select: expect.any(Function),
+		});
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
-		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
+		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('API 리로그');
+		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveValue('team-rilog');
+		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).toHaveValue('API에서 조회한 팀 소개');
 		expect(screen.getByLabelText('팀 로고 변경')).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
 		expect(screen.queryByRole('table', { name: '코로그 멤버 목록' })).not.toBeInTheDocument();
+	});
+
+	it('코로그 프로필 조회 중에는 로딩 상태를 표시한다', () => {
+		useBlogPublicProfileQueryMock.mockReturnValue({
+			data: undefined,
+			isError: false,
+			isPending: true,
+			refetch: refetchProfileMock,
+		});
+
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		expect(screen.getByRole('status')).toHaveTextContent('팀 프로필을 불러오는 중...');
+		expect(screen.queryByRole('textbox', { name: '팀 이름' })).not.toBeInTheDocument();
+	});
+
+	it('코로그 프로필 조회 실패를 알리고 다시 요청한다', async () => {
+		const user = userEvent.setup();
+		useBlogPublicProfileQueryMock.mockReturnValue({
+			data: undefined,
+			isError: true,
+			isPending: false,
+			refetch: refetchProfileMock,
+		});
+
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('팀 프로필을 불러오지 못했어요.');
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(refetchProfileMock).toHaveBeenCalledOnce();
 	});
 
 	it('URL로 선택한 탭을 표시하고 탭 변경을 query에 반영한다', async () => {
@@ -135,7 +202,7 @@ describe('CologSettingsWorkspace', () => {
 		);
 
 		await user.click(screen.getByRole('tab', { name: '프로필' }));
-		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
+		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('API 리로그');
 
 		await user.click(screen.getByRole('tab', { name: '위험 영역' }));
 		expect(screen.queryByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).not.toBeInTheDocument();
@@ -261,7 +328,7 @@ describe('CologSettingsWorkspace', () => {
 		expect(dirtyBeforeUnloadEvent.defaultPrevented).toBe(true);
 
 		await user.clear(nameInput);
-		await user.type(nameInput, '리로그');
+		await user.type(nameInput, 'API 리로그');
 		const cleanBeforeUnloadEvent = new Event('beforeunload', { cancelable: true });
 		window.dispatchEvent(cleanBeforeUnloadEvent);
 		expect(cleanBeforeUnloadEvent.defaultPrevented).toBe(false);
