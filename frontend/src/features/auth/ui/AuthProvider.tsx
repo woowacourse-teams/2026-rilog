@@ -43,7 +43,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 	}, [logout]);
 
 	return (
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated, logout }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized, setIsAuthenticated, logout }}>
 			{/* 초기화 완료 전에 UI를 가리거나 그대로 둘 수 있습니다. 여기서는 기존처럼 그대로 렌더링합니다. */}
 			{children}
 		</AUTH_CONTEXT.Provider>

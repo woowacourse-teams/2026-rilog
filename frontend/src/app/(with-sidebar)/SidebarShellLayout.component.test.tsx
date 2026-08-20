@@ -9,7 +9,9 @@ import SidebarLayout from './layout';
 describe('SidebarLayout', () => {
 	it('사이드바, 모바일 헤더와 페이지 콘텐츠를 함께 조립한다', () => {
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
+			>
 				<LoginModalProvider>
 					<SidebarLayout>
 						<main>페이지 콘텐츠</main>
