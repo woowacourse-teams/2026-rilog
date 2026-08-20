@@ -5,13 +5,14 @@ import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -118,7 +119,7 @@ class BlogMemberServiceTest {
         return Blog.builder()
                 .id(COLOG_ID)
                 .slug(Slug.from(COLOG_SLUG))
-                .name("리로그 팀")
+                .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
     }
@@ -149,6 +150,28 @@ class BlogMemberServiceTest {
                 .profileImageUrl(profileImageUrl)
                 .githubId(id * 100)
                 .build();
+    }
+
+    private Profile createRilogProfile() {
+        return Profile.createColog(
+                "러로",
+                "안녕하세요. 러로입니다. ",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://jinriro.example.com",
+                "https://github.com/Wlsflfh"
+        );
+    }
+
+    private Profile createCologProfile() {
+        return Profile.createColog(
+                "리로그",
+                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://rilog.example.com",
+                "https://github.com/rilog"
+        );
     }
 
 }

@@ -5,6 +5,7 @@ import { createKyInstance } from './create-ky-instance';
 
 export const kyInstance = createKyInstance({
 	baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+	credentials: 'include',
 	tokenManager,
 });
 
