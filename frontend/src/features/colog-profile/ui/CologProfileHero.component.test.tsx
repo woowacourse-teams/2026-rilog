@@ -31,6 +31,13 @@ describe('CologHomeHero', () => {
 			'https://github.com/frontend-lab',
 		);
 		expect(screen.getByRole('button', { name: '팀 설정' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).toBeInTheDocument();
+	});
+
+	it('커버 이미지가 없으면 기존 네이비 배경을 유지한다', () => {
+		render(<CologProfileHero profile={{ ...COLOG_PROFILE_FIXTURE, coverImageUrl: null }} />);
+
+		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
 	});
 
 	it('선택 프로필 정보가 비어 있으면 관련 링크를 렌더링하지 않는다', () => {
