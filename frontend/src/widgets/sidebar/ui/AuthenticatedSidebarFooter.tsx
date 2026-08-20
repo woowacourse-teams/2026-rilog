@@ -1,3 +1,5 @@
+import { useRouter } from 'next/navigation';
+
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { useAuth } from '@/features/auth/model/use-auth';
 
@@ -20,6 +22,7 @@ import {
 } from './sidebar-class-names';
 
 export default function AuthenticatedSidebarFooter() {
+	const router = useRouter();
 	const { logout } = useAuth();
 	const { data: user } = useMyInfoQuery({ select: mapMyInfoResponse });
 	const { mutate: executeLogout } = useLogoutMutation();
@@ -28,6 +31,7 @@ export default function AuthenticatedSidebarFooter() {
 		executeLogout(undefined, {
 			onSettled: () => {
 				logout();
+				router.push(APP_ROUTES.feeds);
 			},
 		});
 	};
