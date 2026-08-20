@@ -5,6 +5,8 @@ import { useId } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
+import { tokenProvider } from '@/features/auth/model/token-provider';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
@@ -43,6 +45,8 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const { mutateAsync: onboard } = useOnboardingMutation();
 	const { mutateAsync: uploadFile } = useUploadFileMutation();
 
+	const { setIsAuthenticated } = useAuth();
+
 	const handleCompleteSignUp: CompleteSignUp = async (value) => {
 		let profileImageUrl = '';
 		if (value.profileImageFile) {
@@ -50,7 +54,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 			profileImageUrl = uploadRes.objectKey;
 		}
 
-		await onboard({
+		const response = await onboard({
 			nickname: value.nickname,
 			slug: value.slug,
 			introduction: value.description,
@@ -58,6 +62,11 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 			githubUrl: '',
 			email: '',
 		});
+
+		if (response.accessToken) {
+			tokenProvider.setAccessToken(response.accessToken);
+			setIsAuthenticated(true);
+		}
 
 		return { slug: value.slug };
 	};

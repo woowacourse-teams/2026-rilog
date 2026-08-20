@@ -1,6 +1,6 @@
 import type { MyCologPreviewResponse, MyInfoResponse, OnboardingRequest } from './types';
 
-import { apiClient } from '@/shared/api/client';
+import { apiClient, apiRequest, kyInstance } from '@/shared/api/client';
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 export const readMyCologsPreview = () =>
@@ -9,7 +9,18 @@ export const readMyCologsPreview = () =>
 export const readMyInfo = () => apiClient.get<ApiResponse<MyInfoResponse>>('v1/users/me');
 
 export const completeOnboarding = async (data: OnboardingRequest) => {
-	return await apiClient.patch<ApiResponse<null>>('v1/users/me/onboarding', {
-		json: data,
-	});
+	const response = await apiRequest(() =>
+		kyInstance.patch('v1/users/me/onboarding', {
+			json: data,
+		})
+	);
+
+	const responseData = await response.json<ApiResponse<null>>();
+	const authorizationHeader = response.headers.get('Authorization');
+	const accessToken = authorizationHeader ? authorizationHeader.replace('Bearer ', '') : null;
+
+	return {
+		data: responseData,
+		accessToken,
+	};
 };
