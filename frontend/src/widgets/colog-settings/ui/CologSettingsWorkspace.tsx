@@ -2,29 +2,39 @@
 
 import { useCallback, useState } from 'react';
 
-import type { SettingsTab } from '../lib/get-next-tab';
 import type { FormEvent } from 'react';
 
+import type { CologMember } from '@/domains/blog/model/colog';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
 import { useCologProfileForm } from '@/features/colog-profile-management/hooks/use-colog-profile-form';
-import { MOCK_COLOG_PROFILE_SETTINGS } from '@/features/colog-profile-management/lib/mock-colog-profile-settings';
+import { mapCologProfileSettingsResponse } from '@/features/colog-profile-management/lib/map-colog-profile-settings-response';
 import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/lib/validate-colog-profile-settings';
+import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
+import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
+import type { SettingsTab } from '../lib/get-next-tab';
 
 import CologSettingsHeader from './CologSettingsHeader';
-import type { CologMember } from '@/domains/blog/model/colog';
+
 interface CologSettingsWorkspaceProps {
 	slug?: string;
 	initialTab?: SettingsTab;
 	initialMembers?: CologMember[];
+}
+
+interface CologSettingsWorkspaceContentProps {
+	slug: string;
+	initialTab: SettingsTab;
+	initialMembers?: CologMember[];
+	initialProfile: CologProfileSettingsValue;
 }
 
 const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: string }> = {
@@ -47,8 +57,53 @@ export default function CologSettingsWorkspace({
 	initialTab = 'profile',
 	initialMembers,
 }: CologSettingsWorkspaceProps) {
+	const profileQuery = useBlogPublicProfileQuery({
+		slug,
+		select: (response) => (response.data === undefined ? undefined : mapCologProfileSettingsResponse(response.data)),
+	});
+
+	if (profileQuery.isPending) {
+		return (
+			<PageShell>
+				<p className="flex min-h-64 items-center justify-center text-body-2 text-text-secondary" role="status">
+					팀 프로필을 불러오는 중...
+				</p>
+			</PageShell>
+		);
+	}
+
+	if (profileQuery.isError || profileQuery.data === undefined) {
+		return (
+			<PageShell>
+				<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
+					<p className="text-body-2 text-text-secondary">팀 프로필을 불러오지 못했어요.</p>
+					<Button variant="secondary" onClick={() => void profileQuery.refetch()}>
+						다시 시도
+					</Button>
+				</div>
+			</PageShell>
+		);
+	}
+
+	return (
+		<CologSettingsWorkspaceContent
+			key={slug}
+			slug={slug}
+			initialTab={initialTab}
+			initialMembers={initialMembers}
+			initialProfile={profileQuery.data}
+		/>
+	);
+}
+
+function CologSettingsWorkspaceContent({
+	slug,
+	initialTab,
+	initialMembers,
+	initialProfile,
+}: CologSettingsWorkspaceContentProps) {
 	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
-	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
+	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
