@@ -20,10 +20,11 @@ import PageShell from '@/shared/ui/page-shell/PageShell';
 import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
 
 import CologSettingsHeader from './CologSettingsHeader';
-
+import type { CologMember } from '@/domains/blog/model/colog';
 interface CologSettingsWorkspaceProps {
 	slug?: string;
 	initialTab?: SettingsTab;
+	initialMembers?: CologMember[];
 }
 
 const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: string }> = {
@@ -44,12 +45,13 @@ const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: strin
 export default function CologSettingsWorkspace({
 	slug = 'rilog',
 	initialTab = 'profile',
+	initialMembers,
 }: CologSettingsWorkspaceProps) {
 	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...MOCK_COLOG_PROFILE_SETTINGS }));
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
-	const memberDrafts = useCologMemberDrafts();
+	const memberDrafts = useCologMemberDrafts({ initialMembers });
 
 	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
 	const isWorkspaceDirty =
@@ -125,7 +127,8 @@ export default function CologSettingsWorkspace({
 
 			return (
 				<>
-					<Button
+					{/* TODO: 멤버 정보 수정 API 연동 후 주석 해제 */}
+					{/* <Button
 						type="button"
 						variant="secondary"
 						size="md"
@@ -133,7 +136,7 @@ export default function CologSettingsWorkspace({
 						onClick={memberDrafts.handleStartEditing}
 					>
 						멤버 정보 수정
-					</Button>
+					</Button> */}
 					<Button
 						type="button"
 						size="md"
@@ -164,7 +167,7 @@ export default function CologSettingsWorkspace({
 		>
 			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
 				{activeTab === 'profile' && <CologProfileSection form={profileForm} onSubmit={handleProfileSubmit} />}
-				{activeTab === 'members' && <CologMemberManagementSection drafts={memberDrafts} />}
+				{activeTab === 'members' && <CologMemberManagementSection slug={slug} drafts={memberDrafts} />}
 				{activeTab === 'danger' && <CologDangerZoneSection />}
 			</div>
 

@@ -6,8 +6,6 @@ import type { FormEvent } from 'react';
 
 import type { CologMember, CologMemberPermission } from '@/domains/blog/model/colog';
 
-import { MOCK_COLOG_MEMBERS } from '../lib/mock-colog-members';
-
 export type CologMemberDraft = Pick<CologMember, 'id' | 'permission' | 'blogRole'>;
 export type CologMemberDraftChange = Partial<Pick<CologMember, 'permission' | 'blogRole'>>;
 
@@ -15,7 +13,7 @@ interface UseCologMemberDraftsOptions {
 	initialMembers?: CologMember[];
 }
 
-export function useCologMemberDrafts({ initialMembers = MOCK_COLOG_MEMBERS }: UseCologMemberDraftsOptions = {}) {
+export function useCologMemberDrafts({ initialMembers = [] }: UseCologMemberDraftsOptions = {}) {
 	const [members, setMembers] = useState(() => initialMembers.map((member) => ({ ...member })));
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);

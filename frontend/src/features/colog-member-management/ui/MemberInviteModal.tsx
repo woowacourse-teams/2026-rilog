@@ -11,7 +11,7 @@ import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
 
-import { useReadUserBySlugMutation } from '@/api/users/mutations/use-read-user-by-slug-mutation';
+import { useReadUserBySlugMutation } from '@/shared/api/users/mutations/use-read-user-by-slug-mutation';
 
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
@@ -66,6 +66,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 				setCandidates((currentCandidates) => [
 					...currentCandidates,
 					{
+						userId: user.id,
 						slug: user.slug,
 						nickname: user.nickname,
 						profileImageUrl: user.profileImageUrl,

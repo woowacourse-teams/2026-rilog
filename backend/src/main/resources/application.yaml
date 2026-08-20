@@ -42,10 +42,11 @@ auth:
     cookie-name: refresh_token
     cookie-path: /v1/auth
     cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
-    cookie-same-site: Lax
+    cookie-same-site: ${REFRESH_TOKEN_SAME_SITE_OPTION:Lax}
 
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET}
     region: ${AWS_REGION:ap-northeast-2}
+    root-directory: ${AWS_S3_DIRECTORY}
     presigned-url-expiration-minutes: 10

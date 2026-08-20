@@ -65,7 +65,7 @@ export default function CologMemberRow({
 					PERMISSION_LABELS[member.permission]
 				)}
 			</td>
-			<td className="px-2 py-3 text-body-1 text-text-primary">
+			{/* <td className="px-2 py-3 text-body-1 text-text-primary">
 				{isEditing ? (
 					<Input
 						aria-label={`${member.nickname} 역할`}
@@ -76,7 +76,7 @@ export default function CologMemberRow({
 				) : (
 					member.blogRole
 				)}
-			</td>
+			</td> */}
 			<td className="px-2 py-3 text-label-1 text-text-secondary">{joinedAt}</td>
 			<td className="py-3 pr-8 text-right">
 				<button
