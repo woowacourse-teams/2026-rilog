@@ -47,8 +47,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         WHERE p.id = :postId
           AND p.deletedAt IS NULL
           AND (
-                r.slug = :slug
-                OR c.slug = :slug
+                r.profile.slug = :slug
+                OR c.profile.slug = :slug
               )
         """)
     Optional<Post> findDetailByIdAndBlogSlug(

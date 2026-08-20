@@ -2,6 +2,7 @@ package kr.rilog.domain.blog.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
@@ -29,53 +30,17 @@ public class Blog extends BaseEntity {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @Column(length = 20, nullable = false)
-    private String name; // NOTE - 팀블로그명 or 개인블로그명(사용자명)
-
     @Embedded
-    private Slug slug;
-
-    @Column(length = 80)
-    private String introduction;
+    private Profile profile;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BlogType blogType;
 
-    @Column(length = 512)
-    private String profileImageUrl;
-
-    @Column(length = 512)
-    private String coverImageUrl;
-
-    @Column(length = 512)
-    private String email;
-
-    @Column(length = 512)
-    private String serviceUrl;
-
-    @Column(length = 512)
-    private String githubUrl;
-
-    public static Blog createColog(
-            User owner,
-            String name,
-            String slug,
-            String introduction,
-            String logoUrl,
-            String coverImageUrl,
-            String serviceUrl,
-            String githubUrl
-    ) {
+    public static Blog createColog(User owner, Profile profile) {
         return Blog.builder()
                 .owner(owner)
-                .name(name)
-                .slug(Slug.from(slug))
-                .introduction(introduction)
-                .profileImageUrl(logoUrl)
-                .coverImageUrl(coverImageUrl)
-                .serviceUrl(serviceUrl)
-                .githubUrl(githubUrl)
+                .profile(profile)
                 .blogType(BlogType.COLOG)
                 .build();
     }
@@ -83,12 +48,14 @@ public class Blog extends BaseEntity {
     public static Blog createRilog(User owner) {
         return Blog.builder()
                 .owner(owner)
-                .name(owner.getNickname())
-                .slug(Slug.from(owner.getSlug()))
-                .introduction(owner.getIntroduction())
-                .profileImageUrl(owner.getProfileImageUrl())
-                .email(owner.getEmail())
-                .githubUrl(owner.getGithubUrl())
+                .profile(Profile.createRilog(
+                        owner.getNickname(),
+                        owner.getSlug(),
+                        owner.getIntroduction(),
+                        owner.getProfileImageUrl(),
+                        owner.getEmail(),
+                        owner.getGithubUrl()
+                ))
                 .blogType(BlogType.RILOG)
                 .build();
     }
@@ -111,8 +78,36 @@ public class Blog extends BaseEntity {
         return owner == user || owner.getId() != null && Objects.equals(owner.getId(), user.getId());
     }
 
+    public String getName() {
+        return profile == null ? null : profile.getName();
+    }
+
     public String getSlug() {
-        return slug == null ? null : slug.getValue();
+        return profile == null ? null : profile.getSlug();
+    }
+
+    public String getIntroduction() {
+        return profile == null ? null : profile.getIntroduction();
+    }
+
+    public String getProfileImageUrl() {
+        return profile == null ? null : profile.getProfileImageUrl();
+    }
+
+    public String getCoverImageUrl() {
+        return profile == null ? null : profile.getCoverImageUrl();
+    }
+
+    public String getEmail() {
+        return profile == null ? null : profile.getEmail();
+    }
+
+    public String getServiceUrl() {
+        return profile == null ? null : profile.getServiceUrl();
+    }
+
+    public String getGithubUrl() {
+        return profile == null ? null : profile.getGithubUrl();
     }
 
 }

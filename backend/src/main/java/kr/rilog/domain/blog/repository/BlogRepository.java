@@ -22,13 +22,34 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
             """)
     Optional<Blog> findRilogByOwnerId(@Param("ownerId") Long ownerId);
 
-    Optional<Blog> findBySlugAndBlogTypeAndDeletedAtIsNull(Slug slug, BlogType blogType);
+    @Query("""
+            SELECT blog
+            FROM Blog blog
+            WHERE blog.profile.slug = :slug
+              AND blog.blogType = :blogType
+              AND blog.deletedAt IS NULL
+            """)
+    Optional<Blog> findBySlugAndBlogTypeAndDeletedAtIsNull(
+            @Param("slug") Slug slug,
+            @Param("blogType") BlogType blogType
+    );
 
     Optional<Blog> findByIdAndBlogType(Long id, BlogType blogType);
 
-    Optional<Blog> findBySlugAndDeletedAtIsNull(Slug slug);
+    @Query("""
+            SELECT blog
+            FROM Blog blog
+            WHERE blog.profile.slug = :slug
+              AND blog.deletedAt IS NULL
+            """)
+    Optional<Blog> findBySlugAndDeletedAtIsNull(@Param("slug") Slug slug);
 
-    boolean existsBySlug(Slug slug);
+    @Query("""
+            SELECT CASE WHEN COUNT(blog) > 0 THEN true ELSE false END
+            FROM Blog blog
+            WHERE blog.profile.slug = :slug
+            """)
+    boolean existsBySlug(@Param("slug") Slug slug);
 
     @Query("""
             SELECT blogMember.blog

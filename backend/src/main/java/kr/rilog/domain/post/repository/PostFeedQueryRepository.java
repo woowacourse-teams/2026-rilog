@@ -31,9 +31,9 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             
                 CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.name ELSE rilog.name END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profileImageUrl ELSE rilog.profileImageUrl END
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.slug.value ELSE rilog.profile.slug.value END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END
             )
             FROM Post p
             JOIN p.user author
@@ -66,9 +66,9 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
 
                 CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.name ELSE rilog.name END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profileImageUrl ELSE rilog.profileImageUrl END
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.slug.value ELSE rilog.profile.slug.value END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END
             )
             FROM Post post
             JOIN post.user author
@@ -103,9 +103,9 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
 
                 colog.blogType,
                 colog.id,
-                colog.slug.value,
-                colog.name,
-                colog.profileImageUrl
+                colog.profile.slug.value,
+                colog.profile.name,
+                colog.profile.profileImageUrl
             )
             FROM Post post
             JOIN post.user author
