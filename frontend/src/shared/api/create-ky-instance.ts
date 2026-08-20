@@ -4,9 +4,9 @@ import type { Hooks, KyInstance, Options } from 'ky';
 
 import { API_ERROR_CODES } from './error-codes';
 
-interface TokenProvider {
-	getAccessToken: () => string | null;
-	refreshAccessToken: () => Promise<string | null>;
+interface TokenManager {
+	getToken: () => string | null;
+	refresh: () => Promise<string | null>;
 }
 
 export interface RequestAuthOptions {
@@ -16,13 +16,12 @@ export interface RequestAuthOptions {
 interface CreateKyInstanceOptions extends Omit<Options, 'hooks'> {
 	baseUrl?: string;
 	hooks?: Hooks;
-	onTokenRefreshFailure?: () => void;
-	tokenProvider?: TokenProvider;
+	tokenManager?: TokenManager;
 }
 
-const ANONYMOUS_TOKEN_PROVIDER: TokenProvider = {
-	getAccessToken: () => null,
-	refreshAccessToken: () => Promise.resolve(null),
+const ANONYMOUS_TOKEN_MANAGER: TokenManager = {
+	getToken: () => null,
+	refresh: () => Promise.resolve(null),
 };
 
 const isBrowser = () => typeof window !== 'undefined';
@@ -58,37 +57,11 @@ const ensureRefreshRetry = (retry: Options['retry']): Options['retry'] => {
 
 export const createKyInstance = ({
 	hooks,
-	onTokenRefreshFailure,
 	retry,
-	tokenProvider = ANONYMOUS_TOKEN_PROVIDER,
+	tokenManager = ANONYMOUS_TOKEN_MANAGER,
 	...options
 }: CreateKyInstanceOptions = {}): KyInstance => {
-	let refreshPromise: Promise<string | null> | null = null;
 	const resolvedBaseUrl = typeof options.baseUrl === 'string' ? options.baseUrl : undefined;
-
-	const refreshAccessToken = () => {
-		if (refreshPromise !== null) {
-			return refreshPromise;
-		}
-
-		const currentRefreshPromise = tokenProvider
-			.refreshAccessToken()
-			.then((accessToken) => {
-				if (accessToken === null) {
-					onTokenRefreshFailure?.();
-				}
-
-				return accessToken;
-			})
-			.finally(() => {
-				refreshPromise = null;
-			});
-
-		refreshPromise = currentRefreshPromise;
-
-		return currentRefreshPromise;
-	};
-
 	const getApiBase = (): string | undefined => resolvedBaseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL;
 
 	return ky.create({
@@ -122,7 +95,7 @@ export const createKyInstance = ({
 						return;
 					}
 
-					const accessToken = tokenProvider.getAccessToken();
+					const accessToken = tokenManager.getToken();
 
 					if (accessToken !== null) {
 						request.headers.set('Authorization', `Bearer ${accessToken}`);
@@ -151,7 +124,6 @@ export const createKyInstance = ({
 					}
 
 					if (retryCount > 0) {
-						onTokenRefreshFailure?.();
 						return;
 					}
 
@@ -161,7 +133,8 @@ export const createKyInstance = ({
 					}
 
 					// 만료된 access token에 한해 클라이언트에서 한 번만 재발급 후 재시도한다.
-					const accessToken = await refreshAccessToken();
+					// 중복 요청 방지 및 실패 시 로그아웃 처리는 tokenManager 내부에서 수행합니다.
+					const accessToken = await tokenManager.refresh();
 
 					if (accessToken === null) {
 						return;

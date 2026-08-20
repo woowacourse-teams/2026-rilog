@@ -5,8 +5,8 @@ import { useId } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
-import { tokenProvider } from '@/features/auth/model/token-provider';
 import { useAuth } from '@/features/auth/model/use-auth';
+import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
@@ -17,6 +17,7 @@ import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
+
 
 import { useSignUpForm } from '../hooks/use-sign-up-form';
 import {
@@ -64,7 +65,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		});
 
 		if (response.accessToken) {
-			tokenProvider.setAccessToken(response.accessToken);
+			tokenManager.setToken(response.accessToken);
 			setIsAuthenticated(true);
 		}
 

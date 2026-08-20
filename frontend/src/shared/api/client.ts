@@ -1,31 +1,14 @@
-import { tokenProvider } from '@/features/auth/model/token-provider';
+import { tokenManager } from '@/shared/api/auth/token-manager';
 
 import { normalizeApiError } from './api-error';
 import { createKyInstance } from './create-ky-instance';
 
-type TokenRefreshFailureListener = () => void;
-
-const tokenRefreshFailureListeners = new Set<TokenRefreshFailureListener>();
-
-const publishTokenRefreshFailure = () => {
-	tokenRefreshFailureListeners.forEach((listener) => {
-		listener();
-	});
-};
-
-export const subscribeTokenRefreshFailure = (listener: TokenRefreshFailureListener) => {
-	tokenRefreshFailureListeners.add(listener);
-
-	return () => {
-		tokenRefreshFailureListeners.delete(listener);
-	};
-};
-
 export const kyInstance = createKyInstance({
 	baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-	onTokenRefreshFailure: publishTokenRefreshFailure,
-	tokenProvider,
+	tokenManager,
 });
+
+export const subscribeTokenRefreshFailure = (listener: () => void) => tokenManager.subscribeLogout(listener);
 
 /**
  * 범용 API 요청 wrapper
