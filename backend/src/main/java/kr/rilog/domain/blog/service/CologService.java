@@ -9,6 +9,7 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.command.CologProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
@@ -73,6 +74,16 @@ public class CologService {
         BlogMember savedMember = blogMemberRepository.save(member);
 
         return CologMemberInviteResult.from(savedMember);
+    }
+
+    @Transactional
+    public void changeCologProfile(Long requesterId, String slug, CologProfileUpdateCommand command) {
+        Blog colog = getColog(slug);
+
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
+        requesterMember.validateHasAdminPermission();
+
+        colog.changeProfile(command.toProfile());
     }
 
     private User getUser(Long ownerId) {

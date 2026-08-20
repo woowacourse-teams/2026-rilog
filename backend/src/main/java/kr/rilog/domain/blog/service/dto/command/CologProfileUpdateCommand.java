@@ -2,15 +2,16 @@ package kr.rilog.domain.blog.service.dto.command;
 
 import kr.rilog.domain.blog.entity.vo.Profile;
 
-public record CologCreateCommand(
-        String name,
-        String slug,
-        String introduction,
+public record CologProfileUpdateCommand(
+
         String profileImageUrl,
         String coverImageUrl,
+        String name,
+        String introduction,
         String serviceUrl,
         String githubUrl,
         String email
+
 ) {
 
     public Profile toProfile() {
