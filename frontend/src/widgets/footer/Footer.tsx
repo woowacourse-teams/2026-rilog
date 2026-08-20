@@ -62,16 +62,16 @@ export default function Footer() {
 						</a>
 						<a
 							className={ICON_LINK_CLASS_NAME}
-							href="https://docs.google.com/forms/"
+							href="https://open.kakao.com/o/s8RvBMJi"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog Google Form 문의"
+							aria-label="Rilog 오픈채팅방"
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/google-form.svg" alt="" width={24} height={24} />
 						</a>
 						<a
 							className={ICON_LINK_CLASS_NAME}
-							href="https://www.instagram.com/"
+							href="https://www.instagram.com/rilog_official/"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="Rilog Instagram"
@@ -80,7 +80,7 @@ export default function Footer() {
 						</a>
 						<a
 							className={ICON_LINK_CLASS_NAME}
-							href="https://www.threads.net/"
+							href="https://www.threads.com/@rilog_official"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="Rilog Threads"

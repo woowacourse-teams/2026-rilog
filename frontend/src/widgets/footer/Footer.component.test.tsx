@@ -31,9 +31,9 @@ describe('Footer', () => {
 		expect(screen.getByRole('link', { name: 'Rilog 이메일 문의' })).toHaveAttribute('href', 'mailto:contact@rilog.dev');
 
 		const externalLinks = [
-			['Rilog Google Form 문의', 'https://docs.google.com/forms/'],
-			['Rilog Instagram', 'https://www.instagram.com/'],
-			['Rilog Threads', 'https://www.threads.net/'],
+			['Rilog 오픈채팅방', 'https://open.kakao.com/o/s8RvBMJi'],
+			['Rilog Instagram', 'https://www.instagram.com/rilog_official/'],
+			['Rilog Threads', 'https://www.threads.com/@rilog_official'],
 		] as const;
 
 		for (const [name, href] of externalLinks) {
@@ -46,7 +46,7 @@ describe('Footer', () => {
 
 		const iconSources = [
 			['Rilog 이메일 문의', '/icons/contact/email.svg'],
-			['Rilog Google Form 문의', '/icons/contact/google-form.svg'],
+			['Rilog 오픈채팅방', '/icons/contact/google-form.svg'],
 			['Rilog Instagram', '/icons/contact/instagram.svg'],
 			['Rilog Threads', '/icons/contact/threads.svg'],
 		] as const;
