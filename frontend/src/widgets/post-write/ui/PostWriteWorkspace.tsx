@@ -49,12 +49,10 @@ export default function PostWriteWorkspace({
 	const resolvedUploadFile = uploadFile ?? uploadPostBodyFileWithApi;
 
 	const myInfo = myInfoResponse?.data;
-	const cologOptions = useMemo(() => {
-		const personalBlog = myInfo === undefined ? [] : [{ id: myInfo.id, slug: myInfo.slug, name: '내 블로그' }];
-		const teamBlogs = myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
-
-		return [...personalBlog, ...teamBlogs];
-	}, [myCologsResponse?.data, myInfo]);
+	const cologOptions = useMemo(
+		() => myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [],
+		[myCologsResponse?.data],
+	);
 
 	const publishPostWithApi: PublishPost = async ({ document, settings }) => {
 		if (settings.blog === null) {

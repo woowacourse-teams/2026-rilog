@@ -56,7 +56,7 @@ beforeEach(() => {
 	requestPostPublicationMock.mockResolvedValue({
 		status: 201,
 		message: '게시글 발행에 성공했습니다.',
-		data: { postId: 77, slug: 'jetproc' },
+		data: { postId: 77, slug: 'rilog-team' },
 	});
 });
 
@@ -162,14 +162,14 @@ describe('PostWriteWorkspace', () => {
 		expect(bodyField).not.toHaveAttribute('aria-describedby');
 	});
 
-	it('내 블로그와 소속 팀 블로그를 발행 대상으로 보여 준다', async () => {
+	it('내 블로그를 제외하고 소속 팀 블로그만 발행 대상으로 보여 준다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
-		expect(screen.getByRole('option', { name: '내 블로그' })).toHaveValue('10');
+		expect(screen.queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
 		expect(screen.getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
 	});
 
@@ -350,10 +350,10 @@ describe('PostWriteWorkspace', () => {
 		await selectFirstCoLog(user);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@jetproc/posts/77'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
 		expect(uploadRepresentativeImageMock).toHaveBeenCalledWith({ file: coverImage, type: 'IMAGE' });
 		expect(requestPostPublicationMock).toHaveBeenCalledWith({
-			slug: 'jetproc',
+			slug: 'rilog-team',
 			request: {
 				title: 'BlockNote 도입기',
 				content: [createParagraph('오늘 배운 내용을 기록합니다.')],
@@ -378,7 +378,7 @@ describe('PostWriteWorkspace', () => {
 		await selectFirstCoLog(user);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@jetproc/posts/77'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
 		expect(requestPostPublicationMock).toHaveBeenCalledWith(
 			expect.objectContaining({
