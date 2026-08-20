@@ -14,8 +14,14 @@ describe('Footer', () => {
 		expect(homeLink.querySelector('img')).toHaveAttribute('src', '/brand/logo.svg');
 		expect(within(footer).getByText('기록을 작성하고 함께 나누는 공간')).toBeInTheDocument();
 		expect(within(footer).getByRole('navigation', { name: '정책' })).toBeInTheDocument();
-		expect(within(footer).getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute('href', '/privacy');
-		expect(within(footer).getByRole('link', { name: '이용약관' })).toHaveAttribute('href', '/terms');
+		expect(within(footer).getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
+			'href',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link',
+		);
+		expect(within(footer).getByRole('link', { name: '이용약관' })).toHaveAttribute(
+			'href',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link',
+		);
 		expect(within(footer).getByText(`© ${new Date().getFullYear()} Rilog. All rights reserved.`)).toBeInTheDocument();
 	});
 

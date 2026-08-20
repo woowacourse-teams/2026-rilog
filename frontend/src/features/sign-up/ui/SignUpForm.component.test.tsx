@@ -40,11 +40,11 @@ describe('SignUpForm', () => {
 
 		expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
 			'href',
-			'https://example.com/terms-of-service',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link',
 		);
 		expect(screen.getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
 			'href',
-			'https://example.com/privacy-policy',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link',
 		);
 		screen.getAllByRole('link').forEach((link) => {
 			expect(link).toHaveAttribute('target', '_blank');

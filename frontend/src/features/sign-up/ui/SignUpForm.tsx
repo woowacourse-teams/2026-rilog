@@ -29,8 +29,10 @@ import {
 	SIGN_UP_SLUG_PATTERN,
 } from '../model/sign-up';
 
-const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
-const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
+const TERMS_OF_SERVICE_URL =
+	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link';
+const PRIVACY_POLICY_URL =
+	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link';
 
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
