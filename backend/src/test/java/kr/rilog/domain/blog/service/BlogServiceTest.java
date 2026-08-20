@@ -1,6 +1,5 @@
 package kr.rilog.domain.blog.service;
 
-import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
@@ -11,7 +10,7 @@ import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

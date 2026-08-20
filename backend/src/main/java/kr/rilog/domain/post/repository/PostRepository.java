@@ -4,7 +4,7 @@ package kr.rilog.domain.post.repository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

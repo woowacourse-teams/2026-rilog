@@ -15,7 +15,7 @@ import kr.rilog.domain.auth.repository.RefreshSessionRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

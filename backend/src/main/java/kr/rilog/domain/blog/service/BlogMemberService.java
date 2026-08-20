@@ -7,7 +7,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

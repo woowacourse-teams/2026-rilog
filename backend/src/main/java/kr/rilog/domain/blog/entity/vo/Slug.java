@@ -1,4 +1,4 @@
-package kr.rilog.domain.blog.entity;
+package kr.rilog.domain.blog.entity.vo;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

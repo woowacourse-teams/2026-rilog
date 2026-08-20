@@ -12,7 +12,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
