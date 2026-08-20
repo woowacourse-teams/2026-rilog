@@ -13,3 +13,16 @@ export interface CologCreateResponse {
 	name: string;
 	slug: string;
 }
+
+export interface CologMemberInviteRequest {
+	userId: number;
+	permission: 'ADMIN' | 'MEMBER';
+	blogRole?: string;
+}
+
+export interface CologMemberInviteResponse {
+	id: number;
+	userId: number;
+	permission: 'OWNER' | 'ADMIN' | 'MEMBER';
+	blogRole: string;
+}
