@@ -33,6 +33,7 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 	const [description, setDescription] = useState('');
 	const [signUpState, setSignUpState] = useState<SignUpState>({ status: 'idle' });
 	const [validationErrors, setValidationErrors] = useState<SignUpValidationErrors>({});
+	const [isTermsAgreed, setIsTermsAgreed] = useState(false);
 
 	const isSigningUp = signUpState.status === 'pending';
 
@@ -47,6 +48,11 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 
 	const handleDescriptionChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
 		setDescription(event.currentTarget.value);
+		clearSignUpError();
+	};
+
+	const handleTermsAgreementChange = (event: ChangeEvent<HTMLInputElement>) => {
+		setIsTermsAgreed(event.currentTarget.checked);
 		clearSignUpError();
 	};
 
@@ -129,10 +135,12 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 		description,
 		signUpState,
 		validationErrors,
+		isTermsAgreed,
 		isSigningUp,
 		clearSignUpError,
 		handleImageChange,
 		handleDescriptionChange,
+		handleTermsAgreementChange,
 		handleRequiredTextChange,
 		validateRequiredTextField,
 		handleSubmit,

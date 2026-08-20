@@ -97,10 +97,11 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		description,
 		signUpState,
 		validationErrors,
+		isTermsAgreed,
 		isSigningUp,
-		clearSignUpError,
 		handleImageChange,
 		handleDescriptionChange,
+		handleTermsAgreementChange,
 		handleRequiredTextChange,
 		validateRequiredTextField,
 		handleSubmit,
@@ -302,8 +303,9 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 					aria-label="[필수] 아래 약관에 동의합니다."
 					aria-describedby={termsAgreementLinksId}
 					required
+					checked={isTermsAgreed}
 					disabled={isSigningUp}
-					onChange={clearSignUpError}
+					onChange={handleTermsAgreementChange}
 				/>
 				<span id={termsAgreementLinksId} className="sr-only">
 					이용약관 및 개인정보처리방침
@@ -346,7 +348,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 				>
 					취소
 				</Button>
-				<Button type="submit" size="lg" className="w-full sm:w-40" isPending={isSigningUp}>
+				<Button type="submit" size="lg" className="w-full sm:w-40" disabled={!isTermsAgreed} isPending={isSigningUp}>
 					{isSigningUp ? '시작하는 중' : '시작하기'}
 				</Button>
 			</div>

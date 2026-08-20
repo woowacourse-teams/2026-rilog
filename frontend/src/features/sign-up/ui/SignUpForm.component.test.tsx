@@ -49,6 +49,7 @@ describe('SignUpForm', () => {
 		).toHaveAccessibleDescription('이용약관 및 개인정보처리방침');
 		expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '시작하기' })).toHaveAttribute('type', 'submit');
+		expect(screen.getByRole('button', { name: '시작하기' })).toBeDisabled();
 
 		expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
 			'href',
@@ -212,12 +213,18 @@ describe('SignUpForm', () => {
 		const agreement = screen.getByRole('checkbox', {
 			name: '[필수] 아래 약관에 동의합니다.',
 		});
+		const submitButton = screen.getByRole('button', { name: '시작하기' });
 		expect(agreement).toBeRequired();
 		expect(agreement).toBeInvalid();
+		expect(submitButton).toBeDisabled();
 		await user.click(agreement);
 
 		expect(agreement).toBeChecked();
 		expect(agreement).toBeValid();
+		expect(submitButton).toBeEnabled();
+
+		await user.click(agreement);
+		expect(submitButton).toBeDisabled();
 	});
 
 	it('유효한 온보딩 정보를 제출하고 replace 옵션으로 이동한다', async () => {
