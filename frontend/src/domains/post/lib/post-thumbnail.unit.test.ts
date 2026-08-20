@@ -14,7 +14,7 @@ describe('resolvePostThumbnailUrl', () => {
 	});
 
 	it('썸네일이 없거나 잘못된 key면 공통 기본 이미지를 반환한다', () => {
-		expect(resolvePostThumbnailUrl(null)).toBe(POST_THUMBNAIL_FALLBACK_URL);
-		expect(resolvePostThumbnailUrl('null/images/post.png')).toBe(POST_THUMBNAIL_FALLBACK_URL);
+		expect(resolvePostThumbnailUrl(null)).toBe('/images/thumbnail-fallback.svg');
+		expect(resolvePostThumbnailUrl('null/images/post.png')).toBe('/images/thumbnail-fallback.svg');
 	});
 });

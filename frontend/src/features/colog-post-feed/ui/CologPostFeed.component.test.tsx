@@ -51,10 +51,12 @@ describe('CologPostFeed', () => {
 			'src',
 			expect.stringContaining(encodeURIComponent('https://images.rilog.test/post.png')),
 		);
-		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).toHaveAttribute(
-			'src',
-			expect.stringContaining(encodeURIComponent('/images/team-cover-placeholder.png')),
-		);
+		expect(
+			new URL(
+				within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' }).getAttribute('src')!,
+				'http://localhost',
+			).pathname,
+		).toBe('/images/thumbnail-fallback.svg');
 		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).not.toHaveClass(
 			'object-contain',
 			'p-5',

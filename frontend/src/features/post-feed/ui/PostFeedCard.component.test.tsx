@@ -51,15 +51,16 @@ describe('PostFeedCard', () => {
 		const thumbnail = screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' });
 		fireEvent.error(thumbnail);
 
-		expect(thumbnail.getAttribute('src')).toContain(encodeURIComponent('/images/team-cover-placeholder.png'));
+		expect(new URL(thumbnail.getAttribute('src')!, 'http://localhost').pathname).toBe('/images/thumbnail-fallback.svg');
 	});
 
 	it('썸네일 URL이 없으면 처음부터 팀 커버 기본 이미지를 표시한다', () => {
 		render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl: null }} />);
 
-		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')).toContain(
-			encodeURIComponent('/images/team-cover-placeholder.png'),
-		);
+		expect(
+			new URL(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')!, 'http://localhost')
+				.pathname,
+		).toBe('/images/thumbnail-fallback.svg');
 		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' })).not.toHaveClass(
 			'object-contain',
 			'p-10',

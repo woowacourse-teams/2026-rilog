@@ -35,11 +35,11 @@ describe('PostDetailHero', () => {
 	it('썸네일이 없거나 로드에 실패하면 피드와 동일한 기본 이미지를 표시한다', () => {
 		const { rerender } = render(<PostDetailHero title="이미지 없는 글" thumbnailUrl={null} />);
 
-		expect(getSourceImageUrl('이미지 없는 글')).toBe('/images/team-cover-placeholder.png');
+		expect(getSourceImageUrl('이미지 없는 글')).toBe('/images/thumbnail-fallback.svg');
 
 		rerender(<PostDetailHero title="실패한 이미지 글" thumbnailUrl="broken-thumbnail.png" />);
 		fireEvent.error(screen.getByRole('img', { name: '실패한 이미지 글' }));
 
-		expect(getSourceImageUrl('실패한 이미지 글')).toBe('/images/team-cover-placeholder.png');
+		expect(getSourceImageUrl('실패한 이미지 글')).toBe('/images/thumbnail-fallback.svg');
 	});
 });
