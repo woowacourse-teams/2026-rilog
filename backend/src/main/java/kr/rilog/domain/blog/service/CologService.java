@@ -14,7 +14,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -43,13 +43,8 @@ public class CologService {
 
         Blog colog = Blog.createColog(
                 owner,
-                command.name(),
                 command.slug(),
-                command.introduction(),
-                command.logoUrl(),
-                command.coverImageUrl(),
-                command.serviceUrl(),
-                command.githubUrl()
+                command.toProfile()
         );
         Blog savedColog = saveColog(colog);
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));

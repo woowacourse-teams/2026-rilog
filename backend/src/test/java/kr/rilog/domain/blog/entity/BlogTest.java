@@ -1,46 +1,34 @@
 package kr.rilog.domain.blog.entity;
 
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Profile;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BlogTest {
 
-    private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long OWNER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
 
     @Test
-    @DisplayName("사용자가 블로그 소유자이면 소유자 검증을 통과한다")
-    void validateIsOwnerPassesWhenUserIsOwner() {
+    @DisplayName("개인 블로그를 생성하면 사용자 프로필 정보와 RILOG 타입이 설정된다")
+    void createRilogCreatesPersonalBlogFromOwnerProfile() {
         // given
         User owner = createUser(OWNER_ID);
-        User user = createUser(OWNER_ID);
-        Blog blog = createRilog(owner);
 
-        // when - then
-        assertThatCode(() -> blog.validateIsOwner(user)).doesNotThrowAnyException();
-    }
+        // when
+        Blog rilog = Blog.createRilog(owner);
 
-    @Test
-    @DisplayName("사용자가 블로그 소유자가 아니면 예외가 발생한다")
-    void validateIsOwnerFailsWhenUserIsNotOwner() {
-        // given
-        Blog blog = createRilog(createUser(OWNER_ID));
-        User user = createUser(OTHER_USER_ID);
-
-        // when - then
-        assertThatThrownBy(() -> blog.validateIsOwner(user))
-                .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
+        // then
+        assertThat(rilog.getBlogType()).isEqualTo(BlogType.RILOG);
     }
 
     @Test
@@ -52,45 +40,48 @@ class BlogTest {
         // when
         Blog colog = Blog.createColog(
                 owner,
-                "리로그 팀",
-                "rilog-team",
-                "함께 쓰는 기술 블로그",
-                "https://example.com/logo.png",
-                "https://example.com/cover.png",
-                "https://rilog.example.com",
-                "https://github.com/rilog"
+                "team_rilog",
+                createCologProfile()
         );
 
         // then
-        assertThat(colog)
-                .extracting(
-                        Blog::getOwner,
-                        Blog::getName,
-                        Blog::getSlug,
-                        Blog::getIntroduction,
-                        Blog::getProfileImageUrl,
-                        Blog::getCoverImageUrl,
-                        Blog::getServiceUrl,
-                        Blog::getGithubUrl,
-                        Blog::getBlogType
-                )
-                .containsExactly(
-                        owner,
-                        "리로그 팀",
-                        "rilog-team",
-                        "함께 쓰는 기술 블로그",
-                        "https://example.com/logo.png",
-                        "https://example.com/cover.png",
-                        "https://rilog.example.com",
-                        "https://github.com/rilog",
-                        BlogType.COLOG
-                );
+        assertThat(colog.getBlogType()).isEqualTo(BlogType.COLOG);
+    }
+
+    @Test
+    @DisplayName("사용자가 블로그 소유자이면 소유자 검증을 통과한다")
+    void validateIsOwnerPassesWhenUserIsOwner() {
+        // given
+        User owner = createUser(OWNER_ID);
+        User user = createUser(OWNER_ID);
+
+        // when
+        Blog blog = createRilog(owner);
+
+        // then
+        assertThatCode(() -> blog.validateIsOwner(user)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("사용자가 블로그 소유자가 아니면 예외가 발생한다")
+    void validateIsOwnerFailsWhenUserIsNotOwner() {
+        // given
+        User owner = createUser(OWNER_ID);
+        User user = createUser(OTHER_USER_ID);
+
+        // when
+        Blog blog = createRilog(owner);
+
+        // then
+        assertThatThrownBy(() -> blog.validateIsOwner(user))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
     }
 
     private User createUser(Long id) {
         return User.builder()
                 .id(id)
-                .githubId(id)
+                .slug(Slug.from("rilog"))
                 .build();
     }
 
@@ -98,9 +89,32 @@ class BlogTest {
         return Blog.builder()
                 .id(1L)
                 .owner(owner)
-                .name("개인 블로그")
                 .slug(Slug.from("rilog"))
+                .profile(createRilogProfile())
                 .blogType(BlogType.RILOG)
                 .build();
     }
+
+    private Profile createRilogProfile() {
+        return Profile.createColog(
+                "러로",
+                "안녕하세요. 러로입니다. ",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://jinriro.example.com",
+                "https://github.com/Wlsflfh"
+        );
+    }
+
+    private Profile createCologProfile() {
+        return Profile.createColog(
+                "리로그",
+                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://rilog.example.com",
+                "https://github.com/rilog"
+        );
+    }
+
 }

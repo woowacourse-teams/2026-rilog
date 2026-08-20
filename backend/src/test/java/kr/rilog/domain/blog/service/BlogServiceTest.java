@@ -1,8 +1,8 @@
 package kr.rilog.domain.blog.service;
 
-import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
@@ -10,7 +10,7 @@ import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,12 +57,12 @@ class BlogServiceTest {
         // given
         User owner = createCompletedOwner();
         Blog colog = createDetailedColog(owner);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from("rilog-team"), BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from("team_Rilog"), BlogType.COLOG)).thenReturn(Optional.of(colog));
         when(blogMemberRepository.countActiveMembersByBlogId(COLOG_ID)).thenReturn(10L);
         when(postRepository.countPublicPublishedPostsByCologId(COLOG_ID)).thenReturn(24L);
 
         // when
-        CologPublicProfileResult result = blogService.getPublicProfile("rilog-team");
+        CologPublicProfileResult result = blogService.getPublicProfile("team_Rilog");
 
         // then
         assertThat(result)
@@ -80,10 +80,10 @@ class BlogServiceTest {
                 )
                 .containsExactly(
                         COLOG_ID,
-                        "리로그 팀",
-                        "rilog-team",
-                        "함께 쓰는 기술 블로그",
-                        "https://example.com/logo.png",
+                        "리로그",
+                        "team_rilog",
+                        "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                        "https://example.com/profile.png",
                         "https://example.com/cover.png",
                         "https://rilog.example.com",
                         "https://github.com/rilog",
@@ -123,31 +123,11 @@ class BlogServiceTest {
         verify(blogRepository).findAllActiveCologsByUserId(REQUESTER_ID);
     }
 
-    @Test
-    @DisplayName("나의 팀 목록 조회 결과에는 팀 식별자, 슬러그, 이름과 로고 URL이 순서대로 포함된다")
-    void getMyCologsPreviewReturnsCologSummariesInRepositoryOrder() {
-        // given
-        Blog firstColog = createColog(2L, "study-2", "스터디 2", "https://example.com/study-2.png");
-        Blog secondColog = createColog(1L, "study-1", "스터디 1", "https://example.com/study-1.png");
-        when(blogRepository.findAllActiveCologsByUserId(REQUESTER_ID))
-                .thenReturn(List.of(firstColog, secondColog));
-
-        // when
-        List<MyCologResponse> responses = blogService.getMyCologsPreview(REQUESTER_ID);
-
-        // then
-        assertThat(responses).containsExactly(
-                new MyCologResponse(2L, "study-2", "스터디 2", "https://example.com/study-2.png"),
-                new MyCologResponse(1L, "study-1", "스터디 1", "https://example.com/study-1.png")
-        );
-    }
-
-    private Blog createColog(Long id, String slug, String name, String logoUrl) {
+    private Blog createColog(Long id) {
         return Blog.builder()
                 .id(id)
-                .slug(Slug.from(slug))
-                .name(name)
-                .profileImageUrl(logoUrl)
+                .slug(Slug.from("team_rilog"))
+                .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
     }
@@ -156,13 +136,8 @@ class BlogServiceTest {
         return Blog.builder()
                 .id(COLOG_ID)
                 .owner(owner)
-                .name("리로그 팀")
-                .slug(Slug.from("rilog-team"))
-                .introduction("함께 쓰는 기술 블로그")
-                .profileImageUrl("https://example.com/logo.png")
-                .coverImageUrl("https://example.com/cover.png")
-                .serviceUrl("https://rilog.example.com")
-                .githubUrl("https://github.com/rilog")
+                .slug(Slug.from("team_rilog"))
+                .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
     }
@@ -173,6 +148,28 @@ class BlogServiceTest {
                 .nickname(Nickname.from("러로"))
                 .slug(Slug.from("riro"))
                 .build();
+    }
+
+    private Profile createRilogProfile() {
+        return Profile.createColog(
+                "러로",
+                "안녕하세요. 러로입니다. ",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://jinriro.example.com",
+                "https://github.com/Wlsflfh"
+        );
+    }
+
+    private Profile createCologProfile() {
+        return Profile.createColog(
+                "리로그",
+                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://rilog.example.com",
+                "https://github.com/rilog"
+        );
     }
 
 }

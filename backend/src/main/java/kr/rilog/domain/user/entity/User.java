@@ -6,7 +6,7 @@ import kr.rilog.domain.user.entity.vo.Email;
 import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.entity.BaseEntity;
-import kr.rilog.domain.blog.entity.Slug;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.AccessLevel;
 import lombok.Builder.Default;
 import lombok.Getter;
