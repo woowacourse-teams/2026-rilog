@@ -2,11 +2,18 @@
 
 import { useState } from 'react';
 
-import type { CompleteSignUp } from '../model/sign-up';
+import type { CompleteSignUp, SignUpValidationErrors } from '../model/sign-up';
 import type { ChangeEvent, SubmitEvent } from 'react';
 
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
-import { validateSignUpFields } from '../lib/validate-sign-up';
+import {
+	normalizeSignUpFields,
+	validateSignUpFields,
+	validateSignUpNickname,
+	validateSignUpSlug,
+} from '../lib/validate-sign-up';
+
+type RequiredTextField = 'nickname' | 'slug';
 
 const getFormDataText = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
 
@@ -25,6 +32,7 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 	const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 	const [description, setDescription] = useState('');
 	const [signUpState, setSignUpState] = useState<SignUpState>({ status: 'idle' });
+	const [validationErrors, setValidationErrors] = useState<SignUpValidationErrors>({});
 
 	const isSigningUp = signUpState.status === 'pending';
 
@@ -43,8 +51,18 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 	};
 
 	const handleRequiredTextChange = (event: ChangeEvent<HTMLInputElement>) => {
-		event.currentTarget.setCustomValidity('');
+		const field = event.currentTarget.name;
+		if (field === 'nickname' || field === 'slug') {
+			setValidationErrors((current) => ({ ...current, [field]: undefined }));
+		}
 		clearSignUpError();
+	};
+
+	const validateRequiredTextField = (field: RequiredTextField, value: string) => {
+		const error = field === 'nickname' ? validateSignUpNickname(value) : validateSignUpSlug(value);
+		setValidationErrors((current) => ({ ...current, [field]: error }));
+
+		return error === undefined;
 	};
 
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -55,17 +73,28 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 		}
 
 		const formData = new FormData(event.currentTarget);
-		const nickname = getFormDataText(formData.get('nickname')).trim();
-		const slug = getFormDataText(formData.get('slug')).trim();
-		const validationErrors = validateSignUpFields({ nickname, slug });
+		const { nickname, slug } = normalizeSignUpFields({
+			nickname: getFormDataText(formData.get('nickname')),
+			slug: getFormDataText(formData.get('slug')),
+		});
+		const nextValidationErrors = validateSignUpFields({ nickname, slug });
 		const nicknameInput = event.currentTarget.elements.namedItem('nickname');
 		const slugInput = event.currentTarget.elements.namedItem('slug');
 
-		if (nicknameInput instanceof HTMLInputElement) {
-			nicknameInput.setCustomValidity(validationErrors.nickname ?? '');
+		setValidationErrors(nextValidationErrors);
+
+		if (nextValidationErrors.nickname !== undefined) {
+			if (nicknameInput instanceof HTMLInputElement) {
+				nicknameInput.focus();
+			}
+			return;
 		}
-		if (slugInput instanceof HTMLInputElement) {
-			slugInput.setCustomValidity(validationErrors.slug ?? '');
+
+		if (nextValidationErrors.slug !== undefined) {
+			if (slugInput instanceof HTMLInputElement) {
+				slugInput.focus();
+			}
+			return;
 		}
 
 		if (!event.currentTarget.checkValidity()) {
@@ -99,11 +128,13 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 		profileImageFile,
 		description,
 		signUpState,
+		validationErrors,
 		isSigningUp,
 		clearSignUpError,
 		handleImageChange,
 		handleDescriptionChange,
 		handleRequiredTextChange,
+		validateRequiredTextField,
 		handleSubmit,
 	};
 }

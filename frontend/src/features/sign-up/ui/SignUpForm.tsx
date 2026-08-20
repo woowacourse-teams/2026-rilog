@@ -96,11 +96,13 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		profileImageFile,
 		description,
 		signUpState,
+		validationErrors,
 		isSigningUp,
 		clearSignUpError,
 		handleImageChange,
 		handleDescriptionChange,
 		handleRequiredTextChange,
+		validateRequiredTextField,
 		handleSubmit,
 	} = useSignUpForm({
 		completeSignUp: completeSignUp ?? handleCompleteSignUp,
@@ -131,7 +133,8 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 	const handleNicknameAvailabilityCheck = async () => {
 		const input = nicknameInputRef.current;
-		if (!input || !input.reportValidity()) {
+		if (!input || !validateRequiredTextField('nickname', input.value)) {
+			input?.focus();
 			return;
 		}
 
@@ -144,7 +147,8 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 	const handleSlugAvailabilityCheck = async () => {
 		const input = slugInputRef.current;
-		if (!input || !input.reportValidity()) {
+		if (!input || !validateRequiredTextField('slug', input.value)) {
+			input?.focus();
 			return;
 		}
 
@@ -203,8 +207,14 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 							autoComplete="nickname"
 							disabled={isSigningUp || nicknameAvailability.isPending}
 							onChange={handleNicknameChange}
-							status={nicknameAvailability.isError ? 'error' : nicknameAvailability.isSuccess ? 'success' : 'default'}
-							helperText={nicknameAvailabilityMessage}
+							status={
+								validationErrors.nickname !== undefined || nicknameAvailability.isError
+									? 'error'
+									: nicknameAvailability.isSuccess
+										? 'success'
+										: 'default'
+							}
+							helperText={validationErrors.nickname ?? nicknameAvailabilityMessage}
 						/>
 						<Button
 							variant="secondary"
@@ -242,8 +252,14 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 							required
 							disabled={isSigningUp || slugAvailability.isPending}
 							onChange={handleSlugChange}
-							status={slugAvailability.isError ? 'error' : slugAvailability.isSuccess ? 'success' : 'default'}
-							helperText={slugAvailabilityMessage}
+							status={
+								validationErrors.slug !== undefined || slugAvailability.isError
+									? 'error'
+									: slugAvailability.isSuccess
+										? 'success'
+										: 'default'
+							}
+							helperText={validationErrors.slug ?? slugAvailabilityMessage}
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
 									rilog.kr/@

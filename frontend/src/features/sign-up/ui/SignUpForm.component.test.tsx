@@ -120,6 +120,31 @@ describe('SignUpForm', () => {
 		await waitFor(() => expect(checkButton).toBeEnabled());
 	});
 
+	it('유효하지 않은 입력은 중복 확인 API를 호출하지 않고 입력 오류를 안내한다', async () => {
+		const user = userEvent.setup();
+		renderSignUpForm();
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(nickname, '  ');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+
+		expect(checkNicknameAvailability).not.toHaveBeenCalled();
+		expect(nickname).toBeInvalid();
+		expect(nickname).toHaveAccessibleDescription(/닉네임은 2~20자로 입력해 주세요\./);
+		expect(nickname).toHaveFocus();
+
+		await user.type(slug, 'ri.log');
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		expect(checkSlugAvailability).not.toHaveBeenCalled();
+		expect(slug).toBeInvalid();
+		expect(slug).toHaveAccessibleDescription(
+			/고유 아이디는 4~20자의 영문, 숫자, 하이픈\(-\), 언더스코어\(_\)만 사용할 수 있어요\./,
+		);
+		expect(slug).toHaveFocus();
+	});
+
 	it('중복된 고유 아이디 오류를 입력 상태와 메시지로 표시한다', async () => {
 		const user = userEvent.setup();
 		vi.mocked(checkSlugAvailability).mockRejectedValue({
