@@ -1,7 +1,12 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 
-import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
+import {
+	PROXY_AUTH_REQUIRED_NOTICE,
+	PROXY_NOTICE_QUERY_KEY,
+	PROXY_SESSION_COOKIE_NAME,
+	PROXY_SESSION_COOKIE_VALUE,
+} from '@/shared/api/proxy/constants';
 
 import { config, proxy } from './proxy';
 
@@ -22,12 +27,14 @@ describe('proxy', () => {
 	});
 
 	it.each(['/write', '/co-logs/create', '/@rilog/settings'])(
-		'proxy session이 없으면 %s 요청을 root로 이동시킨다',
+		'proxy session이 없으면 %s 요청을 인증 안내가 포함된 피드로 이동시킨다',
 		(pathname) => {
 			const response = proxy(createRequest(pathname));
 
 			expect(response.status).toBe(307);
-			expect(response.headers.get('location')).toBe('https://rilog.test/');
+			expect(response.headers.get('location')).toBe(
+				`https://rilog.test/feeds?${PROXY_NOTICE_QUERY_KEY}=${PROXY_AUTH_REQUIRED_NOTICE}`,
+			);
 		},
 	);
 
