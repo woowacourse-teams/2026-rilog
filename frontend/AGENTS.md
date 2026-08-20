@@ -1,6 +1,6 @@
 # Rilog 프론트엔드 작업 규칙
 
-루트 `AGENTS.md`와 `docs/harness/team-defaults.md`를 함께 따른다. 아래 규칙은 frontend 스캐폴드 이후 적용한다.
+루트 `AGENTS.md`, `docs/harness/team-defaults.md`, `docs/harness/fe-api-guide.md`를 함께 따른다. 아래 규칙은 frontend 스캐폴드 이후 적용한다.
 
 ## 기술 기준
 
@@ -13,12 +13,11 @@
 
 ## 구조
 
-- `api`: API 모듈
 - `app`: route, layout, metadata와 페이지 조립
 - `widgets`: 여러 feature/domain을 조합한 큰 UI
 - `features`: 사용자 행동과 유스케이스
 - `domains`: post, colog 같은 핵심 도메인 model/API/UI
-- `shared`: 특정 도메인에 종속되지 않는 기반
+- `shared`: 특정 도메인에 종속되지 않는 기반. `shared/api`는 HTTP 통신과 서버 상태를 백엔드 resource별로 캡슐화한다.
 - `test`: 공통 fixture, factory와 setup
 
 `app`에 비즈니스 규칙을 직접 구현하지 않는다. 두 군데에서 사용됐다는 이유만으로 `shared`로 올리지 않으며 도메인 독립성이 확인될 때 승격한다.
@@ -64,22 +63,22 @@
 - API 구현 작업을 시작할 때 먼저
   `docs/tasks/`를 검색한다. 요청 endpoint, operation ID 또는 resource 이름과 일치하는 task 문서가 있으면 해당 문서를 읽고 acceptance criteria와 scope를 따른다.
 - API task 문서가 여러 개 일치하면 가장 구체적인 문서를 우선하고, 적용한 문서 경로를 작업 계획과 완료 보고에 명시한다. 일치하는 문서가 없으면 아래 API Architecture 규칙과 기존 코드 convention을 기준으로 진행한다.
-- API 모듈은 `src/api` 아래에 둔다.
+- API 모듈은 `src/shared/api` 아래에 둔다.
 - 백엔드 endpoint의 `/v1` 다음 첫 번째 path segment를 기준으로 모듈을 그룹화한다.
-    - `/v1/blogs/...`는 `src/api/blogs`에 둔다.
-    - `/v1/feeds/...`는 `src/api/feeds`에 둔다.
+    - `/v1/blogs/...`는 `src/shared/api/blogs`에 둔다.
+    - `/v1/feeds/...`는 `src/shared/api/feeds`에 둔다.
 - API 모듈도 위의 배럴 export 금지 규칙을 따른다. `index.ts`를 만들지 않고 필요한 파일 경로에서 직접 import한다.
 - React와 TanStack Query에 의존하지 않는 raw HTTP 함수는 `api.ts`에 둔다.
     - 기존 HTTP client, base URL 처리, response wrapper, 인증과 오류 처리 방식을 재사용한다.
-- API 함수, query/mutation hook 또는 consumer가 공유하는 resource 타입은 `types.ts`에 둔다. resource를 넘는 API response wrapper 같은 공통 타입은 `src/api/shared.types.ts`에 둔다.
+- API 함수, query/mutation hook 또는 consumer가 공유하는 resource 타입은 `types.ts`에 둔다. resource를 넘는 API response wrapper 같은 공통 타입은 `src/shared/api/shared.types.ts`에 둔다.
 - query key factory는 `queries/keys.ts`에 둔다. 반환 데이터에 영향을 주는 모든 parameter를 query key에 포함한다.
-- TanStack Query resource query는 `src/api/<resource>/queries/<concern>/` 관심사별 디렉터리 안에 options, client hook, server prefetch를 함께 둔다.
+- TanStack Query resource query는 `src/shared/api/<resource>/queries/<concern>/` 관심사별 디렉터리 안에 options, client hook, server prefetch를 함께 둔다.
     - `query-options.ts`: `'use client'` 없이 query key, query function, pagination과 같은 단일 query 설정을 제공한다.
     - `use-query.ts`: `'use client'` 경계에서 위 options를 `useQuery` 또는 `useInfiniteQuery`에 전달한다.
     - `prefetch-query.ts`: `'use client'` 없이 같은 options를 `QueryClient.prefetchQuery` 또는 `prefetchInfiniteQuery`에 전달한다. QueryClient를 내부에서 생성하지 않는다.
 - query options factory는 client hook과 server prefetch가 공유하는 단일 출처다. options 파일에는 React import나 `'use client'`를 넣지 않는다.
 - `api.ts`, `use-query.ts`, `prefetch-query.ts`, `keys.ts`처럼 파일명이 짧아도 export 함수와 key factory 이름에는 resource와 concern을 포함한다. 예: `readFullFeedPosts`, `useFullFeedPostsQuery`, `prefetchFullFeedPostsQuery`, `feedsQueryKeys`.
-- query가 API DTO를 도메인 모델로 변환해야 하면 `features`의 얇은 consumer hook이 API query hook의 `select`를 주입한다. mapper와 projection은 `features`에 두되 query key, query function, pagination, prefetch의 소유권은 `src/api` query에 둔다.
+- query가 API DTO를 도메인 모델로 변환해야 하면 `features`의 얇은 consumer hook이 API query hook의 `select`를 주입한다. mapper와 projection은 `features`에 두되 query key, query function, pagination, prefetch의 소유권은 `src/shared/api` query에 둔다.
 - mutation은 관심사별 `mutations/use-<concern>-mutation.ts` 파일에 둔다. mutation options가 한 hook에서만 사용되면 해당 파일에 colocate하고, 여러 소비자나 순수 테스트에서 재사용할 때만 별도 `mutation-options.ts`로 분리한다. mutation에는 query와 같은 SSR prefetch 파일을 만들지 않는다.
 - resource 전반에 공통으로 적용되는 cache invalidate/update는 mutation hook 안에 둔다.
 - 페이지 또는 feature 전용 후속 동작은 `mutate`/`mutateAsync` 호출 시 `onSuccess` 또는
