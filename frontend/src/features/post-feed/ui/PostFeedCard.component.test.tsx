@@ -44,20 +44,20 @@ describe('PostFeedCard', () => {
 		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://images.rilog.test/profile.png');
 	});
 
-	it('썸네일을 불러오지 못하면 Rilog 기본 이미지를 표시한다', () => {
+	it('썸네일을 불러오지 못하면 팀 커버 기본 이미지를 표시한다', () => {
 		render(<PostFeedCard post={PERSONAL_POST} />);
 
 		const thumbnail = screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' });
 		fireEvent.error(thumbnail);
 
-		expect(thumbnail.getAttribute('src')).toMatch(/\/brand\/logo\.svg$/);
+		expect(thumbnail.getAttribute('src')).toContain(encodeURIComponent('/images/team-cover-placeholder.png'));
 	});
 
-	it('썸네일 URL이 없으면 처음부터 Rilog 기본 이미지를 표시한다', () => {
+	it('썸네일 URL이 없으면 처음부터 팀 커버 기본 이미지를 표시한다', () => {
 		render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl: null }} />);
 
-		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')).toMatch(
-			/\/brand\/logo\.svg$/,
+		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')).toContain(
+			encodeURIComponent('/images/team-cover-placeholder.png'),
 		);
 	});
 
@@ -76,5 +76,9 @@ describe('PostFeedCard', () => {
 		);
 
 		expect(screen.getByText('리로그 팀')).toBeInTheDocument();
+		const cologLogoUrl = screen.getByRole('img', { name: '리로그 팀' }).getAttribute('src');
+		const parsedCologLogoUrl = new URL(cologLogoUrl!, 'http://localhost');
+
+		expect(parsedCologLogoUrl.searchParams.get('url') ?? parsedCologLogoUrl.pathname).toBe('/brand/logo.svg');
 	});
 });
