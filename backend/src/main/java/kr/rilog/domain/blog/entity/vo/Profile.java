@@ -69,6 +69,26 @@ public class Profile {
         );
     }
 
+    public static Profile createColog(
+            String name,
+            String introduction,
+            String profileImageUrl,
+            String coverImageUrl,
+            String serviceUrl,
+            String githubUrl,
+            String email
+    ) {
+        return new Profile(
+                name,
+                introduction,
+                profileImageUrl,
+                coverImageUrl,
+                email,
+                serviceUrl,
+                githubUrl
+        );
+    }
+
     public static Profile createRilog(
             String name,
             String introduction,
