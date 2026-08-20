@@ -15,7 +15,7 @@ export default function Sidebar() {
 	return (
 		<aside
 			aria-label="사이드바"
-			className="group fixed inset-y-0 left-0 z-40 flex h-dvh w-17.5 flex-col border-r border-border-default bg-surface transition-[width] duration-200 ease-out focus-within:w-60 hover:w-60"
+			className="group fixed inset-y-0 left-0 z-40 flex h-dvh w-17.5 flex-col border-r border-border-default bg-surface transition-[width] duration-200 ease-out hover:w-60"
 		>
 			<SidebarHeader />
 
