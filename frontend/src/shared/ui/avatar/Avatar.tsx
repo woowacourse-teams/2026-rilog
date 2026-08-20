@@ -7,7 +7,7 @@ interface AvatarProps extends Omit<ComponentPropsWithRef<'span'>, 'children'> {
 	src?: string;
 }
 
-export default function Avatar({ className, fallback, hasBorder = false, label, src, ...avatarProps }: AvatarProps) {
+export default function Avatar({ className, fallback, hasBorder = true, label, src, ...avatarProps }: AvatarProps) {
 	return (
 		<span
 			{...avatarProps}

@@ -14,7 +14,9 @@ describe('Avatar', () => {
 	it('독립적으로 사용하면 접근 가능한 이름을 제공한다', () => {
 		render(<Avatar fallback="R" label="Rilog 프로필" />);
 
-		expect(screen.getByRole('img', { name: 'Rilog 프로필' })).toHaveTextContent('R');
+		const avatar = screen.getByRole('img', { name: 'Rilog 프로필' });
+		expect(avatar).toHaveTextContent('R');
+		expect(avatar).toHaveClass('border', 'border-border-default');
 	});
 
 	it('이미지 주소가 있으면 fallback 대신 프로필 이미지를 표시한다', () => {
