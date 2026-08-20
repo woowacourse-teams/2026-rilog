@@ -19,12 +19,19 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 	const githubUrl = profile.githubUrl?.trim() ?? '';
 	const coverImageUrl = getImageUrl(profile.coverImageUrl);
 	const hasCoverImage = coverImageUrl !== '';
+	const heroBackgroundClassName = hasCoverImage
+		? 'bg-brand-primary text-text-on-dark'
+		: 'bg-[#DBE5F5] text-text-primary';
+	const coverTextShadowClassName = hasCoverImage ? 'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]' : '';
+	const secondaryTextClassName = hasCoverImage ? 'text-navy-200' : 'text-text-secondary';
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
 	const hasServiceUrl = serviceUrl !== '';
 	const hasGitHubUrl = githubUrl !== '';
 
 	return (
-		<div className="relative flex min-h-96 flex-col items-center justify-center overflow-hidden bg-brand-primary px-5 py-12 text-center text-text-on-dark sm:min-h-112 sm:px-6 sm:py-14 md:min-h-128 md:py-16">
+		<div
+			className={`relative flex min-h-96 flex-col items-center justify-center overflow-hidden px-5 py-12 text-center sm:min-h-112 sm:px-6 sm:py-14 md:min-h-128 md:py-16 ${heroBackgroundClassName}`}
+		>
 			{hasCoverImage && <CologProfileCoverImage src={coverImageUrl} alt={`${profile.name} 커버 이미지`} />}
 			<div className="relative flex flex-col items-center">
 				<CologAvatar
@@ -35,9 +42,15 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 					className="size-32! sm:size-40! md:size-45!"
 				/>
 
-				<h1 className="mt-2.5 max-w-full text-title-2 font-semibold wrap-break-word sm:text-title-3">{profile.name}</h1>
+				<h1
+					className={`mt-2.5 max-w-full text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
+				>
+					{profile.name}
+				</h1>
 				{hasDescription || hasServiceUrl ? (
-					<p className="mt-2 max-w-sm text-label-2 text-navy-200 sm:mt-2.5 sm:max-w-lg sm:text-body-1">
+					<p
+						className={`mt-2 max-w-sm text-label-2 sm:mt-2.5 sm:max-w-lg sm:text-body-1 ${secondaryTextClassName} ${coverTextShadowClassName}`}
+					>
 						{hasDescription ? profile.description : null}
 						{hasDescription && hasServiceUrl ? <br /> : null}
 						{hasServiceUrl ? (
@@ -53,7 +66,9 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 				) : null}
 
 				{hasGitHubUrl ? (
-					<div className="mt-2 flex items-center gap-0.5 text-navy-200 sm:mt-2.5 sm:gap-1">
+					<div
+						className={`mt-2 flex items-center gap-0.5 sm:mt-2.5 sm:gap-1 ${secondaryTextClassName} ${coverTextShadowClassName}`}
+					>
 						<a
 							href={githubUrl}
 							target="_blank"

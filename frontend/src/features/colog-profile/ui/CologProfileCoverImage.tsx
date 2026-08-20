@@ -16,9 +16,14 @@ export default function CologProfileCoverImage({ src, alt }: CologProfileCoverIm
 	}
 
 	return (
-		<>
-			<Image src={src} alt={alt} fill priority sizes="100vw" className="object-cover" onError={() => setHasFailed(true)} />
-			<div className="absolute inset-0 bg-brand-primary/70" aria-hidden="true" />
-		</>
+		<Image
+			src={src}
+			alt={alt}
+			fill
+			priority
+			sizes="100vw"
+			className="object-cover"
+			onError={() => setHasFailed(true)}
+		/>
 	);
 }

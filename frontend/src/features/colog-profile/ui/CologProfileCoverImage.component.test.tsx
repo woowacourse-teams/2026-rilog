@@ -5,7 +5,11 @@ import CologProfileCoverImage from './CologProfileCoverImage';
 
 describe('CologProfileCoverImage', () => {
 	it('이미지를 불러오지 못하면 렌더링을 중단해 hero 기본 배경을 드러낸다', () => {
-		render(<CologProfileCoverImage src="https://images.rilog.test/cover.png" alt="리로그 커버 이미지" />);
+		const { container } = render(
+			<CologProfileCoverImage src="https://images.rilog.test/cover.png" alt="리로그 커버 이미지" />,
+		);
+
+		expect(container.querySelector('[aria-hidden="true"]')).not.toBeInTheDocument();
 
 		fireEvent.error(screen.getByRole('img', { name: '리로그 커버 이미지' }));
 
