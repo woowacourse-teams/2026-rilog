@@ -1,6 +1,5 @@
-package kr.rilog.global.vo;
+package kr.rilog.domain.blog.entity.vo;
 
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.exception.UserErrorInformation;
 import kr.rilog.domain.user.exception.UserException;
 import org.assertj.core.api.Assertions;
