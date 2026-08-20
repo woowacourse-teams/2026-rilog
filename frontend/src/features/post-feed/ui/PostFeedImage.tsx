@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { getImageUrl } from '@/shared/utils/get-image-url';
+
 interface PostFeedImageProps {
 	src: string | null;
 	alt: string;
@@ -30,7 +32,7 @@ export default function PostFeedImage({
 
 	return (
 		<Image
-			src={imageUrl}
+			src={getImageUrl(imageUrl)}
 			alt={alt}
 			width={width}
 			height={height}
