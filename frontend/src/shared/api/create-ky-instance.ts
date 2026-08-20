@@ -67,6 +67,7 @@ export const createKyInstance = ({
 	return ky.create({
 		...options,
 		retry: ensureRefreshRetry(retry),
+		credentials: 'include',
 		hooks: {
 			...hooks,
 			beforeError: [
