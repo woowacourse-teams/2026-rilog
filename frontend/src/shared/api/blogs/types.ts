@@ -1,6 +1,30 @@
+import type { Block } from '@blocknote/core';
+
 export interface BlogDetailRequest {
 	slug: string;
 	postId: number;
+}
+
+export type PostPublishCategory = 'TECH' | 'DAILY';
+export type PostVisibility = 'PUBLIC' | 'PRIVATE';
+
+export interface PostPublishRequest {
+	title: string;
+	content: Block[];
+	category: PostPublishCategory;
+	visibility: PostVisibility;
+	thumbnailImageUrl: string | null;
+	profileImageUrl: string | null;
+}
+
+export interface PostPublishResponse {
+	postId: number;
+	slug: string;
+}
+
+export interface PublishPostRequest {
+	slug: string;
+	request: PostPublishRequest;
 }
 
 export interface AuthorResponse {
