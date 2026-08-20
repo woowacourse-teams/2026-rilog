@@ -16,7 +16,7 @@ interface AccessFeedbackProps {
 const ACCESS_FEEDBACK_CONTENT = {
 	'auth-required': {
 		title: '로그인이 필요한 페이지입니다.',
-		description: '로그인 후 다시 이용해 주세요.',
+		description: '홈으로 이동합니다. 로그인 후 이용해 주세요.',
 	},
 	forbidden: {
 		title: '접근 권한이 없는 페이지입니다.',
