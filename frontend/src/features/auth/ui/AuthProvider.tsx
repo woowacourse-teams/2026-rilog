@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect, useState } from 'react';
 
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { clearProxySession, registerProxySession } from '@/shared/api/proxy/api';
 
 import { AUTH_CONTEXT } from '../model/auth-context';
 
@@ -16,15 +17,22 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
 	useEffect(() => {
 		let isActive = true;
-		const unsubscribeLogin = tokenManager.subscribeLogin(() => {
-			if (isActive) {
-				setIsAuthenticated(true);
+		const unsubscribeLogin = tokenManager.subscribeLogin(async () => {
+			try {
+				await registerProxySession();
+			} finally {
+				if (isActive) {
+					setIsAuthenticated(true);
+				}
 			}
 		});
-		const unsubscribeLogout = tokenManager.subscribeLogout(() => {
+
+		const unsubscribeLogout = tokenManager.subscribeLogout(async () => {
 			if (isActive) {
 				setIsAuthenticated(false);
 			}
+
+			await clearProxySession();
 		});
 
 		const initializeAuth = async () => {
