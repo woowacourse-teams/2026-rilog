@@ -5,14 +5,14 @@ on:
   workflow_dispatch:
   # production 브랜치에 코드가 병합(Push)될 때 배포 실행
   push:
-    branches: [ "production" ]
+    branches: [ "develop" ]
     paths:
       - "frontend/**"
       - ".github/workflows/rilog-fe-dev.yml"
   
   # PR 생성/업데이트 시에는 빌드(build) Job까지만 실행하여 사전 검증
   pull_request:
-    branches: [ "production" ]
+    branches: [ "develop" ]
     paths:
       - "frontend/**"
       - ".github/workflows/rilog-fe-dev.yml"
@@ -84,8 +84,7 @@ jobs:
     name: Deploy Rilog FE Dev
     runs-on: [ self-hosted, frontend ] # frontend 라벨로 분기
     needs: build
-    # 테스트를 위해 임시로 PR(pull_request) 업데이트 시에도 배포되도록 허용
-    if: github.event_name == 'push'
+    #    if: github.event_name == 'push'
 
     steps:
       - name: Download Build Artifacts
