@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import static kr.rilog.support.BlogFixture.*;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITATION_PERMISSION_INVALID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -101,7 +101,7 @@ class BlogMemberTest {
         // when & then
         assertThatThrownBy(() -> owner.validateCanInvite(BlogPermission.OWNER))
                 .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_MEMBER_PERMISSION_INVALID.getMessage());
+                .hasMessage(BLOG_MEMBER_INVITATION_PERMISSION_INVALID.getMessage());
     }
 
     private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {
