@@ -15,7 +15,9 @@ vi.mock('next/navigation', () => ({
 
 function renderHeader(isAuthenticated = false) {
 	return render(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+		<AUTH_CONTEXT.Provider
+			value={{ isAuthenticated, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
+		>
 			<LoginModalProvider>
 				<MobileHeader />
 			</LoginModalProvider>

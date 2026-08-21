@@ -1,11 +1,25 @@
 import { expect, test } from '@playwright/test';
 
+import { mockCologSettingsAccess } from './fixtures/colog-settings-access';
+
 test.describe('팀 프로필 설정', () => {
+	test.beforeEach(async ({ page }) => {
+		await mockCologSettingsAccess(page);
+	});
+
 	test('설정 탭 query가 없으면 프로필 탭으로 이동한다', async ({ page }) => {
 		await page.goto('/@rilog/settings');
 
 		await expect(page).toHaveURL('/@rilog/settings?tab=profile');
 		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
+	});
+
+	test('OWNER가 코로그 홈의 설정 버튼으로 기본 설정 탭에 이동한다', async ({ page }) => {
+		await page.goto('/@rilog-e2e');
+
+		await page.getByRole('button', { name: '리로그 E2E 코로그 설정으로 이동' }).click();
+
+		await expect(page).toHaveURL('/@rilog-e2e/settings?tab=profile');
 	});
 
 	test('잘못된 설정 탭 query는 프로필 탭으로 이동한다', async ({ page }) => {
@@ -30,6 +44,7 @@ test.describe('팀 프로필 설정', () => {
 		const nameInput = page.getByRole('textbox', { name: '팀 이름' });
 		await nameInput.fill('새 리로그');
 		await page.getByRole('button', { name: '변경사항 저장' }).click();
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
 		await page.getByRole('tab', { name: '멤버 관리' }).click();
 		await page.getByRole('tab', { name: '프로필' }).click();
 
@@ -58,5 +73,23 @@ test.describe('팀 프로필 설정', () => {
 		await page.goto('/@rilog/settings?tab=members');
 
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	});
+
+	test('MEMBER가 설정 URL에 직접 접근하면 코로그 홈으로 이동한다', async ({ page }) => {
+		await mockCologSettingsAccess(page, 'MEMBER');
+
+		await page.goto('/@rilog/settings?tab=profile');
+
+		await expect(page).toHaveURL('/@rilog');
+		await expect(page.getByRole('tab', { name: '프로필' })).not.toBeAttached();
+	});
+
+	test('코로그에 속하지 않은 사용자가 설정 URL에 직접 접근하면 코로그 홈으로 이동한다', async ({ page }) => {
+		await mockCologSettingsAccess(page, null);
+
+		await page.goto('/@rilog/settings?tab=profile');
+
+		await expect(page).toHaveURL('/@rilog');
+		await expect(page.getByRole('tab', { name: '프로필' })).not.toBeAttached();
 	});
 });

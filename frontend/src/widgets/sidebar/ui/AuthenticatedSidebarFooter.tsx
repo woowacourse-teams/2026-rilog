@@ -47,11 +47,11 @@ export default function AuthenticatedSidebarFooter() {
 			</div>
 
 			<footer className="w-full shrink-0 border-t border-border-default p-3">
-				<div className="flex w-full items-center gap-1 rounded-xl bg-transparent p-1.5 transition-colors group-focus-within:bg-surface-hover group-hover:bg-surface-hover">
+				<div className="flex w-full items-center gap-1 rounded-xl bg-transparent p-1.5 transition-colors group-hover:bg-surface-hover">
 					<CustomLink
 						href={slug ? buildCologHomePath(slug) : '#'}
 						aria-label={`${nickname} @${slug}`}
-						className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg group-focus-within:justify-start group-hover:justify-start ${FOCUS_CLASS_NAME}`}
+						className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg group-hover:justify-start ${FOCUS_CLASS_NAME}`}
 					>
 						<UserAvatar src={profileImageUrl} fallback={fallback} size="lg" />
 						<span className={`min-w-0 ${EXPANDED_TEXT_CLASS_NAME}`}>
@@ -64,7 +64,7 @@ export default function AuthenticatedSidebarFooter() {
 						onClick={handleLogout}
 						size="icon"
 						variant="ghost"
-						className={`hidden! shrink-0 items-center justify-center group-focus-within:flex! group-hover:flex! ${FOCUS_CLASS_NAME}`}
+						className={`hidden! shrink-0 items-center justify-center group-hover:flex! ${FOCUS_CLASS_NAME}`}
 					>
 						<LogOutIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					</Button>

@@ -14,9 +14,11 @@ vi.mock('next/navigation', () => ({
 describe('SignUpForm', () => {
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
 		return render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
+			>
 				<SignUpForm {...props} />
-			</AUTH_CONTEXT.Provider>
+			</AUTH_CONTEXT.Provider>,
 		);
 	};
 

@@ -71,7 +71,8 @@ public class BlogFixture {
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
                 "https://rilog.example.com",
-                "https://github.com/2026-rilog"
+                "https://github.com/2026-rilog",
+                "test@test.com"
         );
     }
 

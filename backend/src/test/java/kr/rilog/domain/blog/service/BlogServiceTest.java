@@ -123,15 +123,6 @@ class BlogServiceTest {
         verify(blogRepository).findAllActiveCologsByUserId(REQUESTER_ID);
     }
 
-    private Blog createColog(Long id) {
-        return Blog.builder()
-                .id(id)
-                .slug(Slug.from("team_rilog"))
-                .profile(createCologProfile())
-                .blogType(BlogType.COLOG)
-                .build();
-    }
-
     private Blog createDetailedColog(User owner) {
         return Blog.builder()
                 .id(COLOG_ID)
@@ -150,17 +141,6 @@ class BlogServiceTest {
                 .build();
     }
 
-    private Profile createRilogProfile() {
-        return Profile.createColog(
-                "러로",
-                "안녕하세요. 러로입니다. ",
-                "https://example.com/profile.png",
-                "https://example.com/cover.png",
-                "https://jinriro.example.com",
-                "https://github.com/Wlsflfh"
-        );
-    }
-
     private Profile createCologProfile() {
         return Profile.createColog(
                 "리로그",
@@ -168,7 +148,8 @@ class BlogServiceTest {
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
                 "https://rilog.example.com",
-                "https://github.com/rilog"
+                "https://github.com/rilog",
+                "test@test.com"
         );
     }
 

@@ -42,7 +42,7 @@ class UserTest {
     }
 
     private User createOnboardingCompletedUser() {
-        User user = createUser(OWNER_ID);
+        User user = User.createPendingGithubUser(0L, "https://github.com/~", "https://dummy-images");
 
         user.completeOnboarding(
                 "러로",

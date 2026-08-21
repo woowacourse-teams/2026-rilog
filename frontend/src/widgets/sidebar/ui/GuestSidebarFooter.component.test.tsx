@@ -11,7 +11,9 @@ describe('GuestSidebarFooter', () => {
 	it('로그인 버튼을 누르면 로그인 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, setIsAuthenticated: vi.fn(), logout: vi.fn() }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
+			>
 				<LoginModalProvider>
 					<GuestSidebarFooter />
 				</LoginModalProvider>
