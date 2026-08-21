@@ -87,7 +87,7 @@ public class BlogMember extends BaseEntity {
     }
 
     public void validateHasAdminPermission() {
-        if (status != ACTIVE || permission != ADMIN) {
+        if (status != ACTIVE || permission != OWNER && permission != ADMIN) {
             throw new BlogException(ADMIN_PERMISSION_INVALID);
         }
     }
