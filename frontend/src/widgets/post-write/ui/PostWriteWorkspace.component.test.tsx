@@ -7,13 +7,18 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
+import type { PostPublishResponse, PublishPostRequest } from '@/shared/api/blogs/types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
+type UploadImage = (request: { file: File; type: 'IMAGE' }) => Promise<{ objectKey: string }>;
+type RequestPostPublication = (request: PublishPostRequest) => Promise<ApiResponse<PostPublishResponse>>;
+
 const { replaceMock, uploadRepresentativeImageMock, requestPostPublicationMock } = vi.hoisted(() => ({
 	replaceMock: vi.fn(),
-	uploadRepresentativeImageMock: vi.fn(),
-	requestPostPublicationMock: vi.fn(),
+	uploadRepresentativeImageMock: vi.fn<UploadImage>(),
+	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -72,6 +77,15 @@ const createParagraph = (text = ''): Block => ({
 	children: [],
 });
 
+const createImage = (url: string): Block =>
+	({
+		id: 'image',
+		type: 'image',
+		props: { url },
+		content: undefined,
+		children: [],
+	}) as unknown as Block;
+
 function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
 	// BlockNote를 로드하지 않고도 부모와 주고받는 최신 본문 계약을 재현
 	const blocksRef = useRef<Block[]>([createParagraph()]);
@@ -119,6 +133,17 @@ function BodyImageUploadEditor({ onReady, uploadFile }: PostEditorProps) {
 			<output>{uploadedImageUrl}</output>
 		</>
 	);
+}
+
+function FirstBodyImageEditor({ onReady }: PostEditorProps) {
+	useEffect(() => {
+		onReady([
+			createParagraph('이미지가 있는 본문'),
+			createImage('https://images.rilog.test/posts/first-body-image.png'),
+		]);
+	}, [onReady]);
+
+	return null;
 }
 
 const fillValidPost = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -182,10 +207,10 @@ describe('PostWriteWorkspace', () => {
 		await user.click(screen.getByRole('button', { name: '본문 이미지 업로드' }));
 
 		expect(await screen.findByText('https://images.rilog.test/posts/body-image.png')).toBeInTheDocument();
-		expect(uploadRepresentativeImageMock).toHaveBeenCalledWith({
-			file: expect.objectContaining({ name: 'body.png', type: 'image/png' }),
-			type: 'IMAGE',
-		});
+		const uploadedBodyImage = uploadRepresentativeImageMock.mock.calls[0]?.[0];
+		expect(uploadedBodyImage?.file.name).toBe('body.png');
+		expect(uploadedBodyImage?.file.type).toBe('image/png');
+		expect(uploadedBodyImage?.type).toBe('IMAGE');
 	});
 
 	it('모달을 닫았다 열어도 게시 설정을 유지하고 backdrop으로 닫히지 않는다', async () => {
@@ -368,7 +393,24 @@ describe('PostWriteWorkspace', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('대표 이미지가 없으면 본문 이미지를 쓰지 않고 공통 기본 썸네일을 API에 전송한다', async () => {
+	it('대표 이미지를 선택하지 않으면 본문의 첫 이미지 URL을 API에 전송한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(<PostWriteWorkspace editorComponent={FirstBodyImageEditor} navigate={navigate} />);
+
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), 'BlockNote 도입기');
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
+		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
+		expect(requestPostPublicationMock.mock.calls[0]?.[0].request.thumbnailImageUrl).toBe(
+			'https://images.rilog.test/posts/first-body-image.png',
+		);
+	});
+
+	it('선택 이미지와 본문 이미지가 모두 없으면 공통 기본 썸네일을 API에 전송한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} navigate={navigate} />);
@@ -380,10 +422,8 @@ describe('PostWriteWorkspace', () => {
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
-		expect(requestPostPublicationMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				request: expect.objectContaining({ thumbnailImageUrl: '/images/thumbnail-fallback.svg' }),
-			}),
+		expect(requestPostPublicationMock.mock.calls[0]?.[0].request.thumbnailImageUrl).toBe(
+			'/images/thumbnail-fallback.svg',
 		);
 	});
 
