@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum BlogErrorInformation implements ErrorInformation {
 
     BLOG_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 블로그를 찾을 수 없습니다."),
-    BLOG_SLUG_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 팀 slug입니다."),
+    BLOG_SLUG_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 slug입니다."),
     BLOG_MEMBER_INVITE_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 멤버 초대 권한이 없습니다."),
     BLOG_MEMBER_INVITATION_PERMISSION_INVALID(HttpStatus.BAD_REQUEST, "초대할 수 없는 팀 권한입니다."),
     ADMIN_PERMISSION_INVALID(HttpStatus.BAD_REQUEST, "ADMIN 권한이 아닙니다."),

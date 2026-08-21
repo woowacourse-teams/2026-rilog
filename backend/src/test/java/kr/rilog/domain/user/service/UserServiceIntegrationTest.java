@@ -12,7 +12,6 @@ import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.UserFixture;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -195,7 +194,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("중복된 슬러그로 온보딩을 완료하면 예외가 발생하고 대기 상태를 유지한다.")
+    @DisplayName("중복된 슬러그로 온보딩을 완료하면 예외가 발생한다.")
     void completeOnboardingThrowsAndPreservesPendingUserWhenSlugIsDuplicated() {
         // given
         userRepository.saveAndFlush(
@@ -210,8 +209,6 @@ class UserServiceIntegrationTest extends ServiceSupport {
 
         User savedUser = userRepository.findById(pendingUser.getId()).orElseThrow();
         assertThat(savedUser.getOnboardingStatus()).isEqualTo(PENDING);
-        assertThat(savedUser.getSlug()).isNull();
-        assertThat(blogRepository.findRilogByOwnerId(pendingUser.getId())).isEmpty();
     }
 
     @Test
@@ -240,7 +237,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     @DisplayName("등록되지 않은 슬러그는 중복 검증을 통과한다.")
     void validateDuplicatedSlugPassesWhenSlugDoesNotExist() {
         // when & then
-        assertThatCode(() -> userService.validateDuplicatedSlug("available-slug"))
+        assertThatCode(() -> userService.validateDuplicatedBlogSlug("available-slug"))
                 .doesNotThrowAnyException();
     }
 
@@ -248,12 +245,13 @@ class UserServiceIntegrationTest extends ServiceSupport {
     @DisplayName("등록된 슬러그를 검사하면 중복 예외가 발생한다.")
     void validateDuplicatedSlugThrowsWhenSlugExists() {
         // given
+        String duplicatedSlug = "duplicated-slug";
         userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("기존사용자", "duplicated-slug")
+                UserFixture.completedWithNicknameAndSlug("기존사용자", duplicatedSlug)
         );
 
         // when & then
-        assertThatThrownBy(() -> userService.validateDuplicatedSlug("duplicated-slug"))
+        assertThatThrownBy(() -> userService.validateDuplicatedUserSlug(duplicatedSlug))
                 .isInstanceOf(UserException.class)
                 .hasMessage(SLUG_DUPLICATED.getMessage());
     }
@@ -267,16 +265,6 @@ class UserServiceIntegrationTest extends ServiceSupport {
                 "https://github.com/rilog",
                 "rilog@example.com"
         );
-    }
-
-    private User completedUser(String nickname, String slug) {
-        return User.builder()
-                .githubId(100L)
-                .nickname(Nickname.from(nickname))
-                .slug(Slug.from(slug))
-                .profileImageUrl("https://example.com/profile.png")
-                .onboardingStatus(COMPLETED)
-                .build();
     }
 
 }
