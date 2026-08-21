@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
@@ -48,6 +48,8 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
 	const nicknameInputRef = useRef<HTMLInputElement>(null);
 	const slugInputRef = useRef<HTMLInputElement>(null);
+	const [isNicknameAvailabilityRequired, setIsNicknameAvailabilityRequired] = useState(false);
+	const [isSlugAvailabilityRequired, setIsSlugAvailabilityRequired] = useState(false);
 
 	const { mutateAsync: onboard } = useOnboardingMutation();
 	const { mutateAsync: uploadFile } = useUploadFileMutation();
@@ -114,15 +116,18 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 	const handleNicknameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		nicknameAvailability.reset();
+		setIsNicknameAvailabilityRequired(false);
 		handleRequiredTextChange(event);
 	};
 
 	const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		slugAvailability.reset();
+		setIsSlugAvailabilityRequired(false);
 		handleRequiredTextChange(event);
 	};
 
 	const handleNicknameAvailabilityCheck = async () => {
+		setIsNicknameAvailabilityRequired(false);
 		const input = nicknameInputRef.current;
 		if (!input || !validateRequiredTextField('nickname', input.value)) {
 			input?.focus();
@@ -137,6 +142,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	};
 
 	const handleSlugAvailabilityCheck = async () => {
+		setIsSlugAvailabilityRequired(false);
 		const input = slugInputRef.current;
 		if (!input || !validateRequiredTextField('slug', input.value)) {
 			input?.focus();
@@ -150,8 +156,29 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		}
 	};
 
+	const handleSignUpSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
+		if (nicknameAvailability.isSuccess && slugAvailability.isSuccess) {
+			void handleSubmit(event);
+			return;
+		}
+
+		event.preventDefault();
+		const isNicknameValid = validateRequiredTextField('nickname', nicknameInputRef.current?.value ?? '');
+		const isSlugValid = validateRequiredTextField('slug', slugInputRef.current?.value ?? '');
+
+		setIsNicknameAvailabilityRequired(!nicknameAvailability.isSuccess && isNicknameValid);
+		setIsSlugAvailabilityRequired(!slugAvailability.isSuccess && isSlugValid);
+
+		if (!nicknameAvailability.isSuccess) {
+			nicknameInputRef.current?.focus();
+			return;
+		}
+
+		slugInputRef.current?.focus();
+	};
+
 	return (
-		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
+		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={handleSignUpSubmit}>
 			<div role="group" aria-labelledby={profileImageLabelId} className="flex flex-col gap-3">
 				<p id={profileImageLabelId} className="text-body-2 font-semibold text-text-primary">
 					프로필 이미지 (선택)
@@ -192,13 +219,18 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 							disabled={isSigningUp || nicknameAvailability.isPending}
 							onChange={handleNicknameChange}
 							status={
-								validationErrors.nickname !== undefined || nicknameAvailability.isError
+								validationErrors.nickname !== undefined ||
+								nicknameAvailability.isError ||
+								isNicknameAvailabilityRequired
 									? 'error'
 									: nicknameAvailability.isSuccess
 										? 'success'
 										: 'default'
 							}
-							helperText={validationErrors.nickname ?? nicknameAvailabilityMessage}
+							helperText={
+								validationErrors.nickname ??
+								(isNicknameAvailabilityRequired ? '닉네임 중복 확인이 필요합니다.' : nicknameAvailabilityMessage)
+							}
 						/>
 						<Button
 							variant="secondary"
@@ -237,13 +269,16 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 							disabled={isSigningUp || slugAvailability.isPending}
 							onChange={handleSlugChange}
 							status={
-								validationErrors.slug !== undefined || slugAvailability.isError
+								validationErrors.slug !== undefined || slugAvailability.isError || isSlugAvailabilityRequired
 									? 'error'
 									: slugAvailability.isSuccess
 										? 'success'
 										: 'default'
 							}
-							helperText={validationErrors.slug ?? slugAvailabilityMessage}
+							helperText={
+								validationErrors.slug ??
+								(isSlugAvailabilityRequired ? '고유 아이디 중복 확인이 필요합니다.' : slugAvailabilityMessage)
+							}
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
 									rilog.kr/@

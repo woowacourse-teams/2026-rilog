@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import type { SubmitEvent } from 'react';
 
@@ -22,11 +23,13 @@ interface CologCreateFormProps {
 export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	const router = useRouter();
 	const form = useCologCreateForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
+	const [isSlugAvailabilityRequired, setIsSlugAvailabilityRequired] = useState(false);
 
 	const { mutateAsync: createColog, isPending: isCreating, error, reset: clearCreateError } = useCreateCologMutation();
 	const slugAvailability = useCheckSlugAvailabilityMutation();
 
 	const handleSlugAvailabilityCheck = async () => {
+		setIsSlugAvailabilityRequired(false);
 		const normalizedSlug = form.validateSlug();
 		if (normalizedSlug === null) {
 			return;
@@ -51,6 +54,12 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		const normalizedValue = form.validate();
 
 		if (normalizedValue === null) {
+			return;
+		}
+
+		if (!slugAvailability.isSuccess) {
+			setIsSlugAvailabilityRequired(true);
+			form.refs.slug.current?.focus();
 			return;
 		}
 
@@ -83,6 +92,10 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		: slugAvailability.isError
 			? getApiErrorMessage(slugAvailability.error, '고유 아이디 중복 확인에 실패했습니다.')
 			: undefined;
+	const displayedSlugAvailabilityStatus = isSlugAvailabilityRequired ? 'error' : slugAvailability.status;
+	const displayedSlugAvailabilityMessage = isSlugAvailabilityRequired
+		? '팀 고유 아이디 중복 확인이 필요합니다.'
+		: slugAvailabilityMessage;
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={(event) => void handleSubmit(event)}>
@@ -91,12 +104,13 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 				errors={form.errors}
 				refs={form.refs}
 				disabled={isCreating}
-				slugAvailabilityStatus={slugAvailability.status}
-				slugAvailabilityMessage={slugAvailabilityMessage}
+				slugAvailabilityStatus={displayedSlugAvailabilityStatus}
+				slugAvailabilityMessage={displayedSlugAvailabilityMessage}
 				onTextFieldChange={(field, value) => {
 					form.updateTextField(field, value);
 					if (field === 'slug') {
 						slugAvailability.reset();
+						setIsSlugAvailabilityRequired(false);
 					}
 					clearCreateError();
 				}}

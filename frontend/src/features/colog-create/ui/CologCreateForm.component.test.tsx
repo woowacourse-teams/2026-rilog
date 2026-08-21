@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -30,13 +30,22 @@ const renderWithClient = (ui: React.ReactElement) => {
 	return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 };
 
-const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
+const fillRequiredFields = async (
+	user: ReturnType<typeof userEvent.setup>,
+	{ shouldCheckAvailability = true }: { shouldCheckAvailability?: boolean } = {},
+) => {
 	const logoFile = new File(['logo'], 'logo.png', { type: 'image/png' });
 
 	await user.upload(screen.getByLabelText('팀 로고 변경'), logoFile);
 	await user.type(screen.getByRole('textbox', { name: '팀 이름' }), '  리로그  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 소개' }), '함께 성장하는 개발 팀입니다');
+	if (shouldCheckAvailability) {
+		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
+		await waitFor(() =>
+			expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveAccessibleDescription(/사용가능/),
+		);
+	}
 
 	return logoFile;
 };
@@ -46,6 +55,11 @@ describe('CologCreateForm', () => {
 		backMock.mockClear();
 		replaceMock.mockClear();
 		vi.clearAllMocks();
+		vi.mocked(checkSlugAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 슬러그입니다.',
+			data: null,
+		});
 	});
 
 	it('팀 생성에 필요한 입력과 action을 제공한다', () => {
@@ -99,6 +113,32 @@ describe('CologCreateForm', () => {
 
 		await user.type(slug, '2');
 		expect(slug).not.toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
+	});
+
+	it('중복 확인 전 제출하면 안내하고 확인 후 아이디가 바뀌면 다시 안내한다', async () => {
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
+		const user = userEvent.setup();
+		const { unmount } = renderWithClient(<CologCreateForm />);
+
+		const submitButton = screen.getByRole('button', { name: '팀 만들기' });
+		const slug = screen.getByRole('textbox', { name: '팀 고유 아이디' });
+
+		await fillRequiredFields(user, { shouldCheckAvailability: false });
+		expect(submitButton).toBeEnabled();
+		fireEvent.submit(submitButton.closest('form')!);
+		expect(createColog).not.toHaveBeenCalled();
+		expect(slug).toHaveAccessibleDescription(/팀 고유 아이디 중복 확인이 필요합니다\./);
+		expect(slug).toHaveFocus();
+
+		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
+		await waitFor(() => expect(slug).toHaveAccessibleDescription(/사용가능한 슬러그입니다\./));
+
+		await user.type(slug, '2');
+		await user.click(submitButton);
+		expect(slug).toHaveAccessibleDescription(/팀 고유 아이디 중복 확인이 필요합니다\./);
+
+		unmount();
+		vi.unstubAllGlobals();
 	});
 
 	it('유효하지 않은 팀 고유 아이디는 중복 확인 API를 호출하지 않고 오류를 안내한다', async () => {
@@ -195,7 +235,6 @@ describe('CologCreateForm', () => {
 		const user = userEvent.setup();
 
 		renderWithClient(<CologCreateForm />);
-
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
 		expect(screen.getByText('팀 로고를 등록해 주세요.')).toBeInTheDocument();
