@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
+import type { SettingsTab } from '../lib/get-next-tab';
 import type { FormEvent } from 'react';
 
 import type { CologMember } from '@/domains/blog/model/colog';
@@ -22,7 +23,6 @@ import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
-import type { SettingsTab } from '../lib/get-next-tab';
 
 import CologSettingsHeader from './CologSettingsHeader';
 

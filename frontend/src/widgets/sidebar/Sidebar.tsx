@@ -13,23 +13,26 @@ export default function Sidebar() {
 	const { isAuthenticated } = useAuth();
 
 	return (
-		<aside
-			aria-label="사이드바"
-			className="group fixed inset-y-0 left-0 z-40 flex h-dvh w-17.5 flex-col border-r border-border-default bg-surface transition-[width] duration-200 ease-out hover:w-60"
-		>
-			<SidebarHeader />
+		<>
+			<aside
+				aria-label="사이드바"
+				className="group fixed inset-y-0 left-0 z-40 flex h-dvh w-17.5 flex-col border-r border-border-default bg-surface transition-[width] duration-200 ease-out hover:w-60"
+			>
+				<div className="fixed top-0 left-0 -z-100 h-dvh w-25" />
+				<SidebarHeader />
 
-			<div className="min-h-0 w-full flex-1 overflow-y-auto px-3 pb-4">
-				<PageNavigation />
-				{isAuthenticated && (
-					<>
-						<Divider className="my-4" />
-						<CologNavigation />
-					</>
-				)}
-			</div>
+				<div className="min-h-0 w-full flex-1 overflow-y-auto px-3 pb-4">
+					<PageNavigation />
+					{isAuthenticated && (
+						<>
+							<Divider className="my-4" />
+							<CologNavigation />
+						</>
+					)}
+				</div>
 
-			{isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />}
-		</aside>
+				{isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />}
+			</aside>
+		</>
 	);
 }

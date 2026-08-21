@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 
 import type { PublicBlogFeedPostResponse } from '../../types';
+
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 import { readPublicBlogPosts } from '../../api';

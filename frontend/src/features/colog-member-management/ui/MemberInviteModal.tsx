@@ -6,12 +6,12 @@ import { useId, useRef, useState } from 'react';
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 import type { FormEvent, KeyboardEvent } from 'react';
 
+import { useReadUserBySlugMutation } from '@/shared/api/users/mutations/use-read-user-by-slug-mutation';
 import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
 
-import { useReadUserBySlugMutation } from '@/shared/api/users/mutations/use-read-user-by-slug-mutation';
 
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 

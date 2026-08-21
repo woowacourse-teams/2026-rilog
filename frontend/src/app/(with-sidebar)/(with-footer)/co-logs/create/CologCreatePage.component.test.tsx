@@ -1,7 +1,7 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CologCreatePage from './page';
 
 vi.mock('next/navigation', () => ({

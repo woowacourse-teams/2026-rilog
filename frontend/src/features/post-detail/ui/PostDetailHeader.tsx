@@ -1,9 +1,8 @@
-import CustomLink from '@/shared/ui/link/CustomLink';
-
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface PostDetailHeaderProps {
 	title: string;

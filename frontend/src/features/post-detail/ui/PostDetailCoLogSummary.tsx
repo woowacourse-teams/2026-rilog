@@ -1,8 +1,7 @@
-import CustomLink from '@/shared/ui/link/CustomLink';
-
 import type { CologSummary } from '@/domains/blog/model/colog';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface PostDetailCoLogSummaryProps {
 	colog: CologSummary;
