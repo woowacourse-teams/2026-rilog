@@ -29,13 +29,13 @@ test.describe('팀 프로필 설정', () => {
 		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 	});
 
-	test('프로필 탭과 저장된 mock 프로필을 기본으로 제공한다', async ({ page }) => {
+	test('프로필 탭과 조회한 팀 프로필을 기본으로 제공한다', async ({ page }) => {
 		await page.goto('/@rilog/settings?tab=profile');
 
 		await expect(page.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
 		await expect(page.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveValue('rilog');
-		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toHaveCount(0);
 	});
 
 	test('프로필을 저장하면 탭을 왕복해도 저장값을 유지한다', async ({ page }) => {
@@ -43,13 +43,23 @@ test.describe('팀 프로필 설정', () => {
 
 		const nameInput = page.getByRole('textbox', { name: '팀 이름' });
 		await nameInput.fill('새 리로그');
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeEnabled();
+		const saveRequest = page.waitForRequest('**/v1/cologs/rilog/profiles');
 		await page.getByRole('button', { name: '변경사항 저장' }).click();
-		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
+		const request = await saveRequest;
+		expect(request.method()).toBe('PATCH');
+		expect(request.postDataJSON()).toMatchObject({
+			name: '새 리로그',
+			profileImageUrl: 'https://images.rilog.test/profile.png',
+			coverImageUrl: null,
+			introduction: 'E2E 팀 소개',
+		});
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toHaveCount(0);
 		await page.getByRole('tab', { name: '멤버 관리' }).click();
 		await page.getByRole('tab', { name: '프로필' }).click();
 
 		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveValue('새 리로그');
-		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeDisabled();
+		await expect(page.getByRole('button', { name: '변경사항 저장' })).toHaveCount(0);
 	});
 
 	test('저장하지 않은 프로필의 탭 이동을 취소하거나 확정한다', async ({ page }) => {
@@ -80,6 +90,8 @@ test.describe('팀 프로필 설정', () => {
 
 		await page.goto('/@rilog/settings?tab=profile');
 
+		await expect(page.getByRole('alertdialog', { name: '접근 권한이 없는 페이지입니다.' })).toBeVisible();
+		await page.getByRole('button', { name: '확인' }).click();
 		await expect(page).toHaveURL('/@rilog');
 		await expect(page.getByRole('tab', { name: '프로필' })).not.toBeAttached();
 	});
@@ -89,6 +101,8 @@ test.describe('팀 프로필 설정', () => {
 
 		await page.goto('/@rilog/settings?tab=profile');
 
+		await expect(page.getByRole('alertdialog', { name: '접근 권한이 없는 페이지입니다.' })).toBeVisible();
+		await page.getByRole('button', { name: '확인' }).click();
 		await expect(page).toHaveURL('/@rilog');
 		await expect(page.getByRole('tab', { name: '프로필' })).not.toBeAttached();
 	});

@@ -46,7 +46,7 @@ export default function CologProfileFormFields({
 				onCoverImageFileChange={onCoverImageFileChange}
 			/>
 
-			<Field label="팀 이름" description="서비스에 표시될 팀의 이름입니다." required>
+			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -57,7 +57,7 @@ export default function CologProfileFormFields({
 						required
 						minLength={COLOG_NAME_MIN_LENGTH}
 						maxLength={COLOG_NAME_MAX_LENGTH}
-						placeholder="예: Rilog 프론트엔드 팀"
+						placeholder="예: Rilog"
 						status={errors.name !== undefined ? 'error' : 'default'}
 						helperText={errors.name}
 						onChange={(event) => onTextFieldChange('name', event.target.value)}
@@ -65,7 +65,16 @@ export default function CologProfileFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 고유 아이디" description="팀 고유 아이디는 변경할 수 없습니다." required>
+			<Field
+				label="팀 고유 아이디"
+				description={
+					<ul className="list-disc pl-5">
+						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
+						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
+					</ul>
+				}
+				required
+			>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -82,7 +91,7 @@ export default function CologProfileFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 소개" description="팀을 소개해 보세요.">
+			<Field label="팀 소개" description="팀을 소개하는 문장을 입력하세요.">
 				{({ id, describedBy }) => (
 					<div>
 						<Textarea

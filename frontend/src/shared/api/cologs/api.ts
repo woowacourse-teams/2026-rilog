@@ -4,6 +4,7 @@ import type {
 	CologCreateResponse,
 	CologMemberInviteRequest,
 	CologMemberInviteResponse,
+	CologProfileUpdateRequest,
 } from './types';
 
 import { apiClient } from '@/shared/api/client';
@@ -20,6 +21,14 @@ export const inviteCologMember = (slug: string, request: CologMemberInviteReques
 		`v1/cologs/${encodeURIComponent(normalizedSlug)}/members`,
 		{ json: request },
 	);
+};
+
+export const updateCologProfile = (slug: string, request: CologProfileUpdateRequest) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.patch<ApiResponse<void>>(`v1/cologs/${encodeURIComponent(normalizedSlug)}/profiles`, {
+		json: request,
+	});
 };
 
 export const readCologMembers = (slug: string) => {

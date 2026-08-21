@@ -26,12 +26,6 @@ export const validateCologProfileSettings = (value: CologProfileSettingsValue): 
 	const errors: CologProfileValidationErrors = {};
 	const normalized = normalizeCologProfileSettings(value);
 
-	const hasLogo =
-		(value.logoFile !== null && value.logoFile !== undefined) || (normalized.profileImageUrl ?? '') !== '';
-	if (!hasLogo) {
-		errors.logoFile = '팀 로고를 등록해 주세요.';
-	}
-
 	if (normalized.name.length < COLOG_NAME_MIN_LENGTH || normalized.name.length > COLOG_NAME_MAX_LENGTH) {
 		errors.name = `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
 	}
