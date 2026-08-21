@@ -7,6 +7,7 @@ import { getImageUrl } from '@/shared/utils/get-image-url';
 
 interface PostFeedImageProps {
 	src: string | null;
+	fallbackSrc?: string;
 	alt: string;
 	width: number;
 	height: number;
@@ -15,10 +16,11 @@ interface PostFeedImageProps {
 	isScaledOnInteraction?: boolean;
 }
 
-const FALLBACK_IMAGE_URL = '/brand/logo.svg';
+const DEFAULT_FALLBACK_IMAGE_URL = '/brand/logo.svg';
 
 export default function PostFeedImage({
 	src,
+	fallbackSrc = DEFAULT_FALLBACK_IMAGE_URL,
 	alt,
 	width,
 	height,
@@ -27,12 +29,13 @@ export default function PostFeedImage({
 	isScaledOnInteraction = false,
 }: PostFeedImageProps) {
 	const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-	const hasFallback = src === null || src === failedImageUrl;
-	const imageUrl = hasFallback ? FALLBACK_IMAGE_URL : src;
+	const sourceImageUrl = getImageUrl(src);
+	const hasFallback = sourceImageUrl === '' || sourceImageUrl === failedImageUrl;
+	const imageUrl = hasFallback ? getImageUrl(fallbackSrc) : sourceImageUrl;
 
 	return (
 		<Image
-			src={getImageUrl(imageUrl)}
+			src={imageUrl}
 			alt={alt}
 			width={width}
 			height={height}
@@ -44,7 +47,7 @@ export default function PostFeedImage({
 			}`.trim()}
 			onError={() => {
 				if (!hasFallback) {
-					setFailedImageUrl(src);
+					setFailedImageUrl(sourceImageUrl);
 				}
 			}}
 		/>

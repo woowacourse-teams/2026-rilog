@@ -39,7 +39,7 @@ describe('mapFullFeedPostResponse', () => {
 							blogId: 20,
 							name: '리로그 팀',
 							slug: 'rilog',
-							logoImageUrl: '',
+							profileImageUrl: 'https://images.rilog.test/team.png',
 							coverImageUrl: '',
 							memberCount: 7,
 							postCount: 3,
@@ -57,7 +57,13 @@ describe('mapFullFeedPostResponse', () => {
 		});
 		expect(page.items[1]).toMatchObject({
 			author: { id: 10, nickname: '리로', slug: 'riro' },
-			blog: { id: 20, name: '리로그 팀', slug: 'rilog', type: 'COLOG' },
+			blog: {
+				id: 20,
+				name: '리로그 팀',
+				slug: 'rilog',
+				type: 'COLOG',
+				profileImageUrl: 'https://images.rilog.test/team.png',
+			},
 		});
 	});
 });

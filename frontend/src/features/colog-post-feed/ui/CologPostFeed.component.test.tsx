@@ -51,10 +51,19 @@ describe('CologPostFeed', () => {
 			'src',
 			expect.stringContaining(encodeURIComponent('https://images.rilog.test/post.png')),
 		);
-		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).toHaveAttribute(
-			'src',
-			expect.stringContaining('/brand/logo.svg'),
+		expect(
+			new URL(
+				within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' }).getAttribute('src')!,
+				'http://localhost',
+			).pathname,
+		).toBe('/images/thumbnail-fallback.svg');
+		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).not.toHaveClass(
+			'object-contain',
+			'p-5',
 		);
+		expect(
+			within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' }).parentElement,
+		).not.toHaveClass('border', 'border-border-default');
 	});
 
 	it('게시글이 없으면 빈 상태를 제공한다', () => {

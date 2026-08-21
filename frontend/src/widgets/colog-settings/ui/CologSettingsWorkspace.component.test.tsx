@@ -58,12 +58,30 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('API 리로그');
-		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveValue('team-rilog');
-		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).toHaveValue('API에서 조회한 팀 소개');
-		expect(screen.getByLabelText('팀 로고 변경')).not.toBeRequired();
-		expect(screen.getByRole('textbox', { name: '팀 소개 (선택)' })).not.toBeRequired();
+		for (const label of ['팀 로고', '팀 이름', '팀 고유 아이디']) {
+			const fieldLabel = screen.getByText(label).closest('label')!;
+			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
+		}
+		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
+		expect(slugInput).toHaveValue('team-rilog');
+		expect(slugInput).toBeDisabled();
+		expect(slugInput).toHaveAccessibleDescription('팀 고유 아이디는 변경할 수 없습니다.');
+		expect(screen.getByText('rilog.kr/@')).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '팀 소개' })).toHaveValue('API에서 조회한 팀 소개');
+		expect(screen.getByLabelText('새 팀 로고 업로드')).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();
+		expect(screen.getByRole('group', { name: '소셜' })).toHaveAccessibleDescription('링크를 통해 팀을 표현해 보세요.');
+		expect(screen.queryByText('(선택)')).not.toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '서비스 링크' })).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
+		expect(screen.getByRole('textbox', { name: '서비스 링크' }).parentElement?.querySelector('img')).toHaveAttribute(
+			'src',
+			'/icons/form/link.svg',
+		);
+		expect(screen.getByRole('textbox', { name: 'GitHub 링크' }).parentElement?.querySelector('img')).toHaveAttribute(
+			'src',
+			'/icons/form/github.svg',
+		);
 		expect(screen.queryByRole('table', { name: '코로그 멤버 목록' })).not.toBeInTheDocument();
 	});
 

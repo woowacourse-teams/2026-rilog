@@ -5,12 +5,7 @@ import type {
 	CologProfileValidationErrors,
 } from '../model/colog-profile-settings';
 
-import {
-	COLOG_DESCRIPTION_MAX_LENGTH,
-	COLOG_NAME_MAX_LENGTH,
-	COLOG_NAME_MIN_LENGTH,
-	COLOG_SLUG_MIN_LENGTH,
-} from '@/domains/blog/model/colog';
+import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LENGTH } from '@/domains/blog/model/colog';
 import Field from '@/shared/ui/field/Field';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
@@ -51,7 +46,7 @@ export default function CologProfileFormFields({
 				onCoverImageFileChange={onCoverImageFileChange}
 			/>
 
-			<Field label="팀 이름" description="서비스에 표시될 팀의 이름입니다.">
+			<Field label="팀 이름" description="서비스에 표시될 팀의 이름입니다." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -70,27 +65,24 @@ export default function CologProfileFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 고유 아이디" description="팀 페이지 URL에 사용될 고유한 식별자입니다.">
+			<Field label="팀 고유 아이디" description="팀 고유 아이디는 변경할 수 없습니다." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
 						aria-describedby={describedBy}
 						ref={refs.slug}
 						value={value.slug}
-						disabled={disabled}
-						required
-						minLength={COLOG_SLUG_MIN_LENGTH}
-						maxLength={COLOG_NAME_MAX_LENGTH}
-						pattern="[a-z0-9-]+"
-						placeholder="예: rilog-fe"
-						status={errors.slug !== undefined ? 'error' : 'default'}
-						helperText={errors.slug}
-						onChange={(event) => onTextFieldChange('slug', event.target.value)}
+						disabled
+						left={
+							<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
+								rilog.kr/@
+							</span>
+						}
 					/>
 				)}
 			</Field>
 
-			<Field label="팀 소개 (선택)" description="팀을 소개해 보세요.">
+			<Field label="팀 소개" description="팀을 소개해 보세요.">
 				{({ id, describedBy }) => (
 					<div>
 						<Textarea

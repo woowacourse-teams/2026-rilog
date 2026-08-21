@@ -31,18 +31,22 @@ export default function Footer() {
 					aria-label="정책"
 					className="hidden flex-wrap items-center gap-x-5 text-caption-1 font-semibold sm:col-start-2 sm:row-start-1 sm:flex sm:flex-col sm:items-end sm:gap-x-0"
 				>
-					<CustomLink
+					<a
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-0 sm:py-0.5`}
-						href="/privacy"
+						href="https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link"
+						target="_blank"
+						rel="noopener noreferrer"
 					>
 						개인정보처리방침
-					</CustomLink>
-					<CustomLink
+					</a>
+					<a
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-0 sm:py-0.5`}
-						href="/terms"
+						href="https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link"
+						target="_blank"
+						rel="noopener noreferrer"
 					>
 						이용약관
-					</CustomLink>
+					</a>
 				</nav>
 
 				<section
@@ -58,16 +62,16 @@ export default function Footer() {
 						</a>
 						<a
 							className={ICON_LINK_CLASS_NAME}
-							href="https://docs.google.com/forms/"
+							href="https://open.kakao.com/o/s8RvBMJi"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog Google Form 문의"
+							aria-label="Rilog 오픈채팅방"
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/google-form.svg" alt="" width={24} height={24} />
 						</a>
 						<a
 							className={ICON_LINK_CLASS_NAME}
-							href="https://www.instagram.com/"
+							href="https://www.instagram.com/rilog_official/"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="Rilog Instagram"
@@ -76,7 +80,7 @@ export default function Footer() {
 						</a>
 						<a
 							className={ICON_LINK_CLASS_NAME}
-							href="https://www.threads.net/"
+							href="https://www.threads.com/@rilog_official"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="Rilog Threads"

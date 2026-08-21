@@ -11,7 +11,7 @@ interface PostFeedCologBadgeProps {
 export default function PostFeedCologBadge({ colog }: PostFeedCologBadgeProps) {
 	return (
 		<span className="absolute top-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-md border border-border-default bg-surface py-1 pr-2.5 pl-1.5 text-caption-2 font-semibold text-text-primary shadow-sm">
-			<span className="size-5 shrink-0 overflow-hidden rounded-full bg-background">
+			<span className="size-5 shrink-0 overflow-hidden rounded-md border border-border-default bg-background">
 				<PostFeedImage
 					src={colog.profileImageUrl}
 					alt={colog.name}

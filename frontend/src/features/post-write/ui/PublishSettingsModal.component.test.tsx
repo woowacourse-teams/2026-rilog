@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+
 import PublishSettingsModal from './PublishSettingsModal';
 
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
@@ -12,7 +14,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	settings: { category: 'IT', blog: null, representativeImage: null },
 	selectedImageUrl: null,
 	bodyBlocks: [],
-	defaultImageUrl: '/images/default-post-cover.svg',
+	defaultImageUrl: POST_THUMBNAIL_FALLBACK_URL,
 	cologOptions: [
 		{ id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
 		{ id: 2, slug: 'second-colog', name: '두 번째 Co-log' },
@@ -29,6 +31,14 @@ const renderModal = (overrides: Partial<ComponentProps<typeof PublishSettingsMod
 	render(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
 
 describe('PublishSettingsModal', () => {
+	it('피드와 상세 화면의 기본 썸네일을 미리보기로 표시한다', () => {
+		renderModal();
+
+		const previewImage = screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' });
+		expect(previewImage).toHaveAttribute('src', POST_THUMBNAIL_FALLBACK_URL);
+		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
+	});
+
 	it('선택 가능한 Co-log가 하나뿐이면 빈 선택값을 자동으로 채운다', async () => {
 		const handleCoLogChange = vi.fn();
 		renderModal({

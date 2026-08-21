@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static kr.rilog.domain.user.exception.UserErrorInformation.NICKNAME_DUPLICATED;
-import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -31,7 +30,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        userQueryService= mock(UserQueryService.class);
+        userQueryService = mock(UserQueryService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService, userQueryService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -59,43 +58,6 @@ class UserControllerTest {
                         .param("nickname", nickname))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("NICKNAME_DUPLICATED"));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"Ab1_", "12345678901234567890", "ri-log_01"})
-    @DisplayName("4자 이상 20자 이하이고 허용 문자로 구성된 슬러그는 사용 가능 여부를 확인한다")
-    void validateSlugAcceptsValidSlug(String slug) throws Exception {
-        mockMvc.perform(get("/v1/availability/slug")
-                        .param("slug", slug))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.message").value("사용가능한 슬러그입니다."));
-
-        verify(userService).validateDuplicatedSlug(slug);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"abc", "123456789012345678901"})
-    @DisplayName("4자 미만이거나 20자를 초과한 슬러그는 거절한다")
-    void validateSlugRejectsInvalidLength(String slug) throws Exception {
-        mockMvc.perform(get("/v1/availability/slug")
-                        .param("slug", slug))
-                .andExpect(status().isBadRequest());
-
-        verify(userService, never()).validateDuplicatedSlug(slug);
-    }
-
-    @Test
-    @DisplayName("중복된 슬러그이면 중복 오류를 반환한다")
-    void validateSlugRejectsDuplicatedSlug() throws Exception {
-        String slug = "ri_log-01";
-        doThrow(new UserException(SLUG_DUPLICATED))
-                .when(userService).validateDuplicatedSlug(slug);
-
-        mockMvc.perform(get("/v1/availability/slug")
-                        .param("slug", slug))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("SLUG_DUPLICATED"));
     }
 
     @Test

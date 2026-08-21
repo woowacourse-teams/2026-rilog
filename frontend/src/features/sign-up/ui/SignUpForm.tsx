@@ -16,8 +16,8 @@ import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Checkbox from '@/shared/ui/checkbox/Checkbox';
 import Field from '@/shared/ui/field/Field';
+import ImageEditMenu from '@/shared/ui/image-edit-menu/ImageEditMenu';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
-import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
@@ -32,8 +32,10 @@ import {
 	SIGN_UP_SLUG_PATTERN,
 } from '../model/sign-up';
 
-const TERMS_OF_SERVICE_URL = 'https://example.com/terms-of-service';
-const PRIVACY_POLICY_URL = 'https://example.com/privacy-policy';
+const TERMS_OF_SERVICE_URL =
+	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link';
+const PRIVACY_POLICY_URL =
+	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link';
 
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
@@ -164,20 +166,13 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 						className="size-25 shrink-0 bg-background"
 						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 					/>
-					<div className="flex flex-1 flex-wrap items-center gap-2">
-						<ImageUploader onFileChange={handleImageChange} disabled={isSigningUp} className="bg-white" />
-						{profileImageFile !== null && (
-							<Button
-								type="button"
-								variant="secondary"
-								size="md"
-								disabled={isSigningUp}
-								onClick={() => handleImageChange(null)}
-							>
-								기본 이미지로 변경
-							</Button>
-						)}
-					</div>
+					<ImageEditMenu
+						imageLabel="프로필 이미지"
+						hasImage={profileImageFile !== null}
+						disabled={isSigningUp}
+						onFileChange={handleImageChange}
+						onReset={() => handleImageChange(null)}
+					/>
 				</div>
 			</div>
 
