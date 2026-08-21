@@ -152,17 +152,6 @@ class BlogMemberServiceTest {
                 .build();
     }
 
-    private Profile createRilogProfile() {
-        return Profile.createColog(
-                "러로",
-                "안녕하세요. 러로입니다. ",
-                "https://example.com/profile.png",
-                "https://example.com/cover.png",
-                "https://jinriro.example.com",
-                "https://github.com/Wlsflfh"
-        );
-    }
-
     private Profile createCologProfile() {
         return Profile.createColog(
                 "리로그",
@@ -170,7 +159,8 @@ class BlogMemberServiceTest {
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
                 "https://rilog.example.com",
-                "https://github.com/rilog"
+                "https://github.com/rilog",
+                "test@test.com"
         );
     }
 

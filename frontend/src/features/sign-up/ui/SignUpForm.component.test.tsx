@@ -1,8 +1,9 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-session';
@@ -13,9 +14,25 @@ vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
 }));
 
+vi.mock('@/shared/api/availability/api', () => ({
+	checkNicknameAvailability: vi.fn(),
+	checkSlugAvailability: vi.fn(),
+}));
+
 describe('SignUpForm', () => {
 	beforeEach(() => {
 		sessionStorage.clear();
+		vi.clearAllMocks();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
+		vi.mocked(checkSlugAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 슬러그입니다.',
+			data: null,
+		});
 	});
 
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
@@ -30,9 +47,11 @@ describe('SignUpForm', () => {
 		renderSignUpForm();
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
-		expect(screen.getByLabelText('이미지 변경')).toHaveAttribute('type', 'file');
+		expect(screen.getByText('프로필 이미지 추가')).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '닉네임 중복 확인' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '고유 아이디 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();
 		expect(
 			screen.getByRole('checkbox', {
@@ -41,19 +60,166 @@ describe('SignUpForm', () => {
 		).toHaveAccessibleDescription('이용약관 및 개인정보처리방침');
 		expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '시작하기' })).toHaveAttribute('type', 'submit');
+		expect(screen.getByRole('button', { name: '시작하기' })).toBeDisabled();
 
 		expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
 			'href',
-			'https://example.com/terms-of-service',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link',
 		);
 		expect(screen.getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
 			'href',
-			'https://example.com/privacy-policy',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link',
 		);
 		screen.getAllByRole('link').forEach((link) => {
 			expect(link).toHaveAttribute('target', '_blank');
 			expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 		});
+	});
+
+	it('닉네임과 고유 아이디 중복 확인을 요청하고 사용 가능 상태를 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
+		vi.mocked(checkSlugAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 슬러그입니다.',
+			data: null,
+		});
+		renderSignUpForm();
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(nickname, '리로그');
+		await user.type(slug, 'rilog');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		await waitFor(() => {
+			expect(checkNicknameAvailability).toHaveBeenCalledWith({ nickname: '리로그' });
+			expect(checkSlugAvailability).toHaveBeenCalledWith({ slug: 'rilog' });
+		});
+		expect(nickname).toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+		expect(slug).toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
+
+		await user.type(nickname, '팀');
+		expect(nickname).not.toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+	});
+
+	it('중복 확인 전 제출하면 안내하고 두 확인 후 입력이 바뀌면 다시 안내한다', async () => {
+		const user = userEvent.setup();
+		const completeSignUp = vi.fn();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
+		vi.mocked(checkSlugAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 슬러그입니다.',
+			data: null,
+		});
+		renderSignUpForm({ completeSignUp });
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		const submitButton = screen.getByRole('button', { name: '시작하기' });
+
+		await user.type(nickname, '리로그');
+		await user.type(slug, 'rilog');
+		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
+
+		expect(submitButton).toBeEnabled();
+		fireEvent.submit(submitButton.closest('form')!);
+		expect(completeSignUp).not.toHaveBeenCalled();
+		expect(nickname).toHaveAccessibleDescription(/닉네임 중복 확인이 필요합니다\./);
+		expect(slug).toHaveAccessibleDescription(/고유 아이디 중복 확인이 필요합니다\./);
+		expect(nickname).toHaveFocus();
+
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await waitFor(() => expect(nickname).toHaveAccessibleDescription(/사용가능한 닉네임입니다\./));
+
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+		await waitFor(() => expect(slug).toHaveAccessibleDescription(/사용가능한 슬러그입니다\./));
+
+		await user.type(nickname, '팀');
+		await user.click(submitButton);
+		expect(nickname).toHaveAccessibleDescription(/닉네임 중복 확인이 필요합니다\./);
+	});
+
+	it('중복 확인 중인 입력과 버튼을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		let resolveAvailabilityCheck: (() => void) | undefined;
+		vi.mocked(checkNicknameAvailability).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveAvailabilityCheck = () => resolve({ status: 200, message: '사용가능한 닉네임입니다.', data: null });
+				}),
+		);
+		renderSignUpForm();
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const checkButton = screen.getByRole('button', { name: '닉네임 중복 확인' });
+		await user.type(nickname, '리로그');
+		await user.click(checkButton);
+
+		expect(nickname).toBeDisabled();
+		expect(checkButton).toBeDisabled();
+		expect(checkButton).toHaveAttribute('aria-busy', 'true');
+
+		resolveAvailabilityCheck?.();
+		await waitFor(() => expect(checkButton).toBeEnabled());
+	});
+
+	it('유효하지 않은 입력은 중복 확인 API를 호출하지 않고 입력 오류를 안내한다', async () => {
+		const user = userEvent.setup();
+		renderSignUpForm();
+
+		const nickname = screen.getByRole('textbox', { name: '닉네임' });
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(nickname, '  ');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+
+		expect(checkNicknameAvailability).not.toHaveBeenCalled();
+		expect(nickname).toBeInvalid();
+		expect(nickname).toHaveAccessibleDescription(/닉네임은 2~20자로 입력해 주세요\./);
+		expect(nickname).toHaveFocus();
+
+		await user.type(slug, 'ri.log');
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		expect(checkSlugAvailability).not.toHaveBeenCalled();
+		expect(slug).toBeInvalid();
+		expect(slug).toHaveAccessibleDescription(
+			/고유 아이디는 4~20자의 영문, 숫자, 하이픈\(-\), 언더스코어\(_\)만 사용할 수 있어요\./,
+		);
+		expect(slug).toHaveFocus();
+	});
+
+	it('중복된 고유 아이디 오류를 입력 상태와 메시지로 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(checkSlugAvailability).mockRejectedValue({
+			type: 'api',
+			kind: 'conflict',
+			detail: {
+				status: 404,
+				error: 'NOT_FOUND',
+				errorCode: 'SLUG_DUPLICATED',
+				message: '중복되는 슬러그입니다.',
+				invalidParams: null,
+			},
+			response: new Response(null, { status: 404 }),
+		});
+		renderSignUpForm();
+
+		const slug = screen.getByRole('textbox', { name: '고유 아이디' });
+		await user.type(slug, 'rilog');
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		await waitFor(() => expect(slug).toBeInvalid());
+		expect(slug).toHaveAccessibleDescription(/중복되는 슬러그입니다\./);
 	});
 
 	it('한 줄 소개의 글자 수를 입력에 맞춰 안내한다', async () => {
@@ -73,19 +239,21 @@ describe('SignUpForm', () => {
 		const user = userEvent.setup();
 		const { unmount } = renderSignUpForm();
 
+		await user.click(screen.getByText('프로필 이미지 추가'));
 		await user.upload(
-			screen.getByLabelText('이미지 변경'),
+			screen.getByLabelText('프로필 이미지 업로드'),
 			new File(['profile'], 'profile.png', { type: 'image/png' }),
 		);
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute('src', 'blob:profile-image');
 
-		await user.click(screen.getByRole('button', { name: '기본 이미지로 변경' }));
+		await user.click(screen.getByText('프로필 이미지 변경'));
+		await user.click(screen.getByRole('button', { name: '기본 이미지로 되돌리기' }));
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			'/images/profile-placeholder.svg',
 		);
-		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');
@@ -99,12 +267,18 @@ describe('SignUpForm', () => {
 		const agreement = screen.getByRole('checkbox', {
 			name: '[필수] 아래 약관에 동의합니다.',
 		});
+		const submitButton = screen.getByRole('button', { name: '시작하기' });
 		expect(agreement).toBeRequired();
 		expect(agreement).toBeInvalid();
+		expect(submitButton).toBeDisabled();
 		await user.click(agreement);
 
 		expect(agreement).toBeChecked();
 		expect(agreement).toBeValid();
+		expect(submitButton).toBeEnabled();
+
+		await user.click(agreement);
+		expect(submitButton).toBeDisabled();
 	});
 
 	it('유효한 온보딩 정보를 제출하고 replace 옵션으로 이동한다', async () => {
@@ -117,6 +291,8 @@ describe('SignUpForm', () => {
 		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
 		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log-01');
 		await user.type(screen.getByRole('textbox', { name: '한 줄 소개' }), ' 함께 기록해요 ');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
 		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
 		await user.click(screen.getByRole('button', { name: '시작하기' }));
 
@@ -172,6 +348,8 @@ describe('SignUpForm', () => {
 
 		await user.type(nickname, '리로그');
 		await user.type(slug, 'rilog');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
 		await user.click(agreement);
 		await user.click(submitButton);
 		expect(await screen.findByRole('alert')).toHaveTextContent('이미 사용 중인 정보입니다.');
@@ -180,13 +358,18 @@ describe('SignUpForm', () => {
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
 		await user.click(submitButton);
+		expect(nickname).toHaveAccessibleDescription(/닉네임 중복 확인이 필요합니다\./);
+		expect(completeSignUp).toHaveBeenCalledOnce();
+
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(submitButton);
 		expect(await screen.findByRole('alert')).toBeInTheDocument();
+
 		await user.type(slug, '2');
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
 		await user.click(submitButton);
-		expect(await screen.findByRole('alert')).toBeInTheDocument();
-		await user.click(agreement);
-		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+		expect(slug).toHaveAccessibleDescription(/고유 아이디 중복 확인이 필요합니다\./);
+		expect(completeSignUp).toHaveBeenCalledTimes(2);
 	});
 });

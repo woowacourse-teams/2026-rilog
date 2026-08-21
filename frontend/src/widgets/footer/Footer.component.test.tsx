@@ -14,8 +14,14 @@ describe('Footer', () => {
 		expect(homeLink.querySelector('img')).toHaveAttribute('src', '/brand/logo.svg');
 		expect(within(footer).getByText('기록을 작성하고 함께 나누는 공간')).toBeInTheDocument();
 		expect(within(footer).getByRole('navigation', { name: '정책' })).toBeInTheDocument();
-		expect(within(footer).getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute('href', '/privacy');
-		expect(within(footer).getByRole('link', { name: '이용약관' })).toHaveAttribute('href', '/terms');
+		expect(within(footer).getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
+			'href',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link',
+		);
+		expect(within(footer).getByRole('link', { name: '이용약관' })).toHaveAttribute(
+			'href',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link',
+		);
 		expect(within(footer).getByText(`© ${new Date().getFullYear()} Rilog. All rights reserved.`)).toBeInTheDocument();
 	});
 
@@ -25,9 +31,9 @@ describe('Footer', () => {
 		expect(screen.getByRole('link', { name: 'Rilog 이메일 문의' })).toHaveAttribute('href', 'mailto:contact@rilog.dev');
 
 		const externalLinks = [
-			['Rilog Google Form 문의', 'https://docs.google.com/forms/'],
-			['Rilog Instagram', 'https://www.instagram.com/'],
-			['Rilog Threads', 'https://www.threads.net/'],
+			['Rilog 오픈채팅방', 'https://open.kakao.com/o/s8RvBMJi'],
+			['Rilog Instagram', 'https://www.instagram.com/rilog_official/'],
+			['Rilog Threads', 'https://www.threads.com/@rilog_official'],
 		] as const;
 
 		for (const [name, href] of externalLinks) {
@@ -40,7 +46,7 @@ describe('Footer', () => {
 
 		const iconSources = [
 			['Rilog 이메일 문의', '/icons/contact/email.svg'],
-			['Rilog Google Form 문의', '/icons/contact/google-form.svg'],
+			['Rilog 오픈채팅방', '/icons/contact/google-form.svg'],
 			['Rilog Instagram', '/icons/contact/instagram.svg'],
 			['Rilog Threads', '/icons/contact/threads.svg'],
 		] as const;

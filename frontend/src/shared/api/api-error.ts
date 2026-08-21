@@ -73,3 +73,18 @@ export const getFieldErrors = (error: NormalizedApiError): Record<string, string
 
 	return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
 };
+
+export const getApiErrorMessage = (error: unknown, fallbackMessage: string): string => {
+	if (
+		typeof error === 'object' &&
+		error !== null &&
+		'type' in error &&
+		error.type === 'api' &&
+		'detail' in error &&
+		isErrorDetail(error.detail)
+	) {
+		return error.detail.message;
+	}
+
+	return error instanceof Error ? error.message : fallbackMessage;
+};

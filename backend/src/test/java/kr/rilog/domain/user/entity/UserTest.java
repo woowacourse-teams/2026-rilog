@@ -4,7 +4,7 @@ import kr.rilog.domain.auth.application.GlobalRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static kr.rilog.support.BlogFixture.createUser;
+import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserTest {
@@ -42,7 +42,7 @@ class UserTest {
     }
 
     private User createOnboardingCompletedUser() {
-        User user = createUser(OWNER_ID);
+        User user = User.createPendingGithubUser(0L, "https://github.com/~", "https://dummy-images");
 
         user.completeOnboarding(
                 "러로",

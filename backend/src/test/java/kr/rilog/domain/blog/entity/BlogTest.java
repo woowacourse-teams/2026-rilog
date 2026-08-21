@@ -1,13 +1,14 @@
 package kr.rilog.domain.blog.entity;
 
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
-import static kr.rilog.support.BlogFixture.*;
+import static kr.rilog.support.fixure.BlogFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -75,6 +76,30 @@ class BlogTest {
         assertThatThrownBy(() -> blog.validateIsOwner(user))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
+    }
+
+    @Test
+    @DisplayName("블로그 프로필을 변경하면 새 프로필이 반영된다.")
+    void changeProfileReplacesProfile() {
+        // given
+        Blog blog = createColog(createUser(OWNER_ID));
+        Profile newProfile = Profile.createColog(
+                "새 팀 이름",
+                "새 팀 소개",
+                "https://example.com/new-profile.png",
+                "https://example.com/new-cover.png",
+                "https://new-rilog.example.com",
+                "https://github.com/new-rilog",
+                "new-rilog@example.com"
+        );
+
+        // when
+        blog.changeProfile(newProfile);
+
+        // then
+        assertThat(blog.getProfile())
+                .usingRecursiveComparison()
+                .isEqualTo(newProfile);
     }
 
 }

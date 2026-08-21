@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { MOCK_COLOG_HOME_MEMBERS } from '@/features/colog-members/lib/mock-colog-home';
-import CologMemberList from '@/features/colog-members/ui/CologMemberList';
+import CologMemberAside from '@/features/colog-members/ui/CologMemberAside';
 import { hasCologSlugPrefix } from '@/shared/routes/app-routes';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
@@ -26,7 +25,7 @@ export default async function CologHomePage({ params }: CologHomePageProps) {
 			header={<CologHomeHero slug={normalizedSlug} />}
 			rightAside={
 				<div className="py-11">
-					<CologMemberList members={MOCK_COLOG_HOME_MEMBERS} />
+					<CologMemberAside slug={normalizedSlug} />
 				</div>
 			}
 		>

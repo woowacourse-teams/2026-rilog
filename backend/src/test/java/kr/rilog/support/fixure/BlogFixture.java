@@ -1,4 +1,4 @@
-package kr.rilog.support;
+package kr.rilog.support.fixure;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
@@ -44,6 +44,16 @@ public class BlogFixture {
                 .build();
     }
 
+    public static Blog createColog(User owner, String slug) {
+        return Blog.builder()
+                .id(1L)
+                .owner(owner)
+                .slug(Slug.from(slug))
+                .profile(cologProfile())
+                .blogType(BlogType.COLOG)
+                .build();
+    }
+
     public static Profile rilogProfile() {
         return Profile.createRilog(
                 "러로",
@@ -61,7 +71,8 @@ public class BlogFixture {
                 "https://example.com/profile.png",
                 "https://example.com/cover.png",
                 "https://rilog.example.com",
-                "https://github.com/2026-rilog"
+                "https://github.com/2026-rilog",
+                "test@test.com"
         );
     }
 

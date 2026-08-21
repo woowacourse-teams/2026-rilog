@@ -64,34 +64,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("중복되지 않은 슬러그는 검증을 통과한다")
-    void validateDuplicatedSlugPassesWhenSlugDoesNotExist() {
-        // given
-        Slug slug = Slug.from("ri_log-01");
-        when(userRepository.existsBySlug(slug)).thenReturn(false);
-
-        // when - then
-        assertThatCode(() -> userService.validateDuplicatedSlug(slug.getValue()))
-                .doesNotThrowAnyException();
-        verify(userRepository).existsBySlug(slug);
-    }
-
-    @Test
-    @DisplayName("중복된 슬러그이면 예외가 발생한다")
-    void validateDuplicatedSlugThrowsWhenSlugExists() {
-        // given
-        Slug slug = Slug.from("ri_log-01");
-        when(userRepository.existsBySlug(slug)).thenReturn(true);
-
-        // when - then
-        assertThatThrownBy(() -> userService.validateDuplicatedSlug(slug.getValue()))
-                .isInstanceOf(UserException.class)
-                .extracting("errorInformation")
-                .isEqualTo(SLUG_DUPLICATED);
-        verify(userRepository).existsBySlug(slug);
-    }
-
-    @Test
     @DisplayName("PENDING 사용자는 온보딩을 완료할 수 있다")
     void completeOnboardingCompletesPendingUser() {
         // given

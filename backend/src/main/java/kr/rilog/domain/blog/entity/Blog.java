@@ -65,6 +65,10 @@ public class Blog extends BaseEntity {
                 .build();
     }
 
+    public void changeProfile(Profile newProfile) {
+        this.profile = newProfile;
+    }
+
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;
     }

@@ -368,7 +368,7 @@ describe('PostWriteWorkspace', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('대표 이미지가 없으면 본문 이미지를 쓰지 않고 thumbnailImageUrl을 null로 전송한다', async () => {
+	it('대표 이미지가 없으면 본문 이미지를 쓰지 않고 공통 기본 썸네일을 API에 전송한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} navigate={navigate} />);
@@ -382,7 +382,7 @@ describe('PostWriteWorkspace', () => {
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
 		expect(requestPostPublicationMock).toHaveBeenCalledWith(
 			expect.objectContaining({
-				request: expect.objectContaining({ thumbnailImageUrl: null }),
+				request: expect.objectContaining({ thumbnailImageUrl: '/images/thumbnail-fallback.svg' }),
 			}),
 		);
 	});
