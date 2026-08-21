@@ -2,14 +2,17 @@ package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.vo.Profile;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.UserFixture;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -264,6 +267,16 @@ class UserServiceIntegrationTest extends ServiceSupport {
                 "https://github.com/rilog",
                 "rilog@example.com"
         );
+    }
+
+    private User completedUser(String nickname, String slug) {
+        return User.builder()
+                .githubId(100L)
+                .nickname(Nickname.from(nickname))
+                .slug(Slug.from(slug))
+                .profileImageUrl("https://example.com/profile.png")
+                .onboardingStatus(COMPLETED)
+                .build();
     }
 
 }

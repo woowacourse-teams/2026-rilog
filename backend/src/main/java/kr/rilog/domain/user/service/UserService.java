@@ -1,7 +1,6 @@
 package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.blog.entity.Blog;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -9,6 +8,7 @@ import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -71,6 +71,7 @@ public class UserService {
         }
     }
 
+    // TODO blogRepository에서 조회하는 걸로 변경.
     public void validateDuplicatedSlug(String slug) {
         if (userRepository.existsBySlug(Slug.from(slug))) {
             throw new UserException(SLUG_DUPLICATED);

@@ -9,12 +9,15 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Email;
 import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.user.exception.UserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -22,8 +25,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +55,85 @@ class BlogServiceTest {
     @BeforeEach
     void setUp() {
         blogService = new BlogService(blogRepository, blogMemberRepository, postRepository);
+    }
+
+    @Test
+    @DisplayName("중복되지 않은 블로그 슬러그는 검증을 통과한다")
+    void validateDuplicatedSlugPassesWhenBlogSlugDoesNotExist() {
+        // given
+        Slug slug = Slug.from("ri_log-01");
+        when(blogRepository.existsBySlug(slug)).thenReturn(false);
+
+        // when - then
+        assertThatCode(() -> blogService.validateDuplicatedSlug(slug.getValue()))
+                .doesNotThrowAnyException();
+        verify(blogRepository).existsBySlug(slug);
+    }
+
+    @Test
+    @DisplayName("중복된 블로그 슬러그이면 예외가 발생한다")
+    void validateDuplicatedSlugThrowsWhenBlogSlugExists() {
+        // given
+        Slug slug = Slug.from("ri_log-01");
+        when(blogRepository.existsBySlug(slug)).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> blogService.validateDuplicatedSlug(slug.getValue()))
+                .isInstanceOf(UserException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(SLUG_DUPLICATED);
+        verify(blogRepository).existsBySlug(slug);
+    }
+
+    @Test
+    @DisplayName("개인 블로그가 없으면 사용자 정보로 RILOG를 생성한다")
+    void createRilogIfAbsentCreatesRilogWhenMissing() {
+        // given
+        User owner = createCompletedOwner();
+        when(blogRepository.findRilogByOwnerId(REQUESTER_ID)).thenReturn(Optional.empty());
+
+        // when
+        blogService.createRilogIfAbsent(owner);
+
+        // then
+        ArgumentCaptor<Blog> blogCaptor = ArgumentCaptor.forClass(Blog.class);
+        verify(blogRepository).save(blogCaptor.capture());
+        assertThat(blogCaptor.getValue())
+                .extracting(
+                        Blog::getOwner,
+                        Blog::getName,
+                        Blog::getSlug,
+                        Blog::getIntroduction,
+                        Blog::getProfileImageUrl,
+                        Blog::getGithubUrl,
+                        Blog::getEmail,
+                        Blog::getBlogType
+                )
+                .containsExactly(
+                        owner,
+                        "러로",
+                        "riro",
+                        "기록하는 개발자입니다.",
+                        "https://example.com/profile.png",
+                        "https://github.com/riro",
+                        "riro@example.com",
+                        BlogType.RILOG
+                );
+    }
+
+    @Test
+    @DisplayName("이미 개인 블로그가 있으면 RILOG를 다시 생성하지 않는다")
+    void createRilogIfAbsentDoesNotCreateRilogWhenAlreadyExists() {
+        // given
+        User owner = createCompletedOwner();
+        Blog rilog = Blog.createRilog(owner);
+        when(blogRepository.findRilogByOwnerId(REQUESTER_ID)).thenReturn(Optional.of(rilog));
+
+        // when
+        blogService.createRilogIfAbsent(owner);
+
+        // then
+        verify(blogRepository, never()).save(any(Blog.class));
     }
 
     @Test
@@ -138,6 +223,10 @@ class BlogServiceTest {
                 .id(REQUESTER_ID)
                 .nickname(Nickname.from("러로"))
                 .slug(Slug.from("riro"))
+                .introduction("기록하는 개발자입니다.")
+                .profileImageUrl("https://example.com/profile.png")
+                .githubUrl("https://github.com/riro")
+                .email(Email.from("riro@example.com"))
                 .build();
     }
 
