@@ -18,7 +18,7 @@ export default async function PostDetail({ post }: PostDetailProps) {
 
 	return (
 		<main className="min-h-dvh bg-background">
-			<PostDetailHero title={post.title} thumbnailImageUrl={post.thumbnailUrl} />
+			<PostDetailHero title={post.title} thumbnailUrl={post.thumbnailUrl} />
 
 			<div className="px-5 sm:px-8">
 				<div className="mx-auto max-w-2xl aside-right:-translate-x-8.75">

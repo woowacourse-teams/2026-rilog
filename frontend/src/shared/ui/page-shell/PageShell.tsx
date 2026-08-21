@@ -32,10 +32,15 @@ export default function PageShell({
 
 	return (
 		<div className={pageClassName}>
-			<header className={headerClassName} data-has-aside={hasAside}>
+			<header className={headerClassName} data-has-aside={hasAside} data-has-left-aside={hasLeftAside}>
 				{header}
 			</header>
-			<div className={contentClassName} data-has-aside={hasAside}>
+			<div
+				className={contentClassName}
+				data-has-aside={hasAside}
+				data-has-left-aside={hasLeftAside}
+				data-has-right-aside={hasRightAside}
+			>
 				{hasLeftAside && <aside className="page-shell-aside page-shell-aside-left">{leftAside}</aside>}
 				<main className="page-shell-main">{children}</main>
 				{hasRightAside && <aside className="page-shell-aside page-shell-aside-right">{rightAside}</aside>}

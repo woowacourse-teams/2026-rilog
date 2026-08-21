@@ -51,7 +51,7 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 				blogId: post.blog.id,
 				name: post.blog.name,
 				slug: post.blog.slug,
-				logoImageUrl: post.blog.profileImageUrl ?? null,
+				profileImageUrl: post.blog.profileImageUrl ?? null,
 				coverImageUrl: null,
 				memberCount: 1,
 				postCount: 1,

@@ -26,7 +26,7 @@ describe('SignUpForm', () => {
 		renderSignUpForm();
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
-		expect(screen.getByLabelText('이미지 변경')).toHaveAttribute('type', 'file');
+		expect(screen.getByText('프로필 이미지 추가')).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();
@@ -40,11 +40,11 @@ describe('SignUpForm', () => {
 
 		expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
 			'href',
-			'https://example.com/terms-of-service',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link',
 		);
 		expect(screen.getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
 			'href',
-			'https://example.com/privacy-policy',
+			'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link',
 		);
 		screen.getAllByRole('link').forEach((link) => {
 			expect(link).toHaveAttribute('target', '_blank');
@@ -69,19 +69,21 @@ describe('SignUpForm', () => {
 		const user = userEvent.setup();
 		const { unmount } = renderSignUpForm();
 
+		await user.click(screen.getByText('프로필 이미지 추가'));
 		await user.upload(
-			screen.getByLabelText('이미지 변경'),
+			screen.getByLabelText('프로필 이미지 업로드'),
 			new File(['profile'], 'profile.png', { type: 'image/png' }),
 		);
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute('src', 'blob:profile-image');
 
-		await user.click(screen.getByRole('button', { name: '기본 이미지로 변경' }));
+		await user.click(screen.getByText('프로필 이미지 변경'));
+		await user.click(screen.getByRole('button', { name: '기본 이미지로 되돌리기' }));
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			'/images/profile-placeholder.svg',
 		);
-		expect(screen.queryByRole('button', { name: '기본 이미지로 변경' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');

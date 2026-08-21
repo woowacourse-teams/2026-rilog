@@ -13,7 +13,7 @@ const VALID_SETTINGS: CologProfileSettingsValue = {
 	slug: 'rilog-team',
 	description: '함께 기록하는 팀입니다.',
 	profileImageUrl: '/images/profile-placeholder.svg',
-	coverImageUrl: '/images/team-cover-placeholder.svg',
+	coverImageUrl: '',
 	serviceUrl: 'https://rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams',
 	logoFile: null,

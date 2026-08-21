@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import type {
 	CologProfileFormRefs,
 	CologProfileSettingsValue,
@@ -25,7 +27,7 @@ export default function CologProfileSocialFields({
 }: CologProfileSocialFieldsProps) {
 	return (
 		<fieldset className="flex flex-col gap-6" aria-describedby="social-fields-desc">
-			<legend className="text-body-2 font-semibold text-text-primary">소셜 (선택)</legend>
+			<legend className="text-body-2 font-semibold text-text-primary">소셜</legend>
 			<p id="social-fields-desc" className="text-label-2 text-text-secondary">
 				링크를 통해 팀을 표현해 보세요.
 			</p>
@@ -39,6 +41,7 @@ export default function CologProfileSocialFields({
 						value={value.serviceUrl ?? ''}
 						disabled={disabled}
 						placeholder="https://example.com"
+						left={<Image src="/icons/form/link.svg" alt="" width={20} height={20} className="size-5 shrink-0" />}
 						status={errors.serviceUrl !== undefined ? 'error' : 'default'}
 						helperText={errors.serviceUrl}
 						onChange={(event) => onTextFieldChange('serviceUrl', event.target.value)}
@@ -55,6 +58,7 @@ export default function CologProfileSocialFields({
 						value={value.githubUrl ?? ''}
 						disabled={disabled}
 						placeholder="https://github.com/organization"
+						left={<Image src="/icons/form/github.svg" alt="" width={20} height={20} className="size-5 shrink-0" />}
 						status={errors.githubUrl !== undefined ? 'error' : 'default'}
 						helperText={errors.githubUrl}
 						onChange={(event) => onTextFieldChange('githubUrl', event.target.value)}

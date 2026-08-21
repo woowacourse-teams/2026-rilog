@@ -49,7 +49,7 @@ export interface RilogOwnerResponse extends BaseOwnerResponse {
 
 export interface CologOwnerResponse extends BaseOwnerResponse {
 	type: 'COLOG';
-	logoImageUrl: string | null;
+	profileImageUrl: string | null;
 	coverImageUrl: string | null;
 	memberCount: number;
 	postCount: number;
