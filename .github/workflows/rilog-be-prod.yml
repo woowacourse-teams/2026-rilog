@@ -69,7 +69,7 @@ jobs:
           push: ${{ github.event_name == 'push' }}
           tags: |
             ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:prod
-            ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ vars.PROD_IMAGE_VERSION }}
+            ${{ secrets.DOCKER_USER_NAME }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=min
 
