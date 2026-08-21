@@ -9,10 +9,12 @@ import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZ
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
 import { useCologProfileForm } from '@/features/colog-profile-management/hooks/use-colog-profile-form';
+import { useSaveCologProfile } from '@/features/colog-profile-management/hooks/use-save-colog-profile';
 import { mapCologProfileSettingsResponse } from '@/features/colog-profile-management/lib/map-colog-profile-settings-response';
 import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/lib/validate-colog-profile-settings';
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
+import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -107,6 +109,7 @@ function CologSettingsWorkspaceContent({
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
+	const saveCologProfile = useSaveCologProfile();
 
 	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
 	const isWorkspaceDirty =
@@ -128,26 +131,40 @@ function CologSettingsWorkspaceContent({
 		onTabChange: commitTabChange,
 	});
 
-	const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+	const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		if (saveCologProfile.isPending) {
+			return;
+		}
+
 		const normalizedValue = profileForm.validate();
 
 		if (normalizedValue === null) {
 			return;
 		}
 
-		setSavedProfile(normalizedValue);
+		try {
+			const savedValue = await saveCologProfile.mutateAsync({ slug, value: normalizedValue });
+			profileForm.setValue(savedValue);
+			setSavedProfile(savedValue);
+		} catch {
+			// mutation 상태의 error를 폼 하단에 표시한다.
+		}
 	};
 
+	const profileErrorMessage = saveCologProfile.isError
+		? getApiErrorMessage(saveCologProfile.error, '팀 프로필을 저장하지 못했어요. 다시 시도해 주세요.')
+		: null;
+
 	const renderHeaderActions = () => {
-		if (activeTab === 'profile') {
+		if (activeTab === 'profile' && isProfileDirty) {
 			return (
 				<Button
 					form="profile-settings-form"
 					type="submit"
 					size="md"
 					className="w-full max-w-40 sm:max-w-60 md:max-w-none lg:w-30 lg:max-w-none"
-					disabled={!isProfileDirty}
+					isPending={saveCologProfile.isPending}
 				>
 					변경사항 저장
 				</Button>
@@ -221,7 +238,24 @@ function CologSettingsWorkspaceContent({
 			}
 		>
 			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
-				{activeTab === 'profile' && <CologProfileSection form={profileForm} onSubmit={handleProfileSubmit} />}
+				{activeTab === 'profile' && (
+					<>
+						<CologProfileSection
+							form={profileForm}
+							onSubmit={(event) => void handleProfileSubmit(event)}
+							disabled={saveCologProfile.isPending}
+							onValueChange={saveCologProfile.reset}
+						/>
+						{profileErrorMessage !== null && (
+							<p
+								className="mx-6 mt-4 rounded-md border border-danger bg-background p-3 text-label-2 text-danger sm:mx-8 lg:mx-0"
+								role="alert"
+							>
+								{profileErrorMessage}
+							</p>
+						)}
+					</>
+				)}
 				{activeTab === 'members' && <CologMemberManagementSection slug={slug} drafts={memberDrafts} />}
 				{activeTab === 'danger' && <CologDangerZoneSection />}
 			</div>

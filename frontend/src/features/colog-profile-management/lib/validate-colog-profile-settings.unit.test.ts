@@ -46,14 +46,14 @@ describe('validateCologProfileSettings', () => {
 		).toEqual({});
 	});
 
-	it('로고 URL과 새 파일이 모두 없으면 필수 오류를 반환한다', () => {
+	it('로고 URL과 새 파일이 모두 없으면 기본 이미지 사용으로 판단한다', () => {
 		expect(
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
 				profileImageUrl: '',
 				logoFile: null,
 			}),
-		).toEqual({ logoFile: '팀 로고를 등록해 주세요.' });
+		).toEqual({});
 	});
 
 	it('선택 소셜 정보는 빈 값을 허용하고 입력하면 형식을 검사한다', () => {

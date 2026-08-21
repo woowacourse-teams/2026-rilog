@@ -26,13 +26,13 @@ export default function CologProfileSocialFields({
 	onTextFieldChange,
 }: CologProfileSocialFieldsProps) {
 	return (
-		<fieldset className="flex flex-col gap-6" aria-describedby="social-fields-desc">
+		<fieldset className="flex flex-col gap-3" aria-describedby="social-fields-desc">
 			<legend className="text-body-2 font-semibold text-text-primary">소셜</legend>
 			<p id="social-fields-desc" className="text-label-2 text-text-secondary">
 				링크를 통해 팀을 표현해 보세요.
 			</p>
 
-			<Field label="서비스 링크">
+			<Field>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -49,7 +49,7 @@ export default function CologProfileSocialFields({
 				)}
 			</Field>
 
-			<Field label="GitHub 링크">
+			<Field>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}

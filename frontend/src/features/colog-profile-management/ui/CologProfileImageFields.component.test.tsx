@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -27,11 +27,17 @@ describe('CologProfileImageFields', () => {
 		expect(screen.getByText('팀 로고 추가')).toBeInTheDocument();
 		expect(screen.getByText('커버 이미지 추가')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('rounded-lg');
-		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
-		expect(screen.getByText('커버 이미지 추가').closest('details')).toHaveClass('absolute', 'right-3', 'bottom-3');
+		const defaultCoverImage = screen.getByRole('img', { name: '기본 팀 커버 이미지' });
+		expect(defaultCoverImage.parentElement?.parentElement).toHaveClass('min-w-0', 'flex-1');
+		expect(screen.getByText('커버 이미지 추가').closest('label')).not.toHaveClass('absolute');
+		expect(screen.getByText('커버 이미지 추가').closest('label')?.parentElement?.parentElement).toHaveClass(
+			'sm:w-44',
+			'sm:shrink-0',
+		);
+		expect(screen.queryByRole('button', { name: /기본 이미지로 되돌리기/ })).not.toBeInTheDocument();
 	});
 
-	it('선택된 이미지를 기본 이미지로 되돌린다', async () => {
+	it('이미지 hover overlay의 중앙 action으로 기본 이미지로 되돌린다', async () => {
 		const user = userEvent.setup();
 		const onLogoFileChange = vi.fn();
 		const onCoverImageFileChange = vi.fn();
@@ -43,13 +49,10 @@ describe('CologProfileImageFields', () => {
 			/>,
 		);
 
-		const logoMenu = screen.getByText('팀 로고 변경').closest('details')!;
-		await user.click(screen.getByText('팀 로고 변경'));
-		await user.click(within(logoMenu).getByRole('button', { name: '기본 이미지로 되돌리기' }));
-
-		const coverMenu = screen.getByText('커버 이미지 변경').closest('details')!;
-		await user.click(screen.getByText('커버 이미지 변경'));
-		await user.click(within(coverMenu).getByRole('button', { name: '기본 이미지로 되돌리기' }));
+		expect(screen.getByText('팀 로고 변경')).toBeInTheDocument();
+		expect(screen.getByText('커버 이미지 변경')).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '팀 로고 기본 이미지로 되돌리기' }));
+		await user.click(screen.getByRole('button', { name: '커버 이미지 기본 이미지로 되돌리기' }));
 
 		expect(onLogoFileChange).toHaveBeenCalledWith(null);
 		expect(onCoverImageFileChange).toHaveBeenCalledWith(null);
