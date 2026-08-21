@@ -24,6 +24,7 @@ describe('PostFeedCard', () => {
 		render(<PostFeedCard post={PERSONAL_POST} />);
 
 		expect(screen.getByRole('link', { name: /함께 기록하는 방법/ })).toHaveAttribute('href', '/@rilogger/posts/17');
+		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' })).toHaveClass('text-body-3');
 		expect(screen.getByText('리로거')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '리로거 프로필' })).toHaveTextContent('리');
 		expect(screen.getByText('2026년 8월 4일')).toHaveAttribute('datetime', PERSONAL_POST.publishedAt);
@@ -57,10 +58,14 @@ describe('PostFeedCard', () => {
 	it('썸네일 URL이 없으면 처음부터 팀 커버 기본 이미지를 표시한다', () => {
 		render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl: null }} />);
 
+		const postCard = screen.getByRole('link', { name: /함께 기록하는 방법/ });
 		expect(
 			new URL(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')!, 'http://localhost')
 				.pathname,
 		).toBe('/images/thumbnail-fallback.svg');
+		expect(postCard.querySelector('article > div')).toHaveClass('bg-thumbnail-background');
+		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' }).parentElement).toHaveClass('mt-2');
+		expect(screen.getByText('리로거').parentElement).toHaveClass('mt-2');
 		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' })).not.toHaveClass(
 			'object-contain',
 			'p-10',

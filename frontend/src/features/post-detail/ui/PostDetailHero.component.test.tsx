@@ -36,6 +36,7 @@ describe('PostDetailHero', () => {
 		const { rerender } = render(<PostDetailHero title="이미지 없는 글" thumbnailUrl={null} />);
 
 		expect(getSourceImageUrl('이미지 없는 글')).toBe('/images/thumbnail-fallback.svg');
+		expect(screen.getByRole('figure', { name: '이미지 없는 글 대표 이미지' })).toHaveClass('bg-thumbnail-background');
 
 		rerender(<PostDetailHero title="실패한 이미지 글" thumbnailUrl="broken-thumbnail.png" />);
 		fireEvent.error(screen.getByRole('img', { name: '실패한 이미지 글' }));

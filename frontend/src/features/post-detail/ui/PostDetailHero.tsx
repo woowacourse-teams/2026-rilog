@@ -19,7 +19,7 @@ export default function PostDetailHero({ title, thumbnailUrl }: PostDetailHeroPr
 	return (
 		<figure
 			aria-label={`${title} 대표 이미지`}
-			className="relative m-0 h-[clamp(20rem,min(50vw,calc(100svh-12rem)),48rem)] overflow-hidden bg-brand-primary"
+			className="relative m-0 h-[clamp(20rem,min(50vw,calc(100svh-12rem)),48rem)] overflow-hidden bg-thumbnail-background"
 		>
 			<Image
 				src={imageUrl}

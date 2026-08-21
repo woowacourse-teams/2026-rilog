@@ -97,7 +97,7 @@ export default function CologPostFeed({ slug, initialRequestFailed = false }: Co
 								href={buildPostDetailPath(slug, String(post.id))}
 								className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 							>
-								<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-surface-hover sm:h-27">
+								<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-27">
 									<PostFeedImage
 										src={post.thumbnailUrl}
 										fallbackSrc={POST_THUMBNAIL_FALLBACK_URL}
