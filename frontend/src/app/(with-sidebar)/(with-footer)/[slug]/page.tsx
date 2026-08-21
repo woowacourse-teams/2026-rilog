@@ -1,0 +1,37 @@
+import { notFound } from 'next/navigation';
+
+import CologMemberAside from '@/features/colog-members/ui/CologMemberAside';
+import { hasCologSlugPrefix } from '@/shared/routes/app-routes';
+import PageShell from '@/shared/ui/page-shell/PageShell';
+import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
+import CologHomeHero from '@/widgets/colog-home/ui/CologHomeHero';
+import CologPostList from '@/widgets/colog-home/ui/CologPostList';
+
+interface CologHomePageProps {
+	params: Promise<{ slug: string }>;
+}
+
+export default async function CologHomePage({ params }: CologHomePageProps) {
+	const { slug } = await params;
+	if (!hasCologSlugPrefix(slug)) {
+		notFound();
+	}
+
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return (
+		<PageShell
+			fullHeaderWidth
+			header={<CologHomeHero slug={normalizedSlug} />}
+			rightAside={
+				<div className="py-11">
+					<CologMemberAside slug={normalizedSlug} />
+				</div>
+			}
+		>
+			<div className="px-6 py-11 aside-right:px-0">
+				<CologPostList slug={normalizedSlug} />
+			</div>
+		</PageShell>
+	);
+}

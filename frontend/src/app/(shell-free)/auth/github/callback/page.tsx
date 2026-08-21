@@ -1,0 +1,17 @@
+import { Suspense } from 'react';
+
+import GitHubCallbackHandler from '@/features/login/ui/GitHubCallbackHandler';
+
+export default function GitHubCallbackPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex min-h-screen items-center justify-center">
+					<p className="text-body-1 text-text-secondary">로그인 처리 중입니다...</p>
+				</div>
+			}
+		>
+			<GitHubCallbackHandler />
+		</Suspense>
+	);
+}

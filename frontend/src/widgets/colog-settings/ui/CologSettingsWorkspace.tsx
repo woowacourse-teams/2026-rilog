@@ -1,0 +1,275 @@
+'use client';
+
+import { useCallback, useState } from 'react';
+
+import type { FormEvent } from 'react';
+
+import type { CologMember } from '@/domains/blog/model/colog';
+import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
+import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
+import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
+import { useCologProfileForm } from '@/features/colog-profile-management/hooks/use-colog-profile-form';
+import { useSaveCologProfile } from '@/features/colog-profile-management/hooks/use-save-colog-profile';
+import { mapCologProfileSettingsResponse } from '@/features/colog-profile-management/lib/map-colog-profile-settings-response';
+import { isCologProfileSettingsEqual } from '@/features/colog-profile-management/lib/validate-colog-profile-settings';
+import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
+import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
+import { buildCologSettingsPath } from '@/shared/routes/app-routes';
+import Button from '@/shared/ui/button/Button';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+import PageShell from '@/shared/ui/page-shell/PageShell';
+
+import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
+import type { SettingsTab } from '../lib/get-next-tab';
+
+import CologSettingsHeader from './CologSettingsHeader';
+
+interface CologSettingsWorkspaceProps {
+	slug?: string;
+	initialTab?: SettingsTab;
+	initialMembers?: CologMember[];
+}
+
+interface CologSettingsWorkspaceContentProps {
+	slug: string;
+	initialTab: SettingsTab;
+	initialMembers?: CologMember[];
+	initialProfile: CologProfileSettingsValue;
+}
+
+const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: string }> = {
+	profile: {
+		title: '프로필',
+		description: '팀의 기본 정보와 소개를 관리합니다.',
+	},
+	members: {
+		title: '멤버 관리',
+		description: '팀 멤버의 프로필, 역할, 권한을 관리합니다.',
+	},
+	danger: {
+		title: '위험 영역',
+		description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.',
+	},
+};
+
+export default function CologSettingsWorkspace({
+	slug = 'rilog',
+	initialTab = 'profile',
+	initialMembers,
+}: CologSettingsWorkspaceProps) {
+	const profileQuery = useBlogPublicProfileQuery({
+		slug,
+		select: (response) => (response.data === undefined ? undefined : mapCologProfileSettingsResponse(response.data)),
+	});
+
+	if (profileQuery.isPending) {
+		return (
+			<PageShell>
+				<p className="flex min-h-64 items-center justify-center text-body-2 text-text-secondary" role="status">
+					팀 프로필을 불러오는 중...
+				</p>
+			</PageShell>
+		);
+	}
+
+	if (profileQuery.isError || profileQuery.data === undefined) {
+		return (
+			<PageShell>
+				<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
+					<p className="text-body-2 text-text-secondary">팀 프로필을 불러오지 못했어요.</p>
+					<Button variant="secondary" onClick={() => void profileQuery.refetch()}>
+						다시 시도
+					</Button>
+				</div>
+			</PageShell>
+		);
+	}
+
+	return (
+		<CologSettingsWorkspaceContent
+			key={slug}
+			slug={slug}
+			initialTab={initialTab}
+			initialMembers={initialMembers}
+			initialProfile={profileQuery.data}
+		/>
+	);
+}
+
+function CologSettingsWorkspaceContent({
+	slug,
+	initialTab,
+	initialMembers,
+	initialProfile,
+}: CologSettingsWorkspaceContentProps) {
+	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
+
+	const profileForm = useCologProfileForm({ initialValue: savedProfile });
+	const memberDrafts = useCologMemberDrafts({ initialMembers });
+	const saveCologProfile = useSaveCologProfile();
+
+	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
+	const isWorkspaceDirty =
+		activeTab === 'profile' ? isProfileDirty : activeTab === 'members' ? memberDrafts.isDirty : false;
+
+	const commitTabChange = useCallback(
+		(nextTab: SettingsTab) => {
+			profileForm.setValue(savedProfile);
+			memberDrafts.handleCancelEditing();
+			setActiveTab(nextTab);
+			window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, nextTab));
+		},
+		[memberDrafts, profileForm, savedProfile, slug],
+	);
+
+	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
+		activeTab,
+		isDirty: isWorkspaceDirty,
+		onTabChange: commitTabChange,
+	});
+
+	const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (saveCologProfile.isPending) {
+			return;
+		}
+
+		const normalizedValue = profileForm.validate();
+
+		if (normalizedValue === null) {
+			return;
+		}
+
+		try {
+			const savedValue = await saveCologProfile.mutateAsync({ slug, value: normalizedValue });
+			profileForm.setValue(savedValue);
+			setSavedProfile(savedValue);
+		} catch {
+			// mutation 상태의 error를 폼 하단에 표시한다.
+		}
+	};
+
+	const profileErrorMessage = saveCologProfile.isError
+		? getApiErrorMessage(saveCologProfile.error, '팀 프로필을 저장하지 못했어요. 다시 시도해 주세요.')
+		: null;
+
+	const renderHeaderActions = () => {
+		if (activeTab === 'profile' && isProfileDirty) {
+			return (
+				<Button
+					form="profile-settings-form"
+					type="submit"
+					size="md"
+					className="w-full max-w-40 sm:max-w-60 md:max-w-none lg:w-30 lg:max-w-none"
+					isPending={saveCologProfile.isPending}
+				>
+					변경사항 저장
+				</Button>
+			);
+		}
+
+		if (activeTab === 'members') {
+			if (memberDrafts.isEditing) {
+				return (
+					<>
+						<Button
+							type="button"
+							variant="secondary"
+							size="md"
+							className="w-full sm:w-30"
+							onClick={memberDrafts.handleCancelEditing}
+						>
+							취소
+						</Button>
+						<Button
+							form="member-settings-form"
+							type="submit"
+							size="md"
+							className="w-full sm:w-30"
+							disabled={memberDrafts.draftMembers.length === 0}
+						>
+							저장
+						</Button>
+					</>
+				);
+			}
+
+			return (
+				<>
+					{/* TODO: 멤버 정보 수정 API 연동 후 주석 해제 */}
+					{/* <Button
+						type="button"
+						variant="secondary"
+						size="md"
+						className="w-full sm:w-30"
+						onClick={memberDrafts.handleStartEditing}
+					>
+						멤버 정보 수정
+					</Button> */}
+					<Button
+						type="button"
+						size="md"
+						className="w-full sm:w-30"
+						onClick={() => memberDrafts.setIsInviteModalOpen(true)}
+					>
+						+ 멤버 초대
+					</Button>
+				</>
+			);
+		}
+
+		return undefined;
+	};
+
+	return (
+		<PageShell
+			isHeaderSticky
+			header={
+				<CologSettingsHeader
+					activeTab={activeTab}
+					title={TAB_HEADER_CONFIG[activeTab].title}
+					description={TAB_HEADER_CONFIG[activeTab].description}
+					onTabChangeRequest={onTabChangeRequest}
+					actions={renderHeaderActions()}
+				/>
+			}
+		>
+			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
+				{activeTab === 'profile' && (
+					<>
+						<CologProfileSection
+							form={profileForm}
+							onSubmit={(event) => void handleProfileSubmit(event)}
+							disabled={saveCologProfile.isPending}
+							onValueChange={saveCologProfile.reset}
+						/>
+						{profileErrorMessage !== null && (
+							<p
+								className="mx-6 mt-4 rounded-md border border-danger bg-background p-3 text-label-2 text-danger sm:mx-8 lg:mx-0"
+								role="alert"
+							>
+								{profileErrorMessage}
+							</p>
+						)}
+					</>
+				)}
+				{activeTab === 'members' && <CologMemberManagementSection slug={slug} drafts={memberDrafts} />}
+				{activeTab === 'danger' && <CologDangerZoneSection />}
+			</div>
+
+			<ConfirmModal
+				open={isLeaveModalOpen}
+				title="변경 사항을 저장하지 않고 이동할까요?"
+				description="수정 중인 설정은 저장되지 않습니다."
+				confirmLabel="이동"
+				cancelLabel="계속 수정"
+				variant="danger"
+				onConfirm={onLeaveConfirm}
+				onCancel={onLeaveCancel}
+			/>
+		</PageShell>
+	);
+}

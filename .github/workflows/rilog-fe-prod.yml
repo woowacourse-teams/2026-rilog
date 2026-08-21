@@ -1,0 +1,123 @@
+name: rilog-fe-prod.yml
+
+on:
+  # 수동으로 워크플로우를 실행하여 인프라 세팅을 테스트할 수 있도록 추가
+  workflow_dispatch:
+  # production 브랜치에 코드가 병합(Push)될 때 배포 실행
+  push:
+    branches: [ "production" ]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/rilog-fe-prod.yml"
+  
+  # PR 생성/업데이트 시에는 빌드(build) Job까지만 실행하여 사전 검증
+  pull_request:
+    branches: [ "production" ]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/rilog-fe-prod.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Rilog FE PROD
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24' # package.json engines 기준
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.21.0
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create .env file for Build
+        env:
+          ENV_SECRET: ${{ secrets.ENV_PROD_FE }}
+        run: |
+          echo "$ENV_SECRET" > .env
+
+      - name: Build Next.js app
+        run: pnpm build
+
+      - name: Package artifacts
+        # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
+        run: |
+          tar -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml ecosystem.config.cjs next.config.ts
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fe-build-artifact
+          path: frontend/fe-build.tar.gz
+          retention-days: 1
+
+  deploy:
+    name: Deploy Rilog FE PROD
+    runs-on: [ self-hosted, frontend ] # frontend 라벨로 분기
+    needs: build
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: fe-build-artifact
+          path: /tmp/rilog-fe
+
+      - name: Setup Node PATH
+        run: |
+          NODE_BIN=$(find $HOME/.nvm/versions/node -maxdepth 1 -type d | sort -V | tail -1)/bin
+          echo "$NODE_BIN" >> $GITHUB_PATH
+
+      - name: Deploy to Server
+        run: |
+          TARGET_DIR="/home/ubuntu/rilog-next"
+          
+          # 0. 이전 빌드 산출물 정리 (node_modules는 재사용해서 install 속도 확보)
+          mkdir -p $TARGET_DIR
+          rm -rf $TARGET_DIR/.next $TARGET_DIR/public
+          
+          # 1. 대상 디렉터리 생성 및 압축 해제
+          mkdir -p $TARGET_DIR
+          tar -xzf /tmp/rilog-fe/fe-build.tar.gz -C $TARGET_DIR
+          rm -rf /tmp/rilog-fe
+          
+          cd $TARGET_DIR
+          
+          # 2. EC2 서버에서 의존성 설치 (실행 환경 호환성 문제 우회)
+          npm install -g pnpm@11.21.0
+          pnpm install --prod --frozen-lockfile
+          
+          # 3. pm2 재시작
+          # ecosystem.config.cjs를 사용해 프로세스 리로드 (update-env로 환경변수 갱신 보장)
+          pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
+          pm2 save

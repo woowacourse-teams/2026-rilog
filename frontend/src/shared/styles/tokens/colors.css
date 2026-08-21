@@ -1,0 +1,91 @@
+:root {
+	/* Brand primitives */
+	--navy-50: #f5f7fb;
+	--navy-100: #edf1f7;
+	--navy-200: #dee6f0;
+	--navy-300: #c9d5e5;
+	--navy-400: #a9bad2;
+	--navy-500: #8199b9;
+	--navy-600: #5b769b;
+	--navy-700: #35557c;
+	--navy-800: #0c2d5b;
+	--navy-900: #061a40;
+	--navy-950: #03102a;
+	--amber-500: #f2b84b;
+	--amber-50: #fff6dd;
+
+	/* Neutral primitives */
+	--white: #ffffff;
+	--neutral-25: #fcfcfd;
+	--neutral-50: #f8f9fb;
+	--neutral-100: #f1f4f8;
+	--neutral-200: #e7ecf2;
+	--neutral-300: #d7dee8;
+	--neutral-400: #a8b3c3;
+	--neutral-500: #94a3b8;
+	--neutral-600: #64748b;
+	--neutral-700: #3d4c63;
+
+	/* Status primitives */
+	--red-50: #fef2f2;
+	--red-300: #fca5a5;
+	--red-700: #b91c1c;
+	--red-800: #991b1b;
+	--red-900: #7f1d1d;
+	--green-50: #f0fdf4;
+	--green-300: #86efac;
+	--green-700: #15803d;
+	--green-800: #166534;
+	--green-900: #14532d;
+	--blue-600: #2563eb;
+
+	/* External brand primitives */
+	--github-900: #24292f;
+	--github-950: #1b1f23;
+	--github-1000: #161b22;
+
+	/* Semantic aliases */
+	--background: var(--neutral-50);
+	--surface: var(--neutral-25);
+	--surface-hover: var(--neutral-100);
+	--surface-active: var(--neutral-200);
+	--thumbnail-background: #ecf1f9;
+
+	--text-primary: var(--navy-900);
+	--text-secondary: var(--neutral-700);
+	--text-disabled: var(--neutral-600);
+	--text-on-dark: var(--neutral-50);
+	--text-placeholder: var(--neutral-500);
+
+	--border-default: var(--neutral-300);
+	--border-strong: var(--neutral-400);
+	--brand-primary: var(--navy-900);
+	--brand-primary-hover: var(--navy-800);
+	--brand-primary-active: var(--navy-950);
+	--brand-secondary: var(--amber-500);
+	--brand-secondary-soft: var(--amber-50);
+
+	--on-brand-primary: var(--white);
+	--on-brand-secondary: var(--navy-900);
+
+	--danger: var(--red-700);
+	--danger-hover: var(--red-800);
+	--danger-active: var(--red-900);
+	--danger-soft: var(--red-50);
+	--danger-border: var(--red-300);
+	--danger-text: var(--red-800);
+
+	--success: var(--green-700);
+	--success-hover: var(--green-800);
+	--success-active: var(--green-900);
+	--success-soft: var(--green-50);
+	--success-border: var(--green-300);
+	--success-text: var(--green-800);
+
+	--github: var(--github-900);
+	--github-hover: var(--github-950);
+	--github-active: var(--github-1000);
+
+	--focus-ring: var(--blue-600);
+	--overlay-backdrop: rgb(8 12 20 / 0.56);
+}

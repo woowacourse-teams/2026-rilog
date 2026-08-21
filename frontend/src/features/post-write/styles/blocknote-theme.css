@@ -1,0 +1,104 @@
+.post-write-blocknote {
+	--radius: var(--radius-xl);
+	--card: var(--surface);
+	--card-foreground: var(--text-primary);
+	--popover: var(--surface);
+	--popover-foreground: var(--text-primary);
+	--primary: var(--brand-primary);
+	--primary-foreground: var(--on-brand-primary);
+	--secondary: var(--surface-hover);
+	--secondary-foreground: var(--text-primary);
+	--muted: var(--surface-hover);
+	--muted-foreground: var(--text-secondary);
+	--accent: var(--surface-hover);
+	--accent-foreground: var(--text-primary);
+	--destructive: var(--danger);
+	--destructive-foreground: var(--white);
+	--border: var(--border-default);
+	--input: var(--border-default);
+	--ring: var(--focus-ring);
+	--bn-colors-editor-text: var(--text-primary);
+	--bn-colors-editor-background: transparent;
+	--bn-colors-menu-text: var(--text-primary);
+	--bn-colors-menu-background: var(--surface);
+	--bn-colors-tooltip-text: var(--text-primary);
+	--bn-colors-tooltip-background: var(--surface-hover);
+	--bn-colors-hovered-text: var(--text-primary);
+	--bn-colors-hovered-background: var(--surface-hover);
+	--bn-colors-selected-text: var(--on-brand-primary);
+	--bn-colors-selected-background: var(--brand-primary);
+	--bn-colors-disabled-text: var(--text-disabled);
+	--bn-colors-disabled-background: var(--surface-hover);
+	--bn-colors-shadow: var(--border-default);
+	--bn-colors-border: var(--border-default);
+	--bn-colors-side-menu: var(--text-secondary);
+	--bn-font-family: var(--font-sans);
+	--bn-border-radius: var(--radius-lg);
+	min-width: 0;
+}
+
+.post-write-blocknote .bn-container,
+.post-write-blocknote .bn-editor {
+	background: transparent;
+}
+
+.post-write-blocknote .bn-editor {
+	min-height: 22rem;
+	padding-inline: 0;
+	font-family: var(--font-sans);
+	font-size: 1.125rem;
+	line-height: 1.75rem;
+}
+
+.post-write-blocknote .bn-default-styles {
+	font-family: var(--font-sans);
+}
+
+.post-write-blocknote .bn-block-content.ProseMirror-selectednode > *,
+.post-write-blocknote .ProseMirror-selectednode > .bn-block-content > * {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+/* 리스트 아이템이면 기본적으로 위아래 여백 부여 */
+.post-write-blocknote
+	.bn-block-outer:has(
+		> .bn-block > .bn-block-content:is([data-content-type='bulletListItem'], [data-content-type='numberedListItem'])
+	) {
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+/* 바로 앞 형제가 같은 타입의 리스트 아이템이면 padding-top 축소 */
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem'])
+	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem']) {
+	padding-top: 0;
+}
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem'])
+	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem']) {
+	padding-top: 0;
+}
+
+/* 바로 다음 형제가 같은 타입의 리스트 아이템이면 padding-bottom 축소 */
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem']):has(
+		+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='bulletListItem']
+	) {
+	padding-bottom: 0;
+}
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem']):has(
+		+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='numberedListItem']
+	) {
+	padding-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+	.post-write-blocknote .bn-editor {
+		min-height: 18rem;
+		font-size: 1rem;
+		line-height: 1.5rem;
+	}
+}

@@ -18,6 +18,10 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
+src/main/java/kr/rilog/test/**
+local.env
+.gradle-user-home/
+.gradle-codex/
 *.env
 .idea
 *.iws
