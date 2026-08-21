@@ -6,7 +6,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static kr.rilog.support.BlogFixture.*;
+import static kr.rilog.support.fixure.BlogFixture.*;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_INVALID;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITATION_PERMISSION_INVALID;

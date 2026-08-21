@@ -6,7 +6,6 @@ import kr.rilog.domain.user.service.UserService;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.user.controller.apispec.UserApiSpec;
 import kr.rilog.domain.user.controller.dto.response.UserInfoResponse;
-import kr.rilog.domain.user.service.UserQueryService;
 import kr.rilog.domain.user.service.dto.result.UserInfoResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController implements UserApiSpec {
 
     private final UserService userService;
-    private final UserQueryService userQueryService;
 
     @AuthGuard
     @GetMapping("/users/{slug}")
     public ApiResponse<UserInfoResponse> getUserInfo(@PathVariable("slug") String slug) {
-        UserInfoResult result = userQueryService.getUserInfo(slug);
+        UserInfoResult result = userService.getUserInfo(slug);
         UserInfoResponse data = UserInfoResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "유저 정보 조회에 성공했습니다.", data);
     }

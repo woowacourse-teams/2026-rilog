@@ -1,4 +1,4 @@
-package kr.rilog.support;
+package kr.rilog.support.fixure;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
@@ -39,6 +39,16 @@ public class BlogFixture {
                 .id(1L)
                 .owner(owner)
                 .slug(Slug.from("rilog"))
+                .profile(cologProfile())
+                .blogType(BlogType.COLOG)
+                .build();
+    }
+
+    public static Blog createColog(User owner, String slug) {
+        return Blog.builder()
+                .id(1L)
+                .owner(owner)
+                .slug(Slug.from(slug))
                 .profile(cologProfile())
                 .blogType(BlogType.COLOG)
                 .build();

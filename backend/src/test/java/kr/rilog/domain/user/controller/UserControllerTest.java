@@ -1,6 +1,5 @@
 package kr.rilog.domain.user.controller;
 
-import kr.rilog.domain.user.service.UserQueryService;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.service.UserService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -24,14 +23,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerTest {
 
     private UserService userService;
-    private UserQueryService userQueryService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        userQueryService = mock(UserQueryService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService, userQueryService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
