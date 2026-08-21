@@ -66,28 +66,33 @@ export default function CologProfileImageFields({
 
 			<Field label="커버 이미지">
 				{({ id }) => (
-					<div id={id} className="group relative">
-						<ImagePreview
-							src={coverImagePreviewUrl || undefined}
-							alt="팀 커버 이미지 미리보기"
-							shape="rectangle"
-							className="h-32 w-full sm:h-40"
-							fallback={<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />}
-						/>
-						{hasCustomCover && (
-							<ImageResetOverlay
-								imageLabel="커버 이미지"
-								disabled={disabled}
-								onReset={() => onCoverImageFileChange(null)}
+					<div id={id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+						<div className="group relative min-w-0 flex-1">
+							<ImagePreview
+								src={coverImagePreviewUrl || undefined}
+								alt="팀 커버 이미지 미리보기"
+								shape="rectangle"
+								className="h-32 w-full sm:h-40"
+								fallback={
+									<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />
+								}
 							/>
-						)}
-						<ImageEditButton
-							imageLabel="커버 이미지"
-							hasImage={hasCustomCover}
-							disabled={disabled}
-							className="absolute right-3 bottom-3 z-30"
-							onFileChange={onCoverImageFileChange}
-						/>
+							{hasCustomCover && (
+								<ImageResetOverlay
+									imageLabel="커버 이미지"
+									disabled={disabled}
+									onReset={() => onCoverImageFileChange(null)}
+								/>
+							)}
+						</div>
+						<div className="w-full sm:w-44 sm:shrink-0">
+							<ImageEditButton
+								imageLabel="커버 이미지"
+								hasImage={hasCustomCover}
+								disabled={disabled}
+								onFileChange={onCoverImageFileChange}
+							/>
+						</div>
 					</div>
 				)}
 			</Field>

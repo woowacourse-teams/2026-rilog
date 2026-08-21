@@ -27,8 +27,13 @@ describe('CologProfileImageFields', () => {
 		expect(screen.getByText('팀 로고 추가')).toBeInTheDocument();
 		expect(screen.getByText('커버 이미지 추가')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('rounded-lg');
-		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
-		expect(screen.getByText('커버 이미지 추가').closest('label')).toHaveClass('absolute', 'right-3', 'bottom-3');
+		const defaultCoverImage = screen.getByRole('img', { name: '기본 팀 커버 이미지' });
+		expect(defaultCoverImage.parentElement?.parentElement).toHaveClass('min-w-0', 'flex-1');
+		expect(screen.getByText('커버 이미지 추가').closest('label')).not.toHaveClass('absolute');
+		expect(screen.getByText('커버 이미지 추가').closest('label')?.parentElement?.parentElement).toHaveClass(
+			'sm:w-44',
+			'sm:shrink-0',
+		);
 		expect(screen.queryByRole('button', { name: /기본 이미지로 되돌리기/ })).not.toBeInTheDocument();
 	});
 
