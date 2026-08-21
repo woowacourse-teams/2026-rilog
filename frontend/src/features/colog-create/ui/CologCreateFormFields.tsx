@@ -51,7 +51,7 @@ export default function CologCreateFormFields({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<Field label="팀 로고" description="팀을 대표하는 로고 이미지를 등록해 주세요." required>
+			<Field label="팀 로고" required>
 				{({ id }) => (
 					<div id={id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
 						<div className="relative shrink-0">
@@ -92,7 +92,7 @@ export default function CologCreateFormFields({
 				)}
 			</Field>
 
-			<Field label="커버 이미지" description="팀 페이지 상단에 노출될 커버 이미지를 등록해 주세요.">
+			<Field label="커버 이미지">
 				{({ id }) => (
 					<div id={id} className="flex flex-col gap-3">
 						<div className="relative">
@@ -130,7 +130,7 @@ export default function CologCreateFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 이름" description="서비스에 표시될 팀의 이름입니다." required>
+			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
@@ -141,7 +141,7 @@ export default function CologCreateFormFields({
 						required
 						minLength={COLOG_NAME_MIN_LENGTH}
 						maxLength={COLOG_NAME_MAX_LENGTH}
-						placeholder="예: Rilog 프론트엔드 팀"
+						placeholder="예: Rilog"
 						status={errors.name !== undefined ? 'error' : 'default'}
 						helperText={errors.name}
 						onChange={(event) => onTextFieldChange('name', event.target.value)}
@@ -149,7 +149,16 @@ export default function CologCreateFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 고유 아이디" description="팀 페이지 URL에 사용될 고유한 식별자입니다." required>
+			<Field
+				label="팀 고유 아이디"
+				description={
+					<ul className="list-disc pl-5">
+						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
+						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
+					</ul>
+				}
+				required
+			>
 				{({ id, describedBy }) => (
 					<div className="flex items-start gap-2">
 						<Input
@@ -165,7 +174,7 @@ export default function CologCreateFormFields({
 							placeholder="예: rilog-fe"
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
-								rilog.kr/@
+									rilog.kr/@
 								</span>
 							}
 							status={hasSlugError ? 'error' : slugAvailabilityStatus === 'success' ? 'success' : 'default'}
@@ -186,7 +195,7 @@ export default function CologCreateFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 소개" description="팀을 소개해 보세요.">
+			<Field label="팀 소개" description="팀을 소개하는 문장을 입력하세요.">
 				{({ id, describedBy }) => (
 					<div>
 						<Textarea
@@ -205,13 +214,13 @@ export default function CologCreateFormFields({
 				)}
 			</Field>
 
-			<fieldset className="flex flex-col gap-6" aria-describedby="social-fields-desc">
+			<fieldset className="flex flex-col gap-3" aria-describedby="social-fields-desc">
 				<legend className="text-body-2 font-semibold text-text-primary">소셜</legend>
 				<p id="social-fields-desc" className="text-label-2 text-text-secondary">
 					링크를 통해 팀을 표현해 보세요.
 				</p>
 
-				<Field label="서비스 링크">
+				<Field>
 					{({ id, describedBy }) => (
 						<Input
 							id={id}
@@ -228,7 +237,7 @@ export default function CologCreateFormFields({
 					)}
 				</Field>
 
-				<Field label="GitHub 링크">
+				<Field>
 					{({ id, describedBy }) => (
 						<Input
 							id={id}

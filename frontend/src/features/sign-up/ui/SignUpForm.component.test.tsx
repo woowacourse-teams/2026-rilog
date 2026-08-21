@@ -239,21 +239,20 @@ describe('SignUpForm', () => {
 		const user = userEvent.setup();
 		const { unmount } = renderSignUpForm();
 
-		await user.click(screen.getByText('프로필 이미지 추가'));
 		await user.upload(
-			screen.getByLabelText('프로필 이미지 업로드'),
+			screen.getByLabelText('프로필 이미지 추가'),
 			new File(['profile'], 'profile.png', { type: 'image/png' }),
 		);
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute('src', 'blob:profile-image');
 
-		await user.click(screen.getByText('프로필 이미지 변경'));
-		await user.click(screen.getByRole('button', { name: '기본 이미지로 되돌리기' }));
+		expect(screen.getByText('프로필 이미지 변경')).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '프로필 이미지 기본 이미지로 되돌리기' }));
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			'/images/profile-placeholder.svg',
 		);
-		expect(screen.queryByRole('button', { name: '기본 이미지로 되돌리기' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '프로필 이미지 기본 이미지로 되돌리기' })).not.toBeInTheDocument();
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');

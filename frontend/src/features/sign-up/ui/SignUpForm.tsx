@@ -16,8 +16,9 @@ import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Checkbox from '@/shared/ui/checkbox/Checkbox';
 import Field from '@/shared/ui/field/Field';
-import ImageEditMenu from '@/shared/ui/image-edit-menu/ImageEditMenu';
+import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
+import ImageResetOverlay from '@/shared/ui/image-reset-overlay/ImageResetOverlay';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
@@ -186,26 +187,34 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 					프로필 이미지 (선택)
 				</p>
 				<div className="flex items-end gap-4">
-					<ImagePreview
-						src={previewUrl}
-						alt="프로필 이미지 미리보기"
-						shape="circle"
-						fit={profileImageFile === null ? 'contain' : 'cover'}
-						sizes="100px"
-						className="size-25 shrink-0 bg-background"
-						imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
-					/>
-					<ImageEditMenu
+					<div className="group relative shrink-0">
+						<ImagePreview
+							src={previewUrl}
+							alt="프로필 이미지 미리보기"
+							shape="circle"
+							fit={profileImageFile === null ? 'contain' : 'cover'}
+							sizes="100px"
+							className="size-25 bg-background"
+							imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
+						/>
+						{profileImageFile !== null && (
+							<ImageResetOverlay
+								imageLabel="프로필 이미지"
+								disabled={isSigningUp}
+								onReset={() => handleImageChange(null)}
+							/>
+						)}
+					</div>
+					<ImageEditButton
 						imageLabel="프로필 이미지"
 						hasImage={profileImageFile !== null}
 						disabled={isSigningUp}
 						onFileChange={handleImageChange}
-						onReset={() => handleImageChange(null)}
 					/>
 				</div>
 			</div>
 
-			<Field label="닉네임" description="닉네임은 2~20자 사이로 입력 가능해요.">
+			<Field label="닉네임" description="닉네임은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
 					<div className="flex items-start gap-2">
 						<Input
@@ -256,6 +265,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
 					</ul>
 				}
+				required
 			>
 				{({ id, describedBy }) => (
 					<div className="flex items-start gap-2">
