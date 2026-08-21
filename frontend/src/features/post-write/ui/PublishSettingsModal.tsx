@@ -135,10 +135,14 @@ export default function PublishSettingsModal({
 							aria-label="게시글 썸네일 미리보기"
 							className="mt-5 overflow-hidden rounded-lg border border-border-default bg-surface"
 						>
-							<div className="aspect-video bg-surface-hover">
+							<div className="aspect-video bg-thumbnail-background">
 								{/* 동적 blob/본문 URL을 그대로 미리보기 위한 UI 전용 이미지입니다. */}
 								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img src={getImageUrl(previewUrl)} alt="게시글 대표 이미지 미리보기" className="size-full object-cover" />
+								<img
+									src={getImageUrl(previewUrl)}
+									alt="게시글 대표 이미지 미리보기"
+									className="size-full object-cover"
+								/>
 							</div>
 							<figcaption className="px-4 py-4">
 								<p className="line-clamp-2 text-body-3 font-semibold wrap-break-word text-text-primary">{postTitle}</p>

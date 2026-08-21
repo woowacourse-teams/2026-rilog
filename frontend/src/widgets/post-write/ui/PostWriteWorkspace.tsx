@@ -5,6 +5,7 @@ import { useCallback, useMemo } from 'react';
 
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -18,8 +19,6 @@ import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
 import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
-
-const DEFAULT_POST_COVER_PATH = '/images/default-post-cover.svg';
 
 interface PostWriteWorkspaceProps {
 	editorComponent?: ComponentType<PostEditorProps>;
@@ -61,7 +60,7 @@ export default function PostWriteWorkspace({
 
 		const thumbnailImageUrl =
 			settings.representativeImage === null
-				? null
+				? POST_THUMBNAIL_FALLBACK_URL
 				: (
 						await uploadFileToStorage({
 							file: settings.representativeImage,
@@ -149,7 +148,7 @@ export default function PostWriteWorkspace({
 				settings={publicationSettings}
 				selectedImageUrl={selectedImageUrl}
 				bodyBlocks={publicationBlocks}
-				defaultImageUrl={DEFAULT_POST_COVER_PATH}
+				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}
 				cologError={cologError}
 				publishError={publishError}
