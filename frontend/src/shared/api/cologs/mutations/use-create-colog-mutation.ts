@@ -1,13 +1,15 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import type { CologCreateValue } from '@/features/colog-create/model/colog-create';
 import { createColog } from '@/shared/api/cologs/api';
 import type { CologCreateRequest, CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
-
-import type { CologCreateValue } from '@/features/colog-create/model/colog-create';
+import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 
 export const useCreateCologMutation = () => {
+	const queryClient = useQueryClient();
+
 	return useMutation<ApiResponse<CologCreateResponse>, Error, CologCreateValue>({
 		mutationFn: async (value: CologCreateValue) => {
 			let profileImageUrl = value.profileImageUrl || undefined;
@@ -35,5 +37,6 @@ export const useCreateCologMutation = () => {
 
 			return createColog(request);
 		},
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsPreview() }),
 	});
 };
