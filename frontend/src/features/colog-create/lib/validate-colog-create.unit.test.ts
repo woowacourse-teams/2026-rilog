@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import type { CologCreateValue } from '../model/colog-create';
 
-import { normalizeCologCreateValue, validateCologCreateValue } from './validate-colog-create';
+import {
+	normalizeCologCreateValue,
+	normalizeCologSlug,
+	validateCologCreateValue,
+	validateCologSlug,
+} from './validate-colog-create';
 
 const VALID_VALUE: CologCreateValue = {
 	name: '리로그',
@@ -76,5 +81,15 @@ describe('normalizeCologCreateValue', () => {
 			serviceUrl: 'https://rilog.kr',
 			githubUrl: 'https://github.com/woowacourse-teams',
 		});
+	});
+});
+
+describe('validateCologSlug', () => {
+	it('앞뒤 공백과 대문자를 정규화하고 허용되지 않은 문자를 거부한다', () => {
+		expect(normalizeCologSlug('  Rilog-Team  ')).toBe('rilog-team');
+		expect(validateCologSlug('  Rilog-Team  ')).toBeUndefined();
+		expect(validateCologSlug('rilog_team')).toBe(
+			'고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.',
+		);
 	});
 });
