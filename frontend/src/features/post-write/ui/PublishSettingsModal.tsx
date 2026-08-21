@@ -11,7 +11,6 @@ import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/p
 import Button from '@/shared/ui/button/Button';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Modal from '@/shared/ui/modal/Modal';
-
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
 import { resolveRepresentativeImagePreview } from '../lib/resolve-representative-image';
@@ -106,11 +105,13 @@ export default function PublishSettingsModal({
 							<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
 								대표 이미지
 							</h3>
-							<p className="mt-1 text-caption-1 text-text-secondary">직접 선택한 이미지만 대표 이미지로 저장됩니다.</p>
+							<p className="mt-1 text-caption-1 text-text-secondary">
+								직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.
+							</p>
 							<div
 								className={`mt-4 grid gap-2 ${settings.representativeImage === null ? 'grid-cols-1' : 'grid-cols-2'}`}
 							>
-								{/* 브라우저에서 선택한 첫 이미지 파일은 공용 ImageUploader를 통해 부모에 전달됩니다. */}
+								{/* 브라우저에서 선택한 이미지 파일은 공용 ImageUploader를 통해 부모에 전달됩니다. */}
 								<ImageUploader
 									fullWidth
 									buttonLabel={settings.representativeImage === null ? '이미지 선택' : '이미지 변경'}
