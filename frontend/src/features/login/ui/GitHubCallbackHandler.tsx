@@ -3,14 +3,14 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { useAuth } from '@/features/auth/model/use-auth';
+import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { APP_ROUTES } from '@/shared/routes/app-routes';
 
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
-	const { setIsAuthenticated } = useAuth();
 	const processed = useRef(false);
 
 	useEffect(() => {
@@ -33,25 +33,27 @@ export default function GitHubCallbackHandler() {
 				}
 
 				if (accessToken) {
-					tokenManager.setToken(accessToken);
-					setIsAuthenticated(true);
+					await tokenManager.publishLogin(accessToken);
 				}
 
 				if (data.onboardingStatus === 'PENDING') {
-					router.replace('/sign-up');
+					startSignUpFlow();
+					router.replace(APP_ROUTES.signUp);
 				} else {
+					clearSignUpFlow();
 					const redirectUrl = localStorage.getItem('postLoginRedirect') || '/';
 					localStorage.removeItem('postLoginRedirect');
 					router.replace(redirectUrl);
 				}
 			} catch (err) {
+				clearSignUpFlow();
 				console.error('GitHub login failed:', err);
 				router.replace('/');
 			}
 		};
 
 		void processCallback();
-	}, [searchParams, router, setIsAuthenticated]);
+	}, [searchParams, router]);
 
 	return (
 		<div className="flex min-h-screen items-center justify-center">

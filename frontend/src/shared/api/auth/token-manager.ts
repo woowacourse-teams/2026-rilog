@@ -1,11 +1,12 @@
 import ky from 'ky';
 
-type LogoutListener = () => void;
+type AuthListener = () => void | Promise<void>;
 
 class TokenManager {
 	private accessToken: string | null = null;
 	private refreshPromise: Promise<string | null> | null = null;
-	private logoutListeners = new Set<LogoutListener>();
+	private loginListeners = new Set<AuthListener>();
+	private logoutListeners = new Set<AuthListener>();
 
 	constructor() {
 		if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_DEV_MASTER_TOKEN) {
@@ -19,10 +20,6 @@ class TokenManager {
 
 	setToken(token: string) {
 		this.accessToken = token;
-	}
-
-	clearToken() {
-		this.accessToken = null;
 	}
 
 	async refresh(): Promise<string | null> {
@@ -50,7 +47,7 @@ class TokenManager {
 			if (response.ok) {
 				const authHeader = response.headers.get('Authorization');
 				const token = authHeader ? authHeader.replace('Bearer ', '') : null;
-				
+
 				if (token) {
 					this.setToken(token);
 					return token;
@@ -61,20 +58,44 @@ class TokenManager {
 		}
 
 		// 재발급 실패 시 토큰을 비우고 로그아웃 이벤트를 발행하여 앱 전체를 로그아웃 상태로 전환
-		this.clearToken();
-		this.publishLogout();
+		await this.publishLogout();
 		return null;
 	}
 
-	subscribeLogout(listener: LogoutListener) {
+	subscribeLogin(listener: AuthListener) {
+		this.loginListeners.add(listener);
+		return () => {
+			this.loginListeners.delete(listener);
+		};
+	}
+
+	async publishLogin(token: string): Promise<void> {
+		this.setToken(token);
+		await this.notifyListeners(this.loginListeners);
+	}
+
+	subscribeLogout(listener: AuthListener) {
 		this.logoutListeners.add(listener);
 		return () => {
 			this.logoutListeners.delete(listener);
 		};
 	}
 
-	publishLogout() {
-		this.logoutListeners.forEach((listener) => listener());
+	async publishLogout(): Promise<void> {
+		this.accessToken = null;
+		await this.notifyListeners(this.logoutListeners);
+	}
+
+	private async notifyListeners(listeners: Set<AuthListener>): Promise<void> {
+		const results = await Promise.allSettled(
+			Array.from(listeners, (listener) => Promise.resolve().then(() => listener())),
+		);
+
+		results.forEach((result) => {
+			if (result.status === 'rejected') {
+				console.error('[TokenManager] Auth listener failed:', result.reason);
+			}
+		});
 	}
 }
 

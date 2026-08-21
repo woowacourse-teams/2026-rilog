@@ -14,10 +14,19 @@ interface LoginModalProviderProps {
 
 export default function LoginModalProvider({ children }: LoginModalProviderProps) {
 	const [isOpen, setIsOpen] = useState(false);
-	const login = useCallback(() => setIsOpen(true), []);
-	const close = useCallback(() => setIsOpen(false), []);
+	const [isLoginPending, setIsLoginPending] = useState(false);
+	const login = useCallback(() => {
+		setIsLoginPending(false);
+		setIsOpen(true);
+	}, []);
+	const close = useCallback(() => {
+		setIsLoginPending(false);
+		setIsOpen(false);
+	}, []);
 
 	const handleGitHubLogin = useCallback(() => {
+		setIsLoginPending(true);
+
 		const currentUrl = window.location.pathname + window.location.search;
 		localStorage.setItem('postLoginRedirect', currentUrl);
 
@@ -29,7 +38,7 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 	return (
 		<LOGIN_MODAL_CONTEXT.Provider value={login}>
 			{children}
-			<LoginModal open={isOpen} onClose={close} onGitHubLogin={handleGitHubLogin} />
+			<LoginModal open={isOpen} onClose={close} onGitHubLogin={handleGitHubLogin} isPending={isLoginPending} />
 		</LOGIN_MODAL_CONTEXT.Provider>
 	);
 }

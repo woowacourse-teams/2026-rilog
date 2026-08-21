@@ -1,20 +1,14 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
-const { logoutMock, mutateMock, pushMock } = vi.hoisted(() => ({
-	logoutMock: vi.fn(),
+const { mutateMock } = vi.hoisted(() => ({
 	mutateMock: vi.fn(),
-	pushMock: vi.fn(),
-}));
-
-vi.mock('next/navigation', () => ({
-	useRouter: () => ({ push: pushMock }),
 }));
 
 vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
@@ -41,22 +35,13 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 
 function renderFooter() {
 	return renderWithQuery(
-		<AUTH_CONTEXT.Provider
-			value={{ isAuthenticated: true, isInitialized: true, setIsAuthenticated: vi.fn(), logout: logoutMock }}
-		>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true }}>
 			<AuthenticatedSidebarFooter />
 		</AUTH_CONTEXT.Provider>,
 	);
 }
 
 describe('AuthenticatedSidebarFooter', () => {
-	beforeEach(() => {
-		logoutMock.mockReset();
-		pushMock.mockReset();
-		mutateMock.mockReset();
-		mutateMock.mockImplementation((_value: undefined, options: { onSettled?: () => void }) => options.onSettled?.());
-	});
-
 	it('글쓰기와 프로필 진입점, 로그아웃 버튼을 제공한다', () => {
 		renderFooter();
 
@@ -85,13 +70,13 @@ describe('AuthenticatedSidebarFooter', () => {
 		expect(logoutButton).toHaveFocus();
 	});
 
-	it('로그아웃 완료 후 메인 피드로 이동한다', async () => {
+	it('로그아웃 버튼을 누르면 별도 페이지 이동 없이 로그아웃을 요청한다', async () => {
 		const user = userEvent.setup();
 		renderFooter();
 
 		await user.click(screen.getByRole('button', { name: '로그아웃' }));
 
-		expect(logoutMock).toHaveBeenCalledOnce();
-		expect(pushMock).toHaveBeenCalledWith('/feeds');
+		expect(mutateMock).toHaveBeenCalledOnce();
+		expect(mutateMock).toHaveBeenCalledWith();
 	});
 });

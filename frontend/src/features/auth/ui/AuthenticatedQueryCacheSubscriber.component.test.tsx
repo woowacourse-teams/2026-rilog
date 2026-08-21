@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe('AuthenticatedQueryCacheSubscriber', () => {
-	it('token 갱신 실패 시 인증 query cache를 제거하고 구독을 정리한다', async () => {
+	it('logout 이벤트 발생 시 인증 query cache를 제거하고 구독을 정리한다', async () => {
 		vi.stubGlobal(
 			'fetch',
 			vi.fn().mockImplementation(() => Promise.resolve(createUnauthorizedResponse())),

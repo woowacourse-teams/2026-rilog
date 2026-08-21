@@ -5,7 +5,7 @@ import { useId, useRef, useState } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
-import { useAuth } from '@/features/auth/model/use-auth';
+import { clearSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
@@ -56,8 +56,6 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const nicknameAvailability = useCheckNicknameAvailabilityMutation();
 	const slugAvailability = useCheckSlugAvailabilityMutation();
 
-	const { setIsAuthenticated } = useAuth();
-
 	const handleCompleteSignUp: CompleteSignUp = async (value) => {
 		let profileImageUrl = '';
 		if (value.profileImageFile) {
@@ -76,7 +74,6 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 		if (response.accessToken) {
 			tokenManager.setToken(response.accessToken);
-			setIsAuthenticated(true);
 		}
 
 		return { slug: value.slug };
@@ -103,6 +100,11 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	});
 
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
+	const handleCancel = () => {
+		clearSignUpFlow();
+		window.history.back();
+	};
+
 	const nicknameAvailabilityMessage = nicknameAvailability.isSuccess
 		? nicknameAvailability.data.message
 		: nicknameAvailability.isError
@@ -362,7 +364,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 					size="lg"
 					className="w-full bg-white sm:w-40"
 					disabled={isSigningUp}
-					onClick={() => window.history.back()}
+					onClick={handleCancel}
 				>
 					취소
 				</Button>

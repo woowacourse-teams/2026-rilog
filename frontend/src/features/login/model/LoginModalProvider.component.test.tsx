@@ -39,9 +39,7 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider
-				value={{ isAuthenticated: false, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
-			>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
@@ -58,9 +56,7 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider
-				value={{ isAuthenticated: true, isInitialized: true, setIsAuthenticated: vi.fn(), logout: vi.fn() }}
-			>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true }}>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
@@ -71,5 +67,22 @@ describe('LoginModalProvider', () => {
 
 		expect(action).toHaveBeenCalledOnce();
 		expect(screen.queryByRole('dialog', { name: '로그인' })).not.toBeInTheDocument();
+	});
+
+	it('GitHub 로그인을 시작하면 중복 요청과 모달 닫기를 막는다', async () => {
+		const user = userEvent.setup();
+		render(
+			<LoginModalProvider>
+				<LoginButton />
+			</LoginModalProvider>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '로그인 열기' }));
+		const githubLoginButton = screen.getByRole('button', { name: 'GitHub로 계속하기' });
+		await user.click(githubLoginButton);
+
+		expect(githubLoginButton).toBeDisabled();
+		expect(githubLoginButton).toHaveAttribute('aria-busy', 'true');
+		expect(screen.getByRole('button', { name: '모달 닫기' })).toBeDisabled();
 	});
 });

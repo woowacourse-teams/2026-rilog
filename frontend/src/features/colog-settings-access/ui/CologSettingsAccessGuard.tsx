@@ -1,10 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
 import type { ReactNode } from 'react';
 
+import AccessFeedback from '@/features/auth/ui/AccessFeedback';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
@@ -16,18 +14,21 @@ interface CologSettingsAccessGuardProps {
 }
 
 export default function CologSettingsAccessGuard({ children, slug }: CologSettingsAccessGuardProps) {
-	const router = useRouter();
 	const accessStatus = useCologSettingsAccess(slug);
 	const homePath = buildCologHomePath(slug);
 
-	useEffect(() => {
-		if (accessStatus === 'unauthorized') {
-			router.replace(homePath);
-		}
-	}, [accessStatus, homePath, router]);
-
 	if (accessStatus === 'authorized') {
 		return children;
+	}
+
+	if (accessStatus === 'unauthenticated' || accessStatus === 'forbidden') {
+		return (
+			<AccessFeedback
+				isOpen
+				reason={accessStatus === 'unauthenticated' ? 'auth-required' : 'forbidden'}
+				redirectPath={homePath}
+			/>
+		);
 	}
 
 	if (accessStatus === 'error') {
