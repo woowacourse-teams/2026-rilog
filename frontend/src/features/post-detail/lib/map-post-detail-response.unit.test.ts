@@ -63,7 +63,7 @@ describe('mapPostDetailResponse', () => {
 				blogId: 5,
 				slug: 'rilog',
 				name: 'Rilog',
-				logoImageUrl: null,
+				profileImageUrl: 'https://images.rilog.test/team.png',
 				coverImageUrl: null,
 				memberCount: 8,
 				postCount: 42,
@@ -77,6 +77,7 @@ describe('mapPostDetailResponse', () => {
 		expect(postDetail.thumbnailUrl).toBe('https://images.rilog.test/cover.png');
 		expect(postDetail.blog.type).toBe('COLOG');
 		if (postDetail.blog.type === 'COLOG') {
+			expect(postDetail.blog.profileImageUrl).toBe('https://images.rilog.test/team.png');
 			expect(postDetail.blog.memberCount).toBe(8);
 			expect(postDetail.blog.postCount).toBe(42);
 		}

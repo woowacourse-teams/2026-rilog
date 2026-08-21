@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
+import kr.rilog.domain.blog.controller.dto.request.CologProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
 import kr.rilog.global.response.ApiResponse;
@@ -42,6 +43,20 @@ public interface CologApiSpec {
             @Parameter(description = "멤버를 초대할 팀 블로그 slug", example = "rilog-team")
             @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
+    );
+
+    @Operation(
+            summary = "팀 프로필 수정 API",
+            description = "팀 블로그 프로필을 수정합니다.. OWNER 또는 ADMIN 권한의 팀 멤버만 수정할 수 있습니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "팀 프로필 수정 성공"
+    )
+    ApiResponse<Void> updateCologProfile(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug,
+            @Valid @RequestBody CologProfileUpdateRequest dto
     );
 
 }

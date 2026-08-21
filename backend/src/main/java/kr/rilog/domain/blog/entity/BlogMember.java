@@ -15,8 +15,7 @@ import java.time.LocalDateTime;
 
 import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.*;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 
 @Getter
 @Entity
@@ -83,7 +82,13 @@ public class BlogMember extends BaseEntity {
         }
 
         if (inviteePermission != ADMIN && inviteePermission != MEMBER) {
-            throw new BlogException(BLOG_MEMBER_PERMISSION_INVALID);
+            throw new BlogException(BLOG_MEMBER_INVITATION_PERMISSION_INVALID);
+        }
+    }
+
+    public void validateHasAdminPermission() {
+        if (status != ACTIVE || permission != ADMIN) {
+            throw new BlogException(ADMIN_PERMISSION_INVALID);
         }
     }
 

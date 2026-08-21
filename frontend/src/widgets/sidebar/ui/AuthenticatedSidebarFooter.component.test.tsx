@@ -7,6 +7,14 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
+const { mutateMock } = vi.hoisted(() => ({
+	mutateMock: vi.fn(),
+}));
+
+vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
+	useLogoutMutation: () => ({ mutate: mutateMock }),
+}));
+
 vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 	useMyInfoQuery: vi.fn(({ select }) => {
 		const response = {
@@ -60,5 +68,15 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		await user.tab();
 		expect(logoutButton).toHaveFocus();
+	});
+
+	it('로그아웃 버튼을 누르면 별도 페이지 이동 없이 로그아웃을 요청한다', async () => {
+		const user = userEvent.setup();
+		renderFooter();
+
+		await user.click(screen.getByRole('button', { name: '로그아웃' }));
+
+		expect(mutateMock).toHaveBeenCalledOnce();
+		expect(mutateMock).toHaveBeenCalledWith();
 	});
 });

@@ -56,14 +56,15 @@ public class Profile {
             String profileImageUrl,
             String coverImageUrl,
             String serviceUrl,
-            String githubUrl
+            String githubUrl,
+            String email
     ) {
         return new Profile(
                 name,
                 introduction,
                 profileImageUrl,
                 coverImageUrl,
-                null,
+                email,
                 serviceUrl,
                 githubUrl
         );

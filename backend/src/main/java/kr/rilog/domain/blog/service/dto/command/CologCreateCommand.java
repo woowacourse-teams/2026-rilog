@@ -9,7 +9,8 @@ public record CologCreateCommand(
         String profileImageUrl,
         String coverImageUrl,
         String serviceUrl,
-        String githubUrl
+        String githubUrl,
+        String email
 ) {
 
     public Profile toProfile() {
@@ -19,7 +20,8 @@ public record CologCreateCommand(
                 profileImageUrl,
                 coverImageUrl,
                 serviceUrl,
-                githubUrl
+                githubUrl,
+                email
         );
     }
 

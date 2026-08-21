@@ -38,11 +38,23 @@ public record CologCreateRequest(
 
         @Schema(description = "팀 GitHub URL", example = "https://github.com/rilog")
         @Size(max = 512, message = "GitHub URL은 512자 이하여야 합니다.")
-        String githubUrl
+        String githubUrl,
+
+        @Schema(description = "팀 Email", example = "test@test.com")
+        String email
 
 ) {
 
     public CologCreateCommand toCommand() {
-        return new CologCreateCommand(name, slug, introduction, profileImageUrl, coverImageUrl, serviceUrl, githubUrl);
+            return new CologCreateCommand(
+                    name,
+                    slug,
+                    introduction,
+                    profileImageUrl,
+                    coverImageUrl,
+                    serviceUrl,
+                    githubUrl,
+                    email
+            );
     }
 }

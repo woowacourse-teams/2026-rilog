@@ -8,8 +8,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static kr.rilog.support.BlogFixture.*;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_INVALID;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITATION_PERMISSION_INVALID;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_PERMISSION_INVALID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -101,7 +102,42 @@ class BlogMemberTest {
         // when & then
         assertThatThrownBy(() -> owner.validateCanInvite(BlogPermission.OWNER))
                 .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_MEMBER_PERMISSION_INVALID.getMessage());
+                .hasMessage(BLOG_MEMBER_INVITATION_PERMISSION_INVALID.getMessage());
+    }
+
+    @Test
+    @DisplayName("활성 ADMIN 멤버는 ADMIN 권한 검증을 통과한다.")
+    void validateHasAdminPermissionAllowsActiveAdmin() {
+        // given
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatCode(admin::validateHasAdminPermission)
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("ADMIN 권한이 아닌 멤버는 ADMIN 권한 검증에 실패한다.")
+    void validateHasAdminPermissionRejectsNonAdmin() {
+        // given
+        BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(member::validateHasAdminPermission)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
+    }
+
+    @Test
+    @DisplayName("활성 상태가 아닌 ADMIN 멤버는 ADMIN 권한 검증에 실패한다.")
+    void validateHasAdminPermissionRejectsInactiveAdmin() {
+        // given
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.LEFT);
+
+        // when & then
+        assertThatThrownBy(admin::validateHasAdminPermission)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
     }
 
     private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {

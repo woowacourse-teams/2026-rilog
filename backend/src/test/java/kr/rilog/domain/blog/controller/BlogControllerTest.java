@@ -10,9 +10,12 @@ import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.BlogService;
+import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -20,7 +23,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.Instant;
 import java.util.List;
 
+import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,6 +34,57 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class BlogControllerTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Ab1_", "12345678901234567890", "ri-log_01"})
+    @DisplayName("GET /v1/availability/slug는 블로그 슬러그 사용 가능 여부를 확인한다")
+    void validateSlugAcceptsValidSlug(String slug) throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("사용가능한 슬러그입니다."));
+
+        verify(blogService).validateDuplicatedSlug(slug);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abc", "123456789012345678901"})
+    @DisplayName("GET /v1/availability/slug는 길이가 올바르지 않은 슬러그를 거절한다")
+    void validateSlugRejectsInvalidLength(String slug) throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isBadRequest());
+
+        verify(blogService, never()).validateDuplicatedSlug(slug);
+    }
+
+    @Test
+    @DisplayName("GET /v1/availability/slug는 중복된 블로그 슬러그이면 중복 오류를 반환한다")
+    void validateSlugRejectsDuplicatedSlug() throws Exception {
+        // given
+        String slug = "ri_log-01";
+        BlogService blogService = mock(BlogService.class);
+        doThrow(new UserException(SLUG_DUPLICATED))
+                .when(blogService).validateDuplicatedSlug(slug);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("SLUG_DUPLICATED"));
+    }
 
     @Test
     @DisplayName("GET /v1/blogs/@{slug}는 블로그 컨트롤러에서 공개 프로필 정보를 조회한다")

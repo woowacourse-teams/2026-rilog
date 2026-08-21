@@ -49,6 +49,7 @@
 	--surface: var(--neutral-25);
 	--surface-hover: var(--neutral-100);
 	--surface-active: var(--neutral-200);
+	--thumbnail-background: #ecf1f9;
 
 	--text-primary: var(--navy-900);
 	--text-secondary: var(--neutral-700);

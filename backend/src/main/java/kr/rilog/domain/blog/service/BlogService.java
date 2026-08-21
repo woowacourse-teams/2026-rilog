@@ -9,12 +9,15 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.exception.UserException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,20 @@ public class BlogService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final PostRepository postRepository;
+
+    public void validateDuplicatedSlug(String slug) {
+        if (blogRepository.existsBySlug(Slug.from(slug))) {
+            throw new UserException(SLUG_DUPLICATED);
+        }
+    }
+
+    public void createRilogIfAbsent(User user) {
+        if (blogRepository.findRilogByOwnerId(user.getId()).isPresent()) {
+            return;
+        }
+
+        blogRepository.save(Blog.createRilog(user));
+    }
 
     public CologPublicProfileResult getPublicProfile(String slug) {
         Blog colog = blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)

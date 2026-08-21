@@ -3,7 +3,12 @@ import { useMemo, useRef, useState } from 'react';
 import type { CologCreateValue, CologProfileTextField, CologProfileValidationErrors } from '../model/colog-create';
 import type { RefObject } from 'react';
 
-import { normalizeCologCreateValue, validateCologCreateValue } from '../lib/validate-colog-create';
+import {
+	normalizeCologCreateValue,
+	normalizeCologSlug,
+	validateCologCreateValue,
+	validateCologSlug,
+} from '../lib/validate-colog-create';
 import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';
 
 export interface CologCreateFormRefs {
@@ -89,6 +94,26 @@ export function useCologCreateForm(options: UseCologCreateFormOptions = {}) {
 		return normalizeCologCreateValue(value);
 	};
 
+	const validateSlug = (): string | null => {
+		const slugError = validateCologSlug(value.slug);
+		setErrors((current) => {
+			const nextErrors = { ...current };
+			if (slugError === undefined) {
+				delete nextErrors.slug;
+			} else {
+				nextErrors.slug = slugError;
+			}
+			return nextErrors;
+		});
+
+		if (slugError !== undefined) {
+			refs.slug.current?.focus();
+			return null;
+		}
+
+		return normalizeCologSlug(value.slug);
+	};
+
 	return {
 		value,
 		errors,
@@ -97,6 +122,7 @@ export function useCologCreateForm(options: UseCologCreateFormOptions = {}) {
 		updateLogoFile,
 		updateCoverImageFile,
 		validate,
+		validateSlug,
 		setValue,
 	};
 }

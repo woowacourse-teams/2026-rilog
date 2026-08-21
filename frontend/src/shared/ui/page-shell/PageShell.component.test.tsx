@@ -47,7 +47,10 @@ describe('PageShell', () => {
 		const header = screen.getByRole('banner');
 		const [leftAside, rightAside] = screen.getAllByRole('complementary');
 		const main = screen.getByRole('main');
+		const content = main.parentElement;
 
+		expect(content).toHaveAttribute('data-has-left-aside', 'true');
+		expect(content).toHaveAttribute('data-has-right-aside', 'true');
 		expect(within(header).getByRole('heading', { name: '헤더 콘텐츠' })).toBeInTheDocument();
 		expect(within(leftAside).getByRole('heading', { name: '왼쪽 보조 콘텐츠' })).toBeInTheDocument();
 		expect(within(main).getByRole('heading', { name: '메인 콘텐츠' })).toBeInTheDocument();
