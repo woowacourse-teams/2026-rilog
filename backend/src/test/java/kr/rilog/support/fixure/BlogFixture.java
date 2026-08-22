@@ -54,6 +54,10 @@ public class BlogFixture {
                 .build();
     }
 
+    public static Blog createPersistableColog(User owner, String slug) {
+        return Blog.createColog(owner, slug, cologProfile());
+    }
+
     public static Profile rilogProfile() {
         return Profile.createRilog(
                 "러로",
