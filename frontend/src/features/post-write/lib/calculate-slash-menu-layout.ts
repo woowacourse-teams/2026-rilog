@@ -2,6 +2,8 @@ export const SLASH_MENU_EDGE_PADDING = 16;
 export const SLASH_MENU_GAP = 10;
 export const SLASH_MENU_EARLY_FLIP_PADDING = 24;
 export const SLASH_MENU_INITIAL_HEIGHT = 320;
+export const SLASH_MENU_BOTTOM_MAX_HEIGHT = 560;
+export const SLASH_MENU_TOP_MAX_HEIGHT = 400;
 
 export interface SlashMenuRect {
 	bottom: number;
@@ -38,10 +40,12 @@ export const calculateSlashMenuLayout = ({
 	const shouldPlaceAbove =
 		availableBelow < preferredHeight + SLASH_MENU_EARLY_FLIP_PADDING && availableAbove > availableBelow;
 	const availableHeight = shouldPlaceAbove ? availableAbove : availableBelow;
+	const preferredMaxHeight = shouldPlaceAbove ? SLASH_MENU_TOP_MAX_HEIGHT : SLASH_MENU_BOTTOM_MAX_HEIGHT;
+	const maxHeight = Math.min(availableHeight, preferredMaxHeight);
 
 	return {
 		placement: shouldPlaceAbove ? 'top-start' : 'bottom-start',
-		maxHeight: availableHeight,
+		maxHeight,
 		maxWidth: Math.max(0, boundary.width - SLASH_MENU_EDGE_PADDING * 2),
 	};
 };

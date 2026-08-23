@@ -19,7 +19,7 @@ describe('calculateSlashMenuLayout', () => {
 			reference: { top: 120, bottom: 144 },
 		});
 
-		expect(layout).toEqual({ placement: 'bottom-start', maxHeight: 630, maxWidth: 568 });
+		expect(layout).toEqual({ placement: 'bottom-start', maxHeight: 560, maxWidth: 568 });
 	});
 
 	it('아래 공간이 메뉴 높이와 조기 반전 여유보다 작으면 위에 배치한다', () => {
@@ -29,7 +29,7 @@ describe('calculateSlashMenuLayout', () => {
 			reference: { top: 560, bottom: 584 },
 		});
 
-		expect(layout).toEqual({ placement: 'top-start', maxHeight: 534, maxWidth: 568 });
+		expect(layout).toEqual({ placement: 'top-start', maxHeight: 400, maxWidth: 568 });
 	});
 
 	it('양쪽 공간이 부족하면 더 넓은 방향을 선택하고 메뉴 높이를 제한한다', () => {
@@ -40,6 +40,16 @@ describe('calculateSlashMenuLayout', () => {
 		});
 
 		expect(layout).toEqual({ placement: 'bottom-start', maxHeight: 170, maxWidth: 568 });
+	});
+
+	it('가용 공간이 고정 높이보다 작으면 가용 공간에 맞춘다', () => {
+		const layout = calculateSlashMenuLayout({
+			boundary: { ...VIEWPORT, bottom: 400, height: 400 },
+			menuHeight: 320,
+			reference: { top: 250, bottom: 274 },
+		});
+
+		expect(layout).toEqual({ placement: 'top-start', maxHeight: 224, maxWidth: 568 });
 	});
 });
 
