@@ -6,6 +6,7 @@ import type {
 } from '../model/colog-profile-settings';
 
 import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LENGTH } from '@/domains/blog/model/colog';
+import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
@@ -19,7 +20,10 @@ interface CologProfileFormFieldsProps {
 	refs: CologProfileFormRefs;
 	isLogoRequired?: boolean;
 	disabled?: boolean;
+	nameAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
+	nameAvailabilityMessage?: string;
 	onTextFieldChange: (field: CologProfileTextField, nextValue: string) => void;
+	onNameAvailabilityCheck: () => void;
 	onLogoFileChange: (file: File | null) => void;
 	onCoverImageFileChange: (file: File | null) => void;
 }
@@ -30,10 +34,15 @@ export default function CologProfileFormFields({
 	refs,
 	isLogoRequired = false,
 	disabled = false,
+	nameAvailabilityStatus = 'idle',
+	nameAvailabilityMessage,
 	onTextFieldChange,
+	onNameAvailabilityCheck,
 	onLogoFileChange,
 	onCoverImageFileChange,
 }: CologProfileFormFieldsProps) {
+	const hasNameError = errors.name !== undefined || nameAvailabilityStatus === 'error';
+
 	return (
 		<div className="flex flex-col gap-6">
 			<CologProfileImageFields
@@ -48,33 +57,36 @@ export default function CologProfileFormFields({
 
 			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
-					<Input
-						id={id}
-						aria-describedby={describedBy}
-						ref={refs.name}
-						value={value.name}
-						disabled={disabled}
-						required
-						minLength={COLOG_NAME_MIN_LENGTH}
-						maxLength={COLOG_NAME_MAX_LENGTH}
-						placeholder="예: Rilog"
-						status={errors.name !== undefined ? 'error' : 'default'}
-						helperText={errors.name}
-						onChange={(event) => onTextFieldChange('name', event.target.value)}
-					/>
+					<div className="flex items-start gap-2">
+						<Input
+							id={id}
+							aria-describedby={describedBy}
+							ref={refs.name}
+							value={value.name}
+							disabled={disabled || nameAvailabilityStatus === 'pending'}
+							required
+							minLength={COLOG_NAME_MIN_LENGTH}
+							maxLength={COLOG_NAME_MAX_LENGTH}
+							placeholder="예: Rilog"
+							status={hasNameError ? 'error' : nameAvailabilityStatus === 'success' ? 'success' : 'default'}
+							helperText={errors.name ?? nameAvailabilityMessage}
+							onChange={(event) => onTextFieldChange('name', event.target.value)}
+						/>
+						<Button
+							variant="secondary"
+							className="shrink-0 bg-white whitespace-nowrap"
+							aria-label="팀 이름 중복 확인"
+							disabled={disabled}
+							isPending={nameAvailabilityStatus === 'pending'}
+							onClick={onNameAvailabilityCheck}
+						>
+							{nameAvailabilityStatus === 'pending' ? '확인 중' : '중복 확인'}
+						</Button>
+					</div>
 				)}
 			</Field>
 
-			<Field
-				label="팀 고유 아이디"
-				description={
-					<ul className="list-disc pl-5">
-						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
-						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
-					</ul>
-				}
-				required
-			>
+			<Field label="팀 고유 아이디" description="팀 고유 아이디는 변경할 수 없습니다." required>
 				{({ id, describedBy }) => (
 					<Input
 						id={id}

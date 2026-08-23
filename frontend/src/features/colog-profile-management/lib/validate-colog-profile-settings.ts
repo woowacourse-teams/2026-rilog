@@ -11,9 +11,21 @@ import {
 
 const URL_PATTERN = /^https?:\/\//i;
 
+export const normalizeCologProfileName = (name: string): string => name.trim();
+
+export const validateCologProfileName = (name: string): string | undefined => {
+	const normalizedName = normalizeCologProfileName(name);
+
+	if (normalizedName.length < COLOG_NAME_MIN_LENGTH || normalizedName.length > COLOG_NAME_MAX_LENGTH) {
+		return `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
+	}
+
+	return undefined;
+};
+
 export const normalizeCologProfileSettings = (value: CologProfileSettingsValue): CologProfileSettingsValue => ({
 	...value,
-	name: value.name.trim(),
+	name: normalizeCologProfileName(value.name),
 	slug: value.slug.trim().toLowerCase(),
 	description: (value.description ?? '').trim(),
 	profileImageUrl: (value.profileImageUrl ?? '').trim(),
@@ -26,8 +38,9 @@ export const validateCologProfileSettings = (value: CologProfileSettingsValue): 
 	const errors: CologProfileValidationErrors = {};
 	const normalized = normalizeCologProfileSettings(value);
 
-	if (normalized.name.length < COLOG_NAME_MIN_LENGTH || normalized.name.length > COLOG_NAME_MAX_LENGTH) {
-		errors.name = `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
+	const nameError = validateCologProfileName(normalized.name);
+	if (nameError !== undefined) {
+		errors.name = nameError;
 	}
 
 	if (

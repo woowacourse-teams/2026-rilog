@@ -8,6 +8,7 @@ const MY_INFO_ROUTE = '**/v1/users/me';
 const COLOG_MEMBERS_ROUTE = '**/v1/cologs/*/members';
 const COLOG_PROFILE_UPDATE_ROUTE = '**/v1/cologs/*/profiles';
 const COLOG_PROFILE_ROUTE = /\/v1\/blogs\/@[^/]+$/;
+const NICKNAME_AVAILABILITY_ROUTE = '**/v1/availability/nickname*';
 const AUTH_REFRESH_ROUTE = '**/v1/auth/token/refresh';
 const PROXY_SESSION_ROUTE = '**/api/auth/proxy-session';
 
@@ -25,6 +26,7 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 	await page.unroute(COLOG_MEMBERS_ROUTE);
 	await page.unroute(COLOG_PROFILE_UPDATE_ROUTE);
 	await page.unroute(COLOG_PROFILE_ROUTE);
+	await page.unroute(NICKNAME_AVAILABILITY_ROUTE);
 	await page.request.post('http://localhost:3000/api/auth/proxy-session');
 
 	await page.route(AUTH_REFRESH_ROUTE, (route) =>
@@ -79,6 +81,13 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 		route.fulfill({
 			contentType: 'application/json',
 			body: JSON.stringify({ status: 200, message: '팀 프로필을 수정했습니다.' }),
+		}),
+	);
+
+	await page.route(NICKNAME_AVAILABILITY_ROUTE, (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({ status: 200, message: '사용가능한 닉네임입니다.', data: null }),
 		}),
 	);
 

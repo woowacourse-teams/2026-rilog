@@ -16,6 +16,7 @@ import { isCologProfileSettingsEqual } from '@/features/colog-profile-management
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import CologProfileSection from '@/features/colog-profile-management/ui/CologProfileSection';
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -106,10 +107,12 @@ function CologSettingsWorkspaceContent({
 }: CologSettingsWorkspaceContentProps) {
 	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
+	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
 	const saveCologProfile = useSaveCologProfile();
+	const nameAvailability = useCheckNicknameAvailabilityMutation();
 
 	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
 	const isWorkspaceDirty =
@@ -118,11 +121,13 @@ function CologSettingsWorkspaceContent({
 	const commitTabChange = useCallback(
 		(nextTab: SettingsTab) => {
 			profileForm.setValue(savedProfile);
+			nameAvailability.reset();
+			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, nextTab));
 		},
-		[memberDrafts, profileForm, savedProfile, slug],
+		[memberDrafts, nameAvailability, profileForm, savedProfile, slug],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
@@ -143,18 +148,52 @@ function CologSettingsWorkspaceContent({
 			return;
 		}
 
+		const hasNameChanged = normalizedValue.name !== savedProfile.name.trim();
+		if (hasNameChanged && !nameAvailability.isSuccess) {
+			setIsNameAvailabilityRequired(true);
+			profileForm.refs.name.current?.focus();
+			return;
+		}
+
 		try {
 			const savedValue = await saveCologProfile.mutateAsync({ slug, value: normalizedValue });
 			profileForm.setValue(savedValue);
 			setSavedProfile(savedValue);
+			nameAvailability.reset();
+			setIsNameAvailabilityRequired(false);
 		} catch {
 			// mutation 상태의 error를 폼 하단에 표시한다.
+		}
+	};
+
+	const handleNameAvailabilityCheck = async () => {
+		setIsNameAvailabilityRequired(false);
+		const normalizedName = profileForm.validateName();
+		if (normalizedName === null) {
+			return;
+		}
+
+		profileForm.setValue({ ...profileForm.value, name: normalizedName });
+
+		try {
+			await nameAvailability.mutateAsync(normalizedName);
+		} catch {
+			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
 		}
 	};
 
 	const profileErrorMessage = saveCologProfile.isError
 		? getApiErrorMessage(saveCologProfile.error, '팀 프로필을 저장하지 못했어요. 다시 시도해 주세요.')
 		: null;
+	const nameAvailabilityMessage = nameAvailability.isSuccess
+		? nameAvailability.data.message
+		: nameAvailability.isError
+			? getApiErrorMessage(nameAvailability.error, '팀 이름 중복 확인에 실패했습니다.')
+			: undefined;
+	const displayedNameAvailabilityStatus = isNameAvailabilityRequired ? 'error' : nameAvailability.status;
+	const displayedNameAvailabilityMessage = isNameAvailabilityRequired
+		? '팀 이름 중복 확인이 필요합니다.'
+		: nameAvailabilityMessage;
 
 	const renderHeaderActions = () => {
 		if (activeTab === 'profile' && isProfileDirty) {
@@ -244,7 +283,16 @@ function CologSettingsWorkspaceContent({
 							form={profileForm}
 							onSubmit={(event) => void handleProfileSubmit(event)}
 							disabled={saveCologProfile.isPending}
-							onValueChange={saveCologProfile.reset}
+							nameAvailabilityStatus={displayedNameAvailabilityStatus}
+							nameAvailabilityMessage={displayedNameAvailabilityMessage}
+							onNameAvailabilityCheck={() => void handleNameAvailabilityCheck()}
+							onValueChange={(field) => {
+								saveCologProfile.reset();
+								if (field === 'name') {
+									nameAvailability.reset();
+									setIsNameAvailabilityRequired(false);
+								}
+							}}
 						/>
 						{profileErrorMessage !== null && (
 							<p

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
+import { checkNicknameAvailability } from '@/shared/api/availability/api';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import CologSettingsWorkspace from './CologSettingsWorkspace';
@@ -36,6 +37,8 @@ vi.mock('@/features/colog-profile-management/hooks/use-save-colog-profile', () =
 	useSaveCologProfile: useSaveCologProfileMock,
 }));
 
+vi.mock('@/shared/api/availability/api');
+
 const PROFILE_SETTINGS: CologProfileSettingsValue = {
 	name: 'API 리로그',
 	slug: 'team-rilog',
@@ -56,11 +59,19 @@ describe('CologSettingsWorkspace', () => {
 		resetSaveProfileMock.mockClear();
 		useBlogPublicProfileQueryMock.mockReset();
 		useSaveCologProfileMock.mockReset();
-		mutateAsyncMock.mockImplementation(async ({ value }: { value: CologProfileSettingsValue }) => ({
-			...value,
-			logoFile: null,
-			coverImageFile: null,
-		}));
+		vi.mocked(checkNicknameAvailability).mockReset();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
+		mutateAsyncMock.mockImplementation(({ value }: { value: CologProfileSettingsValue }) =>
+			Promise.resolve({
+				...value,
+				logoFile: null,
+				coverImageFile: null,
+			}),
+		);
 		useSaveCologProfileMock.mockReturnValue({
 			error: null,
 			isError: false,
@@ -80,13 +91,14 @@ describe('CologSettingsWorkspace', () => {
 	it('조회한 코로그 프로필을 폼 초기값으로 표시한다', () => {
 		render(<CologSettingsWorkspace slug="team-rilog" />);
 
-		expect(useBlogPublicProfileQueryMock).toHaveBeenCalledWith({
-			slug: 'team-rilog',
-			select: expect.any(Function),
-		});
+		expect(useBlogPublicProfileQueryMock).toHaveBeenCalledOnce();
+		const [queryOptions] = useBlogPublicProfileQueryMock.mock.calls[0] as [{ slug: string; select: unknown }];
+		expect(queryOptions.slug).toBe('team-rilog');
+		expect(queryOptions.select).toBeTypeOf('function');
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('API 리로그');
+		expect(screen.getByRole('button', { name: '팀 이름 중복 확인' })).toBeInTheDocument();
 		for (const label of ['팀 이름', '팀 고유 아이디']) {
 			const fieldLabel = screen.getByText(label).closest('label')!;
 			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
@@ -124,6 +136,50 @@ describe('CologSettingsWorkspace', () => {
 		await user.type(screen.getByRole('textbox', { name: '팀 이름' }), '새 리로그');
 
 		expect(screen.getByRole('button', { name: '변경사항 저장' })).toBeEnabled();
+	});
+
+	it('변경한 팀 이름을 중복 확인하고 다시 바꾸면 확인 상태를 초기화한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace />);
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.clear(name);
+		await user.type(name, '  새 리로그  ');
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+
+		await waitFor(() => expect(checkNicknameAvailability).toHaveBeenCalledWith({ nickname: '새 리로그' }));
+		expect(name).toHaveValue('새 리로그');
+		expect(name).toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+
+		await user.type(name, '2');
+		expect(name).not.toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+	});
+
+	it('변경한 팀 이름을 중복 확인하지 않으면 저장하지 않고 이름 입력에 안내한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace />);
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.clear(name);
+		await user.type(name, '새 리로그');
+		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));
+
+		expect(mutateAsyncMock).not.toHaveBeenCalled();
+		expect(name).toHaveAccessibleDescription(/팀 이름 중복 확인이 필요합니다\./);
+		expect(name).toHaveFocus();
+	});
+
+	it('팀 이름이 그대로면 다른 프로필 변경은 이름 중복 확인 없이 저장한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace />);
+
+		const description = screen.getByRole('textbox', { name: '팀 소개' });
+		await user.clear(description);
+		await user.type(description, '새로운 팀 소개');
+		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));
+
+		await waitFor(() => expect(mutateAsyncMock).toHaveBeenCalledOnce());
+		expect(checkNicknameAvailability).not.toHaveBeenCalled();
 	});
 
 	it('코로그 프로필 조회 중에는 로딩 상태를 표시한다', () => {
@@ -220,14 +276,12 @@ describe('CologSettingsWorkspace', () => {
 		const nameInput = screen.getByRole('textbox', { name: '팀 이름' });
 		await user.clear(nameInput);
 		await user.type(nameInput, '새 리로그');
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
 		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));
 		await waitFor(() => expect(mutateAsyncMock).toHaveBeenCalledOnce());
-		expect(mutateAsyncMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				slug: 'rilog',
-				value: expect.objectContaining({ name: '새 리로그' }),
-			}),
-		);
+		const [profileMutation] = mutateAsyncMock.mock.calls[0] as [{ slug: string; value: CologProfileSettingsValue }];
+		expect(profileMutation.slug).toBe('rilog');
+		expect(profileMutation.value.name).toBe('새 리로그');
 		await waitFor(() => expect(screen.queryByRole('button', { name: '변경사항 저장' })).not.toBeInTheDocument());
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 

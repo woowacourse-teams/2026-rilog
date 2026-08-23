@@ -1,6 +1,7 @@
 'use client';
 
 import type { useCologProfileForm } from '../hooks/use-colog-profile-form';
+import type { CologProfileTextField } from '../model/colog-profile-settings';
 import type { FormEvent } from 'react';
 
 import CologProfileFormFields from './CologProfileFormFields';
@@ -9,7 +10,10 @@ interface CologProfileSectionProps {
 	form: ReturnType<typeof useCologProfileForm>;
 	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 	disabled?: boolean;
-	onValueChange?: () => void;
+	onValueChange?: (field?: CologProfileTextField) => void;
+	nameAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
+	nameAvailabilityMessage?: string;
+	onNameAvailabilityCheck: () => void;
 }
 
 export default function CologProfileSection({
@@ -17,6 +21,9 @@ export default function CologProfileSection({
 	onSubmit,
 	disabled = false,
 	onValueChange,
+	nameAvailabilityStatus = 'idle',
+	nameAvailabilityMessage,
+	onNameAvailabilityCheck,
 }: CologProfileSectionProps) {
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
@@ -28,9 +35,12 @@ export default function CologProfileSection({
 							errors={form.errors}
 							refs={form.refs}
 							disabled={disabled}
+							nameAvailabilityStatus={nameAvailabilityStatus}
+							nameAvailabilityMessage={nameAvailabilityMessage}
+							onNameAvailabilityCheck={onNameAvailabilityCheck}
 							onTextFieldChange={(field, value) => {
 								form.updateTextField(field, value);
-								onValueChange?.();
+								onValueChange?.(field);
 							}}
 							onLogoFileChange={(file) => {
 								form.updateLogoFile(file);
