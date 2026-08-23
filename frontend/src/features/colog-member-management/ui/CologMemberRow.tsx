@@ -1,6 +1,5 @@
 import type { CologMember, CologMemberPermission } from '@/domains/blog/model/colog';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import Input from '@/shared/ui/input/Input';
 
 const PERMISSION_LABELS: Record<CologMemberPermission, string> = {
 	OWNER: 'Owner',

@@ -1,11 +1,13 @@
 'use client';
 
-import type { ComponentType } from 'react';
 import { useCallback, useMemo } from 'react';
 
+import type { ComponentType } from 'react';
+
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
-import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -60,7 +62,7 @@ export default function PostWriteWorkspace({
 
 		const thumbnailImageUrl =
 			settings.representativeImage === null
-				? POST_THUMBNAIL_FALLBACK_URL
+				? (findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL)
 				: (
 						await uploadFileToStorage({
 							file: settings.representativeImage,

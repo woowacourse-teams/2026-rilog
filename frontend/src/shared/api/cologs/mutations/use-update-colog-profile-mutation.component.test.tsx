@@ -3,8 +3,8 @@ import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import * as cologApi from '@/shared/api/cologs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
+import * as cologApi from '@/shared/api/cologs/api';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 

@@ -1,6 +1,5 @@
-import CustomLink from '@/shared/ui/link/CustomLink';
-
 import { APP_ROUTES } from '@/shared/routes/app-routes';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { EXPANDED_TEXT_CLASS_NAME, FOCUS_CLASS_NAME } from './sidebar-class-names';
 

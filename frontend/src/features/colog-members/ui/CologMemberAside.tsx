@@ -1,9 +1,9 @@
 'use client';
 
+import { mapCologMemberResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
 import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
 import Button from '@/shared/ui/button/Button';
 
-import { mapCologMemberResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
 
 import CologMemberList from './CologMemberList';
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { POST_THUMBNAIL_FALLBACK_URL, resolvePostThumbnailUrl } from './post-thumbnail';
+import { resolvePostThumbnailUrl } from './post-thumbnail';
 
 describe('resolvePostThumbnailUrl', () => {
 	afterEach(() => {

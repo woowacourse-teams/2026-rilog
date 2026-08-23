@@ -1,10 +1,9 @@
-import CustomLink from '@/shared/ui/link/CustomLink';
-
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostFeedItem } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import PostFeedCologBadge from './PostFeedCologBadge';
 import PostFeedImage from './PostFeedImage';

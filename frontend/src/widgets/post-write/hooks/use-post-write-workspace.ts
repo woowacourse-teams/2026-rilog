@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Block } from '@blocknote/core';
 
-import type { PostCategory } from '@/domains/post/model/post';
 import type { CologOption } from '@/domains/blog/model/colog';
+import type { PostCategory } from '@/domains/post/model/post';
 import { validatePostDocument } from '@/features/post-write/lib/validate-post-document';
 import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
 import type { PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';

@@ -2,9 +2,9 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { updateCologProfile } from '@/shared/api/cologs/api';
 import type { CologProfileUpdateRequest } from '@/shared/api/cologs/types';
-import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 

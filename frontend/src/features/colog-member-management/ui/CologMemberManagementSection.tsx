@@ -1,7 +1,7 @@
 'use client';
 
-import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
+import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 
@@ -97,7 +97,12 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 				</div>
 			</form>
 
-			<MemberInviteModal open={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} onInvite={handleInvite} />
+			<MemberInviteModal
+				slug={slug}
+				open={isInviteModalOpen}
+				onClose={() => setIsInviteModalOpen(false)}
+				onInvite={handleInvite}
+			/>
 		</section>
 	);
 }

@@ -1,27 +1,27 @@
 'use client';
 
-
 import { useId, useRef, useState } from 'react';
 
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 import type { FormEvent, KeyboardEvent } from 'react';
 
+import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
+import { useReadUserBySlugMutation } from '@/shared/api/users/mutations/use-read-user-by-slug-mutation';
 import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
 
-import { useReadUserBySlugMutation } from '@/shared/api/users/mutations/use-read-user-by-slug-mutation';
-
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
 interface MemberInviteModalProps {
+	slug: string;
 	open: boolean;
 	onClose: () => void;
 	onInvite?: (candidates: MemberInviteCandidate[]) => void;
 }
 
-export default function MemberInviteModal({ open, onClose, onInvite }: MemberInviteModalProps) {
+export default function MemberInviteModal({ slug, open, onClose, onInvite }: MemberInviteModalProps) {
 	const formId = useId();
 	const inputId = useId();
 	const helperTextId = useId();
@@ -31,6 +31,9 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 	const [errorMessage, setErrorMessage] = useState<string>();
 
 	const { mutateAsync: readUserBySlug, isPending } = useReadUserBySlugMutation();
+	const { data: cologMembers } = useCologMembersQuery({ slug });
+	const cologMemberSlugs = cologMembers?.data?.map((member) => member.slug) ?? [];
+	const candidateSlugs = candidates.map((candidate) => candidate.slug);
 
 	const reset = () => {
 		setSlugInput('');
@@ -51,8 +54,13 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 			return;
 		}
 
-		if (candidates.some((candidate) => candidate.slug === normalizedSlug)) {
+		if (candidateSlugs.includes(normalizedSlug)) {
 			setErrorMessage('이미 추가한 멤버입니다.');
+			return;
+		}
+
+		if (cologMemberSlugs.includes(normalizedSlug)) {
+			setErrorMessage('이미 등록된 멤버입니다.');
 			return;
 		}
 
@@ -135,7 +143,7 @@ export default function MemberInviteModal({ open, onClose, onInvite }: MemberInv
 							value={slugInput}
 							aria-label="초대할 멤버 고유 아이디"
 							aria-describedby={helperTextId}
-							placeholder="@jetproc"
+							placeholder="@user"
 							status={errorMessage ? 'error' : 'default'}
 							className="border-0 bg-transparent px-3"
 							onChange={(event) => {
