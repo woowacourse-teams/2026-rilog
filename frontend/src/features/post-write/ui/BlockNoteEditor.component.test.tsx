@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PostEditorHandle } from '../model/post-editor';
 import type { Block } from '@blocknote/core';
+import type { ReactNode } from 'react';
 
 import BlockNoteEditor from './BlockNoteEditor';
 
@@ -14,18 +15,49 @@ interface MockEditor {
 	focus: () => void;
 }
 
+interface SuggestionMenuControllerProps {
+	triggerCharacter: string;
+	shouldOpen?: (state: {
+		selection: { $from: { parent: { type: { isInGroup: (name: string) => boolean } } } };
+	}) => boolean;
+	floatingUIOptions?: {
+		useFloatingOptions?: {
+			middleware?: unknown[];
+			placement?: string;
+			whileElementsMounted?: unknown;
+		};
+	};
+}
+
 const useCreateBlockNote = vi.fn<(...args: unknown[]) => MockEditor>();
 const defaultUploadFile = vi.fn(() => Promise.resolve('data:image/png;base64,mock'));
+const suggestionMenuControllerProps = vi.fn<(props: SuggestionMenuControllerProps) => void>();
 
 vi.mock('@blocknote/react', () => ({
 	useCreateBlockNote: (...args: unknown[]): MockEditor => useCreateBlockNote(...args),
+	SuggestionMenuController: (props: SuggestionMenuControllerProps) => {
+		suggestionMenuControllerProps(props);
+
+		return <div data-testid="slash-menu-controller" data-trigger-character={props.triggerCharacter} />;
+	},
 }));
 
 vi.mock('@blocknote/shadcn', () => ({
-	BlockNoteView: ({ onChange }: { onChange: () => void }) => (
-		<button type="button" onClick={onChange}>
-			본문 변경
-		</button>
+	BlockNoteView: ({
+		children,
+		onChange,
+		slashMenu,
+	}: {
+		children: ReactNode;
+		onChange: () => void;
+		slashMenu?: boolean;
+	}) => (
+		<>
+			<button type="button" data-slash-menu={String(slashMenu)} onClick={onChange}>
+				본문 변경
+			</button>
+			{children}
+		</>
 	),
 }));
 
@@ -45,6 +77,7 @@ describe('BlockNoteEditor', () => {
 	beforeEach(() => {
 		editorElement = document.createElement('div');
 		focusEditor = vi.fn();
+		suggestionMenuControllerProps.mockClear();
 		useCreateBlockNote.mockReturnValue({
 			document: blocks,
 			domElement: editorElement,
@@ -116,5 +149,30 @@ describe('BlockNoteEditor', () => {
 			}),
 			[defaultUploadFile],
 		);
+	});
+
+	it('가용 공간을 기준으로 배치하는 커스텀 슬래시 메뉴를 사용한다', () => {
+		const { getByRole, getByTestId } = render(
+			<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />,
+		);
+		const latestControllerProps = suggestionMenuControllerProps.mock.calls.at(-1)?.[0];
+
+		if (latestControllerProps === undefined) {
+			throw new Error('SuggestionMenuController props를 찾을 수 없습니다.');
+		}
+
+		const { shouldOpen, floatingUIOptions } = latestControllerProps;
+
+		expect(getByRole('button', { name: '본문 변경' })).toHaveAttribute('data-slash-menu', 'false');
+		expect(getByTestId('slash-menu-controller')).toHaveAttribute('data-trigger-character', '/');
+		expect(typeof shouldOpen).toBe('function');
+		expect(
+			shouldOpen?.({
+				selection: { $from: { parent: { type: { isInGroup: (name: string) => name === 'tableContent' } } } },
+			}),
+		).toBe(false);
+		expect(shouldOpen?.({ selection: { $from: { parent: { type: { isInGroup: () => false } } } } })).toBe(true);
+		expect(floatingUIOptions?.useFloatingOptions?.placement).toBe('bottom-start');
+		expect(floatingUIOptions?.useFloatingOptions?.middleware).toHaveLength(1);
 	});
 });

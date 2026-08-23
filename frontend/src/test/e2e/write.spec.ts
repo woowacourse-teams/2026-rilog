@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
+import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
+
 const TEST_IMAGE_BYTES = Array.from(
 	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
 );
@@ -15,6 +17,41 @@ const fillPost = async (page: Page) => {
 
 const expectBodyImage = async (page: Page) => {
 	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
+};
+
+const enableWriteAccess = async (page: Page) => {
+	await page.context().addCookies([
+		{
+			name: PROXY_SESSION_COOKIE_NAME,
+			value: PROXY_SESSION_COOKIE_VALUE,
+			url: 'http://localhost:3000',
+		},
+	]);
+};
+
+const getSlashMenuPosition = async (page: Page) => {
+	await expect(page.locator('#bn-suggestion-menu')).toBeVisible();
+
+	return page.evaluate(() => {
+		const selection = window.getSelection();
+		const range = selection?.rangeCount === 0 ? undefined : selection?.getRangeAt(0);
+		const caretRect = range?.getBoundingClientRect();
+		const menuRect = document.querySelector<HTMLElement>('#bn-suggestion-menu')?.getBoundingClientRect();
+
+		if (caretRect === undefined || menuRect === undefined) {
+			throw new Error('슬래시 메뉴 또는 커서 위치를 찾을 수 없습니다.');
+		}
+
+		return {
+			caretBottom: caretRect.bottom,
+			caretTop: caretRect.top,
+			menuBottom: menuRect.bottom,
+			menuTop: menuRect.top,
+			menuLeft: menuRect.left,
+			menuRight: menuRect.right,
+			viewportWidth: window.innerWidth,
+		};
+	});
 };
 
 test.describe('글 작성', () => {
@@ -207,5 +244,35 @@ test.describe('글 작성', () => {
 		await page.getByRole('button', { name: '발행' }).click();
 		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	});
+
+	test('커서 아래 공간이 부족하면 슬래시 메뉴를 위에 표시하고 viewport 안에 유지한다', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 500 });
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/');
+
+		const position = await getSlashMenuPosition(page);
+		expect(position.menuBottom).toBeLessThanOrEqual(position.caretTop);
+		expect(position.menuLeft).toBeGreaterThanOrEqual(0);
+		expect(position.menuRight).toBeLessThanOrEqual(position.viewportWidth);
+
+		await page.keyboard.type('이미지');
+		const filteredPosition = await getSlashMenuPosition(page);
+		expect(filteredPosition.menuTop).toBeGreaterThanOrEqual(filteredPosition.caretBottom);
+	});
+
+	test('커서 아래 공간이 충분하면 슬래시 메뉴를 아래에 표시한다', async ({ page }) => {
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/이미지');
+
+		const position = await getSlashMenuPosition(page);
+		expect(position.menuTop).toBeGreaterThanOrEqual(position.caretBottom);
 	});
 });
