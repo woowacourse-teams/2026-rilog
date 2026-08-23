@@ -1,14 +1,135 @@
 'use client';
 
 import { ko } from '@blocknote/core/locales';
-import { useCreateBlockNote } from '@blocknote/react';
+import { SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle } from 'react';
 
 import type { PostEditorProps } from '../model/post-editor';
+import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
+import {
+	calculateSlashMenuLayout,
+	clampSlashMenuCoordinate,
+	SLASH_MENU_EDGE_PADDING,
+	SLASH_MENU_GAP,
+	SLASH_MENU_INITIAL_HEIGHT,
+} from '../lib/calculate-slash-menu-layout';
 import '../styles/blocknote-theme.css';
+
+const isClippingElement = (element: Element): boolean => {
+	const ownerWindow = element.ownerDocument.defaultView ?? window;
+	const { overflow, overflowX, overflowY } = ownerWindow.getComputedStyle(element);
+	return [overflow, overflowX, overflowY].some((value) => /auto|scroll|hidden|clip/.test(value));
+};
+
+const intersectRects = (first: DOMRect, second: DOMRect): DOMRect => {
+	const left = Math.max(first.left, second.left);
+	const top = Math.max(first.top, second.top);
+	const right = Math.max(left, Math.min(first.right, second.right));
+	const bottom = Math.max(top, Math.min(first.bottom, second.bottom));
+
+	return new DOMRect(left, top, right - left, bottom - top);
+};
+
+const getSlashMenuBoundary = (floatingElement: HTMLElement, referenceElement: Element | null): DOMRect => {
+	const ownerWindow = floatingElement.ownerDocument.defaultView ?? window;
+	const visualViewport = ownerWindow.visualViewport;
+	let boundary = new DOMRect(
+		visualViewport?.offsetLeft ?? 0,
+		visualViewport?.offsetTop ?? 0,
+		visualViewport?.width ?? ownerWindow.innerWidth,
+		visualViewport?.height ?? ownerWindow.innerHeight,
+	);
+
+	for (
+		let element = referenceElement?.parentElement;
+		element !== null && element !== undefined;
+		element = element.parentElement
+	) {
+		if (isClippingElement(element)) {
+			boundary = intersectRects(boundary, element.getBoundingClientRect());
+		}
+	}
+
+	return boundary;
+};
+
+const getReferenceElement = (reference: unknown): Element | null => {
+	if (typeof reference !== 'object' || reference === null || !('contextElement' in reference)) {
+		return null;
+	}
+
+	const contextElement = reference.contextElement;
+	return contextElement instanceof Element ? contextElement : null;
+};
+
+const subscribeVisualViewportUpdates = (floatingElement: HTMLElement, update: () => void): (() => void) => {
+	const visualViewport = floatingElement.ownerDocument.defaultView?.visualViewport;
+	if (visualViewport === undefined || visualViewport === null) {
+		return () => undefined;
+	}
+
+	visualViewport.addEventListener('resize', update);
+	visualViewport.addEventListener('scroll', update);
+
+	return () => {
+		visualViewport.removeEventListener('resize', update);
+		visualViewport.removeEventListener('scroll', update);
+	};
+};
+
+const slashMenuFloatingUIOptions = {
+	useFloatingOptions: {
+		placement: 'bottom-start',
+		strategy: 'fixed',
+		whileElementsMounted: (_reference, floating, update) => subscribeVisualViewportUpdates(floating, update),
+		middleware: [
+			{
+				name: 'rilogSlashMenuPosition',
+				fn: ({ elements, placement, rects, x, y }) => {
+					const boundary = getSlashMenuBoundary(elements.floating, getReferenceElement(elements.reference));
+					const menuHeight = elements.floating.scrollHeight || rects.floating.height || SLASH_MENU_INITIAL_HEIGHT;
+					const layout = calculateSlashMenuLayout({
+						boundary,
+						menuHeight,
+						reference: { top: rects.reference.y, bottom: rects.reference.y + rects.reference.height },
+					});
+					const maxHeight = `${layout.maxHeight}px`;
+					const maxWidth = `${layout.maxWidth}px`;
+					const sizeChanged =
+						elements.floating.style.maxHeight !== maxHeight || elements.floating.style.maxWidth !== maxWidth;
+
+					elements.floating.style.maxHeight = maxHeight;
+					elements.floating.style.maxWidth = maxWidth;
+
+					if (placement !== layout.placement) {
+						return { reset: { placement: layout.placement } };
+					}
+
+					if (sizeChanged) {
+						return { reset: { rects: true } };
+					}
+
+					const offsetY = layout.placement === 'bottom-start' ? y + SLASH_MENU_GAP : y - SLASH_MENU_GAP;
+					return {
+						x: clampSlashMenuCoordinate(
+							x,
+							boundary.left + SLASH_MENU_EDGE_PADDING,
+							boundary.right - rects.floating.width - SLASH_MENU_EDGE_PADDING,
+						),
+						y: clampSlashMenuCoordinate(
+							offsetY,
+							boundary.top + SLASH_MENU_EDGE_PADDING,
+							boundary.bottom - rects.floating.height - SLASH_MENU_EDGE_PADDING,
+						),
+					};
+				},
+			},
+		],
+	},
+} satisfies FloatingUIOptions;
 
 export default function BlockNoteEditor({ onChange, onReady, uploadFile, ariaDescribedBy, ref }: PostEditorProps) {
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
@@ -53,7 +174,13 @@ export default function BlockNoteEditor({ onChange, onReady, uploadFile, ariaDes
 
 	return (
 		<div className="post-write-blocknote">
-			<BlockNoteView editor={editor} theme="light" onChange={() => onChange([...editor.document])} />
+			<BlockNoteView editor={editor} theme="light" slashMenu={false} onChange={() => onChange([...editor.document])}>
+				<SuggestionMenuController
+					triggerCharacter="/"
+					shouldOpen={(state) => !state.selection.$from.parent.type.isInGroup('tableContent')}
+					floatingUIOptions={slashMenuFloatingUIOptions}
+				/>
+			</BlockNoteView>
 		</div>
 	);
 }

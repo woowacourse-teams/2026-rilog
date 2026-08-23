@@ -4,6 +4,8 @@ import type { Page } from '@playwright/test';
 
 import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
 
+import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
+
 const TEST_IMAGE_BYTES = Array.from(
 	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
 );
@@ -15,6 +17,8 @@ const IPHONE_13 = {
 	viewport: devices['iPhone 13'].viewport,
 };
 
+const MY_COLOGS_PREVIEW_ROUTE = '**/v1/users/me/cologs/preview';
+
 const fillPost = async (page: Page) => {
 	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
 	const editor = page.getByRole('textbox', { name: '게시글 내용' });
@@ -24,6 +28,64 @@ const fillPost = async (page: Page) => {
 
 const expectBodyImage = async (page: Page) => {
 	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
+};
+
+const enableWriteAccess = async (page: Page) => {
+	await mockAuthenticatedAccess(page);
+	await page.route(MY_COLOGS_PREVIEW_ROUTE, (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({ status: 200, message: '내 Co-log 미리보기 조회에 성공했습니다.', data: [] }),
+		}),
+	);
+};
+
+const getSlashMenuPosition = async (page: Page) => {
+	await expect(page.locator('#bn-suggestion-menu')).toBeVisible();
+
+	return page.evaluate(() => {
+		const selection = window.getSelection();
+		const range = selection?.rangeCount === 0 ? undefined : selection?.getRangeAt(0);
+		const caretRect = range?.getBoundingClientRect();
+		const menuRect = document.querySelector<HTMLElement>('#bn-suggestion-menu')?.getBoundingClientRect();
+
+		if (caretRect === undefined || menuRect === undefined) {
+			throw new Error('슬래시 메뉴 또는 커서 위치를 찾을 수 없습니다.');
+		}
+
+		return {
+			caretBottom: caretRect.bottom,
+			caretTop: caretRect.top,
+			menuBottom: menuRect.bottom,
+			menuTop: menuRect.top,
+			menuLeft: menuRect.left,
+			menuRight: menuRect.right,
+			viewportBottom: (window.visualViewport?.offsetTop ?? 0) + (window.visualViewport?.height ?? window.innerHeight),
+			viewportTop: window.visualViewport?.offsetTop ?? 0,
+			viewportWidth: window.innerWidth,
+		};
+	});
+};
+
+const insertQuoteAfterParagraph = async (page: Page) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+	await page.keyboard.type('일반 문단');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('/인용');
+	await page.keyboard.press('Enter');
+	await expect(page.locator('[data-content-type="quote"]')).toBeVisible();
+};
+
+const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
+	return page.locator(`[data-content-type="${contentType}"]`).evaluate((content) => {
+		const outer = content.closest<HTMLElement>('.bn-block-outer');
+		if (outer === null) {
+			throw new Error('BlockNote 블록 외곽 요소를 찾을 수 없습니다.');
+		}
+
+		return getComputedStyle(outer).paddingTop;
+	});
 };
 
 test.describe('글 작성', () => {
@@ -216,6 +278,56 @@ test.describe('글 작성', () => {
 		await page.getByRole('button', { name: '발행' }).click();
 		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	});
+
+	test('커서 아래 공간이 부족하면 슬래시 메뉴를 위에 표시하고 viewport 안에 유지한다', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 400 });
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.evaluate(() => window.scrollTo({ top: 0 }));
+		await page.keyboard.type('/');
+
+		const position = await getSlashMenuPosition(page);
+		expect(position.menuBottom).toBeLessThanOrEqual(position.caretTop);
+		expect(position.menuTop).toBeGreaterThanOrEqual(position.viewportTop);
+		expect(position.menuBottom).toBeLessThanOrEqual(position.viewportBottom);
+		expect(position.menuLeft).toBeGreaterThanOrEqual(0);
+		expect(position.menuRight).toBeLessThanOrEqual(position.viewportWidth);
+
+		await page.keyboard.type('이미지');
+		const filteredPosition = await getSlashMenuPosition(page);
+		expect(filteredPosition.menuBottom).toBeLessThanOrEqual(filteredPosition.caretTop);
+		expect(filteredPosition.menuTop).toBeGreaterThanOrEqual(filteredPosition.viewportTop);
+		expect(filteredPosition.menuBottom).toBeLessThanOrEqual(filteredPosition.viewportBottom);
+	});
+
+	test('커서 아래 공간이 충분하면 슬래시 메뉴를 아래에 표시한다', async ({ page }) => {
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/이미지');
+
+		const position = await getSlashMenuPosition(page);
+		expect(position.menuTop).toBeGreaterThanOrEqual(position.caretBottom);
+		expect(position.menuTop).toBeGreaterThanOrEqual(position.viewportTop);
+		expect(position.menuBottom).toBeLessThanOrEqual(position.viewportBottom);
+	});
+
+	test('특수 블록에 데스크톱과 모바일의 공통 세로 여백을 적용한다', async ({ page }) => {
+		await enableWriteAccess(page);
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.goto('/write');
+		await insertQuoteAfterParagraph(page);
+		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('16px');
+
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/write');
+		await insertQuoteAfterParagraph(page);
+		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('12px');
 	});
 });
 
