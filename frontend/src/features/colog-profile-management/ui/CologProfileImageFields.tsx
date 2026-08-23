@@ -8,7 +8,6 @@ import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageResetOverlay from '@/shared/ui/image-reset-overlay/ImageResetOverlay';
 
-
 const MAX_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 interface CologProfileImageFieldsProps {
@@ -128,6 +127,7 @@ export default function CologProfileImageFields({
 									src={coverImagePreviewUrl || undefined}
 									alt="팀 커버 이미지 미리보기"
 									shape="rectangle"
+									status={coverImageFileSizeError ? 'error' : 'default'}
 									className="aspect-[1/3] h-auto w-full sm:h-40 sm:w-auto"
 									fallback={
 										<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />

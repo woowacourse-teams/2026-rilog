@@ -210,6 +210,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 								src={previewUrl}
 								alt="프로필 이미지 미리보기"
 								shape="circle"
+								status={profileImageFileSizeError ? 'error' : 'default'}
 								fit={profileImageFile === null ? 'contain' : 'cover'}
 								sizes="100px"
 								className="size-25 bg-background"

@@ -310,7 +310,7 @@ describe('CologCreateForm', () => {
 		await user.click(screen.getByRole('button', { name: '팀 로고 제거' }));
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute(
 			'src',
-			'/images/profile-placeholder.svg',
+			'/images/colog-placeholder.svg',
 		);
 
 		unmount();
