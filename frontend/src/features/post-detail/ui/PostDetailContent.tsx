@@ -6,6 +6,7 @@ import type { MouseEvent } from 'react';
 
 interface PostDetailContentProps {
 	html: string;
+	postId: number;
 }
 
 const getToggleButton = (target: EventTarget | null): HTMLButtonElement | null => {
@@ -27,14 +28,20 @@ const setToggleExpanded = (toggleButton: HTMLButtonElement, isExpanded: boolean)
 	toggleButton.setAttribute('aria-label', isExpanded ? '하위 내용 접기' : '하위 내용 펼치기');
 };
 
-export default function PostDetailContent({ html }: PostDetailContentProps) {
+export default function PostDetailContent({ html, postId }: PostDetailContentProps) {
 	const contentRef = useRef<HTMLElement>(null);
+	const currentPostIdRef = useRef(postId);
 	const expandedToggleIdsRef = useRef(new Set<string>());
 
 	useLayoutEffect(() => {
 		const contentElement = contentRef.current;
 		if (contentElement === null) {
 			return;
+		}
+
+		if (currentPostIdRef.current !== postId) {
+			currentPostIdRef.current = postId;
+			expandedToggleIdsRef.current.clear();
 		}
 
 		contentElement
