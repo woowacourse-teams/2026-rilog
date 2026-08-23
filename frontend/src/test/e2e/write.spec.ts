@@ -49,6 +49,8 @@ const getSlashMenuPosition = async (page: Page) => {
 			menuTop: menuRect.top,
 			menuLeft: menuRect.left,
 			menuRight: menuRect.right,
+			viewportBottom: (window.visualViewport?.offsetTop ?? 0) + (window.visualViewport?.height ?? window.innerHeight),
+			viewportTop: window.visualViewport?.offsetTop ?? 0,
 			viewportWidth: window.innerWidth,
 		};
 	});
@@ -247,21 +249,26 @@ test.describe('글 작성', () => {
 	});
 
 	test('커서 아래 공간이 부족하면 슬래시 메뉴를 위에 표시하고 viewport 안에 유지한다', async ({ page }) => {
-		await page.setViewportSize({ width: 390, height: 500 });
+		await page.setViewportSize({ width: 390, height: 400 });
 		await enableWriteAccess(page);
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
+		await page.evaluate(() => window.scrollTo({ top: 0 }));
 		await page.keyboard.type('/');
 
 		const position = await getSlashMenuPosition(page);
 		expect(position.menuBottom).toBeLessThanOrEqual(position.caretTop);
+		expect(position.menuTop).toBeGreaterThanOrEqual(position.viewportTop);
+		expect(position.menuBottom).toBeLessThanOrEqual(position.viewportBottom);
 		expect(position.menuLeft).toBeGreaterThanOrEqual(0);
 		expect(position.menuRight).toBeLessThanOrEqual(position.viewportWidth);
 
 		await page.keyboard.type('이미지');
 		const filteredPosition = await getSlashMenuPosition(page);
-		expect(filteredPosition.menuTop).toBeGreaterThanOrEqual(filteredPosition.caretBottom);
+		expect(filteredPosition.menuBottom).toBeLessThanOrEqual(filteredPosition.caretTop);
+		expect(filteredPosition.menuTop).toBeGreaterThanOrEqual(filteredPosition.viewportTop);
+		expect(filteredPosition.menuBottom).toBeLessThanOrEqual(filteredPosition.viewportBottom);
 	});
 
 	test('커서 아래 공간이 충분하면 슬래시 메뉴를 아래에 표시한다', async ({ page }) => {
@@ -274,5 +281,7 @@ test.describe('글 작성', () => {
 
 		const position = await getSlashMenuPosition(page);
 		expect(position.menuTop).toBeGreaterThanOrEqual(position.caretBottom);
+		expect(position.menuTop).toBeGreaterThanOrEqual(position.viewportTop);
+		expect(position.menuBottom).toBeLessThanOrEqual(position.viewportBottom);
 	});
 });

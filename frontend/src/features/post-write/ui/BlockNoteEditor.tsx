@@ -83,6 +83,7 @@ const subscribeVisualViewportUpdates = (floatingElement: HTMLElement, update: ()
 const slashMenuFloatingUIOptions = {
 	useFloatingOptions: {
 		placement: 'bottom-start',
+		strategy: 'fixed',
 		whileElementsMounted: (_reference, floating, update) => subscribeVisualViewportUpdates(floating, update),
 		middleware: [
 			{

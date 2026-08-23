@@ -24,6 +24,7 @@ interface SuggestionMenuControllerProps {
 		useFloatingOptions?: {
 			middleware?: unknown[];
 			placement?: string;
+			strategy?: string;
 			whileElementsMounted?: unknown;
 		};
 	};
@@ -173,6 +174,7 @@ describe('BlockNoteEditor', () => {
 		).toBe(false);
 		expect(shouldOpen?.({ selection: { $from: { parent: { type: { isInGroup: () => false } } } } })).toBe(true);
 		expect(floatingUIOptions?.useFloatingOptions?.placement).toBe('bottom-start');
+		expect(floatingUIOptions?.useFloatingOptions?.strategy).toBe('fixed');
 		expect(floatingUIOptions?.useFloatingOptions?.middleware).toHaveLength(1);
 	});
 });
