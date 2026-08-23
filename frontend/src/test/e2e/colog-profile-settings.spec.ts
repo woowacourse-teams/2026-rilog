@@ -21,13 +21,11 @@ test.describe('팀 프로필 설정', () => {
 		await expect(settingsButton).toBeVisible();
 		const buttonBox = await settingsButton.boundingBox();
 		const headingBox = await heading.boundingBox();
-		expect(
-			Math.abs(
-				(buttonBox?.y ?? 0) + (buttonBox?.height ?? 0) / 2 - ((headingBox?.y ?? 0) + (headingBox?.height ?? 0) / 2),
-			),
-		).toBeLessThanOrEqual(1);
-		expect(buttonBox?.x).toBeGreaterThanOrEqual((headingBox?.x ?? 0) + (headingBox?.width ?? 0));
-		expect(buttonBox?.height).toBeGreaterThanOrEqual(44);
+		const buttonRight = (buttonBox?.x ?? 0) + (buttonBox?.width ?? 0);
+		const headingRight = (headingBox?.x ?? 0) + (headingBox?.width ?? 0);
+		expect(Math.abs((buttonBox?.y ?? 0) - (headingBox?.y ?? 0))).toBeLessThanOrEqual(1);
+		expect(Math.abs(buttonRight - headingRight)).toBeLessThanOrEqual(1);
+		expect(buttonBox?.height).toBe(28);
 		const initialBackground = await settingsButton.evaluate((element) => getComputedStyle(element).backgroundColor);
 		expect(initialBackground).toBe('rgba(0, 0, 0, 0)');
 		expect(await settingsButton.evaluate((element) => getComputedStyle(element).borderWidth)).toBe('0px');

@@ -43,13 +43,13 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 					className="size-32! sm:size-40! md:size-45!"
 				/>
 
-				<div className="mt-2.5 flex max-w-full flex-wrap items-center justify-center gap-2">
+				<div className="relative mt-2.5 inline-block max-w-full">
 					<h1
-						className={`max-w-full min-w-0 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
+						className={`max-w-full min-w-0 pr-7 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
 					>
 						{profile.name}
 					</h1>
-					{action ? <div className={`shrink-0 ${actionToneClassName}`}>{action}</div> : null}
+					{action ? <div className={`absolute top-0 right-0 ${actionToneClassName}`}>{action}</div> : null}
 				</div>
 				{hasDescription || hasServiceUrl ? (
 					<p

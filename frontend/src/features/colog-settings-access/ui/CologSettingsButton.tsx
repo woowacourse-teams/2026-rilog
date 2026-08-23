@@ -26,10 +26,10 @@ export default function CologSettingsButton({ isOnCover = false, slug }: CologSe
 				variant="ghost"
 				size="icon"
 				aria-label="코로그 설정"
-				className="size-11! bg-transparent hover:bg-surface/20 active:bg-surface/30"
+				className="size-7! bg-transparent hover:bg-surface/20 active:bg-surface/30"
 				style={{ color: iconColor }}
 			>
-				<SettingsIcon aria-hidden="true" focusable="false" className="size-5" />
+				<SettingsIcon aria-hidden="true" focusable="false" className="size-4" />
 			</ButtonLink>
 			<span
 				role="tooltip"
