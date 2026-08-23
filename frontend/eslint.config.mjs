@@ -3,6 +3,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettierConfig from 'eslint-config-prettier/flat';
 import checkFile from 'eslint-plugin-check-file';
+import importPlugin from 'eslint-plugin-import';
 import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
@@ -24,6 +25,7 @@ const eslintConfig = defineConfig([
 	{
 		plugins: {
 			'check-file': checkFile,
+			import: importPlugin,
 			'unused-imports': unusedImports,
 		},
 		rules: {
