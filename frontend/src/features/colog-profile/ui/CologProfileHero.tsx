@@ -34,13 +34,16 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 		>
 			{hasCoverImage && <CologProfileCoverImage src={coverImageUrl} alt={`${profile.name} 커버 이미지`} />}
 			<div className="relative flex flex-col items-center">
-				<CologAvatar
-					src={profile.profileImageUrl || undefined}
-					fallback={profile.name.slice(0, 1)}
-					label={`${profile.name} 코로그 로고`}
-					size="max"
-					className="size-32! sm:size-40! md:size-45!"
-				/>
+				<div className="relative inline-flex">
+					<CologAvatar
+						src={profile.profileImageUrl || undefined}
+						fallback={profile.name.slice(0, 1)}
+						label={`${profile.name} 코로그 로고`}
+						size="max"
+						className="size-32! sm:size-40! md:size-45!"
+					/>
+					{action ? <div className="absolute bottom-0 left-full ml-2">{action}</div> : null}
+				</div>
 
 				<h1
 					className={`mt-2.5 max-w-full text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
@@ -81,8 +84,6 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 					</div>
 				) : null}
 			</div>
-
-			{action ? <div className="absolute top-5 right-5 sm:top-8 md:top-20 md:right-15">{action}</div> : null}
 		</div>
 	);
 }

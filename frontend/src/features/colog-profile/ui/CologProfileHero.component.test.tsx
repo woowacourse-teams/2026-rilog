@@ -66,7 +66,7 @@ describe('CologHomeHero', () => {
 		expect(screen.queryByRole('link')).not.toBeInTheDocument();
 	});
 
-	it('action을 전달하지 않으면 우측 상단 control을 렌더링하지 않는다', () => {
+	it('action을 전달하지 않으면 설정 control을 렌더링하지 않는다', () => {
 		render(<CologProfileHero profile={COLOG_PROFILE_FIXTURE} />);
 
 		expect(screen.queryByRole('button')).not.toBeInTheDocument();

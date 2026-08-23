@@ -23,9 +23,10 @@ export default function CologSettingsButton({ name, slug }: CologSettingsButtonP
 
 	return (
 		<Button
+			variant="ghost"
 			size="icon"
 			aria-label={`${name} 코로그 설정으로 이동`}
-			className="bg-transparent"
+			className="bg-background shadow-sm hover:bg-surface active:bg-surface-active"
 			onClick={() => router.push(buildCologSettingsPath(slug, 'profile'))}
 		>
 			<SettingsIcon aria-hidden="true" focusable="false" className="size-6" />
