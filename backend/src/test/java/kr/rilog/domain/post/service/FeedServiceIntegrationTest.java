@@ -22,9 +22,6 @@ import java.time.LocalDateTime;
 import static kr.rilog.domain.blog.entity.enums.BlogType.COLOG;
 import static kr.rilog.domain.blog.entity.enums.BlogType.RILOG;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.post.entity.enums.Category.DAILY;
-import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
-import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -51,26 +48,10 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // given
         User author = saveCompletedUser(1L, "피드작성자", "feed-author");
         Blog rilog = saveRilog(author);
-        Post publicPublishedPost = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("공개 발행 글")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
-        savePost(PostFixture.builderForRilog(rilog, author)
-                .title("비공개 발행 글")
-                .visibility(PRIVATE)
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(1))
-                .build());
-        savePost(PostFixture.builderForRilog(rilog, author)
-                .title("공개 임시 글")
-                .status(DRAFT)
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(2))
-                .build());
-        Post deletedPost = PostFixture.builderForRilog(rilog, author)
-                .title("삭제된 공개 발행 글")
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(3))
-                .build();
-        deletedPost.delete();
-        savePost(deletedPost);
+        Post publicPublishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        savePost(PostFixture.privatePublishedRilogPost(rilog, author));
+        savePost(PostFixture.publicDraftRilogPost(rilog, author));
+        savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, author));
 
         // when
         FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
@@ -87,18 +68,9 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // given
         User author = saveCompletedUser(2L, "정렬작성자", "order-author");
         Blog rilog = saveRilog(author);
-        Post firstSameTimePost = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("같은 시각 첫 번째 글")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
-        Post secondSameTimePost = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("같은 시각 두 번째 글")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
-        Post latestPost = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("가장 최근 글")
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(1))
-                .build());
+        Post firstSameTimePost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post secondSameTimePost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post latestPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.plusMinutes(1)));
 
         // when
         FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
@@ -115,18 +87,9 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // given
         User author = saveCompletedUser(3L, "페이지작성자", "page-author");
         Blog rilog = saveRilog(author);
-        savePost(PostFixture.builderForRilog(rilog, author)
-                .title("가장 오래된 글")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
-        Post middlePost = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("중간 글")
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(1))
-                .build());
-        Post latestPost = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("최신 글")
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(2))
-                .build());
+        savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post middlePost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.plusMinutes(1)));
+        Post latestPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.plusMinutes(2)));
 
         // when
         FullFeedPostResponse result = feedService.readFullFeedPostList(0, 2);
@@ -149,12 +112,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // given
         User author = saveCompletedUser(4L, "개인작성자", "rilog-author");
         Blog rilog = saveRilog(author);
-        Post post = savePost(PostFixture.builderForRilog(rilog, author)
-                .title("개인 블로그 글")
-                .category(DAILY)
-                .thumbnailImageUrl("https://example.com/rilog-post.png")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, rilog);
 
         // when
@@ -171,11 +129,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         User author = saveCompletedUser(5L, "팀작성자", "colog-author");
         Blog rilog = saveRilog(author);
         Blog colog = saveColog(author, "team-blog");
-        Post post = savePost(PostFixture.builderForRilog(rilog, author)
-                .colog(colog)
-                .title("팀 블로그 글")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, author));
         FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, colog);
 
         // when
@@ -193,26 +147,11 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Blog targetRilog = saveRilog(targetAuthor);
         User otherAuthor = saveCompletedUser(7L, "다른작성자", "other-rilog");
         Blog otherRilog = saveRilog(otherAuthor);
-        Post targetPost = savePost(PostFixture.builderForRilog(targetRilog, targetAuthor)
-                .title("조회 대상 글")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
-        savePost(PostFixture.builderForRilog(targetRilog, targetAuthor)
-                .title("조회 대상 비공개 글")
-                .visibility(PRIVATE)
-                .build());
-        savePost(PostFixture.builderForRilog(targetRilog, targetAuthor)
-                .title("조회 대상 임시 글")
-                .status(DRAFT)
-                .build());
-        Post deletedPost = PostFixture.builderForRilog(targetRilog, targetAuthor)
-                .title("조회 대상 삭제 글")
-                .build();
-        deletedPost.delete();
-        savePost(deletedPost);
-        savePost(PostFixture.builderForRilog(otherRilog, otherAuthor)
-                .title("다른 개인 블로그 글")
-                .build());
+        Post targetPost = savePost(PostFixture.publicPublishedRilogPost(targetRilog, targetAuthor));
+        savePost(PostFixture.privatePublishedRilogPost(targetRilog, targetAuthor));
+        savePost(PostFixture.publicDraftRilogPost(targetRilog, targetAuthor));
+        savePost(PostFixture.deletedPublicPublishedRilogPost(targetRilog, targetAuthor));
+        savePost(PostFixture.publicPublishedRilogPost(otherRilog, otherAuthor));
 
         // when
         PublicBlogFeedPostResponse result = feedService.readPublicBlogPosts(targetRilog.getSlug(), 0, 10);
@@ -230,39 +169,24 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // given
         User author = saveCompletedUser(8L, "팀조회작성자", "team-feed-author");
         Blog rilog = saveRilog(author);
-        Blog targetColog = saveColog(author, "target-team");
+        Blog colog = saveColog(author, "target-team");
         Blog otherColog = saveColog(author, "other-team");
-        Post olderTargetPost = savePost(PostFixture.builderForRilog(rilog, author)
-                .colog(targetColog)
-                .title("팀 공개 글 1")
-                .publishedAt(BASE_PUBLISHED_AT)
-                .build());
-        Post latestTargetPost = savePost(PostFixture.builderForRilog(rilog, author)
-                .colog(targetColog)
-                .title("팀 공개 글 2")
-                .publishedAt(BASE_PUBLISHED_AT.plusMinutes(1))
-                .build());
-        savePost(PostFixture.builderForRilog(rilog, author)
-                .colog(targetColog)
-                .title("팀 비공개 글")
-                .visibility(PRIVATE)
-                .build());
-        savePost(PostFixture.builderForRilog(rilog, author)
-                .colog(otherColog)
-                .title("다른 팀 글")
-                .build());
+        Post olderPost = savePost(PostFixture.publicPublishedColog(rilog, colog, author, BASE_PUBLISHED_AT));
+        Post latestPost = savePost(PostFixture.publicPublishedColog(rilog, colog, author, BASE_PUBLISHED_AT.plusMinutes(1)));
+        savePost(PostFixture.privatePublishedCologPost(rilog, colog, author));
+        savePost(PostFixture.publicPublishedColog(rilog, otherColog, author));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readPublicBlogPosts(targetColog.getSlug(), 0, 10);
+        PublicBlogFeedPostResponse result = feedService.readPublicBlogPosts(colog.getSlug(), 0, 10);
 
         // then
         assertThat(result.type()).isEqualTo(COLOG.name());
         assertThat(result.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
-                .containsExactly(latestTargetPost.getId(), olderTargetPost.getId());
+                .containsExactly(latestPost.getId(), olderPost.getId());
         assertThat(result.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::owner)
-                .containsOnly(expectedPublicBlogOwner(targetColog));
+                .containsOnly(expectedPublicBlogOwner(colog));
     }
 
     @Test

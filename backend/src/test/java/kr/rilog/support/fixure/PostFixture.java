@@ -1,11 +1,12 @@
 package kr.rilog.support.fixure;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
-import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.user.entity.User;
 import tools.jackson.databind.JsonNode;
@@ -16,108 +17,158 @@ import java.time.LocalDateTime;
 public final class PostFixture {
 
     private static final Category DEFAULT_CATEGORY = Category.TECH;
+    private static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 8, 23, 12, 0);
+    private static final String DEFAULT_TITLE = "게시글 제목";
     private static final String DEFAULT_THUMBNAIL_URL = "https://example.com/thumbnail.png";
 
     private PostFixture() {
     }
 
-    public static PostSaveCommand commandWithTitleAndVisibility(
-            String title,
-            PostVisibility visibility
-    ) {
+    public static PostSaveCommand publicPostPublishCommand() {
         return new PostSaveCommand(
-                title,
+                DEFAULT_TITLE,
                 content(),
                 DEFAULT_CATEGORY,
-                visibility,
+                PostVisibility.PUBLIC,
                 DEFAULT_THUMBNAIL_URL
         );
     }
 
-    public static PostDetail detailWithTitleAndVisibility(
-            String title,
-            PostVisibility visibility
+    public static Post publicPublishedRilogPost(Blog rilog, User writer) {
+        return builderForRilog(rilog, writer).build();
+    }
+
+    public static Post publicPublishedRilogPostAt(Blog rilog, User writer, LocalDateTime publishedAt) {
+        return builderForRilog(rilog, writer)
+                .publishedAt(publishedAt)
+                .build();
+    }
+
+    public static Post privatePublishedRilogPost(Blog rilog, User writer) {
+        return builderForRilog(rilog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
+    public static Post publicDraftRilogPost(Blog rilog, User writer) {
+        return builderForRilog(rilog, writer)
+                .status(PostStatus.DRAFT)
+                .publishedAt(null)
+                .build();
+    }
+
+    public static Post deletedPublicPublishedRilogPost(Blog rilog, User writer) {
+        Post post = publicPublishedRilogPost(rilog, writer);
+        post.delete();
+        return post;
+    }
+
+    public static Post publicPublishedColog(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer).build();
+    }
+
+    public static Post publicPublishedColog(
+            Blog rilog,
+            Blog colog,
+            User writer,
+            LocalDateTime publishedAt
     ) {
-        return new PostDetail(
-                title,
-                content(),
-                DEFAULT_CATEGORY,
-                visibility,
-                DEFAULT_THUMBNAIL_URL
-        );
+        return builderForColog(rilog, colog, writer)
+                .publishedAt(publishedAt)
+                .build();
     }
 
-    public static JsonNode content() {
-        return contentWithBody("본문");
+    public static Post privatePublishedCologPost(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .build();
     }
 
-    public static JsonNode contentWithBody(String body) {
-        return JsonNodeFactory.instance.objectNode().put("body", body);
+    public static Post publicDraftCologPost(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer)
+                .status(PostStatus.DRAFT)
+                .publishedAt(null)
+                .build();
     }
 
-    public static Builder builderForRilog(Blog rilog, User writer) {
+    public static Post deletedPublicPublishedCologPost(Blog rilog, Blog colog, User writer) {
+        Post post = publicPublishedColog(rilog, colog, writer);
+        post.delete();
+        return post;
+    }
+
+    public static PostDetailResponse postDetailResponse(Post post, User writer, Blog rilog) {
+        return new PostDetailResponse(post.getTitle(),
+                post.getContent(),
+                post.getPublishedAt(),
+                post.getThumbnailImageUrl(),
+                post.getCategory().getName(),
+                new PostDetailResponse.AuthorResponse(
+                        writer.getNickname(),
+                        writer.getId(),
+                        writer.getSlug(),
+                        writer.getProfileImageUrl()
+                ),
+                new RilogOwnerResponse(
+                        rilog.getBlogType(),
+                        rilog.getId(),
+                        rilog.getSlug(),
+                        rilog.getName(),
+                        rilog.getProfileImageUrl()
+                ));
+    }
+
+    private static Builder builderForRilog(Blog rilog, User writer) {
         return new Builder(rilog, writer);
     }
 
-    public static final class Builder {
+    private static Builder builderForColog(Blog rilog, Blog colog, User writer) {
+        return builderForRilog(rilog, writer).colog(colog);
+    }
+
+    private static JsonNode content() {
+        return JsonNodeFactory.instance.objectNode().put("body", "본문");
+    }
+
+    private static final class Builder {
 
         private final Blog rilog;
         private final User writer;
         private Blog colog;
-        private String title = "게시글 제목";
+        private String title = DEFAULT_TITLE;
         private JsonNode content = PostFixture.content();
         private Category category = DEFAULT_CATEGORY;
         private PostStatus status = PostStatus.PUBLISHED;
         private PostVisibility visibility = PostVisibility.PUBLIC;
         private String thumbnailImageUrl = DEFAULT_THUMBNAIL_URL;
-        private LocalDateTime publishedAt = LocalDateTime.now();
+        private LocalDateTime publishedAt = DEFAULT_PUBLISHED_AT;
 
         private Builder(Blog rilog, User writer) {
             this.rilog = rilog;
             this.writer = writer;
         }
 
-        public Builder colog(Blog colog) {
+        private Builder colog(Blog colog) {
             this.colog = colog;
             return this;
         }
 
-        public Builder title(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public Builder content(JsonNode content) {
-            this.content = content;
-            return this;
-        }
-
-        public Builder category(Category category) {
-            this.category = category;
-            return this;
-        }
-
-        public Builder status(PostStatus status) {
+        private Builder status(PostStatus status) {
             this.status = status;
             return this;
         }
 
-        public Builder visibility(PostVisibility visibility) {
+        private Builder visibility(PostVisibility visibility) {
             this.visibility = visibility;
             return this;
         }
 
-        public Builder thumbnailImageUrl(String thumbnailImageUrl) {
-            this.thumbnailImageUrl = thumbnailImageUrl;
-            return this;
-        }
-
-        public Builder publishedAt(LocalDateTime publishedAt) {
+        private Builder publishedAt(LocalDateTime publishedAt) {
             this.publishedAt = publishedAt;
             return this;
         }
 
-        public Post build() {
+        private Post build() {
             return Post.builder()
                     .user(writer)
                     .rilog(rilog)
