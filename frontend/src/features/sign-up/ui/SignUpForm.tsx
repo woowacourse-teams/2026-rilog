@@ -1,5 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useId, useRef, useState } from 'react';
+
+import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
+
 import { clearSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
@@ -16,10 +21,7 @@ import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageResetOverlay from '@/shared/ui/image-reset-overlay/ImageResetOverlay';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
-import { useRouter } from 'next/navigation';
-import { useId, useRef, useState } from 'react';
 
-import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 import { useSignUpForm } from '../hooks/use-sign-up-form';
 import {
 	type CompleteSignUp,
@@ -35,6 +37,7 @@ const TERMS_OF_SERVICE_URL =
 	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link';
 const PRIVACY_POLICY_URL =
 	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link';
+const MAX_PROFILE_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
@@ -43,12 +46,15 @@ interface SignUpFormProps {
 
 export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps) {
 	const profileImageLabelId = useId();
+	const profileImageDescriptionId = `${profileImageLabelId}-description`;
+	const profileImageErrorId = `${profileImageLabelId}-file-error`;
 	const termsAgreementId = useId();
 	const termsAgreementLinksId = `${termsAgreementId}-links`;
 	const nicknameInputRef = useRef<HTMLInputElement>(null);
 	const slugInputRef = useRef<HTMLInputElement>(null);
 	const [isNicknameAvailabilityRequired, setIsNicknameAvailabilityRequired] = useState(false);
 	const [isSlugAvailabilityRequired, setIsSlugAvailabilityRequired] = useState(false);
+	const [profileImageFileSizeError, setProfileImageFileSizeError] = useState<string | null>(null);
 
 	const { mutateAsync: onboard } = useOnboardingMutation();
 	const { mutateAsync: uploadFile } = useUploadFileMutation();
@@ -99,6 +105,10 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	});
 
 	const previewUrl = useImagePreviewUrl(profileImageFile, '/images/profile-placeholder.svg');
+	const handleProfileImageChange = (file: File | null) => {
+		setProfileImageFileSizeError(null);
+		handleImageChange(file);
+	};
 	const handleCancel = () => {
 		clearSignUpFlow();
 		window.history.back();
@@ -180,35 +190,63 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 	return (
 		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={handleSignUpSubmit}>
-			<div role="group" aria-labelledby={profileImageLabelId} className="flex flex-col gap-3">
+			<div
+				role="group"
+				aria-labelledby={profileImageLabelId}
+				aria-describedby={profileImageDescriptionId}
+				className="flex flex-col gap-3"
+			>
 				<p id={profileImageLabelId} className="text-body-2 font-semibold text-text-primary">
 					프로필 이미지 (선택)
 				</p>
-				<div className="flex items-end gap-4">
-					<div className="group relative shrink-0">
-						<ImagePreview
-							src={previewUrl}
-							alt="프로필 이미지 미리보기"
-							shape="circle"
-							fit={profileImageFile === null ? 'contain' : 'cover'}
-							sizes="100px"
-							className="size-25 bg-background"
-							imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
-						/>
-						{profileImageFile !== null && (
-							<ImageResetOverlay
-								imageLabel="프로필 이미지"
-								disabled={isSigningUp}
-								onReset={() => handleImageChange(null)}
+				<ul id={profileImageDescriptionId} className="list-disc pl-5 text-label-2 text-text-secondary">
+					<li>프로필 이미지는 360*360px(1:1) 사이즈를 권장해요.</li>
+					<li>10MB 이하의 파일만 업로드 가능해요.</li>
+				</ul>
+				<div className="flex flex-col gap-2">
+					<div className="flex items-end gap-4">
+						<div className="group relative shrink-0">
+							<ImagePreview
+								src={previewUrl}
+								alt="프로필 이미지 미리보기"
+								shape="circle"
+								fit={profileImageFile === null ? 'contain' : 'cover'}
+								sizes="100px"
+								className="size-25 bg-background"
+								imageClassName={previewUrl.startsWith('blob:') ? undefined : 'px-5 py-4'}
 							/>
-						)}
+							{profileImageFile !== null && (
+								<ImageResetOverlay
+									imageLabel="프로필 이미지"
+									disabled={isSigningUp}
+									onReset={() => handleProfileImageChange(null)}
+								/>
+							)}
+						</div>
+						<ImageEditButton
+							imageLabel="프로필 이미지"
+							hasImage={profileImageFile !== null}
+							disabled={isSigningUp}
+							aria-describedby={
+								profileImageFileSizeError
+									? `${profileImageDescriptionId} ${profileImageErrorId}`
+									: profileImageDescriptionId
+							}
+							aria-invalid={profileImageFileSizeError !== null}
+							validateFile={(file) => file.size <= MAX_PROFILE_IMAGE_FILE_SIZE_BYTES}
+							onFileRejected={(file) => {
+								if (file.size > MAX_PROFILE_IMAGE_FILE_SIZE_BYTES) {
+									setProfileImageFileSizeError('프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+								}
+							}}
+							onFileChange={handleProfileImageChange}
+						/>
 					</div>
-					<ImageEditButton
-						imageLabel="프로필 이미지"
-						hasImage={profileImageFile !== null}
-						disabled={isSigningUp}
-						onFileChange={handleImageChange}
-					/>
+					{profileImageFileSizeError && (
+						<p id={profileImageErrorId} role="alert" className="text-label-1 text-danger">
+							{profileImageFileSizeError}
+						</p>
+					)}
 				</div>
 			</div>
 

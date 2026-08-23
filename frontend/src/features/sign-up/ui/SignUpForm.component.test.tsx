@@ -48,6 +48,9 @@ describe('SignUpForm', () => {
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
 		expect(screen.getByText('프로필 이미지 추가')).toBeInTheDocument();
+		expect(screen.getByLabelText('프로필 이미지 추가')).toHaveAccessibleDescription(
+			'프로필 이미지는 360*360px(1:1) 사이즈를 권장해요. 10MB 이하의 파일만 업로드 가능해요.',
+		);
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		const slugInput = screen.getByRole('textbox', { name: '고유 아이디' });
 		expect(slugInput).toBeInTheDocument();
@@ -260,6 +263,39 @@ describe('SignUpForm', () => {
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');
+		vi.unstubAllGlobals();
+	});
+
+	it('10MB를 초과한 프로필 이미지는 반영하지 않고 이미지 영역 아래에 오류를 안내한다', async () => {
+		vi.stubGlobal(
+			'URL',
+			Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:profile-image'), revokeObjectURL: vi.fn() }),
+		);
+		const user = userEvent.setup();
+		const oversizedImage = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'oversized.png', {
+			type: 'image/png',
+		});
+		const validImage = new File(['valid'], 'valid.png', { type: 'image/png' });
+		const { unmount } = renderSignUpForm();
+		const imageInput = screen.getByLabelText('프로필 이미지 추가');
+
+		await user.upload(imageInput, oversizedImage);
+
+		expect((imageInput as HTMLInputElement).files).toHaveLength(0);
+		expect(imageInput).toHaveAttribute('aria-invalid', 'true');
+		expect(imageInput).toHaveAccessibleDescription(/프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요\./);
+		const imageError = screen.getByText('프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+		expect(imageError.previousElementSibling).toContainElement(
+			screen.getByRole('img', { name: '프로필 이미지 미리보기' }),
+		);
+		expect(imageError.previousElementSibling).toContainElement(imageInput);
+
+		await user.upload(imageInput, validImage);
+
+		expect(imageInput).toHaveAttribute('aria-invalid', 'false');
+		expect(screen.queryByText('프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.')).not.toBeInTheDocument();
+
+		unmount();
 		vi.unstubAllGlobals();
 	});
 
