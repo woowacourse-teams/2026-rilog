@@ -19,6 +19,7 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+
 interface CologCreateFormFieldsProps {
 	value: CologCreateValue;
 	errors: CologProfileValidationErrors;
@@ -204,7 +205,7 @@ export default function CologCreateFormFields({
 				)}
 			</Field>
 
-			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
+			<Field label="팀 이름" description="팀 이름은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
 					<div className="flex items-start gap-2">
 						<Input

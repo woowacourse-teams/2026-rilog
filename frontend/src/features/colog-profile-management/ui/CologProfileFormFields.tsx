@@ -1,15 +1,14 @@
+import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LENGTH } from '@/domains/blog/model/colog';
+import Button from '@/shared/ui/button/Button';
+import Field from '@/shared/ui/field/Field';
+import Input from '@/shared/ui/input/Input';
+import Textarea from '@/shared/ui/textarea/Textarea';
 import type {
 	CologProfileFormRefs,
 	CologProfileSettingsValue,
 	CologProfileTextField,
 	CologProfileValidationErrors,
 } from '../model/colog-profile-settings';
-
-import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LENGTH } from '@/domains/blog/model/colog';
-import Button from '@/shared/ui/button/Button';
-import Field from '@/shared/ui/field/Field';
-import Input from '@/shared/ui/input/Input';
-import Textarea from '@/shared/ui/textarea/Textarea';
 
 import CologProfileImageFields from './CologProfileImageFields';
 import CologProfileSocialFields from './CologProfileSocialFields';
@@ -55,7 +54,7 @@ export default function CologProfileFormFields({
 				onCoverImageFileChange={onCoverImageFileChange}
 			/>
 
-			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
+			<Field label="팀 이름" description="팀 이름은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
 					<div className="flex items-start gap-2">
 						<Input
