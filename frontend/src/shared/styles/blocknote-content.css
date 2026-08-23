@@ -9,9 +9,7 @@
 				> .bn-block-content:is(
 					[data-content-type='audio'],
 					[data-content-type='codeBlock'],
-					[data-content-type='divider'],
 					[data-content-type='file'],
-					[data-content-type='image'],
 					[data-content-type='quote'],
 					[data-content-type='table'],
 					[data-content-type='video']
@@ -25,9 +23,7 @@
 				> .bn-block-content:is(
 					[data-content-type='audio'],
 					[data-content-type='codeBlock'],
-					[data-content-type='divider'],
 					[data-content-type='file'],
-					[data-content-type='image'],
 					[data-content-type='quote'],
 					[data-content-type='table'],
 					[data-content-type='video']
@@ -43,9 +39,7 @@
 				> .bn-block-content:is(
 					[data-content-type='audio'],
 					[data-content-type='codeBlock'],
-					[data-content-type='divider'],
 					[data-content-type='file'],
-					[data-content-type='image'],
 					[data-content-type='quote'],
 					[data-content-type='table'],
 					[data-content-type='video']
@@ -56,9 +50,7 @@
 				> .bn-block-content:is(
 					[data-content-type='audio'],
 					[data-content-type='codeBlock'],
-					[data-content-type='divider'],
 					[data-content-type='file'],
-					[data-content-type='image'],
 					[data-content-type='quote'],
 					[data-content-type='table'],
 					[data-content-type='video']
@@ -74,9 +66,7 @@
 				> .bn-block-content:is(
 					[data-content-type='audio'],
 					[data-content-type='codeBlock'],
-					[data-content-type='divider'],
 					[data-content-type='file'],
-					[data-content-type='image'],
 					[data-content-type='quote'],
 					[data-content-type='table'],
 					[data-content-type='video']
@@ -89,6 +79,51 @@
 		&:last-child {
 			padding-bottom: 0;
 		}
+	}
+
+	&
+		.bn-block-outer:has(
+			> .bn-block
+				> .bn-block-content:is(
+					[data-content-type='bulletListItem'],
+					[data-content-type='numberedListItem'],
+					[data-content-type='checkListItem'],
+					[data-content-type='toggleListItem']
+				)
+		) {
+		padding-block: var(--post-list-item-space);
+	}
+
+	&
+		:is(
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem'])
+				+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem']),
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem'])
+				+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem']),
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='checkListItem'])
+				+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='checkListItem']),
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='toggleListItem'])
+				+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='toggleListItem'])
+		) {
+		padding-top: var(--post-list-item-shared-space);
+	}
+
+	&
+		:is(
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='bulletListItem']):has(
+					+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='bulletListItem']
+				),
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='numberedListItem']):has(
+					+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='numberedListItem']
+				),
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='checkListItem']):has(
+					+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='checkListItem']
+				),
+			.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='toggleListItem']):has(
+					+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='toggleListItem']
+				)
+		) {
+		padding-bottom: var(--post-list-item-shared-space);
 	}
 }
 
