@@ -23,7 +23,13 @@ const TONE_CLASS_NAMES: Record<CologAvatarTone, string> = {
 	strong: 'bg-navy-200 text-navy-800',
 };
 
-export default function CologAvatar({ className, size = 'md', tone = 'strong', src, ...avatarProps }: CologAvatarProps) {
+export default function CologAvatar({
+	className,
+	size = 'md',
+	tone = 'strong',
+	src,
+	...avatarProps
+}: CologAvatarProps) {
 	return (
 		<Avatar
 			{...avatarProps}

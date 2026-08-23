@@ -26,17 +26,22 @@ const POST_FIXTURES: PostSummary[] = [
 	},
 ];
 
+type PublicBlogPostsResult = ReturnType<typeof usePublicBlogPosts>;
+
+const createPublicBlogPostsResult = (items: PostSummary[]): PublicBlogPostsResult =>
+	({
+		data: { pages: [{ items, page: 0, hasNext: false }] },
+		fetchNextPage: vi.fn(),
+		hasNextPage: false,
+		isFetchingNextPage: false,
+		isFetchNextPageError: false,
+		isPending: false,
+		isError: false,
+	}) as unknown as PublicBlogPostsResult;
+
 describe('CologPostFeed', () => {
 	it('전달받은 게시글만 렌더링한다', () => {
-		vi.mocked(usePublicBlogPosts).mockReturnValue({
-			data: { pages: [{ items: POST_FIXTURES, page: 0, hasNext: false }] },
-			fetchNextPage: vi.fn(),
-			hasNextPage: false,
-			isFetchingNextPage: false,
-			isFetchNextPageError: false,
-			isPending: false,
-			isError: false,
-		} as any);
+		vi.mocked(usePublicBlogPosts).mockReturnValue(createPublicBlogPostsResult(POST_FIXTURES));
 
 		render(<CologPostFeed slug="rilog" />);
 
@@ -67,15 +72,7 @@ describe('CologPostFeed', () => {
 	});
 
 	it('게시글이 없으면 빈 상태를 제공한다', () => {
-		vi.mocked(usePublicBlogPosts).mockReturnValue({
-			data: { pages: [{ items: [], page: 0, hasNext: false }] },
-			fetchNextPage: vi.fn(),
-			hasNextPage: false,
-			isFetchingNextPage: false,
-			isFetchNextPageError: false,
-			isPending: false,
-			isError: false,
-		} as any);
+		vi.mocked(usePublicBlogPosts).mockReturnValue(createPublicBlogPostsResult([]));
 
 		render(<CologPostFeed slug="rilog" />);
 

@@ -92,7 +92,7 @@ describe('CologSettingsWorkspace', () => {
 
 		expect(useBlogPublicProfileQueryMock).toHaveBeenCalledWith({
 			slug: 'team-rilog',
-			select: expect.any(Function),
+			select: expect.any(Function) as unknown,
 		});
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
@@ -232,12 +232,11 @@ describe('CologSettingsWorkspace', () => {
 		await user.type(nameInput, '새 리로그');
 		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));
 		await waitFor(() => expect(mutateAsyncMock).toHaveBeenCalledOnce());
-		expect(mutateAsyncMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				slug: 'rilog',
-				value: expect.objectContaining({ name: '새 리로그' }),
-			}),
-		);
+		const [[mutation]] = mutateAsyncMock.mock.calls as unknown as [
+			[{ slug: string; value: CologProfileSettingsValue }],
+		];
+		expect(mutation.slug).toBe('rilog');
+		expect(mutation.value.name).toBe('새 리로그');
 		await waitFor(() => expect(screen.queryByRole('button', { name: '변경사항 저장' })).not.toBeInTheDocument());
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 

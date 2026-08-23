@@ -10,7 +10,6 @@ import { apiClient, apiRequest, kyInstance } from '@/shared/api/client';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 
-
 export const readUserBySlug = ({ slug }: ReadUserBySlugRequest) => {
 	const normalizedSlug = stripAtPrefix(slug);
 

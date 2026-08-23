@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
-
 const LINK_CLASS_NAME =
 	'rounded-sm transition-[color,opacity,transform] duration-200 hover:text-brand-primary-hover active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transform-none';
 

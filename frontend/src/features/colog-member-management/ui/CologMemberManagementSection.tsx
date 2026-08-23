@@ -101,7 +101,9 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 				slug={slug}
 				open={isInviteModalOpen}
 				onClose={() => setIsInviteModalOpen(false)}
-				onInvite={handleInvite}
+				onInvite={(candidates) => {
+					void handleInvite(candidates);
+				}}
 			/>
 		</section>
 	);

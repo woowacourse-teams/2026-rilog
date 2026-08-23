@@ -25,7 +25,7 @@ export default function CologMemberRow({
 	member,
 	isEditing = false,
 	onPermissionChange,
-	onBlogRoleChange,
+	onBlogRoleChange: _onBlogRoleChange,
 }: CologMemberRowProps) {
 	const joinedAt = JOINED_AT_FORMATTER.format(new Date(member.joinedAt)).replace(/\.$/, '');
 
