@@ -7,6 +7,18 @@ export const COLOG_SLUG_MAX_LENGTH = 20;
 export const COLOG_DESCRIPTION_MAX_LENGTH = 80;
 export const COLOG_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+export const normalizeCologName = (name: string): string => name.trim();
+
+export const validateCologName = (name: string): string | undefined => {
+	const normalizedName = normalizeCologName(name);
+
+	if (normalizedName.length < COLOG_NAME_MIN_LENGTH || normalizedName.length > COLOG_NAME_MAX_LENGTH) {
+		return `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
+	}
+
+	return undefined;
+};
+
 export type CologMemberPermission = 'OWNER' | 'ADMIN' | 'MEMBER';
 
 export interface CologMember {

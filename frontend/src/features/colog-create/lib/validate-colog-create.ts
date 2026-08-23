@@ -1,28 +1,16 @@
 import {
 	COLOG_DESCRIPTION_MAX_LENGTH,
-	COLOG_NAME_MAX_LENGTH,
-	COLOG_NAME_MIN_LENGTH,
 	COLOG_SLUG_MAX_LENGTH,
 	COLOG_SLUG_MIN_LENGTH,
 	COLOG_SLUG_PATTERN,
+	normalizeCologName,
+	validateCologName,
 } from '@/domains/blog/model/colog';
 import type { CologCreateValue, CologProfileValidationErrors } from '../model/colog-create';
 
 const URL_PATTERN = /^https?:\/\//i;
 
 export const normalizeCologSlug = (slug: string): string => slug.trim().toLowerCase();
-
-export const normalizeCologName = (name: string): string => name.trim();
-
-export const validateCologName = (name: string): string | undefined => {
-	const normalizedName = normalizeCologName(name);
-
-	if (normalizedName.length < COLOG_NAME_MIN_LENGTH || normalizedName.length > COLOG_NAME_MAX_LENGTH) {
-		return `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
-	}
-
-	return undefined;
-};
 
 export const validateCologSlug = (slug: string): string | undefined => {
 	const normalizedSlug = normalizeCologSlug(slug);

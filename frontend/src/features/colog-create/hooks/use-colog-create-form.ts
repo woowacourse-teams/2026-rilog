@@ -3,12 +3,12 @@ import { useMemo, useRef, useState } from 'react';
 import type { CologCreateValue, CologProfileTextField, CologProfileValidationErrors } from '../model/colog-create';
 import type { RefObject } from 'react';
 
+import { normalizeCologName, validateCologName } from '@/domains/blog/model/colog';
+
 import {
 	normalizeCologCreateValue,
-	normalizeCologName,
 	normalizeCologSlug,
 	validateCologCreateValue,
-	validateCologName,
 	validateCologSlug,
 } from '../lib/validate-colog-create';
 import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';

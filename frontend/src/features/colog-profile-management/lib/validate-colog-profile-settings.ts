@@ -2,30 +2,18 @@ import type { CologProfileSettingsValue, CologProfileValidationErrors } from '..
 
 import {
 	COLOG_DESCRIPTION_MAX_LENGTH,
-	COLOG_NAME_MAX_LENGTH,
-	COLOG_NAME_MIN_LENGTH,
 	COLOG_SLUG_MAX_LENGTH,
 	COLOG_SLUG_MIN_LENGTH,
 	COLOG_SLUG_PATTERN,
+	normalizeCologName,
+	validateCologName,
 } from '@/domains/blog/model/colog';
 
 const URL_PATTERN = /^https?:\/\//i;
 
-export const normalizeCologProfileName = (name: string): string => name.trim();
-
-export const validateCologProfileName = (name: string): string | undefined => {
-	const normalizedName = normalizeCologProfileName(name);
-
-	if (normalizedName.length < COLOG_NAME_MIN_LENGTH || normalizedName.length > COLOG_NAME_MAX_LENGTH) {
-		return `팀 이름은 ${COLOG_NAME_MIN_LENGTH}~${COLOG_NAME_MAX_LENGTH}자로 입력해 주세요.`;
-	}
-
-	return undefined;
-};
-
 export const normalizeCologProfileSettings = (value: CologProfileSettingsValue): CologProfileSettingsValue => ({
 	...value,
-	name: normalizeCologProfileName(value.name),
+	name: normalizeCologName(value.name),
 	slug: value.slug.trim().toLowerCase(),
 	description: (value.description ?? '').trim(),
 	profileImageUrl: (value.profileImageUrl ?? '').trim(),
@@ -38,7 +26,7 @@ export const validateCologProfileSettings = (value: CologProfileSettingsValue): 
 	const errors: CologProfileValidationErrors = {};
 	const normalized = normalizeCologProfileSettings(value);
 
-	const nameError = validateCologProfileName(normalized.name);
+	const nameError = validateCologName(normalized.name);
 	if (nameError !== undefined) {
 		errors.name = nameError;
 	}

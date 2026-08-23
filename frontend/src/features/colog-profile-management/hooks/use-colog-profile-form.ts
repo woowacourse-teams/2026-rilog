@@ -7,12 +7,9 @@ import type {
 	CologProfileValidationErrors,
 } from '../model/colog-profile-settings';
 
-import {
-	normalizeCologProfileName,
-	normalizeCologProfileSettings,
-	validateCologProfileName,
-	validateCologProfileSettings,
-} from '../lib/validate-colog-profile-settings';
+import { normalizeCologName, validateCologName } from '@/domains/blog/model/colog';
+
+import { normalizeCologProfileSettings, validateCologProfileSettings } from '../lib/validate-colog-profile-settings';
 import { EMPTY_COLOG_PROFILE_SETTINGS_VALUE } from '../model/colog-profile-settings';
 
 interface UseCologProfileFormOptions {
@@ -92,7 +89,7 @@ export function useCologProfileForm(options: UseCologProfileFormOptions = {}) {
 	};
 
 	const validateName = (): string | null => {
-		const nameError = validateCologProfileName(value.name);
+		const nameError = validateCologName(value.name);
 		setErrors((current) => {
 			const nextErrors = { ...current };
 			if (nameError === undefined) {
@@ -108,7 +105,7 @@ export function useCologProfileForm(options: UseCologProfileFormOptions = {}) {
 			return null;
 		}
 
-		return normalizeCologProfileName(value.name);
+		return normalizeCologName(value.name);
 	};
 
 	return {
