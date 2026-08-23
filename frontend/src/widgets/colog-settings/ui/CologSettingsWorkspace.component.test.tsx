@@ -14,6 +14,7 @@ const {
 	replaceMock,
 	resetSaveProfileMock,
 	useBlogPublicProfileQueryMock,
+	useCologMembersQueryMock,
 	useSaveCologProfileMock,
 } = vi.hoisted(() => ({
 	mutateAsyncMock: vi.fn(),
@@ -21,6 +22,7 @@ const {
 	replaceMock: vi.fn(),
 	resetSaveProfileMock: vi.fn(),
 	useBlogPublicProfileQueryMock: vi.fn(),
+	useCologMembersQueryMock: vi.fn(),
 	useSaveCologProfileMock: vi.fn(),
 }));
 
@@ -30,6 +32,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/shared/api/blogs/queries/public-profile/use-query', () => ({
 	useBlogPublicProfileQuery: useBlogPublicProfileQueryMock,
+}));
+
+vi.mock('@/shared/api/cologs/queries/members/use-query', () => ({
+	useCologMembersQuery: useCologMembersQueryMock,
 }));
 
 vi.mock('@/features/colog-profile-management/hooks/use-save-colog-profile', () => ({
@@ -55,8 +61,9 @@ describe('CologSettingsWorkspace', () => {
 		replaceMock.mockClear();
 		resetSaveProfileMock.mockClear();
 		useBlogPublicProfileQueryMock.mockReset();
+		useCologMembersQueryMock.mockReset();
 		useSaveCologProfileMock.mockReset();
-		mutateAsyncMock.mockImplementation(async ({ value }: { value: CologProfileSettingsValue }) => ({
+		mutateAsyncMock.mockImplementation(({ value }: { value: CologProfileSettingsValue }) => ({
 			...value,
 			logoFile: null,
 			coverImageFile: null,
@@ -73,6 +80,9 @@ describe('CologSettingsWorkspace', () => {
 			isError: false,
 			isPending: false,
 			refetch: refetchProfileMock,
+		});
+		useCologMembersQueryMock.mockReturnValue({
+			data: { status: 200, message: '팀 멤버 목록 조회에 성공했습니다.', data: [] },
 		});
 		window.history.replaceState(null, '', '/');
 	});
@@ -341,7 +351,10 @@ describe('CologSettingsWorkspace', () => {
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 		await user.click(screen.getByRole('button', { name: '+ 멤버 초대' }));
 
+		expect(useCologMembersQueryMock).toHaveBeenCalledWith({ slug: 'rilog' });
 		expect(screen.getByRole('dialog', { name: '멤버 초대' })).toBeInTheDocument();
-		expect(screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' })).toHaveFocus();
+		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
+		expect(input).toHaveFocus();
+		expect(input).toHaveAttribute('placeholder', '@user');
 	});
 });
