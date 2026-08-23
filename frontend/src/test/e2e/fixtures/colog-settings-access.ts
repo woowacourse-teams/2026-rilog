@@ -1,25 +1,16 @@
 import type { Page } from '@playwright/test';
 
-import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
+import { AUTH_REFRESH_ROUTE, mockAuthenticatedAccess, MY_INFO_ROUTE } from './authenticated-access';
 
 type CologPermission = 'OWNER' | 'ADMIN' | 'MEMBER';
 
-const MY_INFO_ROUTE = '**/v1/users/me';
 const COLOG_MEMBERS_ROUTE = '**/v1/cologs/*/members';
 const COLOG_PROFILE_UPDATE_ROUTE = '**/v1/cologs/*/profiles';
 const COLOG_PROFILE_ROUTE = /\/v1\/blogs\/@[^/]+$/;
 const NICKNAME_AVAILABILITY_ROUTE = '**/v1/availability/nickname*';
-const AUTH_REFRESH_ROUTE = '**/v1/auth/token/refresh';
 const PROXY_SESSION_ROUTE = '**/api/auth/proxy-session';
 
 export const mockCologSettingsAccess = async (page: Page, permission: CologPermission | null = 'OWNER') => {
-	await page.context().addCookies([
-		{
-			name: PROXY_SESSION_COOKIE_NAME,
-			value: PROXY_SESSION_COOKIE_VALUE,
-			url: 'http://localhost:3000',
-		},
-	]);
 	await page.unroute(AUTH_REFRESH_ROUTE);
 	await page.unroute(PROXY_SESSION_ROUTE);
 	await page.unroute(MY_INFO_ROUTE);
@@ -28,29 +19,7 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 	await page.unroute(COLOG_PROFILE_ROUTE);
 	await page.unroute(NICKNAME_AVAILABILITY_ROUTE);
 	await page.request.post('http://localhost:3000/api/auth/proxy-session');
-
-	await page.route(AUTH_REFRESH_ROUTE, (route) =>
-		route.fulfill({
-			status: 204,
-			headers: {
-				Authorization: 'Bearer e2e-access-token',
-				'Access-Control-Allow-Credentials': 'true',
-				'Access-Control-Allow-Origin': 'http://localhost:3000',
-				'Access-Control-Expose-Headers': 'Authorization',
-			},
-		}),
-	);
-
-	await page.route(MY_INFO_ROUTE, (route) =>
-		route.fulfill({
-			contentType: 'application/json',
-			body: JSON.stringify({
-				status: 200,
-				message: '내 정보 조회에 성공했습니다.',
-				data: { id: 1, slug: 'e2e-user', nickname: 'E2E 사용자', profileImageUrl: null },
-			}),
-		}),
-	);
+	await mockAuthenticatedAccess(page);
 
 	await page.route(COLOG_MEMBERS_ROUTE, (route) =>
 		route.fulfill({
