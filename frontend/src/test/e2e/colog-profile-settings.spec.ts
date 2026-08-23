@@ -16,21 +16,26 @@ test.describe('팀 프로필 설정', () => {
 
 	test('OWNER가 코로그 홈의 설정 버튼으로 기본 설정 탭에 이동한다', async ({ page }) => {
 		await page.goto('/@rilog-e2e');
-		const settingsButton = page.getByRole('button', { name: '리로그 E2E 코로그 설정으로 이동' });
-		const avatar = page.getByRole('img', { name: '리로그 E2E 코로그 로고' });
+		const settingsButton = page.getByRole('link', { name: '코로그 설정' });
+		const heading = page.getByRole('heading', { name: '리로그 E2E' });
 		await expect(settingsButton).toBeVisible();
 		const buttonBox = await settingsButton.boundingBox();
-		const avatarBox = await avatar.boundingBox();
-		expect(buttonBox?.x).toBeGreaterThanOrEqual((avatarBox?.x ?? 0) + (avatarBox?.width ?? 0));
-		expect(Math.round((buttonBox?.y ?? 0) + (buttonBox?.height ?? 0))).toBe(
-			Math.round((avatarBox?.y ?? 0) + (avatarBox?.height ?? 0)),
-		);
+		const headingBox = await heading.boundingBox();
+		expect(
+			Math.abs(
+				(buttonBox?.y ?? 0) + (buttonBox?.height ?? 0) / 2 - ((headingBox?.y ?? 0) + (headingBox?.height ?? 0) / 2),
+			),
+		).toBeLessThanOrEqual(1);
+		expect(buttonBox?.x).toBeGreaterThanOrEqual((headingBox?.x ?? 0) + (headingBox?.width ?? 0));
+		expect(buttonBox?.height).toBeGreaterThanOrEqual(44);
 		const initialBackground = await settingsButton.evaluate((element) => getComputedStyle(element).backgroundColor);
-		expect(await settingsButton.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+		expect(initialBackground).toBe('rgba(0, 0, 0, 0)');
+		expect(await settingsButton.evaluate((element) => getComputedStyle(element).borderWidth)).toBe('0px');
 		await settingsButton.hover();
 		await expect
 			.poll(() => settingsButton.evaluate((element) => getComputedStyle(element).backgroundColor))
 			.not.toBe(initialBackground);
+		await expect(page.locator('[role="tooltip"]')).toHaveCSS('opacity', '1');
 
 		await settingsButton.click();
 

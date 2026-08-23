@@ -97,8 +97,9 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 					name: slug === 'rilog-e2e' ? '리로그 E2E' : '리로그',
 					slug,
 					introduction: 'E2E 팀 소개',
-					profileImageUrl: 'https://images.rilog.test/profile.png',
-					coverImageUrl: null,
+					profileImageUrl:
+						slug === 'rilog-e2e' ? '/images/profile-placeholder.svg' : 'https://images.rilog.test/profile.png',
+					coverImageUrl: slug === 'rilog-e2e' ? '/images/default-post-cover.svg' : null,
 					serviceUrl: null,
 					githubUrl: null,
 					memberCount: 1,

@@ -31,6 +31,10 @@ describe('CologHomeHero', () => {
 			'https://github.com/frontend-lab',
 		);
 		expect(screen.getByRole('button', { name: '팀 설정' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '팀 설정' }).parentElement).toHaveClass(
+			'text-text-on-dark',
+			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
+		);
 		expect(screen.getByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).toBeInTheDocument();
 	});
 
@@ -38,7 +42,7 @@ describe('CologHomeHero', () => {
 		render(<CologProfileHero profile={{ ...COLOG_PROFILE_FIXTURE, coverImageUrl: null }} />);
 
 		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' }).parentElement?.parentElement).toHaveClass(
+		expect(screen.getByRole('img', { name: '프론트엔드 연구소 코로그 로고' }).parentElement?.parentElement).toHaveClass(
 			'bg-[#DBE5F5]',
 		);
 	});

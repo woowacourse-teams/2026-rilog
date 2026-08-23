@@ -23,6 +23,7 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 		? 'bg-brand-primary text-text-on-dark'
 		: 'bg-[#DBE5F5] text-text-primary';
 	const coverTextShadowClassName = hasCoverImage ? 'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]' : '';
+	const actionToneClassName = hasCoverImage ? `text-text-on-dark ${coverTextShadowClassName}` : 'text-text-secondary';
 	const secondaryTextClassName = hasCoverImage ? 'text-navy-200' : 'text-text-secondary';
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
 	const hasServiceUrl = serviceUrl !== '';
@@ -34,22 +35,22 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 		>
 			{hasCoverImage && <CologProfileCoverImage src={coverImageUrl} alt={`${profile.name} 커버 이미지`} />}
 			<div className="relative flex flex-col items-center">
-				<div className="relative inline-flex">
-					<CologAvatar
-						src={profile.profileImageUrl || undefined}
-						fallback={profile.name.slice(0, 1)}
-						label={`${profile.name} 코로그 로고`}
-						size="max"
-						className="size-32! sm:size-40! md:size-45!"
-					/>
-					{action ? <div className="absolute bottom-0 left-full ml-2">{action}</div> : null}
-				</div>
+				<CologAvatar
+					src={profile.profileImageUrl || undefined}
+					fallback={profile.name.slice(0, 1)}
+					label={`${profile.name} 코로그 로고`}
+					size="max"
+					className="size-32! sm:size-40! md:size-45!"
+				/>
 
-				<h1
-					className={`mt-2.5 max-w-full text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
-				>
-					{profile.name}
-				</h1>
+				<div className="mt-2.5 flex max-w-full flex-wrap items-center justify-center gap-2">
+					<h1
+						className={`max-w-full min-w-0 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
+					>
+						{profile.name}
+					</h1>
+					{action ? <div className={`shrink-0 ${actionToneClassName}`}>{action}</div> : null}
+				</div>
 				{hasDescription || hasServiceUrl ? (
 					<p
 						className={`mt-2 max-w-sm text-label-2 sm:mt-2.5 sm:max-w-lg sm:text-body-1 ${secondaryTextClassName} ${coverTextShadowClassName}`}
