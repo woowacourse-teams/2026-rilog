@@ -10,14 +10,14 @@ import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.exception.UserException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +29,19 @@ public class BlogService {
 
     public void validateDuplicatedSlug(String slug) {
         if (blogRepository.existsBySlug(Slug.from(slug))) {
-            throw new UserException(SLUG_DUPLICATED);
+            throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
+        }
+    }
+
+    public void validateDuplicatedProfileName(String profileName) {
+        if (blogRepository.existsByProfileName(profileName)) {
+            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        }
+    }
+
+    public void validateDuplicatedProfileName(String profileName, Long excludedBlogId) {
+        if (blogRepository.existsByProfileNameExceptId(profileName, excludedBlogId)) {
+            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         }
     }
 
