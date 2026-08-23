@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { useState } from 'react';
 
 import type { CologCreateFormRefs } from '../hooks/use-colog-create-form';
 import type { CologCreateValue, CologProfileTextField, CologProfileValidationErrors } from '../model/colog-create';
@@ -17,6 +18,8 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+
+const MAX_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 interface CologCreateFormFieldsProps {
 	value: CologCreateValue;
@@ -49,91 +52,155 @@ export default function CologCreateFormFields({
 	onLogoFileChange,
 	onCoverImageFileChange,
 }: CologCreateFormFieldsProps) {
+	const [logoFileSizeError, setLogoFileSizeError] = useState<string | null>(null);
+	const [coverImageFileSizeError, setCoverImageFileSizeError] = useState<string | null>(null);
 	const logoPreviewUrl = useImagePreviewUrl(value.logoFile, value.profileImageUrl ?? '');
 	const coverImagePreviewUrl = useImagePreviewUrl(value.coverImageFile, value.coverImageUrl ?? '');
-	const hasLogoError = errors.logoFile !== undefined;
+	const displayedLogoError = logoFileSizeError ?? errors.logoFile;
+	const hasLogoError = displayedLogoError !== undefined;
 	const hasCustomLogo = value.logoFile !== null || Boolean(value.profileImageUrl);
 	const hasCustomCover = value.coverImageFile !== null || Boolean(value.coverImageUrl);
 	const hasNameError = errors.name !== undefined || nameAvailabilityStatus === 'error';
 	const hasSlugError = errors.slug !== undefined || slugAvailabilityStatus === 'error';
+	const validateImageFileSize = (file: File) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES;
+
+	const handleLogoFileChange = (file: File | null) => {
+		setLogoFileSizeError(null);
+		onLogoFileChange(file);
+	};
+
+	const handleCoverImageFileChange = (file: File | null) => {
+		setCoverImageFileSizeError(null);
+		onCoverImageFileChange(file);
+	};
 
 	return (
 		<div className="flex flex-col gap-6">
-			<Field label="팀 로고" required>
-				{({ id }) => (
-					<div id={id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-						<div className="relative shrink-0">
-							<ImagePreview
-								src={logoPreviewUrl || '/images/profile-placeholder.svg'}
-								alt="팀 로고 미리보기"
-								shape="square"
-								status={hasLogoError ? 'error' : 'default'}
-								className="size-20 sm:size-24"
-							/>
-							{hasCustomLogo ? (
-								<Button
-									variant="danger"
-									size="icon"
-									aria-label="팀 로고 제거"
-									disabled={disabled}
-									className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
-									onClick={() => onLogoFileChange(null)}
-								>
-									<span aria-hidden="true" className="text-body-2 leading-none">
-										×
-									</span>
-								</Button>
-							) : null}
-						</div>
-						<div className="flex flex-col gap-2">
+			<Field
+				label="팀 로고"
+				description={
+					<ul className="list-disc pl-5">
+						<li>로고 이미지는 360*360px(1:1) 사이즈를 권장해요.</li>
+						<li>10MB 이하의 파일만 업로드 가능해요.</li>
+					</ul>
+				}
+				required
+			>
+				{({ id, describedBy }) => (
+					<div id={id} className="flex flex-col gap-2">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+							<div className="relative shrink-0">
+								<ImagePreview
+									src={logoPreviewUrl || '/images/profile-placeholder.svg'}
+									alt="팀 로고 미리보기"
+									shape="square"
+									status={hasLogoError ? 'error' : 'default'}
+									className="size-20 sm:size-24"
+								/>
+								{hasCustomLogo ? (
+									<Button
+										variant="danger"
+										size="icon"
+										aria-label="팀 로고 제거"
+										disabled={disabled}
+										className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
+										onClick={() => handleLogoFileChange(null)}
+									>
+										<span aria-hidden="true" className="text-body-2 leading-none">
+											×
+										</span>
+									</Button>
+								) : null}
+							</div>
 							<ImageUploader
 								ref={refs.logoFile}
 								required
 								buttonLabel="이미지 변경"
 								aria-label="팀 로고 변경"
+								aria-describedby={hasLogoError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy}
+								aria-invalid={hasLogoError}
 								disabled={disabled}
-								onFileChange={(file) => onLogoFileChange(file)}
+								validateFile={validateImageFileSize}
+								onFileRejected={(file) => {
+									if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+										setLogoFileSizeError('팀 로고는 10MB 이하의 이미지만 업로드할 수 있어요.');
+									}
+								}}
+								onFileChange={handleLogoFileChange}
 							/>
-							{hasLogoError && <p className="text-label-1 text-danger">{errors.logoFile}</p>}
 						</div>
+						{hasLogoError && (
+							<p
+								id={`${id}-file-error`}
+								role={logoFileSizeError ? 'alert' : undefined}
+								className="text-label-1 text-danger"
+							>
+								{displayedLogoError}
+							</p>
+						)}
 					</div>
 				)}
 			</Field>
 
-			<Field label="커버 이미지">
-				{({ id }) => (
-					<div id={id} className="flex flex-col gap-3">
-						<div className="relative">
-							<ImagePreview
-								src={coverImagePreviewUrl || undefined}
-								alt="팀 커버 이미지 미리보기"
-								shape="rectangle"
-								className="h-32 w-full sm:h-40"
-								fallback={
-									<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />
+			<Field
+				label="커버 이미지"
+				description={
+					<ul className="list-disc pl-5">
+						<li>커버 이미지는 3072*1024px(3:1) 사이즈를 권장해요.</li>
+						<li>10MB 이하의 파일만 업로드 가능해요.</li>
+					</ul>
+				}
+			>
+				{({ id, describedBy }) => (
+					<div id={id} className="flex flex-col gap-2">
+						<div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+							<div className="relative">
+								<ImagePreview
+									src={coverImagePreviewUrl || undefined}
+									alt="팀 커버 이미지 미리보기"
+									shape="rectangle"
+									className="aspect-[1/3] h-auto w-full sm:h-40 sm:w-auto"
+									fallback={
+										<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />
+									}
+								/>
+								{hasCustomCover ? (
+									<Button
+										variant="danger"
+										size="icon"
+										aria-label="커버 이미지 제거"
+										disabled={disabled}
+										className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
+										onClick={() => handleCoverImageFileChange(null)}
+									>
+										<span aria-hidden="true" className="text-body-2 leading-none">
+											×
+										</span>
+									</Button>
+								) : null}
+							</div>
+							<ImageUploader
+								buttonLabel="이미지 변경"
+								aria-label="커버 이미지 변경"
+								aria-describedby={
+									coverImageFileSizeError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy
 								}
+								aria-invalid={coverImageFileSizeError !== null}
+								disabled={disabled}
+								validateFile={validateImageFileSize}
+								onFileRejected={(file) => {
+									if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+										setCoverImageFileSizeError('커버 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+									}
+								}}
+								onFileChange={handleCoverImageFileChange}
 							/>
-							{hasCustomCover ? (
-								<Button
-									variant="danger"
-									size="icon"
-									aria-label="커버 이미지 제거"
-									disabled={disabled}
-									className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
-									onClick={() => onCoverImageFileChange(null)}
-								>
-									<span aria-hidden="true" className="text-body-2 leading-none">
-										×
-									</span>
-								</Button>
-							) : null}
 						</div>
-						<ImageUploader
-							buttonLabel="이미지 변경"
-							aria-label="커버 이미지 변경"
-							disabled={disabled}
-							onFileChange={(file) => onCoverImageFileChange(file)}
-						/>
+						{coverImageFileSizeError && (
+							<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+								{coverImageFileSizeError}
+							</p>
+						)}
 					</div>
 				)}
 			</Field>
