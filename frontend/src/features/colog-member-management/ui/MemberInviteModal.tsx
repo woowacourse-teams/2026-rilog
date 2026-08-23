@@ -143,7 +143,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 							value={slugInput}
 							aria-label="초대할 멤버 고유 아이디"
 							aria-describedby={helperTextId}
-							placeholder="@jetproc"
+							placeholder="@user"
 							status={errorMessage ? 'error' : 'default'}
 							className="border-0 bg-transparent px-3"
 							onChange={(event) => {
