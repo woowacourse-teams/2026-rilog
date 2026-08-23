@@ -12,6 +12,7 @@ import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/
 import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useOnboardingMutation } from '@/shared/api/users/mutations/use-onboarding-mutation';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Checkbox from '@/shared/ui/checkbox/Checkbox';
@@ -37,8 +38,6 @@ const TERMS_OF_SERVICE_URL =
 	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link';
 const PRIVACY_POLICY_URL =
 	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link';
-const MAX_PROFILE_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
 	navigate?: (href: string, options?: SignUpNavigateOptions) => void;
@@ -234,9 +233,9 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 									: profileImageDescriptionId
 							}
 							aria-invalid={profileImageFileSizeError !== null}
-							validateFile={(file) => file.size <= MAX_PROFILE_IMAGE_FILE_SIZE_BYTES}
+							validateFile={(file) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES}
 							onFileRejected={(file) => {
-								if (file.size > MAX_PROFILE_IMAGE_FILE_SIZE_BYTES) {
+								if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
 									setProfileImageFileSizeError('프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
 								}
 							}}

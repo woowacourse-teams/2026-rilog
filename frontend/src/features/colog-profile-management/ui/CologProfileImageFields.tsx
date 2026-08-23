@@ -2,13 +2,12 @@ import { type RefObject, useState } from 'react';
 
 import type { CologProfileSettingsValue, CologProfileValidationErrors } from '../model/colog-profile-settings';
 
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Field from '@/shared/ui/field/Field';
 import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageResetOverlay from '@/shared/ui/image-reset-overlay/ImageResetOverlay';
-
-const MAX_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 interface CologProfileImageFieldsProps {
 	value: CologProfileSettingsValue;

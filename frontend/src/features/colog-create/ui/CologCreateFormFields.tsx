@@ -10,6 +10,7 @@ import {
 	COLOG_NAME_MIN_LENGTH,
 	COLOG_SLUG_MIN_LENGTH,
 } from '@/domains/blog/model/colog';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
@@ -17,8 +18,6 @@ import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
-
-const MAX_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 interface CologCreateFormFieldsProps {
 	value: CologCreateValue;

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-session';
@@ -272,7 +273,7 @@ describe('SignUpForm', () => {
 			Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:profile-image'), revokeObjectURL: vi.fn() }),
 		);
 		const user = userEvent.setup();
-		const oversizedImage = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'oversized.png', {
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
 			type: 'image/png',
 		});
 		const validImage = new File(['valid'], 'valid.png', { type: 'image/png' });

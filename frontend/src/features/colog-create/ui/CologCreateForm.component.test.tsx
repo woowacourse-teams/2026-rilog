@@ -9,6 +9,7 @@ import type { CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
 import type { PresignedUrlCreateResponse } from '@/shared/api/uploads/types';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 
 import CologCreateForm from './CologCreateForm';
 
@@ -107,7 +108,7 @@ describe('CologCreateForm', () => {
 	it('10MB를 초과한 이미지는 반영하지 않고 이미지 영역 아래에 오류를 안내한다', async () => {
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
 		const user = userEvent.setup();
-		const oversizedImage = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'oversized.png', {
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
 			type: 'image/png',
 		});
 		const validImage = new File(['valid'], 'valid.png', { type: 'image/png' });

@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { CologProfileSettingsValue } from '../model/colog-profile-settings';
 
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
+
 import CologProfileImageFields from './CologProfileImageFields';
 
 const DEFAULT_VALUE: CologProfileSettingsValue = {
@@ -62,7 +64,7 @@ describe('CologProfileImageFields', () => {
 		const user = userEvent.setup();
 		const onLogoFileChange = vi.fn();
 		const onCoverImageFileChange = vi.fn();
-		const oversizedImage = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'oversized.png', {
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
 			type: 'image/png',
 		});
 		const validImage = new File(['valid'], 'valid.png', { type: 'image/png' });
