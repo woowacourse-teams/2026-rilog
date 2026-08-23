@@ -27,7 +27,7 @@ export default async function PostDetail({ post }: PostDetailProps) {
 					<Divider aria-label="게시글 정보와 본문 구분" />
 
 					<div className="relative mt-10">
-						<PostDetailContent html={contentHtml} />
+						<PostDetailContent html={contentHtml} postId={post.id} />
 						{tableOfContents.length === 0 ? null : <PostTableOfContents items={tableOfContents} />}
 					</div>
 				</div>
