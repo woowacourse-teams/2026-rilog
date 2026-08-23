@@ -101,6 +101,5 @@
 }
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock'] {
-	margin-block: 1rem;
 	background: var(--brand-primary);
 }

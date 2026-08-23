@@ -2,9 +2,14 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
+import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
+
 const TEST_IMAGE_BYTES = Array.from(
 	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
 );
+const AUTH_REFRESH_ROUTE = '**/v1/auth/token/refresh';
+const MY_COLOGS_PREVIEW_ROUTE = '**/v1/users/me/cologs/preview';
+const MY_INFO_ROUTE = '**/v1/users/me';
 
 const fillPost = async (page: Page) => {
 	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
@@ -15,6 +20,64 @@ const fillPost = async (page: Page) => {
 
 const expectBodyImage = async (page: Page) => {
 	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
+};
+
+const enableWriteAccess = async (page: Page) => {
+	await page.context().addCookies([
+		{
+			name: PROXY_SESSION_COOKIE_NAME,
+			value: PROXY_SESSION_COOKIE_VALUE,
+			url: 'http://localhost:3000',
+		},
+	]);
+	await page.route(AUTH_REFRESH_ROUTE, (route) =>
+		route.fulfill({
+			status: 204,
+			headers: {
+				Authorization: 'Bearer e2e-access-token',
+				'Access-Control-Allow-Credentials': 'true',
+				'Access-Control-Allow-Origin': 'http://localhost:3000',
+				'Access-Control-Expose-Headers': 'Authorization',
+			},
+		}),
+	);
+	await page.route(MY_INFO_ROUTE, (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 200,
+				message: '내 정보 조회에 성공했습니다.',
+				data: { id: 1, slug: 'e2e-user', nickname: 'E2E 사용자', profileImageUrl: null },
+			}),
+		}),
+	);
+	await page.route(MY_COLOGS_PREVIEW_ROUTE, (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({ status: 200, message: '내 Co-log 미리보기 조회에 성공했습니다.', data: [] }),
+		}),
+	);
+};
+
+const insertQuoteAfterParagraph = async (page: Page) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+	await page.keyboard.type('일반 문단');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('/인용');
+	await page.keyboard.press('Enter');
+	await expect(page.locator('[data-content-type="quote"]')).toBeVisible();
+};
+
+const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
+	return page.locator(`[data-content-type="${contentType}"]`).evaluate((content) => {
+		const outer = content.closest<HTMLElement>('.bn-block-outer');
+		if (outer === null) {
+			throw new Error('BlockNote 블록 외곽 요소를 찾을 수 없습니다.');
+		}
+
+		return getComputedStyle(outer).paddingTop;
+	});
 };
 
 test.describe('글 작성', () => {
@@ -207,5 +270,18 @@ test.describe('글 작성', () => {
 		await page.getByRole('button', { name: '발행' }).click();
 		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	});
+
+	test('특수 블록에 데스크톱과 모바일의 공통 세로 여백을 적용한다', async ({ page }) => {
+		await enableWriteAccess(page);
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.goto('/write');
+		await insertQuoteAfterParagraph(page);
+		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('16px');
+
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/write');
+		await insertQuoteAfterParagraph(page);
+		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('12px');
 	});
 });
