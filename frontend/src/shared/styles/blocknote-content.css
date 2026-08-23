@@ -1,119 +1,95 @@
+/* BlockNote의 특수 블록은 작성과 상세 화면에서 같은 세로 리듬을 사용한다. */
 :is(.post-detail-body, .post-write-blocknote) {
 	--post-special-block-space: 1rem;
 	--post-special-block-shared-space: 0.5rem;
-}
 
-:is(.post-detail-body, .post-write-blocknote)
-	.bn-block-outer:has(
-		> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	) {
-	padding-block: var(--post-special-block-space);
-}
-
-:is(.post-detail-body, .post-write-blocknote)
-	.bn-block-outer:has(
-		> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	)
-	+ .bn-block-outer:has(
-		> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	) {
-	padding-top: var(--post-special-block-shared-space);
-}
-
-:is(.post-detail-body, .post-write-blocknote)
-	.bn-block-outer:has(
-		> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	):has(
-		+ .bn-block-outer
+	&
+		.bn-block-outer:has(
 			> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	) {
-	padding-bottom: var(--post-special-block-shared-space);
-}
+				> .bn-block-content:is(
+					[data-content-type='audio'],
+					[data-content-type='codeBlock'],
+					[data-content-type='divider'],
+					[data-content-type='file'],
+					[data-content-type='image'],
+					[data-content-type='quote'],
+					[data-content-type='table'],
+					[data-content-type='video']
+				)
+		) {
+		padding-block: var(--post-special-block-space);
 
-:is(.post-detail-body, .post-write-blocknote)
-	.bn-block-group
-	> .bn-block-outer:first-child:has(
-		> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	) {
-	padding-top: 0;
-}
+		&:has(
+			+ .bn-block-outer
+				> .bn-block
+				> .bn-block-content:is(
+					[data-content-type='audio'],
+					[data-content-type='codeBlock'],
+					[data-content-type='divider'],
+					[data-content-type='file'],
+					[data-content-type='image'],
+					[data-content-type='quote'],
+					[data-content-type='table'],
+					[data-content-type='video']
+				)
+		) {
+			padding-bottom: var(--post-special-block-shared-space);
+		}
+	}
 
-:is(.post-detail-body, .post-write-blocknote)
-	.bn-block-group
-	> .bn-block-outer:last-child:has(
-		> .bn-block
-			> .bn-block-content:is(
-				[data-content-type='audio'],
-				[data-content-type='codeBlock'],
-				[data-content-type='divider'],
-				[data-content-type='file'],
-				[data-content-type='image'],
-				[data-content-type='quote'],
-				[data-content-type='table'],
-				[data-content-type='video']
-			)
-	) {
-	padding-bottom: 0;
+	&
+		.bn-block-outer:has(
+			> .bn-block
+				> .bn-block-content:is(
+					[data-content-type='audio'],
+					[data-content-type='codeBlock'],
+					[data-content-type='divider'],
+					[data-content-type='file'],
+					[data-content-type='image'],
+					[data-content-type='quote'],
+					[data-content-type='table'],
+					[data-content-type='video']
+				)
+		)
+		+ .bn-block-outer:has(
+			> .bn-block
+				> .bn-block-content:is(
+					[data-content-type='audio'],
+					[data-content-type='codeBlock'],
+					[data-content-type='divider'],
+					[data-content-type='file'],
+					[data-content-type='image'],
+					[data-content-type='quote'],
+					[data-content-type='table'],
+					[data-content-type='video']
+				)
+		) {
+		padding-top: var(--post-special-block-shared-space);
+	}
+
+	&
+		.bn-block-group
+		> .bn-block-outer:has(
+			> .bn-block
+				> .bn-block-content:is(
+					[data-content-type='audio'],
+					[data-content-type='codeBlock'],
+					[data-content-type='divider'],
+					[data-content-type='file'],
+					[data-content-type='image'],
+					[data-content-type='quote'],
+					[data-content-type='table'],
+					[data-content-type='video']
+				)
+		) {
+		&:first-child {
+			padding-top: 0;
+		}
+
+		&:last-child {
+			padding-bottom: 0;
+		}
+	}
 }
 
 @media (max-width: 40rem) {
