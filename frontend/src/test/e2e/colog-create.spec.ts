@@ -35,6 +35,10 @@ test.describe('팀 생성', () => {
 		});
 		await page.getByRole('textbox', { name: '팀 이름' }).fill('리로그 E2E');
 		await page.getByRole('textbox', { name: '팀 고유 아이디' }).fill('rilog-e2e');
+		await page.getByRole('button', { name: '팀 이름 중복 확인' }).click();
+		await expect(page.getByRole('textbox', { name: '팀 이름' })).toHaveAccessibleDescription(/사용가능/);
+		await page.getByRole('button', { name: '팀 고유 아이디 중복 확인' }).click();
+		await expect(page.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveAccessibleDescription(/사용가능/);
 		await page.getByRole('button', { name: '팀 만들기' }).click();
 
 		await expect(page).toHaveURL('/@rilog-e2e');

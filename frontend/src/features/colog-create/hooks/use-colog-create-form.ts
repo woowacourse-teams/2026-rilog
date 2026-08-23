@@ -5,8 +5,10 @@ import type { RefObject } from 'react';
 
 import {
 	normalizeCologCreateValue,
+	normalizeCologName,
 	normalizeCologSlug,
 	validateCologCreateValue,
+	validateCologName,
 	validateCologSlug,
 } from '../lib/validate-colog-create';
 import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';
@@ -114,6 +116,26 @@ export function useCologCreateForm(options: UseCologCreateFormOptions = {}) {
 		return normalizeCologSlug(value.slug);
 	};
 
+	const validateName = (): string | null => {
+		const nameError = validateCologName(value.name);
+		setErrors((current) => {
+			const nextErrors = { ...current };
+			if (nameError === undefined) {
+				delete nextErrors.name;
+			} else {
+				nextErrors.name = nameError;
+			}
+			return nextErrors;
+		});
+
+		if (nameError !== undefined) {
+			refs.name.current?.focus();
+			return null;
+		}
+
+		return normalizeCologName(value.name);
+	};
+
 	return {
 		value,
 		errors,
@@ -122,6 +144,7 @@ export function useCologCreateForm(options: UseCologCreateFormOptions = {}) {
 		updateLogoFile,
 		updateCoverImageFile,
 		validate,
+		validateName,
 		validateSlug,
 		setValue,
 	};

@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { checkSlugAvailability } from '@/shared/api/availability/api';
+import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
 import { createColog } from '@/shared/api/cologs/api';
 import type { CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
@@ -41,6 +41,10 @@ const fillRequiredFields = async (
 	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 소개' }), '함께 성장하는 개발 팀입니다');
 	if (shouldCheckAvailability) {
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+		await waitFor(() =>
+			expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAccessibleDescription(/사용가능/),
+		);
 		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
 		await waitFor(() =>
 			expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveAccessibleDescription(/사용가능/),
@@ -55,6 +59,11 @@ describe('CologCreateForm', () => {
 		backMock.mockClear();
 		replaceMock.mockClear();
 		vi.clearAllMocks();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
 		vi.mocked(checkSlugAvailability).mockResolvedValue({
 			status: 200,
 			message: '사용가능한 슬러그입니다.',
@@ -74,6 +83,7 @@ describe('CologCreateForm', () => {
 			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
 		}
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeRequired();
+		expect(screen.getByRole('button', { name: '팀 이름 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toBeRequired();
 		expect(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();
@@ -115,6 +125,64 @@ describe('CologCreateForm', () => {
 		expect(slug).not.toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
 	});
 
+	it('팀 이름을 정규화해 중복 확인하고 이름이 바뀌면 확인 상태를 초기화한다', async () => {
+		const user = userEvent.setup();
+		renderWithClient(<CologCreateForm />);
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.type(name, '  리로그 팀  ');
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+
+		await waitFor(() => expect(checkNicknameAvailability).toHaveBeenCalledWith({ nickname: '리로그 팀' }));
+		expect(name).toHaveValue('리로그 팀');
+		expect(name).toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+
+		await user.type(name, '2');
+		expect(name).not.toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+	});
+
+	it('팀 이름 중복 확인 전 제출하면 이름 입력에 안내하고 focus한다', async () => {
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
+		const user = userEvent.setup();
+		const { unmount } = renderWithClient(<CologCreateForm />);
+
+		await fillRequiredFields(user, { shouldCheckAvailability: false });
+		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		expect(createColog).not.toHaveBeenCalled();
+		expect(name).toHaveAccessibleDescription(/팀 이름 중복 확인이 필요합니다\./);
+		expect(name).toHaveFocus();
+
+		unmount();
+		vi.unstubAllGlobals();
+	});
+
+	it('중복된 팀 이름 오류를 입력 상태와 메시지로 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(checkNicknameAvailability).mockRejectedValue({
+			type: 'api',
+			kind: 'conflict',
+			detail: {
+				status: 404,
+				error: 'NOT_FOUND',
+				errorCode: 'NICKNAME_DUPLICATED',
+				message: '중복되는 닉네임입니다.',
+				invalidParams: null,
+			},
+			response: new Response(null, { status: 404 }),
+		});
+		renderWithClient(<CologCreateForm />);
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.type(name, '리로그 팀');
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+
+		await waitFor(() => expect(name).toBeInvalid());
+		expect(name).toHaveAccessibleDescription(/중복되는 닉네임입니다\./);
+	});
+
 	it('중복 확인 전 제출하면 안내하고 확인 후 아이디가 바뀌면 다시 안내한다', async () => {
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
 		const user = userEvent.setup();
@@ -124,6 +192,7 @@ describe('CologCreateForm', () => {
 		const slug = screen.getByRole('textbox', { name: '팀 고유 아이디' });
 
 		await fillRequiredFields(user, { shouldCheckAvailability: false });
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
 		expect(submitButton).toBeEnabled();
 		fireEvent.submit(submitButton.closest('form')!);
 		expect(createColog).not.toHaveBeenCalled();
@@ -220,7 +289,7 @@ describe('CologCreateForm', () => {
 		const introduction = screen.getByRole('textbox', { name: '팀 소개' });
 		await user.type(introduction, '함께 성장하는 개발 팀입니다');
 
-		expect(introduction).toHaveAccessibleDescription('팀을 소개해 보세요. 15 / 80');
+		expect(introduction).toHaveAccessibleDescription('팀을 소개하는 문장을 입력하세요. 15 / 80');
 	});
 
 	it('팀 이름과 고유 아이디의 입력 규칙을 제공한다', () => {

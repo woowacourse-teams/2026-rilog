@@ -22,9 +22,12 @@ interface CologCreateFormFieldsProps {
 	errors: CologProfileValidationErrors;
 	refs: CologCreateFormRefs;
 	disabled?: boolean;
+	nameAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
+	nameAvailabilityMessage?: string;
 	slugAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
 	slugAvailabilityMessage?: string;
 	onTextFieldChange: (field: CologProfileTextField, nextValue: string) => void;
+	onNameAvailabilityCheck: () => void;
 	onSlugAvailabilityCheck: () => void;
 	onLogoFileChange: (file: File | null) => void;
 	onCoverImageFileChange: (file: File | null) => void;
@@ -35,9 +38,12 @@ export default function CologCreateFormFields({
 	errors,
 	refs,
 	disabled = false,
+	nameAvailabilityStatus = 'idle',
+	nameAvailabilityMessage,
 	slugAvailabilityStatus = 'idle',
 	slugAvailabilityMessage,
 	onTextFieldChange,
+	onNameAvailabilityCheck,
 	onSlugAvailabilityCheck,
 	onLogoFileChange,
 	onCoverImageFileChange,
@@ -47,6 +53,7 @@ export default function CologCreateFormFields({
 	const hasLogoError = errors.logoFile !== undefined;
 	const hasCustomLogo = value.logoFile !== null || Boolean(value.profileImageUrl);
 	const hasCustomCover = value.coverImageFile !== null || Boolean(value.coverImageUrl);
+	const hasNameError = errors.name !== undefined || nameAvailabilityStatus === 'error';
 	const hasSlugError = errors.slug !== undefined || slugAvailabilityStatus === 'error';
 
 	return (
@@ -132,20 +139,32 @@ export default function CologCreateFormFields({
 
 			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
 				{({ id, describedBy }) => (
-					<Input
-						id={id}
-						aria-describedby={describedBy}
-						ref={refs.name}
-						value={value.name}
-						disabled={disabled}
-						required
-						minLength={COLOG_NAME_MIN_LENGTH}
-						maxLength={COLOG_NAME_MAX_LENGTH}
-						placeholder="예: Rilog"
-						status={errors.name !== undefined ? 'error' : 'default'}
-						helperText={errors.name}
-						onChange={(event) => onTextFieldChange('name', event.target.value)}
-					/>
+					<div className="flex items-start gap-2">
+						<Input
+							id={id}
+							aria-describedby={describedBy}
+							ref={refs.name}
+							value={value.name}
+							disabled={disabled || nameAvailabilityStatus === 'pending'}
+							required
+							minLength={COLOG_NAME_MIN_LENGTH}
+							maxLength={COLOG_NAME_MAX_LENGTH}
+							placeholder="예: Rilog"
+							status={hasNameError ? 'error' : nameAvailabilityStatus === 'success' ? 'success' : 'default'}
+							helperText={errors.name ?? nameAvailabilityMessage}
+							onChange={(event) => onTextFieldChange('name', event.target.value)}
+						/>
+						<Button
+							variant="secondary"
+							className="shrink-0 bg-white whitespace-nowrap"
+							aria-label="팀 이름 중복 확인"
+							disabled={disabled}
+							isPending={nameAvailabilityStatus === 'pending'}
+							onClick={onNameAvailabilityCheck}
+						>
+							{nameAvailabilityStatus === 'pending' ? '확인 중' : '중복 확인'}
+						</Button>
+					</div>
 				)}
 			</Field>
 
@@ -224,6 +243,7 @@ export default function CologCreateFormFields({
 					{({ id, describedBy }) => (
 						<Input
 							id={id}
+							aria-label="서비스 링크"
 							aria-describedby={describedBy}
 							ref={refs.serviceUrl}
 							value={value.serviceUrl ?? ''}
@@ -241,6 +261,7 @@ export default function CologCreateFormFields({
 					{({ id, describedBy }) => (
 						<Input
 							id={id}
+							aria-label="GitHub 링크"
 							aria-describedby={describedBy}
 							ref={refs.githubUrl}
 							value={value.githubUrl ?? ''}
