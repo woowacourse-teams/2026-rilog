@@ -91,7 +91,7 @@ export default function CologCreateFormFields({
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
 							<div className="relative shrink-0">
 								<ImagePreview
-									src={logoPreviewUrl || '/images/profile-placeholder.svg'}
+									src={logoPreviewUrl || '/images/colog-placeholder.svg'}
 									alt="팀 로고 미리보기"
 									shape="square"
 									status={hasLogoError ? 'error' : 'default'}

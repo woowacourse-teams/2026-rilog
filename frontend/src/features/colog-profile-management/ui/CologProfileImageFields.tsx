@@ -67,7 +67,7 @@ export default function CologProfileImageFields({
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
 							<div className="group relative w-fit shrink-0">
 								<ImagePreview
-									src={logoPreviewUrl || '/images/profile-placeholder.svg'}
+									src={logoPreviewUrl || '/images/colog-placeholder.svg'}
 									alt="팀 로고 미리보기"
 									shape="square"
 									status={hasLogoError ? 'error' : 'default'}
