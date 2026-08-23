@@ -49,7 +49,11 @@ describe('SignUpForm', () => {
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
 		expect(screen.getByText('프로필 이미지 추가')).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
-		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
+		const slugInput = screen.getByRole('textbox', { name: '고유 아이디' });
+		expect(slugInput).toBeInTheDocument();
+		expect(slugInput).toHaveAccessibleDescription(
+			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
+		);
 		expect(screen.getByRole('button', { name: '닉네임 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '고유 아이디 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();

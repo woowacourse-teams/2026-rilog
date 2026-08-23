@@ -17,6 +17,7 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+
 interface CologCreateFormFieldsProps {
 	value: CologCreateValue;
 	errors: CologProfileValidationErrors;
@@ -174,6 +175,7 @@ export default function CologCreateFormFields({
 					<ul className="list-disc pl-5">
 						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
 						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
+						<li>아이디는 한 번 설정하면 변경할 수 없습니다.</li>
 					</ul>
 				}
 				required

@@ -1,10 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useId, useRef, useState } from 'react';
-
-import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
-
 import { clearSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
@@ -21,7 +16,10 @@ import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageResetOverlay from '@/shared/ui/image-reset-overlay/ImageResetOverlay';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
+import { useRouter } from 'next/navigation';
+import { useId, useRef, useState } from 'react';
 
+import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 import { useSignUpForm } from '../hooks/use-sign-up-form';
 import {
 	type CompleteSignUp,
@@ -263,6 +261,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 					<ul className="list-disc pl-5">
 						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
 						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
+						<li>아이디는 한 번 설정하면 변경할 수 없습니다.</li>
 					</ul>
 				}
 				required
