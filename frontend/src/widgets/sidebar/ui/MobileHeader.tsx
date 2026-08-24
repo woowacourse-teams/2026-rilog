@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
@@ -31,14 +32,15 @@ export default function MobileHeader() {
 			</CustomLink>
 
 			{isAuthenticated ? (
-				<UserAvatar
-					src={user?.profileImageUrl}
-					fallback={user?.nickname.slice(0, 1).toUpperCase() ?? 'P'}
-					label={user === null || user === undefined ? '사용자 프로필' : `${user.nickname} 프로필`}
-					slug={user?.slug}
-					size="lg"
-					hasBorder
-				/>
+				<UserBlogLink slug={user?.slug}>
+					<UserAvatar
+						src={user?.profileImageUrl}
+						fallback={user?.nickname.slice(0, 1).toUpperCase() ?? 'P'}
+						label={user === null || user === undefined ? '사용자 프로필' : `${user.nickname} 프로필`}
+						size="lg"
+						hasBorder
+					/>
+				</UserBlogLink>
 			) : (
 				<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
 					로그인

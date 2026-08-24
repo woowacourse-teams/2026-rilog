@@ -1,5 +1,6 @@
 import type { CologMemberSummary } from '@/domains/blog/model/colog';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 
 interface CologMemberListProps {
 	members: readonly CologMemberSummary[];
@@ -17,14 +18,15 @@ export default function CologMemberList({ members }: CologMemberListProps) {
 				<ul className="mt-4 grid grid-cols-[repeat(5,max-content)] gap-1">
 					{members.map((member) => (
 						<li key={member.id}>
-							<UserAvatar
-								src={member.profileImageUrl ?? undefined}
-								fallback={member.nickname.slice(0, 1)}
-								label={`${member.nickname} 프로필`}
-								slug={member.slug}
-								size="lg"
-								className="bg-border-default"
-							/>
+							<UserBlogLink slug={member.slug}>
+								<UserAvatar
+									src={member.profileImageUrl ?? undefined}
+									fallback={member.nickname.slice(0, 1)}
+									label={`${member.nickname} 프로필`}
+									size="lg"
+									className="bg-border-default"
+								/>
+							</UserBlogLink>
 						</li>
 					))}
 				</ul>
