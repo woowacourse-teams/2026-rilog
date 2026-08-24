@@ -41,6 +41,7 @@ public class CologService {
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
         User owner = getUser(ownerId);
         validateSlugUnique(command.slug());
+        validateProfileNameUnique(command.name());
 
         Blog colog = Blog.createColog(
                 owner,
@@ -83,6 +84,7 @@ public class CologService {
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
         requesterMember.validateHasAdminPermission();
 
+        validateProfileNameUniqueExceptSelf(command.name(), colog.getId());
         colog.changeProfile(command.toProfile());
     }
 
@@ -110,6 +112,18 @@ public class CologService {
     private void validateSlugUnique(String slug) {
         if (blogRepository.existsBySlug(Slug.from(slug))) {
             throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateProfileNameUnique(String profileName) {
+        if (blogRepository.existsByProfileName(profileName)) {
+            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateProfileNameUniqueExceptSelf(String profileName, Long blogId) {
+        if (blogRepository.existsByProfileNameExceptId(profileName, blogId)) {
+            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         }
     }
 

@@ -2,7 +2,6 @@ package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
@@ -72,7 +71,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostPublishResult result = postService.publish(command, rilog.getSlug(), writer.getId());
 
         // then
-        Post savedPost = postRepository.findDetailByIdAndBlogSlug(result.postId(), Slug.from(rilog.getSlug()))
+        Post savedPost = postRepository.findDetailById(result.postId())
                 .orElseThrow();
 
         assertSoftly(softly -> {
@@ -104,7 +103,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostPublishResult result = postService.publish(command, colog.getSlug(), writer.getId());
 
         // then
-        Post savedPost = postRepository.findDetailByIdAndBlogSlug(result.postId(), Slug.from(colog.getSlug()))
+        Post savedPost = postRepository.findDetailById(result.postId())
                 .orElseThrow();
 
         assertSoftly(softly -> {
@@ -244,7 +243,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostDetailResponse expected = PostFixture.postDetailResponse(post, writer, rilog);
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(rilog.getSlug(), post.getId(), null);
+        PostDetailResponse result = postService.readPostOfBlogs(post.getId(), null);
 
         // then
         assertThat(result)
@@ -262,11 +261,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(
-                rilog.getSlug(),
-                privatePost.getId(),
-                writer.getId()
-        );
+        PostDetailResponse result = postService.readPostOfBlogs(privatePost.getId(), writer.getId());
 
         // then
         assertThat(result.title()).isEqualTo(privatePost.getTitle());
@@ -281,7 +276,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(rilog.getSlug(), privatePost.getId(), null))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(privatePost.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -296,21 +291,21 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User otherUser = saveCompletedUser(15L, "비공개타인", "private-outsider");
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(rilog.getSlug(), privatePost.getId(), otherUser.getId()))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(privatePost.getId(), otherUser.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
 
     @Test
-    @DisplayName("게시글이 소속되지 않은 블로그 슬러그로 조회하면 예외가 발생한다.")
-    void readPostThrowsWhenPostDoesNotBelongToSlug() {
+    @DisplayName("존재하지 않는 게시글 ID로 조회하면 예외가 발생한다.")
+    void readPostThrowsWhenPostDoesNotExist() {
         // given
         User writer = saveCompletedUser(16L, "슬러그작성자", "post-slug-writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs("other-blog", post.getId(), null))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(post.getId() + 1, null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -324,7 +319,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(rilog.getSlug(), deletedPost.getId(), null))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(deletedPost.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -348,7 +343,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post readTarget = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(colog.getSlug(), readTarget.getId(), null);
+        PostDetailResponse result = postService.readPostOfBlogs(readTarget.getId(), null);
 
         // then
         assertThat(result.owner()).isInstanceOfSatisfying(
@@ -376,7 +371,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner));
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(colog.getSlug(), readTarget.getId(), null);
+        PostDetailResponse result = postService.readPostOfBlogs(readTarget.getId(), null);
 
         // then
         assertThat(result.owner()).isInstanceOfSatisfying(
