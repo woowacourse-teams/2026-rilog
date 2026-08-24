@@ -2,7 +2,7 @@
 
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
-import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
+import { APP_ROUTES, buildBlogHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 import { mapMyCologsPreviewResponse } from '../lib/map-my-cologs-preview-response';
@@ -22,7 +22,7 @@ export default function CologNavigation() {
 					myCologs?.map((colog) => (
 						<li key={colog.id} className="w-full">
 							<SidebarNavigationLink
-								href={buildCologHomePath(colog.slug)}
+								href={buildBlogHomePath(colog.slug)}
 								icon={
 									<CologAvatar
 										fallback={colog.name.charAt(0)}

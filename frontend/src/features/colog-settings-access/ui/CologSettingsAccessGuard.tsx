@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 
 import AccessFeedback from '@/features/auth/ui/AccessFeedback';
-import { buildCologHomePath } from '@/shared/routes/app-routes';
+import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 import { useCologSettingsAccess } from '../hooks/use-colog-settings-access';
@@ -15,7 +15,7 @@ interface CologSettingsAccessGuardProps {
 
 export default function CologSettingsAccessGuard({ children, slug }: CologSettingsAccessGuardProps) {
 	const accessStatus = useCologSettingsAccess(slug);
-	const homePath = buildCologHomePath(slug);
+	const homePath = buildBlogHomePath(slug);
 
 	if (accessStatus === 'authorized') {
 		return children;

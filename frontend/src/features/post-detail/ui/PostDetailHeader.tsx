@@ -1,7 +1,7 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import { buildCologHomePath } from '@/shared/routes/app-routes';
+import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface PostDetailHeaderProps {
@@ -19,7 +19,7 @@ export default function PostDetailHeader({ title, publishedAt, author }: PostDet
 
 			<div className="mt-7 flex items-center gap-3 text-label-2 text-text-secondary">
 				<CustomLink
-					href={buildCologHomePath(author.slug)}
+					href={buildBlogHomePath(author.slug)}
 					className="flex items-center gap-2 rounded-full transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
 					<UserAvatar
