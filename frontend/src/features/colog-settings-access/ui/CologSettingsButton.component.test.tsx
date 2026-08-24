@@ -1,18 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CologSettingsAccessStatus } from '../hooks/use-colog-settings-access';
 
 import CologSettingsButton from './CologSettingsButton';
 
-const { pushMock, useCologSettingsAccessMock } = vi.hoisted(() => ({
-	pushMock: vi.fn(),
+const { useCologSettingsAccessMock } = vi.hoisted(() => ({
 	useCologSettingsAccessMock: vi.fn<() => CologSettingsAccessStatus>(),
-}));
-
-vi.mock('next/navigation', () => ({
-	useRouter: () => ({ push: pushMock }),
 }));
 
 vi.mock('../hooks/use-colog-settings-access', () => ({
@@ -21,18 +15,26 @@ vi.mock('../hooks/use-colog-settings-access', () => ({
 
 describe('CologSettingsButton', () => {
 	beforeEach(() => {
-		pushMock.mockReset();
 		useCologSettingsAccessMock.mockReset();
 	});
 
-	it('설정 접근 권한이 있으면 설정 버튼을 제공하고 기본 설정 탭으로 이동한다', async () => {
-		const user = userEvent.setup();
+	it('설정 접근 권한이 있으면 기본 설정 탭 링크를 제공한다', () => {
 		useCologSettingsAccessMock.mockReturnValue('authorized');
 
-		render(<CologSettingsButton name="리로그" slug="rilog" />);
-		await user.click(screen.getByRole('button', { name: '리로그 코로그 설정으로 이동' }));
+		render(<CologSettingsButton slug="rilog" />);
 
-		expect(pushMock).toHaveBeenCalledWith('/@rilog/settings?tab=profile');
+		const settingsLink = screen.getByRole('link', { name: '코로그 설정' });
+		expect(settingsLink).toHaveAttribute('href', '/@rilog/settings?tab=profile');
+		expect(settingsLink).not.toHaveTextContent('코로그 설정');
+		expect(screen.getByRole('tooltip', { hidden: true })).toHaveTextContent('코로그 설정');
+	});
+
+	it('커버 이미지 위에서는 밝은 아이콘 색상을 사용한다', () => {
+		useCologSettingsAccessMock.mockReturnValue('authorized');
+
+		render(<CologSettingsButton slug="rilog" isOnCover />);
+
+		expect(screen.getByRole('link', { name: '코로그 설정' })).toHaveStyle({ color: 'var(--text-on-dark)' });
 	});
 
 	it.each(['initializing', 'checking', 'unauthenticated', 'forbidden', 'error'] as const)(
@@ -40,9 +42,9 @@ describe('CologSettingsButton', () => {
 		(status) => {
 			useCologSettingsAccessMock.mockReturnValue(status);
 
-			render(<CologSettingsButton name="리로그" slug="rilog" />);
+			render(<CologSettingsButton slug="rilog" />);
 
-			expect(screen.queryByRole('button')).not.toBeInTheDocument();
+			expect(screen.queryByRole('link')).not.toBeInTheDocument();
 		},
 	);
 });

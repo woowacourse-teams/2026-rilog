@@ -65,6 +65,54 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	expect(hasHorizontalOverflow).toBe(false);
 });
 
+test('같은 행의 제목 줄 수가 달라도 작성자 프로필을 하단에 정렬한다', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto('/feeds');
+	const firstCard = postLinks(page).nth(0);
+	const secondCard = postLinks(page).nth(1);
+	const feedGrid = page.locator('#post-feed-content ul');
+	await expect(firstCard).toBeVisible();
+	await expect(secondCard).toBeVisible();
+	await expect(feedGrid).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
+	const firstTitle = firstCard.getByRole('heading');
+	const secondTitle = secondCard.getByRole('heading');
+
+	await firstTitle.evaluate((element) => {
+		element.textContent = '짧은 제목';
+	});
+	await secondTitle.evaluate((element) => {
+		element.textContent = '같은 행에서 두 줄을 차지하는 충분히 긴 게시글 제목입니다';
+	});
+	await expect
+		.poll(async () => (await secondTitle.boundingBox())!.height > (await firstTitle.boundingBox())!.height)
+		.toBe(true);
+	const firstMeta = await firstCard.locator('time').boundingBox();
+	const secondMeta = await secondCard.locator('time').boundingBox();
+	expect(Math.round((firstMeta?.y ?? 0) + (firstMeta?.height ?? 0))).toBe(
+		Math.round((secondMeta?.y ?? 0) + (secondMeta?.height ?? 0)),
+	);
+
+	await secondTitle.evaluate((element) => {
+		element.textContent = '다른 짧은 제목';
+	});
+	await expect
+		.poll(async () => Math.round((await secondTitle.boundingBox())!.height))
+		.toBe(Math.round((await firstTitle.boundingBox())!.height));
+	const firstSingleLineMeta = await firstCard.locator('time').boundingBox();
+	const secondSingleLineMeta = await secondCard.locator('time').boundingBox();
+	expect(Math.round((firstSingleLineMeta?.y ?? 0) + (firstSingleLineMeta?.height ?? 0))).toBe(
+		Math.round((secondSingleLineMeta?.y ?? 0) + (secondSingleLineMeta?.height ?? 0)),
+	);
+
+	await page.setViewportSize({ width: 1024, height: 900 });
+	await expect(feedGrid).toHaveCSS('grid-template-columns', /\S+ \S+ \S+/);
+	await page.setViewportSize({ width: 768, height: 900 });
+	await expect(feedGrid).toHaveCSS('grid-template-columns', /\S+ \S+/);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(feedGrid).toHaveCSS('grid-template-columns', /^\S+$/);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('피드 게시글을 slug가 포함된 상세 URL에서 조회한다', async ({ request }) => {
 	const response = await request.get('/@author-1/posts/1');
 

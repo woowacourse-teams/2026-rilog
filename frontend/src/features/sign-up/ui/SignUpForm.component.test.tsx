@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-session';
@@ -48,8 +49,15 @@ describe('SignUpForm', () => {
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
 		expect(screen.getByText('프로필 이미지 추가')).toBeInTheDocument();
+		expect(screen.getByLabelText('프로필 이미지 추가')).toHaveAccessibleDescription(
+			'프로필 이미지는 360*360px(1:1) 사이즈를 권장해요. 10MB 이하의 파일만 업로드 가능해요.',
+		);
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
-		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeInTheDocument();
+		const slugInput = screen.getByRole('textbox', { name: '고유 아이디' });
+		expect(slugInput).toBeInTheDocument();
+		expect(slugInput).toHaveAccessibleDescription(
+			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
+		);
 		expect(screen.getByRole('button', { name: '닉네임 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '고유 아이디 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toBeInTheDocument();
@@ -256,6 +264,39 @@ describe('SignUpForm', () => {
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:profile-image');
+		vi.unstubAllGlobals();
+	});
+
+	it('10MB를 초과한 프로필 이미지는 반영하지 않고 이미지 영역 아래에 오류를 안내한다', async () => {
+		vi.stubGlobal(
+			'URL',
+			Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:profile-image'), revokeObjectURL: vi.fn() }),
+		);
+		const user = userEvent.setup();
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
+			type: 'image/png',
+		});
+		const validImage = new File(['valid'], 'valid.png', { type: 'image/png' });
+		const { unmount } = renderSignUpForm();
+		const imageInput = screen.getByLabelText('프로필 이미지 추가');
+
+		await user.upload(imageInput, oversizedImage);
+
+		expect((imageInput as HTMLInputElement).files).toHaveLength(0);
+		expect(imageInput).toHaveAttribute('aria-invalid', 'true');
+		expect(imageInput).toHaveAccessibleDescription(/프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요\./);
+		const imageError = screen.getByText('프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+		expect(imageError.previousElementSibling).toContainElement(
+			screen.getByRole('img', { name: '프로필 이미지 미리보기' }),
+		);
+		expect(imageError.previousElementSibling).toContainElement(imageInput);
+
+		await user.upload(imageInput, validImage);
+
+		expect(imageInput).toHaveAttribute('aria-invalid', 'false');
+		expect(screen.queryByText('프로필 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.')).not.toBeInTheDocument();
+
+		unmount();
 		vi.unstubAllGlobals();
 	});
 

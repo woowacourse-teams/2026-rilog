@@ -16,8 +16,26 @@ test.describe('팀 프로필 설정', () => {
 
 	test('OWNER가 코로그 홈의 설정 버튼으로 기본 설정 탭에 이동한다', async ({ page }) => {
 		await page.goto('/@rilog-e2e');
+		const settingsButton = page.getByRole('link', { name: '코로그 설정' });
+		const heading = page.getByRole('heading', { name: '리로그 E2E' });
+		await expect(settingsButton).toBeVisible();
+		const buttonBox = await settingsButton.boundingBox();
+		const headingBox = await heading.boundingBox();
+		const buttonRight = (buttonBox?.x ?? 0) + (buttonBox?.width ?? 0);
+		const headingRight = (headingBox?.x ?? 0) + (headingBox?.width ?? 0);
+		expect(Math.abs((buttonBox?.y ?? 0) - (headingBox?.y ?? 0))).toBeLessThanOrEqual(1);
+		expect(Math.abs(buttonRight - headingRight)).toBeLessThanOrEqual(1);
+		expect(buttonBox?.height).toBe(28);
+		const initialBackground = await settingsButton.evaluate((element) => getComputedStyle(element).backgroundColor);
+		expect(initialBackground).toBe('rgba(0, 0, 0, 0)');
+		expect(await settingsButton.evaluate((element) => getComputedStyle(element).borderWidth)).toBe('0px');
+		await settingsButton.hover();
+		await expect
+			.poll(() => settingsButton.evaluate((element) => getComputedStyle(element).backgroundColor))
+			.not.toBe(initialBackground);
+		await expect(page.locator('[role="tooltip"]')).toHaveCSS('opacity', '1');
 
-		await page.getByRole('button', { name: '리로그 E2E 코로그 설정으로 이동' }).click();
+		await settingsButton.click();
 
 		await expect(page).toHaveURL('/@rilog-e2e/settings?tab=profile');
 	});
@@ -44,6 +62,8 @@ test.describe('팀 프로필 설정', () => {
 		const nameInput = page.getByRole('textbox', { name: '팀 이름' });
 		await nameInput.fill('새 리로그');
 		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeEnabled();
+		await page.getByRole('button', { name: '팀 이름 중복 확인' }).click();
+		await expect(nameInput).toHaveAccessibleDescription(/사용가능/);
 		const saveRequest = page.waitForRequest('**/v1/cologs/rilog/profiles');
 		await page.getByRole('button', { name: '변경사항 저장' }).click();
 		const request = await saveRequest;

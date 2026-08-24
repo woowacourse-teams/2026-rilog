@@ -6,6 +6,7 @@ import { useState } from 'react';
 import type { SubmitEvent } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
 import { useCreateCologMutation } from '@/shared/api/cologs/mutations/use-create-colog-mutation';
 import { buildCologHomePath } from '@/shared/routes/app-routes';
@@ -23,10 +24,28 @@ interface CologCreateFormProps {
 export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	const router = useRouter();
 	const form = useCologCreateForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
+	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 	const [isSlugAvailabilityRequired, setIsSlugAvailabilityRequired] = useState(false);
 
 	const { mutateAsync: createColog, isPending: isCreating, error, reset: clearCreateError } = useCreateCologMutation();
+	const nameAvailability = useCheckNicknameAvailabilityMutation();
 	const slugAvailability = useCheckSlugAvailabilityMutation();
+
+	const handleNameAvailabilityCheck = async () => {
+		setIsNameAvailabilityRequired(false);
+		const normalizedName = form.validateName();
+		if (normalizedName === null) {
+			return;
+		}
+
+		form.setValue({ ...form.value, name: normalizedName });
+
+		try {
+			await nameAvailability.mutateAsync(normalizedName);
+		} catch {
+			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
+		}
+	};
 
 	const handleSlugAvailabilityCheck = async () => {
 		setIsSlugAvailabilityRequired(false);
@@ -54,6 +73,12 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		const normalizedValue = form.validate();
 
 		if (normalizedValue === null) {
+			return;
+		}
+
+		if (!nameAvailability.isSuccess) {
+			setIsNameAvailabilityRequired(true);
+			form.refs.name.current?.focus();
 			return;
 		}
 
@@ -87,12 +112,21 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	};
 
 	const errorMessage = error?.message || '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
+	const nameAvailabilityMessage = nameAvailability.isSuccess
+		? nameAvailability.data.message
+		: nameAvailability.isError
+			? getApiErrorMessage(nameAvailability.error, '팀 이름 중복 확인에 실패했습니다.')
+			: undefined;
 	const slugAvailabilityMessage = slugAvailability.isSuccess
 		? slugAvailability.data.message
 		: slugAvailability.isError
 			? getApiErrorMessage(slugAvailability.error, '고유 아이디 중복 확인에 실패했습니다.')
 			: undefined;
 	const displayedSlugAvailabilityStatus = isSlugAvailabilityRequired ? 'error' : slugAvailability.status;
+	const displayedNameAvailabilityStatus = isNameAvailabilityRequired ? 'error' : nameAvailability.status;
+	const displayedNameAvailabilityMessage = isNameAvailabilityRequired
+		? '팀 이름 중복 확인이 필요합니다.'
+		: nameAvailabilityMessage;
 	const displayedSlugAvailabilityMessage = isSlugAvailabilityRequired
 		? '팀 고유 아이디 중복 확인이 필요합니다.'
 		: slugAvailabilityMessage;
@@ -104,16 +138,23 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 				errors={form.errors}
 				refs={form.refs}
 				disabled={isCreating}
+				nameAvailabilityStatus={displayedNameAvailabilityStatus}
+				nameAvailabilityMessage={displayedNameAvailabilityMessage}
 				slugAvailabilityStatus={displayedSlugAvailabilityStatus}
 				slugAvailabilityMessage={displayedSlugAvailabilityMessage}
 				onTextFieldChange={(field, value) => {
 					form.updateTextField(field, value);
+					if (field === 'name') {
+						nameAvailability.reset();
+						setIsNameAvailabilityRequired(false);
+					}
 					if (field === 'slug') {
 						slugAvailability.reset();
 						setIsSlugAvailabilityRequired(false);
 					}
 					clearCreateError();
 				}}
+				onNameAvailabilityCheck={() => void handleNameAvailabilityCheck()}
 				onSlugAvailabilityCheck={() => void handleSlugAvailabilityCheck()}
 				onLogoFileChange={(file) => {
 					form.updateLogoFile(file);

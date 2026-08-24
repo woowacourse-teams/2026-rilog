@@ -3,12 +3,13 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { checkSlugAvailability } from '@/shared/api/availability/api';
+import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
 import { createColog } from '@/shared/api/cologs/api';
 import type { CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
 import type { PresignedUrlCreateResponse } from '@/shared/api/uploads/types';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 
 import CologCreateForm from './CologCreateForm';
 
@@ -41,6 +42,10 @@ const fillRequiredFields = async (
 	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 소개' }), '함께 성장하는 개발 팀입니다');
 	if (shouldCheckAvailability) {
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+		await waitFor(() =>
+			expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAccessibleDescription(/사용가능/),
+		);
 		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
 		await waitFor(() =>
 			expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveAccessibleDescription(/사용가능/),
@@ -55,6 +60,11 @@ describe('CologCreateForm', () => {
 		backMock.mockClear();
 		replaceMock.mockClear();
 		vi.clearAllMocks();
+		vi.mocked(checkNicknameAvailability).mockResolvedValue({
+			status: 200,
+			message: '사용가능한 닉네임입니다.',
+			data: null,
+		});
 		vi.mocked(checkSlugAvailability).mockResolvedValue({
 			status: 200,
 			message: '사용가능한 슬러그입니다.',
@@ -74,6 +84,7 @@ describe('CologCreateForm', () => {
 			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
 		}
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeRequired();
+		expect(screen.getByRole('button', { name: '팀 이름 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toBeRequired();
 		expect(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();
@@ -92,6 +103,42 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).not.toBeRequired();
 		expect(screen.getByRole('button', { name: '취소' })).toHaveAttribute('type', 'button');
 		expect(screen.getByRole('button', { name: '팀 만들기' })).toHaveAttribute('type', 'submit');
+	});
+
+	it('10MB를 초과한 이미지는 반영하지 않고 이미지 영역 아래에 오류를 안내한다', async () => {
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
+		const user = userEvent.setup();
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
+			type: 'image/png',
+		});
+		const validImage = new File(['valid'], 'valid.png', { type: 'image/png' });
+		const { unmount } = renderWithClient(<CologCreateForm />);
+
+		const logoInput = screen.getByLabelText('팀 로고 변경');
+		const coverInput = screen.getByLabelText('커버 이미지 변경');
+		await user.upload(logoInput, oversizedImage);
+		await user.upload(coverInput, oversizedImage);
+
+		expect((logoInput as HTMLInputElement).files).toHaveLength(0);
+		expect((coverInput as HTMLInputElement).files).toHaveLength(0);
+		expect(logoInput).toHaveAttribute('aria-invalid', 'true');
+		expect(coverInput).toHaveAttribute('aria-invalid', 'true');
+		const logoError = screen.getByText('팀 로고는 10MB 이하의 이미지만 업로드할 수 있어요.');
+		const coverError = screen.getByText('커버 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+		expect(logoError.previousElementSibling).toContainElement(screen.getByRole('img', { name: '팀 로고 미리보기' }));
+		expect(logoError.previousElementSibling).toContainElement(logoInput);
+		expect(coverError.previousElementSibling).toContainElement(
+			screen.getByRole('img', { name: '기본 팀 커버 이미지' }),
+		);
+		expect(coverError.previousElementSibling).toContainElement(coverInput);
+
+		await user.upload(logoInput, validImage);
+
+		expect(logoInput).toHaveAttribute('aria-invalid', 'false');
+		expect(screen.queryByText('팀 로고는 10MB 이하의 이미지만 업로드할 수 있어요.')).not.toBeInTheDocument();
+
+		unmount();
+		vi.unstubAllGlobals();
 	});
 
 	it('팀 고유 아이디를 정규화해 중복 확인하고 사용 가능 상태를 표시한다', async () => {
@@ -115,6 +162,64 @@ describe('CologCreateForm', () => {
 		expect(slug).not.toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
 	});
 
+	it('팀 이름을 정규화해 중복 확인하고 이름이 바뀌면 확인 상태를 초기화한다', async () => {
+		const user = userEvent.setup();
+		renderWithClient(<CologCreateForm />);
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.type(name, '  리로그 팀  ');
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+
+		await waitFor(() => expect(checkNicknameAvailability).toHaveBeenCalledWith({ nickname: '리로그 팀' }));
+		expect(name).toHaveValue('리로그 팀');
+		expect(name).toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+
+		await user.type(name, '2');
+		expect(name).not.toHaveAccessibleDescription(/사용가능한 닉네임입니다\./);
+	});
+
+	it('팀 이름 중복 확인 전 제출하면 이름 입력에 안내하고 focus한다', async () => {
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
+		const user = userEvent.setup();
+		const { unmount } = renderWithClient(<CologCreateForm />);
+
+		await fillRequiredFields(user, { shouldCheckAvailability: false });
+		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		expect(createColog).not.toHaveBeenCalled();
+		expect(name).toHaveAccessibleDescription(/팀 이름 중복 확인이 필요합니다\./);
+		expect(name).toHaveFocus();
+
+		unmount();
+		vi.unstubAllGlobals();
+	});
+
+	it('중복된 팀 이름 오류를 입력 상태와 메시지로 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(checkNicknameAvailability).mockRejectedValue({
+			type: 'api',
+			kind: 'conflict',
+			detail: {
+				status: 404,
+				error: 'NOT_FOUND',
+				errorCode: 'NICKNAME_DUPLICATED',
+				message: '중복되는 닉네임입니다.',
+				invalidParams: null,
+			},
+			response: new Response(null, { status: 404 }),
+		});
+		renderWithClient(<CologCreateForm />);
+
+		const name = screen.getByRole('textbox', { name: '팀 이름' });
+		await user.type(name, '리로그 팀');
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
+
+		await waitFor(() => expect(name).toBeInvalid());
+		expect(name).toHaveAccessibleDescription(/중복되는 닉네임입니다\./);
+	});
+
 	it('중복 확인 전 제출하면 안내하고 확인 후 아이디가 바뀌면 다시 안내한다', async () => {
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() }));
 		const user = userEvent.setup();
@@ -124,6 +229,7 @@ describe('CologCreateForm', () => {
 		const slug = screen.getByRole('textbox', { name: '팀 고유 아이디' });
 
 		await fillRequiredFields(user, { shouldCheckAvailability: false });
+		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
 		expect(submitButton).toBeEnabled();
 		fireEvent.submit(submitButton.closest('form')!);
 		expect(createColog).not.toHaveBeenCalled();
@@ -205,7 +311,7 @@ describe('CologCreateForm', () => {
 		await user.click(screen.getByRole('button', { name: '팀 로고 제거' }));
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute(
 			'src',
-			'/images/profile-placeholder.svg',
+			'/images/colog-placeholder.svg',
 		);
 
 		unmount();
@@ -220,7 +326,7 @@ describe('CologCreateForm', () => {
 		const introduction = screen.getByRole('textbox', { name: '팀 소개' });
 		await user.type(introduction, '함께 성장하는 개발 팀입니다');
 
-		expect(introduction).toHaveAccessibleDescription('팀을 소개해 보세요. 15 / 80');
+		expect(introduction).toHaveAccessibleDescription('팀을 소개하는 문장을 입력하세요. 15 / 80');
 	});
 
 	it('팀 이름과 고유 아이디의 입력 규칙을 제공한다', () => {
@@ -228,7 +334,11 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('minlength', '2');
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('maxlength', '20');
-		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' })).toHaveAttribute('pattern', '[a-z0-9-]+');
+		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
+		expect(slugInput).toHaveAttribute('pattern', '[a-z0-9-]+');
+		expect(slugInput).toHaveAccessibleDescription(
+			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
+		);
 	});
 
 	it('유효하지 않은 제출은 오류를 안내하고 첫 번째 오류 입력으로 focus한다', async () => {

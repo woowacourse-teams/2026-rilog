@@ -7,6 +7,7 @@ type CologPermission = 'OWNER' | 'ADMIN' | 'MEMBER';
 const COLOG_MEMBERS_ROUTE = '**/v1/cologs/*/members';
 const COLOG_PROFILE_UPDATE_ROUTE = '**/v1/cologs/*/profiles';
 const COLOG_PROFILE_ROUTE = /\/v1\/blogs\/@[^/]+$/;
+const NICKNAME_AVAILABILITY_ROUTE = '**/v1/availability/nickname*';
 const PROXY_SESSION_ROUTE = '**/api/auth/proxy-session';
 
 export const mockCologSettingsAccess = async (page: Page, permission: CologPermission | null = 'OWNER') => {
@@ -16,6 +17,7 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 	await page.unroute(COLOG_MEMBERS_ROUTE);
 	await page.unroute(COLOG_PROFILE_UPDATE_ROUTE);
 	await page.unroute(COLOG_PROFILE_ROUTE);
+	await page.unroute(NICKNAME_AVAILABILITY_ROUTE);
 	await page.request.post('http://localhost:3000/api/auth/proxy-session');
 	await mockAuthenticatedAccess(page);
 
@@ -51,6 +53,13 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 		}),
 	);
 
+	await page.route(NICKNAME_AVAILABILITY_ROUTE, (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({ status: 200, message: '사용가능한 닉네임입니다.', data: null }),
+		}),
+	);
+
 	await page.route(COLOG_PROFILE_ROUTE, (route) => {
 		const pathname = new URL(route.request().url()).pathname;
 		const slug = decodeURIComponent(pathname.slice(pathname.lastIndexOf('@') + 1));
@@ -66,8 +75,9 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 					name: slug === 'rilog-e2e' ? '리로그 E2E' : '리로그',
 					slug,
 					introduction: 'E2E 팀 소개',
-					profileImageUrl: 'https://images.rilog.test/profile.png',
-					coverImageUrl: null,
+					profileImageUrl:
+						slug === 'rilog-e2e' ? '/images/profile-placeholder.svg' : 'https://images.rilog.test/profile.png',
+					coverImageUrl: slug === 'rilog-e2e' ? '/images/default-post-cover.svg' : null,
 					serviceUrl: null,
 					githubUrl: null,
 					memberCount: 1,

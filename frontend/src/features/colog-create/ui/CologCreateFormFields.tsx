@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { useState } from 'react';
 
 import type { CologCreateFormRefs } from '../hooks/use-colog-create-form';
 import type { CologCreateValue, CologProfileTextField, CologProfileValidationErrors } from '../model/colog-create';
@@ -9,6 +10,7 @@ import {
 	COLOG_NAME_MIN_LENGTH,
 	COLOG_SLUG_MIN_LENGTH,
 } from '@/domains/blog/model/colog';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
@@ -22,9 +24,12 @@ interface CologCreateFormFieldsProps {
 	errors: CologProfileValidationErrors;
 	refs: CologCreateFormRefs;
 	disabled?: boolean;
+	nameAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
+	nameAvailabilityMessage?: string;
 	slugAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
 	slugAvailabilityMessage?: string;
 	onTextFieldChange: (field: CologProfileTextField, nextValue: string) => void;
+	onNameAvailabilityCheck: () => void;
 	onSlugAvailabilityCheck: () => void;
 	onLogoFileChange: (file: File | null) => void;
 	onCoverImageFileChange: (file: File | null) => void;
@@ -35,117 +40,198 @@ export default function CologCreateFormFields({
 	errors,
 	refs,
 	disabled = false,
+	nameAvailabilityStatus = 'idle',
+	nameAvailabilityMessage,
 	slugAvailabilityStatus = 'idle',
 	slugAvailabilityMessage,
 	onTextFieldChange,
+	onNameAvailabilityCheck,
 	onSlugAvailabilityCheck,
 	onLogoFileChange,
 	onCoverImageFileChange,
 }: CologCreateFormFieldsProps) {
+	const [logoFileSizeError, setLogoFileSizeError] = useState<string | null>(null);
+	const [coverImageFileSizeError, setCoverImageFileSizeError] = useState<string | null>(null);
 	const logoPreviewUrl = useImagePreviewUrl(value.logoFile, value.profileImageUrl ?? '');
 	const coverImagePreviewUrl = useImagePreviewUrl(value.coverImageFile, value.coverImageUrl ?? '');
-	const hasLogoError = errors.logoFile !== undefined;
+	const displayedLogoError = logoFileSizeError ?? errors.logoFile;
+	const hasLogoError = displayedLogoError !== undefined;
 	const hasCustomLogo = value.logoFile !== null || Boolean(value.profileImageUrl);
 	const hasCustomCover = value.coverImageFile !== null || Boolean(value.coverImageUrl);
+	const hasNameError = errors.name !== undefined || nameAvailabilityStatus === 'error';
 	const hasSlugError = errors.slug !== undefined || slugAvailabilityStatus === 'error';
+	const validateImageFileSize = (file: File) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES;
+
+	const handleLogoFileChange = (file: File | null) => {
+		setLogoFileSizeError(null);
+		onLogoFileChange(file);
+	};
+
+	const handleCoverImageFileChange = (file: File | null) => {
+		setCoverImageFileSizeError(null);
+		onCoverImageFileChange(file);
+	};
 
 	return (
 		<div className="flex flex-col gap-6">
-			<Field label="팀 로고" required>
-				{({ id }) => (
-					<div id={id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-						<div className="relative shrink-0">
-							<ImagePreview
-								src={logoPreviewUrl || '/images/profile-placeholder.svg'}
-								alt="팀 로고 미리보기"
-								shape="square"
-								status={hasLogoError ? 'error' : 'default'}
-								className="size-20 sm:size-24"
-							/>
-							{hasCustomLogo ? (
-								<Button
-									variant="danger"
-									size="icon"
-									aria-label="팀 로고 제거"
-									disabled={disabled}
-									className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
-									onClick={() => onLogoFileChange(null)}
-								>
-									<span aria-hidden="true" className="text-body-2 leading-none">
-										×
-									</span>
-								</Button>
-							) : null}
-						</div>
-						<div className="flex flex-col gap-2">
+			<Field
+				label="팀 로고"
+				description={
+					<ul className="list-disc pl-5">
+						<li>로고 이미지는 360*360px(1:1) 사이즈를 권장해요.</li>
+						<li>10MB 이하의 파일만 업로드 가능해요.</li>
+					</ul>
+				}
+				required
+			>
+				{({ id, describedBy }) => (
+					<div id={id} className="flex flex-col gap-2">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+							<div className="relative shrink-0">
+								<ImagePreview
+									src={logoPreviewUrl || '/images/colog-placeholder.svg'}
+									alt="팀 로고 미리보기"
+									shape="square"
+									status={hasLogoError ? 'error' : 'default'}
+									className="size-20 sm:size-24"
+								/>
+								{hasCustomLogo ? (
+									<Button
+										variant="danger"
+										size="icon"
+										aria-label="팀 로고 제거"
+										disabled={disabled}
+										className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
+										onClick={() => handleLogoFileChange(null)}
+									>
+										<span aria-hidden="true" className="text-body-2 leading-none">
+											×
+										</span>
+									</Button>
+								) : null}
+							</div>
 							<ImageUploader
 								ref={refs.logoFile}
 								required
 								buttonLabel="이미지 변경"
 								aria-label="팀 로고 변경"
+								aria-describedby={hasLogoError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy}
+								aria-invalid={hasLogoError}
 								disabled={disabled}
-								onFileChange={(file) => onLogoFileChange(file)}
+								validateFile={validateImageFileSize}
+								onFileRejected={(file) => {
+									if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+										setLogoFileSizeError('팀 로고는 10MB 이하의 이미지만 업로드할 수 있어요.');
+									}
+								}}
+								onFileChange={handleLogoFileChange}
 							/>
-							{hasLogoError && <p className="text-label-1 text-danger">{errors.logoFile}</p>}
 						</div>
+						{hasLogoError && (
+							<p
+								id={`${id}-file-error`}
+								role={logoFileSizeError ? 'alert' : undefined}
+								className="text-label-1 text-danger"
+							>
+								{displayedLogoError}
+							</p>
+						)}
 					</div>
 				)}
 			</Field>
 
-			<Field label="커버 이미지">
-				{({ id }) => (
-					<div id={id} className="flex flex-col gap-3">
-						<div className="relative">
-							<ImagePreview
-								src={coverImagePreviewUrl || undefined}
-								alt="팀 커버 이미지 미리보기"
-								shape="rectangle"
-								className="h-32 w-full sm:h-40"
-								fallback={
-									<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />
-								}
-							/>
-							{hasCustomCover ? (
-								<Button
-									variant="danger"
-									size="icon"
-									aria-label="커버 이미지 제거"
-									disabled={disabled}
-									className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
-									onClick={() => onCoverImageFileChange(null)}
-								>
-									<span aria-hidden="true" className="text-body-2 leading-none">
-										×
-									</span>
-								</Button>
-							) : null}
-						</div>
-						<ImageUploader
-							buttonLabel="이미지 변경"
-							aria-label="커버 이미지 변경"
-							disabled={disabled}
-							onFileChange={(file) => onCoverImageFileChange(file)}
-						/>
-					</div>
-				)}
-			</Field>
-
-			<Field label="팀 이름" description="닉네임은 2~20자 사이로 입력 가능해요." required>
+			<Field
+				label="커버 이미지"
+				description={
+					<ul className="list-disc pl-5">
+						<li>커버 이미지는 3072*1024px(3:1) 사이즈를 권장해요.</li>
+						<li>10MB 이하의 파일만 업로드 가능해요.</li>
+					</ul>
+				}
+			>
 				{({ id, describedBy }) => (
-					<Input
-						id={id}
-						aria-describedby={describedBy}
-						ref={refs.name}
-						value={value.name}
-						disabled={disabled}
-						required
-						minLength={COLOG_NAME_MIN_LENGTH}
-						maxLength={COLOG_NAME_MAX_LENGTH}
-						placeholder="예: Rilog"
-						status={errors.name !== undefined ? 'error' : 'default'}
-						helperText={errors.name}
-						onChange={(event) => onTextFieldChange('name', event.target.value)}
-					/>
+					<div id={id} className="flex flex-col gap-2">
+						<div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+							<div className="relative">
+								<ImagePreview
+									src={coverImagePreviewUrl || undefined}
+									alt="팀 커버 이미지 미리보기"
+									shape="rectangle"
+									status={coverImageFileSizeError ? 'error' : 'default'}
+									className="aspect-[1/3] h-auto w-full sm:h-40 sm:w-auto"
+									fallback={
+										<span role="img" aria-label="기본 팀 커버 이미지" className="absolute inset-0 bg-[#DBE5F5]" />
+									}
+								/>
+								{hasCustomCover ? (
+									<Button
+										variant="danger"
+										size="icon"
+										aria-label="커버 이미지 제거"
+										disabled={disabled}
+										className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
+										onClick={() => handleCoverImageFileChange(null)}
+									>
+										<span aria-hidden="true" className="text-body-2 leading-none">
+											×
+										</span>
+									</Button>
+								) : null}
+							</div>
+							<ImageUploader
+								buttonLabel="이미지 변경"
+								aria-label="커버 이미지 변경"
+								aria-describedby={
+									coverImageFileSizeError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy
+								}
+								aria-invalid={coverImageFileSizeError !== null}
+								disabled={disabled}
+								validateFile={validateImageFileSize}
+								onFileRejected={(file) => {
+									if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+										setCoverImageFileSizeError('커버 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+									}
+								}}
+								onFileChange={handleCoverImageFileChange}
+							/>
+						</div>
+						{coverImageFileSizeError && (
+							<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+								{coverImageFileSizeError}
+							</p>
+						)}
+					</div>
+				)}
+			</Field>
+
+			<Field label="팀 이름" description="팀 이름은 2~20자 사이로 입력 가능해요." required>
+				{({ id, describedBy }) => (
+					<div className="flex items-start gap-2">
+						<Input
+							id={id}
+							aria-describedby={describedBy}
+							ref={refs.name}
+							value={value.name}
+							disabled={disabled || nameAvailabilityStatus === 'pending'}
+							required
+							minLength={COLOG_NAME_MIN_LENGTH}
+							maxLength={COLOG_NAME_MAX_LENGTH}
+							placeholder="예: Rilog"
+							status={hasNameError ? 'error' : nameAvailabilityStatus === 'success' ? 'success' : 'default'}
+							helperText={errors.name ?? nameAvailabilityMessage}
+							onChange={(event) => onTextFieldChange('name', event.target.value)}
+						/>
+						<Button
+							variant="secondary"
+							className="shrink-0 bg-white whitespace-nowrap"
+							aria-label="팀 이름 중복 확인"
+							disabled={disabled}
+							isPending={nameAvailabilityStatus === 'pending'}
+							onClick={onNameAvailabilityCheck}
+						>
+							{nameAvailabilityStatus === 'pending' ? '확인 중' : '중복 확인'}
+						</Button>
+					</div>
 				)}
 			</Field>
 
@@ -155,6 +241,7 @@ export default function CologCreateFormFields({
 					<ul className="list-disc pl-5">
 						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
 						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
+						<li>아이디는 한 번 설정하면 변경할 수 없습니다.</li>
 					</ul>
 				}
 				required
@@ -224,6 +311,7 @@ export default function CologCreateFormFields({
 					{({ id, describedBy }) => (
 						<Input
 							id={id}
+							aria-label="서비스 링크"
 							aria-describedby={describedBy}
 							ref={refs.serviceUrl}
 							value={value.serviceUrl ?? ''}
@@ -241,6 +329,7 @@ export default function CologCreateFormFields({
 					{({ id, describedBy }) => (
 						<Input
 							id={id}
+							aria-label="GitHub 링크"
 							aria-describedby={describedBy}
 							ref={refs.githubUrl}
 							value={value.githubUrl ?? ''}

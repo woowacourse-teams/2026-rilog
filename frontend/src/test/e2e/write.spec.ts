@@ -1,12 +1,22 @@
-import { expect, test } from '@playwright/test';
+import { devices, expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
+
+import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
 
 const TEST_IMAGE_BYTES = Array.from(
 	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
 );
+const IPHONE_13 = {
+	deviceScaleFactor: devices['iPhone 13'].deviceScaleFactor,
+	hasTouch: devices['iPhone 13'].hasTouch,
+	isMobile: devices['iPhone 13'].isMobile,
+	userAgent: devices['iPhone 13'].userAgent,
+	viewport: devices['iPhone 13'].viewport,
+};
+
 const MY_COLOGS_PREVIEW_ROUTE = '**/v1/users/me/cologs/preview';
 
 const fillPost = async (page: Page) => {
@@ -79,7 +89,7 @@ const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
 };
 
 test.describe('글 작성', () => {
-	test('512px 미만 모바일 화면에서 발행 버튼을 하단에 고정한다', async ({ page }) => {
+	test('512px 미만의 좁은 데스크톱 화면에서 발행 버튼을 하단에 고정한다', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 500 });
 		await page.goto('/write');
 		const publishButton = page.getByRole('button', { name: '발행' });
@@ -259,7 +269,7 @@ test.describe('글 작성', () => {
 		await dialog.dismiss();
 	});
 
-	test('mobile viewport에서 작성 화면과 게시 설정이 가로로 넘치지 않는다', async ({ page }) => {
+	test('좁은 데스크톱 viewport에서 작성 화면과 게시 설정이 가로로 넘치지 않는다', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto('/write');
 		await fillPost(page);
@@ -318,5 +328,25 @@ test.describe('글 작성', () => {
 		await page.goto('/write');
 		await insertQuoteAfterParagraph(page);
 		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('12px');
+	});
+});
+
+test.describe('모바일 글쓰기 차단', () => {
+	test.use(IPHONE_13);
+
+	test('모바일 기기에서는 editor를 생성하지 않고 PC 이용을 안내한다', async ({ page }) => {
+		await page.context().addCookies([
+			{
+				name: PROXY_SESSION_COOKIE_NAME,
+				value: PROXY_SESSION_COOKIE_VALUE,
+				url: 'http://localhost:3000',
+			},
+		]);
+		await page.goto('/write');
+
+		await expect(page.getByRole('heading', { name: '글 작성은 PC에서 이용해 주세요' })).toBeVisible();
+		await expect(page.getByRole('link', { name: '피드로 돌아가기' })).toHaveAttribute('href', '/feeds');
+		await expect(page.getByRole('textbox', { name: '게시글 내용' })).not.toBeAttached();
+		await expect(page.locator('.bn-editor')).not.toBeAttached();
 	});
 });

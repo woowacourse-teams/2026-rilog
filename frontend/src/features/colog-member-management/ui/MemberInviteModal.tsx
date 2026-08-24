@@ -96,8 +96,8 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 		void handleAddCandidate();
 	};
 
-	const handleRemoveCandidate = (slugToRemove: string) => {
-		setCandidates((currentCandidates) => currentCandidates.filter((candidate) => candidate.slug !== slugToRemove));
+	const handleRemoveCandidate = (candidateSlug: string) => {
+		setCandidates((currentCandidates) => currentCandidates.filter((candidate) => candidate.slug !== candidateSlug));
 	};
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

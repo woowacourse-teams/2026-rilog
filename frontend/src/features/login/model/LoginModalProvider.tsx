@@ -32,6 +32,8 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 
 		const frontendCallbackUrl = '/auth/github/callback';
 		const backendAuthUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/github?redirectUrl=${frontendCallbackUrl}`;
+		// GitHub OAuth는 백엔드 origin으로 전체 페이지를 이동해야 하므로 Next Router를 사용할 수 없다.
+		// eslint-disable-next-line @next/next/no-location-assign-relative-destination
 		window.location.href = backendAuthUrl;
 	}, []);
 

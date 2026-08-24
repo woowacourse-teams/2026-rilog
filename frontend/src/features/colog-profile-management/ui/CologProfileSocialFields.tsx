@@ -36,6 +36,7 @@ export default function CologProfileSocialFields({
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
+						aria-label="서비스 링크"
 						aria-describedby={describedBy}
 						ref={refs.serviceUrl}
 						value={value.serviceUrl ?? ''}
@@ -53,6 +54,7 @@ export default function CologProfileSocialFields({
 				{({ id, describedBy }) => (
 					<Input
 						id={id}
+						aria-label="GitHub 링크"
 						aria-describedby={describedBy}
 						ref={refs.githubUrl}
 						value={value.githubUrl ?? ''}
