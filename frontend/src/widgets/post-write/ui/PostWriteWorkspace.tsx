@@ -7,7 +7,7 @@ import type { ComponentType } from 'react';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
-import type { PublishPost } from '@/features/post-write/model/post-publication';
+import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -24,6 +24,7 @@ import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 
 interface PostWriteWorkspaceProps {
 	editorComponent?: ComponentType<PostEditorProps>;
+	initialDocument?: EditorDocument;
 	publishPost?: PublishPost;
 	uploadFile?: UploadPostBodyFile;
 	navigate?: (href: string) => void;
@@ -31,6 +32,7 @@ interface PostWriteWorkspaceProps {
 
 export default function PostWriteWorkspace({
 	editorComponent = DynamicBlockNoteEditor,
+	initialDocument,
 	publishPost,
 	uploadFile,
 	navigate,
@@ -39,6 +41,7 @@ export default function PostWriteWorkspace({
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
+
 	const uploadPostBodyFileWithApi = useCallback<UploadPostBodyFile>(
 		async (file) => {
 			const { objectKey } = await uploadFileToStorage({ file, type: 'IMAGE' });
@@ -118,7 +121,7 @@ export default function PostWriteWorkspace({
 		handleClosePublishSettings,
 		handleCancelLeave,
 		handleConfirmLeave,
-	} = usePostWriteWorkspace({ publishPost: publishPost ?? publishPostWithApi, navigate });
+	} = usePostWriteWorkspace({ initialDocument, publishPost: publishPost ?? publishPostWithApi, navigate });
 
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
@@ -136,6 +139,7 @@ export default function PostWriteWorkspace({
 					<PostBodyField
 						editorComponent={editorComponent}
 						editorRef={editorRef}
+						initialBlocks={initialDocument?.blocks}
 						error={documentErrors.body}
 						onReady={handleEditorReady}
 						onChange={handleEditorChange}

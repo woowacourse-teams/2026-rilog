@@ -131,10 +131,18 @@ const slashMenuFloatingUIOptions = {
 	},
 } satisfies FloatingUIOptions;
 
-export default function BlockNoteEditor({ onChange, onReady, uploadFile, ariaDescribedBy, ref }: PostEditorProps) {
+export default function BlockNoteEditor({
+	initialBlocks,
+	onChange,
+	onReady,
+	uploadFile,
+	ariaDescribedBy,
+	ref,
+}: PostEditorProps) {
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
 		{
+			...(initialBlocks === undefined || initialBlocks.length === 0 ? {} : { initialContent: initialBlocks }),
 			dictionary: {
 				...ko,
 				placeholders: {
@@ -144,7 +152,7 @@ export default function BlockNoteEditor({ onChange, onReady, uploadFile, ariaDes
 			},
 			uploadFile,
 		},
-		[uploadFile],
+		[initialBlocks, uploadFile],
 	);
 
 	// 제목에서 Enter를 누르거나 검증에 실패했을 때 실제 에디터로 focus할 수 있도록 useImperativeHandle(리모콘 역할) 사용

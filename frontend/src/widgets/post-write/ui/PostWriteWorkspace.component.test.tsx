@@ -86,9 +86,9 @@ const createImage = (url: string): Block =>
 		children: [],
 	}) as unknown as Block;
 
-function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
+function FakeEditor({ initialBlocks, onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
 	// BlockNote를 로드하지 않고도 부모와 주고받는 최신 본문 계약을 재현
-	const blocksRef = useRef<Block[]>([createParagraph()]);
+	const blocksRef = useRef<Block[]>(initialBlocks ?? [createParagraph()]);
 	// focus 위임 여부를 실제 textarea focus로 검증하기 위한 ref
 	const editorRef = useRef<HTMLTextAreaElement>(null);
 
@@ -105,6 +105,7 @@ function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps
 			ref={editorRef}
 			aria-label="게시글 내용"
 			aria-describedby={ariaDescribedBy}
+			data-initial-block-count={initialBlocks?.length ?? 0}
 			onChange={(event) => {
 				blocksRef.current = [createParagraph(event.currentTarget.value)];
 				onChange(blocksRef.current);
@@ -160,6 +161,23 @@ const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe('PostWriteWorkspace', () => {
+	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
+		const initialBlocks = [createParagraph('기존 본문')];
+		render(
+			<PostWriteWorkspace
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 제목', blocks: initialBlocks }}
+			/>,
+		);
+
+		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('기존 제목');
+		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveAttribute('data-initial-block-count', '1');
+
+		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
+		window.dispatchEvent(beforeUnloadEvent);
+		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
+	});
+
 	it('진입 시 제목에 focus하고 Enter를 누르면 본문으로 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);

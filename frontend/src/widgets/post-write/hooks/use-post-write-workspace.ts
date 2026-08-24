@@ -9,7 +9,7 @@ import type { CologOption } from '@/domains/blog/model/colog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { validatePostDocument } from '@/features/post-write/lib/validate-post-document';
 import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
-import type { PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
+import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
 import type { PostDocumentErrors } from '@/features/post-write/model/post-write-validation';
 import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
@@ -17,6 +17,7 @@ import { buildPostDetailPath } from '@/shared/routes/app-routes';
 type PublishState = { status: 'idle' } | { status: 'pending' } | { status: 'error'; message: string };
 
 interface UsePostWriteWorkspaceOptions {
+	initialDocument?: EditorDocument;
 	publishPost: PublishPost;
 	navigate?: (href: string) => void;
 }
@@ -27,15 +28,15 @@ const INITIAL_PUBLICATION_SETTINGS: PublicationSettings = {
 	representativeImage: null,
 };
 
-export function usePostWriteWorkspace({ publishPost, navigate }: UsePostWriteWorkspaceOptions) {
+export function usePostWriteWorkspace({ initialDocument, publishPost, navigate }: UsePostWriteWorkspaceOptions) {
 	const router = useRouter();
 
 	const titleRef = useRef<HTMLTextAreaElement>(null);
 	const editorRef = useRef<PostEditorHandle>(null);
-	const latestBlocksRef = useRef<Block[]>([]);
+	const latestBlocksRef = useRef<Block[]>(initialDocument?.blocks ?? []);
 	const selectedImageUrlRef = useRef<string | null>(null);
 
-	const [title, setTitle] = useState('');
+	const [title, setTitle] = useState(initialDocument?.title ?? '');
 	const [isEditorReady, setIsEditorReady] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
 	const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);

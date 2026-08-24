@@ -6,7 +6,7 @@ import { useMobileDevice } from '@/shared/hooks/use-mobile-device';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
-const POST_WRITE_WORKSPACE = lazy(() => import('./PostWriteWorkspace'));
+const POST_WRITE_LOADER = lazy(() => import('./PostWriteLoader'));
 
 const statusClassName = 'flex min-h-dvh items-center justify-center bg-background px-6 text-center text-text-primary';
 
@@ -43,7 +43,7 @@ export default function PostWriteDeviceGate() {
 
 	return (
 		<Suspense fallback={<WriteEnvironmentPending />}>
-			<POST_WRITE_WORKSPACE />
+			<POST_WRITE_LOADER />
 		</Suspense>
 	);
 }

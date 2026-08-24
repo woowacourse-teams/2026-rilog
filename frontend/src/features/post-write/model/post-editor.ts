@@ -6,6 +6,7 @@ export interface PostEditorHandle {
 }
 
 export interface PostEditorProps {
+	initialBlocks?: Block[];
 	onChange: (blocks: Block[]) => void;
 	onReady: (blocks: Block[]) => void;
 	uploadFile: UploadPostBodyFile;
