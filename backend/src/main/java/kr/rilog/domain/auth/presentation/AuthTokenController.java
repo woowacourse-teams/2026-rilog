@@ -1,9 +1,9 @@
 package kr.rilog.domain.auth.presentation;
 
+import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenLogoutService;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationResult;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotator;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationService;
 import kr.rilog.domain.auth.exception.AuthException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -22,7 +22,7 @@ public class AuthTokenController {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
-    private final RefreshTokenRotator refreshTokenRotator;
+    private final RefreshTokenRotationService refreshTokenRotationService;
     private final RefreshTokenLogoutService refreshTokenLogoutService;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
@@ -31,7 +31,7 @@ public class AuthTokenController {
             @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshTokenValue
     ) {
         RefreshToken refreshToken = refreshTokenFrom(refreshTokenValue);
-        RefreshTokenRotationResult result = refreshTokenRotator.rotate(refreshToken);
+        AuthTokenPair result = refreshTokenRotationService.rotate(refreshToken);
         ResponseCookie refreshTokenCookie = refreshTokenCookieFactory.create(result.refreshToken());
 
         return ResponseEntity.noContent()
@@ -71,4 +71,5 @@ public class AuthTokenController {
 
         return null;
     }
+
 }

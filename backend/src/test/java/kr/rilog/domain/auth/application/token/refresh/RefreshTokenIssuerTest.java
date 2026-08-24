@@ -2,9 +2,9 @@ package kr.rilog.domain.auth.application.token.refresh;
 
 import kr.rilog.domain.auth.application.port.token.RefreshTokenGenerator;
 import kr.rilog.domain.auth.application.port.token.RefreshTokenHasher;
+import kr.rilog.domain.auth.application.port.token.RefreshSessionStore;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.domain.auth.entity.RefreshSession;
-import kr.rilog.domain.auth.repository.RefreshSessionRepository;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,9 +18,9 @@ import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class RefreshTokenIssuerTest {
 
@@ -34,14 +34,12 @@ class RefreshTokenIssuerTest {
     @DisplayName("Refresh Token을 발급하고 원문이 아닌 해시값을 세션에 저장한다")
     void issueCreatesRefreshSessionWithHashedToken() {
         // given
-        RefreshSessionRepository refreshSessionRepository = mock(RefreshSessionRepository.class);
-        when(refreshSessionRepository.save(any(RefreshSession.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
 
         RefreshTokenIssuer refreshTokenIssuer = new RefreshTokenIssuer(
                 new FixedRefreshTokenGenerator("raw-refresh-token"),
                 new FixedRefreshTokenHasher("hashed-refresh-token"),
-                refreshSessionRepository,
+                refreshSessionStore,
                 RefreshTokenProperties.of(EXPIRATION, "refresh_token", "/v1/auth", false, "Lax"),
                 CLOCK
         );
@@ -51,20 +49,18 @@ class RefreshTokenIssuerTest {
 
         // then
         assertThat(refreshToken.value()).isEqualTo("raw-refresh-token");
-        verify(refreshSessionRepository).save(any(RefreshSession.class));
+        verify(refreshSessionStore).save(any(RefreshSession.class), eq(EXPIRATION));
     }
 
     @Test
-    @DisplayName("Refresh Session은 사용자, 해시값, 만료 시간, 폐기 상태를 가진다")
-    void refreshSessionStoresUserHashExpirationAndRevocationState() {
+    @DisplayName("Refresh Session은 사용자, 해시값, 만료 시간을 가진다")
+    void refreshSessionStoresUserHashAndExpiration() {
         // given
-        RefreshSessionRepository refreshSessionRepository = mock(RefreshSessionRepository.class);
-        when(refreshSessionRepository.save(any(RefreshSession.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
         RefreshTokenIssuer refreshTokenIssuer = new RefreshTokenIssuer(
                 new FixedRefreshTokenGenerator("raw-refresh-token"),
                 new FixedRefreshTokenHasher("hashed-refresh-token"),
-                refreshSessionRepository,
+                refreshSessionStore,
                 RefreshTokenProperties.of(EXPIRATION, "refresh_token", "/v1/auth", false, "Lax"),
                 CLOCK
         );
@@ -74,13 +70,12 @@ class RefreshTokenIssuerTest {
 
         // then
         ArgumentCaptor<RefreshSession> sessionCaptor = ArgumentCaptor.forClass(RefreshSession.class);
-        verify(refreshSessionRepository).save(sessionCaptor.capture());
+        verify(refreshSessionStore).save(sessionCaptor.capture(), eq(EXPIRATION));
         RefreshSession session = sessionCaptor.getValue();
         assertThat(session.getUserId()).isEqualTo(1L);
         assertThat(session.getTokenHash()).isEqualTo("hashed-refresh-token");
         assertThat(session.getTokenHash()).isNotEqualTo("raw-refresh-token");
         assertThat(session.getExpiresAt()).isEqualTo(LocalDateTime.of(2026, 8, 27, 0, 0));
-        assertThat(session.isRevoked()).isFalse();
     }
 
     private User loginUser() {

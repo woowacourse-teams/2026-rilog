@@ -30,7 +30,6 @@ public enum AuthErrorInformation implements ErrorInformation {
     REFRESH_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "Refresh Token이 필요합니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "Refresh Token이 유효하지 않습니다."),
     EXPIRED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "Refresh Token이 만료되었습니다."),
-    REUSED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "이미 사용된 Refresh Token입니다."),
     AUTHORIZATION_HEADER_MISSING(HttpStatus.UNAUTHORIZED, "Authorization 헤더가 필요합니다."),
     INVALID_AUTHORIZATION_HEADER(HttpStatus.UNAUTHORIZED, "Authorization 헤더 형식이 올바르지 않습니다."),
     AUTHENTICATION_CONTEXT_MISSING(HttpStatus.UNAUTHORIZED, "인증 사용자 정보가 없습니다."),

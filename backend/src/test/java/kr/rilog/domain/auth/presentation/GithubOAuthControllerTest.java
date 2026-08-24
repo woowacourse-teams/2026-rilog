@@ -6,10 +6,9 @@ import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
-import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
-import kr.rilog.domain.auth.application.token.login.LoginTokenIssuer;
 import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginUserService;
+import kr.rilog.domain.auth.application.token.login.LoginTokenIssuer;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
 import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
@@ -21,15 +20,13 @@ import kr.rilog.domain.auth.application.port.oauth.OAuthUserClient;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.port.token.RefreshTokenGenerator;
 import kr.rilog.domain.auth.application.port.token.RefreshTokenHasher;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
-import kr.rilog.domain.auth.entity.RefreshSession;
 import kr.rilog.domain.auth.infrastructure.github.GithubOAuthAuthorizationUrlProvider;
-import kr.rilog.domain.auth.repository.RefreshSessionRepository;
+import kr.rilog.domain.auth.application.port.token.RefreshSessionStore;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -276,9 +273,9 @@ class GithubOAuthControllerTest {
                         loginUserService
                 ),
                 new LoginTokenIssuer(
-                        new OnboardingTokenService(new FixedOnboardingTokenProvider()),
+                        new FixedOnboardingTokenProvider(),
                         new AuthTokenPairIssuer(
-                                new AccessTokenService(new FixedAccessTokenProvider()),
+                                new FixedAccessTokenProvider(),
                                 refreshTokenIssuer()
                         )
                 ),
@@ -297,13 +294,11 @@ class GithubOAuthControllerTest {
     }
 
     private RefreshTokenIssuer refreshTokenIssuer() {
-        RefreshSessionRepository refreshSessionRepository = mock(RefreshSessionRepository.class);
-        when(refreshSessionRepository.save(any(RefreshSession.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
         return new RefreshTokenIssuer(
                 new FixedRefreshTokenGenerator(),
                 new FixedRefreshTokenHasher(),
-                refreshSessionRepository,
+                refreshSessionStore,
                 RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax")
         );
     }

@@ -4,7 +4,6 @@ import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
 import kr.rilog.domain.blog.entity.vo.Slug;
@@ -34,7 +33,7 @@ class AuthTokenPairIssuerTest {
         when(refreshTokenIssuer.issue(user)).thenReturn(RefreshToken.of("refresh-token"));
 
         AuthTokenPairIssuer issuer = new AuthTokenPairIssuer(
-                new AccessTokenService(new FixedAccessTokenProvider()),
+                new FixedAccessTokenProvider(),
                 refreshTokenIssuer
         );
 

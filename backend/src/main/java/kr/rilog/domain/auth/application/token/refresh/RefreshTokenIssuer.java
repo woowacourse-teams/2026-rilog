@@ -2,9 +2,9 @@ package kr.rilog.domain.auth.application.token.refresh;
 
 import kr.rilog.domain.auth.application.port.token.RefreshTokenGenerator;
 import kr.rilog.domain.auth.application.port.token.RefreshTokenHasher;
+import kr.rilog.domain.auth.application.port.token.RefreshSessionStore;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.domain.auth.entity.RefreshSession;
-import kr.rilog.domain.auth.repository.RefreshSessionRepository;
 import kr.rilog.domain.user.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ public class RefreshTokenIssuer {
 
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final RefreshTokenHasher refreshTokenHasher;
-    private final RefreshSessionRepository refreshSessionRepository;
+    private final RefreshSessionStore refreshSessionStore;
     private final RefreshTokenProperties properties;
     private final Clock clock;
 
@@ -25,13 +25,13 @@ public class RefreshTokenIssuer {
     public RefreshTokenIssuer(
             RefreshTokenGenerator refreshTokenGenerator,
             RefreshTokenHasher refreshTokenHasher,
-            RefreshSessionRepository refreshSessionRepository,
+            RefreshSessionStore refreshSessionStore,
             RefreshTokenProperties properties
     ) {
         this(
                 refreshTokenGenerator,
                 refreshTokenHasher,
-                refreshSessionRepository,
+                refreshSessionStore,
                 properties,
                 Clock.systemUTC()
         );
@@ -40,13 +40,13 @@ public class RefreshTokenIssuer {
     RefreshTokenIssuer(
             RefreshTokenGenerator refreshTokenGenerator,
             RefreshTokenHasher refreshTokenHasher,
-            RefreshSessionRepository refreshSessionRepository,
+            RefreshSessionStore refreshSessionStore,
             RefreshTokenProperties properties,
             Clock clock
     ) {
         this.refreshTokenGenerator = refreshTokenGenerator;
         this.refreshTokenHasher = refreshTokenHasher;
-        this.refreshSessionRepository = refreshSessionRepository;
+        this.refreshSessionStore = refreshSessionStore;
         this.properties = properties;
         this.clock = clock;
     }
@@ -61,7 +61,7 @@ public class RefreshTokenIssuer {
                 tokenHash,
                 expiresAt
         );
-        refreshSessionRepository.save(refreshSession);
+        refreshSessionStore.save(refreshSession, properties.expiration());
         return refreshToken;
     }
 }

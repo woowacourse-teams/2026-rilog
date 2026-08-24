@@ -1,13 +1,12 @@
 package kr.rilog.domain.auth.application.token.login;
 
 import kr.rilog.domain.auth.application.GlobalRole;
-import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
-import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.entity.OnboardingStatus;
@@ -28,7 +27,7 @@ class LoginTokenIssuerTest {
         // given
         AuthTokenPairIssuer authTokenPairIssuer = mock(AuthTokenPairIssuer.class);
         LoginTokenIssuer issuer = new LoginTokenIssuer(
-                new OnboardingTokenService(new FixedOnboardingTokenProvider()),
+                new FixedOnboardingTokenProvider(),
                 authTokenPairIssuer
         );
 
@@ -54,7 +53,7 @@ class LoginTokenIssuerTest {
                         RefreshToken.of("refresh-token")
                 ));
         LoginTokenIssuer issuer = new LoginTokenIssuer(
-                new OnboardingTokenService(new FixedOnboardingTokenProvider()),
+                new FixedOnboardingTokenProvider(),
                 authTokenPairIssuer
         );
 

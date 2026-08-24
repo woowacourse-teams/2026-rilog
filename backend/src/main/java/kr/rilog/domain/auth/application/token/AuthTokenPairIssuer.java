@@ -1,7 +1,7 @@
 package kr.rilog.domain.auth.application.token;
 
+import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
 import kr.rilog.domain.user.entity.User;
@@ -12,11 +12,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthTokenPairIssuer {
 
-    private final AccessTokenService accessTokenService;
+    private final AccessTokenProvider accessTokenProvider;
     private final RefreshTokenIssuer refreshTokenIssuer;
 
     public AuthTokenPair issue(User user) {
-        AccessToken accessToken = accessTokenService.issue(
+        AccessToken accessToken = accessTokenProvider.issue(
                 user.getId(),
                 user.getGlobalRole(),
                 user.getSlug()
