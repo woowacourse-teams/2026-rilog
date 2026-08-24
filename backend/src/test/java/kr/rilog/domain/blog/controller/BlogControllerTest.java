@@ -2,9 +2,9 @@ package kr.rilog.domain.blog.controller;
 
 import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.exception.BlogException;
@@ -213,9 +213,11 @@ class BlogControllerTest {
     }
 
     private MockMvc mockMvc(BlogService blogService) {
-        AccessTokenService accessTokenService = new AccessTokenService(new FixedAccessTokenProvider());
         return MockMvcBuilders.standaloneSetup(new BlogController(blogService))
-                .addInterceptors(new BearerAuthenticationInterceptor(accessTokenService))
+                .addInterceptors(new BearerAuthenticationInterceptor(
+                        new FixedAccessTokenProvider(),
+                        mock(OnboardingTokenProvider.class)
+                ))
                 .setCustomArgumentResolvers(new LoginUserIdArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

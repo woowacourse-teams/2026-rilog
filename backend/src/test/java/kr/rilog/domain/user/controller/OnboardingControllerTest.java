@@ -1,12 +1,18 @@
 package kr.rilog.domain.user.controller;
 
+import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
+import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
-import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
+import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.user.service.OnboardingCompletionResult;
 import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
@@ -51,22 +57,14 @@ class OnboardingControllerTest {
     @DisplayName("PATCH /v1/users/me/onboarding은 온보딩 완료 후 Access Token과 Refresh Token을 발급한다")
     void completeOnboardingIssuesAccessTokenAndRefreshToken() throws Exception {
         // given
-        OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
         OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
-
-        when(onboardingTokenService.parse("onboarding-token"))
-                .thenReturn(OnboardingTokenClaims.of(
-                        1L,
-                        Instant.parse("2026-08-13T00:00:00Z"),
-                        Instant.parse("2026-08-13T00:10:00Z")
-                ));
         when(onboardingCompletionService.complete(1L, command()))
                 .thenReturn(new OnboardingCompletionResult(
                         AccessToken.of("access-token"),
                         RefreshToken.of("refresh-token")
                 ));
 
-        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
+        MockMvc mockMvc = mockMvc(onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -90,9 +88,8 @@ class OnboardingControllerTest {
     @DisplayName("Authorization 헤더가 없으면 온보딩 완료를 거부한다")
     void completeOnboardingRejectsMissingAuthorizationHeader() throws Exception {
         // given
-        OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
         OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
-        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
+        MockMvc mockMvc = mockMvc(onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -101,7 +98,6 @@ class OnboardingControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_HEADER_MISSING"));
 
-        verify(onboardingTokenService, never()).parse(any(String.class));
         verify(onboardingCompletionService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
@@ -109,9 +105,8 @@ class OnboardingControllerTest {
     @DisplayName("Bearer 형식이 아니면 온보딩 완료를 거부한다")
     void completeOnboardingRejectsInvalidAuthorizationHeader() throws Exception {
         // given
-        OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
         OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
-        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
+        MockMvc mockMvc = mockMvc(onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -121,7 +116,6 @@ class OnboardingControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
 
-        verify(onboardingTokenService, never()).parse(any(String.class));
         verify(onboardingCompletionService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
@@ -129,11 +123,11 @@ class OnboardingControllerTest {
     @DisplayName("유효하지 않은 Onboarding Token이면 온보딩 완료를 거부한다")
     void completeOnboardingRejectsInvalidOnboardingToken() throws Exception {
         // given
-        OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
         OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
-        when(onboardingTokenService.parse("invalid-token"))
-                .thenThrow(new AuthException(INVALID_ONBOARDING_TOKEN));
-        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
+        MockMvc mockMvc = mockMvc(
+                onboardingCompletionService,
+                new ThrowingOnboardingTokenProvider()
+        );
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -146,9 +140,13 @@ class OnboardingControllerTest {
         verify(onboardingCompletionService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
+    private MockMvc mockMvc(OnboardingCompletionService onboardingCompletionService) {
+        return mockMvc(onboardingCompletionService, new FixedOnboardingTokenProvider());
+    }
+
     private MockMvc mockMvc(
-            OnboardingTokenService onboardingTokenService,
-            OnboardingCompletionService onboardingCompletionService
+            OnboardingCompletionService onboardingCompletionService,
+            OnboardingTokenProvider onboardingTokenProvider
     ) {
         RefreshTokenProperties properties = RefreshTokenProperties.of(
                 Duration.ofDays(14),
@@ -158,10 +156,14 @@ class OnboardingControllerTest {
                 "Lax"
         );
         return MockMvcBuilders.standaloneSetup(new OnboardingController(
-                        onboardingTokenService,
                         onboardingCompletionService,
                         new RefreshTokenCookieFactory(properties)
                 ))
+                .addInterceptors(new BearerAuthenticationInterceptor(
+                        new ThrowingAccessTokenProvider(),
+                        onboardingTokenProvider
+                ))
+                .setCustomArgumentResolvers(new LoginUserIdArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -175,5 +177,48 @@ class OnboardingControllerTest {
                 "https://github.com/jinriro",
                 "riro@example.com"
         );
+    }
+
+    private static class FixedOnboardingTokenProvider implements OnboardingTokenProvider {
+
+        @Override
+        public OnboardingToken issue(Long userId) {
+            throw new UnsupportedOperationException("Not used in this test");
+        }
+
+        @Override
+        public OnboardingTokenClaims parse(String onboardingToken) {
+            return OnboardingTokenClaims.of(
+                    1L,
+                    Instant.parse("2026-08-13T00:00:00Z"),
+                    Instant.parse("2026-08-13T00:10:00Z")
+            );
+        }
+    }
+
+    private static class ThrowingOnboardingTokenProvider implements OnboardingTokenProvider {
+
+        @Override
+        public OnboardingToken issue(Long userId) {
+            throw new UnsupportedOperationException("Not used in this test");
+        }
+
+        @Override
+        public OnboardingTokenClaims parse(String onboardingToken) {
+            throw new AuthException(INVALID_ONBOARDING_TOKEN);
+        }
+    }
+
+    private static class ThrowingAccessTokenProvider implements AccessTokenProvider {
+
+        @Override
+        public AccessToken issue(Long userId, GlobalRole role, String slug) {
+            throw new UnsupportedOperationException("Not used in this test");
+        }
+
+        @Override
+        public AccessTokenClaims parse(String accessToken) {
+            throw new UnsupportedOperationException("Not used in this test");
+        }
     }
 }

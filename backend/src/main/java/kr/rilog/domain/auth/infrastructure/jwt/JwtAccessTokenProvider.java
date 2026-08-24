@@ -1,12 +1,7 @@
 package kr.rilog.domain.auth.infrastructure.jwt;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import kr.rilog.domain.auth.application.token.TokenType;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.GlobalRole;
@@ -18,8 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.ACCESS_TOKEN_CLAIM_MISSING;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.ACCESS_TOKEN_CONFIGURATION_INVALID;
@@ -34,8 +29,7 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
     private static final String SLUG_CLAIM = "slug";
 
     private final AccessTokenProperties properties;
-    private final Algorithm algorithm;
-    private final Clock clock;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     public JwtAccessTokenProvider(AccessTokenProperties properties) {
@@ -48,8 +42,11 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
             throw new AuthException(ACCESS_TOKEN_CONFIGURATION_INVALID);
         }
         this.properties = properties;
-        this.algorithm = Algorithm.HMAC256(properties.secret());
-        this.clock = clock;
+        this.jwtTokenProvider = new JwtTokenProvider(
+                properties.secret(),
+                clock,
+                ACCESS_TOKEN_CONFIGURATION_INVALID
+        );
     }
 
     @Override
@@ -58,20 +55,16 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
             throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
         }
 
-        Instant issuedAt = Instant.now(clock);
-        Instant expiresAt = issuedAt.plus(properties.expiration());
-        try {
-            String token = JWT.create()
-                    .withClaim(USER_ID_CLAIM, userId)
-                    .withClaim(ROLE_CLAIM, role.name())
-                    .withClaim(SLUG_CLAIM, slug)
-                    .withIssuedAt(Date.from(issuedAt))
-                    .withExpiresAt(Date.from(expiresAt))
-                    .sign(algorithm);
-            return AccessToken.of(token);
-        } catch (JWTCreationException exception) {
-            throw new AuthException(ACCESS_TOKEN_CONFIGURATION_INVALID);
-        }
+        String token = jwtTokenProvider.create(
+                Map.of(
+                        USER_ID_CLAIM, userId,
+                        ROLE_CLAIM, role.name(),
+                        SLUG_CLAIM, slug,
+                        JwtTokenProvider.TOKEN_TYPE_CLAIM, TokenType.ACCESS.name()
+                ),
+                properties.expiration()
+        );
+        return AccessToken.of(token);
     }
 
     @Override
@@ -80,26 +73,32 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
             throw new AuthException(INVALID_ACCESS_TOKEN);
         }
 
-        try {
-            JWTVerifier verifier = ((JWTVerifier.BaseVerification) JWT.require(algorithm)).build(clock);
-            DecodedJWT decodedJWT = verifier.verify(accessToken);
-            return claims(decodedJWT);
-        } catch (TokenExpiredException exception) {
-            throw new AuthException(EXPIRED_ACCESS_TOKEN);
-        } catch (JWTVerificationException exception) {
-            throw new AuthException(INVALID_ACCESS_TOKEN);
-        }
+        DecodedJWT decodedJWT = jwtTokenProvider.verify(
+                accessToken,
+                EXPIRED_ACCESS_TOKEN,
+                INVALID_ACCESS_TOKEN
+        );
+        return claims(decodedJWT);
     }
 
     private AccessTokenClaims claims(DecodedJWT decodedJWT) {
         Long userId = decodedJWT.getClaim(USER_ID_CLAIM).asLong();
         String role = decodedJWT.getClaim(ROLE_CLAIM).asString();
         String slug = decodedJWT.getClaim(SLUG_CLAIM).asString();
+        String tokenType = decodedJWT.getClaim(JwtTokenProvider.TOKEN_TYPE_CLAIM).asString();
         Date issuedAt = decodedJWT.getIssuedAt();
         Date expiresAt = decodedJWT.getExpiresAt();
 
-        if (userId == null || role == null || !StringUtils.hasText(slug) || issuedAt == null || expiresAt == null) {
+        if (userId == null
+                || role == null
+                || !StringUtils.hasText(slug)
+                || !StringUtils.hasText(tokenType)
+                || issuedAt == null
+                || expiresAt == null) {
             throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
+        }
+        if (!TokenType.ACCESS.name().equals(tokenType)) {
+            throw new AuthException(INVALID_ACCESS_TOKEN);
         }
 
         try {
