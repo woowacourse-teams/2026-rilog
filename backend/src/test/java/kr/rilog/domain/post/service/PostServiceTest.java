@@ -235,11 +235,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
+        when(postRepository.findDetailById(POST_ID))
                 .thenReturn(Optional.of(publicPost));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(RILOG_SLUG, POST_ID, null);
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, null);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -252,7 +252,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(COLOG_SLUG)))
+        when(postRepository.findDetailById(POST_ID))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -263,7 +263,7 @@ class PostServiceTest {
         )).thenReturn(5L);
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(COLOG_SLUG, POST_ID, null);
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, null);
 
         // then
         assertThat(response.owner())
@@ -280,11 +280,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
+        when(postRepository.findDetailById(POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(RILOG_SLUG, POST_ID, null))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
@@ -296,11 +296,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
+        when(postRepository.findDetailById(POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(RILOG_SLUG, POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -312,11 +312,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailByIdAndBlogSlug(POST_ID, Slug.from(RILOG_SLUG)))
+        when(postRepository.findDetailById(POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(RILOG_SLUG, POST_ID, 999L))
+        assertThatThrownBy(() -> postService.readPostOfBlogs(POST_ID, 999L))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
