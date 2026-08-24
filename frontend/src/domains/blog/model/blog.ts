@@ -3,13 +3,15 @@ import type { CologMember } from './colog';
 import type { PostSummary } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 
+export type BlogType = 'RILOG' | 'COLOG';
+
 export interface BaseBlog {
 	id: number;
 	slug: string;
 	name: string;
 	profileImageUrl: string | null;
 	description?: string;
-	type: 'RILOG' | 'COLOG';
+	type: BlogType;
 }
 
 // 개인 블로그 (Rilog)

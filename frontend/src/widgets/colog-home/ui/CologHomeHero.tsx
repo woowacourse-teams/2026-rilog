@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import BlogProfileViewTracker from '@/features/analytics/ui/BlogProfileViewTracker';
 import CologProfileHero from '@/features/colog-profile/ui/CologProfileHero';
 import CologSettingsButton from '@/features/colog-settings-access/ui/CologSettingsButton';
 import { readBlogPublicProfile } from '@/shared/api/blogs/api';
@@ -28,9 +29,12 @@ export default async function CologHomeHero({ slug }: CologHomeHeroProps) {
 	const hasCoverImage = getImageUrl(profile.coverImageUrl) !== '';
 
 	return (
-		<CologProfileHero
-			profile={profile}
-			action={<CologSettingsButton slug={profile.slug} isOnCover={hasCoverImage} />}
-		/>
+		<>
+			<BlogProfileViewTracker blogType="COLOG" />
+			<CologProfileHero
+				profile={profile}
+				action={<CologSettingsButton slug={profile.slug} isOnCover={hasCoverImage} />}
+			/>
+		</>
 	);
 }
