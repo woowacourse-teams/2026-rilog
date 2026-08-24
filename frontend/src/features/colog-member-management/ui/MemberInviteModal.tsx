@@ -11,7 +11,6 @@ import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
-
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
 interface MemberInviteModalProps {
@@ -97,8 +96,8 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 		void handleAddCandidate();
 	};
 
-	const handleRemoveCandidate = (slug: string) => {
-		setCandidates((currentCandidates) => currentCandidates.filter((candidate) => candidate.slug !== slug));
+	const handleRemoveCandidate = (candidateSlug: string) => {
+		setCandidates((currentCandidates) => currentCandidates.filter((candidate) => candidate.slug !== candidateSlug));
 	};
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

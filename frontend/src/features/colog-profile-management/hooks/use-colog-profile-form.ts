@@ -7,6 +7,8 @@ import type {
 	CologProfileValidationErrors,
 } from '../model/colog-profile-settings';
 
+import { normalizeCologName, validateCologName } from '@/domains/blog/model/colog';
+
 import { normalizeCologProfileSettings, validateCologProfileSettings } from '../lib/validate-colog-profile-settings';
 import { EMPTY_COLOG_PROFILE_SETTINGS_VALUE } from '../model/colog-profile-settings';
 
@@ -86,6 +88,26 @@ export function useCologProfileForm(options: UseCologProfileFormOptions = {}) {
 		return normalizeCologProfileSettings(value);
 	};
 
+	const validateName = (): string | null => {
+		const nameError = validateCologName(value.name);
+		setErrors((current) => {
+			const nextErrors = { ...current };
+			if (nameError === undefined) {
+				delete nextErrors.name;
+			} else {
+				nextErrors.name = nameError;
+			}
+			return nextErrors;
+		});
+
+		if (nameError !== undefined) {
+			refs.name.current?.focus();
+			return null;
+		}
+
+		return normalizeCologName(value.name);
+	};
+
 	return {
 		value,
 		errors,
@@ -94,6 +116,7 @@ export function useCologProfileForm(options: UseCologProfileFormOptions = {}) {
 		updateLogoFile,
 		updateCoverImageFile,
 		validate,
+		validateName,
 		setValue,
 	};
 }

@@ -45,6 +45,24 @@ describe('ImageUploader', () => {
 		expect(handleFileChange).not.toHaveBeenCalled();
 	});
 
+	it('추가 이미지 검증과 거절 콜백을 FileUploader에 전달한다', async () => {
+		const user = userEvent.setup();
+		const handleFileChange = vi.fn();
+		const handleFileRejected = vi.fn();
+		const validateFile = vi.fn(() => false);
+		const file = new File(['oversized'], 'cover.png', { type: 'image/png' });
+
+		render(
+			<ImageUploader onFileChange={handleFileChange} onFileRejected={handleFileRejected} validateFile={validateFile} />,
+		);
+
+		await user.upload(screen.getByLabelText('이미지 변경'), file);
+
+		expect(validateFile).toHaveBeenCalledWith(file);
+		expect(handleFileChange).not.toHaveBeenCalled();
+		expect(handleFileRejected).toHaveBeenCalledWith(file);
+	});
+
 	it('문구와 native 속성 및 ref를 FileUploader에 전달한다', () => {
 		const inputRef = createRef<HTMLInputElement>();
 

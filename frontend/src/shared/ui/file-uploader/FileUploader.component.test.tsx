@@ -35,10 +35,18 @@ describe('FileUploader', () => {
 		const user = userEvent.setup();
 		const handleChange = vi.fn();
 		const handleFileChange = vi.fn();
+		const handleFileRejected = vi.fn();
 		const validateFile = vi.fn(() => false);
 		const file = new File(['rilog'], 'rilog.txt', { type: 'text/plain' });
 
-		render(<FileUploader onChange={handleChange} onFileChange={handleFileChange} validateFile={validateFile} />);
+		render(
+			<FileUploader
+				onChange={handleChange}
+				onFileChange={handleFileChange}
+				onFileRejected={handleFileRejected}
+				validateFile={validateFile}
+			/>,
+		);
 
 		const input = screen.getByLabelText('파일 선택');
 		await user.upload(input, file);
@@ -46,6 +54,7 @@ describe('FileUploader', () => {
 		expect(validateFile).toHaveBeenCalledWith(file);
 		expect((input as HTMLInputElement).files).toHaveLength(0);
 		expect(handleFileChange).not.toHaveBeenCalled();
+		expect(handleFileRejected).toHaveBeenCalledWith(file);
 		expect(handleChange).toHaveBeenCalledOnce();
 	});
 
