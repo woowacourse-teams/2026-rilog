@@ -30,7 +30,7 @@ export const buildBlogHomePath = (slug: string) => {
 	return `/@${normalizeSegment(normalizedSlug, '블로그 slug가 필요합니다.')}`;
 };
 
-export const hasCologSlugPrefix = (slug: string) => decodeSegment(slug).trim().startsWith('@');
+export const hasBlogSlugPrefix = (slug: string) => decodeSegment(slug).trim().startsWith('@');
 
 export const buildCologSettingsPath = (slug: string, tab: CologSettingsTab) =>
 	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;

@@ -8,14 +8,14 @@ import Button from '@/shared/ui/button/Button';
 
 import { usePublicBlogPosts } from '../hooks/use-public-blog-posts';
 
-import CologPostFeedSkeleton from './CologPostFeedSkeleton';
+import BlogPostFeedSkeleton from './BlogPostFeedSkeleton';
 
-interface CologPostFeedProps {
+interface BlogPostFeedProps {
 	slug: string;
 	initialRequestFailed?: boolean;
 }
 
-export default function CologPostFeed({ slug, initialRequestFailed = false }: CologPostFeedProps) {
+export default function BlogPostFeed({ slug, initialRequestFailed = false }: BlogPostFeedProps) {
 	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const query = usePublicBlogPosts({ slug, isEnabled: isQueryEnabled });
@@ -77,11 +77,11 @@ export default function CologPostFeed({ slug, initialRequestFailed = false }: Co
 	}
 
 	if (query.isPending) {
-		return <CologPostFeedSkeleton />;
+		return <BlogPostFeedSkeleton />;
 	}
 
 	return (
-		<section aria-label="코로그 게시글" className="min-w-0">
+		<section aria-label="블로그 게시글" className="min-w-0">
 			<BlogPostList posts={posts} slug={slug} />
 
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />

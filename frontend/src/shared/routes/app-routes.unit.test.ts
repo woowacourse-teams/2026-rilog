@@ -5,7 +5,7 @@ import {
 	buildBlogHomePath,
 	buildCologSettingsPath,
 	buildPostDetailPath,
-	hasCologSlugPrefix,
+	hasBlogSlugPrefix,
 	parseCologSettingsTab,
 } from './app-routes';
 
@@ -20,9 +20,9 @@ describe('app routes', () => {
 	});
 
 	it('코로그 경로의 @ 접두사를 판별한다', () => {
-		expect(hasCologSlugPrefix('@rilog')).toBe(true);
-		expect(hasCologSlugPrefix('%40rilog')).toBe(true);
-		expect(hasCologSlugPrefix('rilog')).toBe(false);
+		expect(hasBlogSlugPrefix('@rilog')).toBe(true);
+		expect(hasBlogSlugPrefix('%40rilog')).toBe(true);
+		expect(hasBlogSlugPrefix('rilog')).toBe(false);
 	});
 
 	it('블로그 slug를 @ 경로 segment로 정규화한다', () => {
