@@ -21,6 +21,7 @@ export default function CologMemberList({ members }: CologMemberListProps) {
 								src={member.profileImageUrl ?? undefined}
 								fallback={member.nickname.slice(0, 1)}
 								label={`${member.nickname} 프로필`}
+								slug={member.slug}
 								size="lg"
 								className="bg-border-default"
 							/>

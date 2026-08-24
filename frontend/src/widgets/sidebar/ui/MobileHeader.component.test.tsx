@@ -7,10 +7,17 @@ import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 
 import MobileHeader from './MobileHeader';
 
-const navigationMock = vi.hoisted(() => ({ pathname: '/feeds' }));
+const { navigationMock, useMyInfoQueryMock } = vi.hoisted(() => ({
+	navigationMock: { pathname: '/feeds' },
+	useMyInfoQueryMock: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
 	usePathname: () => navigationMock.pathname,
+}));
+
+vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
+	useMyInfoQuery: useMyInfoQueryMock,
 }));
 
 function renderHeader(isAuthenticated = false) {
@@ -26,6 +33,7 @@ function renderHeader(isAuthenticated = false) {
 describe('MobileHeader', () => {
 	beforeEach(() => {
 		navigationMock.pathname = '/feeds';
+		useMyInfoQueryMock.mockReset().mockReturnValue({ data: null });
 	});
 
 	it('비로그인 사용자에게 피드 링크와 로그인 버튼을 제공한다', async () => {
@@ -46,13 +54,24 @@ describe('MobileHeader', () => {
 
 	it('로그인 사용자에게 아바타를 표시하고 게시글에서도 피드 링크를 현재 위치로 표시한다', () => {
 		navigationMock.pathname = '/@rilog/posts/17';
+		useMyInfoQueryMock.mockReturnValue({
+			data: { id: 1, slug: 'e2e-user', nickname: 'E2E 사용자', profileImageUrl: null },
+		});
 		renderHeader(true);
 
 		const feedLink = screen.getByRole('link', { name: 'Rilog.' });
 
 		expect(feedLink).toHaveAttribute('href', '/feeds');
 		expect(feedLink).toHaveAttribute('aria-current', 'page');
-		expect(screen.getByText('P')).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: '@e2e-user 블로그로 이동' })).toHaveAttribute('href', '/@e2e-user');
+		expect(screen.getByRole('img', { name: 'E2E 사용자 프로필' })).toHaveTextContent('E');
 		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
+	});
+
+	it('내 정보 조회 전에는 fallback avatar를 링크 없이 표시한다', () => {
+		renderHeader(true);
+
+		expect(screen.getByRole('img', { name: '사용자 프로필' })).toHaveTextContent('P');
+		expect(screen.queryByRole('link', { name: /블로그로 이동/ })).not.toBeInTheDocument();
 	});
 });
