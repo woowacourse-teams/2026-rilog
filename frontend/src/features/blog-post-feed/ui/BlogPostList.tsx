@@ -13,7 +13,11 @@ interface BlogPostListProps {
 
 export default function BlogPostList({ posts, slug }: BlogPostListProps) {
 	if (posts.length === 0) {
-		return <p className="text-body-2 text-text-secondary">아직 작성된 게시글이 없습니다.</p>;
+		return (
+			<div className="flex min-h-80 items-center justify-center text-center">
+				<p className="text-body-2 text-text-secondary">아직 작성된 게시글이 없습니다.</p>
+			</div>
+		);
 	}
 
 	return (
