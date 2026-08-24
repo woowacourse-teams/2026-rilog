@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
 import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
@@ -20,7 +21,6 @@ export default function GitHubCallbackHandler() {
 		const code = searchParams.get('code') || undefined;
 		const state = searchParams.get('state') || undefined;
 		const error = searchParams.get('error') || undefined;
-		console.log(code, state, error);
 
 		const processCallback = async () => {
 			try {
@@ -35,6 +35,9 @@ export default function GitHubCallbackHandler() {
 				if (accessToken) {
 					await tokenManager.publishLogin(accessToken);
 				}
+				analytics.githubLoginCompleted({
+					userType: data.onboardingStatus === 'PENDING' ? 'new' : 'returning',
+				});
 
 				if (data.onboardingStatus === 'PENDING') {
 					startSignUpFlow();
@@ -46,6 +49,7 @@ export default function GitHubCallbackHandler() {
 					router.replace(redirectUrl);
 				}
 			} catch (err) {
+				analytics.githubLoginFailed();
 				clearSignUpFlow();
 				console.error('GitHub login failed:', err);
 				router.replace('/');

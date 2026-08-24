@@ -8,6 +8,10 @@ import LoginModalProvider from './LoginModalProvider';
 import { useAuthAction } from './use-auth-action';
 import { useLoginModal } from './use-login-modal';
 
+const { githubLoginStartedMock } = vi.hoisted(() => ({ githubLoginStartedMock: vi.fn() }));
+
+vi.mock('@/features/analytics/model/events', () => ({ analytics: { githubLoginStarted: githubLoginStartedMock } }));
+
 function LoginButton() {
 	const login = useLoginModal();
 
@@ -84,5 +88,6 @@ describe('LoginModalProvider', () => {
 		expect(githubLoginButton).toBeDisabled();
 		expect(githubLoginButton).toHaveAttribute('aria-busy', 'true');
 		expect(screen.getByRole('button', { name: '모달 닫기' })).toBeDisabled();
+		expect(githubLoginStartedMock).toHaveBeenCalledOnce();
 	});
 });
