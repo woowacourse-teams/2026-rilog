@@ -2,7 +2,8 @@
 
 import { useSearchParams } from 'next/navigation';
 
-import { usePostWriteInitialDocument } from '@/features/post-write/hooks/use-post-write-initial-document';
+import { usePostWriteInitialData } from '@/features/post-write/hooks/use-post-write-initial-data';
+import PostWriteAccessGuard from '@/features/post-write/ui/PostWriteAccessGuard';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
@@ -15,7 +16,7 @@ export default function PostWriteLoader() {
 	const isEditMode = rawPostId !== null;
 	const isValidPostId =
 		isEditMode && rawPostId.trim().length > 0 && Number.isSafeInteger(parsedPostId) && parsedPostId > 0;
-	const initialDocumentQuery = usePostWriteInitialDocument({
+	const initialDataQuery = usePostWriteInitialData({
 		postId: isValidPostId ? parsedPostId : 0,
 		isEnabled: isValidPostId,
 	});
@@ -35,7 +36,7 @@ export default function PostWriteLoader() {
 		);
 	}
 
-	if (initialDocumentQuery.isPending) {
+	if (initialDataQuery.isPending) {
 		return (
 			<main className={loaderClassName}>
 				<p className="text-body-2 text-text-secondary" role="status">
@@ -45,7 +46,7 @@ export default function PostWriteLoader() {
 		);
 	}
 
-	if (initialDocumentQuery.isError || initialDocumentQuery.data === undefined) {
+	if (initialDataQuery.isError || initialDataQuery.data === undefined) {
 		return (
 			<main className={loaderClassName}>
 				<p className="text-body-2 text-danger-text" role="alert">
@@ -56,5 +57,9 @@ export default function PostWriteLoader() {
 		);
 	}
 
-	return <PostWriteWorkspace key={parsedPostId} initialDocument={initialDocumentQuery.data} />;
+	return (
+		<PostWriteAccessGuard authorId={initialDataQuery.data.authorId}>
+			<PostWriteWorkspace key={parsedPostId} initialDocument={initialDataQuery.data.document} />
+		</PostWriteAccessGuard>
+	);
 }

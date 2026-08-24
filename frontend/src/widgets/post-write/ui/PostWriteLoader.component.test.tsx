@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
+import type { PostWriteInitialData } from '@/features/post-write/hooks/use-post-write-initial-data';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
 
 import PostWriteLoader from './PostWriteLoader';
@@ -11,29 +12,37 @@ interface WorkspaceMockProps {
 	initialDocument?: EditorDocument;
 }
 
-interface InitialDocumentQueryOptionsMock {
+interface InitialDataQueryOptionsMock {
 	postId: number;
 	isEnabled: boolean;
 }
 
-interface InitialDocumentQueryResultMock {
+interface InitialDataQueryResultMock {
 	isPending: boolean;
 	isError: boolean;
-	data?: EditorDocument;
+	data?: PostWriteInitialData;
 }
 
-const { searchParamsGetMock, usePostWriteInitialDocumentMock } = vi.hoisted(() => ({
+const { searchParamsGetMock, usePostWriteInitialDataMock } = vi.hoisted(() => ({
 	searchParamsGetMock: vi.fn(),
-	usePostWriteInitialDocumentMock:
-		vi.fn<(options: InitialDocumentQueryOptionsMock) => InitialDocumentQueryResultMock>(),
+	usePostWriteInitialDataMock: vi.fn<(options: InitialDataQueryOptionsMock) => InitialDataQueryResultMock>(),
 }));
 
 vi.mock('next/navigation', () => ({
 	useSearchParams: () => ({ get: searchParamsGetMock }),
 }));
 
-vi.mock('@/features/post-write/hooks/use-post-write-initial-document', () => ({
-	usePostWriteInitialDocument: usePostWriteInitialDocumentMock,
+vi.mock('@/features/post-write/hooks/use-post-write-initial-data', () => ({
+	usePostWriteInitialData: usePostWriteInitialDataMock,
+}));
+
+vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
+	default: ({ authorId, children }: { authorId: number; children: React.ReactNode }) => (
+		<div>
+			<p>접근 가드 작성자 {authorId}</p>
+			{children}
+		</div>
+	),
 }));
 
 vi.mock('./PostWriteWorkspace', () => ({
@@ -63,21 +72,24 @@ const initialDocument: EditorDocument = {
 	blocks: [initialBlock],
 };
 
+const initialData: PostWriteInitialData = {
+	authorId: 7,
+	document: initialDocument,
+};
+
 describe('PostWriteLoader', () => {
 	beforeEach(() => {
 		searchParamsGetMock.mockReset();
-		usePostWriteInitialDocumentMock.mockReset();
+		usePostWriteInitialDataMock.mockReset();
 		searchParamsGetMock.mockReturnValue(null);
-		usePostWriteInitialDocumentMock.mockReturnValue({ isPending: false, isError: false, data: undefined });
+		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: false, data: undefined });
 	});
 
 	it('postId가 없으면 새 글 workspace를 바로 렌더링한다', () => {
 		render(<PostWriteLoader />);
 
 		expect(screen.getByText('글쓰기 워크스페이스')).toBeInTheDocument();
-		expect(usePostWriteInitialDocumentMock).toHaveBeenCalledWith(
-			expect.objectContaining({ postId: 0, isEnabled: false }),
-		);
+		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 0, isEnabled: false }));
 	});
 
 	it('올바르지 않은 postId이면 상세조회를 실행하지 않고 오류를 안내한다', () => {
@@ -87,14 +99,12 @@ describe('PostWriteLoader', () => {
 
 		expect(screen.getByRole('alert')).toHaveTextContent('올바르지 않은 게시글 ID입니다.');
 		expect(screen.queryByText('글쓰기 워크스페이스')).not.toBeInTheDocument();
-		expect(usePostWriteInitialDocumentMock).toHaveBeenCalledWith(
-			expect.objectContaining({ postId: 0, isEnabled: false }),
-		);
+		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 0, isEnabled: false }));
 	});
 
 	it('게시글 상세조회 중에는 pending 상태를 보여 준다', () => {
 		searchParamsGetMock.mockReturnValue('31');
-		usePostWriteInitialDocumentMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
+		usePostWriteInitialDataMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
 
 		render(<PostWriteLoader />);
 
@@ -104,7 +114,7 @@ describe('PostWriteLoader', () => {
 
 	it('게시글 상세조회에 실패하면 오류를 안내한다', () => {
 		searchParamsGetMock.mockReturnValue('31');
-		usePostWriteInitialDocumentMock.mockReturnValue({ isPending: false, isError: true, data: undefined });
+		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: true, data: undefined });
 
 		render(<PostWriteLoader />);
 
@@ -114,18 +124,17 @@ describe('PostWriteLoader', () => {
 
 	it('게시글 상세조회 결과를 title과 body 초기값으로 workspace에 전달한다', () => {
 		searchParamsGetMock.mockReturnValue('31');
-		usePostWriteInitialDocumentMock.mockReturnValue({
+		usePostWriteInitialDataMock.mockReturnValue({
 			isPending: false,
 			isError: false,
-			data: initialDocument,
+			data: initialData,
 		});
 
 		render(<PostWriteLoader />);
 
 		expect(screen.getByText('불러온 제목')).toBeInTheDocument();
 		expect(screen.getByText('본문 블록 1개')).toBeInTheDocument();
-		expect(usePostWriteInitialDocumentMock).toHaveBeenCalledWith(
-			expect.objectContaining({ postId: 31, isEnabled: true }),
-		);
+		expect(screen.getByText('접근 가드 작성자 7')).toBeInTheDocument();
+		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 31, isEnabled: true }));
 	});
 });
