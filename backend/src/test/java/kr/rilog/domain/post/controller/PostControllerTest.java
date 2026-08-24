@@ -39,16 +39,16 @@ class PostControllerTest {
     void getPostDetailsAllowsAnonymousUser() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPostOfBlogs(BLOG_SLUG, POST_ID, null)).thenReturn(response());
+        when(postService.readPostOfBlogs(POST_ID, null)).thenReturn(response());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
+        mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.owner.type").value("RILOG"));
 
-        verify(postService).readPostOfBlogs(BLOG_SLUG, POST_ID, null);
+        verify(postService).readPostOfBlogs(POST_ID, null);
     }
 
     @Test
@@ -56,16 +56,16 @@ class PostControllerTest {
     void getPostDetailsPassesRequesterIdWhenAccessTokenExists() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPostOfBlogs(BLOG_SLUG, POST_ID, 7L)).thenReturn(response());
+        when(postService.readPostOfBlogs(POST_ID, 7L)).thenReturn(response());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
+        mockMvc.perform(get("/v1/posts/{postId}", POST_ID)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200));
 
-        verify(postService).readPostOfBlogs(BLOG_SLUG, POST_ID, 7L);
+        verify(postService).readPostOfBlogs(POST_ID, 7L);
     }
 
     @Test
@@ -76,7 +76,7 @@ class PostControllerTest {
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
+        mockMvc.perform(get("/v1/posts/{postId}", POST_ID)
                         .header(HttpHeaders.AUTHORIZATION, "Basic access-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));

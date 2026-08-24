@@ -37,11 +37,11 @@ public interface PostApiSpec {
             @Valid @RequestBody PostPublishRequest request
     );
 
-    @GetMapping("/blogs/{slug}/posts/{postId}")
+    @GetMapping("/posts/{postId}")
     @OptionalAuthGuard
     @Operation(
-            summary = "블로그 게시글 상세 조회 API",
-            description = "블로그 slug와 게시글 ID로 게시글 상세 정보를 조회합니다. 소속 블로그 유형에 따라 owner 응답이 달라집니다."
+            summary = "게시글 상세 조회 API",
+            description = "게시글 ID로 게시글 상세 정보를 조회합니다. 소속 블로그 유형에 따라 owner 응답이 달라집니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
@@ -66,8 +66,6 @@ public interface PostApiSpec {
             )
     )
     ApiResponse<PostDetailResponse> getPostDetails(
-            @Parameter(description = "게시글이 소속된 블로그 slug", example = "jetproc")
-            @PathVariable String slug,
             @Parameter(description = "게시글 ID", example = "1")
             @PathVariable Long postId,
             @Parameter(hidden = true) @NullableLoginUserId Long requesterId

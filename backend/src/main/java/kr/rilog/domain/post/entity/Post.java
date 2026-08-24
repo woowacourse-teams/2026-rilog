@@ -44,7 +44,7 @@ public class Post extends BaseEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rilog_id", nullable = true)
+    @JoinColumn(name = "rilog_id", nullable = false)
     private Blog rilog;
 
     @ManyToOne(fetch = FetchType.LAZY)

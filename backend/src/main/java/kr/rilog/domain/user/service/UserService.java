@@ -5,7 +5,6 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
@@ -15,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static kr.rilog.domain.user.exception.UserErrorInformation.*;
 
@@ -47,7 +47,7 @@ public class UserService {
             throw new UserException(ONBOARDING_ALREADY_COMPLETED);
         }
 
-        validateDuplicatedNickname(command.nickname());
+        validateDuplicatedProfileName(command.nickname());
         validateDuplicatedUserSlug(command.slug());
         validateDuplicatedBlogSlug(command.slug());
 
@@ -65,21 +65,21 @@ public class UserService {
         return completedUser;
     }
 
-    public void validateDuplicatedNickname(String nickname) {
-        if (userRepository.existsByNickname(Nickname.from(nickname))) {
-            throw new UserException(NICKNAME_DUPLICATED);
-        }
-    }
-
-    public void validateDuplicatedBlogSlug(String slug) {
-        if (blogRepository.existsBySlug(Slug.from(slug))) {
-            throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
+    private void validateDuplicatedProfileName(String profileName) {
+        if (blogRepository.existsByProfileName(profileName)) {
+            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         }
     }
 
     public void validateDuplicatedUserSlug(String slug) {
         if (userRepository.existsBySlug(Slug.from(slug))) {
             throw new UserException(SLUG_DUPLICATED);
+        }
+    }
+
+    private void validateDuplicatedBlogSlug(String slug) {
+        if (blogRepository.existsBySlug(Slug.from(slug))) {
+            throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
         }
     }
 

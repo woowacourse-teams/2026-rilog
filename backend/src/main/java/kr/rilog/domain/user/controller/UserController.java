@@ -1,6 +1,5 @@
 package kr.rilog.domain.user.controller;
 
-import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.user.service.UserService;
 import kr.rilog.domain.auth.annotation.AuthGuard;
@@ -13,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -37,15 +35,6 @@ public class UserController implements UserApiSpec {
         UserInfoResult result = userService.getUserInformation(userId);
         UserInfoResponse data = UserInfoResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "나의 유저 정보 조회에 성공했습니다.", data);
-    }
-
-    @GetMapping("/availability/nickname")
-    public ApiResponse<Void> validateNickname(
-            @RequestParam("nickname")
-            @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하이어야 합니다.") String nickname
-    ) {
-        userService.validateDuplicatedNickname(nickname);
-        return ApiResponse.response(HttpStatus.OK, "사용가능한 닉네임입니다.");
     }
 
 }

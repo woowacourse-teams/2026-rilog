@@ -52,8 +52,8 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    public PostDetailResponse readPostOfBlogs(String slug, Long postId, Long requesterId) {
-        Post post = getPost(slug, postId);
+    public PostDetailResponse readPostOfBlogs(Long postId, Long requesterId) {
+        Post post = getPost(postId);
         post.validateReadableBy(requesterId);
 
         if (!post.isCologAffiliated()) {
@@ -108,8 +108,8 @@ public class PostService {
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
     }
 
-    private Post getPost(String slug, Long postId) {
-        return postRepository.findDetailByIdAndBlogSlug(postId, Slug.from(slug))
+    private Post getPost(Long postId) {
+        return postRepository.findDetailById(postId)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 
