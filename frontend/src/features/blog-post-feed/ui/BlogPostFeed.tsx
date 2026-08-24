@@ -56,7 +56,7 @@ export default function BlogPostFeed({ slug, initialRequestFailed = false }: Blo
 
 	if (hasInitialError) {
 		return (
-			<section aria-label="코로그 게시글 에러" className="min-w-0">
+			<section aria-label="블로그 게시글 오류" className="min-w-0">
 				<div className="flex min-h-32 flex-col items-center justify-center gap-5 text-center" role="alert">
 					<p className="text-body-2 text-text-secondary">게시글 목록을 불러오지 못했어요.</p>
 					<Button

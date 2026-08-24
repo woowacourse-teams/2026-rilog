@@ -78,4 +78,16 @@ describe('BlogPostFeed', () => {
 
 		expect(screen.getByText('아직 작성된 게시글이 없습니다.')).toBeInTheDocument();
 	});
+
+	it('게시글 조회에 실패하면 블로그 공통 오류 영역을 제공한다', () => {
+		vi.mocked(usePublicBlogPosts).mockReturnValue({
+			...createPublicBlogPostsResult([]),
+			data: undefined,
+			isError: true,
+		} as unknown as PublicBlogPostsResult);
+
+		render(<BlogPostFeed slug="rilog" />);
+
+		expect(screen.getByRole('region', { name: '블로그 게시글 오류' })).toBeInTheDocument();
+	});
 });
