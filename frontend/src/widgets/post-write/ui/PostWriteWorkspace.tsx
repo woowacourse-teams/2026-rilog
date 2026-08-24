@@ -7,7 +7,7 @@ import type { ComponentType } from 'react';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
-import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
+import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -25,6 +25,7 @@ import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 interface PostWriteWorkspaceProps {
 	editorComponent?: ComponentType<PostEditorProps>;
 	initialDocument?: EditorDocument;
+	initialPublicationSettings?: PublicationSettings;
 	publishPost?: PublishPost;
 	uploadFile?: UploadPostBodyFile;
 	navigate?: (href: string) => void;
@@ -33,6 +34,7 @@ interface PostWriteWorkspaceProps {
 export default function PostWriteWorkspace({
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
+	initialPublicationSettings,
 	publishPost,
 	uploadFile,
 	navigate,
@@ -54,10 +56,17 @@ export default function PostWriteWorkspace({
 	const resolvedUploadFile = uploadFile ?? uploadPostBodyFileWithApi;
 
 	const myInfo = myInfoResponse?.data;
-	const cologOptions = useMemo(
-		() => myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [],
-		[myCologsResponse?.data],
-	);
+	const cologOptions = useMemo(() => {
+		const availableBlogs =
+			myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
+		const initialBlog = initialPublicationSettings?.blog;
+
+		if (initialBlog === null || initialBlog === undefined || availableBlogs.some(({ id }) => id === initialBlog.id)) {
+			return availableBlogs;
+		}
+
+		return [initialBlog, ...availableBlogs];
+	}, [initialPublicationSettings?.blog, myCologsResponse?.data]);
 
 	const publishPostWithApi: PublishPost = async ({ document, settings }) => {
 		if (settings.blog === null) {
@@ -65,14 +74,14 @@ export default function PostWriteWorkspace({
 		}
 
 		const thumbnailImageUrl =
-			settings.representativeImage === null
-				? (findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL)
-				: (
+			settings.representativeImage !== null
+				? (
 						await uploadFileToStorage({
 							file: settings.representativeImage,
 							type: 'IMAGE',
 						})
-					).objectKey;
+					).objectKey
+				: (settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL);
 
 		const response = await requestPostPublication({
 			slug: settings.blog.slug,
@@ -122,11 +131,16 @@ export default function PostWriteWorkspace({
 		handleClosePublishSettings,
 		handleCancelLeave,
 		handleConfirmLeave,
-	} = usePostWriteWorkspace({ initialDocument, publishPost: publishPost ?? publishPostWithApi, navigate });
+	} = usePostWriteWorkspace({
+		initialDocument,
+		initialPublicationSettings,
+		publishPost: publishPost ?? publishPostWithApi,
+		navigate,
+	});
 
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
-			<WritePublishActionBar isEditorReady={isEditorReady} onPublish={() => console.log(document.body)} />
+			<WritePublishActionBar isEditorReady={isEditorReady} onPublish={handleOpenPublishSettings} />
 			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
 				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
 					<PostTitleField
@@ -153,7 +167,7 @@ export default function PostWriteWorkspace({
 				open={isPublishModalOpen}
 				postTitle={title.trim()}
 				settings={publicationSettings}
-				selectedImageUrl={selectedImageUrl}
+				selectedImageUrl={selectedImageUrl ?? publicationSettings.representativeImageUrl}
 				bodyBlocks={publicationBlocks}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}

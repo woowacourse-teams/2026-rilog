@@ -11,7 +11,7 @@ import PublishSettingsModal from './PublishSettingsModal';
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
 	postTitle: '게시글 제목',
-	settings: { category: 'IT', blog: null, representativeImage: null },
+	settings: { category: 'IT', blog: null, representativeImage: null, representativeImageUrl: null },
 	selectedImageUrl: null,
 	bodyBlocks: [],
 	defaultImageUrl: POST_THUMBNAIL_FALLBACK_URL,
@@ -80,6 +80,21 @@ describe('PublishSettingsModal', () => {
 		);
 		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
 		expect(handleImageChange).toHaveBeenLastCalledWith(null);
+	});
+
+	it('기존 대표 이미지 URL이 있으면 변경과 제거 동작을 제공한다', async () => {
+		const user = userEvent.setup();
+		const handleImageChange = vi.fn();
+		renderModal({
+			settings: { ...DEFAULT_PROPS.settings, representativeImageUrl: 'posts/existing-thumbnail.png' },
+			selectedImageUrl: 'posts/existing-thumbnail.png',
+			onImageChange: handleImageChange,
+		});
+
+		expect(screen.getByLabelText('이미지 변경')).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
+
+		expect(handleImageChange).toHaveBeenCalledWith(null);
 	});
 
 	it('발행 중에는 설정 변경과 모든 종료 경로를 막는다', async () => {

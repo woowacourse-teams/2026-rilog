@@ -3,13 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
-import type { PostWriteInitialData } from '@/features/post-write/hooks/use-post-write-initial-data';
-import type { EditorDocument } from '@/features/post-write/model/post-publication';
+import type {
+	EditorDocument,
+	PostWriteInitialData,
+	PublicationSettings,
+} from '@/features/post-write/model/post-publication';
 
 import PostWriteLoader from './PostWriteLoader';
 
 interface WorkspaceMockProps {
 	initialDocument?: EditorDocument;
+	initialPublicationSettings?: PublicationSettings;
 }
 
 interface InitialDataQueryOptionsMock {
@@ -46,13 +50,20 @@ vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
 }));
 
 vi.mock('./PostWriteWorkspace', () => ({
-	default: ({ initialDocument }: WorkspaceMockProps) => (
+	default: ({ initialDocument, initialPublicationSettings }: WorkspaceMockProps) => (
 		<div>
 			<p>글쓰기 워크스페이스</p>
 			{initialDocument === undefined ? null : (
 				<>
 					<p>{initialDocument.title}</p>
 					<p>본문 블록 {initialDocument.blocks.length}개</p>
+				</>
+			)}
+			{initialPublicationSettings === undefined ? null : (
+				<>
+					<p>카테고리 {initialPublicationSettings.category}</p>
+					<p>블로그 {initialPublicationSettings.blog?.name}</p>
+					<p>썸네일 {initialPublicationSettings.representativeImageUrl}</p>
 				</>
 			)}
 		</div>
@@ -75,6 +86,12 @@ const initialDocument: EditorDocument = {
 const initialData: PostWriteInitialData = {
 	authorId: 7,
 	document: initialDocument,
+	settings: {
+		category: 'DAILY',
+		blog: { id: 3, slug: 'author', name: '작성자 블로그' },
+		representativeImage: null,
+		representativeImageUrl: 'posts/existing-thumbnail.png',
+	},
 };
 
 describe('PostWriteLoader', () => {
@@ -122,7 +139,7 @@ describe('PostWriteLoader', () => {
 		expect(screen.queryByText('글쓰기 워크스페이스')).not.toBeInTheDocument();
 	});
 
-	it('게시글 상세조회 결과를 title과 body 초기값으로 workspace에 전달한다', () => {
+	it('게시글 상세조회 결과의 문서와 게시 설정을 workspace에 전달한다', () => {
 		searchParamsGetMock.mockReturnValue('31');
 		usePostWriteInitialDataMock.mockReturnValue({
 			isPending: false,
@@ -134,6 +151,9 @@ describe('PostWriteLoader', () => {
 
 		expect(screen.getByText('불러온 제목')).toBeInTheDocument();
 		expect(screen.getByText('본문 블록 1개')).toBeInTheDocument();
+		expect(screen.getByText('카테고리 DAILY')).toBeInTheDocument();
+		expect(screen.getByText('블로그 작성자 블로그')).toBeInTheDocument();
+		expect(screen.getByText('썸네일 posts/existing-thumbnail.png')).toBeInTheDocument();
 		expect(screen.getByText('접근 가드 작성자 7')).toBeInTheDocument();
 		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 31, isEnabled: true }));
 	});

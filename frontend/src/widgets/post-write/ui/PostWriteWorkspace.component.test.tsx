@@ -201,6 +201,45 @@ describe('PostWriteWorkspace', () => {
 		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
 	});
 
+	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
+		const user = userEvent.setup();
+		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '31', slug: 'personal-blog' });
+		render(
+			<PostWriteWorkspace
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
+				initialPublicationSettings={{
+					category: 'DAILY',
+					blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+					representativeImage: null,
+					representativeImageUrl: 'posts/existing-thumbnail.png',
+				}}
+				publishPost={publishPost}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+
+		expect(screen.getByRole('radio', { name: '일상' })).toBeChecked();
+		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue('3');
+		expect(screen.getByRole('option', { name: '내 블로그' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'https://images.rilog.test/posts/existing-thumbnail.png',
+		);
+
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(publishPost).toHaveBeenCalledOnce());
+		expect(publishPost.mock.calls[0]?.[0].settings).toMatchObject({
+			category: 'DAILY',
+			blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+			representativeImage: null,
+			representativeImageUrl: 'posts/existing-thumbnail.png',
+		});
+	});
+
 	it('진입 시 제목에 focus하고 Enter를 누르면 본문으로 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
@@ -447,6 +486,36 @@ describe('PostWriteWorkspace', () => {
 
 		unmount();
 		vi.unstubAllGlobals();
+	});
+
+	it('수정 초기 설정의 기존 블로그, 카테고리와 썸네일 key를 실제 API 요청에 유지한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(
+			<PostWriteWorkspace
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
+				initialPublicationSettings={{
+					category: 'DAILY',
+					blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+					representativeImage: null,
+					representativeImageUrl: 'posts/existing-thumbnail.png',
+				}}
+				navigate={navigate}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestPostPublicationMock).toHaveBeenCalledOnce());
+		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
+		const publicationRequest = requestPostPublicationMock.mock.calls[0]?.[0];
+		expect(publicationRequest?.slug).toBe('personal-blog');
+		expect(publicationRequest?.request).toMatchObject({
+			category: 'DAILY',
+			thumbnailImageUrl: 'posts/existing-thumbnail.png',
+		});
 	});
 
 	it('대표 이미지를 선택하지 않으면 본문의 첫 이미지 URL을 API에 전송한다', async () => {

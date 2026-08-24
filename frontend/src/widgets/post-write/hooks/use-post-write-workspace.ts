@@ -18,6 +18,7 @@ type PublishState = { status: 'idle' } | { status: 'pending' } | { status: 'erro
 
 interface UsePostWriteWorkspaceOptions {
 	initialDocument?: EditorDocument;
+	initialPublicationSettings?: PublicationSettings;
 	publishPost: PublishPost;
 	navigate?: (href: string) => void;
 }
@@ -26,9 +27,15 @@ const INITIAL_PUBLICATION_SETTINGS: PublicationSettings = {
 	category: 'IT',
 	blog: null,
 	representativeImage: null,
+	representativeImageUrl: null,
 };
 
-export function usePostWriteWorkspace({ initialDocument, publishPost, navigate }: UsePostWriteWorkspaceOptions) {
+export function usePostWriteWorkspace({
+	initialDocument,
+	initialPublicationSettings,
+	publishPost,
+	navigate,
+}: UsePostWriteWorkspaceOptions) {
 	const router = useRouter();
 
 	const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -45,7 +52,9 @@ export function usePostWriteWorkspace({ initialDocument, publishPost, navigate }
 
 	const [publicationBlocks, setPublicationBlocks] = useState<Block[]>([]);
 	const [publishState, setPublishState] = useState<PublishState>({ status: 'idle' });
-	const [publicationSettings, setPublicationSettings] = useState(INITIAL_PUBLICATION_SETTINGS);
+	const [publicationSettings, setPublicationSettings] = useState(
+		initialPublicationSettings ?? INITIAL_PUBLICATION_SETTINGS,
+	);
 
 	const [documentErrors, setDocumentErrors] = useState<PostDocumentErrors>({});
 	const [cologError, setCologError] = useState<string>();
@@ -131,7 +140,11 @@ export function usePostWriteWorkspace({ initialDocument, publishPost, navigate }
 		const nextImageUrl = file === null ? null : URL.createObjectURL(file);
 		selectedImageUrlRef.current = nextImageUrl;
 		setSelectedImageUrl(nextImageUrl);
-		setPublicationSettings((currentSettings) => ({ ...currentSettings, representativeImage: file }));
+		setPublicationSettings((currentSettings) => ({
+			...currentSettings,
+			representativeImage: file,
+			representativeImageUrl: null,
+		}));
 	};
 
 	const handleCategoryChange = (category: PostCategory) => {
