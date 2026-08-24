@@ -40,6 +40,15 @@ public class BlogController implements BlogApiSpec {
         return ApiResponse.response(HttpStatus.OK, "사용가능한 슬러그입니다.");
     }
 
+    @GetMapping("/availability/nickname")
+    public ApiResponse<Void> validateNickname(
+            @RequestParam("nickname")
+            @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하이어야 합니다.") String nickname
+    ) {
+        blogService.validateDuplicatedProfileName(nickname);
+        return ApiResponse.response(HttpStatus.OK, "사용가능한 닉네임입니다.");
+    }
+
     @GetMapping("/blogs/@{slug}")
     public ApiResponse<CologPublicProfileResponse> getPublicProfile(@PathVariable("slug") String slug) {
         CologPublicProfileResult result = blogService.getPublicProfile(slug);

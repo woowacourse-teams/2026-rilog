@@ -7,10 +7,10 @@ import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.BlogService;
-import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.Instant;
 import java.util.List;
 
-import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -75,15 +76,80 @@ class BlogControllerTest {
         // given
         String slug = "ri_log-01";
         BlogService blogService = mock(BlogService.class);
-        doThrow(new UserException(SLUG_DUPLICATED))
+        doThrow(new BlogException(BLOG_SLUG_ALREADY_EXISTS))
                 .when(blogService).validateDuplicatedSlug(slug);
         MockMvc mockMvc = mockMvc(blogService);
 
         // when - then
         mockMvc.perform(get("/v1/availability/slug")
                         .param("slug", slug))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("SLUG_DUPLICATED"));
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("BLOG_SLUG_ALREADY_EXISTS"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"러로", "12345678901234567890"})
+    @DisplayName("GET /v1/availability/nickname은 블로그 프로필 이름 사용 가능 여부를 확인한다")
+    void validateNicknameAcceptsValidNickname(String nickname) throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/nickname")
+                        .param("nickname", nickname))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("사용가능한 닉네임입니다."));
+
+        verify(blogService).validateDuplicatedProfileName(nickname);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"러", "123456789012345678901"})
+    @DisplayName("GET /v1/availability/nickname은 길이가 올바르지 않은 이름을 거절한다")
+    void validateNicknameRejectsInvalidLength(String nickname) throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/nickname")
+                        .param("nickname", nickname))
+                .andExpect(status().isBadRequest());
+
+        verify(blogService, never()).validateDuplicatedProfileName(nickname);
+    }
+
+    @Test
+    @DisplayName("GET /v1/availability/nickname은 중복된 블로그 프로필 이름이면 중복 오류를 반환한다")
+    void validateNicknameRejectsDuplicatedProfileName() throws Exception {
+        // given
+        String nickname = "러로";
+        BlogService blogService = mock(BlogService.class);
+        doThrow(new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS))
+                .when(blogService).validateDuplicatedProfileName(nickname);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/nickname")
+                        .param("nickname", nickname))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("BLOG_PROFILE_NAME_ALREADY_EXISTS"));
+    }
+
+    @Test
+    @DisplayName("GET /v1/availability/nickname은 요청 파라미터가 없으면 거절한다")
+    void validateNicknameRejectsMissingParameter() throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/nickname"))
+                .andExpect(status().isBadRequest());
+
+        verify(blogService, never()).validateDuplicatedProfileName(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test

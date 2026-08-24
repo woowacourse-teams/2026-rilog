@@ -3,9 +3,9 @@ package kr.rilog.domain.user.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
@@ -17,9 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static kr.rilog.domain.blog.entity.enums.BlogType.RILOG;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.user.entity.OnboardingStatus.COMPLETED;
 import static kr.rilog.domain.user.entity.OnboardingStatus.PENDING;
-import static kr.rilog.domain.user.exception.UserErrorInformation.NICKNAME_DUPLICATED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALREADY_COMPLETED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -174,18 +174,19 @@ class UserServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("중복된 닉네임으로 온보딩을 완료하면 예외가 발생하고 대기 상태를 유지한다.")
-    void completeOnboardingThrowsAndPreservesPendingUserWhenNicknameIsDuplicated() {
+    @DisplayName("중복된 블로그 프로필 이름으로 온보딩을 완료하면 예외가 발생하고 대기 상태를 유지한다.")
+    void completeOnboardingThrowsAndPreservesPendingUserWhenProfileNameIsDuplicated() {
         // given
-        userRepository.saveAndFlush(
+        User existingUser = userRepository.saveAndFlush(
                 UserFixture.completedWithNicknameAndSlug("러로", "existing-user")
         );
+        blogRepository.saveAndFlush(Blog.createRilog(existingUser));
         User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
 
         // when & then
         assertThatThrownBy(() -> userService.completeOnboarding(pendingUser.getId(), onboardingCommand()))
-                .isInstanceOf(UserException.class)
-                .hasMessage(NICKNAME_DUPLICATED.getMessage());
+                .isInstanceOf(BlogException.class)
+                .hasMessage(BLOG_PROFILE_NAME_ALREADY_EXISTS.getMessage());
 
         User savedUser = userRepository.findById(pendingUser.getId()).orElseThrow();
         assertThat(savedUser.getOnboardingStatus()).isEqualTo(PENDING);
@@ -212,37 +213,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("등록되지 않은 닉네임은 중복 검증을 통과한다.")
-    void validateDuplicatedNicknamePassesWhenNicknameDoesNotExist() {
-        // when & then
-        assertThatCode(() -> userService.validateDuplicatedNickname("사용가능닉네임"))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("등록된 닉네임을 검사하면 중복 예외가 발생한다.")
-    void validateDuplicatedNicknameThrowsWhenNicknameExists() {
-        // given
-        userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("중복닉네임", "existing-user")
-        );
-
-        // when & then
-        assertThatThrownBy(() -> userService.validateDuplicatedNickname("중복닉네임"))
-                .isInstanceOf(UserException.class)
-                .hasMessage(NICKNAME_DUPLICATED.getMessage());
-    }
-
-    @Test
-    @DisplayName("등록되지 않은 슬러그는 중복 검증을 통과한다.")
-    void validateDuplicatedSlugPassesWhenSlugDoesNotExist() {
-        // when & then
-        assertThatCode(() -> userService.validateDuplicatedBlogSlug("available-slug"))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("등록된 슬러그를 검사하면 중복 예외가 발생한다.")
+    @DisplayName("등록된 유저 슬러그를 검사하면 중복 예외가 발생한다.")
     void validateDuplicatedSlugThrowsWhenSlugExists() {
         // given
         String duplicatedSlug = "duplicated-slug";

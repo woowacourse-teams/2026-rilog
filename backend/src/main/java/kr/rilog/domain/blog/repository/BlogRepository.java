@@ -52,6 +52,26 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     boolean existsBySlug(@Param("slug") Slug slug);
 
     @Query("""
+            SELECT CASE WHEN COUNT(blog) > 0 THEN true ELSE false END
+            FROM Blog blog
+            WHERE blog.profile.name = :profileName
+              AND blog.deletedAt IS NULL
+            """)
+    boolean existsByProfileName(@Param("profileName") String profileName);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(blog) > 0 THEN true ELSE false END
+            FROM Blog blog
+            WHERE blog.profile.name = :profileName
+              AND blog.id <> :blogId
+              AND blog.deletedAt IS NULL
+            """)
+    boolean existsByProfileNameExceptId(
+            @Param("profileName") String profileName,
+            @Param("blogId") Long blogId
+    );
+
+    @Query("""
             SELECT blogMember.blog
             FROM BlogMember blogMember
             WHERE blogMember.user.id = :userId

@@ -12,7 +12,6 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Email;
 import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.blog.entity.vo.Slug;
-import kr.rilog.domain.user.exception.UserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,8 +23,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -79,10 +79,66 @@ class BlogServiceTest {
 
         // when - then
         assertThatThrownBy(() -> blogService.validateDuplicatedSlug(slug.getValue()))
-                .isInstanceOf(UserException.class)
+                .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
-                .isEqualTo(SLUG_DUPLICATED);
+                .isEqualTo(BLOG_SLUG_ALREADY_EXISTS);
         verify(blogRepository).existsBySlug(slug);
+    }
+
+    @Test
+    @DisplayName("중복되지 않은 블로그 프로필 이름은 검증을 통과한다")
+    void validateDuplicatedProfileNamePassesWhenProfileNameDoesNotExist() {
+        // given
+        String profileName = "러로";
+        when(blogRepository.existsByProfileName(profileName)).thenReturn(false);
+
+        // when - then
+        assertThatCode(() -> blogService.validateDuplicatedProfileName(profileName))
+                .doesNotThrowAnyException();
+        verify(blogRepository).existsByProfileName(profileName);
+    }
+
+    @Test
+    @DisplayName("중복된 블로그 프로필 이름이면 예외가 발생한다")
+    void validateDuplicatedProfileNameThrowsWhenProfileNameExists() {
+        // given
+        String profileName = "러로";
+        when(blogRepository.existsByProfileName(profileName)).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> blogService.validateDuplicatedProfileName(profileName))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        verify(blogRepository).existsByProfileName(profileName);
+    }
+
+    @Test
+    @DisplayName("프로필 이름 변경 시 자기 자신을 제외하고 중복을 검사한다")
+    void validateDuplicatedProfileNameExceptSelfPassesWhenOnlySelfHasProfileName() {
+        // given
+        String profileName = "리로그";
+        when(blogRepository.existsByProfileNameExceptId(profileName, COLOG_ID)).thenReturn(false);
+
+        // when - then
+        assertThatCode(() -> blogService.validateDuplicatedProfileName(profileName, COLOG_ID))
+                .doesNotThrowAnyException();
+        verify(blogRepository).existsByProfileNameExceptId(profileName, COLOG_ID);
+    }
+
+    @Test
+    @DisplayName("프로필 이름 변경 시 다른 블로그의 이름과 중복되면 예외가 발생한다")
+    void validateDuplicatedProfileNameExceptSelfThrowsWhenOtherBlogHasProfileName() {
+        // given
+        String profileName = "리로그";
+        when(blogRepository.existsByProfileNameExceptId(profileName, COLOG_ID)).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> blogService.validateDuplicatedProfileName(profileName, COLOG_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        verify(blogRepository).existsByProfileNameExceptId(profileName, COLOG_ID);
     }
 
     @Test

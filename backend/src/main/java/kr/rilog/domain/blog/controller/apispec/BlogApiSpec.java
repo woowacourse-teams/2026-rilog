@@ -29,6 +29,15 @@ public interface BlogApiSpec {
     );
 
     @Operation(
+            summary = "닉네임 중복 검사 API",
+            description = "개인/팀 블로그 프로필 이름으로 이미 존재하는 닉네임인지 검사합니다."
+    )
+    ApiResponse<Void> validateNickname(
+            @RequestParam("nickname")
+            @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하이어야 합니다.") String nickname
+    );
+
+    @Operation(
             summary = "공개 블로그 프로필 조회 API",
             description = "공개 프로필 화면에서 사용할 블로그 정보를 @slug 경로 기준으로 조회합니다."
     )
