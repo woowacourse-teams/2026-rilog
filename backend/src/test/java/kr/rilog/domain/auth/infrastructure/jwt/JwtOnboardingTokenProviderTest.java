@@ -31,7 +31,7 @@ class JwtOnboardingTokenProviderTest {
     private static final Duration EXPIRATION = Duration.ofMinutes(10);
 
     @Test
-    @DisplayName("Onboarding Token은 userId, purpose, iat, exp Claim을 포함하고 다시 파싱된다")
+    @DisplayName("Onboarding Token은 userId, tokenType, iat, exp Claim을 포함하고 다시 파싱된다")
     void issueCreatesTokenWithRequiredClaimsAndParseReadsThem() {
         // given
         JwtOnboardingTokenProvider provider = provider(SECRET, NOW);
@@ -42,7 +42,7 @@ class JwtOnboardingTokenProviderTest {
         // then
         DecodedJWT decodedJWT = JWT.decode(onboardingToken.value());
         assertThat(decodedJWT.getClaim("userId").asLong()).isEqualTo(1L);
-        assertThat(decodedJWT.getClaim("purpose").asString()).isEqualTo("ONBOARDING");
+        assertThat(decodedJWT.getClaim("tokenType").asString()).isEqualTo("ONBOARDING");
         assertThat(decodedJWT.getClaim("role").isMissing()).isTrue();
         assertThat(decodedJWT.getClaim("slug").isMissing()).isTrue();
         assertThat(decodedJWT.getIssuedAt().toInstant()).isEqualTo(NOW);
@@ -131,7 +131,7 @@ class JwtOnboardingTokenProviderTest {
     @DisplayName("필수 Claim 중 하나라도 없는 Onboarding Token은 거부한다")
     void parseRejectsTokenWithoutAnyRequiredClaim() {
         // given
-        List<String> requiredClaims = List.of("userId", "purpose", "iat", "exp");
+        List<String> requiredClaims = List.of("userId", "tokenType", "iat", "exp");
 
         // when - then
         for (String missingClaim : requiredClaims) {
@@ -146,10 +146,28 @@ class JwtOnboardingTokenProviderTest {
     }
 
     @Test
-    @DisplayName("purpose가 ONBOARDING이 아닌 Token은 거부한다")
-    void parseRejectsTokenWithUnsupportedPurpose() {
+    @DisplayName("purpose Claim만 가진 기존 Onboarding Token은 거부한다")
+    void parseRejectsLegacyOnboardingTokenWithPurposeClaim() {
         // given
-        String tokenWithUnsupportedPurpose = createToken(
+        String legacyToken = JWT.create()
+                .withClaim("userId", 1L)
+                .withClaim("purpose", "ONBOARDING")
+                .withIssuedAt(Date.from(NOW))
+                .withExpiresAt(Date.from(NOW.plus(EXPIRATION)))
+                .sign(Algorithm.HMAC256(SECRET));
+
+        // when - then
+        assertThatThrownBy(() -> provider(SECRET, NOW).parse(legacyToken))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.ONBOARDING_TOKEN_CLAIM_MISSING);
+    }
+
+    @Test
+    @DisplayName("tokenType이 ONBOARDING이 아닌 Token은 거부한다")
+    void parseRejectsTokenWithUnsupportedTokenType() {
+        // given
+        String accessToken = createToken(
                 SECRET,
                 1L,
                 "ACCESS",
@@ -158,7 +176,7 @@ class JwtOnboardingTokenProviderTest {
         );
 
         // when - then
-        assertThatThrownBy(() -> provider(SECRET, NOW).parse(tokenWithUnsupportedPurpose))
+        assertThatThrownBy(() -> provider(SECRET, NOW).parse(accessToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.INVALID_ONBOARDING_TOKEN);
@@ -188,15 +206,15 @@ class JwtOnboardingTokenProviderTest {
     private String tamperPayload(String token) {
         String[] parts = token.split("\\.");
         String payload = """
-                {"userId":2,"purpose":"ONBOARDING","iat":1893456000,"exp":1893456600}
+                {"userId":2,"tokenType":"ONBOARDING","iat":1893456000,"exp":1893456600}
                 """;
         return parts[0] + "." + encode(payload) + "." + parts[2];
     }
 
-    private String createToken(String secret, Long userId, String purpose, Instant issuedAt, Instant expiresAt) {
+    private String createToken(String secret, Long userId, String tokenType, Instant issuedAt, Instant expiresAt) {
         return JWT.create()
                 .withClaim("userId", userId)
-                .withClaim("purpose", purpose)
+                .withClaim("tokenType", tokenType)
                 .withIssuedAt(Date.from(issuedAt))
                 .withExpiresAt(Date.from(expiresAt))
                 .sign(Algorithm.HMAC256(secret));
@@ -208,8 +226,8 @@ class JwtOnboardingTokenProviderTest {
         if (!"userId".equals(missingClaim)) {
             builder.withClaim("userId", 1L);
         }
-        if (!"purpose".equals(missingClaim)) {
-            builder.withClaim("purpose", "ONBOARDING");
+        if (!"tokenType".equals(missingClaim)) {
+            builder.withClaim("tokenType", "ONBOARDING");
         }
         if (!"iat".equals(missingClaim)) {
             builder.withIssuedAt(Date.from(NOW));
