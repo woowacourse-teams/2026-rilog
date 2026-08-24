@@ -1,22 +1,16 @@
 package kr.rilog.domain.user.controller;
 
-import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
-import kr.rilog.domain.user.entity.OnboardingStatus;
-import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.entity.vo.Nickname;
-import kr.rilog.domain.user.service.UserService;
+import kr.rilog.domain.user.service.OnboardingCompletionResult;
+import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -58,25 +52,21 @@ class OnboardingControllerTest {
     void completeOnboardingIssuesAccessTokenAndRefreshToken() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        UserService userService = mock(UserService.class);
-        AccessTokenService accessTokenService = mock(AccessTokenService.class);
-        RefreshTokenIssuer refreshTokenIssuer = mock(RefreshTokenIssuer.class);
+        OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
 
-        User user = completedUser();
         when(onboardingTokenService.parse("onboarding-token"))
                 .thenReturn(OnboardingTokenClaims.of(
                         1L,
                         Instant.parse("2026-08-13T00:00:00Z"),
                         Instant.parse("2026-08-13T00:10:00Z")
                 ));
-        when(userService.completeOnboarding(1L, command()))
-                .thenReturn(user);
-        when(accessTokenService.issue(1L, GlobalRole.USER, "ri_log-01"))
-                .thenReturn(AccessToken.of("access-token"));
-        when(refreshTokenIssuer.issue(user))
-                .thenReturn(RefreshToken.of("refresh-token"));
+        when(onboardingCompletionService.complete(1L, command()))
+                .thenReturn(new OnboardingCompletionResult(
+                        AccessToken.of("access-token"),
+                        RefreshToken.of("refresh-token")
+                ));
 
-        MockMvc mockMvc = mockMvc(onboardingTokenService, userService, accessTokenService, refreshTokenIssuer);
+        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -101,13 +91,8 @@ class OnboardingControllerTest {
     void completeOnboardingRejectsMissingAuthorizationHeader() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        UserService userService = mock(UserService.class);
-        MockMvc mockMvc = mockMvc(
-                onboardingTokenService,
-                userService,
-                mock(AccessTokenService.class),
-                mock(RefreshTokenIssuer.class)
-        );
+        OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
+        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -117,7 +102,7 @@ class OnboardingControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_HEADER_MISSING"));
 
         verify(onboardingTokenService, never()).parse(any(String.class));
-        verify(userService, never()).completeOnboarding(any(Long.class), any(OnboardingCompleteCommand.class));
+        verify(onboardingCompletionService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
     @Test
@@ -125,13 +110,8 @@ class OnboardingControllerTest {
     void completeOnboardingRejectsInvalidAuthorizationHeader() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        UserService userService = mock(UserService.class);
-        MockMvc mockMvc = mockMvc(
-                onboardingTokenService,
-                userService,
-                mock(AccessTokenService.class),
-                mock(RefreshTokenIssuer.class)
-        );
+        OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
+        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -142,7 +122,7 @@ class OnboardingControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
 
         verify(onboardingTokenService, never()).parse(any(String.class));
-        verify(userService, never()).completeOnboarding(any(Long.class), any(OnboardingCompleteCommand.class));
+        verify(onboardingCompletionService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
     @Test
@@ -150,15 +130,10 @@ class OnboardingControllerTest {
     void completeOnboardingRejectsInvalidOnboardingToken() throws Exception {
         // given
         OnboardingTokenService onboardingTokenService = mock(OnboardingTokenService.class);
-        UserService userService = mock(UserService.class);
+        OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
         when(onboardingTokenService.parse("invalid-token"))
                 .thenThrow(new AuthException(INVALID_ONBOARDING_TOKEN));
-        MockMvc mockMvc = mockMvc(
-                onboardingTokenService,
-                userService,
-                mock(AccessTokenService.class),
-                mock(RefreshTokenIssuer.class)
-        );
+        MockMvc mockMvc = mockMvc(onboardingTokenService, onboardingCompletionService);
 
         // when - then
         mockMvc.perform(patch("/v1/users/me/onboarding")
@@ -168,14 +143,12 @@ class OnboardingControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_ONBOARDING_TOKEN"));
 
-        verify(userService, never()).completeOnboarding(any(Long.class), any(OnboardingCompleteCommand.class));
+        verify(onboardingCompletionService, never()).complete(any(Long.class), any(OnboardingCompleteCommand.class));
     }
 
     private MockMvc mockMvc(
             OnboardingTokenService onboardingTokenService,
-            UserService userService,
-            AccessTokenService accessTokenService,
-            RefreshTokenIssuer refreshTokenIssuer
+            OnboardingCompletionService onboardingCompletionService
     ) {
         RefreshTokenProperties properties = RefreshTokenProperties.of(
                 Duration.ofDays(14),
@@ -186,23 +159,10 @@ class OnboardingControllerTest {
         );
         return MockMvcBuilders.standaloneSetup(new OnboardingController(
                         onboardingTokenService,
-                        userService,
-                        accessTokenService,
-                        refreshTokenIssuer,
+                        onboardingCompletionService,
                         new RefreshTokenCookieFactory(properties)
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-    }
-
-    private User completedUser() {
-        return User.builder()
-                .id(1L)
-                .githubId(100L)
-                .nickname(Nickname.from("러로"))
-                .slug(Slug.from("ri_log-01"))
-                .globalRole(GlobalRole.USER)
-                .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
     }
 

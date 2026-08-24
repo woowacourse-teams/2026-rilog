@@ -1,16 +1,14 @@
 package kr.rilog.domain.auth.application.token.login;
 
 import kr.rilog.domain.auth.application.GlobalRole;
-import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
+import kr.rilog.domain.auth.application.token.AuthTokenPair;
+import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
-import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -28,11 +26,10 @@ class LoginTokenIssuerTest {
     @DisplayName("PENDING 사용자는 Onboarding Token만 발급한다")
     void issueReturnsPendingResultForPendingUser() {
         // given
-        RefreshTokenIssuer refreshTokenIssuer = mock(RefreshTokenIssuer.class);
+        AuthTokenPairIssuer authTokenPairIssuer = mock(AuthTokenPairIssuer.class);
         LoginTokenIssuer issuer = new LoginTokenIssuer(
                 new OnboardingTokenService(new FixedOnboardingTokenProvider()),
-                new AccessTokenService(new FixedAccessTokenProvider()),
-                refreshTokenIssuer
+                authTokenPairIssuer
         );
 
         // when
@@ -42,7 +39,7 @@ class LoginTokenIssuerTest {
         assertThat(result).isInstanceOf(LoginTokenResult.Pending.class);
         LoginTokenResult.Pending pending = (LoginTokenResult.Pending) result;
         assertThat(pending.onboardingToken().value()).isEqualTo("onboarding-token:1");
-        verifyNoInteractions(refreshTokenIssuer);
+        verifyNoInteractions(authTokenPairIssuer);
     }
 
     @Test
@@ -50,12 +47,15 @@ class LoginTokenIssuerTest {
     void issueReturnsCompletedResultForCompletedUser() {
         // given
         User user = completedUser();
-        RefreshTokenIssuer refreshTokenIssuer = mock(RefreshTokenIssuer.class);
-        when(refreshTokenIssuer.issue(user)).thenReturn(RefreshToken.of("refresh-token"));
+        AuthTokenPairIssuer authTokenPairIssuer = mock(AuthTokenPairIssuer.class);
+        when(authTokenPairIssuer.issue(user))
+                .thenReturn(new AuthTokenPair(
+                        AccessToken.of("access-token"),
+                        RefreshToken.of("refresh-token")
+                ));
         LoginTokenIssuer issuer = new LoginTokenIssuer(
                 new OnboardingTokenService(new FixedOnboardingTokenProvider()),
-                new AccessTokenService(new FixedAccessTokenProvider()),
-                refreshTokenIssuer
+                authTokenPairIssuer
         );
 
         // when
@@ -64,7 +64,7 @@ class LoginTokenIssuerTest {
         // then
         assertThat(result).isInstanceOf(LoginTokenResult.Completed.class);
         LoginTokenResult.Completed completed = (LoginTokenResult.Completed) result;
-        assertThat(completed.accessToken().value()).isEqualTo("access-token:1:USER:jinriro");
+        assertThat(completed.accessToken().value()).isEqualTo("access-token");
         assertThat(completed.refreshToken().value()).isEqualTo("refresh-token");
     }
 
@@ -94,19 +94,6 @@ class LoginTokenIssuerTest {
 
         @Override
         public OnboardingTokenClaims parse(String onboardingToken) {
-            throw new UnsupportedOperationException("Not used in this test");
-        }
-    }
-
-    private static class FixedAccessTokenProvider implements AccessTokenProvider {
-
-        @Override
-        public AccessToken issue(Long userId, GlobalRole role, String slug) {
-            return AccessToken.of("access-token:%d:%s:%s".formatted(userId, role, slug));
-        }
-
-        @Override
-        public AccessTokenClaims parse(String accessToken) {
             throw new UnsupportedOperationException("Not used in this test");
         }
     }
