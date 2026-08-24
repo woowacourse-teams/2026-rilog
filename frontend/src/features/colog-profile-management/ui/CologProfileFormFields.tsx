@@ -1,14 +1,15 @@
-import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LENGTH } from '@/domains/blog/model/colog';
-import Button from '@/shared/ui/button/Button';
-import Field from '@/shared/ui/field/Field';
-import Input from '@/shared/ui/input/Input';
-import Textarea from '@/shared/ui/textarea/Textarea';
 import type {
 	CologProfileFormRefs,
 	CologProfileSettingsValue,
 	CologProfileTextField,
 	CologProfileValidationErrors,
 } from '../model/colog-profile-settings';
+
+import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LENGTH } from '@/domains/blog/model/colog';
+import Button from '@/shared/ui/button/Button';
+import Field from '@/shared/ui/field/Field';
+import Input from '@/shared/ui/input/Input';
+import Textarea from '@/shared/ui/textarea/Textarea';
 
 import CologProfileImageFields from './CologProfileImageFields';
 import CologProfileSocialFields from './CologProfileSocialFields';

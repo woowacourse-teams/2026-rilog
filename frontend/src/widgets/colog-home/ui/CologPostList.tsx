@@ -6,7 +6,6 @@ import CologPostFeedSkeleton from '@/features/colog-post-feed/ui/CologPostFeedSk
 import { prefetchPublicBlogPostsQuery } from '@/shared/api/blogs/queries/public-blog-posts/prefetch-query';
 import { publicBlogPostsQueryOptions } from '@/shared/api/blogs/queries/public-blog-posts/query-options';
 
-
 interface CologPostListProps {
 	slug: string;
 }

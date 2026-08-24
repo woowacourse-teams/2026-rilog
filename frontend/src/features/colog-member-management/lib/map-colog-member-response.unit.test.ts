@@ -28,7 +28,7 @@ describe('mapCologMemberResponse', () => {
 			blogRole: '백엔드 개발자',
 			joinedAt: '2026-08-20T10:00:00Z',
 		});
-		
+
 		// @ts-expect-error userId should not be in CologMember
 		expect(result.userId).toBeUndefined();
 	});

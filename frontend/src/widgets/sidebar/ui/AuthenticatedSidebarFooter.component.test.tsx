@@ -11,24 +11,25 @@ const { mutateMock } = vi.hoisted(() => ({
 	mutateMock: vi.fn(),
 }));
 
+const MY_INFO_RESPONSE = {
+	status: 200,
+	message: 'OK',
+	data: {
+		id: 1,
+		slug: 'jetproc',
+		nickname: '파라디',
+		profileImageUrl: null,
+	},
+};
+
 vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
 	useLogoutMutation: () => ({ mutate: mutateMock }),
 }));
 
 vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
-	useMyInfoQuery: vi.fn(({ select }) => {
-		const response = {
-			status: 200,
-			message: 'OK',
-			data: {
-				id: 1,
-				slug: 'jetproc',
-				nickname: '파라디',
-				profileImageUrl: null,
-			},
-		};
+	useMyInfoQuery: vi.fn(({ select }: { select?: (response: typeof MY_INFO_RESPONSE) => unknown }) => {
 		return {
-			data: select ? select(response) : response,
+			data: select ? select(MY_INFO_RESPONSE) : MY_INFO_RESPONSE,
 		};
 	}),
 }));

@@ -19,7 +19,6 @@ import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
-
 interface CologCreateFormFieldsProps {
 	value: CologCreateValue;
 	errors: CologProfileValidationErrors;

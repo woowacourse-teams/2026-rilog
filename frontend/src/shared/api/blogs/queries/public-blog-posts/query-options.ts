@@ -14,7 +14,10 @@ export interface PublicBlogPostsQueryOptions {
 	size?: number;
 }
 
-export const publicBlogPostsQueryOptions = ({ slug, size = PUBLIC_BLOG_POSTS_PAGE_SIZE }: PublicBlogPostsQueryOptions) =>
+export const publicBlogPostsQueryOptions = ({
+	slug,
+	size = PUBLIC_BLOG_POSTS_PAGE_SIZE,
+}: PublicBlogPostsQueryOptions) =>
 	infiniteQueryOptions<ApiResponse<PublicBlogFeedPostResponse>>({
 		queryKey: blogsQueryKeys.publicBlogPosts(slug),
 		queryFn: ({ pageParam }) => readPublicBlogPosts({ slug, page: Number(pageParam), size }),

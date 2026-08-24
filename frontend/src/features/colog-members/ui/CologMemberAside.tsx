@@ -4,7 +4,6 @@ import { mapCologMemberResponse } from '@/features/colog-member-management/lib/m
 import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
 import Button from '@/shared/ui/button/Button';
 
-
 import CologMemberList from './CologMemberList';
 
 interface CologMemberAsideProps {

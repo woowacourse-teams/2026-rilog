@@ -1,5 +1,3 @@
-
-
 import type { AuthResponse, GitHubCallbackParams } from './types';
 
 import { apiRequest, kyInstance } from '@/shared/api/client';
@@ -29,4 +27,3 @@ export const logoutAuth = async () => {
 		}),
 	);
 };
-

@@ -19,8 +19,11 @@ vi.mock('@/shared/api/cologs/mutations/use-update-colog-profile-mutation', () =>
 const createWrapper = () => {
 	const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 
-	return ({ children }: { children: ReactNode }) =>
-		createElement(QueryClientProvider, { client: queryClient }, children);
+	function QueryProviderWrapper({ children }: { children: ReactNode }) {
+		return createElement(QueryClientProvider, { client: queryClient }, children);
+	}
+
+	return QueryProviderWrapper;
 };
 
 afterEach(() => {

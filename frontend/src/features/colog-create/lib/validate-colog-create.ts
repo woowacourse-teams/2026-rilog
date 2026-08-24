@@ -1,3 +1,5 @@
+import type { CologCreateValue, CologProfileValidationErrors } from '../model/colog-create';
+
 import {
 	COLOG_DESCRIPTION_MAX_LENGTH,
 	COLOG_SLUG_MAX_LENGTH,
@@ -6,7 +8,6 @@ import {
 	normalizeCologName,
 	validateCologName,
 } from '@/domains/blog/model/colog';
-import type { CologCreateValue, CologProfileValidationErrors } from '../model/colog-create';
 
 const URL_PATTERN = /^https?:\/\//i;
 
