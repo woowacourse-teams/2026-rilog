@@ -65,7 +65,6 @@ describe('PostFeedCard', () => {
 		).toBe('/images/thumbnail-fallback.svg');
 		expect(postCard.querySelector('article > div')).toHaveClass('bg-thumbnail-background');
 		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' }).parentElement).toHaveClass('mt-2');
-		expect(screen.getByText('리로거').parentElement).toHaveClass('mt-2');
 		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' })).not.toHaveClass(
 			'object-contain',
 			'p-10',

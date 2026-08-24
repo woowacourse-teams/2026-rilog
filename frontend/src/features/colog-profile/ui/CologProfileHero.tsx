@@ -23,6 +23,7 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 		? 'bg-brand-primary text-text-on-dark'
 		: 'bg-[#DBE5F5] text-text-primary';
 	const coverTextShadowClassName = hasCoverImage ? 'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]' : '';
+	const actionToneClassName = hasCoverImage ? `text-text-on-dark ${coverTextShadowClassName}` : 'text-text-secondary';
 	const secondaryTextClassName = hasCoverImage ? 'text-navy-200' : 'text-text-secondary';
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
 	const hasServiceUrl = serviceUrl !== '';
@@ -42,11 +43,14 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 					className="size-32! sm:size-40! md:size-45!"
 				/>
 
-				<h1
-					className={`mt-2.5 max-w-full text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
-				>
-					{profile.name}
-				</h1>
+				<div className="relative mt-2.5 inline-block max-w-full">
+					<h1
+						className={`max-w-full min-w-0 pr-7 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
+					>
+						{profile.name}
+					</h1>
+					{action ? <div className={`absolute top-0 right-0 ${actionToneClassName}`}>{action}</div> : null}
+				</div>
 				{hasDescription || hasServiceUrl ? (
 					<p
 						className={`mt-2 max-w-sm text-label-2 sm:mt-2.5 sm:max-w-lg sm:text-body-1 ${secondaryTextClassName} ${coverTextShadowClassName}`}
@@ -81,8 +85,6 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 					</div>
 				) : null}
 			</div>
-
-			{action ? <div className="absolute top-5 right-5 sm:top-8 md:top-20 md:right-15">{action}</div> : null}
 		</div>
 	);
 }

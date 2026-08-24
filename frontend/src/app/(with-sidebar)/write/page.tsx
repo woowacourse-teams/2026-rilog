@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import PostWriteWorkspace from '@/widgets/post-write/ui/PostWriteWorkspace';
+import PostWriteDeviceGate from '@/widgets/post-write/ui/PostWriteDeviceGate';
 
 export const metadata: Metadata = {
 	title: '새 글 작성 | Rilog',
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function WritePage() {
-	return <PostWriteWorkspace />;
+	return <PostWriteDeviceGate />;
 }
