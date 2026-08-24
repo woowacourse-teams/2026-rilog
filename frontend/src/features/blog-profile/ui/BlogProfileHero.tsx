@@ -1,20 +1,21 @@
 import type { ReactNode } from 'react';
 
-import type { CologProfile } from '@/domains/blog/model/colog';
+import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
-import { getServiceUrlLabel } from '@/features/colog-profile/lib/get-service-url-label';
 import GitHubIcon from '@/shared/assets/brand/github.svg';
 import LinkIcon from '@/shared/assets/icons/link.svg';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
-import CologProfileCoverImage from './CologProfileCoverImage';
+import { getServiceUrlLabel } from '../lib/get-service-url-label';
 
-interface CologProfileHeroProps {
+import BlogProfileCoverImage from './BlogProfileCoverImage';
+
+interface BlogProfileHeroProps {
 	action?: ReactNode;
-	profile: CologProfile;
+	profile: BlogPublicProfile;
 }
 
-export default function CologProfileHero({ action, profile }: CologProfileHeroProps) {
+export default function BlogProfileHero({ action, profile }: BlogProfileHeroProps) {
 	const serviceUrl = profile.serviceUrl?.trim() ?? '';
 	const githubUrl = profile.githubUrl?.trim() ?? '';
 	const coverImageUrl = getImageUrl(profile.coverImageUrl);
@@ -28,17 +29,18 @@ export default function CologProfileHero({ action, profile }: CologProfileHeroPr
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
 	const hasServiceUrl = serviceUrl !== '';
 	const hasGitHubUrl = githubUrl !== '';
+	const avatarLabel = profile.type === 'COLOG' ? `${profile.name} 코로그 로고` : `${profile.name} 개인 블로그 프로필`;
 
 	return (
 		<div
 			className={`relative flex min-h-96 flex-col items-center justify-center overflow-hidden px-5 py-12 text-center sm:min-h-112 sm:px-6 sm:py-14 md:min-h-128 md:py-16 ${heroBackgroundClassName}`}
 		>
-			{hasCoverImage && <CologProfileCoverImage src={coverImageUrl} alt={`${profile.name} 커버 이미지`} />}
+			{hasCoverImage && <BlogProfileCoverImage src={coverImageUrl} alt={`${profile.name} 커버 이미지`} />}
 			<div className="relative flex flex-col items-center">
 				<CologAvatar
 					src={profile.profileImageUrl || undefined}
 					fallback={profile.name.slice(0, 1)}
-					label={`${profile.name} 코로그 로고`}
+					label={avatarLabel}
 					size="max"
 					className="size-32! sm:size-40! md:size-45!"
 				/>
