@@ -10,6 +10,7 @@ import { renderWithQuery as render } from '@/test/render-with-query';
 import CologSettingsWorkspace from './CologSettingsWorkspace';
 
 const {
+	cologProfileUpdatedMock,
 	mutateAsyncMock,
 	refetchProfileMock,
 	replaceMock,
@@ -18,6 +19,7 @@ const {
 	useCologMembersQueryMock,
 	useSaveCologProfileMock,
 } = vi.hoisted(() => ({
+	cologProfileUpdatedMock: vi.fn(),
 	mutateAsyncMock: vi.fn(),
 	refetchProfileMock: vi.fn(),
 	replaceMock: vi.fn(),
@@ -45,6 +47,8 @@ vi.mock('@/features/colog-profile-management/hooks/use-save-colog-profile', () =
 
 vi.mock('@/shared/api/availability/api');
 
+vi.mock('@/features/analytics/model/events', () => ({ analytics: { cologProfileUpdated: cologProfileUpdatedMock } }));
+
 const PROFILE_SETTINGS: CologProfileSettingsValue = {
 	name: 'API 리로그',
 	slug: 'team-rilog',
@@ -60,6 +64,7 @@ const PROFILE_SETTINGS: CologProfileSettingsValue = {
 describe('CologSettingsWorkspace', () => {
 	beforeEach(() => {
 		mutateAsyncMock.mockReset();
+		cologProfileUpdatedMock.mockReset();
 		refetchProfileMock.mockClear();
 		replaceMock.mockClear();
 		resetSaveProfileMock.mockClear();
@@ -189,6 +194,7 @@ describe('CologSettingsWorkspace', () => {
 		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));
 
 		await waitFor(() => expect(mutateAsyncMock).toHaveBeenCalledOnce());
+		expect(cologProfileUpdatedMock).toHaveBeenCalledWith({ changedFields: ['introduction'] });
 		expect(checkNicknameAvailability).not.toHaveBeenCalled();
 	});
 
