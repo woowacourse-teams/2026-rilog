@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ReactNode } from 'react';
+
 import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 
 import BlogHome from './BlogHome';
@@ -14,9 +16,20 @@ vi.mock('@/features/colog-members/ui/CologMemberAside', () => ({
 	},
 }));
 
-vi.mock('./BlogHomeHero', () => ({
-	default: function MockBlogHomeHero({ profile }: { profile: BlogPublicProfile }) {
-		return <div>프로필: {profile.type}</div>;
+vi.mock('@/features/blog-profile/ui/BlogProfileHero', () => ({
+	default: function MockBlogProfileHero({ profile, action }: { profile: BlogPublicProfile; action?: ReactNode }) {
+		return (
+			<div>
+				프로필: {profile.type}
+				{action}
+			</div>
+		);
+	},
+}));
+
+vi.mock('@/features/colog-settings-access/ui/CologSettingsButton', () => ({
+	default: function MockCologSettingsButton({ slug }: { slug: string }) {
+		return <a href={`/@${slug}/settings?tab=profile`}>팀 설정</a>;
 	},
 }));
 
@@ -48,6 +61,10 @@ describe('BlogHome', () => {
 		expect(screen.getByText('프로필: COLOG')).toBeInTheDocument();
 		expect(screen.getByText('게시글 목록: rilog-team')).toBeInTheDocument();
 		expect(screen.getByText('멤버 목록: rilog-team')).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveAttribute(
+			'href',
+			'/@rilog-team/settings?tab=profile',
+		);
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
 	});
 
@@ -57,6 +74,7 @@ describe('BlogHome', () => {
 		expect(screen.getByText('프로필: RILOG')).toBeInTheDocument();
 		expect(screen.getByText('게시글 목록: jetproc')).toBeInTheDocument();
 		expect(screen.queryByText(/멤버 목록:/)).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: '팀 설정' })).not.toBeInTheDocument();
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
 	});
 });
