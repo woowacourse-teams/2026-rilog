@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PostDetailResponse } from '@/shared/api/blogs/types';
+import type { PostDetailResponse } from '@/shared/api/posts/types';
 
 import { mapPostDetailResponse } from './map-post-detail-response';
 

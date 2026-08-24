@@ -3,7 +3,7 @@ import type { Block } from '@blocknote/core';
 import type { Blog } from '@/domains/blog/model/blog';
 import type { PostCategory, PostDetail } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
-import type { PostDetailResponse } from '@/shared/api/blogs/types';
+import type { PostDetailResponse } from '@/shared/api/posts/types';
 
 export const mapPostDetailResponse = (response: PostDetailResponse, postId?: number): PostDetail => {
 	const author: User = {

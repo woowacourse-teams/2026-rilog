@@ -1,10 +1,5 @@
 import type { Block } from '@blocknote/core';
 
-export interface BlogDetailRequest {
-	slug: string;
-	postId: number;
-}
-
 export type PostPublishCategory = 'TECH' | 'DAILY';
 export type PostVisibility = 'PUBLIC' | 'PRIVATE';
 
@@ -56,16 +51,6 @@ export interface CologOwnerResponse extends BaseOwnerResponse {
 }
 
 export type PostOwnerResponse = RilogOwnerResponse | CologOwnerResponse;
-
-export interface PostDetailResponse {
-	title: string;
-	content: unknown;
-	publishedAt: string;
-	thumbnailImageUrl: string | null;
-	category: string;
-	author: AuthorResponse;
-	owner: PostOwnerResponse;
-}
 
 export interface CologPublicProfileResponse {
 	type: string;
