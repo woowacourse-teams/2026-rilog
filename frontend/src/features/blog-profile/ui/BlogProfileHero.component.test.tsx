@@ -24,7 +24,7 @@ describe('BlogProfileHero', () => {
 		render(<BlogProfileHero profile={COLOG_PROFILE_FIXTURE} action={<button type="button">팀 설정</button>} />);
 
 		expect(screen.getByRole('heading', { level: 1, name: '프론트엔드 연구소' })).toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 코로그 로고' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' })).toBeInTheDocument();
 		expect(screen.getByText('사용자 경험을 함께 연구합니다.')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'frontend-lab.example.com' })).toHaveAttribute(
 			'href',
@@ -44,7 +44,7 @@ describe('BlogProfileHero', () => {
 		render(<BlogProfileHero profile={{ ...COLOG_PROFILE_FIXTURE, coverImageUrl: null }} />);
 
 		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 코로그 로고' }).parentElement?.parentElement).toHaveClass(
+		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' }).parentElement?.parentElement).toHaveClass(
 			'bg-brand-primary',
 			'text-on-brand-primary',
 		);

@@ -18,7 +18,7 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 	const hasDescription = (profile.description?.trim() ?? '') !== '';
 	const hasServiceUrl = serviceUrl !== '';
 	const hasGitHubUrl = githubUrl !== '';
-	const avatarLabel = profile.type === 'COLOG' ? `${profile.name} 코로그 로고` : `${profile.name} 개인 블로그 프로필`;
+	const avatarLabel = profile.type === 'COLOG' ? `${profile.name} 팀 로고` : `${profile.name} 개인 블로그 프로필`;
 	const avatarShapeClassName = profile.type === 'RILOG' ? 'rounded-full!' : '';
 
 	return (
