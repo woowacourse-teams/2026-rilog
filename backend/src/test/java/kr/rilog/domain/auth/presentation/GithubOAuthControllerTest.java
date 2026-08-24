@@ -1,6 +1,7 @@
 package kr.rilog.domain.auth.presentation;
 
 import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
@@ -276,8 +277,10 @@ class GithubOAuthControllerTest {
                 ),
                 new LoginTokenIssuer(
                         new OnboardingTokenService(new FixedOnboardingTokenProvider()),
-                        new AccessTokenService(new FixedAccessTokenProvider()),
-                        refreshTokenIssuer()
+                        new AuthTokenPairIssuer(
+                                new AccessTokenService(new FixedAccessTokenProvider()),
+                                refreshTokenIssuer()
+                        )
                 ),
                 new RefreshTokenCookieFactory(RefreshTokenProperties.of(
                         Duration.ofDays(14),

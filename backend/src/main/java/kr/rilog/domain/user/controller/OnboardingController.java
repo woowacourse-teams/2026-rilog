@@ -1,18 +1,15 @@
 package kr.rilog.domain.user.controller;
 
 import jakarta.validation.Valid;
-import kr.rilog.domain.auth.application.token.access.AccessToken;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
 import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.user.controller.apispec.OnboardingApiSpec;
 import kr.rilog.domain.user.controller.dto.request.OnboardingCompleteRequest;
-import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.service.UserService;
+import kr.rilog.domain.user.service.OnboardingCompletionResult;
+import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -37,9 +34,7 @@ public class OnboardingController implements OnboardingApiSpec {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final OnboardingTokenService onboardingTokenService;
-    private final UserService userService;
-    private final AccessTokenService accessTokenService;
-    private final RefreshTokenIssuer refreshTokenIssuer;
+    private final OnboardingCompletionService onboardingCompletionService;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
     @Override
@@ -50,14 +45,12 @@ public class OnboardingController implements OnboardingApiSpec {
     ) {
         String onboardingToken = extractBearerToken(authorizationHeader);
         OnboardingTokenClaims claims = onboardingTokenService.parse(onboardingToken);
-        User user = userService.completeOnboarding(claims.userId(), request.toCommand());
-
-        AccessToken accessToken = accessTokenService.issue(user.getId(), user.getGlobalRole(), user.getSlug());
-        RefreshToken refreshToken = refreshTokenIssuer.issue(user);
+        OnboardingCompletionResult result = onboardingCompletionService.complete(claims.userId(), request.toCommand());
+        RefreshToken refreshToken = result.refreshToken();
         ResponseCookie refreshTokenCookie = refreshTokenCookieFactory.create(refreshToken);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessToken.value())
+                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + result.accessToken().value())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(ApiResponse.response(HttpStatus.OK, "온보딩이 완료되었습니다."));
     }
