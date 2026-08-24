@@ -1,6 +1,6 @@
 import type {
 	BlogDetailRequest,
-	CologPublicProfileResponse,
+	BlogPublicProfileResponse,
 	PostDetailResponse,
 	PostPublishResponse,
 	PublishPostRequest,
@@ -27,10 +27,10 @@ export const readBlogPostDetail = ({ slug, postId }: BlogDetailRequest) => {
 	);
 };
 
-export const readBlogPublicProfile = ({ slug }: { slug: string }): Promise<ApiResponse<CologPublicProfileResponse>> => {
+export const readBlogPublicProfile = ({ slug }: { slug: string }): Promise<ApiResponse<BlogPublicProfileResponse>> => {
 	const normalizedSlug = stripAtPrefix(slug);
 
-	return apiClient.get<ApiResponse<CologPublicProfileResponse>>(`v1/blogs/@${encodeURIComponent(normalizedSlug)}`);
+	return apiClient.get<ApiResponse<BlogPublicProfileResponse>>(`v1/blogs/@${encodeURIComponent(normalizedSlug)}`);
 };
 
 export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsRequest) => {

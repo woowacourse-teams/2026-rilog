@@ -1,3 +1,5 @@
+import type { BlogType } from '@/domains/blog/model/blog';
+
 export interface FullFeedPostsRequest {
 	page: number;
 	size: number;
@@ -12,7 +14,7 @@ export interface AuthorResponse {
 }
 
 interface BaseOwnerResponse {
-	type: 'COLOG' | 'RILOG';
+	type: BlogType;
 	blogId: number;
 	slug: string;
 	name: string;
