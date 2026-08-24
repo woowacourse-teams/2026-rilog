@@ -35,7 +35,7 @@ describe('mapBlogPublicProfileResponse', () => {
 		});
 	});
 
-	it('RILOG API 응답의 기본 커버와 개인 블로그 값을 그대로 보존한다', () => {
+	it('RILOG API 응답의 빈 커버와 개인 블로그 값을 그대로 보존한다', () => {
 		const response: BlogPublicProfileResponse = {
 			type: 'RILOG',
 			id: 2,
@@ -43,7 +43,7 @@ describe('mapBlogPublicProfileResponse', () => {
 			slug: 'jetproc',
 			introduction: '기록하며 성장합니다.',
 			profileImageUrl: 'https://example.com/user-profile.png',
-			coverImageUrl: 'https://example.com/rilog-default-cover.png',
+			coverImageUrl: '',
 			serviceUrl: null,
 			githubUrl: 'https://github.com/jetproc',
 			memberCount: 1,
@@ -57,7 +57,7 @@ describe('mapBlogPublicProfileResponse', () => {
 			slug: 'jetproc',
 			description: '기록하며 성장합니다.',
 			profileImageUrl: 'https://example.com/user-profile.png',
-			coverImageUrl: 'https://example.com/rilog-default-cover.png',
+			coverImageUrl: '',
 			serviceUrl: undefined,
 			githubUrl: 'https://github.com/jetproc',
 			memberCount: 1,
