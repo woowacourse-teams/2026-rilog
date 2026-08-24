@@ -30,6 +30,8 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 	const hasServiceUrl = serviceUrl !== '';
 	const hasGitHubUrl = githubUrl !== '';
 	const avatarLabel = profile.type === 'COLOG' ? `${profile.name} 코로그 로고` : `${profile.name} 개인 블로그 프로필`;
+	const avatarShapeClassName = profile.type === 'RILOG' ? 'rounded-full!' : '';
+	const actionSpacingClassName = action ? 'pr-7' : '';
 
 	return (
 		<div
@@ -42,12 +44,12 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 					fallback={profile.name.slice(0, 1)}
 					label={avatarLabel}
 					size="max"
-					className="size-32! sm:size-40! md:size-45!"
+					className={`size-32! sm:size-40! md:size-45! ${avatarShapeClassName}`}
 				/>
 
 				<div className="relative mt-2.5 inline-block max-w-full">
 					<h1
-						className={`max-w-full min-w-0 pr-7 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
+						className={`max-w-full min-w-0 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${actionSpacingClassName} ${coverTextShadowClassName}`}
 					>
 						{profile.name}
 					</h1>

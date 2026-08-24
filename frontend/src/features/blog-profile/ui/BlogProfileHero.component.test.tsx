@@ -39,6 +39,7 @@ describe('BlogProfileHero', () => {
 			'text-text-on-dark',
 			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
 		);
+		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).toHaveClass('pr-7');
 		expect(screen.getByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).toBeInTheDocument();
 	});
 
@@ -93,6 +94,7 @@ describe('BlogProfileHero', () => {
 			/>,
 		);
 
-		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).toHaveClass('rounded-full!');
+		expect(screen.getByRole('heading', { name: '파라디' })).not.toHaveClass('pr-7');
 	});
 });
