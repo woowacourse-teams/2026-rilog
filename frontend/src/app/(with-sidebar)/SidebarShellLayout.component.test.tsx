@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
@@ -8,14 +9,18 @@ import SidebarLayout from './layout';
 
 describe('SidebarLayout', () => {
 	it('사이드바, 모바일 헤더와 페이지 콘텐츠를 함께 조립한다', () => {
+		const queryClient = new QueryClient();
+
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
-				<LoginModalProvider>
-					<SidebarLayout>
-						<main>페이지 콘텐츠</main>
-					</SidebarLayout>
-				</LoginModalProvider>
-			</AUTH_CONTEXT.Provider>,
+			<QueryClientProvider client={queryClient}>
+				<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+					<LoginModalProvider>
+						<SidebarLayout>
+							<main>페이지 콘텐츠</main>
+						</SidebarLayout>
+					</LoginModalProvider>
+				</AUTH_CONTEXT.Provider>
+			</QueryClientProvider>,
 		);
 
 		expect(screen.getByRole('complementary', { name: '사이드바' }).parentElement).toHaveClass('hidden', 'sm:flex');
