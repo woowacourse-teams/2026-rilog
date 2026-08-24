@@ -9,15 +9,16 @@ import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
 import type { PostPublishResponse, PublishPostRequest } from '@/shared/api/blogs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
+import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
-type UploadImage = (request: { file: File; type: 'IMAGE' }) => Promise<{ objectKey: string }>;
+type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PublishPostRequest) => Promise<ApiResponse<PostPublishResponse>>;
 
 const { replaceMock, uploadRepresentativeImageMock, requestPostPublicationMock } = vi.hoisted(() => ({
 	replaceMock: vi.fn(),
-	uploadRepresentativeImageMock: vi.fn<UploadImage>(),
+	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 }));
 
@@ -136,6 +137,28 @@ function BodyImageUploadEditor({ onReady, uploadFile }: PostEditorProps) {
 	);
 }
 
+function BodyPdfUploadEditor({ onReady, uploadFile }: PostEditorProps) {
+	const [uploadedFileUrl, setUploadedFileUrl] = useState('');
+
+	useEffect(() => {
+		onReady([createParagraph('PDF가 있는 본문')]);
+	}, [onReady]);
+
+	return (
+		<>
+			<button
+				type="button"
+				onClick={() => {
+					void uploadFile(new File(['pdf'], 'document.pdf', { type: 'application/pdf' })).then(setUploadedFileUrl);
+				}}
+			>
+				본문 PDF 업로드
+			</button>
+			<output>{uploadedFileUrl}</output>
+		</>
+	);
+}
+
 function FirstBodyImageEditor({ onReady }: PostEditorProps) {
 	useEffect(() => {
 		onReady([
@@ -229,6 +252,21 @@ describe('PostWriteWorkspace', () => {
 		expect(uploadedBodyImage?.file.name).toBe('body.png');
 		expect(uploadedBodyImage?.file.type).toBe('image/png');
 		expect(uploadedBodyImage?.type).toBe('IMAGE');
+	});
+
+	it('본문의 PDF 파일을 범용 파일로 업로드하고 완성된 URL을 에디터에 전달한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://files.rilog.test');
+		uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/document.pdf' });
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={BodyPdfUploadEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '본문 PDF 업로드' }));
+
+		expect(await screen.findByText('https://files.rilog.test/posts/document.pdf')).toBeInTheDocument();
+		const uploadedBodyFile = uploadRepresentativeImageMock.mock.calls[0]?.[0];
+		expect(uploadedBodyFile?.file.name).toBe('document.pdf');
+		expect(uploadedBodyFile?.file.type).toBe('application/pdf');
+		expect(uploadedBodyFile?.type).toBe('FILE');
 	});
 
 	it('모달을 닫았다 열어도 게시 설정을 유지하고 backdrop으로 닫히지 않는다', async () => {
