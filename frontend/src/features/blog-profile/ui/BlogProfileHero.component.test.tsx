@@ -35,27 +35,25 @@ describe('BlogProfileHero', () => {
 			'https://github.com/frontend-lab',
 		);
 		expect(screen.getByRole('button', { name: '팀 설정' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: '팀 설정' }).parentElement).toHaveClass(
-			'text-text-on-dark',
-			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
-		);
-		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).toHaveClass('pr-7');
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '팀 설정' }).parentElement).toHaveClass('text-on-brand-primary');
+		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).not.toHaveClass('pr-7');
+		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
 	});
 
-	it('커버 이미지가 없으면 지정한 연한 파란 배경을 사용한다', () => {
+	it('커버 이미지 유무와 관계없이 primary 배경을 사용한다', () => {
 		render(<BlogProfileHero profile={{ ...COLOG_PROFILE_FIXTURE, coverImageUrl: null }} />);
 
 		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '프론트엔드 연구소 코로그 로고' }).parentElement?.parentElement).toHaveClass(
-			'bg-[#DBE5F5]',
+			'bg-brand-primary',
+			'text-on-brand-primary',
 		);
 	});
 
-	it('커버 이미지 위 텍스트에 shadow를 적용한다', () => {
+	it('Hero 텍스트에 이미지용 shadow를 적용하지 않는다', () => {
 		render(<BlogProfileHero profile={COLOG_PROFILE_FIXTURE} />);
 
-		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).toHaveClass(
+		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).not.toHaveClass(
 			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
 		);
 	});
@@ -95,6 +93,13 @@ describe('BlogProfileHero', () => {
 		);
 
 		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).toHaveClass('rounded-full!');
-		expect(screen.getByRole('heading', { name: '파라디' })).not.toHaveClass('pr-7');
+		const heading = screen.getByRole('heading', { name: '파라디' });
+		expect(heading).not.toHaveClass('pr-7', 'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]');
+		expect(heading.parentElement?.parentElement?.parentElement).toHaveClass(
+			'bg-brand-primary',
+			'text-on-brand-primary',
+		);
+		expect(screen.getByText('사용자 경험을 함께 연구합니다.')).toHaveClass('text-on-brand-primary');
+		expect(screen.queryByRole('img', { name: '파라디 커버 이미지' })).not.toBeInTheDocument();
 	});
 });

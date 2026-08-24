@@ -6,7 +6,7 @@ import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 import BlogHomeHero from './BlogHomeHero';
 
 vi.mock('@/features/colog-settings-access/ui/CologSettingsButton', () => ({
-	default: function MockCologSettingsButton({ slug }: { slug: string }) {
+	default: function MockCologSettingsButton({ slug, isOnCover: _isOnCover }: { slug: string; isOnCover?: boolean }) {
 		return <a href={`/@${slug}/settings?tab=profile`}>코로그 설정</a>;
 	},
 }));
