@@ -37,15 +37,18 @@ public class RefreshTokenRotationService {
                 .orElseThrow(() -> new AuthException(INVALID_REFRESH_TOKEN));
         LocalDateTime now = LocalDateTime.now(clock);
 
-        if (currentSession.isExpired(now)) {
-            throw new AuthException(EXPIRED_REFRESH_TOKEN);
-        }
-
+        validateExpired(currentSession, now);
         User user = userRepository.findById(currentSession.getUserId())
                 .orElseThrow(() -> new AuthException(INVALID_REFRESH_TOKEN));
         validateRefreshable(user, currentSession, now);
 
         return authTokenPairIssuer.issue(user);
+    }
+
+    private void validateExpired(RefreshSession currentSession, LocalDateTime now) {
+        if (currentSession.isExpired(now)) {
+            throw new AuthException(EXPIRED_REFRESH_TOKEN);
+        }
     }
 
     private void validateRefreshable(User user, RefreshSession currentSession, LocalDateTime now) {
