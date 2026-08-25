@@ -13,7 +13,7 @@ import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
-import kr.rilog.domain.user.service.OnboardingCompletionResult;
+import kr.rilog.domain.user.service.dto.result.OnboardingCompletionResult;
 import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;

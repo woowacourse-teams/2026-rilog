@@ -4,6 +4,7 @@ import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
+import kr.rilog.domain.user.service.dto.result.OnboardingCompletionResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

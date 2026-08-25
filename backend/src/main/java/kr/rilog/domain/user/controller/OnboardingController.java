@@ -8,7 +8,7 @@ import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.user.controller.apispec.OnboardingApiSpec;
 import kr.rilog.domain.user.controller.dto.request.OnboardingCompleteRequest;
-import kr.rilog.domain.user.service.OnboardingCompletionResult;
+import kr.rilog.domain.user.service.dto.result.OnboardingCompletionResult;
 import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
