@@ -144,16 +144,41 @@ export default function PostWriteWorkspace({
 		navigate,
 	});
 
+	// TODO: 임시 저장 API 연동 시 아래 상태와 핸들러를 draft 전용 hook으로 분리한다.
+	const [draftPosts, setDraftPosts] = useState([
+		{ id: 1, title: '디자인 시스템 도입 회고', draftedAt: '2026-08-21T04:40:07.585624' },
+		{ id: 2, title: 'TypeScript 타입 설계 회고', draftedAt: '2026-08-20T04:40:07.585624' },
+		{ id: 3, title: '접근성 개선 기록', draftedAt: '2026-08-19T04:40:07.585624' },
+		{ id: 4, title: 'Next.js 마이그레이션', draftedAt: '2026-08-18T04:40:07.585624' },
+	]);
 	const [isDraftListModalOpen, setIsDraftListModalOpen] = useState(false);
+	const [draftPostIdPendingDeletion, setDraftPostIdPendingDeletion] = useState<number | null>(null);
+
 	const selectDraftPost = () => {};
-	const deleteDraftPost = () => {};
+	const requestDraftPostDeletion = (draftPostId: number) => {
+		setDraftPostIdPendingDeletion(draftPostId);
+	};
+	const cancelDraftPostDeletion = () => {
+		setDraftPostIdPendingDeletion(null);
+	};
+	const confirmDraftPostDeletion = () => {
+		if (draftPostIdPendingDeletion === null) {
+			return;
+		}
+
+		setDraftPosts((currentDraftPosts) =>
+			currentDraftPosts.filter((draftPost) => draftPost.id !== draftPostIdPendingDeletion),
+		);
+		setDraftPostIdPendingDeletion(null);
+	};
 
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
 			<WritePublishActionBar
 				isEditorReady={isEditorReady}
+				draftCount={draftPosts.length}
 				onPublish={handleOpenPublishSettings}
-				onShowDraft={() => setIsDraftListModalOpen(true)}
+				onDraftListShow={() => setIsDraftListModalOpen(true)}
 			/>
 			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
 				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
@@ -197,9 +222,21 @@ export default function PostWriteWorkspace({
 
 			<DraftListModal
 				open={isDraftListModalOpen}
+				draftPosts={draftPosts}
 				onClose={() => setIsDraftListModalOpen(false)}
 				onSelect={selectDraftPost}
-				onDelete={deleteDraftPost}
+				onDelete={requestDraftPostDeletion}
+			/>
+
+			<ConfirmModal
+				open={draftPostIdPendingDeletion !== null}
+				title="임시 저장 글을 삭제할까요?"
+				description="삭제한 임시 저장 글은 복구할 수 없습니다."
+				confirmLabel="삭제"
+				cancelLabel="취소"
+				variant="danger"
+				onConfirm={confirmDraftPostDeletion}
+				onCancel={cancelDraftPostDeletion}
 			/>
 
 			<ConfirmModal

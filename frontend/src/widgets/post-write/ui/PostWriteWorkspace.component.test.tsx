@@ -268,6 +268,36 @@ describe('PostWriteWorkspace', () => {
 		expect(postEditorOpenedMock).toHaveBeenCalledOnce();
 	});
 
+	it('임시 저장 글 삭제를 취소하면 목록을 유지하고 확인하면 목록과 개수를 갱신한다', async () => {
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '임시 저장된 글 4개 보기' }));
+		const draftListDialog = screen.getByRole('dialog', { name: '임시 저장된 글' });
+		const firstDeleteButton = within(draftListDialog).getByRole('button', {
+			name: '디자인 시스템 도입 회고 임시 저장 글 삭제',
+		});
+
+		await user.click(firstDeleteButton);
+		const deleteConfirmDialog = screen.getByRole('dialog', { name: '임시 저장 글을 삭제할까요?' });
+		await user.click(within(deleteConfirmDialog).getByRole('button', { name: '취소' }));
+
+		await waitFor(() =>
+			expect(screen.queryByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).not.toBeInTheDocument(),
+		);
+		expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(4);
+
+		await user.click(firstDeleteButton);
+		await user.click(
+			within(screen.getByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).getByRole('button', {
+				name: '삭제',
+			}),
+		);
+
+		await waitFor(() => expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(3));
+		expect(screen.getByRole('button', { name: '임시 저장된 글 3개 보기' })).toBeInTheDocument();
+	});
+
 	it('빈 문서는 설정 모달을 열지 않고 첫 오류로 focus한다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
