@@ -146,15 +146,14 @@ export default function PostWriteWorkspace({
 
 	// TODO: 임시 저장 API 연동 시 아래 상태와 핸들러를 draft 전용 hook으로 분리한다.
 	const [draftPosts, setDraftPosts] = useState([
-		{ id: 1, title: '디자인 시스템 도입 회고', draftedAt: '2026-08-21T04:40:07.585624' },
-		{ id: 2, title: 'TypeScript 타입 설계 회고', draftedAt: '2026-08-20T04:40:07.585624' },
-		{ id: 3, title: '접근성 개선 기록', draftedAt: '2026-08-19T04:40:07.585624' },
+		{ id: 34, title: '디자인 시스템 도입 회고', draftedAt: '2026-08-21T04:40:07.585624' },
+		{ id: 37, title: 'TypeScript 타입 설계 회고', draftedAt: '2026-08-20T04:40:07.585624' },
+		{ id: 21, title: '접근성 개선 기록', draftedAt: '2026-08-19T04:40:07.585624' },
 		{ id: 4, title: 'Next.js 마이그레이션', draftedAt: '2026-08-18T04:40:07.585624' },
 	]);
 	const [isDraftListModalOpen, setIsDraftListModalOpen] = useState(false);
 	const [draftPostIdPendingDeletion, setDraftPostIdPendingDeletion] = useState<number | null>(null);
 
-	const selectDraftPost = () => {};
 	const requestDraftPostDeletion = (draftPostId: number) => {
 		setDraftPostIdPendingDeletion(draftPostId);
 	};
@@ -224,7 +223,6 @@ export default function PostWriteWorkspace({
 				open={isDraftListModalOpen}
 				draftPosts={draftPosts}
 				onClose={() => setIsDraftListModalOpen(false)}
-				onSelect={selectDraftPost}
 				onDelete={requestDraftPostDeletion}
 			/>
 

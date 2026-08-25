@@ -1,5 +1,6 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import XIcon from '@/shared/assets/icons/x.svg';
+import CustomLink from '@/shared/ui/link/CustomLink';
 import Modal from '@/shared/ui/modal/Modal';
 
 interface DraftPostItem {
@@ -12,11 +13,10 @@ interface DraftListModalProps {
 	open: boolean;
 	draftPosts: DraftPostItem[];
 	onClose: () => void;
-	onSelect: (draftPostId: number) => void;
 	onDelete: (draftPostId: number) => void;
 }
 
-export default function DraftListModal({ open, draftPosts, onClose, onSelect, onDelete }: DraftListModalProps) {
+export default function DraftListModal({ open, draftPosts, onClose, onDelete }: DraftListModalProps) {
 	const DRAFT_BUTTON_CLASS_NAME = 'transition-colors hover:bg-navy-50/50 active:bg-navy-200/50';
 
 	return (
@@ -30,14 +30,13 @@ export default function DraftListModal({ open, draftPosts, onClose, onSelect, on
 			<ul className="flex max-h-64 flex-col gap-4">
 				{draftPosts.map((post) => (
 					<li key={post.id} className="flex items-stretch justify-between overflow-clip rounded-lg bg-navy-100">
-						<button
-							type="button"
-							onClick={() => onSelect(post.id)}
+						<CustomLink
+							href={`/write?postId=${post.id}`}
 							className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
 						>
 							<strong className="truncate text-body-3">{post.title}</strong>
 							<span className="text-caption-2 text-text-secondary">{formatPublishedDate(post.draftedAt)}</span>
-						</button>
+						</CustomLink>
 						<button
 							type="button"
 							aria-label={`${post.title} 임시 저장 글 삭제`}
