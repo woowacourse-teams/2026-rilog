@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import type { CologPublicProfileResponse } from '@/shared/api/blogs/types';
+import type { BlogPublicProfileResponse } from '@/shared/api/blogs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 import { blogPublicProfileQueryOptions } from './query-options';
@@ -10,10 +10,10 @@ import { blogPublicProfileQueryOptions } from './query-options';
 interface UseBlogPublicProfileQueryOptions<TData> {
 	slug: string;
 	isEnabled?: boolean;
-	select?: (data: ApiResponse<CologPublicProfileResponse>) => TData;
+	select?: (data: ApiResponse<BlogPublicProfileResponse>) => TData;
 }
 
-export const useBlogPublicProfileQuery = <TData = ApiResponse<CologPublicProfileResponse>>({
+export const useBlogPublicProfileQuery = <TData = ApiResponse<BlogPublicProfileResponse>>({
 	slug,
 	isEnabled = true,
 	select,

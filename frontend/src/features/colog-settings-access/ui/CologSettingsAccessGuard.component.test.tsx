@@ -34,7 +34,7 @@ describe('CologSettingsAccessGuard', () => {
 			</CologSettingsAccessGuard>,
 		);
 
-		expect(screen.getByRole('status', { name: '코로그 설정 접근 권한 확인 중' })).toBeInTheDocument();
+		expect(screen.getByRole('status', { name: '팀 설정 접근 권한 확인 중' })).toBeInTheDocument();
 		expect(screen.queryByText('설정 내용')).not.toBeInTheDocument();
 		expect(replaceMock).not.toHaveBeenCalled();
 	});
@@ -52,7 +52,7 @@ describe('CologSettingsAccessGuard', () => {
 		expect(replaceMock).not.toHaveBeenCalled();
 	});
 
-	it('인증되지 않았으면 로그인 필요 안내 후 코로그 홈으로 이동한다', async () => {
+	it('인증되지 않았으면 로그인 필요 안내 후 팀 홈으로 이동한다', async () => {
 		const user = userEvent.setup();
 		useCologSettingsAccessMock.mockReturnValue('unauthenticated');
 
@@ -68,7 +68,7 @@ describe('CologSettingsAccessGuard', () => {
 		expect(replaceMock).toHaveBeenCalledWith('/@rilog', { scroll: false });
 	});
 
-	it('설정 권한이 없으면 권한 안내 후 코로그 홈으로 이동한다', async () => {
+	it('설정 권한이 없으면 권한 안내 후 팀 홈으로 이동한다', async () => {
 		const user = userEvent.setup();
 		useCologSettingsAccessMock.mockReturnValue('forbidden');
 
@@ -93,8 +93,8 @@ describe('CologSettingsAccessGuard', () => {
 			</CologSettingsAccessGuard>,
 		);
 
-		expect(screen.getByRole('alert')).toHaveTextContent('코로그 설정 접근 권한을 확인하지 못했습니다.');
-		expect(screen.getByRole('link', { name: '코로그 홈으로 돌아가기' })).toHaveAttribute('href', '/@rilog');
+		expect(screen.getByRole('alert')).toHaveTextContent('팀 설정 접근 권한을 확인하지 못했습니다.');
+		expect(screen.getByRole('link', { name: '팀 홈으로 돌아가기' })).toHaveAttribute('href', '/@rilog');
 		expect(screen.queryByText('설정 내용')).not.toBeInTheDocument();
 		expect(replaceMock).not.toHaveBeenCalled();
 	});

@@ -1,7 +1,7 @@
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { useLogoutMutation } from '@/shared/api/auth/mutations/use-logout-mutation';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
-import { APP_ROUTES, buildCologHomePath } from '@/shared/routes/app-routes';
+import { APP_ROUTES, buildBlogHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -42,7 +42,7 @@ export default function AuthenticatedSidebarFooter() {
 			<footer className="w-full shrink-0 border-t border-border-default p-3">
 				<div className="flex w-full items-center gap-1 rounded-xl bg-transparent p-1.5 transition-colors group-hover:bg-surface-hover">
 					<CustomLink
-						href={slug ? buildCologHomePath(slug) : '#'}
+						href={slug ? buildBlogHomePath(slug) : '#'}
 						aria-label={`${nickname} @${slug}`}
 						className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg group-hover:justify-start ${FOCUS_CLASS_NAME}`}
 					>

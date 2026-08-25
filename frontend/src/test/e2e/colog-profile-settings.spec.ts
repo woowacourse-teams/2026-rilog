@@ -16,7 +16,7 @@ test.describe('팀 프로필 설정', () => {
 
 	test('OWNER가 코로그 홈의 설정 버튼으로 기본 설정 탭에 이동한다', async ({ page }) => {
 		await page.goto('/@rilog-e2e');
-		const settingsButton = page.getByRole('link', { name: '코로그 설정' });
+		const settingsButton = page.getByRole('link', { name: '팀 설정' });
 		const heading = page.getByRole('heading', { name: '리로그 E2E' });
 		await expect(settingsButton).toBeVisible();
 		const buttonBox = await settingsButton.boundingBox();

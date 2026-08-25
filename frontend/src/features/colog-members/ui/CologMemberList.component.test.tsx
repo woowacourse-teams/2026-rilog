@@ -17,6 +17,14 @@ describe('CologMemberList', () => {
 		const memberSection = screen.getByRole('region', { name: 'Members' });
 		expect(within(memberSection).getAllByRole('img')).toHaveLength(2);
 		expect(within(memberSection).getByRole('img', { name: '여름 프로필' })).toBeInTheDocument();
+		expect(within(memberSection).getByRole('link', { name: '@saebom 블로그로 이동' })).toHaveAttribute(
+			'href',
+			'/@saebom',
+		);
+		expect(within(memberSection).getByRole('link', { name: '@yeoreum 블로그로 이동' })).toHaveAttribute(
+			'href',
+			'/@yeoreum',
+		);
 	});
 
 	it('멤버가 없으면 빈 상태를 제공한다', () => {

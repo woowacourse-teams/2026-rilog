@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CologPublicProfileResponse } from '@/shared/api/blogs/types';
+import type { BlogPublicProfileResponse } from '@/shared/api/blogs/types';
 
 import { mapCologProfileSettingsResponse } from './map-colog-profile-settings-response';
 
 describe('mapCologProfileSettingsResponse', () => {
 	it('API 프로필 응답을 설정 폼 초기값으로 변환한다', () => {
-		const response: CologPublicProfileResponse = {
+		const response: BlogPublicProfileResponse = {
 			type: 'COLOG',
 			id: 1,
 			name: '리로그 팀',
@@ -34,7 +34,7 @@ describe('mapCologProfileSettingsResponse', () => {
 	});
 
 	it('선택 정보가 null이면 빈 문자열로 변환한다', () => {
-		const response: CologPublicProfileResponse = {
+		const response: BlogPublicProfileResponse = {
 			type: 'COLOG',
 			id: 2,
 			name: '빈 코로그',

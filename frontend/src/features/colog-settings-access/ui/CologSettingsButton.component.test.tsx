@@ -23,10 +23,10 @@ describe('CologSettingsButton', () => {
 
 		render(<CologSettingsButton slug="rilog" />);
 
-		const settingsLink = screen.getByRole('link', { name: '코로그 설정' });
+		const settingsLink = screen.getByRole('link', { name: '팀 설정' });
 		expect(settingsLink).toHaveAttribute('href', '/@rilog/settings?tab=profile');
-		expect(settingsLink).not.toHaveTextContent('코로그 설정');
-		expect(screen.getByRole('tooltip', { hidden: true })).toHaveTextContent('코로그 설정');
+		expect(settingsLink).not.toHaveTextContent('팀 설정');
+		expect(screen.getByRole('tooltip', { hidden: true })).toHaveTextContent('팀 설정');
 	});
 
 	it('커버 이미지 위에서는 밝은 아이콘 색상을 사용한다', () => {
@@ -34,7 +34,7 @@ describe('CologSettingsButton', () => {
 
 		render(<CologSettingsButton slug="rilog" isOnCover />);
 
-		expect(screen.getByRole('link', { name: '코로그 설정' })).toHaveStyle({ color: 'var(--text-on-dark)' });
+		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveStyle({ color: 'var(--text-on-dark)' });
 	});
 
 	it.each(['initializing', 'checking', 'unauthenticated', 'forbidden', 'error'] as const)(

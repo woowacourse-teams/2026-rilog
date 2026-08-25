@@ -27,6 +27,7 @@ describe('PostFeedCard', () => {
 		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' })).toHaveClass('text-body-3');
 		expect(screen.getByText('리로거')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '리로거 프로필' })).toHaveTextContent('리');
+		expect(screen.getAllByRole('link')).toHaveLength(1);
 		expect(screen.getByText('2026년 8월 4일')).toHaveAttribute('datetime', PERSONAL_POST.publishedAt);
 	});
 
