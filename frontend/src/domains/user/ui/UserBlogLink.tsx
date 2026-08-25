@@ -6,15 +6,11 @@ import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 
 interface UserBlogLinkProps {
 	children: ReactNode;
-	slug?: string;
+	slug: string;
 }
 
 export default function UserBlogLink({ children, slug }: UserBlogLinkProps) {
 	const normalizedSlug = slug === undefined ? '' : stripAtPrefix(slug);
-
-	if (normalizedSlug === '') {
-		return children;
-	}
 
 	return (
 		<CustomLink
