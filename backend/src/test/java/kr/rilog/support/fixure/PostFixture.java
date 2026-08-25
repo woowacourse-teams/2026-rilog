@@ -9,6 +9,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.user.entity.User;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -146,6 +147,18 @@ public final class PostFixture {
                 Category.DAILY,
                 PostVisibility.PRIVATE,
                 "https://example.com/updated-thumbnail.png"
+        );
+    }
+
+    public static PostUpdateCommand updateCommandTo(String newSlug) {
+        PostDetail detail = updatedPostDetail();
+        return new PostUpdateCommand(
+                newSlug,
+                detail.title(),
+                detail.content(),
+                detail.category(),
+                detail.visibility(),
+                detail.thumbnailUrl()
         );
     }
 

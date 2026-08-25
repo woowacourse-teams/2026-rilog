@@ -28,6 +28,15 @@ public final class BlogMemberFixture {
                 .build();
     }
 
+    public static BlogMember leftMember(Blog blog, User user) {
+        return BlogMember.builder()
+                .blog(blog)
+                .user(user)
+                .permission(BlogPermission.MEMBER)
+                .status(BlogMemberStatus.LEFT)
+                .build();
+    }
+
     public static BlogMember blogMember(Blog blog, User user) {
         return BlogMember.builder()
                 .blog(blog)

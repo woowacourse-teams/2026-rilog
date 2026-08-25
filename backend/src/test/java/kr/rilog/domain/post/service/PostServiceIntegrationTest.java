@@ -9,10 +9,13 @@ import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -28,11 +31,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.ALREADY_BLOG_MEMBER_LEFT;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
+import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -96,7 +101,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User writer = saveCompletedUser(2L, "팀작성자", "colog-writer");
         Blog rilog = saveRilog(writer);
         Blog colog = saveColog(writer, "team-colog");
-        saveOwnerMembership(colog, writer);
         PostSaveCommand command = PostFixture.publicPostPublishCommand();
 
         // when
@@ -120,7 +124,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         // given
         User owner = saveCompletedUser(3L, "팀소유자", "team-owner");
         Blog colog = saveColog(owner, "owner-colog");
-        saveOwnerMembership(colog, owner);
         User writer = saveCompletedUser(4L, "비멤버", "non-member");
         saveRilog(writer);
 
@@ -162,7 +165,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         // given
         User owner = saveCompletedUser(7L, "팀블로그주인", "colog-owner");
         Blog colog = saveColog(owner, "missing-rilog-colog");
-        saveOwnerMembership(colog, owner);
         User writer = saveCompletedUser(8L, "개인블로그없음", "writer-without-rilog");
         saveActiveMember(colog, writer);
 
@@ -231,6 +233,149 @@ class PostServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(USER_NOT_FOUND.getMessage());
 
         assertThat(postRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("같은 개인 블로그에서 게시글을 수정하면 상세 정보가 저장되고 현재 소속을 반환한다.")
+    void updateInSameRilogPersistsDetailAndReturnsCurrentAffiliation() {
+        // given
+        User writer = saveCompletedUser(23L, "수정작성자", "update-writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+        PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
+
+        // when
+        PostUpdateResult result = postService.update(command, post.getId(), writer.getId());
+
+        // then
+        Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+
+        assertThat(result).isEqualTo(new PostUpdateResult(post.getId(), rilog.getSlug()));
+        assertThat(detailOf(savedPost)).isEqualTo(command.toDetail());
+    }
+
+    @Test
+    @DisplayName("개인 블로그 게시글을 팀 블로그로 수정하면 대상 팀 블로그에 소속되고 대상 소속을 반환한다.")
+    void updateFromRilogToCologPersistsAndReturnsTargetAffiliation() {
+        // given
+        User writer = saveCompletedUser(24L, "팀이동작성자", "move-to-colog-writer");
+        Blog rilog = saveRilog(writer);
+        Blog targetColog = saveColog(writer, "update-target-colog");
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+        PostUpdateCommand command = PostFixture.updateCommandTo(targetColog.getSlug());
+
+        // when
+        PostUpdateResult result = postService.update(command, post.getId(), writer.getId());
+
+        // then
+        Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+
+        assertThat(result).isEqualTo(new PostUpdateResult(post.getId(), targetColog.getSlug()));
+        assertThat(savedPost.getColog().getId()).isEqualTo(targetColog.getId());
+    }
+
+    @Test
+    @DisplayName("팀 블로그 게시글을 개인 블로그로 수정하면 팀 블로그 소속이 해제되고 개인 소속을 반환한다.")
+    void updateFromCologToRilogRemovesAndReturnsRilogAffiliation() {
+        // given
+        User writer = saveCompletedUser(25L, "개인이동작성자", "move-to-rilog-writer");
+        Blog rilog = saveRilog(writer);
+        Blog colog = saveColog(writer, "update-source-colog");
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+        PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
+
+        // when
+        PostUpdateResult result = postService.update(command, post.getId(), writer.getId());
+
+        // then
+        Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+
+        assertThat(result).isEqualTo(new PostUpdateResult(post.getId(), rilog.getSlug()));
+        assertThat(savedPost.getColog()).isNull();
+    }
+
+    @Test
+    @DisplayName("초안 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
+    void updateDraftPostThrowsAndPreservesDetail() {
+        // given
+        User writer = saveCompletedUser(26L, "초안작성자", "draft-update-writer");
+        Blog rilog = saveRilog(writer);
+        Post draftPost = savePost(PostFixture.publicDraftRilogPost(rilog, writer));
+        PostDetail originalDetail = detailOf(draftPost);
+        PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
+
+        // when & then
+        assertThatThrownBy(() -> postService.update(command, draftPost.getId(), writer.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_NOT_FOUND.getMessage());
+
+        Post savedPost = postRepository.findDetailById(draftPost.getId()).orElseThrow();
+        assertThat(detailOf(savedPost)).isEqualTo(originalDetail);
+    }
+
+    @Test
+    @DisplayName("작성자가 아닌 사용자가 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
+    void updateByNonWriterThrowsAndPreservesDetail() {
+        // given
+        User writer = saveCompletedUser(27L, "원본작성자", "original-writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+        User requester = saveCompletedUser(28L, "다른수정자", "other-update-writer");
+        PostDetail originalDetail = detailOf(post);
+        PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
+
+        // when & then
+        assertThatThrownBy(() -> postService.update(command, post.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(NOT_POST_AUTHOR.getMessage());
+
+        Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+        assertThat(detailOf(savedPost)).isEqualTo(originalDetail);
+    }
+
+    @Test
+    @DisplayName("현재 블로그에서 탈퇴한 작성자가 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
+    void updateByLeftCurrentBlogMemberThrowsAndPreservesDetail() {
+        // given
+        User cologOwner = saveCompletedUser(29L, "현재팀소유자", "current-colog-owner");
+        Blog currentColog = saveColog(cologOwner, "left-current-colog");
+        User writer = saveCompletedUser(30L, "현재탈퇴작성자", "left-current-writer");
+        Blog rilog = saveRilog(writer);
+        saveLeftMember(currentColog, writer);
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, currentColog, writer));
+        PostDetail originalDetail = detailOf(post);
+        PostUpdateCommand command = PostFixture.updateCommandTo(currentColog.getSlug());
+
+        // when & then
+        assertThatThrownBy(() -> postService.update(command, post.getId(), writer.getId()))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
+
+        Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+        assertThat(detailOf(savedPost)).isEqualTo(originalDetail);
+    }
+
+    @Test
+    @DisplayName("대상 블로그에서 탈퇴한 작성자가 게시글을 수정하면 예외가 발생하고 게시글 상태가 유지된다.")
+    void updateToBlogWhereWriterLeftThrowsAndPreservesPost() {
+        // given
+        User cologOwner = saveCompletedUser(31L, "대상팀소유자", "target-colog-owner");
+        Blog targetColog = saveColog(cologOwner, "left-target-colog");
+        User writer = saveCompletedUser(32L, "대상탈퇴작성자", "left-target-writer");
+        Blog rilog = saveRilog(writer);
+        saveLeftMember(targetColog, writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+        PostDetail originalDetail = detailOf(post);
+        PostUpdateCommand command = PostFixture.updateCommandTo(targetColog.getSlug());
+
+        // when & then
+        assertThatThrownBy(() -> postService.update(command, post.getId(), writer.getId()))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
+
+        Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+        assertThat(detailOf(savedPost)).isEqualTo(originalDetail);
+        assertThat(savedPost.getColog()).isNull();
     }
 
     @Test
@@ -335,7 +480,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User deletedMember = saveCompletedUser(20L, "삭제팀멤버", "deleted-colog-member");
 
         // 집계 대상
-        saveOwnerMembership(colog, owner);
         saveActiveMember(colog, member);
 
         // 집계 제외
@@ -359,7 +503,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User owner = saveCompletedUser(21L, "게시글집계팀주인", "post-count-owner");
         Blog rilog = saveRilog(owner);
         Blog colog = saveColog(owner, "post-count-colog");
-        saveOwnerMembership(colog, owner);
 
         // 집계 대상
         Post readTarget = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
@@ -416,11 +559,15 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     private Blog saveRilog(User owner) {
-        return blogRepository.saveAndFlush(Blog.createRilog(owner));
+        Blog blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
+        saveOwnerMembership(blog, owner);
+        return blog;
     }
 
     private Blog saveColog(User owner, String slug) {
-        return blogRepository.saveAndFlush(Blog.createColog(owner, slug, BlogFixture.cologProfile()));
+        Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, slug, BlogFixture.cologProfile()));
+        saveOwnerMembership(blog, owner);
+        return blog;
     }
 
     private BlogMember saveOwnerMembership(Blog blog, User owner) {
@@ -437,6 +584,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
         ));
     }
 
+    private BlogMember saveLeftMember(Blog blog, User user) {
+        return blogMemberRepository.saveAndFlush(BlogMemberFixture.leftMember(blog, user));
+    }
+
     private BlogMember saveDeletedActiveMember(Blog blog, User user) {
         BlogMember member = saveActiveMember(blog, user);
         member.delete();
@@ -445,6 +596,16 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     private Post savePost(Post post) {
         return postRepository.saveAndFlush(post);
+    }
+
+    private PostDetail detailOf(Post post) {
+        return new PostDetail(
+                post.getTitle(),
+                post.getContent(),
+                post.getCategory(),
+                post.getVisibility(),
+                post.getThumbnailImageUrl()
+        );
     }
 
 }
