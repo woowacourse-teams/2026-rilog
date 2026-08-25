@@ -106,4 +106,18 @@ class SlugTest {
                 .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
     }
 
+    @Test
+    @DisplayName("서로 다른 슬러그에 different()를 사용하면 True를 반환한다.")
+    void isDifferent() {
+        // given
+        Slug slug1 = Slug.from("rilog-01");
+        Slug slug2 = Slug.from("rilog-02");
+
+        // when
+        boolean result = slug1.isDifferent(slug2);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
 }
