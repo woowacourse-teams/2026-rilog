@@ -71,4 +71,9 @@ public class PostContent {
         }
         return Optional.of(url.asString());
     }
+
+    public JsonNode getContent() {
+        return value;
+    }
+
 }
