@@ -5,7 +5,7 @@ import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenProvider;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -29,12 +29,12 @@ class AuthTokenPairIssuerTest {
                 .globalRole(GlobalRole.ADMIN)
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
-        RefreshTokenIssuer refreshTokenIssuer = mock(RefreshTokenIssuer.class);
-        when(refreshTokenIssuer.issue(user)).thenReturn(RefreshToken.of("refresh-token"));
+        RefreshTokenProvider refreshTokenProvider = mock(RefreshTokenProvider.class);
+        when(refreshTokenProvider.issue(user)).thenReturn(RefreshToken.of("refresh-token"));
 
         AuthTokenPairIssuer issuer = new AuthTokenPairIssuer(
                 new FixedAccessTokenProvider(),
-                refreshTokenIssuer
+                refreshTokenProvider
         );
 
         // when

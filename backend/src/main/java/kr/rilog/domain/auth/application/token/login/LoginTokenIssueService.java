@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class LoginTokenIssuer {
+public class LoginTokenIssueService {
 
     private final OnboardingTokenProvider onboardingTokenProvider;
     private final AuthTokenPairIssuer authTokenPairIssuer;

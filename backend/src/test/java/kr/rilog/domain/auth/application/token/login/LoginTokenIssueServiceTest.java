@@ -19,14 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-class LoginTokenIssuerTest {
+class LoginTokenIssueServiceTest {
 
     @Test
     @DisplayName("PENDING 사용자는 Onboarding Token만 발급한다")
     void issueReturnsPendingResultForPendingUser() {
         // given
         AuthTokenPairIssuer authTokenPairIssuer = mock(AuthTokenPairIssuer.class);
-        LoginTokenIssuer issuer = new LoginTokenIssuer(
+        LoginTokenIssueService issuer = new LoginTokenIssueService(
                 new FixedOnboardingTokenProvider(),
                 authTokenPairIssuer
         );
@@ -52,7 +52,7 @@ class LoginTokenIssuerTest {
                         AccessToken.of("access-token"),
                         RefreshToken.of("refresh-token")
                 ));
-        LoginTokenIssuer issuer = new LoginTokenIssuer(
+        LoginTokenIssueService issuer = new LoginTokenIssueService(
                 new FixedOnboardingTokenProvider(),
                 authTokenPairIssuer
         );

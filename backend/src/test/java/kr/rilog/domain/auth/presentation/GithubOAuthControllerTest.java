@@ -8,9 +8,9 @@ import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginUserService;
-import kr.rilog.domain.auth.application.token.login.LoginTokenIssuer;
+import kr.rilog.domain.auth.application.token.login.LoginTokenIssueService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenProvider;
 import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import kr.rilog.domain.auth.application.oauth.SocialLoginUser;
 import kr.rilog.domain.auth.application.oauth.StartOAuthLogin;
@@ -273,7 +273,7 @@ class GithubOAuthControllerTest {
                         List.of(new StubOAuthUserClient()),
                         loginUserService
                 ),
-                new LoginTokenIssuer(
+                new LoginTokenIssueService(
                         new FixedOnboardingTokenProvider(),
                         new AuthTokenPairIssuer(
                                 new FixedAccessTokenProvider(),
@@ -294,9 +294,9 @@ class GithubOAuthControllerTest {
                 .build();
     }
 
-    private RefreshTokenIssuer refreshTokenIssuer() {
+    private RefreshTokenProvider refreshTokenIssuer() {
         RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
-        return new RefreshTokenIssuer(
+        return new RefreshTokenProvider(
                 new FixedRefreshTokenGenerator(),
                 new FixedRefreshTokenHasher(),
                 refreshSessionStore,

@@ -202,7 +202,7 @@ class RefreshTokenRotationServiceTest {
             RefreshTokenHasher refreshTokenHasher,
             RefreshTokenGenerator refreshTokenGenerator
     ) {
-        RefreshTokenIssuer refreshTokenIssuer = new RefreshTokenIssuer(
+        RefreshTokenProvider refreshTokenProvider = new RefreshTokenProvider(
                 refreshTokenGenerator,
                 refreshTokenHasher,
                 refreshSessionStore,
@@ -211,7 +211,7 @@ class RefreshTokenRotationServiceTest {
         );
         AuthTokenPairIssuer authTokenPairIssuer = new AuthTokenPairIssuer(
                 new FixedAccessTokenProvider(),
-                refreshTokenIssuer
+                refreshTokenProvider
         );
         return new RefreshTokenRotationService(
                 refreshTokenHasher,

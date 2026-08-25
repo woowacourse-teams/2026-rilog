@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-class RefreshTokenIssuerTest {
+class RefreshTokenProviderTest {
 
     private static final Clock CLOCK = Clock.fixed(
             Instant.parse("2026-08-13T00:00:00Z"),
@@ -36,7 +36,7 @@ class RefreshTokenIssuerTest {
         // given
         RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
 
-        RefreshTokenIssuer refreshTokenIssuer = new RefreshTokenIssuer(
+        RefreshTokenProvider refreshTokenProvider = new RefreshTokenProvider(
                 new FixedRefreshTokenGenerator("raw-refresh-token"),
                 new FixedRefreshTokenHasher("hashed-refresh-token"),
                 refreshSessionStore,
@@ -45,7 +45,7 @@ class RefreshTokenIssuerTest {
         );
 
         // when
-        RefreshToken refreshToken = refreshTokenIssuer.issue(loginUser());
+        RefreshToken refreshToken = refreshTokenProvider.issue(loginUser());
 
         // then
         assertThat(refreshToken.value()).isEqualTo("raw-refresh-token");
@@ -57,7 +57,7 @@ class RefreshTokenIssuerTest {
     void refreshSessionStoresUserHashAndExpiration() {
         // given
         RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
-        RefreshTokenIssuer refreshTokenIssuer = new RefreshTokenIssuer(
+        RefreshTokenProvider refreshTokenProvider = new RefreshTokenProvider(
                 new FixedRefreshTokenGenerator("raw-refresh-token"),
                 new FixedRefreshTokenHasher("hashed-refresh-token"),
                 refreshSessionStore,
@@ -66,7 +66,7 @@ class RefreshTokenIssuerTest {
         );
 
         // when
-        refreshTokenIssuer.issue(loginUser());
+        refreshTokenProvider.issue(loginUser());
 
         // then
         ArgumentCaptor<RefreshSession> sessionCaptor = ArgumentCaptor.forClass(RefreshSession.class);

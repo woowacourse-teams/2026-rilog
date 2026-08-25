@@ -5,7 +5,7 @@ import kr.rilog.domain.auth.application.oauth.OAuthLoginResult;
 import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import kr.rilog.domain.auth.application.oauth.StartOAuthLogin;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
-import kr.rilog.domain.auth.application.token.login.LoginTokenIssuer;
+import kr.rilog.domain.auth.application.token.login.LoginTokenIssueService;
 import kr.rilog.domain.auth.application.token.login.LoginTokenResult;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
@@ -36,7 +36,7 @@ public class GithubOAuthController {
 
     private final StartOAuthLogin startOAuthLogin;
     private final CompleteOAuthLogin completeOAuthLogin;
-    private final LoginTokenIssuer loginTokenIssuer;
+    private final LoginTokenIssueService loginTokenIssueService;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
     @GetMapping("/v1/auth/github")
@@ -61,7 +61,7 @@ public class GithubOAuthController {
                 loginUser.getOnboardingStatus(),
                 result.redirectUrl()
         );
-        LoginTokenResult tokenResult = loginTokenIssuer.issue(loginUser);
+        LoginTokenResult tokenResult = loginTokenIssueService.issue(loginUser);
 
         return switch (tokenResult) {
             case LoginTokenResult.Pending pending -> onboardingResponse(
