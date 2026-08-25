@@ -8,10 +8,8 @@ import type { Block } from '@blocknote/core';
 import type { CologOption } from '@/domains/blog/model/colog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { analytics } from '@/features/analytics/model/events';
-import { validatePostDocument } from '@/features/post-write/lib/validate-post-document';
-import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
+import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
 import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
-import type { PostDocumentErrors } from '@/features/post-write/model/post-write-validation';
 import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
@@ -39,14 +37,8 @@ export function usePostWriteWorkspace({
 }: UsePostWriteWorkspaceOptions) {
 	const router = useRouter();
 
-	const titleRef = useRef<HTMLTextAreaElement>(null);
-	const editorRef = useRef<PostEditorHandle>(null);
-	const latestBlocksRef = useRef<Block[]>(initialDocument?.blocks ?? []);
 	const selectedImageUrlRef = useRef<string | null>(null);
 
-	const [title, setTitle] = useState(initialDocument?.title ?? '');
-	const [isEditorReady, setIsEditorReady] = useState(false);
-	const [isDirty, setIsDirty] = useState(false);
 	const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 	const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -57,8 +49,20 @@ export function usePostWriteWorkspace({
 		initialPublicationSettings ?? INITIAL_PUBLICATION_SETTINGS,
 	);
 
-	const [documentErrors, setDocumentErrors] = useState<PostDocumentErrors>({});
 	const [cologError, setCologError] = useState<string>();
+	const {
+		titleRef,
+		editorRef,
+		title,
+		isEditorReady,
+		isDirty,
+		documentErrors,
+		handleTitleChange,
+		handleEditorReady,
+		handleEditorChange,
+		preparePostDocument,
+		markClean,
+	} = usePostDocument({ initialDocument });
 
 	const isPublishing = publishState.status === 'pending';
 	const publishError = publishState.status === 'error' ? publishState.message : undefined;
@@ -84,10 +88,6 @@ export function usePostWriteWorkspace({
 		onReplace: replaceNavigation,
 	});
 
-	useEffect(() => {
-		titleRef.current?.focus();
-	}, []);
-
 	useEffect(
 		() => () => {
 			if (selectedImageUrlRef.current !== null) {
@@ -96,40 +96,6 @@ export function usePostWriteWorkspace({
 		},
 		[],
 	);
-
-	const handleEditorReady = useCallback((blocks: Block[]) => {
-		latestBlocksRef.current = blocks;
-		setIsEditorReady(true);
-	}, []);
-
-	const handleTitleChange = (nextTitle: string) => {
-		setTitle(nextTitle);
-		setIsDirty(true);
-		setDocumentErrors((currentErrors) => ({ ...currentErrors, title: undefined }));
-	};
-
-	const handleEditorChange = useCallback((blocks: Block[]) => {
-		latestBlocksRef.current = blocks;
-		setIsDirty(true);
-		setDocumentErrors((currentErrors) => ({ ...currentErrors, body: undefined }));
-	}, []);
-
-	const preparePostDocument = (): EditorDocument | null => {
-		const nextErrors = validatePostDocument(title, latestBlocksRef.current);
-		setDocumentErrors(nextErrors);
-
-		if (nextErrors.title !== undefined) {
-			titleRef.current?.focus();
-			return null;
-		}
-
-		if (nextErrors.body !== undefined) {
-			editorRef.current?.focus();
-			return null;
-		}
-
-		return { title: title.trim(), blocks: [...latestBlocksRef.current] };
-	};
 
 	const handleOpenPublishSettings = () => {
 		const document = preparePostDocument();
@@ -191,7 +157,7 @@ export function usePostWriteWorkspace({
 			});
 
 			clearGuardEntry();
-			setIsDirty(false);
+			markClean();
 			setIsPublishModalOpen(false);
 
 			if (selectedImageUrlRef.current !== null) {
@@ -224,7 +190,7 @@ export function usePostWriteWorkspace({
 
 	const handleConfirmLeave = () => {
 		setIsLeaveModalOpen(false);
-		setIsDirty(false);
+		markClean();
 		void continuePendingNavigation();
 	};
 
