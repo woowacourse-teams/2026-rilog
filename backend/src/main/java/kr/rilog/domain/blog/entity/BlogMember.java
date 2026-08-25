@@ -92,4 +92,10 @@ public class BlogMember extends BaseEntity {
         }
     }
 
+    public void validateActiveMember() {
+        if (status != ACTIVE) {
+            throw new BlogException(ALREADY_BLOG_MEMBER_LEFT);
+        }
+    }
+
 }

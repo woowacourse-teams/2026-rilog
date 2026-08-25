@@ -4,13 +4,13 @@ import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.support.fixure.BlogMemberFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.support.fixure.BlogFixture.*;
 
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_INVALID;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITATION_PERMISSION_INVALID;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -145,6 +145,18 @@ class BlogMemberTest {
                 .permission(permission)
                 .status(status)
                 .build();
+    }
+
+    @Test
+    @DisplayName("ACTIVE가 아니면 탈퇴한 회원입니다.")
+    void validateActiveMember() {
+        // given
+        BlogMember blogMember = BlogMemberFixture.leftMember();
+
+        // when & then
+        assertThatThrownBy(blogMember::validateActiveMember)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
     }
 
 }
