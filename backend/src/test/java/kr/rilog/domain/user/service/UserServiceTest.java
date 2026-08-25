@@ -3,6 +3,7 @@ package kr.rilog.domain.user.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -22,7 +23,6 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALR
 import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -34,7 +34,8 @@ class UserServiceTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final BlogRepository blogRepository = mock(BlogRepository.class);
-    private final UserService userService = new UserService(userRepository, blogRepository);
+    private final BlogMemberRepository blogMemberRepository = mock(BlogMemberRepository.class);
+    private final UserService userService = new UserService(userRepository, blogRepository, blogMemberRepository);
 
     @Test
     @DisplayName("PENDING 사용자는 온보딩을 완료할 수 있다")
