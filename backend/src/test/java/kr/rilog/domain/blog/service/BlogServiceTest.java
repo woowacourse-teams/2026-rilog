@@ -1,11 +1,15 @@
 package kr.rilog.domain.blog.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
@@ -20,12 +24,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,6 +44,7 @@ class BlogServiceTest {
     private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long REQUESTER_ID = 1L;
     private static final Long COLOG_ID = 2L;
+    private static final Long RILOG_ID = 3L;
 
     @Mock
     private BlogRepository blogRepository;
@@ -111,34 +116,6 @@ class BlogServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         verify(blogRepository).existsByProfileName(profileName);
-    }
-
-    @Test
-    @DisplayName("프로필 이름 변경 시 자기 자신을 제외하고 중복을 검사한다")
-    void validateDuplicatedProfileNameExceptSelfPassesWhenOnlySelfHasProfileName() {
-        // given
-        String profileName = "리로그";
-        when(blogRepository.existsByProfileNameExceptId(profileName, COLOG_ID)).thenReturn(false);
-
-        // when - then
-        assertThatCode(() -> blogService.validateDuplicatedProfileName(profileName, COLOG_ID))
-                .doesNotThrowAnyException();
-        verify(blogRepository).existsByProfileNameExceptId(profileName, COLOG_ID);
-    }
-
-    @Test
-    @DisplayName("프로필 이름 변경 시 다른 블로그의 이름과 중복되면 예외가 발생한다")
-    void validateDuplicatedProfileNameExceptSelfThrowsWhenOtherBlogHasProfileName() {
-        // given
-        String profileName = "리로그";
-        when(blogRepository.existsByProfileNameExceptId(profileName, COLOG_ID)).thenReturn(true);
-
-        // when - then
-        assertThatThrownBy(() -> blogService.validateDuplicatedProfileName(profileName, COLOG_ID))
-                .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
-        verify(blogRepository).existsByProfileNameExceptId(profileName, COLOG_ID);
     }
 
     @Test
@@ -251,17 +228,82 @@ class BlogServiceTest {
     }
 
     @Test
-    @DisplayName("나의 팀 목록을 조회하면 요청자가 활동 중인 팀을 조회한다")
-    void getMyCologsPreviewFindsActiveCologsByRequesterId() {
+    @DisplayName("ADMIN이 COLOG 프로필을 변경하면 자기 자신을 제외하고 이름 중복을 검사한다")
+    void changeBlogProfileForCologValidatesDuplicateProfileNameExceptSelf() {
         // given
-        when(blogRepository.findAllActiveCologsByUserId(REQUESTER_ID))
-                .thenReturn(List.of());
+        User admin = createCompletedOwner();
+        Blog colog = createDetailedColog(admin);
+        BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
+        BlogProfileUpdateCommand command = updateCommand("새 리로그 팀");
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("team_Rilog"))).thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, REQUESTER_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogRepository.existsByProfileNameExceptId(command.name(), COLOG_ID)).thenReturn(false);
 
         // when
-        blogService.getMyCologsPreview(REQUESTER_ID);
+        blogService.changeBlogProfile(REQUESTER_ID, "team_Rilog", command);
 
         // then
-        verify(blogRepository).findAllActiveCologsByUserId(REQUESTER_ID);
+        verify(blogRepository).existsByProfileNameExceptId(command.name(), COLOG_ID);
+        assertThat(colog.getName()).isEqualTo("새 리로그 팀");
+    }
+
+    @Test
+    @DisplayName("COLOG 프로필 변경 시 다른 블로그 이름과 중복되면 변경을 거부한다")
+    void changeBlogProfileForCologRejectsDuplicateProfileName() {
+        // given
+        User admin = createCompletedOwner();
+        Blog colog = createDetailedColog(admin);
+        BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
+        BlogProfileUpdateCommand command = updateCommand("중복 팀");
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("team_Rilog"))).thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, REQUESTER_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogRepository.existsByProfileNameExceptId(command.name(), COLOG_ID)).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> blogService.changeBlogProfile(REQUESTER_ID, "team_Rilog", command))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        assertThat(colog.getName()).isEqualTo("리로그");
+    }
+
+    @Test
+    @DisplayName("RILOG 소유자가 개인 프로필을 변경하면 자기 자신을 제외하고 이름 중복을 검사한다")
+    void changeBlogProfileForRilogAllowsOwner() {
+        // given
+        User owner = createCompletedOwner();
+        Blog rilog = createDetailedRilog(owner);
+        BlogProfileUpdateCommand command = updateCommand("새 개인 블로그");
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("riro"))).thenReturn(Optional.of(rilog));
+        when(blogRepository.existsByProfileNameExceptId(command.name(), RILOG_ID)).thenReturn(false);
+
+        // when
+        blogService.changeBlogProfile(REQUESTER_ID, "riro", command);
+
+        // then
+        verify(blogMemberRepository, never()).findByBlogIdAndUserIdAndStatus(any(), any(), any());
+        verify(blogRepository).existsByProfileNameExceptId(command.name(), RILOG_ID);
+        assertThat(rilog.getName()).isEqualTo("새 개인 블로그");
+    }
+
+    @Test
+    @DisplayName("RILOG 소유자가 아니면 개인 프로필 변경을 거부한다")
+    void changeBlogProfileForRilogRejectsNonOwner() {
+        // given
+        User owner = createCompletedOwner();
+        Blog rilog = createDetailedRilog(owner);
+        BlogProfileUpdateCommand command = updateCommand("새 개인 블로그");
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("riro"))).thenReturn(Optional.of(rilog));
+
+        // when - then
+        assertThatThrownBy(() -> blogService.changeBlogProfile(99L, "riro", command))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
+        verify(blogRepository, never()).existsByProfileNameExceptId(command.name(), RILOG_ID);
+        assertThat(rilog.getName()).isEqualTo("러로");
     }
 
     private Blog createDetailedColog(User owner) {
@@ -284,6 +326,43 @@ class BlogServiceTest {
                 .githubUrl("https://github.com/riro")
                 .email(Email.from("riro@example.com"))
                 .build();
+    }
+
+    private Blog createDetailedRilog(User owner) {
+        return Blog.builder()
+                .id(RILOG_ID)
+                .owner(owner)
+                .slug(Slug.from("riro"))
+                .profile(Profile.createRilog(
+                        owner.getNickname(),
+                        owner.getIntroduction(),
+                        owner.getProfileImageUrl(),
+                        owner.getEmail(),
+                        owner.getGithubUrl()
+                ))
+                .blogType(BlogType.RILOG)
+                .build();
+    }
+
+    private BlogMember createMember(Blog blog, User user, BlogPermission permission) {
+        return BlogMember.builder()
+                .blog(blog)
+                .user(user)
+                .permission(permission)
+                .status(BlogMemberStatus.ACTIVE)
+                .build();
+    }
+
+    private BlogProfileUpdateCommand updateCommand(String name) {
+        return new BlogProfileUpdateCommand(
+                "https://example.com/new-profile.png",
+                "https://example.com/new-cover.png",
+                name,
+                "새 소개",
+                "https://new-rilog.example.com",
+                "https://github.com/new-rilog",
+                "new-rilog@example.com"
+        );
     }
 
     private Profile createCologProfile() {

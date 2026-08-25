@@ -1,5 +1,6 @@
 package kr.rilog.domain.blog.service;
 
+import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
@@ -9,7 +10,6 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
-import kr.rilog.domain.blog.service.dto.command.CologProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -77,15 +78,10 @@ public class CologService {
         return CologMemberInviteResult.from(savedMember);
     }
 
-    @Transactional
-    public void changeCologProfile(Long requesterId, String slug, CologProfileUpdateCommand command) {
-        Blog colog = getColog(slug);
-
-        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
-        requesterMember.validateHasAdminPermission();
-
-        validateProfileNameUniqueExceptSelf(command.name(), colog.getId());
-        colog.changeProfile(command.toProfile());
+    public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
+        return blogRepository.findAllActiveCologsByUserId(requesterId).stream()
+                .map(MyCologResponse::of)
+                .toList();
     }
 
     private User getUser(Long ownerId) {
@@ -117,12 +113,6 @@ public class CologService {
 
     private void validateProfileNameUnique(String profileName) {
         if (blogRepository.existsByProfileName(profileName)) {
-            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
-        }
-    }
-
-    private void validateProfileNameUniqueExceptSelf(String profileName, Long blogId) {
-        if (blogRepository.existsByProfileNameExceptId(profileName, blogId)) {
             throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         }
     }

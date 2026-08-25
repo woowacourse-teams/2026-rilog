@@ -6,9 +6,9 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.CologApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
-import kr.rilog.domain.blog.controller.dto.request.CologProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
+import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
@@ -16,6 +16,8 @@ import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/v1")
@@ -50,14 +52,10 @@ public class CologController implements CologApiSpec {
     }
 
     @AuthGuard
-    @PatchMapping("/cologs/{slug}/profiles")
-    public ApiResponse<Void> updateCologProfile(
-            @LoginUserId Long requesterId,
-            @PathVariable("slug") String slug,
-            @Valid @RequestBody CologProfileUpdateRequest dto
-    ) {
-        cologService.changeCologProfile(requesterId, slug, dto.toCommand());
-        return ApiResponse.response(HttpStatus.CREATED, "팀 프로필을 수정했습니다.");
+    @GetMapping("/users/me/cologs/preview")
+    public ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId) {
+        List<MyCologResponse> data = cologService.getMyCologsPreview(requesterId);
+        return ApiResponse.response(HttpStatus.OK, "나의 팀 목록을 조회합니다.", data);
     }
 
 }

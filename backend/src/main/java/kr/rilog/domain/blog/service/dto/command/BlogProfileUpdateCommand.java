@@ -2,7 +2,7 @@ package kr.rilog.domain.blog.service.dto.command;
 
 import kr.rilog.domain.blog.entity.vo.Profile;
 
-public record CologProfileUpdateCommand(
+public record BlogProfileUpdateCommand(
 
         String profileImageUrl,
         String coverImageUrl,
