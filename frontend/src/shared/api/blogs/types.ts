@@ -1,5 +1,7 @@
 import type { Block } from '@blocknote/core';
 
+import type { BlogType } from '@/domains/blog/model/blog';
+
 export type PostPublishCategory = 'TECH' | 'DAILY';
 export type PostVisibility = 'PUBLIC' | 'PRIVATE';
 
@@ -31,7 +33,7 @@ export interface AuthorResponse {
 }
 
 interface BaseOwnerResponse {
-	type: 'COLOG' | 'RILOG';
+	type: BlogType;
 	blogId: number;
 	slug: string;
 	name: string;
@@ -52,8 +54,8 @@ export interface CologOwnerResponse extends BaseOwnerResponse {
 
 export type PostOwnerResponse = RilogOwnerResponse | CologOwnerResponse;
 
-export interface CologPublicProfileResponse {
-	type: string;
+export interface BlogPublicProfileResponse {
+	type: BlogType;
 	id: number;
 	name: string;
 	slug: string;
@@ -82,7 +84,7 @@ export interface PostItemResponse {
 }
 
 export interface PublicBlogFeedPostResponse {
-	type: 'COLOG' | 'RILOG';
+	type: BlogType;
 	posts: PostItemResponse[];
 	page: number;
 	size: number;

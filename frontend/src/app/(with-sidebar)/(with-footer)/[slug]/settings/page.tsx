@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { mapCologMemberResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
 import CologSettingsAccessGuard from '@/features/colog-settings-access/ui/CologSettingsAccessGuard';
 import { readCologMembers } from '@/shared/api/cologs/api';
-import { buildCologSettingsPath, hasCologSlugPrefix, parseCologSettingsTab } from '@/shared/routes/app-routes';
+import { buildCologSettingsPath, hasBlogSlugPrefix, parseCologSettingsTab } from '@/shared/routes/app-routes';
 import CologSettingsWorkspace from '@/widgets/colog-settings/ui/CologSettingsWorkspace';
 
 interface CologSettingsPageProps {
@@ -17,7 +17,7 @@ export default async function CologSettingsPage({ params, searchParams }: CologS
 	const initialTab = parseCologSettingsTab(tab);
 	const requestedTab = Array.isArray(tab) ? tab[0] : tab;
 
-	if (!hasCologSlugPrefix(slug)) {
+	if (!hasBlogSlugPrefix(slug)) {
 		notFound();
 	}
 

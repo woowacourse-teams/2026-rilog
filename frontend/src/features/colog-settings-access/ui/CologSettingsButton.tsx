@@ -25,7 +25,7 @@ export default function CologSettingsButton({ isOnCover = false, slug }: CologSe
 				href={buildCologSettingsPath(slug, 'profile')}
 				variant="ghost"
 				size="icon"
-				aria-label="코로그 설정"
+				aria-label="팀 설정"
 				className="size-7! bg-transparent hover:bg-surface/20 active:bg-surface/30"
 				style={{ color: iconColor }}
 			>
@@ -36,7 +36,7 @@ export default function CologSettingsButton({ isOnCover = false, slug }: CologSe
 				aria-hidden="true"
 				className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 -translate-x-1/2 rounded-md bg-brand-primary px-2 py-1 text-caption-1 font-medium whitespace-nowrap text-text-on-dark opacity-0 shadow-sm transition-opacity duration-150 group-focus-within/settings:opacity-100 group-hover/settings:opacity-100"
 			>
-				코로그 설정
+				팀 설정
 			</span>
 		</span>
 	);

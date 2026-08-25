@@ -139,7 +139,7 @@ describe('CologSettingsWorkspace', () => {
 			'src',
 			'/icons/form/github.svg',
 		);
-		expect(screen.queryByRole('table', { name: '코로그 멤버 목록' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('table', { name: '팀 멤버 목록' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '변경사항 저장' })).not.toBeInTheDocument();
 	});
 
@@ -246,7 +246,7 @@ describe('CologSettingsWorkspace', () => {
 
 		expect(screen.getByRole('tab', { name: '멤버 관리' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
-		expect(screen.getByRole('table', { name: '코로그 멤버 목록' })).toBeInTheDocument();
+		expect(screen.getByRole('table', { name: '팀 멤버 목록' })).toBeInTheDocument();
 	});
 
 	it('프로필, 멤버 관리, 위험 영역을 같은 설정 패널 위치에서 전환한다', async () => {
@@ -368,7 +368,7 @@ describe('CologSettingsWorkspace', () => {
 		const user = userEvent.setup();
 		render(
 			<>
-				<Link href="/@rilog">코로그로 돌아가기</Link>
+				<Link href="/@rilog">팀으로 돌아가기</Link>
 				<CologSettingsWorkspace />
 			</>,
 		);
@@ -376,7 +376,7 @@ describe('CologSettingsWorkspace', () => {
 		const nameInput = screen.getByRole('textbox', { name: '팀 이름' });
 		await user.clear(nameInput);
 		await user.type(nameInput, '수정 중인 리로그');
-		await user.click(screen.getByRole('link', { name: '코로그로 돌아가기' }));
+		await user.click(screen.getByRole('link', { name: '팀으로 돌아가기' }));
 
 		expect(screen.getByRole('dialog', { name: '변경 사항을 저장하지 않고 이동할까요?' })).toBeInTheDocument();
 		expect(replaceMock).not.toHaveBeenCalled();

@@ -10,7 +10,7 @@ import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
 import { useCreateCologMutation } from '@/shared/api/cologs/mutations/use-create-colog-mutation';
-import { buildCologHomePath } from '@/shared/routes/app-routes';
+import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 
 import { useCologCreateForm } from '../hooks/use-colog-create-form';
@@ -99,7 +99,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 				throw new Error('팀을 만들지 못했습니다. 다시 시도해 주세요.');
 			}
 
-			const profilePath = buildCologHomePath(data.slug);
+			const profilePath = buildBlogHomePath(data.slug);
 			analytics.cologCreated({
 				hasCoverImage: normalizedValue.coverImageFile !== null,
 				hasIntroduction: (normalizedValue.description ?? '').trim() !== '',

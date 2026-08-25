@@ -17,7 +17,7 @@ vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
 }));
 
 describe('CologNavigation', () => {
-	it('내 코로그 링크와 생성 링크를 제공한다', () => {
+	it('내 팀 링크와 생성 링크를 제공한다', () => {
 		renderWithQuery(<CologNavigation />);
 
 		const navigation = screen.getByRole('navigation');
@@ -28,15 +28,15 @@ describe('CologNavigation', () => {
 			expect(link).toHaveAttribute('href');
 			expect(link).toHaveAccessibleName();
 		});
-		expect(within(navigation).getByRole('link', { name: '코로그 만들기' })).toHaveAttribute('href', '/co-logs/create');
+		expect(within(navigation).getByRole('link', { name: '팀 만들기' })).toHaveAttribute('href', '/co-logs/create');
 	});
 
-	it('키보드로 코로그 링크와 생성 링크에 접근한다', async () => {
+	it('키보드로 팀 링크와 생성 링크에 접근한다', async () => {
 		const user = userEvent.setup();
 		renderWithQuery(<CologNavigation />);
 		const navigation = screen.getByRole('navigation');
 		const cologLinks = within(navigation).getAllByRole('link');
-		const createLink = within(navigation).getByRole('link', { name: '코로그 만들기' });
+		const createLink = within(navigation).getByRole('link', { name: '팀 만들기' });
 
 		await user.tab();
 		expect(cologLinks[0]).toHaveFocus();

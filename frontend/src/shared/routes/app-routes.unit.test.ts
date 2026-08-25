@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	APP_ROUTES,
-	buildCologHomePath,
+	buildBlogHomePath,
 	buildCologSettingsPath,
 	buildPostDetailPath,
-	hasCologSlugPrefix,
+	hasBlogSlugPrefix,
 	parseCologSettingsTab,
 } from './app-routes';
 
@@ -20,15 +20,15 @@ describe('app routes', () => {
 	});
 
 	it('코로그 경로의 @ 접두사를 판별한다', () => {
-		expect(hasCologSlugPrefix('@rilog')).toBe(true);
-		expect(hasCologSlugPrefix('%40rilog')).toBe(true);
-		expect(hasCologSlugPrefix('rilog')).toBe(false);
+		expect(hasBlogSlugPrefix('@rilog')).toBe(true);
+		expect(hasBlogSlugPrefix('%40rilog')).toBe(true);
+		expect(hasBlogSlugPrefix('rilog')).toBe(false);
 	});
 
-	it('코로그 slug를 @ 경로 segment로 정규화한다', () => {
-		expect(buildCologHomePath(' @rilog ')).toBe('/@rilog');
-		expect(buildCologHomePath('%40rilog')).toBe('/@rilog');
-		expect(buildCologHomePath('team/name')).toBe('/@team%2Fname');
+	it('블로그 slug를 @ 경로 segment로 정규화한다', () => {
+		expect(buildBlogHomePath(' @rilog ')).toBe('/@rilog');
+		expect(buildBlogHomePath('%40rilog')).toBe('/@rilog');
+		expect(buildBlogHomePath('team/name')).toBe('/@team%2Fname');
 	});
 
 	it('코로그 설정 탭 경로를 만든다', () => {
@@ -47,7 +47,7 @@ describe('app routes', () => {
 	});
 
 	it('동적 경로에 빈 값은 허용하지 않는다', () => {
-		expect(() => buildCologHomePath(' @ ')).toThrow('코로그 slug가 필요합니다.');
+		expect(() => buildBlogHomePath(' @ ')).toThrow('블로그 slug가 필요합니다.');
 		expect(() => buildPostDetailPath('rilog', '   ')).toThrow('게시글 ID가 필요합니다.');
 	});
 });

@@ -1,8 +1,8 @@
 import type { CologProfileSettingsValue } from '../model/colog-profile-settings';
 
-import type { CologPublicProfileResponse } from '@/shared/api/blogs/types';
+import type { BlogPublicProfileResponse } from '@/shared/api/blogs/types';
 
-export const mapCologProfileSettingsResponse = (response: CologPublicProfileResponse): CologProfileSettingsValue => ({
+export const mapCologProfileSettingsResponse = (response: BlogPublicProfileResponse): CologProfileSettingsValue => ({
 	name: response.name,
 	slug: response.slug,
 	description: response.introduction ?? '',

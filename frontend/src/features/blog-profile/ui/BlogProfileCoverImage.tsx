@@ -3,12 +3,12 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-interface CologProfileCoverImageProps {
+interface BlogProfileCoverImageProps {
 	src: string;
 	alt: string;
 }
 
-export default function CologProfileCoverImage({ src, alt }: CologProfileCoverImageProps) {
+export default function BlogProfileCoverImage({ src, alt }: BlogProfileCoverImageProps) {
 	const [hasFailed, setHasFailed] = useState(false);
 
 	if (hasFailed) {

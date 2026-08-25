@@ -1,37 +1,37 @@
 import { notFound } from 'next/navigation';
 
-import CologMemberAside from '@/features/colog-members/ui/CologMemberAside';
-import { hasCologSlugPrefix } from '@/shared/routes/app-routes';
-import PageShell from '@/shared/ui/page-shell/PageShell';
+import { mapBlogPublicProfileResponse } from '@/features/blog-profile/lib/map-blog-public-profile-response';
+import { readBlogPublicProfile } from '@/shared/api/blogs/api';
+import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
-import CologHomeHero from '@/widgets/colog-home/ui/CologHomeHero';
-import CologPostList from '@/widgets/colog-home/ui/CologPostList';
+import BlogHome from '@/widgets/blog-home/ui/BlogHome';
 
-interface CologHomePageProps {
+interface BlogHomePageProps {
 	params: Promise<{ slug: string }>;
 }
 
-export default async function CologHomePage({ params }: CologHomePageProps) {
+export default async function BlogHomePage({ params }: BlogHomePageProps) {
 	const { slug } = await params;
-	if (!hasCologSlugPrefix(slug)) {
+	if (!hasBlogSlugPrefix(slug)) {
 		notFound();
 	}
 
 	const normalizedSlug = stripAtPrefix(slug);
+	let profileResponse;
 
-	return (
-		<PageShell
-			fullHeaderWidth
-			header={<CologHomeHero slug={normalizedSlug} />}
-			rightAside={
-				<div className="py-11">
-					<CologMemberAside slug={normalizedSlug} />
-				</div>
-			}
-		>
-			<div className="px-6 py-11 aside-right:px-0">
-				<CologPostList slug={normalizedSlug} />
-			</div>
-		</PageShell>
-	);
+	try {
+		profileResponse = await readBlogPublicProfile({ slug: normalizedSlug });
+	} catch {
+		notFound();
+	}
+
+	if (profileResponse.data === undefined) {
+		notFound();
+	}
+
+	if (profileResponse.data.type !== 'COLOG' && profileResponse.data.type !== 'RILOG') {
+		notFound();
+	}
+
+	return <BlogHome profile={mapBlogPublicProfileResponse(profileResponse.data)} />;
 }

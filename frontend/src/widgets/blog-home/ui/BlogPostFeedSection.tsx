@@ -1,16 +1,16 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
-import CologPostFeed from '@/features/colog-post-feed/ui/CologPostFeed';
-import CologPostFeedSkeleton from '@/features/colog-post-feed/ui/CologPostFeedSkeleton';
+import BlogPostFeed from '@/features/blog-post-feed/ui/BlogPostFeed';
+import BlogPostFeedSkeleton from '@/features/blog-post-feed/ui/BlogPostFeedSkeleton';
 import { prefetchPublicBlogPostsQuery } from '@/shared/api/blogs/queries/public-blog-posts/prefetch-query';
 import { publicBlogPostsQueryOptions } from '@/shared/api/blogs/queries/public-blog-posts/query-options';
 
-interface CologPostListProps {
+interface BlogPostFeedSectionProps {
 	slug: string;
 }
 
-async function CologPostListContent({ slug }: CologPostListProps) {
+async function BlogPostFeedSectionContent({ slug }: BlogPostFeedSectionProps) {
 	const queryClient = new QueryClient();
 	const postsQueryOptions = publicBlogPostsQueryOptions({ slug });
 
@@ -20,15 +20,15 @@ async function CologPostListContent({ slug }: CologPostListProps) {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<CologPostFeed slug={slug} initialRequestFailed={initialRequestFailed} />
+			<BlogPostFeed slug={slug} initialRequestFailed={initialRequestFailed} />
 		</HydrationBoundary>
 	);
 }
 
-export default function CologPostList({ slug }: CologPostListProps) {
+export default function BlogPostFeedSection({ slug }: BlogPostFeedSectionProps) {
 	return (
-		<Suspense fallback={<CologPostFeedSkeleton />}>
-			<CologPostListContent slug={slug} />
+		<Suspense fallback={<BlogPostFeedSkeleton />}>
+			<BlogPostFeedSectionContent slug={slug} />
 		</Suspense>
 	);
 }

@@ -1,8 +1,8 @@
-export default function CologPostFeedSkeleton() {
+export default function BlogPostFeedSkeleton() {
 	const items = Array.from({ length: 5 }, (_, i) => i);
 
 	return (
-		<section aria-label="코로그 게시글 로딩 중" className="min-w-0" role="status">
+		<section aria-label="블로그 게시글 로딩 중" className="min-w-0" role="status">
 			<ul className="flex flex-col gap-7">
 				{items.map((item) => (
 					<li key={item} className="flex animate-pulse gap-4 motion-reduce:animate-none">

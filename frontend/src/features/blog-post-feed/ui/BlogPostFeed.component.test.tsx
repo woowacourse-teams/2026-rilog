@@ -5,7 +5,7 @@ import type { PostSummary } from '@/domains/post/model/post';
 
 import { usePublicBlogPosts } from '../hooks/use-public-blog-posts';
 
-import CologPostFeed from './CologPostFeed';
+import BlogPostFeed from './BlogPostFeed';
 
 vi.mock('../hooks/use-public-blog-posts');
 
@@ -39,13 +39,13 @@ const createPublicBlogPostsResult = (items: PostSummary[]): PublicBlogPostsResul
 		isError: false,
 	}) as unknown as PublicBlogPostsResult;
 
-describe('CologPostFeed', () => {
+describe('BlogPostFeed', () => {
 	it('전달받은 게시글만 렌더링한다', () => {
 		vi.mocked(usePublicBlogPosts).mockReturnValue(createPublicBlogPostsResult(POST_FIXTURES));
 
-		render(<CologPostFeed slug="rilog" />);
+		render(<BlogPostFeed slug="rilog" />);
 
-		const postSection = screen.getByRole('region', { name: '코로그 게시글' });
+		const postSection = screen.getByRole('region', { name: '블로그 게시글' });
 		expect(within(postSection).getAllByRole('link')).toHaveLength(2);
 		expect(within(postSection).getByRole('link', { name: /접근 가능한 인터페이스 만들기/ })).toHaveAttribute(
 			'href',
@@ -74,8 +74,20 @@ describe('CologPostFeed', () => {
 	it('게시글이 없으면 빈 상태를 제공한다', () => {
 		vi.mocked(usePublicBlogPosts).mockReturnValue(createPublicBlogPostsResult([]));
 
-		render(<CologPostFeed slug="rilog" />);
+		render(<BlogPostFeed slug="rilog" />);
 
 		expect(screen.getByText('아직 작성된 게시글이 없습니다.')).toBeInTheDocument();
+	});
+
+	it('게시글 조회에 실패하면 블로그 공통 오류 영역을 제공한다', () => {
+		vi.mocked(usePublicBlogPosts).mockReturnValue({
+			...createPublicBlogPostsResult([]),
+			data: undefined,
+			isError: true,
+		} as unknown as PublicBlogPostsResult);
+
+		render(<BlogPostFeed slug="rilog" />);
+
+		expect(screen.getByRole('region', { name: '블로그 게시글 오류' })).toBeInTheDocument();
 	});
 });

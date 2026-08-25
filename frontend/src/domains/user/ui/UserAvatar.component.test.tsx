@@ -8,5 +8,6 @@ describe('UserAvatar', () => {
 		render(<UserAvatar fallback="R" label="Rilog 사용자" />);
 
 		expect(screen.getByRole('img', { name: 'Rilog 사용자' })).toHaveTextContent('R');
+		expect(screen.queryByRole('link')).not.toBeInTheDocument();
 	});
 });

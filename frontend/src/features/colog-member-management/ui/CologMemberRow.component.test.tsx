@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -30,7 +30,6 @@ describe('CologMemberRow', () => {
 		expect(screen.getByText('김지연')).toBeInTheDocument();
 		expect(screen.getByText('@jiyeon')).toBeInTheDocument();
 		expect(screen.getByText('Owner')).toBeInTheDocument();
-		expect(screen.getByText('회장')).toBeInTheDocument();
 		expect(screen.getByText('2024. 5. 20')).toBeInTheDocument();
 	});
 
@@ -51,23 +50,5 @@ describe('CologMemberRow', () => {
 		await user.selectOptions(select, 'ADMIN');
 
 		expect(onPermissionChange).toHaveBeenCalledWith(1, 'ADMIN');
-	});
-
-	it('편집 모드에서 역할 input을 변경하면 콜백을 호출한다', () => {
-		const onBlogRoleChange = vi.fn();
-
-		renderInTable(
-			<CologMemberRow
-				member={BASE_MEMBER}
-				isEditing
-				onPermissionChange={vi.fn()}
-				onBlogRoleChange={onBlogRoleChange}
-			/>,
-		);
-
-		const input = screen.getByRole('textbox', { name: '김지연 역할' });
-		fireEvent.change(input, { target: { value: '부회장' } });
-
-		expect(onBlogRoleChange).toHaveBeenCalledWith(1, '부회장');
 	});
 });

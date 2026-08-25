@@ -4,17 +4,32 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
+import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
+import { mapMyInfoResponse } from '../lib/map-my-info-response';
+
 export default function MobileHeader() {
 	const { isAuthenticated } = useAuth();
+	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
 	const pathname = usePathname() ?? '';
 	const handleLoginClick = useAuthAction();
 	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
+	const userAvatar = (
+		<UserAvatar
+			src={user?.profileImageUrl}
+			fallback={user?.nickname.slice(0, 1).toUpperCase() ?? 'P'}
+			label={user === null || user === undefined ? '사용자 프로필' : `${user.nickname} 프로필`}
+			size="lg"
+			hasBorder
+		/>
+	);
+	const userProfileControl = user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
 
 	return (
 		<nav
@@ -27,7 +42,7 @@ export default function MobileHeader() {
 			</CustomLink>
 
 			{isAuthenticated ? (
-				<UserAvatar fallback="P" size="lg" hasBorder />
+				userProfileControl
 			) : (
 				<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
 					로그인
