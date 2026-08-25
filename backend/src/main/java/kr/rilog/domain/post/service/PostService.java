@@ -1,6 +1,7 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -13,7 +14,9 @@ import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -22,9 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUBLISH_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
@@ -71,6 +72,28 @@ public class PostService {
         return new TotalPostsCountResponse(count);
     }
 
+    @Transactional
+    public PostUpdateResult update(PostUpdateCommand command, Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateWrittenBy(requesterId);
+
+        Slug ownSlug = Slug.from(post.getOwnSlug());
+        BlogMember ownBlogMember = getBlogMember(ownSlug, requesterId);
+        ownBlogMember.validateActiveMember();
+
+        Blog targetBlog = ownBlogMember.getBlog();
+        Slug targetSlug = Slug.from(command.newSlug());
+
+        if(ownSlug.isDifferent(targetSlug)){
+            BlogMember targetBlogMember = getBlogMember(targetSlug, requesterId);
+            targetBlogMember.validateActiveMember();
+            targetBlog = targetBlogMember.getBlog();
+        }
+
+        post.update(command.toDetail(), targetBlog);
+        return PostUpdateResult.of(post, targetBlog);
+    }
+
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {
         rilog.validateIsOwner(writer);
         return Post.create(rilog, writer, command.toDetail());
@@ -108,8 +131,18 @@ public class PostService {
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
     }
 
+    private BlogMember getBlogMember(Slug slug, Long memberId) {
+        return blogMemberRepository.findWithBlogBySlugAndUserId(slug, memberId)
+                .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
+    }
+
     private Post getPost(Long postId) {
         return postRepository.findDetailById(postId)
+                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+
+    private Post getPublishedPost(Long postId) {
+        return postRepository.findDetailByIdAndStatus(postId, PostStatus.PUBLISHED)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 
