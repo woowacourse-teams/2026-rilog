@@ -26,7 +26,7 @@ class PostContentTest {
                 ]
                 """);
 
-        assertThatThrownBy(()->PostContent.from(value))
+        assertThatCode(() -> PostContent.from(value))
                 .doesNotThrowAnyException();
     }
 
