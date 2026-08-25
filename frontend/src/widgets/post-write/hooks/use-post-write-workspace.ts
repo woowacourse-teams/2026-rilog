@@ -7,6 +7,7 @@ import type { Block } from '@blocknote/core';
 
 import type { CologOption } from '@/domains/blog/model/colog';
 import type { PostCategory } from '@/domains/post/model/post';
+import { analytics } from '@/features/analytics/model/events';
 import { validatePostDocument } from '@/features/post-write/lib/validate-post-document';
 import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
@@ -175,6 +176,10 @@ export function usePostWriteWorkspace({
 				settings: publicationSettings,
 			});
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
+			analytics.postPublished({
+				category: publicationSettings.category,
+				hasCustomRepresentativeImage: publicationSettings.representativeImage !== null,
+			});
 
 			clearGuardEntry();
 			setIsDirty(false);

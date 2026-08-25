@@ -13,11 +13,16 @@ import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 
 import CologCreateForm from './CologCreateForm';
 
-const { backMock, replaceMock } = vi.hoisted(() => ({ backMock: vi.fn(), replaceMock: vi.fn() }));
+const { backMock, cologCreatedMock, replaceMock } = vi.hoisted(() => ({
+	backMock: vi.fn(),
+	cologCreatedMock: vi.fn(),
+	replaceMock: vi.fn(),
+}));
 
 vi.mock('@/shared/api/cologs/api');
 vi.mock('@/shared/api/availability/api');
 vi.mock('@/shared/api/uploads/api');
+vi.mock('@/features/analytics/model/events', () => ({ analytics: { cologCreated: cologCreatedMock } }));
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: backMock, replace: replaceMock }),
 }));
@@ -58,6 +63,7 @@ const fillRequiredFields = async (
 describe('CologCreateForm', () => {
 	beforeEach(() => {
 		backMock.mockClear();
+		cologCreatedMock.mockClear();
 		replaceMock.mockClear();
 		vi.clearAllMocks();
 		vi.mocked(checkNicknameAvailability).mockResolvedValue({
@@ -388,6 +394,12 @@ describe('CologCreateForm', () => {
 				profileImageUrl: 'image.png',
 			}),
 		);
+		expect(cologCreatedMock).toHaveBeenCalledWith({
+			hasCoverImage: false,
+			hasIntroduction: true,
+			hasServiceUrl: false,
+			hasGithubUrl: false,
+		});
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:logo');

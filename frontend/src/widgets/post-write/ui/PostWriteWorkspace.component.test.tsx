@@ -16,7 +16,15 @@ import PostWriteWorkspace from './PostWriteWorkspace';
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PublishPostRequest) => Promise<ApiResponse<PostPublishResponse>>;
 
-const { replaceMock, uploadRepresentativeImageMock, requestPostPublicationMock } = vi.hoisted(() => ({
+const {
+	postEditorOpenedMock,
+	postPublishedMock,
+	replaceMock,
+	uploadRepresentativeImageMock,
+	requestPostPublicationMock,
+} = vi.hoisted(() => ({
+	postEditorOpenedMock: vi.fn(),
+	postPublishedMock: vi.fn(),
 	replaceMock: vi.fn(),
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
@@ -24,6 +32,13 @@ const { replaceMock, uploadRepresentativeImageMock, requestPostPublicationMock }
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ push: vi.fn(), replace: replaceMock }),
+}));
+
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		postEditorOpened: postEditorOpenedMock,
+		postPublished: postPublishedMock,
+	},
 }));
 
 vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
@@ -56,6 +71,8 @@ vi.mock('@/shared/api/blogs/mutations/use-publish-post-mutation', () => ({
 
 beforeEach(() => {
 	replaceMock.mockReset();
+	postEditorOpenedMock.mockReset();
+	postPublishedMock.mockReset();
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
@@ -248,6 +265,7 @@ describe('PostWriteWorkspace', () => {
 		expect(titleField).toHaveFocus();
 		await user.type(titleField, '제목{enter}');
 		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
+		expect(postEditorOpenedMock).toHaveBeenCalledOnce();
 	});
 
 	it('빈 문서는 설정 모달을 열지 않고 첫 오류로 focus한다', async () => {
@@ -386,6 +404,10 @@ describe('PostWriteWorkspace', () => {
 
 		resolvePublish?.({ postId: 'post/40', slug: 'rilog' });
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog/posts/post%2F40'));
+		expect(postPublishedMock).toHaveBeenCalledWith({
+			category: 'IT',
+			hasCustomRepresentativeImage: false,
+		});
 		expect(historyBackSpy).not.toHaveBeenCalled();
 		historyBackSpy.mockRestore();
 	});
@@ -417,6 +439,7 @@ describe('PostWriteWorkspace', () => {
 			.mockRejectedValueOnce(new Error('failed'))
 			.mockResolvedValueOnce({ postId: 'retry-success', slug: 'rilog' });
 		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		postPublishedMock.mockClear();
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		const selectedCoLogId = await selectFirstCoLog(user);
@@ -428,6 +451,7 @@ describe('PostWriteWorkspace', () => {
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/retry-success'));
 		expect(publishPost).toHaveBeenCalledTimes(2);
+		expect(postPublishedMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('선택한 대표 이미지를 주입된 발행 설정에 포함한다', async () => {

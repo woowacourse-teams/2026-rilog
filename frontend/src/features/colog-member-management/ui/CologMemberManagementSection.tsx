@@ -3,6 +3,7 @@
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 
+import { analytics } from '@/features/analytics/model/events';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 
 import CologMemberRow from './CologMemberRow';
@@ -39,9 +40,10 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 			),
 		);
 
-		const hasSuccess = results.some((result) => result.status === 'fulfilled');
+		const successfulInvitationCount = results.filter((result) => result.status === 'fulfilled').length;
 
-		if (hasSuccess) {
+		if (successfulInvitationCount > 0) {
+			analytics.cologMembersInvited({ invitedMemberCount: successfulInvitationCount });
 			window.location.reload();
 		}
 	};

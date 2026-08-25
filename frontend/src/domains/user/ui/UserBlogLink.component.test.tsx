@@ -17,15 +17,4 @@ describe('UserBlogLink', () => {
 		expect(profileLink).toHaveClass('rounded-full', 'focus-visible:outline-2', 'focus-visible:outline-focus-ring');
 		expect(screen.getByRole('img', { name: 'Rilog 사용자' })).toHaveTextContent('R');
 	});
-
-	it('빈 slug는 children을 링크로 만들지 않는다', () => {
-		render(
-			<UserBlogLink slug=" @ ">
-				<UserAvatar fallback="R" label="Rilog 사용자" />
-			</UserBlogLink>,
-		);
-
-		expect(screen.queryByRole('link')).not.toBeInTheDocument();
-		expect(screen.getByRole('img', { name: 'Rilog 사용자' })).toBeInTheDocument();
-	});
 });

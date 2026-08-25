@@ -10,7 +10,7 @@ interface UserBlogLinkProps {
 }
 
 export default function UserBlogLink({ children, slug }: UserBlogLinkProps) {
-	const normalizedSlug = slug === undefined ? '' : stripAtPrefix(slug);
+	const normalizedSlug = stripAtPrefix(slug);
 
 	return (
 		<CustomLink

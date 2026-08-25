@@ -11,6 +11,8 @@ import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-sessio
 
 import SignUpForm from './SignUpForm';
 
+const { signUpCompletedMock } = vi.hoisted(() => ({ signUpCompletedMock: vi.fn() }));
+
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
 }));
@@ -19,6 +21,8 @@ vi.mock('@/shared/api/availability/api', () => ({
 	checkNicknameAvailability: vi.fn(),
 	checkSlugAvailability: vi.fn(),
 }));
+
+vi.mock('@/features/analytics/model/events', () => ({ analytics: { signUpCompleted: signUpCompletedMock } }));
 
 describe('SignUpForm', () => {
 	beforeEach(() => {
@@ -346,6 +350,10 @@ describe('SignUpForm', () => {
 			expect(navigate).toHaveBeenCalledWith('/', { replace: true });
 		});
 		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(signUpCompletedMock).toHaveBeenCalledWith({
+			hasProfileImage: false,
+			hasIntroduction: true,
+		});
 	});
 
 	it('취소하면 회원가입 흐름을 제거하고 이전 페이지로 이동한다', async () => {

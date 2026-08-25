@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import type { ComponentType } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import { analytics } from '@/features/analytics/model/events';
 import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
@@ -39,6 +40,10 @@ export default function PostWriteWorkspace({
 	uploadFile,
 	navigate,
 }: PostWriteWorkspaceProps) {
+	useEffect(() => {
+		analytics.postEditorOpened();
+	}, []);
+
 	const { data: myInfoResponse } = useMyInfoQuery();
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();

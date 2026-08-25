@@ -20,6 +20,16 @@ export default function MobileHeader() {
 	const pathname = usePathname() ?? '';
 	const handleLoginClick = useAuthAction();
 	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
+	const userAvatar = (
+		<UserAvatar
+			src={user?.profileImageUrl}
+			fallback={user?.nickname.slice(0, 1).toUpperCase() ?? 'P'}
+			label={user === null || user === undefined ? '사용자 프로필' : `${user.nickname} 프로필`}
+			size="lg"
+			hasBorder
+		/>
+	);
+	const userProfileControl = user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
 
 	return (
 		<nav
@@ -32,15 +42,7 @@ export default function MobileHeader() {
 			</CustomLink>
 
 			{isAuthenticated ? (
-				<UserBlogLink slug={user?.slug}>
-					<UserAvatar
-						src={user?.profileImageUrl}
-						fallback={user?.nickname.slice(0, 1).toUpperCase() ?? 'P'}
-						label={user === null || user === undefined ? '사용자 프로필' : `${user.nickname} 프로필`}
-						size="lg"
-						hasBorder
-					/>
-				</UserBlogLink>
+				userProfileControl
 			) : (
 				<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
 					로그인

@@ -3,14 +3,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import GitHubCallbackHandler from './GitHubCallbackHandler';
 
-const { clearSignUpFlowMock, handleGitHubCallbackMock, publishLoginMock, replaceMock, startSignUpFlowMock } =
-	vi.hoisted(() => ({
-		clearSignUpFlowMock: vi.fn(),
-		handleGitHubCallbackMock: vi.fn(),
-		publishLoginMock: vi.fn(),
-		replaceMock: vi.fn(),
-		startSignUpFlowMock: vi.fn(),
-	}));
+const {
+	githubLoginCompletedMock,
+	githubLoginFailedMock,
+	clearSignUpFlowMock,
+	handleGitHubCallbackMock,
+	publishLoginMock,
+	replaceMock,
+	startSignUpFlowMock,
+} = vi.hoisted(() => ({
+	githubLoginCompletedMock: vi.fn(),
+	githubLoginFailedMock: vi.fn(),
+	clearSignUpFlowMock: vi.fn(),
+	handleGitHubCallbackMock: vi.fn(),
+	publishLoginMock: vi.fn(),
+	replaceMock: vi.fn(),
+	startSignUpFlowMock: vi.fn(),
+}));
+
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		githubLoginCompleted: githubLoginCompletedMock,
+		githubLoginFailed: githubLoginFailedMock,
+	},
+}));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ replace: replaceMock }),
@@ -33,6 +49,8 @@ vi.mock('@/shared/api/auth/token-manager', () => ({
 describe('GitHubCallbackHandler', () => {
 	beforeEach(() => {
 		clearSignUpFlowMock.mockReset();
+		githubLoginCompletedMock.mockReset();
+		githubLoginFailedMock.mockReset();
 		handleGitHubCallbackMock.mockReset();
 		publishLoginMock.mockReset().mockResolvedValue(undefined);
 		replaceMock.mockReset();
@@ -55,6 +73,7 @@ describe('GitHubCallbackHandler', () => {
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/sign-up'));
 		expect(publishLoginMock).toHaveBeenCalledWith('access-token');
 		expect(startSignUpFlowMock).toHaveBeenCalledOnce();
+		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'new' });
 		expect(publishLoginMock.mock.invocationCallOrder[0]).toBeLessThan(
 			startSignUpFlowMock.mock.invocationCallOrder[0] ?? 0,
 		);
@@ -75,5 +94,15 @@ describe('GitHubCallbackHandler', () => {
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/'));
 		expect(clearSignUpFlowMock).toHaveBeenCalledOnce();
 		expect(startSignUpFlowMock).not.toHaveBeenCalled();
+		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'returning' });
+	});
+
+	it('로그인 처리 실패를 내용 없이 기록한다', async () => {
+		handleGitHubCallbackMock.mockRejectedValue(new Error('callback failed'));
+
+		render(<GitHubCallbackHandler />);
+
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/'));
+		expect(githubLoginFailedMock).toHaveBeenCalledOnce();
 	});
 });

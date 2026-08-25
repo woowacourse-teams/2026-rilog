@@ -4,6 +4,8 @@ import { useCallback, useState } from 'react';
 
 import type { ReactNode } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
+
 import LoginModal from '../ui/LoginModal';
 
 import { LOGIN_MODAL_CONTEXT } from './login-modal-context';
@@ -25,6 +27,7 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 	}, []);
 
 	const handleGitHubLogin = useCallback(() => {
+		analytics.githubLoginStarted();
 		setIsLoginPending(true);
 
 		const currentUrl = window.location.pathname + window.location.search;

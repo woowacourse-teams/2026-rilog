@@ -7,7 +7,17 @@ import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 
 import BlogHome from './BlogHome';
 
-const { memberAsideRenderMock } = vi.hoisted(() => ({ memberAsideRenderMock: vi.fn() }));
+const { memberAsideRenderMock, profileViewTrackerRenderMock } = vi.hoisted(() => ({
+	memberAsideRenderMock: vi.fn(),
+	profileViewTrackerRenderMock: vi.fn(),
+}));
+
+vi.mock('@/features/analytics/ui/BlogProfileViewTracker', () => ({
+	default: function MockBlogProfileViewTracker({ blogType }: { blogType: BlogPublicProfile['type'] }) {
+		profileViewTrackerRenderMock(blogType);
+		return null;
+	},
+}));
 
 vi.mock('@/features/colog-members/ui/CologMemberAside', () => ({
 	default: function MockCologMemberAside({ slug }: { slug: string }) {
@@ -53,6 +63,7 @@ const COLOG_PROFILE: BlogPublicProfile = {
 describe('BlogHome', () => {
 	beforeEach(() => {
 		memberAsideRenderMock.mockClear();
+		profileViewTrackerRenderMock.mockClear();
 	});
 
 	it('COLOG에는 멤버 aside와 공통 프로필·게시글 영역을 조립한다', () => {
@@ -61,11 +72,9 @@ describe('BlogHome', () => {
 		expect(screen.getByText('프로필: COLOG')).toBeInTheDocument();
 		expect(screen.getByText('게시글 목록: rilog-team')).toBeInTheDocument();
 		expect(screen.getByText('멤버 목록: rilog-team')).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveAttribute(
-			'href',
-			'/@rilog-team/settings?tab=profile',
-		);
+		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveAttribute('href', '/@rilog-team/settings?tab=profile');
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
+		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('COLOG');
 	});
 
 	it('RILOG에는 멤버 aside를 생성하지 않고 공통 프로필·게시글 영역만 조립한다', () => {
@@ -76,5 +85,6 @@ describe('BlogHome', () => {
 		expect(screen.queryByText(/멤버 목록:/)).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '팀 설정' })).not.toBeInTheDocument();
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
+		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('RILOG');
 	});
 });

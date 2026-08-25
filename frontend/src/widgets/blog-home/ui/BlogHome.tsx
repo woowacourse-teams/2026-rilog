@@ -1,4 +1,5 @@
 import type { BlogPublicProfile } from '@/domains/blog/model/blog';
+import BlogProfileViewTracker from '@/features/analytics/ui/BlogProfileViewTracker';
 import BlogProfileHero from '@/features/blog-profile/ui/BlogProfileHero';
 import CologMemberAside from '@/features/colog-members/ui/CologMemberAside';
 import CologSettingsButton from '@/features/colog-settings-access/ui/CologSettingsButton';
@@ -24,6 +25,7 @@ export default function BlogHome({ profile }: BlogHomeProps) {
 			<div className="px-6 py-11 aside-right:px-0">
 				<BlogPostFeedSection slug={profile.slug} />
 			</div>
+			<BlogProfileViewTracker blogType={profile.type} />
 		</PageShell>
 	);
 }

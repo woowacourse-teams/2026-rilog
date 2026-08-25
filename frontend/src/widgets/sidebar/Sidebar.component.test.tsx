@@ -25,14 +25,12 @@ function renderSidebar(isAuthenticated = false) {
 }
 
 describe('Sidebar', () => {
-	it('기본 접힘 상태에서 hover와 focus 진입 시 펼쳐진다', () => {
+	it('기본 접힘 상태에서 hover 시 펼쳐지고 focus 후에는 너비를 고정하지 않는다', () => {
 		renderSidebar(true);
 
-		expect(screen.getByRole('complementary', { name: '사이드바' })).toHaveClass(
-			'w-17.5',
-			'hover:w-60',
-			'focus-within:w-60',
-		);
+		const sidebar = screen.getByRole('complementary', { name: '사이드바' });
+		expect(sidebar).toHaveClass('w-17.5', 'hover:w-60');
+		expect(sidebar).not.toHaveClass('focus-within:w-60');
 	});
 
 	it('로그인 사용자용 코로그 탐색과 푸터를 조립한다', () => {

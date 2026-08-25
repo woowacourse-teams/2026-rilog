@@ -6,6 +6,7 @@ import type { SettingsTab } from '../lib/get-next-tab';
 import type { FormEvent } from 'react';
 
 import type { CologMember } from '@/domains/blog/model/colog';
+import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
@@ -53,6 +54,28 @@ const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: strin
 		title: '위험 영역',
 		description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.',
 	},
+};
+
+const getChangedProfileFields = (
+	previousValue: CologProfileSettingsValue,
+	nextValue: CologProfileSettingsValue,
+): CologProfileChangedField[] => {
+	const changedFields: CologProfileChangedField[] = [];
+	const hasTextChanged = (field: 'name' | 'description' | 'serviceUrl' | 'githubUrl') =>
+		(nextValue[field] ?? '').trim() !== (previousValue[field] ?? '').trim();
+
+	if (hasTextChanged('name')) changedFields.push('name');
+	if (nextValue.logoFile !== null || nextValue.profileImageUrl !== previousValue.profileImageUrl) {
+		changedFields.push('logo');
+	}
+	if (nextValue.coverImageFile !== null || nextValue.coverImageUrl !== previousValue.coverImageUrl) {
+		changedFields.push('cover_image');
+	}
+	if (hasTextChanged('description')) changedFields.push('introduction');
+	if (hasTextChanged('serviceUrl')) changedFields.push('service_url');
+	if (hasTextChanged('githubUrl')) changedFields.push('github_url');
+
+	return changedFields;
 };
 
 export default function CologSettingsWorkspace({
@@ -154,11 +177,13 @@ function CologSettingsWorkspaceContent({
 			profileForm.refs.name.current?.focus();
 			return;
 		}
+		const changedFields = getChangedProfileFields(savedProfile, normalizedValue);
 
 		try {
 			const savedValue = await saveCologProfile.mutateAsync({ slug, value: normalizedValue });
 			profileForm.setValue(savedValue);
 			setSavedProfile(savedValue);
+			analytics.cologProfileUpdated({ changedFields });
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 		} catch {

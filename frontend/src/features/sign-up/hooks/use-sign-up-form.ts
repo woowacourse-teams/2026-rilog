@@ -5,6 +5,8 @@ import { useState } from 'react';
 import type { CompleteSignUp, SignUpValidationErrors } from '../model/sign-up';
 import type { ChangeEvent, SubmitEvent } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
+
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
 import { clearSignUpFlow } from '../lib/sign-up-flow-session';
 import {
@@ -113,6 +115,10 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 
 		try {
 			await completeSignUp({ nickname, slug, description: description.trim(), profileImageFile });
+			analytics.signUpCompleted({
+				hasProfileImage: profileImageFile !== null,
+				hasIntroduction: description.trim() !== '',
+			});
 			clearSignUpFlow();
 
 			if (navigate !== undefined) {

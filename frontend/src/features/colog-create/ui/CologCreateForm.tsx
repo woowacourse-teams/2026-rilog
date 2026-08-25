@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import type { SubmitEvent } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
@@ -99,6 +100,12 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 			}
 
 			const profilePath = buildBlogHomePath(data.slug);
+			analytics.cologCreated({
+				hasCoverImage: normalizedValue.coverImageFile !== null,
+				hasIntroduction: (normalizedValue.description ?? '').trim() !== '',
+				hasServiceUrl: (normalizedValue.serviceUrl ?? '').trim() !== '',
+				hasGithubUrl: (normalizedValue.githubUrl ?? '').trim() !== '',
+			});
 
 			if (navigate !== undefined) {
 				navigate(profilePath);
