@@ -13,8 +13,8 @@ public record S3ObjectAddress(
         String key
 ) {
 
-    private static final String S3_HOST_SUFFIX =
-            ".s3.ap-northeast-2.amazonaws.com";
+    private static final String S3_HOST_SUFFIX = ".s3.ap-northeast-2.amazonaws.com";
+    private static final String HTTPS_SCHEME = "https";
 
     public static S3ObjectAddress from(String objectUrl) {
         URI uri = URI.create(objectUrl);
@@ -32,15 +32,13 @@ public record S3ObjectAddress(
     }
 
     private static void validateScheme(URI uri) {
-        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+        if (!HTTPS_SCHEME.equalsIgnoreCase(uri.getScheme())) {
             throw new UploadException(INVALID_S3_URL_SCHEME);
         }
     }
 
     private static void validateHost(String host) {
-        if (host == null
-                || !host.endsWith(S3_HOST_SUFFIX)
-                || host.length() == S3_HOST_SUFFIX.length()) {
+        if (host == null || !host.endsWith(S3_HOST_SUFFIX) || host.length() == S3_HOST_SUFFIX.length()) {
             throw new UploadException(UNSUPPORTED_S3_HOST);
         }
     }
