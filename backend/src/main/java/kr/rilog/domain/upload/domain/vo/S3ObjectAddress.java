@@ -6,6 +6,7 @@ import java.net.URI;
 
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.*;
 
+// TODO, THINK S3ObjectAddress가 필드로 TagStatus를 가지는 걸 고민.
 public record S3ObjectAddress(
         String bucket,
         String key
