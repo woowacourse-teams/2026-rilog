@@ -9,10 +9,10 @@ import { COLOG_DESCRIPTION_MAX_LENGTH, COLOG_NAME_MAX_LENGTH, COLOG_NAME_MIN_LEN
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import Input from '@/shared/ui/input/Input';
+import ProfileSocialFields from '@/shared/ui/profile/ProfileSocialFields';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
 import CologProfileImageFields from './CologProfileImageFields';
-import CologProfileSocialFields from './CologProfileSocialFields';
 
 interface CologProfileFormFieldsProps {
 	value: CologProfileSettingsValue;
@@ -122,12 +122,15 @@ export default function CologProfileFormFields({
 				)}
 			</Field>
 
-			<CologProfileSocialFields
-				value={value}
+			<ProfileSocialFields
+				serviceUrl={value.serviceUrl ?? ''}
+				githubUrl={value.githubUrl ?? ''}
 				errors={errors}
-				refs={refs}
+				serviceUrlRef={refs.serviceUrl}
+				githubUrlRef={refs.githubUrl}
+				description="링크를 통해 팀을 표현해 보세요."
 				disabled={disabled}
-				onTextFieldChange={onTextFieldChange}
+				onChange={onTextFieldChange}
 			/>
 		</div>
 	);
