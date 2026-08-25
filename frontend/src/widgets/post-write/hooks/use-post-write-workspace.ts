@@ -1,19 +1,18 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
 import { usePostPublication } from '@/features/post-write/hooks/use-post-publication';
 import { usePostPublicationSettings } from '@/features/post-write/hooks/use-post-publication-settings';
+import { usePostWriteLeaveGuard } from '@/features/post-write/hooks/use-post-write-leave-guard';
 import type {
 	EditorDocument,
 	PublicationSettings,
 	PublishPost,
 	PublishPostResult,
 } from '@/features/post-write/model/post-publication';
-import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface UsePostWriteWorkspaceOptions {
@@ -29,9 +28,6 @@ export function usePostWriteWorkspace({
 	publishPost,
 	navigate,
 }: UsePostWriteWorkspaceOptions) {
-	const router = useRouter();
-
-	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 	const {
 		titleRef,
 		editorRef,
@@ -55,26 +51,15 @@ export function usePostWriteWorkspace({
 		validatePublicationSettings,
 		clearSelectedImageUrl,
 	} = usePostPublicationSettings({ initialSettings: initialPublicationSettings });
-
-	const replaceNavigation = useCallback(
-		(href: string) => {
-			if (navigate !== undefined) {
-				navigate(href);
-				return;
-			}
-			router.replace(href);
-		},
-		[navigate, router],
-	);
-
-	const handleNavigationAttempt = useCallback(() => {
-		setIsLeaveModalOpen(true);
-	}, []);
-
-	const { cancelPendingNavigation, continuePendingNavigation, clearGuardEntry } = useUnsavedChangesGuard({
+	const {
+		isLeaveModalOpen,
+		cancelLeave: handleCancelLeave,
+		confirmLeave: handleConfirmLeave,
+		navigateAfterCompletion,
+	} = usePostWriteLeaveGuard({
 		isDirty,
-		onNavigationAttempt: handleNavigationAttempt,
-		onReplace: replaceNavigation,
+		markClean,
+		navigate,
 	});
 	const handlePublished = useCallback(
 		(result: PublishPostResult, settings: PublicationSettings) => {
@@ -84,12 +69,10 @@ export function usePostWriteWorkspace({
 				hasCustomRepresentativeImage: settings.representativeImage !== null,
 			});
 
-			clearGuardEntry();
-			markClean();
 			clearSelectedImageUrl();
-			replaceNavigation(postDetailPath);
+			navigateAfterCompletion(postDetailPath);
 		},
-		[clearGuardEntry, clearSelectedImageUrl, markClean, replaceNavigation],
+		[clearSelectedImageUrl, navigateAfterCompletion],
 	);
 	const {
 		document: publicationDocument,
@@ -116,17 +99,6 @@ export function usePostWriteWorkspace({
 		}
 
 		await publishDocument(publicationSettings);
-	};
-
-	const handleCancelLeave = () => {
-		cancelPendingNavigation();
-		setIsLeaveModalOpen(false);
-	};
-
-	const handleConfirmLeave = () => {
-		setIsLeaveModalOpen(false);
-		markClean();
-		void continuePendingNavigation();
 	};
 
 	return {
