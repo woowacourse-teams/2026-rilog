@@ -37,7 +37,7 @@ public class PostContent {
         return new PostContent(value);
     }
 
-    public List<String> fileUrlsRemovedIn(PostContent newContent) {
+    public List<String> fileUrlsNotIn(PostContent newContent) {
         Set<String> remaining = new HashSet<>(newContent.extractFileUrls());
         return extractFileUrls().stream()
                 .filter(url -> !remaining.contains(url))

@@ -84,7 +84,7 @@ class PostContentTest {
         PostContent after = content(imageBlock(IMAGE_URL_A));
 
         // when & then
-        assertThat(before.fileUrlsRemovedIn(after))
+        assertThat(before.fileUrlsNotIn(after))
                 .containsExactly(IMAGE_URL_B);
     }
 
