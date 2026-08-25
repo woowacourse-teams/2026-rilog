@@ -1,9 +1,11 @@
 import type { PostEditorHandle, PostEditorProps } from '../model/post-editor';
+import type { Block } from '@blocknote/core';
 import type { ComponentType, RefObject } from 'react';
 
 interface PostBodyFieldProps {
 	editorComponent: ComponentType<PostEditorProps>;
 	editorRef: RefObject<PostEditorHandle | null>;
+	initialBlocks?: Block[];
 	error?: string;
 	onReady: PostEditorProps['onReady'];
 	onChange: PostEditorProps['onChange'];
@@ -13,12 +15,13 @@ interface PostBodyFieldProps {
 const POST_BODY_ERROR_ID = 'post-body-error';
 
 export default function PostBodyField(props: PostBodyFieldProps) {
-	const { editorRef, error, onReady, onChange, uploadFile } = props;
+	const { editorRef, initialBlocks, error, onReady, onChange, uploadFile } = props;
 
 	return (
 		<>
 			<props.editorComponent
 				ref={editorRef}
+				initialBlocks={initialBlocks}
 				onReady={onReady}
 				onChange={onChange}
 				uploadFile={uploadFile}

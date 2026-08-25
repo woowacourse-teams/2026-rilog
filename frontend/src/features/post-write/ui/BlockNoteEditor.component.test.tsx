@@ -133,7 +133,19 @@ describe('BlockNoteEditor', () => {
 		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={configuredUploadFile} />);
 
 		expect(useCreateBlockNote).toHaveBeenCalledWith(expect.objectContaining({ uploadFile: configuredUploadFile }), [
+			undefined,
 			configuredUploadFile,
+		]);
+	});
+
+	it('전달받은 본문 블록을 BlockNote 초기 문서로 사용한다', () => {
+		render(
+			<BlockNoteEditor initialBlocks={blocks} onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />,
+		);
+
+		expect(useCreateBlockNote).toHaveBeenLastCalledWith(expect.objectContaining({ initialContent: blocks }), [
+			blocks,
+			defaultUploadFile,
 		]);
 	});
 
@@ -148,8 +160,24 @@ describe('BlockNoteEditor', () => {
 			expect.objectContaining({
 				dictionary,
 			}),
-			[defaultUploadFile],
+			[undefined, defaultUploadFile],
 		);
+	});
+
+	it('초기 본문이 비어 있으면 BlockNote가 기본 문서를 생성하도록 맡긴다', () => {
+		const initialBlocks: Block[] = [];
+		render(
+			<BlockNoteEditor
+				initialBlocks={initialBlocks}
+				onChange={vi.fn()}
+				onReady={vi.fn()}
+				uploadFile={defaultUploadFile}
+			/>,
+		);
+
+		const latestCall = useCreateBlockNote.mock.calls.at(-1);
+		expect(latestCall?.[0]).not.toHaveProperty('initialContent');
+		expect(latestCall?.[1]).toEqual([initialBlocks, defaultUploadFile]);
 	});
 
 	it('가용 공간을 기준으로 배치하는 커스텀 슬래시 메뉴를 사용한다', () => {

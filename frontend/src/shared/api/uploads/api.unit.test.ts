@@ -146,6 +146,51 @@ describe('uploadFileWithPresignedUrl', () => {
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 
+	it('PDF는 presigned URL 요청 payload와 S3 PUT 요청에 application/pdf를 사용한다', async () => {
+		const pdfPresignedResponse = {
+			...MOCK_PRESIGNED_RESPONSE,
+			data: {
+				...MOCK_PRESIGNED_RESPONSE.data,
+				objectKey: 'rilog/uploads/files/document.pdf',
+				uploadUrl: 'https://s3.rilog.test/upload/document.pdf?signature=xyz',
+				headers: {
+					'content-type': ['application/pdf'],
+					'x-amz-tagging': ['status=TEMPORARY'],
+				},
+			},
+		};
+		let presignedRequestContentType: string | null = null;
+		let presignedRequestBody: unknown;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+			if (url.includes('/v1/uploads/presigned-url')) {
+				if (input instanceof Request) {
+					presignedRequestContentType = input.headers.get('content-type');
+					presignedRequestBody = await input.clone().json();
+				}
+				return Response.json(pdfPresignedResponse);
+			}
+			if (url.includes('https://s3.rilog.test/upload')) {
+				return new Response(null, { status: 200 });
+			}
+			throw new Error(`Unexpected URL: ${url}`);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File(['pdf-bytes'], 'document.pdf', { type: 'application/pdf' });
+		await uploadFileWithPresignedUrl({ file, type: 'FILE' });
+
+		expect(presignedRequestContentType).toContain('application/json');
+		expect(presignedRequestBody).toMatchObject({
+			contentType: 'application/pdf',
+			type: 'FILE',
+		});
+
+		const storageRequest = fetchMock.mock.calls[1]?.[0] as Request;
+		expect(storageRequest.method).toBe('PUT');
+		expect(storageRequest.headers.get('content-type')).toBe('application/pdf');
+	});
+
 	it('Presigned URL 발급 시 data가 없으면 에러를 던진다', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data: null }));
 		vi.stubGlobal('fetch', fetchMock);

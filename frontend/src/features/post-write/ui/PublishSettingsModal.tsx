@@ -59,6 +59,7 @@ export default function PublishSettingsModal({
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
+	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
 	// 선택 가능한 Co-log가 하나뿐일 때 자동 선택할 blog
 	const onlyBlog = cologOptions.length === 1 ? cologOptions[0] : undefined;
 
@@ -108,18 +109,16 @@ export default function PublishSettingsModal({
 							<p className="mt-1 text-caption-1 text-text-secondary">
 								직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.
 							</p>
-							<div
-								className={`mt-4 grid gap-2 ${settings.representativeImage === null ? 'grid-cols-1' : 'grid-cols-2'}`}
-							>
+							<div className={`mt-4 grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
 								{/* 브라우저에서 선택한 이미지 파일은 공용 ImageUploader를 통해 부모에 전달됩니다. */}
 								<ImageUploader
 									fullWidth
-									buttonLabel={settings.representativeImage === null ? '이미지 선택' : '이미지 변경'}
+									buttonLabel={hasRepresentativeImage ? '이미지 변경' : '이미지 선택'}
 									disabled={isPublishing}
 									onChange={resetFileInput}
 									onFileChange={onImageChange}
 								/>
-								{settings.representativeImage !== null && (
+								{hasRepresentativeImage && (
 									<Button
 										size="md"
 										variant="ghost"

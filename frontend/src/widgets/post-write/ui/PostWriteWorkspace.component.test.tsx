@@ -9,15 +9,16 @@ import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
 import type { PostPublishResponse, PublishPostRequest } from '@/shared/api/blogs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
+import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
-type UploadImage = (request: { file: File; type: 'IMAGE' }) => Promise<{ objectKey: string }>;
+type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PublishPostRequest) => Promise<ApiResponse<PostPublishResponse>>;
 
 const { replaceMock, uploadRepresentativeImageMock, requestPostPublicationMock } = vi.hoisted(() => ({
 	replaceMock: vi.fn(),
-	uploadRepresentativeImageMock: vi.fn<UploadImage>(),
+	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 }));
 
@@ -86,9 +87,9 @@ const createImage = (url: string): Block =>
 		children: [],
 	}) as unknown as Block;
 
-function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
+function FakeEditor({ initialBlocks, onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
 	// BlockNote를 로드하지 않고도 부모와 주고받는 최신 본문 계약을 재현
-	const blocksRef = useRef<Block[]>([createParagraph()]);
+	const blocksRef = useRef<Block[]>(initialBlocks ?? [createParagraph()]);
 	// focus 위임 여부를 실제 textarea focus로 검증하기 위한 ref
 	const editorRef = useRef<HTMLTextAreaElement>(null);
 
@@ -105,6 +106,7 @@ function FakeEditor({ onChange, onReady, ariaDescribedBy, ref }: PostEditorProps
 			ref={editorRef}
 			aria-label="게시글 내용"
 			aria-describedby={ariaDescribedBy}
+			data-initial-block-count={initialBlocks?.length ?? 0}
 			onChange={(event) => {
 				blocksRef.current = [createParagraph(event.currentTarget.value)];
 				onChange(blocksRef.current);
@@ -135,6 +137,28 @@ function BodyImageUploadEditor({ onReady, uploadFile }: PostEditorProps) {
 	);
 }
 
+function BodyPdfUploadEditor({ onReady, uploadFile }: PostEditorProps) {
+	const [uploadedFileUrl, setUploadedFileUrl] = useState('');
+
+	useEffect(() => {
+		onReady([createParagraph('PDF가 있는 본문')]);
+	}, [onReady]);
+
+	return (
+		<>
+			<button
+				type="button"
+				onClick={() => {
+					void uploadFile(new File(['pdf'], 'document.pdf', { type: 'application/pdf' })).then(setUploadedFileUrl);
+				}}
+			>
+				본문 PDF 업로드
+			</button>
+			<output>{uploadedFileUrl}</output>
+		</>
+	);
+}
+
 function FirstBodyImageEditor({ onReady }: PostEditorProps) {
 	useEffect(() => {
 		onReady([
@@ -160,6 +184,62 @@ const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe('PostWriteWorkspace', () => {
+	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
+		const initialBlocks = [createParagraph('기존 본문')];
+		render(
+			<PostWriteWorkspace
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 제목', blocks: initialBlocks }}
+			/>,
+		);
+
+		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('기존 제목');
+		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveAttribute('data-initial-block-count', '1');
+
+		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
+		window.dispatchEvent(beforeUnloadEvent);
+		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
+	});
+
+	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
+		const user = userEvent.setup();
+		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '31', slug: 'personal-blog' });
+		render(
+			<PostWriteWorkspace
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
+				initialPublicationSettings={{
+					category: 'DAILY',
+					blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+					representativeImage: null,
+					representativeImageUrl: 'posts/existing-thumbnail.png',
+				}}
+				publishPost={publishPost}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+
+		expect(screen.getByRole('radio', { name: '일상' })).toBeChecked();
+		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue('3');
+		expect(screen.getByRole('option', { name: '내 블로그' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'https://images.rilog.test/posts/existing-thumbnail.png',
+		);
+
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(publishPost).toHaveBeenCalledOnce());
+		expect(publishPost.mock.calls[0]?.[0].settings).toMatchObject({
+			category: 'DAILY',
+			blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+			representativeImage: null,
+			representativeImageUrl: 'posts/existing-thumbnail.png',
+		});
+	});
+
 	it('진입 시 제목에 focus하고 Enter를 누르면 본문으로 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
@@ -211,6 +291,21 @@ describe('PostWriteWorkspace', () => {
 		expect(uploadedBodyImage?.file.name).toBe('body.png');
 		expect(uploadedBodyImage?.file.type).toBe('image/png');
 		expect(uploadedBodyImage?.type).toBe('IMAGE');
+	});
+
+	it('본문의 PDF 파일을 범용 파일로 업로드하고 완성된 URL을 에디터에 전달한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://files.rilog.test');
+		uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/document.pdf' });
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={BodyPdfUploadEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '본문 PDF 업로드' }));
+
+		expect(await screen.findByText('https://files.rilog.test/posts/document.pdf')).toBeInTheDocument();
+		const uploadedBodyFile = uploadRepresentativeImageMock.mock.calls[0]?.[0];
+		expect(uploadedBodyFile?.file.name).toBe('document.pdf');
+		expect(uploadedBodyFile?.file.type).toBe('application/pdf');
+		expect(uploadedBodyFile?.type).toBe('FILE');
 	});
 
 	it('모달을 닫았다 열어도 게시 설정을 유지하고 backdrop으로 닫히지 않는다', async () => {
@@ -391,6 +486,36 @@ describe('PostWriteWorkspace', () => {
 
 		unmount();
 		vi.unstubAllGlobals();
+	});
+
+	it('수정 초기 설정의 기존 블로그, 카테고리와 썸네일 key를 실제 API 요청에 유지한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(
+			<PostWriteWorkspace
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
+				initialPublicationSettings={{
+					category: 'DAILY',
+					blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+					representativeImage: null,
+					representativeImageUrl: 'posts/existing-thumbnail.png',
+				}}
+				navigate={navigate}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestPostPublicationMock).toHaveBeenCalledOnce());
+		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
+		const publicationRequest = requestPostPublicationMock.mock.calls[0]?.[0];
+		expect(publicationRequest?.slug).toBe('personal-blog');
+		expect(publicationRequest?.request).toMatchObject({
+			category: 'DAILY',
+			thumbnailImageUrl: 'posts/existing-thumbnail.png',
+		});
 	});
 
 	it('대표 이미지를 선택하지 않으면 본문의 첫 이미지 URL을 API에 전송한다', async () => {

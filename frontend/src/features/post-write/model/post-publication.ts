@@ -12,6 +12,13 @@ export interface PublicationSettings {
 	category: PostCategory;
 	blog: CologOption | null;
 	representativeImage: File | null;
+	representativeImageUrl: string | null;
+}
+
+export interface PostWriteInitialData {
+	authorId: number;
+	document: EditorDocument;
+	settings: PublicationSettings;
 }
 
 export interface PublishPostCommand {

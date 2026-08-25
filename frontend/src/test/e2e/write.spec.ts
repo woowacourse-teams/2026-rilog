@@ -89,6 +89,59 @@ const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
 };
 
 test.describe('글 작성', () => {
+	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
+		await enableWriteAccess(page);
+		await page.route('**/v1/posts/31', (route) =>
+			route.fulfill({
+				contentType: 'application/json',
+				body: JSON.stringify({
+					status: 200,
+					message: '게시글 상세 조회에 성공했습니다.',
+					data: {
+						title: '불러온 게시글 제목',
+						content: [
+							{
+								id: 'edit-paragraph',
+								type: 'paragraph',
+								props: {
+									backgroundColor: 'default',
+									textColor: 'default',
+									textAlignment: 'left',
+								},
+								content: [{ type: 'text', text: '불러온 게시글 본문', styles: {} }],
+								children: [],
+							},
+						],
+						publishedAt: '2026-08-24T00:00:00Z',
+						thumbnailImageUrl: 'posts/edit-thumbnail.png',
+						category: 'DAILY',
+						author: { userId: 1, nickname: 'E2E 사용자', slug: 'e2e-user', profileImageUrl: null },
+						owner: {
+							type: 'RILOG',
+							blogId: 1,
+							slug: 'e2e-user',
+							name: 'E2E 사용자',
+							profileImageUrl: null,
+						},
+					},
+				}),
+			}),
+		);
+
+		await page.goto('/write?postId=31');
+
+		await expect(page.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('불러온 게시글 제목');
+		await expect(page.getByRole('textbox', { name: '게시글 내용' })).toContainText('불러온 게시글 본문');
+		await page.getByRole('button', { name: '발행' }).click();
+		await expect(page.getByRole('radio', { name: '일상' })).toBeChecked();
+		await expect(page.getByRole('combobox', { name: 'Co-log' })).toHaveValue('1');
+		await expect(page.getByRole('option', { name: 'E2E 사용자' })).toHaveCount(1);
+		await expect(page.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			/posts\/edit-thumbnail\.png$/,
+		);
+	});
+
 	test('512px 미만의 좁은 데스크톱 화면에서 발행 버튼을 하단에 고정한다', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 500 });
 		await page.goto('/write');
