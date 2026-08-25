@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 
-import type { SettingsTab } from '../lib/get-next-tab';
 import type { FormEvent } from 'react';
 
 import type { CologMember } from '@/domains/blog/model/colog';
@@ -20,28 +19,28 @@ import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
-import { buildCologSettingsPath } from '@/shared/routes/app-routes';
+import { buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 import SettingsHeader from '@/shared/ui/settings/SettingsHeader';
 
-import { SETTINGS_TABS } from '../lib/get-next-tab';
+import { COLOG_SETTINGS_TABS } from '../lib/colog-settings-tabs';
 
 interface CologSettingsWorkspaceProps {
 	slug?: string;
-	initialTab?: SettingsTab;
+	initialTab?: CologSettingsTab;
 	initialMembers?: CologMember[];
 }
 
 interface CologSettingsWorkspaceContentProps {
 	slug: string;
-	initialTab: SettingsTab;
+	initialTab: CologSettingsTab;
 	initialMembers?: CologMember[];
 	initialProfile: CologProfileSettingsValue;
 }
 
-const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: string }> = {
+const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: string }> = {
 	profile: {
 		title: '프로필',
 		description: '팀의 기본 정보와 소개를 관리합니다.',
@@ -128,7 +127,7 @@ function CologSettingsWorkspaceContent({
 	initialMembers,
 	initialProfile,
 }: CologSettingsWorkspaceContentProps) {
-	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
@@ -142,7 +141,7 @@ function CologSettingsWorkspaceContent({
 		activeTab === 'profile' ? isProfileDirty : activeTab === 'members' ? memberDrafts.isDirty : false;
 
 	const commitTabChange = useCallback(
-		(nextTab: SettingsTab, path: string) => {
+		(nextTab: CologSettingsTab, path: string) => {
 			profileForm.setValue(savedProfile);
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
@@ -295,7 +294,7 @@ function CologSettingsWorkspaceContent({
 			header={
 				<SettingsHeader
 					activeTab={activeTab}
-					tabs={SETTINGS_TABS}
+					tabs={COLOG_SETTINGS_TABS}
 					tabListLabel="팀 설정"
 					idPrefix="colog-settings"
 					title={TAB_HEADER_CONFIG[activeTab].title}
