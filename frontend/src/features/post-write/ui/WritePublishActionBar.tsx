@@ -3,9 +3,10 @@ import Button from '@/shared/ui/button/Button';
 interface WritePublishActionBarProps {
 	isEditorReady: boolean;
 	onPublish: () => void;
+	onShowDraft: () => void;
 }
 
-export default function WritePublishActionBar({ isEditorReady, onPublish }: WritePublishActionBarProps) {
+export default function WritePublishActionBar({ isEditorReady, onPublish, onShowDraft }: WritePublishActionBarProps) {
 	const draftCount = 3;
 
 	return (
@@ -24,7 +25,7 @@ export default function WritePublishActionBar({ isEditorReady, onPublish }: Writ
 						className="aspect-square h-auto rounded-l-none border-l-0"
 						variant="secondary"
 						disabled={!isEditorReady}
-						onClick={() => {}}
+						onClick={onShowDraft}
 					>
 						{draftCount}
 					</Button>

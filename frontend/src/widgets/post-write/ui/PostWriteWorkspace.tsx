@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { ComponentType } from 'react';
 
@@ -9,6 +9,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
+import DraftListModal from '@/features/post-write/ui/DraftListModal';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -143,9 +144,17 @@ export default function PostWriteWorkspace({
 		navigate,
 	});
 
+	const [isDraftListModalOpen, setIsDraftListModalOpen] = useState(false);
+	const selectDraftPost = () => {};
+	const deleteDraftPost = () => {};
+
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
-			<WritePublishActionBar isEditorReady={isEditorReady} onPublish={handleOpenPublishSettings} />
+			<WritePublishActionBar
+				isEditorReady={isEditorReady}
+				onPublish={handleOpenPublishSettings}
+				onShowDraft={() => setIsDraftListModalOpen(true)}
+			/>
 			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
 				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
 					<PostTitleField
@@ -184,6 +193,13 @@ export default function PostWriteWorkspace({
 				onCoLogChange={handleCoLogChange}
 				onImageChange={handleImageChange}
 				onPublish={() => void handlePublish()}
+			/>
+
+			<DraftListModal
+				open={isDraftListModalOpen}
+				onClose={() => setIsDraftListModalOpen(false)}
+				onSelect={selectDraftPost}
+				onDelete={deleteDraftPost}
 			/>
 
 			<ConfirmModal
