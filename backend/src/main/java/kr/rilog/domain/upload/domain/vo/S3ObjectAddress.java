@@ -1,6 +1,12 @@
 package kr.rilog.domain.upload.domain.vo;
 
+import kr.rilog.domain.upload.exception.UploadException;
+
 import java.net.URI;
+
+import static kr.rilog.domain.upload.exception.UploadErrorInformation.INVALID_S3_URL_SCHEME;
+import static kr.rilog.domain.upload.exception.UploadErrorInformation.S3_OBJECT_KEY_MISSING;
+import static kr.rilog.domain.upload.exception.UploadErrorInformation.UNSUPPORTED_S3_HOST;
 
 public record S3ObjectAddress(
         String bucket,
@@ -12,42 +18,36 @@ public record S3ObjectAddress(
 
     public static S3ObjectAddress from(String objectUrl) {
         URI uri = URI.create(objectUrl);
-        validateScheme(uri, objectUrl);
+        validateScheme(uri);
 
         String host = uri.getHost();
-        validateHost(host, objectUrl);
+        validateHost(host);
 
         String bucket = host.substring(0, host.length() - S3_HOST_SUFFIX.length());
         String decodedPath = uri.getPath();
-        validatePath(decodedPath, objectUrl);
+        validatePath(decodedPath);
         String key = decodedPath.substring(1);
 
         return new S3ObjectAddress(bucket, key);
     }
 
-    // TODO 예외처리
-    private static void validateScheme(URI uri, String objectUrl) {
+    private static void validateScheme(URI uri) {
         if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            throw new IllegalArgumentException(
-                    "HTTPS 주소가 아닙니다: " + objectUrl);
+            throw new UploadException(INVALID_S3_URL_SCHEME);
         }
     }
 
-    // TODO 예외처리
-    private static void validateHost(String host, String objectUrl) {
+    private static void validateHost(String host) {
         if (host == null
                 || !host.endsWith(S3_HOST_SUFFIX)
                 || host.length() == S3_HOST_SUFFIX.length()) {
-            throw new IllegalArgumentException(
-                    "지원하지 않는 S3 주소입니다: " + objectUrl);
+            throw new UploadException(UNSUPPORTED_S3_HOST);
         }
     }
 
-    // TODO 예외처리
-    private static void validatePath(String path, String objectUrl) {
+    private static void validatePath(String path) {
         if (path == null || path.length() <= 1) {
-            throw new IllegalArgumentException(
-                    "S3 객체 키가 없습니다: " + objectUrl);
+            throw new UploadException(S3_OBJECT_KEY_MISSING);
         }
     }
 
