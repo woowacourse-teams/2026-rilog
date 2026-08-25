@@ -114,21 +114,30 @@ export function usePostWriteWorkspace({
 		setDocumentErrors((currentErrors) => ({ ...currentErrors, body: undefined }));
 	}, []);
 
-	const handleOpenPublishSettings = () => {
+	const preparePostDocument = (): EditorDocument | null => {
 		const nextErrors = validatePostDocument(title, latestBlocksRef.current);
 		setDocumentErrors(nextErrors);
 
 		if (nextErrors.title !== undefined) {
 			titleRef.current?.focus();
-			return;
+			return null;
 		}
 
 		if (nextErrors.body !== undefined) {
 			editorRef.current?.focus();
+			return null;
+		}
+
+		return { title: title.trim(), blocks: [...latestBlocksRef.current] };
+	};
+
+	const handleOpenPublishSettings = () => {
+		const document = preparePostDocument();
+		if (document === null) {
 			return;
 		}
 
-		setPublicationBlocks([...latestBlocksRef.current]);
+		setPublicationBlocks(document.blocks);
 		setPublishState({ status: 'idle' });
 		setIsPublishModalOpen(true);
 	};
@@ -236,6 +245,7 @@ export function usePostWriteWorkspace({
 		handleTitleChange,
 		handleEditorReady,
 		handleEditorChange,
+		preparePostDocument,
 		handleOpenPublishSettings,
 		handleImageChange,
 		handleCategoryChange,

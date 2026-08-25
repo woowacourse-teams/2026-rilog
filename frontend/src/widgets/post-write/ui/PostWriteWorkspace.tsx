@@ -129,6 +129,7 @@ export default function PostWriteWorkspace({
 		handleTitleChange,
 		handleEditorReady,
 		handleEditorChange,
+		preparePostDocument,
 		handleOpenPublishSettings,
 		handleImageChange,
 		handleCategoryChange,
@@ -154,7 +155,13 @@ export default function PostWriteWorkspace({
 	const [isDraftListModalOpen, setIsDraftListModalOpen] = useState(false);
 	const [draftPostIdPendingDeletion, setDraftPostIdPendingDeletion] = useState<number | null>(null);
 
-	const handleDraftSave = () => {};
+	const handleDraftSave = () => {
+		if (preparePostDocument() === null) {
+			return;
+		}
+
+		// TODO: 임시 저장 API 연동
+	};
 	const requestDraftPostDeletion = (draftPostId: number) => {
 		setDraftPostIdPendingDeletion(draftPostId);
 	};

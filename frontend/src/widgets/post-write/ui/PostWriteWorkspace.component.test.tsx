@@ -328,6 +328,24 @@ describe('PostWriteWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
 	});
 
+	it('유효하지 않은 문서를 임시저장하면 오류를 표시하고 첫 오류 필드로 focus한다', async () => {
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		expect(screen.getByText('제목을 입력해 주세요.')).toBeInTheDocument();
+		expect(screen.getByText('내용을 입력해 주세요.')).toBeInTheDocument();
+		const titleField = screen.getByRole('textbox', { name: '게시글 제목' });
+		expect(titleField).toHaveFocus();
+
+		await user.type(titleField, '임시 저장할 제목');
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		expect(screen.queryByText('제목을 입력해 주세요.')).not.toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
+	});
+
 	it('내 블로그를 제외하고 소속 팀 블로그만 발행 대상으로 보여 준다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
