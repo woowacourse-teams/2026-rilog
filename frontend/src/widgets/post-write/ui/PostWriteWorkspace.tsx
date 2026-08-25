@@ -119,7 +119,7 @@ export default function PostWriteWorkspace({
 		isEditorReady,
 		documentErrors,
 		publicationSettings,
-		selectedImageUrl,
+		representativeImagePreviewUrl,
 		publicationBlocks,
 		isPublishModalOpen,
 		isLeaveModalOpen,
@@ -214,7 +214,7 @@ export default function PostWriteWorkspace({
 				open={isPublishModalOpen}
 				postTitle={title.trim()}
 				settings={publicationSettings}
-				selectedImageUrl={selectedImageUrl ?? publicationSettings.representativeImageUrl}
+				selectedImageUrl={representativeImagePreviewUrl}
 				bodyBlocks={publicationBlocks}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}

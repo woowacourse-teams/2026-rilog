@@ -1,14 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { Block } from '@blocknote/core';
 
-import type { CologOption } from '@/domains/blog/model/colog';
-import type { PostCategory } from '@/domains/post/model/post';
 import { analytics } from '@/features/analytics/model/events';
 import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
+import { usePostPublicationSettings } from '@/features/post-write/hooks/use-post-publication-settings';
 import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
 import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
@@ -22,13 +21,6 @@ interface UsePostWriteWorkspaceOptions {
 	navigate?: (href: string) => void;
 }
 
-const INITIAL_PUBLICATION_SETTINGS: PublicationSettings = {
-	category: 'IT',
-	blog: null,
-	representativeImage: null,
-	representativeImageUrl: null,
-};
-
 export function usePostWriteWorkspace({
 	initialDocument,
 	initialPublicationSettings,
@@ -37,19 +29,11 @@ export function usePostWriteWorkspace({
 }: UsePostWriteWorkspaceOptions) {
 	const router = useRouter();
 
-	const selectedImageUrlRef = useRef<string | null>(null);
-
-	const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 	const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
 	const [publicationBlocks, setPublicationBlocks] = useState<Block[]>([]);
 	const [publishState, setPublishState] = useState<PublishState>({ status: 'idle' });
-	const [publicationSettings, setPublicationSettings] = useState(
-		initialPublicationSettings ?? INITIAL_PUBLICATION_SETTINGS,
-	);
-
-	const [cologError, setCologError] = useState<string>();
 	const {
 		titleRef,
 		editorRef,
@@ -63,6 +47,16 @@ export function usePostWriteWorkspace({
 		preparePostDocument,
 		markClean,
 	} = usePostDocument({ initialDocument });
+	const {
+		settings: publicationSettings,
+		representativeImagePreviewUrl,
+		cologError,
+		handleImageChange,
+		handleCategoryChange,
+		handleCoLogChange,
+		validatePublicationSettings,
+		clearSelectedImageUrl,
+	} = usePostPublicationSettings({ initialSettings: initialPublicationSettings });
 
 	const isPublishing = publishState.status === 'pending';
 	const publishError = publishState.status === 'error' ? publishState.message : undefined;
@@ -88,15 +82,6 @@ export function usePostWriteWorkspace({
 		onReplace: replaceNavigation,
 	});
 
-	useEffect(
-		() => () => {
-			if (selectedImageUrlRef.current !== null) {
-				URL.revokeObjectURL(selectedImageUrlRef.current);
-			}
-		},
-		[],
-	);
-
 	const handleOpenPublishSettings = () => {
 		const document = preparePostDocument();
 		if (document === null) {
@@ -108,41 +93,15 @@ export function usePostWriteWorkspace({
 		setIsPublishModalOpen(true);
 	};
 
-	const handleImageChange = (file: File | null) => {
-		if (selectedImageUrlRef.current !== null) {
-			URL.revokeObjectURL(selectedImageUrlRef.current);
-		}
-
-		const nextImageUrl = file === null ? null : URL.createObjectURL(file);
-		selectedImageUrlRef.current = nextImageUrl;
-		setSelectedImageUrl(nextImageUrl);
-		setPublicationSettings((currentSettings) => ({
-			...currentSettings,
-			representativeImage: file,
-			representativeImageUrl: null,
-		}));
-	};
-
-	const handleCategoryChange = (category: PostCategory) => {
-		setPublicationSettings((currentSettings) => ({ ...currentSettings, category }));
-	};
-
-	const handleCoLogChange = (blog: CologOption | null) => {
-		setPublicationSettings((currentSettings) => ({ ...currentSettings, blog }));
-		setCologError(undefined);
-	};
-
 	const handlePublish = async () => {
 		if (publishState.status === 'pending') {
 			return;
 		}
 
-		if (publicationSettings.blog === null) {
-			setCologError('Co-log를 선택해 주세요.');
+		if (!validatePublicationSettings()) {
 			return;
 		}
 
-		setCologError(undefined);
 		setPublishState({ status: 'pending' });
 
 		try {
@@ -160,11 +119,7 @@ export function usePostWriteWorkspace({
 			markClean();
 			setIsPublishModalOpen(false);
 
-			if (selectedImageUrlRef.current !== null) {
-				URL.revokeObjectURL(selectedImageUrlRef.current);
-				selectedImageUrlRef.current = null;
-				setSelectedImageUrl(null);
-			}
+			clearSelectedImageUrl();
 
 			replaceNavigation(postDetailPath);
 		} catch (error) {
@@ -201,7 +156,7 @@ export function usePostWriteWorkspace({
 		isEditorReady,
 		documentErrors,
 		publicationSettings,
-		selectedImageUrl,
+		representativeImagePreviewUrl,
 		publicationBlocks,
 		isPublishModalOpen,
 		isLeaveModalOpen,
