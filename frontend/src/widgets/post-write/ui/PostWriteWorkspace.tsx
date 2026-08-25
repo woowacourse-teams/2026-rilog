@@ -120,7 +120,7 @@ export default function PostWriteWorkspace({
 		documentErrors,
 		publicationSettings,
 		representativeImagePreviewUrl,
-		publicationBlocks,
+		publicationDocument,
 		isPublishModalOpen,
 		isLeaveModalOpen,
 		cologError,
@@ -212,10 +212,10 @@ export default function PostWriteWorkspace({
 
 			<PublishSettingsModal
 				open={isPublishModalOpen}
-				postTitle={title.trim()}
+				postTitle={publicationDocument?.title ?? title.trim()}
 				settings={publicationSettings}
 				selectedImageUrl={representativeImagePreviewUrl}
-				bodyBlocks={publicationBlocks}
+				bodyBlocks={publicationDocument?.blocks ?? []}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}
 				cologError={cologError}
