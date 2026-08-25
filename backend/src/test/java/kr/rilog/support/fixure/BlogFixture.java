@@ -34,6 +34,17 @@ public class BlogFixture {
                 .build();
     }
 
+    public static Blog otherUserRilog() {
+        User otherUser = createUser(2L);
+        return Blog.builder()
+                .id(2L)
+                .owner(otherUser)
+                .slug(Slug.from("other-rilog"))
+                .profile(rilogProfile())
+                .blogType(BlogType.RILOG)
+                .build();
+    }
+
     public static Blog createColog(User owner) {
         return Blog.builder()
                 .id(1L)
@@ -49,6 +60,17 @@ public class BlogFixture {
                 .id(1L)
                 .owner(owner)
                 .slug(Slug.from(slug))
+                .profile(cologProfile())
+                .blogType(BlogType.COLOG)
+                .build();
+    }
+
+    public static Blog targetColog() {
+        User owner = createUser(3L);
+        return Blog.builder()
+                .id(2L)
+                .owner(owner)
+                .slug(Slug.from("target-colog"))
                 .profile(cologProfile())
                 .blogType(BlogType.COLOG)
                 .build();
