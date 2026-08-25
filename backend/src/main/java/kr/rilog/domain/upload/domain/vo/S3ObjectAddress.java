@@ -4,9 +4,7 @@ import kr.rilog.domain.upload.exception.UploadException;
 
 import java.net.URI;
 
-import static kr.rilog.domain.upload.exception.UploadErrorInformation.INVALID_S3_URL_SCHEME;
-import static kr.rilog.domain.upload.exception.UploadErrorInformation.S3_OBJECT_KEY_MISSING;
-import static kr.rilog.domain.upload.exception.UploadErrorInformation.UNSUPPORTED_S3_HOST;
+import static kr.rilog.domain.upload.exception.UploadErrorInformation.*;
 
 public record S3ObjectAddress(
         String bucket,
@@ -16,19 +14,21 @@ public record S3ObjectAddress(
     private static final String S3_HOST_SUFFIX = ".s3.ap-northeast-2.amazonaws.com";
     private static final String HTTPS_SCHEME = "https";
 
-    public static S3ObjectAddress from(String objectUrl) {
+    public static S3ObjectAddress from(String objectUrl, String originBucket) {
         URI uri = URI.create(objectUrl);
         validateScheme(uri);
 
         String host = uri.getHost();
         validateHost(host);
 
-        String bucket = host.substring(0, host.length() - S3_HOST_SUFFIX.length());
+        String parsedBucket = host.substring(0, host.length() - S3_HOST_SUFFIX.length());
+        validateBucket(parsedBucket, originBucket);
+
         String decodedPath = uri.getPath();
         validatePath(decodedPath);
         String key = decodedPath.substring(1);
 
-        return new S3ObjectAddress(bucket, key);
+        return new S3ObjectAddress(parsedBucket, key);
     }
 
     private static void validateScheme(URI uri) {
@@ -46,6 +46,12 @@ public record S3ObjectAddress(
     private static void validatePath(String path) {
         if (path == null || path.length() <= 1) {
             throw new UploadException(S3_OBJECT_KEY_MISSING);
+        }
+    }
+
+    private static void validateBucket(String parsedBucket, String originBucket) {
+        if (parsedBucket.equals(originBucket)) {
+            throw new UploadException(UNSUPPORTED_S3_BUCKET);
         }
     }
 

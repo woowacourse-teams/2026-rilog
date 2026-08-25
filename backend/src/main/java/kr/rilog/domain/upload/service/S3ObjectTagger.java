@@ -21,7 +21,7 @@ public class S3ObjectTagger {
 
     public void fileTag(List<String> objectUrls, TagStatus tagStatus) {
         for (String objectUrl : objectUrls) {
-            S3ObjectAddress address = S3ObjectAddress.from(objectUrl);
+            S3ObjectAddress address = S3ObjectAddress.from(objectUrl, properties.bucket());
             changeS3ObjectTag(address.key(), tagStatus);
         }
     }
