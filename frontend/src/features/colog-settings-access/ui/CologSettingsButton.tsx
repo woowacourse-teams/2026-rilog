@@ -1,10 +1,9 @@
 'use client';
 
+import { useSettingsAccess } from '@/features/settings-access/hooks/use-settings-access';
 import SettingsIcon from '@/shared/assets/icons/settings.svg';
 import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
-
-import { useCologSettingsAccess } from '../hooks/use-colog-settings-access';
 
 interface CologSettingsButtonProps {
 	isOnCover?: boolean;
@@ -12,7 +11,7 @@ interface CologSettingsButtonProps {
 }
 
 export default function CologSettingsButton({ isOnCover = false, slug }: CologSettingsButtonProps) {
-	const accessStatus = useCologSettingsAccess(slug);
+	const accessStatus = useSettingsAccess({ type: 'COLOG', slug });
 	const iconColor = isOnCover ? 'var(--text-on-dark)' : 'var(--text-secondary)';
 
 	if (accessStatus !== 'authorized') {

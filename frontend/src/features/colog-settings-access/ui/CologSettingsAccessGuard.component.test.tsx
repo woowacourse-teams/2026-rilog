@@ -2,31 +2,31 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CologSettingsAccessStatus } from '../hooks/use-colog-settings-access';
+import type { SettingsAccessStatus } from '@/features/settings-access/hooks/use-settings-access';
 
 import CologSettingsAccessGuard from './CologSettingsAccessGuard';
 
-const { replaceMock, useCologSettingsAccessMock } = vi.hoisted(() => ({
+const { replaceMock, useSettingsAccessMock } = vi.hoisted(() => ({
 	replaceMock: vi.fn(),
-	useCologSettingsAccessMock: vi.fn<() => CologSettingsAccessStatus>(),
+	useSettingsAccessMock: vi.fn<() => SettingsAccessStatus>(),
 }));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ replace: replaceMock }),
 }));
 
-vi.mock('../hooks/use-colog-settings-access', () => ({
-	useCologSettingsAccess: useCologSettingsAccessMock,
+vi.mock('@/features/settings-access/hooks/use-settings-access', () => ({
+	useSettingsAccess: useSettingsAccessMock,
 }));
 
 describe('CologSettingsAccessGuard', () => {
 	beforeEach(() => {
 		replaceMock.mockReset();
-		useCologSettingsAccessMock.mockReset();
+		useSettingsAccessMock.mockReset();
 	});
 
 	it.each(['initializing', 'checking'] as const)('%s 상태에서는 설정 내용을 노출하지 않는다', (status) => {
-		useCologSettingsAccessMock.mockReturnValue(status);
+		useSettingsAccessMock.mockReturnValue(status);
 
 		render(
 			<CologSettingsAccessGuard slug="rilog">
@@ -40,7 +40,7 @@ describe('CologSettingsAccessGuard', () => {
 	});
 
 	it('권한이 있으면 설정 내용을 렌더링한다', () => {
-		useCologSettingsAccessMock.mockReturnValue('authorized');
+		useSettingsAccessMock.mockReturnValue('authorized');
 
 		render(
 			<CologSettingsAccessGuard slug="rilog">
@@ -54,7 +54,7 @@ describe('CologSettingsAccessGuard', () => {
 
 	it('인증되지 않았으면 로그인 필요 안내 후 팀 홈으로 이동한다', async () => {
 		const user = userEvent.setup();
-		useCologSettingsAccessMock.mockReturnValue('unauthenticated');
+		useSettingsAccessMock.mockReturnValue('unauthenticated');
 
 		render(
 			<CologSettingsAccessGuard slug="@rilog">
@@ -70,7 +70,7 @@ describe('CologSettingsAccessGuard', () => {
 
 	it('설정 권한이 없으면 권한 안내 후 팀 홈으로 이동한다', async () => {
 		const user = userEvent.setup();
-		useCologSettingsAccessMock.mockReturnValue('forbidden');
+		useSettingsAccessMock.mockReturnValue('forbidden');
 
 		render(
 			<CologSettingsAccessGuard slug="@rilog">
@@ -85,7 +85,7 @@ describe('CologSettingsAccessGuard', () => {
 	});
 
 	it('권한 조회가 실패하면 설정 내용을 숨기고 복귀 수단을 제공한다', () => {
-		useCologSettingsAccessMock.mockReturnValue('error');
+		useSettingsAccessMock.mockReturnValue('error');
 
 		render(
 			<CologSettingsAccessGuard slug="rilog">
@@ -101,14 +101,14 @@ describe('CologSettingsAccessGuard', () => {
 
 	it('권한이 사라지면 렌더링 중인 설정 내용을 제거하고 홈으로 이동한다', async () => {
 		const user = userEvent.setup();
-		useCologSettingsAccessMock.mockReturnValue('authorized');
+		useSettingsAccessMock.mockReturnValue('authorized');
 		const { rerender } = render(
 			<CologSettingsAccessGuard slug="rilog">
 				<div>설정 내용</div>
 			</CologSettingsAccessGuard>,
 		);
 
-		useCologSettingsAccessMock.mockReturnValue('forbidden');
+		useSettingsAccessMock.mockReturnValue('forbidden');
 		rerender(
 			<CologSettingsAccessGuard slug="rilog">
 				<div>설정 내용</div>
