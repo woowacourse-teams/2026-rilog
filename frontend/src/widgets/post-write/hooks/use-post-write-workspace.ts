@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
+import { usePostDrafts } from '@/features/post-write/hooks/use-post-drafts';
 import { usePostPublication } from '@/features/post-write/hooks/use-post-publication';
 import { usePostPublicationSettings } from '@/features/post-write/hooks/use-post-publication-settings';
 import { usePostWriteLeaveGuard } from '@/features/post-write/hooks/use-post-write-leave-guard';
@@ -41,6 +42,7 @@ export function usePostWriteWorkspace({
 		preparePostDocument,
 		markClean,
 	} = usePostDocument({ initialDocument });
+	const drafts = usePostDrafts({ prepareDocument: preparePostDocument });
 	const {
 		settings: publicationSettings,
 		representativeImagePreviewUrl,
@@ -133,5 +135,6 @@ export function usePostWriteWorkspace({
 			cancel: handleCancelLeave,
 			confirm: handleConfirmLeave,
 		},
+		drafts,
 	};
 }
