@@ -2,6 +2,7 @@ package kr.rilog.domain.post.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
@@ -18,7 +19,10 @@ import org.hibernate.type.SqlTypes;
 import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 
 /**
@@ -116,6 +120,22 @@ public class Post extends BaseEntity {
                 .build();
     }
 
+    public void update(PostDetail detail, Blog targetBlog) {
+        validateTargetBlog(targetBlog);
+        this.category = detail.category();
+        this.visibility = detail.visibility();
+        this.title = detail.title();
+        this.content = detail.content();
+        this.thumbnailImageUrl = detail.thumbnailUrl();
+        this.colog = targetBlog.isColog() ? targetBlog : null;
+    }
+
+    private void validateTargetBlog(Blog targetBlog) {
+        if (!targetBlog.isColog() && !isOwnRilog(targetBlog)) {
+            throw new BlogException(RILOG_POST_PUBLISH_FORBIDDEN);
+        }
+    }
+
     public void validateReadableBy(Long requesterId) {
         if (!isPrivate()) {
             return;
@@ -130,6 +150,12 @@ public class Post extends BaseEntity {
         return visibility == PostVisibility.PRIVATE;
     }
 
+    public void validateWrittenBy(Long requesterId) {
+        if(!isWrittenBy(requesterId)) {
+            throw new PostException(NOT_POST_AUTHOR);
+        }
+    }
+
     public boolean isWrittenBy(Long requesterId) {
         return requesterId != null
                 && user != null
@@ -139,6 +165,10 @@ public class Post extends BaseEntity {
 
     public boolean isCologAffiliated() {
         return colog != null;
+    }
+
+    private boolean isOwnRilog(Blog targetBlog) {
+        return rilog == targetBlog || Objects.equals(rilog.getId(), targetBlog.getId());
     }
 
 }
