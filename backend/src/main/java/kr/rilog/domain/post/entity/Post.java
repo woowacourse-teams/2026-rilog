@@ -167,6 +167,14 @@ public class Post extends BaseEntity {
         return colog != null;
     }
 
+    public String getOwnSlug() {
+        if (isCologAffiliated()) {
+            return getColog().getSlug();
+        }
+
+        return getRilog().getSlug();
+    }
+
     private boolean isOwnRilog(Blog targetBlog) {
         return rilog == targetBlog || Objects.equals(rilog.getId(), targetBlog.getId());
     }
