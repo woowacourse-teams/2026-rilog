@@ -103,7 +103,7 @@ public class JwtOnboardingTokenProvider implements OnboardingTokenProvider {
 
     public Long parseLong(String claimName, DecodedJWT decodedJWT){
         Claim claim = decodedJWT.getClaim(claimName);
-        if (claim.isNull()) {
+        if (claim.isMissing() || claim.isNull()) {
             throw new AuthException(ONBOARDING_TOKEN_CLAIM_MISSING);
         }
 
@@ -112,7 +112,7 @@ public class JwtOnboardingTokenProvider implements OnboardingTokenProvider {
 
     public String parseString(String claimName, DecodedJWT decodedJWT){
         Claim claim = decodedJWT.getClaim(claimName);
-        if (claim.isNull()) {
+        if (claim.isMissing() || claim.isNull()) {
             throw new AuthException(ONBOARDING_TOKEN_CLAIM_MISSING);
         }
 

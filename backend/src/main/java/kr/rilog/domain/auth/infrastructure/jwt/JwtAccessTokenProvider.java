@@ -122,10 +122,9 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
         }
     }
 
-
     public Long parseLong(String claimName, DecodedJWT decodedJWT){
         Claim claim = decodedJWT.getClaim(claimName);
-        if (claim.isNull()) {
+        if (claim.isMissing() || claim.isNull()) {
             throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
         }
 
@@ -134,7 +133,7 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
 
     public String parseString(String claimName, DecodedJWT decodedJWT){
         Claim claim = decodedJWT.getClaim(claimName);
-        if (claim.isNull()) {
+        if (claim.isMissing() || claim.isNull()) {
             throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
         }
 
@@ -143,7 +142,7 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
 
     public Date parseDate(Date date){
         if (date == null) {
-            throw new AuthException(ONBOARDING_TOKEN_CLAIM_MISSING);
+            throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
         }
 
         return date;

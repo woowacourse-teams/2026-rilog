@@ -41,6 +41,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -299,7 +300,8 @@ class GithubOAuthControllerTest {
                 new FixedRefreshTokenGenerator(),
                 new FixedRefreshTokenHasher(),
                 refreshSessionStore,
-                RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax")
+                RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax"),
+                Clock.systemUTC()
         );
     }
 
