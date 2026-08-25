@@ -113,31 +113,9 @@ export default function PostWriteWorkspace({
 	};
 
 	const {
-		titleRef,
-		editorRef,
-		title,
-		isEditorReady,
-		documentErrors,
-		publicationSettings,
-		representativeImagePreviewUrl,
-		publicationDocument,
-		isPublishModalOpen,
-		isLeaveModalOpen,
-		cologError,
-		publishError,
-		isPublishing,
-		handleTitleChange,
-		handleEditorReady,
-		handleEditorChange,
-		preparePostDocument,
-		handleOpenPublishSettings,
-		handleImageChange,
-		handleCategoryChange,
-		handleCoLogChange,
-		handlePublish,
-		handleClosePublishSettings,
-		handleCancelLeave,
-		handleConfirmLeave,
+		document: postDocument,
+		publication,
+		leaveGuard,
 	} = usePostWriteWorkspace({
 		initialDocument,
 		initialPublicationSettings,
@@ -156,7 +134,7 @@ export default function PostWriteWorkspace({
 	const [draftPostIdPendingDeletion, setDraftPostIdPendingDeletion] = useState<number | null>(null);
 
 	const handleDraftSave = () => {
-		if (preparePostDocument() === null) {
+		if (postDocument.prepare() === null) {
 			return;
 		}
 
@@ -182,50 +160,50 @@ export default function PostWriteWorkspace({
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
 			<WritePublishActionBar
-				isEditorReady={isEditorReady}
+				isEditorReady={postDocument.isEditorReady}
 				draftCount={draftPosts.length}
-				onPublish={handleOpenPublishSettings}
+				onPublish={publication.open}
 				onDraftSave={handleDraftSave}
 				onDraftListShow={() => setIsDraftListModalOpen(true)}
 			/>
 			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
 				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
 					<PostTitleField
-						value={title}
-						error={documentErrors.title}
-						inputRef={titleRef}
-						onChange={handleTitleChange}
-						onEnter={() => editorRef.current?.focus()}
+						value={postDocument.title}
+						error={postDocument.errors.title}
+						inputRef={postDocument.titleRef}
+						onChange={postDocument.handleTitleChange}
+						onEnter={() => postDocument.editorRef.current?.focus()}
 					/>
 					<div className="my-7 h-px bg-border-default" />
 					<PostBodyField
 						editorComponent={editorComponent}
-						editorRef={editorRef}
+						editorRef={postDocument.editorRef}
 						initialBlocks={initialDocument?.blocks}
-						error={documentErrors.body}
-						onReady={handleEditorReady}
-						onChange={handleEditorChange}
+						error={postDocument.errors.body}
+						onReady={postDocument.handleEditorReady}
+						onChange={postDocument.handleEditorChange}
 						uploadFile={resolvedUploadFile}
 					/>
 				</div>
 			</main>
 
 			<PublishSettingsModal
-				open={isPublishModalOpen}
-				postTitle={publicationDocument?.title ?? title.trim()}
-				settings={publicationSettings}
-				selectedImageUrl={representativeImagePreviewUrl}
-				bodyBlocks={publicationDocument?.blocks ?? []}
+				open={publication.isModalOpen}
+				postTitle={publication.document?.title ?? postDocument.title.trim()}
+				settings={publication.settings}
+				selectedImageUrl={publication.representativeImagePreviewUrl}
+				bodyBlocks={publication.document?.blocks ?? []}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}
-				cologError={cologError}
-				publishError={publishError}
-				isPublishing={isPublishing}
-				onClose={handleClosePublishSettings}
-				onCategoryChange={handleCategoryChange}
-				onCoLogChange={handleCoLogChange}
-				onImageChange={handleImageChange}
-				onPublish={() => void handlePublish()}
+				cologError={publication.cologError}
+				publishError={publication.publishError}
+				isPublishing={publication.isPublishing}
+				onClose={publication.close}
+				onCategoryChange={publication.handleCategoryChange}
+				onCoLogChange={publication.handleCoLogChange}
+				onImageChange={publication.handleImageChange}
+				onPublish={() => void publication.publish()}
 			/>
 
 			<DraftListModal
@@ -247,14 +225,14 @@ export default function PostWriteWorkspace({
 			/>
 
 			<ConfirmModal
-				open={isLeaveModalOpen}
+				open={leaveGuard.isModalOpen}
 				title="작성 중인 글을 나갈까요?"
 				description="저장되지 않은 내용은 복구할 수 없습니다."
 				confirmLabel="나가기"
 				cancelLabel="계속 작성"
 				variant="danger"
-				onConfirm={handleConfirmLeave}
-				onCancel={handleCancelLeave}
+				onConfirm={leaveGuard.confirm}
+				onCancel={leaveGuard.cancel}
 			/>
 		</div>
 	);
