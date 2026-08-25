@@ -68,4 +68,5 @@ public record RefreshTokenProperties(
         }
         return cookieSameSite;
     }
+
 }

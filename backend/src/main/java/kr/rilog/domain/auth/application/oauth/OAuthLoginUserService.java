@@ -51,4 +51,5 @@ public class OAuthLoginUserService {
         return userRepository.findByGithubId(githubId)
                 .orElseThrow();
     }
+
 }

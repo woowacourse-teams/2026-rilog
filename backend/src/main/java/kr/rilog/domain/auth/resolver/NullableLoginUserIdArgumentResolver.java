@@ -32,4 +32,5 @@ public class NullableLoginUserIdArgumentResolver implements HandlerMethodArgumen
         }
         return authenticatedUser.userId();
     }
+
 }

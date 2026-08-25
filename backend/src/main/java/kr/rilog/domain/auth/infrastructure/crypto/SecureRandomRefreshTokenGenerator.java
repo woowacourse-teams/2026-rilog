@@ -22,4 +22,5 @@ public class SecureRandomRefreshTokenGenerator implements RefreshTokenGenerator 
                 .withoutPadding()
                 .encodeToString(bytes));
     }
+
 }

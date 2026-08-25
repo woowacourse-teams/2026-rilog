@@ -21,4 +21,5 @@ public record AccessTokenClaims(
     ) {
         return new AccessTokenClaims(userId, role, slug, issuedAt, expiresAt);
     }
+
 }

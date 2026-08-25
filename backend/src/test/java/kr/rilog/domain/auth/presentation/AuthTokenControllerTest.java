@@ -1,11 +1,11 @@
 package kr.rilog.domain.auth.presentation;
 
 import jakarta.servlet.http.Cookie;
+import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.application.token.refresh.RefreshTokenLogoutService;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationResult;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotator;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenRotationService;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -34,13 +34,13 @@ class AuthTokenControllerTest {
     @DisplayName("POST /v1/auth/token/refresh는 Refresh Token 쿠키로 토큰을 재발급한다")
     void refreshIssuesNewAccessTokenAndRefreshTokenCookie() throws Exception {
         // given
-        RefreshTokenRotator refreshTokenRotator = mock(RefreshTokenRotator.class);
-        when(refreshTokenRotator.rotate(any(RefreshToken.class)))
-                .thenReturn(new RefreshTokenRotationResult(
+        RefreshTokenRotationService refreshTokenRotationService = mock(RefreshTokenRotationService.class);
+        when(refreshTokenRotationService.rotate(any(RefreshToken.class)))
+                .thenReturn(new AuthTokenPair(
                         AccessToken.of("new-access-token"),
                         RefreshToken.of("new-refresh-token")
                 ));
-        MockMvc mockMvc = mockMvc(refreshTokenRotator);
+        MockMvc mockMvc = mockMvc(refreshTokenRotationService);
 
         // when - then
         mockMvc.perform(post("/v1/auth/token/refresh")
@@ -55,14 +55,14 @@ class AuthTokenControllerTest {
                         containsString("SameSite=Lax")
                 )));
 
-        verify(refreshTokenRotator).rotate(RefreshToken.of("old-refresh-token"));
+        verify(refreshTokenRotationService).rotate(RefreshToken.of("old-refresh-token"));
     }
 
     @Test
     @DisplayName("Refresh Token 쿠키가 없으면 토큰 재발급을 거부한다")
     void refreshRejectsMissingRefreshTokenCookie() throws Exception {
         // given
-        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotator.class));
+        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotationService.class));
 
         // when - then
         mockMvc.perform(post("/v1/auth/token/refresh"))
@@ -75,7 +75,7 @@ class AuthTokenControllerTest {
     void logoutRevokesRefreshSessionAndExpiresCookie() throws Exception {
         // given
         RefreshTokenLogoutService refreshTokenLogoutService = mock(RefreshTokenLogoutService.class);
-        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotator.class), refreshTokenLogoutService);
+        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotationService.class), refreshTokenLogoutService);
 
         // when - then
         mockMvc.perform(post("/v1/auth/logout")
@@ -97,7 +97,7 @@ class AuthTokenControllerTest {
     void logoutWithoutRefreshTokenCookieExpiresCookie() throws Exception {
         // given
         RefreshTokenLogoutService refreshTokenLogoutService = mock(RefreshTokenLogoutService.class);
-        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotator.class), refreshTokenLogoutService);
+        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotationService.class), refreshTokenLogoutService);
 
         // when - then
         mockMvc.perform(post("/v1/auth/logout"))
@@ -113,12 +113,12 @@ class AuthTokenControllerTest {
         verifyNoInteractions(refreshTokenLogoutService);
     }
 
-    private MockMvc mockMvc(RefreshTokenRotator refreshTokenRotator) {
-        return mockMvc(refreshTokenRotator, mock(RefreshTokenLogoutService.class));
+    private MockMvc mockMvc(RefreshTokenRotationService refreshTokenRotationService) {
+        return mockMvc(refreshTokenRotationService, mock(RefreshTokenLogoutService.class));
     }
 
     private MockMvc mockMvc(
-            RefreshTokenRotator refreshTokenRotator,
+            RefreshTokenRotationService refreshTokenRotationService,
             RefreshTokenLogoutService refreshTokenLogoutService
     ) {
         RefreshTokenProperties properties = RefreshTokenProperties.of(
@@ -129,7 +129,7 @@ class AuthTokenControllerTest {
                 "Lax"
         );
         return MockMvcBuilders.standaloneSetup(new AuthTokenController(
-                        refreshTokenRotator,
+                        refreshTokenRotationService,
                         refreshTokenLogoutService,
                         new RefreshTokenCookieFactory(properties)
                 ))

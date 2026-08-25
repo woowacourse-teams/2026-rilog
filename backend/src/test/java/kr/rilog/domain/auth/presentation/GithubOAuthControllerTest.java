@@ -1,15 +1,16 @@
 package kr.rilog.domain.auth.presentation;
 
 import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
-import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
 import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginUserService;
+import kr.rilog.domain.auth.application.token.login.LoginTokenIssueService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
-import kr.rilog.domain.auth.application.token.refresh.RefreshTokenIssuer;
+import kr.rilog.domain.auth.application.token.refresh.RefreshTokenProvider;
 import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
 import kr.rilog.domain.auth.application.oauth.SocialLoginUser;
 import kr.rilog.domain.auth.application.oauth.StartOAuthLogin;
@@ -19,15 +20,13 @@ import kr.rilog.domain.auth.application.port.oauth.OAuthUserClient;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.port.token.RefreshTokenGenerator;
 import kr.rilog.domain.auth.application.port.token.RefreshTokenHasher;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.config.RefreshTokenProperties;
-import kr.rilog.domain.auth.entity.RefreshSession;
 import kr.rilog.domain.auth.infrastructure.github.GithubOAuthAuthorizationUrlProvider;
-import kr.rilog.domain.auth.repository.RefreshSessionRepository;
+import kr.rilog.domain.auth.application.port.token.RefreshSessionStore;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -42,6 +41,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -273,16 +273,20 @@ class GithubOAuthControllerTest {
                         List.of(new StubOAuthUserClient()),
                         loginUserService
                 ),
-                refreshTokenIssuer(),
+                new LoginTokenIssueService(
+                        new FixedOnboardingTokenProvider(),
+                        new AuthTokenPairIssuer(
+                                new FixedAccessTokenProvider(),
+                                refreshTokenIssuer()
+                        )
+                ),
                 new RefreshTokenCookieFactory(RefreshTokenProperties.of(
                         Duration.ofDays(14),
                         "refresh_token",
                         "/v1/auth",
                         false,
                         "Lax"
-                )),
-                new OnboardingTokenService(new FixedOnboardingTokenProvider()),
-                new AccessTokenService(new FixedAccessTokenProvider())
+                ))
         );
 
         return MockMvcBuilders.standaloneSetup(controller)
@@ -290,15 +294,14 @@ class GithubOAuthControllerTest {
                 .build();
     }
 
-    private RefreshTokenIssuer refreshTokenIssuer() {
-        RefreshSessionRepository refreshSessionRepository = mock(RefreshSessionRepository.class);
-        when(refreshSessionRepository.save(any(RefreshSession.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        return new RefreshTokenIssuer(
+    private RefreshTokenProvider refreshTokenIssuer() {
+        RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
+        return new RefreshTokenProvider(
                 new FixedRefreshTokenGenerator(),
                 new FixedRefreshTokenHasher(),
-                refreshSessionRepository,
-                RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax")
+                refreshSessionStore,
+                RefreshTokenProperties.of(Duration.ofDays(14), "refresh_token", "/v1/auth", false, "Lax"),
+                Clock.systemUTC()
         );
     }
 

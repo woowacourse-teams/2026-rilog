@@ -4,12 +4,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
-import kr.rilog.domain.auth.annotation.LoginUserSlug;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
+import kr.rilog.domain.auth.application.token.TokenType;
+import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.context.AuthenticatedUser;
 import kr.rilog.domain.auth.context.AuthenticationContext;
 import kr.rilog.domain.auth.exception.AuthException;
@@ -32,7 +34,8 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private final AccessTokenService accessTokenService;
+    private final AccessTokenProvider accessTokenProvider;
+    private final OnboardingTokenProvider onboardingTokenProvider;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -43,6 +46,7 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         validateLoginUserParameterUsage(handlerMethod);
         AuthGuard authGuard = authGuard(handlerMethod);
         OptionalAuthGuard optionalAuthGuard = optionalAuthGuard(handlerMethod);
+        validateAuthenticationAnnotationUsage(authGuard, optionalAuthGuard);
         if (authGuard == null && optionalAuthGuard == null) {
             return true;
         }
@@ -52,14 +56,22 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        String accessToken = extractAccessToken(authorizationHeader);
-        AccessTokenClaims claims = accessTokenService.parse(accessToken);
-        AuthenticatedUser authenticatedUser = AuthenticatedUser.from(claims);
+        String bearerToken = extractBearerToken(authorizationHeader);
+        AuthenticatedUser authenticatedUser = authenticate(bearerToken, tokenType(authGuard));
         if (authGuard != null) {
             authorize(authGuard, authenticatedUser);
         }
         AuthenticationContext.set(request, authenticatedUser);
         return true;
+    }
+
+    private void validateAuthenticationAnnotationUsage(AuthGuard authGuard, OptionalAuthGuard optionalAuthGuard) {
+        if (authGuard != null && optionalAuthGuard != null) {
+            throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
+        }
+        if (authGuard != null && authGuard.value() != TokenType.ACCESS && authGuard.roles().length > 0) {
+            throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
+        }
     }
 
     private void validateLoginUserParameterUsage(HandlerMethod handlerMethod) {
@@ -75,8 +87,7 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
 
     private boolean hasLoginUserParameter(HandlerMethod handlerMethod) {
         for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
-            if (parameter.hasParameterAnnotation(LoginUserId.class)
-                    || parameter.hasParameterAnnotation(LoginUserSlug.class)) {
+            if (parameter.hasParameterAnnotation(LoginUserId.class)) {
                 return true;
             }
         }
@@ -115,7 +126,24 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         return handlerMethod.getMethodAnnotation(OptionalAuthGuard.class);
     }
 
-    private String extractAccessToken(String authorizationHeader) {
+    private TokenType tokenType(AuthGuard authGuard) {
+        if (authGuard == null) {
+            return TokenType.ACCESS;
+        }
+        return authGuard.value();
+    }
+
+    private AuthenticatedUser authenticate(String bearerToken, TokenType tokenType) {
+        if (tokenType == TokenType.ONBOARDING) {
+            OnboardingTokenClaims claims = onboardingTokenProvider.parse(bearerToken);
+            return AuthenticatedUser.from(claims);
+        }
+
+        AccessTokenClaims claims = accessTokenProvider.parse(bearerToken);
+        return AuthenticatedUser.from(claims);
+    }
+
+    private String extractBearerToken(String authorizationHeader) {
         if (!StringUtils.hasText(authorizationHeader)) {
             throw new AuthException(AUTHORIZATION_HEADER_MISSING);
         }
@@ -139,4 +167,5 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         }
         return false;
     }
+
 }

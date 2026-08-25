@@ -1,6 +1,7 @@
 package kr.rilog.domain.auth.context;
 
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.GlobalRole;
 
 public record AuthenticatedUser(
@@ -16,4 +17,13 @@ public record AuthenticatedUser(
                 claims.slug()
         );
     }
+
+    public static AuthenticatedUser from(OnboardingTokenClaims claims) {
+        return new AuthenticatedUser(
+                claims.userId(),
+                null,
+                null
+        );
+    }
+
 }

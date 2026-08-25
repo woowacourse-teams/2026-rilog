@@ -2,16 +2,17 @@ package kr.rilog.domain.auth.interceptor;
 
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
-import kr.rilog.domain.auth.annotation.LoginUserSlug;
+import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.token.TokenType;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
-import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
+import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
-import kr.rilog.domain.auth.resolver.LoginUserSlugArgumentResolver;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class BearerAuthenticationInterceptorTest {
         mockMvc.perform(get("/v1/protected")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-access-token"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("7:jinriro"));
+                .andExpect(content().string("7"));
 
         assertThat(accessTokenProvider.parsedToken).isEqualTo("rilog-access-token");
     }
@@ -151,19 +152,6 @@ class BearerAuthenticationInterceptorTest {
     }
 
     @Test
-    @DisplayName("@LoginUserSlug는 @AuthGuard가 붙은 요청에서만 사용할 수 있다")
-    void rejectsLoginUserSlugParameterWithoutAuthGuardAnnotation() throws Exception {
-        // given
-        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider());
-
-        // when - then
-        mockMvc.perform(get("/v1/misconfigured-user-slug")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-access-token"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.errorCode").value("AUTHENTICATION_ANNOTATION_MISSING"));
-    }
-
-    @Test
     @DisplayName("Bearer 형식이 아닌 Authorization 헤더는 거부한다")
     void rejectsInvalidAuthorizationHeaderFormat() throws Exception {
         // given
@@ -190,13 +178,38 @@ class BearerAuthenticationInterceptorTest {
                 .andExpect(jsonPath("$.errorCode").value("EXPIRED_ACCESS_TOKEN"));
     }
 
+    @Test
+    @DisplayName("@AuthGuard(TokenType.ONBOARDING)은 Onboarding Token으로 userId를 주입한다")
+    void onboardingGuardParsesOnboardingToken() throws Exception {
+        // given
+        RecordingAccessTokenProvider accessTokenProvider = new RecordingAccessTokenProvider();
+        RecordingOnboardingTokenProvider onboardingTokenProvider = new RecordingOnboardingTokenProvider();
+        MockMvc mockMvc = mockMvc(accessTokenProvider, onboardingTokenProvider);
+
+        // when - then
+        mockMvc.perform(get("/v1/onboarding-only")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-onboarding-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("onboarding:7"));
+
+        assertThat(onboardingTokenProvider.parsedToken).isEqualTo("rilog-onboarding-token");
+        assertThat(accessTokenProvider.parsedToken).isNull();
+    }
+
     private MockMvc mockMvc(AccessTokenProvider accessTokenProvider) {
+        return mockMvc(accessTokenProvider, new ThrowingOnboardingTokenProvider());
+    }
+
+    private MockMvc mockMvc(
+            AccessTokenProvider accessTokenProvider,
+            OnboardingTokenProvider onboardingTokenProvider
+    ) {
         return MockMvcBuilders.standaloneSetup(new TestController())
-                .addInterceptors(new BearerAuthenticationInterceptor(new AccessTokenService(accessTokenProvider)))
-                .setCustomArgumentResolvers(
-                        new LoginUserIdArgumentResolver(),
-                        new LoginUserSlugArgumentResolver()
-                )
+                .addInterceptors(new BearerAuthenticationInterceptor(
+                        accessTokenProvider,
+                        onboardingTokenProvider
+                ))
+                .setCustomArgumentResolvers(new LoginUserIdArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -206,8 +219,8 @@ class BearerAuthenticationInterceptorTest {
 
         @AuthGuard
         @GetMapping("/v1/protected")
-        public String protectedEndpoint(@LoginUserId Long userId, @LoginUserSlug String slug) {
-            return userId + ":" + slug;
+        public String protectedEndpoint(@LoginUserId Long userId) {
+            return userId.toString();
         }
 
         @AuthGuard(roles = GlobalRole.USER)
@@ -228,14 +241,15 @@ class BearerAuthenticationInterceptorTest {
             return "authenticated";
         }
 
+        @AuthGuard(TokenType.ONBOARDING)
+        @GetMapping("/v1/onboarding-only")
+        public String onboardingOnly(@LoginUserId Long userId) {
+            return "onboarding:" + userId;
+        }
+
         @GetMapping("/v1/misconfigured-user-id")
         public String misconfiguredUserId(@LoginUserId Long userId) {
             return userId.toString();
-        }
-
-        @GetMapping("/v1/misconfigured-user-slug")
-        public String misconfiguredUserSlug(@LoginUserSlug String slug) {
-            return slug;
         }
 
         @GetMapping("/v1/public")
@@ -285,6 +299,39 @@ class BearerAuthenticationInterceptorTest {
         @Override
         public AccessTokenClaims parse(String accessToken) {
             throw new AuthException(AuthErrorInformation.EXPIRED_ACCESS_TOKEN);
+        }
+    }
+
+    private static class RecordingOnboardingTokenProvider implements OnboardingTokenProvider {
+
+        private String parsedToken;
+
+        @Override
+        public OnboardingToken issue(Long userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public OnboardingTokenClaims parse(String onboardingToken) {
+            this.parsedToken = onboardingToken;
+            return OnboardingTokenClaims.of(
+                    7L,
+                    Instant.parse("2026-08-13T00:00:00Z"),
+                    Instant.parse("2026-08-13T00:10:00Z")
+            );
+        }
+    }
+
+    private static class ThrowingOnboardingTokenProvider implements OnboardingTokenProvider {
+
+        @Override
+        public OnboardingToken issue(Long userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public OnboardingTokenClaims parse(String onboardingToken) {
+            throw new UnsupportedOperationException("Not used in this test");
         }
     }
 }

@@ -70,4 +70,5 @@ public class RestClientGithubUserClient implements OAuthUserClient {
                 || !StringUtils.hasText(response.login())
                 || !StringUtils.hasText(response.avatarUrl());
     }
+
 }
