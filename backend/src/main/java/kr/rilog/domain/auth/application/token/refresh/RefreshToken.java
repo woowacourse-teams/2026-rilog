@@ -7,4 +7,5 @@ public record RefreshToken(
     public static RefreshToken of(String value) {
         return new RefreshToken(value);
     }
+
 }

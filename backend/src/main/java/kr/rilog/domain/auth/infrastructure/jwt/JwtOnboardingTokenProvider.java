@@ -105,4 +105,5 @@ public class JwtOnboardingTokenProvider implements OnboardingTokenProvider {
             throw new AuthException(ONBOARDING_TOKEN_CONFIGURATION_INVALID);
         }
     }
+
 }

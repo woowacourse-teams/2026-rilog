@@ -66,4 +66,5 @@ public class RestClientGithubAccessTokenClient implements OAuthAccessTokenClient
         form.add("redirect_uri", properties.callbackUri().toString());
         return form;
     }
+
 }

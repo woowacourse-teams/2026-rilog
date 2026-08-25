@@ -39,4 +39,5 @@ public class RefreshTokenLogoutService {
         String tokenHash = refreshTokenHasher.hash(refreshToken);
         refreshSessionStore.revoke(tokenHash, LocalDateTime.now(clock));
     }
+
 }

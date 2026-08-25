@@ -7,4 +7,5 @@ public record OnboardingToken(
     public static OnboardingToken of(String value) {
         return new OnboardingToken(value);
     }
+
 }

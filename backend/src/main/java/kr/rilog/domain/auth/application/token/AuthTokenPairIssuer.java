@@ -24,4 +24,5 @@ public class AuthTokenPairIssuer {
         RefreshToken refreshToken = refreshTokenIssuer.issue(user);
         return new AuthTokenPair(accessToken, refreshToken);
     }
+
 }

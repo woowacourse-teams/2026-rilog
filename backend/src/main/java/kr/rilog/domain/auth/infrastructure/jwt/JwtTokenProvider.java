@@ -73,4 +73,5 @@ final class JwtTokenProvider {
 
         throw new AuthException(configurationInvalid);
     }
+
 }

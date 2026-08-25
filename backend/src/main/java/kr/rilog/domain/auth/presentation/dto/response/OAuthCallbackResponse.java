@@ -10,4 +10,5 @@ public record OAuthCallbackResponse(
     public static OAuthCallbackResponse of(OnboardingStatus onboardingStatus, String redirectUrl) {
         return new OAuthCallbackResponse(onboardingStatus.name(), redirectUrl);
     }
+
 }

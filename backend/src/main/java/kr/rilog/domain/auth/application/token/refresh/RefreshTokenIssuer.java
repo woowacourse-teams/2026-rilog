@@ -64,4 +64,5 @@ public class RefreshTokenIssuer {
         refreshSessionStore.save(refreshSession, properties.expiration());
         return refreshToken;
     }
+
 }

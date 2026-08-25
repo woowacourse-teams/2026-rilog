@@ -82,4 +82,5 @@ public class RefreshTokenRotationService {
             throw new AuthException(INVALID_REFRESH_TOKEN);
         }
     }
+
 }

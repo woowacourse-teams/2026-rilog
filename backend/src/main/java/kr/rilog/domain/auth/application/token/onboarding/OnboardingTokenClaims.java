@@ -15,4 +15,5 @@ public record OnboardingTokenClaims(
     ) {
         return new OnboardingTokenClaims(userId, issuedAt, expiresAt);
     }
+
 }

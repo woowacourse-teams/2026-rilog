@@ -123,4 +123,5 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
             throw new AuthException(ACCESS_TOKEN_CONFIGURATION_INVALID);
         }
     }
+
 }

@@ -7,4 +7,5 @@ public record AccessToken(
     public static AccessToken of(String value) {
         return new AccessToken(value);
     }
+
 }

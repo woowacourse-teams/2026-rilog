@@ -16,4 +16,5 @@ public record OnboardingTokenProperties(
         }
         return new OnboardingTokenProperties(secret, expiration);
     }
+
 }

@@ -5,4 +5,5 @@ import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 public interface RefreshTokenGenerator {
 
     RefreshToken generate();
+
 }

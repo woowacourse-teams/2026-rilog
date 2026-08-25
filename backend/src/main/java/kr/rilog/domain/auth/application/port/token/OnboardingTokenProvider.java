@@ -8,4 +8,5 @@ public interface OnboardingTokenProvider {
     OnboardingToken issue(Long userId);
 
     OnboardingTokenClaims parse(String onboardingToken);
+
 }

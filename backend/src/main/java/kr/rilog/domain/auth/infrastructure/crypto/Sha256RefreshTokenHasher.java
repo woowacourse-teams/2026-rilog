@@ -24,4 +24,5 @@ public class Sha256RefreshTokenHasher implements RefreshTokenHasher {
             throw new IllegalStateException("SHA-256 algorithm is not available.", exception);
         }
     }
+
 }

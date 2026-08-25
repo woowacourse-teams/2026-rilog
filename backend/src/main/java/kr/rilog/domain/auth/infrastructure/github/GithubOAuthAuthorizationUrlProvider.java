@@ -51,4 +51,5 @@ public class GithubOAuthAuthorizationUrlProvider implements OAuthAuthorizationUr
             throw new AuthException(GITHUB_OAUTH_CONFIGURATION_INVALID);
         }
     }
+
 }

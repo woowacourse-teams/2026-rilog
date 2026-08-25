@@ -31,4 +31,5 @@ public class AuthenticationWebConfig implements WebMvcConfigurer {
         resolvers.add(loginUserIdArgumentResolver);
         resolvers.add(nullableLoginUserIdArgumentResolver);
     }
+
 }

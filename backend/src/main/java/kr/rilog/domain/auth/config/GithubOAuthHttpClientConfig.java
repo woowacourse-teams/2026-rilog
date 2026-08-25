@@ -18,4 +18,5 @@ public class GithubOAuthHttpClientConfig {
                 .requestFactory(requestFactory)
                 .build();
     }
+
 }

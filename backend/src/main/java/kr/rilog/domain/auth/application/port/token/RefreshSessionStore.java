@@ -15,4 +15,5 @@ public interface RefreshSessionStore {
     Optional<RefreshSession> consume(String tokenHash);
 
     void revoke(String tokenHash, LocalDateTime revokedAt);
+
 }

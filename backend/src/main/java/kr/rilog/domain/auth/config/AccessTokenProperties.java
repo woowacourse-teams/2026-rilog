@@ -16,4 +16,5 @@ public record AccessTokenProperties(
         }
         return new AccessTokenProperties(secret, expiration);
     }
+
 }
