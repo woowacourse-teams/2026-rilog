@@ -9,9 +9,9 @@ import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
-import kr.rilog.domain.blog.service.dto.command.CologProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
@@ -31,6 +31,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_ALREADY_EXISTS;
@@ -350,45 +351,24 @@ class CologServiceTest {
     }
 
     @Test
-    @DisplayName("ADMIN이 팀 프로필을 변경하면 자기 자신을 제외하고 이름 중복을 검사한다")
-    void changeCologProfileValidatesDuplicateProfileNameExceptSelf() {
+    @DisplayName("나의 팀 목록을 조회하면 요청자가 활동 중인 팀을 조회한다")
+    void getMyCologsPreviewFindsActiveCologsByRequesterId() {
         // given
-        User admin = createOwner();
-        Blog colog = createColog(admin);
-        BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
-        CologProfileUpdateCommand command = updateCommand("리로그 팀");
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(Optional.of(requesterMember));
-        when(blogRepository.existsByProfileNameExceptId(command.name(), COLOG_ID)).thenReturn(false);
+        Blog colog = createColog(createOwner());
+        when(blogRepository.findAllActiveCologsByUserId(OWNER_ID))
+                .thenReturn(List.of(colog));
 
         // when
-        cologService.changeCologProfile(OWNER_ID, COLOG_SLUG, command);
+        List<MyCologResponse> result = cologService.getMyCologsPreview(OWNER_ID);
 
         // then
-        verify(blogRepository).existsByProfileNameExceptId(command.name(), COLOG_ID);
-        assertThat(colog.getName()).isEqualTo("리로그 팀");
-    }
-
-    @Test
-    @DisplayName("팀 프로필 변경 시 다른 블로그 이름과 중복되면 변경을 거부한다")
-    void changeCologProfileRejectsDuplicateProfileName() {
-        // given
-        User admin = createOwner();
-        Blog colog = createColog(admin);
-        BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
-        CologProfileUpdateCommand command = updateCommand("중복 팀");
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(Optional.of(requesterMember));
-        when(blogRepository.existsByProfileNameExceptId(command.name(), COLOG_ID)).thenReturn(true);
-
-        // when - then
-        assertThatThrownBy(() -> cologService.changeCologProfile(OWNER_ID, COLOG_SLUG, command))
-                .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
-        assertThat(colog.getName()).isEqualTo("리로그 팀");
+        verify(blogRepository).findAllActiveCologsByUserId(OWNER_ID);
+        assertThat(result).containsExactly(new MyCologResponse(
+                COLOG_ID,
+                COLOG_SLUG,
+                "리로그 팀",
+                "https://example.com/profile.png"
+        ));
     }
 
     private User createOwner() {
@@ -435,18 +415,6 @@ class CologServiceTest {
                 "https://rilog.example.com",
                 "https://github.com/rilog",
                 "test@test.com"
-        );
-    }
-
-    private CologProfileUpdateCommand updateCommand(String name) {
-        return new CologProfileUpdateCommand(
-                "https://example.com/new-profile.png",
-                "https://example.com/new-cover.png",
-                name,
-                "새 팀 소개",
-                "https://new-rilog.example.com",
-                "https://github.com/new-rilog",
-                "new-rilog@example.com"
         );
     }
 

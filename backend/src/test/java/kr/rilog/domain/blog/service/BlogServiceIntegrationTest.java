@@ -1,9 +1,13 @@
 package kr.rilog.domain.blog.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
@@ -11,6 +15,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -26,6 +33,9 @@ class BlogServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogRepository blogRepository;
+
+    @Autowired
+    private BlogMemberRepository blogMemberRepository;
 
     @Test
     @DisplayName("활성 블로그의 slug와 중복되면 예외가 발생한다")
@@ -68,15 +78,40 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("프로필 이름 변경 시 자기 자신의 이름은 중복 검사에서 제외한다")
-    void validateDuplicatedProfileNameExceptSelfIgnoresCurrentBlog() {
+    @DisplayName("ADMIN이 COLOG 프로필을 변경하면 변경된 프로필이 저장된다.")
+    void changeBlogProfilePersistsChangedCologProfile() {
         // given
         User owner = userRepository.save(User.createPendingGithubUser(100L, "owner", "https://example.com/owner.png"));
-        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-a", "리로그 팀"));
+        User admin = userRepository.save(User.createPendingGithubUser(200L, "admin", "https://example.com/admin.png"));
+        Blog colog = blogRepository.save(createColog(owner, "team-a", "리로그 팀"));
+        blogMemberRepository.saveAndFlush(
+                BlogMember.invite(
+                        colog,
+                        admin,
+                        "Backend",
+                        BlogPermission.ADMIN,
+                        LocalDateTime.now()
+                )
+        );
+        BlogProfileUpdateCommand command = new BlogProfileUpdateCommand(
+                "https://example.com/new-profile.png",
+                "https://example.com/new-cover.png",
+                "새 리로그 팀",
+                "새 팀 소개",
+                "https://new-rilog.example.com",
+                "https://github.com/new-rilog",
+                "new-rilog@example.com"
+        );
+        Profile expectedProfile = command.toProfile();
 
-        // when - then
-        assertThatCode(() -> blogService.validateDuplicatedProfileName("리로그 팀", colog.getId()))
-                .doesNotThrowAnyException();
+        // when
+        blogService.changeBlogProfile(admin.getId(), "team-a", command);
+
+        // then
+        Blog savedColog = blogRepository.findById(colog.getId()).orElseThrow();
+        assertThat(savedColog.getProfile())
+                .usingRecursiveComparison()
+                .isEqualTo(expectedProfile);
     }
 
     private Blog createColog(User owner, String slug, String name) {

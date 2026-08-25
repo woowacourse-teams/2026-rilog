@@ -1,6 +1,7 @@
 package kr.rilog.domain.blog.controller;
 
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
@@ -10,6 +11,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -125,6 +129,27 @@ class CologControllerTest {
     }
 
     @Test
+    @DisplayName("GET /v1/users/me/cologs/preview는 인증된 사용자의 팀 목록을 조회한다")
+    void getMyCologsPreviewReturnsAuthenticatedUsersCologs() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        when(cologService.getMyCologsPreview(7L))
+                .thenReturn(List.of(new MyCologResponse(1L, "rilog-team", "리로그 팀", "https://example.com/logo.png")));
+        MockMvc mockMvc = mockMvc(cologService);
+
+        // when - then
+        mockMvc.perform(get("/v1/users/me/cologs/preview")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].cologId").value(1L))
+                .andExpect(jsonPath("$.data[0].slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data[0].name").value("리로그 팀"))
+                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/logo.png"));
+
+        verify(cologService).getMyCologsPreview(7L);
+    }
+
+    @Test
     @DisplayName("POST /v1/cologs/{slug}/members는 로그인 사용자의 팀 멤버 초대를 처리한다")
     void inviteMemberInvitesCologMemberForLoginUser() throws Exception {
         // given
@@ -153,6 +178,12 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.blogRole").value("Backend"));
 
         verify(cologService).inviteMember(1L, "rilog-team", command);
+    }
+
+    private MockMvc mockMvc(CologService cologService) {
+        return MockMvcBuilders.standaloneSetup(new CologController(cologService))
+                .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(7L))
+                .build();
     }
 
     private record FixedLoginUserIdArgumentResolver(Long userId) implements HandlerMethodArgumentResolver {

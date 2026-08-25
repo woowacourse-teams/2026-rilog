@@ -2,16 +2,16 @@ package kr.rilog.domain.blog.controller.apispec;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
-import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
 
 public interface BlogApiSpec {
 
@@ -50,7 +50,17 @@ public interface BlogApiSpec {
             @PathVariable("slug") String slug
     );
 
-    @Operation(description = "나의 블로그 목록 요약 조회 API", summary = "나의 블로그 목록 요약 조회 API")
-    ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId);
-
+    @Operation(
+            summary = "프로필 수정 API",
+            description = "블로그 프로필을 수정합니다. 개인 블로그는 소유자만, 팀 블로그는 OWNER 또는 ADMIN 권한의 팀 멤버만 수정할 수 있습니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "프로필 수정 성공"
+    )
+    ApiResponse<Void> updateBlogProfile(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug,
+            @Valid @RequestBody BlogProfileUpdateRequest dto
+    );
 }
