@@ -4,6 +4,7 @@ interface WritePublishActionBarProps {
 	isEditorReady: boolean;
 	draftCount: number;
 	onPublish: () => void;
+	onDraftSave: () => void;
 	onDraftListShow: () => void;
 }
 
@@ -11,6 +12,7 @@ export default function WritePublishActionBar({
 	isEditorReady,
 	draftCount,
 	onPublish,
+	onDraftSave,
 	onDraftListShow,
 }: WritePublishActionBarProps) {
 	return (
@@ -21,7 +23,7 @@ export default function WritePublishActionBar({
 						className="min-w-btn-wide rounded-r-none"
 						variant="secondary"
 						disabled={!isEditorReady}
-						onClick={() => {}}
+						onClick={onDraftSave}
 					>
 						임시저장
 					</Button>

@@ -154,6 +154,7 @@ export default function PostWriteWorkspace({
 	const [isDraftListModalOpen, setIsDraftListModalOpen] = useState(false);
 	const [draftPostIdPendingDeletion, setDraftPostIdPendingDeletion] = useState<number | null>(null);
 
+	const handleDraftSave = () => {};
 	const requestDraftPostDeletion = (draftPostId: number) => {
 		setDraftPostIdPendingDeletion(draftPostId);
 	};
@@ -177,6 +178,7 @@ export default function PostWriteWorkspace({
 				isEditorReady={isEditorReady}
 				draftCount={draftPosts.length}
 				onPublish={handleOpenPublishSettings}
+				onDraftSave={handleDraftSave}
 				onDraftListShow={() => setIsDraftListModalOpen(true)}
 			/>
 			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
