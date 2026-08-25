@@ -9,7 +9,6 @@ import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
-import kr.rilog.domain.user.service.dto.result.OnboardingCompletionResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +41,7 @@ class OnboardingCompletionServiceTest {
         );
 
         // when
-        OnboardingCompletionResult result = service.complete(1L, command);
+        AuthTokenPair result = service.complete(1L, command);
 
         // then
         assertThat(result.accessToken().value()).isEqualTo("access-token");

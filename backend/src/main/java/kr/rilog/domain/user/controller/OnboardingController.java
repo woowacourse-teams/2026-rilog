@@ -3,11 +3,11 @@ package kr.rilog.domain.user.controller;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.user.controller.apispec.OnboardingApiSpec;
 import kr.rilog.domain.user.controller.dto.request.OnboardingCompleteRequest;
-import kr.rilog.domain.user.service.dto.result.OnboardingCompletionResult;
 import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class OnboardingController implements OnboardingApiSpec {
             @LoginUserId Long userId,
             @Valid @RequestBody OnboardingCompleteRequest request
     ) {
-        OnboardingCompletionResult result = onboardingCompletionService.complete(userId, request.toCommand());
+        AuthTokenPair result = onboardingCompletionService.complete(userId, request.toCommand());
         RefreshToken refreshToken = result.refreshToken();
         ResponseCookie refreshTokenCookie = refreshTokenCookieFactory.create(refreshToken);
 

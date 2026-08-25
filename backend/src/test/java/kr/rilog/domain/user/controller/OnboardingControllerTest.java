@@ -3,6 +3,7 @@ package kr.rilog.domain.user.controller;
 import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
 import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
+import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
@@ -13,7 +14,6 @@ import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.presentation.RefreshTokenCookieFactory;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
-import kr.rilog.domain.user.service.dto.result.OnboardingCompletionResult;
 import kr.rilog.domain.user.service.OnboardingCompletionService;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -59,7 +59,7 @@ class OnboardingControllerTest {
         // given
         OnboardingCompletionService onboardingCompletionService = mock(OnboardingCompletionService.class);
         when(onboardingCompletionService.complete(1L, command()))
-                .thenReturn(new OnboardingCompletionResult(
+                .thenReturn(new AuthTokenPair(
                         AccessToken.of("access-token"),
                         RefreshToken.of("refresh-token")
                 ));
