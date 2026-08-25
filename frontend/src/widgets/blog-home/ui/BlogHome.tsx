@@ -3,6 +3,7 @@ import BlogProfileViewTracker from '@/features/analytics/ui/BlogProfileViewTrack
 import BlogProfileHero from '@/features/blog-profile/ui/BlogProfileHero';
 import CologMemberAside from '@/features/colog-members/ui/CologMemberAside';
 import CologSettingsButton from '@/features/colog-settings-access/ui/CologSettingsButton';
+import RilogSettingsButton from '@/features/rilog-settings-access/ui/RilogSettingsButton';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import BlogPostFeedSection from './BlogPostFeedSection';
@@ -12,7 +13,12 @@ interface BlogHomeProps {
 }
 
 export default function BlogHome({ profile }: BlogHomeProps) {
-	const action = profile.type === 'COLOG' ? <CologSettingsButton slug={profile.slug} isOnCover /> : undefined;
+	const action =
+		profile.type === 'COLOG' ? (
+			<CologSettingsButton slug={profile.slug} isOnCover />
+		) : (
+			<RilogSettingsButton slug={profile.slug} />
+		);
 	const memberAside =
 		profile.type === 'COLOG' ? (
 			<div className="py-11">
