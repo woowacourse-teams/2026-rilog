@@ -1,5 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.jwt;
 
+import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import kr.rilog.domain.auth.application.token.TokenType;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
@@ -16,10 +17,7 @@ import java.time.Clock;
 import java.util.Date;
 import java.util.Map;
 
-import static kr.rilog.domain.auth.exception.AuthErrorInformation.ACCESS_TOKEN_CLAIM_MISSING;
-import static kr.rilog.domain.auth.exception.AuthErrorInformation.ACCESS_TOKEN_CONFIGURATION_INVALID;
-import static kr.rilog.domain.auth.exception.AuthErrorInformation.EXPIRED_ACCESS_TOKEN;
-import static kr.rilog.domain.auth.exception.AuthErrorInformation.INVALID_ACCESS_TOKEN;
+import static kr.rilog.domain.auth.exception.AuthErrorInformation.*;
 
 @Component
 public class JwtAccessTokenProvider implements AccessTokenProvider {
@@ -82,12 +80,12 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
     }
 
     private AccessTokenClaims claims(DecodedJWT decodedJWT) {
-        Long userId = decodedJWT.getClaim(USER_ID_CLAIM).asLong();
-        String role = decodedJWT.getClaim(ROLE_CLAIM).asString();
-        String slug = decodedJWT.getClaim(SLUG_CLAIM).asString();
-        String tokenType = decodedJWT.getClaim(JwtTokenProvider.TOKEN_TYPE_CLAIM).asString();
-        Date issuedAt = decodedJWT.getIssuedAt();
-        Date expiresAt = decodedJWT.getExpiresAt();
+        Long userId = parseLong(USER_ID_CLAIM, decodedJWT);
+        String role = parseString(ROLE_CLAIM, decodedJWT);
+        String slug = parseString(SLUG_CLAIM, decodedJWT);
+        String tokenType = parseString(JwtTokenProvider.TOKEN_TYPE_CLAIM, decodedJWT);
+        Date issuedAt = parseDate(decodedJWT.getIssuedAt());
+        Date expiresAt = parseDate(decodedJWT.getExpiresAt());
 
         if (userId == null
                 || role == null
@@ -122,6 +120,33 @@ public class JwtAccessTokenProvider implements AccessTokenProvider {
                 || properties.expiration().isNegative()) {
             throw new AuthException(ACCESS_TOKEN_CONFIGURATION_INVALID);
         }
+    }
+
+
+    public Long parseLong(String claimName, DecodedJWT decodedJWT){
+        Claim claim = decodedJWT.getClaim(claimName);
+        if (claim.isNull()) {
+            throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
+        }
+
+        return claim.asLong();
+    }
+
+    public String parseString(String claimName, DecodedJWT decodedJWT){
+        Claim claim = decodedJWT.getClaim(claimName);
+        if (claim.isNull()) {
+            throw new AuthException(ACCESS_TOKEN_CLAIM_MISSING);
+        }
+
+        return claim.asString();
+    }
+
+    public Date parseDate(Date date){
+        if (date == null) {
+            throw new AuthException(ONBOARDING_TOKEN_CLAIM_MISSING);
+        }
+
+        return date;
     }
 
 }
