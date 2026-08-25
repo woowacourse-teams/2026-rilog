@@ -10,8 +10,10 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.post.controller.dto.request.PostPublishRequest;
+import kr.rilog.domain.post.controller.dto.request.PostUpdateRequest;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
+import kr.rilog.domain.post.controller.dto.response.PostUpdateResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.http.MediaType;
@@ -80,4 +82,15 @@ public interface PostApiSpec {
             description = "전체 게시글 수 조회 성공"
     )
     ApiResponse<TotalPostsCountResponse> getPostCount();
+
+    @Operation(
+            summary = "발행된 게시글 수정 API",
+            description = "발행된 게시글을 수정합니다."
+    )
+    ApiResponse<PostUpdateResponse> updatePost(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId,
+            @RequestBody PostUpdateRequest dto
+    );
+
 }
