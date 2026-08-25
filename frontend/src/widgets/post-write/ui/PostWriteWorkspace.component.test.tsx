@@ -315,6 +315,19 @@ describe('PostWriteWorkspace', () => {
 		expect(bodyField).not.toHaveAttribute('aria-describedby');
 	});
 
+	it('제목만 입력한 문서는 본문 오류를 표시하고 에디터로 focus한다', async () => {
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '제목만 있는 글');
+		await user.click(screen.getByRole('button', { name: '발행' }));
+
+		expect(screen.queryByRole('dialog', { name: '게시 설정' })).not.toBeInTheDocument();
+		expect(screen.queryByText('제목을 입력해 주세요.')).not.toBeInTheDocument();
+		expect(screen.getByText('내용을 입력해 주세요.')).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
+	});
+
 	it('내 블로그를 제외하고 소속 팀 블로그만 발행 대상으로 보여 준다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
@@ -378,7 +391,11 @@ describe('PostWriteWorkspace', () => {
 	});
 
 	it('선택한 대표 이미지를 유지하고 교체·제거·unmount 때 object URL을 해제한다', async () => {
-		const createObjectUrl = vi.fn().mockReturnValueOnce('blob:first-cover').mockReturnValueOnce('blob:second-cover');
+		const createObjectUrl = vi
+			.fn()
+			.mockReturnValueOnce('blob:first-cover')
+			.mockReturnValueOnce('blob:second-cover')
+			.mockReturnValueOnce('blob:third-cover');
 		const revokeObjectUrl = vi.fn();
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
@@ -401,8 +418,17 @@ describe('PostWriteWorkspace', () => {
 			'blob:second-cover',
 		);
 
-		unmount();
+		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:second-cover');
+		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'/images/thumbnail-fallback.svg',
+		);
+
+		await user.upload(screen.getByLabelText('이미지 선택'), new File(['third'], 'third.png', { type: 'image/png' }));
+
+		unmount();
+		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:third-cover');
 		vi.unstubAllGlobals();
 	});
 
@@ -438,6 +464,9 @@ describe('PostWriteWorkspace', () => {
 			category: 'IT',
 			hasCustomRepresentativeImage: false,
 		});
+		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
+		window.dispatchEvent(beforeUnloadEvent);
+		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
 		expect(historyBackSpy).not.toHaveBeenCalled();
 		historyBackSpy.mockRestore();
 	});
