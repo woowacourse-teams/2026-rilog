@@ -6,6 +6,7 @@ export const APP_ROUTES = {
 } as const;
 
 export type CologSettingsTab = 'profile' | 'members' | 'danger';
+export type RilogSettingsTab = 'profile' | 'danger';
 
 const normalizeSegment = (value: string, errorMessage: string) => {
 	const normalizedValue = value.trim();
@@ -35,6 +36,9 @@ export const hasBlogSlugPrefix = (slug: string) => decodeSegment(slug).trim().st
 export const buildCologSettingsPath = (slug: string, tab: CologSettingsTab) =>
 	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
 
+export const buildRilogSettingsPath = (slug: string, tab: RilogSettingsTab) =>
+	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
+
 export const buildPostDetailPath = (slug: string, postId: string) =>
 	`${buildBlogHomePath(slug)}/posts/${normalizeSegment(postId, '게시글 ID가 필요합니다.')}`;
 
@@ -42,4 +46,10 @@ export const parseCologSettingsTab = (value: string | string[] | undefined): Col
 	const tab = Array.isArray(value) ? value[0] : value;
 
 	return tab === 'members' || tab === 'danger' ? tab : 'profile';
+};
+
+export const parseRilogSettingsTab = (value: string | string[] | undefined): RilogSettingsTab => {
+	const tab = Array.isArray(value) ? value[0] : value;
+
+	return tab === 'danger' ? tab : 'profile';
 };

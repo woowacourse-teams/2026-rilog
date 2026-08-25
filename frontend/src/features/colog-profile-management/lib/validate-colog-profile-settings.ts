@@ -8,8 +8,7 @@ import {
 	normalizeCologName,
 	validateCologName,
 } from '@/domains/blog/model/colog';
-
-const URL_PATTERN = /^https?:\/\//i;
+import { isHttpUrl } from '@/shared/utils/is-http-url';
 
 export const normalizeCologProfileSettings = (value: CologProfileSettingsValue): CologProfileSettingsValue => ({
 	...value,
@@ -45,12 +44,12 @@ export const validateCologProfileSettings = (value: CologProfileSettingsValue): 
 	}
 
 	const serviceUrl = normalized.serviceUrl ?? '';
-	if (serviceUrl.length > 0 && !URL_PATTERN.test(serviceUrl)) {
+	if (serviceUrl.length > 0 && !isHttpUrl(serviceUrl)) {
 		errors.serviceUrl = '올바른 서비스 URL을 입력해 주세요.';
 	}
 
 	const githubUrl = normalized.githubUrl ?? '';
-	if (githubUrl.length > 0 && !URL_PATTERN.test(githubUrl)) {
+	if (githubUrl.length > 0 && !isHttpUrl(githubUrl)) {
 		errors.githubUrl = '올바른 GitHub URL을 입력해 주세요.';
 	}
 

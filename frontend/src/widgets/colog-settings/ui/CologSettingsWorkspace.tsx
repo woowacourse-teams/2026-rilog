@@ -19,14 +19,14 @@ import CologProfileSection from '@/features/colog-profile-management/ui/CologPro
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
+import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
 import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
+import SettingsHeader from '@/shared/ui/settings/SettingsHeader';
 
-import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
-
-import CologSettingsHeader from './CologSettingsHeader';
+import { SETTINGS_TABS } from '../lib/get-next-tab';
 
 interface CologSettingsWorkspaceProps {
 	slug?: string;
@@ -142,20 +142,21 @@ function CologSettingsWorkspaceContent({
 		activeTab === 'profile' ? isProfileDirty : activeTab === 'members' ? memberDrafts.isDirty : false;
 
 	const commitTabChange = useCallback(
-		(nextTab: SettingsTab) => {
+		(nextTab: SettingsTab, path: string) => {
 			profileForm.setValue(savedProfile);
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
 			setActiveTab(nextTab);
-			window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, nextTab));
+			window.history.replaceState(window.history.state, '', path);
 		},
-		[memberDrafts, nameAvailability, profileForm, savedProfile, slug],
+		[memberDrafts, nameAvailability, profileForm, savedProfile],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
 		activeTab,
 		isDirty: isWorkspaceDirty,
+		buildPath: (nextTab) => buildCologSettingsPath(slug, nextTab),
 		onTabChange: commitTabChange,
 	});
 
@@ -292,8 +293,11 @@ function CologSettingsWorkspaceContent({
 		<PageShell
 			isHeaderSticky
 			header={
-				<CologSettingsHeader
+				<SettingsHeader
 					activeTab={activeTab}
+					tabs={SETTINGS_TABS}
+					tabListLabel="팀 설정"
+					idPrefix="colog-settings"
 					title={TAB_HEADER_CONFIG[activeTab].title}
 					description={TAB_HEADER_CONFIG[activeTab].description}
 					onTabChangeRequest={onTabChangeRequest}
@@ -301,7 +305,7 @@ function CologSettingsWorkspaceContent({
 				/>
 			}
 		>
-			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
+			<div id={`colog-settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`colog-settings-tab-${activeTab}`}>
 				{activeTab === 'profile' && (
 					<>
 						<CologProfileSection
