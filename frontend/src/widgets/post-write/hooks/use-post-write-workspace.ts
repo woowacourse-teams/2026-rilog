@@ -43,6 +43,7 @@ export function usePostWriteWorkspace({
 		markClean,
 	} = usePostDocument({ initialDocument });
 	const drafts = usePostDrafts({ prepareDocument: preparePostDocument });
+
 	const {
 		settings: publicationSettings,
 		representativeImagePreviewUrl,
@@ -53,6 +54,7 @@ export function usePostWriteWorkspace({
 		validatePublicationSettings,
 		clearSelectedImageUrl,
 	} = usePostPublicationSettings({ initialSettings: initialPublicationSettings });
+
 	const {
 		isLeaveModalOpen,
 		cancelLeave: handleCancelLeave,
@@ -63,6 +65,7 @@ export function usePostWriteWorkspace({
 		markClean,
 		navigate,
 	});
+
 	const handlePublished = useCallback(
 		(result: PublishPostResult, settings: PublicationSettings) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
@@ -76,6 +79,7 @@ export function usePostWriteWorkspace({
 		},
 		[clearSelectedImageUrl, navigateAfterCompletion],
 	);
+
 	const {
 		document: publicationDocument,
 		isModalOpen: isPublishModalOpen,
