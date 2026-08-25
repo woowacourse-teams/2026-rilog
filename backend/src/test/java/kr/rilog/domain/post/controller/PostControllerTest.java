@@ -2,9 +2,9 @@ package kr.rilog.domain.post.controller;
 
 import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.port.token.AccessTokenProvider;
+import kr.rilog.domain.auth.application.port.token.OnboardingTokenProvider;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
-import kr.rilog.domain.auth.application.token.access.AccessTokenService;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
@@ -85,9 +85,11 @@ class PostControllerTest {
     }
 
     private MockMvc mockMvc(PostService postService) {
-        AccessTokenService accessTokenService = new AccessTokenService(new FixedAccessTokenProvider());
         return MockMvcBuilders.standaloneSetup(new PostController(postService))
-                .addInterceptors(new BearerAuthenticationInterceptor(accessTokenService))
+                .addInterceptors(new BearerAuthenticationInterceptor(
+                        new FixedAccessTokenProvider(),
+                        mock(OnboardingTokenProvider.class)
+                ))
                 .setCustomArgumentResolvers(
                         new LoginUserIdArgumentResolver(),
                         new NullableLoginUserIdArgumentResolver()

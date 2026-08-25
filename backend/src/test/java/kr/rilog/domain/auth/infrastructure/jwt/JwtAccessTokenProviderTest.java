@@ -32,7 +32,7 @@ class JwtAccessTokenProviderTest {
     private static final Duration EXPIRATION = Duration.ofMinutes(15);
 
     @Test
-    @DisplayName("Access Token은 userId, role, slug, iat, exp Claim을 포함하고 다시 파싱된다")
+    @DisplayName("Access Token은 userId, role, slug, tokenType, iat, exp Claim을 포함하고 다시 파싱된다")
     void issueCreatesTokenWithRequiredClaimsAndParseReadsThem() {
         // given
         JwtAccessTokenProvider provider = provider(SECRET, NOW);
@@ -45,6 +45,7 @@ class JwtAccessTokenProviderTest {
         assertThat(decodedJWT.getClaim("userId").asLong()).isEqualTo(1L);
         assertThat(decodedJWT.getClaim("role").asString()).isEqualTo("USER");
         assertThat(decodedJWT.getClaim("slug").asString()).isEqualTo("jinriro");
+        assertThat(decodedJWT.getClaim("tokenType").asString()).isEqualTo("ACCESS");
         assertThat(decodedJWT.getClaim("token").isMissing()).isTrue();
         assertThat(decodedJWT.getIssuedAt().toInstant()).isEqualTo(NOW);
         assertThat(decodedJWT.getExpiresAt().toInstant()).isEqualTo(NOW.plus(EXPIRATION));
@@ -90,7 +91,8 @@ class JwtAccessTokenProviderTest {
                 GlobalRole.USER.name(),
                 "jinriro",
                 NOW.minus(EXPIRATION).minusSeconds(1),
-                NOW.minusSeconds(1)
+                NOW.minusSeconds(1),
+                "ACCESS"
         );
 
         // when - then
@@ -137,7 +139,7 @@ class JwtAccessTokenProviderTest {
     @DisplayName("필수 Claim 중 하나라도 없는 Access Token은 거부한다")
     void parseRejectsTokenWithoutAnyRequiredClaim() {
         // given
-        List<String> requiredClaims = List.of("userId", "role", "slug", "iat", "exp");
+        List<String> requiredClaims = List.of("userId", "role", "slug", "tokenType", "iat", "exp");
 
         // when - then
         for (String missingClaim : requiredClaims) {
@@ -152,6 +154,19 @@ class JwtAccessTokenProviderTest {
     }
 
     @Test
+    @DisplayName("tokenType Claim이 없는 기존 Access Token은 거부한다")
+    void parseRejectsLegacyAccessTokenWithoutTokenType() {
+        // given
+        String legacyToken = createTokenWithoutRequiredClaim("tokenType");
+
+        // when - then
+        assertThatThrownBy(() -> provider(SECRET, NOW).parse(legacyToken))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.ACCESS_TOKEN_CLAIM_MISSING);
+    }
+
+    @Test
     @DisplayName("지원하지 않는 role Claim의 Access Token은 거부한다")
     void parseRejectsTokenWithUnsupportedRole() {
         // given
@@ -161,11 +176,33 @@ class JwtAccessTokenProviderTest {
                 "OWNER",
                 "jinriro",
                 NOW,
-                NOW.plus(EXPIRATION)
+                NOW.plus(EXPIRATION),
+                "ACCESS"
         );
 
         // when - then
         assertThatThrownBy(() -> provider(SECRET, NOW).parse(tokenWithUnsupportedRole))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorInformation")
+                .isEqualTo(AuthErrorInformation.INVALID_ACCESS_TOKEN);
+    }
+
+    @Test
+    @DisplayName("tokenType이 ACCESS가 아닌 Token은 Access Token으로 거부한다")
+    void parseRejectsTokenWithUnsupportedTokenType() {
+        // given
+        String onboardingToken = createToken(
+                SECRET,
+                1L,
+                GlobalRole.USER.name(),
+                "jinriro",
+                NOW,
+                NOW.plus(EXPIRATION),
+                "ONBOARDING"
+        );
+
+        // when - then
+        assertThatThrownBy(() -> provider(SECRET, NOW).parse(onboardingToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.INVALID_ACCESS_TOKEN);
@@ -195,16 +232,25 @@ class JwtAccessTokenProviderTest {
     private String tamperPayload(String token) {
         String[] parts = token.split("\\.");
         String payload = """
-                {"userId":2,"role":"USER","slug":"jinriro","iat":1893456000,"exp":1893456900}
+                {"userId":2,"role":"USER","slug":"jinriro","tokenType":"ACCESS","iat":1893456000,"exp":1893456900}
                 """;
         return parts[0] + "." + encode(payload) + "." + parts[2];
     }
 
-    private String createToken(String secret, Long userId, String role, String slug, Instant issuedAt, Instant expiresAt) {
+    private String createToken(
+            String secret,
+            Long userId,
+            String role,
+            String slug,
+            Instant issuedAt,
+            Instant expiresAt,
+            String tokenType
+    ) {
         return JWT.create()
                 .withClaim("userId", userId)
                 .withClaim("role", role)
                 .withClaim("slug", slug)
+                .withClaim("tokenType", tokenType)
                 .withIssuedAt(Date.from(issuedAt))
                 .withExpiresAt(Date.from(expiresAt))
                 .sign(Algorithm.HMAC256(secret));
@@ -221,6 +267,9 @@ class JwtAccessTokenProviderTest {
         }
         if (!"slug".equals(missingClaim)) {
             builder.withClaim("slug", "jinriro");
+        }
+        if (!"tokenType".equals(missingClaim)) {
+            builder.withClaim("tokenType", "ACCESS");
         }
         if (!"iat".equals(missingClaim)) {
             builder.withIssuedAt(Date.from(NOW));

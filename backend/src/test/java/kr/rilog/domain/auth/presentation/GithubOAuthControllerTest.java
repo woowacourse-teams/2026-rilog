@@ -1,11 +1,13 @@
 package kr.rilog.domain.auth.presentation;
 
 import kr.rilog.domain.auth.application.GlobalRole;
+import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingToken;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenClaims;
 import kr.rilog.domain.auth.application.token.onboarding.OnboardingTokenService;
+import kr.rilog.domain.auth.application.token.login.LoginTokenIssuer;
 import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
 import kr.rilog.domain.auth.application.oauth.OAuthLoginUserService;
 import kr.rilog.domain.auth.application.token.refresh.RefreshToken;
@@ -273,16 +275,20 @@ class GithubOAuthControllerTest {
                         List.of(new StubOAuthUserClient()),
                         loginUserService
                 ),
-                refreshTokenIssuer(),
+                new LoginTokenIssuer(
+                        new OnboardingTokenService(new FixedOnboardingTokenProvider()),
+                        new AuthTokenPairIssuer(
+                                new AccessTokenService(new FixedAccessTokenProvider()),
+                                refreshTokenIssuer()
+                        )
+                ),
                 new RefreshTokenCookieFactory(RefreshTokenProperties.of(
                         Duration.ofDays(14),
                         "refresh_token",
                         "/v1/auth",
                         false,
                         "Lax"
-                )),
-                new OnboardingTokenService(new FixedOnboardingTokenProvider()),
-                new AccessTokenService(new FixedAccessTokenProvider())
+                ))
         );
 
         return MockMvcBuilders.standaloneSetup(controller)
