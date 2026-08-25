@@ -1,6 +1,6 @@
 package kr.rilog.domain.upload.service;
 
-import kr.rilog.domain.upload.domain.UploadStatus;
+import kr.rilog.domain.upload.domain.TagStatus;
 import kr.rilog.domain.upload.domain.UploadType;
 import kr.rilog.domain.upload.exception.UploadException;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static kr.rilog.domain.upload.domain.UploadStatus.CONFIRMED;
+import static kr.rilog.domain.upload.domain.TagStatus.CONFIRMED;
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.*;
 
 @Service
@@ -100,14 +100,14 @@ public class UploadService {
 
     public void markTemporary(String objectKey) {
         validateObjectKey(objectKey);
-        updateStatus(objectKey, UploadStatus.TEMPORARY);
+        updateStatus(objectKey, TagStatus.TEMPORARY);
     }
 
     public void markTemporaryAll(Set<String> objectKeys) {
         objectKeys.forEach(this::markTemporary);
     }
 
-    private void updateStatus(String objectKey, UploadStatus value) {
+    private void updateStatus(String objectKey, TagStatus value) {
         Tagging tagging = Tagging.builder()
                 .tagSet(generateTag("status", value))
                 .build();
@@ -122,7 +122,7 @@ public class UploadService {
         s3Client.putObjectTagging(request);
     }
 
-    private static Tag generateTag(String key, UploadStatus status) {
+    private static Tag generateTag(String key, TagStatus status) {
         return Tag.builder()
                 .key(key)
                 .value(status.name())
@@ -148,7 +148,7 @@ public class UploadService {
         );
     }
 
-    private String createTaggingQuery(UploadStatus status) {
+    private String createTaggingQuery(TagStatus status) {
         return "status=" + status.name();
     }
 
