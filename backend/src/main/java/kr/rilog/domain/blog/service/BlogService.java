@@ -20,7 +20,6 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 
 @Service
 @RequiredArgsConstructor
@@ -87,11 +86,7 @@ public class BlogService {
             return;
         }
 
-        if (blog.getOwner() == null
-                || blog.getOwner().getId() == null
-                || !blog.getOwner().getId().equals(requesterId)) {
-            throw new BlogException(RILOG_POST_PUBLISH_FORBIDDEN);
-        }
+        blog.validateIsOwner(requesterId);
     }
 
     private BlogMember getActiveMember(Long blogId, Long userId) {
