@@ -79,6 +79,29 @@ class BlogTest {
     }
 
     @Test
+    @DisplayName("요청자 ID가 블로그 소유자 ID와 같으면 소유자 검증을 통과한다")
+    void validateIsOwnerPassesWhenRequesterIdIsOwnerId() {
+        // given
+        Blog blog = createRilog(createUser(OWNER_ID));
+
+        // when - then
+        assertThatCode(() -> blog.validateIsOwner(OWNER_ID))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("요청자 ID가 블로그 소유자 ID와 다르면 예외가 발생한다")
+    void validateIsOwnerFailsWhenRequesterIdIsNotOwnerId() {
+        // given
+        Blog blog = createRilog(createUser(OWNER_ID));
+
+        // when - then
+        assertThatThrownBy(() -> blog.validateIsOwner(OTHER_USER_ID))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
+    }
+
+    @Test
     @DisplayName("블로그 프로필을 변경하면 새 프로필이 반영된다.")
     void changeProfileReplacesProfile() {
         // given

@@ -8,8 +8,8 @@ import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
-import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -17,11 +17,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
-import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
@@ -31,6 +31,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -192,24 +193,41 @@ class BlogControllerTest {
     }
 
     @Test
-    @DisplayName("GET /v1/users/me/cologs/preview는 인증된 사용자의 팀 목록을 조회한다")
-    void getMyCologsPreviewReturnsAuthenticatedUsersCologs() throws Exception {
+    @DisplayName("PATCH /v1/blogs/{slug}/profiles는 로그인 사용자의 블로그 프로필 수정을 처리한다")
+    void updateBlogProfileChangesProfileForLoginUser() throws Exception {
         // given
         BlogService blogService = mock(BlogService.class);
-        when(blogService.getMyCologsPreview(7L))
-                .thenReturn(List.of(new MyCologResponse(1L, "rilog-team", "리로그 팀", "https://example.com/logo.png")));
         MockMvc mockMvc = mockMvc(blogService);
+        BlogProfileUpdateCommand command = new BlogProfileUpdateCommand(
+                "https://example.com/new-profile.png",
+                "https://example.com/new-cover.png",
+                "새 리로그 팀",
+                "새 소개",
+                "https://new-rilog.example.com",
+                "https://github.com/new-rilog",
+                "new-rilog@example.com"
+        );
 
         // when - then
-        mockMvc.perform(get("/v1/users/me/cologs/preview")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+        mockMvc.perform(patch("/v1/blogs/{slug}/profiles", "rilog-team")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "profileImageUrl": "https://example.com/new-profile.png",
+                                  "coverImageUrl": "https://example.com/new-cover.png",
+                                  "name": "새 리로그 팀",
+                                  "introduction": "새 소개",
+                                  "serviceUrl": "https://new-rilog.example.com",
+                                  "githubUrl": "https://github.com/new-rilog",
+                                  "email": "new-rilog@example.com"
+                                }
+                                """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].cologId").value(1L))
-                .andExpect(jsonPath("$.data[0].slug").value("rilog-team"))
-                .andExpect(jsonPath("$.data[0].name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/logo.png"));
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("프로필을 수정했습니다."));
 
-        verify(blogService).getMyCologsPreview(7L);
+        verify(blogService).changeBlogProfile(7L, "rilog-team", command);
     }
 
     private MockMvc mockMvc(BlogService blogService) {

@@ -9,7 +9,6 @@ import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
-import kr.rilog.domain.blog.service.dto.command.CologProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -89,43 +88,6 @@ class CologServiceIntegrationTest extends ServiceSupport {
 
         assertThat(savedMember.getPermission()).isEqualTo(BlogPermission.MEMBER);
         assertThat(result.permission()).isEqualTo(BlogPermission.MEMBER);
-    }
-
-    @Test
-    @DisplayName("ADMIN이 팀 프로필을 변경하면 변경된 프로필이 저장된다.")
-    void changeCologProfilePersistsChangedProfile() {
-        // given
-        User owner = userRepository.save(createUser(100L, "owner"));
-        User admin = userRepository.save(createUser(200L, "admin"));
-        Blog colog = blogRepository.save(createColog(owner));
-        blogMemberRepository.saveAndFlush(
-                BlogMember.invite(
-                        colog,
-                        admin,
-                        "Backend",
-                        BlogPermission.ADMIN,
-                        LocalDateTime.now()
-                )
-        );
-        CologProfileUpdateCommand command = new CologProfileUpdateCommand(
-                "https://example.com/new-profile.png",
-                "https://example.com/new-cover.png",
-                "새 리로그 팀",
-                "새 팀 소개",
-                "https://new-rilog.example.com",
-                "https://github.com/new-rilog",
-                "new-rilog@example.com"
-        );
-        Profile expectedProfile = command.toProfile();
-
-        // when
-        cologService.changeCologProfile(admin.getId(), COLOG_SLUG, command);
-
-        // then
-        Blog savedColog = blogRepository.findById(colog.getId()).orElseThrow();
-        assertThat(savedColog.getProfile())
-                .usingRecursiveComparison()
-                .isEqualTo(expectedProfile);
     }
 
     private InvitationScenario createInvitationScenario() {

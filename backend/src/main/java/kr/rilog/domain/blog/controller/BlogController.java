@@ -1,24 +1,19 @@
 package kr.rilog.domain.blog.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
+import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
-import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("v1")
@@ -57,10 +52,14 @@ public class BlogController implements BlogApiSpec {
     }
 
     @AuthGuard
-    @GetMapping("/users/me/cologs/preview")
-    public ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId) {
-        List<MyCologResponse> data = blogService.getMyCologsPreview(requesterId);
-        return ApiResponse.response(HttpStatus.OK, "나의 팀 목록을 조회합니다.", data);
+    @PatchMapping("/blogs/{slug}/profiles")
+    public ApiResponse<Void> updateBlogProfile(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug,
+            @Valid @RequestBody BlogProfileUpdateRequest dto
+    ) {
+        blogService.changeBlogProfile(requesterId, slug, dto.toCommand());
+        return ApiResponse.response(HttpStatus.OK, "프로필을 수정했습니다.");
     }
 
 }

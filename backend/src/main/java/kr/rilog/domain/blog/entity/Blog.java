@@ -79,12 +79,24 @@ public class Blog extends BaseEntity {
         }
     }
 
+    public void validateIsOwner(Long requesterId) {
+        if (!isOwner(requesterId)) {
+            throw new BlogException(RILOG_POST_PUBLISH_FORBIDDEN);
+        }
+    }
+
     private boolean isOwner(User user) {
         if (owner == null || user == null) {
             return false;
         }
 
         return owner == user || owner.getId() != null && Objects.equals(owner.getId(), user.getId());
+    }
+
+    private boolean isOwner(Long requesterId) {
+        return owner != null
+                && owner.getId() != null
+                && Objects.equals(owner.getId(), requesterId);
     }
 
     public String getName() {
