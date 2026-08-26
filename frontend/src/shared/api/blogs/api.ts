@@ -62,7 +62,7 @@ export const readBlogPublicProfile = ({ slug }: { slug: string }): Promise<ApiRe
 		return Promise.resolve({ status: 200, message: 'OK', data: mockProfile });
 	}
 
-	return apiClient.get<ApiResponse<BlogPublicProfileResponse>>(`v1/blogs/@${encodeURIComponent(normalizedSlug)}`);
+	return apiClient.get<ApiResponse<BlogPublicProfileResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}`);
 };
 
 export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsRequest) => {
@@ -85,7 +85,7 @@ export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsReq
 	}
 
 	return apiClient.get<ApiResponse<PublicBlogFeedPostResponse>>(
-		`v1/blogs/@${encodeURIComponent(normalizedSlug)}/posts`,
+		`v1/blogs/${encodeURIComponent(normalizedSlug)}/posts`,
 		{
 			searchParams: {
 				page,
