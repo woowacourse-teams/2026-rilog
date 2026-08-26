@@ -51,17 +51,17 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 
 	//url에 앵커 추가
 	const handleAnchorClick = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+		event.preventDefault();
 		const heading = document.getElementById(id);
 
 		if (heading === null) {
 			return;
 		}
 
-		event.preventDefault();
 		const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 		heading.scrollIntoView({ behavior: shouldReduceMotion ? 'auto' : 'smooth', block: 'start' });
-		window.history.replaceState(null, '', `#${encodeURIComponent(id)}`);
+		window.history.replaceState(window.history.state, '', `#${encodeURIComponent(id)}`);
 		setActiveId(id);
 	};
 
