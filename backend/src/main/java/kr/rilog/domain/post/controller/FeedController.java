@@ -25,7 +25,7 @@ public class FeedController implements FeedApiSpec {
         return ApiResponse.response(HttpStatus.OK, "전체피드의 게시물 목록 조회에 성공했습니다.", data);
     }
 
-    @GetMapping("/blogs/@{slug}/posts")
+    @GetMapping("/blogs/{slug}/posts")
     public ApiResponse<PublicBlogFeedPostResponse> getPublicBlogPosts(
             @PathVariable String slug,
             @RequestParam int page,
