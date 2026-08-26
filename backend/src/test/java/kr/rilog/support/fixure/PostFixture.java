@@ -8,6 +8,7 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
+import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.user.entity.User;
@@ -25,6 +26,10 @@ public final class PostFixture {
     private static final String DEFAULT_THUMBNAIL_URL = "https://example.com/thumbnail.png";
 
     private PostFixture() {
+    }
+
+    public static DraftSaveCommand initialDraftSaveCommand() {
+        return new DraftSaveCommand(DEFAULT_TITLE, content());
     }
 
     public static PostSaveCommand publicPostPublishCommand(String slug) {

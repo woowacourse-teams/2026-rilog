@@ -8,6 +8,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -63,7 +64,7 @@ public class Post extends BaseEntity {
     private JsonNode content; // THINK JsonNode 포장.
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Category category;
 
     @Enumerated(EnumType.STRING)
@@ -117,6 +118,18 @@ public class Post extends BaseEntity {
                 .thumbnailImageUrl(detail.thumbnailUrl())
                 .publishedAt(LocalDateTime.now())
                 .status(PostStatus.PUBLISHED)
+                .build();
+    }
+
+    public static Post draft(DraftSaveCommand command, User author, Blog rilog) {
+        return Post.builder()
+                .user(author)
+                .rilog(rilog)
+                .title(command.title())
+                .content(command.content())
+                .status(PostStatus.DRAFT)
+                .visibility(PostVisibility.PRIVATE)
+                .publishedAt(LocalDateTime.now())
                 .build();
     }
 
