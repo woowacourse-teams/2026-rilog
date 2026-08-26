@@ -93,7 +93,7 @@ public class DraftController implements DraftApiSpec {
             @PathVariable("draftId") Long draftId,
             @Valid @RequestBody DraftPublishRequest dto
     ) {
-        PostPublishResult result = draftService.publishDraft(dto.toCommand(), requesterId, draftId);
+        PostPublishResult result = draftService.publishDraft(dto.toCommand(), draftId, requesterId);
         PostPublishResponse data = PostPublishResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "임시저장 글을 성공적으로 발행했습니다.", data);
     }
