@@ -4,8 +4,10 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
+import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -48,6 +51,21 @@ public class DraftService {
         return DraftListResult.from(drafts);
     }
 
+    @Transactional
+    public DraftIdResult overwriteDraft(DraftOverwriteCommand command, Long postId, Long requesterId) {
+        Post draft = getDraft(postId);
+        draft.validateWrittenBy(requesterId);
+        draft.overwriteDraft(command);
+        return DraftIdResult.from(draft.getId());
+    }
+
+    @Transactional
+    public void deleteDraft(Long postId, Long requesterId) {
+        Post draft = getDraft(postId);
+        draft.validateWrittenBy(requesterId);
+        draft.delete();
+    }
+
     private User getUser(Long requesterId) {
         return userRepository.findById(requesterId)
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
@@ -56,6 +74,11 @@ public class DraftService {
     private Blog getRilog(User writer) {
         return blogRepository.findRilogByOwnerId(writer.getId())
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
+    }
+
+    private Post getDraft(Long postId) {
+        return postRepository.findDetailByIdAndStatus(postId, DRAFT)
+                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 
 }
