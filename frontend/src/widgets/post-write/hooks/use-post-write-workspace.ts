@@ -44,6 +44,7 @@ export function usePostWriteWorkspace({
 		preparePostDocument,
 		markClean,
 	} = usePostDocument({ initialDocument });
+
 	const drafts = usePostDrafts({ prepareDocument: preparePostDocument });
 
 	const {
@@ -112,6 +113,7 @@ export function usePostWriteWorkspace({
 	};
 
 	return {
+		isDirty,
 		document: {
 			titleRef,
 			editorRef,

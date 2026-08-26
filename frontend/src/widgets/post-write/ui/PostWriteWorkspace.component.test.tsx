@@ -255,7 +255,11 @@ describe('PostWriteWorkspace', () => {
 
 		expect(screen.queryByRole('button', { name: '임시저장' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /임시 저장된 글/ })).not.toBeInTheDocument();
-		await user.click(screen.getByRole('button', { name: '발행' }));
+		const publishButton = screen.getByRole('button', { name: '발행' });
+		expect(publishButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		expect(publishButton).toBeEnabled();
+		await user.click(publishButton);
 
 		expect(screen.getByRole('radio', { name: '일상' })).toBeChecked();
 		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue('3');
@@ -623,6 +627,7 @@ describe('PostWriteWorkspace', () => {
 			/>,
 		);
 
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 

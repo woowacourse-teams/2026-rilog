@@ -115,6 +115,7 @@ export default function PostWriteWorkspace({
 	};
 
 	const {
+		isDirty,
 		document: postDocument,
 		publication,
 		leaveGuard,
@@ -132,6 +133,7 @@ export default function PostWriteWorkspace({
 			<WritePublishActionBar
 				isEditMode={isEditMode}
 				isEditorReady={postDocument.isEditorReady}
+				isPublishReady={postDocument.isEditorReady && isDirty}
 				draftCount={drafts.posts.length}
 				onPublish={publication.open}
 				onDraftSave={drafts.save}

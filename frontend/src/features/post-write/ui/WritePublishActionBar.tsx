@@ -3,6 +3,7 @@ import Button from '@/shared/ui/button/Button';
 interface WritePublishActionBarProps {
 	isEditMode: boolean;
 	isEditorReady: boolean;
+	isPublishReady: boolean;
 	draftCount: number;
 	onPublish: () => void;
 	onDraftSave: () => void;
@@ -12,6 +13,7 @@ interface WritePublishActionBarProps {
 export default function WritePublishActionBar({
 	isEditMode,
 	isEditorReady,
+	isPublishReady,
 	draftCount,
 	onPublish,
 	onDraftSave,
@@ -25,7 +27,7 @@ export default function WritePublishActionBar({
 						<Button
 							className="min-w-btn-wide rounded-r-none"
 							variant="secondary"
-							disabled={!isEditorReady}
+							disabled={!isPublishReady}
 							onClick={onDraftSave}
 						>
 							임시저장
@@ -41,7 +43,7 @@ export default function WritePublishActionBar({
 						</Button>
 					</div>
 				)}
-				<Button className="min-w-btn-wide" disabled={!isEditorReady} onClick={onPublish}>
+				<Button className="min-w-btn-wide" disabled={!isPublishReady} onClick={onPublish}>
 					발행
 				</Button>
 			</div>
