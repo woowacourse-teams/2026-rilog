@@ -22,7 +22,13 @@ export default async function PostDetail({ post }: PostDetailProps) {
 
 			<div className="px-5 sm:px-8">
 				<div className="mx-auto max-w-2xl aside-right:-translate-x-8.75">
-					<PostDetailHeader postId={post.id} title={post.title} publishedAt={post.publishedAt} author={post.author} />
+					<PostDetailHeader
+						postId={post.id}
+						slug={post.blog.slug}
+						title={post.title}
+						publishedAt={post.publishedAt}
+						author={post.author}
+					/>
 					{post.blog.type === 'COLOG' ? <PostDetailCoLogSummary colog={post.blog} /> : null}
 					<Divider aria-label="게시글 정보와 본문 구분" />
 
