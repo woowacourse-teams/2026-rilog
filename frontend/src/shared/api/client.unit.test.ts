@@ -41,4 +41,15 @@ describe('apiClient', () => {
 		expect(listener).toHaveBeenCalledOnce();
 		unsubscribe();
 	});
+
+	it('DELETE 응답은 JSON으로 파싱하지 않고 204 Response를 반환한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const response = await apiClient.delete('v1/posts/42');
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('DELETE');
+		expect(response.status).toBe(204);
+	});
 });

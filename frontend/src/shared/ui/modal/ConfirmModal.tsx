@@ -52,7 +52,7 @@ export default function ConfirmModal({
 			initialFocusRef={variant === 'danger' ? cancelButtonRef : confirmButtonRef}
 			className={COMPACT_MODAL_CLASS_NAME}
 		>
-			<div className={COMPACT_MODAL_CONTENT_CLASS_NAME}>
+			<div className={`${COMPACT_MODAL_CONTENT_CLASS_NAME} text-left`}>
 				<header className="flex-none">
 					<h2 id={titleId} className="text-title-2 font-semibold text-text-primary">
 						{title}

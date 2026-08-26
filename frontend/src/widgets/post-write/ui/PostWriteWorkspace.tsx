@@ -15,16 +15,18 @@ import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
-import { usePublishPostMutation } from '@/shared/api/blogs/mutations/use-publish-post-mutation';
+import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish-post-mutation';
+import { useUpdatePostMutation } from '@/shared/api/posts/mutations/use-update-post-mutation';
+import type { PostWriteRequest } from '@/shared/api/posts/types';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
-import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
 import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 
 interface PostWriteWorkspaceProps {
+	postId?: number;
 	editorComponent?: ComponentType<PostEditorProps>;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
@@ -34,6 +36,7 @@ interface PostWriteWorkspaceProps {
 }
 
 export default function PostWriteWorkspace({
+	postId,
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
 	initialPublicationSettings,
@@ -41,14 +44,16 @@ export default function PostWriteWorkspace({
 	uploadFile,
 	navigate,
 }: PostWriteWorkspaceProps) {
+	const isEditMode = postId !== undefined;
+
 	useEffect(() => {
 		analytics.postEditorOpened();
 	}, []);
 
-	const { data: myInfoResponse } = useMyInfoQuery();
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
+	const { mutateAsync: requestPostUpdate } = useUpdatePostMutation();
 
 	const uploadPostBodyFileWithApi = useCallback<UploadPostBodyFile>(
 		async (file) => {
@@ -61,7 +66,6 @@ export default function PostWriteWorkspace({
 	);
 	const resolvedUploadFile = uploadFile ?? uploadPostBodyFileWithApi;
 
-	const myInfo = myInfoResponse?.data;
 	const cologOptions = useMemo(() => {
 		const availableBlogs =
 			myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
@@ -89,7 +93,7 @@ export default function PostWriteWorkspace({
 					).objectKey
 				: (settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL);
 
-		const response = await requestPostPublication({
+		const request: PostWriteRequest = {
 			slug: settings.blog.slug,
 			title: document.title,
 			content: document.blocks,
@@ -97,8 +101,8 @@ export default function PostWriteWorkspace({
 			// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 			visibility: 'PUBLIC',
 			thumbnailImageUrl,
-			profileImageUrl: myInfo?.profileImageUrl ?? null,
-		});
+		};
+		const response = isEditMode ? await requestPostUpdate({ postId, request }) : await requestPostPublication(request);
 
 		if (response.data === undefined) {
 			throw new Error('발행 응답에 게시글 정보가 없습니다.');
@@ -111,11 +115,13 @@ export default function PostWriteWorkspace({
 	};
 
 	const {
+		isDirty,
 		document: postDocument,
 		publication,
 		leaveGuard,
 		drafts,
 	} = usePostWriteWorkspace({
+		isEditMode,
 		initialDocument,
 		initialPublicationSettings,
 		publishPost: publishPost ?? publishPostWithApi,
@@ -125,7 +131,9 @@ export default function PostWriteWorkspace({
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
 			<WritePublishActionBar
+				isEditMode={isEditMode}
 				isEditorReady={postDocument.isEditorReady}
+				isPublishReady={postDocument.isEditorReady && isDirty}
 				draftCount={drafts.posts.length}
 				onPublish={publication.open}
 				onDraftSave={drafts.save}

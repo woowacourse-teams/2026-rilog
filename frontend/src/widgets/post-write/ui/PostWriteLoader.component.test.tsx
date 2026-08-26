@@ -12,6 +12,7 @@ import type {
 import PostWriteLoader from './PostWriteLoader';
 
 interface WorkspaceMockProps {
+	postId?: number;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
 }
@@ -50,9 +51,10 @@ vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
 }));
 
 vi.mock('./PostWriteWorkspace', () => ({
-	default: ({ initialDocument, initialPublicationSettings }: WorkspaceMockProps) => (
+	default: ({ postId, initialDocument, initialPublicationSettings }: WorkspaceMockProps) => (
 		<div>
 			<p>글쓰기 워크스페이스</p>
+			{postId === undefined ? null : <p>수정 게시글 {postId}</p>}
 			{initialDocument === undefined ? null : (
 				<>
 					<p>{initialDocument.title}</p>
@@ -155,6 +157,7 @@ describe('PostWriteLoader', () => {
 		expect(screen.getByText('블로그 작성자 블로그')).toBeInTheDocument();
 		expect(screen.getByText('썸네일 posts/existing-thumbnail.png')).toBeInTheDocument();
 		expect(screen.getByText('접근 가드 작성자 7')).toBeInTheDocument();
+		expect(screen.getByText('수정 게시글 31')).toBeInTheDocument();
 		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 31, isEnabled: true }));
 	});
 });

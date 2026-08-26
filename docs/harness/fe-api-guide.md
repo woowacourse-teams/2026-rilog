@@ -63,6 +63,8 @@ features/
 ### 3.3 API 호출 함수 (`api.ts`)
 - 전역 `apiClient`(`client.ts`)를 사용하여 실제 HTTP 요청을 수행하는 순수 함수를 작성합니다.
 - URL 경로나 Query Parameter 가공을 여기서 담당합니다.
+- `apiClient`의 `GET`, `POST`, `PUT`, `PATCH`는 JSON 응답을 파싱합니다.
+- `apiClient.delete`는 모든 DELETE API가 `204 No Content`를 반환한다는 계약을 따르며, JSON 응답을 고려하지 않고 원본 `Response`를 반환합니다.
 ```typescript
 import { apiClient } from '@/shared/api/client';
 import type { ApiResponse } from '@/shared/api/shared.types';

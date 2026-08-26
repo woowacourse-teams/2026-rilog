@@ -10,10 +10,10 @@ import * as uploadApi from '@/shared/api/uploads/api';
 
 import { useSaveCologProfile } from './use-save-colog-profile';
 
-const { updateCologProfileMock } = vi.hoisted(() => ({ updateCologProfileMock: vi.fn() }));
+const { updateBlogProfileMock } = vi.hoisted(() => ({ updateBlogProfileMock: vi.fn() }));
 
-vi.mock('@/shared/api/cologs/mutations/use-update-colog-profile-mutation', () => ({
-	useUpdateCologProfileMutation: () => ({ mutateAsync: updateCologProfileMock }),
+vi.mock('@/shared/api/blogs/mutations/use-update-blog-profile-mutation', () => ({
+	useUpdateBlogProfileMutation: () => ({ mutateAsync: updateBlogProfileMock }),
 }));
 
 const createWrapper = () => {
@@ -27,7 +27,7 @@ const createWrapper = () => {
 };
 
 afterEach(() => {
-	updateCologProfileMock.mockReset();
+	updateBlogProfileMock.mockReset();
 	vi.restoreAllMocks();
 });
 
@@ -48,7 +48,7 @@ describe('useSaveCologProfile', () => {
 			headers: {},
 			expiresAt: '2026-08-21T00:00:00Z',
 		});
-		updateCologProfileMock.mockResolvedValue({ status: 200, message: '팀 프로필을 수정했습니다.' });
+		updateBlogProfileMock.mockResolvedValue({ status: 200, message: '팀 프로필을 수정했습니다.' });
 		const logoFile = new File(['logo'], 'logo.png', { type: 'image/png' });
 		const coverImageFile = new File(['cover'], 'cover.png', { type: 'image/png' });
 		const value: CologProfileSettingsValue = {
@@ -68,7 +68,7 @@ describe('useSaveCologProfile', () => {
 
 		expect(uploadFile).toHaveBeenCalledWith({ file: logoFile, type: 'IMAGE' });
 		expect(uploadFile).toHaveBeenCalledWith({ file: coverImageFile, type: 'IMAGE' });
-		expect(updateCologProfileMock).toHaveBeenCalledWith({
+		expect(updateBlogProfileMock).toHaveBeenCalledWith({
 			slug: '@rilog-team',
 			request: {
 				name: '리로그 팀',

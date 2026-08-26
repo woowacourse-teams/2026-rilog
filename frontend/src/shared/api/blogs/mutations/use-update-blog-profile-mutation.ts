@@ -2,22 +2,22 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { updateBlogProfile } from '@/shared/api/blogs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
-import { updateCologProfile } from '@/shared/api/cologs/api';
-import type { CologProfileUpdateRequest } from '@/shared/api/cologs/types';
+import type { BlogProfileUpdateRequest } from '@/shared/api/blogs/types';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 
-interface UpdateCologProfileVariables {
+interface UpdateBlogProfileVariables {
 	slug: string;
-	request: CologProfileUpdateRequest;
+	request: BlogProfileUpdateRequest;
 }
 
-export const useUpdateCologProfileMutation = () => {
+export const useUpdateBlogProfileMutation = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ slug, request }: UpdateCologProfileVariables) => updateCologProfile(slug, request),
+		mutationFn: ({ slug, request }: UpdateBlogProfileVariables) => updateBlogProfile(slug, request),
 		onSuccess: () =>
 			Promise.all([
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),

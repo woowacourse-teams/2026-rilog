@@ -17,6 +17,7 @@ import type {
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface UsePostWriteWorkspaceOptions {
+	isEditMode?: boolean;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
 	publishPost: PublishPost;
@@ -24,6 +25,7 @@ interface UsePostWriteWorkspaceOptions {
 }
 
 export function usePostWriteWorkspace({
+	isEditMode = false,
 	initialDocument,
 	initialPublicationSettings,
 	publishPost,
@@ -42,6 +44,7 @@ export function usePostWriteWorkspace({
 		preparePostDocument,
 		markClean,
 	} = usePostDocument({ initialDocument });
+
 	const drafts = usePostDrafts({ prepareDocument: preparePostDocument });
 
 	const {
@@ -69,15 +72,17 @@ export function usePostWriteWorkspace({
 	const handlePublished = useCallback(
 		(result: PublishPostResult, settings: PublicationSettings) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
-			analytics.postPublished({
-				category: settings.category,
-				hasCustomRepresentativeImage: settings.representativeImage !== null,
-			});
+			if (!isEditMode) {
+				analytics.postPublished({
+					category: settings.category,
+					hasCustomRepresentativeImage: settings.representativeImage !== null,
+				});
+			}
 
 			clearSelectedImageUrl();
 			navigateAfterCompletion(postDetailPath);
 		},
-		[clearSelectedImageUrl, navigateAfterCompletion],
+		[clearSelectedImageUrl, isEditMode, navigateAfterCompletion],
 	);
 
 	const {
@@ -108,6 +113,7 @@ export function usePostWriteWorkspace({
 	};
 
 	return {
+		isDirty,
 		document: {
 			titleRef,
 			editorRef,

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { publishPost, readBlogPublicProfile, readPublicBlogPosts } from './api';
+import type { BlogProfileUpdateRequest } from './types';
+
+import { readBlogPublicProfile, readPublicBlogPosts, updateBlogProfile } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -11,41 +13,30 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe('publishPost', () => {
-	it('slug의 @ 접두사를 제거해 요청 본문에 포함하고 게시글 endpoint로 POST한다', async () => {
-		const responseBody = {
-			status: 201,
-			message: '게시글 발행에 성공했습니다.',
-			data: { postId: 42, slug: 'rilog-team' },
-		};
+describe('updateBlogProfile', () => {
+	it('정규화한 slug와 요청 본문으로 블로그 프로필 수정 PATCH 요청을 보낸다', async () => {
+		let capturedRequest: Request | undefined;
 		let capturedBody: unknown;
-		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-			if (input instanceof Request) {
-				capturedBody = await input.clone().json();
-			}
-
-			return Response.json(responseBody, { status: 201 });
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			capturedRequest = input as Request;
+			capturedBody = await capturedRequest.clone().json();
+			return Response.json({ status: 200, message: '팀 프로필을 수정했습니다.' });
 		});
 		vi.stubGlobal('fetch', fetchMock);
-		const requestBody = {
-			slug: '@rilog-team',
-			title: 'BlockNote 도입기',
-			content: [],
-			category: 'TECH' as const,
-			visibility: 'PUBLIC' as const,
-			thumbnailImageUrl: 'posts/cover.png',
-			profileImageUrl: null,
+		const request: BlogProfileUpdateRequest = {
+			name: '리로그 팀',
+			profileImageUrl: 'rilog/uploads/images/logo.png',
+			coverImageUrl: null,
+			introduction: '함께 기록하는 팀',
+			serviceUrl: null,
+			githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
 		};
 
-		await expect(publishPost(requestBody)).resolves.toEqual(responseBody);
+		await updateBlogProfile('@rilog/team', request);
 
-		const request = fetchMock.mock.calls[0]?.[0] as Request;
-		expect(request.method).toBe('POST');
-		expect(request.url).toBe('https://api.rilog.test/v1/posts');
-		expect(capturedBody).toEqual({
-			...requestBody,
-			slug: 'rilog-team',
-		});
+		expect(capturedRequest?.method).toBe('PATCH');
+		expect(capturedRequest?.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/profiles');
+		expect(capturedBody).toEqual(request);
 	});
 });
 
