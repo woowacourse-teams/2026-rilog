@@ -5,8 +5,8 @@ import { AUTH_REFRESH_ROUTE, mockAuthenticatedAccess, MY_INFO_ROUTE } from './au
 type CologPermission = 'OWNER' | 'ADMIN' | 'MEMBER';
 
 const COLOG_MEMBERS_ROUTE = '**/v1/cologs/*/members';
-const COLOG_PROFILE_UPDATE_ROUTE = '**/v1/cologs/*/profiles';
-const COLOG_PROFILE_ROUTE = /\/v1\/blogs\/@[^/]+$/;
+const COLOG_PROFILE_UPDATE_ROUTE = '**/v1/blogs/*/profiles';
+const COLOG_PROFILE_ROUTE = /\/v1\/blogs\/[^/]+$/;
 const NICKNAME_AVAILABILITY_ROUTE = '**/v1/availability/nickname*';
 const PROXY_SESSION_ROUTE = '**/api/auth/proxy-session';
 
@@ -62,7 +62,7 @@ export const mockCologSettingsAccess = async (page: Page, permission: CologPermi
 
 	await page.route(COLOG_PROFILE_ROUTE, (route) => {
 		const pathname = new URL(route.request().url()).pathname;
-		const slug = decodeURIComponent(pathname.slice(pathname.lastIndexOf('@') + 1));
+		const slug = decodeURIComponent(pathname.slice(pathname.lastIndexOf('/') + 1));
 
 		return route.fulfill({
 			contentType: 'application/json',

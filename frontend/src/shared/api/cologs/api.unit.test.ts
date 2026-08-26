@@ -35,7 +35,7 @@ describe('updateCologProfile', () => {
 		await updateCologProfile('@rilog/team', request);
 
 		expect(capturedRequest?.method).toBe('PATCH');
-		expect(capturedRequest?.url).toBe('https://api.rilog.test/v1/cologs/rilog%2Fteam/profiles');
+		expect(capturedRequest?.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/profiles');
 		expect(capturedBody).toEqual(request);
 	});
 });

@@ -26,7 +26,7 @@ export const inviteCologMember = (slug: string, request: CologMemberInviteReques
 export const updateCologProfile = (slug: string, request: CologProfileUpdateRequest) => {
 	const normalizedSlug = stripAtPrefix(slug);
 
-	return apiClient.patch<ApiResponse<void>>(`v1/cologs/${encodeURIComponent(normalizedSlug)}/profiles`, {
+	return apiClient.patch<ApiResponse<void>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/profiles`, {
 		json: request,
 	});
 };
