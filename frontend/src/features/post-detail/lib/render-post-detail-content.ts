@@ -13,10 +13,23 @@ interface ServerBlockNoteEditorWithDom {
 
 const POST_DETAIL_TOGGLE_BUTTON_SELECTOR = ':scope > .bn-toggle-button';
 const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
+const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
 
-const enhancePostDetailToggles = (html: string, document: Document): string => {
+const enhancePostDetailHtml = (html: string, document: Document): string => {
 	const container = document.createElement('div');
 	container.innerHTML = html;
+
+	container.querySelectorAll<HTMLElement>(POST_DETAIL_HEADING_CONTENT_SELECTOR).forEach((headingContent) => {
+		const headingBlock = headingContent.closest<HTMLElement>('.bn-block-outer[data-id]');
+		if (headingBlock === null) {
+			return;
+		}
+
+		const blockId = headingBlock.dataset.id;
+		if (blockId !== undefined) {
+			headingBlock.id = blockId;
+		}
+	});
 
 	container.querySelectorAll<HTMLElement>('.bn-toggle-wrapper').forEach((toggleWrapper, index) => {
 		const toggleButton = toggleWrapper.querySelector<HTMLButtonElement>(POST_DETAIL_TOGGLE_BUTTON_SELECTOR);
@@ -54,5 +67,5 @@ export const renderPostDetailContent = async (blocks: Block[]): Promise<string> 
 	const html = await editor.blocksToFullHTML(blocks);
 	const document = (editor as unknown as ServerBlockNoteEditorWithDom).jsdom.window.document;
 
-	return enhancePostDetailToggles(html, document);
+	return enhancePostDetailHtml(html, document);
 };
