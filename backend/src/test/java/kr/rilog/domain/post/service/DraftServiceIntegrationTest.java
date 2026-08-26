@@ -1,20 +1,27 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
+import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
+import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
+import kr.rilog.support.fixure.BlogFixture;
+import kr.rilog.support.fixure.BlogMemberFixture;
 import kr.rilog.support.fixure.PostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
@@ -23,14 +30,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.ALREADY_BLOG_MEMBER_LEFT;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
+import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.PostFixture.initialDraftSaveCommand;
 import static kr.rilog.support.fixure.PostFixture.overwrittenDraftCommand;
+import static kr.rilog.support.fixure.PostFixture.publicDraftPublishCommand;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -47,6 +57,9 @@ class DraftServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogRepository blogRepository;
+
+    @Autowired
+    private BlogMemberRepository blogMemberRepository;
 
     @Autowired
     private PostRepository postRepository;
@@ -422,6 +435,138 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("작성자가 초안을 개인 블로그에 발행하면 입력한 게시글 정보와 발행 상태가 저장되고 게시글 위치를 반환한다.")
+    void publishDraftToRilogPersistsDetailAndPublishedState() {
+        // given
+        User writer = saveCompletedUser(201L, "발행작성자", "publish-writer");
+        Blog rilog = saveRilog(writer);
+        saveOwnerMembership(rilog, writer);
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "발행 전 제목",
+                BASE_PUBLISHED_AT
+        ));
+        DraftPublishCommand command = publicDraftPublishCommand(rilog.getSlug());
+
+        // when
+        PostPublishResult result = draftService.publishDraft(command, draft.getId(), writer.getId());
+
+        // then
+        Post publishedPost = postRepository.findById(draft.getId()).orElseThrow();
+        PostDetail publishedDetail = new PostDetail(
+                publishedPost.getTitle(),
+                publishedPost.getContent(),
+                publishedPost.getCategory(),
+                publishedPost.getVisibility(),
+                publishedPost.getThumbnailImageUrl()
+        );
+        assertSoftly(softly -> {
+            softly.assertThat(result).isEqualTo(new PostPublishResult(draft.getId(), rilog.getSlug()));
+            softly.assertThat(publishedDetail).isEqualTo(command.toDetail());
+            softly.assertThat(publishedPost.getStatus()).isEqualTo(PUBLISHED);
+            softly.assertThat(publishedPost.getPublishedAt()).isAfter(BASE_PUBLISHED_AT);
+            softly.assertThat(publishedPost.getColog()).isNull();
+        });
+    }
+
+    @Test
+    @DisplayName("작성자가 초안을 팀 블로그에 발행하면 개인 블로그와 대상 팀 블로그 소속이 저장된다.")
+    void publishDraftToCologPersistsRilogAndCologAffiliation() {
+        // given
+        User writer = saveCompletedUser(201L, "팀글작성자", "colog-writer");
+        Blog rilog = saveRilog(writer);
+        Blog colog = blogRepository.saveAndFlush(
+                Blog.createColog(writer, "team-blog", BlogFixture.cologProfile())
+        );
+        saveOwnerMembership(rilog, writer);
+        saveOwnerMembership(colog, writer);
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "팀 블로그 발행 전 제목",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when
+        PostPublishResult result = draftService.publishDraft(
+                publicDraftPublishCommand(colog.getSlug()),
+                draft.getId(),
+                writer.getId()
+        );
+
+        // then
+        Post publishedPost = postRepository.findById(draft.getId()).orElseThrow();
+        assertSoftly(softly -> {
+            softly.assertThat(result.slug()).isEqualTo(colog.getSlug());
+            softly.assertThat(publishedPost.getRilog().getId()).isEqualTo(rilog.getId());
+            softly.assertThat(publishedPost.getColog().getId()).isEqualTo(colog.getId());
+        });
+    }
+
+    @Test
+    @DisplayName("다른 작성자의 초안을 발행하면 작성 권한 예외가 발생하고 초안 상태가 유지된다.")
+    void publishDraftThrowsAndPreservesDraftWhenRequesterIsNotWriter() {
+        // given
+        User writer = saveCompletedUser(201L, "초안작성자", "publish-owner");
+        Blog rilog = saveRilog(writer);
+        saveOwnerMembership(rilog, writer);
+        User requester = saveCompletedUser(202L, "발행요청자", "publish-requester");
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "유지할 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.publishDraft(
+                publicDraftPublishCommand(rilog.getSlug()),
+                draft.getId(),
+                requester.getId()
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(NOT_POST_AUTHOR.getMessage());
+
+        Post preservedDraft = postRepository.findById(draft.getId()).orElseThrow();
+        assertSoftly(softly -> {
+            softly.assertThat(preservedDraft.getStatus()).isEqualTo(DRAFT);
+            softly.assertThat(preservedDraft.getTitle()).isEqualTo(draft.getTitle());
+        });
+    }
+
+    @Test
+    @DisplayName("활성 팀 멤버가 아닌 작성자가 초안을 발행하면 예외가 발생하고 초안 상태가 유지된다.")
+    void publishDraftThrowsAndPreservesDraftWhenTargetMembershipIsInactive() {
+        // given
+        User writer = saveCompletedUser(201L, "탈퇴멤버", "left-member");
+        Blog rilog = saveRilog(writer);
+        saveOwnerMembership(rilog, writer);
+        User cologOwner = saveCompletedUser(202L, "팀소유자", "team-owner");
+        Blog colog = blogRepository.saveAndFlush(
+                Blog.createColog(cologOwner, "inactive-team", BlogFixture.cologProfile())
+        );
+        blogMemberRepository.saveAndFlush(BlogMemberFixture.leftMember(colog, writer));
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "유지할 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.publishDraft(
+                publicDraftPublishCommand(colog.getSlug()),
+                draft.getId(),
+                writer.getId()
+        ))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
+
+        assertThat(postRepository.findById(draft.getId()).orElseThrow().getStatus()).isEqualTo(DRAFT);
+    }
+
+    @Test
     @DisplayName("작성자가 자신의 초안을 삭제하면 삭제 상태가 저장된다.")
     void deleteDraftPersistsDeletion() {
         // given
@@ -533,6 +678,10 @@ class DraftServiceIntegrationTest extends ServiceSupport {
 
     private Blog saveRilog(User writer) {
         return blogRepository.saveAndFlush(Blog.createRilog(writer));
+    }
+
+    private BlogMember saveOwnerMembership(Blog blog, User user) {
+        return blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(blog, user));
     }
 
 }
