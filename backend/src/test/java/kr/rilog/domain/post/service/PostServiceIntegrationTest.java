@@ -578,8 +578,8 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("팀 블로그의 일반 멤버는 자신이 작성한 게시글을 삭제할 수 없다.")
-    void cologMemberCannotDeleteOwnPost() {
+    @DisplayName("팀 블로그의 활성 멤버는 자신이 작성한 게시글을 삭제할 수 있다.")
+    void activeCologMemberDeletesOwnPost() {
         // given
         User owner = saveCompletedUser(122L, "자기글팀주인", "own-post-owner");
         Blog colog = saveColog(owner, "own-post-colog");
@@ -588,12 +588,12 @@ class PostServiceIntegrationTest extends ServiceSupport {
         saveActiveMember(colog, writer);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
-        // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), writer.getId()))
-                .isInstanceOf(PostException.class)
-                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
+        // when
+        postService.deletePublishedPost(post.getId(), writer.getId());
 
-        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
+        // then
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isNotNull();
     }
 
     @Test

@@ -169,7 +169,7 @@ public class PostService {
     }
 
     private void validateCanDeletePublishedPost(Post post, Long requesterId) {
-        if (post.isCologAffiliated() && hasCologDeletePermission(post, requesterId)) {
+        if (post.isCologAffiliated() && canDeleteCologPost(post, requesterId)) {
             return;
         }
 
@@ -180,13 +180,9 @@ public class PostService {
         throw new PostException(POST_DELETE_FORBIDDEN);
     }
 
-    private boolean hasCologDeletePermission(Post post, Long requesterId) {
-        if (!post.isCologAffiliated()) {
-            return false;
-        }
-
+    private boolean canDeleteCologPost(Post post, Long requesterId) {
         return getBlogMember(post.getOwnBlogId(), requesterId)
-                .map(BlogMember::hasDeletePermission)
+                .map(member -> post.isWrittenBy(requesterId) || member.hasDeletePermission())
                 .orElse(false);
     }
 
