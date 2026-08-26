@@ -12,4 +12,8 @@ public record PostPublishResult(
         return new PostPublishResult(post.getId(), publishingBlog.getSlug());
     }
 
+    public static PostPublishResult of(Post post) {
+        return new PostPublishResult(post.getId(), post.getOwnSlug());
+    }
+
 }
