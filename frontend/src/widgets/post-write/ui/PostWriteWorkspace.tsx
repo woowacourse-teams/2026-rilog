@@ -91,15 +91,13 @@ export default function PostWriteWorkspace({
 
 		const response = await requestPostPublication({
 			slug: settings.blog.slug,
-			request: {
-				title: document.title,
-				content: document.blocks,
-				category: settings.category === 'IT' ? 'TECH' : settings.category,
-				// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
-				visibility: 'PUBLIC',
-				thumbnailImageUrl,
-				profileImageUrl: myInfo?.profileImageUrl ?? null,
-			},
+			title: document.title,
+			content: document.blocks,
+			category: settings.category === 'IT' ? 'TECH' : settings.category,
+			// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
+			visibility: 'PUBLIC',
+			thumbnailImageUrl,
+			profileImageUrl: myInfo?.profileImageUrl ?? null,
 		});
 
 		if (response.data === undefined) {

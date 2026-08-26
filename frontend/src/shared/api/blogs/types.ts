@@ -6,6 +6,7 @@ export type PostPublishCategory = 'TECH' | 'DAILY';
 export type PostVisibility = 'PUBLIC' | 'PRIVATE';
 
 export interface PostPublishRequest {
+	slug: string;
 	title: string;
 	content: Block[];
 	category: PostPublishCategory;
@@ -17,11 +18,6 @@ export interface PostPublishRequest {
 export interface PostPublishResponse {
 	postId: number;
 	slug: string;
-}
-
-export interface PublishPostRequest {
-	slug: string;
-	request: PostPublishRequest;
 }
 
 export interface AuthorResponse {

@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe('publishPost', () => {
-	it('slug의 @ 접두사를 제거하고 발행 요청을 POST로 전송한다', async () => {
+	it('slug의 @ 접두사를 제거해 요청 본문에 포함하고 게시글 endpoint로 POST한다', async () => {
 		const responseBody = {
 			status: 201,
 			message: '게시글 발행에 성공했습니다.',
@@ -28,6 +28,7 @@ describe('publishPost', () => {
 		});
 		vi.stubGlobal('fetch', fetchMock);
 		const requestBody = {
+			slug: '@rilog-team',
 			title: 'BlockNote 도입기',
 			content: [],
 			category: 'TECH' as const,
@@ -36,12 +37,15 @@ describe('publishPost', () => {
 			profileImageUrl: null,
 		};
 
-		await expect(publishPost({ slug: '@rilog-team', request: requestBody })).resolves.toEqual(responseBody);
+		await expect(publishPost(requestBody)).resolves.toEqual(responseBody);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('POST');
-		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts');
-		expect(capturedBody).toEqual(requestBody);
+		expect(request.url).toBe('https://api.rilog.test/v1/posts');
+		expect(capturedBody).toEqual({
+			...requestBody,
+			slug: 'rilog-team',
+		});
 	});
 });
 

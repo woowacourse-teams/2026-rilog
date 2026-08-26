@@ -7,14 +7,14 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
-import type { PostPublishResponse, PublishPostRequest } from '@/shared/api/blogs/types';
+import type { PostPublishRequest, PostPublishResponse } from '@/shared/api/blogs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
-type RequestPostPublication = (request: PublishPostRequest) => Promise<ApiResponse<PostPublishResponse>>;
+type RequestPostPublication = (request: PostPublishRequest) => Promise<ApiResponse<PostPublishResponse>>;
 
 const {
 	postEditorOpenedMock,
@@ -575,14 +575,12 @@ describe('PostWriteWorkspace', () => {
 		expect(uploadRepresentativeImageMock).toHaveBeenCalledWith({ file: coverImage, type: 'IMAGE' });
 		expect(requestPostPublicationMock).toHaveBeenCalledWith({
 			slug: 'rilog-team',
-			request: {
-				title: 'BlockNote 도입기',
-				content: [createParagraph('오늘 배운 내용을 기록합니다.')],
-				category: 'TECH',
-				visibility: 'PUBLIC',
-				thumbnailImageUrl: 'posts/cover-object-key.png',
-				profileImageUrl: 'profile/object-key.png',
-			},
+			title: 'BlockNote 도입기',
+			content: [createParagraph('오늘 배운 내용을 기록합니다.')],
+			category: 'TECH',
+			visibility: 'PUBLIC',
+			thumbnailImageUrl: 'posts/cover-object-key.png',
+			profileImageUrl: 'profile/object-key.png',
 		});
 
 		unmount();
@@ -613,7 +611,7 @@ describe('PostWriteWorkspace', () => {
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
 		const publicationRequest = requestPostPublicationMock.mock.calls[0]?.[0];
 		expect(publicationRequest?.slug).toBe('personal-blog');
-		expect(publicationRequest?.request).toMatchObject({
+		expect(publicationRequest).toMatchObject({
 			category: 'DAILY',
 			thumbnailImageUrl: 'posts/existing-thumbnail.png',
 		});
@@ -631,7 +629,7 @@ describe('PostWriteWorkspace', () => {
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
-		expect(requestPostPublicationMock.mock.calls[0]?.[0].request.thumbnailImageUrl).toBe(
+		expect(requestPostPublicationMock.mock.calls[0]?.[0].thumbnailImageUrl).toBe(
 			'https://images.rilog.test/posts/first-body-image.png',
 		);
 	});
@@ -648,9 +646,7 @@ describe('PostWriteWorkspace', () => {
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
-		expect(requestPostPublicationMock.mock.calls[0]?.[0].request.thumbnailImageUrl).toBe(
-			'/images/thumbnail-fallback.svg',
-		);
+		expect(requestPostPublicationMock.mock.calls[0]?.[0].thumbnailImageUrl).toBe('/images/thumbnail-fallback.svg');
 	});
 
 	it('dirty 상태의 내부 링크 이동을 확인하고 취소 또는 계속한다', async () => {
