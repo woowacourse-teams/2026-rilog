@@ -11,8 +11,9 @@ import type {
 
 import PostWriteLoader from './PostWriteLoader';
 
-interface WorkspaceMockProps {
-	postId?: number;
+interface ControllerMockProps {
+	postId: number;
+	draftId: number;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
 }
@@ -29,7 +30,7 @@ interface InitialDataQueryResultMock {
 }
 
 const { searchParamsGetMock, usePostWriteInitialDataMock } = vi.hoisted(() => ({
-	searchParamsGetMock: vi.fn(),
+	searchParamsGetMock: vi.fn<(name: string) => string | null>(),
 	usePostWriteInitialDataMock: vi.fn<(options: InitialDataQueryOptionsMock) => InitialDataQueryResultMock>(),
 }));
 
@@ -50,11 +51,18 @@ vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
 	),
 }));
 
-vi.mock('./PostWriteWorkspace', () => ({
-	default: ({ postId, initialDocument, initialPublicationSettings }: WorkspaceMockProps) => (
+vi.mock('./NewPostController', () => ({
+	default: () => <p>새 글 컨트롤러</p>,
+}));
+
+vi.mock('./DraftPostController', () => ({
+	default: ({ draftId }: Pick<ControllerMockProps, 'draftId'>) => <p>임시저장 게시글 {draftId}</p>,
+}));
+
+vi.mock('./EditPostController', () => ({
+	default: ({ postId, initialDocument, initialPublicationSettings }: Omit<ControllerMockProps, 'draftId'>) => (
 		<div>
-			<p>글쓰기 워크스페이스</p>
-			{postId === undefined ? null : <p>수정 게시글 {postId}</p>}
+			<p>수정 게시글 {postId}</p>
 			{initialDocument === undefined ? null : (
 				<>
 					<p>{initialDocument.title}</p>
@@ -107,42 +115,53 @@ describe('PostWriteLoader', () => {
 	it('postId가 없으면 새 글 workspace를 바로 렌더링한다', () => {
 		render(<PostWriteLoader />);
 
-		expect(screen.getByText('글쓰기 워크스페이스')).toBeInTheDocument();
-		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 0, isEnabled: false }));
+		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
+		expect(usePostWriteInitialDataMock).not.toHaveBeenCalled();
+	});
+
+	it('새 글 진입 후 URL에 draftId가 추가되어도 최초 controller를 교체하지 않는다', () => {
+		const { rerender } = render(<PostWriteLoader />);
+		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
+
+		searchParamsGetMock.mockImplementation((name) => (name === 'draftId' ? '123' : null));
+		rerender(<PostWriteLoader />);
+
+		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
+		expect(screen.queryByText('임시저장 게시글 123')).not.toBeInTheDocument();
 	});
 
 	it('올바르지 않은 postId이면 상세조회를 실행하지 않고 오류를 안내한다', () => {
-		searchParamsGetMock.mockReturnValue('post-31');
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? 'post-31' : null));
 
 		render(<PostWriteLoader />);
 
 		expect(screen.getByRole('alert')).toHaveTextContent('올바르지 않은 게시글 ID입니다.');
-		expect(screen.queryByText('글쓰기 워크스페이스')).not.toBeInTheDocument();
-		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 0, isEnabled: false }));
+		expect(screen.queryByText('새 글 컨트롤러')).not.toBeInTheDocument();
+		expect(usePostWriteInitialDataMock).not.toHaveBeenCalled();
 	});
 
 	it('게시글 상세조회 중에는 pending 상태를 보여 준다', () => {
-		searchParamsGetMock.mockReturnValue('31');
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
 
 		render(<PostWriteLoader />);
 
 		expect(screen.getByRole('status')).toHaveTextContent('게시글을 불러오고 있어요.');
-		expect(screen.queryByText('글쓰기 워크스페이스')).not.toBeInTheDocument();
+		expect(screen.queryByText('새 글 컨트롤러')).not.toBeInTheDocument();
 	});
 
 	it('게시글 상세조회에 실패하면 오류를 안내한다', () => {
-		searchParamsGetMock.mockReturnValue('31');
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: true, data: undefined });
 
 		render(<PostWriteLoader />);
 
 		expect(screen.getByRole('alert')).toHaveTextContent('게시글을 불러오지 못했습니다.');
-		expect(screen.queryByText('글쓰기 워크스페이스')).not.toBeInTheDocument();
+		expect(screen.queryByText('새 글 컨트롤러')).not.toBeInTheDocument();
 	});
 
 	it('게시글 상세조회 결과의 문서와 게시 설정을 workspace에 전달한다', () => {
-		searchParamsGetMock.mockReturnValue('31');
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
 		usePostWriteInitialDataMock.mockReturnValue({
 			isPending: false,
 			isError: false,
@@ -159,5 +178,22 @@ describe('PostWriteLoader', () => {
 		expect(screen.getByText('접근 가드 작성자 7')).toBeInTheDocument();
 		expect(screen.getByText('수정 게시글 31')).toBeInTheDocument();
 		expect(usePostWriteInitialDataMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 31, isEnabled: true }));
+	});
+
+	it('draftId가 있으면 draft API 연결 전의 임시저장 workflow를 렌더링한다', () => {
+		searchParamsGetMock.mockImplementation((name) => (name === 'draftId' ? '42' : null));
+
+		render(<PostWriteLoader />);
+
+		expect(screen.getByText('임시저장 게시글 42')).toBeInTheDocument();
+		expect(usePostWriteInitialDataMock).not.toHaveBeenCalled();
+	});
+
+	it('postId와 draftId를 함께 사용하면 모호한 URL을 거부한다', () => {
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : '42'));
+
+		render(<PostWriteLoader />);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('게시글 ID와 임시저장 ID를 함께 사용할 수 없습니다.');
 	});
 });
