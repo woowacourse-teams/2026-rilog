@@ -1,7 +1,9 @@
 package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -14,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static kr.rilog.domain.user.exception.UserErrorInformation.*;
@@ -25,6 +29,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BlogRepository blogRepository;
+    private final BlogMemberRepository blogMemberRepository;
 
     public UserInfoResult getUserInformation(Long userId) {
         User user = getUser(userId);
@@ -40,9 +45,7 @@ public class UserService {
 
     @Transactional
     public User completeOnboarding(Long userId, OnboardingCompleteCommand command) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserException(USER_NOT_FOUND));
-
+        User user = getUser(userId);
         if (user.isOnboardingCompleted()) {
             throw new UserException(ONBOARDING_ALREADY_COMPLETED);
         }
@@ -61,7 +64,7 @@ public class UserService {
         );
 
         User completedUser = userRepository.saveAndFlush(user);
-        createRilogIfAbsent(completedUser);
+        createRilog(completedUser);
         return completedUser;
     }
 
@@ -89,6 +92,15 @@ public class UserService {
         }
 
         blogRepository.save(Blog.createRilog(user));
+    }
+
+    private void createRilog(User user) {
+        Blog rilog = blogRepository.save(Blog.createRilog(user));
+        createRilogMember(rilog, user);
+    }
+
+    private void createRilogMember(Blog rilog, User owner) {
+        blogMemberRepository.save(BlogMember.createOwner(rilog, owner, LocalDateTime.now()));
     }
 
     private User getUser(Long userId) {

@@ -2,6 +2,7 @@ package kr.rilog.domain.blog.repository;
 
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,6 +40,19 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             ORDER BY blogMember.joinedAt ASC, blogMember.id ASC
             """)
     List<BlogMember> findAllWithUserByBlogIdAndStatus(@Param("blogId") Long blogId, @Param("status") BlogMemberStatus status);
+
+
+    @Query("""
+            select bm
+            from BlogMember bm
+            join fetch bm.blog b
+            where b.slug = :slug
+              and bm.user.id = :userId
+            """)
+    Optional<BlogMember> findWithBlogBySlugAndUserId(
+            @Param("slug") Slug slug,
+            @Param("userId") Long memberId
+    );
 
     @Query("""
             SELECT COUNT(bm.id)

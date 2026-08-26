@@ -7,7 +7,9 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.user.entity.User;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 
 public final class PostFixture {
 
+    private static final Long DEFAULT_WRITER_ID = 1L;
     private static final Category DEFAULT_CATEGORY = Category.TECH;
     private static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 8, 23, 12, 0);
     private static final String DEFAULT_TITLE = "게시글 제목";
@@ -34,6 +37,12 @@ public final class PostFixture {
         );
     }
 
+    public static Post publicPublishedRilogPost() {
+        User writer = BlogFixture.createUser(DEFAULT_WRITER_ID);
+        Blog rilog = BlogFixture.createRilog(writer);
+        return publicPublishedRilogPost(rilog, writer);
+    }
+
     public static Post publicPublishedRilogPost(Blog rilog, User writer) {
         return builderForRilog(rilog, writer).build();
     }
@@ -48,6 +57,12 @@ public final class PostFixture {
         return builderForRilog(rilog, writer)
                 .visibility(PostVisibility.PRIVATE)
                 .build();
+    }
+
+    public static Post privatePublishedRilogPost() {
+        User writer = BlogFixture.createUser(DEFAULT_WRITER_ID);
+        Blog rilog = BlogFixture.createRilog(writer);
+        return privatePublishedRilogPost(rilog, writer);
     }
 
     public static Post publicDraftRilogPost(Blog rilog, User writer) {
@@ -65,6 +80,13 @@ public final class PostFixture {
 
     public static Post publicPublishedColog(Blog rilog, Blog colog, User writer) {
         return builderForColog(rilog, colog, writer).build();
+    }
+
+    public static Post publicPublishedCologPost() {
+        User writer = BlogFixture.createUser(DEFAULT_WRITER_ID);
+        Blog rilog = BlogFixture.createRilog(writer);
+        Blog colog = BlogFixture.createColog(writer);
+        return publicPublishedColog(rilog, colog, writer);
     }
 
     public static Post publicPublishedColog(
@@ -116,6 +138,28 @@ public final class PostFixture {
                         rilog.getName(),
                         rilog.getProfileImageUrl()
                 ));
+    }
+
+    public static PostDetail updatedPostDetail() {
+        return new PostDetail(
+                "수정된 제목",
+                JsonNodeFactory.instance.objectNode().put("body", "수정된 본문"),
+                Category.DAILY,
+                PostVisibility.PRIVATE,
+                "https://example.com/updated-thumbnail.png"
+        );
+    }
+
+    public static PostUpdateCommand updateCommandTo(String newSlug) {
+        PostDetail detail = updatedPostDetail();
+        return new PostUpdateCommand(
+                newSlug,
+                detail.title(),
+                detail.content(),
+                detail.category(),
+                detail.visibility(),
+                detail.thumbnailUrl()
+        );
     }
 
     private static Builder builderForRilog(Blog rilog, User writer) {

@@ -50,4 +50,8 @@ public class Slug {
         }
     }
 
+    public boolean isDifferent(Slug slug) {
+        return !this.value.equals(slug.value);
+    }
+
 }
