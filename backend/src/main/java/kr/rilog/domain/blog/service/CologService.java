@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.exception.BlogErrorInformation;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
@@ -49,6 +50,7 @@ public class CologService {
                 command.slug(),
                 command.toProfile()
         );
+
         Blog savedColog = saveColog(colog);
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));
         blogMemberRepository.save(ownerMember);
@@ -58,9 +60,9 @@ public class CologService {
 
     @Transactional
     public CologMemberInviteResult inviteMember(Long requesterId, String slug, CologMemberInviteCommand command) {
-        Blog colog = getColog(slug);
+        Blog colog = getColog(Slug.from(slug));
 
-        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_INVITE_FORBIDDEN);
         requesterMember.validateCanInvite();
 
         User invitee = getUser(command.userId());
@@ -78,6 +80,25 @@ public class CologService {
         return CologMemberInviteResult.from(savedMember);
     }
 
+    @Transactional
+    public void leaveColog(Long requesterId, String slug) {
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+
+        requesterMember.validateCanLeave();
+        requesterMember.leave();
+    }
+
+    @Transactional
+    public void removeMember(Long requesterId, String slug, Long memberId) {
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
+
+        requesterMember.validateCanRemove(targetMember);
+        targetMember.leave();
+    }
+
     public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
         return blogRepository.findAllActiveCologsByUserId(requesterId).stream()
                 .map(MyCologResponse::of)
@@ -89,14 +110,19 @@ public class CologService {
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
     }
 
-    private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
+    private Blog getColog(Slug slug) {
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
-    private BlogMember getActiveMember(Long blogId, Long userId) {
-        return blogMemberRepository.findByBlogIdAndUserIdAndStatus(blogId, userId, BlogMemberStatus.ACTIVE)
-                .orElseThrow(() -> new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN));
+    private BlogMember getActiveMember(Long blogId, Long userId, BlogErrorInformation errorInformation) {
+        return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(blogId, userId, BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(errorInformation));
+    }
+
+    private BlogMember getActiveMemberById(Long blogId, Long memberId) {
+        return blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(memberId, blogId, BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
     }
 
     private void validateNotActiveMember(Long blodIg, Long userId) {

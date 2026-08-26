@@ -60,6 +60,12 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             BlogMemberStatus status
     );
 
+    Optional<BlogMember> findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+            Long memberId,
+            Long blogId,
+            BlogMemberStatus status
+    );
+
     @Query("""
             SELECT COUNT(bm.id)
             FROM BlogMember bm
