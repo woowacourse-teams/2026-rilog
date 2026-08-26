@@ -152,4 +152,5 @@ public class BlogMember extends BaseEntity {
 
         return permission == ADMIN && target.permission == MEMBER;
     }
+
 }
