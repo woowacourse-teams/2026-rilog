@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.post.controller.dto.request.DraftOverwriteRequest;
 import kr.rilog.domain.post.controller.dto.response.DraftDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftListResponse;
@@ -42,6 +43,25 @@ public interface DraftApiSpec {
     ApiResponse<DraftDetailResponse> getDraft(
             @LoginUserId Long requesterId,
             @PathVariable("draftId") Long draftId
+    );
+
+    @Operation(
+            summary = "임시저장 덮어쓰기 API",
+            description = "로그인 사용자가 작성한 초안의 제목과 본문을 덮어씁니다."
+    )
+    ApiResponse<DraftIdResponse> overwriteDraft(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId,
+            @Valid @RequestBody DraftOverwriteRequest command
+    );
+
+    @Operation(
+            summary = "임시저장 삭제 API",
+            description = "로그인 사용자가 작성한 초안을 삭제합니다."
+    )
+    ApiResponse<Void> deleteDraft(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId
     );
 
 }

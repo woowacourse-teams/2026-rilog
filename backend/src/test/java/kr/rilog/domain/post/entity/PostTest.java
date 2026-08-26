@@ -4,10 +4,13 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
@@ -27,6 +30,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 class PostTest {
 
     private static final Long OTHER_USER_ID = 2L;
+    private static final LocalDateTime BASE_DRAFT_SAVED_AT = LocalDateTime.of(2026, 8, 25, 12, 0);
 
     @Test
     @DisplayName("초안을 생성하면 입력한 내용과 초안 전용 상태를 가진다.")
@@ -66,6 +70,68 @@ class PostTest {
             softly.assertThat(draft.getRilog()).isSameAs(rilog);
             softly.assertThat(draft.getColog()).isNull();
         });
+    }
+
+    @Test
+    @DisplayName("초안을 덮어쓰면 제목과 본문이 새로운 내용으로 변경된다.")
+    void overwriteDraftChangesTitleAndContent() {
+        // given
+        User writer = createUser(1L);
+        Post draft = draftRilogPostAt(
+                createRilog(writer),
+                writer,
+                "덮어쓰기 전 제목",
+                BASE_DRAFT_SAVED_AT
+        );
+        DraftOverwriteCommand command = overwrittenDraftCommand();
+
+        // when
+        draft.overwriteDraft(command);
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(draft.getTitle()).isEqualTo(command.title());
+            softly.assertThat(draft.getTitle()).isNotEqualTo("덮어쓰기 전 제목");
+            softly.assertThat(draft.getContent()).isEqualTo(command.content());
+        });
+    }
+
+    @Test
+    @DisplayName("초안을 덮어쓰면 임시저장 시각이 갱신된다.")
+    void overwriteDraftUpdatesPublishedAt() {
+        // given
+        User writer = createUser(1L);
+        Post draft = draftRilogPostAt(
+                createRilog(writer),
+                writer,
+                "덮어쓰기 전 제목",
+                BASE_DRAFT_SAVED_AT
+        );
+
+        // when
+        draft.overwriteDraft(overwrittenDraftCommand());
+
+        // then
+        assertThat(draft.getPublishedAt()).isAfter(BASE_DRAFT_SAVED_AT);
+    }
+
+    @Test
+    @DisplayName("초안을 삭제하면 삭제 상태가 된다.")
+    void deleteDraftMarksDraftDeleted() {
+        // given
+        User writer = createUser(1L);
+        Post draft = draftRilogPostAt(
+                createRilog(writer),
+                writer,
+                "삭제할 초안",
+                BASE_DRAFT_SAVED_AT
+        );
+
+        // when
+        draft.delete();
+
+        // then
+        assertThat(draft.getDeletedAt()).isNotNull();
     }
 
     @Test

@@ -8,6 +8,7 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
+import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
@@ -30,6 +31,13 @@ public final class PostFixture {
 
     public static DraftSaveCommand initialDraftSaveCommand() {
         return new DraftSaveCommand(DEFAULT_TITLE, content());
+    }
+
+    public static DraftOverwriteCommand overwrittenDraftCommand() {
+        return new DraftOverwriteCommand(
+                "덮어쓴 게시글 제목",
+                JsonNodeFactory.instance.objectNode().put("body", "덮어쓴 본문")
+        );
     }
 
     public static Post draftRilogPostAt(

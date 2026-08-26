@@ -7,6 +7,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
+import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
@@ -55,6 +56,21 @@ public class DraftService {
         Post draft = getDraft(draftId);
         draft.validateWrittenBy(requesterid);
         return DraftDetailResult.from(draft);
+    }
+
+    @Transactional
+    public DraftIdResult overwriteDraft(DraftOverwriteCommand command, Long postId, Long requesterId) {
+        Post draft = getDraft(postId);
+        draft.validateWrittenBy(requesterId);
+        draft.overwriteDraft(command);
+        return DraftIdResult.from(draft.getId());
+    }
+
+    @Transactional
+    public void deleteDraft(Long postId, Long requesterId) {
+        Post draft = getDraft(postId);
+        draft.validateWrittenBy(requesterId);
+        draft.delete();
     }
 
     private User getUser(Long requesterId) {

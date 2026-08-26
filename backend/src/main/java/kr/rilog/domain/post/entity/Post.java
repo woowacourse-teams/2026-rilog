@@ -8,6 +8,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
@@ -141,6 +142,12 @@ public class Post extends BaseEntity {
         this.content = detail.content();
         this.thumbnailImageUrl = detail.thumbnailUrl();
         this.colog = targetBlog.isColog() ? targetBlog : null;
+    }
+
+    public void overwriteDraft(DraftOverwriteCommand command) {
+        this.title = command.title();
+        this.content = command.content();
+        this.publishedAt = LocalDateTime.now();
     }
 
     private void validateTargetBlog(Blog targetBlog) {
