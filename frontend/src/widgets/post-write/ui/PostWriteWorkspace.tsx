@@ -10,6 +10,7 @@ import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-represe
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
 import DraftListModal from '@/features/post-write/ui/DraftListModal';
+import DraftWriteActionButtons from '@/features/post-write/ui/DraftWriteActionButtons';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -131,13 +132,20 @@ export default function PostWriteWorkspace({
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
 			<WritePublishActionBar
-				isEditMode={isEditMode}
-				isEditorReady={postDocument.isEditorReady}
-				isPublishReady={postDocument.isEditorReady && isDirty}
-				draftCount={drafts.posts.length}
+				isPublishReady={postDocument.isEditorReady && (!isEditMode || isDirty)}
+				secondaryActions={
+					isEditMode ? undefined : (
+						<DraftWriteActionButtons
+							draftCount={drafts.posts.length}
+							isEditorReady={postDocument.isEditorReady}
+							isSaveReady={postDocument.isEditorReady}
+							onSave={drafts.save}
+							onListShow={drafts.openList}
+						/>
+					)
+				}
+				publishLabel={isEditMode ? '수정' : '발행'}
 				onPublish={publication.open}
-				onDraftSave={drafts.save}
-				onDraftListShow={drafts.openList}
 			/>
 			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
 				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
