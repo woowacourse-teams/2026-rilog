@@ -43,8 +43,8 @@ public class PostService {
     private final UserRepository userRepository;
 
     @Transactional
-    public PostPublishResult publish(PostSaveCommand command, String slug, Long requesterId) {
-        Blog publishingBlog = getBlog(slug);
+    public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
+        Blog publishingBlog = getBlog(command.slug());
         User writer = getUser(requesterId);
 
         Post post = publishingBlog.isColog()

@@ -104,7 +104,7 @@ class FeedControllerTest {
     }
 
     @Test
-    @DisplayName("GET /v1/blogs/@{slug}/posts는 공개 블로그 게시글 목록을 조회한다")
+    @DisplayName("GET /v1/blogs/{slug}/posts는 공개 블로그 게시글 목록을 조회한다")
     void getPublicBlogPostsReturnsPosts() throws Exception {
         // given
         FeedService feedService = mock(FeedService.class);
@@ -141,7 +141,7 @@ class FeedControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/@{slug}/posts", "rilog-team")
+        mockMvc.perform(get("/v1/blogs/{slug}/posts", "rilog-team")
                         .param("page", "1")
                         .param("size", "2"))
                 .andExpect(status().isOk())
@@ -157,21 +157,6 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.hasNext").value(false));
 
         verify(feedService).readPublicBlogPosts("rilog-team", 1, 2);
-    }
-
-    @Test
-    @DisplayName("골뱅이 없는 공개 블로그 게시글 목록 조회 경로는 제공하지 않는다")
-    void getPublicBlogPostsPathWithoutAtSignIsRemoved() throws Exception {
-        // given
-        FeedService feedService = mock(FeedService.class);
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FeedController(feedService))
-                .build();
-
-        // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}/posts", "rilog-team")
-                        .param("page", "1")
-                        .param("size", "2"))
-                .andExpect(status().isNotFound());
     }
 
     @Test

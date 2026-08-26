@@ -154,7 +154,7 @@ class BlogControllerTest {
     }
 
     @Test
-    @DisplayName("GET /v1/blogs/@{slug}는 블로그 컨트롤러에서 공개 프로필 정보를 조회한다")
+    @DisplayName("GET /v1/blogs/{slug}는 블로그 컨트롤러에서 공개 프로필 정보를 조회한다")
     void getPublicProfileReturnsBlogProfile() throws Exception {
         // given
         BlogService blogService = mock(BlogService.class);
@@ -174,7 +174,7 @@ class BlogControllerTest {
         MockMvc mockMvc = mockMvc(blogService);
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/@{slug}", "rilog-team"))
+        mockMvc.perform(get("/v1/blogs/{slug}", "rilog-team"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.id").value(2L))
