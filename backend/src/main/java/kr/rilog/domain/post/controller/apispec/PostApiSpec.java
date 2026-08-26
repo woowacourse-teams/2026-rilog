@@ -33,8 +33,6 @@ public interface PostApiSpec {
             description = "게시글 발행 성공"
     )
     ApiResponse<PostPublishResponse> create(
-            @Parameter(description = "게시글을 발행할 블로그 Slug", example = "team-rilog")
-            @PathVariable String slug,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
     );

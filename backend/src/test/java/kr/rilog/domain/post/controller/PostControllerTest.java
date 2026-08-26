@@ -12,20 +12,26 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -33,6 +39,38 @@ class PostControllerTest {
 
     private static final Long POST_ID = 1L;
     private static final String BLOG_SLUG = "writer";
+
+    @Test
+    @DisplayName("게시글 발행은 request body의 slug를 발행 대상 블로그 slug로 전달한다")
+    void createPassesSlugFromRequestBody() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        when(postService.publish(any(PostSaveCommand.class), eq(BLOG_SLUG), eq(7L)))
+                .thenReturn(new PostPublishResult(31L, BLOG_SLUG));
+        MockMvc mockMvc = mockMvc(postService);
+
+        // when - then
+        mockMvc.perform(post("/v1/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "slug": "writer",
+                                  "title": "BlockNote 도입기",
+                                  "content": [],
+                                  "category": "TECH",
+                                  "visibility": "PUBLIC",
+                                  "thumbnailImageUrl": null,
+                                  "profileImageUrl": null
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(201))
+                .andExpect(jsonPath("$.data.postId").value(31))
+                .andExpect(jsonPath("$.data.slug").value(BLOG_SLUG));
+
+        verify(postService).publish(any(PostSaveCommand.class), eq(BLOG_SLUG), eq(7L));
+    }
 
     @Test
     @DisplayName("블로그의 공개 게시글 상세 조회는 로그인하지 않아도 가능하다")
