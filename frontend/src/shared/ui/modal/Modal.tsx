@@ -5,6 +5,7 @@ import { useId } from 'react';
 import type { ModalCancelAction, ModalPadding, ModalPrimaryAction, ModalScrollMode, ModalSize } from './modal.types';
 import type { ReactNode, RefObject } from 'react';
 
+import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 
 import BaseModal from './BaseModal';
@@ -118,9 +119,7 @@ export default function Modal({
 							disabled={isPending}
 							onClick={onClose}
 						>
-							<svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none">
-								<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-							</svg>
+							<XIcon aria-hidden="true" className="size-5" />
 						</Button>
 					)}
 					<div className={`min-w-0`}>
