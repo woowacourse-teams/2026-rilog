@@ -64,4 +64,15 @@ public class PostController implements PostApiSpec {
         return ApiResponse.response(HttpStatus.OK, "게시글을 수정했습니다.", data);
     }
 
+    @AuthGuard
+    @DeleteMapping("/posts/{postId}")
+    public ApiResponse<Void> deletePublishedPost(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId
+    ) {
+        postService.deletePublishedPost(postId, requesterId);
+        return ApiResponse.response(HttpStatus.NO_CONTENT, "게시글을 삭제했습니다.");
+    }
+
+
 }

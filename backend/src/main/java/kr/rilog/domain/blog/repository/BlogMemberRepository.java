@@ -54,6 +54,12 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             @Param("userId") Long memberId
     );
 
+    Optional<BlogMember> findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+            Long blogId,
+            Long userId,
+            BlogMemberStatus status
+    );
+
     @Query("""
             SELECT COUNT(bm.id)
             FROM BlogMember bm

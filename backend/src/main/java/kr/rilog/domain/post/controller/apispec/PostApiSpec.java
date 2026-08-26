@@ -91,4 +91,13 @@ public interface PostApiSpec {
             @Valid @RequestBody PostUpdateRequest dto
     );
 
+    @Operation(
+            summary = "발행된 게시글 삭제 API",
+            description = "발행된 게시글을 삭제합니다."
+    )
+    ApiResponse<Void> deletePublishedPost(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId
+    );
+
 }
