@@ -76,18 +76,18 @@ public class BlogMember extends BaseEntity {
                 .build();
     }
 
-    public void validateCanInvite(BlogPermission inviteePermission) {
-        if (status != ACTIVE || permission != OWNER && permission != ADMIN) {
-            throw new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN);
+    public void validateCanInvite() {
+        if (!isCologMember()) {
+            throw new BlogException(BLOG_MEMBER_INVITATION_PERMISSION_INVALID);
         }
 
-        if (inviteePermission != ADMIN && inviteePermission != MEMBER) {
-            throw new BlogException(BLOG_MEMBER_INVITATION_PERMISSION_INVALID);
+        if (!hasInvitePermission()) {
+            throw new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN);
         }
     }
 
     public void validateHasAdminPermission() {
-        if (status != ACTIVE || permission != OWNER && permission != ADMIN) {
+        if (!isCologMember() || !hasInvitePermission()) {
             throw new BlogException(ADMIN_PERMISSION_INVALID);
         }
     }
@@ -104,4 +104,11 @@ public class BlogMember extends BaseEntity {
                 && (permission == OWNER || permission == ADMIN);
     }
 
+    private boolean isCologMember() {
+        return blog != null && blog.isColog();
+    }
+
+    private boolean hasInvitePermission() {
+        return status == ACTIVE && (permission == OWNER || permission == ADMIN);
+    }
 }

@@ -61,7 +61,7 @@ public class CologService {
         Blog colog = getColog(slug);
 
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId);
-        requesterMember.validateCanInvite(command.permission());
+        requesterMember.validateCanInvite();
 
         User invitee = getUser(command.userId());
         validateNotActiveMember(colog.getId(), invitee.getId());

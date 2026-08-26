@@ -59,13 +59,13 @@ class BlogMemberTest {
     @DisplayName("활성 OWNER와 ADMIN 멤버는 사용자를 초대할 수 있다")
     void validateCanInviteAllowsActiveOwnerAndAdmin() {
         // given
-        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
-        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+        BlogMember ownerMember = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember adminMember = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatCode(() -> owner.validateCanInvite(BlogPermission.ADMIN))
+        assertThatCode(() -> ownerMember.validateCanInvite())
                 .doesNotThrowAnyException();
-        assertThatCode(() -> admin.validateCanInvite(BlogPermission.MEMBER))
+        assertThatCode(() -> adminMember.validateCanInvite())
                 .doesNotThrowAnyException();
     }
 
@@ -76,7 +76,7 @@ class BlogMemberTest {
         BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> member.validateCanInvite(BlogPermission.MEMBER))
+        assertThatThrownBy(() -> member.validateCanInvite())
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_MEMBER_INVITE_FORBIDDEN.getMessage());
     }
@@ -88,19 +88,21 @@ class BlogMemberTest {
         BlogMember member = createMember(BlogPermission.OWNER, BlogMemberStatus.LEFT);
 
         // when & then
-        assertThatThrownBy(() -> member.validateCanInvite(BlogPermission.MEMBER))
+        assertThatThrownBy(() -> member.validateCanInvite())
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_MEMBER_INVITE_FORBIDDEN.getMessage());
     }
 
     @Test
-    @DisplayName("초대받는 사용자에게 OWNER 권한을 부여할 수 없다")
-    void validateCanInviteRejectsOwnerPermissionForInvitee() {
+    @DisplayName("개인 블로그 멤버는 OWNER 권한이어도 사용자를 초대할 수 없다")
+    void validateCanInviteRejectsRilogMember() {
         // given
-        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        User owner = createUser(OWNER_ID);
+        Blog rilog = createRilog(owner);
+        BlogMember ownerMember = BlogMember.createOwner(rilog, owner, pastDate());
 
         // when & then
-        assertThatThrownBy(() -> owner.validateCanInvite(BlogPermission.OWNER))
+        assertThatThrownBy(() -> ownerMember.validateCanInvite())
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_MEMBER_INVITATION_PERMISSION_INVALID.getMessage());
     }
@@ -136,6 +138,20 @@ class BlogMemberTest {
 
         // when & then
         assertThatThrownBy(admin::validateHasAdminPermission)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
+    }
+
+    @Test
+    @DisplayName("개인 블로그 멤버는 OWNER 권한이어도 ADMIN 권한 검증에 실패한다.")
+    void validateHasAdminPermissionRejectsRilogOwner() {
+        // given
+        User owner = createUser(OWNER_ID);
+        Blog rilog = createRilog(owner);
+        BlogMember ownerMember = BlogMember.createOwner(rilog, owner, pastDate());
+
+        // when & then
+        assertThatThrownBy(ownerMember::validateHasAdminPermission)
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
     }
@@ -189,7 +205,11 @@ class BlogMemberTest {
     }
 
     private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {
+        User owner = createUser(OWNER_ID);
+        Blog colog = createColog(owner);
         return BlogMember.builder()
+                .blog(colog)
+                .user(owner)
                 .permission(permission)
                 .status(status)
                 .build();
