@@ -166,7 +166,7 @@ public class Post extends BaseEntity {
     }
 
     private void validateIsDraft() {
-        if(status == PostStatus.DRAFT) {
+        if(status != PostStatus.DRAFT) {
             throw new PostException(DUPLICATED_PUBLISH);
         }
     }
