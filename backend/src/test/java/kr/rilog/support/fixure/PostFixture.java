@@ -27,8 +27,9 @@ public final class PostFixture {
     private PostFixture() {
     }
 
-    public static PostSaveCommand publicPostPublishCommand() {
+    public static PostSaveCommand publicPostPublishCommand(String slug) {
         return new PostSaveCommand(
+                slug,
                 DEFAULT_TITLE,
                 content(),
                 DEFAULT_CATEGORY,

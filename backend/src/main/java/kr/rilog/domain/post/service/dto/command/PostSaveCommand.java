@@ -7,6 +7,7 @@ import tools.jackson.databind.JsonNode;
 
 public record PostSaveCommand(
 
+        String slug,
         String title,
         JsonNode content,
         Category category,

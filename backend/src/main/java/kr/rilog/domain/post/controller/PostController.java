@@ -31,7 +31,7 @@ public class PostController implements PostApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
     ) {
-        PostPublishResult result = postService.publish(request.toCommand(), request.slug(), requesterId);
+        PostPublishResult result = postService.publish(request.toCommand(), requesterId);
         PostPublishResponse data = PostPublishResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "게시글이 발행되었습니다.", data);
     }

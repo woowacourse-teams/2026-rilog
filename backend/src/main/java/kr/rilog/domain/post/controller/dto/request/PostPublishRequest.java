@@ -39,6 +39,7 @@ public record PostPublishRequest(
 
     public PostSaveCommand toCommand() {
         return new PostSaveCommand(
+                slug,
                 title,
                 content,
                 category,

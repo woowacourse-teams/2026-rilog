@@ -84,7 +84,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Blog rilog = createRilog(writer);
-        PostSaveCommand command = createCommand();
+        PostSaveCommand command = createCommand(RILOG_SLUG);
         Post savedPost = Post.builder().id(POST_ID).build();
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
@@ -92,7 +92,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        PostPublishResult result = postService.publish(command, RILOG_SLUG, WRITER_ID);
+        PostPublishResult result = postService.publish(command, WRITER_ID);
 
         // then
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -112,7 +112,7 @@ class PostServiceTest {
         User writer = createWriter();
         Blog colog = createColog();
         Blog rilog = createRilog(writer);
-        PostSaveCommand command = createCommand();
+        PostSaveCommand command = createCommand(COLOG_SLUG);
         Post savedPost = Post.builder().id(POST_ID).build();
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
@@ -123,7 +123,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        PostPublishResult result = postService.publish(command, COLOG_SLUG, WRITER_ID);
+        PostPublishResult result = postService.publish(command, WRITER_ID);
 
         // then
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -148,7 +148,7 @@ class PostServiceTest {
                 .thenReturn(false);
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_SLUG, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(COLOG_POST_PUBLISH_FORBIDDEN);
@@ -163,7 +163,7 @@ class PostServiceTest {
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);
@@ -180,7 +180,7 @@ class PostServiceTest {
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(UserException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(USER_NOT_FOUND);
@@ -200,7 +200,7 @@ class PostServiceTest {
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), COLOG_SLUG, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_NOT_FOUND);
@@ -222,7 +222,7 @@ class PostServiceTest {
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(), RILOG_SLUG, WRITER_ID))
+        assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
@@ -348,8 +348,9 @@ class PostServiceTest {
                 .build();
     }
 
-    private PostSaveCommand createCommand() {
+    private PostSaveCommand createCommand(String slug) {
         return new PostSaveCommand(
+                slug,
                 "게시글 제목",
                 content,
                 Category.TECH,

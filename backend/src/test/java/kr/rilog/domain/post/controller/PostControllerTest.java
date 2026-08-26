@@ -17,6 +17,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -45,7 +47,7 @@ class PostControllerTest {
     void createPassesSlugFromRequestBody() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.publish(any(PostSaveCommand.class), eq(BLOG_SLUG), eq(7L)))
+        when(postService.publish(any(PostSaveCommand.class), eq(7L)))
                 .thenReturn(new PostPublishResult(31L, BLOG_SLUG));
         MockMvc mockMvc = mockMvc(postService);
 
@@ -69,7 +71,9 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.data.postId").value(31))
                 .andExpect(jsonPath("$.data.slug").value(BLOG_SLUG));
 
-        verify(postService).publish(any(PostSaveCommand.class), eq(BLOG_SLUG), eq(7L));
+        ArgumentCaptor<PostSaveCommand> commandCaptor = ArgumentCaptor.forClass(PostSaveCommand.class);
+        verify(postService).publish(commandCaptor.capture(), eq(7L));
+        assertThat(commandCaptor.getValue().slug()).isEqualTo(BLOG_SLUG);
     }
 
     @Test
