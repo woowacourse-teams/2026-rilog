@@ -6,6 +6,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
@@ -29,6 +30,7 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUN
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.PostFixture.initialDraftSaveCommand;
+import static kr.rilog.support.fixure.PostFixture.overwrittenDraftCommand;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -297,6 +299,211 @@ class DraftServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> draftService.getMyDraft(deletedDraft.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("작성자가 자신의 초안을 덮어쓰면 새로운 내용과 임시저장 시각이 저장되고 같은 초안 아이디를 반환한다.")
+    void overwriteDraftPersistsNewContentAndPublishedAt() {
+        // given
+        User writer = saveCompletedUser();
+        Blog rilog = saveRilog(writer);
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "덮어쓰기 전 제목",
+                BASE_PUBLISHED_AT
+        ));
+        DraftOverwriteCommand command = overwrittenDraftCommand();
+
+        // when
+        DraftIdResult result = draftService.overwriteDraft(command, draft.getId(), writer.getId());
+
+        // then
+        Post overwrittenDraft = postRepository.findById(draft.getId()).orElseThrow();
+        assertSoftly(softly -> {
+            softly.assertThat(result).isEqualTo(new DraftIdResult(draft.getId()));
+            softly.assertThat(overwrittenDraft.getTitle()).isEqualTo(command.title());
+            softly.assertThat(overwrittenDraft.getContent()).isEqualTo(command.content());
+            softly.assertThat(overwrittenDraft.getPublishedAt()).isAfter(BASE_PUBLISHED_AT);
+        });
+    }
+
+    @Test
+    @DisplayName("다른 작성자의 초안을 덮어쓰면 작성 권한 예외가 발생하고 기존 내용이 유지된다.")
+    void overwriteDraftThrowsAndPreservesContentWhenRequesterIsNotWriter() {
+        // given
+        User writer = saveCompletedUser(201L, "초안작성자", "overwrite-writer");
+        Blog rilog = saveRilog(writer);
+        User requester = saveCompletedUser(202L, "덮어쓰기요청자", "overwrite-requester");
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "유지할 제목",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.overwriteDraft(
+                overwrittenDraftCommand(),
+                draft.getId(),
+                requester.getId()
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(NOT_POST_AUTHOR.getMessage());
+
+        Post preservedDraft = postRepository.findById(draft.getId()).orElseThrow();
+        assertSoftly(softly -> {
+            softly.assertThat(preservedDraft.getTitle()).isEqualTo(draft.getTitle());
+            softly.assertThat(preservedDraft.getContent()).isEqualTo(draft.getContent());
+            softly.assertThat(preservedDraft.getPublishedAt()).isEqualTo(BASE_PUBLISHED_AT);
+        });
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 초안을 덮어쓰면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void overwriteDraftThrowsWhenDraftDoesNotExist() {
+        // when & then
+        assertThatThrownBy(() -> draftService.overwriteDraft(
+                overwrittenDraftCommand(),
+                Long.MIN_VALUE,
+                Long.MAX_VALUE
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("발행된 글을 초안으로 덮어쓰면 초안을 찾을 수 없다는 예외가 발생하고 기존 내용이 유지된다.")
+    void overwriteDraftThrowsAndPreservesContentWhenPostIsPublished() {
+        // given
+        User writer = saveCompletedUser();
+        Blog rilog = saveRilog(writer);
+        Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.overwriteDraft(
+                overwrittenDraftCommand(),
+                publishedPost.getId(),
+                writer.getId()
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+
+        Post preservedPost = postRepository.findById(publishedPost.getId()).orElseThrow();
+        assertThat(preservedPost.getTitle()).isEqualTo(publishedPost.getTitle());
+    }
+
+    @Test
+    @DisplayName("삭제된 초안을 덮어쓰면 초안을 찾을 수 없다는 예외가 발생하고 삭제 상태가 유지된다.")
+    void overwriteDraftThrowsAndPreservesDeletionWhenDraftIsDeleted() {
+        // given
+        User writer = saveCompletedUser();
+        Blog rilog = saveRilog(writer);
+        Post deletedDraft = savePost(PostFixture.deletedDraftRilogPostAt(
+                rilog,
+                writer,
+                "삭제된 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.overwriteDraft(
+                overwrittenDraftCommand(),
+                deletedDraft.getId(),
+                writer.getId()
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+
+        Post preservedDraft = postRepository.findById(deletedDraft.getId()).orElseThrow();
+        assertThat(preservedDraft.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("작성자가 자신의 초안을 삭제하면 삭제 상태가 저장된다.")
+    void deleteDraftPersistsDeletion() {
+        // given
+        User writer = saveCompletedUser();
+        Blog rilog = saveRilog(writer);
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "삭제할 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when
+        draftService.deleteDraft(draft.getId(), writer.getId());
+
+        // then
+        Post deletedDraft = postRepository.findById(draft.getId()).orElseThrow();
+        assertThat(deletedDraft.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("다른 작성자의 초안을 삭제하면 작성 권한 예외가 발생하고 삭제되지 않는다.")
+    void deleteDraftThrowsAndPreservesDraftWhenRequesterIsNotWriter() {
+        // given
+        User writer = saveCompletedUser(201L, "초안작성자", "delete-writer");
+        Blog rilog = saveRilog(writer);
+        User requester = saveCompletedUser(202L, "삭제요청자", "delete-requester");
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                writer,
+                "유지할 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.deleteDraft(draft.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(NOT_POST_AUTHOR.getMessage());
+
+        assertThat(postRepository.findById(draft.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 초안을 삭제하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void deleteDraftThrowsWhenDraftDoesNotExist() {
+        // when & then
+        assertThatThrownBy(() -> draftService.deleteDraft(Long.MIN_VALUE, Long.MAX_VALUE))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("발행된 글을 초안으로 삭제하면 초안을 찾을 수 없다는 예외가 발생하고 삭제되지 않는다.")
+    void deleteDraftThrowsAndPreservesPostWhenPostIsPublished() {
+        // given
+        User writer = saveCompletedUser();
+        Blog rilog = saveRilog(writer);
+        Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.deleteDraft(publishedPost.getId(), writer.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+
+        assertThat(postRepository.findById(publishedPost.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 초안을 삭제하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void deleteDraftThrowsWhenDraftIsAlreadyDeleted() {
+        // given
+        User writer = saveCompletedUser();
+        Blog rilog = saveRilog(writer);
+        Post deletedDraft = savePost(PostFixture.deletedDraftRilogPostAt(
+                rilog,
+                writer,
+                "이미 삭제된 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.deleteDraft(deletedDraft.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }
