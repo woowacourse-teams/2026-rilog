@@ -4,10 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.post.controller.dto.response.DraftDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftListResponse;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.global.response.ApiResponse;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -31,6 +33,15 @@ public interface DraftApiSpec {
             @LoginUserId Long requesterId,
             @RequestParam int page,
             @RequestParam int size
+    );
+
+    @Operation(
+            summary = "임시저장 상세 조회(불러오기) API",
+            description = "임시저장된 글을 불러옵니다."
+    )
+    ApiResponse<DraftDetailResponse> getDraft(
+            @LoginUserId Long requesterId,
+            @PathVariable("draftId") Long draftId
     );
 
 }
