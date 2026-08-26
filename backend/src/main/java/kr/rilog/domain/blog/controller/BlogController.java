@@ -44,7 +44,7 @@ public class BlogController implements BlogApiSpec {
         return ApiResponse.response(HttpStatus.OK, "사용가능한 닉네임입니다.");
     }
 
-    @GetMapping("/blogs/@{slug}")
+    @GetMapping("/blogs/{slug}")
     public ApiResponse<CologPublicProfileResponse> getPublicProfile(@PathVariable("slug") String slug) {
         CologPublicProfileResult result = blogService.getPublicProfile(slug);
         CologPublicProfileResponse data = CologPublicProfileResponse.from(result);
