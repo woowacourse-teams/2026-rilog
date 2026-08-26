@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.post.controller.apispec.DraftApiSpec;
+import kr.rilog.domain.post.controller.dto.request.DraftOverwriteRequest;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftListResponse;
 import kr.rilog.domain.post.service.DraftService;
@@ -44,6 +45,29 @@ public class DraftController implements DraftApiSpec {
         DraftListResult result = draftService.readMyDraftList(requesterId, page, size);
         DraftListResponse data = DraftListResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "임시저장 목록 조회에 성공했습니다.", data);
+    }
+
+    @AuthGuard
+    @PutMapping("/drafts/{postId}")
+    public ApiResponse<DraftIdResponse> overwriteDraft(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId,
+            @Valid @RequestBody DraftOverwriteRequest dto
+    ) {
+        DraftIdResult result = draftService.overwriteDraft(dto.toCommand(), postId, requesterId);
+        DraftIdResponse data = DraftIdResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "임시저장을 덮어썼습니다.", data);
+    }
+
+    @AuthGuard
+    @DeleteMapping("/drafts/{postId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ApiResponse<Void> deleteDraft(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId
+    ) {
+        draftService.deleteDraft(postId, requesterId);
+        return ApiResponse.response(HttpStatus.NO_CONTENT, "임시저장을 삭제했습니다.");
     }
 
 }
