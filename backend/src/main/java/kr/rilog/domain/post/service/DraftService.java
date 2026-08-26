@@ -4,8 +4,10 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -34,6 +37,12 @@ public class DraftService {
         return DraftIdResult.from(saved.getId());
     }
 
+    public DraftDetailResult getMyDraft(Long draftId, Long requesterid) {
+        Post draft = getDraft(draftId);
+        draft.validateWrittenBy(requesterid);
+        return DraftDetailResult.from(draft);
+    }
+
     private User getUser(Long requesterId) {
         return userRepository.findById(requesterId)
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
@@ -42,6 +51,11 @@ public class DraftService {
     private Blog getRilog(User writer) {
         return blogRepository.findRilogByOwnerId(writer.getId())
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
+    }
+
+    private Post getDraft(Long draftId) {
+        return postRepository.findDraftById(draftId)
+                .orElseThrow(() -> new PostException(DRAFT_NOT_FOUND));
     }
 
 }
