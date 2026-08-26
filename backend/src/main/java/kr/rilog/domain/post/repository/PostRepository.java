@@ -75,6 +75,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("status") PostStatus status
     );
 
+    @Query("""
+        SELECT p
+        FROM Post p
+        JOIN FETCH p.rilog r
+        WHERE p.id = :postId
+          AND p.status = kr.rilog.domain.post.entity.enums.PostStatus.DRAFT
+          AND p.deletedAt IS NULL
+        """)
+    Optional<Post> findDraftById(@Param("postId") Long postId);
+
     long countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
             Long cologId,
             PostStatus status,

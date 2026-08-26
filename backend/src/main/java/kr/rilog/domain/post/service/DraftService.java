@@ -9,6 +9,7 @@ import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.user.entity.User;
@@ -22,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
-import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -51,6 +52,12 @@ public class DraftService {
         return DraftListResult.from(drafts);
     }
 
+    public DraftDetailResult getMyDraft(Long draftId, Long requesterid) {
+        Post draft = getDraft(draftId);
+        draft.validateWrittenBy(requesterid);
+        return DraftDetailResult.from(draft);
+    }
+
     @Transactional
     public DraftIdResult overwriteDraft(DraftOverwriteCommand command, Long postId, Long requesterId) {
         Post draft = getDraft(postId);
@@ -76,9 +83,9 @@ public class DraftService {
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
     }
 
-    private Post getDraft(Long postId) {
-        return postRepository.findDetailByIdAndStatus(postId, DRAFT)
-                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    private Post getDraft(Long draftId) {
+        return postRepository.findDraftById(draftId)
+                .orElseThrow(() -> new PostException(DRAFT_NOT_FOUND));
     }
 
 }

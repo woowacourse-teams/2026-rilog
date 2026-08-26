@@ -4,8 +4,10 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.user.entity.User;
@@ -23,6 +25,8 @@ import java.time.LocalDateTime;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
+import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.PostFixture.initialDraftSaveCommand;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -206,6 +210,95 @@ class DraftServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(result.numberOfElements()).isZero();
             softly.assertThat(result.hasNext()).isFalse();
         });
+    }
+
+    @Test
+    @DisplayName("작성자가 자신의 미삭제 초안을 상세 조회하면 저장된 내용을 반환한다.")
+    void getMyDraftReturnsActiveDraftWrittenByRequester() {
+        // given
+        User requester = saveCompletedUser();
+        Blog rilog = saveRilog(requester);
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                rilog,
+                requester,
+                "상세 조회할 초안",
+                BASE_PUBLISHED_AT
+        ));
+        DraftDetailResult expected = new DraftDetailResult(
+                draft.getId(),
+                draft.getTitle(),
+                draft.getContent(),
+                draft.getStatus(),
+                draft.getPublishedAt()
+        );
+
+        // when
+        DraftDetailResult result = draftService.getMyDraft(draft.getId(), requester.getId());
+
+        // then
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("다른 작성자의 초안을 상세 조회하면 작성 권한 예외가 발생한다.")
+    void getMyDraftThrowsWhenRequesterIsNotWriter() {
+        // given
+        User requester = saveCompletedUser(201L, "조회요청자", "draft-requester");
+        User writer = saveCompletedUser(202L, "초안작성자", "draft-writer");
+        Blog writerRilog = saveRilog(writer);
+        Post draft = savePost(PostFixture.draftRilogPostAt(
+                writerRilog,
+                writer,
+                "다른 작성자의 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.getMyDraft(draft.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(NOT_POST_AUTHOR.getMessage());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 초안을 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void getMyDraftThrowsWhenDraftDoesNotExist() {
+        // when & then
+        assertThatThrownBy(() -> draftService.getMyDraft(Long.MIN_VALUE, Long.MAX_VALUE))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("발행된 글을 초안으로 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void getMyDraftThrowsWhenPostIsPublished() {
+        // given
+        User requester = saveCompletedUser();
+        Blog rilog = saveRilog(requester);
+        Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, requester));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.getMyDraft(publishedPost.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("삭제된 초안을 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void getMyDraftThrowsWhenDraftIsDeleted() {
+        // given
+        User requester = saveCompletedUser();
+        Blog rilog = saveRilog(requester);
+        Post deletedDraft = savePost(PostFixture.deletedDraftRilogPostAt(
+                rilog,
+                requester,
+                "삭제된 초안",
+                BASE_PUBLISHED_AT
+        ));
+
+        // when & then
+        assertThatThrownBy(() -> draftService.getMyDraft(deletedDraft.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }
 
     private User saveCompletedUser() {
