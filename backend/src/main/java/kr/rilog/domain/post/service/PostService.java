@@ -25,7 +25,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
@@ -94,6 +97,13 @@ public class PostService {
         return PostUpdateResult.of(post, targetBlog);
     }
 
+    @Transactional
+    public void deletePublishedPost(Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        validateCanDeletePublishedPost(post, requesterId);
+        post.delete();
+    }
+
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {
         rilog.validateIsOwner(writer);
         return Post.create(rilog, writer, command.toDetail());
@@ -156,6 +166,34 @@ public class PostService {
 
     private long getMemberCount(Blog colog) {
         return blogMemberRepository.countActiveMembers(colog.getId(), BlogMemberStatus.ACTIVE);
+    }
+
+    private void validateCanDeletePublishedPost(Post post, Long requesterId) {
+        if (post.isWrittenBy(requesterId)) {
+            return;
+        }
+
+        if (!hasCologDeletePermission(post, requesterId)) {
+            throw new PostException(POST_DELETE_FORBIDDEN);
+        }
+    }
+
+    private boolean hasCologDeletePermission(Post post, Long requesterId) {
+        if (!post.isCologAffiliated()) {
+            return false;
+        }
+
+        return getBlogMember(post.getOwnBlogId(), requesterId)
+                .map(BlogMember::hasDeletePermission)
+                .orElse(false);
+    }
+
+    private Optional<BlogMember> getBlogMember(Long blogId, Long requesterId) {
+        return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                blogId,
+                requesterId,
+                BlogMemberStatus.ACTIVE
+        );
     }
 
 }

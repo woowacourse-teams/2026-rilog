@@ -2,6 +2,7 @@ package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.ADMIN;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ALREADY_BLOG_MEMBER_LEFT;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
@@ -38,6 +40,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUN
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -545,6 +548,197 @@ class PostServiceIntegrationTest extends ServiceSupport {
         assertThat(result.totalPostsCount()).isEqualTo(2L);
     }
 
+    @Test
+    @DisplayName("게시글 작성자는 개인 블로그의 발행된 게시글을 삭제할 수 있다.")
+    void writerDeletesPublishedRilogPost() {
+        // given
+        User writer = saveCompletedUser(101L, "삭제작성자", "delete-rilog-writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+
+        // when
+        postService.deletePublishedPost(post.getId(), writer.getId());
+
+        // then
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그에서 탈퇴한 작성자도 자신의 발행된 게시글을 삭제할 수 있다.")
+    void leftWriterDeletesOwnPublishedCologPost() {
+        // given
+        User owner = saveCompletedUser(102L, "삭제팀주인", "delete-colog-owner");
+        Blog colog = saveColog(owner, "delete-writer-colog");
+        User writer = saveCompletedUser(103L, "탈퇴작성자", "left-delete-writer");
+        Blog rilog = saveRilog(writer);
+        saveLeftMember(colog, writer);
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when
+        postService.deletePublishedPost(post.getId(), writer.getId());
+
+        // then
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그의 OWNER는 다른 작성자의 발행된 게시글을 삭제할 수 있다.")
+    void cologOwnerDeletesAnotherWritersPublishedPost() {
+        // given
+        User owner = saveCompletedUser(104L, "권한팀주인", "auth-owner");
+        Blog colog = saveColog(owner, "owner-delete-colog");
+        User writer = saveCompletedUser(105L, "팀글작성자", "owner-delete-writer");
+        Blog rilog = saveRilog(writer);
+        saveActiveMember(colog, writer);
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when
+        postService.deletePublishedPost(post.getId(), owner.getId());
+
+        // then
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그의 ADMIN은 다른 작성자의 발행된 게시글을 삭제할 수 있다.")
+    void cologAdminDeletesAnotherWritersPublishedPost() {
+        // given
+        User owner = saveCompletedUser(106L, "관리팀주인", "admin-colog-owner");
+        Blog colog = saveColog(owner, "admin-delete-colog");
+        User writer = saveCompletedUser(107L, "관리팀작성자", "admin-delete-writer");
+        Blog rilog = saveRilog(writer);
+        saveActiveMember(colog, writer);
+        User admin = saveCompletedUser(108L, "관리자", "post-delete-admin");
+        saveActiveMember(colog, admin, ADMIN);
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when
+        postService.deletePublishedPost(post.getId(), admin.getId());
+
+        // then
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그의 일반 멤버는 다른 작성자의 게시글을 삭제할 수 없다.")
+    void cologMemberCannotDeleteAnotherWritersPost() {
+        // given
+        User owner = saveCompletedUser(109L, "일반팀주인", "member-colog-owner");
+        Blog colog = saveColog(owner, "member-delete-colog");
+        User writer = saveCompletedUser(110L, "일반팀작성자", "member-delete-writer");
+        Blog rilog = saveRilog(writer);
+        saveActiveMember(colog, writer);
+        User member = saveCompletedUser(111L, "일반멤버", "post-delete-member");
+        saveActiveMember(colog, member);
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), member.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
+
+        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그에서 탈퇴한 ADMIN은 다른 작성자의 게시글을 삭제할 수 없다.")
+    void leftCologAdminCannotDeleteAnotherWritersPost() {
+        // given
+        User owner = saveCompletedUser(112L, "탈퇴팀주인", "left-owner");
+        Blog colog = saveColog(owner, "left-colog");
+        User writer = saveCompletedUser(113L, "탈퇴팀작성자", "left-writer");
+        Blog rilog = saveRilog(writer);
+        saveActiveMember(colog, writer);
+        User admin = saveCompletedUser(114L, "탈퇴관리자", "left-admin");
+        blogMemberRepository.saveAndFlush(BlogMemberFixture.leftAdmin(colog, admin));
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), admin.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
+
+        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그에 소속되지 않은 사용자는 다른 작성자의 게시글을 삭제할 수 없다.")
+    void nonCologMemberCannotDeleteAnotherWritersPost() {
+        // given
+        User owner = saveCompletedUser(115L, "비소속팀주인", "none-owner");
+        Blog colog = saveColog(owner, "none-colog");
+        User writer = saveCompletedUser(116L, "비소속팀작성자", "none-writer");
+        Blog rilog = saveRilog(writer);
+        saveActiveMember(colog, writer);
+        User requester = saveCompletedUser(117L, "비소속요청자", "none-requester");
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
+
+        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("개인 블로그의 작성자가 아닌 사용자는 게시글을 삭제할 수 없다.")
+    void nonWriterCannotDeleteRilogPost() {
+        // given
+        User writer = saveCompletedUser(118L, "개인글작성자", "forbid-writer");
+        Blog rilog = saveRilog(writer);
+        User requester = saveCompletedUser(119L, "개인글요청자", "forbid-requester");
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
+
+        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("초안 게시글을 삭제하면 게시글을 찾을 수 없다는 예외가 발생한다.")
+    void deleteDraftPostThrowsPostNotFound() {
+        // given
+        User writer = saveCompletedUser(120L, "초안작성자", "draft-delete-writer");
+        Blog rilog = saveRilog(writer);
+        Post draft = savePost(PostFixture.publicDraftRilogPost(rilog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(draft.getId(), writer.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 게시글을 삭제하면 게시글을 찾을 수 없다는 예외가 발생한다.")
+    void deleteDeletedPostThrowsPostNotFound() {
+        // given
+        User writer = saveCompletedUser(121L, "기삭제작성자", "deleted-writer");
+        Blog rilog = saveRilog(writer);
+        Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(deletedPost.getId(), writer.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 게시글을 삭제하면 게시글을 찾을 수 없다는 예외가 발생한다.")
+    void deleteMissingPostThrowsPostNotFound() {
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(Long.MAX_VALUE, Long.MAX_VALUE))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_NOT_FOUND.getMessage());
+    }
+
     private User saveCompletedUser(long githubId, String nickname, String slug) {
         User user = UserFixture.user(githubId, "github-user-" + githubId);
         user.completeOnboarding(
@@ -575,11 +769,15 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     private BlogMember saveActiveMember(Blog blog, User user) {
+        return saveActiveMember(blog, user, MEMBER);
+    }
+
+    private BlogMember saveActiveMember(Blog blog, User user, BlogPermission permission) {
         return blogMemberRepository.saveAndFlush(BlogMember.invite(
                 blog,
                 user,
                 "개발자",
-                MEMBER,
+                permission,
                 PUBLISHED_AT
         ));
     }
