@@ -208,6 +208,19 @@ class BlogMemberTest {
     }
 
     @Test
+    @DisplayName("팀 멤버가 탈퇴하면 delete() 가 반영된다.")
+    void leaveChangesToDelete() {
+        // given
+        BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        member.leave();
+
+        // then
+        assertThat(member.getDeletedAt()).isNotNull();
+    }
+
+    @Test
     @DisplayName("OWNER는 ADMIN과 MEMBER를 내보낼 수 있다.")
     void validateCanRemoveAllowsOwnerToRemoveAdminAndMember() {
         // given
