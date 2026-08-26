@@ -56,7 +56,7 @@ public class DraftController implements DraftApiSpec {
     ) {
         DraftDetailResult result = draftService.getMyDraft(draftId, requesterId);
         DraftDetailResponse data = DraftDetailResponse.from(result);
-        return ApiResponse.response(HttpStatus.CREATED, "임시저장 글을 성공적으로 불러왔습니다.", data);
+        return ApiResponse.response(HttpStatus.OK, "임시저장 글을 성공적으로 불러왔습니다.", data);
     }
 
 }
