@@ -27,8 +27,9 @@ export const apiRequest = async <T>(fn: () => Promise<T>): Promise<T> => {
 };
 
 /**
- * JSON 응답 전용 HTTP 클라이언트 wrapper
- * 각 HTTP 메서드를 호출한 뒤 자동으로 .json<T>() 파싱을 수행하고 에러를 정규화합니다.
+ * HTTP 클라이언트 wrapper
+ * GET, POST, PUT, PATCH 응답은 자동으로 .json<T>() 파싱하고 에러를 정규화합니다.
+ * DELETE는 항상 204 No Content 응답을 전제로 하며 JSON으로 파싱하지 않고 Response를 반환합니다.
  *
  * @example
  * // JSON 응답의 일반적인 경우
@@ -44,6 +45,6 @@ export const apiClient = {
 		apiRequest(() => kyInstance.put(url, options).json<T>()),
 	patch: <T>(url: string, options?: Parameters<typeof kyInstance.put>[1]) =>
 		apiRequest(() => kyInstance.patch(url, options).json<T>()),
-	delete: <T>(url: string, options?: Parameters<typeof kyInstance.delete>[1]) =>
-		apiRequest(() => kyInstance.delete(url, options).json<T>()),
+	delete: (url: string, options?: Parameters<typeof kyInstance.delete>[1]) =>
+		apiRequest(() => kyInstance.delete(url, options)),
 };
