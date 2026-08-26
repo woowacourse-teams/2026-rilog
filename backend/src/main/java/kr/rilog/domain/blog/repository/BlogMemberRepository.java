@@ -54,6 +54,19 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             @Param("userId") Long memberId
     );
 
+    @Query("""
+            select bm
+            from BlogMember bm
+            join fetch bm.blog b
+            where b.id = :id
+              and bm.user.id = :userId
+            """)
+    Optional<BlogMember> findWithBlogByBlogIdAndUserId(
+            @Param("id") Long blogId,
+            @Param("userId") Long userId
+    );
+
+
     Optional<BlogMember> findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
             Long blogId,
             Long userId,
