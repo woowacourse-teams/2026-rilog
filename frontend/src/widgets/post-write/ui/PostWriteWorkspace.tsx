@@ -44,6 +44,8 @@ export default function PostWriteWorkspace({
 	uploadFile,
 	navigate,
 }: PostWriteWorkspaceProps) {
+	const isEditMode = postId !== undefined;
+
 	useEffect(() => {
 		analytics.postEditorOpened();
 	}, []);
@@ -100,8 +102,7 @@ export default function PostWriteWorkspace({
 			visibility: 'PUBLIC',
 			thumbnailImageUrl,
 		};
-		const response =
-			postId === undefined ? await requestPostPublication(request) : await requestPostUpdate({ postId, request });
+		const response = isEditMode ? await requestPostUpdate({ postId, request }) : await requestPostPublication(request);
 
 		if (response.data === undefined) {
 			throw new Error('발행 응답에 게시글 정보가 없습니다.');
@@ -119,7 +120,7 @@ export default function PostWriteWorkspace({
 		leaveGuard,
 		drafts,
 	} = usePostWriteWorkspace({
-		isEditMode: postId !== undefined,
+		isEditMode,
 		initialDocument,
 		initialPublicationSettings,
 		publishPost: publishPost ?? publishPostWithApi,
@@ -129,6 +130,7 @@ export default function PostWriteWorkspace({
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
 			<WritePublishActionBar
+				isEditMode={isEditMode}
 				isEditorReady={postDocument.isEditorReady}
 				draftCount={drafts.posts.length}
 				onPublish={publication.open}

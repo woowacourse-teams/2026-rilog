@@ -240,6 +240,7 @@ describe('PostWriteWorkspace', () => {
 		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '31', slug: 'personal-blog' });
 		render(
 			<PostWriteWorkspace
+				postId={31}
 				editorComponent={FakeEditor}
 				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
 				initialPublicationSettings={{
@@ -252,6 +253,8 @@ describe('PostWriteWorkspace', () => {
 			/>,
 		);
 
+		expect(screen.queryByRole('button', { name: '임시저장' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /임시 저장된 글/ })).not.toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
 		expect(screen.getByRole('radio', { name: '일상' })).toBeChecked();
