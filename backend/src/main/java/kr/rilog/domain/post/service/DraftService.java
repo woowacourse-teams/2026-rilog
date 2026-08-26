@@ -5,18 +5,25 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.repository.projection.DraftListRow;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
+import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class DraftService {
 
@@ -25,6 +32,7 @@ public class DraftService {
     private final UserRepository userRepository;
 
     // THINK 멱등성.
+    @Transactional
     public DraftIdResult saveDraft(DraftSaveCommand command, Long writerId) {
         User writer = getUser(writerId);
         Blog rilog = getRilog(writer);
@@ -32,6 +40,12 @@ public class DraftService {
         // TODO 이미지 Confirmed 처리.
         Post saved = postRepository.save(Post.draft(command, writer, rilog));
         return DraftIdResult.from(saved.getId());
+    }
+
+    public DraftListResult readMyDraftList(Long requesterId, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        Slice<DraftListRow> drafts = postRepository.findDraftsByWriterId(requesterId, DRAFT, pageable);
+        return DraftListResult.from(drafts);
     }
 
     private User getUser(Long requesterId) {
