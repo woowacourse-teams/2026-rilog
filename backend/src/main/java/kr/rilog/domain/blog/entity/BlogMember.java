@@ -98,6 +98,34 @@ public class BlogMember extends BaseEntity {
         }
     }
 
+    public void validateCanLeave() {
+        validateActiveMember();
+
+        if (permission == OWNER) {
+            throw new BlogException(COLOG_OWNER_LEAVE_FORBIDDEN);
+        }
+    }
+
+    public void validateCanRemove(BlogMember target) {
+        validateActiveMember();
+        target.validateActiveMember();
+
+        if (isSameMember(target)) {
+            throw new BlogException(COLOG_SELF_REMOVE_FORBIDDEN);
+        }
+
+        if (canRemove(target)) {
+            return;
+        }
+
+        throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
+    }
+
+    public void leave() {
+        validateActiveMember();
+        this.status = BlogMemberStatus.LEFT;
+    }
+
     public boolean hasDeletePermission() {
         return status == ACTIVE
                 && getDeletedAt() == null
@@ -110,5 +138,17 @@ public class BlogMember extends BaseEntity {
 
     private boolean hasInvitePermission() {
         return status == ACTIVE && (permission == OWNER || permission == ADMIN);
+    }
+
+    private boolean isSameMember(BlogMember target) {
+        return id.equals(target.id);
+    }
+
+    private boolean canRemove(BlogMember target) {
+        if (permission == OWNER) {
+            return target.permission == ADMIN || target.permission == MEMBER;
+        }
+
+        return permission == ADMIN && target.permission == MEMBER;
     }
 }

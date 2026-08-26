@@ -25,6 +25,7 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -178,6 +179,40 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.blogRole").value("Backend"));
 
         verify(cologService).inviteMember(1L, "rilog-team", command);
+    }
+
+    @Test
+    @DisplayName("DELETE /v1/cologs/{slug}/members/me는 로그인 사용자의 팀 탈퇴를 처리한다")
+    void leaveCologRemovesLoginUserFromColog() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        MockMvc mockMvc = mockMvc(cologService);
+
+        // when - then
+        mockMvc.perform(delete("/v1/cologs/{slug}/members/me", "rilog-team")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(204))
+                .andExpect(jsonPath("$.message").value("팀 블로그에서 탈퇴했습니다."));
+
+        verify(cologService).leaveColog(7L, "rilog-team");
+    }
+
+    @Test
+    @DisplayName("DELETE /v1/cologs/{slug}/members/{memberId}는 팀 멤버 내보내기를 처리한다")
+    void removeMemberRemovesTargetMemberFromColog() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        MockMvc mockMvc = mockMvc(cologService);
+
+        // when - then
+        mockMvc.perform(delete("/v1/cologs/{slug}/members/{memberId}", "rilog-team", 3L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(204))
+                .andExpect(jsonPath("$.message").value("팀 멤버를 내보냈습니다."));
+
+        verify(cologService).removeMember(7L, "rilog-team", 3L);
     }
 
     private MockMvc mockMvc(CologService cologService) {

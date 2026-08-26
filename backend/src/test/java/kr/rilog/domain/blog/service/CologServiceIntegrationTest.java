@@ -90,6 +90,58 @@ class CologServiceIntegrationTest extends ServiceSupport {
         assertThat(result.permission()).isEqualTo(BlogPermission.MEMBER);
     }
 
+    @Test
+    @DisplayName("MEMBER가 팀에서 탈퇴하면 ACTIVE 멤버 조회에서 제외된다.")
+    void leaveCologPersistsLeftStatus() {
+        // given
+        InvitationScenario scenario = createInvitationScenario();
+        BlogMember member = blogMemberRepository.saveAndFlush(BlogMember.invite(
+                scenario.colog(),
+                scenario.invitee(),
+                "Backend",
+                BlogPermission.MEMBER,
+                LocalDateTime.now()
+        ));
+
+        // when
+        cologService.leaveColog(scenario.invitee().getId(), COLOG_SLUG);
+
+        // then
+        assertThat(blogMemberRepository.findByBlogIdAndUserIdAndStatus(
+                scenario.colog().getId(),
+                scenario.invitee().getId(),
+                BlogMemberStatus.ACTIVE
+        )).isEmpty();
+        assertThat(blogMemberRepository.findById(member.getId()).orElseThrow().getStatus())
+                .isEqualTo(BlogMemberStatus.LEFT);
+    }
+
+    @Test
+    @DisplayName("OWNER가 ADMIN을 내보내면 대상이 ACTIVE 멤버 조회에서 제외된다.")
+    void removeMemberPersistsLeftStatus() {
+        // given
+        InvitationScenario scenario = createInvitationScenario();
+        BlogMember adminMember = blogMemberRepository.saveAndFlush(BlogMember.invite(
+                scenario.colog(),
+                scenario.invitee(),
+                "Backend",
+                BlogPermission.ADMIN,
+                LocalDateTime.now()
+        ));
+
+        // when
+        cologService.removeMember(scenario.owner().getId(), COLOG_SLUG, adminMember.getId());
+
+        // then
+        assertThat(blogMemberRepository.findByBlogIdAndUserIdAndStatus(
+                scenario.colog().getId(),
+                scenario.invitee().getId(),
+                BlogMemberStatus.ACTIVE
+        )).isEmpty();
+        assertThat(blogMemberRepository.findById(adminMember.getId()).orElseThrow().getStatus())
+                .isEqualTo(BlogMemberStatus.LEFT);
+    }
+
     private InvitationScenario createInvitationScenario() {
         User owner = userRepository.save(
                 createUser(100L, "owner")

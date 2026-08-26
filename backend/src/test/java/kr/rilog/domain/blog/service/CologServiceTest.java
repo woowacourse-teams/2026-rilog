@@ -50,6 +50,8 @@ class CologServiceTest {
     private static final Long OWNER_ID = 1L;
     private static final Long COLOG_ID = 2L;
     private static final Long INVITEE_ID = 3L;
+    private static final Long REQUESTER_MEMBER_ID = 4L;
+    private static final Long TARGET_MEMBER_ID = 5L;
     private static final String COLOG_SLUG = "rilog-team";
     private static final Instant NOW = Instant.parse("2026-08-13T12:00:00Z");
 
@@ -216,7 +218,11 @@ class CologServiceTest {
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
         when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
         when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
@@ -278,7 +284,11 @@ class CologServiceTest {
         Blog colog = createColog(admin);
         BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
         when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
         when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
@@ -305,7 +315,11 @@ class CologServiceTest {
         User requester = createOwner();
         Blog colog = createColog(requester);
         when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
                 .thenReturn(Optional.empty());
 
         // when - then
@@ -329,7 +343,11 @@ class CologServiceTest {
         Blog colog = createColog(owner);
         BlogMember requesterMember = createMember(colog, owner, BlogPermission.OWNER);
         when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG)).thenReturn(Optional.of(colog));
-        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, OWNER_ID, BlogMemberStatus.ACTIVE))
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
                 .thenReturn(Optional.of(requesterMember));
         when(userRepository.findById(INVITEE_ID)).thenReturn(Optional.of(invitee));
         when(blogMemberRepository.existsByBlogIdAndUserIdAndStatus(COLOG_ID, INVITEE_ID, BlogMemberStatus.ACTIVE))
@@ -345,6 +363,239 @@ class CologServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_MEMBER_ALREADY_EXISTS);
         verify(blogMemberRepository, never()).save(any(BlogMember.class));
+    }
+
+    @Test
+    @DisplayName("ACTIVE ADMIN 또는 MEMBER는 자신이 속한 팀에서 탈퇴한다")
+    void leaveCologChangesRequesterMemberStatusToLeft() {
+        // given
+        User owner = createOwner();
+        User requester = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, requester, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                INVITEE_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+
+        // when
+        cologService.leaveColog(INVITEE_ID, COLOG_SLUG);
+
+        // then
+        assertThat(requesterMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+    }
+
+    @Test
+    @DisplayName("OWNER는 자신이 속한 팀에서 바로 탈퇴할 수 없다")
+    void leaveCologRejectsOwner() {
+        // given
+        User owner = createOwner();
+        Blog colog = createColog(owner);
+        BlogMember ownerMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(ownerMember));
+
+        // when - then
+        assertThatThrownBy(() -> cologService.leaveColog(OWNER_ID, COLOG_SLUG))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_OWNER_LEAVE_FORBIDDEN);
+        assertThat(ownerMember.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("OWNER는 ADMIN을 팀에서 내보낼 수 있다")
+    void removeMemberAllowsOwnerToRemoveAdmin() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.ADMIN);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when
+        cologService.removeMember(OWNER_ID, COLOG_SLUG, TARGET_MEMBER_ID);
+
+        // then
+        assertThat(targetMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+    }
+
+    @Test
+    @DisplayName("ADMIN은 MEMBER를 팀에서 내보낼 수 있다")
+    void removeMemberAllowsAdminToRemoveMember() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.ADMIN);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when
+        cologService.removeMember(OWNER_ID, COLOG_SLUG, TARGET_MEMBER_ID);
+
+        // then
+        assertThat(targetMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+    }
+
+    @Test
+    @DisplayName("ADMIN은 ADMIN을 팀에서 내보낼 수 없다")
+    void removeMemberRejectsAdminRemovingAdmin() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.ADMIN);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.ADMIN);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when - then
+        assertThatThrownBy(() -> cologService.removeMember(OWNER_ID, COLOG_SLUG, TARGET_MEMBER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_MEMBER_REMOVE_FORBIDDEN);
+        assertThat(targetMember.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("MEMBER는 다른 멤버를 팀에서 내보낼 수 없다")
+    void removeMemberRejectsMemberRequester() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.MEMBER);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when - then
+        assertThatThrownBy(() -> cologService.removeMember(OWNER_ID, COLOG_SLUG, TARGET_MEMBER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_MEMBER_REMOVE_FORBIDDEN);
+        assertThat(targetMember.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("자기 자신은 강제 내보내기 API로 내보낼 수 없다")
+    void removeMemberRejectsSelfRemove() {
+        // given
+        User owner = createOwner();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(TARGET_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+
+        // when - then
+        assertThatThrownBy(() -> cologService.removeMember(OWNER_ID, COLOG_SLUG, TARGET_MEMBER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_SELF_REMOVE_FORBIDDEN);
+        assertThat(requesterMember.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("대상 멤버가 팀에 속해있지 않으면 내보낼 수 없다")
+    void removeMemberRejectsTargetMemberNotInColog() {
+        // given
+        User owner = createOwner();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> cologService.removeMember(OWNER_ID, COLOG_SLUG, TARGET_MEMBER_ID))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_MEMBER_DOESNT_NOT_BELONG);
     }
 
     @Test
@@ -394,6 +645,17 @@ class CologServiceTest {
 
     private BlogMember createMember(Blog colog, User user, BlogPermission permission) {
         return BlogMember.builder()
+                .blog(colog)
+                .user(user)
+                .permission(permission)
+                .status(BlogMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
+                .build();
+    }
+
+    private BlogMember createMember(Long id, Blog colog, User user, BlogPermission permission) {
+        return BlogMember.builder()
+                .id(id)
                 .blog(colog)
                 .user(user)
                 .permission(permission)

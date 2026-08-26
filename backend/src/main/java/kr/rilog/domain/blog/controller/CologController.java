@@ -52,6 +52,27 @@ public class CologController implements CologApiSpec {
     }
 
     @AuthGuard
+    @DeleteMapping("/cologs/{slug}/members/me")
+    public ApiResponse<Void> leaveColog(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug
+    ) {
+        cologService.leaveColog(requesterId, slug);
+        return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 블로그에서 탈퇴했습니다.");
+    }
+
+    @AuthGuard
+    @DeleteMapping("/cologs/{slug}/members/{memberId}")
+    public ApiResponse<Void> removeMember(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug,
+            @PathVariable("memberId") Long memberId
+    ) {
+        cologService.removeMember(requesterId, slug, memberId);
+        return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 멤버를 내보냈습니다.");
+    }
+
+    @AuthGuard
     @GetMapping("/users/me/cologs/preview")
     public ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId) {
         List<MyCologResponse> data = cologService.getMyCologsPreview(requesterId);
