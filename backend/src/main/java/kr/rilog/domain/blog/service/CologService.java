@@ -50,6 +50,7 @@ public class CologService {
                 command.slug(),
                 command.toProfile()
         );
+
         Blog savedColog = saveColog(colog);
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));
         blogMemberRepository.save(ownerMember);
@@ -59,7 +60,7 @@ public class CologService {
 
     @Transactional
     public CologMemberInviteResult inviteMember(Long requesterId, String slug, CologMemberInviteCommand command) {
-        Blog colog = getColog(slug);
+        Blog colog = getColog(Slug.from(slug));
 
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_INVITE_FORBIDDEN);
         requesterMember.validateCanInvite();
@@ -81,7 +82,7 @@ public class CologService {
 
     @Transactional
     public void leaveColog(Long requesterId, String slug) {
-        Blog colog = getColog(slug);
+        Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
 
         requesterMember.validateCanLeave();
@@ -90,7 +91,7 @@ public class CologService {
 
     @Transactional
     public void removeMember(Long requesterId, String slug, Long memberId) {
-        Blog colog = getColog(slug);
+        Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
 
@@ -109,8 +110,8 @@ public class CologService {
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
     }
 
-    private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
+    private Blog getColog(Slug slug) {
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
