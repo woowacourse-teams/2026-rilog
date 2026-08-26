@@ -70,10 +70,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
         // given
         User writer = saveCompletedUser(1L, "개인작성자", "rilog-writer");
         Blog rilog = saveRilog(writer);
-        PostSaveCommand command = PostFixture.publicPostPublishCommand();
+        PostSaveCommand command = PostFixture.publicPostPublishCommand(rilog.getSlug());
 
         // when
-        PostPublishResult result = postService.publish(command, rilog.getSlug(), writer.getId());
+        PostPublishResult result = postService.publish(command, writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(result.postId())
@@ -101,10 +101,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User writer = saveCompletedUser(2L, "팀작성자", "colog-writer");
         Blog rilog = saveRilog(writer);
         Blog colog = saveColog(writer, "team-colog");
-        PostSaveCommand command = PostFixture.publicPostPublishCommand();
+        PostSaveCommand command = PostFixture.publicPostPublishCommand(colog.getSlug());
 
         // when
-        PostPublishResult result = postService.publish(command, colog.getSlug(), writer.getId());
+        PostPublishResult result = postService.publish(command, writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(result.postId())
@@ -129,8 +129,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(),
-                colog.getSlug(),
+                PostFixture.publicPostPublishCommand(colog.getSlug()),
                 writer.getId()
         ))
                 .isInstanceOf(BlogException.class)
@@ -149,8 +148,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(),
-                ownerRilog.getSlug(),
+                PostFixture.publicPostPublishCommand(ownerRilog.getSlug()),
                 writer.getId()
         ))
                 .isInstanceOf(BlogException.class)
@@ -170,8 +168,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(),
-                colog.getSlug(),
+                PostFixture.publicPostPublishCommand(colog.getSlug()),
                 writer.getId()
         ))
                 .isInstanceOf(BlogException.class)
@@ -185,8 +182,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     void publishThrowsAndDoesNotPersistPostWhenBlogDoesNotExist() {
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(),
-                "missing-blog",
+                PostFixture.publicPostPublishCommand("missing-blog"),
                 999L
         ))
                 .isInstanceOf(BlogException.class)
@@ -206,8 +202,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(),
-                deletedRilog.getSlug(),
+                PostFixture.publicPostPublishCommand(deletedRilog.getSlug()),
                 owner.getId()
         ))
                 .isInstanceOf(BlogException.class)
@@ -225,8 +220,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(),
-                rilog.getSlug(),
+                PostFixture.publicPostPublishCommand(rilog.getSlug()),
                 Long.MAX_VALUE
         ))
                 .isInstanceOf(UserException.class)
