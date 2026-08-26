@@ -2,6 +2,7 @@ package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.vo.Publisher;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -71,15 +72,11 @@ public class DraftService {
         User writer = getUser(requesterId);
 
         BlogMember targetMemberShip = getBlogMember(Slug.from(command.slug()), requesterId);
-        targetMemberShip.validateActiveMember();
-
         BlogMember rilogMemberShip = getBlogMember(Slug.from(writer.getSlug()), requesterId);
-        rilogMemberShip.validateActiveMember();
 
-        Blog targetBlog = targetMemberShip.getBlog();
-        Blog rilog = rilogMemberShip.getBlog();
+        Publisher publisher = Publisher.of(rilogMemberShip, targetMemberShip);
+        publisher.publishDraft(draft, command.toDetail());
 
-        draft.publish(rilog, targetBlog, command.toDetail());
         return PostPublishResult.of(draft);
     }
 
