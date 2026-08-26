@@ -98,6 +98,12 @@ public class BlogMember extends BaseEntity {
         }
     }
 
+    public boolean hasDeletePermission() {
+        return status == ACTIVE
+                && getDeletedAt() == null
+                && (permission == OWNER || permission == ADMIN);
+    }
+
     private boolean isCologMember() {
         return blog != null && blog.isColog();
     }

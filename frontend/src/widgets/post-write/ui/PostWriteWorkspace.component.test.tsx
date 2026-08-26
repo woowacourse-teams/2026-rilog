@@ -268,6 +268,36 @@ describe('PostWriteWorkspace', () => {
 		expect(postEditorOpenedMock).toHaveBeenCalledOnce();
 	});
 
+	it('임시 저장 글 삭제를 취소하면 목록을 유지하고 확인하면 목록과 개수를 갱신한다', async () => {
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '임시 저장된 글 4개 보기' }));
+		const draftListDialog = screen.getByRole('dialog', { name: '임시 저장된 글' });
+		const firstDeleteButton = within(draftListDialog).getByRole('button', {
+			name: '디자인 시스템 도입 회고 임시 저장 글 삭제',
+		});
+
+		await user.click(firstDeleteButton);
+		const deleteConfirmDialog = screen.getByRole('dialog', { name: '임시 저장 글을 삭제할까요?' });
+		await user.click(within(deleteConfirmDialog).getByRole('button', { name: '취소' }));
+
+		await waitFor(() =>
+			expect(screen.queryByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).not.toBeInTheDocument(),
+		);
+		expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(4);
+
+		await user.click(firstDeleteButton);
+		await user.click(
+			within(screen.getByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).getByRole('button', {
+				name: '삭제',
+			}),
+		);
+
+		await waitFor(() => expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(3));
+		expect(screen.getByRole('button', { name: '임시 저장된 글 3개 보기' })).toBeInTheDocument();
+	});
+
 	it('빈 문서는 설정 모달을 열지 않고 첫 오류로 focus한다', async () => {
 		const user = userEvent.setup();
 		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
@@ -283,6 +313,37 @@ describe('PostWriteWorkspace', () => {
 
 		await user.type(bodyField, '본문');
 		expect(bodyField).not.toHaveAttribute('aria-describedby');
+	});
+
+	it('제목만 입력한 문서는 본문 오류를 표시하고 에디터로 focus한다', async () => {
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '제목만 있는 글');
+		await user.click(screen.getByRole('button', { name: '발행' }));
+
+		expect(screen.queryByRole('dialog', { name: '게시 설정' })).not.toBeInTheDocument();
+		expect(screen.queryByText('제목을 입력해 주세요.')).not.toBeInTheDocument();
+		expect(screen.getByText('내용을 입력해 주세요.')).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
+	});
+
+	it('유효하지 않은 문서를 임시저장하면 오류를 표시하고 첫 오류 필드로 focus한다', async () => {
+		const user = userEvent.setup();
+		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		expect(screen.getByText('제목을 입력해 주세요.')).toBeInTheDocument();
+		expect(screen.getByText('내용을 입력해 주세요.')).toBeInTheDocument();
+		const titleField = screen.getByRole('textbox', { name: '게시글 제목' });
+		expect(titleField).toHaveFocus();
+
+		await user.type(titleField, '임시 저장할 제목');
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		expect(screen.queryByText('제목을 입력해 주세요.')).not.toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
 	});
 
 	it('내 블로그를 제외하고 소속 팀 블로그만 발행 대상으로 보여 준다', async () => {
@@ -348,7 +409,11 @@ describe('PostWriteWorkspace', () => {
 	});
 
 	it('선택한 대표 이미지를 유지하고 교체·제거·unmount 때 object URL을 해제한다', async () => {
-		const createObjectUrl = vi.fn().mockReturnValueOnce('blob:first-cover').mockReturnValueOnce('blob:second-cover');
+		const createObjectUrl = vi
+			.fn()
+			.mockReturnValueOnce('blob:first-cover')
+			.mockReturnValueOnce('blob:second-cover')
+			.mockReturnValueOnce('blob:third-cover');
 		const revokeObjectUrl = vi.fn();
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
@@ -371,8 +436,17 @@ describe('PostWriteWorkspace', () => {
 			'blob:second-cover',
 		);
 
-		unmount();
+		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:second-cover');
+		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'/images/thumbnail-fallback.svg',
+		);
+
+		await user.upload(screen.getByLabelText('이미지 선택'), new File(['third'], 'third.png', { type: 'image/png' }));
+
+		unmount();
+		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:third-cover');
 		vi.unstubAllGlobals();
 	});
 
@@ -408,6 +482,9 @@ describe('PostWriteWorkspace', () => {
 			category: 'IT',
 			hasCustomRepresentativeImage: false,
 		});
+		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
+		window.dispatchEvent(beforeUnloadEvent);
+		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
 		expect(historyBackSpy).not.toHaveBeenCalled();
 		historyBackSpy.mockRestore();
 	});

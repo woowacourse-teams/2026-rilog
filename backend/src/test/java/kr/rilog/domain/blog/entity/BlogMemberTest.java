@@ -156,6 +156,54 @@ class BlogMemberTest {
                 .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
     }
 
+    @Test
+    @DisplayName("활성 OWNER와 ADMIN 멤버는 게시글을 삭제할 수 있다.")
+    void activeOwnerAndAdminHasDeletePermission() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThat(owner.hasDeletePermission()).isTrue();
+        assertThat(admin.hasDeletePermission()).isTrue();
+    }
+
+    @Test
+    @DisplayName("MEMBER 권한의 팀 멤버는 게시글을 삭제할 수 없다.")
+    void memberCannotDeletePost() {
+        // given
+        BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThat(member.hasDeletePermission()).isFalse();
+    }
+
+    @Test
+    @DisplayName("활성 상태가 아닌 OWNER와 ADMIN 멤버는 게시글을 삭제할 수 없다.")
+    void inactiveOwnerAndAdminCannotDeletePost() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.LEFT);
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.LEFT);
+
+        // when & then
+        assertThat(owner.hasDeletePermission()).isFalse();
+        assertThat(admin.hasDeletePermission()).isFalse();
+    }
+
+    @Test
+    @DisplayName("삭제된 OWNER와 ADMIN 멤버는 게시글을 삭제할 수 없다.")
+    void deletedOwnerAndAdminCannotDeletePost() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+        owner.delete();
+        admin.delete();
+
+        // when & then
+        assertThat(owner.hasDeletePermission()).isFalse();
+        assertThat(admin.hasDeletePermission()).isFalse();
+    }
+
     private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {
         User owner = createUser(OWNER_ID);
         Blog colog = createColog(owner);
