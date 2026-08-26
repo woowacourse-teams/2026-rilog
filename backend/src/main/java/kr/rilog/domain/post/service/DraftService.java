@@ -68,11 +68,12 @@ public class DraftService {
     public PostPublishResult publishDraft(DraftPublishCommand command, Long draftId, Long requesterId) {
         Post draft = getDraft(draftId);
         draft.validateWrittenBy(requesterId);
+        User writer = getUser(requesterId);
 
         BlogMember targetMemberShip = getBlogMember(Slug.from(command.slug()), requesterId);
         targetMemberShip.validateActiveMember();
 
-        BlogMember rilogMemberShip = getBlogMember(requesterId, requesterId);
+        BlogMember rilogMemberShip = getBlogMember(Slug.from(writer.getSlug()), requesterId);
         rilogMemberShip.validateActiveMember();
 
         Blog targetBlog = targetMemberShip.getBlog();
@@ -109,11 +110,6 @@ public class DraftService {
 
     private BlogMember getBlogMember(Slug slug, Long memberId) {
         return blogMemberRepository.findWithBlogBySlugAndUserId(slug, memberId)
-                .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
-    }
-
-    private BlogMember getBlogMember(Long blogId, Long memberId) {
-        return blogMemberRepository.findWithBlogByBlogIdAndUserId(blogId, memberId)
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
     }
 
