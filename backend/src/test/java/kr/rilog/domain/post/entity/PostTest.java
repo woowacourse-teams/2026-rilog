@@ -4,22 +4,69 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
+import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
+import static kr.rilog.support.fixure.BlogFixture.createRilog;
+import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static kr.rilog.support.fixure.BlogFixture.otherUserRilog;
 import static kr.rilog.support.fixure.BlogFixture.targetColog;
 import static kr.rilog.support.fixure.PostFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class PostTest {
 
     private static final Long OTHER_USER_ID = 2L;
+
+    @Test
+    @DisplayName("초안을 생성하면 입력한 내용과 초안 전용 상태를 가진다.")
+    void createDraftHasCommandContentAndDraftState() {
+        // given
+        User writer = createUser(1L);
+        Blog rilog = createRilog(writer);
+        DraftSaveCommand command = initialDraftSaveCommand();
+
+        // when
+        Post draft = Post.draft(command, writer, rilog);
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(draft.getTitle()).isEqualTo(command.title());
+            softly.assertThat(draft.getContent()).isEqualTo(command.content());
+            softly.assertThat(draft.getStatus()).isEqualTo(DRAFT);
+            softly.assertThat(draft.getVisibility()).isEqualTo(PRIVATE);
+            softly.assertThat(draft.getCategory()).isNull();
+            softly.assertThat(draft.getThumbnailImageUrl()).isNull();
+        });
+    }
+
+    @Test
+    @DisplayName("초안을 생성하면 작성자와 작성자의 개인 블로그에 소속된다.")
+    void createDraftBelongsToWriterAndRilog() {
+        // given
+        User writer = createUser(1L);
+        Blog rilog = createRilog(writer);
+
+        // when
+        Post draft = Post.draft(initialDraftSaveCommand(), writer, rilog);
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(draft.getUser()).isSameAs(writer);
+            softly.assertThat(draft.getRilog()).isSameAs(rilog);
+            softly.assertThat(draft.getColog()).isNull();
+        });
+    }
 
     @Test
     @DisplayName("공개 게시글은 인증하지 않은 사용자도 읽을 수 있다.")
