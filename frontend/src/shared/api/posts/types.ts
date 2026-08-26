@@ -18,6 +18,20 @@ export interface PostPublishResponse {
 	slug: string;
 }
 
+export interface PostUpdateRequest {
+	slug: string;
+	title: string;
+	content: Block[];
+	category: PostCategoryRequest;
+	visibility: PostVisibilityRequest;
+	thumbnailImageUrl: string | null;
+}
+
+export interface PostUpdateResponse {
+	postId: number;
+	slug: string;
+}
+
 export interface PostsCountResponse {
 	totalPostsCount: number;
 }
