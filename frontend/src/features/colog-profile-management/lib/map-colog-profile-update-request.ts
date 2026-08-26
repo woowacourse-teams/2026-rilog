@@ -1,6 +1,6 @@
 import type { CologProfileSettingsValue } from '../model/colog-profile-settings';
 
-import type { CologProfileUpdateRequest } from '@/shared/api/cologs/types';
+import type { BlogProfileUpdateRequest } from '@/shared/api/blogs/types';
 
 interface CologProfileImageUrls {
 	profileImageUrl: string;
@@ -12,7 +12,7 @@ const toNullableString = (value: string | undefined) => value || null;
 export const mapCologProfileUpdateRequest = (
 	value: CologProfileSettingsValue,
 	imageUrls: CologProfileImageUrls,
-): CologProfileUpdateRequest => ({
+): BlogProfileUpdateRequest => ({
 	name: value.name,
 	profileImageUrl: toNullableString(imageUrls.profileImageUrl),
 	coverImageUrl: toNullableString(imageUrls.coverImageUrl),

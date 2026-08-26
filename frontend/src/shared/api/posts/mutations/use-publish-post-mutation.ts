@@ -2,9 +2,9 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { publishPost } from '@/shared/api/blogs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
+import { publishPost } from '@/shared/api/posts/api';
 import { postsQueryKeys } from '@/shared/api/posts/queries/keys';
 
 export const usePublishPostMutation = () => {

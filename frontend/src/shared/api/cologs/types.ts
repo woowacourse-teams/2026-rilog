@@ -14,15 +14,6 @@ export interface CologCreateResponse {
 	slug: string;
 }
 
-export interface CologProfileUpdateRequest {
-	name: string;
-	profileImageUrl: string | null;
-	coverImageUrl: string | null;
-	introduction: string | null;
-	serviceUrl: string | null;
-	githubUrl: string | null;
-}
-
 export interface CologMemberInviteRequest {
 	userId: number;
 	permission: 'ADMIN' | 'MEMBER';

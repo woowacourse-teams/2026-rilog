@@ -15,7 +15,7 @@ import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
-import { usePublishPostMutation } from '@/shared/api/blogs/mutations/use-publish-post-mutation';
+import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish-post-mutation';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';

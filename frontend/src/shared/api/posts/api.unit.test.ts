@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { readPostDetail } from './api';
+import { publishPost, readPostDetail } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -9,6 +9,44 @@ vi.hoisted(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
+});
+
+describe('publishPost', () => {
+	it('slug의 @ 접두사를 제거해 요청 본문에 포함하고 게시글 endpoint로 POST한다', async () => {
+		const responseBody = {
+			status: 201,
+			message: '게시글 발행에 성공했습니다.',
+			data: { postId: 42, slug: 'rilog-team' },
+		};
+		let capturedBody: unknown;
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) {
+				capturedBody = await input.clone().json();
+			}
+
+			return Response.json(responseBody, { status: 201 });
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const requestBody = {
+			slug: '@rilog-team',
+			title: 'BlockNote 도입기',
+			content: [],
+			category: 'TECH' as const,
+			visibility: 'PUBLIC' as const,
+			thumbnailImageUrl: 'posts/cover.png',
+			profileImageUrl: null,
+		};
+
+		await expect(publishPost(requestBody)).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('POST');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts');
+		expect(capturedBody).toEqual({
+			...requestBody,
+			slug: 'rilog-team',
+		});
+	});
 });
 
 describe('readPostDetail', () => {

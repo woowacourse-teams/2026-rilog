@@ -1,7 +1,6 @@
 import type {
+	BlogProfileUpdateRequest,
 	BlogPublicProfileResponse,
-	PostPublishResponse,
-	PostPublishRequest,
 	PublicBlogFeedPostResponse,
 	PublicBlogFeedPostsRequest,
 } from '@/shared/api/blogs/types';
@@ -41,16 +40,11 @@ const DEV_RILOG_PROFILE_MOCKS: Record<string, BlogPublicProfileResponse> = {
 const readDevRilogProfileMock = (slug: string) =>
 	process.env.NODE_ENV === 'development' ? DEV_RILOG_PROFILE_MOCKS[slug] : undefined;
 
-export const publishPost = (request: PostPublishRequest) => {
-	const { slug, ...post } = request;
+export const updateBlogProfile = (slug: string, request: BlogProfileUpdateRequest) => {
 	const normalizedSlug = stripAtPrefix(slug);
-	const body: PostPublishRequest = {
-		slug: normalizedSlug,
-		...post,
-	};
 
-	return apiClient.post<ApiResponse<PostPublishResponse>>('v1/posts', {
-		json: body,
+	return apiClient.patch<ApiResponse<void>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/profiles`, {
+		json: request,
 	});
 };
 

@@ -7,7 +7,7 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
-import type { PostPublishRequest, PostPublishResponse } from '@/shared/api/blogs/types';
+import type { PostPublishRequest, PostPublishResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
@@ -65,7 +65,7 @@ vi.mock('@/shared/api/uploads/mutations/use-upload-file-mutation', () => ({
 	useUploadFileMutation: () => ({ mutateAsync: uploadRepresentativeImageMock }),
 }));
 
-vi.mock('@/shared/api/blogs/mutations/use-publish-post-mutation', () => ({
+vi.mock('@/shared/api/posts/mutations/use-publish-post-mutation', () => ({
 	usePublishPostMutation: () => ({ mutateAsync: requestPostPublicationMock }),
 }));
 
