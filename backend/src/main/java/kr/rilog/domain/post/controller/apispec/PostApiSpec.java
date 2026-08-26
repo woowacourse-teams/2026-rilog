@@ -90,7 +90,7 @@ public interface PostApiSpec {
     ApiResponse<PostUpdateResponse> updatePost(
             @PathVariable Long postId,
             @LoginUserId Long requesterId,
-            @RequestBody PostUpdateRequest dto
+            @Valid @RequestBody PostUpdateRequest dto
     );
 
 }

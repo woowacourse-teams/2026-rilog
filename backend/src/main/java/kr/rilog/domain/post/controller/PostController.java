@@ -58,7 +58,7 @@ public class PostController implements PostApiSpec {
     public ApiResponse<PostUpdateResponse> updatePost(
             @PathVariable Long postId,
             @LoginUserId Long requesterId,
-            @RequestBody PostUpdateRequest dto
+            @Valid @RequestBody PostUpdateRequest dto
     ) {
         PostUpdateResult result = postService.update(dto.toCommand(), postId, requesterId);
         PostUpdateResponse data = PostUpdateResponse.from(result);

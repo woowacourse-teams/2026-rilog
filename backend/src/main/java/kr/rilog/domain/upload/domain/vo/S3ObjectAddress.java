@@ -15,7 +15,7 @@ public record S3ObjectAddress(
     private static final String S3_HOST_SUFFIX = ".s3.ap-northeast-2.amazonaws.com";
     private static final String HTTPS_SCHEME = "https";
 
-    public static S3ObjectAddress from(String objectUrl, String originBucket) {
+    public static S3ObjectAddress from(String objectUrl) {
         URI uri = URI.create(objectUrl);
         validateScheme(uri);
 
@@ -23,8 +23,6 @@ public record S3ObjectAddress(
         validateHost(host);
 
         String parsedBucket = host.substring(0, host.length() - S3_HOST_SUFFIX.length());
-        validateBucket(parsedBucket, originBucket);
-
         String decodedPath = uri.getPath();
         validatePath(decodedPath);
         String key = decodedPath.substring(1);
@@ -47,12 +45,6 @@ public record S3ObjectAddress(
     private static void validatePath(String path) {
         if (path == null || path.length() <= 1) {
             throw new UploadException(S3_OBJECT_KEY_MISSING);
-        }
-    }
-
-    private static void validateBucket(String parsedBucket, String originBucket) {
-        if (parsedBucket.equals(originBucket)) {
-            throw new UploadException(UNSUPPORTED_S3_BUCKET);
         }
     }
 
