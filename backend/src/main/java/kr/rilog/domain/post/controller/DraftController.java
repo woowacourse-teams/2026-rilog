@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.post.controller.apispec.DraftApiSpec;
+import kr.rilog.domain.post.controller.dto.response.DraftDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.service.DraftService;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,17 @@ public class DraftController implements DraftApiSpec {
         DraftIdResult result = draftService.saveDraft(command, userId);
         DraftIdResponse data = DraftIdResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "최초 임시저장에 성공했습니다.", data);
+    }
+
+    @AuthGuard
+    @GetMapping("/drafts/{draftId}")
+    public ApiResponse<DraftDetailResponse> getDraft(
+            @LoginUserId Long requesterId,
+            @PathVariable("draftId") Long draftId
+    ) {
+        DraftDetailResult result = draftService.getMyDraft(draftId, requesterId);
+        DraftDetailResponse data = DraftDetailResponse.from(result);
+        return ApiResponse.response(HttpStatus.CREATED, "임시저장 글을 성공적으로 불러왔습니다.", data);
     }
 
 }
