@@ -123,6 +123,7 @@ public class BlogMember extends BaseEntity {
 
     public void leave() {
         validateActiveMember();
+        delete();
         this.status = BlogMemberStatus.LEFT;
     }
 
