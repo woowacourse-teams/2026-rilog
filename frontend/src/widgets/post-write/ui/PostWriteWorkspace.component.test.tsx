@@ -15,6 +15,10 @@ import PostWriteWorkspace from './PostWriteWorkspace';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PostWriteRequest) => Promise<ApiResponse<PostWriteResponse>>;
+type RequestPostUpdate = (variables: {
+	postId: number;
+	request: PostWriteRequest;
+}) => Promise<ApiResponse<PostWriteResponse>>;
 
 const {
 	postEditorOpenedMock,
@@ -22,12 +26,14 @@ const {
 	replaceMock,
 	uploadRepresentativeImageMock,
 	requestPostPublicationMock,
+	requestPostUpdateMock,
 } = vi.hoisted(() => ({
 	postEditorOpenedMock: vi.fn(),
 	postPublishedMock: vi.fn(),
 	replaceMock: vi.fn(),
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
+	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -69,17 +75,27 @@ vi.mock('@/shared/api/posts/mutations/use-publish-post-mutation', () => ({
 	usePublishPostMutation: () => ({ mutateAsync: requestPostPublicationMock }),
 }));
 
+vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
+	useUpdatePostMutation: () => ({ mutateAsync: requestPostUpdateMock }),
+}));
+
 beforeEach(() => {
 	replaceMock.mockReset();
 	postEditorOpenedMock.mockReset();
 	postPublishedMock.mockReset();
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
+	requestPostUpdateMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
 	requestPostPublicationMock.mockResolvedValue({
 		status: 201,
 		message: '게시글 발행에 성공했습니다.',
 		data: { postId: 77, slug: 'rilog-team' },
+	});
+	requestPostUpdateMock.mockResolvedValue({
+		status: 200,
+		message: '게시글 수정에 성공했습니다.',
+		data: { postId: 31, slug: 'personal-blog' },
 	});
 });
 
@@ -591,6 +607,7 @@ describe('PostWriteWorkspace', () => {
 		const navigate = vi.fn();
 		render(
 			<PostWriteWorkspace
+				postId={31}
 				editorComponent={FakeEditor}
 				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
 				initialPublicationSettings={{
@@ -606,11 +623,15 @@ describe('PostWriteWorkspace', () => {
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
-		await waitFor(() => expect(requestPostPublicationMock).toHaveBeenCalledOnce());
+		await waitFor(() => expect(requestPostUpdateMock).toHaveBeenCalledOnce());
+		expect(navigate).toHaveBeenCalledWith('/@personal-blog/posts/31');
 		expect(uploadRepresentativeImageMock).not.toHaveBeenCalled();
-		const publicationRequest = requestPostPublicationMock.mock.calls[0]?.[0];
-		expect(publicationRequest?.slug).toBe('personal-blog');
-		expect(publicationRequest).toMatchObject({
+		expect(requestPostPublicationMock).not.toHaveBeenCalled();
+		expect(postPublishedMock).not.toHaveBeenCalled();
+		const updateVariables = requestPostUpdateMock.mock.calls[0]?.[0];
+		expect(updateVariables?.postId).toBe(31);
+		expect(updateVariables?.request.slug).toBe('personal-blog');
+		expect(updateVariables?.request).toMatchObject({
 			category: 'DAILY',
 			thumbnailImageUrl: 'posts/existing-thumbnail.png',
 		});

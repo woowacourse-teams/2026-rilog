@@ -61,6 +61,7 @@ export default function PostWriteLoader() {
 		<PostWriteAccessGuard authorId={initialDataQuery.data.authorId}>
 			<PostWriteWorkspace
 				key={parsedPostId}
+				postId={parsedPostId}
 				initialDocument={initialDataQuery.data.document}
 				initialPublicationSettings={initialDataQuery.data.settings}
 			/>

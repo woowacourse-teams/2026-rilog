@@ -16,6 +16,8 @@ import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
 import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish-post-mutation';
+import { useUpdatePostMutation } from '@/shared/api/posts/mutations/use-update-post-mutation';
+import type { PostWriteRequest } from '@/shared/api/posts/types';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -24,6 +26,7 @@ import { getImageUrl } from '@/shared/utils/get-image-url';
 import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 
 interface PostWriteWorkspaceProps {
+	postId?: number;
 	editorComponent?: ComponentType<PostEditorProps>;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
@@ -33,6 +36,7 @@ interface PostWriteWorkspaceProps {
 }
 
 export default function PostWriteWorkspace({
+	postId,
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
 	initialPublicationSettings,
@@ -47,6 +51,7 @@ export default function PostWriteWorkspace({
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
+	const { mutateAsync: requestPostUpdate } = useUpdatePostMutation();
 
 	const uploadPostBodyFileWithApi = useCallback<UploadPostBodyFile>(
 		async (file) => {
@@ -86,7 +91,7 @@ export default function PostWriteWorkspace({
 					).objectKey
 				: (settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL);
 
-		const response = await requestPostPublication({
+		const request: PostWriteRequest = {
 			slug: settings.blog.slug,
 			title: document.title,
 			content: document.blocks,
@@ -94,7 +99,9 @@ export default function PostWriteWorkspace({
 			// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 			visibility: 'PUBLIC',
 			thumbnailImageUrl,
-		});
+		};
+		const response =
+			postId === undefined ? await requestPostPublication(request) : await requestPostUpdate({ postId, request });
 
 		if (response.data === undefined) {
 			throw new Error('발행 응답에 게시글 정보가 없습니다.');
@@ -112,6 +119,7 @@ export default function PostWriteWorkspace({
 		leaveGuard,
 		drafts,
 	} = usePostWriteWorkspace({
+		isEditMode: postId !== undefined,
 		initialDocument,
 		initialPublicationSettings,
 		publishPost: publishPost ?? publishPostWithApi,
