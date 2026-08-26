@@ -138,3 +138,5 @@ export function usePostWriteWorkspace({
 		},
 	};
 }
+
+export type PostWriteWorkspaceState = ReturnType<typeof usePostWriteWorkspace>;

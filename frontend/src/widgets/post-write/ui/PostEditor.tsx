@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 
+import type { PostWriteWorkspaceState } from '../hooks/use-post-write-workspace';
 import type { ComponentType, ReactNode } from 'react';
 
 import type { CologOption } from '@/domains/blog/model/colog';
@@ -12,54 +13,34 @@ import type {
 	PostWriteEditorContext,
 	UploadPostBodyFile,
 } from '@/features/post-write/model/post-editor';
-import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
+import type { EditorDocument } from '@/features/post-write/model/post-publication';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
 import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal';
-import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
-
-import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 
 interface PostEditorProps {
 	children: (editor: PostWriteEditorContext) => ReactNode;
 	cologOptions: CologOption[];
-	publishPost: PublishPost;
+	workspace: PostWriteWorkspaceState;
 	uploadFile: UploadPostBodyFile;
 	editorComponent?: ComponentType<PostBodyEditorProps>;
 	initialDocument?: EditorDocument;
-	initialPublicationSettings?: PublicationSettings;
-	navigate?: (href: string) => void;
-	onPublished?: (settings: PublicationSettings) => void;
 }
 
 export default function PostEditor({
 	children,
 	cologOptions,
-	publishPost,
+	workspace,
 	uploadFile,
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
-	initialPublicationSettings,
-	navigate,
-	onPublished,
 }: PostEditorProps) {
 	useEffect(() => {
 		analytics.postEditorOpened();
 	}, []);
 
-	const {
-		isDirty,
-		document: postDocument,
-		publication,
-		leaveGuard,
-	} = usePostWriteWorkspace({
-		initialDocument,
-		initialPublicationSettings,
-		publishPost,
-		navigate,
-		onPublished,
-	});
+	const { isDirty, document: postDocument, publication } = workspace;
 
 	return (
 		<div className="min-h-dvh bg-background text-text-primary">
@@ -108,17 +89,6 @@ export default function PostEditor({
 				onCoLogChange={publication.handleCoLogChange}
 				onImageChange={publication.handleImageChange}
 				onPublish={() => void publication.publish()}
-			/>
-
-			<ConfirmModal
-				open={leaveGuard.isModalOpen}
-				title="작성 중인 글을 나갈까요?"
-				description="저장되지 않은 내용은 복구할 수 없습니다."
-				confirmLabel="나가기"
-				cancelLabel="계속 작성"
-				variant="danger"
-				onConfirm={leaveGuard.confirm}
-				onCancel={leaveGuard.cancel}
 			/>
 		</div>
 	);

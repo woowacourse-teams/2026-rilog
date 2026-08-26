@@ -13,7 +13,10 @@ import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish
 import { useUpdatePostMutation } from '@/shared/api/posts/mutations/use-update-post-mutation';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
+
+import { usePostWriteWorkspace } from '../hooks/use-post-write-workspace';
 
 import DraftPostActions from './DraftPostActions';
 import EditPostActions from './EditPostActions';
@@ -95,40 +98,56 @@ export default function PostWriteWorkspace({
 		return mapPostWriteResponse(await requestPostUpdate({ postId, request }));
 	};
 
-	return (
-		<PostEditor
-			cologOptions={cologOptions}
-			publishPost={publishPost ?? (isEditMode ? updatePublishedPost : publishNewPost)}
-			uploadFile={uploadFile ?? uploadPostBodyFileWithApi}
-			editorComponent={editorComponent}
-			initialDocument={initialDocument}
-			initialPublicationSettings={initialPublicationSettings}
-			navigate={navigate}
-			onPublished={
-				isEditMode
-					? undefined
-					: (settings) => {
-							analytics.postPublished({
-								category: settings.category,
-								hasCustomRepresentativeImage: settings.representativeImage !== null,
-							});
-						}
-			}
-		>
-			{(editor) => {
-				if (isEditMode) {
-					return <EditPostActions editor={editor} />;
-				}
+	const workspace = usePostWriteWorkspace({
+		initialDocument,
+		initialPublicationSettings,
+		publishPost: publishPost ?? (isEditMode ? updatePublishedPost : publishNewPost),
+		navigate,
+		onPublished: isEditMode
+			? undefined
+			: (settings) => {
+					analytics.postPublished({
+						category: settings.category,
+						hasCustomRepresentativeImage: settings.representativeImage !== null,
+					});
+				},
+	});
 
-				return (
-					<DraftPostActions
-						isEditorReady={editor.isEditorReady}
-						isPublishReady={editor.isEditorReady}
-						prepareDocument={editor.prepareDocument}
-						onPublish={editor.openPublishSettings}
-					/>
-				);
-			}}
-		</PostEditor>
+	return (
+		<>
+			<PostEditor
+				workspace={workspace}
+				cologOptions={cologOptions}
+				uploadFile={uploadFile ?? uploadPostBodyFileWithApi}
+				editorComponent={editorComponent}
+				initialDocument={initialDocument}
+			>
+				{(editor) => {
+					if (isEditMode) {
+						return <EditPostActions editor={editor} />;
+					}
+
+					return (
+						<DraftPostActions
+							isEditorReady={editor.isEditorReady}
+							isPublishReady={editor.isEditorReady}
+							prepareDocument={editor.prepareDocument}
+							onPublish={editor.openPublishSettings}
+						/>
+					);
+				}}
+			</PostEditor>
+
+			<ConfirmModal
+				open={workspace.leaveGuard.isModalOpen}
+				title="작성 중인 글을 나갈까요?"
+				description="저장되지 않은 내용은 복구할 수 없습니다."
+				confirmLabel="나가기"
+				cancelLabel="계속 작성"
+				variant="danger"
+				onConfirm={workspace.leaveGuard.confirm}
+				onCancel={workspace.leaveGuard.cancel}
+			/>
+		</>
 	);
 }
