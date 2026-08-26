@@ -2,6 +2,8 @@ import { ServerBlockNoteEditor } from '@blocknote/server-util';
 
 import type { Block } from '@blocknote/core';
 
+import { extractPostHeadingAnchors } from './extract-post-table-of-contents';
+
 interface ServerBlockNoteEditorWithDom {
 	jsdom: {
 		reconfigure: (settings: { url: string }) => void;
@@ -15,7 +17,7 @@ const POST_DETAIL_TOGGLE_BUTTON_SELECTOR = ':scope > .bn-toggle-button';
 const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
 const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
 
-const enhancePostDetailHtml = (html: string, document: Document): string => {
+const enhancePostDetailHtml = (html: string, document: Document, headingIdByBlockId: Map<string, string>): string => {
 	const container = document.createElement('div');
 	container.innerHTML = html;
 
@@ -25,9 +27,9 @@ const enhancePostDetailHtml = (html: string, document: Document): string => {
 			return;
 		}
 
-		const blockId = headingBlock.dataset.id;
-		if (blockId !== undefined) {
-			headingBlock.id = blockId;
+		const headingId = headingIdByBlockId.get(headingBlock.dataset.id ?? '');
+		if (headingId !== undefined) {
+			headingBlock.id = headingId;
 		}
 	});
 
@@ -58,6 +60,7 @@ const enhancePostDetailHtml = (html: string, document: Document): string => {
 };
 
 export const renderPostDetailContent = async (blocks: Block[]): Promise<string> => {
+	const headingIdByBlockId = new Map(extractPostHeadingAnchors(blocks).map(({ blockId, id }) => [blockId, id]));
 	const editor = ServerBlockNoteEditor.create();
 
 	// BlockNote 0.53은 URL 없는 JSDOM을 사용해 이미지 등 일부 블록 렌더링 중 localStorage 접근이 실패한다.
@@ -67,5 +70,5 @@ export const renderPostDetailContent = async (blocks: Block[]): Promise<string> 
 	const html = await editor.blocksToFullHTML(blocks);
 	const document = (editor as unknown as ServerBlockNoteEditorWithDom).jsdom.window.document;
 
-	return enhancePostDetailHtml(html, document);
+	return enhancePostDetailHtml(html, document, headingIdByBlockId);
 };

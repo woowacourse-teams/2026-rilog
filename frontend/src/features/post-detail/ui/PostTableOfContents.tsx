@@ -75,7 +75,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 						return (
 							<li key={item.id} className={INDENT_CLASS_BY_LEVEL[item.level]}>
 								<a
-									href={`#${item.id}`}
+									href={`#${encodeURIComponent(item.id)}`}
 									aria-current={isActive ? 'location' : undefined}
 									className={`block rounded-sm text-label-2 transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${isActive ? 'font-semibold text-brand-primary' : 'text-text-placeholder'}`}
 									onClick={(event) => handleAnchorClick(event, item.id)}

@@ -95,12 +95,13 @@ describe('renderPostDetailContent', () => {
 
 	it('목차 대상 헤딩의 바깥 블록에 고유한 DOM id를 부여한다', async () => {
 		const html = await renderPostDetailContent(HEADING_BLOCKS);
+		const expectedHeadingIds = ['첫-번째-제목', '두-번째-제목', '세-번째-제목'];
 
-		[1, 2, 3].forEach((level) => {
+		expectedHeadingIds.forEach((headingId, index) => {
 			expect(html).toMatch(
-				new RegExp(`class="bn-block-outer"[^>]*data-id="heading-level-${level}"[^>]*id="heading-level-${level}"`),
+				new RegExp(`class="bn-block-outer"[^>]*data-id="heading-level-${index + 1}"[^>]*id="${headingId}"`),
 			);
-			expect(html.match(new RegExp(`\\sid="heading-level-${level}"`, 'g'))).toHaveLength(1);
+			expect(html.match(new RegExp(`\\sid="${headingId}"`, 'g'))).toHaveLength(1);
 		});
 		expect(html).not.toMatch(/\sid="paragraph-block"/);
 	});
