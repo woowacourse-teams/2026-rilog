@@ -25,8 +25,8 @@ public class PostController implements PostApiSpec {
     private final PostService postService;
 
     @AuthGuard
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/posts")
+    @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PostPublishResponse> create(
             @LoginUserId Long requesterId,
             @Valid @RequestBody PostPublishRequest request
@@ -66,6 +66,7 @@ public class PostController implements PostApiSpec {
 
     @AuthGuard
     @DeleteMapping("/posts/{postId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> deletePublishedPost(
             @PathVariable Long postId,
             @LoginUserId Long requesterId

@@ -10,10 +10,7 @@ import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1")
@@ -24,6 +21,7 @@ public class DraftController {
 
     @AuthGuard
     @PostMapping("/drafts")
+    @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DraftIdResponse> saveDraft(
             @LoginUserId Long userId,
             @Valid @RequestBody DraftSaveCommand command
