@@ -3,22 +3,7 @@ import type { Block } from '@blocknote/core';
 export type PostCategoryRequest = 'TECH' | 'DAILY';
 export type PostVisibilityRequest = 'PUBLIC' | 'PRIVATE';
 
-export interface PostPublishRequest {
-	slug: string;
-	title: string;
-	content: Block[];
-	category: PostCategoryRequest;
-	visibility: PostVisibilityRequest;
-	thumbnailImageUrl: string | null;
-	profileImageUrl: string | null;
-}
-
-export interface PostPublishResponse {
-	postId: number;
-	slug: string;
-}
-
-export interface PostUpdateRequest {
+export interface PostWriteRequest {
 	slug: string;
 	title: string;
 	content: Block[];
@@ -27,7 +12,7 @@ export interface PostUpdateRequest {
 	thumbnailImageUrl: string | null;
 }
 
-export interface PostUpdateResponse {
+export interface PostWriteResponse {
 	postId: number;
 	slug: string;
 }

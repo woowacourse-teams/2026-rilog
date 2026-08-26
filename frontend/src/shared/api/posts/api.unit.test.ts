@@ -34,7 +34,6 @@ describe('publishPost', () => {
 			category: 'TECH' as const,
 			visibility: 'PUBLIC' as const,
 			thumbnailImageUrl: 'posts/cover.png',
-			profileImageUrl: null,
 		};
 
 		await expect(publishPost(requestBody)).resolves.toEqual(responseBody);
@@ -108,7 +107,7 @@ describe('updatePost', () => {
 			content: [],
 			category: 'TECH' as const,
 			visibility: 'PUBLIC' as const,
-			thumbnailImageUrl: 'posts/updated-cover.png',
+			thumbnailImageUrl: null,
 		};
 
 		await expect(updatePost(42, requestBody)).resolves.toEqual(responseBody);

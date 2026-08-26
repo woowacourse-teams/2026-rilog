@@ -38,7 +38,6 @@ describe('usePublishPostMutation', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: null,
-			profileImageUrl: null,
 		});
 
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });

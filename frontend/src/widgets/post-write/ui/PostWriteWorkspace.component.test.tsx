@@ -7,14 +7,14 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
-import type { PostPublishRequest, PostPublishResponse } from '@/shared/api/posts/types';
+import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
-type RequestPostPublication = (request: PostPublishRequest) => Promise<ApiResponse<PostPublishResponse>>;
+type RequestPostPublication = (request: PostWriteRequest) => Promise<ApiResponse<PostWriteResponse>>;
 
 const {
 	postEditorOpenedMock,
@@ -580,7 +580,6 @@ describe('PostWriteWorkspace', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: 'posts/cover-object-key.png',
-			profileImageUrl: 'profile/object-key.png',
 		});
 
 		unmount();

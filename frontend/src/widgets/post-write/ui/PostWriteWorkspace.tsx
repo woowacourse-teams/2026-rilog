@@ -18,7 +18,6 @@ import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBa
 import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish-post-mutation';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
-import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
@@ -45,7 +44,6 @@ export default function PostWriteWorkspace({
 		analytics.postEditorOpened();
 	}, []);
 
-	const { data: myInfoResponse } = useMyInfoQuery();
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
@@ -61,7 +59,6 @@ export default function PostWriteWorkspace({
 	);
 	const resolvedUploadFile = uploadFile ?? uploadPostBodyFileWithApi;
 
-	const myInfo = myInfoResponse?.data;
 	const cologOptions = useMemo(() => {
 		const availableBlogs =
 			myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
@@ -97,7 +94,6 @@ export default function PostWriteWorkspace({
 			// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 			visibility: 'PUBLIC',
 			thumbnailImageUrl,
-			profileImageUrl: myInfo?.profileImageUrl ?? null,
 		});
 
 		if (response.data === undefined) {
