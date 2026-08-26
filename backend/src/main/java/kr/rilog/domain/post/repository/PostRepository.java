@@ -4,6 +4,9 @@ package kr.rilog.domain.post.repository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.repository.projection.DraftListRow;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +16,24 @@ import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+    @Query("""
+            SELECT new kr.rilog.domain.post.repository.projection.DraftListRow(
+                post.id,
+                post.title,
+                post.publishedAt
+            )
+            FROM Post post
+            WHERE post.user.id = :writerId
+              AND post.status = :status
+              AND post.deletedAt IS NULL
+            ORDER BY post.publishedAt DESC, post.id DESC
+            """)
+    Slice<DraftListRow> findDraftsByWriterId(
+            @Param("writerId") Long writerId,
+            @Param("status") PostStatus status,
+            Pageable pageable
+    );
 
     long countByStatusAndVisibility(PostStatus status, PostVisibility visibility);
 

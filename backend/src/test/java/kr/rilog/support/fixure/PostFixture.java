@@ -32,6 +32,34 @@ public final class PostFixture {
         return new DraftSaveCommand(DEFAULT_TITLE, content());
     }
 
+    public static Post draftRilogPostAt(
+            Blog rilog,
+            User writer,
+            String title,
+            LocalDateTime publishedAt
+    ) {
+        return Post.builder()
+                .user(writer)
+                .rilog(rilog)
+                .title(title)
+                .content(content())
+                .status(PostStatus.DRAFT)
+                .visibility(PostVisibility.PRIVATE)
+                .publishedAt(publishedAt)
+                .build();
+    }
+
+    public static Post deletedDraftRilogPostAt(
+            Blog rilog,
+            User writer,
+            String title,
+            LocalDateTime publishedAt
+    ) {
+        Post post = draftRilogPostAt(rilog, writer, title, publishedAt);
+        post.delete();
+        return post;
+    }
+
     public static PostSaveCommand publicPostPublishCommand(String slug) {
         return new PostSaveCommand(
                 slug,
