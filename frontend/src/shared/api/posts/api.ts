@@ -35,3 +35,5 @@ export const updatePost = (postId: number, request: PostWriteRequest) => {
 
 	return apiClient.put<ApiResponse<PostWriteResponse>>(`v1/posts/${postId}`, { json: body });
 };
+
+export const deletePost = (postId: number) => apiClient.delete(`v1/posts/${postId}`);
