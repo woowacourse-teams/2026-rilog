@@ -169,13 +169,15 @@ public class PostService {
     }
 
     private void validateCanDeletePublishedPost(Post post, Long requesterId) {
-        if (post.isWrittenBy(requesterId)) {
+        if (post.isCologAffiliated() && hasCologDeletePermission(post, requesterId)) {
             return;
         }
 
-        if (!hasCologDeletePermission(post, requesterId)) {
-            throw new PostException(POST_DELETE_FORBIDDEN);
+        if (!post.isCologAffiliated() && post.isWrittenBy(requesterId)) {
+            return;
         }
+
+        throw new PostException(POST_DELETE_FORBIDDEN);
     }
 
     private boolean hasCologDeletePermission(Post post, Long requesterId) {

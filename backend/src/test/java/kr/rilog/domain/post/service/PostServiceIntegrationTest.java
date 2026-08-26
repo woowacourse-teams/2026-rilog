@@ -559,8 +559,8 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("팀 블로그에서 탈퇴한 작성자도 자신의 발행된 게시글을 삭제할 수 있다.")
-    void leftWriterDeletesOwnPublishedCologPost() {
+    @DisplayName("팀 블로그에서 탈퇴한 작성자는 자신의 발행된 게시글을 삭제할 수 없다.")
+    void leftWriterCannotDeleteOwnPublishedCologPost() {
         // given
         User owner = saveCompletedUser(102L, "삭제팀주인", "delete-colog-owner");
         Blog colog = saveColog(owner, "delete-writer-colog");
@@ -569,12 +569,31 @@ class PostServiceIntegrationTest extends ServiceSupport {
         saveLeftMember(colog, writer);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
-        // when
-        postService.deletePublishedPost(post.getId(), writer.getId());
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), writer.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
 
-        // then
-        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
-        assertThat(deletedPost.getDeletedAt()).isNotNull();
+        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그의 일반 멤버는 자신이 작성한 게시글을 삭제할 수 없다.")
+    void cologMemberCannotDeleteOwnPost() {
+        // given
+        User owner = saveCompletedUser(122L, "자기글팀주인", "own-post-owner");
+        Blog colog = saveColog(owner, "own-post-colog");
+        User writer = saveCompletedUser(123L, "자기글작성자", "own-post-writer");
+        Blog rilog = saveRilog(writer);
+        saveActiveMember(colog, writer);
+        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
+
+        // when & then
+        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), writer.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
+
+        assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNull();
     }
 
     @Test
