@@ -3,6 +3,7 @@ package kr.rilog.domain.post.controller;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.post.controller.apispec.DraftApiSpec;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.service.DraftService;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/v1")
 @RequiredArgsConstructor
-public class DraftController {
+public class DraftController implements DraftApiSpec {
 
     private final DraftService draftService;
 

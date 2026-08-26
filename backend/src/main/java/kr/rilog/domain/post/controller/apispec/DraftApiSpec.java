@@ -9,7 +9,7 @@ import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "임시저장 목록 조회 API")
+@Tag(name = "임시저장 API")
 public interface DraftApiSpec {
 
     @Operation(
