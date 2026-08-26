@@ -64,7 +64,7 @@ test.describe('팀 프로필 설정', () => {
 		await expect(page.getByRole('button', { name: '변경사항 저장' })).toBeEnabled();
 		await page.getByRole('button', { name: '팀 이름 중복 확인' }).click();
 		await expect(nameInput).toHaveAccessibleDescription(/사용가능/);
-		const saveRequest = page.waitForRequest('**/v1/cologs/rilog/profiles');
+		const saveRequest = page.waitForRequest('**/v1/blogs/rilog/profiles');
 		await page.getByRole('button', { name: '변경사항 저장' }).click();
 		const request = await saveRequest;
 		expect(request.method()).toBe('PATCH');

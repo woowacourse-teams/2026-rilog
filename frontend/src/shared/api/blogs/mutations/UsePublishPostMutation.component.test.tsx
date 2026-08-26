@@ -34,14 +34,12 @@ describe('usePublishPostMutation', () => {
 
 		await result.current.mutateAsync({
 			slug: 'rilog',
-			request: {
-				title: '새 글',
-				content: [],
-				category: 'TECH',
-				visibility: 'PUBLIC',
-				thumbnailImageUrl: null,
-				profileImageUrl: null,
-			},
+			title: '새 글',
+			content: [],
+			category: 'TECH',
+			visibility: 'PUBLIC',
+			thumbnailImageUrl: null,
+			profileImageUrl: null,
 		});
 
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
