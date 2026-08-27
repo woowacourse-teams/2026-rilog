@@ -182,6 +182,20 @@
 	}
 }
 
+:is(.post-detail-body, .post-write-blocknote)
+	.bn-block-content:not([data-content-type='codeBlock'])
+	.bn-inline-content
+	code {
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+	border-radius: 0.25rem;
+	background: var(--inline-code-background);
+	color: var(--inline-code-text);
+	padding: 0.125rem 0.25rem;
+	font-size: 0.875em;
+	font-weight: 500;
+}
+
 :is(.post-detail-body, .post-write-blocknote) .bn-toggle-add-block-button {
 	padding: 0.25rem 0.5rem;
 }

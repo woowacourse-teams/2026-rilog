@@ -65,6 +65,8 @@
 	--text-placeholder: var(--neutral-500);
 	--link-text: var(--navy-700);
 	--link-text-interactive: var(--blue-600);
+	--inline-code-background: var(--navy-100);
+	--inline-code-text: var(--navy-800);
 	--quote-text: var(--navy-700);
 	--quote-border: var(--navy-500);
 

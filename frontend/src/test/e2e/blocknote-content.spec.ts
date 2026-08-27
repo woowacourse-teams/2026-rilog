@@ -80,6 +80,37 @@ const LIST_TYPES = ['bulletListItem', 'numberedListItem', 'checkListItem', 'togg
 
 test.describe('BlockNote 콘텐츠 여백', () => {
 	for (const rootClass of ['post-detail-body', 'post-write-blocknote'] as const) {
+		test(`${rootClass}의 인라인 코드를 코드 블록과 구분해 표시한다`, async ({ page }) => {
+			await renderBlockNoteFixture(
+				page,
+				rootClass,
+				[
+					{
+						contentType: 'paragraph',
+						innerHtml: '<div class="bn-inline-content">본문 <code>const value</code> 설명</div>',
+					},
+					{
+						contentType: 'codeBlock',
+						innerHtml: '<pre><code class="bn-inline-content">const value = 1;</code></pre>',
+					},
+				],
+				true,
+			);
+
+			const inlineCode = page.locator('[data-content-type="paragraph"] code');
+			const blockCode = page.locator('[data-content-type="codeBlock"] code');
+
+			await expect(inlineCode).toHaveCSS('background-color', 'rgb(237, 241, 247)');
+			await expect(inlineCode).toHaveCSS('color', 'rgb(12, 45, 91)');
+			await expect(inlineCode).toHaveCSS('font-size', '14px');
+			await expect(inlineCode).toHaveCSS('font-weight', '500');
+			await expect(inlineCode).toHaveCSS('padding', '2px 4px');
+			await expect(inlineCode).toHaveCSS('border-radius', '4px');
+			await expect(blockCode).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+		});
+	}
+
+	for (const rootClass of ['post-detail-body', 'post-write-blocknote'] as const) {
 		test(`${rootClass}의 토글, 링크와 인용문에 서비스 본문 스타일을 적용한다`, async ({ page }) => {
 			await renderBlockNoteFixture(
 				page,
