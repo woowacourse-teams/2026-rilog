@@ -1,7 +1,7 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
-import kr.rilog.domain.auth.application.oauth.OAuthLoginAttempt;
-import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.model.OAuthLoginAttempt;
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

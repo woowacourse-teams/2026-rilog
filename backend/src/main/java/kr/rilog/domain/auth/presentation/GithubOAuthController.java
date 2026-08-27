@@ -1,9 +1,9 @@
 package kr.rilog.domain.auth.presentation;
 
-import kr.rilog.domain.auth.application.oauth.CompleteOAuthLogin;
-import kr.rilog.domain.auth.application.oauth.OAuthLoginResult;
-import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
-import kr.rilog.domain.auth.application.oauth.StartOAuthLogin;
+import kr.rilog.domain.auth.application.oauth.usecase.CompleteOAuthLogin;
+import kr.rilog.domain.auth.application.oauth.model.OAuthLoginResult;
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.usecase.StartOAuthLogin;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.login.LoginTokenIssueService;
 import kr.rilog.domain.auth.application.token.login.LoginTokenResult;

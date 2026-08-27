@@ -86,14 +86,6 @@ public class UserService {
         }
     }
 
-    private void createRilogIfAbsent(User user) {
-        if (blogRepository.findRilogByOwnerId(user.getId()).isPresent()) {
-            return;
-        }
-
-        blogRepository.save(Blog.createRilog(user));
-    }
-
     private void createRilog(User user) {
         Blog rilog = blogRepository.save(Blog.createRilog(user));
         createRilogMember(rilog, user);

@@ -28,6 +28,37 @@ const DEFAULT_TEXT_PROPS = {
 
 const text = (value: string) => [{ type: 'text' as const, text: value, styles: {} }];
 
+const HEADING_BLOCKS: Block[] = [
+	{
+		id: 'heading-level-1',
+		type: 'heading',
+		props: { ...DEFAULT_TEXT_PROPS, level: 1, isToggleable: false },
+		content: text('첫 번째 제목'),
+		children: [],
+	},
+	{
+		id: 'heading-level-2',
+		type: 'heading',
+		props: { ...DEFAULT_TEXT_PROPS, level: 2, isToggleable: false },
+		content: text('두 번째 제목'),
+		children: [],
+	},
+	{
+		id: 'heading-level-3',
+		type: 'heading',
+		props: { ...DEFAULT_TEXT_PROPS, level: 3, isToggleable: false },
+		content: text('세 번째 제목'),
+		children: [],
+	},
+	{
+		id: 'paragraph-block',
+		type: 'paragraph',
+		props: DEFAULT_TEXT_PROPS,
+		content: text('본문'),
+		children: [],
+	},
+];
+
 const TOGGLE_BLOCKS: Block[] = [
 	{
 		id: 'toggle-heading',
@@ -60,6 +91,19 @@ describe('renderPostDetailContent', () => {
 
 		expect(html).toContain('<img');
 		expect(html).toContain('src="https://images.rilog.test/post.png"');
+	});
+
+	it('목차 대상 헤딩의 바깥 블록에 고유한 DOM id를 부여한다', async () => {
+		const html = await renderPostDetailContent(HEADING_BLOCKS);
+		const expectedHeadingIds = ['첫-번째-제목', '두-번째-제목', '세-번째-제목'];
+
+		expectedHeadingIds.forEach((headingId, index) => {
+			expect(html).toMatch(
+				new RegExp(`class="bn-block-outer"[^>]*data-id="heading-level-${index + 1}"[^>]*id="${headingId}"`),
+			);
+			expect(html.match(new RegExp(`\\sid="${headingId}"`, 'g'))).toHaveLength(1);
+		});
+		expect(html).not.toMatch(/\sid="paragraph-block"/);
 	});
 
 	it('토글 블록을 접힌 접근 가능한 마크업으로 변환한다', async () => {
