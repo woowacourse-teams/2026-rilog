@@ -1,8 +1,10 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import type { MouseEvent } from 'react';
+
+import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 
 interface PostDetailContentProps {
 	html: string;
@@ -30,12 +32,17 @@ const setToggleExpanded = (toggleButton: HTMLButtonElement, isExpanded: boolean)
 
 export default function PostDetailContent({ html, postId }: PostDetailContentProps) {
 	const contentRef = useRef<HTMLElement>(null);
+	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
 	const currentPostIdRef = useRef(postId);
 	const expandedToggleIdsRef = useRef(new Set<string>());
+	const setContentRef = useCallback((element: HTMLElement | null) => {
+		contentRef.current = element;
+		setContentElement(element);
+	}, []);
 
 	useLayoutEffect(() => {
-		const contentElement = contentRef.current;
-		if (contentElement === null) {
+		const articleElement = contentRef.current;
+		if (articleElement === null) {
 			return;
 		}
 
@@ -44,7 +51,7 @@ export default function PostDetailContent({ html, postId }: PostDetailContentPro
 			expandedToggleIdsRef.current.clear();
 		}
 
-		contentElement
+		articleElement
 			.querySelectorAll<HTMLButtonElement>('button[data-post-detail-toggle][aria-controls]')
 			.forEach((toggleButton) => {
 				const toggleId = toggleButton.getAttribute('aria-controls');
@@ -76,12 +83,13 @@ export default function PostDetailContent({ html, postId }: PostDetailContentPro
 
 	return (
 		<article
-			ref={contentRef}
+			ref={setContentRef}
 			className="post-detail-body bn-root bn-container"
 			aria-label="게시글 본문"
 			onClick={handleToggleClick}
 		>
 			<div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: html }} />
+			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
 		</article>
 	);
 }

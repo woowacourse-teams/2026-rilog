@@ -89,6 +89,79 @@ const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
 };
 
 test.describe('글 작성', () => {
+	test('코드 블록에서 언어를 선택하고 구문을 강조한다', async ({ page }) => {
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드 블록');
+		await page.keyboard.press('Enter');
+
+		const codeBlock = page.locator('[data-content-type="codeBlock"]');
+		const languageTrigger = page.getByRole('button', { name: '코드 언어: JavaScript' });
+		await expect(codeBlock).toBeVisible();
+		await expect(codeBlock).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+		await expect(codeBlock).toHaveCSS('color', 'rgb(31, 35, 40)');
+		await expect(languageTrigger).toHaveAttribute('aria-expanded', 'false');
+		await page.keyboard.type('const message = "highlighted";');
+
+		await expect.poll(() => codeBlock.locator('span.shiki').count()).toBeGreaterThan(0);
+		expect(
+			await codeBlock
+				.locator('span.shiki')
+				.evaluateAll((elements) => new Set(elements.map((element) => getComputedStyle(element).color)).size),
+		).toBeGreaterThan(1);
+
+		await languageTrigger.click();
+		const languageListbox = page.getByRole('listbox', { name: '코드 언어' });
+		const triggerBox = await languageTrigger.boundingBox();
+		const codeBox = await codeBlock.locator('pre').boundingBox();
+		expect(triggerBox).not.toBeNull();
+		expect(codeBox).not.toBeNull();
+		expect(triggerBox!.y + triggerBox!.height).toBeLessThanOrEqual(codeBox!.y);
+		await expect(languageListbox).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+		await expect(languageListbox).toHaveCSS('max-height', '288px');
+		await expect(languageListbox).toHaveCSS('overflow-y', 'auto');
+		expect(await languageListbox.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+		await page.getByRole('option', { name: 'TypeScript' }).click();
+		const typescriptTrigger = page.getByRole('button', { name: '코드 언어: TypeScript' });
+		await expect(typescriptTrigger).toBeVisible();
+		await expect(codeBlock).toHaveAttribute('data-language', 'typescript');
+
+		await typescriptTrigger.click();
+		await page.getByRole('option', { name: 'Plain Text' }).click();
+		await expect(codeBlock).toHaveAttribute('data-language', 'text');
+		await expect(codeBlock.locator('span.shiki')).toHaveCount(0);
+		await expect(codeBlock.locator('pre > code')).toHaveCSS('color', 'rgb(31, 35, 40)');
+	});
+
+	test('Mermaid 코드블록을 다이어그램으로 미리보기한다', async ({ page }) => {
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드 블록');
+		await page.keyboard.press('Enter');
+
+		const codeBlock = page.locator('[data-content-type="codeBlock"]');
+		await page.getByRole('button', { name: '코드 언어: JavaScript' }).click();
+		await page.getByRole('option', { name: 'Mermaid' }).click();
+		await expect(codeBlock).toHaveAttribute('data-language', 'mermaid');
+
+		await codeBlock.locator('pre').click();
+		await page.keyboard.type('graph TD');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('A[Start] --> B[End]');
+
+		const diagram = page.getByRole('img', { name: 'Mermaid 다이어그램 미리보기' });
+		await expect(diagram).toBeVisible({ timeout: 15_000 });
+		await expect(diagram).toHaveCSS('border-top-width', '0px');
+		await expect(diagram.locator('svg')).toBeVisible();
+		await expect(diagram.locator('.nodeLabel').first()).toHaveCSS('font-size', '14px');
+		await expect(diagram).toContainText('Start');
+		await expect(diagram).toContainText('End');
+	});
+
 	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
 		await enableWriteAccess(page);
 		await page.route('**/v1/posts/31', (route) =>

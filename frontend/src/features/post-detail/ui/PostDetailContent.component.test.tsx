@@ -1,8 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import { renderMermaidDiagram } from '@/shared/lib/render-mermaid-diagram';
 
 import PostDetailContent from './PostDetailContent';
+
+vi.mock('@/shared/lib/render-mermaid-diagram', () => ({
+	renderMermaidDiagram: vi.fn(() => Promise.resolve('<svg><text>Rendered diagram</text></svg>')),
+}));
 
 const TOGGLE_HTML = `
 	<div class="bn-block">
@@ -47,6 +53,23 @@ const getToggleButtonByContent = (content: string): HTMLButtonElement => {
 };
 
 describe('PostDetailContent', () => {
+	it('Mermaid 코드블록을 상세 다이어그램으로 렌더링한다', async () => {
+		const html = `
+			<div class="bn-block-outer" data-id="mermaid-block">
+				<div class="bn-block">
+					<div class="bn-block-content" data-content-type="codeBlock" data-language="mermaid">
+						<pre><code>graph TD; A--&gt;B</code></pre>
+					</div>
+				</div>
+			</div>
+		`;
+		render(<PostDetailContent html={html} postId={1} />);
+
+		const diagram = await screen.findByRole('img', { name: 'Mermaid 다이어그램' });
+		expect(diagram.querySelector('svg')).toHaveTextContent('Rendered diagram');
+		expect(vi.mocked(renderMermaidDiagram)).toHaveBeenCalledWith(expect.any(String), 'graph TD; A-->B');
+	});
+
 	it('클릭과 키보드로 토글 상태와 접근성 속성을 동기화한다', async () => {
 		const user = userEvent.setup();
 		render(<PostDetailContent html={TOGGLE_HTML} postId={1} />);
