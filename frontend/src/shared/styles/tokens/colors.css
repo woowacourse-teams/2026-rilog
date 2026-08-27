@@ -43,13 +43,13 @@
 	--github-900: #24292f;
 	--github-950: #1b1f23;
 	--github-1000: #161b22;
-	--github-code-foreground: #e6edf3;
-	--github-code-comment: #8b949e;
-	--github-code-coral: #ff7b72;
-	--github-code-blue: #79c0ff;
-	--github-code-light-blue: #a5d6ff;
-	--github-code-purple: #d2a8ff;
-	--github-code-orange: #ffa657;
+	--github-code-foreground: #1f2328;
+	--github-code-comment: #59636e;
+	--github-code-coral: #cf222e;
+	--github-code-blue: #0550ae;
+	--github-code-light-blue: #0a3069;
+	--github-code-purple: #8250df;
+	--github-code-orange: #953800;
 
 	/* Semantic aliases */
 	--background: var(--neutral-50);
@@ -75,7 +75,7 @@
 	--on-brand-primary: var(--white);
 	--on-brand-secondary: var(--navy-900);
 
-	--code-syntax-background: var(--github-1000);
+	--code-syntax-background: var(--white);
 	--code-syntax-foreground: var(--github-code-foreground);
 	--code-syntax-token-constant: var(--github-code-blue);
 	--code-syntax-token-string: var(--github-code-light-blue);

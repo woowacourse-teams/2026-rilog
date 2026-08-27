@@ -110,6 +110,7 @@
 	width: 100%;
 	max-width: 100%;
 	background: var(--code-syntax-background);
+	color: var(--code-syntax-foreground);
 }
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock'] > pre {
@@ -125,6 +126,7 @@
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock'] > pre > code.bn-inline-content {
 	white-space: pre;
+	color: var(--code-syntax-foreground);
 }
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram) {

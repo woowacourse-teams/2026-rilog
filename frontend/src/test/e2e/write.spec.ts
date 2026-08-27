@@ -100,6 +100,8 @@ test.describe('글 작성', () => {
 		const codeBlock = page.locator('[data-content-type="codeBlock"]');
 		const languageTrigger = page.getByRole('button', { name: '코드 언어: JavaScript' });
 		await expect(codeBlock).toBeVisible();
+		await expect(codeBlock).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+		await expect(codeBlock).toHaveCSS('color', 'rgb(31, 35, 40)');
 		await expect(languageTrigger).toHaveAttribute('aria-expanded', 'false');
 		await page.keyboard.type('const message = "highlighted";');
 
@@ -122,8 +124,15 @@ test.describe('글 작성', () => {
 		await expect(languageListbox).toHaveCSS('overflow-y', 'auto');
 		expect(await languageListbox.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
 		await page.getByRole('option', { name: 'TypeScript' }).click();
-		await expect(page.getByRole('button', { name: '코드 언어: TypeScript' })).toBeVisible();
+		const typescriptTrigger = page.getByRole('button', { name: '코드 언어: TypeScript' });
+		await expect(typescriptTrigger).toBeVisible();
 		await expect(codeBlock).toHaveAttribute('data-language', 'typescript');
+
+		await typescriptTrigger.click();
+		await page.getByRole('option', { name: 'Plain Text' }).click();
+		await expect(codeBlock).toHaveAttribute('data-language', 'text');
+		await expect(codeBlock.locator('span.shiki')).toHaveCount(0);
+		await expect(codeBlock.locator('pre > code')).toHaveCSS('color', 'rgb(31, 35, 40)');
 	});
 
 	test('Mermaid 코드블록을 다이어그램으로 미리보기한다', async ({ page }) => {

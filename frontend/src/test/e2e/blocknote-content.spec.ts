@@ -109,12 +109,28 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 			true,
 		);
 
-		await expect(page.locator('[data-syntax="keyword"]')).toHaveCSS('color', 'rgb(255, 123, 114)');
-		await expect(page.locator('[data-syntax="string"]')).toHaveCSS('color', 'rgb(165, 214, 255)');
+		await expect(page.locator('[data-syntax="keyword"]')).toHaveCSS('color', 'rgb(207, 34, 46)');
+		await expect(page.locator('[data-syntax="string"]')).toHaveCSS('color', 'rgb(10, 48, 105)');
 		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"]')).toHaveCSS(
 			'background-color',
-			'rgb(22, 27, 34)',
+			'rgb(255, 255, 255)',
 		);
+	});
+
+	test('plain text 코드 블록은 라이트 전경색을 사용한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">plain text</code></pre>',
+				},
+			],
+			true,
+		);
+
+		await expect(page.locator('code.bn-inline-content')).toHaveCSS('color', 'rgb(31, 35, 40)');
 	});
 
 	test('긴 코드는 코드 블록 안에서만 가로 스크롤한다', async ({ page }) => {

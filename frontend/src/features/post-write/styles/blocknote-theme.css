@@ -63,6 +63,8 @@
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] {
 	flex-direction: column;
 	align-items: stretch;
+	background: var(--code-syntax-background);
+	color: var(--code-syntax-foreground);
 }
 
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > div {
@@ -72,6 +74,10 @@
 
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > pre {
 	padding-top: 0.75rem;
+}
+
+.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > pre > code.bn-inline-content {
+	color: var(--code-syntax-foreground);
 }
 
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > .mermaid-diagram {
@@ -97,14 +103,14 @@
 	border: 0;
 	border-radius: var(--post-code-language-radius);
 	background: transparent;
-	color: var(--on-brand-primary);
+	color: var(--text-secondary);
 	padding: 0.25rem 0.5rem;
 	opacity: 0.65;
 	cursor: pointer;
 }
 
 .post-write-code-language-trigger:hover {
-	color: var(--white);
+	color: var(--text-primary);
 	opacity: 1;
 }
 
