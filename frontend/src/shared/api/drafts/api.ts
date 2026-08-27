@@ -1,5 +1,7 @@
 import { apiClient } from '@/shared/api/client';
 import type {
+	DraftDetailRequest,
+	DraftDetailResponse,
 	DraftListRequest,
 	DraftListResponse,
 	DraftSaveRequest,
@@ -14,3 +16,6 @@ export const readMyDraftList = ({ page, size }: DraftListRequest) =>
 	apiClient.get<ApiResponse<DraftListResponse>>('v1/drafts/me', {
 		searchParams: { page, size },
 	});
+
+export const readDraftDetail = ({ draftId }: DraftDetailRequest) =>
+	apiClient.get<ApiResponse<DraftDetailResponse>>(`v1/drafts/${draftId}`);

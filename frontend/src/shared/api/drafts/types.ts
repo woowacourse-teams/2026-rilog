@@ -27,3 +27,17 @@ export interface DraftListResponse {
 	numberOfElements: number;
 	hasNext: boolean;
 }
+
+export interface DraftDetailRequest {
+	draftId: number;
+}
+
+export type DraftStatusResponse = 'PUBLISHED' | 'DRAFT';
+
+export interface DraftDetailResponse {
+	draftId: number;
+	title: string;
+	content: unknown;
+	status: DraftStatusResponse;
+	publishedAt: string;
+}

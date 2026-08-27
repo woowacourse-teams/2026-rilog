@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { DraftSaveRequest } from './types';
 
-import { readMyDraftList, saveDraft } from './api';
+import { readDraftDetail, readMyDraftList, saveDraft } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -70,5 +70,29 @@ describe('readMyDraftList', () => {
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/me?page=0&size=10');
+	});
+});
+
+describe('readDraftDetail', () => {
+	it('draftId를 resource 경로로 전달해 임시저장 상세를 조회한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '임시저장 글을 성공적으로 불러왔습니다.',
+			data: {
+				draftId: 42,
+				title: '작성 중인 게시글',
+				content: [],
+				status: 'DRAFT',
+				publishedAt: '2026-08-27T10:42:11.852Z',
+			},
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readDraftDetail({ draftId: 42 })).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
 	});
 });
