@@ -43,6 +43,7 @@ const renderBlockNoteFixture = async (
 	page: Page,
 	rootClass: 'post-detail-body' | 'post-write-blocknote',
 	contentTypes: Array<string | BlockFixture>,
+	shouldWrapInEditor = false,
 ) => {
 	const [blockNoteCoreStyles, sharedStyles, rootStyles] = await Promise.all([
 		readFile(BLOCKNOTE_CORE_STYLES, 'utf8'),
@@ -50,11 +51,11 @@ const renderBlockNoteFixture = async (
 		readFile(rootClass === 'post-detail-body' ? POST_DETAIL_STYLES : POST_WRITE_STYLES, 'utf8'),
 	]);
 
-	await page.setContent(
-		`<div class="${rootClass}"><div class="bn-block-group">${contentTypes.map(block).join('')}</div></div>`,
-	);
+	const blockGroup = `<div class="bn-block-group">${contentTypes.map(block).join('')}</div>`;
+	const content = shouldWrapInEditor ? `<div class="bn-editor bn-default-styles">${blockGroup}</div>` : blockGroup;
+	await page.setContent(`<div class="${rootClass}">${content}</div>`);
 	await page.addStyleTag({
-		content: `:root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
+		content: `* { box-sizing: border-box; } :root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
 	});
 };
 
@@ -77,14 +78,50 @@ const LIST_TYPES = ['bulletListItem', 'numberedListItem', 'checkListItem', 'togg
 
 test.describe('BlockNote 콘텐츠 여백', () => {
 	test('상세 코드 블록은 14px 글자 크기를 사용한다', async ({ page }) => {
-		await renderBlockNoteFixture(page, 'post-detail-body', [
-			{
-				contentType: 'codeBlock',
-				innerHtml: '<pre><code data-language="typescript">const value = 14;</code></pre>',
-			},
-		]);
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">const value = 14;</code></pre>',
+				},
+			],
+			true,
+		);
 
 		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"] > pre')).toHaveCSS('font-size', '14px');
+	});
+
+	test('긴 코드는 코드 블록 안에서만 가로 스크롤한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: `<pre><code class="bn-inline-content">const longValue = '${'가로로 긴 코드'.repeat(30)}';</code></pre>`,
+				},
+			],
+			true,
+		);
+		await page.locator('.post-detail-body').evaluate((element) => {
+			(element as HTMLElement).style.width = '15rem';
+		});
+
+		const codeScroller = page.locator('.bn-block-content[data-content-type="codeBlock"] > pre');
+		await expect(codeScroller).toHaveCSS('overflow-x', 'auto');
+		expect(await codeScroller.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+		expect(
+			await codeScroller.evaluate((element) => {
+				element.scrollLeft = 100;
+
+				return element.scrollLeft > 0;
+			}),
+		).toBe(true);
+		expect(
+			await page.locator('.post-detail-body').evaluate((element) => element.scrollWidth === element.clientWidth),
+		).toBe(true);
 	});
 
 	test('상세 본문의 연속 문단 사이에만 간격을 둔다', async ({ page }) => {
