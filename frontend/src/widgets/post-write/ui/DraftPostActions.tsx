@@ -12,6 +12,7 @@ import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 interface DraftPostActionsProps {
 	selectedDraftId?: number;
 	isEditorReady: boolean;
+	isSaveReady: boolean;
 	isPublishReady: boolean;
 	prepareDocument: () => EditorDocument | null;
 	onSave?: (document: EditorDocument) => void | Promise<void>;
@@ -21,6 +22,7 @@ interface DraftPostActionsProps {
 export default function DraftPostActions({
 	selectedDraftId,
 	isEditorReady,
+	isSaveReady,
 	isPublishReady,
 	prepareDocument,
 	onSave,
@@ -51,7 +53,7 @@ export default function DraftPostActions({
 					<DraftWriteActionButtons
 						draftCount={drafts.posts.length}
 						isEditorReady={isEditorReady}
-						isSaveReady={isPublishReady}
+						isSaveReady={isSaveReady}
 						onSave={drafts.save}
 						onListShow={drafts.openList}
 					/>

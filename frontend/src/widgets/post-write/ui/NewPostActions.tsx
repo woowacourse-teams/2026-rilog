@@ -15,6 +15,7 @@ export default function NewPostActions({ editor, createDraft, onDraftCreated }: 
 	return (
 		<DraftPostActions
 			isEditorReady={editor.isEditorReady}
+			isSaveReady={editor.isEditorReady}
 			isPublishReady={editor.isEditorReady}
 			prepareDocument={editor.prepareDocument}
 			onSave={
@@ -22,6 +23,7 @@ export default function NewPostActions({ editor, createDraft, onDraftCreated }: 
 					? undefined
 					: async (document) => {
 							const result = await createDraft(document);
+							editor.markClean();
 							onDraftCreated(result.draftId);
 						}
 			}

@@ -327,15 +327,20 @@ describe('NewPostController', () => {
 		});
 		expect(`${window.location.pathname}${window.location.search}`).toBe('/write?draftId=123');
 
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		expect(saveButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		expect(saveButton).toBeEnabled();
 		await user.click(screen.getByRole('button', { name: '임시저장' }));
 		await waitFor(() => expect(requestDraftOverwriteMock).toHaveBeenCalledOnce());
 		expect(requestDraftOverwriteMock).toHaveBeenCalledWith({
 			draftId: 123,
 			request: {
-				title: 'BlockNote 도입기',
+				title: 'BlockNote 도입기 수정',
 				content: [createParagraph('오늘 배운 내용을 기록합니다.')],
 			},
 		});
+		await waitFor(() => expect(saveButton).toBeDisabled());
 	});
 
 	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
@@ -371,11 +376,15 @@ describe('NewPostController', () => {
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
 		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('BlockNote 도입기');
 
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		expect(saveButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
 		await user.click(screen.getByRole('button', { name: '임시저장' }));
 
 		await waitFor(() => expect(updateDraft).toHaveBeenCalledOnce());
 		expect(updateDraft.mock.calls[0]?.[0]).toBe(123);
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
+		await waitFor(() => expect(saveButton).toBeDisabled());
 	});
 
 	it('불러온 임시저장 글을 현재 draftId로 덮어쓴다', async () => {
@@ -390,14 +399,17 @@ describe('NewPostController', () => {
 		);
 
 		const saveButton = screen.getByRole('button', { name: '임시저장' });
-		await waitFor(() => expect(saveButton).toBeEnabled());
+		expect(saveButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		expect(saveButton).toBeEnabled();
 		await user.click(saveButton);
 
 		await waitFor(() => expect(requestDraftOverwriteMock).toHaveBeenCalledOnce());
 		expect(requestDraftOverwriteMock).toHaveBeenCalledWith({
 			draftId: 42,
-			request: { title: '기존 임시저장 제목', content: blocks },
+			request: { title: '기존 임시저장 제목 수정', content: blocks },
 		});
+		await waitFor(() => expect(saveButton).toBeDisabled());
 	});
 
 	it('불러온 임시저장 글을 현재 draftId로 발행하고 게시글 상세로 이동한다', async () => {
