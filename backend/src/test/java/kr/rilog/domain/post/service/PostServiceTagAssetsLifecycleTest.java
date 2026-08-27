@@ -150,23 +150,6 @@ class PostServiceTagAssetsLifecycleTest {
     }
 
     @Test
-    @DisplayName("발행 게시글을 삭제하면 게시글 이미지의 분리를 요청한다.")
-    void deleteDetachesTagAssets() {
-        // given
-        User writer = createUser(WRITER_ID);
-        Post post = publicPublishedRilogPost(createRilog(writer), writer);
-        TagAssets assets = post.getTagAssets();
-        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
-                .thenReturn(Optional.of(post));
-
-        // when
-        postService.deletePublishedPost(POST_ID, WRITER_ID);
-
-        // then
-        verify(tagAssetsLifecycle).detach(assets);
-    }
-
-    @Test
     @DisplayName("작성자가 아니면 발행 게시글 이미지의 분리를 요청하지 않는다.")
     void deleteDoesNotDetachTagAssetsWhenRequesterIsNotWriter() {
         // given

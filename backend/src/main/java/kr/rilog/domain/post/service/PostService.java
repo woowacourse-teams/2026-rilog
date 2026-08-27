@@ -101,8 +101,6 @@ public class PostService {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
         post.delete();
-
-        tagAssetsLifecycle.detach(post.getTagAssets());
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {
