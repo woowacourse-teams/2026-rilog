@@ -16,6 +16,7 @@ interface BlockFixture {
 	contentType: string;
 	attributes?: string;
 	content?: string;
+	innerHtml?: string;
 }
 
 const block = (fixture: string | BlockFixture) => {
@@ -23,13 +24,15 @@ const block = (fixture: string | BlockFixture) => {
 		contentType,
 		attributes = '',
 		content = '가독성 점검 본문',
+		innerHtml,
 	} = typeof fixture === 'string' ? { contentType: fixture } : fixture;
+	const contentHtml = innerHtml ?? `<div class="bn-inline-content">${content}</div>`;
 
 	return `
 	<div class="bn-block-outer">
 		<div class="bn-block">
 			<div class="bn-block-content" data-content-type="${contentType}" ${attributes}>
-				<div class="bn-inline-content">${content}</div>
+				${contentHtml}
 			</div>
 		</div>
 	</div>
@@ -51,7 +54,7 @@ const renderBlockNoteFixture = async (
 		`<div class="${rootClass}"><div class="bn-block-group">${contentTypes.map(block).join('')}</div></div>`,
 	);
 	await page.addStyleTag({
-		content: `:root { --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
+		content: `:root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
 	});
 };
 
@@ -73,6 +76,17 @@ const ROOT_SPACING = [
 const LIST_TYPES = ['bulletListItem', 'numberedListItem', 'checkListItem', 'toggleListItem'];
 
 test.describe('BlockNote 콘텐츠 여백', () => {
+	test('상세 코드 블록은 14px 글자 크기를 사용한다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{
+				contentType: 'codeBlock',
+				innerHtml: '<pre><code data-language="typescript">const value = 14;</code></pre>',
+			},
+		]);
+
+		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"] > pre')).toHaveCSS('font-size', '14px');
+	});
+
 	test('상세 본문의 연속 문단 사이에만 간격을 둔다', async ({ page }) => {
 		await renderBlockNoteFixture(page, 'post-detail-body', ['paragraph', 'paragraph', 'paragraph']);
 

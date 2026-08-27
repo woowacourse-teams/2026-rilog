@@ -102,6 +102,10 @@
 	background: var(--brand-primary);
 }
 
+.post-detail-body .bn-block-content[data-content-type='codeBlock'] > pre {
+	font-size: var(--text-body-1);
+}
+
 .post-detail-body
 	.bn-block-group
 	> .bn-block-outer:first-child
