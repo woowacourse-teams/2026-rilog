@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useDeletePostMutation } from '@/shared/api/posts/mutations/use-delete-post-mutation';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
@@ -28,6 +29,7 @@ export default function PostDetailActions({ authorId, slug, postId }: PostDetail
 	}
 
 	const handleEdit = () => {
+		recordEditorEntryContext('post_detail_edit');
 		router.push(`/write?postId=${postId}`);
 	};
 	const handleDeleteRequest = () => {

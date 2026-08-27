@@ -1,4 +1,5 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Modal from '@/shared/ui/modal/Modal';
@@ -28,7 +29,11 @@ export default function DraftListModal({ open, draftPosts, onClose, onDelete, on
 						<button
 							type="button"
 							disabled={onSelect === undefined}
-							onClick={() => onSelect?.(post.id)}
+							onClick={() => {
+								if (onSelect === undefined) return;
+								recordEditorEntryContext('draft_list');
+								onSelect(post.id);
+							}}
 							className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left disabled:cursor-not-allowed ${onSelect === undefined ? '' : DRAFT_BUTTON_CLASS_NAME}`}
 						>
 							<strong className="truncate text-body-3">{post.title}</strong>

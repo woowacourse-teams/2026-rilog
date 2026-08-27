@@ -55,6 +55,12 @@ vi.mock('@/features/post-write/hooks/use-post-write-initial-data', () => ({
 	usePostWriteInitialData: usePostWriteInitialDataMock,
 }));
 
+vi.mock('@/features/analytics/ui/ContentLoadFailureTracker', () => ({
+	default: ({ surface, loadPhase }: { surface: string; loadPhase: string }) => (
+		<p>{`로딩 실패 추적: ${surface}/${loadPhase}`}</p>
+	),
+}));
+
 vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
 	default: ({ authorId, children }: { authorId: number; children: React.ReactNode }) => (
 		<div>
@@ -287,6 +293,7 @@ describe('PostWriteLoader', () => {
 		render(<PostWriteLoader />);
 
 		expect(screen.getByRole('alert')).toHaveTextContent('게시글을 불러오지 못했습니다.');
+		expect(screen.getByText('로딩 실패 추적: post_editor/edit_initial_data')).toBeInTheDocument();
 		expect(screen.queryByText('새 글 컨트롤러')).not.toBeInTheDocument();
 	});
 

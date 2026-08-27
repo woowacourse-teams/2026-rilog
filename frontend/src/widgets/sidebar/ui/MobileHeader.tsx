@@ -18,7 +18,7 @@ export default function MobileHeader() {
 	const { isAuthenticated } = useAuth();
 	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
 	const pathname = usePathname() ?? '';
-	const handleLoginClick = useAuthAction();
+	const handleLoginClick = useAuthAction({ entrySurface: 'mobile_header' });
 	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
 	const userAvatar = (
 		<UserAvatar

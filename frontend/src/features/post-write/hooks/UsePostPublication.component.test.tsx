@@ -65,7 +65,7 @@ describe('usePostPublication', () => {
 			await firstPublish;
 		});
 
-		expect(onPublished).toHaveBeenCalledWith({ postId: '31', slug: 'rilog-team' }, settings);
+		expect(onPublished).toHaveBeenCalledWith({ postId: '31', slug: 'rilog-team' }, settings, expect.any(Object));
 		expect(result.current.isPublishing).toBe(false);
 		expect(result.current.isModalOpen).toBe(false);
 	});

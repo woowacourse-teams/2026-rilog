@@ -11,6 +11,7 @@ import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/typ
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
+import DraftPostController from './DraftPostController';
 import EditPostController from './EditPostController';
 import NewPostController from './NewPostController';
 
@@ -23,6 +24,11 @@ type RequestPostUpdate = (variables: {
 
 const {
 	postEditorOpenedMock,
+	postDraftAbandonedMock,
+	postPublishFailedMock,
+	postPublishSettingsOpenedMock,
+	postPublishStartedMock,
+	postPublishValidationFailedMock,
 	postPublishedMock,
 	replaceMock,
 	uploadRepresentativeImageMock,
@@ -31,6 +37,11 @@ const {
 	editorUnmountedMock,
 } = vi.hoisted(() => ({
 	postEditorOpenedMock: vi.fn(),
+	postDraftAbandonedMock: vi.fn(),
+	postPublishFailedMock: vi.fn(),
+	postPublishSettingsOpenedMock: vi.fn(),
+	postPublishStartedMock: vi.fn(),
+	postPublishValidationFailedMock: vi.fn(),
 	postPublishedMock: vi.fn(),
 	replaceMock: vi.fn(),
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
@@ -46,6 +57,11 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/features/analytics/model/events', () => ({
 	analytics: {
 		postEditorOpened: postEditorOpenedMock,
+		postDraftAbandoned: postDraftAbandonedMock,
+		postPublishFailed: postPublishFailedMock,
+		postPublishSettingsOpened: postPublishSettingsOpenedMock,
+		postPublishStarted: postPublishStartedMock,
+		postPublishValidationFailed: postPublishValidationFailedMock,
 		postPublished: postPublishedMock,
 	},
 }));
@@ -85,6 +101,11 @@ vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
 beforeEach(() => {
 	replaceMock.mockReset();
 	postEditorOpenedMock.mockReset();
+	postDraftAbandonedMock.mockReset();
+	postPublishFailedMock.mockReset();
+	postPublishSettingsOpenedMock.mockReset();
+	postPublishStartedMock.mockReset();
+	postPublishValidationFailedMock.mockReset();
 	postPublishedMock.mockReset();
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
@@ -104,6 +125,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	vi.restoreAllMocks();
 	vi.unstubAllEnvs();
 });
 
@@ -311,6 +333,38 @@ describe('NewPostController', () => {
 		});
 	});
 
+	it('임시저장 글 발행도 현재 post published 계약으로 기록한다', async () => {
+		const user = userEvent.setup();
+		const publishDraft = vi.fn().mockResolvedValue({ postId: 'draft-42', slug: 'rilog-team' });
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '임시저장 제목', blocks: [createParagraph('임시저장 본문')] }}
+				initialPublicationSettings={{
+					category: 'DAILY',
+					blog: { id: 20, slug: 'rilog-team', name: 'Rilog Team' },
+					representativeImage: null,
+					representativeImageUrl: null,
+				}}
+				publishDraft={publishDraft}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(publishDraft).toHaveBeenCalledWith(42, expect.any(Object)));
+		expect(postPublishedMock).toHaveBeenCalledWith({
+			postId: 'draft-42',
+			ownerType: 'COLOG',
+			category: 'DAILY',
+			cologId: 20,
+			imageSource: 'default',
+			blockCountBucket: '1-5',
+		});
+	});
+
 	it('진입 시 제목에 focus하고 Enter를 누르면 본문으로 이동한다', async () => {
 		const user = userEvent.setup();
 		render(<NewPostController editorComponent={FakeEditor} />);
@@ -320,6 +374,7 @@ describe('NewPostController', () => {
 		await user.type(titleField, '제목{enter}');
 		expect(screen.getByRole('textbox', { name: '게시글 내용' })).toHaveFocus();
 		expect(postEditorOpenedMock).toHaveBeenCalledOnce();
+		expect(postEditorOpenedMock).toHaveBeenCalledWith({ entrySource: 'direct', availableBlogCount: 1 });
 	});
 
 	it('임시 저장 글 삭제를 취소하면 목록을 유지하고 확인하면 목록과 개수를 갱신한다', async () => {
@@ -364,6 +419,7 @@ describe('NewPostController', () => {
 		const bodyField = screen.getByRole('textbox', { name: '게시글 내용' });
 		expect(bodyField).toHaveAttribute('aria-describedby', bodyError.id);
 		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveFocus();
+		expect(postPublishValidationFailedMock).toHaveBeenCalledWith({ invalidFields: ['title', 'body'] });
 
 		await user.type(bodyField, '본문');
 		expect(bodyField).not.toHaveAttribute('aria-describedby');
@@ -406,6 +462,7 @@ describe('NewPostController', () => {
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
+		expect(postPublishSettingsOpenedMock).toHaveBeenCalledOnce();
 
 		expect(screen.queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
 		expect(screen.getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
@@ -521,6 +578,11 @@ describe('NewPostController', () => {
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await selectFirstCoLog(user);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+		expect(postPublishStartedMock).toHaveBeenCalledWith({
+			ownerType: 'COLOG',
+			category: 'IT',
+			imageSource: 'default',
+		});
 
 		const dialog = screen.getByRole('dialog', { name: '게시 설정' });
 		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
@@ -532,10 +594,16 @@ describe('NewPostController', () => {
 
 		resolvePublish?.({ postId: 'post/40', slug: 'rilog' });
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog/posts/post%2F40'));
-		expect(postPublishedMock).toHaveBeenCalledWith({
-			category: 'IT',
-			hasCustomRepresentativeImage: false,
-		});
+		expect(postPublishedMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				postId: 'post/40',
+				category: 'IT',
+				cologId: 20,
+				ownerType: 'COLOG',
+				imageSource: 'default',
+				blockCountBucket: '1-5',
+			}),
+		);
 		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
 		window.dispatchEvent(beforeUnloadEvent);
 		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
@@ -577,6 +645,11 @@ describe('NewPostController', () => {
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		expect(await screen.findByText('failed')).toBeInTheDocument();
+		expect(postPublishFailedMock).toHaveBeenCalledWith({
+			failureStage: 'publish_request',
+			errorCode: 'UNKNOWN_ERROR',
+			errorKind: 'unknown',
+		});
 		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
@@ -731,6 +804,9 @@ describe('NewPostController', () => {
 		await user.click(link);
 		await user.click(screen.getByRole('button', { name: '나가기' }));
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/next-page?from=write'));
+		expect(postDraftAbandonedMock).toHaveBeenCalledWith(
+			expect.objectContaining({ documentState: 'title_only', editingTimeBucket: 'under_1m' }),
+		);
 		expect(historyBackSpy).not.toHaveBeenCalled();
 		historyBackSpy.mockRestore();
 		link.remove();
@@ -745,5 +821,37 @@ describe('NewPostController', () => {
 		window.dispatchEvent(beforeUnloadEvent);
 
 		expect(beforeUnloadEvent.defaultPrevented).toBe(true);
+	});
+
+	it('에디터 탭이 숨겨진 시간은 이탈 시 작성 시간에서 제외한다', async () => {
+		let currentTime = 1_000;
+		let visibilityState: DocumentVisibilityState = 'visible';
+		vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
+		vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visibilityState);
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '활성 작성 시간');
+
+		currentTime = 2_000;
+		visibilityState = 'hidden';
+		document.dispatchEvent(new Event('visibilitychange'));
+		currentTime = 902_000;
+		visibilityState = 'visible';
+		document.dispatchEvent(new Event('visibilitychange'));
+		currentTime = 903_000;
+
+		const link = document.createElement('a');
+		link.href = '/next-page';
+		link.textContent = '다른 페이지';
+		document.body.append(link);
+		await user.click(link);
+		await user.click(screen.getByRole('button', { name: '나가기' }));
+
+		expect(postDraftAbandonedMock).toHaveBeenCalledWith({
+			documentState: 'title_only',
+			editingTimeBucket: 'under_1m',
+		});
+		link.remove();
 	});
 });

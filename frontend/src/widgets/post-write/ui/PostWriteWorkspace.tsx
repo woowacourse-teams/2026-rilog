@@ -1,15 +1,22 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import type { ComponentType, ReactNode } from 'react';
 
+import { consumeEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
+import { analytics } from '@/features/analytics/model/events';
 import type {
 	PostEditorProps,
 	PostWriteEditorContext,
 	UploadPostBodyFile,
 } from '@/features/post-write/model/post-editor';
-import type { EditorDocument, PublicationSettings, PublishPost } from '@/features/post-write/model/post-publication';
+import type {
+	EditorDocument,
+	PublicationSettings,
+	PublishPost,
+	PublishPostResult,
+} from '@/features/post-write/model/post-publication';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -27,7 +34,7 @@ interface PostWriteWorkspaceProps {
 	initialPublicationSettings?: PublicationSettings;
 	uploadFile?: UploadPostBodyFile;
 	navigate?: (href: string) => void;
-	onPublished?: (settings: PublicationSettings) => void;
+	onPublished?: (result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => void;
 }
 
 export default function PostWriteWorkspace({
@@ -41,6 +48,18 @@ export default function PostWriteWorkspace({
 	onPublished,
 }: PostWriteWorkspaceProps) {
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
+	const hasTrackedEditorOpenRef = useRef(false);
+
+	useEffect(() => {
+		if (myCologsResponse === undefined || hasTrackedEditorOpenRef.current) return;
+
+		analytics.postEditorOpened({
+			entrySource: consumeEditorEntryContext(),
+			availableBlogCount: myCologsResponse.data?.length ?? null,
+		});
+		hasTrackedEditorOpenRef.current = true;
+	}, [myCologsResponse]);
+
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 
 	const uploadPostBodyFileWithApi = useCallback<UploadPostBodyFile>(

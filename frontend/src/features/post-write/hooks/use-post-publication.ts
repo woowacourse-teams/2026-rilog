@@ -13,13 +13,18 @@ type PublishState = { status: 'idle' } | { status: 'pending' } | { status: 'erro
 
 interface UsePostPublicationOptions {
 	publishPost: PublishPost;
-	onPublished: (result: PublishPostResult, settings: PublicationSettings) => void | Promise<void>;
+	onPublished: (
+		result: PublishPostResult,
+		settings: PublicationSettings,
+		document: EditorDocument,
+	) => void | Promise<void>;
+	onFailed?: (error: unknown) => void;
 }
 
 const getPublishErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : '발행하지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
 
-export function usePostPublication({ publishPost, onPublished }: UsePostPublicationOptions) {
+export function usePostPublication({ publishPost, onPublished, onFailed }: UsePostPublicationOptions) {
 	const isPublishingRef = useRef(false);
 	const [document, setDocument] = useState<EditorDocument | null>(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,17 +52,18 @@ export function usePostPublication({ publishPost, onPublished }: UsePostPublicat
 
 			try {
 				const result = await publishPost({ document, settings });
-				await onPublished(result, settings);
+				await onPublished(result, settings, document);
 
 				isPublishingRef.current = false;
 				setPublishState({ status: 'idle' });
 				setIsModalOpen(false);
 			} catch (error) {
+				onFailed?.(error);
 				isPublishingRef.current = false;
 				setPublishState({ status: 'error', message: getPublishErrorMessage(error) });
 			}
 		},
-		[document, onPublished, publishPost],
+		[document, onFailed, onPublished, publishPost],
 	);
 
 	return {

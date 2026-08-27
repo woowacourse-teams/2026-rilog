@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 
+import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import { buildPostWriteRequest } from '@/features/post-write/lib/build-post-write-request';
 import { mapPostWriteResponse } from '@/features/post-write/lib/map-post-write-response';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
@@ -20,7 +21,12 @@ export function usePublishNewPost(): PublishPost {
 				return objectKey;
 			});
 
-			return mapPostWriteResponse(await requestPublication(request));
+			try {
+				return mapPostWriteResponse(await requestPublication(request));
+			} catch (error) {
+				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
+				throw withAnalyticsFailureStage(error, 'publish_request');
+			}
 		},
 		[requestPublication, uploadFile],
 	);
@@ -37,7 +43,12 @@ export function useUpdatePublishedPost(postId: number): PublishPost {
 				return objectKey;
 			});
 
-			return mapPostWriteResponse(await requestUpdate({ postId, request }));
+			try {
+				return mapPostWriteResponse(await requestUpdate({ postId, request }));
+			} catch (error) {
+				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
+				throw withAnalyticsFailureStage(error, 'publish_request');
+			}
 		},
 		[postId, requestUpdate, uploadFile],
 	);

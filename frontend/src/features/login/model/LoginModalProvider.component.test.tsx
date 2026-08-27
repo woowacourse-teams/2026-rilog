@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 
@@ -15,7 +15,7 @@ vi.mock('@/features/analytics/model/events', () => ({ analytics: { githubLoginSt
 function LoginButton() {
 	const login = useLoginModal();
 
-	return <button onClick={login}>로그인 열기</button>;
+	return <button onClick={() => login()}>로그인 열기</button>;
 }
 
 function AuthActionButton({ action }: { action: () => void }) {
@@ -25,6 +25,12 @@ function AuthActionButton({ action }: { action: () => void }) {
 }
 
 describe('LoginModalProvider', () => {
+	beforeEach(() => {
+		githubLoginStartedMock.mockReset();
+		localStorage.clear();
+		window.history.replaceState({}, '', '/feeds?tab=latest');
+	});
+
 	it('useLoginModal이 반환한 login 함수로 전역 로그인 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(
@@ -88,6 +94,10 @@ describe('LoginModalProvider', () => {
 		expect(githubLoginButton).toBeDisabled();
 		expect(githubLoginButton).toHaveAttribute('aria-busy', 'true');
 		expect(screen.getByRole('button', { name: '모달 닫기' })).toBeDisabled();
-		expect(githubLoginStartedMock).toHaveBeenCalledOnce();
+		expect(githubLoginStartedMock).toHaveBeenCalledWith({
+			entrySurface: 'sidebar',
+			redirectTarget: '/feeds',
+		});
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest');
 	});
 });

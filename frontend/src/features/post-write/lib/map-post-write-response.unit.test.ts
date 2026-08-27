@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
+
 import { mapPostWriteResponse } from './map-post-write-response';
 
 describe('mapPostWriteResponse', () => {
@@ -14,8 +16,13 @@ describe('mapPostWriteResponse', () => {
 	});
 
 	it('게시글 정보가 없는 응답을 거부한다', () => {
-		expect(() => mapPostWriteResponse({ status: 201, message: '응답 데이터 없음' })).toThrow(
-			'발행 응답에 게시글 정보가 없습니다.',
-		);
+		expect.assertions(3);
+		try {
+			mapPostWriteResponse({ status: 201, message: '응답 데이터 없음' });
+		} catch (error) {
+			expect(error).toBeInstanceOf(Error);
+			expect((error as Error).message).toBe('발행 응답에 게시글 정보가 없습니다.');
+			expect(getAnalyticsFailureStage(error)).toBe('publish_response');
+		}
 	});
 });

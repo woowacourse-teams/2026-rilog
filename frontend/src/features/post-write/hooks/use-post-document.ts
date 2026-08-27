@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Block } from '@blocknote/core';
 
-import { validatePostDocument } from '@/features/post-write/lib/validate-post-document';
+import { isMeaningfulPostBody, validatePostDocument } from '@/features/post-write/lib/validate-post-document';
 import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
 import type { PostDocumentErrors } from '@/features/post-write/model/post-write-validation';
@@ -65,6 +65,14 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		setIsDirty(false);
 	}, []);
 
+	const getDocumentState = useCallback(
+		() => ({
+			hasTitle: title.trim().length > 0,
+			hasBody: isMeaningfulPostBody(latestBlocksRef.current),
+		}),
+		[title],
+	);
+
 	return {
 		titleRef,
 		editorRef,
@@ -77,5 +85,6 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		handleEditorChange,
 		preparePostDocument,
 		markClean,
+		getDocumentState,
 	};
 }

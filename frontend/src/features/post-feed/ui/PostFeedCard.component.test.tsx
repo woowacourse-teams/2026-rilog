@@ -21,7 +21,7 @@ const PERSONAL_POST: PostFeedItem = {
 
 describe('PostFeedCard', () => {
 	it('게시글 제목을 이름으로 갖는 상세 링크와 작성 정보를 제공한다', () => {
-		render(<PostFeedCard post={PERSONAL_POST} />);
+		render(<PostFeedCard post={PERSONAL_POST} position={3} />);
 
 		expect(screen.getByRole('link', { name: /함께 기록하는 방법/ })).toHaveAttribute('href', '/@rilogger/posts/17');
 		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' })).toHaveClass('text-body-3');
@@ -34,6 +34,7 @@ describe('PostFeedCard', () => {
 	it('작성자 프로필 이미지가 있으면 UserAvatar에 표시한다', () => {
 		render(
 			<PostFeedCard
+				position={1}
 				post={{
 					...PERSONAL_POST,
 					author: { ...PERSONAL_POST.author, profileImageUrl: 'https://images.rilog.test/profile.png' },
@@ -48,7 +49,7 @@ describe('PostFeedCard', () => {
 	});
 
 	it('썸네일을 불러오지 못하면 팀 커버 기본 이미지를 표시한다', () => {
-		render(<PostFeedCard post={PERSONAL_POST} />);
+		render(<PostFeedCard post={PERSONAL_POST} position={1} />);
 
 		const thumbnail = screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' });
 		fireEvent.error(thumbnail);
@@ -57,7 +58,7 @@ describe('PostFeedCard', () => {
 	});
 
 	it('썸네일 URL이 없으면 처음부터 팀 커버 기본 이미지를 표시한다', () => {
-		render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl: null }} />);
+		render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl: null }} position={1} />);
 
 		const postCard = screen.getByRole('link', { name: /함께 기록하는 방법/ });
 		expect(
@@ -78,12 +79,13 @@ describe('PostFeedCard', () => {
 	});
 
 	it('Colog 글에만 팀 이름 배지를 표시한다', () => {
-		const { rerender } = render(<PostFeedCard post={PERSONAL_POST} />);
+		const { rerender } = render(<PostFeedCard post={PERSONAL_POST} position={1} />);
 
 		expect(screen.queryByText('리로그 팀')).not.toBeInTheDocument();
 
 		rerender(
 			<PostFeedCard
+				position={1}
 				post={{
 					...PERSONAL_POST,
 					blog: {
@@ -108,6 +110,20 @@ describe('PostFeedCard', () => {
 			'rounded-md',
 			'border',
 			'border-border-default',
+		);
+	});
+
+	it('상세 링크를 활성화하면 피드 진입 context를 기록한다', () => {
+		render(<PostFeedCard post={PERSONAL_POST} position={3} />);
+
+		fireEvent.click(screen.getByRole('link', { name: /함께 기록하는 방법/ }));
+
+		expect(window.sessionStorage.getItem('rilog.post-detail-entry-context')).toBe(
+			JSON.stringify({
+				postId: 17,
+				entrySource: 'feed',
+				feedPosition: 3,
+			}),
 		);
 	});
 });

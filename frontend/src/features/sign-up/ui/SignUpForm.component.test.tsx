@@ -1,8 +1,9 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { tokenManager } from '@/shared/api/auth/token-manager';
 import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { renderWithQuery as render } from '@/test/render-with-query';
@@ -11,7 +12,12 @@ import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-sessio
 
 import SignUpForm from './SignUpForm';
 
-const { signUpCompletedMock } = vi.hoisted(() => ({ signUpCompletedMock: vi.fn() }));
+const { onboardMock, signUpCompletedMock, signUpFailedMock, uploadFileMock } = vi.hoisted(() => ({
+	onboardMock: vi.fn(),
+	signUpCompletedMock: vi.fn(),
+	signUpFailedMock: vi.fn(),
+	uploadFileMock: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
@@ -22,12 +28,29 @@ vi.mock('@/shared/api/availability/api', () => ({
 	checkSlugAvailability: vi.fn(),
 }));
 
-vi.mock('@/features/analytics/model/events', () => ({ analytics: { signUpCompleted: signUpCompletedMock } }));
+vi.mock('@/shared/api/uploads/mutations/use-upload-file-mutation', () => ({
+	useUploadFileMutation: () => ({ mutateAsync: uploadFileMock }),
+}));
+
+vi.mock('@/shared/api/users/mutations/use-onboarding-mutation', () => ({
+	useOnboardingMutation: () => ({ mutateAsync: onboardMock }),
+}));
+
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		signUpCompleted: signUpCompletedMock,
+		signUpFailed: signUpFailedMock,
+	},
+}));
 
 describe('SignUpForm', () => {
 	beforeEach(() => {
 		sessionStorage.clear();
 		vi.clearAllMocks();
+		uploadFileMock.mockReset();
+		uploadFileMock.mockResolvedValue({ objectKey: 'profiles/profile.png' });
+		onboardMock.mockReset();
+		onboardMock.mockResolvedValue({ data: { status: 200, message: '회원가입 성공', data: null }, accessToken: null });
 		vi.mocked(checkNicknameAvailability).mockResolvedValue({
 			status: 200,
 			message: '사용가능한 닉네임입니다.',
@@ -40,12 +63,31 @@ describe('SignUpForm', () => {
 		});
 	});
 
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
 		return render(
 			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
 				<SignUpForm {...props} />
 			</AUTH_CONTEXT.Provider>,
 		);
+	};
+
+	const submitValidSignUp = async (profileImageFile?: File) => {
+		const user = userEvent.setup();
+
+		if (profileImageFile !== undefined) {
+			await user.upload(screen.getByLabelText('프로필 이미지 추가'), profileImageFile);
+		}
+		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
+		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'rilog');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
+		await user.click(screen.getByRole('button', { name: '시작하기' }));
 	};
 
 	it('프로필 설정에 필요한 입력과 action을 제공한다', () => {
@@ -359,6 +401,8 @@ describe('SignUpForm', () => {
 		expect(signUpCompletedMock).toHaveBeenCalledWith({
 			hasProfileImage: false,
 			hasIntroduction: true,
+			hasServiceUrl: true,
+			hasGithubUrl: true,
 		});
 	});
 
@@ -445,5 +489,80 @@ describe('SignUpForm', () => {
 		await user.click(submitButton);
 		expect(slug).toHaveAccessibleDescription(/고유 아이디 중복 확인이 필요합니다\./);
 		expect(completeSignUp).toHaveBeenCalledTimes(2);
+	});
+
+	it('회원가입 실패를 stage와 안전한 오류 코드로 기록한다', async () => {
+		const completeSignUp = vi.fn().mockRejectedValue({
+			failureStage: 'onboarding_submit',
+			cause: new TypeError('Failed to fetch'),
+		});
+		renderSignUpForm({ completeSignUp });
+
+		await submitValidSignUp();
+
+		await waitFor(() =>
+			expect(signUpFailedMock).toHaveBeenCalledWith({
+				failureStage: 'onboarding_submit',
+				errorCode: 'NETWORK',
+			}),
+		);
+		expect(screen.getByRole('alert')).toHaveTextContent('Failed to fetch');
+	});
+
+	it('프로필 이미지 업로드 실패의 stage와 원본 오류를 보존한다', async () => {
+		vi.stubGlobal(
+			'URL',
+			Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:profile-image'), revokeObjectURL: vi.fn() }),
+		);
+		uploadFileMock.mockRejectedValue(new TypeError('프로필 이미지 업로드 실패'));
+		renderSignUpForm();
+
+		await submitValidSignUp(new File(['profile'], 'profile.png', { type: 'image/png' }));
+
+		await waitFor(() =>
+			expect(signUpFailedMock).toHaveBeenCalledWith({
+				failureStage: 'profile_image_upload',
+				errorCode: 'NETWORK',
+			}),
+		);
+		expect(screen.getByRole('alert')).toHaveTextContent('프로필 이미지 업로드 실패');
+		expect(onboardMock).not.toHaveBeenCalled();
+	});
+
+	it('온보딩 요청 실패의 stage와 원본 오류를 보존한다', async () => {
+		onboardMock.mockRejectedValue(new TypeError('온보딩 요청 실패'));
+		renderSignUpForm();
+
+		await submitValidSignUp();
+
+		await waitFor(() =>
+			expect(signUpFailedMock).toHaveBeenCalledWith({
+				failureStage: 'onboarding_submit',
+				errorCode: 'NETWORK',
+			}),
+		);
+		expect(screen.getByRole('alert')).toHaveTextContent('온보딩 요청 실패');
+		expect(uploadFileMock).not.toHaveBeenCalled();
+	});
+
+	it('세션 저장 실패의 stage와 원본 오류를 보존한다', async () => {
+		onboardMock.mockResolvedValue({
+			data: { status: 200, message: '회원가입 성공', data: null },
+			accessToken: 'access-token',
+		});
+		vi.spyOn(tokenManager, 'setToken').mockImplementation(() => {
+			throw new Error('세션 저장 실패');
+		});
+		renderSignUpForm();
+
+		await submitValidSignUp();
+
+		await waitFor(() =>
+			expect(signUpFailedMock).toHaveBeenCalledWith({
+				failureStage: 'session_store',
+				errorCode: 'UNKNOWN_ERROR',
+			}),
+		);
+		expect(screen.getByRole('alert')).toHaveTextContent('세션 저장 실패');
 	});
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
+import { recordCologCreationEntryContext } from '@/features/analytics/lib/colog-creation-entry-context';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
 import { APP_ROUTES, buildBlogHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
@@ -40,6 +41,7 @@ export default function CologNavigation() {
 			</ul>
 			<ButtonLink
 				href={APP_ROUTES.cologCreate}
+				onClick={() => recordCologCreationEntryContext('sidebar')}
 				variant="secondary"
 				aria-label="팀 만들기"
 				fullWidth

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import type { PostSummary } from '@/domains/post/model/post';
@@ -40,5 +40,19 @@ describe('BlogPostList', () => {
 
 		expect(screen.getByText('아직 작성된 게시글이 없습니다.')).toBeInTheDocument();
 		expect(screen.queryByRole('list')).not.toBeInTheDocument();
+	});
+
+	it('상세 링크를 활성화하면 블로그 프로필 진입 context를 기록한다', () => {
+		render(<BlogPostList slug="rilog" posts={POST_FIXTURES} />);
+
+		fireEvent.click(screen.getByRole('link', { name: /디자인 토큰 운영 기록/ }));
+
+		expect(window.sessionStorage.getItem('rilog.post-detail-entry-context')).toBe(
+			JSON.stringify({
+				postId: 102,
+				entrySource: 'blog_profile',
+				feedPosition: 2,
+			}),
+		);
 	});
 });

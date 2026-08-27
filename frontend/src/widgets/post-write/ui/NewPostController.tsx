@@ -2,7 +2,9 @@
 
 import { useState, type ComponentType } from 'react';
 
+import { getBlockCountBucket } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
+import { resolveRepresentativeImageSource } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
 import type { CreatePostDraft, PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
@@ -63,10 +65,14 @@ export default function NewPostController({
 			initialDocument={initialDocument}
 			uploadFile={uploadFile}
 			navigate={navigate}
-			onPublished={(settings) => {
+			onPublished={(result, settings, document) => {
 				analytics.postPublished({
+					postId: result.postId,
+					ownerType: 'COLOG',
 					category: settings.category,
-					hasCustomRepresentativeImage: settings.representativeImage !== null,
+					cologId: settings.blog?.id ?? 0,
+					imageSource: resolveRepresentativeImageSource(settings, document.blocks),
+					blockCountBucket: getBlockCountBucket(document.blocks.length),
 				});
 			}}
 		>

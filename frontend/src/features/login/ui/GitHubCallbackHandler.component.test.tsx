@@ -97,12 +97,15 @@ describe('GitHubCallbackHandler', () => {
 		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'returning' });
 	});
 
-	it('로그인 처리 실패를 내용 없이 기록한다', async () => {
+	it('로그인 처리 실패를 stage와 안전한 오류 코드로 기록한다', async () => {
 		handleGitHubCallbackMock.mockRejectedValue(new Error('callback failed'));
 
 		render(<GitHubCallbackHandler />);
 
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/'));
-		expect(githubLoginFailedMock).toHaveBeenCalledOnce();
+		expect(githubLoginFailedMock).toHaveBeenCalledWith({
+			failureStage: 'github_callback',
+			errorCode: 'UNKNOWN_ERROR',
+		});
 	});
 });

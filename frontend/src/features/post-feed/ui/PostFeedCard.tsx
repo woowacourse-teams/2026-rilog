@@ -2,6 +2,7 @@ import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostFeedItem } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
@@ -10,14 +11,23 @@ import PostFeedImage from './PostFeedImage';
 
 interface PostFeedCardProps {
 	post: PostFeedItem;
+	position: number;
 }
 
-export default function PostFeedCard({ post }: PostFeedCardProps) {
+export default function PostFeedCard({ post, position }: PostFeedCardProps) {
+	const handleClick = () => {
+		recordPostDetailEntryContext({
+			postId: post.id,
+			entrySource: 'feed',
+			feedPosition: position,
+		});
+	};
+
 	return (
 		<li className="h-full [contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
 			<CustomLink
 				href={buildPostDetailPath(post.blog.slug, String(post.id))}
-
+				onClick={handleClick}
 				className="group relative z-0 block h-full rounded-xl hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring active:z-10"
 			>
 				<article className="flex h-full flex-col">

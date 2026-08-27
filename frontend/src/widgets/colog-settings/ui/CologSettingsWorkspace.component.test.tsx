@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import { checkNicknameAvailability } from '@/shared/api/availability/api';
+import type { BlogPublicProfileResponse } from '@/shared/api/blogs/types';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import CologSettingsWorkspace from './CologSettingsWorkspace';
@@ -61,6 +62,20 @@ const PROFILE_SETTINGS: CologProfileSettingsValue = {
 	coverImageFile: null,
 };
 
+const PROFILE_RESPONSE: BlogPublicProfileResponse = {
+	type: 'COLOG',
+	id: 41,
+	name: 'API 리로그',
+	slug: 'team-rilog',
+	introduction: 'API에서 조회한 팀 소개',
+	profileImageUrl: 'https://example.com/profile.png',
+	coverImageUrl: 'https://example.com/cover.png',
+	serviceUrl: 'https://rilog.example.com',
+	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
+	memberCount: 3,
+	postCount: 12,
+};
+
 describe('CologSettingsWorkspace', () => {
 	beforeEach(() => {
 		mutateAsyncMock.mockReset();
@@ -92,7 +107,7 @@ describe('CologSettingsWorkspace', () => {
 			reset: resetSaveProfileMock,
 		});
 		useBlogPublicProfileQueryMock.mockReturnValue({
-			data: PROFILE_SETTINGS,
+			data: { cologId: PROFILE_RESPONSE.id, profile: PROFILE_SETTINGS },
 			isError: false,
 			isPending: false,
 			refetch: refetchProfileMock,
@@ -110,6 +125,12 @@ describe('CologSettingsWorkspace', () => {
 		const [queryOptions] = useBlogPublicProfileQueryMock.mock.calls[0] as [{ slug: string; select: unknown }];
 		expect(queryOptions.slug).toBe('team-rilog');
 		expect(queryOptions.select).toBeTypeOf('function');
+		expect(
+			(queryOptions.select as (response: { data: BlogPublicProfileResponse }) => unknown)({ data: PROFILE_RESPONSE }),
+		).toEqual({
+			cologId: 41,
+			profile: PROFILE_SETTINGS,
+		});
 		expect(screen.getByRole('tab', { name: '프로필' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('API 리로그');

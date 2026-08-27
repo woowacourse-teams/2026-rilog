@@ -34,6 +34,7 @@ interface CologSettingsWorkspaceProps {
 }
 
 interface CologSettingsWorkspaceContentProps {
+	cologId: number;
 	slug: string;
 	initialTab: CologSettingsTab;
 	initialMembers?: CologMember[];
@@ -84,7 +85,13 @@ export default function CologSettingsWorkspace({
 }: CologSettingsWorkspaceProps) {
 	const profileQuery = useBlogPublicProfileQuery({
 		slug,
-		select: (response) => (response.data === undefined ? undefined : mapCologProfileSettingsResponse(response.data)),
+		select: (response) =>
+			response.data === undefined
+				? undefined
+				: {
+						cologId: response.data.id,
+						profile: mapCologProfileSettingsResponse(response.data),
+					},
 	});
 
 	if (profileQuery.isPending) {
@@ -113,15 +120,17 @@ export default function CologSettingsWorkspace({
 	return (
 		<CologSettingsWorkspaceContent
 			key={slug}
+			cologId={profileQuery.data.cologId}
 			slug={slug}
 			initialTab={initialTab}
 			initialMembers={initialMembers}
-			initialProfile={profileQuery.data}
+			initialProfile={profileQuery.data.profile}
 		/>
 	);
 }
 
 function CologSettingsWorkspaceContent({
+	cologId,
 	slug,
 	initialTab,
 	initialMembers,
@@ -332,7 +341,9 @@ function CologSettingsWorkspaceContent({
 						)}
 					</>
 				)}
-				{activeTab === 'members' && <CologMemberManagementSection slug={slug} drafts={memberDrafts} />}
+				{activeTab === 'members' && (
+					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
+				)}
 				{activeTab === 'danger' && <CologDangerZoneSection />}
 			</div>
 
