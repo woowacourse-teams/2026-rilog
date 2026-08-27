@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@blocknote/code-block':
+        specifier: 0.53.0
+        version: 0.53.0(@blocknote/core@0.53.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))
       '@blocknote/core':
         specifier: 0.53.0
         version: 0.53.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
@@ -726,6 +729,11 @@ packages:
       '@types/react':
         optional: true
 
+  '@blocknote/code-block@0.53.0':
+    resolution: {integrity: sha512-q28U4x4G0BkiTQVF9yvxFDyH3U/GZ+zdJxImDiNUUzlphM4dc9nXupLyBAgOhS7esuo9k/nouNLAT0+t+FXtCw==}
+    peerDependencies:
+      '@blocknote/core': ^0.53.0
+
   '@blocknote/core@0.53.0':
     resolution: {integrity: sha512-gEJhRGSIu4Ogx4ExhKIq86MM8RgKZhyLGr55stZc8dGC9ZzYJ6R3yG/gTcy8iQnJk/M1BPoV4r8pqZXvi8iJyg==}
     peerDependencies:
@@ -1343,6 +1351,10 @@ packages:
 
   '@shikijs/engine-oniguruma@4.4.3':
     resolution: {integrity: sha512-EcOQkxdxGQrc1Row/cC2c96/v1dbZqGnEVu1qTuT/MJmp6+cXCvQussowVmCv5Tqr3KuY3c7IbM6HTW3LJ1k9w==}
+    engines: {node: '>=20'}
+
+  '@shikijs/langs-precompiled@4.4.3':
+    resolution: {integrity: sha512-i3+91QcqVBji2mlCinQpHQyoZfciaWsHCuv5XZwMXGEmSAMCW0oCdrWp+zMKLf0CwHd9XT+E5RBDJ0RY1USWCw==}
     engines: {node: '>=20'}
 
   '@shikijs/langs@4.4.3':
@@ -5038,6 +5050,16 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.18
 
+  '@blocknote/code-block@0.53.0(@blocknote/core@0.53.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))':
+    dependencies:
+      '@blocknote/core': 0.53.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
+      '@shikijs/core': 4.4.3
+      '@shikijs/engine-javascript': 4.4.3
+      '@shikijs/langs-precompiled': 4.4.3
+      '@shikijs/themes': 4.4.3
+    optionalDependencies:
+      '@shikijs/types': 4.4.3
+
   '@blocknote/core@0.53.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)':
     dependencies:
       '@emoji-mart/data': 1.2.1
@@ -5611,6 +5633,11 @@ snapshots:
     dependencies:
       '@shikijs/types': 4.4.3
       '@shikijs/vscode-textmate': 10.0.2
+
+  '@shikijs/langs-precompiled@4.4.3':
+    dependencies:
+      '@shikijs/types': 4.4.3
+      oniguruma-to-es: 4.3.6
 
   '@shikijs/langs@4.4.3':
     dependencies:
