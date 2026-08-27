@@ -12,12 +12,17 @@ import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/typ
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
+import DraftPostController from './DraftPostController';
 import EditPostController from './EditPostController';
 import NewPostController from './NewPostController';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PostWriteRequest) => Promise<ApiResponse<PostWriteResponse>>;
 type RequestDraftSave = (request: DraftSaveRequest) => Promise<ApiResponse<DraftSaveResponse>>;
+type RequestDraftOverwrite = (variables: {
+	draftId: number;
+	request: DraftSaveRequest;
+}) => Promise<ApiResponse<DraftSaveResponse>>;
 type RequestPostUpdate = (variables: {
 	postId: number;
 	request: PostWriteRequest;
@@ -30,6 +35,7 @@ const {
 	uploadRepresentativeImageMock,
 	requestPostPublicationMock,
 	requestDraftSaveMock,
+	requestDraftOverwriteMock,
 	requestPostUpdateMock,
 	editorUnmountedMock,
 } = vi.hoisted(() => ({
@@ -39,6 +45,7 @@ const {
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 	requestDraftSaveMock: vi.fn<RequestDraftSave>(),
+	requestDraftOverwriteMock: vi.fn<RequestDraftOverwrite>(),
 	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
 	editorUnmountedMock: vi.fn(),
 }));
@@ -86,6 +93,10 @@ vi.mock('@/shared/api/drafts/mutations/use-save-draft-mutation', () => ({
 	useSaveDraftMutation: () => ({ mutateAsync: requestDraftSaveMock }),
 }));
 
+vi.mock('@/shared/api/drafts/mutations/use-overwrite-draft-mutation', () => ({
+	useOverwriteDraftMutation: () => ({ mutateAsync: requestDraftOverwriteMock }),
+}));
+
 vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
 	usePostDraftList: () => ({
 		data: [
@@ -115,6 +126,7 @@ beforeEach(() => {
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
 	requestDraftSaveMock.mockReset();
+	requestDraftOverwriteMock.mockReset();
 	requestPostUpdateMock.mockReset();
 	editorUnmountedMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
@@ -126,6 +138,11 @@ beforeEach(() => {
 	requestDraftSaveMock.mockResolvedValue({
 		status: 201,
 		message: '최초 임시저장에 성공했습니다.',
+		data: { draftId: 123 },
+	});
+	requestDraftOverwriteMock.mockResolvedValue({
+		status: 200,
+		message: '임시저장을 덮어썼습니다.',
 		data: { draftId: 123 },
 	});
 	requestPostUpdateMock.mockResolvedValue({
@@ -257,7 +274,7 @@ const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe('NewPostController', () => {
-	it('최초 임시저장 API에 현재 제목과 본문만 전달하고 반환된 draftId로 URL을 전환한다', async () => {
+	it('최초 임시저장 후 같은 문서를 반환된 draftId로 덮어쓴다', async () => {
 		const user = userEvent.setup();
 		window.history.replaceState(null, '', '/write');
 		render(<NewPostController editorComponent={FakeEditor} />);
@@ -271,6 +288,16 @@ describe('NewPostController', () => {
 			content: [createParagraph('오늘 배운 내용을 기록합니다.')],
 		});
 		expect(`${window.location.pathname}${window.location.search}`).toBe('/write?draftId=123');
+
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+		await waitFor(() => expect(requestDraftOverwriteMock).toHaveBeenCalledOnce());
+		expect(requestDraftOverwriteMock).toHaveBeenCalledWith({
+			draftId: 123,
+			request: {
+				title: 'BlockNote 도입기',
+				content: [createParagraph('오늘 배운 내용을 기록합니다.')],
+			},
+		});
 	});
 
 	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
@@ -311,6 +338,28 @@ describe('NewPostController', () => {
 		await waitFor(() => expect(updateDraft).toHaveBeenCalledOnce());
 		expect(updateDraft.mock.calls[0]?.[0]).toBe(123);
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
+	});
+
+	it('불러온 임시저장 글을 현재 draftId로 덮어쓴다', async () => {
+		const user = userEvent.setup();
+		const blocks = [createParagraph('기존 임시저장 본문')];
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 임시저장 제목', blocks }}
+			/>,
+		);
+
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		await waitFor(() => expect(saveButton).toBeEnabled());
+		await user.click(saveButton);
+
+		await waitFor(() => expect(requestDraftOverwriteMock).toHaveBeenCalledOnce());
+		expect(requestDraftOverwriteMock).toHaveBeenCalledWith({
+			draftId: 42,
+			request: { title: '기존 임시저장 제목', content: blocks },
+		});
 	});
 
 	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {

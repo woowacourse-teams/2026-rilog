@@ -4,6 +4,7 @@ import { useState, type ComponentType } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 import { useCreatePostDraft } from '@/features/post-write/hooks/use-create-post-draft';
+import { useUpdatePostDraft } from '@/features/post-write/hooks/use-update-post-draft';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
 import type { CreatePostDraft, PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
@@ -39,6 +40,7 @@ export default function NewPostController({
 }: NewPostControllerProps) {
 	const publishNewPost = usePublishNewPost();
 	const createNewDraft = useCreatePostDraft();
+	const updatePostDraft = useUpdatePostDraft();
 	const [draftId, setDraftId] = useState<number | null>(null);
 
 	const publishCurrentPost: PublishPost =
@@ -74,7 +76,9 @@ export default function NewPostController({
 		>
 			{(editor) => {
 				if (draftId !== null) {
-					return <SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft} />;
+					return (
+						<SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft ?? updatePostDraft} />
+					);
 				}
 
 				return (

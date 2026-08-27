@@ -3,6 +3,7 @@
 import type { ComponentType } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
+import { useUpdatePostDraft } from '@/features/post-write/hooks/use-update-post-draft';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublicationSettings } from '@/features/post-write/model/post-publication';
 import type { PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
@@ -31,6 +32,8 @@ export default function DraftPostController({
 	uploadFile,
 	navigate,
 }: DraftPostControllerProps) {
+	const updatePostDraft = useUpdatePostDraft();
+
 	return (
 		<PostWriteWorkspace
 			publishPost={(command) => {
@@ -52,7 +55,9 @@ export default function DraftPostController({
 				});
 			}}
 		>
-			{(editor) => <SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft} />}
+			{(editor) => (
+				<SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft ?? updatePostDraft} />
+			)}
 		</PostWriteWorkspace>
 	);
 }
