@@ -10,6 +10,7 @@ type ProfileSocialField = 'serviceUrl' | 'githubUrl';
 interface ProfileSocialFieldsProps {
 	serviceUrl: string;
 	githubUrl: string;
+	maxLength: number;
 	errors: Partial<Record<ProfileSocialField, string>>;
 	serviceUrlRef: RefObject<HTMLInputElement | null>;
 	githubUrlRef: RefObject<HTMLInputElement | null>;
@@ -21,6 +22,7 @@ interface ProfileSocialFieldsProps {
 export default function ProfileSocialFields({
 	serviceUrl,
 	githubUrl,
+	maxLength,
 	errors,
 	serviceUrlRef,
 	githubUrlRef,
@@ -42,8 +44,10 @@ export default function ProfileSocialFields({
 						aria-label="서비스 링크"
 						aria-describedby={describedBy}
 						ref={serviceUrlRef}
+						name="serviceUrl"
 						value={serviceUrl}
 						disabled={disabled}
+						maxLength={maxLength}
 						placeholder="https://example.com"
 						left={<Image src="/icons/form/link.svg" alt="" width={20} height={20} className="size-5 shrink-0" />}
 						status={errors.serviceUrl !== undefined ? 'error' : 'default'}
@@ -60,8 +64,10 @@ export default function ProfileSocialFields({
 						aria-label="GitHub 링크"
 						aria-describedby={describedBy}
 						ref={githubUrlRef}
+						name="githubUrl"
 						value={githubUrl}
 						disabled={disabled}
+						maxLength={maxLength}
 						placeholder="https://github.com/organization"
 						left={<Image src="/icons/form/github.svg" alt="" width={20} height={20} className="size-5 shrink-0" />}
 						status={errors.githubUrl !== undefined ? 'error' : 'default'}

@@ -4,6 +4,7 @@ import type {
 	RilogProfileValidationErrors,
 } from '../model/rilog-profile-settings';
 
+import { BLOG_PROFILE_URL_MAX_LENGTH } from '@/domains/blog/model/blog';
 import { USER_NICKNAME_MAX_LENGTH, USER_NICKNAME_MIN_LENGTH } from '@/domains/user/lib/validate-user-profile';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
@@ -120,6 +121,7 @@ export default function RilogProfileFormFields({
 			<ProfileSocialFields
 				serviceUrl={value.serviceUrl ?? ''}
 				githubUrl={value.githubUrl ?? ''}
+				maxLength={BLOG_PROFILE_URL_MAX_LENGTH}
 				errors={errors}
 				serviceUrlRef={refs.serviceUrl}
 				githubUrlRef={refs.githubUrl}

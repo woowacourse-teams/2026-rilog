@@ -1,5 +1,6 @@
 import type { RilogProfileSettingsValue, RilogProfileValidationErrors } from '../model/rilog-profile-settings';
 
+import { BLOG_PROFILE_URL_MAX_LENGTH } from '@/domains/blog/model/blog';
 import { normalizeUserNickname, validateUserNickname } from '@/domains/user/lib/validate-user-profile';
 import { isHttpUrl } from '@/shared/utils/is-http-url';
 
@@ -29,12 +30,16 @@ export const validateRilogProfileSettings = (value: RilogProfileSettingsValue): 
 	}
 
 	const serviceUrl = normalized.serviceUrl ?? '';
-	if (serviceUrl.length > 0 && !isHttpUrl(serviceUrl)) {
+	if (serviceUrl.length > BLOG_PROFILE_URL_MAX_LENGTH) {
+		errors.serviceUrl = `서비스 링크는 ${BLOG_PROFILE_URL_MAX_LENGTH}자 이하로 입력해 주세요.`;
+	} else if (serviceUrl.length > 0 && !isHttpUrl(serviceUrl)) {
 		errors.serviceUrl = '올바른 서비스 URL을 입력해 주세요.';
 	}
 
 	const githubUrl = normalized.githubUrl ?? '';
-	if (githubUrl.length > 0 && !isHttpUrl(githubUrl)) {
+	if (githubUrl.length > BLOG_PROFILE_URL_MAX_LENGTH) {
+		errors.githubUrl = `GitHub 링크는 ${BLOG_PROFILE_URL_MAX_LENGTH}자 이하로 입력해 주세요.`;
+	} else if (githubUrl.length > 0 && !isHttpUrl(githubUrl)) {
 		errors.githubUrl = '올바른 GitHub URL을 입력해 주세요.';
 	}
 

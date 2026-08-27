@@ -39,6 +39,19 @@ describe('validateRilogProfileSettings', () => {
 			description: '소개는 80자 이내로 입력해 주세요.',
 		});
 	});
+
+	it('소셜 링크 길이 제한을 적용한다', () => {
+		expect(
+			validateRilogProfileSettings({
+				...VALID_VALUE,
+				serviceUrl: `https://${'a'.repeat(505)}`,
+				githubUrl: `https://${'b'.repeat(505)}`,
+			}),
+		).toEqual({
+			serviceUrl: '서비스 링크는 512자 이하로 입력해 주세요.',
+			githubUrl: 'GitHub 링크는 512자 이하로 입력해 주세요.',
+		});
+	});
 });
 
 describe('normalizeRilogProfileSettings', () => {
