@@ -100,7 +100,7 @@ export default function RilogProfileFormFields({
 				)}
 			</Field>
 
-			<Field label="소개" description="나를 소개하는 문장을 입력하세요.">
+			<Field label="한 줄 소개" description="나를 소개하는 문장을 입력하세요.">
 				{({ id, describedBy }) => (
 					<div>
 						<Textarea
