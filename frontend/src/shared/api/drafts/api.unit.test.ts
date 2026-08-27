@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { DraftSaveRequest } from './types';
 
-import { overwriteDraft, readDraftDetail, readMyDraftList, saveDraft } from './api';
+import { deleteDraft, overwriteDraft, readDraftDetail, readMyDraftList, saveDraft } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -124,5 +124,19 @@ describe('overwriteDraft', () => {
 		expect(request.method).toBe('PUT');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
 		expect(capturedBody).toEqual(requestBody);
+	});
+});
+
+describe('deleteDraft', () => {
+	it('postId를 경로로 전달해 DELETE하고 204 응답을 반환한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const response = await deleteDraft(42);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('DELETE');
+		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
+		expect(response.status).toBe(204);
 	});
 });

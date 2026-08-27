@@ -22,3 +22,5 @@ export const readDraftDetail = ({ draftId }: DraftDetailRequest) =>
 
 export const overwriteDraft = (draftId: number, request: DraftSaveRequest) =>
 	apiClient.put<ApiResponse<DraftSaveResponse>>(`v1/drafts/${draftId}`, { json: request });
+
+export const deleteDraft = (postId: number) => apiClient.delete(`v1/drafts/${postId}`);
