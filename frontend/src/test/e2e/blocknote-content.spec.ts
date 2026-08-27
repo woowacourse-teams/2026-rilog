@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 const SHARED_CONTENT_STYLES = new URL('../../shared/styles/blocknote-content.css', import.meta.url);
+const BLOCKNOTE_CORE_STYLES = new URL('../../../node_modules/@blocknote/core/dist/style.css', import.meta.url);
 const POST_DETAIL_STYLES = new URL(
 	'../../app/(with-sidebar)/(with-footer)/[slug]/posts/[postId]/post-detail.css',
 	import.meta.url,
@@ -40,7 +41,8 @@ const renderBlockNoteFixture = async (
 	rootClass: 'post-detail-body' | 'post-write-blocknote',
 	contentTypes: Array<string | BlockFixture>,
 ) => {
-	const [sharedStyles, rootStyles] = await Promise.all([
+	const [blockNoteCoreStyles, sharedStyles, rootStyles] = await Promise.all([
+		readFile(BLOCKNOTE_CORE_STYLES, 'utf8'),
 		readFile(SHARED_CONTENT_STYLES, 'utf8'),
 		readFile(rootClass === 'post-detail-body' ? POST_DETAIL_STYLES : POST_WRITE_STYLES, 'utf8'),
 	]);
@@ -49,7 +51,7 @@ const renderBlockNoteFixture = async (
 		`<div class="${rootClass}"><div class="bn-block-group">${contentTypes.map(block).join('')}</div></div>`,
 	);
 	await page.addStyleTag({
-		content: `:root { --text-body-2: 1rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
+		content: `:root { --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
 	});
 };
 
@@ -95,7 +97,7 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		}
 	});
 
-	test('상세 본문 제목의 폰트 크기를 유지하고 위쪽 간격을 더 크게 둔다', async ({ page }) => {
+	test('데스크톱 본문 헤딩은 BlockNote 기본 크기를 유지하고 위쪽 간격을 더 크게 둔다', async ({ page }) => {
 		await renderBlockNoteFixture(page, 'post-detail-body', [
 			'paragraph',
 			{ contentType: 'heading', attributes: 'data-level="2"' },
@@ -106,12 +108,12 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		const level2Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="2"]');
 		const level3Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="3"]');
 
-		await expect(level2Heading).toHaveCSS('font-size', '24px');
-		await expect(level2Heading).toHaveCSS('padding-top', '39.6px');
-		await expect(level2Heading).toHaveCSS('padding-bottom', '14.4px');
-		await expect(level3Heading).toHaveCSS('font-size', '20px');
-		await expect(level3Heading).toHaveCSS('padding-top', '29px');
-		await expect(level3Heading).toHaveCSS('padding-bottom', '10px');
+		await expect(level2Heading).toHaveCSS('font-size', '32px');
+		await expect(level2Heading).toHaveCSS('padding-top', '52.8px');
+		await expect(level2Heading).toHaveCSS('padding-bottom', '19.2px');
+		await expect(level3Heading).toHaveCSS('font-size', '20.8px');
+		await expect(level3Heading).toHaveCSS('padding-top', '30.16px');
+		await expect(level3Heading).toHaveCSS('padding-bottom', '10.4px');
 	});
 
 	test('두 줄 이상인 상세 본문 제목에 충분한 행간을 적용한다', async ({ page }) => {
@@ -132,10 +134,32 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 			'.bn-block-content[data-content-type="heading"][data-level="3"] .bn-inline-content',
 		);
 
-		await expect(level2Content).toHaveCSS('line-height', '36px');
-		await expect(level3Content).toHaveCSS('line-height', '30px');
-		expect(await level2Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(36);
-		expect(await level3Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(30);
+		await expect(level2Content).toHaveCSS('line-height', '48px');
+		await expect(level3Content).toHaveCSS('line-height', '31.2px');
+		expect(await level2Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(48);
+		expect(await level3Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(31.2);
+	});
+
+	test('모바일 본문 헤딩을 28px부터 단계적으로 축소한다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading' },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+		]);
+		await page.setViewportSize({ width: 390, height: 844 });
+
+		const level1Heading = page.locator('.bn-block-content[data-content-type="heading"]:not([data-level])');
+		const level2Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="2"]');
+		const level3Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="3"]');
+
+		await expect(level1Heading).toHaveCSS('font-size', '28px');
+		await expect(level1Heading.locator('.bn-inline-content')).toHaveCSS('line-height', '36px');
+		await expect(level2Heading).toHaveCSS('font-size', '24px');
+		await expect(level2Heading.locator('.bn-inline-content')).toHaveCSS('line-height', '32px');
+		await expect(level3Heading).toHaveCSS('font-size', '20px');
+		await expect(level3Heading.locator('.bn-inline-content')).toHaveCSS('line-height', '28px');
 	});
 
 	test('연속 헤딩과 구분선 주변의 간격을 중복하지 않는다', async ({ page }) => {
@@ -148,11 +172,11 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 
 		const headings = page.locator('.bn-block-content[data-content-type="heading"]');
 		await expect(headings.nth(0)).toHaveCSS('padding-top', '0px');
-		await expect(headings.nth(0)).toHaveCSS('padding-bottom', '7.2px');
-		await expect(headings.nth(1)).toHaveCSS('padding-top', '15px');
-		await expect(headings.nth(1)).toHaveCSS('padding-bottom', '7px');
-		await expect(headings.nth(2)).toHaveCSS('padding-top', '24px');
-		await expect(headings.nth(2)).toHaveCSS('padding-bottom', '14.4px');
+		await expect(headings.nth(0)).toHaveCSS('padding-bottom', '9.6px');
+		await expect(headings.nth(1)).toHaveCSS('padding-top', '15.6px');
+		await expect(headings.nth(1)).toHaveCSS('padding-bottom', '7.28px');
+		await expect(headings.nth(2)).toHaveCSS('padding-top', '32px');
+		await expect(headings.nth(2)).toHaveCSS('padding-bottom', '19.2px');
 	});
 
 	for (const { rootClass, outer, shared } of ROOT_SPACING) {
