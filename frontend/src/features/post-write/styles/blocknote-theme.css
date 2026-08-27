@@ -1,6 +1,4 @@
 .post-write-blocknote {
-	--post-list-item-space: 0.5em;
-	--post-list-item-shared-space: 0;
 	--radius: var(--radius-xl);
 	--card: var(--surface);
 	--card-foreground: var(--text-primary);
@@ -46,10 +44,6 @@
 
 .post-write-blocknote .bn-editor {
 	min-height: 22rem;
-	padding-inline: 0;
-	font-family: var(--font-sans);
-	font-size: 1.125rem;
-	line-height: 1.75rem;
 }
 
 .post-write-blocknote .bn-default-styles {
@@ -63,8 +57,6 @@
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] {
 	flex-direction: column;
 	align-items: stretch;
-	background: var(--code-syntax-background);
-	color: var(--code-syntax-foreground);
 }
 
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > div {
@@ -74,10 +66,6 @@
 
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > pre {
 	padding-top: 0.75rem;
-}
-
-.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > pre > code.bn-inline-content {
-	color: var(--code-syntax-foreground);
 }
 
 .post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > .mermaid-diagram {
@@ -169,7 +157,5 @@
 @media (max-width: 40rem) {
 	.post-write-blocknote .bn-editor {
 		min-height: 18rem;
-		font-size: 1rem;
-		line-height: 1.5rem;
 	}
 }

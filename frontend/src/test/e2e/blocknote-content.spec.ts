@@ -57,7 +57,7 @@ const renderBlockNoteFixture = async (
 	const content = shouldWrapInEditor ? `<div class="bn-editor bn-default-styles">${blockGroup}</div>` : blockGroup;
 	await page.setContent(`<div class="${rootClass}">${content}</div>`);
 	await page.addStyleTag({
-		content: `* { box-sizing: border-box; } ${colorTokenStyles} :root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
+		content: `* { box-sizing: border-box; transition: none !important; } ${colorTokenStyles} :root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
 	});
 };
 
@@ -73,12 +73,77 @@ const getPadding = (page: Page, index: number) =>
 
 const ROOT_SPACING = [
 	{ rootClass: 'post-detail-body' as const, outer: '9.6px', shared: '3.2px' },
-	{ rootClass: 'post-write-blocknote' as const, outer: '8px', shared: '0px' },
+	{ rootClass: 'post-write-blocknote' as const, outer: '9.6px', shared: '3.2px' },
 ];
 
 const LIST_TYPES = ['bulletListItem', 'numberedListItem', 'checkListItem', 'toggleListItem'];
 
 test.describe('BlockNote 콘텐츠 여백', () => {
+	test('에디터와 상세 본문은 데스크톱과 모바일에서 같은 시각 규칙을 사용한다', async ({ page }) => {
+		const fixtures: Array<string | BlockFixture> = [
+			'paragraph',
+			'paragraph',
+			{ contentType: 'heading' },
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+			'bulletListItem',
+			'quote',
+			{
+				contentType: 'codeBlock',
+				innerHtml: '<pre><code class="bn-inline-content">plain text</code></pre>',
+			},
+		];
+		const getVisualMetrics = (rootClass: 'post-detail-body' | 'post-write-blocknote') =>
+			page.locator(`.${rootClass}`).evaluate((root) => {
+				const styles = (selector: string) => getComputedStyle(root.querySelector(selector)!);
+				const codeStyle = styles('[data-content-type="codeBlock"] > pre');
+				const boxStyles = (selector: string) => {
+					const style = styles(selector);
+
+					return {
+						color: style.color,
+						fontSize: style.fontSize,
+						letterSpacing: style.letterSpacing,
+						lineHeight: style.lineHeight,
+						paddingBottom: style.paddingBottom,
+						paddingTop: style.paddingTop,
+					};
+				};
+
+				return {
+					code: {
+						color: codeStyle.color,
+						fontSize: codeStyle.fontSize,
+						lineHeight: codeStyle.lineHeight,
+						paddingBottom: codeStyle.paddingBottom,
+					},
+					codeBlock: boxStyles('[data-content-type="codeBlock"]'),
+					editor: boxStyles('.bn-editor'),
+					heading1: boxStyles('[data-content-type="heading"]:not([data-level])'),
+					heading2: boxStyles('[data-content-type="heading"][data-level="2"]'),
+					heading3: boxStyles('[data-content-type="heading"][data-level="3"]'),
+					list: boxStyles('.bn-block-outer:has(> .bn-block > [data-content-type="bulletListItem"])'),
+					paragraph: boxStyles('[data-content-type="paragraph"]'),
+					secondParagraph: boxStyles('.bn-block-outer:nth-child(2)'),
+					quote: boxStyles('.bn-block-outer:has(> .bn-block > [data-content-type="quote"])'),
+				};
+			});
+
+		for (const viewport of [
+			{ width: 1280, height: 800 },
+			{ width: 390, height: 844 },
+		]) {
+			await page.setViewportSize(viewport);
+			await renderBlockNoteFixture(page, 'post-detail-body', fixtures, true);
+			const detailMetrics = await getVisualMetrics('post-detail-body');
+
+			await renderBlockNoteFixture(page, 'post-write-blocknote', fixtures, true);
+			const editorMetrics = await getVisualMetrics('post-write-blocknote');
+
+			expect(editorMetrics).toEqual(detailMetrics);
+		}
+	});
+
 	test('상세 코드 블록은 14px 글자 크기를 사용한다', async ({ page }) => {
 		await renderBlockNoteFixture(
 			page,
