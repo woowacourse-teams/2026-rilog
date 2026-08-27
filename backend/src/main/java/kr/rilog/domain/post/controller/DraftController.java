@@ -87,7 +87,7 @@ public class DraftController implements DraftApiSpec {
     }
 
     @AuthGuard
-    @PatchMapping("/drafts/{draftId}/publish")
+    @PutMapping("/drafts/{draftId}/publish")
     public ApiResponse<PostPublishResponse> publishDraft(
             @LoginUserId Long requesterId,
             @PathVariable("draftId") Long draftId,
