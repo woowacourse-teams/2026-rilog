@@ -98,9 +98,9 @@ test.describe('글 작성', () => {
 		await page.keyboard.press('Enter');
 
 		const codeBlock = page.locator('[data-content-type="codeBlock"]');
-		const languageSelect = page.getByRole('combobox', { name: '코드 언어' });
+		const languageTrigger = page.getByRole('button', { name: '코드 언어: JavaScript' });
 		await expect(codeBlock).toBeVisible();
-		await expect(languageSelect).toHaveValue('javascript');
+		await expect(languageTrigger).toHaveAttribute('aria-expanded', 'false');
 		await page.keyboard.type('const message = "highlighted";');
 
 		await expect.poll(() => codeBlock.locator('span.shiki').count()).toBeGreaterThan(0);
@@ -110,8 +110,19 @@ test.describe('글 작성', () => {
 				.evaluateAll((elements) => new Set(elements.map((element) => getComputedStyle(element).color)).size),
 		).toBeGreaterThan(1);
 
-		await languageSelect.selectOption('typescript');
-		await expect(languageSelect).toHaveValue('typescript');
+		await languageTrigger.click();
+		const languageListbox = page.getByRole('listbox', { name: '코드 언어' });
+		const triggerBox = await languageTrigger.boundingBox();
+		const codeBox = await codeBlock.locator('pre').boundingBox();
+		expect(triggerBox).not.toBeNull();
+		expect(codeBox).not.toBeNull();
+		expect(triggerBox!.y + triggerBox!.height).toBeLessThanOrEqual(codeBox!.y);
+		await expect(languageListbox).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+		await expect(languageListbox).toHaveCSS('max-height', '288px');
+		await expect(languageListbox).toHaveCSS('overflow-y', 'auto');
+		expect(await languageListbox.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+		await page.getByRole('option', { name: 'TypeScript' }).click();
+		await expect(page.getByRole('button', { name: '코드 언어: TypeScript' })).toBeVisible();
 		await expect(codeBlock).toHaveAttribute('data-language', 'typescript');
 	});
 

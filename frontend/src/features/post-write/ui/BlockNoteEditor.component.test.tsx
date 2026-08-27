@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -105,18 +105,43 @@ describe('BlockNoteEditor', () => {
 		await waitFor(() => expect(editorElement).not.toHaveAttribute('aria-describedby'));
 	});
 
-	it('동적으로 생성된 코드 언어 선택 컨트롤에 접근 가능한 이름을 부여한다', async () => {
+	it('동적으로 생성된 코드 언어 선택 컨트롤을 접근 가능한 드롭다운으로 대체한다', async () => {
+		const user = userEvent.setup();
 		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
 		const languageSelect = document.createElement('select');
+		languageSelect.append(new Option('JavaScript', 'javascript'), new Option('TypeScript', 'typescript'));
+		languageSelect.value = 'javascript';
+		const handleLanguageChange = vi.fn();
+		languageSelect.addEventListener('change', handleLanguageChange);
 		const codeBlock = document.createElement('div');
 		const selectWrapper = document.createElement('div');
 		codeBlock.className = 'bn-block-content';
 		codeBlock.dataset.contentType = 'codeBlock';
 		selectWrapper.append(languageSelect);
 		codeBlock.append(selectWrapper);
+		document.body.append(editorElement);
 		editorElement.append(codeBlock);
 
-		await waitFor(() => expect(languageSelect).toHaveAccessibleName('코드 언어'));
+		const languageTrigger = await screen.findByRole('button', { name: '코드 언어: JavaScript' });
+		expect(languageSelect).toHaveAttribute('aria-hidden', 'true');
+		expect(languageSelect).toHaveAttribute('tabindex', '-1');
+
+		languageTrigger.focus();
+		await user.keyboard('{ArrowDown}');
+		await waitFor(() => expect(screen.getByRole('option', { name: 'JavaScript' })).toHaveFocus());
+		await user.keyboard('{ArrowDown}');
+		expect(screen.getByRole('option', { name: 'TypeScript' })).toHaveFocus();
+		await user.keyboard('{Escape}');
+		expect(screen.queryByRole('listbox', { name: '코드 언어' })).not.toBeInTheDocument();
+		expect(languageTrigger).toHaveFocus();
+
+		await user.click(languageTrigger);
+		await user.click(screen.getByRole('option', { name: 'TypeScript' }));
+
+		expect(languageSelect).toHaveValue('typescript');
+		expect(handleLanguageChange).toHaveBeenCalledOnce();
+		expect(languageTrigger).toHaveAccessibleName('코드 언어: TypeScript');
+		editorElement.remove();
 	});
 
 	it('초기 문서와 변경된 문서를 외부 계약으로 전달한다', async () => {

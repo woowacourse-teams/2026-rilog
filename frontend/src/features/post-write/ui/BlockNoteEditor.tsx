@@ -20,19 +20,13 @@ import {
 } from '../lib/calculate-slash-menu-layout';
 import '../styles/blocknote-theme.css';
 
+import CodeLanguageDropdownController from './CodeLanguageDropdown';
+
 const POST_WRITE_SCHEMA = BlockNoteSchema.create().extend({
 	blockSpecs: {
 		codeBlock: createCodeBlockSpec(codeBlockOptions),
 	},
 });
-
-const CODE_LANGUAGE_SELECT_SELECTOR = '.bn-block-content[data-content-type="codeBlock"] > div > select';
-
-const labelCodeLanguageSelects = (editorElement: HTMLElement): void => {
-	editorElement.querySelectorAll<HTMLSelectElement>(CODE_LANGUAGE_SELECT_SELECTOR).forEach((languageSelect) => {
-		languageSelect.setAttribute('aria-label', '코드 언어');
-	});
-};
 
 const isClippingElement = (element: Element): boolean => {
 	const ownerWindow = element.ownerDocument.defaultView ?? window;
@@ -197,20 +191,6 @@ export default function BlockNoteEditor({
 		}
 	}, [ariaDescribedBy, editor]);
 
-	// BlockNote가 코드 블록 생성 시 추가하는 언어 선택 컨트롤에 접근 가능한 이름을 부여한다.
-	useEffect(() => {
-		const editorElement = editor.domElement;
-		if (editorElement === undefined) {
-			return;
-		}
-
-		labelCodeLanguageSelects(editorElement);
-		const observer = new MutationObserver(() => labelCodeLanguageSelects(editorElement));
-		observer.observe(editorElement, { childList: true, subtree: true });
-
-		return () => observer.disconnect();
-	}, [editor]);
-
 	return (
 		<div className="post-write-blocknote">
 			<BlockNoteView editor={editor} theme="light" slashMenu={false} onChange={() => onChange([...editor.document])}>
@@ -220,6 +200,7 @@ export default function BlockNoteEditor({
 					floatingUIOptions={slashMenuFloatingUIOptions}
 				/>
 			</BlockNoteView>
+			<CodeLanguageDropdownController editor={editor} />
 		</div>
 	);
 }
