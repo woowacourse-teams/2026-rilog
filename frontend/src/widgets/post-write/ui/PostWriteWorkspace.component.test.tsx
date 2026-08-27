@@ -86,6 +86,24 @@ vi.mock('@/shared/api/drafts/mutations/use-save-draft-mutation', () => ({
 	useSaveDraftMutation: () => ({ mutateAsync: requestDraftSaveMock }),
 }));
 
+vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
+	usePostDraftList: () => ({
+		data: [
+			{ id: 34, title: '디자인 시스템 도입 회고', savedAt: '2026-08-21T04:40:07.585624' },
+			{ id: 37, title: 'TypeScript 타입 설계 회고', savedAt: '2026-08-20T04:40:07.585624' },
+			{ id: 21, title: '접근성 개선 기록', savedAt: '2026-08-19T04:40:07.585624' },
+			{ id: 4, title: 'Next.js 마이그레이션', savedAt: '2026-08-18T04:40:07.585624' },
+		],
+		isPending: false,
+		isError: false,
+		hasNextPage: false,
+		isFetchingNextPage: false,
+		isFetchNextPageError: false,
+		refetch: vi.fn(),
+		fetchNextPage: vi.fn(),
+	}),
+}));
+
 vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
 	useUpdatePostMutation: () => ({ mutateAsync: requestPostUpdateMock }),
 }));

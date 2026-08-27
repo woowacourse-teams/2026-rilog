@@ -1,5 +1,6 @@
 'use client';
 
+import { usePostDraftList } from '@/features/post-write/hooks/use-post-draft-list';
 import { usePostDrafts } from '@/features/post-write/hooks/use-post-drafts';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
 import DraftListModal from '@/features/post-write/ui/DraftListModal';
@@ -22,7 +23,8 @@ export default function DraftPostActions({
 	onSave,
 	onPublish,
 }: DraftPostActionsProps) {
-	const drafts = usePostDrafts({ prepareDocument, onSave });
+	const draftList = usePostDraftList();
+	const drafts = usePostDrafts({ prepareDocument, posts: draftList.data, onSave });
 
 	return (
 		<>
@@ -43,8 +45,15 @@ export default function DraftPostActions({
 			<DraftListModal
 				open={drafts.isListModalOpen}
 				draftPosts={drafts.posts}
+				isPending={draftList.isPending}
+				isError={draftList.isError}
+				hasNextPage={draftList.hasNextPage}
+				isFetchingNextPage={draftList.isFetchingNextPage}
+				isFetchNextPageError={draftList.isFetchNextPageError}
 				onClose={drafts.closeList}
 				onDelete={drafts.requestDeletion}
+				onRetry={() => void draftList.refetch()}
+				onLoadMore={() => void draftList.fetchNextPage()}
 			/>
 
 			<ConfirmModal
