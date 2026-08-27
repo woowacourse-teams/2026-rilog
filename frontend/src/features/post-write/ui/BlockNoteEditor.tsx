@@ -1,5 +1,7 @@
 'use client';
 
+import { codeBlockOptions } from '@blocknote/code-block';
+import { BlockNoteSchema, createCodeBlockSpec } from '@blocknote/core';
 import { ko } from '@blocknote/core/locales';
 import { SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
@@ -17,6 +19,20 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import '../styles/blocknote-theme.css';
+
+const POST_WRITE_SCHEMA = BlockNoteSchema.create().extend({
+	blockSpecs: {
+		codeBlock: createCodeBlockSpec(codeBlockOptions),
+	},
+});
+
+const CODE_LANGUAGE_SELECT_SELECTOR = '.bn-block-content[data-content-type="codeBlock"] > div > select';
+
+const labelCodeLanguageSelects = (editorElement: HTMLElement): void => {
+	editorElement.querySelectorAll<HTMLSelectElement>(CODE_LANGUAGE_SELECT_SELECTOR).forEach((languageSelect) => {
+		languageSelect.setAttribute('aria-label', '코드 언어');
+	});
+};
 
 const isClippingElement = (element: Element): boolean => {
 	const ownerWindow = element.ownerDocument.defaultView ?? window;
@@ -143,6 +159,7 @@ export default function BlockNoteEditor({
 	const editor = useCreateBlockNote(
 		{
 			...(initialBlocks === undefined || initialBlocks.length === 0 ? {} : { initialContent: initialBlocks }),
+			schema: POST_WRITE_SCHEMA,
 			dictionary: {
 				...ko,
 				placeholders: {
@@ -179,6 +196,20 @@ export default function BlockNoteEditor({
 			editorElement.setAttribute('aria-describedby', ariaDescribedBy);
 		}
 	}, [ariaDescribedBy, editor]);
+
+	// BlockNote가 코드 블록 생성 시 추가하는 언어 선택 컨트롤에 접근 가능한 이름을 부여한다.
+	useEffect(() => {
+		const editorElement = editor.domElement;
+		if (editorElement === undefined) {
+			return;
+		}
+
+		labelCodeLanguageSelects(editorElement);
+		const observer = new MutationObserver(() => labelCodeLanguageSelects(editorElement));
+		observer.observe(editorElement, { childList: true, subtree: true });
+
+		return () => observer.disconnect();
+	}, [editor]);
 
 	return (
 		<div className="post-write-blocknote">

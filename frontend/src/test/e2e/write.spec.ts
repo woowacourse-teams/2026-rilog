@@ -89,6 +89,32 @@ const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
 };
 
 test.describe('글 작성', () => {
+	test('코드 블록에서 언어를 선택하고 구문을 강조한다', async ({ page }) => {
+		await enableWriteAccess(page);
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드 블록');
+		await page.keyboard.press('Enter');
+
+		const codeBlock = page.locator('[data-content-type="codeBlock"]');
+		const languageSelect = page.getByRole('combobox', { name: '코드 언어' });
+		await expect(codeBlock).toBeVisible();
+		await expect(languageSelect).toHaveValue('javascript');
+		await page.keyboard.type('const message = "highlighted";');
+
+		await expect.poll(() => codeBlock.locator('span.shiki').count()).toBeGreaterThan(0);
+		expect(
+			await codeBlock
+				.locator('span.shiki')
+				.evaluateAll((elements) => new Set(elements.map((element) => getComputedStyle(element).color)).size),
+		).toBeGreaterThan(1);
+
+		await languageSelect.selectOption('typescript');
+		await expect(languageSelect).toHaveValue('typescript');
+		await expect(codeBlock).toHaveAttribute('data-language', 'typescript');
+	});
+
 	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
 		await enableWriteAccess(page);
 		await page.route('**/v1/posts/31', (route) =>

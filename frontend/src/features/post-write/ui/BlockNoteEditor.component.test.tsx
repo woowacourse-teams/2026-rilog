@@ -105,6 +105,20 @@ describe('BlockNoteEditor', () => {
 		await waitFor(() => expect(editorElement).not.toHaveAttribute('aria-describedby'));
 	});
 
+	it('동적으로 생성된 코드 언어 선택 컨트롤에 접근 가능한 이름을 부여한다', async () => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+		const languageSelect = document.createElement('select');
+		const codeBlock = document.createElement('div');
+		const selectWrapper = document.createElement('div');
+		codeBlock.className = 'bn-block-content';
+		codeBlock.dataset.contentType = 'codeBlock';
+		selectWrapper.append(languageSelect);
+		codeBlock.append(selectWrapper);
+		editorElement.append(codeBlock);
+
+		await waitFor(() => expect(languageSelect).toHaveAccessibleName('코드 언어'));
+	});
+
 	it('초기 문서와 변경된 문서를 외부 계약으로 전달한다', async () => {
 		const user = userEvent.setup();
 		const handleReady = vi.fn();
