@@ -2,7 +2,7 @@ package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
-import kr.rilog.domain.blog.entity.vo.Publisher;
+import kr.rilog.domain.blog.model.Publisher;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;

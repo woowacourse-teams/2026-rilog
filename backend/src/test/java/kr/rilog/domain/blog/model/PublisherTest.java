@@ -1,4 +1,4 @@
-package kr.rilog.domain.blog.entity.vo;
+package kr.rilog.domain.blog.model;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
