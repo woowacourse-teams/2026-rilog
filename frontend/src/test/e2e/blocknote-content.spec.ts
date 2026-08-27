@@ -79,6 +79,57 @@ const ROOT_SPACING = [
 const LIST_TYPES = ['bulletListItem', 'numberedListItem', 'checkListItem', 'toggleListItem'];
 
 test.describe('BlockNote 콘텐츠 여백', () => {
+	for (const rootClass of ['post-detail-body', 'post-write-blocknote'] as const) {
+		test(`${rootClass}의 토글, 링크와 인용문에 서비스 본문 스타일을 적용한다`, async ({ page }) => {
+			await renderBlockNoteFixture(
+				page,
+				rootClass,
+				[
+					{
+						contentType: 'toggleListItem',
+						innerHtml:
+							'<div><div class="bn-toggle-wrapper"><button class="bn-toggle-button" type="button"><svg width="18" height="18"></svg></button><div class="bn-inline-content">토글</div></div><button class="bn-toggle-add-block-button" type="button">비어 있는 토글입니다. 클릭하여 블록을 추가하세요.</button></div>',
+					},
+					{
+						contentType: 'paragraph',
+						innerHtml: '<div class="bn-inline-content"><a href="https://rilog.dev">Rilog 링크</a></div>',
+					},
+					{
+						contentType: 'quote',
+						innerHtml: '<blockquote><div class="bn-inline-content">인용문</div></blockquote>',
+					},
+				],
+				true,
+			);
+
+			const toggleButton = page.locator('.bn-toggle-button');
+			const emptyToggleButton = page.getByRole('button', {
+				name: '비어 있는 토글입니다. 클릭하여 블록을 추가하세요.',
+			});
+			const link = page.getByRole('link', { name: 'Rilog 링크' });
+			const quote = page.locator('[data-content-type="quote"] blockquote');
+
+			await expect(toggleButton).toHaveCSS('padding', '3px');
+			await expect(toggleButton).toHaveCSS('width', '24px');
+			await expect(toggleButton).toHaveCSS('height', '24px');
+			await expect(emptyToggleButton).toHaveCSS('padding', '4px 8px');
+			await expect(link).toHaveCSS('color', 'rgb(53, 85, 124)');
+			await expect(link).toHaveCSS('text-decoration-line', 'underline');
+			await link.hover();
+			await expect(link).toHaveCSS('color', 'rgb(37, 99, 235)');
+			await page.mouse.move(0, 0);
+			await link.focus();
+			await expect(link).toHaveCSS('color', 'rgb(37, 99, 235)');
+			await link.hover();
+			await page.mouse.down();
+			expect(await link.evaluate((element) => element.matches(':active'))).toBe(true);
+			await expect(link).toHaveCSS('color', 'rgb(37, 99, 235)');
+			await page.mouse.up();
+			await expect(quote).toHaveCSS('color', 'rgb(53, 85, 124)');
+			await expect(quote).toHaveCSS('border-left-color', 'rgb(129, 153, 185)');
+		});
+	}
+
 	test('에디터와 상세 본문은 데스크톱과 모바일에서 같은 시각 규칙을 사용한다', async ({ page }) => {
 		const fixtures: Array<string | BlockFixture> = [
 			'paragraph',

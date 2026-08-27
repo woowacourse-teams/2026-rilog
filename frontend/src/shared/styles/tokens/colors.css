@@ -63,6 +63,10 @@
 	--text-disabled: var(--neutral-600);
 	--text-on-dark: var(--neutral-50);
 	--text-placeholder: var(--neutral-500);
+	--link-text: var(--navy-700);
+	--link-text-interactive: var(--blue-600);
+	--quote-text: var(--navy-700);
+	--quote-border: var(--navy-500);
 
 	--border-default: var(--neutral-300);
 	--border-strong: var(--neutral-400);

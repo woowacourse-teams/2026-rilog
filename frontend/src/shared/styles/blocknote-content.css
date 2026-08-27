@@ -158,6 +158,39 @@
 	vertical-align: baseline;
 }
 
+:is(.post-detail-body, .post-write-blocknote) .bn-inline-content a[href] {
+	color: var(--link-text);
+	text-decoration-line: underline;
+	text-decoration-thickness: 0.08em;
+	text-underline-offset: 0.18em;
+	transition: color 200ms ease-out;
+}
+
+:is(.post-detail-body, .post-write-blocknote) .bn-inline-content a[href]:is(:hover, :focus-visible, :active) {
+	color: var(--link-text-interactive);
+}
+
+:is(.post-detail-body, .post-write-blocknote) .bn-inline-content a[href]:focus-visible {
+	border-radius: 0.125rem;
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:is(.post-detail-body, .post-write-blocknote) .bn-inline-content a[href] {
+		transition: none;
+	}
+}
+
+:is(.post-detail-body, .post-write-blocknote) .bn-toggle-add-block-button {
+	padding: 0.25rem 0.5rem;
+}
+
+:is(.post-detail-body, .post-write-blocknote) [data-content-type='quote'] blockquote {
+	border-left-color: var(--quote-border);
+	color: var(--quote-text);
+}
+
 :is(.post-detail-body, .post-write-blocknote)
 	.bn-block-content:is(
 		[data-content-type='paragraph'],
