@@ -2,9 +2,7 @@
 
 import { useCallback } from 'react';
 
-import { analytics } from '@/features/analytics/model/events';
 import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
-import { usePostDrafts } from '@/features/post-write/hooks/use-post-drafts';
 import { usePostPublication } from '@/features/post-write/hooks/use-post-publication';
 import { usePostPublicationSettings } from '@/features/post-write/hooks/use-post-publication-settings';
 import { usePostWriteLeaveGuard } from '@/features/post-write/hooks/use-post-write-leave-guard';
@@ -17,19 +15,19 @@ import type {
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface UsePostWriteWorkspaceOptions {
-	isEditMode?: boolean;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
 	publishPost: PublishPost;
 	navigate?: (href: string) => void;
+	onPublished?: (settings: PublicationSettings) => void;
 }
 
 export function usePostWriteWorkspace({
-	isEditMode = false,
 	initialDocument,
 	initialPublicationSettings,
 	publishPost,
 	navigate,
+	onPublished,
 }: UsePostWriteWorkspaceOptions) {
 	const {
 		titleRef,
@@ -44,8 +42,6 @@ export function usePostWriteWorkspace({
 		preparePostDocument,
 		markClean,
 	} = usePostDocument({ initialDocument });
-
-	const drafts = usePostDrafts({ prepareDocument: preparePostDocument });
 
 	const {
 		settings: publicationSettings,
@@ -72,17 +68,12 @@ export function usePostWriteWorkspace({
 	const handlePublished = useCallback(
 		(result: PublishPostResult, settings: PublicationSettings) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
-			if (!isEditMode) {
-				analytics.postPublished({
-					category: settings.category,
-					hasCustomRepresentativeImage: settings.representativeImage !== null,
-				});
-			}
+			onPublished?.(settings);
 
 			clearSelectedImageUrl();
 			navigateAfterCompletion(postDetailPath);
 		},
-		[clearSelectedImageUrl, isEditMode, navigateAfterCompletion],
+		[clearSelectedImageUrl, navigateAfterCompletion, onPublished],
 	);
 
 	const {
@@ -145,6 +136,7 @@ export function usePostWriteWorkspace({
 			cancel: handleCancelLeave,
 			confirm: handleConfirmLeave,
 		},
-		drafts,
 	};
 }
+
+export type PostWriteWorkspaceState = ReturnType<typeof usePostWriteWorkspace>;
