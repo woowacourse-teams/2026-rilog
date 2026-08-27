@@ -261,96 +261,117 @@ class BlogMemberTest {
     }
 
     @Test
-    @DisplayName("팀 멤버가 탈퇴하면 상태가 LEFT로 변경된다.")
-    void leaveChangesStatusToLeft() {
+    @DisplayName("본인 탈퇴를 하면 상태가 LEFT로 변경된다.")
+    void leaveBySelfChangesStatusToLeft() {
         // given
         BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when
-        member.leave();
+        member.leaveBySelf();
 
         // then
         assertThat(member.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
     }
 
     @Test
-    @DisplayName("팀 멤버가 탈퇴하면 delete() 가 반영된다.")
-    void leaveChangesToDelete() {
+    @DisplayName("본인 탈퇴를 하면 delete() 가 반영된다.")
+    void leaveBySelfChangesToDelete() {
         // given
         BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when
-        member.leave();
+        member.leaveBySelf();
 
         // then
         assertThat(member.getDeletedAt()).isNotNull();
     }
 
     @Test
-    @DisplayName("OWNER는 ADMIN과 MEMBER를 내보낼 수 있다.")
-    void validateCanRemoveAllowsOwnerToRemoveAdminAndMember() {
+    @DisplayName("OWNER는 ADMIN을 내보낼 수 있다.")
+    void removeAdminByOwner() {
         // given
         BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember admin = createMember(2L, 2L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when
+        assertThatCode(() -> owner.remove(admin))
+                .doesNotThrowAnyException();
+
+        // then
+        assertThat(owner.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+        assertThat(admin.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+    }
+
+    @Test
+    @DisplayName("OWNER는 MEMBER를 내보낼 수 있다.")
+    void removeMemberByOwner() {
+        // given
+        BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember member = createMember(3L, 3L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
-        // when & then
-        assertThatCode(() -> owner.validateCanRemove(admin))
+        // when
+        assertThatCode(() -> owner.remove(member))
                 .doesNotThrowAnyException();
-        assertThatCode(() -> owner.validateCanRemove(member))
-                .doesNotThrowAnyException();
+
+        // then
+        assertThat(owner.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+        assertThat(member.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
     }
 
     @Test
     @DisplayName("ADMIN은 MEMBER만 내보낼 수 있다.")
-    void validateCanRemoveAllowsAdminToRemoveMember() {
+    void removeMember() {
         // given
         BlogMember admin = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
         BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
-        // when & then
-        assertThatCode(() -> admin.validateCanRemove(member))
+        // when
+        assertThatCode(() -> admin.remove(member))
                 .doesNotThrowAnyException();
+
+        // then
+        assertThat(admin.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+        assertThat(member.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
     }
 
     @Test
     @DisplayName("ADMIN은 OWNER와 ADMIN을 내보낼 수 없다.")
-    void validateCanRemoveRejectsAdminRemovingOwnerOrAdmin() {
+    void removeRejectsAdminRemovingOwnerOrAdmin() {
         // given
         BlogMember admin = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
         BlogMember owner = createMember(2L, 2L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember otherAdmin = createMember(3L, 3L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> admin.validateCanRemove(owner))
+        assertThatThrownBy(() -> admin.remove(owner))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_MEMBER_REMOVE_FORBIDDEN.getMessage());
-        assertThatThrownBy(() -> admin.validateCanRemove(otherAdmin))
+        assertThatThrownBy(() -> admin.remove(otherAdmin))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_MEMBER_REMOVE_FORBIDDEN.getMessage());
     }
 
     @Test
     @DisplayName("MEMBER는 다른 멤버를 내보낼 수 없다.")
-    void validateCanRemoveRejectsMemberRemovingMember() {
+    void removeRejectsMemberRemovingMember() {
         // given
         BlogMember requester = createMember(1L, 1L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
         BlogMember target = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> requester.validateCanRemove(target))
+        assertThatThrownBy(() -> requester.remove(target))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_MEMBER_REMOVE_FORBIDDEN.getMessage());
     }
 
     @Test
     @DisplayName("자기 자신은 강제 내보내기 API로 내보낼 수 없다.")
-    void validateCanRemoveRejectsSelfRemove() {
+    void remove() {
         // given
         BlogMember member = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> member.validateCanRemove(member))
+        assertThatThrownBy(() -> member.remove(member))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_SELF_REMOVE_FORBIDDEN.getMessage());
     }

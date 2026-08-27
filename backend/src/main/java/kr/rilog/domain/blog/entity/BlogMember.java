@@ -112,7 +112,7 @@ public class BlogMember extends BaseEntity {
         }
     }
 
-    public void validateCanRemove(BlogMember target) {
+    public void remove(BlogMember target) {
         validateActiveMember();
         target.validateActiveMember();
 
@@ -121,22 +121,27 @@ public class BlogMember extends BaseEntity {
         }
 
         if (canRemove(target)) {
+            target.markAsLeft();
             return;
         }
 
         throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
     }
 
-    public void leave() {
-        validateActiveMember();
-        delete();
-        this.status = BlogMemberStatus.LEFT;
+    public void leaveBySelf() {
+        validateCanLeave();
+        markAsLeft();
     }
 
     public boolean hasDeletePermission() {
         return status == ACTIVE
                 && getDeletedAt() == null
                 && (permission == OWNER || permission == ADMIN);
+    }
+
+    private void markAsLeft() {
+        delete();
+        this.status = BlogMemberStatus.LEFT;
     }
 
     private boolean isCologMember() {

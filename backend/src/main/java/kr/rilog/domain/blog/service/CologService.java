@@ -85,8 +85,7 @@ public class CologService {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
 
-        requesterMember.validateCanLeave();
-        requesterMember.leave();
+        requesterMember.leaveBySelf();
     }
 
     @Transactional
@@ -95,8 +94,7 @@ public class CologService {
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
 
-        requesterMember.validateCanRemove(targetMember);
-        targetMember.leave();
+        requesterMember.remove(targetMember);
     }
 
     public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
