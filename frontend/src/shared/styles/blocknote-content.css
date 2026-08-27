@@ -4,7 +4,7 @@
 	--post-heading-1-line-height: 1.35;
 	--post-heading-2-line-height: 1.5;
 	--post-heading-3-line-height: 1.5;
-	--post-paragraph-space: 1rem;
+	--post-paragraph-space: 0.875rem;
 	--post-special-block-space: 1rem;
 	--post-special-block-shared-space: 0.5rem;
 	--post-list-item-space: 0.6em;
@@ -226,9 +226,9 @@
 	.bn-block-outer
 	> .bn-block
 	> .bn-block-content[data-content-type='heading']:not([data-level]) {
-	font-size: 3rem;
-	padding-top: 1.8em;
-	padding-bottom: 0.65em;
+	font-size: 2.375rem;
+	padding-top: 1.55em;
+	padding-bottom: 0.5em;
 }
 
 :is(.post-detail-body, .post-write-blocknote)
@@ -244,8 +244,8 @@
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'][data-level='2'] {
 	font-size: 2rem;
-	padding-top: 1.65em;
-	padding-bottom: 0.6em;
+	padding-top: 1.45em;
+	padding-bottom: 0.45em;
 }
 
 :is(.post-detail-body, .post-write-blocknote)
@@ -260,9 +260,9 @@
 	.bn-block-outer
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'][data-level='3'] {
-	font-size: 1.3rem;
-	padding-top: 1.45em;
-	padding-bottom: 0.5em;
+	font-size: 1.425rem;
+	padding-top: 1.25em;
+	padding-bottom: 0.35em;
 }
 
 :is(.post-detail-body, .post-write-blocknote)
@@ -314,7 +314,7 @@
 	)
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'] {
-	padding-bottom: 0.3em;
+	padding-bottom: 0.25em;
 }
 
 :is(.post-detail-body, .post-write-blocknote)
@@ -322,7 +322,7 @@
 	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'])
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'] {
-	padding-top: 0.75em;
+	padding-top: 0.625em;
 }
 
 :is(.post-detail-body, .post-write-blocknote)
@@ -331,7 +331,7 @@
 	)
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'] {
-	padding-bottom: 0.35em;
+	padding-bottom: 0.3em;
 }
 
 :is(.post-detail-body, .post-write-blocknote)
@@ -339,7 +339,7 @@
 	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'])
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'] {
-	padding-top: 1em;
+	padding-top: 0.875em;
 }
 
 @media (max-width: 40rem) {
@@ -347,7 +347,7 @@
 		--post-heading-1-line-height: var(--text-heading-4--line-height);
 		--post-heading-2-line-height: var(--text-title-2--line-height);
 		--post-heading-3-line-height: var(--text-title-1--line-height);
-		--post-paragraph-space: 0.875rem;
+		--post-paragraph-space: 0.75rem;
 		--post-special-block-space: 0.75rem;
 		--post-special-block-shared-space: 0.375rem;
 	}
