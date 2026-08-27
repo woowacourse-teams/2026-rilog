@@ -36,6 +36,10 @@ public record OnboardingCompleteRequest(
         @Size(max = 512, message = "GitHub URL은 512자 이하여야 합니다.")
         String githubUrl,
 
+        @Schema(description = "서비스 URL", example = "https://rilog.example.com")
+        @Size(max = 512, message = "서비스 URL은 512자 이하여야 합니다.")
+        String serviceUrl,
+
         @Schema(description = "이메일", example = "riro@example.com")
         @Email(message = "이메일 형식이 올바르지 않습니다.")
         @Size(max = 256, message = "이메일은 256자 이하여야 합니다.")
@@ -44,6 +48,6 @@ public record OnboardingCompleteRequest(
 ) {
 
     public OnboardingCompleteCommand toCommand() {
-        return new OnboardingCompleteCommand(nickname, slug, introduction, profileImageUrl, githubUrl, email);
+        return new OnboardingCompleteCommand(nickname, slug, introduction, profileImageUrl, githubUrl, serviceUrl, email);
     }
 }
