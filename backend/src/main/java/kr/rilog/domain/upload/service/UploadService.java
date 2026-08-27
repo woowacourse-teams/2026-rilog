@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static kr.rilog.domain.upload.domain.enums.TagStatus.CONFIRMED;
+import static kr.rilog.domain.upload.domain.enums.TagStatus.TEMPORARY;
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.*;
 
 @Service
@@ -70,7 +71,7 @@ public class UploadService {
                 .bucket(properties.bucket())
                 .key(objectKey)
                 .contentType(command.contentType())
-                .tagging(createTaggingQuery(CONFIRMED)) // TODO 고아 이미지 전략 구현 뒤, TEMPORARY로 변경
+                .tagging(createTaggingQuery(TEMPORARY))
                 .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -100,7 +101,7 @@ public class UploadService {
 
     public void markTemporary(String objectKey) {
         validateObjectKey(objectKey);
-        updateStatus(objectKey, TagStatus.TEMPORARY);
+        updateStatus(objectKey, TEMPORARY);
     }
 
     public void markTemporaryAll(Set<String> objectKeys) {
