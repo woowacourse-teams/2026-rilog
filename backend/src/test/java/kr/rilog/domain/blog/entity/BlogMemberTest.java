@@ -56,6 +56,55 @@ class BlogMemberTest {
     }
 
     @Test
+    @DisplayName("두 블로그 멤버가 모두 ACTIVE이면 대상 멤버의 블로그로 이동할 수 있다.")
+    void transferReturnsTargetMembersBlogWhenBothMembersAreActive() {
+        // given
+        User writer = createUser(OWNER_ID);
+        Blog sourceBlog = createRilog(writer);
+        Blog targetBlog = targetColog();
+        BlogMember sourceMember = createMember(sourceBlog, writer, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember targetMember = createMember(targetBlog, writer, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        Blog transferredBlog = sourceMember.transfer(targetMember);
+
+        // then
+        assertThat(transferredBlog).isSameAs(targetBlog);
+    }
+
+    @Test
+    @DisplayName("현재 블로그 멤버가 ACTIVE가 아니면 블로그를 이동할 수 없다.")
+    void transferRejectsInactiveSourceMember() {
+        // given
+        User writer = createUser(OWNER_ID);
+        Blog sourceBlog = createRilog(writer);
+        Blog targetBlog = targetColog();
+        BlogMember sourceMember = createMember(sourceBlog, writer, BlogPermission.OWNER, BlogMemberStatus.LEFT);
+        BlogMember targetMember = createMember(targetBlog, writer, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(() -> sourceMember.transfer(targetMember))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
+    }
+
+    @Test
+    @DisplayName("대상 블로그 멤버가 ACTIVE가 아니면 블로그를 이동할 수 없다.")
+    void transferRejectsInactiveTargetMember() {
+        // given
+        User writer = createUser(OWNER_ID);
+        Blog sourceBlog = createRilog(writer);
+        Blog targetBlog = targetColog();
+        BlogMember sourceMember = createMember(sourceBlog, writer, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember targetMember = createMember(targetBlog, writer, BlogPermission.MEMBER, BlogMemberStatus.LEFT);
+
+        // when & then
+        assertThatThrownBy(() -> sourceMember.transfer(targetMember))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
+    }
+
+    @Test
     @DisplayName("활성 OWNER와 ADMIN 멤버는 사용자를 초대할 수 있다")
     void validateCanInviteAllowsActiveOwnerAndAdmin() {
         // given
@@ -355,6 +404,15 @@ class BlogMemberTest {
         return BlogMember.builder()
                 .id(id)
                 .blog(colog)
+                .user(user)
+                .permission(permission)
+                .status(status)
+                .build();
+    }
+
+    private BlogMember createMember(Blog blog, User user, BlogPermission permission, BlogMemberStatus status) {
+        return BlogMember.builder()
+                .blog(blog)
                 .user(user)
                 .permission(permission)
                 .status(status)
