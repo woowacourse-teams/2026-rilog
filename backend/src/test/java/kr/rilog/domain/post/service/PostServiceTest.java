@@ -13,6 +13,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
@@ -29,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import java.util.Optional;
 
@@ -68,8 +70,7 @@ class PostServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private JsonNode content;
+    private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
 
@@ -365,7 +366,7 @@ class PostServiceTest {
                 .user(writer)
                 .rilog(createRilog(writer))
                 .title("게시글 제목")
-                .content(content)
+                .content(PostContent.from(content))
                 .category(Category.TECH)
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)
@@ -380,7 +381,7 @@ class PostServiceTest {
                 .rilog(null)
                 .colog(createColog())
                 .title("게시글 제목")
-                .content(content)
+                .content(PostContent.from(content))
                 .category(Category.TECH)
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)

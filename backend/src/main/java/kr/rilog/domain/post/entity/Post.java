@@ -6,6 +6,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
@@ -16,9 +17,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -62,9 +60,8 @@ public class Post extends BaseEntity {
     @Column(length = 512)
     private String title;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private JsonNode content; // THINK JsonNode 포장.
+    @Embedded
+    private PostContent content;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = true)
@@ -96,7 +93,7 @@ public class Post extends BaseEntity {
                 .rilog(rilog)
                 .user(owner)
                 .title(detail.title())
-                .content(detail.content())
+                .content(PostContent.from(detail.content()))
                 .category(detail.category())
                 .visibility(detail.visibility())
                 .thumbnailImageUrl(detail.thumbnailUrl())
@@ -115,7 +112,7 @@ public class Post extends BaseEntity {
                 .rilog(rilog)
                 .user(owner)
                 .title(detail.title())
-                .content(detail.content())
+                .content(PostContent.from(detail.content()))
                 .category(detail.category())
                 .visibility(detail.visibility())
                 .thumbnailImageUrl(detail.thumbnailUrl())
@@ -129,7 +126,7 @@ public class Post extends BaseEntity {
                 .user(author)
                 .rilog(rilog)
                 .title(command.title())
-                .content(command.content())
+                .content(PostContent.from(command.content()))
                 .status(PostStatus.DRAFT)
                 .visibility(PostVisibility.PRIVATE)
                 .publishedAt(LocalDateTime.now())
@@ -141,7 +138,7 @@ public class Post extends BaseEntity {
         this.category = detail.category();
         this.visibility = detail.visibility();
         this.title = detail.title();
-        this.content = detail.content();
+        this.content = PostContent.from(detail.content());
         this.thumbnailImageUrl = detail.thumbnailUrl();
         this.colog = targetBlog.isColog() ? targetBlog : null;
     }
@@ -153,7 +150,7 @@ public class Post extends BaseEntity {
         this.category = detail.category();
         this.visibility = detail.visibility();
         this.title = detail.title();
-        this.content = detail.content();
+        this.content = PostContent.from(detail.content());
         this.thumbnailImageUrl = detail.thumbnailUrl();
         this.status = PUBLISHED;
         this.publishedAt = LocalDateTime.now();
@@ -161,7 +158,7 @@ public class Post extends BaseEntity {
 
     public void overwriteDraft(DraftOverwriteCommand command) {
         this.title = command.title();
-        this.content = command.content();
+        this.content = PostContent.from(command.content());
         this.publishedAt = LocalDateTime.now();
     }
 

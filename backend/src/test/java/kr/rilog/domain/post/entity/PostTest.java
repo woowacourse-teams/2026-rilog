@@ -2,6 +2,7 @@ package kr.rilog.domain.post.entity;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
@@ -49,7 +50,7 @@ class PostTest {
         // then
         assertSoftly(softly -> {
             softly.assertThat(draft.getTitle()).isEqualTo(command.title());
-            softly.assertThat(draft.getContent()).isEqualTo(command.content());
+            softly.assertThat(draft.getContent()).isEqualTo(PostContent.from(command.content()));
             softly.assertThat(draft.getStatus()).isEqualTo(DRAFT);
             softly.assertThat(draft.getVisibility()).isEqualTo(PRIVATE);
             softly.assertThat(draft.getCategory()).isNull();
@@ -95,7 +96,7 @@ class PostTest {
         assertSoftly(softly -> {
             softly.assertThat(draft.getTitle()).isEqualTo(command.title());
             softly.assertThat(draft.getTitle()).isNotEqualTo("덮어쓰기 전 제목");
-            softly.assertThat(draft.getContent()).isEqualTo(command.content());
+            softly.assertThat(draft.getContent()).isEqualTo(PostContent.from(command.content()));
         });
     }
 
@@ -133,7 +134,7 @@ class PostTest {
         // then
         PostDetail publishedDetail = new PostDetail(
                 draft.getTitle(),
-                draft.getContent(),
+                draft.getContent().getContent(),
                 draft.getCategory(),
                 draft.getVisibility(),
                 draft.getThumbnailImageUrl()
@@ -296,7 +297,7 @@ class PostTest {
         // then
         PostDetail updatedDetail = new PostDetail(
                 post.getTitle(),
-                post.getContent(),
+                post.getContent().getContent(),
                 post.getCategory(),
                 post.getVisibility(),
                 post.getThumbnailImageUrl()
