@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
+import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +13,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.DUPLICATED_PUBLISH;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
+import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
@@ -113,6 +116,86 @@ class PostTest {
 
         // then
         assertThat(draft.getPublishedAt()).isAfter(BASE_DRAFT_SAVED_AT);
+    }
+
+    @Test
+    @DisplayName("초안을 발행하면 입력한 게시글 정보와 발행 상태가 반영된다.")
+    void publishDraftChangesDetailAndPublishedState() {
+        // given
+        User writer = createUser(1L);
+        Blog rilog = createRilog(writer);
+        Post draft = draftRilogPostAt(rilog, writer, "발행 전 제목", BASE_DRAFT_SAVED_AT);
+        DraftPublishCommand command = publicDraftPublishCommand(rilog.getSlug());
+
+        // when
+        draft.publish(rilog, rilog, command.toDetail());
+
+        // then
+        PostDetail publishedDetail = new PostDetail(
+                draft.getTitle(),
+                draft.getContent(),
+                draft.getCategory(),
+                draft.getVisibility(),
+                draft.getThumbnailImageUrl()
+        );
+        assertSoftly(softly -> {
+            softly.assertThat(publishedDetail).isEqualTo(command.toDetail());
+            softly.assertThat(draft.getStatus()).isEqualTo(PUBLISHED);
+            softly.assertThat(draft.getPublishedAt()).isAfter(BASE_DRAFT_SAVED_AT);
+        });
+    }
+
+    @Test
+    @DisplayName("초안을 팀 블로그에 발행하면 작성자의 개인 블로그와 대상 팀 블로그에 소속된다.")
+    void publishDraftToCologChangesAffiliation() {
+        // given
+        User writer = createUser(1L);
+        Blog rilog = createRilog(writer);
+        Blog colog = targetColog();
+        Post draft = draftRilogPostAt(rilog, writer, "발행 전 제목", BASE_DRAFT_SAVED_AT);
+
+        // when
+        draft.publish(rilog, colog, publicDraftPublishCommand(colog.getSlug()).toDetail());
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(draft.getRilog()).isSameAs(rilog);
+            softly.assertThat(draft.getColog()).isSameAs(colog);
+        });
+    }
+
+    @Test
+    @DisplayName("초안을 Rilog에 발행하면 작성자의 개인 블로그에만 소속된다.")
+    void publishDraftToRilogChangesAffiliation() {
+        // given
+        User writer = createUser(1L);
+        Blog rilog = createRilog(writer);
+        Post draft = draftRilogPostAt(rilog, writer, "발행 전 제목", BASE_DRAFT_SAVED_AT);
+
+        // when
+        draft.publish(rilog, rilog, publicDraftPublishCommand(rilog.getSlug()).toDetail());
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(draft.getRilog()).isSameAs(rilog);
+            softly.assertThat(draft.getColog()).isNull();
+        });
+    }
+
+    @Test
+    @DisplayName("이미 발행된 게시글을 다시 발행하면 중복 발행 예외가 발생한다.")
+    void publishPublishedPostThrows() {
+        // given
+        Post post = publicPublishedRilogPost();
+
+        // when & then
+        assertThatThrownBy(() -> post.publish(
+                post.getRilog(),
+                post.getRilog(),
+                publicDraftPublishCommand(post.getRilog().getSlug()).toDetail()
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(DUPLICATED_PUBLISH.getMessage());
     }
 
     @Test

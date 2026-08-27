@@ -23,7 +23,9 @@ import tools.jackson.databind.JsonNode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.DUPLICATED_PUBLISH;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 
@@ -99,7 +101,7 @@ public class Post extends BaseEntity {
                 .visibility(detail.visibility())
                 .thumbnailImageUrl(detail.thumbnailUrl())
                 .publishedAt(LocalDateTime.now())
-                .status(PostStatus.PUBLISHED)
+                .status(PUBLISHED)
                 .build();
     }
 
@@ -118,7 +120,7 @@ public class Post extends BaseEntity {
                 .visibility(detail.visibility())
                 .thumbnailImageUrl(detail.thumbnailUrl())
                 .publishedAt(LocalDateTime.now())
-                .status(PostStatus.PUBLISHED)
+                .status(PUBLISHED)
                 .build();
     }
 
@@ -144,10 +146,29 @@ public class Post extends BaseEntity {
         this.colog = targetBlog.isColog() ? targetBlog : null;
     }
 
+    public void publish(Blog rilog, Blog targetBlog, PostDetail detail) {
+        validateIsDraft();
+        this.rilog = rilog;
+        this.colog = targetBlog.isColog() ? targetBlog : null;
+        this.category = detail.category();
+        this.visibility = detail.visibility();
+        this.title = detail.title();
+        this.content = detail.content();
+        this.thumbnailImageUrl = detail.thumbnailUrl();
+        this.status = PUBLISHED;
+        this.publishedAt = LocalDateTime.now();
+    }
+
     public void overwriteDraft(DraftOverwriteCommand command) {
         this.title = command.title();
         this.content = command.content();
         this.publishedAt = LocalDateTime.now();
+    }
+
+    private void validateIsDraft() {
+        if(status != PostStatus.DRAFT) {
+            throw new PostException(DUPLICATED_PUBLISH);
+        }
     }
 
     private void validateTargetBlog(Blog targetBlog) {
@@ -171,7 +192,7 @@ public class Post extends BaseEntity {
     }
 
     public void validateWrittenBy(Long requesterId) {
-        if(!isWrittenBy(requesterId)) {
+        if (!isWrittenBy(requesterId)) {
             throw new PostException(NOT_POST_AUTHOR);
         }
     }

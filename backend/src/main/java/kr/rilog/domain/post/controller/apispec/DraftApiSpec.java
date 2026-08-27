@@ -5,9 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.post.controller.dto.request.DraftOverwriteRequest;
+import kr.rilog.domain.post.controller.dto.request.DraftPublishRequest;
 import kr.rilog.domain.post.controller.dto.response.DraftDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftListResponse;
+import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,6 +64,16 @@ public interface DraftApiSpec {
     ApiResponse<Void> deleteDraft(
             @PathVariable Long postId,
             @LoginUserId Long requesterId
+    );
+
+    @Operation(
+            summary = "임시저장 발행 API",
+            description = "로그인 사용자가 작성한 초안(임시저장 글)을 발행합니다."
+    )
+    ApiResponse<PostPublishResponse> publishDraft(
+            @LoginUserId Long requesterId,
+            @PathVariable("draftId") Long draftId,
+            @Valid @RequestBody DraftPublishRequest dto
     );
 
 }

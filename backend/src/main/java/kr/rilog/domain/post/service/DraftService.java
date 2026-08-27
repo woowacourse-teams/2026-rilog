@@ -1,17 +1,23 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.model.Publisher;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
+import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
+import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -33,6 +39,7 @@ public class DraftService {
 
     private final PostRepository postRepository;
     private final BlogRepository blogRepository;
+    private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
 
     // THINK 멱등성.
@@ -52,10 +59,25 @@ public class DraftService {
         return DraftListResult.from(drafts);
     }
 
-    public DraftDetailResult getMyDraft(Long draftId, Long requesterid) {
+    public DraftDetailResult getMyDraft(Long draftId, Long requesterId) {
         Post draft = getDraft(draftId);
-        draft.validateWrittenBy(requesterid);
+        draft.validateWrittenBy(requesterId);
         return DraftDetailResult.from(draft);
+    }
+
+    @Transactional
+    public PostPublishResult publishDraft(DraftPublishCommand command, Long draftId, Long requesterId) {
+        Post draft = getDraft(draftId);
+        draft.validateWrittenBy(requesterId);
+        User writer = getUser(requesterId);
+
+        BlogMember targetMemberShip = getBlogMember(Slug.from(command.slug()), requesterId);
+        BlogMember rilogMemberShip = getBlogMember(Slug.from(writer.getSlug()), requesterId);
+
+        Publisher publisher = Publisher.of(rilogMemberShip, targetMemberShip);
+        publisher.publishDraft(draft, command.toDetail());
+
+        return PostPublishResult.of(draft);
     }
 
     @Transactional
@@ -81,6 +103,11 @@ public class DraftService {
     private Blog getRilog(User writer) {
         return blogRepository.findRilogByOwnerId(writer.getId())
                 .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
+    }
+
+    private BlogMember getBlogMember(Slug slug, Long memberId) {
+        return blogMemberRepository.findWithBlogBySlugAndUserId(slug, memberId)
+                .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
     }
 
     private Post getDraft(Long draftId) {

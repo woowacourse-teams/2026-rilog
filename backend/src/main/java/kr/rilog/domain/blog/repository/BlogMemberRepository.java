@@ -48,6 +48,8 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             join fetch bm.blog b
             where b.slug = :slug
               and bm.user.id = :userId
+              and bm.deletedAt is null
+              and b.deletedAt is null
             """)
     Optional<BlogMember> findWithBlogBySlugAndUserId(
             @Param("slug") Slug slug,
