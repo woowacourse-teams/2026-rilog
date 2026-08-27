@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import kr.rilog.domain.upload.domain.UploadType;
+import kr.rilog.domain.upload.domain.enums.UploadType;
 
 public record PreSignedUrlCreateRequest(
 

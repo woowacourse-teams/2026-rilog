@@ -4,8 +4,13 @@ import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { analytics } from '@/features/analytics/model/events';
+import { renderMermaidDiagram } from '@/shared/lib/render-mermaid-diagram';
 
 import PostDetailContent from './PostDetailContent';
+
+vi.mock('@/shared/lib/render-mermaid-diagram', () => ({
+	renderMermaidDiagram: vi.fn(() => Promise.resolve('<svg><text>Rendered diagram</text></svg>')),
+}));
 
 const TOGGLE_HTML = `
 	<div class="bn-block">
@@ -62,6 +67,23 @@ describe('PostDetailContent', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
+	});
+
+	it('Mermaid 코드블록을 상세 다이어그램으로 렌더링한다', async () => {
+		const html = `
+			<div class="bn-block-outer" data-id="mermaid-block">
+				<div class="bn-block">
+					<div class="bn-block-content" data-content-type="codeBlock" data-language="mermaid">
+						<pre><code>graph TD; A--&gt;B</code></pre>
+					</div>
+				</div>
+			</div>
+		`;
+		render(<PostDetailContent html={html} postId={1} ownerType="RILOG" category="IT" />);
+
+		const diagram = await screen.findByRole('img', { name: 'Mermaid 다이어그램' });
+		expect(diagram.querySelector('svg')).toHaveTextContent('Rendered diagram');
+		expect(vi.mocked(renderMermaidDiagram)).toHaveBeenCalledWith(expect.any(String), 'graph TD; A-->B');
 	});
 
 	it('클릭과 키보드로 토글 상태와 접근성 속성을 동기화한다', async () => {

@@ -1,12 +1,19 @@
 package kr.rilog.domain.blog.entity;
 
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+import java.util.List;
+
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_DELETE_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.support.fixure.BlogFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -123,6 +130,81 @@ class BlogTest {
         assertThat(blog.getProfile())
                 .usingRecursiveComparison()
                 .isEqualTo(newProfile);
+    }
+
+    @Test
+    @DisplayName("팀 블로그는 프로필 이미지와 커버 이미지를 태그 자산으로 제공한다.")
+    void cologProvidesProfileAndCoverImagesAsTagAssets() {
+        Blog colog = createColog(createUser(OWNER_ID));
+
+        TagAssets assets = colog.getTagAssets();
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(
+                colog.getProfileImageUrl(),
+                colog.getCoverImageUrl()
+        )));
+    }
+
+    @Test
+    @DisplayName("개인 블로그는 커버 이미지가 없어도 프로필 이미지만 태그 자산으로 제공한다.")
+    void rilogProvidesOnlyProfileImageAsTagAssets() {
+        Blog rilog = createRilog(createUser(OWNER_ID));
+
+        TagAssets assets = rilog.getTagAssets();
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(rilog.getProfileImageUrl())));
+    }
+
+    @Test
+    @DisplayName("ACTIVE OWNER가 팀 블로그를 삭제하면 팀과 ACTIVE 멤버가 삭제 처리된다.")
+    void deleteCologByLeavesActiveMembersAndDeletesColog() {
+        // given
+        User owner = createUser(OWNER_ID);
+        User memberUser = createUser(OTHER_USER_ID);
+        Blog colog = createColog(owner);
+        BlogMember ownerMember = createMember(colog, owner, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(colog, memberUser, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        colog.deleteCologBy(ownerMember, List.of(ownerMember, member));
+
+        // then
+        assertThat(colog.getDeletedAt()).isNotNull();
+        assertThat(ownerMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(member.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(ownerMember.getDeletedAt()).isNotNull();
+        assertThat(member.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("다른 팀 블로그의 OWNER는 팀 블로그를 삭제할 수 없다.")
+    void deleteCologByRejectsOtherCologOwner() {
+        // given
+        User owner = createUser(OWNER_ID);
+        Blog targetColog = createColog(owner);
+        Blog otherColog = targetColog();
+        BlogMember otherOwner = createMember(otherColog, owner, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(() -> targetColog.deleteCologBy(otherOwner, List.of(otherOwner)))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_DELETE_FORBIDDEN.getMessage());
+        assertThat(targetColog.getDeletedAt()).isNull();
+        assertThat(otherOwner.getStatus()).isEqualTo(BlogMemberStatus.ACTIVE);
+    }
+
+    private BlogMember createMember(
+            Blog blog,
+            User user,
+            BlogPermission permission,
+            BlogMemberStatus status
+    ) {
+        return BlogMember.builder()
+                .blog(blog)
+                .user(user)
+                .permission(permission)
+                .status(status)
+                .build();
     }
 
 }

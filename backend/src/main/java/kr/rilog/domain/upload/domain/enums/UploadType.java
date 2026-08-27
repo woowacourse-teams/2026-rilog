@@ -1,4 +1,4 @@
-package kr.rilog.domain.upload.domain;
+package kr.rilog.domain.upload.domain.enums;
 
 public enum UploadType {
 

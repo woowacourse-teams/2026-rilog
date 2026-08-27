@@ -7,10 +7,12 @@ import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.user.entity.User;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 class PostDetailResponseTest {
 
@@ -42,6 +44,19 @@ class PostDetailResponseTest {
         Assertions.assertThat(owner.type()).isEqualTo(BlogType.COLOG);
     }
 
+    @Test
+    @DisplayName("게시글 상세 응답은 본문을 기존 JSON 형식으로 반환한다.")
+    void responsePreservesJsonContent() {
+        // given
+        Post post = createPost();
+
+        // when
+        PostDetailResponse response = PostDetailResponse.fromRilog(post);
+
+        // then
+        Assertions.assertThat(response.content()).isEqualTo(post.getContent().getContent());
+    }
+
     private Post createPost() {
         User writer = User.builder()
                 .id(1L)
@@ -69,6 +84,7 @@ class PostDetailResponseTest {
                 .rilog(rilog)
                 .colog(colog)
                 .title("게시글 제목")
+                .content(PostContent.from(JsonNodeFactory.instance.arrayNode()))
                 .category(Category.TECH)
                 .build();
     }

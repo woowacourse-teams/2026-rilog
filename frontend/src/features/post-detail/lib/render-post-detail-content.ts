@@ -3,6 +3,7 @@ import { ServerBlockNoteEditor } from '@blocknote/server-util';
 import type { Block } from '@blocknote/core';
 
 import { extractPostHeadingAnchors } from './extract-post-table-of-contents';
+import { highlightPostCode } from './highlight-post-code';
 
 interface ServerBlockNoteEditorWithDom {
 	jsdom: {
@@ -16,10 +17,42 @@ interface ServerBlockNoteEditorWithDom {
 const POST_DETAIL_TOGGLE_BUTTON_SELECTOR = ':scope > .bn-toggle-button';
 const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
 const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
+const POST_DETAIL_CODE_CONTENT_SELECTOR =
+	'.bn-block-content[data-content-type="codeBlock"][data-language] > pre > code.bn-inline-content';
 
-const enhancePostDetailHtml = (html: string, document: Document, headingIdByBlockId: Map<string, string>): string => {
+const enhancePostDetailHtml = async (
+	html: string,
+	document: Document,
+	headingIdByBlockId: Map<string, string>,
+): Promise<string> => {
 	const container = document.createElement('div');
 	container.innerHTML = html;
+
+	const codeContents = Array.from(container.querySelectorAll<HTMLElement>(POST_DETAIL_CODE_CONTENT_SELECTOR));
+	await Promise.all(
+		codeContents.map(async (codeContent) => {
+			const codeBlock = codeContent.closest<HTMLElement>('[data-content-type="codeBlock"][data-language]');
+			const language = codeBlock?.dataset.language;
+			if (language === undefined) {
+				return;
+			}
+
+			const highlightedHtml = await highlightPostCode(codeContent.textContent ?? '', language);
+			if (highlightedHtml === null) {
+				return;
+			}
+
+			const highlightedContainer = document.createElement('div');
+			highlightedContainer.innerHTML = highlightedHtml;
+			const highlightedCode = highlightedContainer.querySelector('pre > code');
+			if (highlightedCode === null) {
+				return;
+			}
+
+			codeContent.innerHTML = highlightedCode.innerHTML;
+			codeContent.dataset.postCodeHighlighted = '';
+		}),
+	);
 
 	container.querySelectorAll<HTMLElement>(POST_DETAIL_HEADING_CONTENT_SELECTOR).forEach((headingContent) => {
 		const headingBlock = headingContent.closest<HTMLElement>('.bn-block-outer[data-id]');

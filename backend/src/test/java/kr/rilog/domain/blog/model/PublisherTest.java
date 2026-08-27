@@ -47,7 +47,7 @@ class PublisherTest {
         // then
         PostDetail publishedDetail = new PostDetail(
                 draft.getTitle(),
-                draft.getContent(),
+                draft.getContent().getContent(),
                 draft.getCategory(),
                 draft.getVisibility(),
                 draft.getThumbnailImageUrl()

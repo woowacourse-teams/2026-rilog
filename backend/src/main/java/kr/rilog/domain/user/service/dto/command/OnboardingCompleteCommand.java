@@ -6,6 +6,7 @@ public record OnboardingCompleteCommand(
         String introduction,
         String profileImageUrl,
         String githubUrl,
+        String serviceUrl,
         String email
 ) {
 }

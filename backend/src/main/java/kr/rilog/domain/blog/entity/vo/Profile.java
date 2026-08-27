@@ -79,14 +79,31 @@ public class Profile {
             String email,
             String githubUrl
     ) {
+        return createRilog(
+                name,
+                introduction,
+                profileImageUrl,
+                null,
+                githubUrl,
+                email
+        );
+    }
 
+    public static Profile createRilog(
+            String name,
+            String introduction,
+            String profileImageUrl,
+            String serviceUrl,
+            String githubUrl,
+            String email
+    ) {
         return new Profile(
                 name,
                 introduction,
                 profileImageUrl,
                 null,
                 email,
-                null,
+                serviceUrl,
                 githubUrl
         );
     }

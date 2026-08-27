@@ -10,6 +10,7 @@ import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -85,7 +86,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         assertSoftly(softly -> {
             softly.assertThat(result).isEqualTo(new PostPublishResult(savedPost.getId(), rilog.getSlug()));
             softly.assertThat(savedPost.getTitle()).isEqualTo(command.title());
-            softly.assertThat(savedPost.getContent()).isEqualTo(command.content());
+            softly.assertThat(savedPost.getContent()).isEqualTo(PostContent.from(command.content()));
             softly.assertThat(savedPost.getCategory()).isEqualTo(command.category());
             softly.assertThat(savedPost.getVisibility()).isEqualTo(command.visibility());
             softly.assertThat(savedPost.getThumbnailImageUrl()).isEqualTo(command.thumbnailImageUrl());
@@ -812,7 +813,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     private PostDetail detailOf(Post post) {
         return new PostDetail(
                 post.getTitle(),
-                post.getContent(),
+                post.getContent().getContent(),
                 post.getCategory(),
                 post.getVisibility(),
                 post.getThumbnailImageUrl()
