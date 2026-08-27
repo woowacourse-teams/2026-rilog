@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { DraftSaveRequest } from './types';
 
-import { readDraftDetail, readMyDraftList, saveDraft } from './api';
+import { overwriteDraft, readDraftDetail, readMyDraftList, saveDraft } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -94,5 +94,35 @@ describe('readDraftDetail', () => {
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
+	});
+});
+
+describe('overwriteDraft', () => {
+	it('draftId를 경로로 전달하고 제목과 본문을 JSON 본문에 담아 PUT 요청한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '임시저장을 덮어썼습니다.',
+			data: { draftId: 42 },
+		};
+		let capturedBody: unknown;
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) {
+				capturedBody = await input.clone().json();
+			}
+
+			return Response.json(responseBody);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const requestBody: DraftSaveRequest = {
+			title: '수정한 임시저장 게시글',
+			content: [],
+		};
+
+		await expect(overwriteDraft(42, requestBody)).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('PUT');
+		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
+		expect(capturedBody).toEqual(requestBody);
 	});
 });

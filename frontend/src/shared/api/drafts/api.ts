@@ -19,3 +19,6 @@ export const readMyDraftList = ({ page, size }: DraftListRequest) =>
 
 export const readDraftDetail = ({ draftId }: DraftDetailRequest) =>
 	apiClient.get<ApiResponse<DraftDetailResponse>>(`v1/drafts/${draftId}`);
+
+export const overwriteDraft = (draftId: number, request: DraftSaveRequest) =>
+	apiClient.put<ApiResponse<DraftSaveResponse>>(`v1/drafts/${draftId}`, { json: request });
