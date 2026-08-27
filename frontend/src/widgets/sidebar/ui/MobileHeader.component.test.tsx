@@ -12,8 +12,18 @@ const { navigationMock, useMyInfoQueryMock } = vi.hoisted(() => ({
 	useMyInfoQueryMock: vi.fn(),
 }));
 
+const { githubLoginStartedMock } = vi.hoisted(() => ({
+	githubLoginStartedMock: vi.fn(),
+}));
+
 vi.mock('next/navigation', () => ({
 	usePathname: () => navigationMock.pathname,
+}));
+
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		githubLoginStarted: githubLoginStartedMock,
+	},
 }));
 
 vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
@@ -32,7 +42,10 @@ function renderHeader(isAuthenticated = false) {
 
 describe('MobileHeader', () => {
 	beforeEach(() => {
+		githubLoginStartedMock.mockReset();
+		localStorage.clear();
 		navigationMock.pathname = '/feeds';
+		window.history.replaceState({}, '', '/feeds?tab=latest');
 		useMyInfoQueryMock.mockReset().mockReturnValue({ data: null });
 	});
 
@@ -50,6 +63,20 @@ describe('MobileHeader', () => {
 
 		await user.click(screen.getByRole('button', { name: '로그인' }));
 		expect(screen.getByRole('dialog', { name: '로그인' })).toBeInTheDocument();
+	});
+
+	it('모바일 헤더에서 시작한 GitHub 로그인에 진입면과 path-only redirect를 남긴다', async () => {
+		const user = userEvent.setup();
+		renderHeader();
+
+		await user.click(screen.getByRole('button', { name: '로그인' }));
+		await user.click(screen.getByRole('button', { name: 'GitHub로 계속하기' }));
+
+		expect(githubLoginStartedMock).toHaveBeenCalledWith({
+			entrySurface: 'mobile_header',
+			redirectTarget: '/feeds',
+		});
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds');
 	});
 
 	it('로그인 사용자에게 아바타를 표시하고 게시글에서도 피드 링크를 현재 위치로 표시한다', () => {

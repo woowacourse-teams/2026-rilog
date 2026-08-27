@@ -17,7 +17,10 @@ interface LoginModalProviderProps {
 export default function LoginModalProvider({ children }: LoginModalProviderProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoginPending, setIsLoginPending] = useState(false);
-	const login = useCallback(() => {
+	const [loginEntrySurface, setLoginEntrySurface] = useState<'sidebar' | 'mobile_header'>('sidebar');
+
+	const login = useCallback((options?: { entrySurface?: 'sidebar' | 'mobile_header' }) => {
+		setLoginEntrySurface(options?.entrySurface ?? 'sidebar');
 		setIsLoginPending(false);
 		setIsOpen(true);
 	}, []);
@@ -27,18 +30,18 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 	}, []);
 
 	const handleGitHubLogin = useCallback(() => {
-		analytics.githubLoginStarted();
+		const redirectTarget = window.location.pathname;
+		analytics.githubLoginStarted({ entrySurface: loginEntrySurface, redirectTarget });
 		setIsLoginPending(true);
 
-		const currentUrl = window.location.pathname + window.location.search;
-		localStorage.setItem('postLoginRedirect', currentUrl);
+		localStorage.setItem('postLoginRedirect', redirectTarget);
 
 		const frontendCallbackUrl = '/auth/github/callback';
 		const backendAuthUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/github?redirectUrl=${frontendCallbackUrl}`;
 		// GitHub OAuth는 백엔드 origin으로 전체 페이지를 이동해야 하므로 Next Router를 사용할 수 없다.
 		// eslint-disable-next-line @next/next/no-location-assign-relative-destination
 		window.location.href = backendAuthUrl;
-	}, []);
+	}, [loginEntrySurface]);
 
 	return (
 		<LOGIN_MODAL_CONTEXT.Provider value={login}>
