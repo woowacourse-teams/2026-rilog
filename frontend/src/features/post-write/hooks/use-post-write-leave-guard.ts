@@ -9,9 +9,10 @@ interface UsePostWriteLeaveGuardOptions {
 	isDirty: boolean;
 	markClean: () => void;
 	navigate?: (href: string) => void;
+	onConfirmLeave?: () => void;
 }
 
-export function usePostWriteLeaveGuard({ isDirty, markClean, navigate }: UsePostWriteLeaveGuardOptions) {
+export function usePostWriteLeaveGuard({ isDirty, markClean, navigate, onConfirmLeave }: UsePostWriteLeaveGuardOptions) {
 	const router = useRouter();
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
@@ -43,10 +44,11 @@ export function usePostWriteLeaveGuard({ isDirty, markClean, navigate }: UsePost
 	}, [cancelPendingNavigation]);
 
 	const confirmLeave = useCallback(() => {
+		onConfirmLeave?.();
 		setIsLeaveModalOpen(false);
 		markClean();
 		void continuePendingNavigation();
-	}, [continuePendingNavigation, markClean]);
+	}, [continuePendingNavigation, markClean, onConfirmLeave]);
 
 	const navigateAfterCompletion = useCallback(
 		(href: string) => {
