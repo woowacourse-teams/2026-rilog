@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Objects;
 
 import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.*;
@@ -112,25 +114,20 @@ public class BlogMember extends BaseEntity {
         }
     }
 
-    public void validateCanRemove(BlogMember target) {
+    public void validateCanDeleteColog() {
         validateActiveMember();
-        target.validateActiveMember();
 
-        if (isSameMember(target)) {
-            throw new BlogException(COLOG_SELF_REMOVE_FORBIDDEN);
+        if (!isCologMember() || permission != OWNER) {
+            throw new BlogException(COLOG_DELETE_FORBIDDEN);
         }
-
-        if (canRemove(target)) {
-            return;
-        }
-
-        throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
     }
 
-    public void leave() {
-        validateActiveMember();
-        delete();
-        this.status = BlogMemberStatus.LEFT;
+    void validateCanDeleteColog(Blog colog) {
+        validateCanDeleteColog();
+
+        if (!isMemberOf(colog)) {
+            throw new BlogException(COLOG_DELETE_FORBIDDEN);
+        }
     }
 
     public boolean hasDeletePermission() {
@@ -139,8 +136,52 @@ public class BlogMember extends BaseEntity {
                 && (permission == OWNER || permission == ADMIN);
     }
 
+    public void remove(BlogMember target) {
+        validateActiveMember();
+        target.validateActiveMember();
+
+        if (isSameMember(target)) {
+            throw new BlogException(COLOG_SELF_REMOVE_FORBIDDEN);
+        }
+
+        if (canRemove(target)) {
+            target.markAsLeft();
+            return;
+        }
+
+        throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
+    }
+
+    public void leaveBySelf() {
+        validateCanLeave();
+        markAsLeft();
+    }
+
+    void leaveByCologDeletion() {
+        validateActiveMember();
+        markAsLeft();
+    }
+
+    private void markAsLeft() {
+        delete();
+        this.status = BlogMemberStatus.LEFT;
+    }
+
     private boolean isCologMember() {
         return blog != null && blog.isColog();
+    }
+
+    private boolean isMemberOf(Blog targetBlog) {
+        if (blog == null || targetBlog == null) {
+            return false;
+        }
+
+        if (blog == targetBlog) {
+            return true;
+        }
+
+        return blog.getId() != null
+                && Objects.equals(blog.getId(), targetBlog.getId());
     }
 
     private boolean hasInvitePermission() {

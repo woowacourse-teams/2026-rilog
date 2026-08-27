@@ -69,7 +69,7 @@ class CologControllerTest {
 
         // when - then
         mockMvc.perform(get("/v1/cologs/{slug}", "rilog-team"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isMethodNotAllowed());
     }
 
     @Test
@@ -213,6 +213,23 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.message").value("팀 멤버를 내보냈습니다."));
 
         verify(cologService).removeMember(7L, "rilog-team", 3L);
+    }
+
+    @Test
+    @DisplayName("DELETE /v1/cologs/{slug}는 로그인 사용자의 팀 블로그 삭제를 처리한다")
+    void deleteCologDeletesAuthenticatedUsersColog() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        MockMvc mockMvc = mockMvc(cologService);
+
+        // when - then
+        mockMvc.perform(delete("/v1/cologs/{slug}", "rilog-team")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(204))
+                .andExpect(jsonPath("$.message").value("팀 블로그를 삭제했습니다."));
+
+        verify(cologService).deleteColog(7L, "rilog-team");
     }
 
     private MockMvc mockMvc(CologService cologService) {

@@ -75,5 +75,4 @@ public class PostController implements PostApiSpec {
         return ApiResponse.response(HttpStatus.NO_CONTENT, "게시글을 삭제했습니다.");
     }
 
-
 }
