@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 
 @Schema(description = "온보딩 완료 요청")
@@ -15,7 +16,7 @@ public record OnboardingCompleteRequest(
         @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하이어야 합니다.")
         String nickname,
 
-        @Schema(description = "사용자 slug", example = "ri_log-01")
+        @Schema(description = "사용자 slug (4~20자, 영문, 숫자, 하이픈(-), 언더스코어(_) 허용, 소문자로 저장)", example = "ri_log-01")
         @NotBlank(message = "슬러그는 필수입니다.")
         @Size(min = 4, max = 20, message = "슬러그는 4자 이상 20자 이하이어야 합니다.")
         @Pattern(

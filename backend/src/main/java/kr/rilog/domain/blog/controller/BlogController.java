@@ -8,6 +8,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.global.response.ApiResponse;

@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import static kr.rilog.domain.user.exception.UserErrorInformation.INVALID_SLUG;
@@ -20,14 +21,16 @@ public class Slug {
 
     private static final int MIN_LENGTH = 4;
     private static final int MAX_LENGTH = 20;
-    private static final Pattern SLUG_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
+    private static final String REGEX = "^[A-Za-z0-9_-]+$";
+
+    private static final Pattern SLUG_PATTERN = Pattern.compile(REGEX);
 
     @Column(name = "slug", length = MAX_LENGTH, unique = true)
     private String value;
 
     private Slug(String value) {
         validate(value);
-        this.value = value.toLowerCase().strip();
+        this.value = value.strip().toLowerCase(Locale.ROOT);
     }
 
     public static Slug from(String value) {
