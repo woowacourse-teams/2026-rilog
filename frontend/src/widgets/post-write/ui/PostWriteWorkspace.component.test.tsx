@@ -244,7 +244,7 @@ describe('NewPostController', () => {
 
 	it('최초 임시저장 후 draft workflow로 전환해도 현재 Editor를 유지하고 이후 저장은 draftId를 사용한다', async () => {
 		const user = userEvent.setup();
-		const replaceStateSpy = vi.spyOn(window.history, 'replaceState').mockImplementation(() => undefined);
+		window.history.replaceState({ testMarker: 'preserved' }, '', '/write');
 		const createDraft = vi.fn().mockResolvedValue({ draftId: 123 });
 		const updateDraft = vi.fn().mockResolvedValue(undefined);
 		render(<NewPostController editorComponent={FakeEditor} createDraft={createDraft} updateDraft={updateDraft} />);
@@ -253,7 +253,8 @@ describe('NewPostController', () => {
 		await user.click(screen.getByRole('button', { name: '임시저장' }));
 
 		await waitFor(() => expect(createDraft).toHaveBeenCalledOnce());
-		expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/write?draftId=123');
+		expect(`${window.location.pathname}${window.location.search}`).toBe('/write?draftId=123');
+		expect(window.history.state).toMatchObject({ testMarker: 'preserved' });
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
 		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('BlockNote 도입기');
 
@@ -262,7 +263,6 @@ describe('NewPostController', () => {
 		await waitFor(() => expect(updateDraft).toHaveBeenCalledOnce());
 		expect(updateDraft.mock.calls[0]?.[0]).toBe(123);
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
-		replaceStateSpy.mockRestore();
 	});
 
 	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {

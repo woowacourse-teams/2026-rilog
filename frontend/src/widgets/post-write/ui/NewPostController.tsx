@@ -50,7 +50,7 @@ export default function NewPostController({
 
 	const handleDraftCreated = (createdDraftId: number) => {
 		setDraftId(createdDraftId);
-		window.history.replaceState(null, '', `/write?draftId=${createdDraftId}`);
+		window.history.replaceState(window.history.state, '', `/write?draftId=${createdDraftId}`);
 	};
 
 	return (
