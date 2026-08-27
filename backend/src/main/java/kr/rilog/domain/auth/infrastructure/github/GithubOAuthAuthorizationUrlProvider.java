@@ -1,6 +1,6 @@
 package kr.rilog.domain.auth.infrastructure.github;
 
-import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthAuthorizationUrlProvider;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthException;

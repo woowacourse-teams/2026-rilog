@@ -80,18 +80,9 @@ public class PostService {
         Post post = getPublishedPost(postId);
         post.validateWrittenBy(requesterId);
 
-        Slug ownSlug = Slug.from(post.getOwnSlug());
-        BlogMember ownBlogMember = getBlogMember(ownSlug, requesterId);
-        ownBlogMember.validateActiveMember();
-
-        Blog targetBlog = ownBlogMember.getBlog();
-        Slug targetSlug = Slug.from(command.newSlug());
-
-        if(ownSlug.isDifferent(targetSlug)){
-            BlogMember targetBlogMember = getBlogMember(targetSlug, requesterId);
-            targetBlogMember.validateActiveMember();
-            targetBlog = targetBlogMember.getBlog();
-        }
+        BlogMember ownBlogMember = getBlogMember(Slug.from(post.getOwnSlug()), requesterId);
+        BlogMember targetMember = getBlogMember(Slug.from(command.newSlug()), requesterId);
+        Blog targetBlog = ownBlogMember.transfer(targetMember);
 
         post.update(command.toDetail(), targetBlog);
         return PostUpdateResult.of(post, targetBlog);

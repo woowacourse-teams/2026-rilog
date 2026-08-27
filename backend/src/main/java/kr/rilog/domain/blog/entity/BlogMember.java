@@ -76,6 +76,12 @@ public class BlogMember extends BaseEntity {
                 .build();
     }
 
+    public Blog transfer(BlogMember targetMember) {
+        validateActiveMember();
+        targetMember.validateActiveMember();
+        return targetMember.getBlog();
+    }
+
     public void validateCanInvite() {
         if (!isCologMember()) {
             throw new BlogException(BLOG_MEMBER_INVITATION_PERMISSION_INVALID);
