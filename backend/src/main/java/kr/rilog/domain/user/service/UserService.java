@@ -64,7 +64,7 @@ public class UserService {
         );
 
         User completedUser = userRepository.saveAndFlush(user);
-        createRilog(completedUser);
+        createRilog(completedUser, command.serviceUrl());
         return completedUser;
     }
 
@@ -86,8 +86,8 @@ public class UserService {
         }
     }
 
-    private void createRilog(User user) {
-        Blog rilog = blogRepository.save(Blog.createRilog(user));
+    private void createRilog(User user, String serviceUrl) {
+        Blog rilog = blogRepository.save(Blog.createRilog(user, serviceUrl));
         createRilogMember(rilog, user);
     }
 

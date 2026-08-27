@@ -91,6 +91,21 @@ class BlogServiceTest {
     }
 
     @Test
+    @DisplayName("블로그 슬러그 중복 검사는 대소문자를 소문자로 정규화해 확인한다")
+    void validateDuplicatedSlugChecksNormalizedSlug() {
+        // given
+        Slug normalizedSlug = Slug.from("ri_log-01");
+        when(blogRepository.existsBySlug(normalizedSlug)).thenReturn(true);
+
+        // when - then
+        assertThatThrownBy(() -> blogService.validateDuplicatedSlug("Ri_Log-01"))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_SLUG_ALREADY_EXISTS);
+        verify(blogRepository).existsBySlug(normalizedSlug);
+    }
+
+    @Test
     @DisplayName("중복되지 않은 블로그 프로필 이름은 검증을 통과한다")
     void validateDuplicatedProfileNamePassesWhenProfileNameDoesNotExist() {
         // given

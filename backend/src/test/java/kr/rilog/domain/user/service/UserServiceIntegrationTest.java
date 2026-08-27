@@ -133,13 +133,15 @@ class UserServiceIntegrationTest extends ServiceSupport {
                 command.nickname(),
                 command.introduction(),
                 command.profileImageUrl(),
-                command.email(),
-                command.githubUrl()
+                command.serviceUrl(),
+                command.githubUrl(),
+                command.email()
         );
 
         assertThat(result.getSlug()).isEqualTo(savedRilog.getSlug());
         assertThat(savedRilog.getOwner().getId()).isEqualTo(result.getId());
         assertThat(savedRilog.getProfile()).isEqualTo(expectedProfile);
+        assertThat(savedRilog.getServiceUrl()).isEqualTo(command.serviceUrl());
         assertThat(savedRilog.getBlogType()).isEqualTo(RILOG);
     }
 
@@ -234,6 +236,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/rilog",
+                "https://rilog.example.com",
                 "rilog@example.com"
         );
     }

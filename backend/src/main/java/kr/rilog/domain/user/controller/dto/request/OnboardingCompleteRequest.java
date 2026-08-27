@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
 
 @Schema(description = "온보딩 완료 요청")
@@ -15,7 +16,7 @@ public record OnboardingCompleteRequest(
         @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하이어야 합니다.")
         String nickname,
 
-        @Schema(description = "사용자 slug", example = "ri_log-01")
+        @Schema(description = "사용자 slug (4~20자, 영문, 숫자, 하이픈(-), 언더스코어(_) 허용, 소문자로 저장)", example = "ri_log-01")
         @NotBlank(message = "슬러그는 필수입니다.")
         @Size(min = 4, max = 20, message = "슬러그는 4자 이상 20자 이하이어야 합니다.")
         @Pattern(
@@ -36,6 +37,10 @@ public record OnboardingCompleteRequest(
         @Size(max = 512, message = "GitHub URL은 512자 이하여야 합니다.")
         String githubUrl,
 
+        @Schema(description = "서비스 URL", example = "https://rilog.example.com")
+        @Size(max = 512, message = "서비스 URL은 512자 이하여야 합니다.")
+        String serviceUrl,
+
         @Schema(description = "이메일", example = "riro@example.com")
         @Email(message = "이메일 형식이 올바르지 않습니다.")
         @Size(max = 256, message = "이메일은 256자 이하여야 합니다.")
@@ -44,6 +49,6 @@ public record OnboardingCompleteRequest(
 ) {
 
     public OnboardingCompleteCommand toCommand() {
-        return new OnboardingCompleteCommand(nickname, slug, introduction, profileImageUrl, githubUrl, email);
+        return new OnboardingCompleteCommand(nickname, slug, introduction, profileImageUrl, githubUrl, serviceUrl, email);
     }
 }
