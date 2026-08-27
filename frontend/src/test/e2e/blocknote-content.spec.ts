@@ -109,11 +109,11 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 			true,
 		);
 
-		await expect(page.locator('[data-syntax="keyword"]')).toHaveCSS('color', 'rgb(252, 165, 165)');
-		await expect(page.locator('[data-syntax="string"]')).toHaveCSS('color', 'rgb(134, 239, 172)');
+		await expect(page.locator('[data-syntax="keyword"]')).toHaveCSS('color', 'rgb(255, 123, 114)');
+		await expect(page.locator('[data-syntax="string"]')).toHaveCSS('color', 'rgb(165, 214, 255)');
 		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"]')).toHaveCSS(
 			'background-color',
-			'rgb(6, 26, 64)',
+			'rgb(22, 27, 34)',
 		);
 	});
 
