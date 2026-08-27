@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
 import Button from '@/shared/ui/button/Button';
 
 import { usePostFeed } from '../hooks/use-post-feed';
@@ -67,6 +68,7 @@ export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedG
 				className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
 				aria-labelledby="post-feed-heading"
 			>
+				<ContentLoadFailureTracker surface="feed" loadPhase="initial" error={query.error} />
 				<h2 id="post-feed-heading" className="sr-only">
 					최신 게시글
 				</h2>
@@ -124,8 +126,8 @@ export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedG
 				최신 게시글
 			</h2>
 			<ul className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-				{posts.map((post) => (
-					<PostFeedCard key={post.id} post={post} />
+				{posts.map((post, index) => (
+					<PostFeedCard key={post.id} post={post} position={index + 1} />
 				))}
 			</ul>
 
@@ -135,6 +137,7 @@ export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedG
 					{query.isFetchingNextPage && <p className="text-body-1 text-text-secondary">게시글을 더 불러오는 중...</p>}
 					{query.isFetchNextPageError && (
 						<div className="flex flex-col items-center gap-3">
+							<ContentLoadFailureTracker surface="feed" loadPhase="pagination" error={query.error} />
 							<p className="text-body-1 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
 							<Button variant="secondary" onClick={() => void query.fetchNextPage()}>
 								다시 시도
