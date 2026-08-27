@@ -1,7 +1,8 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
 import { useMobileDevice } from '@/shared/hooks/use-mobile-device';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
@@ -22,6 +23,14 @@ function WriteEnvironmentPending() {
 
 export default function PostWriteDeviceGate() {
 	const { isMobileDevice, isResolved } = useMobileDevice();
+	const hasTrackedUnavailableRef = useRef(false);
+
+	useEffect(() => {
+		if (isMobileDevice && !hasTrackedUnavailableRef.current) {
+			analytics.postEditorUnavailableViewed();
+			hasTrackedUnavailableRef.current = true;
+		}
+	}, [isMobileDevice]);
 
 	if (!isResolved) {
 		return <WriteEnvironmentPending />;

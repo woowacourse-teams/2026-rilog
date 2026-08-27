@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
-import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import tools.jackson.databind.JsonNode;
 
 public record DraftOverwriteRequest(

@@ -1,4 +1,4 @@
-package kr.rilog.domain.upload.domain;
+package kr.rilog.domain.upload.domain.enums;
 
 import software.amazon.awssdk.services.s3.model.Tag;
 import software.amazon.awssdk.services.s3.model.Tagging;

@@ -52,6 +52,16 @@ public class CologController implements CologApiSpec {
     }
 
     @AuthGuard
+    @DeleteMapping("/cologs/{slug}")
+    public ApiResponse<Void> deleteColog(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug
+    ) {
+        cologService.deleteColog(requesterId, slug);
+        return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 블로그를 삭제했습니다.");
+    }
+
+    @AuthGuard
     @DeleteMapping("/cologs/{slug}/members/me")
     public ApiResponse<Void> leaveColog(
             @LoginUserId Long requesterId,

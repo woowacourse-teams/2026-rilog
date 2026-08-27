@@ -1,4 +1,5 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import XIcon from '@/shared/assets/icons/x.svg';
 import { buildDraftWritePath } from '@/shared/routes/app-routes';
@@ -65,7 +66,7 @@ export default function DraftListModal({
 
 			{draftPosts.length > 0 && (
 				<>
-					<ul className="flex flex-col gap-4">
+					<ul className="flex max-h-64 flex-col gap-4 overflow-y-auto">
 						{draftPosts.map((post) => {
 							const isSelected = post.id === selectedDraftId;
 							const content = (
@@ -98,6 +99,7 @@ export default function DraftListModal({
 										<CustomLink
 											replace
 											href={buildDraftWritePath(post.id)}
+											onClick={() => recordEditorEntryContext('draft_list')}
 											className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
 										>
 											{content}

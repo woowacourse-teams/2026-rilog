@@ -2,16 +2,19 @@ package kr.rilog.domain.post.entity;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.DUPLICATED_PUBLISH;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
@@ -25,6 +28,9 @@ import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static kr.rilog.support.fixure.BlogFixture.otherUserRilog;
 import static kr.rilog.support.fixure.BlogFixture.targetColog;
 import static kr.rilog.support.fixure.PostFixture.*;
+import static kr.rilog.support.fixure.PostContentFixture.IMAGE_URL_A;
+import static kr.rilog.support.fixure.PostContentFixture.content;
+import static kr.rilog.support.fixure.PostContentFixture.imageBlock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,7 +55,7 @@ class PostTest {
         // then
         assertSoftly(softly -> {
             softly.assertThat(draft.getTitle()).isEqualTo(command.title());
-            softly.assertThat(draft.getContent()).isEqualTo(command.content());
+            softly.assertThat(draft.getContent()).isEqualTo(PostContent.from(command.content()));
             softly.assertThat(draft.getStatus()).isEqualTo(DRAFT);
             softly.assertThat(draft.getVisibility()).isEqualTo(PRIVATE);
             softly.assertThat(draft.getCategory()).isNull();
@@ -95,7 +101,7 @@ class PostTest {
         assertSoftly(softly -> {
             softly.assertThat(draft.getTitle()).isEqualTo(command.title());
             softly.assertThat(draft.getTitle()).isNotEqualTo("덮어쓰기 전 제목");
-            softly.assertThat(draft.getContent()).isEqualTo(command.content());
+            softly.assertThat(draft.getContent()).isEqualTo(PostContent.from(command.content()));
         });
     }
 
@@ -133,7 +139,7 @@ class PostTest {
         // then
         PostDetail publishedDetail = new PostDetail(
                 draft.getTitle(),
-                draft.getContent(),
+                draft.getContent().getContent(),
                 draft.getCategory(),
                 draft.getVisibility(),
                 draft.getThumbnailImageUrl()
@@ -296,7 +302,7 @@ class PostTest {
         // then
         PostDetail updatedDetail = new PostDetail(
                 post.getTitle(),
-                post.getContent(),
+                post.getContent().getContent(),
                 post.getCategory(),
                 post.getVisibility(),
                 post.getThumbnailImageUrl()
@@ -403,6 +409,33 @@ class PostTest {
 
         // then
         assertThat(ownSlug).isEqualTo(post.getRilog().getSlug());
+    }
+
+    @Test
+    @DisplayName("게시글은 본문 파일과 썸네일 이미지를 태그 자산으로 제공한다.")
+    void postProvidesContentAndThumbnailAsTagAssets() {
+        String thumbnailImageUrl = "https://example.com/thumbnail.png";
+        Post post = Post.builder()
+                .content(content(imageBlock(IMAGE_URL_A)))
+                .thumbnailImageUrl(thumbnailImageUrl)
+                .build();
+
+        TagAssets assets = post.getTagAssets();
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(IMAGE_URL_A, thumbnailImageUrl)));
+    }
+
+    @Test
+    @DisplayName("초안은 썸네일 이미지가 없어도 본문 파일만 태그 자산으로 제공한다.")
+    void draftProvidesContentAsTagAssetsWithoutThumbnail() {
+        Post draft = Post.builder()
+                .content(content(imageBlock(IMAGE_URL_A)))
+                .thumbnailImageUrl(null)
+                .build();
+
+        TagAssets assets = draft.getTagAssets();
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(IMAGE_URL_A)));
     }
 
 }

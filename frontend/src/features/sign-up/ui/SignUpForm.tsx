@@ -41,6 +41,17 @@ const TERMS_OF_SERVICE_URL =
 	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568021b809fedd5650c5dd?source=copy_link';
 const PRIVACY_POLICY_URL =
 	'https://receptive-sugar-20f.notion.site/Rilog-3c20af5ece568068a244ead52491639b?source=copy_link';
+
+interface SignUpSubmissionFailure {
+	failureStage: string;
+	cause: unknown;
+}
+
+const createSignUpFailure = (failureStage: string, cause: unknown): SignUpSubmissionFailure => ({
+	failureStage,
+	cause,
+});
+
 interface SignUpFormProps {
 	completeSignUp?: CompleteSignUp;
 	navigate?: (href: string, options?: SignUpNavigateOptions) => void;
@@ -66,14 +77,30 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const handleCompleteSignUp: CompleteSignUp = async (value) => {
 		let profileImageUrl = '';
 		if (value.profileImageFile) {
-			const uploadRes = await uploadFile({ file: value.profileImageFile, type: 'IMAGE' });
-			profileImageUrl = uploadRes.objectKey;
+			try {
+				const uploadRes = await uploadFile({ file: value.profileImageFile, type: 'IMAGE' });
+				profileImageUrl = uploadRes.objectKey;
+			} catch (error) {
+				// eslint-disable-next-line @typescript-eslint/only-throw-error -- 제출 실패 단계와 원본 오류를 구조적으로 전달한다.
+				throw createSignUpFailure('profile_image_upload', error);
+			}
 		}
 
-		const response = await onboard(mapOnboardingRequest(value, profileImageUrl));
+		let response;
+		try {
+			response = await onboard(mapOnboardingRequest(value, profileImageUrl));
+		} catch (error) {
+			// eslint-disable-next-line @typescript-eslint/only-throw-error -- 제출 실패 단계와 원본 오류를 구조적으로 전달한다.
+			throw createSignUpFailure('onboarding_submit', error);
+		}
 
 		if (response.accessToken) {
-			tokenManager.setToken(response.accessToken);
+			try {
+				tokenManager.setToken(response.accessToken);
+			} catch (error) {
+				// eslint-disable-next-line @typescript-eslint/only-throw-error -- 제출 실패 단계와 원본 오류를 구조적으로 전달한다.
+				throw createSignUpFailure('session_store', error);
+			}
 		}
 
 		return { slug: value.slug };

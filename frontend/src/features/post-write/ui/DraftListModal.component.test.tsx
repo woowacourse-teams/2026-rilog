@@ -1,8 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import DraftListModal from './DraftListModal';
+
+const { recordEditorEntryContextMock } = vi.hoisted(() => ({
+	recordEditorEntryContextMock: vi.fn(),
+}));
+
+vi.mock('@/features/analytics/lib/editor-entry-context', () => ({
+	recordEditorEntryContext: recordEditorEntryContextMock,
+}));
 
 const defaultProps = {
 	open: true,
@@ -12,6 +20,8 @@ const defaultProps = {
 };
 
 describe('DraftListModal', () => {
+	beforeEach(() => recordEditorEntryContextMock.mockReset());
+
 	it('목록을 불러오는 동안 loading 상태를 알린다', () => {
 		render(<DraftListModal {...defaultProps} isPending />);
 
@@ -59,6 +69,20 @@ describe('DraftListModal', () => {
 		);
 
 		expect(screen.getByRole('link', { name: /작성 중인 글/ })).toHaveAttribute('href', '/write?draftId=42');
+	});
+
+	it('임시저장 글로 이동하기 직전에 분석 진입 컨텍스트를 기록한다', async () => {
+		const user = userEvent.setup();
+		render(
+			<DraftListModal
+				{...defaultProps}
+				draftPosts={[{ id: 42, title: '작성 중인 글', savedAt: '2026-08-27T10:29:46.466Z' }]}
+			/>,
+		);
+
+		await user.click(screen.getByRole('link', { name: /작성 중인 글/ }));
+
+		expect(recordEditorEntryContextMock).toHaveBeenCalledWith('draft_list');
 	});
 
 	it('현재 선택된 임시저장 글을 표시하고 링크로 제공하지 않는다', () => {

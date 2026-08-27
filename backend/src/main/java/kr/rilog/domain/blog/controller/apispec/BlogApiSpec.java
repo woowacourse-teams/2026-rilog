@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,9 +18,10 @@ public interface BlogApiSpec {
 
     @Operation(
             summary = "슬러그 중복 검사 API",
-            description = "이미 존재하는 블로그 슬러그인지 검사합니다."
+            description = "이미 존재하는 블로그 슬러그인지 검사합니다. 슬러그는 4~20자의 영문, 숫자, 하이픈(-), 언더스코어(_)를 허용하며 소문자로 저장됩니다."
     )
     ApiResponse<Void> validateSlug(
+            @Parameter(description = "중복 검사할 블로그 slug", example = "ri_log-01")
             @RequestParam("slug")
             @Size(min = 4, max = 20, message = "슬러그는 4자 이상 20자 이하이어야 합니다.")
             @Pattern(

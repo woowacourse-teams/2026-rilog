@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useSyncExternalStore } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
 import AccessFeedback from '@/features/auth/ui/AccessFeedback';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
@@ -10,7 +11,9 @@ import {
 	clearSignUpFlow,
 	getServerSignUpFlowStatus,
 	getSignUpFlowStatus,
+	hasTrackedSignUpStarted,
 	initializeSignUpFlowStatus,
+	markSignUpStarted,
 	subscribeSignUpFlow,
 } from '../lib/sign-up-flow-session';
 
@@ -25,6 +28,15 @@ export default function SignUpAccessGuard({ children }: SignUpAccessGuardProps) 
 		initializeSignUpFlowStatus();
 		return tokenManager.subscribeLogout(clearSignUpFlow);
 	}, []);
+
+	useEffect(() => {
+		if (signUpFlowStatus !== 'allowed' || hasTrackedSignUpStarted()) {
+			return;
+		}
+
+		analytics.signUpStarted();
+		markSignUpStarted();
+	}, [signUpFlowStatus]);
 
 	if (signUpFlowStatus === 'checking') {
 		return (

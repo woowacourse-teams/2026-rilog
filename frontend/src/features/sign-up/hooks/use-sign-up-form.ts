@@ -5,7 +5,9 @@ import { useRef, useState } from 'react';
 import type { CompleteSignUp, SignUpValidationErrors } from '../model/sign-up';
 import type { ChangeEvent, SubmitEvent } from 'react';
 
+import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
+import { getApiErrorMessage } from '@/shared/api/api-error';
 
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
 import { clearSignUpFlow } from '../lib/sign-up-flow-session';
@@ -31,6 +33,14 @@ interface UseSignUpFormOptions {
 	completeSignUp?: CompleteSignUp;
 	navigate?: (href: string, options?: SignUpNavigateOptions) => void;
 }
+
+interface SignUpFailure {
+	failureStage: string;
+	cause?: unknown;
+}
+
+const isSignUpFailure = (error: unknown): error is SignUpFailure =>
+	typeof error === 'object' && error !== null && 'failureStage' in error && typeof error.failureStage === 'string';
 
 export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }: UseSignUpFormOptions = {}) {
 	const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
@@ -153,6 +163,8 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 			analytics.signUpCompleted({
 				hasProfileImage: profileImageFile !== null,
 				hasIntroduction: description.trim() !== '',
+				hasServiceUrl: normalizedValue.serviceUrl !== '',
+				hasGithubUrl: normalizedValue.githubUrl !== '',
 			});
 			clearSignUpFlow();
 
@@ -163,12 +175,18 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 
 			window.location.replace('/');
 		} catch (error) {
+			const analyticsError = isSignUpFailure(error) ? error.cause : error;
+			const { errorCode } = getAnalyticsErrorProperties(analyticsError);
+			analytics.signUpFailed({
+				failureStage: isSignUpFailure(error) ? error.failureStage : 'submit',
+				errorCode,
+			});
 			setSignUpState({
 				status: 'error',
-				message:
-					error instanceof Error
-						? error.message
-						: '회원가입을 완료하지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.',
+				message: getApiErrorMessage(
+					analyticsError,
+					'회원가입을 완료하지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.',
+				),
 			});
 		}
 	};

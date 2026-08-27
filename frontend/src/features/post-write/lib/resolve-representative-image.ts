@@ -1,5 +1,7 @@
 import type { Block } from '@blocknote/core';
 
+import type { ImageSource } from '@/features/analytics/model/analytics-event';
+import type { PublicationSettings } from '@/features/post-write/model/post-publication';
 const getImageUrl = (block: Block): string | null => {
 	if (block.type !== 'image') {
 		return null;
@@ -30,3 +32,9 @@ export const resolveRepresentativeImagePreview = (
 	blocks: Block[],
 	defaultImageUrl: string,
 ) => selectedImageUrl ?? findFirstBodyImageUrl(blocks) ?? defaultImageUrl;
+
+export const resolveRepresentativeImageSource = (settings: PublicationSettings, blocks: Block[]): ImageSource => {
+	if (settings.representativeImage !== null) return 'uploaded';
+	if (settings.representativeImageUrl !== null) return 'existing';
+	return findFirstBodyImageUrl(blocks) === null ? 'default' : 'body';
+};

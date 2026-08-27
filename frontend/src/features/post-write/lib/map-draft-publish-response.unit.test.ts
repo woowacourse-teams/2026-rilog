@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
+
 import { mapDraftPublishResponse } from './map-draft-publish-response';
 
 describe('mapDraftPublishResponse', () => {
@@ -14,8 +16,12 @@ describe('mapDraftPublishResponse', () => {
 	});
 
 	it('게시글 정보가 없는 응답을 거부한다', () => {
-		expect(() => mapDraftPublishResponse({ status: 200, message: '응답 데이터 없음' })).toThrow(
-			'발행 응답에 게시글 정보가 없습니다.',
-		);
+		expect.assertions(2);
+		try {
+			mapDraftPublishResponse({ status: 200, message: '응답 데이터 없음' });
+		} catch (error) {
+			expect(error).toHaveProperty('message', '발행 응답에 게시글 정보가 없습니다.');
+			expect(getAnalyticsFailureStage(error)).toBe('publish_response');
+		}
 	});
 });

@@ -21,6 +21,12 @@ vi.mock('@/features/post-write/hooks/use-draft-initial-document', () => ({
 	useDraftInitialDocument: useDraftInitialDocumentMock,
 }));
 
+vi.mock('@/features/analytics/ui/ContentLoadFailureTracker', () => ({
+	default: ({ surface, loadPhase }: { surface: string; loadPhase: string }) => (
+		<p>{`로딩 실패 추적: ${surface}/${loadPhase}`}</p>
+	),
+}));
+
 vi.mock('./DraftPostController', () => ({
 	default: ({ draftId, initialDocument }: { draftId: number; initialDocument: EditorDocument }) => (
 		<div>
@@ -60,6 +66,7 @@ describe('DraftPostLoader', () => {
 		render(<DraftPostLoader draftId={42} />);
 
 		expect(screen.getByRole('alert')).toHaveTextContent('임시저장 글을 불러오지 못했습니다.');
+		expect(screen.getByText('로딩 실패 추적: post_editor/draft_initial_data')).toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 		expect(refetch).toHaveBeenCalledOnce();
 	});

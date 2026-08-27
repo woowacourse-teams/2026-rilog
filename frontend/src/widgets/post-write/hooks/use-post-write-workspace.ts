@@ -2,16 +2,22 @@
 
 import { useCallback } from 'react';
 
+import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
+import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
+import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
+import { analytics } from '@/features/analytics/model/events';
 import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
 import { usePostPublication } from '@/features/post-write/hooks/use-post-publication';
 import { usePostPublicationSettings } from '@/features/post-write/hooks/use-post-publication-settings';
 import { usePostWriteLeaveGuard } from '@/features/post-write/hooks/use-post-write-leave-guard';
+import { resolveRepresentativeImageSource } from '@/features/post-write/lib/resolve-representative-image';
 import type {
 	EditorDocument,
 	PublicationSettings,
 	PublishPost,
 	PublishPostResult,
 } from '@/features/post-write/model/post-publication';
+import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface UsePostWriteWorkspaceOptions {
@@ -19,7 +25,7 @@ interface UsePostWriteWorkspaceOptions {
 	initialPublicationSettings?: PublicationSettings;
 	publishPost: PublishPost;
 	navigate?: (href: string) => void;
-	onPublished?: (settings: PublicationSettings) => void;
+	onPublished?: (result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => void;
 }
 
 export function usePostWriteWorkspace({
@@ -29,6 +35,8 @@ export function usePostWriteWorkspace({
 	navigate,
 	onPublished,
 }: UsePostWriteWorkspaceOptions) {
+	const getActiveEditingTime = useActiveElapsedTime();
+
 	const {
 		titleRef,
 		editorRef,
@@ -41,6 +49,7 @@ export function usePostWriteWorkspace({
 		handleEditorChange,
 		preparePostDocument,
 		markClean,
+		getDocumentState,
 	} = usePostDocument({ initialDocument });
 
 	const {
@@ -63,12 +72,34 @@ export function usePostWriteWorkspace({
 		isDirty,
 		markClean,
 		navigate,
+		onConfirmLeave: () => {
+			const { hasTitle, hasBody } = getDocumentState();
+			if (!hasTitle && !hasBody) return;
+
+			const elapsedSeconds = getActiveEditingTime() / 1_000;
+			analytics.postDraftAbandoned({
+				documentState: hasTitle && hasBody ? 'title_and_body' : hasTitle ? 'title_only' : 'body_only',
+				editingTimeBucket:
+					elapsedSeconds < 60
+						? 'under_1m'
+						: elapsedSeconds < 300
+							? '1_to_5m'
+							: elapsedSeconds < 900
+								? '5_to_15m'
+								: '15m_plus',
+			});
+		},
 	});
 
 	const handlePublished = useCallback(
-		(result: PublishPostResult, settings: PublicationSettings) => {
+		(result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
-			onPublished?.(settings);
+			recordPostDetailEntryContext({
+				postId: Number(result.postId),
+				entrySource: 'publish_redirect',
+				feedPosition: null,
+			});
+			onPublished?.(result, settings, document);
 
 			clearSelectedImageUrl();
 			navigateAfterCompletion(postDetailPath);
@@ -84,22 +115,41 @@ export function usePostWriteWorkspace({
 		open: openPublication,
 		close: closePublication,
 		publish: publishDocument,
-	} = usePostPublication({ publishPost, onPublished: handlePublished });
+	} = usePostPublication({
+		publishPost,
+		onPublished: handlePublished,
+		onFailed: (error) => {
+			const { errorCode, errorKind } = getAnalyticsErrorProperties(error);
+			analytics.postPublishFailed({
+				failureStage: getAnalyticsFailureStage(error),
+				errorCode,
+				errorKind,
+			});
+		},
+	});
 
 	const handleOpenPublishSettings = () => {
 		const document = preparePostDocument();
 		if (document === null) {
+			analytics.postPublishValidationFailed({ invalidFields: ['title', 'body'] });
 			return;
 		}
 
 		openPublication(document);
+		analytics.postPublishSettingsOpened();
 	};
 
 	const handlePublish = async () => {
 		if (!validatePublicationSettings()) {
+			analytics.postPublishValidationFailed({ invalidFields: ['colog'] });
 			return;
 		}
 
+		analytics.postPublishStarted({
+			ownerType: 'COLOG',
+			category: publicationSettings.category,
+			imageSource: resolveRepresentativeImageSource(publicationSettings, publicationDocument?.blocks ?? []),
+		});
 		await publishDocument(publicationSettings);
 	};
 

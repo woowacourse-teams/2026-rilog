@@ -6,6 +6,12 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import CologNavigation from './CologNavigation';
 
+const { recordCologCreationEntryContextMock } = vi.hoisted(() => ({ recordCologCreationEntryContextMock: vi.fn() }));
+
+vi.mock('@/features/analytics/lib/colog-creation-entry-context', () => ({
+	recordCologCreationEntryContext: recordCologCreationEntryContextMock,
+}));
+
 vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
 	useMyCologsPreviewQuery: vi.fn(() => ({
 		data: [
@@ -46,5 +52,14 @@ describe('CologNavigation', () => {
 		}
 		await user.tab();
 		expect(createLink).toHaveFocus();
+	});
+
+	it('팀 만들기 진입을 sidebar source로 기록한다', async () => {
+		const user = userEvent.setup();
+		renderWithQuery(<CologNavigation />);
+
+		await user.click(screen.getByRole('link', { name: '팀 만들기' }));
+
+		expect(recordCologCreationEntryContextMock).toHaveBeenCalledWith('sidebar');
 	});
 });

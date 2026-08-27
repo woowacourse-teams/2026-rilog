@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
 import BlogPostList from '@/features/blog-post-feed/ui/BlogPostList';
 import { deduplicatePostFeedItems } from '@/features/post-feed/lib/deduplicate-post-feed-items';
 import Button from '@/shared/ui/button/Button';
@@ -57,6 +58,7 @@ export default function BlogPostFeed({ slug, initialRequestFailed = false }: Blo
 	if (hasInitialError) {
 		return (
 			<section aria-label="블로그 게시글 오류" className="min-w-0">
+				<ContentLoadFailureTracker surface="blog_post_list" loadPhase="initial" error={query.error} />
 				<div className="flex min-h-32 flex-col items-center justify-center gap-5 text-center" role="alert">
 					<p className="text-body-2 text-text-secondary">게시글 목록을 불러오지 못했어요.</p>
 					<Button
@@ -90,6 +92,7 @@ export default function BlogPostFeed({ slug, initialRequestFailed = false }: Blo
 					{query.isFetchingNextPage && <p className="text-body-1 text-text-secondary">게시글을 더 불러오는 중...</p>}
 					{query.isFetchNextPageError && (
 						<div className="flex flex-col items-center gap-3">
+							<ContentLoadFailureTracker surface="blog_post_list" loadPhase="pagination" error={query.error} />
 							<p className="text-body-1 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
 							<Button variant="secondary" onClick={() => void query.fetchNextPage()}>
 								다시 시도

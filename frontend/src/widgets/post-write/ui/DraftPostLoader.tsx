@@ -1,5 +1,6 @@
 'use client';
 
+import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
 import { useDraftInitialDocument } from '@/features/post-write/hooks/use-draft-initial-document';
 import Button from '@/shared/ui/button/Button';
 
@@ -27,6 +28,11 @@ export default function DraftPostLoader({ draftId }: DraftPostLoaderProps) {
 	if (initialDocumentQuery.isError || initialDocumentQuery.data === undefined) {
 		return (
 			<main className={loaderClassName}>
+				<ContentLoadFailureTracker
+					surface="post_editor"
+					loadPhase="draft_initial_data"
+					error={initialDocumentQuery.error}
+				/>
 				<div className="flex flex-col items-center gap-5" role="alert">
 					<p className="text-body-2 text-danger-text">임시저장 글을 불러오지 못했습니다.</p>
 					<Button variant="secondary" onClick={() => void initialDocumentQuery.refetch()}>

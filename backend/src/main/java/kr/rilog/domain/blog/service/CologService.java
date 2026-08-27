@@ -13,6 +13,8 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -36,7 +38,9 @@ public class CologService {
 
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
+    private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final TagAssetsLifecycle tagAssetsLifecycle;
     private final Clock clock;
 
     @Transactional
@@ -54,6 +58,8 @@ public class CologService {
         Blog savedColog = saveColog(colog);
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));
         blogMemberRepository.save(ownerMember);
+
+        tagAssetsLifecycle.attach(savedColog.getTagAssets());
 
         return CologCreateResult.from(savedColog);
     }
@@ -85,8 +91,7 @@ public class CologService {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
 
-        requesterMember.validateCanLeave();
-        requesterMember.leave();
+        requesterMember.leaveBySelf();
     }
 
     @Transactional
@@ -95,8 +100,19 @@ public class CologService {
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
 
-        requesterMember.validateCanRemove(targetMember);
-        targetMember.leave();
+        requesterMember.remove(targetMember);
+    }
+
+    @Transactional
+    public void deleteColog(Long requesterId, String slug) {
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        requesterMember.validateCanDeleteColog();
+
+        List<BlogMember> activeMembers = blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(colog.getId(), BlogMemberStatus.ACTIVE);
+        colog.deleteCologBy(requesterMember, activeMembers);
+
+        postRepository.softDeleteAllByCologId(colog.getId(), LocalDateTime.now(clock));
     }
 
     public List<MyCologResponse> getMyCologsPreview(Long requesterId) {

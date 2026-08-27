@@ -1,13 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import type { PostWriteWorkspaceState } from '../hooks/use-post-write-workspace';
 import type { ComponentType, ReactNode } from 'react';
 
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
-import { analytics } from '@/features/analytics/model/events';
 import type {
 	PostEditorProps as PostBodyEditorProps,
 	PostWriteEditorContext,
@@ -36,10 +33,6 @@ export default function PostEditor({
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
 }: PostEditorProps) {
-	useEffect(() => {
-		analytics.postEditorOpened();
-	}, []);
-
 	const { isDirty, document: postDocument, publication } = workspace;
 
 	return (

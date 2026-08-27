@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 
+import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import { buildDraftPublishRequest } from '@/features/post-write/lib/build-draft-publish-request';
 import { buildPostWriteRequest } from '@/features/post-write/lib/build-post-write-request';
 import { mapDraftPublishResponse } from '@/features/post-write/lib/map-draft-publish-response';
@@ -24,7 +25,12 @@ export function usePublishNewPost(): PublishPost {
 				return objectKey;
 			});
 
-			return mapPostWriteResponse(await requestPublication(request));
+			try {
+				return mapPostWriteResponse(await requestPublication(request));
+			} catch (error) {
+				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
+				throw withAnalyticsFailureStage(error, 'publish_request');
+			}
 		},
 		[requestPublication, uploadFile],
 	);
@@ -41,7 +47,12 @@ export function usePublishPostDraft(): PublishPostDraft {
 				return objectKey;
 			});
 
-			return mapDraftPublishResponse(await requestPublication({ draftId, request }));
+			try {
+				return mapDraftPublishResponse(await requestPublication({ draftId, request }));
+			} catch (error) {
+				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
+				throw withAnalyticsFailureStage(error, 'publish_request');
+			}
 		},
 		[requestPublication, uploadFile],
 	);
@@ -58,7 +69,12 @@ export function useUpdatePublishedPost(postId: number): PublishPost {
 				return objectKey;
 			});
 
-			return mapPostWriteResponse(await requestUpdate({ postId, request }));
+			try {
+				return mapPostWriteResponse(await requestUpdate({ postId, request }));
+			} catch (error) {
+				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
+				throw withAnalyticsFailureStage(error, 'publish_request');
+			}
 		},
 		[postId, requestUpdate, uploadFile],
 	);

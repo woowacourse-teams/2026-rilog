@@ -65,6 +65,7 @@ class OnboardingCompletionServiceTest {
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/jinriro",
+                "https://rilog.example.com",
                 "riro@example.com"
         );
     }

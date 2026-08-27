@@ -1,4 +1,5 @@
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 import type { PostWriteRequest } from '@/shared/api/posts/types';
 
@@ -14,10 +15,15 @@ export const buildPostWriteRequest = async (
 		throw new Error('Co-log를 선택해 주세요.');
 	}
 
-	const thumbnailImageUrl =
-		settings.representativeImage !== null
-			? await uploadRepresentativeImage(settings.representativeImage)
-			: (settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL);
+	let thumbnailImageUrl =
+		settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL;
+	if (settings.representativeImage !== null) {
+		try {
+			thumbnailImageUrl = await uploadRepresentativeImage(settings.representativeImage);
+		} catch (error) {
+			throw withAnalyticsFailureStage(error, 'representative_image_upload');
+		}
+	}
 
 	return {
 		slug: settings.blog.slug,

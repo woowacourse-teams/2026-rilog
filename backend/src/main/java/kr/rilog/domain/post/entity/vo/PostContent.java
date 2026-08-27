@@ -3,6 +3,7 @@ package kr.rilog.domain.post.entity.vo;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -44,6 +45,11 @@ public class PostContent {
         return extractFileUrls().stream()
                 .filter(url -> !remaining.contains(url))
                 .toList();
+    }
+
+    public TagAssets extractTagAssets() {
+        List<String> strings = extractFileUrls();
+        return TagAssets.from(strings);
     }
 
     public List<String> extractFileUrls() {

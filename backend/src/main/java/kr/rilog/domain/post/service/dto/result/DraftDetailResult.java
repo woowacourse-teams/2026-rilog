@@ -20,7 +20,7 @@ public record DraftDetailResult(
         return new DraftDetailResult(
                 draft.getId(),
                 draft.getTitle(),
-                draft.getContent(),
+                draft.getContent().getContent(),
                 draft.getStatus(),
                 draft.getPublishedAt()
         );

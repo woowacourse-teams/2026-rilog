@@ -1,4 +1,5 @@
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { useLogoutMutation } from '@/shared/api/auth/mutations/use-logout-mutation';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES, buildBlogHomePath } from '@/shared/routes/app-routes';
@@ -33,7 +34,12 @@ export default function AuthenticatedSidebarFooter() {
 	return (
 		<>
 			<div className="w-full shrink-0 px-3 pb-3">
-				<ButtonLink href={APP_ROUTES.write} fullWidth className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}>
+				<ButtonLink
+					href={APP_ROUTES.write}
+					onClick={() => recordEditorEntryContext('sidebar')}
+					fullWidth
+					className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}
+				>
 					<WriteIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					<span className={EXPANDED_TEXT_CLASS_NAME}>글쓰기</span>
 				</ButtonLink>

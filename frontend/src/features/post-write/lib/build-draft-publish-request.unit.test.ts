@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
+import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 
 import { buildDraftPublishRequest } from './build-draft-publish-request';
@@ -39,5 +40,17 @@ describe('buildDraftPublishRequest', () => {
 			thumbnailImageUrl: 'posts/existing.png',
 		});
 		expect(uploadRepresentativeImage).not.toHaveBeenCalled();
+	});
+
+	it('대표 이미지 업로드 실패 단계를 보존한다', async () => {
+		const command = createCommand();
+		command.settings.representativeImage = new File(['image'], 'cover.png', { type: 'image/png' });
+		const uploadError = new TypeError('이미지 업로드 실패');
+		const uploadRepresentativeImage = vi.fn().mockRejectedValue(uploadError);
+
+		const error = await buildDraftPublishRequest(command, uploadRepresentativeImage).catch((cause: unknown) => cause);
+
+		expect(error).toBe(uploadError);
+		expect(getAnalyticsFailureStage(error)).toBe('representative_image_upload');
 	});
 });
