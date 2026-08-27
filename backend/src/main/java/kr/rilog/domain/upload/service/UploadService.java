@@ -1,7 +1,7 @@
 package kr.rilog.domain.upload.service;
 
-import kr.rilog.domain.upload.domain.TagStatus;
-import kr.rilog.domain.upload.domain.UploadType;
+import kr.rilog.domain.upload.domain.enums.TagStatus;
+import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.exception.UploadException;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static kr.rilog.domain.upload.domain.TagStatus.CONFIRMED;
+import static kr.rilog.domain.upload.domain.enums.TagStatus.CONFIRMED;
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.*;
 
 @Service

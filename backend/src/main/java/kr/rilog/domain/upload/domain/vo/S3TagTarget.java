@@ -1,6 +1,6 @@
-package kr.rilog.domain.upload.domain.vo.v2;
+package kr.rilog.domain.upload.domain.vo;
 
-import kr.rilog.domain.upload.domain.TagStatus;
+import kr.rilog.domain.upload.domain.enums.TagStatus;
 
 import java.util.Objects;
 

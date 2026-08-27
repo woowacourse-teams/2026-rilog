@@ -1,8 +1,8 @@
 package kr.rilog.domain.upload.service;
 
-import kr.rilog.domain.upload.domain.TagStatus;
-import kr.rilog.domain.upload.domain.vo.v2.S3TagTarget;
-import kr.rilog.domain.upload.domain.vo.v2.TagAssets;
+import kr.rilog.domain.upload.domain.enums.TagStatus;
+import kr.rilog.domain.upload.domain.vo.S3TagTarget;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,13 +19,13 @@ class S3TagAssetsLifecycleTest {
     private static final String REMOVED_URL = "https://s3.example.com/removed.png";
     private static final String RETAINED_URL = "https://s3.example.com/retained.png";
 
-    private S3ObjectTaggerV2 objectTagger;
+    private S3ObjectTagger objectTagger;
     private S3ObjectKeyResolver objectKeyResolver;
     private S3TagAssetsLifecycle lifecycle;
 
     @BeforeEach
     void setUp() {
-        objectTagger = mock(S3ObjectTaggerV2.class);
+        objectTagger = mock(S3ObjectTagger.class);
         objectKeyResolver = mock(S3ObjectKeyResolver.class);
         lifecycle = new S3TagAssetsLifecycle(
                 objectTagger,

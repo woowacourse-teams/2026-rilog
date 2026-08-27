@@ -1,7 +1,7 @@
 package kr.rilog.domain.upload.service;
 
-import kr.rilog.domain.upload.domain.TagStatus;
-import kr.rilog.domain.upload.domain.vo.v2.S3TagTarget;
+import kr.rilog.domain.upload.domain.enums.TagStatus;
+import kr.rilog.domain.upload.domain.vo.S3TagTarget;
 import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-class S3ObjectTaggerV2Test {
+class S3ObjectTaggerTest {
 
     private static final String BUCKET = "rilog-bucket";
     private static final String OBJECT_KEY = "images/2026/image.png";
@@ -30,7 +30,7 @@ class S3ObjectTaggerV2Test {
     @DisplayName("태깅 대상의 버킷, 객체 키와 태그 상태를 S3에 전달한다.")
     void requestTagChangeWithTargetInformation(TagStatus tagStatus) {
         S3Client s3Client = mock(S3Client.class);
-        S3ObjectTaggerV2 tagger = new S3ObjectTaggerV2(s3Client, s3Properties());
+        S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
         S3TagTarget target = new S3TagTarget(OBJECT_KEY, tagStatus);
         ArgumentCaptor<PutObjectTaggingRequest> requestCaptor =
                 ArgumentCaptor.forClass(PutObjectTaggingRequest.class);
@@ -50,7 +50,7 @@ class S3ObjectTaggerV2Test {
     @DisplayName("태깅 대상마다 S3 태그 변경을 한 번씩 요청한다.")
     void requestTagChangeForEveryTarget() {
         S3Client s3Client = mock(S3Client.class);
-        S3ObjectTaggerV2 tagger = new S3ObjectTaggerV2(s3Client, s3Properties());
+        S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
         List<S3TagTarget> targets = List.of(
                 new S3TagTarget("images/2026/image.png", TagStatus.CONFIRMED),
                 new S3TagTarget("images/2026/document.pdf", TagStatus.TEMPORARY)
@@ -66,7 +66,7 @@ class S3ObjectTaggerV2Test {
     @DisplayName("태깅 대상이 비어 있으면 S3 태그 변경을 요청하지 않는다.")
     void doNotRequestTagChangeWhenTargetsAreEmpty() {
         S3Client s3Client = mock(S3Client.class);
-        S3ObjectTaggerV2 tagger = new S3ObjectTaggerV2(s3Client, s3Properties());
+        S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
 
         tagger.tag(List.of());
 

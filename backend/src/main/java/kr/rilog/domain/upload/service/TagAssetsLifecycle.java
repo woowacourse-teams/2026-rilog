@@ -1,6 +1,6 @@
 package kr.rilog.domain.upload.service;
 
-import kr.rilog.domain.upload.domain.vo.v2.TagAssets;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 
 public interface TagAssetsLifecycle {
 

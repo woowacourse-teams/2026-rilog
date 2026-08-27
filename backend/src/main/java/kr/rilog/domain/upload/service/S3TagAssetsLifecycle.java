@@ -1,9 +1,9 @@
 package kr.rilog.domain.upload.service;
 
-import kr.rilog.domain.upload.domain.TagStatus;
-import kr.rilog.domain.upload.domain.vo.v2.S3TagTarget;
-import kr.rilog.domain.upload.domain.vo.v2.TagAssetChanges;
-import kr.rilog.domain.upload.domain.vo.v2.TagAssets;
+import kr.rilog.domain.upload.domain.enums.TagStatus;
+import kr.rilog.domain.upload.domain.vo.S3TagTarget;
+import kr.rilog.domain.upload.domain.vo.TagAssetChanges;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
 
-    private final S3ObjectTaggerV2 objectTaggerV2;
+    private final S3ObjectTagger objectTaggerV2;
     private final S3ObjectKeyResolver objectKeyResolver;
 
     @Override

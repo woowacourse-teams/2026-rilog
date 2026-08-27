@@ -1,4 +1,4 @@
-package kr.rilog.domain.upload.domain.vo.v2;
+package kr.rilog.domain.upload.domain.vo;
 
 import java.util.Set;
 
