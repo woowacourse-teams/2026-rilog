@@ -5,8 +5,8 @@ import { useState } from 'react';
 
 import type { SubmitEvent } from 'react';
 
-import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { consumeCologCreationEntryContext } from '@/features/analytics/lib/colog-creation-entry-context';
+import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
 import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
