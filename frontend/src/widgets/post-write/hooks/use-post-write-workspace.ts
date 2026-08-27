@@ -7,7 +7,6 @@ import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-deta
 import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
 import { usePostDocument } from '@/features/post-write/hooks/use-post-document';
-import { usePostDrafts } from '@/features/post-write/hooks/use-post-drafts';
 import { usePostPublication } from '@/features/post-write/hooks/use-post-publication';
 import { usePostPublicationSettings } from '@/features/post-write/hooks/use-post-publication-settings';
 import { usePostWriteLeaveGuard } from '@/features/post-write/hooks/use-post-write-leave-guard';
@@ -20,32 +19,26 @@ import type {
 } from '@/features/post-write/model/post-publication';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
-const getBlockCountBucket = (count: number) => {
-	if (count <= 5) return '1-5';
-	if (count <= 10) return '6-10';
-	if (count <= 20) return '11-20';
-	return '21+';
-};
-
 interface UsePostWriteWorkspaceOptions {
-	isEditMode?: boolean;
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
 	publishPost: PublishPost;
 	navigate?: (href: string) => void;
+	onPublished?: (result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => void;
 }
 
 export function usePostWriteWorkspace({
-	isEditMode = false,
 	initialDocument,
 	initialPublicationSettings,
 	publishPost,
 	navigate,
+	onPublished,
 }: UsePostWriteWorkspaceOptions) {
 	const editorOpenedAtRef = useRef<number | null>(null);
 	useEffect(() => {
 		editorOpenedAtRef.current = Date.now();
 	}, []);
+
 	const {
 		titleRef,
 		editorRef,
@@ -60,8 +53,6 @@ export function usePostWriteWorkspace({
 		markClean,
 		getDocumentState,
 	} = usePostDocument({ initialDocument });
-
-	const drafts = usePostDrafts({ prepareDocument: preparePostDocument });
 
 	const {
 		settings: publicationSettings,
@@ -86,8 +77,9 @@ export function usePostWriteWorkspace({
 		onConfirmLeave: () => {
 			const { hasTitle, hasBody } = getDocumentState();
 			if (!hasTitle && !hasBody) return;
+
 			const elapsedSeconds = (Date.now() - (editorOpenedAtRef.current ?? Date.now())) / 1_000;
-			analytics.postDraftAbandoned?.({
+			analytics.postDraftAbandoned({
 				documentState: hasTitle && hasBody ? 'title_and_body' : hasTitle ? 'title_only' : 'body_only',
 				editingTimeBucket:
 					elapsedSeconds < 60
@@ -104,26 +96,17 @@ export function usePostWriteWorkspace({
 	const handlePublished = useCallback(
 		(result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
-			if (!isEditMode) {
-				analytics.postPublished({
-					postId: result.postId,
-					ownerType: 'COLOG',
-					category: settings.category,
-					cologId: settings.blog?.id ?? 0,
-					imageSource: resolveRepresentativeImageSource(settings, document.blocks),
-					blockCountBucket: getBlockCountBucket(document.blocks.length),
-				});
-			}
 			recordPostDetailEntryContext({
 				postId: Number(result.postId),
 				entrySource: 'publish_redirect',
 				feedPosition: null,
 			});
+			onPublished?.(result, settings, document);
 
 			clearSelectedImageUrl();
 			navigateAfterCompletion(postDetailPath);
 		},
-		[clearSelectedImageUrl, isEditMode, navigateAfterCompletion],
+		[clearSelectedImageUrl, navigateAfterCompletion, onPublished],
 	);
 
 	const {
@@ -139,34 +122,36 @@ export function usePostWriteWorkspace({
 		onPublished: handlePublished,
 		onFailed: (error) => {
 			const { errorCode, errorKind } = getAnalyticsErrorProperties(error);
-			const failureStage = getAnalyticsFailureStage(error);
-			analytics.postPublishFailed?.({ failureStage, errorCode, errorKind });
+			analytics.postPublishFailed({
+				failureStage: getAnalyticsFailureStage(error),
+				errorCode,
+				errorKind,
+			});
 		},
 	});
 
 	const handleOpenPublishSettings = () => {
 		const document = preparePostDocument();
 		if (document === null) {
-			analytics.postPublishValidationFailed?.({ invalidFields: ['title', 'body'] });
+			analytics.postPublishValidationFailed({ invalidFields: ['title', 'body'] });
 			return;
 		}
 
 		openPublication(document);
-		analytics.postPublishSettingsOpened?.();
+		analytics.postPublishSettingsOpened();
 	};
 
 	const handlePublish = async () => {
 		if (!validatePublicationSettings()) {
-			analytics.postPublishValidationFailed?.({ invalidFields: ['colog'] });
+			analytics.postPublishValidationFailed({ invalidFields: ['colog'] });
 			return;
 		}
 
-		analytics.postPublishStarted?.({
+		analytics.postPublishStarted({
 			ownerType: 'COLOG',
 			category: publicationSettings.category,
 			imageSource: resolveRepresentativeImageSource(publicationSettings, publicationDocument?.blocks ?? []),
 		});
-
 		await publishDocument(publicationSettings);
 	};
 
@@ -203,6 +188,7 @@ export function usePostWriteWorkspace({
 			cancel: handleCancelLeave,
 			confirm: handleConfirmLeave,
 		},
-		drafts,
 	};
 }
+
+export type PostWriteWorkspaceState = ReturnType<typeof usePostWriteWorkspace>;

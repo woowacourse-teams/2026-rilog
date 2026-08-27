@@ -19,6 +19,13 @@ export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 export type ScrollDepthBucket = '50_percent';
 // 작성한 글의 블록 수를 범주화한 값, 정확한 수 대신 구간으로 기록하면 이벤트 차원을 과도하게 늘리지 않고, 사용자가 주로 짧은 글·중간 길이 글·긴 글 중 무엇을 작성하는지 분석할 수 있음
 export type BlockCountBucket = '1-5' | '6-10' | '11-20' | '21+';
+
+export const getBlockCountBucket = (count: number): BlockCountBucket => {
+	if (count <= 5) return '1-5';
+	if (count <= 10) return '6-10';
+	if (count <= 20) return '11-20';
+	return '21+';
+};
 // “발행 실패”를 하나로 뭉치지 않고 원인을 분리해, 이미지 스토리지 문제인지 API 문제인지 빠르게 파악할 수 있음
 export type PublishFailureStage = 'representative_image_upload' | 'publish_request' | 'publish_response';
 //  발행 시도나 임시저장 시도에서 사용자가 어느 입력 단계에서 이탈하는지 분석하는 데 필요

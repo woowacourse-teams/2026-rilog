@@ -132,7 +132,8 @@ test.describe('글 작성', () => {
 
 		await expect(page.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('불러온 게시글 제목');
 		await expect(page.getByRole('textbox', { name: '게시글 내용' })).toContainText('불러온 게시글 본문');
-		await page.getByRole('button', { name: '발행' }).click();
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('불러온 게시글 제목 수정');
+		await page.getByRole('button', { name: '수정' }).click();
 		await expect(page.getByRole('radio', { name: '일상' })).toBeChecked();
 		await expect(page.getByRole('combobox', { name: 'Co-log' })).toHaveValue('1');
 		await expect(page.getByRole('option', { name: 'E2E 사용자' })).toHaveCount(1);

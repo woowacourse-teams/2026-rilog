@@ -15,9 +15,14 @@ const PLACEHOLDER_DRAFT_POSTS: readonly DraftPostItem[] = [
 interface UsePostDraftsOptions {
 	prepareDocument: () => EditorDocument | null;
 	initialPosts?: readonly DraftPostItem[];
+	onSave?: (document: EditorDocument) => void | Promise<void>;
 }
 
-export function usePostDrafts({ prepareDocument, initialPosts = PLACEHOLDER_DRAFT_POSTS }: UsePostDraftsOptions) {
+export function usePostDrafts({
+	prepareDocument,
+	initialPosts = PLACEHOLDER_DRAFT_POSTS,
+	onSave,
+}: UsePostDraftsOptions) {
 	const [posts, setPosts] = useState<DraftPostItem[]>(() => [...initialPosts]);
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
 	const [postIdPendingDeletion, setPostIdPendingDeletion] = useState<number | null>(null);
@@ -28,8 +33,8 @@ export function usePostDrafts({ prepareDocument, initialPosts = PLACEHOLDER_DRAF
 			return;
 		}
 
-		// TODO: 임시 저장 API 연동
-	}, [prepareDocument]);
+		void onSave?.(document);
+	}, [onSave, prepareDocument]);
 
 	const openList = useCallback(() => {
 		setIsListModalOpen(true);
