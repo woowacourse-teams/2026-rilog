@@ -7,4 +7,9 @@ describe('draftsQueryKeys', () => {
 		expect(draftsQueryKeys.myList(10)).toEqual(['drafts', 'me', { size: 10 }]);
 		expect(draftsQueryKeys.myList(20)).not.toEqual(draftsQueryKeys.myList(10));
 	});
+
+	it('draftId를 상세 query key에 포함한다', () => {
+		expect(draftsQueryKeys.detail(42)).toEqual(['drafts', 'detail', 42]);
+		expect(draftsQueryKeys.detail(43)).not.toEqual(draftsQueryKeys.detail(42));
+	});
 });
