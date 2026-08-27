@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
+
 interface CodeLanguageDropdownControllerProps {
 	editor: {
 		domElement?: HTMLElement;
@@ -177,6 +179,11 @@ export default function CodeLanguageDropdownController({ editor }: CodeLanguageD
 
 	return (
 		<>
+			<MermaidCodeBlockPreviewController
+				container={editor.domElement}
+				debounceMs={300}
+				label="Mermaid 다이어그램 미리보기"
+			/>
 			{languageSelects.map((languageSelect, index) => {
 				const portalTarget = languageSelect.parentElement;
 				if (portalTarget === null) {

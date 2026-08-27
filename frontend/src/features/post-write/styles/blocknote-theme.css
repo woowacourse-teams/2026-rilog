@@ -74,6 +74,11 @@
 	padding-top: 0.75rem;
 }
 
+.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > .mermaid-diagram {
+	width: auto;
+	margin: 0 1.5rem 1.5rem;
+}
+
 .post-write-code-language {
 	--post-code-language-radius: 0.375rem;
 	--post-code-language-shadow: 0 0.5rem 1.5rem rgb(3 16 42 / 0.28);

@@ -127,6 +127,18 @@
 	white-space: pre;
 }
 
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram) {
+	flex-direction: column;
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram[data-state='ready']) {
+	background: transparent;
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram[data-state='ready']) > pre {
+	display: none;
+}
+
 .post-detail-body
 	.bn-block-group
 	> .bn-block-outer:first-child
