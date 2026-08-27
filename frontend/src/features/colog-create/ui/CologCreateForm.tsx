@@ -6,6 +6,7 @@ import { useState } from 'react';
 import type { SubmitEvent } from 'react';
 
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
+import { consumeCologCreationEntryContext } from '@/features/analytics/lib/colog-creation-entry-context';
 import { analytics } from '@/features/analytics/model/events';
 import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
@@ -138,7 +139,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		form.setValue(normalizedValue);
 
 		try {
-			analytics.cologCreationStarted({ entrySource: 'direct' });
+			analytics.cologCreationStarted({ entrySource: consumeCologCreationEntryContext() });
 			const response = await createColog(normalizedValue);
 			const data = response.data;
 
