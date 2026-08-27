@@ -112,6 +112,20 @@ public class BlogMember extends BaseEntity {
         }
     }
 
+    public void validateCanDeleteColog() {
+        validateActiveMember();
+
+        if (!isCologMember() || permission != OWNER) {
+            throw new BlogException(COLOG_DELETE_FORBIDDEN);
+        }
+    }
+
+    public boolean hasDeletePermission() {
+        return status == ACTIVE
+                && getDeletedAt() == null
+                && (permission == OWNER || permission == ADMIN);
+    }
+
     public void remove(BlogMember target) {
         validateActiveMember();
         target.validateActiveMember();
@@ -133,10 +147,9 @@ public class BlogMember extends BaseEntity {
         markAsLeft();
     }
 
-    public boolean hasDeletePermission() {
-        return status == ACTIVE
-                && getDeletedAt() == null
-                && (permission == OWNER || permission == ADMIN);
+    public void leaveByCologDeletion() {
+        validateActiveMember();
+        markAsLeft();
     }
 
     private void markAsLeft() {

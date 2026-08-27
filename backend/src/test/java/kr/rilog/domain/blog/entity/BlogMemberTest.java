@@ -261,6 +261,59 @@ class BlogMemberTest {
     }
 
     @Test
+    @DisplayName("ACTIVE 상태의 OWNER는 팀 블로그를 삭제할 수 있다.")
+    void validateCanDeleteCologAllowsActiveOwner() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatCode(owner::validateCanDeleteColog)
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("OWNER가 아닌 ACTIVE 멤버는 팀 블로그를 삭제할 수 없다.")
+    void validateCanDeleteCologRejectsNonOwner() {
+        // given
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(admin::validateCanDeleteColog)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_DELETE_FORBIDDEN.getMessage());
+        assertThatThrownBy(member::validateCanDeleteColog)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_DELETE_FORBIDDEN.getMessage());
+    }
+
+    @Test
+    @DisplayName("ACTIVE가 아닌 OWNER는 팀 블로그를 삭제할 수 없다.")
+    void validateCanDeleteCologRejectsInactiveOwner() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.LEFT);
+
+        // when & then
+        assertThatThrownBy(owner::validateCanDeleteColog)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
+    }
+
+    @Test
+    @DisplayName("개인 블로그 OWNER는 팀 블로그 삭제 권한 검증에 실패한다.")
+    void validateCanDeleteCologRejectsRilogOwner() {
+        // given
+        User owner = createUser(OWNER_ID);
+        Blog rilog = createRilog(owner);
+        BlogMember ownerMember = BlogMember.createOwner(rilog, owner, pastDate());
+
+        // when & then
+        assertThatThrownBy(ownerMember::validateCanDeleteColog)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_DELETE_FORBIDDEN.getMessage());
+    }
+
+    @Test
     @DisplayName("본인 탈퇴를 하면 상태가 LEFT로 변경된다.")
     void leaveBySelfChangesStatusToLeft() {
         // given
@@ -284,6 +337,20 @@ class BlogMemberTest {
 
         // then
         assertThat(member.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("팀 블로그 삭제로 인한 탈퇴는 OWNER도 LEFT 처리할 수 있다.")
+    void leaveByCologDeletionAllowsOwner() {
+        // given
+        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+
+        // when
+        owner.leaveByCologDeletion();
+
+        // then
+        assertThat(owner.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(owner.getDeletedAt()).isNotNull();
     }
 
     @Test

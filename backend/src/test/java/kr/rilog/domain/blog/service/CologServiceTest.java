@@ -14,6 +14,11 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.Category;
+import kr.rilog.domain.post.entity.enums.PostStatus;
+import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -33,6 +38,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -62,6 +69,9 @@ class CologServiceTest {
     private BlogMemberRepository blogMemberRepository;
 
     @Mock
+    private PostRepository postRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     private CologService cologService;
@@ -71,6 +81,7 @@ class CologServiceTest {
         cologService = new CologService(
                 blogRepository,
                 blogMemberRepository,
+                postRepository,
                 userRepository,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
@@ -599,6 +610,67 @@ class CologServiceTest {
     }
 
     @Test
+    @DisplayName("ACTIVE OWNER는 팀 블로그와 팀 게시글, 팀 멤버를 삭제 처리한다")
+    void deleteCologDeletesCologPostsAndLeavesMembers() {
+        // given
+        User owner = createOwner();
+        User invitee = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember ownerMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        BlogMember invitedMember = createMember(TARGET_MEMBER_ID, colog, invitee, BlogPermission.MEMBER);
+        Post cologPost = createCologPost(10L, colog, owner);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(ownerMember));
+        when(postRepository.findAllByCologIdAndDeletedAtIsNull(COLOG_ID))
+                .thenReturn(List.of(cologPost));
+        when(blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(List.of(ownerMember, invitedMember));
+
+        // when
+        cologService.deleteColog(OWNER_ID, COLOG_SLUG);
+
+        // then
+        assertThat(colog.getDeletedAt()).isNotNull();
+        assertThat(cologPost.getDeletedAt()).isNotNull();
+        assertThat(ownerMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(invitedMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(ownerMember.getDeletedAt()).isNotNull();
+        assertThat(invitedMember.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("ACTIVE 멤버여도 OWNER가 아니면 팀 블로그를 삭제할 수 없다")
+    void deleteCologRejectsNonOwnerMember() {
+        // given
+        User owner = createOwner();
+        Blog colog = createColog(owner);
+        BlogMember adminMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.ADMIN);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(adminMember));
+
+        // when - then
+        assertThatThrownBy(() -> cologService.deleteColog(OWNER_ID, COLOG_SLUG))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_DELETE_FORBIDDEN);
+        assertThat(colog.getDeletedAt()).isNull();
+        verify(postRepository, never()).findAllByCologIdAndDeletedAtIsNull(COLOG_ID);
+        verify(blogMemberRepository, never()).findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE);
+    }
+
+    @Test
     @DisplayName("나의 팀 목록을 조회하면 요청자가 활동 중인 팀을 조회한다")
     void getMyCologsPreviewFindsActiveCologsByRequesterId() {
         // given
@@ -661,6 +733,35 @@ class CologServiceTest {
                 .permission(permission)
                 .status(BlogMemberStatus.ACTIVE)
                 .joinedAt(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
+                .build();
+    }
+
+    private Post createCologPost(Long id, Blog colog, User writer) {
+        Blog rilog = Blog.builder()
+                .id(99L)
+                .owner(writer)
+                .slug(Slug.from("owner-rilog"))
+                .profile(Profile.createRilog(
+                        "러로",
+                        "기록하는 개발자입니다.",
+                        "https://example.com/profile.png",
+                        "rilog@example.com",
+                        "https://github.com/rilog"
+                ))
+                .blogType(BlogType.RILOG)
+                .build();
+
+        return Post.builder()
+                .id(id)
+                .user(writer)
+                .rilog(rilog)
+                .colog(colog)
+                .title("게시글 제목")
+                .content(JsonNodeFactory.instance.objectNode().put("body", "본문"))
+                .category(Category.TECH)
+                .status(PostStatus.PUBLISHED)
+                .visibility(PostVisibility.PUBLIC)
+                .publishedAt(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
                 .build();
     }
 
