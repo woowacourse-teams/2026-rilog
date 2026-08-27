@@ -1,7 +1,6 @@
-package kr.rilog.domain.upload.domain.vo.v2;
+package kr.rilog.domain.upload.domain.vo;
 
 import kr.rilog.domain.upload.domain.enums.TagStatus;
-import kr.rilog.domain.upload.domain.vo.S3TagTarget;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

@@ -1,7 +1,5 @@
-package kr.rilog.domain.upload.domain.vo.v2;
+package kr.rilog.domain.upload.domain.vo;
 
-import kr.rilog.domain.upload.domain.vo.TagAssetChanges;
-import kr.rilog.domain.upload.domain.vo.TagAssets;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
