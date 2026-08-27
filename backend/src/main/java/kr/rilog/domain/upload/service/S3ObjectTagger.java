@@ -1,7 +1,6 @@
 package kr.rilog.domain.upload.service;
 
 import kr.rilog.domain.upload.domain.TagStatus;
-import kr.rilog.domain.upload.domain.vo.S3ObjectAddress;
 import kr.rilog.domain.upload.exception.UploadException;
 import kr.rilog.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
@@ -30,11 +29,23 @@ public class S3ObjectTagger {
         }
     }
 
+    public void fileTag(List<S3UploadTarget> uploadTargets) {
+        uploadTargets.forEach(this::changeS3ObjectTag);
+    }
+
     private void changeS3ObjectTag(String key, TagStatus tagStatus) {
         s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
                 .bucket(properties.bucket())
                 .key(key)
                 .tagging(tagStatus.toTagging())
+                .build());
+    }
+
+    private void changeS3ObjectTag(S3UploadTarget uploadTarget) {
+        s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
+                .bucket(properties.bucket())
+                .key(uploadTarget.key())
+                .tagging(uploadTarget.tagStatus().toTagging())
                 .build());
     }
 
