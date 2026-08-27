@@ -69,7 +69,6 @@ export default function RilogSettingsWorkspace({ slug, initialTab = 'profile' }:
 		);
 	}
 
-	console.log(profileQuery.data);
 	return (
 		<RilogSettingsWorkspaceContent key={slug} slug={slug} initialTab={initialTab} initialProfile={profileQuery.data} />
 	);
