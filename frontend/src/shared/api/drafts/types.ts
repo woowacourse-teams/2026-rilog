@@ -41,3 +41,20 @@ export interface DraftDetailResponse {
 	status: DraftStatusResponse;
 	publishedAt: string;
 }
+
+export type DraftPublishCategoryRequest = 'TECH' | 'DAILY';
+export type DraftPublishVisibilityRequest = 'PUBLIC' | 'PRIVATE';
+
+export interface DraftPublishRequest {
+	slug: string;
+	title: string;
+	content: Block[];
+	category: DraftPublishCategoryRequest;
+	visibility: DraftPublishVisibilityRequest;
+	thumbnailImageUrl: string | null;
+}
+
+export interface DraftPublishResponse {
+	postId: number;
+	slug: string;
+}

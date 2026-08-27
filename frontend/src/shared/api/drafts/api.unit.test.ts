@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { DraftSaveRequest } from './types';
+import type { DraftPublishRequest, DraftSaveRequest } from './types';
 
-import { deleteDraft, overwriteDraft, readDraftDetail, readMyDraftList, saveDraft } from './api';
+import { deleteDraft, overwriteDraft, publishDraft, readDraftDetail, readMyDraftList, saveDraft } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -138,5 +138,39 @@ describe('deleteDraft', () => {
 		expect(request.method).toBe('DELETE');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
 		expect(response.status).toBe(204);
+	});
+});
+
+describe('publishDraft', () => {
+	it('draftId를 경로로 전달하고 발행 정보를 JSON 본문에 담아 PATCH 요청한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '임시저장 글을 발행했습니다.',
+			data: { postId: 42, slug: 'rilog-team' },
+		};
+		let capturedBody: unknown;
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) {
+				capturedBody = await input.clone().json();
+			}
+
+			return Response.json(responseBody);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const requestBody: DraftPublishRequest = {
+			slug: '@rilog-team',
+			title: '완성한 게시글',
+			content: [],
+			category: 'TECH',
+			visibility: 'PUBLIC',
+			thumbnailImageUrl: null,
+		};
+
+		await expect(publishDraft(7, requestBody)).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('PATCH');
+		expect(request.url).toBe('https://api.rilog.test/v1/drafts/7/publish');
+		expect(capturedBody).toEqual({ ...requestBody, slug: 'rilog-team' });
 	});
 });
