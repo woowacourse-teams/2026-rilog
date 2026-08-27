@@ -12,7 +12,12 @@ interface UsePostWriteLeaveGuardOptions {
 	onConfirmLeave?: () => void;
 }
 
-export function usePostWriteLeaveGuard({ isDirty, markClean, navigate, onConfirmLeave }: UsePostWriteLeaveGuardOptions) {
+export function usePostWriteLeaveGuard({
+	isDirty,
+	markClean,
+	navigate,
+	onConfirmLeave,
+}: UsePostWriteLeaveGuardOptions) {
 	const router = useRouter();
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 

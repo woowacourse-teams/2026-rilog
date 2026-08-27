@@ -65,10 +65,13 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		setIsDirty(false);
 	}, []);
 
-	const getDocumentState = useCallback(() => ({
-		hasTitle: title.trim().length > 0,
-		hasBody: isMeaningfulPostBody(latestBlocksRef.current),
-	}), [title]);
+	const getDocumentState = useCallback(
+		() => ({
+			hasTitle: title.trim().length > 0,
+			hasBody: isMeaningfulPostBody(latestBlocksRef.current),
+		}),
+		[title],
+	);
 
 	return {
 		titleRef,
