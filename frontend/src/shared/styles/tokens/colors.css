@@ -68,6 +68,18 @@
 	--on-brand-primary: var(--white);
 	--on-brand-secondary: var(--navy-900);
 
+	--code-syntax-background: var(--brand-primary);
+	--code-syntax-foreground: var(--neutral-50);
+	--code-syntax-token-constant: var(--amber-500);
+	--code-syntax-token-string: var(--green-300);
+	--code-syntax-token-comment: var(--neutral-400);
+	--code-syntax-token-keyword: var(--red-300);
+	--code-syntax-token-parameter: var(--neutral-200);
+	--code-syntax-token-function: var(--navy-300);
+	--code-syntax-token-string-expression: var(--green-300);
+	--code-syntax-token-punctuation: var(--neutral-300);
+	--code-syntax-token-link: var(--navy-300);
+
 	--danger: var(--red-700);
 	--danger-hover: var(--red-800);
 	--danger-active: var(--red-900);

@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 const SHARED_CONTENT_STYLES = new URL('../../shared/styles/blocknote-content.css', import.meta.url);
+const COLOR_TOKEN_STYLES = new URL('../../shared/styles/tokens/colors.css', import.meta.url);
 const BLOCKNOTE_CORE_STYLES = new URL('../../../node_modules/@blocknote/core/dist/style.css', import.meta.url);
 const POST_DETAIL_STYLES = new URL(
 	'../../app/(with-sidebar)/(with-footer)/[slug]/posts/[postId]/post-detail.css',
@@ -45,8 +46,9 @@ const renderBlockNoteFixture = async (
 	contentTypes: Array<string | BlockFixture>,
 	shouldWrapInEditor = false,
 ) => {
-	const [blockNoteCoreStyles, sharedStyles, rootStyles] = await Promise.all([
+	const [blockNoteCoreStyles, colorTokenStyles, sharedStyles, rootStyles] = await Promise.all([
 		readFile(BLOCKNOTE_CORE_STYLES, 'utf8'),
+		readFile(COLOR_TOKEN_STYLES, 'utf8'),
 		readFile(SHARED_CONTENT_STYLES, 'utf8'),
 		readFile(rootClass === 'post-detail-body' ? POST_DETAIL_STYLES : POST_WRITE_STYLES, 'utf8'),
 	]);
@@ -55,7 +57,7 @@ const renderBlockNoteFixture = async (
 	const content = shouldWrapInEditor ? `<div class="bn-editor bn-default-styles">${blockGroup}</div>` : blockGroup;
 	await page.setContent(`<div class="${rootClass}">${content}</div>`);
 	await page.addStyleTag({
-		content: `* { box-sizing: border-box; } :root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
+		content: `* { box-sizing: border-box; } ${colorTokenStyles} :root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
 	});
 };
 
@@ -91,6 +93,28 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		);
 
 		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"] > pre')).toHaveCSS('font-size', '14px');
+	});
+
+	test('상세 코드 블록은 의미 토큰으로 구문을 강조한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml:
+						'<pre><code class="bn-inline-content" data-post-code-highlighted=""><span class="line"><span data-syntax="keyword" style="color:var(--code-syntax-token-keyword)">const</span> <span data-syntax="string" style="color:var(--code-syntax-token-string-expression)">"value"</span></span></code></pre>',
+				},
+			],
+			true,
+		);
+
+		await expect(page.locator('[data-syntax="keyword"]')).toHaveCSS('color', 'rgb(252, 165, 165)');
+		await expect(page.locator('[data-syntax="string"]')).toHaveCSS('color', 'rgb(134, 239, 172)');
+		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"]')).toHaveCSS(
+			'background-color',
+			'rgb(6, 26, 64)',
+		);
 	});
 
 	test('긴 코드는 코드 블록 안에서만 가로 스크롤한다', async ({ page }) => {

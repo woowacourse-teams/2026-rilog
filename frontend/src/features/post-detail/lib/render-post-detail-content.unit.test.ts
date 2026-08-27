@@ -30,6 +30,14 @@ const DEFAULT_TEXT_PROPS = {
 
 const text = (value: string) => [{ type: 'text' as const, text: value, styles: {} }];
 
+const code = (id: string, value: string, language: string): Block => ({
+	id,
+	type: 'codeBlock',
+	props: { language },
+	content: text(value),
+	children: [],
+});
+
 const HEADING_BLOCKS: Block[] = [
 	{
 		id: 'heading-level-1',
@@ -102,8 +110,24 @@ describe('renderPostDetailContent', () => {
 		expect(html).toContain('href="https://www.rilog.dev/docs/architecture"');
 		expect(html).toContain('data-language="typescript"');
 		expect(html).toContain('data-language="unknown-language"');
+		expect(html.match(/data-post-code-highlighted=""/g)).toHaveLength(2);
+		expect(html).toContain('style="color:var(--code-syntax-token-keyword)"');
 		expect(html).toContain('&lt;script&gt;alert("escaped")&lt;/script&gt;');
 		expect(html).not.toContain('<script>alert("escaped")</script>');
+	});
+
+	it('지원 언어만 하이라이팅하고 일반 텍스트와 알 수 없는 언어는 원문으로 유지한다', async () => {
+		const source = 'const message: string = "<script>unsafe</script>";';
+		const html = await renderPostDetailContent([
+			code('typescript-code', source, 'typescript'),
+			code('plain-code', source, 'text'),
+			code('unknown-code', source, 'unknown-language'),
+		]);
+
+		expect(html.match(/data-post-code-highlighted=""/g)).toHaveLength(1);
+		expect(html).toContain('<span class="line">');
+		expect(html).not.toContain('<script>unsafe</script>');
+		expect(html.match(/&lt;script&gt;unsafe&lt;\/script&gt;/g)).toHaveLength(3);
 	});
 
 	it('이미지 블록을 정적 HTML 이미지로 변환한다', async () => {

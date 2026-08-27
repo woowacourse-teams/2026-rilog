@@ -109,7 +109,7 @@
 	min-width: 0;
 	width: 100%;
 	max-width: 100%;
-	background: var(--brand-primary);
+	background: var(--code-syntax-background);
 }
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock'] > pre {
