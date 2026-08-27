@@ -412,6 +412,46 @@ describe('NewPostController', () => {
 		await waitFor(() => expect(saveButton).toBeDisabled());
 	});
 
+	it('임시저장 요청 중 저장 상태를 표시하고 저장, 목록, 발행 버튼을 비활성화한다', async () => {
+		let resolveSave: ((response: ApiResponse<DraftSaveResponse>) => void) | undefined;
+		requestDraftOverwriteMock.mockImplementationOnce(
+			() =>
+				new Promise<ApiResponse<DraftSaveResponse>>((resolve) => {
+					resolveSave = resolve;
+				}),
+		);
+		const user = userEvent.setup();
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 임시저장 제목', blocks: [createParagraph('기존 본문')] }}
+			/>,
+		);
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		const listButton = screen.getByRole('button', { name: '임시 저장된 글 4개 보기' });
+		const publishButton = screen.getByRole('button', { name: '발행' });
+
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		await user.click(saveButton);
+
+		expect(screen.getByRole('status')).toHaveTextContent('저장 중...');
+		expect(saveButton).toBeDisabled();
+		expect(listButton).toBeDisabled();
+		expect(publishButton).toBeDisabled();
+
+		resolveSave?.({
+			status: 200,
+			message: '임시저장을 덮어썼습니다.',
+			data: { draftId: 42 },
+		});
+
+		await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+		expect(saveButton).toBeDisabled();
+		expect(listButton).toBeEnabled();
+		expect(publishButton).toBeEnabled();
+	});
+
 	it('불러온 임시저장 글을 현재 draftId로 발행하고 게시글 상세로 이동한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();

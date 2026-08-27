@@ -14,16 +14,31 @@ interface UsePostDraftsOptions {
 
 export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }: UsePostDraftsOptions) {
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [postIdPendingDeletion, setPostIdPendingDeletion] = useState<number | null>(null);
+	const isSavingRef = useRef(false);
 	const isDeletingRef = useRef(false);
 
-	const save = useCallback(() => {
+	const save = useCallback(async () => {
+		if (isSavingRef.current || onSave === undefined) {
+			return;
+		}
+
 		const document = prepareDocument();
 		if (document === null) {
 			return;
 		}
 
-		void onSave?.(document);
+		isSavingRef.current = true;
+		setIsSaving(true);
+		try {
+			await onSave(document);
+		} catch {
+			// mutation error 상태는 호출자가 사용자 피드백으로 표시한다.
+		} finally {
+			isSavingRef.current = false;
+			setIsSaving(false);
+		}
 	}, [onSave, prepareDocument]);
 
 	const openList = useCallback(() => {
@@ -60,6 +75,7 @@ export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }:
 
 	return {
 		posts,
+		isSaving,
 		isListModalOpen,
 		isDeletionModalOpen: postIdPendingDeletion !== null,
 		save,

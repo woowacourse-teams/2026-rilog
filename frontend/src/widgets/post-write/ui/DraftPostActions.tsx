@@ -48,13 +48,14 @@ export default function DraftPostActions({
 	return (
 		<>
 			<WritePublishActionBar
-				isPublishReady={isPublishReady}
+				isPublishReady={isPublishReady && !drafts.isSaving}
 				secondaryActions={
 					<DraftWriteActionButtons
 						draftCount={drafts.posts.length}
-						isEditorReady={isEditorReady}
-						isSaveReady={isSaveReady}
-						onSave={drafts.save}
+						isEditorReady={isEditorReady && !drafts.isSaving}
+						isSaveReady={isSaveReady && !drafts.isSaving}
+						isSaving={drafts.isSaving}
+						onSave={() => void drafts.save()}
 						onListShow={drafts.openList}
 					/>
 				}
