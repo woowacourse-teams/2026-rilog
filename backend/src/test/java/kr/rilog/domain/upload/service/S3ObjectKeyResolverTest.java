@@ -29,11 +29,11 @@ class S3ObjectKeyResolverTest {
     @Test
     @DisplayName("설정된 S3 주소에서 디코딩된 객체 키를 추출한다.")
     void resolveObjectKeyFromConfiguredS3Url() {
-        String objectUrl = "https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/rilog/images/2026/a%20b.png";
+        String objectUrl = "https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/images/2026/a%20b.png";
 
         Optional<String> objectKey = resolver.resolve(objectUrl);
 
-        assertThat(objectKey).contains("rilog/images/2026/a b.png");
+        assertThat(objectKey).contains("images/2026/a b.png");
     }
 
     @ParameterizedTest
