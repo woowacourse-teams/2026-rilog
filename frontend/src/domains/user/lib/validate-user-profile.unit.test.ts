@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	normalizeUserNickname,
 	normalizeUserSlug,
+	USER_SLUG_PATTERN,
 	validateUserNickname,
 	validateUserSlug,
 } from './validate-user-profile';
@@ -20,5 +21,9 @@ describe('user profile validation', () => {
 		expect(validateUserSlug('ri.log')).toBe(
 			'고유 아이디는 4~20자의 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있어요.',
 		);
+	});
+
+	it('slug pattern은 최신 브라우저의 v 플래그 정규식으로 사용할 수 있다', () => {
+		expect(() => new RegExp(USER_SLUG_PATTERN, 'v')).not.toThrow();
 	});
 });

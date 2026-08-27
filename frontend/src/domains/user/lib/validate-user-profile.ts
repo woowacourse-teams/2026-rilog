@@ -2,7 +2,7 @@ export const USER_NICKNAME_MIN_LENGTH = 2;
 export const USER_NICKNAME_MAX_LENGTH = 20;
 export const USER_SLUG_MIN_LENGTH = 4;
 export const USER_SLUG_MAX_LENGTH = 20;
-export const USER_SLUG_PATTERN = '[A-Za-z0-9_-]+';
+export const USER_SLUG_PATTERN = '[A-Za-z0-9_\\-]+';
 
 const SLUG_PATTERN = new RegExp(`^(?:${USER_SLUG_PATTERN})$`);
 
