@@ -23,6 +23,7 @@ type RequestDraftOverwrite = (variables: {
 	draftId: number;
 	request: DraftSaveRequest;
 }) => Promise<ApiResponse<DraftSaveResponse>>;
+type RequestDraftDelete = (postId: number) => Promise<Response>;
 type RequestPostUpdate = (variables: {
 	postId: number;
 	request: PostWriteRequest;
@@ -36,6 +37,8 @@ const {
 	requestPostPublicationMock,
 	requestDraftSaveMock,
 	requestDraftOverwriteMock,
+	requestDraftDeleteMock,
+	resetDraftDeleteMock,
 	requestPostUpdateMock,
 	editorUnmountedMock,
 } = vi.hoisted(() => ({
@@ -46,6 +49,8 @@ const {
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 	requestDraftSaveMock: vi.fn<RequestDraftSave>(),
 	requestDraftOverwriteMock: vi.fn<RequestDraftOverwrite>(),
+	requestDraftDeleteMock: vi.fn<RequestDraftDelete>(),
+	resetDraftDeleteMock: vi.fn(),
 	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
 	editorUnmountedMock: vi.fn(),
 }));
@@ -97,6 +102,15 @@ vi.mock('@/shared/api/drafts/mutations/use-overwrite-draft-mutation', () => ({
 	useOverwriteDraftMutation: () => ({ mutateAsync: requestDraftOverwriteMock }),
 }));
 
+vi.mock('@/shared/api/drafts/mutations/use-delete-draft-mutation', () => ({
+	useDeleteDraftMutation: () => ({
+		mutateAsync: requestDraftDeleteMock,
+		reset: resetDraftDeleteMock,
+		isPending: false,
+		isError: false,
+	}),
+}));
+
 vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
 	usePostDraftList: () => ({
 		data: [
@@ -127,6 +141,8 @@ beforeEach(() => {
 	requestPostPublicationMock.mockReset();
 	requestDraftSaveMock.mockReset();
 	requestDraftOverwriteMock.mockReset();
+	requestDraftDeleteMock.mockReset();
+	resetDraftDeleteMock.mockReset();
 	requestPostUpdateMock.mockReset();
 	editorUnmountedMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
@@ -145,6 +161,7 @@ beforeEach(() => {
 		message: '임시저장을 덮어썼습니다.',
 		data: { draftId: 123 },
 	});
+	requestDraftDeleteMock.mockResolvedValue(new Response(null, { status: 204 }));
 	requestPostUpdateMock.mockResolvedValue({
 		status: 200,
 		message: '게시글 수정에 성공했습니다.',
@@ -439,7 +456,7 @@ describe('NewPostController', () => {
 		expect(postEditorOpenedMock).toHaveBeenCalledOnce();
 	});
 
-	it('임시 저장 글 삭제를 취소하면 목록을 유지하고 확인하면 목록과 개수를 갱신한다', async () => {
+	it('임시 저장 글 삭제를 취소하면 요청하지 않고 확인하면 선택한 postId로 삭제한다', async () => {
 		const user = userEvent.setup();
 		render(<NewPostController editorComponent={FakeEditor} />);
 
@@ -457,6 +474,7 @@ describe('NewPostController', () => {
 			expect(screen.queryByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).not.toBeInTheDocument(),
 		);
 		expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(4);
+		expect(requestDraftDeleteMock).not.toHaveBeenCalled();
 
 		await user.click(firstDeleteButton);
 		await user.click(
@@ -465,8 +483,10 @@ describe('NewPostController', () => {
 			}),
 		);
 
-		await waitFor(() => expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(3));
-		expect(screen.getByRole('button', { name: '임시 저장된 글 3개 보기' })).toBeInTheDocument();
+		await waitFor(() => expect(requestDraftDeleteMock).toHaveBeenCalledWith(34));
+		await waitFor(() =>
+			expect(screen.queryByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).not.toBeInTheDocument(),
+		);
 	});
 
 	it('빈 문서는 설정 모달을 열지 않고 첫 오류로 focus한다', async () => {

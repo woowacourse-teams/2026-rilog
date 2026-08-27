@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
@@ -9,13 +9,13 @@ interface UsePostDraftsOptions {
 	prepareDocument: () => EditorDocument | null;
 	posts?: readonly DraftPostItem[];
 	onSave?: (document: EditorDocument) => void | Promise<void>;
+	onDelete: (postId: number) => Promise<unknown>;
 }
 
-export function usePostDrafts({ prepareDocument, posts = [], onSave }: UsePostDraftsOptions) {
-	const [removedPostIds, setRemovedPostIds] = useState<Set<number>>(() => new Set());
+export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }: UsePostDraftsOptions) {
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
 	const [postIdPendingDeletion, setPostIdPendingDeletion] = useState<number | null>(null);
-	const visiblePosts = useMemo(() => posts.filter(({ id }) => !removedPostIds.has(id)), [posts, removedPostIds]);
+	const isDeletingRef = useRef(false);
 
 	const save = useCallback(() => {
 		const document = prepareDocument();
@@ -42,17 +42,24 @@ export function usePostDrafts({ prepareDocument, posts = [], onSave }: UsePostDr
 		setPostIdPendingDeletion(null);
 	}, []);
 
-	const confirmDeletion = useCallback(() => {
-		if (postIdPendingDeletion === null) {
+	const confirmDeletion = useCallback(async () => {
+		if (postIdPendingDeletion === null || isDeletingRef.current) {
 			return;
 		}
 
-		setRemovedPostIds((currentIds) => new Set(currentIds).add(postIdPendingDeletion));
-		setPostIdPendingDeletion(null);
-	}, [postIdPendingDeletion]);
+		isDeletingRef.current = true;
+		try {
+			await onDelete(postIdPendingDeletion);
+			setPostIdPendingDeletion(null);
+		} catch {
+			// mutation error 상태는 호출자가 사용자 피드백으로 표시한다.
+		} finally {
+			isDeletingRef.current = false;
+		}
+	}, [onDelete, postIdPendingDeletion]);
 
 	return {
-		posts: visiblePosts,
+		posts,
 		isListModalOpen,
 		isDeletionModalOpen: postIdPendingDeletion !== null,
 		save,

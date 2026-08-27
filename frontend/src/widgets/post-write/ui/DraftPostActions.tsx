@@ -6,6 +6,7 @@ import type { EditorDocument } from '@/features/post-write/model/post-publicatio
 import DraftListModal from '@/features/post-write/ui/DraftListModal';
 import DraftWriteActionButtons from '@/features/post-write/ui/DraftWriteActionButtons';
 import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBar';
+import { useDeleteDraftMutation } from '@/shared/api/drafts/mutations/use-delete-draft-mutation';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface DraftPostActionsProps {
@@ -26,7 +27,21 @@ export default function DraftPostActions({
 	onPublish,
 }: DraftPostActionsProps) {
 	const draftList = usePostDraftList();
-	const drafts = usePostDrafts({ prepareDocument, posts: draftList.data, onSave });
+	const deleteDraftMutation = useDeleteDraftMutation();
+	const drafts = usePostDrafts({
+		prepareDocument,
+		posts: draftList.data,
+		onSave,
+		onDelete: deleteDraftMutation.mutateAsync,
+	});
+	const requestDeletion = (postId: number) => {
+		deleteDraftMutation.reset();
+		drafts.requestDeletion(postId);
+	};
+	const cancelDeletion = () => {
+		deleteDraftMutation.reset();
+		drafts.cancelDeletion();
+	};
 
 	return (
 		<>
@@ -54,7 +69,7 @@ export default function DraftPostActions({
 				isFetchingNextPage={draftList.isFetchingNextPage}
 				isFetchNextPageError={draftList.isFetchNextPageError}
 				onClose={drafts.closeList}
-				onDelete={drafts.requestDeletion}
+				onDelete={requestDeletion}
 				onRetry={() => void draftList.refetch()}
 				onLoadMore={() => void draftList.fetchNextPage()}
 			/>
@@ -62,12 +77,22 @@ export default function DraftPostActions({
 			<ConfirmModal
 				open={drafts.isDeletionModalOpen}
 				title="임시 저장 글을 삭제할까요?"
-				description="삭제한 임시 저장 글은 복구할 수 없습니다."
+				description={
+					<>
+						<span>삭제한 임시 저장 글은 복구할 수 없습니다.</span>
+						{deleteDraftMutation.isError && (
+							<span className="mt-2 block text-danger-text" role="alert">
+								임시 저장 글을 삭제하지 못했습니다. 다시 시도해 주세요.
+							</span>
+						)}
+					</>
+				}
 				confirmLabel="삭제"
 				cancelLabel="취소"
 				variant="danger"
-				onConfirm={drafts.confirmDeletion}
-				onCancel={drafts.cancelDeletion}
+				isPending={deleteDraftMutation.isPending}
+				onConfirm={() => void drafts.confirmDeletion()}
+				onCancel={cancelDeletion}
 			/>
 		</>
 	);

@@ -8,7 +8,7 @@ import Modal from '@/shared/ui/modal/Modal';
 
 interface DraftListModalProps {
 	open: boolean;
-	draftPosts: DraftPostItem[];
+	draftPosts: readonly DraftPostItem[];
 	selectedDraftId?: number;
 	isPending?: boolean;
 	isError?: boolean;
