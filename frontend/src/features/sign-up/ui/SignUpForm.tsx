@@ -5,6 +5,8 @@ import { useId, useRef, useState } from 'react';
 
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
+import { BLOG_PROFILE_URL_MAX_LENGTH } from '@/domains/blog/model/blog';
+import { mapOnboardingRequest } from '@/features/sign-up/lib/map-onboarding-request';
 import { clearSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
@@ -21,6 +23,7 @@ import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import ImagePreview from '@/shared/ui/image-preview/ImagePreview';
 import ImageResetOverlay from '@/shared/ui/image-reset-overlay/ImageResetOverlay';
 import Input from '@/shared/ui/input/Input';
+import ProfileSocialFields from '@/shared/ui/profile/ProfileSocialFields';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
 import { useSignUpForm } from '../hooks/use-sign-up-form';
@@ -67,14 +70,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 			profileImageUrl = uploadRes.objectKey;
 		}
 
-		const response = await onboard({
-			nickname: value.nickname,
-			slug: value.slug,
-			introduction: value.description,
-			profileImageUrl,
-			githubUrl: '',
-			email: '',
-		});
+		const response = await onboard(mapOnboardingRequest(value, profileImageUrl));
 
 		if (response.accessToken) {
 			tokenManager.setToken(response.accessToken);
@@ -88,12 +84,17 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	const {
 		profileImageFile,
 		description,
+		serviceUrl,
+		githubUrl,
+		serviceUrlRef,
+		githubUrlRef,
 		signUpState,
 		validationErrors,
 		isTermsAgreed,
 		isSigningUp,
 		handleImageChange,
 		handleDescriptionChange,
+		handleSocialLinkChange,
 		handleTermsAgreementChange,
 		handleRequiredTextChange,
 		validateRequiredTextField,
@@ -361,6 +362,18 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 					/>
 				)}
 			</Field>
+
+			<ProfileSocialFields
+				serviceUrl={serviceUrl}
+				githubUrl={githubUrl}
+				maxLength={BLOG_PROFILE_URL_MAX_LENGTH}
+				errors={validationErrors}
+				serviceUrlRef={serviceUrlRef}
+				githubUrlRef={githubUrlRef}
+				description="링크를 통해 나를 표현해 보세요."
+				disabled={isSigningUp}
+				onChange={handleSocialLinkChange}
+			/>
 
 			<label className="flex items-center gap-2 text-body-2 text-text-primary">
 				<Checkbox

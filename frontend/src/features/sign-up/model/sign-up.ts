@@ -10,6 +10,8 @@ export interface SignUpValue {
 	nickname: string;
 	slug: string;
 	description: string;
+	serviceUrl: string;
+	githubUrl: string;
 	profileImageFile: File | null;
 }
 
@@ -29,9 +31,13 @@ export const SIGN_UP_SLUG_PATTERN = USER_SLUG_PATTERN;
 export interface SignUpFieldValues {
 	nickname: string;
 	slug: string;
+	serviceUrl: string;
+	githubUrl: string;
 }
 
 export interface SignUpValidationErrors {
 	nickname?: string;
 	slug?: string;
+	serviceUrl?: string;
+	githubUrl?: string;
 }
