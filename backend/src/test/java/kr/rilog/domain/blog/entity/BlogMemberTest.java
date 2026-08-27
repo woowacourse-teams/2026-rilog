@@ -56,14 +56,31 @@ class BlogMemberTest {
     }
 
     @Test
-    @DisplayName("두 블로그 멤버가 모두 ACTIVE이면 대상 멤버의 블로그로 이동할 수 있다.")
-    void transferReturnsTargetMembersBlogWhenBothMembersAreActive() {
+    @DisplayName("두 블로그 멤버가 모두 ACTIVE이면 대상 멤버의 블로그로 이동할 수 있다. (Rilog -> Colog)")
+    void transferReturnsTargetMembersBlogWhenBothMembersAreActiveFromRilog() {
         // given
         User writer = createUser(OWNER_ID);
         Blog sourceBlog = createRilog(writer);
         Blog targetBlog = targetColog();
         BlogMember sourceMember = createMember(sourceBlog, writer, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember targetMember = createMember(targetBlog, writer, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        Blog transferredBlog = sourceMember.transfer(targetMember);
+
+        // then
+        assertThat(transferredBlog).isSameAs(targetBlog);
+    }
+
+    @Test
+    @DisplayName("두 블로그 멤버가 모두 ACTIVE이면 대상 멤버의 블로그로 이동할 수 있다. (Colog -> Rilog)")
+    void transferReturnsTargetMembersBlogWhenBothMembersAreActiveFromColog() {
+        // given
+        User writer = createUser(OWNER_ID);
+        Blog sourceBlog = createColog(writer);
+        Blog targetBlog = otherUserRilog();
+        BlogMember sourceMember = createMember(sourceBlog, writer, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+        BlogMember targetMember = createMember(targetBlog, writer, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
 
         // when
         Blog transferredBlog = sourceMember.transfer(targetMember);
