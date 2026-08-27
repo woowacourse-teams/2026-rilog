@@ -1,5 +1,7 @@
-package kr.rilog.domain.auth.application.oauth;
+package kr.rilog.domain.auth.application.oauth.service;
 
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginUser;
 import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;

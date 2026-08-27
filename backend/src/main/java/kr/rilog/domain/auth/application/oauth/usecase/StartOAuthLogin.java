@@ -1,5 +1,7 @@
-package kr.rilog.domain.auth.application.oauth;
+package kr.rilog.domain.auth.application.oauth.usecase;
 
+import kr.rilog.domain.auth.application.oauth.model.OAuthLoginAttempt;
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthAuthorizationUrlProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
 import kr.rilog.domain.auth.exception.AuthException;

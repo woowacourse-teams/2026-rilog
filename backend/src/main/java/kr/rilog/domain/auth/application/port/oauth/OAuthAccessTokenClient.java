@@ -1,7 +1,7 @@
 package kr.rilog.domain.auth.application.port.oauth;
 
-import kr.rilog.domain.auth.application.oauth.OAuthAccessToken;
-import kr.rilog.domain.auth.application.oauth.SocialLoginProvider;
+import kr.rilog.domain.auth.application.oauth.model.OAuthAccessToken;
+import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 
 public interface OAuthAccessTokenClient {
 
