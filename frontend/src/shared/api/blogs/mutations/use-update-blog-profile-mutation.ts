@@ -22,6 +22,7 @@ export const useUpdateBlogProfileMutation = () => {
 			Promise.all([
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
+				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myInfo() }),
 				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsPreview() }),
 			]),
 	});

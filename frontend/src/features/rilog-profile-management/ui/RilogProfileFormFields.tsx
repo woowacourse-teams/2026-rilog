@@ -20,7 +20,7 @@ interface RilogProfileFormFieldsProps {
 	value: RilogProfileSettingsValue;
 	errors: RilogProfileValidationErrors;
 	refs: RilogProfileFormRefs;
-	nicknameAvailabilityStatus: 'idle' | 'success' | 'error';
+	nicknameAvailabilityStatus: 'idle' | 'pending' | 'success' | 'error';
 	nicknameAvailabilityMessage?: string;
 	disabled?: boolean;
 	onTextFieldChange: (field: 'nickname' | 'description' | 'serviceUrl' | 'githubUrl', value: string) => void;
@@ -58,7 +58,7 @@ export default function RilogProfileFormFields({
 							aria-describedby={describedBy}
 							ref={refs.nickname}
 							value={value.nickname}
-							disabled={disabled}
+							disabled={disabled || nicknameAvailabilityStatus === 'pending'}
 							required
 							minLength={USER_NICKNAME_MIN_LENGTH}
 							maxLength={USER_NICKNAME_MAX_LENGTH}
@@ -74,9 +74,10 @@ export default function RilogProfileFormFields({
 							className="shrink-0 bg-white whitespace-nowrap"
 							aria-label="닉네임 중복 확인"
 							disabled={disabled}
+							isPending={nicknameAvailabilityStatus === 'pending'}
 							onClick={onNicknameAvailabilityCheck}
 						>
-							중복 확인
+							{nicknameAvailabilityStatus === 'pending' ? '확인 중' : '중복 확인'}
 						</Button>
 					</div>
 				)}
