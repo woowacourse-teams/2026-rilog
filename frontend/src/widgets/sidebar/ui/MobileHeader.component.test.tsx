@@ -65,7 +65,7 @@ describe('MobileHeader', () => {
 		expect(screen.getByRole('dialog', { name: '로그인' })).toBeInTheDocument();
 	});
 
-	it('모바일 헤더에서 시작한 GitHub 로그인에 진입면과 path-only redirect를 남긴다', async () => {
+	it('모바일 헤더에서 시작한 GitHub 로그인에 진입면과 검색 조건을 포함한 복귀 경로를 남긴다', async () => {
 		const user = userEvent.setup();
 		renderHeader();
 
@@ -76,7 +76,7 @@ describe('MobileHeader', () => {
 			entrySurface: 'mobile_header',
 			redirectTarget: '/feeds',
 		});
-		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds');
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest');
 	});
 
 	it('로그인 사용자에게 아바타를 표시하고 게시글에서도 피드 링크를 현재 위치로 표시한다', () => {

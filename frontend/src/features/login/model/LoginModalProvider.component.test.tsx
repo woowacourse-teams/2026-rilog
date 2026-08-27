@@ -98,6 +98,6 @@ describe('LoginModalProvider', () => {
 			entrySurface: 'sidebar',
 			redirectTarget: '/feeds',
 		});
-		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds');
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest');
 	});
 });

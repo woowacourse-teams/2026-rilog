@@ -31,10 +31,11 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 
 	const handleGitHubLogin = useCallback(() => {
 		const redirectTarget = window.location.pathname;
+		const postLoginRedirect = `${redirectTarget}${window.location.search}`;
 		analytics.githubLoginStarted({ entrySurface: loginEntrySurface, redirectTarget });
 		setIsLoginPending(true);
 
-		localStorage.setItem('postLoginRedirect', redirectTarget);
+		localStorage.setItem('postLoginRedirect', postLoginRedirect);
 
 		const frontendCallbackUrl = '/auth/github/callback';
 		const backendAuthUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/github?redirectUrl=${frontendCallbackUrl}`;

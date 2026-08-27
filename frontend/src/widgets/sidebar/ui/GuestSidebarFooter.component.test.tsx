@@ -44,7 +44,7 @@ describe('GuestSidebarFooter', () => {
 		expect(screen.getByRole('button', { name: 'GitHub로 계속하기' })).toHaveFocus();
 	});
 
-	it('사이드바에서 시작한 GitHub 로그인에 진입면과 path-only redirect를 남긴다', async () => {
+	it('사이드바에서 시작한 GitHub 로그인에 진입면과 검색 조건을 포함한 복귀 경로를 남긴다', async () => {
 		const user = userEvent.setup();
 		render(
 			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
@@ -61,6 +61,6 @@ describe('GuestSidebarFooter', () => {
 			entrySurface: 'sidebar',
 			redirectTarget: '/feeds',
 		});
-		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds');
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest');
 	});
 });
