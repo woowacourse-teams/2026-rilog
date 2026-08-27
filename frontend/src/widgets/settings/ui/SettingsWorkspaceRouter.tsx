@@ -3,8 +3,7 @@
 import { useEffect } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
-import CologSettingsAccessGuard from '@/features/colog-settings-access/ui/CologSettingsAccessGuard';
-import RilogSettingsAccessGuard from '@/features/rilog-settings-access/ui/RilogSettingsAccessGuard';
+import SettingsAccessGuard from '@/features/settings-access/ui/SettingsAccessGuard';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import {
 	buildCologSettingsPath,
@@ -81,17 +80,17 @@ export default function SettingsWorkspaceRouter({ slug, tab }: SettingsWorkspace
 
 	if (settingsRoute.type === 'RILOG') {
 		return (
-			<RilogSettingsAccessGuard slug={slug}>
+			<SettingsAccessGuard type="RILOG" slug={slug}>
 				<RilogSettingsWorkspace slug={slug} initialTab={settingsRoute.initialTab} />
-			</RilogSettingsAccessGuard>
+			</SettingsAccessGuard>
 		);
 	}
 
 	if (settingsRoute.type === 'COLOG') {
 		return (
-			<CologSettingsAccessGuard slug={slug}>
+			<SettingsAccessGuard type="COLOG" slug={slug}>
 				<CologSettingsWorkspace slug={slug} initialTab={settingsRoute.initialTab} />
-			</CologSettingsAccessGuard>
+			</SettingsAccessGuard>
 		);
 	}
 }

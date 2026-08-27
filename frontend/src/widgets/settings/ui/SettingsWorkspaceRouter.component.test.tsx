@@ -10,11 +10,10 @@ const { useBlogPublicProfileQueryMock } = vi.hoisted(() => ({
 vi.mock('@/shared/api/blogs/queries/public-profile/use-query', () => ({
 	useBlogPublicProfileQuery: useBlogPublicProfileQueryMock,
 }));
-vi.mock('@/features/colog-settings-access/ui/CologSettingsAccessGuard', () => ({
-	default: ({ children }: { children: React.ReactNode }) => children,
-}));
-vi.mock('@/features/rilog-settings-access/ui/RilogSettingsAccessGuard', () => ({
-	default: ({ children }: { children: React.ReactNode }) => children,
+vi.mock('@/features/settings-access/ui/SettingsAccessGuard', () => ({
+	default: ({ children, type, slug }: { children: React.ReactNode; type: string; slug: string }) => (
+		<div aria-label={`${type} ${slug} 설정 접근 가드`}>{children}</div>
+	),
 }));
 vi.mock('@/widgets/colog-settings/ui/CologSettingsWorkspace', () => ({
 	default: ({ initialTab }: { initialTab: string }) => <div>Co-log 설정: {initialTab}</div>,
@@ -37,6 +36,7 @@ describe('SettingsWorkspaceRouter', () => {
 
 		render(<SettingsWorkspaceRouter slug="rilogger" tab="danger" />);
 
+		expect(screen.getByRole('generic', { name: 'RILOG rilogger 설정 접근 가드' })).toBeInTheDocument();
 		expect(screen.getByText('Rilog 설정: danger')).toBeInTheDocument();
 		expect(screen.queryByText(/Co-log 설정/)).not.toBeInTheDocument();
 	});
@@ -50,6 +50,7 @@ describe('SettingsWorkspaceRouter', () => {
 
 		render(<SettingsWorkspaceRouter slug="rilog" tab="members" />);
 
+		expect(screen.getByRole('generic', { name: 'COLOG rilog 설정 접근 가드' })).toBeInTheDocument();
 		expect(screen.getByText('Co-log 설정: members')).toBeInTheDocument();
 		expect(screen.queryByText(/Rilog 설정/)).not.toBeInTheDocument();
 	});
