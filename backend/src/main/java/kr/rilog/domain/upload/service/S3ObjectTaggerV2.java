@@ -18,7 +18,7 @@ public class S3ObjectTaggerV2 {
     private final S3Client s3Client;
     private final S3Properties properties;
 
-    public void fileTag(List<S3TagTarget> uploadTargets) {
+    public void tag(List<S3TagTarget> uploadTargets) {
         uploadTargets.forEach(this::changeS3ObjectTag);
     }
 

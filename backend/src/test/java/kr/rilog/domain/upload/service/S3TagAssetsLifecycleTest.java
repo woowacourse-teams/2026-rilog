@@ -2,7 +2,7 @@ package kr.rilog.domain.upload.service;
 
 import kr.rilog.domain.upload.domain.TagStatus;
 import kr.rilog.domain.upload.domain.vo.v2.S3TagTarget;
-import kr.rilog.domain.upload.domain.vo.v2.UploadAssets;
+import kr.rilog.domain.upload.domain.vo.v2.TagAssets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import java.util.Set;
 
 import static org.mockito.Mockito.*;
 
-class S3UploadAssetsLifecycleTest {
+class S3TagAssetsLifecycleTest {
 
     private static final String ADDED_URL = "https://s3.example.com/added.png";
     private static final String REMOVED_URL = "https://s3.example.com/removed.png";
@@ -21,13 +21,13 @@ class S3UploadAssetsLifecycleTest {
 
     private S3ObjectTaggerV2 objectTagger;
     private S3ObjectKeyResolver objectKeyResolver;
-    private S3UploadAssetsLifecycle lifecycle;
+    private S3TagAssetsLifecycle lifecycle;
 
     @BeforeEach
     void setUp() {
         objectTagger = mock(S3ObjectTaggerV2.class);
         objectKeyResolver = mock(S3ObjectKeyResolver.class);
-        lifecycle = new S3UploadAssetsLifecycle(
+        lifecycle = new S3TagAssetsLifecycle(
                 objectTagger,
                 objectKeyResolver
         );
@@ -39,10 +39,10 @@ class S3UploadAssetsLifecycleTest {
         when(objectKeyResolver.resolve(ADDED_URL))
                 .thenReturn(Optional.of("images/added.png"));
 
-        lifecycle.attach(new UploadAssets(Set.of(ADDED_URL)));
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
 
         verify(objectKeyResolver).resolve(ADDED_URL);
-        verify(objectTagger).fileTag(List.of(
+        verify(objectTagger).tag(List.of(
                 new S3TagTarget(
                         "images/added.png",
                         TagStatus.CONFIRMED
@@ -56,10 +56,10 @@ class S3UploadAssetsLifecycleTest {
         when(objectKeyResolver.resolve(REMOVED_URL))
                 .thenReturn(Optional.of("images/removed.png"));
 
-        lifecycle.detach(new UploadAssets(Set.of(REMOVED_URL)));
+        lifecycle.detach(new TagAssets(Set.of(REMOVED_URL)));
 
         verify(objectKeyResolver).resolve(REMOVED_URL);
-        verify(objectTagger).fileTag(List.of(
+        verify(objectTagger).tag(List.of(
                 new S3TagTarget(
                         "images/removed.png",
                         TagStatus.TEMPORARY
@@ -70,10 +70,10 @@ class S3UploadAssetsLifecycleTest {
     @Test
     @DisplayName("추가된 자산은 CONFIRMED, 제거된 자산은 TEMPORARY로 변경한다.")
     void synchronizeAssets() {
-        UploadAssets previous = new UploadAssets(
+        TagAssets previous = new TagAssets(
                 Set.of(RETAINED_URL, REMOVED_URL)
         );
-        UploadAssets current = new UploadAssets(
+        TagAssets current = new TagAssets(
                 Set.of(RETAINED_URL, ADDED_URL)
         );
 
@@ -86,7 +86,7 @@ class S3UploadAssetsLifecycleTest {
 
         verify(objectKeyResolver).resolve(REMOVED_URL);
         verify(objectKeyResolver).resolve(ADDED_URL);
-        verify(objectTagger).fileTag(List.of(
+        verify(objectTagger).tag(List.of(
                 new S3TagTarget(
                         "images/added.png",
                         TagStatus.CONFIRMED
@@ -101,10 +101,10 @@ class S3UploadAssetsLifecycleTest {
     @Test
     @DisplayName("자산 변경이 없으면 태깅하지 않는다.")
     void doNothingWhenAssetsAreUnchanged() {
-        UploadAssets previous =
-                new UploadAssets(Set.of(RETAINED_URL));
-        UploadAssets current =
-                new UploadAssets(Set.of(RETAINED_URL));
+        TagAssets previous =
+                new TagAssets(Set.of(RETAINED_URL));
+        TagAssets current =
+                new TagAssets(Set.of(RETAINED_URL));
 
         lifecycle.synchronize(previous, current);
 
@@ -117,9 +117,9 @@ class S3UploadAssetsLifecycleTest {
         when(objectKeyResolver.resolve(ADDED_URL))
                 .thenReturn(Optional.empty());
 
-        lifecycle.attach(new UploadAssets(Set.of(ADDED_URL)));
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
 
-        verify(objectTagger).fileTag(List.of());
+        verify(objectTagger).tag(List.of());
     }
 
 }

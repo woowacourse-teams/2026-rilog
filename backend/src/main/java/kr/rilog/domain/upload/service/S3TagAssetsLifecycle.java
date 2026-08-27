@@ -2,8 +2,8 @@ package kr.rilog.domain.upload.service;
 
 import kr.rilog.domain.upload.domain.TagStatus;
 import kr.rilog.domain.upload.domain.vo.v2.S3TagTarget;
-import kr.rilog.domain.upload.domain.vo.v2.UploadAssetChanges;
-import kr.rilog.domain.upload.domain.vo.v2.UploadAssets;
+import kr.rilog.domain.upload.domain.vo.v2.TagAssetChanges;
+import kr.rilog.domain.upload.domain.vo.v2.TagAssets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,19 +13,19 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class S3UploadAssetsLifecycle implements UploadAssetsLifecycle {
+public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
 
     private final S3ObjectTaggerV2 objectTaggerV2;
     private final S3ObjectKeyResolver objectKeyResolver;
 
     @Override
-    public void attach(UploadAssets assets) {
-        objectTaggerV2.fileTag(toTargets(assets, TagStatus.CONFIRMED));
+    public void attach(TagAssets assets) {
+        objectTaggerV2.tag(toTargets(assets, TagStatus.CONFIRMED));
     }
 
     @Override
-    public void synchronize(UploadAssets previous, UploadAssets current) {
-        UploadAssetChanges changes = previous.changesTo(current);
+    public void synchronize(TagAssets previous, TagAssets current) {
+        TagAssetChanges changes = previous.changesTo(current);
         if (changes.isEmpty()) {
             return;
         }
@@ -33,25 +33,25 @@ public class S3UploadAssetsLifecycle implements UploadAssetsLifecycle {
         List<S3TagTarget> targets = new ArrayList<>();
 
         targets.addAll(toTargets(
-                new UploadAssets(changes.added()),
+                new TagAssets(changes.added()),
                 TagStatus.CONFIRMED
         ));
 
         targets.addAll(toTargets(
-                new UploadAssets(changes.removed()),
+                new TagAssets(changes.removed()),
                 TagStatus.TEMPORARY
         ));
 
-        objectTaggerV2.fileTag(targets);
+        objectTaggerV2.tag(targets);
     }
 
     @Override
-    public void detach(UploadAssets assets) {
-        objectTaggerV2.fileTag(toTargets(assets, TagStatus.TEMPORARY));
+    public void detach(TagAssets assets) {
+        objectTaggerV2.tag(toTargets(assets, TagStatus.TEMPORARY));
     }
 
     private List<S3TagTarget> toTargets(
-            UploadAssets assets,
+            TagAssets assets,
             TagStatus status
     ) {
         return assets.objectUrls().stream()

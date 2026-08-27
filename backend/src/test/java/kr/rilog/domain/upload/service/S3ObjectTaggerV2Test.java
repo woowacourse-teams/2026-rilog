@@ -35,7 +35,7 @@ class S3ObjectTaggerV2Test {
         ArgumentCaptor<PutObjectTaggingRequest> requestCaptor =
                 ArgumentCaptor.forClass(PutObjectTaggingRequest.class);
 
-        tagger.fileTag(List.of(target));
+        tagger.tag(List.of(target));
 
         verify(s3Client).putObjectTagging(requestCaptor.capture());
         PutObjectTaggingRequest expected = PutObjectTaggingRequest.builder()
@@ -56,7 +56,7 @@ class S3ObjectTaggerV2Test {
                 new S3TagTarget("images/2026/document.pdf", TagStatus.TEMPORARY)
         );
 
-        tagger.fileTag(targets);
+        tagger.tag(targets);
 
         verify(s3Client, times(targets.size()))
                 .putObjectTagging(any(PutObjectTaggingRequest.class));
@@ -68,7 +68,7 @@ class S3ObjectTaggerV2Test {
         S3Client s3Client = mock(S3Client.class);
         S3ObjectTaggerV2 tagger = new S3ObjectTaggerV2(s3Client, s3Properties());
 
-        tagger.fileTag(List.of());
+        tagger.tag(List.of());
 
         verifyNoInteractions(s3Client);
     }
