@@ -4,8 +4,10 @@ import { useCallback, useState } from 'react';
 
 import RilogDangerZoneSection from '@/features/rilog-danger-zone/ui/RilogDangerZoneSection';
 import { useRilogProfileManagement } from '@/features/rilog-profile-management/hooks/use-rilog-profile-management';
-import { createMockRilogProfile } from '@/features/rilog-profile-management/lib/mock-rilog-profile';
+import { mapRilogProfileSettingsResponse } from '@/features/rilog-profile-management/lib/map-rilog-profile-settings-response';
+import type { RilogProfileSettingsValue } from '@/features/rilog-profile-management/model/rilog-profile-settings';
 import RilogProfileSection from '@/features/rilog-profile-management/ui/RilogProfileSection';
+import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
 import { buildRilogSettingsPath, type RilogSettingsTab } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -18,7 +20,12 @@ import { RILOG_SETTINGS_TABS } from '../lib/rilog-settings-tabs';
 interface RilogSettingsWorkspaceProps {
 	slug: string;
 	initialTab?: RilogSettingsTab;
-	onWithdraw?: () => void;
+}
+
+interface RilogSettingsWorkspaceContentProps {
+	slug: string;
+	initialTab: RilogSettingsTab;
+	initialProfile: RilogProfileSettingsValue;
 }
 
 const TAB_HEADER_CONFIG: Record<RilogSettingsTab, { title: string; description: string }> = {
@@ -26,13 +33,44 @@ const TAB_HEADER_CONFIG: Record<RilogSettingsTab, { title: string; description: 
 	danger: { title: '위험 영역', description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.' },
 };
 
-export default function RilogSettingsWorkspace({
-	slug,
-	initialTab = 'profile',
-	onWithdraw,
-}: RilogSettingsWorkspaceProps) {
+export default function RilogSettingsWorkspace({ slug, initialTab = 'profile' }: RilogSettingsWorkspaceProps) {
+	const profileQuery = useBlogPublicProfileQuery({
+		slug,
+		select: (response) => (response.data === undefined ? undefined : mapRilogProfileSettingsResponse(response.data)),
+	});
+
+	if (profileQuery.isPending) {
+		return (
+			<PageShell>
+				<p className="flex min-h-64 items-center justify-center text-body-2 text-text-secondary" role="status">
+					개인 프로필을 불러오는 중...
+				</p>
+			</PageShell>
+		);
+	}
+
+	if (profileQuery.isError || profileQuery.data === undefined) {
+		return (
+			<PageShell>
+				<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
+					<p className="text-body-2 text-text-secondary">개인 프로필을 불러오지 못했어요.</p>
+					<Button variant="secondary" onClick={() => void profileQuery.refetch()}>
+						다시 시도
+					</Button>
+				</div>
+			</PageShell>
+		);
+	}
+
+	console.log(profileQuery.data);
+	return (
+		<RilogSettingsWorkspaceContent key={slug} slug={slug} initialTab={initialTab} initialProfile={profileQuery.data} />
+	);
+}
+
+function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: RilogSettingsWorkspaceContentProps) {
 	const [activeTab, setActiveTab] = useState<RilogSettingsTab>(initialTab);
-	const profileManagement = useRilogProfileManagement({ initialProfile: createMockRilogProfile(slug) });
+	const profileManagement = useRilogProfileManagement({ initialProfile });
 	const isWorkspaceDirty = activeTab === 'profile' && profileManagement.isDirty;
 
 	const commitTabChange = useCallback(
@@ -76,7 +114,7 @@ export default function RilogSettingsWorkspace({
 		>
 			<div id={`rilog-settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`rilog-settings-tab-${activeTab}`}>
 				{activeTab === 'profile' && <RilogProfileSection management={profileManagement} />}
-				{activeTab === 'danger' && <RilogDangerZoneSection onWithdraw={onWithdraw} />}
+				{activeTab === 'danger' && <RilogDangerZoneSection />}
 			</div>
 			<ConfirmModal
 				open={isLeaveModalOpen}

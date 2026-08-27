@@ -5,12 +5,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 
 import { useRilogProfileManagement } from '../hooks/use-rilog-profile-management';
-import { createMockRilogProfile } from '../lib/mock-rilog-profile';
 
 import RilogProfileSection from './RilogProfileSection';
 
+const initialProfile = {
+	nickname: '리로거',
+	slug: 'rilogger',
+	description: '기록하고 성장하는 개발자입니다.',
+	profileImageUrl: '',
+	serviceUrl: 'https://rilog.kr',
+	githubUrl: 'https://github.com/rilog',
+	profileImageFile: null,
+};
+
 function RilogProfileTestWorkspace() {
-	const management = useRilogProfileManagement({ initialProfile: createMockRilogProfile('rilogger') });
+	const management = useRilogProfileManagement({ initialProfile });
 
 	return (
 		<>

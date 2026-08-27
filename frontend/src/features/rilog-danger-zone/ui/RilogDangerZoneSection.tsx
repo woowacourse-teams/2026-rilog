@@ -5,15 +5,10 @@ import { useState } from 'react';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
-interface RilogDangerZoneSectionProps {
-	onWithdraw?: () => void;
-}
-
-export default function RilogDangerZoneSection({ onWithdraw }: RilogDangerZoneSectionProps) {
+export default function RilogDangerZoneSection() {
 	const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
 	const handleWithdrawConfirm = () => {
-		onWithdraw?.();
 		setIsWithdrawModalOpen(false);
 	};
 

@@ -29,7 +29,21 @@ describe('SettingsWorkspaceRouter', () => {
 
 	it('Rilog 프로필은 Rilog 설정 워크스페이스로 연결한다', () => {
 		useBlogPublicProfileQueryMock.mockReturnValue({
-			data: { data: { type: 'RILOG' } },
+			data: {
+				data: {
+					type: 'RILOG',
+					id: 1,
+					name: '조회된 리로거',
+					slug: 'rilogger',
+					introduction: null,
+					profileImageUrl: null,
+					coverImageUrl: null,
+					serviceUrl: null,
+					githubUrl: null,
+					memberCount: 1,
+					postCount: 0,
+				},
+			},
 			isError: false,
 			isPending: false,
 		});
