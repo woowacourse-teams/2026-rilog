@@ -1,31 +1,21 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
 
-const PLACEHOLDER_DRAFT_POSTS: readonly DraftPostItem[] = [
-	{ id: 34, title: '디자인 시스템 도입 회고', savedAt: '2026-08-21T04:40:07.585624' },
-	{ id: 37, title: 'TypeScript 타입 설계 회고', savedAt: '2026-08-20T04:40:07.585624' },
-	{ id: 21, title: '접근성 개선 기록', savedAt: '2026-08-19T04:40:07.585624' },
-	{ id: 4, title: 'Next.js 마이그레이션', savedAt: '2026-08-18T04:40:07.585624' },
-];
-
 interface UsePostDraftsOptions {
 	prepareDocument: () => EditorDocument | null;
-	initialPosts?: readonly DraftPostItem[];
+	posts?: readonly DraftPostItem[];
 	onSave?: (document: EditorDocument) => void | Promise<void>;
 }
 
-export function usePostDrafts({
-	prepareDocument,
-	initialPosts = PLACEHOLDER_DRAFT_POSTS,
-	onSave,
-}: UsePostDraftsOptions) {
-	const [posts, setPosts] = useState<DraftPostItem[]>(() => [...initialPosts]);
+export function usePostDrafts({ prepareDocument, posts = [], onSave }: UsePostDraftsOptions) {
+	const [removedPostIds, setRemovedPostIds] = useState<Set<number>>(() => new Set());
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
 	const [postIdPendingDeletion, setPostIdPendingDeletion] = useState<number | null>(null);
+	const visiblePosts = useMemo(() => posts.filter(({ id }) => !removedPostIds.has(id)), [posts, removedPostIds]);
 
 	const save = useCallback(() => {
 		const document = prepareDocument();
@@ -57,12 +47,12 @@ export function usePostDrafts({
 			return;
 		}
 
-		setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postIdPendingDeletion));
+		setRemovedPostIds((currentIds) => new Set(currentIds).add(postIdPendingDeletion));
 		setPostIdPendingDeletion(null);
 	}, [postIdPendingDeletion]);
 
 	return {
-		posts,
+		posts: visiblePosts,
 		isListModalOpen,
 		isDeletionModalOpen: postIdPendingDeletion !== null,
 		save,

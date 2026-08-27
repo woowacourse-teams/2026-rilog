@@ -14,7 +14,7 @@ describe('usePostDrafts', () => {
 	it('문서 준비가 성공할 때와 실패할 때 모두 최신 문서를 준비한다', () => {
 		const prepareDocument = vi.fn().mockReturnValueOnce(null).mockReturnValueOnce({ title: '제목', blocks: [] });
 		const onSave = vi.fn();
-		const { result } = renderHook(() => usePostDrafts({ prepareDocument, initialPosts: INITIAL_POSTS, onSave }));
+		const { result } = renderHook(() => usePostDrafts({ prepareDocument, posts: INITIAL_POSTS, onSave }));
 
 		act(() => result.current.save());
 		act(() => result.current.save());
@@ -24,7 +24,7 @@ describe('usePostDrafts', () => {
 	});
 
 	it('목록 모달을 열고 닫는다', () => {
-		const { result } = renderHook(() => usePostDrafts({ prepareDocument: vi.fn(), initialPosts: INITIAL_POSTS }));
+		const { result } = renderHook(() => usePostDrafts({ prepareDocument: vi.fn(), posts: INITIAL_POSTS }));
 
 		act(() => result.current.openList());
 		expect(result.current.isListModalOpen).toBe(true);
@@ -34,7 +34,7 @@ describe('usePostDrafts', () => {
 	});
 
 	it('삭제를 취소하면 목록을 유지하고 확인하면 선택한 글만 제거한다', () => {
-		const { result } = renderHook(() => usePostDrafts({ prepareDocument: vi.fn(), initialPosts: INITIAL_POSTS }));
+		const { result } = renderHook(() => usePostDrafts({ prepareDocument: vi.fn(), posts: INITIAL_POSTS }));
 
 		act(() => result.current.requestDeletion(1));
 		expect(result.current.isDeletionModalOpen).toBe(true);
