@@ -1,7 +1,9 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import XIcon from '@/shared/assets/icons/x.svg';
+import { buildDraftWritePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
+import CustomLink from '@/shared/ui/link/CustomLink';
 import Modal from '@/shared/ui/modal/Modal';
 
 interface DraftListModalProps {
@@ -14,7 +16,6 @@ interface DraftListModalProps {
 	isFetchNextPageError?: boolean;
 	onClose: () => void;
 	onDelete: (draftPostId: number) => void;
-	onSelect?: (draftPostId: number) => void;
 	onRetry?: () => void;
 	onLoadMore?: () => void;
 }
@@ -29,7 +30,6 @@ export default function DraftListModal({
 	isFetchNextPageError = false,
 	onClose,
 	onDelete,
-	onSelect,
 	onRetry,
 	onLoadMore,
 }: DraftListModalProps) {
@@ -66,15 +66,14 @@ export default function DraftListModal({
 					<ul className="flex flex-col gap-4">
 						{draftPosts.map((post) => (
 							<li key={post.id} className="flex items-stretch justify-between overflow-clip rounded-lg bg-navy-100">
-								<button
-									type="button"
-									disabled={onSelect === undefined}
-									onClick={() => onSelect?.(post.id)}
-									className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left disabled:cursor-not-allowed ${onSelect === undefined ? '' : DRAFT_BUTTON_CLASS_NAME}`}
+								<CustomLink
+									replace
+									href={buildDraftWritePath(post.id)}
+									className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
 								>
 									<strong className="truncate text-body-3">{post.title}</strong>
 									<span className="text-caption-2 text-text-secondary">{formatPublishedDate(post.savedAt)}</span>
-								</button>
+								</CustomLink>
 								<button
 									type="button"
 									aria-label={`${post.title} 임시 저장 글 삭제`}

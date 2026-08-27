@@ -49,4 +49,15 @@ describe('DraftListModal', () => {
 		await user.click(screen.getByRole('button', { name: '더 보기' }));
 		expect(onLoadMore).toHaveBeenCalledOnce();
 	});
+
+	it('목록 제목을 임시저장 상세 작성 경로로 연결한다', () => {
+		render(
+			<DraftListModal
+				{...defaultProps}
+				draftPosts={[{ id: 42, title: '작성 중인 글', savedAt: '2026-08-27T10:29:46.466Z' }]}
+			/>,
+		);
+
+		expect(screen.getByRole('link', { name: /작성 중인 글/ })).toHaveAttribute('href', '/write?draftId=42');
+	});
 });

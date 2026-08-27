@@ -45,6 +45,8 @@ export const buildRilogSettingsPath = (slug: string, tab: RilogSettingsTab) =>
 export const buildPostDetailPath = (slug: string, postId: string) =>
 	`${buildBlogHomePath(slug)}/posts/${normalizeSegment(postId, '게시글 ID가 필요합니다.')}`;
 
+export const buildDraftWritePath = (draftId: number) => `${APP_ROUTES.write}?draftId=${draftId}`;
+
 const isSettingsTab = <T extends string>(tab: string | undefined, tabs: readonly T[]): tab is T => {
 	return tab !== undefined && tabs.some((candidate) => candidate === tab);
 };

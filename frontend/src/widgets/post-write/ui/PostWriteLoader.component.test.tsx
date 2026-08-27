@@ -38,12 +38,14 @@ const {
 	editControllerUnmountedMock,
 	newControllerUnmountedMock,
 	searchParamsGetMock,
+	useDraftInitialDocumentMock,
 	usePostWriteInitialDataMock,
 } = vi.hoisted(() => ({
 	draftControllerUnmountedMock: vi.fn(),
 	editControllerUnmountedMock: vi.fn(),
 	newControllerUnmountedMock: vi.fn(),
 	searchParamsGetMock: vi.fn<(name: string) => string | null>(),
+	useDraftInitialDocumentMock: vi.fn(),
 	usePostWriteInitialDataMock: vi.fn<(options: InitialDataQueryOptionsMock) => InitialDataQueryResultMock>(),
 }));
 
@@ -53,6 +55,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/features/post-write/hooks/use-post-write-initial-data', () => ({
 	usePostWriteInitialData: usePostWriteInitialDataMock,
+}));
+
+vi.mock('@/features/post-write/hooks/use-draft-initial-document', () => ({
+	useDraftInitialDocument: useDraftInitialDocumentMock,
 }));
 
 vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
@@ -179,8 +185,15 @@ describe('PostWriteLoader', () => {
 		editControllerUnmountedMock.mockReset();
 		newControllerUnmountedMock.mockReset();
 		searchParamsGetMock.mockReset();
+		useDraftInitialDocumentMock.mockReset();
 		usePostWriteInitialDataMock.mockReset();
 		searchParamsGetMock.mockReturnValue(null);
+		useDraftInitialDocumentMock.mockReturnValue({
+			isPending: false,
+			isError: false,
+			data: { title: '', blocks: [] },
+			refetch: vi.fn(),
+		});
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: false, data: undefined });
 	});
 
