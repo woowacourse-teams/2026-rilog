@@ -66,10 +66,8 @@ public class UserService {
         );
 
         User completedUser = userRepository.saveAndFlush(user);
-        Blog rilog = createRilog(completedUser);
-
+        Blog rilog = createRilog(completedUser, command.serviceUrl());
         tagAssetsLifecycle.attach(rilog.getTagAssets());
-
         return completedUser;
     }
 
@@ -91,8 +89,8 @@ public class UserService {
         }
     }
 
-    private Blog createRilog(User user) {
-        Blog rilog = blogRepository.save(Blog.createRilog(user));
+    private Blog createRilog(User user, String serviceUrl) {
+        Blog rilog = blogRepository.save(Blog.createRilog(user, serviceUrl));
         createRilogMember(rilog, user);
         return rilog;
     }

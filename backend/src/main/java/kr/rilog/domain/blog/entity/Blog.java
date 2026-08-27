@@ -53,6 +53,10 @@ public class Blog extends BaseEntity {
     }
 
     public static Blog createRilog(User owner) {
+        return createRilog(owner, null);
+    }
+
+    public static Blog createRilog(User owner, String serviceUrl) {
         return Blog.builder()
                 .owner(owner)
                 .slug(Slug.from(owner.getSlug()))
@@ -60,8 +64,9 @@ public class Blog extends BaseEntity {
                         owner.getNickname(),
                         owner.getIntroduction(),
                         owner.getProfileImageUrl(),
-                        owner.getEmail(),
-                        owner.getGithubUrl()
+                        serviceUrl,
+                        owner.getGithubUrl(),
+                        owner.getEmail()
                 ))
                 .blogType(BlogType.RILOG)
                 .build();

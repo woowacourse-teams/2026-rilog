@@ -122,6 +122,7 @@ class UserServiceTest {
                         Blog::getSlug,
                         Blog::getIntroduction,
                         Blog::getProfileImageUrl,
+                        Blog::getServiceUrl,
                         Blog::getGithubUrl,
                         Blog::getEmail,
                         Blog::getBlogType
@@ -132,6 +133,7 @@ class UserServiceTest {
                         "ri_log-01",
                         "기록하는 개발자입니다.",
                         "https://example.com/profile.png",
+                        "https://rilog.example.com",
                         "https://github.com/jinriro",
                         "riro@example.com",
                         BlogType.RILOG
@@ -268,6 +270,7 @@ class UserServiceTest {
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/jinriro",
+                "https://rilog.example.com",
                 "riro@example.com"
         );
     }
