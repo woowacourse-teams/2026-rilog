@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
+import { POST_DETAIL_READABILITY_CONTENT } from '../model/post-detail.mock';
+
 import { renderPostDetailContent } from './render-post-detail-content';
 
 const IMAGE_BLOCK: Block = {
@@ -86,6 +88,24 @@ const TOGGLE_BLOCKS: Block[] = [
 ];
 
 describe('renderPostDetailContent', () => {
+	it('가독성 점검 fixture의 주요 블록과 안전한 코드 원문을 정적 HTML로 변환한다', async () => {
+		const html = await renderPostDetailContent(POST_DETAIL_READABILITY_CONTENT);
+
+		expect(html).toContain('data-content-type="heading"');
+		expect(html).toContain('data-content-type="bulletListItem"');
+		expect(html).toContain('data-content-type="numberedListItem"');
+		expect(html).toContain('data-content-type="checkListItem"');
+		expect(html).toContain('data-content-type="quote"');
+		expect(html).toContain('data-content-type="table"');
+		expect(html).toContain('data-content-type="toggleListItem"');
+		expect(html).toContain('data-content-type="image"');
+		expect(html).toContain('href="https://www.rilog.dev/docs/architecture"');
+		expect(html).toContain('data-language="typescript"');
+		expect(html).toContain('data-language="unknown-language"');
+		expect(html).toContain('&lt;script&gt;alert("escaped")&lt;/script&gt;');
+		expect(html).not.toContain('<script>alert("escaped")</script>');
+	});
+
 	it('이미지 블록을 정적 HTML 이미지로 변환한다', async () => {
 		const html = await renderPostDetailContent([IMAGE_BLOCK]);
 
