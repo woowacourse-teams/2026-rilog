@@ -1,5 +1,6 @@
-package kr.rilog.domain.upload.domain.vo.v2;
+package kr.rilog.domain.upload.service;
 
+import kr.rilog.domain.upload.domain.vo.v2.S3TagTarget;
 import kr.rilog.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
