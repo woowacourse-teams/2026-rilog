@@ -136,6 +136,12 @@ describe('BlockNoteEditor', () => {
 		expect(languageTrigger).toHaveFocus();
 
 		await user.click(languageTrigger);
+		expect(screen.getByRole('listbox', { name: '코드 언어' })).toBeInTheDocument();
+		await user.keyboard('{Escape}');
+		expect(screen.queryByRole('listbox', { name: '코드 언어' })).not.toBeInTheDocument();
+		expect(languageTrigger).toHaveFocus();
+
+		await user.click(languageTrigger);
 		await user.click(screen.getByRole('option', { name: 'TypeScript' }));
 
 		expect(languageSelect).toHaveValue('typescript');

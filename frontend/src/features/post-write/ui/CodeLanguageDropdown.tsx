@@ -94,6 +94,9 @@ function CodeLanguageDropdown({ languageSelect }: CodeLanguageDropdownProps) {
 					if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 						event.preventDefault();
 						openAndFocusOption(event.key === 'ArrowDown' ? selectedIndex : languageOptions.length - 1);
+					} else if (event.key === 'Escape' && isOpen) {
+						event.preventDefault();
+						setIsOpen(false);
 					}
 				}}
 			>
