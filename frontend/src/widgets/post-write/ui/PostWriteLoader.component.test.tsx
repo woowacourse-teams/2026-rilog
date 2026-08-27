@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
@@ -18,6 +18,10 @@ interface ControllerMockProps {
 	initialPublicationSettings?: PublicationSettings;
 }
 
+interface NewPostControllerMockProps {
+	onDraftPromoted?: (draftId: number) => void;
+}
+
 interface InitialDataQueryOptionsMock {
 	postId: number;
 	isEnabled: boolean;
@@ -29,7 +33,16 @@ interface InitialDataQueryResultMock {
 	data?: PostWriteInitialData;
 }
 
-const { searchParamsGetMock, usePostWriteInitialDataMock } = vi.hoisted(() => ({
+const {
+	draftControllerUnmountedMock,
+	editControllerUnmountedMock,
+	newControllerUnmountedMock,
+	searchParamsGetMock,
+	usePostWriteInitialDataMock,
+} = vi.hoisted(() => ({
+	draftControllerUnmountedMock: vi.fn(),
+	editControllerUnmountedMock: vi.fn(),
+	newControllerUnmountedMock: vi.fn(),
 	searchParamsGetMock: vi.fn<(name: string) => string | null>(),
 	usePostWriteInitialDataMock: vi.fn<(options: InitialDataQueryOptionsMock) => InitialDataQueryResultMock>(),
 }));
@@ -51,34 +64,90 @@ vi.mock('@/features/post-write/ui/PostWriteAccessGuard', () => ({
 	),
 }));
 
-vi.mock('./NewPostController', () => ({
-	default: () => <p>새 글 컨트롤러</p>,
-}));
+vi.mock('./NewPostController', async () => {
+	const { useEffect } = await import('react');
 
-vi.mock('./DraftPostController', () => ({
-	default: ({ draftId }: Pick<ControllerMockProps, 'draftId'>) => <p>임시저장 게시글 {draftId}</p>,
-}));
+	function MockNewPostController({ onDraftPromoted }: NewPostControllerMockProps) {
+		useEffect(
+			() => () => {
+				newControllerUnmountedMock();
+			},
+			[],
+		);
 
-vi.mock('./EditPostController', () => ({
-	default: ({ postId, initialDocument, initialPublicationSettings }: Omit<ControllerMockProps, 'draftId'>) => (
-		<div>
-			<p>수정 게시글 {postId}</p>
-			{initialDocument === undefined ? null : (
-				<>
-					<p>{initialDocument.title}</p>
-					<p>본문 블록 {initialDocument.blocks.length}개</p>
-				</>
-			)}
-			{initialPublicationSettings === undefined ? null : (
-				<>
-					<p>카테고리 {initialPublicationSettings.category}</p>
-					<p>블로그 {initialPublicationSettings.blog?.name}</p>
-					<p>썸네일 {initialPublicationSettings.representativeImageUrl}</p>
-				</>
-			)}
-		</div>
-	),
-}));
+		return (
+			<div>
+				<p>새 글 컨트롤러</p>
+				<button type="button" onClick={() => onDraftPromoted?.(123)}>
+					현재 글 임시저장 완료
+				</button>
+			</div>
+		);
+	}
+
+	return {
+		default: MockNewPostController,
+	};
+});
+
+vi.mock('./DraftPostController', async () => {
+	const { useEffect } = await import('react');
+
+	function MockDraftPostController({ draftId }: Pick<ControllerMockProps, 'draftId'>) {
+		useEffect(
+			() => () => {
+				draftControllerUnmountedMock(draftId);
+			},
+			[draftId],
+		);
+
+		return <p>임시저장 게시글 {draftId}</p>;
+	}
+
+	return {
+		default: MockDraftPostController,
+	};
+});
+
+vi.mock('./EditPostController', async () => {
+	const { useEffect } = await import('react');
+
+	function MockEditPostController({
+		postId,
+		initialDocument,
+		initialPublicationSettings,
+	}: Omit<ControllerMockProps, 'draftId'>) {
+		useEffect(
+			() => () => {
+				editControllerUnmountedMock(postId);
+			},
+			[postId],
+		);
+
+		return (
+			<div>
+				<p>수정 게시글 {postId}</p>
+				{initialDocument === undefined ? null : (
+					<>
+						<p>{initialDocument.title}</p>
+						<p>본문 블록 {initialDocument.blocks.length}개</p>
+					</>
+				)}
+				{initialPublicationSettings === undefined ? null : (
+					<>
+						<p>카테고리 {initialPublicationSettings.category}</p>
+						<p>블로그 {initialPublicationSettings.blog?.name}</p>
+						<p>썸네일 {initialPublicationSettings.representativeImageUrl}</p>
+					</>
+				)}
+			</div>
+		);
+	}
+
+	return {
+		default: MockEditPostController,
+	};
+});
 
 const initialBlock: Block = {
 	id: 'paragraph',
@@ -106,6 +175,9 @@ const initialData: PostWriteInitialData = {
 
 describe('PostWriteLoader', () => {
 	beforeEach(() => {
+		draftControllerUnmountedMock.mockReset();
+		editControllerUnmountedMock.mockReset();
+		newControllerUnmountedMock.mockReset();
 		searchParamsGetMock.mockReset();
 		usePostWriteInitialDataMock.mockReset();
 		searchParamsGetMock.mockReturnValue(null);
@@ -123,11 +195,69 @@ describe('PostWriteLoader', () => {
 		const { rerender } = render(<PostWriteLoader />);
 		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
 
+		fireEvent.click(screen.getByRole('button', { name: '현재 글 임시저장 완료' }));
 		searchParamsGetMock.mockImplementation((name) => (name === 'draftId' ? '123' : null));
 		rerender(<PostWriteLoader />);
 
 		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
 		expect(screen.queryByText('임시저장 게시글 123')).not.toBeInTheDocument();
+		expect(newControllerUnmountedMock).not.toHaveBeenCalled();
+	});
+
+	it('새 글 작성 중 기존 draft URL로 이동하면 draft controller로 전환한다', () => {
+		const { rerender } = render(<PostWriteLoader />);
+
+		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
+		searchParamsGetMock.mockImplementation((name) => (name === 'draftId' ? '42' : null));
+		rerender(<PostWriteLoader />);
+
+		expect(screen.getByText('임시저장 게시글 42')).toBeInTheDocument();
+		expect(screen.queryByText('새 글 컨트롤러')).not.toBeInTheDocument();
+		expect(newControllerUnmountedMock).toHaveBeenCalledOnce();
+	});
+
+	it('기존 임시저장 중 다른 draftId URL로 이동하면 기존 controller를 remount한다', () => {
+		searchParamsGetMock.mockImplementation((name) => (name === 'draftId' ? '41' : null));
+		const { rerender } = render(<PostWriteLoader />);
+
+		expect(screen.getByText('임시저장 게시글 41')).toBeInTheDocument();
+		searchParamsGetMock.mockImplementation((name) => (name === 'draftId' ? '42' : null));
+		rerender(<PostWriteLoader />);
+
+		expect(screen.getByText('임시저장 게시글 42')).toBeInTheDocument();
+		expect(screen.queryByText('임시저장 게시글 41')).not.toBeInTheDocument();
+		expect(draftControllerUnmountedMock).toHaveBeenCalledWith(41);
+	});
+
+	it('게시글 수정 중 새 글 URL로 이동하면 새 작성 controller로 전환한다', () => {
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: false, data: initialData });
+		const { rerender } = render(<PostWriteLoader />);
+
+		expect(screen.getByText('수정 게시글 31')).toBeInTheDocument();
+		searchParamsGetMock.mockReturnValue(null);
+		rerender(<PostWriteLoader />);
+
+		expect(screen.getByText('새 글 컨트롤러')).toBeInTheDocument();
+		expect(screen.queryByText('수정 게시글 31')).not.toBeInTheDocument();
+		expect(editControllerUnmountedMock).toHaveBeenCalledWith(31);
+	});
+
+	it('게시글 수정 중 다른 postId URL로 이동하면 기존 controller를 remount한다', () => {
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: false, data: initialData });
+		const { rerender } = render(<PostWriteLoader />);
+
+		expect(screen.getByText('수정 게시글 31')).toBeInTheDocument();
+		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '32' : null));
+		rerender(<PostWriteLoader />);
+
+		expect(screen.getByText('수정 게시글 32')).toBeInTheDocument();
+		expect(screen.queryByText('수정 게시글 31')).not.toBeInTheDocument();
+		expect(editControllerUnmountedMock).toHaveBeenCalledWith(31);
+		expect(usePostWriteInitialDataMock).toHaveBeenLastCalledWith(
+			expect.objectContaining({ postId: 32, isEnabled: true }),
+		);
 	});
 
 	it('올바르지 않은 postId이면 상세조회를 실행하지 않고 오류를 안내한다', () => {

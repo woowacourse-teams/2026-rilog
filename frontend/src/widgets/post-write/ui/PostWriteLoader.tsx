@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import DraftPostLoader from './DraftPostLoader';
 import EditPostLoader from './EditPostLoader';
@@ -9,7 +9,7 @@ import NewPostController from './NewPostController';
 
 const loaderClassName = 'flex min-h-dvh items-center justify-center bg-background px-6 text-center';
 
-type InitialPostWriteEntry =
+type PostWriteEntry =
 	| { type: 'new' }
 	| { type: 'draft'; draftId: number }
 	| { type: 'edit'; postId: number }
@@ -17,7 +17,14 @@ type InitialPostWriteEntry =
 	| { type: 'invalid-post' }
 	| { type: 'ambiguous' };
 
-const parseInitialEntry = (rawPostId: string | null, rawDraftId: string | null): InitialPostWriteEntry => {
+interface PostWriteSession {
+	entry: PostWriteEntry;
+	key: number;
+	promotedDraftId: number | null;
+	urlEntryKey: string;
+}
+
+const parsePostWriteEntry = (rawPostId: string | null, rawDraftId: string | null): PostWriteEntry => {
 	if (rawPostId !== null && rawDraftId !== null) {
 		return { type: 'ambiguous' };
 	}
@@ -39,15 +46,43 @@ const parseInitialEntry = (rawPostId: string | null, rawDraftId: string | null):
 	return { type: 'new' };
 };
 
+const createUrlEntryKey = (rawPostId: string | null, rawDraftId: string | null) =>
+	JSON.stringify([rawPostId, rawDraftId]);
+
 export default function PostWriteLoader() {
 	const searchParams = useSearchParams();
-	// 최초 임시저장은 URL만 바꾸므로, 동기화된 searchParams가 현재 Controller를 교체하지 않게 진입값을 고정한다.
-	// 기존 임시저장 선택은 별도의 새 작성 세션 전환으로 이 경계를 명시적으로 remount해야 한다.
-	const [initialEntry] = useState(() => parseInitialEntry(searchParams.get('postId'), searchParams.get('draftId')));
+	const rawPostId = searchParams.get('postId');
+	const rawDraftId = searchParams.get('draftId');
+	const urlEntry = parsePostWriteEntry(rawPostId, rawDraftId);
+	const urlEntryKey = createUrlEntryKey(rawPostId, rawDraftId);
+	const [session, setSession] = useState<PostWriteSession>(() => ({
+		entry: urlEntry,
+		key: 0,
+		promotedDraftId: null,
+		urlEntryKey,
+	}));
 
-	if (initialEntry.type === 'ambiguous') {
+	let activeSession = session;
+	if (session.urlEntryKey !== urlEntryKey) {
+		const isCurrentNewPostPromotion =
+			session.entry.type === 'new' && urlEntry.type === 'draft' && session.promotedDraftId === urlEntry.draftId;
+
+		activeSession = isCurrentNewPostPromotion
+			? { ...session, urlEntryKey }
+			: { entry: urlEntry, key: session.key + 1, promotedDraftId: null, urlEntryKey };
+
+		setSession(activeSession);
+	}
+
+	const handleDraftPromoted = useCallback((draftId: number) => {
+		setSession((currentSession) => ({ ...currentSession, promotedDraftId: draftId }));
+	}, []);
+
+	const { entry, key } = activeSession;
+
+	if (entry.type === 'ambiguous') {
 		return (
-			<main className={loaderClassName}>
+			<main key={key} className={loaderClassName}>
 				<p className="text-body-2 text-danger-text" role="alert">
 					게시글 ID와 임시저장 ID를 함께 사용할 수 없습니다.
 				</p>
@@ -55,9 +90,9 @@ export default function PostWriteLoader() {
 		);
 	}
 
-	if (initialEntry.type === 'invalid-draft') {
+	if (entry.type === 'invalid-draft') {
 		return (
-			<main className={loaderClassName}>
+			<main key={key} className={loaderClassName}>
 				<p className="text-body-2 text-danger-text" role="alert">
 					올바르지 않은 임시저장 ID입니다.
 				</p>
@@ -65,13 +100,13 @@ export default function PostWriteLoader() {
 		);
 	}
 
-	if (initialEntry.type === 'draft') {
-		return <DraftPostLoader draftId={initialEntry.draftId} />;
+	if (entry.type === 'draft') {
+		return <DraftPostLoader key={key} draftId={entry.draftId} />;
 	}
 
-	if (initialEntry.type === 'invalid-post') {
+	if (entry.type === 'invalid-post') {
 		return (
-			<main className={loaderClassName}>
+			<main key={key} className={loaderClassName}>
 				<p className="text-body-2 text-danger-text" role="alert">
 					{/* TODO: 추가 피드백 필요(리다이렉트 등) */}
 					올바르지 않은 게시글 ID입니다.
@@ -80,9 +115,9 @@ export default function PostWriteLoader() {
 		);
 	}
 
-	if (initialEntry.type === 'edit') {
-		return <EditPostLoader postId={initialEntry.postId} />;
+	if (entry.type === 'edit') {
+		return <EditPostLoader key={key} postId={entry.postId} />;
 	}
 
-	return <NewPostController />;
+	return <NewPostController key={key} onDraftPromoted={handleDraftPromoted} />;
 }

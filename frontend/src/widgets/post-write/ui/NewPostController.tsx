@@ -22,6 +22,7 @@ interface NewPostControllerProps {
 	publishDraft?: PublishPostDraft;
 	uploadFile?: UploadPostBodyFile;
 	navigate?: (href: string) => void;
+	onDraftPromoted?: (draftId: number) => void;
 }
 
 export default function NewPostController({
@@ -33,6 +34,7 @@ export default function NewPostController({
 	publishDraft,
 	uploadFile,
 	navigate,
+	onDraftPromoted,
 }: NewPostControllerProps) {
 	const publishNewPost = usePublishNewPost();
 	const [draftId, setDraftId] = useState<number | null>(null);
@@ -49,6 +51,7 @@ export default function NewPostController({
 				};
 
 	const handleDraftCreated = (createdDraftId: number) => {
+		onDraftPromoted?.(createdDraftId);
 		setDraftId(createdDraftId);
 		window.history.replaceState(window.history.state, '', `/write?draftId=${createdDraftId}`);
 	};
