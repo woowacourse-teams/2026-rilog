@@ -109,10 +109,10 @@ public class CologService {
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         requesterMember.validateCanDeleteColog();
 
-        List<BlogMember> activeMembers = blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(colog.getId(), BlogMemberStatus.ACTIVE);
-        colog.deleteCologBy(requesterMember, activeMembers);
-
-        postRepository.softDeleteAllByCologId(colog.getId(), LocalDateTime.now(clock));
+        LocalDateTime deletedAt = LocalDateTime.now(clock);
+        colog.delete();
+        blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
+        postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
     }
 
     public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
