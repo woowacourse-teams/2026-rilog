@@ -2,6 +2,7 @@ import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostSummary } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -22,10 +23,17 @@ export default function BlogPostList({ posts, slug }: BlogPostListProps) {
 
 	return (
 		<ul className="flex flex-col gap-7">
-			{posts.map((post) => (
+			{posts.map((post, index) => (
 				<li key={post.id}>
 					<CustomLink
 						href={buildPostDetailPath(slug, String(post.id))}
+						onClick={() =>
+							recordPostDetailEntryContext({
+								postId: post.id,
+								entrySource: 'blog_profile',
+								feedPosition: index + 1,
+							})
+						}
 						className="group flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 					>
 						<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-27">
