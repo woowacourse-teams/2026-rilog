@@ -8,6 +8,7 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { consumePostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { analytics } from '@/features/analytics/model/events';
+import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 
 interface PostDetailContentProps {
 	html: string;
@@ -84,6 +85,7 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 	const contentRef = useRef<HTMLElement>(null);
 	const currentPostIdRef = useRef(postId);
 	const expandedToggleIdsRef = useRef(new Set<string>());
+	const getActiveEngagementTime = useActiveElapsedTime(postId);
 
 	useLayoutEffect(() => {
 		const contentElement = contentRef.current;
@@ -130,7 +132,6 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 
 	useEffect(() => {
 		const trackerKey = getTrackerKey(postId);
-		const startedAt = Date.now();
 
 		const trackReadEngagement = () => {
 			if (engagedTrackerKeys.has(trackerKey)) {
@@ -149,7 +150,7 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 			engagedTrackerKeys.add(trackerKey);
 			analytics.postReadEngaged({
 				postId,
-				engagementSeconds: Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
+				engagementSeconds: Math.floor(getActiveEngagementTime() / 1_000),
 				scrollDepthBucket: READ_ENGAGED_SCROLL_DEPTH_BUCKET,
 			});
 		};
@@ -162,7 +163,7 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 			window.removeEventListener('scroll', trackReadEngagement);
 			window.removeEventListener('resize', trackReadEngagement);
 		};
-	}, [postId]);
+	}, [getActiveEngagementTime, postId]);
 
 	const handleToggleClick = (event: MouseEvent<HTMLElement>) => {
 		const toggleButton = getToggleButton(event.target);

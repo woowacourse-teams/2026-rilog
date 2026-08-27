@@ -172,8 +172,10 @@ describe('PostDetailContent', () => {
 	it('본문 스크롤 깊이가 50%에 도달하면 engagement를 한 번 전송한다', () => {
 		let currentTime = 1_000;
 		let articleTop = 900;
+		let visibilityState: DocumentVisibilityState = 'visible';
 
 		vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
+		vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visibilityState);
 		vi.stubGlobal('innerHeight', 700);
 		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function getBoundingClientRect(
 			this: HTMLElement,
@@ -210,7 +212,14 @@ describe('PostDetailContent', () => {
 		window.dispatchEvent(new Event('scroll'));
 		expect(postReadEngagedMock).not.toHaveBeenCalled();
 
-		currentTime = 4_500;
+		currentTime = 1_500;
+		visibilityState = 'hidden';
+		document.dispatchEvent(new Event('visibilitychange'));
+		currentTime = 601_500;
+		visibilityState = 'visible';
+		document.dispatchEvent(new Event('visibilitychange'));
+
+		currentTime = 604_500;
 		articleTop = 50;
 
 		window.dispatchEvent(new Event('scroll'));

@@ -125,6 +125,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	vi.restoreAllMocks();
 	vi.unstubAllEnvs();
 });
 
@@ -820,5 +821,37 @@ describe('NewPostController', () => {
 		window.dispatchEvent(beforeUnloadEvent);
 
 		expect(beforeUnloadEvent.defaultPrevented).toBe(true);
+	});
+
+	it('에디터 탭이 숨겨진 시간은 이탈 시 작성 시간에서 제외한다', async () => {
+		let currentTime = 1_000;
+		let visibilityState: DocumentVisibilityState = 'visible';
+		vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
+		vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visibilityState);
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '활성 작성 시간');
+
+		currentTime = 2_000;
+		visibilityState = 'hidden';
+		document.dispatchEvent(new Event('visibilitychange'));
+		currentTime = 902_000;
+		visibilityState = 'visible';
+		document.dispatchEvent(new Event('visibilitychange'));
+		currentTime = 903_000;
+
+		const link = document.createElement('a');
+		link.href = '/next-page';
+		link.textContent = '다른 페이지';
+		document.body.append(link);
+		await user.click(link);
+		await user.click(screen.getByRole('button', { name: '나가기' }));
+
+		expect(postDraftAbandonedMock).toHaveBeenCalledWith({
+			documentState: 'title_only',
+			editingTimeBucket: 'under_1m',
+		});
+		link.remove();
 	});
 });

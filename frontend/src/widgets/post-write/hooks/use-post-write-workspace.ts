@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
@@ -17,6 +17,7 @@ import type {
 	PublishPost,
 	PublishPostResult,
 } from '@/features/post-write/model/post-publication';
+import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 interface UsePostWriteWorkspaceOptions {
@@ -34,10 +35,7 @@ export function usePostWriteWorkspace({
 	navigate,
 	onPublished,
 }: UsePostWriteWorkspaceOptions) {
-	const editorOpenedAtRef = useRef<number | null>(null);
-	useEffect(() => {
-		editorOpenedAtRef.current = Date.now();
-	}, []);
+	const getActiveEditingTime = useActiveElapsedTime();
 
 	const {
 		titleRef,
@@ -78,7 +76,7 @@ export function usePostWriteWorkspace({
 			const { hasTitle, hasBody } = getDocumentState();
 			if (!hasTitle && !hasBody) return;
 
-			const elapsedSeconds = (Date.now() - (editorOpenedAtRef.current ?? Date.now())) / 1_000;
+			const elapsedSeconds = getActiveEditingTime() / 1_000;
 			analytics.postDraftAbandoned({
 				documentState: hasTitle && hasBody ? 'title_and_body' : hasTitle ? 'title_only' : 'body_only',
 				editingTimeBucket:
