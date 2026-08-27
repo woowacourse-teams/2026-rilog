@@ -1,0 +1,30 @@
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
+import type { DraftPublishRequest } from '@/shared/api/drafts/types';
+
+import { findFirstBodyImageUrl } from './resolve-representative-image';
+
+type UploadRepresentativeImage = (file: File) => Promise<string>;
+
+export const buildDraftPublishRequest = async (
+	{ document, settings }: PublishPostCommand,
+	uploadRepresentativeImage: UploadRepresentativeImage,
+): Promise<DraftPublishRequest> => {
+	if (settings.blog === null) {
+		throw new Error('Co-log를 선택해 주세요.');
+	}
+
+	const thumbnailImageUrl =
+		settings.representativeImage !== null
+			? await uploadRepresentativeImage(settings.representativeImage)
+			: (settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL);
+
+	return {
+		slug: settings.blog.slug,
+		title: document.title,
+		content: document.blocks,
+		category: settings.category === 'IT' ? 'TECH' : settings.category,
+		visibility: 'PUBLIC',
+		thumbnailImageUrl,
+	};
+};
