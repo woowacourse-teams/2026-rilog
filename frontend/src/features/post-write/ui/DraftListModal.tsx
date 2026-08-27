@@ -1,4 +1,5 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import XIcon from '@/shared/assets/icons/x.svg';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -27,6 +28,7 @@ export default function DraftListModal({ open, draftPosts, onClose, onDelete }: 
 					<li key={post.id} className="flex items-stretch justify-between overflow-clip rounded-lg bg-navy-100">
 						<CustomLink
 							href={`/write?postId=${post.id}`}
+							onClick={() => recordEditorEntryContext('draft_list')}
 							className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
 						>
 							<strong className="truncate text-body-3">{post.title}</strong>

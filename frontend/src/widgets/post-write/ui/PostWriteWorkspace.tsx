@@ -1,10 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import type { ComponentType } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import { consumeEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
+import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
 import { findFirstBodyImageUrl } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
@@ -46,11 +48,20 @@ export default function PostWriteWorkspace({
 }: PostWriteWorkspaceProps) {
 	const isEditMode = postId !== undefined;
 
-	useEffect(() => {
-		analytics.postEditorOpened();
-	}, []);
-
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
+	const hasTrackedEditorOpenRef = useRef(false);
+
+	useEffect(() => {
+		if (myCologsResponse === undefined || hasTrackedEditorOpenRef.current) {
+			return;
+		}
+
+		analytics.postEditorOpened({
+			entrySource: consumeEditorEntryContext(),
+			availableBlogCount: myCologsResponse.data?.length ?? null,
+		});
+		hasTrackedEditorOpenRef.current = true;
+	}, [myCologsResponse]);
 	const { mutateAsync: uploadFileToStorage } = useUploadFileMutation();
 	const { mutateAsync: requestPostPublication } = usePublishPostMutation();
 	const { mutateAsync: requestPostUpdate } = useUpdatePostMutation();
@@ -83,15 +94,16 @@ export default function PostWriteWorkspace({
 			throw new Error('Co-log를 선택해 주세요.');
 		}
 
-		const thumbnailImageUrl =
-			settings.representativeImage !== null
-				? (
-						await uploadFileToStorage({
-							file: settings.representativeImage,
-							type: 'IMAGE',
-						})
-					).objectKey
-				: (settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL);
+		let thumbnailImageUrl =
+			settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL;
+		if (settings.representativeImage !== null) {
+			try {
+				thumbnailImageUrl = (await uploadFileToStorage({ file: settings.representativeImage, type: 'IMAGE' }))
+					.objectKey;
+			} catch (error) {
+				throw withAnalyticsFailureStage(error, 'representative_image_upload');
+			}
+		}
 
 		const request: PostWriteRequest = {
 			slug: settings.blog.slug,
@@ -102,10 +114,15 @@ export default function PostWriteWorkspace({
 			visibility: 'PUBLIC',
 			thumbnailImageUrl,
 		};
-		const response = isEditMode ? await requestPostUpdate({ postId, request }) : await requestPostPublication(request);
+		let response;
+		try {
+			response = isEditMode ? await requestPostUpdate({ postId, request }) : await requestPostPublication(request);
+		} catch (error) {
+			throw withAnalyticsFailureStage(error, 'publish_request');
+		}
 
 		if (response.data === undefined) {
-			throw new Error('발행 응답에 게시글 정보가 없습니다.');
+			throw withAnalyticsFailureStage(new Error('발행 응답에 게시글 정보가 없습니다.'), 'publish_response');
 		}
 
 		return {
@@ -133,7 +150,7 @@ export default function PostWriteWorkspace({
 			<WritePublishActionBar
 				isEditMode={isEditMode}
 				isEditorReady={postDocument.isEditorReady}
-				isPublishReady={postDocument.isEditorReady && isDirty}
+				isPublishReady={postDocument.isEditorReady && (!isEditMode || isDirty)}
 				draftCount={drafts.posts.length}
 				onPublish={publication.open}
 				onDraftSave={drafts.save}

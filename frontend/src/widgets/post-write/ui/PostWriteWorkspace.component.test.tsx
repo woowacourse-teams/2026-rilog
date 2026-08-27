@@ -22,6 +22,9 @@ type RequestPostUpdate = (variables: {
 
 const {
 	postEditorOpenedMock,
+	postPublishSettingsOpenedMock,
+	postPublishStartedMock,
+	postPublishValidationFailedMock,
 	postPublishedMock,
 	replaceMock,
 	uploadRepresentativeImageMock,
@@ -29,6 +32,9 @@ const {
 	requestPostUpdateMock,
 } = vi.hoisted(() => ({
 	postEditorOpenedMock: vi.fn(),
+	postPublishSettingsOpenedMock: vi.fn(),
+	postPublishStartedMock: vi.fn(),
+	postPublishValidationFailedMock: vi.fn(),
 	postPublishedMock: vi.fn(),
 	replaceMock: vi.fn(),
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
@@ -43,6 +49,9 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/features/analytics/model/events', () => ({
 	analytics: {
 		postEditorOpened: postEditorOpenedMock,
+		postPublishSettingsOpened: postPublishSettingsOpenedMock,
+		postPublishStarted: postPublishStartedMock,
+		postPublishValidationFailed: postPublishValidationFailedMock,
 		postPublished: postPublishedMock,
 	},
 }));
@@ -501,10 +510,9 @@ describe('PostWriteWorkspace', () => {
 
 		resolvePublish?.({ postId: 'post/40', slug: 'rilog' });
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog/posts/post%2F40'));
-		expect(postPublishedMock).toHaveBeenCalledWith({
-			category: 'IT',
-			hasCustomRepresentativeImage: false,
-		});
+		expect(postPublishedMock).toHaveBeenCalledWith(
+			expect.objectContaining({ postId: 'post/40', category: 'IT', cologId: 20, ownerType: 'COLOG' }),
+		);
 		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
 		window.dispatchEvent(beforeUnloadEvent);
 		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
