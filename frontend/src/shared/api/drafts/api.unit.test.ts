@@ -142,7 +142,7 @@ describe('deleteDraft', () => {
 });
 
 describe('publishDraft', () => {
-	it('draftId를 경로로 전달하고 발행 정보를 JSON 본문에 담아 PATCH 요청한다', async () => {
+	it('draftId를 경로로 전달하고 발행 정보를 JSON 본문에 담아 PUT 요청한다', async () => {
 		const responseBody = {
 			status: 200,
 			message: '임시저장 글을 발행했습니다.',
@@ -169,7 +169,7 @@ describe('publishDraft', () => {
 		await expect(publishDraft(7, requestBody)).resolves.toEqual(responseBody);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
-		expect(request.method).toBe('PATCH');
+		expect(request.method).toBe('PUT');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/7/publish');
 		expect(capturedBody).toEqual({ ...requestBody, slug: 'rilog-team' });
 	});

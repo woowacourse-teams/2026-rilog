@@ -35,7 +35,7 @@ export const publishDraft = (draftId: number, request: DraftPublishRequest) => {
 		...draft,
 	};
 
-	return apiClient.patch<ApiResponse<DraftPublishResponse>>(`v1/drafts/${draftId}/publish`, {
+	return apiClient.put<ApiResponse<DraftPublishResponse>>(`v1/drafts/${draftId}/publish`, {
 		json: body,
 	});
 };
