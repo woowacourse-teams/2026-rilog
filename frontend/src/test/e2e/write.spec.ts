@@ -155,7 +155,9 @@ test.describe('글 작성', () => {
 
 		const diagram = page.getByRole('img', { name: 'Mermaid 다이어그램 미리보기' });
 		await expect(diagram).toBeVisible({ timeout: 15_000 });
+		await expect(diagram).toHaveCSS('border-top-width', '0px');
 		await expect(diagram.locator('svg')).toBeVisible();
+		await expect(diagram.locator('.nodeLabel').first()).toHaveCSS('font-size', '14px');
 		await expect(diagram).toContainText('Start');
 		await expect(diagram).toContainText('End');
 	});

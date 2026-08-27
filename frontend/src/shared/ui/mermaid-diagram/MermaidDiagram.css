@@ -4,7 +4,6 @@
 	width: 100%;
 	min-width: 0;
 	overflow-x: auto;
-	border: 1px solid var(--border-default);
 	border-radius: var(--mermaid-diagram-radius);
 	background: var(--white);
 	color: var(--text-primary);
@@ -24,7 +23,6 @@
 }
 
 .mermaid-diagram[data-state='error'] {
-	border-color: var(--danger-border);
 	background: var(--danger-soft);
 	color: var(--danger-text);
 }

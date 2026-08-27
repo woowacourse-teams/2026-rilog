@@ -8,6 +8,9 @@ const getMermaid = () => {
 			securityLevel: 'strict',
 			startOnLoad: false,
 			theme: 'neutral',
+			themeVariables: {
+				fontSize: '14px',
+			},
 		});
 
 		return mermaid;
