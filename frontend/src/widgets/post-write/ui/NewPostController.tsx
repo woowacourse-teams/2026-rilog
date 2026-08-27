@@ -3,6 +3,7 @@
 import { useState, type ComponentType } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
+import { useCreatePostDraft } from '@/features/post-write/hooks/use-create-post-draft';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
 import type { CreatePostDraft, PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
@@ -37,6 +38,7 @@ export default function NewPostController({
 	onDraftPromoted,
 }: NewPostControllerProps) {
 	const publishNewPost = usePublishNewPost();
+	const createNewDraft = useCreatePostDraft();
 	const [draftId, setDraftId] = useState<number | null>(null);
 
 	const publishCurrentPost: PublishPost =
@@ -75,7 +77,13 @@ export default function NewPostController({
 					return <SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft} />;
 				}
 
-				return <NewPostActions editor={editor} createDraft={createDraft} onDraftCreated={handleDraftCreated} />;
+				return (
+					<NewPostActions
+						editor={editor}
+						createDraft={createDraft ?? createNewDraft}
+						onDraftCreated={handleDraftCreated}
+					/>
+				);
 			}}
 		</PostWriteWorkspace>
 	);

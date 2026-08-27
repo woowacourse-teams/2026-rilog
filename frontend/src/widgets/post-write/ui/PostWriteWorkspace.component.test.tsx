@@ -7,6 +7,7 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
+import type { DraftSaveRequest, DraftSaveResponse } from '@/shared/api/drafts/types';
 import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
@@ -16,6 +17,7 @@ import NewPostController from './NewPostController';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PostWriteRequest) => Promise<ApiResponse<PostWriteResponse>>;
+type RequestDraftSave = (request: DraftSaveRequest) => Promise<ApiResponse<DraftSaveResponse>>;
 type RequestPostUpdate = (variables: {
 	postId: number;
 	request: PostWriteRequest;
@@ -27,6 +29,7 @@ const {
 	replaceMock,
 	uploadRepresentativeImageMock,
 	requestPostPublicationMock,
+	requestDraftSaveMock,
 	requestPostUpdateMock,
 	editorUnmountedMock,
 } = vi.hoisted(() => ({
@@ -35,6 +38,7 @@ const {
 	replaceMock: vi.fn(),
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
+	requestDraftSaveMock: vi.fn<RequestDraftSave>(),
 	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
 	editorUnmountedMock: vi.fn(),
 }));
@@ -78,6 +82,10 @@ vi.mock('@/shared/api/posts/mutations/use-publish-post-mutation', () => ({
 	usePublishPostMutation: () => ({ mutateAsync: requestPostPublicationMock }),
 }));
 
+vi.mock('@/shared/api/drafts/mutations/use-save-draft-mutation', () => ({
+	useSaveDraftMutation: () => ({ mutateAsync: requestDraftSaveMock }),
+}));
+
 vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
 	useUpdatePostMutation: () => ({ mutateAsync: requestPostUpdateMock }),
 }));
@@ -88,6 +96,7 @@ beforeEach(() => {
 	postPublishedMock.mockReset();
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
+	requestDraftSaveMock.mockReset();
 	requestPostUpdateMock.mockReset();
 	editorUnmountedMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
@@ -95,6 +104,11 @@ beforeEach(() => {
 		status: 201,
 		message: '게시글 발행에 성공했습니다.',
 		data: { postId: 77, slug: 'rilog-team' },
+	});
+	requestDraftSaveMock.mockResolvedValue({
+		status: 201,
+		message: '최초 임시저장에 성공했습니다.',
+		data: { draftId: 123 },
 	});
 	requestPostUpdateMock.mockResolvedValue({
 		status: 200,
@@ -225,6 +239,22 @@ const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe('NewPostController', () => {
+	it('최초 임시저장 API에 현재 제목과 본문만 전달하고 반환된 draftId로 URL을 전환한다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/write');
+		render(<NewPostController editorComponent={FakeEditor} />);
+
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		await waitFor(() => expect(requestDraftSaveMock).toHaveBeenCalledOnce());
+		expect(requestDraftSaveMock).toHaveBeenCalledWith({
+			title: 'BlockNote 도입기',
+			content: [createParagraph('오늘 배운 내용을 기록합니다.')],
+		});
+		expect(`${window.location.pathname}${window.location.search}`).toBe('/write?draftId=123');
+	});
+
 	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
 		const initialBlocks = [createParagraph('기존 본문')];
 		render(
