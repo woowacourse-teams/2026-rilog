@@ -15,12 +15,12 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
 
-    private final S3ObjectTagger objectTaggerV2;
+    private final S3ObjectTagger objectTagger;
     private final S3ObjectKeyResolver objectKeyResolver;
 
     @Override
     public void attach(TagAssets assets) {
-        objectTaggerV2.tag(toTargets(assets, TagStatus.CONFIRMED));
+        objectTagger.tag(toTargets(assets, TagStatus.CONFIRMED));
     }
 
     @Override
@@ -42,12 +42,12 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
                 TagStatus.TEMPORARY
         ));
 
-        objectTaggerV2.tag(targets);
+        objectTagger.tag(targets);
     }
 
     @Override
     public void detach(TagAssets assets) {
-        objectTaggerV2.tag(toTargets(assets, TagStatus.TEMPORARY));
+        objectTagger.tag(toTargets(assets, TagStatus.TEMPORARY));
     }
 
     private List<S3TagTarget> toTargets(
