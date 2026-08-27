@@ -362,6 +362,26 @@ describe('NewPostController', () => {
 		});
 	});
 
+	it('현재 작성 중인 임시저장 글은 목록에서 선택 상태로 표시하고 다시 선택할 수 없게 한다', async () => {
+		const user = userEvent.setup();
+		render(
+			<DraftPostController
+				draftId={34}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '디자인 시스템 도입 회고', blocks: [createParagraph('본문')] }}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '임시 저장된 글 4개 보기' }));
+
+		const draftListDialog = screen.getByRole('dialog', { name: '임시 저장된 글' });
+		expect(within(draftListDialog).getByText('현재 작성 중')).toBeInTheDocument();
+		expect(within(draftListDialog).queryByRole('link', { name: /디자인 시스템 도입 회고/ })).not.toBeInTheDocument();
+		expect(
+			within(draftListDialog).queryByRole('button', { name: '디자인 시스템 도입 회고 임시 저장 글 삭제' }),
+		).not.toBeInTheDocument();
+	});
+
 	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
 		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
 		const user = userEvent.setup();

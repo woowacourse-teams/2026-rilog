@@ -14,6 +14,7 @@ interface SavedDraftPostActionsProps {
 export default function SavedDraftPostActions({ draftId, editor, updateDraft }: SavedDraftPostActionsProps) {
 	return (
 		<DraftPostActions
+			selectedDraftId={draftId}
 			isEditorReady={editor.isEditorReady}
 			isPublishReady={editor.isEditorReady}
 			prepareDocument={editor.prepareDocument}

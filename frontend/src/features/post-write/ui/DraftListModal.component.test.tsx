@@ -60,4 +60,25 @@ describe('DraftListModal', () => {
 
 		expect(screen.getByRole('link', { name: /작성 중인 글/ })).toHaveAttribute('href', '/write?draftId=42');
 	});
+
+	it('현재 선택된 임시저장 글을 표시하고 링크로 제공하지 않는다', () => {
+		render(
+			<DraftListModal
+				{...defaultProps}
+				selectedDraftId={42}
+				draftPosts={[
+					{ id: 42, title: '현재 작성 중인 글', savedAt: '2026-08-27T10:29:46.466Z' },
+					{ id: 43, title: '다른 임시저장 글', savedAt: '2026-08-26T10:29:46.466Z' },
+				]}
+			/>,
+		);
+
+		const currentBadge = screen.getByText('현재 작성 중');
+		expect(currentBadge.previousElementSibling).toHaveTextContent('현재 작성 중인 글');
+		expect(screen.getByText('현재 작성 중인 글').closest('[aria-current="page"]')).toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: /현재 작성 중인 글/ })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '현재 작성 중인 글 임시 저장 글 삭제' })).not.toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /다른 임시저장 글/ })).toHaveAttribute('href', '/write?draftId=43');
+		expect(screen.getByRole('button', { name: '다른 임시저장 글 임시 저장 글 삭제' })).toBeEnabled();
+	});
 });

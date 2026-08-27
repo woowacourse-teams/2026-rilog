@@ -9,6 +9,7 @@ import Modal from '@/shared/ui/modal/Modal';
 interface DraftListModalProps {
 	open: boolean;
 	draftPosts: DraftPostItem[];
+	selectedDraftId?: number;
 	isPending?: boolean;
 	isError?: boolean;
 	hasNextPage?: boolean;
@@ -23,6 +24,7 @@ interface DraftListModalProps {
 export default function DraftListModal({
 	open,
 	draftPosts,
+	selectedDraftId,
 	isPending = false,
 	isError = false,
 	hasNextPage = false,
@@ -64,26 +66,56 @@ export default function DraftListModal({
 			{draftPosts.length > 0 && (
 				<>
 					<ul className="flex flex-col gap-4">
-						{draftPosts.map((post) => (
-							<li key={post.id} className="flex items-stretch justify-between overflow-clip rounded-lg bg-navy-100">
-								<CustomLink
-									replace
-									href={buildDraftWritePath(post.id)}
-									className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
-								>
-									<strong className="truncate text-body-3">{post.title}</strong>
+						{draftPosts.map((post) => {
+							const isSelected = post.id === selectedDraftId;
+							const content = (
+								<>
+									<span className="flex min-w-0 items-center gap-2">
+										<strong className="min-w-0 truncate text-body-3">{post.title}</strong>
+										{isSelected && (
+											<span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-caption-1 font-semibold text-brand-primary">
+												현재 작성 중
+											</span>
+										)}
+									</span>
 									<span className="text-caption-2 text-text-secondary">{formatPublishedDate(post.savedAt)}</span>
-								</CustomLink>
-								<button
-									type="button"
-									aria-label={`${post.title} 임시 저장 글 삭제`}
-									onClick={() => onDelete(post.id)}
-									className={`shrink-0 px-7 ${DRAFT_BUTTON_CLASS_NAME}`}
+								</>
+							);
+
+							return (
+								<li
+									key={post.id}
+									className={`flex items-stretch justify-between overflow-clip rounded-lg ${isSelected ? 'bg-navy-200' : 'bg-navy-100'}`}
 								>
-									<XIcon className="size-5 text-text-secondary" />
-								</button>
-							</li>
-						))}
+									{isSelected ? (
+										<div
+											aria-current="page"
+											className="flex min-w-0 flex-1 cursor-not-allowed flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left"
+										>
+											{content}
+										</div>
+									) : (
+										<CustomLink
+											replace
+											href={buildDraftWritePath(post.id)}
+											className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
+										>
+											{content}
+										</CustomLink>
+									)}
+									{!isSelected && (
+										<button
+											type="button"
+											aria-label={`${post.title} 임시 저장 글 삭제`}
+											onClick={() => onDelete(post.id)}
+											className={`shrink-0 px-7 ${DRAFT_BUTTON_CLASS_NAME}`}
+										>
+											<XIcon className="size-5 text-text-secondary" />
+										</button>
+									)}
+								</li>
+							);
+						})}
 					</ul>
 
 					{(hasNextPage || isFetchNextPageError) && (

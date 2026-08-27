@@ -9,6 +9,7 @@ import WritePublishActionBar from '@/features/post-write/ui/WritePublishActionBa
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface DraftPostActionsProps {
+	selectedDraftId?: number;
 	isEditorReady: boolean;
 	isPublishReady: boolean;
 	prepareDocument: () => EditorDocument | null;
@@ -17,6 +18,7 @@ interface DraftPostActionsProps {
 }
 
 export default function DraftPostActions({
+	selectedDraftId,
 	isEditorReady,
 	isPublishReady,
 	prepareDocument,
@@ -45,6 +47,7 @@ export default function DraftPostActions({
 			<DraftListModal
 				open={drafts.isListModalOpen}
 				draftPosts={drafts.posts}
+				selectedDraftId={selectedDraftId}
 				isPending={draftList.isPending}
 				isError={draftList.isError}
 				hasNextPage={draftList.hasNextPage}
