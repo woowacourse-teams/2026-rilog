@@ -2,6 +2,9 @@
 
 .post-detail-body {
 	--post-body-line-height: 1.65;
+	--post-heading-1-line-height: 1.35;
+	--post-heading-2-line-height: 1.5;
+	--post-heading-3-line-height: 1.5;
 	--post-paragraph-space: 1rem;
 	--post-list-item-space: 0.6em;
 	--post-list-item-shared-space: 0.2em;
@@ -61,6 +64,10 @@
 	padding-bottom: 0.65em;
 }
 
+.post-detail-body .bn-block-content[data-content-type='heading'][data-level='1'] .bn-inline-content {
+	line-height: var(--post-heading-1-line-height);
+}
+
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='2'] {
 	padding-top: 1.65em;
 	padding-bottom: 0.6em;
@@ -68,7 +75,7 @@
 }
 
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='2'] .bn-inline-content {
-	line-height: var(--text-title-2--line-height);
+	line-height: var(--post-heading-2-line-height);
 }
 
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='3'] {
@@ -78,7 +85,7 @@
 }
 
 .post-detail-body .bn-block-content[data-content-type='heading'][data-level='3'] .bn-inline-content {
-	line-height: var(--text-title-1--line-height);
+	line-height: var(--post-heading-3-line-height);
 }
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock'] {
@@ -91,6 +98,40 @@
 	> .bn-block
 	> .bn-block-content[data-content-type='heading'] {
 	padding-top: 0;
+}
+
+.post-detail-body
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading']):has(
+		+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='heading']
+	)
+	> .bn-block
+	> .bn-block-content[data-content-type='heading'] {
+	padding-bottom: 0.3em;
+}
+
+.post-detail-body
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'])
+	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'])
+	> .bn-block
+	> .bn-block-content[data-content-type='heading'] {
+	padding-top: 0.75em;
+}
+
+.post-detail-body
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading']):has(
+		+ .bn-block-outer > .bn-block > .bn-block-content[data-content-type='divider']
+	)
+	> .bn-block
+	> .bn-block-content[data-content-type='heading'] {
+	padding-bottom: 0.35em;
+}
+
+.post-detail-body
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='divider'])
+	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'])
+	> .bn-block
+	> .bn-block-content[data-content-type='heading'] {
+	padding-top: 1em;
 }
 
 @media (max-width: 40rem) {

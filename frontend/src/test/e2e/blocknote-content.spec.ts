@@ -14,16 +14,21 @@ const POST_WRITE_STYLES = new URL('../../features/post-write/styles/blocknote-th
 interface BlockFixture {
 	contentType: string;
 	attributes?: string;
+	content?: string;
 }
 
 const block = (fixture: string | BlockFixture) => {
-	const { contentType, attributes = '' } = typeof fixture === 'string' ? { contentType: fixture } : fixture;
+	const {
+		contentType,
+		attributes = '',
+		content = '가독성 점검 본문',
+	} = typeof fixture === 'string' ? { contentType: fixture } : fixture;
 
 	return `
 	<div class="bn-block-outer">
 		<div class="bn-block">
 			<div class="bn-block-content" data-content-type="${contentType}" ${attributes}>
-				<div class="bn-inline-content">가독성 점검 본문</div>
+				<div class="bn-inline-content">${content}</div>
 			</div>
 		</div>
 	</div>
@@ -94,6 +99,7 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		await renderBlockNoteFixture(page, 'post-detail-body', [
 			'paragraph',
 			{ contentType: 'heading', attributes: 'data-level="2"' },
+			'paragraph',
 			{ contentType: 'heading', attributes: 'data-level="3"' },
 		]);
 
@@ -106,6 +112,47 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		await expect(level3Heading).toHaveCSS('font-size', '20px');
 		await expect(level3Heading).toHaveCSS('padding-top', '29px');
 		await expect(level3Heading).toHaveCSS('padding-bottom', '10px');
+	});
+
+	test('두 줄 이상인 상세 본문 제목에 충분한 행간을 적용한다', async ({ page }) => {
+		const longHeading = '화면 폭이 좁아 제목이 여러 줄로 표시되는 경우에도 자연스럽게 읽을 수 있습니다';
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading', attributes: 'data-level="2"', content: longHeading },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="3"', content: longHeading },
+		]);
+		await page.locator('.post-detail-body').evaluate((element) => {
+			(element as HTMLElement).style.width = '12rem';
+		});
+
+		const level2Content = page.locator(
+			'.bn-block-content[data-content-type="heading"][data-level="2"] .bn-inline-content',
+		);
+		const level3Content = page.locator(
+			'.bn-block-content[data-content-type="heading"][data-level="3"] .bn-inline-content',
+		);
+
+		await expect(level2Content).toHaveCSS('line-height', '36px');
+		await expect(level3Content).toHaveCSS('line-height', '30px');
+		expect(await level2Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(36);
+		expect(await level3Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(30);
+	});
+
+	test('연속 헤딩과 구분선 주변의 간격을 중복하지 않는다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+			'divider',
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+		]);
+
+		const headings = page.locator('.bn-block-content[data-content-type="heading"]');
+		await expect(headings.nth(0)).toHaveCSS('padding-top', '0px');
+		await expect(headings.nth(0)).toHaveCSS('padding-bottom', '7.2px');
+		await expect(headings.nth(1)).toHaveCSS('padding-top', '15px');
+		await expect(headings.nth(1)).toHaveCSS('padding-bottom', '7px');
+		await expect(headings.nth(2)).toHaveCSS('padding-top', '24px');
+		await expect(headings.nth(2)).toHaveCSS('padding-bottom', '14.4px');
 	});
 
 	for (const { rootClass, outer, shared } of ROOT_SPACING) {
