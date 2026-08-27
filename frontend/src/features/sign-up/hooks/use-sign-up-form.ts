@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { CompleteSignUp, SignUpValidationErrors } from '../model/sign-up';
 import type { ChangeEvent, SubmitEvent } from 'react';
@@ -17,6 +17,7 @@ import {
 } from '../lib/validate-sign-up';
 
 type RequiredTextField = 'nickname' | 'slug';
+type SocialLinkField = 'serviceUrl' | 'githubUrl';
 
 const getFormDataText = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
 
@@ -34,9 +35,13 @@ interface UseSignUpFormOptions {
 export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }: UseSignUpFormOptions = {}) {
 	const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 	const [description, setDescription] = useState('');
+	const [serviceUrl, setServiceUrl] = useState('');
+	const [githubUrl, setGithubUrl] = useState('');
 	const [signUpState, setSignUpState] = useState<SignUpState>({ status: 'idle' });
 	const [validationErrors, setValidationErrors] = useState<SignUpValidationErrors>({});
 	const [isTermsAgreed, setIsTermsAgreed] = useState(false);
+	const serviceUrlRef = useRef<HTMLInputElement>(null);
+	const githubUrlRef = useRef<HTMLInputElement>(null);
 
 	const isSigningUp = signUpState.status === 'pending';
 
@@ -51,6 +56,16 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 
 	const handleDescriptionChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
 		setDescription(event.currentTarget.value);
+		clearSignUpError();
+	};
+
+	const handleSocialLinkChange = (field: SocialLinkField, value: string) => {
+		if (field === 'serviceUrl') {
+			setServiceUrl(value);
+		} else {
+			setGithubUrl(value);
+		}
+		setValidationErrors((current) => ({ ...current, [field]: undefined }));
 		clearSignUpError();
 	};
 
@@ -82,11 +97,14 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 		}
 
 		const formData = new FormData(event.currentTarget);
-		const { nickname, slug } = normalizeSignUpFields({
+		const normalizedValue = normalizeSignUpFields({
 			nickname: getFormDataText(formData.get('nickname')),
 			slug: getFormDataText(formData.get('slug')),
+			serviceUrl,
+			githubUrl,
 		});
-		const nextValidationErrors = validateSignUpFields({ nickname, slug });
+		const nextValidationErrors = validateSignUpFields(normalizedValue);
+		const { nickname, slug } = normalizedValue;
 		const nicknameInput = event.currentTarget.elements.namedItem('nickname');
 		const slugInput = event.currentTarget.elements.namedItem('slug');
 
@@ -106,6 +124,16 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 			return;
 		}
 
+		if (nextValidationErrors.serviceUrl !== undefined) {
+			serviceUrlRef.current?.focus();
+			return;
+		}
+
+		if (nextValidationErrors.githubUrl !== undefined) {
+			githubUrlRef.current?.focus();
+			return;
+		}
+
 		if (!event.currentTarget.checkValidity()) {
 			event.currentTarget.reportValidity();
 			return;
@@ -114,7 +142,14 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 		setSignUpState({ status: 'pending' });
 
 		try {
-			await completeSignUp({ nickname, slug, description: description.trim(), profileImageFile });
+			await completeSignUp({
+				nickname,
+				slug,
+				description: description.trim(),
+				serviceUrl: normalizedValue.serviceUrl,
+				githubUrl: normalizedValue.githubUrl,
+				profileImageFile,
+			});
 			analytics.signUpCompleted({
 				hasProfileImage: profileImageFile !== null,
 				hasIntroduction: description.trim() !== '',
@@ -141,6 +176,10 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 	return {
 		profileImageFile,
 		description,
+		serviceUrl,
+		githubUrl,
+		serviceUrlRef,
+		githubUrlRef,
 		signUpState,
 		validationErrors,
 		isTermsAgreed,
@@ -148,6 +187,7 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 		clearSignUpError,
 		handleImageChange,
 		handleDescriptionChange,
+		handleSocialLinkChange,
 		handleTermsAgreementChange,
 		handleRequiredTextChange,
 		validateRequiredTextField,

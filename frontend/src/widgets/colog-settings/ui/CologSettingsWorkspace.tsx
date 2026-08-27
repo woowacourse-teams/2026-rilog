@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 
-import type { SettingsTab } from '../lib/get-next-tab';
 import type { FormEvent } from 'react';
 
 import type { CologMember } from '@/domains/blog/model/colog';
@@ -19,29 +18,29 @@ import CologProfileSection from '@/features/colog-profile-management/ui/CologPro
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
-import { buildCologSettingsPath } from '@/shared/routes/app-routes';
+import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
+import { buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
+import SettingsHeader from '@/shared/ui/settings/SettingsHeader';
 
-import { useSettingsLeaveGuard } from '../hooks/use-settings-leave-guard';
-
-import CologSettingsHeader from './CologSettingsHeader';
+import { COLOG_SETTINGS_TABS } from '../lib/colog-settings-tabs';
 
 interface CologSettingsWorkspaceProps {
-	slug?: string;
-	initialTab?: SettingsTab;
+	slug: string;
+	initialTab?: CologSettingsTab;
 	initialMembers?: CologMember[];
 }
 
 interface CologSettingsWorkspaceContentProps {
 	slug: string;
-	initialTab: SettingsTab;
+	initialTab: CologSettingsTab;
 	initialMembers?: CologMember[];
 	initialProfile: CologProfileSettingsValue;
 }
 
-const TAB_HEADER_CONFIG: Record<SettingsTab, { title: string; description: string }> = {
+const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: string }> = {
 	profile: {
 		title: '프로필',
 		description: '팀의 기본 정보와 소개를 관리합니다.',
@@ -79,7 +78,7 @@ const getChangedProfileFields = (
 };
 
 export default function CologSettingsWorkspace({
-	slug = 'rilog',
+	slug,
 	initialTab = 'profile',
 	initialMembers,
 }: CologSettingsWorkspaceProps) {
@@ -128,7 +127,7 @@ function CologSettingsWorkspaceContent({
 	initialMembers,
 	initialProfile,
 }: CologSettingsWorkspaceContentProps) {
-	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
@@ -142,20 +141,21 @@ function CologSettingsWorkspaceContent({
 		activeTab === 'profile' ? isProfileDirty : activeTab === 'members' ? memberDrafts.isDirty : false;
 
 	const commitTabChange = useCallback(
-		(nextTab: SettingsTab) => {
+		(nextTab: CologSettingsTab, path: string) => {
 			profileForm.setValue(savedProfile);
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
 			setActiveTab(nextTab);
-			window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, nextTab));
+			window.history.replaceState(window.history.state, '', path);
 		},
-		[memberDrafts, nameAvailability, profileForm, savedProfile, slug],
+		[memberDrafts, nameAvailability, profileForm, savedProfile],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
 		activeTab,
 		isDirty: isWorkspaceDirty,
+		buildPath: (nextTab) => buildCologSettingsPath(slug, nextTab),
 		onTabChange: commitTabChange,
 	});
 
@@ -292,8 +292,11 @@ function CologSettingsWorkspaceContent({
 		<PageShell
 			isHeaderSticky
 			header={
-				<CologSettingsHeader
+				<SettingsHeader
 					activeTab={activeTab}
+					tabs={COLOG_SETTINGS_TABS}
+					tabListLabel="팀 설정"
+					idPrefix="colog-settings"
 					title={TAB_HEADER_CONFIG[activeTab].title}
 					description={TAB_HEADER_CONFIG[activeTab].description}
 					onTabChangeRequest={onTabChangeRequest}
@@ -301,7 +304,7 @@ function CologSettingsWorkspaceContent({
 				/>
 			}
 		>
-			<div id={`settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`settings-tab-${activeTab}`}>
+			<div id={`colog-settings-panel-${activeTab}`} role="tabpanel" aria-labelledby={`colog-settings-tab-${activeTab}`}>
 				{activeTab === 'profile' && (
 					<>
 						<CologProfileSection

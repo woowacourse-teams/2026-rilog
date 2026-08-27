@@ -4,9 +4,11 @@ import {
 	APP_ROUTES,
 	buildBlogHomePath,
 	buildCologSettingsPath,
+	buildRilogSettingsPath,
 	buildPostDetailPath,
 	hasBlogSlugPrefix,
 	parseCologSettingsTab,
+	parseRilogSettingsTab,
 } from './app-routes';
 
 describe('app routes', () => {
@@ -40,6 +42,13 @@ describe('app routes', () => {
 	it('지원하지 않는 설정 탭은 프로필 탭으로 해석한다', () => {
 		expect(parseCologSettingsTab('mebers')).toBe('profile');
 		expect(parseCologSettingsTab(undefined)).toBe('profile');
+	});
+
+	it('개인 설정 탭 경로를 만들고 지원하지 않는 값은 프로필로 해석한다', () => {
+		expect(buildRilogSettingsPath('rilog', 'profile')).toBe('/@rilog/settings?tab=profile');
+		expect(buildRilogSettingsPath('rilog', 'danger')).toBe('/@rilog/settings?tab=danger');
+		expect(parseRilogSettingsTab('members')).toBe('profile');
+		expect(parseRilogSettingsTab(['danger', 'profile'])).toBe('danger');
 	});
 
 	it('코로그 slug와 게시글 ID로 상세 경로를 만든다', () => {

@@ -1,31 +1,31 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
-import type { SettingsTab } from '../lib/get-next-tab';
+import { useUnsavedChangesGuard } from './use-unsaved-changes-guard';
 
-import { useUnsavedChangesGuard } from '@/shared/hooks/use-unsaved-changes-guard';
-
-interface UseSettingsLeaveGuardOptions {
-	activeTab: SettingsTab;
+interface UseSettingsLeaveGuardOptions<T extends string> {
+	activeTab: T;
 	isDirty: boolean;
-	onTabChange: (nextTab: SettingsTab) => void;
+	buildPath: (nextTab: T) => string;
+	onTabChange: (nextTab: T, path: string) => void;
 }
 
-interface UseSettingsLeaveGuardResult {
+interface UseSettingsLeaveGuardResult<T extends string> {
 	isLeaveModalOpen: boolean;
-	onTabChangeRequest: (nextTab: SettingsTab) => void;
+	onTabChangeRequest: (nextTab: T) => void;
 	onLeaveCancel: () => void;
 	onLeaveConfirm: () => void;
 }
 
-export const useSettingsLeaveGuard = ({
+export const useSettingsLeaveGuard = <T extends string>({
 	activeTab,
 	isDirty,
+	buildPath,
 	onTabChange,
-}: UseSettingsLeaveGuardOptions): UseSettingsLeaveGuardResult => {
+}: UseSettingsLeaveGuardOptions<T>): UseSettingsLeaveGuardResult<T> => {
 	const router = useRouter();
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
-	const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
+	const [pendingTab, setPendingTab] = useState<T | null>(null);
 
 	const handleNavigationAttempt = useCallback(() => {
 		setPendingTab(null);
@@ -45,8 +45,15 @@ export const useSettingsLeaveGuard = ({
 		onReplace: replaceNavigation,
 	});
 
+	const commitTabChange = useCallback(
+		(nextTab: T) => {
+			onTabChange(nextTab, buildPath(nextTab));
+		},
+		[buildPath, onTabChange],
+	);
+
 	const handleTabChangeRequest = useCallback(
-		(nextTab: SettingsTab) => {
+		(nextTab: T) => {
 			if (nextTab === activeTab) {
 				return;
 			}
@@ -57,9 +64,9 @@ export const useSettingsLeaveGuard = ({
 				return;
 			}
 
-			onTabChange(nextTab);
+			commitTabChange(nextTab);
 		},
-		[activeTab, isDirty, onTabChange],
+		[activeTab, commitTabChange, isDirty],
 	);
 
 	const handleLeaveCancel = useCallback(() => {
@@ -76,12 +83,12 @@ export const useSettingsLeaveGuard = ({
 
 		if (nextTab !== null) {
 			clearGuardEntry();
-			onTabChange(nextTab);
+			commitTabChange(nextTab);
 			return;
 		}
 
 		void continuePendingNavigation();
-	}, [clearGuardEntry, continuePendingNavigation, onTabChange, pendingTab]);
+	}, [clearGuardEntry, commitTabChange, continuePendingNavigation, pendingTab]);
 
 	return {
 		isLeaveModalOpen,

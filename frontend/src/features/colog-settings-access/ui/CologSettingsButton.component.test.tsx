@@ -1,25 +1,25 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CologSettingsAccessStatus } from '../hooks/use-colog-settings-access';
+import type { SettingsAccessStatus } from '@/features/settings-access/hooks/use-settings-access';
 
 import CologSettingsButton from './CologSettingsButton';
 
-const { useCologSettingsAccessMock } = vi.hoisted(() => ({
-	useCologSettingsAccessMock: vi.fn<() => CologSettingsAccessStatus>(),
+const { useSettingsAccessMock } = vi.hoisted(() => ({
+	useSettingsAccessMock: vi.fn<() => SettingsAccessStatus>(),
 }));
 
-vi.mock('../hooks/use-colog-settings-access', () => ({
-	useCologSettingsAccess: useCologSettingsAccessMock,
+vi.mock('@/features/settings-access/hooks/use-settings-access', () => ({
+	useSettingsAccess: useSettingsAccessMock,
 }));
 
 describe('CologSettingsButton', () => {
 	beforeEach(() => {
-		useCologSettingsAccessMock.mockReset();
+		useSettingsAccessMock.mockReset();
 	});
 
 	it('설정 접근 권한이 있으면 기본 설정 탭 링크를 제공한다', () => {
-		useCologSettingsAccessMock.mockReturnValue('authorized');
+		useSettingsAccessMock.mockReturnValue('authorized');
 
 		render(<CologSettingsButton slug="rilog" />);
 
@@ -30,7 +30,7 @@ describe('CologSettingsButton', () => {
 	});
 
 	it('커버 이미지 위에서는 밝은 아이콘 색상을 사용한다', () => {
-		useCologSettingsAccessMock.mockReturnValue('authorized');
+		useSettingsAccessMock.mockReturnValue('authorized');
 
 		render(<CologSettingsButton slug="rilog" isOnCover />);
 
@@ -40,7 +40,7 @@ describe('CologSettingsButton', () => {
 	it.each(['initializing', 'checking', 'unauthenticated', 'forbidden', 'error'] as const)(
 		'%s 상태에서는 설정 버튼을 렌더링하지 않는다',
 		(status) => {
-			useCologSettingsAccessMock.mockReturnValue(status);
+			useSettingsAccessMock.mockReturnValue(status);
 
 			render(<CologSettingsButton slug="rilog" />);
 

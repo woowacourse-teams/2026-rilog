@@ -5,6 +5,8 @@ import type { User } from '@/domains/user/model/user';
 
 export type BlogType = 'RILOG' | 'COLOG';
 
+export const BLOG_PROFILE_URL_MAX_LENGTH = 512;
+
 export interface BaseBlog {
 	id: number;
 	slug: string;

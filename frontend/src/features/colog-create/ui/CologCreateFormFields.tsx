@@ -8,7 +8,9 @@ import {
 	COLOG_DESCRIPTION_MAX_LENGTH,
 	COLOG_NAME_MAX_LENGTH,
 	COLOG_NAME_MIN_LENGTH,
+	COLOG_SLUG_MAX_LENGTH,
 	COLOG_SLUG_MIN_LENGTH,
+	COLOG_SLUG_PATTERN,
 } from '@/domains/blog/model/colog';
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { useImagePreviewUrl } from '@/shared/hooks/use-image-preview-url';
@@ -256,8 +258,8 @@ export default function CologCreateFormFields({
 							disabled={disabled || slugAvailabilityStatus === 'pending'}
 							required
 							minLength={COLOG_SLUG_MIN_LENGTH}
-							maxLength={COLOG_NAME_MAX_LENGTH}
-							pattern="[a-z0-9-]+"
+							maxLength={COLOG_SLUG_MAX_LENGTH}
+							pattern={COLOG_SLUG_PATTERN.source}
 							placeholder="예: rilog-fe"
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { CologCreateValue } from '../model/colog-create';
 
+import { COLOG_SLUG_PATTERN } from '@/domains/blog/model/colog';
+
 import {
 	normalizeCologCreateValue,
 	normalizeCologSlug,
@@ -85,6 +87,10 @@ describe('normalizeCologCreateValue', () => {
 });
 
 describe('validateCologSlug', () => {
+	it('팀 slug pattern은 최신 브라우저의 v 플래그 정규식으로 사용할 수 있다', () => {
+		expect(() => new RegExp(COLOG_SLUG_PATTERN.source, 'v')).not.toThrow();
+	});
+
 	it('앞뒤 공백과 대문자를 정규화하고 허용되지 않은 문자를 거부한다', () => {
 		expect(normalizeCologSlug('  Rilog-Team  ')).toBe('rilog-team');
 		expect(validateCologSlug('  Rilog-Team  ')).toBeUndefined();
