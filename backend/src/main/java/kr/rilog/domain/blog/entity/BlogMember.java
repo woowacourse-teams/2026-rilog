@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Objects;
 
 import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.*;
@@ -120,6 +122,14 @@ public class BlogMember extends BaseEntity {
         }
     }
 
+    void validateCanDeleteColog(Blog colog) {
+        validateCanDeleteColog();
+
+        if (!isMemberOf(colog)) {
+            throw new BlogException(COLOG_DELETE_FORBIDDEN);
+        }
+    }
+
     public boolean hasDeletePermission() {
         return status == ACTIVE
                 && getDeletedAt() == null
@@ -147,7 +157,7 @@ public class BlogMember extends BaseEntity {
         markAsLeft();
     }
 
-    public void leaveByCologDeletion() {
+    void leaveByCologDeletion() {
         validateActiveMember();
         markAsLeft();
     }
@@ -159,6 +169,19 @@ public class BlogMember extends BaseEntity {
 
     private boolean isCologMember() {
         return blog != null && blog.isColog();
+    }
+
+    private boolean isMemberOf(Blog targetBlog) {
+        if (blog == null || targetBlog == null) {
+            return false;
+        }
+
+        if (blog == targetBlog) {
+            return true;
+        }
+
+        return blog.getId() != null
+                && Objects.equals(blog.getId(), targetBlog.getId());
     }
 
     private boolean hasInvitePermission() {

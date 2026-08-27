@@ -340,20 +340,6 @@ class BlogMemberTest {
     }
 
     @Test
-    @DisplayName("팀 블로그 삭제로 인한 탈퇴는 OWNER도 LEFT 처리할 수 있다.")
-    void leaveByCologDeletionAllowsOwner() {
-        // given
-        BlogMember owner = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
-
-        // when
-        owner.leaveByCologDeletion();
-
-        // then
-        assertThat(owner.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
-        assertThat(owner.getDeletedAt()).isNotNull();
-    }
-
-    @Test
     @DisplayName("OWNER는 ADMIN을 내보낼 수 있다.")
     void removeAdminByOwner() {
         // given

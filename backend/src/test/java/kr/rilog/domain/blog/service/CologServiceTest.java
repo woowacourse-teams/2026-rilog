@@ -14,10 +14,6 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
-import kr.rilog.domain.post.entity.Post;
-import kr.rilog.domain.post.entity.enums.Category;
-import kr.rilog.domain.post.entity.enums.PostStatus;
-import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -38,8 +34,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
-
-import tools.jackson.databind.node.JsonNodeFactory;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -618,7 +612,6 @@ class CologServiceTest {
         Blog colog = createColog(owner);
         BlogMember ownerMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
         BlogMember invitedMember = createMember(TARGET_MEMBER_ID, colog, invitee, BlogPermission.MEMBER);
-        Post cologPost = createCologPost(10L, colog, owner);
         when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
                 .thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
@@ -627,8 +620,6 @@ class CologServiceTest {
                 BlogMemberStatus.ACTIVE
         ))
                 .thenReturn(Optional.of(ownerMember));
-        when(postRepository.findAllByCologIdAndDeletedAtIsNull(COLOG_ID))
-                .thenReturn(List.of(cologPost));
         when(blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(List.of(ownerMember, invitedMember));
 
@@ -636,8 +627,11 @@ class CologServiceTest {
         cologService.deleteColog(OWNER_ID, COLOG_SLUG);
 
         // then
+        verify(postRepository).softDeleteAllByCologId(
+                COLOG_ID,
+                LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)
+        );
         assertThat(colog.getDeletedAt()).isNotNull();
-        assertThat(cologPost.getDeletedAt()).isNotNull();
         assertThat(ownerMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
         assertThat(invitedMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
         assertThat(ownerMember.getDeletedAt()).isNotNull();
@@ -666,7 +660,7 @@ class CologServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(COLOG_DELETE_FORBIDDEN);
         assertThat(colog.getDeletedAt()).isNull();
-        verify(postRepository, never()).findAllByCologIdAndDeletedAtIsNull(COLOG_ID);
+        verify(postRepository, never()).softDeleteAllByCologId(any(), any());
         verify(blogMemberRepository, never()).findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE);
     }
 
@@ -733,35 +727,6 @@ class CologServiceTest {
                 .permission(permission)
                 .status(BlogMemberStatus.ACTIVE)
                 .joinedAt(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
-                .build();
-    }
-
-    private Post createCologPost(Long id, Blog colog, User writer) {
-        Blog rilog = Blog.builder()
-                .id(99L)
-                .owner(writer)
-                .slug(Slug.from("owner-rilog"))
-                .profile(Profile.createRilog(
-                        "러로",
-                        "기록하는 개발자입니다.",
-                        "https://example.com/profile.png",
-                        "rilog@example.com",
-                        "https://github.com/rilog"
-                ))
-                .blogType(BlogType.RILOG)
-                .build();
-
-        return Post.builder()
-                .id(id)
-                .user(writer)
-                .rilog(rilog)
-                .colog(colog)
-                .title("게시글 제목")
-                .content(JsonNodeFactory.instance.objectNode().put("body", "본문"))
-                .category(Category.TECH)
-                .status(PostStatus.PUBLISHED)
-                .visibility(PostVisibility.PUBLIC)
-                .publishedAt(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
                 .build();
     }
 

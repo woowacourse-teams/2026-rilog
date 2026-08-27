@@ -13,7 +13,6 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
-import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -106,13 +105,10 @@ public class CologService {
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         requesterMember.validateCanDeleteColog();
 
-        List<Post> cologPosts = postRepository.findAllByCologIdAndDeletedAtIsNull(colog.getId());
-        cologPosts.forEach(Post::delete);
-
         List<BlogMember> activeMembers = blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(colog.getId(), BlogMemberStatus.ACTIVE);
-        activeMembers.forEach(BlogMember::leaveByCologDeletion);
+        colog.deleteCologBy(requesterMember, activeMembers);
 
-        colog.delete();
+        postRepository.softDeleteAllByCologId(colog.getId(), LocalDateTime.now(clock));
     }
 
     public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
