@@ -13,16 +13,26 @@ import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 
 import CologCreateForm from './CologCreateForm';
 
-const { backMock, cologCreatedMock, replaceMock } = vi.hoisted(() => ({
-	backMock: vi.fn(),
-	cologCreatedMock: vi.fn(),
-	replaceMock: vi.fn(),
-}));
+const { backMock, cologCreatedMock, cologCreationFailedMock, cologCreationStartedMock, replaceMock } = vi.hoisted(
+	() => ({
+		backMock: vi.fn(),
+		cologCreatedMock: vi.fn(),
+		cologCreationFailedMock: vi.fn(),
+		cologCreationStartedMock: vi.fn(),
+		replaceMock: vi.fn(),
+	}),
+);
 
 vi.mock('@/shared/api/cologs/api');
 vi.mock('@/shared/api/availability/api');
 vi.mock('@/shared/api/uploads/api');
-vi.mock('@/features/analytics/model/events', () => ({ analytics: { cologCreated: cologCreatedMock } }));
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		cologCreated: cologCreatedMock,
+		cologCreationFailed: cologCreationFailedMock,
+		cologCreationStarted: cologCreationStartedMock,
+	},
+}));
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: backMock, replace: replaceMock }),
 }));
@@ -64,6 +74,8 @@ describe('CologCreateForm', () => {
 	beforeEach(() => {
 		backMock.mockClear();
 		cologCreatedMock.mockClear();
+		cologCreationFailedMock.mockClear();
+		cologCreationStartedMock.mockClear();
 		replaceMock.mockClear();
 		vi.clearAllMocks();
 		vi.mocked(checkNicknameAvailability).mockResolvedValue({
@@ -394,7 +406,9 @@ describe('CologCreateForm', () => {
 				profileImageUrl: 'image.png',
 			}),
 		);
+		expect(cologCreationStartedMock).toHaveBeenCalledWith({ entrySource: 'direct' });
 		expect(cologCreatedMock).toHaveBeenCalledWith({
+			cologId: 1,
 			hasCoverImage: false,
 			hasIntroduction: true,
 			hasServiceUrl: false,
@@ -427,15 +441,59 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('button', { name: '팀 만드는 중' })).toBeDisabled();
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeDisabled();
 		expect(createColog).toHaveBeenCalledOnce();
+		expect(cologCreationStartedMock).toHaveBeenCalledTimes(1);
 
 		rejectCreate?.(new Error('팀 생성에 실패했습니다.'));
 		expect(await screen.findByRole('alert')).toHaveTextContent('팀 생성에 실패했습니다.');
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
+		expect(cologCreationFailedMock).toHaveBeenCalledWith({
+			errorCode: 'UNKNOWN_ERROR',
+			invalidFields: [],
+		});
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team'));
 		expect(createColog).toHaveBeenCalledTimes(2);
+		expect(cologCreationStartedMock).toHaveBeenCalledTimes(2);
+
+		unmount();
+		vi.unstubAllGlobals();
+	});
+
+	it('생성 API 필드 오류를 allowlist 기반 invalid_fields로 기록한다', async () => {
+		const createObjectUrl = vi.fn(() => 'blob:logo');
+		const revokeObjectUrl = vi.fn();
+		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
+		const user = userEvent.setup();
+		const apiError = {
+			type: 'api',
+			kind: 'field',
+			detail: {
+				status: 400,
+				error: 'BAD_REQUEST',
+				errorCode: 'INVALID_INPUT_VALUE',
+				message: '입력값이 유효하지 않습니다.',
+				invalidParams: [
+					{ name: 'name', reason: '팀 이름을 입력해 주세요.' },
+					{ name: 'serviceUrl', reason: '올바른 URL을 입력해 주세요.' },
+					{ name: 'nickname', reason: '개인정보는 수집하지 않습니다.' },
+					{ name: null, reason: 'skip' },
+				],
+			},
+		};
+		vi.mocked(createColog).mockRejectedValue(apiError);
+		const { unmount } = renderWithClient(<CologCreateForm navigate={vi.fn()} />);
+		await fillRequiredFields(user);
+
+		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
+
+		await waitFor(() =>
+			expect(cologCreationFailedMock).toHaveBeenCalledWith({
+				errorCode: 'INVALID_INPUT_VALUE',
+				invalidFields: ['name', 'serviceUrl'],
+			}),
+		);
 
 		unmount();
 		vi.unstubAllGlobals();

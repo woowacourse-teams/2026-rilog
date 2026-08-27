@@ -3,18 +3,42 @@
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 
+import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
+import { isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 
 import CologMemberRow from './CologMemberRow';
 import MemberInviteModal from './MemberInviteModal';
 
 interface CologMemberManagementSectionProps {
+	cologId: number;
 	slug: string;
 	drafts: ReturnType<typeof useCologMemberDrafts>;
 }
 
-export default function CologMemberManagementSection({ slug, drafts }: CologMemberManagementSectionProps) {
+const getInvitationErrorCode = (error: unknown) => {
+	if (
+		typeof error === 'object' &&
+		error !== null &&
+		'type' in error &&
+		error.type === 'api' &&
+		'detail' in error &&
+		isErrorDetail(error.detail)
+	) {
+		return error.detail.errorCode;
+	}
+
+	const normalizedError = normalizeApiError(error);
+
+	if (normalizedError.type === 'api') {
+		return normalizedError.detail.errorCode;
+	}
+
+	return getAnalyticsErrorProperties(error).errorCode;
+};
+
+export default function CologMemberManagementSection({ cologId, slug, drafts }: CologMemberManagementSectionProps) {
 	const {
 		displayedMembers,
 		isEditing,
@@ -28,6 +52,8 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
 
 	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
+		analytics.cologMemberInvitationStarted({ cologId, candidateCount: candidates.length });
+
 		const results = await Promise.allSettled(
 			candidates.map((candidate) =>
 				inviteMember({
@@ -41,9 +67,21 @@ export default function CologMemberManagementSection({ slug, drafts }: CologMemb
 		);
 
 		const successfulInvitationCount = results.filter((result) => result.status === 'fulfilled').length;
+		const failedInvitationResults = results.filter((result) => result.status === 'rejected');
+
+		analytics.cologMemberInvitationCompleted({
+			cologId,
+			invitedCount: successfulInvitationCount,
+			failedCount: failedInvitationResults.length,
+		});
+
+		const failedErrorCodes = new Set(failedInvitationResults.map((result) => getInvitationErrorCode(result.reason)));
+
+		for (const errorCode of failedErrorCodes) {
+			analytics.cologMemberInvitationFailed({ cologId, errorCode });
+		}
 
 		if (successfulInvitationCount > 0) {
-			analytics.cologMembersInvited({ invitedMemberCount: successfulInvitationCount });
 			window.location.reload();
 		}
 	};

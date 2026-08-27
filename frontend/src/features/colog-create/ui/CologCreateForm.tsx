@@ -5,8 +5,9 @@ import { useState } from 'react';
 
 import type { SubmitEvent } from 'react';
 
+import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
-import { getApiErrorMessage } from '@/shared/api/api-error';
+import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useCheckSlugAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-slug-availability-mutation';
 import { useCreateCologMutation } from '@/shared/api/cologs/mutations/use-create-colog-mutation';
@@ -21,6 +22,51 @@ import CologCreateFormFields from './CologCreateFormFields';
 interface CologCreateFormProps {
 	navigate?: (href: string) => void;
 }
+
+const COLOG_CREATE_INVALID_FIELD_ALLOWLIST = new Set([
+	'name',
+	'slug',
+	'introduction',
+	'profileImageUrl',
+	'coverImageUrl',
+	'serviceUrl',
+	'githubUrl',
+]);
+
+const getApiErrorDetail = (error: unknown) => {
+	if (
+		typeof error === 'object' &&
+		error !== null &&
+		'type' in error &&
+		error.type === 'api' &&
+		'detail' in error &&
+		isErrorDetail(error.detail)
+	) {
+		return error.detail;
+	}
+
+	const normalizedError = normalizeApiError(error);
+
+	return normalizedError.type === 'api' ? normalizedError.detail : null;
+};
+
+const getCologCreateInvalidFields = (error: unknown) => {
+	const detail = getApiErrorDetail(error);
+
+	if (detail?.invalidParams === null || detail === null) {
+		return [];
+	}
+
+	return detail.invalidParams
+		.map((param) => param.name)
+		.filter((name): name is string => name !== null && COLOG_CREATE_INVALID_FIELD_ALLOWLIST.has(name));
+};
+
+const getCologCreateErrorCode = (error: unknown) => {
+	const detail = getApiErrorDetail(error);
+
+	return detail?.errorCode ?? getAnalyticsErrorProperties(error).errorCode;
+};
 
 export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	const router = useRouter();
@@ -92,6 +138,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		form.setValue(normalizedValue);
 
 		try {
+			analytics.cologCreationStarted({ entrySource: 'direct' });
 			const response = await createColog(normalizedValue);
 			const data = response.data;
 
@@ -101,6 +148,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 
 			const profilePath = buildBlogHomePath(data.slug);
 			analytics.cologCreated({
+				cologId: data.id,
 				hasCoverImage: normalizedValue.coverImageFile !== null,
 				hasIntroduction: (normalizedValue.description ?? '').trim() !== '',
 				hasServiceUrl: (normalizedValue.serviceUrl ?? '').trim() !== '',
@@ -113,8 +161,11 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 			}
 
 			router.replace(profilePath);
-		} catch {
-			// useMutation internally catches and exposes the error via the `error` state.
+		} catch (submitError) {
+			analytics.cologCreationFailed({
+				errorCode: getCologCreateErrorCode(submitError),
+				invalidFields: getCologCreateInvalidFields(submitError),
+			});
 		}
 	};
 
