@@ -28,7 +28,7 @@ import SettingsHeader from '@/shared/ui/settings/SettingsHeader';
 import { COLOG_SETTINGS_TABS } from '../lib/colog-settings-tabs';
 
 interface CologSettingsWorkspaceProps {
-	slug?: string;
+	slug: string;
 	initialTab?: CologSettingsTab;
 	initialMembers?: CologMember[];
 }
@@ -78,7 +78,7 @@ const getChangedProfileFields = (
 };
 
 export default function CologSettingsWorkspace({
-	slug = 'rilog',
+	slug,
 	initialTab = 'profile',
 	initialMembers,
 }: CologSettingsWorkspaceProps) {
