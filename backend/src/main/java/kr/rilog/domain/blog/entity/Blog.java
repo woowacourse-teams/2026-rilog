@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -129,6 +130,10 @@ public class Blog extends BaseEntity {
 
     public String getGithubUrl() {
         return profile == null ? null : profile.getGithubUrl();
+    }
+
+    public TagAssets getTagAssets() {
+        return TagAssets.of(getCoverImageUrl(), getProfileImageUrl());
     }
 
 }

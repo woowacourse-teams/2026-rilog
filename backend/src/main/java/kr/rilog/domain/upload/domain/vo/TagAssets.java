@@ -11,7 +11,9 @@ public record TagAssets(
 ) {
 
     public TagAssets {
-        objectUrls = Set.copyOf(objectUrls);
+        objectUrls = objectUrls.stream()
+                .filter(objectUrl -> objectUrl != null)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     public static TagAssets from(Collection<String> objectUrls) {

@@ -10,12 +10,15 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
@@ -35,7 +38,13 @@ class UserServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final BlogRepository blogRepository = mock(BlogRepository.class);
     private final BlogMemberRepository blogMemberRepository = mock(BlogMemberRepository.class);
-    private final UserService userService = new UserService(userRepository, blogRepository, blogMemberRepository);
+    private final TagAssetsLifecycle tagAssetsLifecycle = mock(TagAssetsLifecycle.class);
+    private final UserService userService = new UserService(
+            userRepository,
+            blogRepository,
+            blogMemberRepository,
+            tagAssetsLifecycle
+    );
 
     @Test
     @DisplayName("PENDING 사용자는 온보딩을 완료할 수 있다")
@@ -53,6 +62,7 @@ class UserServiceTest {
         when(blogRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.empty());
+        when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         User completedUser = userService.completeOnboarding(1L, command);
@@ -97,6 +107,7 @@ class UserServiceTest {
         when(blogRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.empty());
+        when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         User completedUser = userService.completeOnboarding(1L, command());
@@ -125,6 +136,27 @@ class UserServiceTest {
                         "riro@example.com",
                         BlogType.RILOG
                 );
+    }
+
+    @Test
+    @DisplayName("온보딩을 완료하면 개인 블로그 프로필 이미지를 attach 요청한다.")
+    void completeOnboardingAttachesRilogTagAssets() {
+        // given
+        User user = User.builder()
+                .id(1L)
+                .githubId(100L)
+                .onboardingStatus(OnboardingStatus.PENDING)
+                .build();
+        OnboardingCompleteCommand command = command();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        userService.completeOnboarding(1L, command);
+
+        // then
+        verify(tagAssetsLifecycle).attach(new TagAssets(Set.of(command.profileImageUrl())));
     }
 
     @Test
@@ -183,6 +215,7 @@ class UserServiceTest {
                 .extracting("errorInformation")
                 .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         verify(userRepository, never()).saveAndFlush(any(User.class));
+        verify(tagAssetsLifecycle, never()).attach(any());
     }
 
     @Test

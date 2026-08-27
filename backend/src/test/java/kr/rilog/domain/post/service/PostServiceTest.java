@@ -21,6 +21,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -70,13 +71,22 @@ class PostServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TagAssetsLifecycle tagAssetsLifecycle;
+
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(postRepository, blogRepository, blogMemberRepository, userRepository);
+        postService = new PostService(
+                postRepository,
+                blogRepository,
+                blogMemberRepository,
+                userRepository,
+                tagAssetsLifecycle
+        );
     }
 
     @Test
@@ -86,7 +96,11 @@ class PostServiceTest {
         User writer = createWriter();
         Blog rilog = createRilog(writer);
         PostSaveCommand command = createCommand(RILOG_SLUG);
-        Post savedPost = Post.builder().id(POST_ID).build();
+        Post savedPost = Post.builder()
+                .id(POST_ID)
+                .content(PostContent.from(command.content()))
+                .thumbnailImageUrl(command.thumbnailImageUrl())
+                .build();
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
@@ -114,7 +128,11 @@ class PostServiceTest {
         Blog colog = createColog();
         Blog rilog = createRilog(writer);
         PostSaveCommand command = createCommand(COLOG_SLUG);
-        Post savedPost = Post.builder().id(POST_ID).build();
+        Post savedPost = Post.builder()
+                .id(POST_ID)
+                .content(PostContent.from(command.content()))
+                .thumbnailImageUrl(command.thumbnailImageUrl())
+                .build();
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));

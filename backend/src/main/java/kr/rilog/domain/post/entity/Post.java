@@ -11,6 +11,7 @@ import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -223,6 +224,12 @@ public class Post extends BaseEntity {
 
     private boolean isOwnRilog(Blog targetBlog) {
         return rilog == targetBlog || Objects.equals(rilog.getId(), targetBlog.getId());
+    }
+
+    public TagAssets getTagAssets() {
+        return content
+                .extractTagAssets()
+                .plus(thumbnailImageUrl);
     }
 
 }

@@ -17,6 +17,8 @@ import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -41,6 +43,7 @@ public class PostService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
+    private final TagAssetsLifecycle tagAssetsLifecycle;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -53,6 +56,7 @@ public class PostService {
 
         // TODO content에 있는 이미지 파싱하여, S3에 tag 변경...! 이건 그냥 주석으로 유지 다음에 구현..!
         Post published = postRepository.save(post);
+        tagAssetsLifecycle.attach(published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
     }
 
@@ -84,7 +88,11 @@ public class PostService {
         BlogMember targetMember = getBlogMember(Slug.from(command.newSlug()), requesterId);
         Blog targetBlog = ownBlogMember.transfer(targetMember);
 
+        TagAssets previous = post.getTagAssets();
         post.update(command.toDetail(), targetBlog);
+        TagAssets current = post.getTagAssets();
+        tagAssetsLifecycle.synchronize(previous, current);
+
         return PostUpdateResult.of(post, targetBlog);
     }
 
@@ -93,6 +101,8 @@ public class PostService {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
         post.delete();
+
+        tagAssetsLifecycle.detach(post.getTagAssets());
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {

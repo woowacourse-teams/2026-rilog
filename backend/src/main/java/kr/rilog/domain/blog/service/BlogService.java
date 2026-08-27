@@ -11,6 +11,8 @@ import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class BlogService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final PostRepository postRepository;
+    private final TagAssetsLifecycle tagAssetsLifecycle;
 
     @Transactional
     public void changeBlogProfile(Long requesterId, String slug, BlogProfileUpdateCommand command) {
@@ -36,7 +39,11 @@ public class BlogService {
         validateCanChangeProfile(requesterId, blog);
 
         validateDuplicatedProfileName(command.name(), blog.getId());
+
+        TagAssets previous = blog.getTagAssets();
         blog.changeProfile(command.toProfile());
+        TagAssets current = blog.getTagAssets();
+        tagAssetsLifecycle.synchronize(previous, current);
     }
 
     public void validateDuplicatedSlug(String slug) {

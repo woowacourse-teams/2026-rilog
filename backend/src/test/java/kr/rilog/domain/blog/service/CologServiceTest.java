@@ -17,6 +17,8 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -64,6 +67,9 @@ class CologServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TagAssetsLifecycle tagAssetsLifecycle;
+
     private CologService cologService;
 
     @BeforeEach
@@ -72,6 +78,7 @@ class CologServiceTest {
                 blogRepository,
                 blogMemberRepository,
                 userRepository,
+                tagAssetsLifecycle,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
@@ -143,6 +150,27 @@ class CologServiceTest {
     }
 
     @Test
+    @DisplayName("팀을 생성하면 프로필 이미지와 커버 이미지를 attach 요청한다.")
+    void createAttachesTagAssets() {
+        // given
+        User owner = createOwner();
+        CologCreateCommand command = createCommand();
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(blogRepository.existsBySlug(Slug.from(COLOG_SLUG))).thenReturn(false);
+        when(blogRepository.existsByProfileName(command.name())).thenReturn(false);
+        when(blogRepository.saveAndFlush(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        cologService.create(OWNER_ID, command);
+
+        // then
+        verify(tagAssetsLifecycle).attach(new TagAssets(Set.of(
+                command.profileImageUrl(),
+                command.coverImageUrl()
+        )));
+    }
+
+    @Test
     @DisplayName("팀 slug가 이미 존재하면 팀 생성을 거부한다")
     void createRejectsDuplicateSlug() {
         // given
@@ -156,6 +184,7 @@ class CologServiceTest {
                 .isEqualTo(BLOG_SLUG_ALREADY_EXISTS);
         verify(blogRepository, never()).saveAndFlush(any(Blog.class));
         verify(blogMemberRepository, never()).save(any(BlogMember.class));
+        verify(tagAssetsLifecycle, never()).attach(any());
     }
 
     @Test

@@ -68,4 +68,21 @@ class TagAssetsTest {
         assertThat(changes.isEmpty()).isTrue();
     }
 
+    @Test
+    @DisplayName("선택 자산 URL이 없으면 null을 제외하고 자산을 생성한다.")
+    void ignoreNullObjectUrls() {
+        TagAssets assets = TagAssets.of(null, RETAINED_URL)
+                .plus(null);
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(RETAINED_URL)));
+    }
+
+    @Test
+    @DisplayName("선택 자산 URL이 모두 없으면 빈 자산을 생성한다.")
+    void createEmptyAssetsWhenAllObjectUrlsAreNull() {
+        TagAssets assets = TagAssets.of(null, null);
+
+        assertThat(assets.objectUrls()).isEmpty();
+    }
+
 }
