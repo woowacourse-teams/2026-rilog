@@ -22,7 +22,7 @@ public record PostDetailResponse(
     public static PostDetailResponse fromRilog(Post post) {
         return new PostDetailResponse(
                 post.getTitle(),
-                post.getContent(),
+                post.getContent().getContent(),
                 post.getPublishedAt(),
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
@@ -34,7 +34,7 @@ public record PostDetailResponse(
     public static PostDetailResponse fromColog(Post post, long memberCount, long postCount) {
         return new PostDetailResponse(
                 post.getTitle(),
-                post.getContent(),
+                post.getContent().getContent(),
                 post.getPublishedAt(),
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),

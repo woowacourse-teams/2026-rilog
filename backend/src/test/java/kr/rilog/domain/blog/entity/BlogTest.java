@@ -5,10 +5,12 @@ import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_DELETE_FORBIDDEN;
@@ -128,6 +130,29 @@ class BlogTest {
         assertThat(blog.getProfile())
                 .usingRecursiveComparison()
                 .isEqualTo(newProfile);
+    }
+
+    @Test
+    @DisplayName("팀 블로그는 프로필 이미지와 커버 이미지를 태그 자산으로 제공한다.")
+    void cologProvidesProfileAndCoverImagesAsTagAssets() {
+        Blog colog = createColog(createUser(OWNER_ID));
+
+        TagAssets assets = colog.getTagAssets();
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(
+                colog.getProfileImageUrl(),
+                colog.getCoverImageUrl()
+        )));
+    }
+
+    @Test
+    @DisplayName("개인 블로그는 커버 이미지가 없어도 프로필 이미지만 태그 자산으로 제공한다.")
+    void rilogProvidesOnlyProfileImageAsTagAssets() {
+        Blog rilog = createRilog(createUser(OWNER_ID));
+
+        TagAssets assets = rilog.getTagAssets();
+
+        assertThat(assets).isEqualTo(new TagAssets(Set.of(rilog.getProfileImageUrl())));
     }
 
     @Test

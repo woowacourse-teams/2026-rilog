@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
-import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import tools.jackson.databind.JsonNode;
 
 public record DraftPublishRequest(

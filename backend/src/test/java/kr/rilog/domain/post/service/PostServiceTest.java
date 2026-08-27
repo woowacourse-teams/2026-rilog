@@ -13,6 +13,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
@@ -20,6 +21,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import java.util.Optional;
 
@@ -69,13 +72,21 @@ class PostServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private JsonNode content;
+    private TagAssetsLifecycle tagAssetsLifecycle;
+
+    private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(postRepository, blogRepository, blogMemberRepository, userRepository);
+        postService = new PostService(
+                postRepository,
+                blogRepository,
+                blogMemberRepository,
+                userRepository,
+                tagAssetsLifecycle
+        );
     }
 
     @Test
@@ -85,7 +96,11 @@ class PostServiceTest {
         User writer = createWriter();
         Blog rilog = createRilog(writer);
         PostSaveCommand command = createCommand(RILOG_SLUG);
-        Post savedPost = Post.builder().id(POST_ID).build();
+        Post savedPost = Post.builder()
+                .id(POST_ID)
+                .content(PostContent.from(command.content()))
+                .thumbnailImageUrl(command.thumbnailImageUrl())
+                .build();
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
@@ -113,7 +128,11 @@ class PostServiceTest {
         Blog colog = createColog();
         Blog rilog = createRilog(writer);
         PostSaveCommand command = createCommand(COLOG_SLUG);
-        Post savedPost = Post.builder().id(POST_ID).build();
+        Post savedPost = Post.builder()
+                .id(POST_ID)
+                .content(PostContent.from(command.content()))
+                .thumbnailImageUrl(command.thumbnailImageUrl())
+                .build();
 
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
@@ -365,7 +384,7 @@ class PostServiceTest {
                 .user(writer)
                 .rilog(createRilog(writer))
                 .title("게시글 제목")
-                .content(content)
+                .content(PostContent.from(content))
                 .category(Category.TECH)
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)
@@ -380,7 +399,7 @@ class PostServiceTest {
                 .rilog(null)
                 .colog(createColog())
                 .title("게시글 제목")
-                .content(content)
+                .content(PostContent.from(content))
                 .category(Category.TECH)
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)

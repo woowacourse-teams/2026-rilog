@@ -7,6 +7,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
@@ -37,7 +38,9 @@ public final class PostFixture {
     public static DraftOverwriteCommand overwrittenDraftCommand() {
         return new DraftOverwriteCommand(
                 "덮어쓴 게시글 제목",
-                JsonNodeFactory.instance.objectNode().put("body", "덮어쓴 본문")
+                JsonNodeFactory.instance.arrayNode().add(
+                        JsonNodeFactory.instance.objectNode().put("body", "덮어쓴 본문")
+                )
         );
     }
 
@@ -45,7 +48,9 @@ public final class PostFixture {
         return new DraftPublishCommand(
                 slug,
                 "발행된 게시글 제목",
-                JsonNodeFactory.instance.objectNode().put("body", "발행된 본문"),
+                JsonNodeFactory.instance.arrayNode().add(
+                        JsonNodeFactory.instance.objectNode().put("body", "발행된 본문")
+                ),
                 DEFAULT_CATEGORY,
                 PostVisibility.PUBLIC,
                 DEFAULT_THUMBNAIL_URL
@@ -62,7 +67,7 @@ public final class PostFixture {
                 .user(writer)
                 .rilog(rilog)
                 .title(title)
-                .content(content())
+                .content(PostContent.from(content()))
                 .status(PostStatus.DRAFT)
                 .visibility(PostVisibility.PRIVATE)
                 .publishedAt(publishedAt)
@@ -175,7 +180,7 @@ public final class PostFixture {
 
     public static PostDetailResponse postDetailResponse(Post post, User writer, Blog rilog) {
         return new PostDetailResponse(post.getTitle(),
-                post.getContent(),
+                post.getContent().getContent(),
                 post.getPublishedAt(),
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
@@ -197,7 +202,9 @@ public final class PostFixture {
     public static PostDetail updatedPostDetail() {
         return new PostDetail(
                 "수정된 제목",
-                JsonNodeFactory.instance.objectNode().put("body", "수정된 본문"),
+                JsonNodeFactory.instance.arrayNode().add(
+                        JsonNodeFactory.instance.objectNode().put("body", "수정된 본문")
+                ),
                 Category.DAILY,
                 PostVisibility.PRIVATE,
                 "https://example.com/updated-thumbnail.png"
@@ -225,7 +232,9 @@ public final class PostFixture {
     }
 
     private static JsonNode content() {
-        return JsonNodeFactory.instance.objectNode().put("body", "본문");
+        return JsonNodeFactory.instance.arrayNode().add(
+                JsonNodeFactory.instance.objectNode().put("body", "본문")
+        );
     }
 
     private static final class Builder {
@@ -272,7 +281,7 @@ public final class PostFixture {
                     .rilog(rilog)
                     .colog(colog)
                     .title(title)
-                    .content(content)
+                    .content(PostContent.from(content))
                     .category(category)
                     .status(status)
                     .visibility(visibility)

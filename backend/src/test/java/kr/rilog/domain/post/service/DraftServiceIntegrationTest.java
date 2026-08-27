@@ -6,6 +6,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -81,7 +82,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         assertSoftly(softly -> {
             softly.assertThat(result).isEqualTo(new DraftIdResult(savedDraft.getId()));
             softly.assertThat(savedDraft.getTitle()).isEqualTo(command.title());
-            softly.assertThat(savedDraft.getContent()).isEqualTo(command.content());
+            softly.assertThat(savedDraft.getContent()).isEqualTo(PostContent.from(command.content()));
             softly.assertThat(savedDraft.getStatus()).isEqualTo(DRAFT);
             softly.assertThat(savedDraft.getVisibility()).isEqualTo(PRIVATE);
             softly.assertThat(savedDraft.getCategory()).isNull();
@@ -242,7 +243,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         DraftDetailResult expected = new DraftDetailResult(
                 draft.getId(),
                 draft.getTitle(),
-                draft.getContent(),
+                draft.getContent().getContent(),
                 draft.getStatus(),
                 draft.getPublishedAt()
         );
@@ -338,7 +339,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         assertSoftly(softly -> {
             softly.assertThat(result).isEqualTo(new DraftIdResult(draft.getId()));
             softly.assertThat(overwrittenDraft.getTitle()).isEqualTo(command.title());
-            softly.assertThat(overwrittenDraft.getContent()).isEqualTo(command.content());
+            softly.assertThat(overwrittenDraft.getContent()).isEqualTo(PostContent.from(command.content()));
             softly.assertThat(overwrittenDraft.getPublishedAt()).isAfter(BASE_PUBLISHED_AT);
         });
     }
@@ -456,7 +457,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         Post publishedPost = postRepository.findById(draft.getId()).orElseThrow();
         PostDetail publishedDetail = new PostDetail(
                 publishedPost.getTitle(),
-                publishedPost.getContent(),
+                publishedPost.getContent().getContent(),
                 publishedPost.getCategory(),
                 publishedPost.getVisibility(),
                 publishedPost.getThumbnailImageUrl()

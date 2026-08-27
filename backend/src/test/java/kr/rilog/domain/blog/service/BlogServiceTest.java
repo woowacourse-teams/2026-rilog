@@ -12,6 +12,8 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Email;
 import kr.rilog.domain.user.entity.vo.Nickname;
@@ -25,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
@@ -55,11 +58,14 @@ class BlogServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private TagAssetsLifecycle tagAssetsLifecycle;
+
     private BlogService blogService;
 
     @BeforeEach
     void setUp() {
-        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository);
+        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, tagAssetsLifecycle);
     }
 
     @Test
@@ -304,6 +310,30 @@ class BlogServiceTest {
     }
 
     @Test
+    @DisplayName("블로그 프로필을 변경하면 이전 이미지와 현재 이미지의 synchronize 요청한다.")
+    void changeBlogProfileSynchronizesTagAssets() {
+        // given
+        User admin = createCompletedOwner();
+        Blog colog = createDetailedColog(admin);
+        BlogMember requesterMember = createMember(colog, admin, BlogPermission.ADMIN);
+        BlogProfileUpdateCommand command = updateCommand("새 리로그 팀");
+        TagAssets previous = colog.getTagAssets();
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("team_Rilog"))).thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatus(COLOG_ID, REQUESTER_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogRepository.existsByProfileNameExceptId(command.name(), COLOG_ID)).thenReturn(false);
+
+        // when
+        blogService.changeBlogProfile(REQUESTER_ID, "team_Rilog", command);
+
+        // then
+        verify(tagAssetsLifecycle).synchronize(
+                previous,
+                new TagAssets(Set.of(command.profileImageUrl(), command.coverImageUrl()))
+        );
+    }
+
+    @Test
     @DisplayName("RILOG 소유자가 아니면 개인 프로필 변경을 거부한다")
     void changeBlogProfileForRilogRejectsNonOwner() {
         // given
@@ -318,6 +348,7 @@ class BlogServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
         verify(blogRepository, never()).existsByProfileNameExceptId(command.name(), RILOG_ID);
+        verify(tagAssetsLifecycle, never()).synchronize(any(), any());
         assertThat(rilog.getName()).isEqualTo("러로");
     }
 
