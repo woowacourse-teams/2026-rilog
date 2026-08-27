@@ -11,7 +11,10 @@ import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-sessio
 
 import SignUpForm from './SignUpForm';
 
-const { signUpCompletedMock } = vi.hoisted(() => ({ signUpCompletedMock: vi.fn() }));
+const { signUpCompletedMock, signUpFailedMock } = vi.hoisted(() => ({
+	signUpCompletedMock: vi.fn(),
+	signUpFailedMock: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
@@ -22,7 +25,12 @@ vi.mock('@/shared/api/availability/api', () => ({
 	checkSlugAvailability: vi.fn(),
 }));
 
-vi.mock('@/features/analytics/model/events', () => ({ analytics: { signUpCompleted: signUpCompletedMock } }));
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		signUpCompleted: signUpCompletedMock,
+		signUpFailed: signUpFailedMock,
+	},
+}));
 
 describe('SignUpForm', () => {
 	beforeEach(() => {
@@ -359,6 +367,8 @@ describe('SignUpForm', () => {
 		expect(signUpCompletedMock).toHaveBeenCalledWith({
 			hasProfileImage: false,
 			hasIntroduction: true,
+			hasServiceUrl: true,
+			hasGithubUrl: true,
 		});
 	});
 
@@ -445,5 +455,28 @@ describe('SignUpForm', () => {
 		await user.click(submitButton);
 		expect(slug).toHaveAccessibleDescription(/고유 아이디 중복 확인이 필요합니다\./);
 		expect(completeSignUp).toHaveBeenCalledTimes(2);
+	});
+
+	it('회원가입 실패를 stage와 안전한 오류 코드로 기록한다', async () => {
+		const user = userEvent.setup();
+		const completeSignUp = vi.fn().mockRejectedValue({
+			failureStage: 'onboarding_submit',
+			cause: new TypeError('Failed to fetch'),
+		});
+		renderSignUpForm({ completeSignUp });
+
+		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
+		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'rilog');
+		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
+		await user.click(screen.getByRole('button', { name: '시작하기' }));
+
+		await waitFor(() =>
+			expect(signUpFailedMock).toHaveBeenCalledWith({
+				failureStage: 'onboarding_submit',
+				errorCode: 'NETWORK',
+			}),
+		);
 	});
 });
