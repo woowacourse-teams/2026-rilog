@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { readUserBySlug } from './api';
+import { completeOnboarding, readUserBySlug } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -9,6 +9,35 @@ vi.hoisted(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
+});
+
+describe('completeOnboarding', () => {
+	it('소셜 링크를 포함한 온보딩 정보를 PATCH하고 access token을 반환한다', async () => {
+		let capturedBody: unknown;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			const request = input as Request;
+			capturedBody = await request.clone().json();
+
+			return Response.json(
+				{ status: 200, message: '온보딩을 완료했습니다.', data: null },
+				{ headers: { Authorization: 'Bearer access-token' } },
+			);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const requestBody = {
+			nickname: '리로그',
+			slug: 'rilog',
+			serviceUrl: 'https://rilog.kr',
+			githubUrl: 'https://github.com/rilog',
+		};
+
+		await expect(completeOnboarding(requestBody)).resolves.toMatchObject({ accessToken: 'access-token' });
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('PATCH');
+		expect(request.url).toBe('https://api.rilog.test/v1/users/me/onboarding');
+		expect(capturedBody).toEqual(requestBody);
+	});
 });
 
 describe('readUserBySlug', () => {

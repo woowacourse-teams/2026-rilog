@@ -21,6 +21,7 @@ public enum BlogErrorInformation implements ErrorInformation {
     COLOG_OWNER_LEAVE_FORBIDDEN(HttpStatus.FORBIDDEN, "OWNER는 팀 블로그에서 탈퇴할 수 없습니다."),
     COLOG_MEMBER_REMOVE_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 멤버 내보내기 권한이 없습니다."),
     COLOG_SELF_REMOVE_FORBIDDEN(HttpStatus.BAD_REQUEST, "자기 자신은 내보내기 할 수 없습니다."),
+    COLOG_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 블로그 삭제 권한이 없습니다."),
     RILOG_NOT_FOUND(HttpStatus.NOT_FOUND, "작성자의 개인 블로그를 찾을 수 없습니다."),
     RILOG_POST_PUBLISH_FORBIDDEN(HttpStatus.FORBIDDEN, "본인의 개인 블로그에만 게시글을 발행할 수 있습니다."),
     COLOG_POST_PUBLISH_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 블로그 게시글 발행 권한이 없습니다."),

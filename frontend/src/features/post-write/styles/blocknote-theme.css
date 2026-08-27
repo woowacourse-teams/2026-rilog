@@ -1,6 +1,4 @@
 .post-write-blocknote {
-	--post-list-item-space: 0.5em;
-	--post-list-item-shared-space: 0;
 	--radius: var(--radius-xl);
 	--card: var(--surface);
 	--card-foreground: var(--text-primary);
@@ -46,14 +44,108 @@
 
 .post-write-blocknote .bn-editor {
 	min-height: 22rem;
-	padding-inline: 0;
-	font-family: var(--font-sans);
-	font-size: 1.125rem;
-	line-height: 1.75rem;
 }
 
 .post-write-blocknote .bn-default-styles {
 	font-family: var(--font-sans);
+}
+
+.post-write-blocknote select[data-code-language-native] {
+	display: none;
+}
+
+.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > div {
+	width: 100%;
+	padding: 0.5rem 1.125rem 0;
+}
+
+.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > pre {
+	padding-top: 0.75rem;
+}
+
+.post-write-blocknote .bn-block-content[data-content-type='codeBlock'] > .mermaid-diagram {
+	width: auto;
+	margin: 0 1.5rem 1.5rem;
+}
+
+.post-write-code-language {
+	--post-code-language-radius: 0.375rem;
+	--post-code-language-shadow: 0 0.5rem 1.5rem rgb(3 16 42 / 0.28);
+
+	position: relative;
+	z-index: 20;
+	width: fit-content;
+	font-family: var(--font-sans);
+	font-size: var(--text-body-1);
+	line-height: 1.25rem;
+}
+
+.post-write-code-language-trigger {
+	display: flex;
+	align-items: center;
+	border: 0;
+	border-radius: var(--post-code-language-radius);
+	background: transparent;
+	color: var(--text-secondary);
+	padding: 0.25rem 0.5rem;
+	opacity: 0.65;
+	cursor: pointer;
+}
+
+.post-write-code-language-trigger:hover {
+	color: var(--text-primary);
+	opacity: 1;
+}
+
+.post-write-code-language-trigger:focus-visible,
+.post-write-code-language-trigger:active,
+.post-write-code-language-trigger[aria-expanded='true'] {
+	background: transparent;
+	opacity: 1;
+}
+
+.post-write-code-language-listbox {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	display: flex;
+	width: 12rem;
+	max-height: min(18rem, 50dvh);
+	flex-direction: column;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	border: 1px solid var(--border-default);
+	border-radius: var(--post-code-language-radius);
+	background: var(--white);
+	padding: 0.25rem;
+	box-shadow: var(--post-code-language-shadow);
+}
+
+.post-write-code-language-option {
+	flex: none;
+	border: 0;
+	border-radius: var(--post-code-language-radius);
+	background: transparent;
+	color: var(--text-primary);
+	padding: 0.375rem 0.5rem;
+	text-align: left;
+	cursor: pointer;
+}
+
+.post-write-code-language-option:hover,
+.post-write-code-language-option:focus-visible {
+	background: var(--surface-hover);
+}
+
+.post-write-code-language-option[aria-selected='true'] {
+	background: var(--surface-active);
+	color: var(--brand-primary);
+	font-weight: 600;
 }
 
 .post-write-blocknote .bn-block-content.ProseMirror-selectednode > *,
@@ -65,7 +157,5 @@
 @media (max-width: 40rem) {
 	.post-write-blocknote .bn-editor {
 		min-height: 18rem;
-		font-size: 1rem;
-		line-height: 1.5rem;
 	}
 }

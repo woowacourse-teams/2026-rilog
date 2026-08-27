@@ -11,7 +11,8 @@ import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/typ
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
 
-import PostWriteWorkspace from './PostWriteWorkspace';
+import EditPostController from './EditPostController';
+import NewPostController from './NewPostController';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PostWriteRequest) => Promise<ApiResponse<PostWriteResponse>>;
@@ -27,6 +28,7 @@ const {
 	uploadRepresentativeImageMock,
 	requestPostPublicationMock,
 	requestPostUpdateMock,
+	editorUnmountedMock,
 } = vi.hoisted(() => ({
 	postEditorOpenedMock: vi.fn(),
 	postPublishedMock: vi.fn(),
@@ -34,6 +36,7 @@ const {
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
+	editorUnmountedMock: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -86,6 +89,7 @@ beforeEach(() => {
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
 	requestPostUpdateMock.mockReset();
+	editorUnmountedMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
 	requestPostPublicationMock.mockResolvedValue({
 		status: 201,
@@ -132,6 +136,10 @@ function FakeEditor({ initialBlocks, onChange, onReady, ariaDescribedBy, ref }: 
 
 	useEffect(() => {
 		onReady(blocksRef.current);
+
+		return () => {
+			editorUnmountedMock();
+		};
 	}, [onReady]);
 
 	return (
@@ -216,11 +224,11 @@ const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 	return firstCoLogOption.getAttribute('value')!;
 };
 
-describe('PostWriteWorkspace', () => {
+describe('NewPostController', () => {
 	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
 		const initialBlocks = [createParagraph('기존 본문')];
 		render(
-			<PostWriteWorkspace
+			<NewPostController
 				editorComponent={FakeEditor}
 				initialDocument={{ title: '기존 제목', blocks: initialBlocks }}
 			/>,
@@ -234,12 +242,35 @@ describe('PostWriteWorkspace', () => {
 		expect(beforeUnloadEvent.defaultPrevented).toBe(false);
 	});
 
+	it('최초 임시저장 후 draft workflow로 전환해도 현재 Editor를 유지하고 이후 저장은 draftId를 사용한다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState({ testMarker: 'preserved' }, '', '/write');
+		const createDraft = vi.fn().mockResolvedValue({ draftId: 123 });
+		const updateDraft = vi.fn().mockResolvedValue(undefined);
+		render(<NewPostController editorComponent={FakeEditor} createDraft={createDraft} updateDraft={updateDraft} />);
+
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		await waitFor(() => expect(createDraft).toHaveBeenCalledOnce());
+		expect(`${window.location.pathname}${window.location.search}`).toBe('/write?draftId=123');
+		expect(window.history.state).toMatchObject({ testMarker: 'preserved' });
+		expect(editorUnmountedMock).not.toHaveBeenCalled();
+		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('BlockNote 도입기');
+
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		await waitFor(() => expect(updateDraft).toHaveBeenCalledOnce());
+		expect(updateDraft.mock.calls[0]?.[0]).toBe(123);
+		expect(editorUnmountedMock).not.toHaveBeenCalled();
+	});
+
 	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
 		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
 		const user = userEvent.setup();
 		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '31', slug: 'personal-blog' });
 		render(
-			<PostWriteWorkspace
+			<EditPostController
 				postId={31}
 				editorComponent={FakeEditor}
 				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
@@ -255,7 +286,7 @@ describe('PostWriteWorkspace', () => {
 
 		expect(screen.queryByRole('button', { name: '임시저장' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /임시 저장된 글/ })).not.toBeInTheDocument();
-		const publishButton = screen.getByRole('button', { name: '발행' });
+		const publishButton = screen.getByRole('button', { name: '수정' });
 		expect(publishButton).toBeDisabled();
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
 		expect(publishButton).toBeEnabled();
@@ -282,7 +313,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('진입 시 제목에 focus하고 Enter를 누르면 본문으로 이동한다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 
 		const titleField = screen.getByRole('textbox', { name: '게시글 제목' });
 		expect(titleField).toHaveFocus();
@@ -293,7 +324,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('임시 저장 글 삭제를 취소하면 목록을 유지하고 확인하면 목록과 개수를 갱신한다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 
 		await user.click(screen.getByRole('button', { name: '임시 저장된 글 4개 보기' }));
 		const draftListDialog = screen.getByRole('dialog', { name: '임시 저장된 글' });
@@ -323,7 +354,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('빈 문서는 설정 모달을 열지 않고 첫 오류로 focus한다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
@@ -340,7 +371,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('제목만 입력한 문서는 본문 오류를 표시하고 에디터로 focus한다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '제목만 있는 글');
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -353,7 +384,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('유효하지 않은 문서를 임시저장하면 오류를 표시하고 첫 오류 필드로 focus한다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 
 		await user.click(screen.getByRole('button', { name: '임시저장' }));
 
@@ -371,7 +402,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('내 블로그를 제외하고 소속 팀 블로그만 발행 대상으로 보여 준다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -384,7 +415,7 @@ describe('PostWriteWorkspace', () => {
 		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
 		uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/body-image.png' });
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={BodyImageUploadEditor} />);
+		render(<NewPostController editorComponent={BodyImageUploadEditor} />);
 
 		await user.click(screen.getByRole('button', { name: '본문 이미지 업로드' }));
 
@@ -399,7 +430,7 @@ describe('PostWriteWorkspace', () => {
 		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://files.rilog.test');
 		uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/document.pdf' });
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={BodyPdfUploadEditor} />);
+		render(<NewPostController editorComponent={BodyPdfUploadEditor} />);
 
 		await user.click(screen.getByRole('button', { name: '본문 PDF 업로드' }));
 
@@ -412,7 +443,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('모달을 닫았다 열어도 게시 설정을 유지하고 backdrop으로 닫히지 않는다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
@@ -440,7 +471,7 @@ describe('PostWriteWorkspace', () => {
 		const revokeObjectUrl = vi.fn();
 		vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl }));
 		const user = userEvent.setup();
-		const { unmount } = render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		const { unmount } = render(<NewPostController editorComponent={FakeEditor} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
@@ -485,7 +516,7 @@ describe('PostWriteWorkspace', () => {
 					resolvePublish = resolve;
 				}),
 		);
-		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} />);
+		render(<NewPostController editorComponent={FakeEditor} publishPost={publishPost} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await selectFirstCoLog(user);
@@ -516,7 +547,7 @@ describe('PostWriteWorkspace', () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
 		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '   ', slug: 'rilog' });
-		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		render(<NewPostController editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await selectFirstCoLog(user);
@@ -538,7 +569,7 @@ describe('PostWriteWorkspace', () => {
 			.fn<PublishPost>()
 			.mockRejectedValueOnce(new Error('failed'))
 			.mockResolvedValueOnce({ postId: 'retry-success', slug: 'rilog' });
-		render(<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
+		render(<NewPostController editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />);
 		postPublishedMock.mockClear();
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -562,7 +593,7 @@ describe('PostWriteWorkspace', () => {
 		const navigate = vi.fn();
 		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: 'with-cover', slug: 'rilog' });
 		const { unmount } = render(
-			<PostWriteWorkspace editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />,
+			<NewPostController editorComponent={FakeEditor} publishPost={publishPost} navigate={navigate} />,
 		);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -586,7 +617,7 @@ describe('PostWriteWorkspace', () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
 		const coverImage = new File(['image'], 'cover.png', { type: 'image/png' });
-		const { unmount } = render(<PostWriteWorkspace editorComponent={FakeEditor} navigate={navigate} />);
+		const { unmount } = render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -613,7 +644,7 @@ describe('PostWriteWorkspace', () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
 		render(
-			<PostWriteWorkspace
+			<EditPostController
 				postId={31}
 				editorComponent={FakeEditor}
 				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
@@ -628,7 +659,7 @@ describe('PostWriteWorkspace', () => {
 		);
 
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
-		await user.click(screen.getByRole('button', { name: '발행' }));
+		await user.click(screen.getByRole('button', { name: '수정' }));
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(requestPostUpdateMock).toHaveBeenCalledOnce());
@@ -648,7 +679,7 @@ describe('PostWriteWorkspace', () => {
 	it('대표 이미지를 선택하지 않으면 본문의 첫 이미지 URL을 API에 전송한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
-		render(<PostWriteWorkspace editorComponent={FirstBodyImageEditor} navigate={navigate} />);
+		render(<NewPostController editorComponent={FirstBodyImageEditor} navigate={navigate} />);
 
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), 'BlockNote 도입기');
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -665,7 +696,7 @@ describe('PostWriteWorkspace', () => {
 	it('선택 이미지와 본문 이미지가 모두 없으면 공통 기본 썸네일을 API에 전송한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} navigate={navigate} />);
+		render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -682,7 +713,7 @@ describe('PostWriteWorkspace', () => {
 		const navigate = vi.fn();
 		const historyBackSpy = vi.spyOn(window.history, 'back');
 		historyBackSpy.mockClear();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} navigate={navigate} />);
+		render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '이탈 보호');
 
 		const link = document.createElement('a');
@@ -707,7 +738,7 @@ describe('PostWriteWorkspace', () => {
 
 	it('dirty 상태에서 beforeunload 기본 이탈 경고를 요청한다', async () => {
 		const user = userEvent.setup();
-		render(<PostWriteWorkspace editorComponent={FakeEditor} />);
+		render(<NewPostController editorComponent={FakeEditor} />);
 		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '새로고침 보호');
 
 		const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });

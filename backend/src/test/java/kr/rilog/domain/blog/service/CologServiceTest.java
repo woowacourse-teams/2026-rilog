@@ -14,6 +14,7 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -65,6 +66,9 @@ class CologServiceTest {
     private BlogMemberRepository blogMemberRepository;
 
     @Mock
+    private PostRepository postRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -77,6 +81,7 @@ class CologServiceTest {
         cologService = new CologService(
                 blogRepository,
                 blogMemberRepository,
+                postRepository,
                 userRepository,
                 tagAssetsLifecycle,
                 Clock.fixed(NOW, ZoneOffset.UTC)
@@ -625,6 +630,67 @@ class CologServiceTest {
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_MEMBER_DOESNT_NOT_BELONG);
+    }
+
+    @Test
+    @DisplayName("ACTIVE OWNER는 팀 블로그와 팀 게시글, 팀 멤버를 삭제 처리한다")
+    void deleteCologDeletesCologPostsAndLeavesMembers() {
+        // given
+        User owner = createOwner();
+        User invitee = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember ownerMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        BlogMember invitedMember = createMember(TARGET_MEMBER_ID, colog, invitee, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(ownerMember));
+        when(blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(List.of(ownerMember, invitedMember));
+
+        // when
+        cologService.deleteColog(OWNER_ID, COLOG_SLUG);
+
+        // then
+        verify(postRepository).softDeleteAllByCologId(
+                COLOG_ID,
+                LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)
+        );
+        assertThat(colog.getDeletedAt()).isNotNull();
+        assertThat(ownerMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(invitedMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
+        assertThat(ownerMember.getDeletedAt()).isNotNull();
+        assertThat(invitedMember.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("ACTIVE 멤버여도 OWNER가 아니면 팀 블로그를 삭제할 수 없다")
+    void deleteCologRejectsNonOwnerMember() {
+        // given
+        User owner = createOwner();
+        Blog colog = createColog(owner);
+        BlogMember adminMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.ADMIN);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(adminMember));
+
+        // when - then
+        assertThatThrownBy(() -> cologService.deleteColog(OWNER_ID, COLOG_SLUG))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COLOG_DELETE_FORBIDDEN);
+        assertThat(colog.getDeletedAt()).isNull();
+        verify(postRepository, never()).softDeleteAllByCologId(any(), any());
+        verify(blogMemberRepository, never()).findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE);
     }
 
     @Test

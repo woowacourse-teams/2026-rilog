@@ -48,6 +48,20 @@ public interface CologApiSpec {
     );
 
     @Operation(
+            summary = "팀 블로그 삭제 API",
+            description = "요청자가 ACTIVE OWNER 멤버인 팀 블로그를 삭제하고, 팀 게시글과 팀 멤버를 함께 삭제 처리합니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "204",
+            description = "팀 블로그 삭제 성공"
+    )
+    ApiResponse<Void> deleteColog(
+            @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @Parameter(description = "삭제할 팀 블로그 slug", example = "rilog-team")
+            @PathVariable("slug") String slug
+    );
+
+    @Operation(
             summary = "팀 블로그 탈퇴 API",
             description = "요청자가 ACTIVE 멤버인 팀 블로그에서 탈퇴합니다. OWNER는 바로 탈퇴할 수 없습니다."
     )

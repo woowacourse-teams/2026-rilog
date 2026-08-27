@@ -68,6 +68,19 @@ describe('validateCologProfileSettings', () => {
 		});
 	});
 
+	it('소셜 링크 길이 제한을 적용한다', () => {
+		expect(
+			validateCologProfileSettings({
+				...VALID_SETTINGS,
+				serviceUrl: `https://${'a'.repeat(505)}`,
+				githubUrl: `https://${'b'.repeat(505)}`,
+			}),
+		).toEqual({
+			serviceUrl: '서비스 링크는 512자 이하로 입력해 주세요.',
+			githubUrl: 'GitHub 링크는 512자 이하로 입력해 주세요.',
+		});
+	});
+
 	it('한 줄 입력값의 앞뒤 공백을 제외하고 유효성을 검사한다', () => {
 		expect(
 			validateCologProfileSettings({

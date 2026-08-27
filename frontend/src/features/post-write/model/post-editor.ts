@@ -1,3 +1,4 @@
+import type { EditorDocument } from './post-publication';
 import type { Block } from '@blocknote/core';
 import type { Ref } from 'react';
 
@@ -15,3 +16,10 @@ export interface PostEditorProps {
 }
 
 export type UploadPostBodyFile = (file: File) => Promise<string>;
+
+export interface PostWriteEditorContext {
+	isEditorReady: boolean;
+	isDirty: boolean;
+	prepareDocument: () => EditorDocument | null;
+	openPublishSettings: () => void;
+}

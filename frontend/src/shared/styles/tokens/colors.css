@@ -43,6 +43,13 @@
 	--github-900: #24292f;
 	--github-950: #1b1f23;
 	--github-1000: #161b22;
+	--github-code-foreground: #1f2328;
+	--github-code-comment: #59636e;
+	--github-code-coral: #cf222e;
+	--github-code-blue: #0550ae;
+	--github-code-light-blue: #0a3069;
+	--github-code-purple: #8250df;
+	--github-code-orange: #953800;
 
 	/* Semantic aliases */
 	--background: var(--neutral-50);
@@ -56,6 +63,12 @@
 	--text-disabled: var(--neutral-600);
 	--text-on-dark: var(--neutral-50);
 	--text-placeholder: var(--neutral-500);
+	--link-text: var(--navy-700);
+	--link-text-interactive: var(--blue-600);
+	--inline-code-background: var(--navy-100);
+	--inline-code-text: var(--navy-800);
+	--quote-text: var(--navy-700);
+	--quote-border: var(--navy-500);
 
 	--border-default: var(--neutral-300);
 	--border-strong: var(--neutral-400);
@@ -67,6 +80,18 @@
 
 	--on-brand-primary: var(--white);
 	--on-brand-secondary: var(--navy-900);
+
+	--code-syntax-background: var(--white);
+	--code-syntax-foreground: var(--github-code-foreground);
+	--code-syntax-token-constant: var(--github-code-blue);
+	--code-syntax-token-string: var(--github-code-light-blue);
+	--code-syntax-token-comment: var(--github-code-comment);
+	--code-syntax-token-keyword: var(--github-code-coral);
+	--code-syntax-token-parameter: var(--github-code-orange);
+	--code-syntax-token-function: var(--github-code-purple);
+	--code-syntax-token-string-expression: var(--github-code-light-blue);
+	--code-syntax-token-punctuation: var(--github-code-foreground);
+	--code-syntax-token-link: var(--github-code-blue);
 
 	--danger: var(--red-700);
 	--danger-hover: var(--red-800);

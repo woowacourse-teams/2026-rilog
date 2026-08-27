@@ -341,7 +341,7 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('minlength', '2');
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('maxlength', '20');
 		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		expect(slugInput).toHaveAttribute('pattern', '[a-z0-9-]+');
+		expect(slugInput).toHaveAttribute('pattern', '^[a-z0-9]+(?:-[a-z0-9]+)*$');
 		expect(slugInput).toHaveAccessibleDescription(
 			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
 		);

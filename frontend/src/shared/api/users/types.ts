@@ -23,8 +23,9 @@ export type ReadUserBySlugResponse = User;
 export interface OnboardingRequest {
 	nickname: string;
 	slug: string;
-	introduction: string;
-	profileImageUrl: string;
-	githubUrl: string;
-	email: string;
+	introduction?: string;
+	profileImageUrl?: string;
+	serviceUrl?: string;
+	githubUrl?: string;
+	email?: string;
 }

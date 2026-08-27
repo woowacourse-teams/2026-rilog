@@ -1,0 +1,44 @@
+'use client';
+
+import { useCallback } from 'react';
+
+import { buildPostWriteRequest } from '@/features/post-write/lib/build-post-write-request';
+import { mapPostWriteResponse } from '@/features/post-write/lib/map-post-write-response';
+import type { PublishPost } from '@/features/post-write/model/post-publication';
+import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish-post-mutation';
+import { useUpdatePostMutation } from '@/shared/api/posts/mutations/use-update-post-mutation';
+import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
+
+export function usePublishNewPost(): PublishPost {
+	const { mutateAsync: uploadFile } = useUploadFileMutation();
+	const { mutateAsync: requestPublication } = usePublishPostMutation();
+
+	return useCallback<PublishPost>(
+		async (command) => {
+			const request = await buildPostWriteRequest(command, async (file) => {
+				const { objectKey } = await uploadFile({ file, type: 'IMAGE' });
+				return objectKey;
+			});
+
+			return mapPostWriteResponse(await requestPublication(request));
+		},
+		[requestPublication, uploadFile],
+	);
+}
+
+export function useUpdatePublishedPost(postId: number): PublishPost {
+	const { mutateAsync: uploadFile } = useUploadFileMutation();
+	const { mutateAsync: requestUpdate } = useUpdatePostMutation();
+
+	return useCallback<PublishPost>(
+		async (command) => {
+			const request = await buildPostWriteRequest(command, async (file) => {
+				const { objectKey } = await uploadFile({ file, type: 'IMAGE' });
+				return objectKey;
+			});
+
+			return mapPostWriteResponse(await requestUpdate({ postId, request }));
+		},
+		[postId, requestUpdate, uploadFile],
+	);
+}
