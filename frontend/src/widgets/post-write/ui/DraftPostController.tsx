@@ -8,6 +8,8 @@ import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/
 import type { EditorDocument, PublicationSettings } from '@/features/post-write/model/post-publication';
 import type { PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
 
+import { usePublishPostDraft } from '../hooks/use-post-publishers';
+
 import PostWriteWorkspace from './PostWriteWorkspace';
 import SavedDraftPostActions from './SavedDraftPostActions';
 
@@ -33,16 +35,11 @@ export default function DraftPostController({
 	navigate,
 }: DraftPostControllerProps) {
 	const updatePostDraft = useUpdatePostDraft();
+	const publishSavedDraft = usePublishPostDraft();
 
 	return (
 		<PostWriteWorkspace
-			publishPost={(command) => {
-				if (publishDraft === undefined) {
-					throw new Error('임시저장 발행 API는 아직 연결되지 않았습니다.');
-				}
-
-				return publishDraft(draftId, command);
-			}}
+			publishPost={(command) => (publishDraft ?? publishSavedDraft)(draftId, command)}
 			initialDocument={initialDocument}
 			initialPublicationSettings={initialPublicationSettings}
 			editorComponent={editorComponent}

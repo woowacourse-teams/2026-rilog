@@ -7,7 +7,12 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
-import type { DraftSaveRequest, DraftSaveResponse } from '@/shared/api/drafts/types';
+import type {
+	DraftPublishRequest,
+	DraftPublishResponse,
+	DraftSaveRequest,
+	DraftSaveResponse,
+} from '@/shared/api/drafts/types';
 import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
@@ -23,6 +28,10 @@ type RequestDraftOverwrite = (variables: {
 	draftId: number;
 	request: DraftSaveRequest;
 }) => Promise<ApiResponse<DraftSaveResponse>>;
+type RequestDraftPublication = (variables: {
+	draftId: number;
+	request: DraftPublishRequest;
+}) => Promise<ApiResponse<DraftPublishResponse>>;
 type RequestDraftDelete = (postId: number) => Promise<Response>;
 type RequestPostUpdate = (variables: {
 	postId: number;
@@ -37,6 +46,7 @@ const {
 	requestPostPublicationMock,
 	requestDraftSaveMock,
 	requestDraftOverwriteMock,
+	requestDraftPublicationMock,
 	requestDraftDeleteMock,
 	resetDraftDeleteMock,
 	requestPostUpdateMock,
@@ -49,6 +59,7 @@ const {
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
 	requestDraftSaveMock: vi.fn<RequestDraftSave>(),
 	requestDraftOverwriteMock: vi.fn<RequestDraftOverwrite>(),
+	requestDraftPublicationMock: vi.fn<RequestDraftPublication>(),
 	requestDraftDeleteMock: vi.fn<RequestDraftDelete>(),
 	resetDraftDeleteMock: vi.fn(),
 	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
@@ -102,6 +113,10 @@ vi.mock('@/shared/api/drafts/mutations/use-overwrite-draft-mutation', () => ({
 	useOverwriteDraftMutation: () => ({ mutateAsync: requestDraftOverwriteMock }),
 }));
 
+vi.mock('@/shared/api/drafts/mutations/use-publish-draft-mutation', () => ({
+	usePublishDraftMutation: () => ({ mutateAsync: requestDraftPublicationMock }),
+}));
+
 vi.mock('@/shared/api/drafts/mutations/use-delete-draft-mutation', () => ({
 	useDeleteDraftMutation: () => ({
 		mutateAsync: requestDraftDeleteMock,
@@ -141,6 +156,7 @@ beforeEach(() => {
 	requestPostPublicationMock.mockReset();
 	requestDraftSaveMock.mockReset();
 	requestDraftOverwriteMock.mockReset();
+	requestDraftPublicationMock.mockReset();
 	requestDraftDeleteMock.mockReset();
 	resetDraftDeleteMock.mockReset();
 	requestPostUpdateMock.mockReset();
@@ -160,6 +176,11 @@ beforeEach(() => {
 		status: 200,
 		message: '임시저장을 덮어썼습니다.',
 		data: { draftId: 123 },
+	});
+	requestDraftPublicationMock.mockResolvedValue({
+		status: 200,
+		message: '임시저장 글을 발행했습니다.',
+		data: { postId: 77, slug: 'rilog-team' },
 	});
 	requestDraftDeleteMock.mockResolvedValue(new Response(null, { status: 204 }));
 	requestPostUpdateMock.mockResolvedValue({
@@ -377,6 +398,58 @@ describe('NewPostController', () => {
 			draftId: 42,
 			request: { title: '기존 임시저장 제목', content: blocks },
 		});
+	});
+
+	it('불러온 임시저장 글을 현재 draftId로 발행하고 게시글 상세로 이동한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		const blocks = [createParagraph('기존 임시저장 본문')];
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 임시저장 제목', blocks }}
+				navigate={navigate}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestDraftPublicationMock).toHaveBeenCalledOnce());
+		expect(requestDraftPublicationMock).toHaveBeenCalledWith({
+			draftId: 42,
+			request: {
+				slug: 'rilog-team',
+				title: '기존 임시저장 제목',
+				content: blocks,
+				category: 'TECH',
+				visibility: 'PUBLIC',
+				thumbnailImageUrl: '/images/thumbnail-fallback.svg',
+			},
+		});
+		expect(requestPostPublicationMock).not.toHaveBeenCalled();
+		expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77');
+	});
+
+	it('최초 임시저장 후에는 반환된 draftId로 발행한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
+
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+		await waitFor(() => expect(requestDraftSaveMock).toHaveBeenCalledOnce());
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestDraftPublicationMock).toHaveBeenCalledOnce());
+		expect(requestDraftPublicationMock.mock.calls[0]?.[0].draftId).toBe(123);
+		expect(requestPostPublicationMock).not.toHaveBeenCalled();
+		expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77');
 	});
 
 	it('현재 작성 중인 임시저장 글은 목록에서 선택 상태로 표시하고 다시 선택할 수 없게 한다', async () => {

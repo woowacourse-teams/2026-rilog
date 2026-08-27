@@ -9,7 +9,7 @@ import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/
 import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
 import type { CreatePostDraft, PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
 
-import { usePublishNewPost } from '../hooks/use-post-publishers';
+import { usePublishNewPost, usePublishPostDraft } from '../hooks/use-post-publishers';
 
 import NewPostActions from './NewPostActions';
 import PostWriteWorkspace from './PostWriteWorkspace';
@@ -39,6 +39,7 @@ export default function NewPostController({
 	onDraftPromoted,
 }: NewPostControllerProps) {
 	const publishNewPost = usePublishNewPost();
+	const publishSavedDraft = usePublishPostDraft();
 	const createNewDraft = useCreatePostDraft();
 	const updatePostDraft = useUpdatePostDraft();
 	const [draftId, setDraftId] = useState<number | null>(null);
@@ -46,13 +47,7 @@ export default function NewPostController({
 	const publishCurrentPost: PublishPost =
 		draftId === null
 			? (publishPost ?? publishNewPost)
-			: (command) => {
-					if (publishDraft === undefined) {
-						throw new Error('임시저장 발행 API는 아직 연결되지 않았습니다.');
-					}
-
-					return publishDraft(draftId, command);
-				};
+			: (command) => (publishDraft ?? publishSavedDraft)(draftId, command);
 
 	const handleDraftCreated = (createdDraftId: number) => {
 		onDraftPromoted?.(createdDraftId);
