@@ -68,7 +68,7 @@ export default function SettingsWorkspaceRouter({ slug, tab }: SettingsWorkspace
 		);
 	}
 
-	if (profileQuery.isError || settingsRoute === null) {
+	if (profileQuery.isError || profile === undefined || settingsRoute === null) {
 		return (
 			<PageShell>
 				<p className="flex min-h-64 items-center justify-center text-body-2 text-danger-text" role="alert">

@@ -40,6 +40,7 @@ describe('useUpdateBlogProfileMutation', () => {
 		expect(updateBlogProfile).toHaveBeenCalledWith('rilog-team', request);
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myInfo() });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsPreview() });
 	});
 });

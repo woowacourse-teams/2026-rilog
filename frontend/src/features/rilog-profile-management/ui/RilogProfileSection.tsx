@@ -1,37 +1,49 @@
 'use client';
 
-import type { useRilogProfileManagement } from '../hooks/use-rilog-profile-management';
+import type { useRilogProfileForm } from '../hooks/use-rilog-profile-form';
+import type { RilogProfileTextField } from '../model/rilog-profile-settings';
+import type { FormEvent } from 'react';
 
 import RilogProfileFormFields from './RilogProfileFormFields';
 
 interface RilogProfileSectionProps {
-	management: ReturnType<typeof useRilogProfileManagement>;
+	form: ReturnType<typeof useRilogProfileForm>;
+	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+	disabled?: boolean;
+	onValueChange?: (field?: RilogProfileTextField) => void;
+	nicknameAvailabilityStatus?: 'idle' | 'pending' | 'success' | 'error';
+	nicknameAvailabilityMessage?: string;
+	onNicknameAvailabilityCheck: () => void;
 }
 
-export default function RilogProfileSection({ management }: RilogProfileSectionProps) {
-	const nicknameAvailabilityStatus = management.isNicknameAvailabilityRequired
-		? 'error'
-		: management.isNicknameConfirmed
-			? 'success'
-			: 'idle';
-	const nicknameAvailabilityMessage = management.isNicknameAvailabilityRequired
-		? '닉네임 중복 확인이 필요합니다.'
-		: management.isNicknameConfirmed
-			? '사용 가능한 닉네임입니다.'
-			: undefined;
-
+export default function RilogProfileSection({
+	form,
+	onSubmit,
+	disabled = false,
+	onValueChange,
+	nicknameAvailabilityStatus = 'idle',
+	nicknameAvailabilityMessage,
+	onNicknameAvailabilityCheck,
+}: RilogProfileSectionProps) {
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
-			<form id="rilog-profile-settings-form" noValidate onSubmit={management.handleSubmit}>
+			<form id="profile-settings-form" noValidate onSubmit={onSubmit}>
 				<RilogProfileFormFields
-					value={management.form.value}
-					errors={management.form.errors}
-					refs={management.form.refs}
+					value={form.value}
+					errors={form.errors}
+					refs={form.refs}
+					disabled={disabled}
 					nicknameAvailabilityStatus={nicknameAvailabilityStatus}
 					nicknameAvailabilityMessage={nicknameAvailabilityMessage}
-					onTextFieldChange={management.handleTextFieldChange}
-					onProfileImageChange={management.form.updateProfileImageFile}
-					onNicknameAvailabilityCheck={management.handleNicknameAvailabilityCheck}
+					onTextFieldChange={(field, value) => {
+						form.updateTextField(field, value);
+						onValueChange?.(field);
+					}}
+					onProfileImageChange={(file) => {
+						form.updateProfileImageFile(file);
+						onValueChange?.();
+					}}
+					onNicknameAvailabilityCheck={onNicknameAvailabilityCheck}
 				/>
 			</form>
 		</section>
