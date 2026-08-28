@@ -7,10 +7,10 @@ import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
-import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
+import kr.rilog.domain.blog.controller.dto.response.BlogPublicProfileResponse;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.service.BlogService;
-import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
+import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -46,9 +46,9 @@ public class BlogController implements BlogApiSpec {
     }
 
     @GetMapping("/blogs/{slug}")
-    public ApiResponse<CologPublicProfileResponse> getPublicProfile(@PathVariable("slug") String slug) {
-        CologPublicProfileResult result = blogService.getPublicProfile(slug);
-        CologPublicProfileResponse data = CologPublicProfileResponse.from(result);
+    public ApiResponse<BlogPublicProfileResponse> getPublicProfile(@PathVariable("slug") String slug) {
+        BlogPublicProfileResult result = blogService.getPublicProfile(slug);
+        BlogPublicProfileResponse data = BlogPublicProfileResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "공개 프로필 조회에 성공했습니다.", data);
     }
 

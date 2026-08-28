@@ -3,12 +3,11 @@ package kr.rilog.domain.blog.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
-import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
-import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
+import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
@@ -42,6 +41,7 @@ public class BlogService {
 
         TagAssets previous = blog.getTagAssets();
         blog.changeProfile(command.toProfile());
+        synchronizeOwnerProfileIfRilog(blog, command);
         TagAssets current = blog.getTagAssets();
         tagAssetsLifecycle.synchronize(previous, current);
     }
@@ -66,13 +66,29 @@ public class BlogService {
         blogRepository.save(Blog.createRilog(user));
     }
 
-    public CologPublicProfileResult getPublicProfile(String slug) {
-        Blog colog = blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
+    public BlogPublicProfileResult getPublicProfile(String slug) {
+        Blog blog = blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(slug))
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
 
-        long memberCount = blogMemberRepository.countActiveMembersByBlogId(colog.getId());
-        long postCount = postRepository.countPublicPublishedPostsByCologId(colog.getId());
-        return CologPublicProfileResult.from(colog, memberCount, postCount);
+        long memberCount = countMembers(blog);
+        long postCount = countPublicPublishedPosts(blog);
+        return BlogPublicProfileResult.from(blog, memberCount, postCount);
+    }
+
+    private long countMembers(Blog blog) {
+        if (!blog.isColog()) {
+            return 1L;
+        }
+
+        return blogMemberRepository.countActiveMembersByBlogId(blog.getId());
+    }
+
+    private long countPublicPublishedPosts(Blog blog) {
+        if (blog.isColog()) {
+            return postRepository.countPublicPublishedPostsByCologId(blog.getId());
+        }
+
+        return postRepository.countPublicPublishedPostsByRilogId(blog.getId());
     }
 
     private Blog getBlog(String slug) {
@@ -84,6 +100,20 @@ public class BlogService {
         if (blogRepository.existsByProfileNameExceptId(profileName, excludedBlogId)) {
             throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         }
+    }
+
+    private void synchronizeOwnerProfileIfRilog(Blog blog, BlogProfileUpdateCommand command) {
+        if (blog.isColog()) {
+            return;
+        }
+
+        blog.getOwner().synchronizeRilogProfile(
+                command.name(),
+                command.introduction(),
+                command.profileImageUrl(),
+                command.githubUrl(),
+                command.email()
+        );
     }
 
     private void validateCanChangeProfile(Long requesterId, Blog blog) {

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
-import kr.rilog.domain.blog.controller.dto.response.CologPublicProfileResponse;
+import kr.rilog.domain.blog.controller.dto.response.BlogPublicProfileResponse;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,7 +47,7 @@ public interface BlogApiSpec {
             responseCode = "200",
             description = "공개 블로그 프로필 조회 성공"
     )
-    ApiResponse<CologPublicProfileResponse> getPublicProfile(
+    ApiResponse<BlogPublicProfileResponse> getPublicProfile(
             @Parameter(description = "공개 블로그 slug", example = "rilog-team")
             @PathVariable("slug") String slug
     );

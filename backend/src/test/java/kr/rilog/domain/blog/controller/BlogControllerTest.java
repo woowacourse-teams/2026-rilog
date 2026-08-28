@@ -7,9 +7,10 @@ import kr.rilog.domain.auth.application.token.access.AccessToken;
 import kr.rilog.domain.auth.application.token.access.AccessTokenClaims;
 import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
-import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
+import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +26,7 @@ import java.time.Instant;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -159,7 +161,8 @@ class BlogControllerTest {
         // given
         BlogService blogService = mock(BlogService.class);
         when(blogService.getPublicProfile("rilog-team"))
-                .thenReturn(new CologPublicProfileResult(
+                .thenReturn(new BlogPublicProfileResult(
+                        BlogType.COLOG,
                         2L,
                         "리로그 팀",
                         "rilog-team",
@@ -190,6 +193,45 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.data.user").doesNotExist());
 
         verify(blogService).getPublicProfile("rilog-team");
+    }
+
+    @Test
+    @DisplayName("GET /v1/blogs/{slug}는 개인 블로그 공개 프로필을 조회한다")
+    void getPublicProfileReturnsRilogProfile() throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        when(blogService.getPublicProfile("riro"))
+                .thenReturn(new BlogPublicProfileResult(
+                        BlogType.RILOG,
+                        3L,
+                        "러로",
+                        "riro",
+                        "기록하는 개발자입니다.",
+                        "https://example.com/profile.png",
+                        null,
+                        null,
+                        "https://github.com/riro",
+                        1L,
+                        7L
+                ));
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/blogs/{slug}", "riro"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.type").value("RILOG"))
+                .andExpect(jsonPath("$.data.id").value(3L))
+                .andExpect(jsonPath("$.data.name").value("러로"))
+                .andExpect(jsonPath("$.data.slug").value("riro"))
+                .andExpect(jsonPath("$.data.introduction").value("기록하는 개발자입니다."))
+                .andExpect(jsonPath("$.data.profileImageUrl").value("https://example.com/profile.png"))
+                .andExpect(jsonPath("$.data.coverImageUrl").value(nullValue()))
+                .andExpect(jsonPath("$.data.serviceUrl").value(nullValue()))
+                .andExpect(jsonPath("$.data.githubUrl").value("https://github.com/riro"))
+                .andExpect(jsonPath("$.data.memberCount").value(1L))
+                .andExpect(jsonPath("$.data.postCount").value(7L));
+
+        verify(blogService).getPublicProfile("riro");
     }
 
     @Test

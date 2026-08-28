@@ -93,6 +93,20 @@ public class User extends BaseEntity {
         this.onboardingCompletedAt = LocalDateTime.now();
     }
 
+    public void synchronizeRilogProfile(
+            String nickname,
+            String introduction,
+            String profileImageUrl,
+            String githubUrl,
+            String email
+    ) {
+        this.nickname = Nickname.from(nickname);
+        this.introduction = introduction;
+        this.profileImageUrl = profileImageUrl;
+        this.githubUrl = githubUrl;
+        this.email = toEmailOrNull(email);
+    }
+
     public boolean isOnboardingCompleted() {
         return this.onboardingStatus == OnboardingStatus.COMPLETED || this.slug != null;
     }
