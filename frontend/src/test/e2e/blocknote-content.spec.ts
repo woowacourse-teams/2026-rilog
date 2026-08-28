@@ -1,0 +1,466 @@
+import { readFile } from 'node:fs/promises';
+
+import { expect, test } from '@playwright/test';
+
+import type { Page } from '@playwright/test';
+
+const SHARED_CONTENT_STYLES = new URL('../../shared/styles/blocknote-content.css', import.meta.url);
+const COLOR_TOKEN_STYLES = new URL('../../shared/styles/tokens/colors.css', import.meta.url);
+const BLOCKNOTE_CORE_STYLES = new URL('../../../node_modules/@blocknote/core/dist/style.css', import.meta.url);
+const POST_DETAIL_STYLES = new URL(
+	'../../app/(with-sidebar)/(with-footer)/[slug]/posts/[postId]/post-detail.css',
+	import.meta.url,
+);
+const POST_WRITE_STYLES = new URL('../../features/post-write/styles/blocknote-theme.css', import.meta.url);
+
+interface BlockFixture {
+	contentType: string;
+	attributes?: string;
+	content?: string;
+	innerHtml?: string;
+}
+
+const block = (fixture: string | BlockFixture) => {
+	const {
+		contentType,
+		attributes = '',
+		content = '가독성 점검 본문',
+		innerHtml,
+	} = typeof fixture === 'string' ? { contentType: fixture } : fixture;
+	const contentHtml = innerHtml ?? `<div class="bn-inline-content">${content}</div>`;
+
+	return `
+	<div class="bn-block-outer">
+		<div class="bn-block">
+			<div class="bn-block-content" data-content-type="${contentType}" ${attributes}>
+				${contentHtml}
+			</div>
+		</div>
+	</div>
+`;
+};
+
+const renderBlockNoteFixture = async (
+	page: Page,
+	rootClass: 'post-detail-body' | 'post-write-blocknote',
+	contentTypes: Array<string | BlockFixture>,
+	shouldWrapInEditor = false,
+) => {
+	const [blockNoteCoreStyles, colorTokenStyles, sharedStyles, rootStyles] = await Promise.all([
+		readFile(BLOCKNOTE_CORE_STYLES, 'utf8'),
+		readFile(COLOR_TOKEN_STYLES, 'utf8'),
+		readFile(SHARED_CONTENT_STYLES, 'utf8'),
+		readFile(rootClass === 'post-detail-body' ? POST_DETAIL_STYLES : POST_WRITE_STYLES, 'utf8'),
+	]);
+
+	const blockGroup = `<div class="bn-block-group">${contentTypes.map(block).join('')}</div>`;
+	const content = shouldWrapInEditor ? `<div class="bn-editor bn-default-styles">${blockGroup}</div>` : blockGroup;
+	await page.setContent(`<div class="${rootClass}">${content}</div>`);
+	await page.addStyleTag({
+		content: `* { box-sizing: border-box; transition: none !important; } ${colorTokenStyles} :root { --text-body-1: 0.875rem; --text-body-2: 1rem; --text-body-3: 1.125rem; --text-heading-3: 2rem; --text-heading-3--line-height: 2.5rem; --text-heading-4: 1.75rem; --text-heading-4--line-height: 2.25rem; --text-title-1: 1.25rem; --text-title-1--line-height: 1.75rem; --text-title-2: 1.5rem; --text-title-2--line-height: 2rem; }\n${blockNoteCoreStyles}\n${sharedStyles}\n${rootStyles.replace("@import '@blocknote/core/style.css';", '')}`,
+	});
+};
+
+const getPadding = (page: Page, index: number) =>
+	page
+		.locator('.bn-block-outer')
+		.nth(index)
+		.evaluate((element) => {
+			const style = getComputedStyle(element);
+
+			return { top: style.paddingTop, bottom: style.paddingBottom };
+		});
+
+const ROOT_SPACING = [
+	{ rootClass: 'post-detail-body' as const, outer: '9.6px', shared: '3.2px' },
+	{ rootClass: 'post-write-blocknote' as const, outer: '9.6px', shared: '3.2px' },
+];
+
+const LIST_TYPES = ['bulletListItem', 'numberedListItem', 'checkListItem', 'toggleListItem'];
+
+test.describe('BlockNote 콘텐츠 여백', () => {
+	for (const rootClass of ['post-detail-body', 'post-write-blocknote'] as const) {
+		test(`${rootClass}의 인라인 코드를 코드 블록과 구분해 표시한다`, async ({ page }) => {
+			await renderBlockNoteFixture(
+				page,
+				rootClass,
+				[
+					{
+						contentType: 'paragraph',
+						innerHtml: '<div class="bn-inline-content">본문 <code>const value</code> 설명</div>',
+					},
+					{
+						contentType: 'codeBlock',
+						innerHtml: '<pre><code class="bn-inline-content">const value = 1;</code></pre>',
+					},
+				],
+				true,
+			);
+
+			const inlineCode = page.locator('[data-content-type="paragraph"] code');
+			const blockCode = page.locator('[data-content-type="codeBlock"] code');
+
+			await expect(inlineCode).toHaveCSS('background-color', 'rgb(237, 241, 247)');
+			await expect(inlineCode).toHaveCSS('color', 'rgb(12, 45, 91)');
+			await expect(inlineCode).toHaveCSS('font-size', '14px');
+			await expect(inlineCode).toHaveCSS('font-weight', '500');
+			await expect(inlineCode).toHaveCSS('padding', '2px 4px');
+			await expect(inlineCode).toHaveCSS('border-radius', '4px');
+			await expect(blockCode).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+		});
+	}
+
+	for (const rootClass of ['post-detail-body', 'post-write-blocknote'] as const) {
+		test(`${rootClass}의 토글, 링크와 인용문에 서비스 본문 스타일을 적용한다`, async ({ page }) => {
+			await renderBlockNoteFixture(
+				page,
+				rootClass,
+				[
+					{
+						contentType: 'toggleListItem',
+						innerHtml:
+							'<div><div class="bn-toggle-wrapper"><button class="bn-toggle-button" type="button"><svg width="18" height="18"></svg></button><div class="bn-inline-content">토글</div></div><button class="bn-toggle-add-block-button" type="button">비어 있는 토글입니다. 클릭하여 블록을 추가하세요.</button></div>',
+					},
+					{
+						contentType: 'paragraph',
+						innerHtml: '<div class="bn-inline-content"><a href="#rilog">Rilog 링크</a></div>',
+					},
+					{
+						contentType: 'quote',
+						innerHtml: '<blockquote><div class="bn-inline-content">인용문</div></blockquote>',
+					},
+				],
+				true,
+			);
+
+			const toggleButton = page.locator('.bn-toggle-button');
+			const emptyToggleButton = page.getByRole('button', {
+				name: '비어 있는 토글입니다. 클릭하여 블록을 추가하세요.',
+			});
+			const link = page.getByRole('link', { name: 'Rilog 링크' });
+			const quote = page.locator('[data-content-type="quote"] blockquote');
+
+			await expect(toggleButton).toHaveCSS('padding', '3px');
+			await expect(toggleButton).toHaveCSS('width', '24px');
+			await expect(toggleButton).toHaveCSS('height', '24px');
+			await expect(emptyToggleButton).toHaveCSS('padding', '4px 8px');
+			await expect(link).toHaveCSS('color', 'rgb(53, 85, 124)');
+			await expect(link).toHaveCSS('text-decoration-line', 'underline');
+			await link.hover();
+			await expect(link).toHaveCSS('color', 'rgb(37, 99, 235)');
+			await page.mouse.move(0, 0);
+			await link.focus();
+			await expect(link).toHaveCSS('color', 'rgb(37, 99, 235)');
+			await link.hover();
+			await page.mouse.down();
+			expect(await link.evaluate((element) => element.matches(':active'))).toBe(true);
+			await expect(link).toHaveCSS('color', 'rgb(37, 99, 235)');
+			await page.mouse.up();
+			await expect(quote).toHaveCSS('color', 'rgb(53, 85, 124)');
+			await expect(quote).toHaveCSS('border-left-color', 'rgb(129, 153, 185)');
+		});
+	}
+
+	test('에디터와 상세 본문은 데스크톱과 모바일에서 같은 시각 규칙을 사용한다', async ({ page }) => {
+		const fixtures: Array<string | BlockFixture> = [
+			'paragraph',
+			'paragraph',
+			{ contentType: 'heading' },
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+			'bulletListItem',
+			'quote',
+			{
+				contentType: 'codeBlock',
+				innerHtml: '<pre><code class="bn-inline-content">plain text</code></pre>',
+			},
+		];
+		const getVisualMetrics = (rootClass: 'post-detail-body' | 'post-write-blocknote') =>
+			page.locator(`.${rootClass}`).evaluate((root) => {
+				const styles = (selector: string) => getComputedStyle(root.querySelector(selector)!);
+				const codeStyle = styles('[data-content-type="codeBlock"] > pre');
+				const boxStyles = (selector: string) => {
+					const style = styles(selector);
+
+					return {
+						color: style.color,
+						fontSize: style.fontSize,
+						letterSpacing: style.letterSpacing,
+						lineHeight: style.lineHeight,
+						paddingBottom: style.paddingBottom,
+						paddingTop: style.paddingTop,
+					};
+				};
+
+				return {
+					code: {
+						color: codeStyle.color,
+						fontSize: codeStyle.fontSize,
+						lineHeight: codeStyle.lineHeight,
+						paddingBottom: codeStyle.paddingBottom,
+					},
+					codeBlock: boxStyles('[data-content-type="codeBlock"]'),
+					editor: boxStyles('.bn-editor'),
+					heading1: boxStyles('[data-content-type="heading"]:not([data-level])'),
+					heading2: boxStyles('[data-content-type="heading"][data-level="2"]'),
+					heading3: boxStyles('[data-content-type="heading"][data-level="3"]'),
+					list: boxStyles('.bn-block-outer:has(> .bn-block > [data-content-type="bulletListItem"])'),
+					paragraph: boxStyles('[data-content-type="paragraph"]'),
+					secondParagraph: boxStyles('.bn-block-outer:nth-child(2)'),
+					quote: boxStyles('.bn-block-outer:has(> .bn-block > [data-content-type="quote"])'),
+				};
+			});
+
+		for (const viewport of [
+			{ width: 1280, height: 800 },
+			{ width: 390, height: 844 },
+		]) {
+			await page.setViewportSize(viewport);
+			await renderBlockNoteFixture(page, 'post-detail-body', fixtures, true);
+			const detailMetrics = await getVisualMetrics('post-detail-body');
+
+			await renderBlockNoteFixture(page, 'post-write-blocknote', fixtures, true);
+			const editorMetrics = await getVisualMetrics('post-write-blocknote');
+
+			expect(editorMetrics).toEqual(detailMetrics);
+		}
+	});
+
+	test('상세 코드 블록은 14px 글자 크기를 사용한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">const value = 14;</code></pre>',
+				},
+			],
+			true,
+		);
+
+		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"] > pre')).toHaveCSS('font-size', '14px');
+	});
+
+	test('상세 코드 블록은 의미 토큰으로 구문을 강조한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml:
+						'<pre><code class="bn-inline-content" data-post-code-highlighted=""><span class="line"><span data-syntax="keyword" style="color:var(--code-syntax-token-keyword)">const</span> <span data-syntax="string" style="color:var(--code-syntax-token-string-expression)">"value"</span></span></code></pre>',
+				},
+			],
+			true,
+		);
+
+		await expect(page.locator('[data-syntax="keyword"]')).toHaveCSS('color', 'rgb(207, 34, 46)');
+		await expect(page.locator('[data-syntax="string"]')).toHaveCSS('color', 'rgb(10, 48, 105)');
+		await expect(page.locator('.bn-block-content[data-content-type="codeBlock"]')).toHaveCSS(
+			'background-color',
+			'rgb(255, 255, 255)',
+		);
+	});
+
+	test('plain text 코드 블록은 라이트 전경색을 사용한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">plain text</code></pre>',
+				},
+			],
+			true,
+		);
+
+		await expect(page.locator('code.bn-inline-content')).toHaveCSS('color', 'rgb(31, 35, 40)');
+	});
+
+	test('긴 코드는 코드 블록 안에서만 가로 스크롤한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: `<pre><code class="bn-inline-content">const longValue = '${'가로로 긴 코드'.repeat(30)}';</code></pre>`,
+				},
+			],
+			true,
+		);
+		await page.locator('.post-detail-body').evaluate((element) => {
+			(element as HTMLElement).style.width = '15rem';
+		});
+
+		const codeScroller = page.locator('.bn-block-content[data-content-type="codeBlock"] > pre');
+		await expect(codeScroller).toHaveCSS('overflow-x', 'auto');
+		expect(await codeScroller.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+		expect(
+			await codeScroller.evaluate((element) => {
+				element.scrollLeft = 100;
+
+				return element.scrollLeft > 0;
+			}),
+		).toBe(true);
+		expect(
+			await page.locator('.post-detail-body').evaluate((element) => element.scrollWidth === element.clientWidth),
+		).toBe(true);
+	});
+
+	test('상세 본문의 연속 문단 사이에만 간격을 둔다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', ['paragraph', 'paragraph', 'paragraph']);
+
+		await expect.poll(() => getPadding(page, 0)).toEqual({ top: '0px', bottom: '0px' });
+		await expect.poll(() => getPadding(page, 1)).toEqual({ top: '14px', bottom: '0px' });
+		await expect.poll(() => getPadding(page, 2)).toEqual({ top: '14px', bottom: '0px' });
+
+		await page.setViewportSize({ width: 390, height: 844 });
+		await expect.poll(() => getPadding(page, 1)).toEqual({ top: '12px', bottom: '0px' });
+	});
+
+	test('상세 본문의 문단, 목록, 인용문에 같은 행간을 적용한다', async ({ page }) => {
+		const textTypes = ['paragraph', ...LIST_TYPES, 'quote'];
+		await renderBlockNoteFixture(page, 'post-detail-body', textTypes);
+
+		for (const [index, textType] of textTypes.entries()) {
+			await expect(page.locator(`.bn-block-content[data-content-type="${textType}"] .bn-inline-content`)).toHaveCSS(
+				'line-height',
+				'26.4px',
+			);
+			await expect(page.locator('.bn-block-content').nth(index)).toHaveCSS('font-size', '16px');
+		}
+	});
+
+	test('데스크톱 본문 헤딩은 설정한 크기 위계와 위쪽 간격을 사용한다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading' },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+		]);
+
+		const level1Heading = page.locator('.bn-block-content[data-content-type="heading"]:not([data-level])');
+		const level2Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="2"]');
+		const level3Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="3"]');
+
+		await expect(level1Heading).toHaveCSS('font-size', '38px');
+		await expect(level2Heading).toHaveCSS('font-size', '32px');
+		await expect(level2Heading).toHaveCSS('padding-top', '46.4px');
+		await expect(level2Heading).toHaveCSS('padding-bottom', '14.4px');
+		await expect(level3Heading).toHaveCSS('font-size', '22.8px');
+		await expect(level3Heading).toHaveCSS('padding-top', '28.5px');
+		await expect(level3Heading).toHaveCSS('padding-bottom', '7.98px');
+	});
+
+	test('두 줄 이상인 상세 본문 제목에 충분한 행간을 적용한다', async ({ page }) => {
+		const longHeading = '화면 폭이 좁아 제목이 여러 줄로 표시되는 경우에도 자연스럽게 읽을 수 있습니다';
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading', attributes: 'data-level="2"', content: longHeading },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="3"', content: longHeading },
+		]);
+		await page.locator('.post-detail-body').evaluate((element) => {
+			(element as HTMLElement).style.width = '12rem';
+		});
+
+		const level2Content = page.locator(
+			'.bn-block-content[data-content-type="heading"][data-level="2"] .bn-inline-content',
+		);
+		const level3Content = page.locator(
+			'.bn-block-content[data-content-type="heading"][data-level="3"] .bn-inline-content',
+		);
+
+		await expect(level2Content).toHaveCSS('line-height', '48px');
+		await expect(level3Content).toHaveCSS('line-height', '34.2px');
+		expect(await level2Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(48);
+		expect(await level3Content.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(34.2);
+	});
+
+	test('모바일 본문 헤딩을 28px부터 단계적으로 축소한다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading' },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			'paragraph',
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+		]);
+		await page.setViewportSize({ width: 390, height: 844 });
+
+		const level1Heading = page.locator('.bn-block-content[data-content-type="heading"]:not([data-level])');
+		const level2Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="2"]');
+		const level3Heading = page.locator('.bn-block-content[data-content-type="heading"][data-level="3"]');
+
+		await expect(level1Heading).toHaveCSS('font-size', '28px');
+		await expect(level1Heading.locator('.bn-inline-content')).toHaveCSS('line-height', '36px');
+		await expect(level2Heading).toHaveCSS('font-size', '24px');
+		await expect(level2Heading.locator('.bn-inline-content')).toHaveCSS('line-height', '32px');
+		await expect(level3Heading).toHaveCSS('font-size', '20px');
+		await expect(level3Heading.locator('.bn-inline-content')).toHaveCSS('line-height', '28px');
+	});
+
+	test('연속 헤딩과 구분선 주변의 간격을 중복하지 않는다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-detail-body', [
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+			{ contentType: 'heading', attributes: 'data-level="3"' },
+			'divider',
+			{ contentType: 'heading', attributes: 'data-level="2"' },
+		]);
+
+		const headings = page.locator('.bn-block-content[data-content-type="heading"]');
+		await expect(headings.nth(0)).toHaveCSS('padding-top', '0px');
+		await expect(headings.nth(0)).toHaveCSS('padding-bottom', '8px');
+		await expect(headings.nth(1)).toHaveCSS('padding-top', '14.25px');
+		await expect(headings.nth(1)).toHaveCSS('padding-bottom', '6.84px');
+		await expect(headings.nth(2)).toHaveCSS('padding-top', '28px');
+		await expect(headings.nth(2)).toHaveCSS('padding-bottom', '14.4px');
+	});
+
+	for (const { rootClass, outer, shared } of ROOT_SPACING) {
+		for (const listType of LIST_TYPES) {
+			test(`${rootClass}의 연속된 ${listType} 여백을 같은 타입끼리만 합친다`, async ({ page }) => {
+				await renderBlockNoteFixture(page, rootClass, [listType, listType, listType]);
+
+				await expect.poll(() => getPadding(page, 0)).toEqual({ top: outer, bottom: shared });
+				await expect.poll(() => getPadding(page, 1)).toEqual({ top: shared, bottom: shared });
+				await expect.poll(() => getPadding(page, 2)).toEqual({ top: shared, bottom: outer });
+			});
+		}
+
+		test(`${rootClass}에서 서로 다른 리스트 타입의 기본 여백을 유지한다`, async ({ page }) => {
+			await renderBlockNoteFixture(page, rootClass, ['bulletListItem', 'checkListItem']);
+
+			await expect.poll(() => getPadding(page, 0)).toEqual({ top: outer, bottom: outer });
+			await expect.poll(() => getPadding(page, 1)).toEqual({ top: outer, bottom: outer });
+		});
+	}
+
+	test('이미지와 구분선에는 특수 블록 공통 여백을 적용하지 않는다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-write-blocknote', [
+			'paragraph',
+			'quote',
+			'image',
+			'paragraph',
+			'quote',
+			'divider',
+			'paragraph',
+		]);
+
+		await expect.poll(() => getPadding(page, 1)).toEqual({ top: '16px', bottom: '16px' });
+		await expect.poll(() => getPadding(page, 2)).toEqual({ top: '0px', bottom: '0px' });
+		await expect.poll(() => getPadding(page, 4)).toEqual({ top: '16px', bottom: '16px' });
+		await expect.poll(() => getPadding(page, 5)).toEqual({ top: '0px', bottom: '0px' });
+	});
+
+	test('나머지 특수 블록은 데스크톱과 모바일 공통 여백을 유지한다', async ({ page }) => {
+		await renderBlockNoteFixture(page, 'post-write-blocknote', ['paragraph', 'quote', 'paragraph']);
+		await expect.poll(() => getPadding(page, 1)).toEqual({ top: '16px', bottom: '16px' });
+
+		await page.setViewportSize({ width: 390, height: 844 });
+		await expect.poll(() => getPadding(page, 1)).toEqual({ top: '12px', bottom: '12px' });
+	});
+});

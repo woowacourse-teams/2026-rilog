@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+@import '../shared/styles/tokens/breakpoints.css';
+@import '../features/post-write/styles/blocknote-shadcn.css';
+@import '../shared/styles/blocknote-content.css';
+@import '../shared/styles/tokens/index.css';
+@import '../shared/ui/button/button.css';
+@import '../shared/ui/modal/modal.css';
+@import '../shared/ui/page-shell/page-shell.css';
+
+@source '../../node_modules/@blocknote/shadcn';
+
+* {
+	box-sizing: border-box;
+}
+
+:where(
+	a[href],
+	button:not(:disabled):not([aria-disabled='true']),
+	input:is([type='button'], [type='submit'], [type='reset'], [type='checkbox'], [type='radio'], [type='file']):not(
+			:disabled
+		),
+	select:not(:disabled),
+	summary,
+	label[for],
+	label:has(input:is([type='checkbox'], [type='radio'], [type='file']):not(:disabled)),
+	[role='button']:not([aria-disabled='true']),
+	[role='tab']:not([aria-disabled='true'])
+) {
+	cursor: pointer;
+}
+
+body {
+	margin: 0;
+	background: var(--background);
+	color: var(--text-primary);
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+@media (width < 48rem) {
+	body:has([data-mobile-bottom-navigation]) {
+		padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+	}
+}

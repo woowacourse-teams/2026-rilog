@@ -1,3 +1,52 @@
 spring:
   application:
     name: backend
+  jpa:
+    properties:
+      hibernate:
+        type:
+          json_format_mapper: jackson3
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+server:
+  forward-headers-strategy: framework
+
+github:
+  oauth:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}
+    callback-uri: ${GITHUB_CALLBACK_URI:http://localhost:5173/auth/github/callback}
+    state-ttl: 5m
+    scope: read:user,user:email
+    token-uri: https://github.com/login/oauth/access_token
+    user-uri: https://api.github.com/user
+    connect-timeout: 3s
+    read-timeout: 3s
+
+auth:
+  access-token:
+    secret: ${ACCESS_TOKEN_SECRET:local-development-access-token-secret-change-me}
+    expiration: ${ACCESS_TOKEN_EXPIRATION:15m}
+  onboarding-token:
+    secret: ${ONBOARDING_TOKEN_SECRET:local-development-onboarding-token-secret-change-me}
+    expiration: ${ONBOARDING_TOKEN_EXPIRATION:10m}
+  refresh-token:
+    expiration: ${REFRESH_TOKEN_EXPIRATION:14d}
+    cookie-name: refresh_token
+    cookie-path: ${REFRESH_TOKEN_PATH}
+    cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
+    cookie-same-site: ${REFRESH_TOKEN_SAME_SITE_OPTION:Lax}
+
+aws:
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+    region: ${AWS_REGION:ap-northeast-2}
+    root-directory: ${AWS_S3_DIRECTORY}
+    presigned-url-expiration-minutes: 10

@@ -1,0 +1,17 @@
+{
+	"css.lint.unknownAtRules": "ignore",
+	"js/ts.preferences.importModuleSpecifier": "non-relative",
+	"eslint.workingDirectories": [
+		{ "pattern": "frontend" },
+		{ "mode": "auto" }
+	],
+	"eslint.validate": [
+		"javascript",
+		"javascriptreact",
+		"typescript",
+		"typescriptreact"
+	],
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit"
+	}
+}

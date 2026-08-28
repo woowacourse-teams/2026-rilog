@@ -1,0 +1,17 @@
+@import '@blocknote/core/style.css';
+
+.post-detail-body .bn-block-outer[id] {
+	scroll-margin-top: 2.5rem;
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram) {
+	flex-direction: column;
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram[data-state='ready']) {
+	background: transparent;
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram[data-state='ready']) > pre {
+	display: none;
+}

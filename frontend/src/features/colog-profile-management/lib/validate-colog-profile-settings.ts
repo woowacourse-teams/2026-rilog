@@ -1,0 +1,76 @@
+import type { CologProfileSettingsValue, CologProfileValidationErrors } from '../model/colog-profile-settings';
+
+import { BLOG_PROFILE_URL_MAX_LENGTH } from '@/domains/blog/model/blog';
+import {
+	COLOG_DESCRIPTION_MAX_LENGTH,
+	COLOG_SLUG_MAX_LENGTH,
+	COLOG_SLUG_MIN_LENGTH,
+	COLOG_SLUG_PATTERN,
+	normalizeCologName,
+	validateCologName,
+} from '@/domains/blog/model/colog';
+import { isHttpUrl } from '@/shared/utils/is-http-url';
+
+export const normalizeCologProfileSettings = (value: CologProfileSettingsValue): CologProfileSettingsValue => ({
+	...value,
+	name: normalizeCologName(value.name),
+	slug: value.slug.trim().toLowerCase(),
+	description: (value.description ?? '').trim(),
+	profileImageUrl: (value.profileImageUrl ?? '').trim(),
+	coverImageUrl: (value.coverImageUrl ?? '').trim(),
+	serviceUrl: (value.serviceUrl ?? '').trim(),
+	githubUrl: (value.githubUrl ?? '').trim(),
+});
+
+export const validateCologProfileSettings = (value: CologProfileSettingsValue): CologProfileValidationErrors => {
+	const errors: CologProfileValidationErrors = {};
+	const normalized = normalizeCologProfileSettings(value);
+
+	const nameError = validateCologName(normalized.name);
+	if (nameError !== undefined) {
+		errors.name = nameError;
+	}
+
+	if (
+		normalized.slug.length < COLOG_SLUG_MIN_LENGTH ||
+		normalized.slug.length > COLOG_SLUG_MAX_LENGTH ||
+		!COLOG_SLUG_PATTERN.test(normalized.slug)
+	) {
+		errors.slug = `고유 아이디는 ${COLOG_SLUG_MIN_LENGTH}~${COLOG_SLUG_MAX_LENGTH}자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.`;
+	}
+
+	const description = normalized.description ?? '';
+	if (description.length > COLOG_DESCRIPTION_MAX_LENGTH) {
+		errors.description = `팀 소개는 ${COLOG_DESCRIPTION_MAX_LENGTH}자 이내로 입력해 주세요.`;
+	}
+
+	const serviceUrl = normalized.serviceUrl ?? '';
+	if (serviceUrl.length > BLOG_PROFILE_URL_MAX_LENGTH) {
+		errors.serviceUrl = `서비스 링크는 ${BLOG_PROFILE_URL_MAX_LENGTH}자 이하로 입력해 주세요.`;
+	} else if (serviceUrl.length > 0 && !isHttpUrl(serviceUrl)) {
+		errors.serviceUrl = '올바른 서비스 URL을 입력해 주세요.';
+	}
+
+	const githubUrl = normalized.githubUrl ?? '';
+	if (githubUrl.length > BLOG_PROFILE_URL_MAX_LENGTH) {
+		errors.githubUrl = `GitHub 링크는 ${BLOG_PROFILE_URL_MAX_LENGTH}자 이하로 입력해 주세요.`;
+	} else if (githubUrl.length > 0 && !isHttpUrl(githubUrl)) {
+		errors.githubUrl = '올바른 GitHub URL을 입력해 주세요.';
+	}
+
+	return errors;
+};
+
+export const isCologProfileSettingsEqual = (
+	left: CologProfileSettingsValue,
+	right: CologProfileSettingsValue,
+): boolean =>
+	left.name === right.name &&
+	left.slug === right.slug &&
+	(left.description ?? '') === (right.description ?? '') &&
+	(left.serviceUrl ?? '') === (right.serviceUrl ?? '') &&
+	(left.githubUrl ?? '') === (right.githubUrl ?? '') &&
+	(left.profileImageUrl ?? '') === (right.profileImageUrl ?? '') &&
+	(left.coverImageUrl ?? '') === (right.coverImageUrl ?? '') &&
+	left.logoFile === right.logoFile &&
+	left.coverImageFile === right.coverImageFile;

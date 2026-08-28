@@ -1,0 +1,63 @@
+@import './colors.css';
+@import './spacing.css';
+@import './typography.css';
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--text-primary);
+
+	--color-navy-50: var(--navy-50);
+	--color-navy-100: var(--navy-100);
+	--color-navy-200: var(--navy-200);
+	--color-navy-300: var(--navy-300);
+	--color-navy-400: var(--navy-400);
+	--color-navy-500: var(--navy-500);
+	--color-navy-600: var(--navy-600);
+	--color-navy-700: var(--navy-700);
+	--color-navy-800: var(--navy-800);
+	--color-navy-900: var(--navy-900);
+	--color-navy-950: var(--navy-950);
+
+	--color-surface: var(--surface);
+	--color-surface-hover: var(--surface-hover);
+	--color-surface-active: var(--surface-active);
+	--color-thumbnail-background: var(--thumbnail-background);
+
+	--color-text-primary: var(--text-primary);
+	--color-text-secondary: var(--text-secondary);
+	--color-text-disabled: var(--text-disabled);
+	--color-text-on-dark: var(--text-on-dark);
+	--color-text-placeholder: var(--text-placeholder);
+
+	--color-border-default: var(--border-default);
+	--color-border-strong: var(--border-strong);
+
+	--color-brand-primary: var(--brand-primary);
+	--color-brand-primary-hover: var(--brand-primary-hover);
+	--color-brand-primary-active: var(--brand-primary-active);
+	--color-brand-secondary: var(--brand-secondary);
+	--color-brand-secondary-soft: var(--brand-secondary-soft);
+
+	--color-on-brand-primary: var(--on-brand-primary);
+	--color-on-brand-secondary: var(--on-brand-secondary);
+
+	--color-danger: var(--danger);
+	--color-danger-hover: var(--danger-hover);
+	--color-danger-active: var(--danger-active);
+	--color-danger-soft: var(--danger-soft);
+	--color-danger-border: var(--danger-border);
+	--color-danger-text: var(--danger-text);
+
+	--color-success: var(--success);
+	--color-success-hover: var(--success-hover);
+	--color-success-active: var(--success-active);
+	--color-success-soft: var(--success-soft);
+	--color-success-border: var(--success-border);
+	--color-success-text: var(--success-text);
+
+	--color-github: var(--github);
+	--color-github-hover: var(--github-hover);
+	--color-github-active: var(--github-active);
+
+	--color-focus-ring: var(--focus-ring);
+}

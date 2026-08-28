@@ -1,0 +1,9 @@
+packages:
+  - '.'
+
+saveExact: true
+
+allowBuilds:
+  core-js: false
+  sharp: false
+  unrs-resolver: false

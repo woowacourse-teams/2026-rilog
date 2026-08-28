@@ -1,0 +1,8 @@
+.next
+node_modules
+coverage
+playwright-report
+test-results
+.omx
+pnpm-lock.yaml
+AGENTS.md
