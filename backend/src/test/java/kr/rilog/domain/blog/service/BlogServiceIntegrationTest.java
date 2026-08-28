@@ -3,14 +3,21 @@ package kr.rilog.domain.blog.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
+import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.user.entity.vo.Email;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
+import kr.rilog.support.fixure.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +43,9 @@ class BlogServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogMemberRepository blogMemberRepository;
+
+    @Autowired
+    private PostRepository postRepository;
 
     @Test
     @DisplayName("활성 블로그의 slug와 중복되면 예외가 발생한다")
@@ -114,6 +124,95 @@ class BlogServiceIntegrationTest extends ServiceSupport {
                 .isEqualTo(expectedProfile);
     }
 
+    @Test
+    @DisplayName("개인 slug로 공개 프로필을 조회하면 RILOG 프로필과 공개 게시글 수를 반환한다.")
+    void getPublicProfileReturnsRilogProfile() {
+        // given
+        User owner = userRepository.save(createCompletedUser(300L, "러로", "riro"));
+        Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner, "https://rilog.example.com"));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-a", "리로그 팀"));
+        postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, owner));
+        postRepository.saveAndFlush(PostFixture.privatePublishedRilogPost(rilog, owner));
+        postRepository.saveAndFlush(PostFixture.publicPublishedColog(rilog, colog, owner));
+
+        // when
+        BlogPublicProfileResult result = blogService.getPublicProfile("riro");
+
+        // then
+        assertThat(result)
+                .extracting(
+                        BlogPublicProfileResult::type,
+                        BlogPublicProfileResult::name,
+                        BlogPublicProfileResult::slug,
+                        BlogPublicProfileResult::memberCount,
+                        BlogPublicProfileResult::postCount
+                )
+                .containsExactly(
+                        BlogType.RILOG,
+                        "러로",
+                        "riro",
+                        1L,
+                        1L
+                );
+    }
+
+    @Test
+    @DisplayName("RILOG 프로필을 변경하면 개인 블로그와 소유자 프로필 정보가 함께 변경된다.")
+    void changeBlogProfilePersistsChangedRilogProfileAndOwnerProfile() {
+        // given
+        User owner = userRepository.save(createCompletedUser(400L, "러로", "riro"));
+        Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner, "https://rilog.example.com"));
+        BlogProfileUpdateCommand command = new BlogProfileUpdateCommand(
+                "https://example.com/new-profile.png",
+                null,
+                "새 개인 블로그",
+                "새 소개",
+                "https://new-rilog.example.com",
+                "https://github.com/new-rilog",
+                "new-rilog@example.com"
+        );
+
+        // when
+        blogService.changeBlogProfile(owner.getId(), "riro", command);
+
+        // then
+        Blog savedRilog = blogRepository.findById(rilog.getId()).orElseThrow();
+        User savedOwner = userRepository.findById(owner.getId()).orElseThrow();
+
+        assertThat(savedRilog)
+                .extracting(
+                        Blog::getName,
+                        Blog::getIntroduction,
+                        Blog::getProfileImageUrl,
+                        Blog::getServiceUrl,
+                        Blog::getGithubUrl,
+                        Blog::getEmail
+                )
+                .containsExactly(
+                        "새 개인 블로그",
+                        "새 소개",
+                        "https://example.com/new-profile.png",
+                        "https://new-rilog.example.com",
+                        "https://github.com/new-rilog",
+                        "new-rilog@example.com"
+                );
+        assertThat(savedOwner)
+                .extracting(
+                        User::getNickname,
+                        User::getIntroduction,
+                        User::getProfileImageUrl,
+                        User::getGithubUrl,
+                        User::getEmail
+                )
+                .containsExactly(
+                        "새 개인 블로그",
+                        "새 소개",
+                        "https://example.com/new-profile.png",
+                        "https://github.com/new-rilog",
+                        "new-rilog@example.com"
+                );
+    }
+
     private Blog createColog(User owner, String slug, String name) {
         return Blog.createColog(
                 owner,
@@ -128,6 +227,18 @@ class BlogServiceIntegrationTest extends ServiceSupport {
                         "test@test.com"
                 )
         );
+    }
+
+    private User createCompletedUser(Long githubId, String nickname, String slug) {
+        return User.builder()
+                .githubId(githubId)
+                .nickname(Nickname.from(nickname))
+                .slug(Slug.from(slug))
+                .introduction("기록하는 개발자입니다.")
+                .profileImageUrl("https://example.com/profile.png")
+                .githubUrl("https://github.com/%s".formatted(slug))
+                .email(Email.from("%s@example.com".formatted(slug)))
+                .build();
     }
 
 }

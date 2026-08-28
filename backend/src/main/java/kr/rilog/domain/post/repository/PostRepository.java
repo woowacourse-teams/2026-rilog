@@ -46,8 +46,19 @@ public interface PostRepository extends JpaRepository<Post, Long> {
               AND post.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
               AND post.visibility = kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC
               AND post.deletedAt IS NULL
-            """)
+    """)
     long countPublicPublishedPostsByCologId(@Param("cologId") Long cologId);
+
+    @Query("""
+            SELECT COUNT(post)
+            FROM Post post
+            WHERE post.rilog.id = :rilogId
+              AND post.colog IS NULL
+              AND post.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
+              AND post.visibility = kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC
+              AND post.deletedAt IS NULL
+            """)
+    long countPublicPublishedPostsByRilogId(@Param("rilogId") Long rilogId);
 
     @Query("""
             SELECT p

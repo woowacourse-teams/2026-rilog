@@ -10,7 +10,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
-import kr.rilog.domain.blog.service.dto.result.CologPublicProfileResult;
+import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
@@ -196,28 +196,30 @@ class BlogServiceTest {
         // given
         User owner = createCompletedOwner();
         Blog colog = createDetailedColog(owner);
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from("team_Rilog"), BlogType.COLOG)).thenReturn(Optional.of(colog));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("team_Rilog"))).thenReturn(Optional.of(colog));
         when(blogMemberRepository.countActiveMembersByBlogId(COLOG_ID)).thenReturn(10L);
         when(postRepository.countPublicPublishedPostsByCologId(COLOG_ID)).thenReturn(24L);
 
         // when
-        CologPublicProfileResult result = blogService.getPublicProfile("team_Rilog");
+        BlogPublicProfileResult result = blogService.getPublicProfile("team_Rilog");
 
         // then
         assertThat(result)
                 .extracting(
-                        CologPublicProfileResult::id,
-                        CologPublicProfileResult::name,
-                        CologPublicProfileResult::slug,
-                        CologPublicProfileResult::introduction,
-                        CologPublicProfileResult::profileImageUrl,
-                        CologPublicProfileResult::coverImageUrl,
-                        CologPublicProfileResult::serviceUrl,
-                        CologPublicProfileResult::githubUrl,
-                        CologPublicProfileResult::memberCount,
-                        CologPublicProfileResult::postCount
+                        BlogPublicProfileResult::type,
+                        BlogPublicProfileResult::id,
+                        BlogPublicProfileResult::name,
+                        BlogPublicProfileResult::slug,
+                        BlogPublicProfileResult::introduction,
+                        BlogPublicProfileResult::profileImageUrl,
+                        BlogPublicProfileResult::coverImageUrl,
+                        BlogPublicProfileResult::serviceUrl,
+                        BlogPublicProfileResult::githubUrl,
+                        BlogPublicProfileResult::memberCount,
+                        BlogPublicProfileResult::postCount
                 )
                 .containsExactly(
+                        BlogType.COLOG,
                         COLOG_ID,
                         "리로그",
                         "team_rilog",
@@ -234,10 +236,55 @@ class BlogServiceTest {
     }
 
     @Test
-    @DisplayName("팀 slug에 해당하는 COLOG가 없으면 공개 프로필 조회를 거부한다")
+    @DisplayName("개인 slug로 공개 프로필 정보를 조회하면 memberCount를 1로 반환한다")
+    void getPublicProfileFindsRilogBySlug() {
+        // given
+        User owner = createCompletedOwner();
+        Blog rilog = createDetailedRilog(owner);
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("riro"))).thenReturn(Optional.of(rilog));
+        when(postRepository.countPublicPublishedPostsByRilogId(RILOG_ID)).thenReturn(7L);
+
+        // when
+        BlogPublicProfileResult result = blogService.getPublicProfile("riro");
+
+        // then
+        assertThat(result)
+                .extracting(
+                        BlogPublicProfileResult::type,
+                        BlogPublicProfileResult::id,
+                        BlogPublicProfileResult::name,
+                        BlogPublicProfileResult::slug,
+                        BlogPublicProfileResult::introduction,
+                        BlogPublicProfileResult::profileImageUrl,
+                        BlogPublicProfileResult::coverImageUrl,
+                        BlogPublicProfileResult::serviceUrl,
+                        BlogPublicProfileResult::githubUrl,
+                        BlogPublicProfileResult::memberCount,
+                        BlogPublicProfileResult::postCount
+                )
+                .containsExactly(
+                        BlogType.RILOG,
+                        RILOG_ID,
+                        "러로",
+                        "riro",
+                        "기록하는 개발자입니다.",
+                        "https://example.com/profile.png",
+                        null,
+                        null,
+                        "https://github.com/riro",
+                        1L,
+                        7L
+                );
+        verify(blogMemberRepository, never()).countActiveMembersByBlogId(any());
+        verify(postRepository, never()).countPublicPublishedPostsByCologId(any());
+        verify(postRepository).countPublicPublishedPostsByRilogId(RILOG_ID);
+    }
+
+    @Test
+    @DisplayName("slug에 해당하는 블로그가 없으면 공개 프로필 조회를 거부한다")
     void getPublicProfileRejectsMissingColog() {
         // given
-        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from("unknown-team"), BlogType.COLOG)).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("unknown-team"))).thenReturn(Optional.empty());
 
         // when - then
         assertThatThrownBy(() -> blogService.getPublicProfile("unknown-team"))
@@ -307,6 +354,21 @@ class BlogServiceTest {
         verify(blogMemberRepository, never()).findByBlogIdAndUserIdAndStatus(any(), any(), any());
         verify(blogRepository).existsByProfileNameExceptId(command.name(), RILOG_ID);
         assertThat(rilog.getName()).isEqualTo("새 개인 블로그");
+        assertThat(owner)
+                .extracting(
+                        User::getNickname,
+                        User::getIntroduction,
+                        User::getProfileImageUrl,
+                        User::getGithubUrl,
+                        User::getEmail
+                )
+                .containsExactly(
+                        "새 개인 블로그",
+                        "새 소개",
+                        "https://example.com/new-profile.png",
+                        "https://github.com/new-rilog",
+                        "new-rilog@example.com"
+                );
     }
 
     @Test
