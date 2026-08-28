@@ -165,6 +165,7 @@ export function usePostWriteWorkspace({
 			handleEditorReady,
 			handleEditorChange,
 			prepare: preparePostDocument,
+			markClean,
 		},
 		publication: {
 			settings: publicationSettings,

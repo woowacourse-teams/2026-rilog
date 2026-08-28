@@ -41,6 +41,7 @@ export default function PostEditor({
 				isEditorReady: postDocument.isEditorReady,
 				isDirty,
 				prepareDocument: postDocument.prepare,
+				markClean: postDocument.markClean,
 				openPublishSettings: publication.open,
 			})}
 

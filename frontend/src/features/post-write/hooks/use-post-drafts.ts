@@ -1,39 +1,44 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
 
-const PLACEHOLDER_DRAFT_POSTS: readonly DraftPostItem[] = [
-	{ id: 34, title: '디자인 시스템 도입 회고', savedAt: '2026-08-21T04:40:07.585624' },
-	{ id: 37, title: 'TypeScript 타입 설계 회고', savedAt: '2026-08-20T04:40:07.585624' },
-	{ id: 21, title: '접근성 개선 기록', savedAt: '2026-08-19T04:40:07.585624' },
-	{ id: 4, title: 'Next.js 마이그레이션', savedAt: '2026-08-18T04:40:07.585624' },
-];
-
 interface UsePostDraftsOptions {
 	prepareDocument: () => EditorDocument | null;
-	initialPosts?: readonly DraftPostItem[];
+	posts?: readonly DraftPostItem[];
 	onSave?: (document: EditorDocument) => void | Promise<void>;
+	onDelete: (postId: number) => Promise<unknown>;
 }
 
-export function usePostDrafts({
-	prepareDocument,
-	initialPosts = PLACEHOLDER_DRAFT_POSTS,
-	onSave,
-}: UsePostDraftsOptions) {
-	const [posts, setPosts] = useState<DraftPostItem[]>(() => [...initialPosts]);
+export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }: UsePostDraftsOptions) {
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [postIdPendingDeletion, setPostIdPendingDeletion] = useState<number | null>(null);
+	const isSavingRef = useRef(false);
+	const isDeletingRef = useRef(false);
 
-	const save = useCallback(() => {
+	const save = useCallback(async () => {
+		if (isSavingRef.current || onSave === undefined) {
+			return;
+		}
+
 		const document = prepareDocument();
 		if (document === null) {
 			return;
 		}
 
-		void onSave?.(document);
+		isSavingRef.current = true;
+		setIsSaving(true);
+		try {
+			await onSave(document);
+		} catch {
+			// mutation error 상태는 호출자가 사용자 피드백으로 표시한다.
+		} finally {
+			isSavingRef.current = false;
+			setIsSaving(false);
+		}
 	}, [onSave, prepareDocument]);
 
 	const openList = useCallback(() => {
@@ -52,17 +57,25 @@ export function usePostDrafts({
 		setPostIdPendingDeletion(null);
 	}, []);
 
-	const confirmDeletion = useCallback(() => {
-		if (postIdPendingDeletion === null) {
+	const confirmDeletion = useCallback(async () => {
+		if (postIdPendingDeletion === null || isDeletingRef.current) {
 			return;
 		}
 
-		setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postIdPendingDeletion));
-		setPostIdPendingDeletion(null);
-	}, [postIdPendingDeletion]);
+		isDeletingRef.current = true;
+		try {
+			await onDelete(postIdPendingDeletion);
+			setPostIdPendingDeletion(null);
+		} catch {
+			// mutation error 상태는 호출자가 사용자 피드백으로 표시한다.
+		} finally {
+			isDeletingRef.current = false;
+		}
+	}, [onDelete, postIdPendingDeletion]);
 
 	return {
 		posts,
+		isSaving,
 		isListModalOpen,
 		isDeletionModalOpen: postIdPendingDeletion !== null,
 		save,

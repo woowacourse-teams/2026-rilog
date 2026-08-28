@@ -4,6 +4,7 @@ import {
 	APP_ROUTES,
 	buildBlogHomePath,
 	buildCologSettingsPath,
+	buildDraftWritePath,
 	buildRilogSettingsPath,
 	buildPostDetailPath,
 	hasBlogSlugPrefix,
@@ -53,6 +54,10 @@ describe('app routes', () => {
 
 	it('코로그 slug와 게시글 ID로 상세 경로를 만든다', () => {
 		expect(buildPostDetailPath('rilog', 'post/40')).toBe('/@rilog/posts/post%2F40');
+	});
+
+	it('draftId로 임시저장 작성 경로를 만든다', () => {
+		expect(buildDraftWritePath(42)).toBe('/write?draftId=42');
 	});
 
 	it('동적 경로에 빈 값은 허용하지 않는다', () => {

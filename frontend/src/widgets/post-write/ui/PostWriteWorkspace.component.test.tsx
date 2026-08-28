@@ -7,6 +7,12 @@ import type { Block } from '@blocknote/core';
 
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
+import type {
+	DraftPublishRequest,
+	DraftPublishResponse,
+	DraftSaveRequest,
+	DraftSaveResponse,
+} from '@/shared/api/drafts/types';
 import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
@@ -17,6 +23,16 @@ import NewPostController from './NewPostController';
 
 type UploadFile = (request: UploadFileOptions) => Promise<{ objectKey: string }>;
 type RequestPostPublication = (request: PostWriteRequest) => Promise<ApiResponse<PostWriteResponse>>;
+type RequestDraftSave = (request: DraftSaveRequest) => Promise<ApiResponse<DraftSaveResponse>>;
+type RequestDraftOverwrite = (variables: {
+	draftId: number;
+	request: DraftSaveRequest;
+}) => Promise<ApiResponse<DraftSaveResponse>>;
+type RequestDraftPublication = (variables: {
+	draftId: number;
+	request: DraftPublishRequest;
+}) => Promise<ApiResponse<DraftPublishResponse>>;
+type RequestDraftDelete = (postId: number) => Promise<Response>;
 type RequestPostUpdate = (variables: {
 	postId: number;
 	request: PostWriteRequest;
@@ -33,6 +49,11 @@ const {
 	replaceMock,
 	uploadRepresentativeImageMock,
 	requestPostPublicationMock,
+	requestDraftSaveMock,
+	requestDraftOverwriteMock,
+	requestDraftPublicationMock,
+	requestDraftDeleteMock,
+	resetDraftDeleteMock,
 	requestPostUpdateMock,
 	editorUnmountedMock,
 } = vi.hoisted(() => ({
@@ -46,6 +67,11 @@ const {
 	replaceMock: vi.fn(),
 	uploadRepresentativeImageMock: vi.fn<UploadFile>(),
 	requestPostPublicationMock: vi.fn<RequestPostPublication>(),
+	requestDraftSaveMock: vi.fn<RequestDraftSave>(),
+	requestDraftOverwriteMock: vi.fn<RequestDraftOverwrite>(),
+	requestDraftPublicationMock: vi.fn<RequestDraftPublication>(),
+	requestDraftDeleteMock: vi.fn<RequestDraftDelete>(),
+	resetDraftDeleteMock: vi.fn(),
 	requestPostUpdateMock: vi.fn<RequestPostUpdate>(),
 	editorUnmountedMock: vi.fn(),
 }));
@@ -94,6 +120,45 @@ vi.mock('@/shared/api/posts/mutations/use-publish-post-mutation', () => ({
 	usePublishPostMutation: () => ({ mutateAsync: requestPostPublicationMock }),
 }));
 
+vi.mock('@/shared/api/drafts/mutations/use-save-draft-mutation', () => ({
+	useSaveDraftMutation: () => ({ mutateAsync: requestDraftSaveMock }),
+}));
+
+vi.mock('@/shared/api/drafts/mutations/use-overwrite-draft-mutation', () => ({
+	useOverwriteDraftMutation: () => ({ mutateAsync: requestDraftOverwriteMock }),
+}));
+
+vi.mock('@/shared/api/drafts/mutations/use-publish-draft-mutation', () => ({
+	usePublishDraftMutation: () => ({ mutateAsync: requestDraftPublicationMock }),
+}));
+
+vi.mock('@/shared/api/drafts/mutations/use-delete-draft-mutation', () => ({
+	useDeleteDraftMutation: () => ({
+		mutateAsync: requestDraftDeleteMock,
+		reset: resetDraftDeleteMock,
+		isPending: false,
+		isError: false,
+	}),
+}));
+
+vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
+	usePostDraftList: () => ({
+		data: [
+			{ id: 34, title: '디자인 시스템 도입 회고', savedAt: '2026-08-21T04:40:07.585624' },
+			{ id: 37, title: 'TypeScript 타입 설계 회고', savedAt: '2026-08-20T04:40:07.585624' },
+			{ id: 21, title: '접근성 개선 기록', savedAt: '2026-08-19T04:40:07.585624' },
+			{ id: 4, title: 'Next.js 마이그레이션', savedAt: '2026-08-18T04:40:07.585624' },
+		],
+		isPending: false,
+		isError: false,
+		hasNextPage: false,
+		isFetchingNextPage: false,
+		isFetchNextPageError: false,
+		refetch: vi.fn(),
+		fetchNextPage: vi.fn(),
+	}),
+}));
+
 vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
 	useUpdatePostMutation: () => ({ mutateAsync: requestPostUpdateMock }),
 }));
@@ -109,6 +174,11 @@ beforeEach(() => {
 	postPublishedMock.mockReset();
 	uploadRepresentativeImageMock.mockReset();
 	requestPostPublicationMock.mockReset();
+	requestDraftSaveMock.mockReset();
+	requestDraftOverwriteMock.mockReset();
+	requestDraftPublicationMock.mockReset();
+	requestDraftDeleteMock.mockReset();
+	resetDraftDeleteMock.mockReset();
 	requestPostUpdateMock.mockReset();
 	editorUnmountedMock.mockReset();
 	uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/cover-object-key.png' });
@@ -117,6 +187,22 @@ beforeEach(() => {
 		message: '게시글 발행에 성공했습니다.',
 		data: { postId: 77, slug: 'rilog-team' },
 	});
+	requestDraftSaveMock.mockResolvedValue({
+		status: 201,
+		message: '최초 임시저장에 성공했습니다.',
+		data: { draftId: 123 },
+	});
+	requestDraftOverwriteMock.mockResolvedValue({
+		status: 200,
+		message: '임시저장을 덮어썼습니다.',
+		data: { draftId: 123 },
+	});
+	requestDraftPublicationMock.mockResolvedValue({
+		status: 200,
+		message: '임시저장 글을 발행했습니다.',
+		data: { postId: 77, slug: 'rilog-team' },
+	});
+	requestDraftDeleteMock.mockResolvedValue(new Response(null, { status: 204 }));
 	requestPostUpdateMock.mockResolvedValue({
 		status: 200,
 		message: '게시글 수정에 성공했습니다.',
@@ -247,6 +333,37 @@ const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe('NewPostController', () => {
+	it('최초 임시저장 후 같은 문서를 반환된 draftId로 덮어쓴다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/write');
+		render(<NewPostController editorComponent={FakeEditor} />);
+
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+
+		await waitFor(() => expect(requestDraftSaveMock).toHaveBeenCalledOnce());
+		expect(requestDraftSaveMock).toHaveBeenCalledWith({
+			title: 'BlockNote 도입기',
+			content: [createParagraph('오늘 배운 내용을 기록합니다.')],
+		});
+		expect(`${window.location.pathname}${window.location.search}`).toBe('/write?draftId=123');
+
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		expect(saveButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		expect(saveButton).toBeEnabled();
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+		await waitFor(() => expect(requestDraftOverwriteMock).toHaveBeenCalledOnce());
+		expect(requestDraftOverwriteMock).toHaveBeenCalledWith({
+			draftId: 123,
+			request: {
+				title: 'BlockNote 도입기 수정',
+				content: [createParagraph('오늘 배운 내용을 기록합니다.')],
+			},
+		});
+		await waitFor(() => expect(saveButton).toBeDisabled());
+	});
+
 	it('전달받은 제목과 본문을 초기값으로 사용하고 dirty 상태로 취급하지 않는다', () => {
 		const initialBlocks = [createParagraph('기존 본문')];
 		render(
@@ -280,11 +397,152 @@ describe('NewPostController', () => {
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
 		expect(screen.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('BlockNote 도입기');
 
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		expect(saveButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
 		await user.click(screen.getByRole('button', { name: '임시저장' }));
 
 		await waitFor(() => expect(updateDraft).toHaveBeenCalledOnce());
 		expect(updateDraft.mock.calls[0]?.[0]).toBe(123);
 		expect(editorUnmountedMock).not.toHaveBeenCalled();
+		await waitFor(() => expect(saveButton).toBeDisabled());
+	});
+
+	it('불러온 임시저장 글을 현재 draftId로 덮어쓴다', async () => {
+		const user = userEvent.setup();
+		const blocks = [createParagraph('기존 임시저장 본문')];
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 임시저장 제목', blocks }}
+			/>,
+		);
+
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		expect(saveButton).toBeDisabled();
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		expect(saveButton).toBeEnabled();
+		await user.click(saveButton);
+
+		await waitFor(() => expect(requestDraftOverwriteMock).toHaveBeenCalledOnce());
+		expect(requestDraftOverwriteMock).toHaveBeenCalledWith({
+			draftId: 42,
+			request: { title: '기존 임시저장 제목 수정', content: blocks },
+		});
+		await waitFor(() => expect(saveButton).toBeDisabled());
+	});
+
+	it('임시저장 요청 중 저장 상태를 표시하고 저장, 목록, 발행 버튼을 비활성화한다', async () => {
+		let resolveSave: ((response: ApiResponse<DraftSaveResponse>) => void) | undefined;
+		requestDraftOverwriteMock.mockImplementationOnce(
+			() =>
+				new Promise<ApiResponse<DraftSaveResponse>>((resolve) => {
+					resolveSave = resolve;
+				}),
+		);
+		const user = userEvent.setup();
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 임시저장 제목', blocks: [createParagraph('기존 본문')] }}
+			/>,
+		);
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+		const listButton = screen.getByRole('button', { name: '임시 저장된 글 4개 보기' });
+		const publishButton = screen.getByRole('button', { name: '발행' });
+
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
+		await user.click(saveButton);
+
+		expect(screen.getByRole('status')).toHaveTextContent('저장 중...');
+		expect(saveButton).toBeDisabled();
+		expect(listButton).toBeDisabled();
+		expect(publishButton).toBeDisabled();
+
+		resolveSave?.({
+			status: 200,
+			message: '임시저장을 덮어썼습니다.',
+			data: { draftId: 42 },
+		});
+
+		await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+		expect(saveButton).toBeDisabled();
+		expect(listButton).toBeEnabled();
+		expect(publishButton).toBeEnabled();
+	});
+
+	it('불러온 임시저장 글을 현재 draftId로 발행하고 게시글 상세로 이동한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		const blocks = [createParagraph('기존 임시저장 본문')];
+		render(
+			<DraftPostController
+				draftId={42}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '기존 임시저장 제목', blocks }}
+				navigate={navigate}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestDraftPublicationMock).toHaveBeenCalledOnce());
+		expect(requestDraftPublicationMock).toHaveBeenCalledWith({
+			draftId: 42,
+			request: {
+				slug: 'rilog-team',
+				title: '기존 임시저장 제목',
+				content: blocks,
+				category: 'TECH',
+				visibility: 'PUBLIC',
+				thumbnailImageUrl: '/images/thumbnail-fallback.svg',
+			},
+		});
+		expect(requestPostPublicationMock).not.toHaveBeenCalled();
+		expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77');
+	});
+
+	it('최초 임시저장 후에는 반환된 draftId로 발행한다', async () => {
+		const user = userEvent.setup();
+		const navigate = vi.fn();
+		render(<NewPostController editorComponent={FakeEditor} navigate={navigate} />);
+
+		await fillValidPost(user);
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+		await waitFor(() => expect(requestDraftSaveMock).toHaveBeenCalledOnce());
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await selectFirstCoLog(user);
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestDraftPublicationMock).toHaveBeenCalledOnce());
+		expect(requestDraftPublicationMock.mock.calls[0]?.[0].draftId).toBe(123);
+		expect(requestPostPublicationMock).not.toHaveBeenCalled();
+		expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77');
+	});
+
+	it('현재 작성 중인 임시저장 글은 목록에서 선택 상태로 표시하고 다시 선택할 수 없게 한다', async () => {
+		const user = userEvent.setup();
+		render(
+			<DraftPostController
+				draftId={34}
+				editorComponent={FakeEditor}
+				initialDocument={{ title: '디자인 시스템 도입 회고', blocks: [createParagraph('본문')] }}
+			/>,
+		);
+
+		await user.click(screen.getByRole('button', { name: '임시 저장된 글 4개 보기' }));
+
+		const draftListDialog = screen.getByRole('dialog', { name: '임시 저장된 글' });
+		expect(within(draftListDialog).getByText('현재 작성 중')).toBeInTheDocument();
+		expect(within(draftListDialog).queryByRole('link', { name: /디자인 시스템 도입 회고/ })).not.toBeInTheDocument();
+		expect(
+			within(draftListDialog).queryByRole('button', { name: '디자인 시스템 도입 회고 임시 저장 글 삭제' }),
+		).not.toBeInTheDocument();
 	});
 
 	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
@@ -377,7 +635,7 @@ describe('NewPostController', () => {
 		expect(postEditorOpenedMock).toHaveBeenCalledWith({ entrySource: 'direct', availableBlogCount: 1 });
 	});
 
-	it('임시 저장 글 삭제를 취소하면 목록을 유지하고 확인하면 목록과 개수를 갱신한다', async () => {
+	it('임시 저장 글 삭제를 취소하면 요청하지 않고 확인하면 선택한 postId로 삭제한다', async () => {
 		const user = userEvent.setup();
 		render(<NewPostController editorComponent={FakeEditor} />);
 
@@ -395,6 +653,7 @@ describe('NewPostController', () => {
 			expect(screen.queryByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).not.toBeInTheDocument(),
 		);
 		expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(4);
+		expect(requestDraftDeleteMock).not.toHaveBeenCalled();
 
 		await user.click(firstDeleteButton);
 		await user.click(
@@ -403,8 +662,10 @@ describe('NewPostController', () => {
 			}),
 		);
 
-		await waitFor(() => expect(within(draftListDialog).getAllByRole('listitem')).toHaveLength(3));
-		expect(screen.getByRole('button', { name: '임시 저장된 글 3개 보기' })).toBeInTheDocument();
+		await waitFor(() => expect(requestDraftDeleteMock).toHaveBeenCalledWith(34));
+		await waitFor(() =>
+			expect(screen.queryByRole('dialog', { name: '임시 저장 글을 삭제할까요?' })).not.toBeInTheDocument(),
+		);
 	});
 
 	it('빈 문서는 설정 모달을 열지 않고 첫 오류로 focus한다', async () => {

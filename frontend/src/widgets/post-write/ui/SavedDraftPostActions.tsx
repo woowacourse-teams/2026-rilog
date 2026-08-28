@@ -14,10 +14,19 @@ interface SavedDraftPostActionsProps {
 export default function SavedDraftPostActions({ draftId, editor, updateDraft }: SavedDraftPostActionsProps) {
 	return (
 		<DraftPostActions
+			selectedDraftId={draftId}
 			isEditorReady={editor.isEditorReady}
+			isSaveReady={editor.isEditorReady && editor.isDirty}
 			isPublishReady={editor.isEditorReady}
 			prepareDocument={editor.prepareDocument}
-			onSave={updateDraft === undefined ? undefined : (document) => updateDraft(draftId, document)}
+			onSave={
+				updateDraft === undefined
+					? undefined
+					: async (document) => {
+							await updateDraft(draftId, document);
+							editor.markClean();
+						}
+			}
 			onPublish={editor.openPublishSettings}
 		/>
 	);

@@ -4,10 +4,13 @@ import type { ComponentType } from 'react';
 
 import { getBlockCountBucket } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
+import { useUpdatePostDraft } from '@/features/post-write/hooks/use-update-post-draft';
 import { resolveRepresentativeImageSource } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublicationSettings } from '@/features/post-write/model/post-publication';
 import type { PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
+
+import { usePublishPostDraft } from '../hooks/use-post-publishers';
 
 import PostWriteWorkspace from './PostWriteWorkspace';
 import SavedDraftPostActions from './SavedDraftPostActions';
@@ -33,15 +36,12 @@ export default function DraftPostController({
 	uploadFile,
 	navigate,
 }: DraftPostControllerProps) {
+	const updatePostDraft = useUpdatePostDraft();
+	const publishSavedDraft = usePublishPostDraft();
+
 	return (
 		<PostWriteWorkspace
-			publishPost={(command) => {
-				if (publishDraft === undefined) {
-					throw new Error('임시저장 발행 API는 아직 연결되지 않았습니다.');
-				}
-
-				return publishDraft(draftId, command);
-			}}
+			publishPost={(command) => (publishDraft ?? publishSavedDraft)(draftId, command)}
 			initialDocument={initialDocument}
 			initialPublicationSettings={initialPublicationSettings}
 			editorComponent={editorComponent}
@@ -58,7 +58,9 @@ export default function DraftPostController({
 				});
 			}}
 		>
-			{(editor) => <SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft} />}
+			{(editor) => (
+				<SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft ?? updatePostDraft} />
+			)}
 		</PostWriteWorkspace>
 	);
 }

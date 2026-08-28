@@ -6,9 +6,10 @@ import type { Block } from '@blocknote/core';
 import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 
-import { usePublishNewPost, useUpdatePublishedPost } from './use-post-publishers';
+import { usePublishNewPost, usePublishPostDraft, useUpdatePublishedPost } from './use-post-publishers';
 
-const { requestPublicationMock, requestUpdateMock, uploadFileMock } = vi.hoisted(() => ({
+const { requestDraftPublicationMock, requestPublicationMock, requestUpdateMock, uploadFileMock } = vi.hoisted(() => ({
+	requestDraftPublicationMock: vi.fn(),
 	requestPublicationMock: vi.fn(),
 	requestUpdateMock: vi.fn(),
 	uploadFileMock: vi.fn(),
@@ -16,6 +17,10 @@ const { requestPublicationMock, requestUpdateMock, uploadFileMock } = vi.hoisted
 
 vi.mock('@/shared/api/posts/mutations/use-publish-post-mutation', () => ({
 	usePublishPostMutation: () => ({ mutateAsync: requestPublicationMock }),
+}));
+
+vi.mock('@/shared/api/drafts/mutations/use-publish-draft-mutation', () => ({
+	usePublishDraftMutation: () => ({ mutateAsync: requestDraftPublicationMock }),
 }));
 
 vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
@@ -46,6 +51,7 @@ const command: PublishPostCommand = {
 
 describe('post publishers', () => {
 	beforeEach(() => {
+		requestDraftPublicationMock.mockReset();
 		requestPublicationMock.mockReset();
 		requestUpdateMock.mockReset();
 		uploadFileMock.mockReset();
@@ -68,6 +74,17 @@ describe('post publishers', () => {
 		const { result } = renderHook(() => useUpdatePublishedPost(31));
 
 		const error = await result.current(command).catch((cause: unknown) => cause);
+
+		expect(error).toBe(requestError);
+		expect(getAnalyticsFailureStage(error)).toBe('publish_request');
+	});
+
+	it('임시저장 글 발행 API 오류에도 publish_request 단계를 부여한다', async () => {
+		const requestError = new TypeError('임시저장 발행 요청 실패');
+		requestDraftPublicationMock.mockRejectedValue(requestError);
+		const { result } = renderHook(() => usePublishPostDraft());
+
+		const error = await result.current(42, command).catch((cause: unknown) => cause);
 
 		expect(error).toBe(requestError);
 		expect(getAnalyticsFailureStage(error)).toBe('publish_request');

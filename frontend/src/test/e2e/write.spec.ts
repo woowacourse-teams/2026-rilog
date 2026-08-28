@@ -18,6 +18,9 @@ const IPHONE_13 = {
 };
 
 const MY_COLOGS_PREVIEW_ROUTE = '**/v1/users/me/cologs/preview';
+const PRESIGNED_URL_ROUTE = '**/v1/uploads/presigned-url';
+const MOCK_UPLOAD_ROUTE = '**/e2e-upload';
+const PUBLISH_POST_ROUTE = '**/v1/posts';
 
 const fillPost = async (page: Page) => {
 	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
@@ -27,7 +30,7 @@ const fillPost = async (page: Page) => {
 };
 
 const expectBodyImage = async (page: Page) => {
-	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
+	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
 };
 
 const enableWriteAccess = async (page: Page) => {
@@ -35,9 +38,42 @@ const enableWriteAccess = async (page: Page) => {
 	await page.route(MY_COLOGS_PREVIEW_ROUTE, (route) =>
 		route.fulfill({
 			contentType: 'application/json',
-			body: JSON.stringify({ status: 200, message: '내 Co-log 미리보기 조회에 성공했습니다.', data: [] }),
+			body: JSON.stringify({
+				status: 200,
+				message: '내 Co-log 미리보기 조회에 성공했습니다.',
+				data: [{ cologId: 7, slug: 'rilog', name: 'Rilog' }],
+			}),
 		}),
 	);
+	await page.route(PRESIGNED_URL_ROUTE, (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 200,
+				message: 'Presigned URL 발급에 성공했습니다.',
+				data: {
+					uploadId: 'e2e-upload-id',
+					objectKey: 'rilog/images/originals/e2e-upload.png',
+					uploadUrl: 'http://localhost:3000/e2e-upload',
+					headers: {},
+					expiresAt: '2026-08-28T00:00:00Z',
+				},
+			}),
+		}),
+	);
+	await page.route(MOCK_UPLOAD_ROUTE, (route) => route.fulfill({ status: 200 }));
+	await page.route(PUBLISH_POST_ROUTE, (route) => {
+		if (route.request().method() !== 'POST') return route.fallback();
+
+		return route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 201,
+				message: '게시글 발행에 성공했습니다.',
+				data: { postId: 31, slug: 'rilog' },
+			}),
+		});
+	});
 };
 
 const getSlashMenuPosition = async (page: Page) => {
@@ -89,8 +125,11 @@ const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
 };
 
 test.describe('글 작성', () => {
-	test('코드 블록에서 언어를 선택하고 구문을 강조한다', async ({ page }) => {
+	test.beforeEach(async ({ page }) => {
 		await enableWriteAccess(page);
+	});
+
+	test('코드 블록에서 언어를 선택하고 구문을 강조한다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
@@ -136,7 +175,6 @@ test.describe('글 작성', () => {
 	});
 
 	test('Mermaid 코드블록을 다이어그램으로 미리보기한다', async ({ page }) => {
-		await enableWriteAccess(page);
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
@@ -163,7 +201,6 @@ test.describe('글 작성', () => {
 	});
 
 	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
-		await enableWriteAccess(page);
 		await page.route('**/v1/posts/31', (route) =>
 			route.fulfill({
 				contentType: 'application/json',
@@ -338,7 +375,7 @@ test.describe('글 작성', () => {
 		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
 		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();
 
-		await expect(page).toHaveURL(/\/@rilog\/posts\/mock-/);
+		await expect(page).toHaveURL('/@rilog/posts/31');
 	});
 
 	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {
@@ -402,14 +439,13 @@ test.describe('글 작성', () => {
 		await fillPost(page);
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
-		await page.getByRole('button', { name: '발행' }).click();
+		await page.getByRole('button', { name: '발행' }).press('Enter');
 		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 	});
 
 	test('커서 아래 공간이 부족하면 슬래시 메뉴를 위에 표시하고 viewport 안에 유지한다', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 400 });
-		await enableWriteAccess(page);
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
@@ -432,7 +468,6 @@ test.describe('글 작성', () => {
 
 	test('커서 아래 공간이 충분하면 슬래시 메뉴를 아래에 표시한다', async ({ page }) => {
 		await page.setViewportSize({ width: 1280, height: 900 });
-		await enableWriteAccess(page);
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
@@ -445,7 +480,6 @@ test.describe('글 작성', () => {
 	});
 
 	test('특수 블록에 데스크톱과 모바일의 공통 세로 여백을 적용한다', async ({ page }) => {
-		await enableWriteAccess(page);
 		await page.setViewportSize({ width: 1280, height: 900 });
 		await page.goto('/write');
 		await insertQuoteAfterParagraph(page);

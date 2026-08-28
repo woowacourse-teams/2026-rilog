@@ -4,12 +4,14 @@ import { useState, type ComponentType } from 'react';
 
 import { getBlockCountBucket } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
+import { useCreatePostDraft } from '@/features/post-write/hooks/use-create-post-draft';
+import { useUpdatePostDraft } from '@/features/post-write/hooks/use-update-post-draft';
 import { resolveRepresentativeImageSource } from '@/features/post-write/lib/resolve-representative-image';
 import type { PostEditorProps, UploadPostBodyFile } from '@/features/post-write/model/post-editor';
 import type { EditorDocument, PublishPost } from '@/features/post-write/model/post-publication';
 import type { CreatePostDraft, PublishPostDraft, UpdatePostDraft } from '@/features/post-write/model/post-write-flow';
 
-import { usePublishNewPost } from '../hooks/use-post-publishers';
+import { usePublishNewPost, usePublishPostDraft } from '../hooks/use-post-publishers';
 
 import NewPostActions from './NewPostActions';
 import PostWriteWorkspace from './PostWriteWorkspace';
@@ -39,18 +41,15 @@ export default function NewPostController({
 	onDraftPromoted,
 }: NewPostControllerProps) {
 	const publishNewPost = usePublishNewPost();
+	const publishSavedDraft = usePublishPostDraft();
+	const createNewDraft = useCreatePostDraft();
+	const updatePostDraft = useUpdatePostDraft();
 	const [draftId, setDraftId] = useState<number | null>(null);
 
 	const publishCurrentPost: PublishPost =
 		draftId === null
 			? (publishPost ?? publishNewPost)
-			: (command) => {
-					if (publishDraft === undefined) {
-						throw new Error('임시저장 발행 API는 아직 연결되지 않았습니다.');
-					}
-
-					return publishDraft(draftId, command);
-				};
+			: (command) => (publishDraft ?? publishSavedDraft)(draftId, command);
 
 	const handleDraftCreated = (createdDraftId: number) => {
 		onDraftPromoted?.(createdDraftId);
@@ -78,10 +77,18 @@ export default function NewPostController({
 		>
 			{(editor) => {
 				if (draftId !== null) {
-					return <SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft} />;
+					return (
+						<SavedDraftPostActions draftId={draftId} editor={editor} updateDraft={updateDraft ?? updatePostDraft} />
+					);
 				}
 
-				return <NewPostActions editor={editor} createDraft={createDraft} onDraftCreated={handleDraftCreated} />;
+				return (
+					<NewPostActions
+						editor={editor}
+						createDraft={createDraft ?? createNewDraft}
+						onDraftCreated={handleDraftCreated}
+					/>
+				);
 			}}
 		</PostWriteWorkspace>
 	);

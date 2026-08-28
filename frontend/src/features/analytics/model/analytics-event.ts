@@ -35,7 +35,8 @@ export type EditingTimeBucket = 'under_1m' | '1_to_5m' | '5_to_15m' | '15m_plus'
 // 어느 화면에서 로딩 실패나 지연이 많이 발생하는지 분리해 볼 수 있음
 export type ContentLoadSurface = 'feed' | 'blog_post_list' | 'post_editor' | 'post_detail';
 // 같은 “로딩이 느리다”라도 초기 진입 문제인지 페이지네이션 문제인지, 에디터 코드 로딩 문제인지 정확히 나눠 개선하기 위해 필요
-export type ContentLoadPhase = 'initial' | 'pagination' | 'edit_initial_data' | 'editor_bundle' | 'detail';
+export type ContentLoadPhase =
+	'initial' | 'pagination' | 'edit_initial_data' | 'draft_initial_data' | 'editor_bundle' | 'detail';
 
 export interface AnalyticsStagedError extends Error {
 	analyticsFailureStage: PublishFailureStage;

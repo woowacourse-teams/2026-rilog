@@ -21,5 +21,6 @@ export interface PostWriteEditorContext {
 	isEditorReady: boolean;
 	isDirty: boolean;
 	prepareDocument: () => EditorDocument | null;
+	markClean: () => void;
 	openPublishSettings: () => void;
 }
