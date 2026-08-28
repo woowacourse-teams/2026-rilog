@@ -637,10 +637,8 @@ class CologServiceTest {
     void deleteCologDeletesCologPostsAndLeavesMembers() {
         // given
         User owner = createOwner();
-        User invitee = createInvitee();
         Blog colog = createColog(owner);
         BlogMember ownerMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
-        BlogMember invitedMember = createMember(TARGET_MEMBER_ID, colog, invitee, BlogPermission.MEMBER);
         when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
                 .thenReturn(Optional.of(colog));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
@@ -649,22 +647,20 @@ class CologServiceTest {
                 BlogMemberStatus.ACTIVE
         ))
                 .thenReturn(Optional.of(ownerMember));
-        when(blogMemberRepository.findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(List.of(ownerMember, invitedMember));
 
         // when
         cologService.deleteColog(OWNER_ID, COLOG_SLUG);
 
         // then
+        verify(blogMemberRepository).softDeleteAllByBlogId(
+                COLOG_ID,
+                LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)
+        );
         verify(postRepository).softDeleteAllByCologId(
                 COLOG_ID,
                 LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)
         );
         assertThat(colog.getDeletedAt()).isNotNull();
-        assertThat(ownerMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
-        assertThat(invitedMember.getStatus()).isEqualTo(BlogMemberStatus.LEFT);
-        assertThat(ownerMember.getDeletedAt()).isNotNull();
-        assertThat(invitedMember.getDeletedAt()).isNotNull();
     }
 
     @Test
@@ -689,8 +685,8 @@ class CologServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(COLOG_DELETE_FORBIDDEN);
         assertThat(colog.getDeletedAt()).isNull();
+        verify(blogMemberRepository, never()).softDeleteAllByBlogId(any(), any());
         verify(postRepository, never()).softDeleteAllByCologId(any(), any());
-        verify(blogMemberRepository, never()).findAllByBlogIdAndStatusAndDeletedAtIsNull(COLOG_ID, BlogMemberStatus.ACTIVE);
     }
 
     @Test

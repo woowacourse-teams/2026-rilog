@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
 import java.util.Objects;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
@@ -74,12 +73,6 @@ public class Blog extends BaseEntity {
 
     public void changeProfile(Profile newProfile) {
         this.profile = newProfile;
-    }
-
-    public void deleteCologBy(BlogMember requesterMember, List<BlogMember> activeMembers) {
-        requesterMember.validateCanDeleteColog(this);
-        activeMembers.forEach(BlogMember::leaveByCologDeletion);
-        delete();
     }
 
     public boolean isColog() {

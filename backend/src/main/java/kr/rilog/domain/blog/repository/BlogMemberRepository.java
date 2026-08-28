@@ -4,10 +4,12 @@ import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,7 +70,20 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             BlogMemberStatus status
     );
 
-    List<BlogMember> findAllByBlogIdAndStatusAndDeletedAtIsNull(Long blogId, BlogMemberStatus status);
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE BlogMember blogMember
+            SET blogMember.status = kr.rilog.domain.blog.entity.enums.BlogMemberStatus.LEFT,
+                blogMember.deletedAt = :deletedAt,
+                blogMember.updatedAt = :deletedAt
+            WHERE blogMember.blog.id = :blogId
+              AND blogMember.status = kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE
+              AND blogMember.deletedAt IS NULL
+            """)
+    int softDeleteAllByBlogId(
+            @Param("blogId") Long blogId,
+            @Param("deletedAt") LocalDateTime deletedAt
+    );
 
     @Query("""
             SELECT COUNT(bm.id)
