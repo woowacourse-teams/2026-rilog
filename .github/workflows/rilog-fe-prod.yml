@@ -71,7 +71,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml ecosystem.config.cjs next.config.ts
+          tar -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
