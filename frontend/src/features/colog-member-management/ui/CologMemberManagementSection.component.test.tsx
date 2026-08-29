@@ -44,13 +44,27 @@ vi.mock('@/shared/api/cologs/mutations/use-remove-colog-member-mutation', () => 
 	}),
 }));
 
+vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
+	useMyInfoQuery: () => ({ data: { slug: 'current-user' } }),
+}));
+
 vi.mock('./CologMemberRow', () => ({
-	default: ({ member, onRemove }: { member: { nickname: string }; onRemove?: () => void }) => (
+	default: ({
+		member,
+		onRemove,
+		canRemove,
+	}: {
+		member: { nickname: string };
+		onRemove?: () => void;
+		canRemove?: boolean;
+	}) => (
 		<tr>
 			<td>
-				<button type="button" onClick={onRemove}>
-					{member.nickname} 멤버 내보내기
-				</button>
+				{canRemove && (
+					<button type="button" onClick={onRemove}>
+						{member.nickname} 멤버 내보내기
+					</button>
+				)}
 			</td>
 		</tr>
 	),
@@ -89,6 +103,15 @@ describe('CologMemberManagementSection', () => {
 			...drafts,
 			displayedMembers: [
 				{
+					id: 1,
+					nickname: '현재 사용자',
+					slug: 'current-user',
+					profileImageUrl: null,
+					permission: 'ADMIN' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+				{
 					id: 7,
 					nickname: '내보낼 멤버',
 					slug: 'member',
@@ -109,6 +132,46 @@ describe('CologMemberManagementSection', () => {
 		await waitFor(() => expect(removeMemberMock).toHaveBeenCalledWith({ slug: '@rilog', memberId: 7 }));
 		expect(handleRemoveMember).toHaveBeenCalledWith(7);
 		expect(screen.queryByRole('dialog', { name: '내보낼 멤버 멤버를 내보낼까요?' })).not.toBeInTheDocument();
+	});
+
+	it('현재 사용자와 권한이 같거나 높은 멤버에게는 내보내기 버튼을 표시하지 않는다', () => {
+		const draftsWithSamePermissionMember = {
+			...drafts,
+			displayedMembers: [
+				{
+					id: 1,
+					nickname: '현재 사용자',
+					slug: 'current-user',
+					profileImageUrl: null,
+					permission: 'ADMIN' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+				{
+					id: 2,
+					nickname: '다른 관리자',
+					slug: 'another-admin',
+					profileImageUrl: null,
+					permission: 'ADMIN' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+				{
+					id: 3,
+					nickname: '팀 소유자',
+					slug: 'owner',
+					profileImageUrl: null,
+					permission: 'OWNER' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+			],
+		};
+
+		render(<CologMemberManagementSection cologId={11} slug="rilog" drafts={draftsWithSamePermissionMember} />);
+
+		expect(screen.queryByRole('button', { name: '다른 관리자 멤버 내보내기' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '팀 소유자 멤버 내보내기' })).not.toBeInTheDocument();
 	});
 
 	it('초대 시작과 완료 이벤트를 같은 cologId로 기록한다', async () => {

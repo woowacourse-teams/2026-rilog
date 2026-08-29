@@ -56,15 +56,21 @@ describe('CologMemberRow', () => {
 		const user = userEvent.setup();
 		const onRemove = vi.fn();
 
-		renderInTable(<CologMemberRow member={BASE_MEMBER} onRemove={onRemove} />);
+		renderInTable(<CologMemberRow member={BASE_MEMBER} canRemove onRemove={onRemove} />);
 		await user.click(screen.getByRole('button', { name: '김지연 멤버 내보내기' }));
 
 		expect(onRemove).toHaveBeenCalledOnce();
 	});
 
-	it('편집 모드에서는 내보내기 버튼을 비활성화한다', () => {
-		renderInTable(<CologMemberRow member={BASE_MEMBER} isEditing />);
+	it('내보낼 수 없는 멤버에게는 내보내기 버튼을 표시하지 않는다', () => {
+		renderInTable(<CologMemberRow member={BASE_MEMBER} />);
 
-		expect(screen.getByRole('button', { name: '김지연 멤버 내보내기' })).toBeDisabled();
+		expect(screen.queryByRole('button', { name: '김지연 멤버 내보내기' })).not.toBeInTheDocument();
+	});
+
+	it('편집 모드에서는 내보내기 버튼을 표시하지 않는다', () => {
+		renderInTable(<CologMemberRow member={BASE_MEMBER} isEditing canRemove />);
+
+		expect(screen.queryByRole('button', { name: '김지연 멤버 내보내기' })).not.toBeInTheDocument();
 	});
 });

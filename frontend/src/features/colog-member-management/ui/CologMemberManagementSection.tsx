@@ -8,9 +8,11 @@ import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 import type { CologMember } from '@/domains/blog/model/colog';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
+import { canRemoveCologMember } from '@/features/colog-member-management/lib/can-remove-colog-member';
 import { isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 import { useRemoveCologMemberMutation } from '@/shared/api/cologs/mutations/use-remove-colog-member-mutation';
+import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import CologMemberRow from './CologMemberRow';
@@ -58,6 +60,7 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
 	const removeMember = useRemoveCologMemberMutation();
+	const { data: currentUser } = useMyInfoQuery({ select: (response) => response.data });
 
 	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
 		analytics.cologMemberInvitationStarted({ cologId, candidateCount: candidates.length });
@@ -159,6 +162,7 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 									<CologMemberRow
 										key={member.id}
 										member={member}
+										canRemove={canRemoveCologMember(currentUser?.slug, displayedMembers, member)}
 										onRemove={() => {
 											removeMember.reset();
 											setMemberToRemove(member);
