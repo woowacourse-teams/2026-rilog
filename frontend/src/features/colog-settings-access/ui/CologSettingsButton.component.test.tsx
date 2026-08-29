@@ -30,6 +30,8 @@ describe('CologSettingsButton', () => {
 			options?.onSuccess?.();
 		});
 		useLeaveCologMutationMock.mockReturnValue({
+			error: null,
+			isError: false,
 			isPending: false,
 			mutate: leaveCologMock,
 			reset: resetLeaveCologMock,
@@ -58,7 +60,7 @@ describe('CologSettingsButton', () => {
 		expect(screen.getByRole('menuitem', { name: '탈퇴' })).toBeInTheDocument();
 	});
 
-	it('MEMBER가 탈퇴를 확정하면 API를 요청하고 모달을 닫는다', async () => {
+	it('MEMBER가 탈퇴를 확정하면 API를 요청하고 탈퇴 완료 모달을 표시한다', async () => {
 		const user = userEvent.setup();
 		useCurrentCologPermissionMock.mockReturnValue('MEMBER');
 		render(<CologSettingsButton slug="@rilog" />);
@@ -73,6 +75,33 @@ describe('CologSettingsButton', () => {
 		expect(requestedSlug).toBe('@rilog');
 		expect(mutationOptions.onSuccess).toBeTypeOf('function');
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: '팀을 탈퇴할까요?' })).not.toBeInTheDocument());
+
+		const completeDialog = screen.getByRole('alertdialog', { name: '탈퇴가 완료되었습니다.' });
+		await waitFor(() => expect(within(completeDialog).getByRole('button', { name: '확인' })).toHaveFocus());
+		await user.click(within(completeDialog).getByRole('button', { name: '확인' }));
+		await waitFor(() =>
+			expect(screen.queryByRole('alertdialog', { name: '탈퇴가 완료되었습니다.' })).not.toBeInTheDocument(),
+		);
+	});
+
+	it('탈퇴에 실패하면 확인 모달 description에 오류 메시지를 추가한다', async () => {
+		const user = userEvent.setup();
+		useCurrentCologPermissionMock.mockReturnValue('MEMBER');
+		useLeaveCologMutationMock.mockReturnValue({
+			error: {},
+			isError: true,
+			isPending: false,
+			mutate: leaveCologMock,
+			reset: resetLeaveCologMock,
+		});
+		render(<CologSettingsButton slug="rilog" />);
+
+		await user.click(screen.getByRole('button', { name: '팀 블로그 메뉴' }));
+		await user.click(screen.getByRole('menuitem', { name: '탈퇴' }));
+
+		expect(screen.getByRole('dialog', { name: '팀을 탈퇴할까요?' })).toHaveAccessibleDescription(
+			/팀 블로그에서 탈퇴하지 못했어요\. 다시 시도해 주세요\./,
+		);
 	});
 
 	it('멤버가 아니거나 권한 확인 전에는 미트볼 버튼을 렌더링하지 않는다', () => {
