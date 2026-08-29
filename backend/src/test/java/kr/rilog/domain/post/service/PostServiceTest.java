@@ -41,6 +41,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUB
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -276,8 +277,14 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
+        BlogMember requesterMember = createMember(publicPost.getRilog(), writer, BlogPermission.OWNER);
         when(postRepository.findDetailById(POST_ID))
                 .thenReturn(Optional.of(publicPost));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                RILOG_ID,
+                WRITER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.of(requesterMember));
 
         // when
         PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
@@ -285,6 +292,28 @@ class PostServiceTest {
         // then
         assertThat(response.viewerPermissions().canEdit()).isTrue();
         assertThat(response.viewerPermissions().canDelete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("개인 블로그 게시글 작성자라도 활성 멤버가 아니면 수정과 삭제를 할 수 없다")
+    void readRilogPostRejectsWriterWithoutActiveMember() {
+        // given
+        User writer = createWriter();
+        Post publicPost = createPost(writer, PostVisibility.PUBLIC);
+        when(postRepository.findDetailById(POST_ID))
+                .thenReturn(Optional.of(publicPost));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                RILOG_ID,
+                WRITER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.empty());
+
+        // when
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+
+        // then
+        assertThat(response.viewerPermissions().canEdit()).isFalse();
+        assertThat(response.viewerPermissions().canDelete()).isFalse();
     }
 
     @Test
@@ -453,6 +482,27 @@ class PostServiceTest {
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("개인 블로그 게시글 작성자라도 활성 멤버가 아니면 삭제할 수 없다")
+    void deleteRilogPostRejectsWriterWithoutActiveMember() {
+        // given
+        User writer = createWriter();
+        Post publicPost = createPost(writer, PostVisibility.PUBLIC);
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
+                .thenReturn(Optional.of(publicPost));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                RILOG_ID,
+                WRITER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> postService.deletePublishedPost(POST_ID, WRITER_ID))
+                .isInstanceOf(PostException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(POST_DELETE_FORBIDDEN);
     }
 
     private User createWriter() {
