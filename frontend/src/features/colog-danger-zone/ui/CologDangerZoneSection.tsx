@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useDeleteCologMutation } from '@/shared/api/cologs/mutations/use-delete-colog-mutation';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -12,10 +13,15 @@ interface CologDangerZoneSectionProps {
 	slug: string;
 }
 
+const DELETE_COLOG_ERROR_FALLBACK_MESSAGE = '팀을 삭제하지 못했어요. 다시 시도해 주세요.';
+
 export default function CologDangerZoneSection({ slug }: CologDangerZoneSectionProps) {
 	const router = useRouter();
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const deleteCologMutation = useDeleteCologMutation();
+	const deleteCologErrorMessage = deleteCologMutation.isError
+		? getApiErrorMessage(deleteCologMutation.error, DELETE_COLOG_ERROR_FALLBACK_MESSAGE)
+		: undefined;
 
 	const handleDeleteConfirm = () => {
 		deleteCologMutation.mutate(slug, {
@@ -49,7 +55,14 @@ export default function CologDangerZoneSection({ slug }: CologDangerZoneSectionP
 			<ConfirmModal
 				open={isDeleteModalOpen}
 				title="팀을 영구 삭제할까요?"
-				description="삭제된 팀과 게시글은 복구할 수 없습니다."
+				description={
+					<>
+						<span>삭제된 팀과 게시글은 복구할 수 없습니다.</span>
+						{deleteCologErrorMessage === undefined ? null : (
+							<span className="mt-2 block text-danger">{deleteCologErrorMessage}</span>
+						)}
+					</>
+				}
 				confirmLabel="영구 삭제"
 				cancelLabel="취소"
 				variant="danger"

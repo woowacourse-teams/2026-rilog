@@ -28,6 +28,8 @@ describe('CologDangerZoneSection', () => {
 			options?.onSuccess?.();
 		});
 		useDeleteCologMutationMock.mockReturnValue({
+			error: null,
+			isError: false,
 			isPending: false,
 			mutate: deleteCologMock,
 			reset: resetDeleteCologMock,
@@ -71,6 +73,24 @@ describe('CologDangerZoneSection', () => {
 		expect(replaceMock).toHaveBeenCalledWith(APP_ROUTES.feeds);
 		await waitFor(() =>
 			expect(screen.queryByRole('dialog', { name: '팀을 영구 삭제할까요?' })).not.toBeInTheDocument(),
+		);
+	});
+
+	it('팀 삭제에 실패하면 확인 모달 description에 오류 메시지를 추가한다', async () => {
+		const user = userEvent.setup();
+		useDeleteCologMutationMock.mockReturnValue({
+			error: {},
+			isError: true,
+			isPending: false,
+			mutate: deleteCologMock,
+			reset: resetDeleteCologMock,
+		});
+		render(<CologDangerZoneSection slug="team-rilog" />);
+
+		await user.click(screen.getByRole('button', { name: '팀 영구 삭제' }));
+
+		expect(screen.getByRole('dialog', { name: '팀을 영구 삭제할까요?' })).toHaveAccessibleDescription(
+			/팀을 삭제하지 못했어요\. 다시 시도해 주세요\./,
 		);
 	});
 });
