@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { deleteColog, removeCologMember } from './api';
+import { deleteColog, leaveColog, removeCologMember } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -21,6 +21,20 @@ describe('deleteColog', () => {
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('DELETE');
 		expect(request.url).toBe('https://api.rilog.test/v1/cologs/rilog%2Fteam');
+		expect(response.status).toBe(204);
+	});
+});
+
+describe('leaveColog', () => {
+	it('정규화한 팀 slug의 현재 멤버 endpoint로 DELETE하고 204 응답을 반환한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const response = await leaveColog('@rilog/team');
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('DELETE');
+		expect(request.url).toBe('https://api.rilog.test/v1/cologs/rilog%2Fteam/members/me');
 		expect(response.status).toBe(204);
 	});
 });

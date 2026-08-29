@@ -34,6 +34,12 @@ export const readCologMembers = (slug: string) => {
 	return apiClient.get<ApiResponse<BlogMemberResponse[]>>(`v1/cologs/${encodeURIComponent(normalizedSlug)}/members`);
 };
 
+export const leaveColog = (slug: string) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.delete(`v1/cologs/${encodeURIComponent(normalizedSlug)}/members/me`);
+};
+
 export const removeCologMember = (slug: string, memberId: number) => {
 	const normalizedSlug = stripAtPrefix(slug);
 
