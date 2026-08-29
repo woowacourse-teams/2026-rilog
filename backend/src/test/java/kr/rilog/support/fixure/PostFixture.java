@@ -196,7 +196,9 @@ public final class PostFixture {
                         rilog.getSlug(),
                         rilog.getName(),
                         rilog.getProfileImageUrl()
-                ));
+                ),
+                PostDetailResponse.ViewerPermissionsResponse.none()
+        );
     }
 
     public static PostDetail updatedPostDetail() {

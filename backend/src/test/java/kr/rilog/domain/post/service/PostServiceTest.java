@@ -1,8 +1,10 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -54,6 +56,7 @@ class PostServiceTest {
     private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long POST_ID = 1L;
     private static final Long WRITER_ID = 2L;
+    private static final Long REQUESTER_ID = 9L;
     private static final Long RILOG_ID = 3L;
     private static final Long COLOG_ID = 4L;
     private static final String RILOG_SLUG = "writer-rilog";
@@ -263,6 +266,25 @@ class PostServiceTest {
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
         assertThat(response.owner().type()).isEqualTo(BlogType.RILOG);
+        assertThat(response.viewerPermissions().canEdit()).isFalse();
+        assertThat(response.viewerPermissions().canDelete()).isFalse();
+    }
+
+    @Test
+    @DisplayName("개인 블로그 게시글 작성자는 수정과 삭제를 할 수 있다")
+    void readRilogPostAllowsWriterToEditAndDelete() {
+        // given
+        User writer = createWriter();
+        Post publicPost = createPost(writer, PostVisibility.PUBLIC);
+        when(postRepository.findDetailById(POST_ID))
+                .thenReturn(Optional.of(publicPost));
+
+        // when
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+
+        // then
+        assertThat(response.viewerPermissions().canEdit()).isTrue();
+        assertThat(response.viewerPermissions().canDelete()).isTrue();
     }
 
     @Test
@@ -291,6 +313,98 @@ class PostServiceTest {
                     assertThat(affiliation.memberCount()).isEqualTo(3L);
                     assertThat(affiliation.postCount()).isEqualTo(5L);
                 });
+        assertThat(response.viewerPermissions().canEdit()).isFalse();
+        assertThat(response.viewerPermissions().canDelete()).isFalse();
+    }
+
+    @Test
+    @DisplayName("팀 블로그 게시글 작성자가 현재 활성 멤버이면 수정과 삭제를 할 수 있다")
+    void readCologPostAllowsActiveWriterToEditAndDelete() {
+        // given
+        User writer = createWriter();
+        Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
+        BlogMember requesterMember = createMember(cologPost.getColog(), writer, BlogPermission.MEMBER);
+        when(postRepository.findDetailById(POST_ID))
+                .thenReturn(Optional.of(cologPost));
+        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(3L);
+        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+                COLOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC
+        )).thenReturn(5L);
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                WRITER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.of(requesterMember));
+
+        // when
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+
+        // then
+        assertThat(response.viewerPermissions().canEdit()).isTrue();
+        assertThat(response.viewerPermissions().canDelete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("팀 블로그 게시글 작성자가 현재 활성 멤버가 아니면 수정과 삭제를 할 수 없다")
+    void readCologPostRejectsLeftWriterPermissions() {
+        // given
+        User writer = createWriter();
+        Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
+        when(postRepository.findDetailById(POST_ID))
+                .thenReturn(Optional.of(cologPost));
+        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(3L);
+        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+                COLOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC
+        )).thenReturn(5L);
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                WRITER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.empty());
+
+        // when
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+
+        // then
+        assertThat(response.viewerPermissions().canEdit()).isFalse();
+        assertThat(response.viewerPermissions().canDelete()).isFalse();
+    }
+
+    @Test
+    @DisplayName("팀 블로그 OWNER와 ADMIN은 다른 작성자의 게시글을 삭제할 수 있다")
+    void readCologPostAllowsManagerToDeleteAnotherWritersPost() {
+        // given
+        User writer = createWriter();
+        User requester = createRequester();
+        Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
+        BlogMember requesterMember = createMember(cologPost.getColog(), requester, BlogPermission.ADMIN);
+        when(postRepository.findDetailById(POST_ID))
+                .thenReturn(Optional.of(cologPost));
+        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
+                .thenReturn(3L);
+        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
+                COLOG_ID,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC
+        )).thenReturn(5L);
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                REQUESTER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.of(requesterMember));
+
+        // when
+        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, REQUESTER_ID);
+
+        // then
+        assertThat(response.viewerPermissions().canEdit()).isFalse();
+        assertThat(response.viewerPermissions().canDelete()).isTrue();
     }
 
     @Test
@@ -345,6 +459,13 @@ class PostServiceTest {
         return User.builder()
                 .id(WRITER_ID)
                 .githubId(100L)
+                .build();
+    }
+
+    private User createRequester() {
+        return User.builder()
+                .id(REQUESTER_ID)
+                .githubId(101L)
                 .build();
     }
 
@@ -404,6 +525,15 @@ class PostServiceTest {
                 .status(PostStatus.PUBLISHED)
                 .visibility(visibility)
                 .thumbnailImageUrl("https://example.com/thumbnail.png")
+                .build();
+    }
+
+    private BlogMember createMember(Blog blog, User user, BlogPermission permission) {
+        return BlogMember.builder()
+                .blog(blog)
+                .user(user)
+                .permission(permission)
+                .status(BlogMemberStatus.ACTIVE)
                 .build();
     }
 
