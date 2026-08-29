@@ -184,7 +184,7 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 
 			<ConfirmModal
 				open={memberToRemove !== null}
-				title={`${memberToRemove?.nickname ?? ''} 멤버를 내보낼까요?`}
+				title={`${memberToRemove?.nickname ?? ''} 님을 내보낼까요?`}
 				description="내보낸 멤버는 나중에 다시 초대할 수 있습니다."
 				confirmLabel="내보내기"
 				variant="danger"
