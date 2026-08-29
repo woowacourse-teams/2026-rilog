@@ -13,6 +13,12 @@ import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 export const createColog = (request: CologCreateRequest) =>
 	apiClient.post<ApiResponse<CologCreateResponse>>('v1/cologs', { json: request });
 
+export const deleteColog = (slug: string) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.delete(`v1/cologs/${encodeURIComponent(normalizedSlug)}`);
+};
+
 export const inviteCologMember = (slug: string, request: CologMemberInviteRequest) => {
 	const normalizedSlug = stripAtPrefix(slug);
 
@@ -26,4 +32,16 @@ export const readCologMembers = (slug: string) => {
 	const normalizedSlug = stripAtPrefix(slug);
 
 	return apiClient.get<ApiResponse<BlogMemberResponse[]>>(`v1/cologs/${encodeURIComponent(normalizedSlug)}/members`);
+};
+
+export const leaveColog = (slug: string) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.delete(`v1/cologs/${encodeURIComponent(normalizedSlug)}/members/me`);
+};
+
+export const removeCologMember = (slug: string, memberId: number) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.delete(`v1/cologs/${encodeURIComponent(normalizedSlug)}/members/${memberId}`);
 };

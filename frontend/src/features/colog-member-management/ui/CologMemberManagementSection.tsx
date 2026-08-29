@@ -1,12 +1,20 @@
 'use client';
 
+import { useState } from 'react';
+
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 
+import type { CologMember } from '@/domains/blog/model/colog';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
-import { isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
+import { canRemoveCologMember } from '@/features/colog-member-management/lib/can-remove-colog-member';
+import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
+import { useRemoveCologMemberMutation } from '@/shared/api/cologs/mutations/use-remove-colog-member-mutation';
+import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
+import AlertModal from '@/shared/ui/modal/AlertModal';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import CologMemberRow from './CologMemberRow';
 import MemberInviteModal from './MemberInviteModal';
@@ -16,6 +24,8 @@ interface CologMemberManagementSectionProps {
 	slug: string;
 	drafts: ReturnType<typeof useCologMemberDrafts>;
 }
+
+const REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 내보내지 못했어요. 다시 시도해 주세요.';
 
 const getInvitationErrorCode = (error: unknown) => {
 	if (
@@ -47,9 +57,17 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 		handleSave,
 		handlePermissionChange,
 		handleBlogRoleChange,
+		handleRemoveMember,
 	} = drafts;
+	const [memberToRemove, setMemberToRemove] = useState<CologMember | null>(null);
+	const [isRemoveCompleteModalOpen, setIsRemoveCompleteModalOpen] = useState(false);
 
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
+	const removeMember = useRemoveCologMemberMutation();
+	const { data: currentUser } = useMyInfoQuery({ select: (response) => response.data });
+	const removeMemberErrorMessage = removeMember.isError
+		? getApiErrorMessage(removeMember.error, REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE)
+		: undefined;
 
 	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
 		analytics.cologMemberInvitationStarted({ cologId, candidateCount: candidates.length });
@@ -84,6 +102,26 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 		if (successfulInvitationCount > 0) {
 			window.location.reload();
 		}
+	};
+
+	const handleRemoveConfirm = async () => {
+		if (memberToRemove === null || removeMember.isPending) {
+			return;
+		}
+
+		try {
+			await removeMember.mutateAsync({ slug, memberId: memberToRemove.id });
+			handleRemoveMember(memberToRemove.id);
+			setMemberToRemove(null);
+			setIsRemoveCompleteModalOpen(true);
+		} catch {
+			// mutation 오류는 확인 모달의 description에 표시한다.
+		}
+	};
+
+	const handleRemoveCancel = () => {
+		removeMember.reset();
+		setMemberToRemove(null);
 	};
 
 	return (
@@ -129,7 +167,15 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 										onBlogRoleChange={handleBlogRoleChange}
 									/>
 								) : (
-									<CologMemberRow key={member.id} member={member} />
+									<CologMemberRow
+										key={member.id}
+										member={member}
+										canRemove={canRemoveCologMember(currentUser?.slug, displayedMembers, member)}
+										onRemove={() => {
+											removeMember.reset();
+											setMemberToRemove(member);
+										}}
+									/>
 								),
 							)}
 						</tbody>
@@ -142,6 +188,31 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 				open={isInviteModalOpen}
 				onClose={() => setIsInviteModalOpen(false)}
 				onInvite={(candidates) => void handleInvite(candidates)}
+			/>
+
+			<ConfirmModal
+				open={memberToRemove !== null}
+				title={`${memberToRemove?.nickname ?? ''} 님을 내보낼까요?`}
+				description={
+					<>
+						<span>내보낸 멤버는 나중에 다시 초대할 수 있습니다.</span>
+						{removeMemberErrorMessage === undefined ? null : (
+							<span className="mt-2 block text-danger">{removeMemberErrorMessage}</span>
+						)}
+					</>
+				}
+				confirmLabel="내보내기"
+				variant="danger"
+				isPending={removeMember.isPending}
+				onConfirm={() => void handleRemoveConfirm()}
+				onCancel={handleRemoveCancel}
+			/>
+
+			<AlertModal
+				open={isRemoveCompleteModalOpen}
+				title="성공적으로 내보냈어요."
+				onAction={() => undefined}
+				onClose={() => setIsRemoveCompleteModalOpen(false)}
 			/>
 		</section>
 	);

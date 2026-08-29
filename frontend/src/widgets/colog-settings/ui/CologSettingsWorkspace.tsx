@@ -4,10 +4,10 @@ import { useCallback, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
-import type { CologMember } from '@/domains/blog/model/colog';
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
+import { mapCologMembersResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
 import { useCologProfileForm } from '@/features/colog-profile-management/hooks/use-colog-profile-form';
 import { useSaveCologProfile } from '@/features/colog-profile-management/hooks/use-save-colog-profile';
@@ -18,6 +18,7 @@ import CologProfileSection from '@/features/colog-profile-management/ui/CologPro
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
+import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
 import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
 import { buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -30,14 +31,12 @@ import { COLOG_SETTINGS_TABS } from '../lib/colog-settings-tabs';
 interface CologSettingsWorkspaceProps {
 	slug: string;
 	initialTab?: CologSettingsTab;
-	initialMembers?: CologMember[];
 }
 
 interface CologSettingsWorkspaceContentProps {
 	cologId: number;
 	slug: string;
 	initialTab: CologSettingsTab;
-	initialMembers?: CologMember[];
 	initialProfile: CologProfileSettingsValue;
 }
 
@@ -78,11 +77,8 @@ const getChangedProfileFields = (
 	return changedFields;
 };
 
-export default function CologSettingsWorkspace({
-	slug,
-	initialTab = 'profile',
-	initialMembers,
-}: CologSettingsWorkspaceProps) {
+export default function CologSettingsWorkspace({ slug, initialTab = 'profile' }: CologSettingsWorkspaceProps) {
+	// TODO: profile 섹션 내부로 이동
 	const profileQuery = useBlogPublicProfileQuery({
 		slug,
 		select: (response) =>
@@ -123,7 +119,6 @@ export default function CologSettingsWorkspace({
 			cologId={profileQuery.data.cologId}
 			slug={slug}
 			initialTab={initialTab}
-			initialMembers={initialMembers}
 			initialProfile={profileQuery.data.profile}
 		/>
 	);
@@ -133,7 +128,6 @@ function CologSettingsWorkspaceContent({
 	cologId,
 	slug,
 	initialTab,
-	initialMembers,
 	initialProfile,
 }: CologSettingsWorkspaceContentProps) {
 	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
@@ -141,6 +135,7 @@ function CologSettingsWorkspaceContent({
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
+	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
 	const saveCologProfile = useSaveCologProfile();
 	const nameAvailability = useCheckNicknameAvailabilityMutation();
@@ -344,7 +339,7 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'members' && (
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
-				{activeTab === 'danger' && <CologDangerZoneSection />}
+				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 
 			<ConfirmModal

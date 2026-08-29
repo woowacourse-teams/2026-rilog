@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SettingsAccessStatus } from '@/features/settings-access/hooks/use-settings-access';
@@ -14,18 +15,23 @@ vi.mock('@/features/settings-access/hooks/use-settings-access', () => ({ useSett
 describe('RilogSettingsButton', () => {
 	beforeEach(() => useSettingsAccessMock.mockReset());
 
-	it('본인에게만 개인 설정 링크를 제공한다', () => {
+	it('소유자에게 개인 설정 옵션만 제공한다', async () => {
+		const user = userEvent.setup();
 		useSettingsAccessMock.mockReturnValue('authorized');
 		render(<RilogSettingsButton slug="rilogger" />);
-		expect(screen.getByRole('link', { name: '개인 설정' })).toHaveAttribute('href', '/@rilogger/settings?tab=profile');
+
+		await user.click(screen.getByRole('button', { name: '개인 블로그 메뉴' }));
+
+		expect(screen.getByRole('menuitem', { name: '설정' })).toHaveAttribute('href', '/@rilogger/settings?tab=profile');
+		expect(screen.queryByRole('menuitem', { name: '탈퇴' })).not.toBeInTheDocument();
 	});
 
 	it.each(['initializing', 'checking', 'unauthenticated', 'forbidden', 'error'] as const)(
-		'%s 상태에서는 숨긴다',
+		'%s 상태에서는 미트볼 버튼을 숨긴다',
 		(status) => {
 			useSettingsAccessMock.mockReturnValue(status);
 			render(<RilogSettingsButton slug="rilogger" />);
-			expect(screen.queryByRole('link')).not.toBeInTheDocument();
+			expect(screen.queryByRole('button', { name: '개인 블로그 메뉴' })).not.toBeInTheDocument();
 		},
 	);
 });
