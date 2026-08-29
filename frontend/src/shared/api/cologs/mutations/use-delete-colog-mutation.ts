@@ -13,12 +13,13 @@ export const useDeleteCologMutation = () => {
 
 	return useMutation({
 		mutationFn: (slug: string) => deleteColog(slug),
-		onSuccess: () =>
-			Promise.all([
+		onSuccess: () => {
+			void Promise.all([
 				queryClient.invalidateQueries({ queryKey: cologsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsPreview() }),
-			]),
+			]);
+		},
 	});
 };
