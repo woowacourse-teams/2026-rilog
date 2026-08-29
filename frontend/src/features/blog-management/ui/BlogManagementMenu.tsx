@@ -10,6 +10,7 @@ import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface BlogManagementMenuProps {
 	ariaLabel: string;
+	onLeave?: () => void;
 	settingsHref?: string;
 	showLeave?: boolean;
 	triggerColor?: string;
@@ -17,6 +18,7 @@ interface BlogManagementMenuProps {
 
 export default function BlogManagementMenu({
 	ariaLabel,
+	onLeave,
 	settingsHref,
 	showLeave = false,
 	triggerColor = 'var(--text-on-dark)',
@@ -73,6 +75,11 @@ export default function BlogManagementMenu({
 		}
 	};
 
+	const handleLeave = () => {
+		setIsOpen(false);
+		onLeave?.();
+	};
+
 	return (
 		<div ref={rootRef} className="relative inline-flex">
 			<Button
@@ -113,7 +120,7 @@ export default function BlogManagementMenu({
 							}}
 							href={settingsHref}
 							role="menuitem"
-							className="block rounded-sm px-4 py-2 text-label-2 text-text-primary transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none active:bg-surface-active"
+							className="block rounded-sm px-4 py-2 text-label-2 text-text-primary transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring active:bg-surface-active"
 							onKeyDown={(event) => handleItemKeyDown(event, 0)}
 						>
 							설정
@@ -126,7 +133,8 @@ export default function BlogManagementMenu({
 							}}
 							type="button"
 							role="menuitem"
-							className="block w-full rounded-sm px-4 py-2 text-left text-label-2 text-danger transition-colors hover:bg-danger-soft focus-visible:bg-danger-soft focus-visible:outline-none active:bg-danger-border"
+							className="block w-full rounded-sm px-4 py-2 text-left text-label-2 text-danger transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring active:bg-surface-active"
+							onClick={handleLeave}
 							onKeyDown={(event) => handleItemKeyDown(event, leaveItemIndex)}
 						>
 							탈퇴

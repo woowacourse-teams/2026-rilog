@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,17 +6,40 @@ import type { BlogMemberResponse } from '@/shared/api/cologs/types';
 
 import CologSettingsButton from './CologSettingsButton';
 
-const { useCurrentCologPermissionMock } = vi.hoisted(() => ({
-	useCurrentCologPermissionMock: vi.fn<() => BlogMemberResponse['permission'] | undefined>(),
+const { leaveCologMock, replaceMock, resetLeaveCologMock, useCurrentCologPermissionMock, useLeaveCologMutationMock } =
+	vi.hoisted(() => ({
+		leaveCologMock: vi.fn(),
+		replaceMock: vi.fn(),
+		resetLeaveCologMock: vi.fn(),
+		useCurrentCologPermissionMock: vi.fn<() => BlogMemberResponse['permission'] | undefined>(),
+		useLeaveCologMutationMock: vi.fn(),
+	}));
+
+vi.mock('next/navigation', () => ({
+	useRouter: () => ({ replace: replaceMock }),
 }));
 
 vi.mock('@/features/colog-settings-access/hooks/use-current-colog-permission', () => ({
 	useCurrentCologPermission: useCurrentCologPermissionMock,
 }));
 
+vi.mock('@/shared/api/cologs/mutations/use-leave-colog-mutation', () => ({
+	useLeaveCologMutation: useLeaveCologMutationMock,
+}));
+
 describe('CologSettingsButton', () => {
 	beforeEach(() => {
-		useCurrentCologPermissionMock.mockReset();
+		vi.clearAllMocks();
+		leaveCologMock.mockImplementation((_slug: string, options?: { onSuccess?: () => void }) => {
+			options?.onSuccess?.();
+		});
+		useLeaveCologMutationMock.mockReturnValue({
+			error: null,
+			isError: false,
+			isPending: false,
+			mutate: leaveCologMock,
+			reset: resetLeaveCologMock,
+		});
 	});
 
 	it('OWNER에게 설정 옵션만 제공한다', async () => {
@@ -41,15 +64,44 @@ describe('CologSettingsButton', () => {
 		expect(screen.getByRole('menuitem', { name: '탈퇴' })).toBeInTheDocument();
 	});
 
-	it('MEMBER에게 핸들러 없는 탈퇴 옵션만 제공한다', async () => {
+	it('MEMBER가 탈퇴를 확정하면 API를 요청하고 피드로 이동한다', async () => {
 		const user = userEvent.setup();
 		useCurrentCologPermissionMock.mockReturnValue('MEMBER');
+		render(<CologSettingsButton slug="@rilog" />);
+
+		await user.click(screen.getByRole('button', { name: '팀 블로그 메뉴' }));
+		expect(screen.queryByRole('menuitem', { name: '설정' })).not.toBeInTheDocument();
+		await user.click(screen.getByRole('menuitem', { name: '탈퇴' }));
+		const dialog = screen.getByRole('dialog', { name: '팀 블로그에서 탈퇴할까요?' });
+		await user.click(within(dialog).getByRole('button', { name: '탈퇴' }));
+
+		const [requestedSlug, mutationOptions] = leaveCologMock.mock.calls[0] as [string, { onSuccess?: () => void }];
+		expect(requestedSlug).toBe('@rilog');
+		expect(mutationOptions.onSuccess).toBeTypeOf('function');
+		expect(replaceMock).toHaveBeenCalledWith('/feeds');
+		await waitFor(() =>
+			expect(screen.queryByRole('dialog', { name: '팀 블로그에서 탈퇴할까요?' })).not.toBeInTheDocument(),
+		);
+	});
+
+	it('탈퇴 실패 메시지를 확인 모달에 표시한다', async () => {
+		const user = userEvent.setup();
+		useCurrentCologPermissionMock.mockReturnValue('ADMIN');
+		useLeaveCologMutationMock.mockReturnValue({
+			error: {},
+			isError: true,
+			isPending: false,
+			mutate: leaveCologMock,
+			reset: resetLeaveCologMock,
+		});
 		render(<CologSettingsButton slug="rilog" />);
 
 		await user.click(screen.getByRole('button', { name: '팀 블로그 메뉴' }));
+		await user.click(screen.getByRole('menuitem', { name: '탈퇴' }));
 
-		expect(screen.queryByRole('menuitem', { name: '설정' })).not.toBeInTheDocument();
-		expect(screen.getByRole('menuitem', { name: '탈퇴' })).toBeInTheDocument();
+		expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent(
+			'팀 블로그에서 탈퇴하지 못했어요. 다시 시도해 주세요.',
+		);
 	});
 
 	it('멤버가 아니거나 권한 확인 전에는 미트볼 버튼을 렌더링하지 않는다', () => {

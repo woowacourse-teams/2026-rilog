@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import BlogManagementMenu from './BlogManagementMenu';
 
@@ -33,5 +33,17 @@ describe('BlogManagementMenu', () => {
 
 		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 		expect(trigger).toHaveFocus();
+	});
+
+	it('탈퇴 옵션을 선택하면 팝오버를 닫고 탈퇴 요청을 전달한다', async () => {
+		const user = userEvent.setup();
+		const onLeave = vi.fn();
+		render(<BlogManagementMenu ariaLabel="블로그 메뉴" showLeave onLeave={onLeave} />);
+
+		await user.click(screen.getByRole('button', { name: '블로그 메뉴' }));
+		await user.click(screen.getByRole('menuitem', { name: '탈퇴' }));
+
+		expect(onLeave).toHaveBeenCalledOnce();
+		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 	});
 });
