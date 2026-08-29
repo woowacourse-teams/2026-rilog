@@ -58,7 +58,7 @@ export default function ConfirmModal({
 						{title}
 					</h2>
 					{hasDescription && (
-						<p id={descriptionId} className="mt-2 text-body-2 text-text-secondary">
+						<p id={descriptionId} className="mt-2 text-body-2 whitespace-pre-wrap text-text-secondary">
 							{description}
 						</p>
 					)}

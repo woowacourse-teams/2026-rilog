@@ -5,9 +5,8 @@ import { useState } from 'react';
 
 import BlogManagementMenu from '@/features/blog-management/ui/BlogManagementMenu';
 import { useCurrentCologPermission } from '@/features/colog-settings-access/hooks/use-current-colog-permission';
-import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useLeaveCologMutation } from '@/shared/api/cologs/mutations/use-leave-colog-mutation';
-import { APP_ROUTES, buildCologSettingsPath } from '@/shared/routes/app-routes';
+import { buildCologSettingsPath } from '@/shared/routes/app-routes';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface CologSettingsButtonProps {
@@ -40,14 +39,9 @@ export default function CologSettingsButton({ isOnCover = false, slug }: CologSe
 		leaveCologMutation.mutate(slug, {
 			onSuccess: () => {
 				setIsLeaveModalOpen(false);
-				router.replace(APP_ROUTES.feeds);
 			},
 		});
 	};
-
-	const leaveErrorMessage = leaveCologMutation.isError
-		? getApiErrorMessage(leaveCologMutation.error, '팀 블로그에서 탈퇴하지 못했어요. 다시 시도해 주세요.')
-		: null;
 
 	return (
 		<>
@@ -61,17 +55,8 @@ export default function CologSettingsButton({ isOnCover = false, slug }: CologSe
 
 			<ConfirmModal
 				open={isLeaveModalOpen}
-				title="정말로 탈퇴할까요?"
-				description={
-					<>
-						<span>탈퇴 후 다시 참여하려면 팀의 초대가 필요합니다.</span>
-						{leaveErrorMessage !== null && (
-							<span className="mt-2 block text-danger" role="alert">
-								{leaveErrorMessage}
-							</span>
-						)}
-					</>
-				}
+				title="팀을 탈퇴할까요?"
+				description={`팀으로 발행한 모든 게시글이 팀 소유로 전환되며,\n본인이 수정하거나 삭제할 수 없습니다.`}
 				confirmLabel="탈퇴"
 				cancelLabel="취소"
 				variant="danger"

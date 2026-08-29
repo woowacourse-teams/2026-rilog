@@ -49,7 +49,7 @@ export default function CologDangerZoneSection({ slug }: CologDangerZoneSectionP
 			<ConfirmModal
 				open={isDeleteModalOpen}
 				title="팀을 영구 삭제할까요?"
-				description="삭제된 팀과 설정은 복구할 수 없습니다."
+				description="삭제된 팀과 게시글은 복구할 수 없습니다."
 				confirmLabel="영구 삭제"
 				cancelLabel="취소"
 				variant="danger"
