@@ -126,12 +126,12 @@ describe('CologMemberManagementSection', () => {
 		render(<CologMemberManagementSection cologId={11} slug="@rilog" drafts={draftsWithMember} />);
 
 		await user.click(screen.getByRole('button', { name: '내보낼 멤버 멤버 내보내기' }));
-		const dialog = screen.getByRole('dialog', { name: '내보낼 멤버 멤버를 내보낼까요?' });
+		const dialog = screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' });
 		await user.click(within(dialog).getByRole('button', { name: '내보내기' }));
 
 		await waitFor(() => expect(removeMemberMock).toHaveBeenCalledWith({ slug: '@rilog', memberId: 7 }));
 		expect(handleRemoveMember).toHaveBeenCalledWith(7);
-		expect(screen.queryByRole('dialog', { name: '내보낼 멤버 멤버를 내보낼까요?' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' })).not.toBeInTheDocument();
 	});
 
 	it('현재 사용자와 권한이 같거나 높은 멤버에게는 내보내기 버튼을 표시하지 않는다', () => {

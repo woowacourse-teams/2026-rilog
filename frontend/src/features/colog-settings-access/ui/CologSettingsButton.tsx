@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import BlogManagementMenu from '@/features/blog-management/ui/BlogManagementMenu';
@@ -15,7 +14,6 @@ interface CologSettingsButtonProps {
 }
 
 export default function CologSettingsButton({ isOnCover = false, slug }: CologSettingsButtonProps) {
-	const router = useRouter();
 	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 	const permission = useCurrentCologPermission(slug);
 	const leaveCologMutation = useLeaveCologMutation();

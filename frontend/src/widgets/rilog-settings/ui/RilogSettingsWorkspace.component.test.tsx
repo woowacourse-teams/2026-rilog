@@ -151,7 +151,7 @@ describe('RilogSettingsWorkspace', () => {
 		vi.mocked(blogsApi.updateBlogProfile).mockRejectedValueOnce(new Error('프로필 수정 실패'));
 		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
 
-		const description = screen.getByRole('textbox', { name: '소개' });
+		const description = screen.getByRole('textbox', { name: '한 줄 소개' });
 		await user.clear(description);
 		await user.type(description, '새 소개');
 		await user.click(screen.getByRole('button', { name: '변경사항 저장' }));

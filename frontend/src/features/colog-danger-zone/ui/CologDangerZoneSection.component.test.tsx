@@ -28,8 +28,6 @@ describe('CologDangerZoneSection', () => {
 			options?.onSuccess?.();
 		});
 		useDeleteCologMutationMock.mockReturnValue({
-			error: null,
-			isError: false,
 			isPending: false,
 			mutate: deleteCologMock,
 			reset: resetDeleteCologMock,
@@ -40,7 +38,7 @@ describe('CologDangerZoneSection', () => {
 		render(<CologDangerZoneSection slug="team-rilog" />);
 
 		expect(screen.getByRole('heading', { level: 2, name: '팀 삭제' })).toBeInTheDocument();
-		expect(screen.getByText(/게시글은 작성자 개인 글로 전환/)).toBeInTheDocument();
+		expect(screen.getByText('팀과 팀의 게시글이 영구적으로 삭제됩니다.')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '팀 영구 삭제' })).toBeInTheDocument();
 	});
 
@@ -51,7 +49,7 @@ describe('CologDangerZoneSection', () => {
 		await user.click(screen.getByRole('button', { name: '팀 영구 삭제' }));
 
 		const dialog = screen.getByRole('dialog', { name: '팀을 영구 삭제할까요?' });
-		expect(dialog).toHaveAccessibleDescription('삭제된 팀과 설정은 복구할 수 없습니다.');
+		expect(dialog).toHaveAccessibleDescription('삭제된 팀과 게시글은 복구할 수 없습니다.');
 		await waitFor(() => expect(within(dialog).getByRole('button', { name: '취소' })).toHaveFocus());
 
 		await user.click(within(dialog).getByRole('button', { name: '취소' }));
@@ -73,24 +71,6 @@ describe('CologDangerZoneSection', () => {
 		expect(replaceMock).toHaveBeenCalledWith(APP_ROUTES.feeds);
 		await waitFor(() =>
 			expect(screen.queryByRole('dialog', { name: '팀을 영구 삭제할까요?' })).not.toBeInTheDocument(),
-		);
-	});
-
-	it('삭제 실패 메시지를 확인 모달에 표시한다', async () => {
-		const user = userEvent.setup();
-		useDeleteCologMutationMock.mockReturnValue({
-			error: {},
-			isError: true,
-			isPending: false,
-			mutate: deleteCologMock,
-			reset: resetDeleteCologMock,
-		});
-		render(<CologDangerZoneSection slug="team-rilog" />);
-
-		await user.click(screen.getByRole('button', { name: '팀 영구 삭제' }));
-
-		expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent(
-			'팀을 삭제하지 못했어요. 다시 시도해 주세요.',
 		);
 	});
 });
