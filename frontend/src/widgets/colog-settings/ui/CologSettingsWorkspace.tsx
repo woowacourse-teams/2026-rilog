@@ -339,7 +339,7 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'members' && (
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
-				{activeTab === 'danger' && <CologDangerZoneSection />}
+				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 
 			<ConfirmModal

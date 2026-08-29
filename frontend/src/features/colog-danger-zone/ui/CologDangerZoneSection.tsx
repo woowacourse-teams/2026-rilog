@@ -1,19 +1,38 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useDeleteCologMutation } from '@/shared/api/cologs/mutations/use-delete-colog-mutation';
+import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface CologDangerZoneSectionProps {
-	onDeleteTeam?: () => void;
+	slug: string;
 }
 
-export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZoneSectionProps) {
+export default function CologDangerZoneSection({ slug }: CologDangerZoneSectionProps) {
+	const router = useRouter();
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const deleteCologMutation = useDeleteCologMutation();
 
 	const handleDeleteConfirm = () => {
-		onDeleteTeam?.();
+		deleteCologMutation.mutate(slug, {
+			onSuccess: () => {
+				setIsDeleteModalOpen(false);
+				router.replace(APP_ROUTES.feeds);
+			},
+		});
+	};
+
+	const handleDeleteRequest = () => {
+		deleteCologMutation.reset();
+		setIsDeleteModalOpen(true);
+	};
+
+	const handleDeleteCancel = () => {
+		deleteCologMutation.reset();
 		setIsDeleteModalOpen(false);
 	};
 
@@ -21,16 +40,8 @@ export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZone
 		<section className="px-6 sm:px-8 lg:px-0">
 			<div className="mt-2.5 rounded-lg bg-danger-soft px-6 py-10 sm:px-12 md:min-h-75 md:px-16 md:py-18">
 				<h2 className="text-title-1 font-bold text-danger">팀 삭제</h2>
-				<p className="mt-3 text-body-1 text-text-primary">
-					팀과 팀의 모든 설정이 영구적으로 삭제됩니다. 게시글은 작성자 개인 글로 전환되며, 이 작업은 취소할 수 없습니다.
-				</p>
-				<Button
-					type="button"
-					variant="danger"
-					size="md"
-					className="mt-9 w-45"
-					onClick={() => setIsDeleteModalOpen(true)}
-				>
+				<p className="mt-3 text-body-1 text-text-primary">팀과 팀의 게시글이 영구적으로 삭제됩니다.</p>
+				<Button type="button" variant="danger" size="md" className="mt-9 w-45" onClick={handleDeleteRequest}>
 					팀 영구 삭제
 				</Button>
 			</div>
@@ -42,8 +53,9 @@ export default function CologDangerZoneSection({ onDeleteTeam }: CologDangerZone
 				confirmLabel="영구 삭제"
 				cancelLabel="취소"
 				variant="danger"
+				isPending={deleteCologMutation.isPending}
 				onConfirm={handleDeleteConfirm}
-				onCancel={() => setIsDeleteModalOpen(false)}
+				onCancel={handleDeleteCancel}
 			/>
 		</section>
 	);

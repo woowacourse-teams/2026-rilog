@@ -42,6 +42,10 @@ vi.mock('@/shared/api/cologs/queries/members/use-query', () => ({
 	useCologMembersQuery: useCologMembersQueryMock,
 }));
 
+vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
+	useMyInfoQuery: () => ({ data: { slug: 'current-user' } }),
+}));
+
 vi.mock('@/features/colog-profile-management/hooks/use-save-colog-profile', () => ({
 	useSaveCologProfile: useSaveCologProfileMock,
 }));
