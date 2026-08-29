@@ -19,6 +19,7 @@ interface CologMemberRowProps {
 	isEditing?: boolean;
 	onPermissionChange?: (memberId: number, permission: CologMemberPermission) => void;
 	onBlogRoleChange?: (memberId: number, blogRole: string) => void;
+	onRemove?: () => void;
 }
 
 export default function CologMemberRow({
@@ -26,6 +27,7 @@ export default function CologMemberRow({
 	isEditing = false,
 	onPermissionChange,
 	onBlogRoleChange: _onBlogRoleChange,
+	onRemove,
 }: CologMemberRowProps) {
 	const joinedAt = JOINED_AT_FORMATTER.format(new Date(member.joinedAt)).replace(/\.$/, '');
 
@@ -81,6 +83,8 @@ export default function CologMemberRow({
 				<button
 					type="button"
 					aria-label={`${member.nickname} 멤버 내보내기`}
+					disabled={isEditing}
+					onClick={onRemove}
 					className="inline-flex size-6 items-center justify-center rounded-full bg-surface-active text-danger transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-focus-ring"
 				>
 					<span aria-hidden="true" className="text-body-2 leading-none font-bold">

@@ -51,4 +51,20 @@ describe('CologMemberRow', () => {
 
 		expect(onPermissionChange).toHaveBeenCalledWith(1, 'ADMIN');
 	});
+
+	it('읽기 모드에서 내보내기 버튼을 누르면 콜백을 호출한다', async () => {
+		const user = userEvent.setup();
+		const onRemove = vi.fn();
+
+		renderInTable(<CologMemberRow member={BASE_MEMBER} onRemove={onRemove} />);
+		await user.click(screen.getByRole('button', { name: '김지연 멤버 내보내기' }));
+
+		expect(onRemove).toHaveBeenCalledOnce();
+	});
+
+	it('편집 모드에서는 내보내기 버튼을 비활성화한다', () => {
+		renderInTable(<CologMemberRow member={BASE_MEMBER} isEditing />);
+
+		expect(screen.getByRole('button', { name: '김지연 멤버 내보내기' })).toBeDisabled();
+	});
 });

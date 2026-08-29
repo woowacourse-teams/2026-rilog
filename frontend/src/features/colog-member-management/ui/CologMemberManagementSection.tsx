@@ -1,12 +1,17 @@
 'use client';
 
+import { useState } from 'react';
+
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
 import type { MemberInviteCandidate } from '../model/member-invite-candidate';
 
+import type { CologMember } from '@/domains/blog/model/colog';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
 import { isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
+import { useRemoveCologMemberMutation } from '@/shared/api/cologs/mutations/use-remove-colog-member-mutation';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import CologMemberRow from './CologMemberRow';
 import MemberInviteModal from './MemberInviteModal';
@@ -47,9 +52,12 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 		handleSave,
 		handlePermissionChange,
 		handleBlogRoleChange,
+		handleRemoveMember,
 	} = drafts;
+	const [memberToRemove, setMemberToRemove] = useState<CologMember | null>(null);
 
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
+	const removeMember = useRemoveCologMemberMutation();
 
 	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
 		analytics.cologMemberInvitationStarted({ cologId, candidateCount: candidates.length });
@@ -84,6 +92,25 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 		if (successfulInvitationCount > 0) {
 			window.location.reload();
 		}
+	};
+
+	const handleRemoveConfirm = async () => {
+		if (memberToRemove === null || removeMember.isPending) {
+			return;
+		}
+
+		try {
+			await removeMember.mutateAsync({ slug, memberId: memberToRemove.id });
+			handleRemoveMember(memberToRemove.id);
+			setMemberToRemove(null);
+		} catch {
+			// TODO: mutation 상태의 error를 토스트에 표시한다.
+		}
+	};
+
+	const handleRemoveCancel = () => {
+		removeMember.reset();
+		setMemberToRemove(null);
 	};
 
 	return (
@@ -129,7 +156,14 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 										onBlogRoleChange={handleBlogRoleChange}
 									/>
 								) : (
-									<CologMemberRow key={member.id} member={member} />
+									<CologMemberRow
+										key={member.id}
+										member={member}
+										onRemove={() => {
+											removeMember.reset();
+											setMemberToRemove(member);
+										}}
+									/>
 								),
 							)}
 						</tbody>
@@ -142,6 +176,17 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 				open={isInviteModalOpen}
 				onClose={() => setIsInviteModalOpen(false)}
 				onInvite={(candidates) => void handleInvite(candidates)}
+			/>
+
+			<ConfirmModal
+				open={memberToRemove !== null}
+				title={`${memberToRemove?.nickname ?? ''} 멤버를 내보낼까요?`}
+				description="내보낸 멤버는 나중에 다시 초대할 수 있습니다."
+				confirmLabel="내보내기"
+				variant="danger"
+				isPending={removeMember.isPending}
+				onConfirm={() => void handleRemoveConfirm()}
+				onCancel={handleRemoveCancel}
 			/>
 		</section>
 	);

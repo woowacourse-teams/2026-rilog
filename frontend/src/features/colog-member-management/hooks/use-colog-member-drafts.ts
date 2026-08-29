@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
@@ -13,11 +13,22 @@ interface UseCologMemberDraftsOptions {
 	initialMembers?: CologMember[];
 }
 
-export function useCologMemberDrafts({ initialMembers = [] }: UseCologMemberDraftsOptions = {}) {
-	const [members, setMembers] = useState(() => initialMembers.map((member) => ({ ...member })));
+export function useCologMemberDrafts({ initialMembers }: UseCologMemberDraftsOptions = {}) {
+	const hasInitializedMembers = useRef(initialMembers !== undefined);
+	// TODO: 멤버 수정 api 연동 시 state 대신 query 기반으로 변경
+	const [members, setMembers] = useState(() => initialMembers?.map((member) => ({ ...member })) ?? []);
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+	useEffect(() => {
+		if (initialMembers === undefined || hasInitializedMembers.current) {
+			return;
+		}
+
+		setMembers(initialMembers.map((member) => ({ ...member })));
+		hasInitializedMembers.current = true;
+	}, [initialMembers]);
 
 	const isDirty = draftMembers.length > 0;
 
@@ -83,6 +94,11 @@ export function useCologMemberDrafts({ initialMembers = [] }: UseCologMemberDraf
 		updateDraftMember(memberId, { blogRole });
 	};
 
+	const handleRemoveMember = (memberId: number) => {
+		setMembers((currentMembers) => currentMembers.filter((member) => member.id !== memberId));
+		setDraftMembers((currentDrafts) => currentDrafts.filter((member) => member.id !== memberId));
+	};
+
 	return {
 		members,
 		displayedMembers,
@@ -96,5 +112,6 @@ export function useCologMemberDrafts({ initialMembers = [] }: UseCologMemberDraf
 		handleSave,
 		handlePermissionChange,
 		handleBlogRoleChange,
+		handleRemoveMember,
 	};
 }
