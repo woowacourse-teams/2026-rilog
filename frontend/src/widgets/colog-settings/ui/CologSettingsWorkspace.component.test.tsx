@@ -113,7 +113,7 @@ describe('CologSettingsWorkspace', () => {
 			refetch: refetchProfileMock,
 		});
 		useCologMembersQueryMock.mockReturnValue({
-			data: { status: 200, message: '팀 멤버 목록 조회에 성공했습니다.', data: [] },
+			data: [],
 		});
 		window.history.replaceState(null, '', '/');
 	});
@@ -432,7 +432,9 @@ describe('CologSettingsWorkspace', () => {
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 		await user.click(screen.getByRole('button', { name: '+ 멤버 초대' }));
 
-		expect(useCologMembersQueryMock).toHaveBeenCalledWith({ slug: 'team-rilog' });
+		const [memberQueryOptions] = useCologMembersQueryMock.mock.calls[0] as [{ slug: string; select: unknown }];
+		expect(memberQueryOptions.slug).toBe('team-rilog');
+		expect(memberQueryOptions.select).toBeTypeOf('function');
 		expect(screen.getByRole('dialog', { name: '멤버 초대' })).toBeInTheDocument();
 		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
 		expect(input).toHaveFocus();
