@@ -156,6 +156,51 @@ class ChaptersOfBlogTest {
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
     }
 
+    @Test
+    @DisplayName("중간 챕터를 삭제하면 남은 챕터의 순서를 0부터 연속되게 재정렬한다.")
+    void deleteReordersRemainingChaptersSequentially() {
+        // given
+        Blog blog = createBlog();
+        Chapter first = chapterWithId(1L, blog, "첫 번째", 0);
+        Chapter second = chapterWithId(2L, blog, "두 번째", 1);
+        Chapter target = chapterWithId(3L, blog, "세 번째", 2);
+        Chapter fourth = chapterWithId(4L, blog, "네 번째", 3);
+        Chapter fifth = chapterWithId(5L, blog, "다섯 번째", 4);
+        Chapter sixth = chapterWithId(6L, blog, "여섯 번째", 5);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(List.of(
+                first,
+                second,
+                target,
+                fourth,
+                fifth,
+                sixth
+        ));
+
+        // when
+        chapters.delete(target.getId());
+
+        // then
+        List<Integer> remainingOrders = List.of(first, second, fourth, fifth, sixth).stream()
+                .map(Chapter::getOrder)
+                .toList();
+        assertThat(remainingOrders).containsExactly(0, 1, 2, 3, 4);
+    }
+
+    @Test
+    @DisplayName("챕터를 삭제하면 대상 챕터가 논리 삭제된다.")
+    void deleteMarksTargetAsDeleted() {
+        // given
+        Blog blog = createBlog();
+        Chapter target = chapterWithId(1L, blog, "개발 이야기", 0);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(List.of(target));
+
+        // when
+        Chapter deleted = chapters.delete(target.getId());
+
+        // then
+        assertThat(deleted.getDeletedAt()).isNotNull();
+    }
+
     private Blog createBlog() {
         User owner = createUser(OWNER_ID);
         return createColog(owner);

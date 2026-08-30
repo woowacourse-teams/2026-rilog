@@ -35,6 +35,24 @@ public record ChaptersOfBlog(List<Chapter> chapters) {
         return renameTarget;
     }
 
+    public Chapter delete(Long targetId) {
+        Chapter deleteTarget = getChapter(targetId);
+        deleteTarget.delete();
+        reorderAfterDeletion(deleteTarget);
+        return deleteTarget;
+    }
+
+    private void reorderAfterDeletion(Chapter deleteTarget) {
+        List<Chapter> remainingChapters = chapters.stream()
+                .filter(chapter -> chapter != deleteTarget)
+                .sorted(Comparator.comparingInt(Chapter::getOrder))
+                .toList();
+
+        for (int order = 0; order < remainingChapters.size(); order++) {
+            remainingChapters.get(order).reorder(order);
+        }
+    }
+
     private void validateUniqueName(ChapterName name) {
         if (isDuplicatedName(name)) {
             throw new ChapterException(CHAPTER_NAME_ALREADY_EXISTS);
