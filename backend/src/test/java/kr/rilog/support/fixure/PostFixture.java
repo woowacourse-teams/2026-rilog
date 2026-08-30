@@ -53,7 +53,8 @@ public final class PostFixture {
                 ),
                 DEFAULT_CATEGORY,
                 PostVisibility.PUBLIC,
-                DEFAULT_THUMBNAIL_URL
+                DEFAULT_THUMBNAIL_URL,
+                null
         );
     }
 
@@ -92,7 +93,8 @@ public final class PostFixture {
                 content(),
                 DEFAULT_CATEGORY,
                 PostVisibility.PUBLIC,
-                DEFAULT_THUMBNAIL_URL
+                DEFAULT_THUMBNAIL_URL,
+                null
         );
     }
 
@@ -221,7 +223,8 @@ public final class PostFixture {
                 detail.content(),
                 detail.category(),
                 detail.visibility(),
-                detail.thumbnailUrl()
+                detail.thumbnailUrl(),
+                null
         );
     }
 
