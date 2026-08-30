@@ -10,6 +10,7 @@ import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.chapter.service.dto.command.ChapterCreateCommand;
+import kr.rilog.domain.chapter.service.dto.command.ChapterRenameCommand;
 import kr.rilog.domain.chapter.service.dto.result.ChapterResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -222,6 +223,76 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         assertThatThrownBy(() -> chapterService.readAll("missing-blog"))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("챕터 이름을 중복되지 않은 이름으로 변경하면 새 이름이 저장된다.")
+    void renamePersistsUniqueName() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter target = chapterRepository.saveAndFlush(
+                Chapter.create(scenario.blog(), "개발 이야기", 0)
+        );
+        ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
+
+        // when
+        ChapterResult result = chapterService.rename(
+                BLOG_SLUG,
+                target.getId(),
+                scenario.requester().getId(),
+                command
+        );
+
+        // then
+        Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
+        assertThat(result.name()).isEqualTo(command.name());
+        assertThat(saved.getName()).isEqualTo(command.name());
+    }
+
+    @Test
+    @DisplayName("챕터 이름을 자기 자신의 이름으로 변경하면 기존 이름을 유지한다.")
+    void renameAllowsOwnName() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter target = chapterRepository.saveAndFlush(
+                Chapter.create(scenario.blog(), "개발 이야기", 0)
+        );
+        ChapterRenameCommand command = new ChapterRenameCommand("개발 이야기");
+
+        // when
+        ChapterResult result = chapterService.rename(
+                BLOG_SLUG,
+                target.getId(),
+                scenario.requester().getId(),
+                command
+        );
+
+        // then
+        Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
+        assertThat(result.name()).isEqualTo("개발 이야기");
+        assertThat(saved.getName()).isEqualTo("개발 이야기");
+    }
+
+    @Test
+    @DisplayName("챕터 이름을 다른 챕터의 이름으로 변경하면 예외가 발생하고 기존 이름을 유지한다.")
+    void renameRejectsOtherChapterNameAndPreservesName() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter target = chapterRepository.saveAndFlush(
+                Chapter.create(scenario.blog(), "개발 이야기", 0)
+        );
+        chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "회고", 1));
+        ChapterRenameCommand command = new ChapterRenameCommand("  회고  ");
+
+        // when & then
+        assertThatThrownBy(() -> chapterService.rename(
+                BLOG_SLUG,
+                target.getId(),
+                scenario.requester().getId(),
+                command
+        ))
+                .isInstanceOf(ChapterException.class)
+                .hasMessage(CHAPTER_NAME_ALREADY_EXISTS.getMessage());
     }
 
     private ChapterCreationScenario createMemberScenario(BlogPermission permission) {

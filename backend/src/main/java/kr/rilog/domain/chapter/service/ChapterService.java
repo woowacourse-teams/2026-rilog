@@ -7,9 +7,11 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.entity.vo.ChapterName;
 import kr.rilog.domain.chapter.entity.vo.ChaptersOfBlog;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.chapter.service.dto.command.ChapterCreateCommand;
+import kr.rilog.domain.chapter.service.dto.command.ChapterRenameCommand;
 import kr.rilog.domain.chapter.service.dto.result.ChapterResult;
 import kr.rilog.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,19 @@ public class ChapterService {
         Blog blog = getBlog(slug);
         ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blog));
         return chapters.getChaptersSortByOrder();
+    }
+
+    @Transactional
+    public ChapterResult rename(String slug, Long chapterId, Long requesterId, ChapterRenameCommand command) {
+        BlogMember blogMember = getBlogMember(Slug.from(slug), requesterId);
+        blogMember.validateHasAdminPermission();
+
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blogMember.getBlog()));
+        chapters.validateUniqueNameExceptId(chapterId, ChapterName.from(command.name()));
+
+        Chapter chapter = chapters.getChapter(chapterId);
+        chapter.rename(command.name());
+        return ChapterResult.from(chapter);
     }
 
     private List<Chapter> getChaptersOfBlog(Blog blog) {
