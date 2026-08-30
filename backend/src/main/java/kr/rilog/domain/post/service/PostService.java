@@ -6,6 +6,9 @@ import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.exception.ChapterException;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse.ViewerPermissionsResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -44,18 +48,19 @@ public class PostService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
+    private final ChapterRepository chapterRepository;
     private final TagAssetsLifecycle tagAssetsLifecycle;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
         Blog publishingBlog = getBlog(command.slug());
         User writer = getUser(requesterId);
+        Chapter chapter = getChapterIfPresent(command.chapterId(), publishingBlog);
 
         Post post = publishingBlog.isColog()
-                ? publishToColog(command, publishingBlog, writer)
-                : publishToRilog(command, publishingBlog, writer);
+                ? publishToColog(command, publishingBlog, writer, chapter)
+                : publishToRilog(command, publishingBlog, writer, chapter);
 
-        // TODO content에 있는 이미지 파싱하여, S3에 tag 변경...! 이건 그냥 주석으로 유지 다음에 구현..!
         Post published = postRepository.save(post);
         tagAssetsLifecycle.attach(published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
@@ -89,9 +94,10 @@ public class PostService {
         BlogMember ownBlogMember = getBlogMember(Slug.from(post.getOwnSlug()), requesterId);
         BlogMember targetMember = getBlogMember(Slug.from(command.newSlug()), requesterId);
         Blog targetBlog = ownBlogMember.transfer(targetMember);
+        Chapter chapter = getChapterIfPresent(command.chapterId(), targetBlog);
 
         TagAssets previous = post.getTagAssets();
-        post.update(command.toDetail(), targetBlog);
+        post.update(command.toDetail(), targetBlog, chapter);
         TagAssets current = post.getTagAssets();
         tagAssetsLifecycle.synchronize(previous, current);
 
@@ -105,15 +111,15 @@ public class PostService {
         post.delete();
     }
 
-    private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer) {
+    private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {
         rilog.validateIsOwner(writer);
-        return Post.create(rilog, writer, command.toDetail());
+        return Post.create(rilog, writer, command.toDetail(), chapter);
     }
 
-    private Post publishToColog(PostSaveCommand command, Blog colog, User writer) {
+    private Post publishToColog(PostSaveCommand command, Blog colog, User writer, Chapter chapter) {
         validateCologMember(colog, writer);
         Blog rilog = getRilog(writer);
-        return Post.create(colog, rilog, writer, command.toDetail());
+        return Post.create(colog, rilog, writer, command.toDetail(), chapter);
     }
 
     private void validateCologMember(Blog colog, User writer) {
@@ -145,6 +151,15 @@ public class PostService {
     private BlogMember getBlogMember(Slug slug, Long memberId) {
         return blogMemberRepository.findWithBlogBySlugAndUserId(slug, memberId)
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
+    }
+
+    private Chapter getChapterIfPresent(Long chapterId, Blog blog) {
+        if (chapterId == null) {
+            return null;
+        }
+
+        return chapterRepository.findByIdAndBlogIdAndDeletedAtIsNull(chapterId, blog.getId())
+                .orElseThrow(() -> new ChapterException(CHAPTER_NOT_FOUND));
     }
 
     private Post getPost(Long postId) {
