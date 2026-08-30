@@ -1,6 +1,7 @@
 package kr.rilog.domain.comment.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.entity.vo.Slug;
@@ -66,11 +67,14 @@ class CommentServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private BlogMemberRepository blogMemberRepository;
+
     private CommentService commentService;
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentRepository, postRepository, userRepository);
+        commentService = new CommentService(commentRepository, postRepository, userRepository, blogMemberRepository);
     }
 
     @Test
@@ -172,6 +176,8 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(post));
         when(commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(POST_ID))
                 .thenReturn(List.of(root, reply));
+        when(blogMemberRepository.findActiveUserIdsByBlogId(post.getOwnBlogId()))
+                .thenReturn(List.of(USER_ID));
 
         // when
         CommentListResponse response = commentService.readComments(POST_ID);
@@ -183,6 +189,34 @@ class CommentServiceTest {
         assertThat(rootResponse.replyCount()).isEqualTo(1);
         assertThat(rootResponse.replies()).hasSize(1);
         assertThat(rootResponse.replies().getFirst().commentId()).isEqualTo(REPLY_ID);
+    }
+
+    @Test
+    @DisplayName("댓글 목록은 작성자 배지와 블로그 멤버 배지 표시 여부를 함께 반환한다")
+    void readCommentsIncludesAuthorBadgeAndMemberBadge() {
+        // given
+        Post post = createPost(POST_ID);
+        User postAuthor = post.getUser();
+        User member = createUser(OTHER_USER_ID);
+        Comment root = createRootComment(COMMENT_ID, post, postAuthor, "작성자 댓글입니다.");
+        Comment reply = createReplyComment(REPLY_ID, post, member, root, "멤버 답글입니다.");
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
+                .thenReturn(Optional.of(post));
+        when(commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(POST_ID))
+                .thenReturn(List.of(root, reply));
+        when(blogMemberRepository.findActiveUserIdsByBlogId(post.getOwnBlogId()))
+                .thenReturn(List.of(postAuthor.getId(), OTHER_USER_ID));
+
+        // when
+        CommentListResponse response = commentService.readComments(POST_ID);
+
+        // then
+        CommentListResponse.CommentResponse rootResponse = response.comments().getFirst();
+        CommentListResponse.ReplyResponse replyResponse = rootResponse.replies().getFirst();
+        assertThat(rootResponse.author().postAuthor()).isTrue();
+        assertThat(rootResponse.author().blogMember()).isTrue();
+        assertThat(replyResponse.author().postAuthor()).isFalse();
+        assertThat(replyResponse.author().blogMember()).isTrue();
     }
 
     @Test
@@ -211,6 +245,8 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(post));
         when(commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(POST_ID))
                 .thenReturn(List.of(deletedRoot, reply));
+        when(blogMemberRepository.findActiveUserIdsByBlogId(post.getOwnBlogId()))
+                .thenReturn(List.of(OTHER_USER_ID));
 
         // when
         CommentListResponse response = commentService.readComments(POST_ID);

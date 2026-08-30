@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,14 +51,34 @@ class CommentControllerTest {
         // given
         CommentService commentService = mock(CommentService.class);
         when(commentService.readComments(POST_ID))
-                .thenReturn(new CommentListResponse(List.of()));
+                .thenReturn(new CommentListResponse(List.of(
+                        new CommentListResponse.CommentResponse(
+                                COMMENT_ID,
+                                "댓글입니다.",
+                                false,
+                                new CommentListResponse.AuthorResponse(
+                                        USER_ID,
+                                        "작성자",
+                                        "writer",
+                                        "https://example.com/profile.png",
+                                        true,
+                                        true
+                                ),
+                                LocalDateTime.of(2026, 8, 30, 12, 0),
+                                LocalDateTime.of(2026, 8, 30, 12, 0),
+                                0,
+                                List.of()
+                        )
+                )));
         MockMvc mockMvc = mockMvc(commentService);
 
         // when - then
         mockMvc.perform(get("/v1/posts/{postId}/comments", POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.comments").isArray());
+                .andExpect(jsonPath("$.data.comments").isArray())
+                .andExpect(jsonPath("$.data.comments[0].author.postAuthor").value(true))
+                .andExpect(jsonPath("$.data.comments[0].author.blogMember").value(true));
 
         verify(commentService).readComments(POST_ID);
     }

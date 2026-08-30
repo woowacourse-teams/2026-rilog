@@ -1,5 +1,6 @@
 package kr.rilog.domain.comment.service;
 
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.comment.controller.dto.response.CommentCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentListResponse;
 import kr.rilog.domain.comment.entity.Comment;
@@ -18,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -30,10 +34,18 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final BlogMemberRepository blogMemberRepository;
 
     public CommentListResponse readComments(Long postId) {
-        getPublishedPost(postId);
-        return CommentListResponse.from(commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(postId));
+        Post post = getPublishedPost(postId);
+        Set<Long> activeMemberUserIds = new HashSet<>(
+                blogMemberRepository.findActiveUserIdsByBlogId(post.getOwnBlogId())
+        );
+        return CommentListResponse.from(
+                post,
+                commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(postId),
+                activeMemberUserIds
+        );
     }
 
     @Transactional

@@ -96,4 +96,15 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
             """)
     long countActiveMembers(@Param("blogId") Long blogId, @Param("status") BlogMemberStatus status);
 
+    @Query("""
+            SELECT bm.user.id
+            FROM BlogMember bm
+            JOIN bm.user u
+            WHERE bm.blog.id = :blogId
+              AND bm.status = kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE
+              AND bm.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+            """)
+    List<Long> findActiveUserIdsByBlogId(@Param("blogId") Long blogId);
+
 }

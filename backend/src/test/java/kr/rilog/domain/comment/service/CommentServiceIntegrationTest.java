@@ -1,6 +1,8 @@
 package kr.rilog.domain.comment.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.comment.controller.dto.response.CommentListResponse;
 import kr.rilog.domain.comment.entity.Comment;
@@ -15,6 +17,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -28,6 +32,9 @@ class CommentServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogRepository blogRepository;
+
+    @Autowired
+    private BlogMemberRepository blogMemberRepository;
 
     @Autowired
     private PostRepository postRepository;
@@ -58,10 +65,14 @@ class CommentServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(rootResponse.commentId()).isEqualTo(rootComment.getId());
             softly.assertThat(rootResponse.content()).isEqualTo("루트 댓글입니다.");
             softly.assertThat(rootResponse.deleted()).isFalse();
+            softly.assertThat(rootResponse.author().postAuthor()).isTrue();
+            softly.assertThat(rootResponse.author().blogMember()).isTrue();
             softly.assertThat(rootResponse.replyCount()).isEqualTo(1);
             softly.assertThat(replyResponse.commentId()).isEqualTo(reply.getId());
             softly.assertThat(replyResponse.content()).isEqualTo("답글입니다.");
             softly.assertThat(replyResponse.author().userId()).isEqualTo(replier.getId());
+            softly.assertThat(replyResponse.author().postAuthor()).isFalse();
+            softly.assertThat(replyResponse.author().blogMember()).isFalse();
         });
     }
 
@@ -110,7 +121,9 @@ class CommentServiceIntegrationTest extends ServiceSupport {
     }
 
     private Blog saveRilog(User owner) {
-        return blogRepository.saveAndFlush(Blog.createRilog(owner, "https://rilog.example.com/" + owner.getSlug()));
+        Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner, "https://rilog.example.com/" + owner.getSlug()));
+        blogMemberRepository.saveAndFlush(BlogMember.createOwner(rilog, owner, LocalDateTime.now()));
+        return rilog;
     }
 
     private Post savePost(Blog rilog, User writer) {
