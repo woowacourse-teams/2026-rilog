@@ -63,20 +63,6 @@ public class Chapter extends BaseEntity {
         this.order = order;
     }
 
-    public boolean belongsTo(Blog blog) {
-        return this.blog == blog
-                || this.blog != null
-                && blog != null
-                && this.blog.getId() != null
-                && Objects.equals(this.blog.getId(), blog.getId());
-    }
-
-    public void validateAssignableTo(Blog blog) {
-        if (getDeletedAt() != null || !belongsTo(blog)) {
-            throw new ChapterException(CHAPTER_NOT_FOUND);
-        }
-    }
-
     public boolean isSameName(ChapterName name) {
         return this.name.equals(name);
     }

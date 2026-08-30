@@ -13,8 +13,7 @@ import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.support.fixure.BlogFixture.createColog;
 import static kr.rilog.support.fixure.BlogFixture.createUser;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class ChaptersOfBlogTest {
 
@@ -76,7 +75,7 @@ class ChaptersOfBlogTest {
         Chapter created = chapters.createNextChapter(blog, "개발 이야기");
 
         // then
-        assertThat(created.belongsTo(blog)).isTrue();
+        assertThat(created.getBlog().getId()).isEqualTo(blog.getId());
     }
 
     @Test

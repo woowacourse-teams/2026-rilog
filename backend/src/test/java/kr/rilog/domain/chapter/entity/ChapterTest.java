@@ -7,14 +7,12 @@ import kr.rilog.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.INVALID_CHAPTER_ORDER;
 import static kr.rilog.support.fixure.BlogFixture.createColog;
 import static kr.rilog.support.fixure.BlogFixture.createPersistableColog;
 import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static kr.rilog.support.fixure.BlogFixture.targetColog;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ChapterTest {
@@ -107,19 +105,7 @@ class ChapterTest {
         Chapter chapter = Chapter.create(blog, "개발 이야기", 0);
 
         // when & then
-        assertThat(chapter.belongsTo(blog)).isTrue();
-    }
-
-    @Test
-    @DisplayName("블로그 객체가 달라도 ID가 같으면 해당 블로그에 속한다.")
-    void belongsToBlogWithSameId() {
-        // given
-        Blog chapterBlog = createColog(createUser(OWNER_ID));
-        Blog sameIdBlog = createColog(createUser(2L));
-        Chapter chapter = Chapter.create(chapterBlog, "개발 이야기", 0);
-
-        // when & then
-        assertThat(chapter.belongsTo(sameIdBlog)).isTrue();
+        assertThat(chapter.getBlog().getId()).isEqualTo(blog.getId());
     }
 
     @Test
@@ -131,47 +117,7 @@ class ChapterTest {
         Chapter chapter = Chapter.create(chapterBlog, "개발 이야기", 0);
 
         // when & then
-        assertThat(chapter.belongsTo(otherBlog)).isFalse();
-    }
-
-    @Test
-    @DisplayName("활성 챕터가 같은 블로그에 속하면 할당할 수 있다.")
-    void validateAssignableToAllowsActiveChapterOfBlog() {
-        // given
-        Blog blog = createColog(createUser(OWNER_ID));
-        Chapter chapter = Chapter.create(blog, "개발 이야기", 0);
-
-        // when & then
-        assertThatCode(() -> chapter.validateAssignableTo(blog))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("다른 블로그의 챕터는 할당할 수 없다.")
-    void validateAssignableToRejectsChapterOfDifferentBlog() {
-        // given
-        Blog chapterBlog = createColog(createUser(OWNER_ID));
-        Blog otherBlog = targetColog();
-        Chapter chapter = Chapter.create(chapterBlog, "개발 이야기", 0);
-
-        // when & then
-        assertThatThrownBy(() -> chapter.validateAssignableTo(otherBlog))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("삭제된 챕터는 원래 블로그에도 할당할 수 없다.")
-    void validateAssignableToRejectsDeletedChapter() {
-        // given
-        Blog blog = createColog(createUser(OWNER_ID));
-        Chapter chapter = Chapter.create(blog, "개발 이야기", 0);
-        chapter.delete();
-
-        // when & then
-        assertThatThrownBy(() -> chapter.validateAssignableTo(blog))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
+        assertThat(chapter.getBlog().getId()).isNotEqualTo(otherBlog.getId());
     }
 
     @Test
