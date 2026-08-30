@@ -62,6 +62,17 @@ public class ChapterService {
         return ChapterResult.from(chapter);
     }
 
+    @Transactional
+    public void delete(String slug, Long chapterId, Long requesterId) {
+        BlogMember blogMember = getBlogMember(Slug.from(slug), requesterId);
+        blogMember.validateHasAdminPermission();
+
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blogMember.getBlog()));
+        chapters.delete(chapterId);
+
+        // TODO - 연관된 Post의 chapterId - null -> 벌크 업데이트
+    }
+
     private List<Chapter> getChaptersOfBlog(Blog blog) {
         return chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(blog.getId());
     }

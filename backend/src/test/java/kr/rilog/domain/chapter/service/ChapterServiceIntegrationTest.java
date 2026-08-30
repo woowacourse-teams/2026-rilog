@@ -370,6 +370,28 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
     }
 
+    @Test
+    @DisplayName("중간 챕터를 삭제하면 남은 챕터의 순서가 0부터 연속되게 저장된다.")
+    void deletePersistsSequentialOrdersOfRemainingChapters() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "첫 번째", 0));
+        chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "두 번째", 1));
+        Chapter target = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "세 번째", 2));
+        chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "네 번째", 3));
+        chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "다섯 번째", 4));
+        chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "여섯 번째", 5));
+
+        // when
+        chapterService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
+
+        // then
+        List<Chapter> remainingChapters = chapterRepository
+                .findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId());
+        assertThat(remainingChapters.stream().map(Chapter::getOrder).toList())
+                .containsExactly(0, 1, 2, 3, 4);
+    }
+
     private ChapterCreationScenario createMemberScenario(BlogPermission permission) {
         User owner = saveUser(100L, "owner");
         Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, BLOG_SLUG, BlogFixture.cologProfile()));
