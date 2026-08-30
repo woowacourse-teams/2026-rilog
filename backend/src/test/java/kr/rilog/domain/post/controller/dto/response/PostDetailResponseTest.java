@@ -23,7 +23,10 @@ class PostDetailResponseTest {
         Post post = createPost();
 
         // when
-        PostDetailResponse response = PostDetailResponse.fromRilog(post);
+        PostDetailResponse response = PostDetailResponse.fromRilog(
+                post,
+                PostDetailResponse.ViewerPermissionsResponse.none()
+        );
         PostOwnerResponse owner = response.owner();
 
         // then
@@ -37,7 +40,12 @@ class PostDetailResponseTest {
         Post post = createPost();
 
         // when
-        PostDetailResponse response = PostDetailResponse.fromColog(post, 3L, 5L);
+        PostDetailResponse response = PostDetailResponse.fromColog(
+                post,
+                3L,
+                5L,
+                PostDetailResponse.ViewerPermissionsResponse.none()
+        );
         PostOwnerResponse owner = response.owner();
 
         // then
@@ -51,7 +59,10 @@ class PostDetailResponseTest {
         Post post = createPost();
 
         // when
-        PostDetailResponse response = PostDetailResponse.fromRilog(post);
+        PostDetailResponse response = PostDetailResponse.fromRilog(
+                post,
+                PostDetailResponse.ViewerPermissionsResponse.none()
+        );
 
         // then
         Assertions.assertThat(response.content()).isEqualTo(post.getContent().getContent());

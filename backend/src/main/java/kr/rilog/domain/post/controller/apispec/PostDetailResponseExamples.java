@@ -27,6 +27,10 @@ final class PostDetailResponseExamples {
                   "slug": "jetproc",
                   "name": "파라디",
                   "profileImageUrl": null
+                },
+                "viewerPermissions": {
+                  "canEdit": false,
+                  "canDelete": false
                 }
               }
             }
@@ -60,6 +64,10 @@ final class PostDetailResponseExamples {
                   "coverImageUrl": null,
                   "memberCount": 8,
                   "postCount": 42
+                },
+                "viewerPermissions": {
+                  "canEdit": false,
+                  "canDelete": false
                 }
               }
             }

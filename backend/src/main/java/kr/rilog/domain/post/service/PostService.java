@@ -7,6 +7,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.PostDetailResponse.ViewerPermissionsResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -63,15 +64,16 @@ public class PostService {
     public PostDetailResponse readPostOfBlogs(Long postId, Long requesterId) {
         Post post = getPost(postId);
         post.validateReadableBy(requesterId);
+        ViewerPermissionsResponse viewerPermissions = viewerPermissionsFor(post, requesterId);
 
         if (!post.isCologAffiliated()) {
-            return PostDetailResponse.fromRilog(post);
+            return PostDetailResponse.fromRilog(post, viewerPermissions);
         }
 
         Blog colog = post.getColog();
         long memberCount = getMemberCount(colog);
         long postCount = getPostCount(colog);
-        return PostDetailResponse.fromColog(post, memberCount, postCount);
+        return PostDetailResponse.fromColog(post, memberCount, postCount, viewerPermissions);
     }
 
     public TotalPostsCountResponse readPostsCount() {
@@ -168,24 +170,38 @@ public class PostService {
     }
 
     private void validateCanDeletePublishedPost(Post post, Long requesterId) {
-        if (post.isCologAffiliated() && canDeleteCologPost(post, requesterId)) {
-            return;
-        }
-
-        if (!post.isCologAffiliated() && post.isWrittenBy(requesterId)) {
+        if (canDeletePost(post, requesterId)) {
             return;
         }
 
         throw new PostException(POST_DELETE_FORBIDDEN);
     }
 
-    private boolean canDeleteCologPost(Post post, Long requesterId) {
-        return getBlogMember(post.getOwnBlogId(), requesterId)
-                .map(member -> post.isWrittenBy(requesterId) || member.hasDeletePermission())
+    private boolean canDeletePost(Post post, Long requesterId) {
+        return findActiveBlogMember(post.getOwnBlogId(), requesterId)
+                .map(member -> canDelete(post, requesterId, member))
                 .orElse(false);
     }
 
-    private Optional<BlogMember> getBlogMember(Long blogId, Long requesterId) {
+    private ViewerPermissionsResponse viewerPermissionsFor(Post post, Long requesterId) {
+        return findActiveBlogMember(post.getOwnBlogId(), requesterId)
+                .map(member -> {
+                    boolean canEdit = post.isWrittenBy(requesterId);
+                    boolean canDelete = canDelete(post, requesterId, member);
+                    return ViewerPermissionsResponse.of(canEdit, canDelete);
+                })
+                .orElseGet(ViewerPermissionsResponse::none);
+    }
+
+    private boolean canDelete(Post post, Long requesterId, BlogMember member) {
+        return post.isWrittenBy(requesterId) || member.hasDeletePermission();
+    }
+
+    private Optional<BlogMember> findActiveBlogMember(Long blogId, Long requesterId) {
+        if (requesterId == null) {
+            return Optional.empty();
+        }
+
         return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
                 blogId,
                 requesterId,
