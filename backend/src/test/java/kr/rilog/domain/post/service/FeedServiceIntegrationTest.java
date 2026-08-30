@@ -3,6 +3,9 @@ package kr.rilog.domain.post.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.domain.post.entity.Post;
@@ -41,6 +44,9 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private PostFeedQueryRepository postFeedQueryRepository;
+
+    @Autowired
+    private ChapterRepository chapterRepository;
 
     @Test
     @DisplayName("전체 피드는 공개 발행 상태이면서 삭제되지 않은 게시글만 반환한다.")
@@ -140,6 +146,23 @@ class FeedServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("전체 피드는 게시글이 속한 챕터의 전체 정보를 반환한다.")
+    void readFullFeedReturnsChapter() {
+        // given
+        User author = saveCompletedUser(10L, "전체챕터작성자", "full-chapter-author");
+        Blog rilog = saveRilog(author);
+        Chapter chapter = saveChapter(rilog, "Spring", 0);
+        savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
+
+        // when
+        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
+
+        // then
+        assertThat(result.posts().getFirst().chapter())
+                .isEqualTo(new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder()));
+    }
+
+    @Test
     @DisplayName("개인 블로그 공개 글 조회는 해당 개인 블로그의 공개 발행 상태인 게시글만 반환한다.")
     void readPublicRilogPostsReturnsOnlyTargetPublicPublishedPosts() {
         // given
@@ -161,6 +184,23 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         assertThat(result.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(targetPost.getId());
+    }
+
+    @Test
+    @DisplayName("개인 블로그 공개 글 목록은 게시글이 속한 챕터의 전체 정보를 반환한다.")
+    void readPublicRilogPostsReturnsChapter() {
+        // given
+        User author = saveCompletedUser(11L, "개인챕터작성자", "rilog-chapter-author");
+        Blog rilog = saveRilog(author);
+        Chapter chapter = saveChapter(rilog, "Java", 1);
+        savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
+
+        // when
+        PublicBlogFeedPostResponse result = feedService.readPublicBlogPosts(rilog.getSlug(), 0, 10);
+
+        // then
+        assertThat(result.posts().getFirst().chapter())
+                .isEqualTo(new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder()));
     }
 
     @Test
@@ -187,6 +227,24 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         assertThat(result.posts())
                 .extracting(PublicBlogFeedPostResponse.PostItemResponse::owner)
                 .containsOnly(expectedPublicBlogOwner(colog));
+    }
+
+    @Test
+    @DisplayName("팀 블로그 공개 글 목록은 게시글이 속한 챕터의 전체 정보를 반환한다.")
+    void readPublicCologPostsReturnsChapter() {
+        // given
+        User author = saveCompletedUser(12L, "팀챕터작성자", "colog-chapter-author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "chapter-team");
+        Chapter chapter = saveChapter(colog, "회고", 2);
+        savePost(PostFixture.publicPublishedColog(rilog, colog, author, chapter));
+
+        // when
+        PublicBlogFeedPostResponse result = feedService.readPublicBlogPosts(colog.getSlug(), 0, 10);
+
+        // then
+        assertThat(result.posts().getFirst().chapter())
+                .isEqualTo(new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder()));
     }
 
     @Test
@@ -238,6 +296,10 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         return postFeedQueryRepository.saveAndFlush(post);
     }
 
+    private Chapter saveChapter(Blog blog, String name, int order) {
+        return chapterRepository.saveAndFlush(Chapter.create(blog, name, order));
+    }
+
     private FullFeedPostResponse.PostItemResponse expectedFullFeedItem(Post post, User author, Blog owner) {
         return new FullFeedPostResponse.PostItemResponse(
                 post.getId(),
@@ -246,6 +308,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
                 post.getCategory().getName(),
                 post.getVisibility().name(),
                 post.getPublishedAt(),
+                ChapterResponse.from(post.getChapter()),
                 new FullFeedPostResponse.AuthorResponse(
                         author.getId(),
                         author.getNickname(),

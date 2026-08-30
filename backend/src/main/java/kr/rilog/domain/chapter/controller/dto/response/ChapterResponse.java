@@ -19,4 +19,12 @@ public record ChapterResponse(
         }
         return new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder());
     }
+
+    public static ChapterResponse from(Long chapterId, String name, Integer order) {
+        if (chapterId == null) {
+            return null;
+        }
+        return new ChapterResponse(chapterId, name, order);
+    }
+
 }

@@ -1,6 +1,7 @@
 package kr.rilog.support.fixure;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
@@ -108,6 +109,12 @@ public final class PostFixture {
         return builderForRilog(rilog, writer).build();
     }
 
+    public static Post publicPublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .chapter(chapter)
+                .build();
+    }
+
     public static Post publicPublishedRilogPostAt(Blog rilog, User writer, LocalDateTime publishedAt) {
         return builderForRilog(rilog, writer)
                 .publishedAt(publishedAt)
@@ -141,6 +148,12 @@ public final class PostFixture {
 
     public static Post publicPublishedColog(Blog rilog, Blog colog, User writer) {
         return builderForColog(rilog, colog, writer).build();
+    }
+
+    public static Post publicPublishedColog(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .chapter(chapter)
+                .build();
     }
 
     public static Post publicPublishedCologPost() {
@@ -247,6 +260,7 @@ public final class PostFixture {
         private final Blog rilog;
         private final User writer;
         private Blog colog;
+        private Chapter chapter;
         private String title = DEFAULT_TITLE;
         private JsonNode content = PostFixture.content();
         private Category category = DEFAULT_CATEGORY;
@@ -262,6 +276,11 @@ public final class PostFixture {
 
         private Builder colog(Blog colog) {
             this.colog = colog;
+            return this;
+        }
+
+        private Builder chapter(Chapter chapter) {
+            this.chapter = chapter;
             return this;
         }
 
@@ -285,6 +304,7 @@ public final class PostFixture {
                     .user(writer)
                     .rilog(rilog)
                     .colog(colog)
+                    .chapter(chapter)
                     .title(title)
                     .content(PostContent.from(content))
                     .category(category)

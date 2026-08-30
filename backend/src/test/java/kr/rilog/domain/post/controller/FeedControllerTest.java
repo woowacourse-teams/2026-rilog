@@ -1,6 +1,7 @@
 package kr.rilog.domain.post.controller;
 
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
 import kr.rilog.domain.post.service.FeedService;
@@ -36,6 +37,7 @@ class FeedControllerTest {
                                         "기술",
                                         "PUBLIC",
                                         LocalDateTime.of(2026, 8, 13, 12, 0),
+                                        new ChapterResponse(20L, "Spring", 0),
                                         new FullFeedPostResponse.AuthorResponse(
                                                 1L,
                                                 "작성자",
@@ -57,6 +59,7 @@ class FeedControllerTest {
                                         "기술",
                                         "PUBLIC",
                                         LocalDateTime.of(2026, 8, 13, 13, 0),
+                                        null,
                                         new FullFeedPostResponse.AuthorResponse(
                                                 1L,
                                                 "작성자",
@@ -86,11 +89,15 @@ class FeedControllerTest {
                         .param("size", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.posts[0].postId").value(10L))
+                .andExpect(jsonPath("$.data.posts[0].chapter.chapterId").value(20L))
+                .andExpect(jsonPath("$.data.posts[0].chapter.name").value("Spring"))
+                .andExpect(jsonPath("$.data.posts[0].chapter.order").value(0))
                 .andExpect(jsonPath("$.data.posts[0].author.nickname").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[0].author.slug").value("writer"))
                 .andExpect(jsonPath("$.data.posts[0].owner.type").value("RILOG"))
                 .andExpect(jsonPath("$.data.posts[0].owner.name").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[1].postId").value(11L))
+                .andExpect(jsonPath("$.data.posts[1].chapter").doesNotExist())
                 .andExpect(jsonPath("$.data.posts[1].author.nickname").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[1].owner.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[1].owner.name").value("리로그 팀"))
@@ -118,6 +125,7 @@ class FeedControllerTest {
                                 "기술",
                                 "PUBLIC",
                                 LocalDateTime.of(2026, 8, 13, 12, 0),
+                                new ChapterResponse(21L, "회고", 1),
                                 new PublicBlogFeedPostResponse.AuthorResponse(
                                         1L,
                                         "작성자",
@@ -147,6 +155,9 @@ class FeedControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[0].postId").value(10L))
+                .andExpect(jsonPath("$.data.posts[0].chapter.chapterId").value(21L))
+                .andExpect(jsonPath("$.data.posts[0].chapter.name").value("회고"))
+                .andExpect(jsonPath("$.data.posts[0].chapter.order").value(1))
                 .andExpect(jsonPath("$.data.posts[0].author.nickname").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[0].author.slug").value("writer"))
                 .andExpect(jsonPath("$.data.posts[0].owner.type").value("COLOG"))

@@ -23,6 +23,10 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 p.category,
                 p.visibility,
                 p.publishedAt,
+
+                chapter.id,
+                chapter.name.value,
+                chapter.order,
             
                 author.id,
                 author.nickname.value,
@@ -39,6 +43,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             JOIN p.user author
             JOIN p.rilog rilog
             LEFT JOIN p.colog colog
+            LEFT JOIN p.chapter chapter
             WHERE p.status = :status
               AND p.visibility = :visibility
               AND p.deletedAt IS NULL
@@ -59,6 +64,10 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 post.visibility,
                 post.publishedAt,
 
+                chapter.id,
+                chapter.name.value,
+                chapter.order,
+
                 author.id,
                 author.nickname.value,
                 author.slug.value,
@@ -74,6 +83,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             JOIN post.user author
             JOIN post.rilog rilog
             LEFT JOIN post.colog colog
+            LEFT JOIN post.chapter chapter
             WHERE post.rilog.id = :rilogId
               AND post.status = :status
               AND post.visibility = :visibility
@@ -96,6 +106,10 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 post.visibility,
                 post.publishedAt,
 
+                chapter.id,
+                chapter.name.value,
+                chapter.order,
+
                 author.id,
                 author.nickname.value,
                 author.slug.value,
@@ -110,6 +124,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             FROM Post post
             JOIN post.user author
             JOIN post.colog colog
+            LEFT JOIN post.chapter chapter
             WHERE post.colog.id = :cologId
               AND post.status = :status
               AND post.visibility = :visibility
