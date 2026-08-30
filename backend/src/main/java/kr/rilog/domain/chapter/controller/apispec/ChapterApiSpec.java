@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.chapter.controller.dto.request.ChapterCreateRequest;
 import kr.rilog.domain.chapter.controller.dto.request.ChapterRenameRequest;
-import kr.rilog.domain.chapter.controller.dto.request.ChapterReorderRequest;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
