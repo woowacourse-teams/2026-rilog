@@ -16,10 +16,11 @@ public record PostDetailResponse(
         String thumbnailImageUrl,
         String category,
         AuthorResponse author,
-        PostOwnerResponse owner
+        PostOwnerResponse owner,
+        ViewerPermissionsResponse viewerPermissions
 ) {
 
-    public static PostDetailResponse fromRilog(Post post) {
+    public static PostDetailResponse fromRilog(Post post, ViewerPermissionsResponse viewerPermissions) {
         return new PostDetailResponse(
                 post.getTitle(),
                 post.getContent().getContent(),
@@ -27,11 +28,17 @@ public record PostDetailResponse(
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
-                RilogOwnerResponse.from(post.getRilog())
+                RilogOwnerResponse.from(post.getRilog()),
+                viewerPermissions
         );
     }
 
-    public static PostDetailResponse fromColog(Post post, long memberCount, long postCount) {
+    public static PostDetailResponse fromColog(
+            Post post,
+            long memberCount,
+            long postCount,
+            ViewerPermissionsResponse viewerPermissions
+    ) {
         return new PostDetailResponse(
                 post.getTitle(),
                 post.getContent().getContent(),
@@ -39,7 +46,8 @@ public record PostDetailResponse(
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
                 AuthorResponse.from(post.getUser()),
-                CologOwnerResponse.of(post.getColog(), memberCount, postCount)
+                CologOwnerResponse.of(post.getColog(), memberCount, postCount),
+                viewerPermissions
         );
     }
 
@@ -57,6 +65,20 @@ public record PostDetailResponse(
                     user.getSlug(),
                     user.getProfileImageUrl()
             );
+        }
+    }
+
+    public record ViewerPermissionsResponse(
+            boolean canEdit,
+            boolean canDelete
+    ) {
+
+        public static ViewerPermissionsResponse of(boolean canEdit, boolean canDelete) {
+            return new ViewerPermissionsResponse(canEdit, canDelete);
+        }
+
+        public static ViewerPermissionsResponse none() {
+            return new ViewerPermissionsResponse(false, false);
         }
     }
 

@@ -88,7 +88,9 @@ class PostControllerTest {
         mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.owner.type").value("RILOG"));
+                .andExpect(jsonPath("$.data.owner.type").value("RILOG"))
+                .andExpect(jsonPath("$.data.viewerPermissions.canEdit").value(false))
+                .andExpect(jsonPath("$.data.viewerPermissions.canDelete").value(false));
 
         verify(postService).readPostOfBlogs(POST_ID, null);
     }
@@ -159,7 +161,8 @@ class PostControllerTest {
                         BLOG_SLUG,
                         "작성자 블로그",
                         "https://example.com/profile.png"
-                )
+                ),
+                PostDetailResponse.ViewerPermissionsResponse.none()
         );
     }
 
