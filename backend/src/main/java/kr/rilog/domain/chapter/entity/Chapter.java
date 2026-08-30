@@ -54,8 +54,8 @@ public class Chapter extends BaseEntity {
                 .build();
     }
 
-    public void rename(String name) {
-        this.name = ChapterName.from(name);
+    public void rename(ChapterName name) {
+        this.name = name;
     }
 
     public void reorder(int order) {

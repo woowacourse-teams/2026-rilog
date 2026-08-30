@@ -66,7 +66,7 @@ class ChapterTest {
         Chapter chapter = createChapter();
 
         // when
-        chapter.rename("새로운 이야기");
+        chapter.rename(ChapterName.from("새로운 이야기"));
 
         // then
         assertThat(chapter.getName()).isEqualTo("새로운 이야기");

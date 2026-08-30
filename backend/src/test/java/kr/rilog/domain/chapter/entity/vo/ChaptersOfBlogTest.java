@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.support.fixure.BlogFixture.createColog;
 import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,9 +94,80 @@ class ChaptersOfBlogTest {
                 .hasMessage(CHAPTER_NAME_ALREADY_EXISTS.getMessage());
     }
 
+    @Test
+    @DisplayName("대상 챕터의 이름을 중복되지 않은 이름으로 변경한다.")
+    void renameChangesTargetName() {
+        // given
+        Blog blog = createBlog();
+        Chapter target = chapterWithId(1L, blog, "개발 이야기", 0);
+        Chapter other = chapterWithId(2L, blog, "회고", 1);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(List.of(target, other));
+
+        // when
+        chapters.rename(target.getId(), ChapterName.from("새로운 이야기"));
+
+        // then
+        assertThat(target.getName()).isEqualTo("새로운 이야기");
+        assertThat(other.getName()).isEqualTo("회고");
+    }
+
+    @Test
+    @DisplayName("대상 챕터는 자기 자신의 이름으로 변경할 수 있다.")
+    void renameAllowsTargetOwnName() {
+        // given
+        Blog blog = createBlog();
+        Chapter target = chapterWithId(1L, blog, "개발 이야기", 0);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(List.of(target));
+
+        // when
+        Chapter renamed = chapters.rename(target.getId(), ChapterName.from("  개발 이야기  "));
+
+        // then
+        assertThat(renamed.getName()).isEqualTo("개발 이야기");
+    }
+
+    @Test
+    @DisplayName("다른 챕터와 이름이 중복되면 변경을 거부하고 기존 이름을 유지한다.")
+    void renameRejectsDuplicateNameAndPreservesTargetName() {
+        // given
+        Blog blog = createBlog();
+        Chapter target = chapterWithId(1L, blog, "개발 이야기", 0);
+        Chapter other = chapterWithId(2L, blog, "회고", 1);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(List.of(target, other));
+
+        // when & then
+        assertThatThrownBy(() -> chapters.rename(target.getId(), ChapterName.from("  회고  ")))
+                .isInstanceOf(ChapterException.class)
+                .hasMessage(CHAPTER_NAME_ALREADY_EXISTS.getMessage());
+        assertThat(target.getName()).isEqualTo("개발 이야기");
+    }
+
+    @Test
+    @DisplayName("목록에 없는 챕터의 이름을 변경하면 예외가 발생한다.")
+    void renameRejectsMissingChapter() {
+        // given
+        Blog blog = createBlog();
+        Chapter chapter = chapterWithId(1L, blog, "개발 이야기", 0);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(List.of(chapter));
+
+        // when & then
+        assertThatThrownBy(() -> chapters.rename(2L, ChapterName.from("새로운 이야기")))
+                .isInstanceOf(ChapterException.class)
+                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
+    }
+
     private Blog createBlog() {
         User owner = createUser(OWNER_ID);
         return createColog(owner);
+    }
+
+    private Chapter chapterWithId(Long id, Blog blog, String name, int order) {
+        return Chapter.builder()
+                .id(id)
+                .blog(blog)
+                .name(ChapterName.from(name))
+                .order(order)
+                .build();
     }
 
 }

@@ -28,6 +28,13 @@ public record ChaptersOfBlog(List<Chapter> chapters) {
         return Chapter.create(blog, chapterName.getValue(), chapters.size()); // NOTE order는 0-based
     }
 
+    public Chapter rename(Long targetId, ChapterName name) {
+        validateUniqueNameExceptId(targetId, name);
+        Chapter renameTarget = getChapter(targetId);
+        renameTarget.rename(name);
+        return renameTarget;
+    }
+
     private void validateUniqueName(ChapterName name) {
         if (isDuplicatedName(name)) {
             throw new ChapterException(CHAPTER_NAME_ALREADY_EXISTS);

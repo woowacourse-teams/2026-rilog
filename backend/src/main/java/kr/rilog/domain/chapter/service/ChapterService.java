@@ -57,10 +57,8 @@ public class ChapterService {
         blogMember.validateHasAdminPermission();
 
         ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blogMember.getBlog()));
-        chapters.validateUniqueNameExceptId(chapterId, ChapterName.from(command.name()));
+        Chapter chapter = chapters.rename(chapterId, ChapterName.from(command.name()));
 
-        Chapter chapter = chapters.getChapter(chapterId);
-        chapter.rename(command.name());
         return ChapterResult.from(chapter);
     }
 
