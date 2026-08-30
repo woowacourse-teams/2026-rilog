@@ -9,6 +9,7 @@ import kr.rilog.domain.auth.interceptor.BearerAuthenticationInterceptor;
 import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.service.PostService;
@@ -26,6 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -88,11 +90,28 @@ class PostControllerTest {
         mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.chapter.chapterId").value(12L))
+                .andExpect(jsonPath("$.data.chapter.name").value("Spring"))
+                .andExpect(jsonPath("$.data.chapter.order").value(0))
                 .andExpect(jsonPath("$.data.owner.type").value("RILOG"))
                 .andExpect(jsonPath("$.data.viewerPermissions.canEdit").value(false))
                 .andExpect(jsonPath("$.data.viewerPermissions.canDelete").value(false));
 
         verify(postService).readPostOfBlogs(POST_ID, null);
+    }
+
+    @Test
+    @DisplayName("미분류 게시글 상세 조회 응답은 chapter를 null로 반환한다.")
+    void getPostDetailsReturnsNullChapterForUnclassifiedPost() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        when(postService.readPostOfBlogs(POST_ID, null)).thenReturn(responseWithoutChapter());
+        MockMvc mockMvc = mockMvc(postService);
+
+        // when - then
+        mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.chapter").value(nullValue()));
     }
 
     @Test
@@ -149,6 +168,7 @@ class PostControllerTest {
                 null,
                 "https://example.com/thumbnail.png",
                 "기술",
+                new ChapterResponse(12L, "Spring", 0),
                 new PostDetailResponse.AuthorResponse(
                         "작성자",
                         7L,
@@ -163,6 +183,21 @@ class PostControllerTest {
                         "https://example.com/profile.png"
                 ),
                 PostDetailResponse.ViewerPermissionsResponse.none()
+        );
+    }
+
+    private PostDetailResponse responseWithoutChapter() {
+        PostDetailResponse response = response();
+        return new PostDetailResponse(
+                response.title(),
+                response.content(),
+                response.publishedAt(),
+                response.thumbnailImageUrl(),
+                response.category(),
+                null,
+                response.author(),
+                response.owner(),
+                response.viewerPermissions()
         );
     }
 

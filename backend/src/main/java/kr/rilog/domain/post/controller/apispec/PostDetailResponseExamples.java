@@ -15,6 +15,11 @@ final class PostDetailResponseExamples {
                 "publishedAt": "2026-08-17T04:30:00",
                 "thumbnailImageUrl": null,
                 "category": "기술",
+                "chapter": {
+                  "chapterId": 11,
+                  "name": "Spring",
+                  "order": 0
+                },
                 "author": {
                   "nickname": "파라디",
                   "userId": 7,
@@ -49,6 +54,7 @@ final class PostDetailResponseExamples {
                 "publishedAt": "2026-08-17T04:40:00",
                 "thumbnailImageUrl": null,
                 "category": "일상",
+                "chapter": null,
                 "author": {
                   "nickname": "파라디",
                   "userId": 7,

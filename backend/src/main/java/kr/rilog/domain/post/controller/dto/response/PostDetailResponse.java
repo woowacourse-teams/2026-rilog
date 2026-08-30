@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.controller.dto.response;
 
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
@@ -15,10 +16,34 @@ public record PostDetailResponse(
         LocalDateTime publishedAt,
         String thumbnailImageUrl,
         String category,
+        ChapterResponse chapter,
         AuthorResponse author,
         PostOwnerResponse owner,
         ViewerPermissionsResponse viewerPermissions
 ) {
+
+    public PostDetailResponse(
+            String title,
+            JsonNode content,
+            LocalDateTime publishedAt,
+            String thumbnailImageUrl,
+            String category,
+            AuthorResponse author,
+            PostOwnerResponse owner,
+            ViewerPermissionsResponse viewerPermissions
+    ) {
+        this(
+                title,
+                content,
+                publishedAt,
+                thumbnailImageUrl,
+                category,
+                null,
+                author,
+                owner,
+                viewerPermissions
+        );
+    }
 
     public static PostDetailResponse fromRilog(Post post, ViewerPermissionsResponse viewerPermissions) {
         return new PostDetailResponse(
@@ -27,6 +52,7 @@ public record PostDetailResponse(
                 post.getPublishedAt(),
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
+                ChapterResponse.from(post.getChapter()),
                 AuthorResponse.from(post.getUser()),
                 RilogOwnerResponse.from(post.getRilog()),
                 viewerPermissions
@@ -45,6 +71,7 @@ public record PostDetailResponse(
                 post.getPublishedAt(),
                 post.getThumbnailImageUrl(),
                 post.getCategory().getName(),
+                ChapterResponse.from(post.getChapter()),
                 AuthorResponse.from(post.getUser()),
                 CologOwnerResponse.of(post.getColog(), memberCount, postCount),
                 viewerPermissions
