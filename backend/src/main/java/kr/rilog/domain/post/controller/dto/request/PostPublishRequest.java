@@ -33,7 +33,9 @@ public record PostPublishRequest(
         String thumbnailImageUrl,
 
         @Size(max = 512, message = "프로필 이미지 URL은 512자 이하여야 합니다.")
-        String profileImageUrl
+        String profileImageUrl,
+
+        Long chapterId
 
 ) {
 
@@ -44,7 +46,8 @@ public record PostPublishRequest(
                 content,
                 category,
                 visibility,
-                thumbnailImageUrl
+                thumbnailImageUrl,
+                chapterId
         );
     }
 

@@ -12,7 +12,8 @@ public record DraftPublishCommand(
         JsonNode content,
         Category category,
         PostVisibility visibility,
-        String thumbnailImageUrl
+        String thumbnailImageUrl,
+        Long chapterId
 
 ) {
 
