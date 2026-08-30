@@ -10,12 +10,15 @@ import kr.rilog.domain.chapter.service.dto.result.ChapterResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/v1")
@@ -34,6 +37,14 @@ public class ChapterController {
     ) {
         ChapterResult result = chapterService.create(slug, requesterId, request.toCommand());
         return ApiResponse.response(HttpStatus.CREATED, "챕터를 생성했습니다.", ChapterResponse.from(result));
+    }
+
+    @GetMapping("/blogs/{slug}/chapters")
+    public ApiResponse<List<ChapterResponse>> readAll(@PathVariable String slug) {
+        List<ChapterResponse> data = chapterService.readAll(slug).stream()
+                .map(ChapterResponse::from)
+                .toList();
+        return ApiResponse.response(HttpStatus.OK, "챕터 목록을 조회했습니다.", data);
     }
 
 }
