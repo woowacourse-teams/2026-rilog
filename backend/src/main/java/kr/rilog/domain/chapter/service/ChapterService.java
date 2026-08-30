@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_DOESNT_NOT_BELONG;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 
 @Service
 @Transactional(readOnly = true)
@@ -36,14 +37,25 @@ public class ChapterService {
         blogMember.validateHasAdminPermission();
 
         Blog blog = blogMember.getBlog();
-        ChaptersOfBlog chaptersOfBlog = ChaptersOfBlog.from(getChaptersOfBlog(blog));
-        Chapter saved = chapterRepository.save(chaptersOfBlog.createNextChapter(blog, command.name()));
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blog));
+        Chapter saved = chapterRepository.save(chapters.createNextChapter(blog, command.name()));
 
         return ChapterResult.from(saved);
     }
 
+    public List<ChapterResult> readAll(String slug) { // NOTE 모든 챕터목록을 불러옴. 페이징 X
+        Blog blog = getBlog(slug);
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blog));
+        return chapters.getChaptersSortByOrder();
+    }
+
     private List<Chapter> getChaptersOfBlog(Blog blog) {
         return chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(blog.getId());
+    }
+
+    private Blog getBlog(String slug) {
+        return blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(slug))
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
     private BlogMember getBlogMember(Slug slug, Long memberId) {

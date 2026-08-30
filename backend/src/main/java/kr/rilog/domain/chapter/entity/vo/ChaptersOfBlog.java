@@ -3,7 +3,9 @@ package kr.rilog.domain.chapter.entity.vo;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
+import kr.rilog.domain.chapter.service.dto.result.ChapterResult;
 
+import java.util.Comparator;
 import java.util.List;
 
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
@@ -33,6 +35,13 @@ public record ChaptersOfBlog(List<Chapter> chapters) {
     private boolean isDuplicatedName(ChapterName name) {
         return chapters.stream()
                 .anyMatch(chapter -> chapter.isSameName(name));
+    }
+
+    public List<ChapterResult> getChaptersSortByOrder() {
+        return chapters.stream()
+                .sorted(Comparator.comparingInt(Chapter::getOrder))
+                .map(ChapterResult::from)
+                .toList();
     }
 
 }
