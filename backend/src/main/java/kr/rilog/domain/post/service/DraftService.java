@@ -7,6 +7,9 @@ import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.exception.ChapterException;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -30,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -43,6 +47,7 @@ public class DraftService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
+    private final ChapterRepository chapterRepository;
     private final TagAssetsLifecycle tagAssetsLifecycle;
 
     // THINK 멱등성.
@@ -51,7 +56,6 @@ public class DraftService {
         User writer = getUser(writerId);
         Blog rilog = getRilog(writer);
 
-        // TODO 이미지 Confirmed 처리.
         Post saved = postRepository.save(Post.draft(command, writer, rilog));
         tagAssetsLifecycle.attach(saved.getTagAssets());
         return DraftIdResult.from(saved.getId());
@@ -80,7 +84,8 @@ public class DraftService {
 
         TagAssets previous = draft.getTagAssets();
         Publisher publisher = Publisher.of(rilogMemberShip, targetMemberShip);
-        publisher.publishDraft(draft, command.toDetail());
+        Chapter chapter = getChapterIfPresent(command.chapterId(), targetMemberShip.getBlog());
+        publisher.publishDraft(draft, command.toDetail(), chapter);
         TagAssets current = draft.getTagAssets();
         tagAssetsLifecycle.synchronize(previous, current);
 
@@ -126,6 +131,15 @@ public class DraftService {
     private Post getDraft(Long draftId) {
         return postRepository.findDraftById(draftId)
                 .orElseThrow(() -> new PostException(DRAFT_NOT_FOUND));
+    }
+
+    private Chapter getChapterIfPresent(Long chapterId, Blog blog) {
+        if (chapterId == null) {
+            return null;
+        }
+
+        return chapterRepository.findByIdAndBlogIdAndDeletedAtIsNull(chapterId, blog.getId())
+                .orElseThrow(() -> new ChapterException(CHAPTER_NOT_FOUND));
     }
 
 }
