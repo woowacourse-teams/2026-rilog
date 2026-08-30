@@ -20,9 +20,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_INVALID;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_DOESNT_NOT_BELONG;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -138,11 +140,93 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         assertThat(chapterRepository.findAll()).isEmpty();
     }
 
+    @Test
+    @DisplayName("챕터 목록을 조회하면 활성 챕터를 순서대로 반환한다.")
+    void readAllReturnsActiveChaptersInOrder() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter third = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "세 번째", 2));
+        Chapter first = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "첫 번째", 0));
+        Chapter second = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "두 번째", 1));
+
+        // when
+        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
+
+        // then
+        assertThat(result).containsExactly(
+                ChapterResult.from(first),
+                ChapterResult.from(second),
+                ChapterResult.from(third)
+        );
+    }
+
+    @Test
+    @DisplayName("챕터 목록을 조회하면 대상 블로그의 챕터만 반환한다.")
+    void readAllReturnsOnlyChaptersOfRequestedBlog() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter targetChapter = chapterRepository.saveAndFlush(
+                Chapter.create(scenario.blog(), "대상 챕터", 0)
+        );
+        User otherOwner = saveUser(300L, "other-owner");
+        Blog otherBlog = blogRepository.saveAndFlush(
+                Blog.createColog(otherOwner, "other-team", BlogFixture.cologProfile())
+        );
+        chapterRepository.saveAndFlush(Chapter.create(otherBlog, "다른 블로그 챕터", 0));
+
+        // when
+        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
+
+        // then
+        assertThat(result).containsExactly(ChapterResult.from(targetChapter));
+    }
+
+    @Test
+    @DisplayName("챕터 목록을 조회하면 삭제된 챕터를 제외한다.")
+    void readAllExcludesDeletedChapter() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter activeChapter = chapterRepository.saveAndFlush(
+                Chapter.create(scenario.blog(), "활성 챕터", 0)
+        );
+        Chapter deletedChapter = chapterRepository.saveAndFlush(
+                Chapter.create(scenario.blog(), "삭제된 챕터", 1)
+        );
+        deletedChapter.delete();
+        chapterRepository.saveAndFlush(deletedChapter);
+
+        // when
+        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
+
+        // then
+        assertThat(result).containsExactly(ChapterResult.from(activeChapter));
+    }
+
+    @Test
+    @DisplayName("챕터가 없는 블로그의 목록을 조회하면 빈 목록을 반환한다.")
+    void readAllReturnsEmptyListWhenBlogHasNoChapter() {
+        // given
+        createMemberScenario(BlogPermission.OWNER);
+
+        // when
+        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 블로그의 챕터 목록을 조회하면 예외가 발생한다.")
+    void readAllRejectsMissingBlog() {
+        // when & then
+        assertThatThrownBy(() -> chapterService.readAll("missing-blog"))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(BLOG_NOT_FOUND.getMessage());
+    }
+
     private ChapterCreationScenario createMemberScenario(BlogPermission permission) {
         User owner = saveUser(100L, "owner");
-        Blog blog = blogRepository.saveAndFlush(
-                Blog.createColog(owner, BLOG_SLUG, BlogFixture.cologProfile())
-        );
+        Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, BLOG_SLUG, BlogFixture.cologProfile()));
         blogMemberRepository.saveAndFlush(BlogMember.createOwner(blog, owner, JOINED_AT));
 
         if (permission == BlogPermission.OWNER) {
@@ -159,9 +243,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     private ChapterCreationScenario createCologWithoutRequesterMembership() {
         User owner = saveUser(100L, "owner");
         User requester = saveUser(200L, "requester");
-        Blog blog = blogRepository.saveAndFlush(
-                Blog.createColog(owner, BLOG_SLUG, BlogFixture.cologProfile())
-        );
+        Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, BLOG_SLUG, BlogFixture.cologProfile()));
         blogMemberRepository.saveAndFlush(BlogMember.createOwner(blog, owner, JOINED_AT));
         return new ChapterCreationScenario(blog, requester);
     }
