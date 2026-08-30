@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,6 +37,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final BlogMemberRepository blogMemberRepository;
+    private final Clock clock;
 
     public CommentListResponse readComments(Long postId) {
         Post post = getPublishedPost(postId);
@@ -81,6 +84,10 @@ public class CommentService {
     public void deleteComment(Long commentId, Long requesterId) {
         Comment comment = getComment(commentId);
         comment.deleteBy(requesterId);
+
+        if (!comment.isReply()) {
+            commentRepository.softDeleteAllRepliesByParentId(commentId, LocalDateTime.now(clock));
+        }
     }
 
     private Post getPublishedPost(Long postId) {

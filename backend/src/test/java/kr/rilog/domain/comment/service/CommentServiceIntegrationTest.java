@@ -77,8 +77,8 @@ class CommentServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("삭제된 루트 댓글은 활성 답글이 있으면 삭제 상태로 반환한다.")
-    void readCommentsShowsDeletedRootCommentWhenItHasActiveReply() {
+    @DisplayName("루트 댓글을 삭제하면 해당 댓글의 답글도 함께 삭제되어 목록에서 제외된다.")
+    void deleteRootCommentDeletesReplies() {
         // given
         User writer = saveCompletedUser(200L, "삭제작성자", "del-writer");
         User replier = saveCompletedUser(201L, "남은답글작성자", "reply-writer");
@@ -86,24 +86,19 @@ class CommentServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(rilog, writer);
         Comment rootComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "삭제될 댓글입니다."));
         Comment reply = commentRepository.saveAndFlush(Comment.createReply(rootComment, replier, "남아있는 답글입니다."));
-        rootComment.deleteBy(writer.getId());
-        commentRepository.saveAndFlush(rootComment);
 
         // when
+        commentService.deleteComment(rootComment.getId(), writer.getId());
         CommentListResponse response = commentService.readComments(post.getId());
 
         // then
-        CommentListResponse.CommentResponse rootResponse = response.comments().getFirst();
+        Comment savedRootComment = commentRepository.findById(rootComment.getId()).orElseThrow();
+        Comment savedReply = commentRepository.findById(reply.getId()).orElseThrow();
 
         assertSoftly(softly -> {
-            softly.assertThat(response.comments()).hasSize(1);
-            softly.assertThat(rootResponse.commentId()).isEqualTo(rootComment.getId());
-            softly.assertThat(rootResponse.content()).isNull();
-            softly.assertThat(rootResponse.author()).isNull();
-            softly.assertThat(rootResponse.deleted()).isTrue();
-            softly.assertThat(rootResponse.replyCount()).isEqualTo(1);
-            softly.assertThat(rootResponse.replies().getFirst().commentId()).isEqualTo(reply.getId());
-            softly.assertThat(rootResponse.replies().getFirst().content()).isEqualTo("남아있는 답글입니다.");
+            softly.assertThat(response.comments()).isEmpty();
+            softly.assertThat(savedRootComment.getDeletedAt()).isNotNull();
+            softly.assertThat(savedReply.getDeletedAt()).isNotNull();
         });
     }
 

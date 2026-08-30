@@ -32,7 +32,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.node.JsonNodeFactory;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +47,8 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +62,7 @@ class CommentServiceTest {
     private static final Long OTHER_USER_ID = 4L;
     private static final Long COMMENT_ID = 5L;
     private static final Long REPLY_ID = 6L;
+    private static final Instant NOW = Instant.parse("2026-08-30T12:00:00Z");
 
     @Mock
     private CommentRepository commentRepository;
@@ -74,7 +80,13 @@ class CommentServiceTest {
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentRepository, postRepository, userRepository, blogMemberRepository);
+        commentService = new CommentService(
+                commentRepository,
+                postRepository,
+                userRepository,
+                blogMemberRepository,
+                Clock.fixed(NOW, ZoneOffset.UTC)
+        );
     }
 
     @Test
@@ -306,6 +318,41 @@ class CommentServiceTest {
 
         // then
         assertThat(comment.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("루트 댓글을 삭제하면 해당 댓글의 답글도 함께 삭제한다")
+    void deleteCommentDeletesRepliesWhenRootCommentDeleted() {
+        // given
+        Comment comment = createRootComment(COMMENT_ID, createPost(POST_ID), createUser(USER_ID), "삭제 전입니다.");
+        when(commentRepository.findByIdAndDeletedAtIsNull(COMMENT_ID))
+                .thenReturn(Optional.of(comment));
+
+        // when
+        commentService.deleteComment(COMMENT_ID, USER_ID);
+
+        // then
+        verify(commentRepository).softDeleteAllRepliesByParentId(
+                eq(COMMENT_ID),
+                eq(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
+        );
+    }
+
+    @Test
+    @DisplayName("답글을 삭제할 때는 하위 답글 삭제를 시도하지 않는다")
+    void deleteReplyDoesNotDeleteReplies() {
+        // given
+        Post post = createPost(POST_ID);
+        Comment parent = createRootComment(COMMENT_ID, post, createUser(OTHER_USER_ID), "부모 댓글입니다.");
+        Comment reply = createReplyComment(REPLY_ID, post, createUser(USER_ID), parent, "답글입니다.");
+        when(commentRepository.findByIdAndDeletedAtIsNull(REPLY_ID))
+                .thenReturn(Optional.of(reply));
+
+        // when
+        commentService.deleteComment(REPLY_ID, USER_ID);
+
+        // then
+        verify(commentRepository, never()).softDeleteAllRepliesByParentId(any(), any());
     }
 
     @Test
