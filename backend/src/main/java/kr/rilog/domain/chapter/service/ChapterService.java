@@ -68,9 +68,9 @@ public class ChapterService {
         blogMember.validateHasAdminPermission();
 
         ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blogMember.getBlog()));
-        chapters.delete(chapterId);
 
-        // TODO - 연관된 Post의 chapterId - null -> 벌크 업데이트
+        chapters.delete(chapterId);
+        postRepository.clearChapterByChapterId(chapterId);
     }
 
     private List<Chapter> getChaptersOfBlog(Blog blog) {

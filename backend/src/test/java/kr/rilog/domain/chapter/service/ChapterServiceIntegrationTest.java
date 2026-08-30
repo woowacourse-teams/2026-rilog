@@ -12,10 +12,13 @@ import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.chapter.service.dto.command.ChapterCreateCommand;
 import kr.rilog.domain.chapter.service.dto.command.ChapterRenameCommand;
 import kr.rilog.domain.chapter.service.dto.result.ChapterResult;
+import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
+import kr.rilog.support.fixure.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +53,9 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private ChapterRepository chapterRepository;
+
+    @Autowired
+    private PostRepository postRepository;
 
     @Test
     @DisplayName("OWNER가 챕터를 생성하면 요청한 이름으로 저장된다.")
@@ -390,6 +396,28 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
                 .findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId());
         assertThat(remainingChapters.stream().map(Chapter::getOrder).toList())
                 .containsExactly(0, 1, 2, 3, 4);
+    }
+
+    @Test
+    @DisplayName("챕터를 삭제하면 연결된 게시글은 유지되고 챕터 연결만 해제된다.")
+    void deleteClearsChapterFromAssociatedPost() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        Chapter target = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "삭제 대상", 0));
+        Post post = PostFixture.publicPublishedColog(
+                scenario.blog(),
+                scenario.blog(),
+                scenario.requester()
+        );
+        post.update(PostFixture.updatedPostDetail(), scenario.blog(), target);
+        postRepository.saveAndFlush(post);
+
+        // when
+        chapterService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
+
+        // then
+        Post preservedPost = postRepository.findDetailById(post.getId()).orElseThrow();
+        assertThat(preservedPost.getChapter()).isNull();
     }
 
     private ChapterCreationScenario createMemberScenario(BlogPermission permission) {

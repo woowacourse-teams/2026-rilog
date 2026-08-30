@@ -66,6 +66,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             JOIN FETCH p.user u
             JOIN FETCH p.rilog r
             LEFT JOIN FETCH p.colog c
+            LEFT JOIN FETCH p.chapter ch
             WHERE p.id = :postId
               AND p.deletedAt IS NULL
             """)
@@ -79,6 +80,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         JOIN FETCH p.user u
         JOIN FETCH p.rilog r
         LEFT JOIN FETCH p.colog c
+        LEFT JOIN FETCH p.chapter ch
         WHERE p.id = :postId
           AND p.status = :status
           AND p.deletedAt IS NULL
@@ -116,5 +118,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("cologId") Long cologId,
             @Param("deletedAt") LocalDateTime deletedAt
     );
+
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            UPDATE Post post
+            SET post.chapter = NULL
+            WHERE post.chapter.id = :chapterId
+            """)
+    int clearChapterByChapterId(@Param("chapterId") Long chapterId);
 
 }
