@@ -69,6 +69,18 @@ describe('PublishSettingsModal', () => {
 		expect(handleCoLogChange).toHaveBeenLastCalledWith(null);
 	});
 
+	it('카테고리를 select에서 변경한다', async () => {
+		const user = userEvent.setup();
+		const handleCategoryChange = vi.fn();
+		renderModal({ onCategoryChange: handleCategoryChange });
+
+		const categorySelect = screen.getByRole('combobox', { name: '카테고리' });
+		expect(categorySelect).toHaveDisplayValue('IT');
+
+		await user.selectOptions(categorySelect, 'DAILY');
+		expect(handleCategoryChange).toHaveBeenCalledWith('DAILY');
+	});
+
 	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
 		const { rerender } = renderModal();
 
@@ -91,7 +103,7 @@ describe('PublishSettingsModal', () => {
 		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
 		expect(chapterSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
-		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
+		expect(within(chapterSelect).getByRole('option', { name: '개발' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
 	});
 
@@ -123,7 +135,7 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByLabelText('이미지 선택')).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
-		expect(screen.getAllByRole('radio')[0]).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toBeDisabled();
 
 		act(() => {
 			resolveCreateChapter({ value: 'new-series', label: '새 시리즈' });

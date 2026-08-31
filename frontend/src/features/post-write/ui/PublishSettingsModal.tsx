@@ -9,7 +9,6 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import Button from '@/shared/ui/button/Button';
-import Divider from '@/shared/ui/divider/Divider';
 import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
@@ -57,9 +56,9 @@ const MOCK_COLOG_CHAPTER_OPTIONS = [
 	{ value: 'planning', label: '기획' },
 	{ value: 'development', label: '개발' },
 	{ value: 'retrospective', label: '회고' },
-	{ value: 'planning', label: '기획' },
-	{ value: 'development', label: '개발' },
-	{ value: 'retrospective', label: '회고' },
+	{ value: 'planning-advanced', label: '기획 심화' },
+	{ value: 'development-advanced', label: '개발 심화' },
+	{ value: 'retrospective-advanced', label: '회고 심화' },
 ];
 
 const BLOG_OPTIONS = [
@@ -239,29 +238,31 @@ export default function PublishSettingsModal({
 					</section>
 
 					<div className="space-y-8">
-						<fieldset disabled={isModalPending}>
-							<legend className="text-body-2 font-semibold text-text-primary">카테고리</legend>
-							<div className="mt-3 grid grid-cols-2 gap-3">
-								{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
-									<label
-										key={value}
-										className={`flex min-h-11 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${settings.category === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
-									>
-										<input
-											type="radio"
-											name="post-category"
-											value={value}
-											checked={settings.category === value}
-											className="sr-only"
-											onChange={() => onCategoryChange(value)}
-										/>
-										{label}
-									</label>
-								))}
-							</div>
-						</fieldset>
+						<Field label="카테고리" controlId="post-category">
+							{({ id }) => (
+								<select
+									id={id}
+									value={settings.category}
+									disabled={isModalPending}
+									className="native-select"
+									onChange={(event) => {
+										const selectedCategory = POST_CATEGORY_OPTIONS.find(
+											(option) => option.value === event.currentTarget.value,
+										)?.value;
 
-						<Divider />
+										if (selectedCategory !== undefined) {
+											onCategoryChange(selectedCategory);
+										}
+									}}
+								>
+									{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
+										<option key={value} value={value}>
+											{label}
+										</option>
+									))}
+								</select>
+							)}
+						</Field>
 
 						<fieldset disabled={isModalPending}>
 							<legend className="text-body-2 font-semibold text-text-primary">블로그</legend>
@@ -269,7 +270,7 @@ export default function PublishSettingsModal({
 								{BLOG_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-11 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${selectedBlog === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
+										className={`flex min-h-10 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${selectedBlog === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
 									>
 										<input
 											type="radio"
