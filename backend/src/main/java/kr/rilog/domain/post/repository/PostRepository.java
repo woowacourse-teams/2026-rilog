@@ -37,7 +37,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             Pageable pageable
     );
 
-    long countByStatusAndVisibility(PostStatus status, PostVisibility visibility);
+    long countByStatusAndVisibilityAndDeletedAtIsNull(PostStatus status, PostVisibility visibility);
 
     @Query("""
             SELECT COUNT(post)

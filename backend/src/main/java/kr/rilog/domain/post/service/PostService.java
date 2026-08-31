@@ -82,7 +82,7 @@ public class PostService {
     }
 
     public TotalPostsCountResponse readPostsCount() {
-        long count = postRepository.countByStatusAndVisibility(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
+        long count = postRepository.countByStatusAndVisibilityAndDeletedAtIsNull(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
         return new TotalPostsCountResponse(count);
     }
 
