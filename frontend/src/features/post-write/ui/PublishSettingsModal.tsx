@@ -255,7 +255,7 @@ export default function PublishSettingsModal({
 					</section>
 
 					<div className="space-y-8">
-						<Field label="카테고리" controlId="post-category">
+						<Field label="카테고리" controlId="post-category" required>
 							{({ id }) => (
 								<select
 									id={id}
@@ -282,7 +282,12 @@ export default function PublishSettingsModal({
 						</Field>
 
 						<fieldset disabled={isModalPending}>
-							<legend className="text-body-2 font-semibold text-text-primary">발행 위치</legend>
+							<legend className="text-body-2 font-semibold text-text-primary">
+								발행 위치
+								<span aria-hidden="true" className="ml-0.5 text-danger">
+									*
+								</span>
+							</legend>
 							<div className="mt-3 grid grid-cols-2 overflow-hidden rounded-lg border border-border-default bg-surface">
 								{BLOG_OPTIONS.map(({ value, label }) => (
 									<label
@@ -304,7 +309,7 @@ export default function PublishSettingsModal({
 						</fieldset>
 
 						{isCologSelected && (
-							<Field label="코로그" controlId="post-colog">
+							<Field label="코로그" controlId="post-colog" required>
 								{({ id }) => {
 									const errorId = `${id}-error`;
 
