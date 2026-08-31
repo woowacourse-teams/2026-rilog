@@ -40,7 +40,7 @@ interface RilogSettingsWorkspaceContentProps {
 
 const TAB_HEADER_CONFIG: Record<RilogSettingsTab, { title: string; description: string }> = {
 	profile: { title: '프로필', description: '개인 기본 정보와 소개를 관리합니다.' },
-	series: { title: '시리즈 관리', description: '시리즈와 게시글을 관리합니다.' },
+	series: { title: '시리즈 관리', description: '블로그 시리즈를 관리합니다.' },
 	danger: { title: '위험 영역', description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.' },
 };
 

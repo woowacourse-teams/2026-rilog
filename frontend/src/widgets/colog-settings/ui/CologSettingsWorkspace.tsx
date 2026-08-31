@@ -54,7 +54,7 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 	},
 	chapters: {
 		title: '챕터 관리',
-		description: '팀의 챕터와 게시글을 관리합니다.',
+		description: '팀의 챕터를 관리합니다.',
 	},
 	danger: {
 		title: '위험 영역',
