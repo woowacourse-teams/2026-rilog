@@ -326,6 +326,7 @@ const fillValidPost = async (user: ReturnType<typeof userEvent.setup>) => {
 
 // 여러 발행 시나리오에서 반복되는 필수 Co-log 선택 동작
 const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
+	await user.click(screen.getByRole('radio', { name: '코로그' }));
 	const select = screen.getByRole('combobox', { name: '코로그' });
 	const firstCoLogOption = within(select).getAllByRole('option')[1];
 	await user.selectOptions(select, firstCoLogOption);
@@ -724,9 +725,11 @@ describe('NewPostController', () => {
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		expect(postPublishSettingsOpenedMock).toHaveBeenCalledOnce();
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
 
-		expect(screen.queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
-		expect(screen.getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		expect(within(cologSelect).queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
+		expect(within(cologSelect).getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
 	});
 
 	it('본문 이미지를 스토리지에 업로드하고 완성된 URL을 에디터에 전달한다', async () => {
