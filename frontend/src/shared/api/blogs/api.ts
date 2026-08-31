@@ -1,6 +1,9 @@
 import type {
 	BlogProfileUpdateRequest,
 	BlogPublicProfileResponse,
+	ChapterCreateRequest,
+	ChapterRenameRequest,
+	ChapterResponse,
 	PublicBlogFeedPostResponse,
 	PublicBlogFeedPostsRequest,
 } from '@/shared/api/blogs/types';
@@ -34,4 +37,33 @@ export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsReq
 			},
 		},
 	);
+};
+
+export const readBlogChapters = (slug: string) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.get<ApiResponse<ChapterResponse[]>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/chapters`);
+};
+
+export const createBlogChapter = (slug: string, request: ChapterCreateRequest) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.post<ApiResponse<ChapterResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/chapters`, {
+		json: request,
+	});
+};
+
+export const renameBlogChapter = (slug: string, chapterId: number, request: ChapterRenameRequest) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.patch<ApiResponse<ChapterResponse>>(
+		`v1/blogs/${encodeURIComponent(normalizedSlug)}/chapters/${chapterId}`,
+		{ json: request },
+	);
+};
+
+export const deleteBlogChapter = (slug: string, chapterId: number) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.delete(`v1/blogs/${encodeURIComponent(normalizedSlug)}/chapters/${chapterId}`);
 };
