@@ -185,11 +185,9 @@ public class PostService {
     }
 
     private void validateCanDeletePublishedPost(Post post, Long requesterId) {
-        if (canDeletePost(post, requesterId)) {
-            return;
+        if (!canDeletePost(post, requesterId)) {
+            throw new PostException(POST_DELETE_FORBIDDEN);
         }
-
-        throw new PostException(POST_DELETE_FORBIDDEN);
     }
 
     private boolean canDeletePost(Post post, Long requesterId) {

@@ -3,11 +3,16 @@ package kr.rilog.domain.blog.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.blog.repository.projection.CologIndexProjection;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogIndexResult;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.chapter.repository.projection.ChapterIndexProjection;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
@@ -16,6 +21,8 @@ import kr.rilog.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
@@ -29,6 +36,7 @@ public class BlogService {
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final PostRepository postRepository;
+    private final ChapterRepository chapterRepository;
     private final TagAssetsLifecycle tagAssetsLifecycle;
 
     @Transactional
@@ -44,6 +52,21 @@ public class BlogService {
         synchronizeOwnerProfileIfRilog(blog, command);
         TagAssets current = blog.getTagAssets();
         tagAssetsLifecycle.synchronize(previous, current);
+    }
+
+    public BlogIndexResult readBlogIndex(String slug) {
+        Blog blog = getBlog(slug);
+
+        List<ChapterIndexProjection> chapterOverviews = readChapterIndex(blog.getId());
+
+        if (blog.isColog()) {
+            long totalCount = postRepository.countPublicPublishedPostsByCologId(blog.getId());
+            return BlogIndexResult.of(BlogType.COLOG, totalCount, chapterOverviews);
+        }
+
+        List<CologIndexProjection> cologOverviews = readCologIndex(blog.getOwner().getId());
+        long totalCount = postRepository.countAllPublicPublishedPostsByRilogId(blog.getId());
+        return BlogIndexResult.of(BlogType.RILOG, totalCount, chapterOverviews, cologOverviews);
     }
 
     public void validateDuplicatedSlug(String slug) {
@@ -119,7 +142,7 @@ public class BlogService {
     private void validateCanChangeProfile(Long requesterId, Blog blog) {
         if (blog.isColog()) {
             BlogMember requesterMember = getActiveMember(blog.getId(), requesterId);
-            requesterMember.validateHasAdminPermission();
+            requesterMember.validateAdminPermission();
             return;
         }
 
@@ -129,6 +152,14 @@ public class BlogService {
     private BlogMember getActiveMember(Long blogId, Long userId) {
         return blogMemberRepository.findByBlogIdAndUserIdAndStatus(blogId, userId, BlogMemberStatus.ACTIVE)
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN));
+    }
+
+    private List<CologIndexProjection> readCologIndex(Long userId) {
+        return blogRepository.findCologIndexByUserId(userId);
+    }
+
+    private List<ChapterIndexProjection> readChapterIndex(Long blogId) {
+        return chapterRepository.findChapterIndexByBlogId(blogId);
     }
 
 }

@@ -82,50 +82,6 @@ public class BlogMember extends BaseEntity {
         return targetMember.getBlog();
     }
 
-    public void validateCanInvite() {
-        if (!isCologMember()) {
-            throw new BlogException(BLOG_MEMBER_INVITATION_PERMISSION_INVALID);
-        }
-
-        if (!hasInvitePermission()) {
-            throw new BlogException(BLOG_MEMBER_INVITE_FORBIDDEN);
-        }
-    }
-
-    public void validateHasAdminPermission() {
-        if (!hasInvitePermission()) {
-            throw new BlogException(ADMIN_PERMISSION_INVALID);
-        }
-    }
-
-    public void validateActiveMember() {
-        if (status != ACTIVE) {
-            throw new BlogException(ALREADY_BLOG_MEMBER_LEFT);
-        }
-    }
-
-    public void validateCanLeave() {
-        validateActiveMember();
-
-        if (permission == OWNER) {
-            throw new BlogException(COLOG_OWNER_LEAVE_FORBIDDEN);
-        }
-    }
-
-    public void validateCanDeleteColog() {
-        validateActiveMember();
-
-        if (!isCologMember() || permission != OWNER) {
-            throw new BlogException(COLOG_DELETE_FORBIDDEN);
-        }
-    }
-
-    public boolean hasDeletePermission() {
-        return status == ACTIVE
-                && getDeletedAt() == null
-                && (permission == OWNER || permission == ADMIN);
-    }
-
     public void remove(BlogMember target) {
         validateActiveMember();
         target.validateActiveMember();
@@ -142,9 +98,42 @@ public class BlogMember extends BaseEntity {
         throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
     }
 
+    public void validateActiveMember() {
+        if (status != ACTIVE) {
+            throw new BlogException(ALREADY_BLOG_MEMBER_LEFT);
+        }
+    }
+
+    public void validateCanLeave() {
+        validateActiveMember();
+
+        if (isOwner()) {
+            throw new BlogException(COLOG_OWNER_LEAVE_FORBIDDEN);
+        }
+    }
+
+    public void validateCanDeleteColog() {
+        validateActiveMember();
+
+        if (!isCologMember() || !isOwner()) {
+            throw new BlogException(COLOG_DELETE_FORBIDDEN);
+        }
+    }
+
+    public boolean hasDeletePermission() {
+        return isAdminPermission() && getDeletedAt() == null;
+    }
+
     public void leaveBySelf() {
         validateCanLeave();
         markAsLeft();
+    }
+
+    // AdminPermission 은 Owner + Admin 권한
+    public void validateAdminPermission() {
+        if (!isAdminPermission()) {
+            throw new BlogException(ADMIN_PERMISSION_REQUIRED);
+        }
     }
 
     private void markAsLeft() {
@@ -152,16 +141,12 @@ public class BlogMember extends BaseEntity {
         this.status = BlogMemberStatus.LEFT;
     }
 
-    private boolean isCologMember() {
-        return blog != null && blog.isColog();
-    }
-
-    private boolean hasInvitePermission() {
-        return status == ACTIVE && (permission == OWNER || permission == ADMIN);
-    }
-
     private boolean isSameMember(BlogMember target) {
         return id.equals(target.id);
+    }
+
+    private boolean isOwner() {
+        return permission == OWNER;
     }
 
     private boolean canRemove(BlogMember target) {
@@ -170,6 +155,14 @@ public class BlogMember extends BaseEntity {
         }
 
         return permission == ADMIN && target.permission == MEMBER;
+    }
+
+    private boolean isCologMember() {
+        return blog.isColog();
+    }
+
+    private boolean isAdminPermission() {
+        return status == ACTIVE && (permission == OWNER || permission == ADMIN);
     }
 
 }
