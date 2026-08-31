@@ -295,6 +295,26 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('button', { name: '+ 챕터 추가' })).toBeInTheDocument();
 	});
 
+	it('챕터 수정 모드에서 이름을 편집하고 저장한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(screen.getByRole('button', { name: '챕터 수정' }));
+
+		const nameInput = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
+		expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+		expect(screen.queryByRole('button', { name: '+ 챕터 추가' })).not.toBeInTheDocument();
+		await user.clear(nameInput);
+		await user.type(nameInput, '플랫폼');
+		await user.click(screen.getByRole('button', { name: '저장' }));
+
+		expect(screen.getByText('플랫폼')).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '챕터 수정' })).toBeInTheDocument();
+		expect(screen.queryByRole('textbox', { name: '플랫폼 챕터 이름' })).not.toBeInTheDocument();
+	});
+
 	it('챕터 추가 버튼을 누르면 챕터 이름 입력 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace slug="team-rilog" />);

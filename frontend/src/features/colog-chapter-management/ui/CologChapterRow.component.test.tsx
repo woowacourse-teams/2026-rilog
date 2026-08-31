@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -36,5 +36,16 @@ describe('CologChapterRow', () => {
 		await user.click(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' }));
 
 		expect(onDelete).toHaveBeenCalledWith(CHAPTER);
+	});
+
+	it('편집 모드에서는 이름 입력을 표시하고 삭제 버튼은 숨긴다', () => {
+		const onNameChange = vi.fn();
+		renderInTable(<CologChapterRow chapter={CHAPTER} isEditing onNameChange={onNameChange} />);
+
+		const input = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
+		fireEvent.change(input, { target: { value: '프론트엔드 팀' } });
+
+		expect(onNameChange).toHaveBeenCalledWith(1, '프론트엔드 팀');
+		expect(screen.queryByRole('button', { name: '프론트엔드 챕터 삭제' })).not.toBeInTheDocument();
 	});
 });

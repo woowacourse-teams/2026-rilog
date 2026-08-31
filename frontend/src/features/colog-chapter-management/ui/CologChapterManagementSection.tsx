@@ -4,11 +4,15 @@ import CologChapterRow from './CologChapterRow';
 
 interface CologChapterManagementSectionProps {
 	chapters: CologChapter[];
+	isEditing?: boolean;
+	onChapterNameChange?: (chapterId: number, name: string) => void;
 	onDeleteChapter?: (chapter: CologChapter) => void;
 }
 
 export default function CologChapterManagementSection({
 	chapters,
+	isEditing = false,
+	onChapterNameChange,
 	onDeleteChapter,
 }: CologChapterManagementSectionProps) {
 	return (
@@ -36,7 +40,13 @@ export default function CologChapterManagementSection({
 					</thead>
 					<tbody>
 						{chapters.map((chapter) => (
-							<CologChapterRow key={chapter.id} chapter={chapter} onDelete={onDeleteChapter} />
+							<CologChapterRow
+								key={chapter.id}
+								chapter={chapter}
+								isEditing={isEditing}
+								onNameChange={onChapterNameChange}
+								onDelete={onDeleteChapter}
+							/>
 						))}
 					</tbody>
 				</table>

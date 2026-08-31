@@ -157,6 +157,8 @@ function CologSettingsWorkspaceContent({
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 	const [isChapterCreateModalOpen, setIsChapterCreateModalOpen] = useState(false);
 	const [chapters, setChapters] = useState(() => INITIAL_MOCK_CHAPTERS);
+	const [chapterDrafts, setChapterDrafts] = useState<CologChapter[]>([]);
+	const [isChapterEditing, setIsChapterEditing] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
 	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
@@ -165,8 +167,15 @@ function CologSettingsWorkspaceContent({
 	const nameAvailability = useCheckNicknameAvailabilityMutation();
 
 	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
+	const isChapterDirty = chapterDrafts.some((chapter, index) => chapter.name !== chapters[index]?.name);
 	const isWorkspaceDirty =
-		activeTab === 'profile' ? isProfileDirty : activeTab === 'members' ? memberDrafts.isDirty : false;
+		activeTab === 'profile'
+			? isProfileDirty
+			: activeTab === 'members'
+				? memberDrafts.isDirty
+				: activeTab === 'chapters'
+					? isChapterDirty
+					: false;
 
 	const commitTabChange = useCallback(
 		(nextTab: CologSettingsTab, path: string) => {
@@ -174,6 +183,9 @@ function CologSettingsWorkspaceContent({
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
+			setChapterDrafts([]);
+			setIsChapterEditing(false);
+			setIsChapterCreateModalOpen(false);
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', path);
 		},
@@ -244,6 +256,27 @@ function CologSettingsWorkspaceContent({
 				postCount: 0,
 			},
 		]);
+	};
+
+	const handleStartChapterEditing = () => {
+		setChapterDrafts(chapters.map((chapter) => ({ ...chapter })));
+		setIsChapterEditing(true);
+	};
+
+	const handleCancelChapterEditing = () => {
+		setChapterDrafts([]);
+		setIsChapterEditing(false);
+	};
+
+	const handleChapterNameChange = (chapterId: number, name: string) => {
+		setChapterDrafts((currentChapters) =>
+			currentChapters.map((chapter) => (chapter.id === chapterId ? { ...chapter, name } : chapter)),
+		);
+	};
+
+	const handleSaveChapterEditing = () => {
+		setChapters(chapterDrafts);
+		handleCancelChapterEditing();
 	};
 
 	const profileErrorMessage = saveCologProfile.isError
@@ -325,10 +358,40 @@ function CologSettingsWorkspaceContent({
 		}
 
 		if (activeTab === 'chapters') {
+			if (isChapterEditing) {
+				return (
+					<>
+						<Button
+							type="button"
+							variant="secondary"
+							size="md"
+							className="w-full sm:w-30"
+							onClick={handleCancelChapterEditing}
+						>
+							취소
+						</Button>
+						<Button
+							type="button"
+							size="md"
+							className="w-full sm:w-30"
+							disabled={!isChapterDirty}
+							onClick={handleSaveChapterEditing}
+						>
+							저장
+						</Button>
+					</>
+				);
+			}
+
 			return (
 				<>
-					{/* TODO: 챕터 수정 기능 연동 */}
-					<Button type="button" variant="secondary" size="md" className="w-full sm:w-30">
+					<Button
+						type="button"
+						variant="secondary"
+						size="md"
+						className="w-full sm:w-30"
+						onClick={handleStartChapterEditing}
+					>
 						챕터 수정
 					</Button>
 					<Button type="button" size="md" className="w-full sm:w-30" onClick={() => setIsChapterCreateModalOpen(true)}>
@@ -390,7 +453,11 @@ function CologSettingsWorkspaceContent({
 				)}
 				{activeTab === 'chapters' && (
 					<>
-						<CologChapterManagementSection chapters={chapters} />
+						<CologChapterManagementSection
+							chapters={isChapterEditing ? chapterDrafts : chapters}
+							isEditing={isChapterEditing}
+							onChapterNameChange={handleChapterNameChange}
+						/>
 						<ChapterCreateModal
 							open={isChapterCreateModalOpen}
 							onClose={() => setIsChapterCreateModalOpen(false)}
