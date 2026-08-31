@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
@@ -9,6 +9,7 @@ import type { ChangeEvent } from 'react';
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import Button from '@/shared/ui/button/Button';
+import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Modal from '@/shared/ui/modal/Modal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
@@ -53,8 +54,6 @@ export default function PublishSettingsModal({
 	onImageChange,
 	onPublish,
 }: PublishSettingsModalProps) {
-	// Co-log select와 검증 메시지를 연결하는 고유 ID
-	const cologErrorId = useId();
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
@@ -101,35 +100,33 @@ export default function PublishSettingsModal({
 		>
 			<form id={PUBLISH_FORM_ID} className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1" action={handleSubmit}>
 				<div className="grid gap-8 md:grid-cols-2 md:gap-10">
-					<section aria-labelledby="representative-image-label">
-						<div>
-							<h3 id="representative-image-label" className="text-label-2 font-semibold text-text-primary">
-								대표 이미지
-							</h3>
-							<p className="mt-1 text-caption-1 text-text-secondary">
-								직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.
-							</p>
-							<div className={`mt-4 grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
-								<ImageUploader
-									fullWidth
-									buttonLabel={hasRepresentativeImage ? '이미지 변경' : '이미지 선택'}
-									disabled={isPublishing}
-									onChange={resetFileInput}
-									onFileChange={onImageChange}
-								/>
-								{hasRepresentativeImage && (
-									<Button
-										size="md"
-										variant="ghost"
-										className="w-full focus-visible:-outline-offset-2"
+					<section>
+						<Field label="대표 이미지" description="직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.">
+							{({ id, describedBy }) => (
+								<div className={`grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
+									<ImageUploader
+										id={id}
+										aria-describedby={describedBy}
+										fullWidth
+										buttonLabel={hasRepresentativeImage ? '이미지 변경' : '이미지 선택'}
 										disabled={isPublishing}
-										onClick={() => onImageChange(null)}
-									>
-										이미지 제거
-									</Button>
-								)}
-							</div>
-						</div>
+										onChange={resetFileInput}
+										onFileChange={onImageChange}
+									/>
+									{hasRepresentativeImage && (
+										<Button
+											size="md"
+											variant="ghost"
+											className="w-full focus-visible:-outline-offset-2"
+											disabled={isPublishing}
+											onClick={() => onImageChange(null)}
+										>
+											이미지 제거
+										</Button>
+									)}
+								</div>
+							)}
+						</Field>
 						<figure
 							aria-label="게시글 썸네일 미리보기"
 							className="mt-5 overflow-hidden rounded-lg border border-border-default bg-surface"
@@ -151,8 +148,8 @@ export default function PublishSettingsModal({
 
 					<div className="space-y-8">
 						<fieldset disabled={isPublishing}>
-							<legend className="text-label-2 font-semibold text-text-primary">카테고리</legend>
-							<div className="mt-4 grid grid-cols-2 gap-3">
+							<legend className="text-body-2 font-semibold text-text-primary">카테고리</legend>
+							<div className="mt-3 grid grid-cols-2 gap-3">
 								{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
@@ -172,37 +169,42 @@ export default function PublishSettingsModal({
 							</div>
 						</fieldset>
 
-						<div>
-							<label htmlFor="post-colog" className="text-label-2 font-semibold text-text-primary">
-								Co-log
-							</label>
-							<select
-								ref={cologSelectRef}
-								id="post-colog"
-								value={settings.blog?.id ?? ''}
-								disabled={isPublishing}
-								aria-invalid={cologError !== undefined}
-								aria-describedby={cologError === undefined ? undefined : cologErrorId}
-								className="mt-4 h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
-								onChange={(event) => {
-									const selectedValue = event.currentTarget.value;
-									const selectedBlog = cologOptions.find((option) => option.id === Number(selectedValue));
-									onCoLogChange(selectedBlog ?? null);
-								}}
-							>
-								<option value="">Co-log를 선택하세요</option>
-								{cologOptions.map((option) => (
-									<option key={option.id} value={option.id}>
-										{option.name}
-									</option>
-								))}
-							</select>
-							{cologError !== undefined && (
-								<p id={cologErrorId} className="mt-2 text-body-1 text-danger-text" role="alert">
-									{cologError}
-								</p>
-							)}
-						</div>
+						<Field label="코로그" controlId="post-colog">
+							{({ id }) => {
+								const errorId = `${id}-error`;
+
+								return (
+									<div>
+										<select
+											ref={cologSelectRef}
+											id={id}
+											value={settings.blog?.id ?? ''}
+											disabled={isPublishing}
+											aria-invalid={cologError !== undefined}
+											aria-describedby={cologError === undefined ? undefined : errorId}
+											className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+											onChange={(event) => {
+												const selectedValue = event.currentTarget.value;
+												const selectedBlog = cologOptions.find((option) => option.id === Number(selectedValue));
+												onCoLogChange(selectedBlog ?? null);
+											}}
+										>
+											<option value="">Co-log를 선택하세요</option>
+											{cologOptions.map((option) => (
+												<option key={option.id} value={option.id}>
+													{option.name}
+												</option>
+											))}
+										</select>
+										{cologError !== undefined && (
+											<p id={errorId} className="mt-2 text-body-1 text-danger-text" role="alert">
+												{cologError}
+											</p>
+										)}
+									</div>
+								);
+							}}
+						</Field>
 
 						{publishError !== undefined && (
 							<div
