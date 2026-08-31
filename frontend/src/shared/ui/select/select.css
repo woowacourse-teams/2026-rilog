@@ -104,7 +104,7 @@
 		background: var(--surface-hover);
 	}
 
-	.native-select option:hover {
+	.native-select option:active {
 		background: var(--surface-active);
 	}
 
