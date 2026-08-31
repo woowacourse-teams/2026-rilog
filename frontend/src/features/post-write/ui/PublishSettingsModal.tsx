@@ -58,8 +58,10 @@ const MOCK_COLOG_CHAPTER_OPTIONS = [
 	{ value: 'retrospective', label: '회고' },
 ];
 
+let nextMockChapterId = 1;
+
 const createMockChapter: CreateChapter = (name) =>
-	Promise.resolve({ value: `mock-${name.trim().replaceAll(' ', '-')}`, label: name });
+	Promise.resolve({ value: `mock-chapter-${nextMockChapterId++}`, label: name });
 
 export default function PublishSettingsModal({
 	open,
@@ -259,7 +261,7 @@ export default function PublishSettingsModal({
 											disabled={isModalPending}
 											aria-invalid={cologError !== undefined}
 											aria-describedby={cologError === undefined ? undefined : errorId}
-											className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+											className="native-select"
 											onChange={(event) => {
 												const selectedValue = event.currentTarget.value;
 												const selectedBlog = cologOptions.find((option) => option.id === Number(selectedValue));
@@ -332,7 +334,7 @@ export default function PublishSettingsModal({
 										id={id}
 										value={selectedChapterValue}
 										disabled={isModalPending}
-										className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+										className="native-select"
 										onChange={(event) => {
 											const selectedValue = event.currentTarget.value;
 											setSelectedChapterValues((currentValues) => ({

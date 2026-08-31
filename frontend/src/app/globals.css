@@ -6,6 +6,7 @@
 @import '../shared/ui/button/button.css';
 @import '../shared/ui/modal/modal.css';
 @import '../shared/ui/page-shell/page-shell.css';
+@import '../shared/ui/select/select.css';
 
 @source '../../node_modules/@blocknote/shadcn';
 

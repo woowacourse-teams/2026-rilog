@@ -49,6 +49,7 @@ describe('PublishSettingsModal', () => {
 		});
 
 		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		expect(cologSelect).toHaveClass('native-select');
 		expect(cologSelect).toHaveDisplayValue('선택 안 함');
 		expect(handleCoLogChange).not.toHaveBeenCalled();
 
@@ -72,6 +73,7 @@ describe('PublishSettingsModal', () => {
 		const { rerender } = renderModal();
 
 		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
+		expect(seriesSelect).toHaveClass('native-select');
 		expect(seriesSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
