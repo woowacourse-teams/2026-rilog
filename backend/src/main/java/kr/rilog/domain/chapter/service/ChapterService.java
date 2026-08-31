@@ -36,7 +36,7 @@ public class ChapterService {
     @Transactional
     public ChapterResult create(String slug, Long requesterId, ChapterCreateCommand command) {
         BlogMember blogMember = getBlogMember(Slug.from(slug), requesterId);
-        blogMember.validateHasAdminPermission();
+        blogMember.validateAdminPermission();
 
         Blog blog = blogMember.getBlog();
         ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blog));
@@ -54,7 +54,7 @@ public class ChapterService {
     @Transactional
     public ChapterResult rename(String slug, Long chapterId, Long requesterId, ChapterRenameCommand command) {
         BlogMember blogMember = getBlogMember(Slug.from(slug), requesterId);
-        blogMember.validateHasAdminPermission();
+        blogMember.validateAdminPermission();
 
         ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blogMember.getBlog()));
         Chapter chapter = chapters.rename(chapterId, ChapterName.from(command.name()));
@@ -65,7 +65,7 @@ public class ChapterService {
     @Transactional
     public void delete(String slug, Long chapterId, Long requesterId) {
         BlogMember blogMember = getBlogMember(Slug.from(slug), requesterId);
-        blogMember.validateHasAdminPermission();
+        blogMember.validateAdminPermission();
 
         ChaptersOfBlog chapters = ChaptersOfBlog.from(getChaptersOfBlog(blogMember.getBlog()));
 

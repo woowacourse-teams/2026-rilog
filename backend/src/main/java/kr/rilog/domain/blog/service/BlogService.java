@@ -142,7 +142,7 @@ public class BlogService {
     private void validateCanChangeProfile(Long requesterId, Blog blog) {
         if (blog.isColog()) {
             BlogMember requesterMember = getActiveMember(blog.getId(), requesterId);
-            requesterMember.validateHasAdminPermission();
+            requesterMember.validateAdminPermission();
             return;
         }
 

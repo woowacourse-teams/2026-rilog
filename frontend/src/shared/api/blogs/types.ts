@@ -57,6 +57,20 @@ export interface BlogPublicProfileRequest {
 	slug: string;
 }
 
+export interface ChapterResponse {
+	chapterId: number;
+	name: string;
+	order: number;
+}
+
+export interface ChapterCreateRequest {
+	name: string;
+}
+
+export interface ChapterRenameRequest {
+	name: string;
+}
+
 export interface PostItemResponse {
 	postId: number;
 	title: string;
