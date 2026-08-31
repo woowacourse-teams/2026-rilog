@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_INVALID;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_REQUIRED;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_DOESNT_NOT_BELONG;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
@@ -130,7 +130,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         // when & then
         assertThatThrownBy(() -> chapterService.create(BLOG_SLUG, scenario.requester().getId(), command))
                 .isInstanceOf(BlogException.class)
-                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
+                .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
         assertThat(chapterRepository.findAll()).isEmpty();
     }
 
@@ -346,7 +346,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
                 command
         ))
                 .isInstanceOf(BlogException.class)
-                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
+                .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
         assertThat(saved.getName()).isEqualTo("개발 이야기");
     }
