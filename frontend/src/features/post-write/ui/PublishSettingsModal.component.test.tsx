@@ -62,6 +62,26 @@ describe('PublishSettingsModal', () => {
 		expect(handleCoLogChange).not.toHaveBeenCalled();
 	});
 
+	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
+		const { rerender } = renderModal();
+
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toHaveDisplayValue('시리즈를 선택하세요');
+		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
+
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{
+					...DEFAULT_PROPS.settings,
+					blog: { id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole('combobox', { name: '챕터' })).toHaveDisplayValue('챕터를 선택하세요');
+		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
+	});
+
 	it('대표 이미지를 선택하고 제거할 수 있다', async () => {
 		const user = userEvent.setup();
 		const handleImageChange = vi.fn();
@@ -105,7 +125,8 @@ describe('PublishSettingsModal', () => {
 		const dialog = screen.getByRole('dialog', { name: '게시 설정' });
 		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
-		expect(screen.getByRole('combobox', { name: 'Co-log' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
 		expect(screen.getByLabelText('이미지 선택')).toBeDisabled();
 
 		fireEvent.click(dialog);
@@ -119,7 +140,7 @@ describe('PublishSettingsModal', () => {
 		const handlePublish = vi.fn();
 		renderModal({ cologError: 'Co-log를 선택해 주세요.', onPublish: handlePublish });
 
-		const cologSelect = screen.getByRole('combobox', { name: 'Co-log' });
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
 		const error = screen.getByRole('alert');
 		expect(cologSelect).toHaveAttribute('aria-describedby', error.id);
 

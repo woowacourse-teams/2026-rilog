@@ -37,6 +37,18 @@ interface PublishSettingsModalProps {
 // 모달 footer의 발행 버튼을 내부 form과 연결하는 ID
 const PUBLISH_FORM_ID = 'post-publish-settings-form';
 
+const MOCK_PERSONAL_CHAPTER_OPTIONS = [
+	{ value: 'frontend-growth', label: '프론트엔드 성장 기록' },
+	{ value: 'project-retrospective', label: '프로젝트 회고' },
+	{ value: 'developer-life', label: '개발자 일상' },
+];
+
+const MOCK_COLOG_CHAPTER_OPTIONS = [
+	{ value: 'planning', label: '기획' },
+	{ value: 'development', label: '개발' },
+	{ value: 'retrospective', label: '회고' },
+];
+
 export default function PublishSettingsModal({
 	open,
 	postTitle,
@@ -59,6 +71,8 @@ export default function PublishSettingsModal({
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
+	const chapterLabel = settings.blog === null ? '시리즈' : '챕터';
+	const chapterOptions = settings.blog === null ? MOCK_PERSONAL_CHAPTER_OPTIONS : MOCK_COLOG_CHAPTER_OPTIONS;
 	// 선택 가능한 Co-log가 하나뿐일 때 자동 선택할 blog
 	const onlyBlog = cologOptions.length === 1 ? cologOptions[0] : undefined;
 
@@ -169,7 +183,7 @@ export default function PublishSettingsModal({
 							</div>
 						</fieldset>
 
-						<Field label="코로그" controlId="post-colog">
+						<Field label="코로그" description="코로그를 선택하지 않으면 개인 블로그로 발행돼요." controlId="post-colog">
 							{({ id }) => {
 								const errorId = `${id}-error`;
 
@@ -204,6 +218,25 @@ export default function PublishSettingsModal({
 									</div>
 								);
 							}}
+						</Field>
+
+						<Field label={chapterLabel} controlId="post-chapter">
+							{({ id }) => (
+								<select
+									key={settings.blog?.id ?? 'personal-blog'}
+									id={id}
+									defaultValue=""
+									disabled={isPublishing}
+									className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+								>
+									<option value="">{chapterLabel}를 선택하세요</option>
+									{chapterOptions.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									))}
+								</select>
+							)}
 						</Field>
 
 						{publishError !== undefined && (
