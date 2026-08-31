@@ -11,7 +11,7 @@ interface InputProps extends ComponentPropsWithRef<'input'> {
 }
 
 const BASE_INPUT_CLASS_NAME =
-	'flex gap-2.5 h-height-md w-full rounded-md border bg-white px-4 text-label-2 text-text-primary focus-within:outline-focus-ring focus-within:outline-2 focus-within:-outline-offset-1 has-disabled:cursor-not-allowed has-disabled:bg-surface has-disabled:text-text-disabled';
+	'flex gap-2.5 h-height-md w-full rounded-md border bg-white px-4 text-label-2 text-text-primary focus-within:outline-focus-ring focus-within:outline-2 focus-within:-outline-offset-2 has-disabled:cursor-not-allowed has-disabled:bg-surface has-disabled:text-text-disabled';
 
 const STATUS_CLASS_NAMES: Record<InputStatus, string> = {
 	default: 'border-border-default',

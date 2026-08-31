@@ -1,16 +1,17 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
+import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
@@ -32,7 +33,15 @@ interface PublishSettingsModalProps {
 	onCoLogChange: (blog: CologOption | null) => void;
 	onImageChange: (file: File | null) => void;
 	onPublish: () => void;
+	onCreateChapter?: CreateChapter;
 }
+
+interface ChapterOption {
+	value: string;
+	label: string;
+}
+
+type CreateChapter = (name: string) => Promise<ChapterOption>;
 
 // 모달 footer의 발행 버튼을 내부 form과 연결하는 ID
 const PUBLISH_FORM_ID = 'post-publish-settings-form';
@@ -48,6 +57,9 @@ const MOCK_COLOG_CHAPTER_OPTIONS = [
 	{ value: 'development', label: '개발' },
 	{ value: 'retrospective', label: '회고' },
 ];
+
+const createMockChapter: CreateChapter = (name) =>
+	Promise.resolve({ value: `mock-${name.trim().replaceAll(' ', '-')}`, label: name });
 
 export default function PublishSettingsModal({
 	open,
@@ -65,17 +77,41 @@ export default function PublishSettingsModal({
 	onCoLogChange,
 	onImageChange,
 	onPublish,
+	onCreateChapter = createMockChapter,
 }: PublishSettingsModalProps) {
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
+	const seriesNameInputRef = useRef<HTMLInputElement>(null);
+	const [createdPersonalChapterOptions, setCreatedPersonalChapterOptions] = useState<ChapterOption[]>([]);
+	const [selectedChapterValues, setSelectedChapterValues] = useState<Record<string, string>>({});
+	const [isSeriesCreatorOpen, setIsSeriesCreatorOpen] = useState(false);
+	const [newSeriesName, setNewSeriesName] = useState('');
+	const [seriesCreationError, setSeriesCreationError] = useState<string>();
+	const [isCreatingSeries, setIsCreatingSeries] = useState(false);
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
 	const chapterLabel = settings.blog === null ? '시리즈' : '챕터';
-	const chapterOptions = settings.blog === null ? MOCK_PERSONAL_CHAPTER_OPTIONS : MOCK_COLOG_CHAPTER_OPTIONS;
+	const chapterOptions =
+		settings.blog === null
+			? [...MOCK_PERSONAL_CHAPTER_OPTIONS, ...createdPersonalChapterOptions]
+			: MOCK_COLOG_CHAPTER_OPTIONS;
+	const chapterScopeKey = settings.blog === null ? 'personal-blog' : `colog-${settings.blog.id}`;
+	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
+	const isModalPending = isPublishing || isCreatingSeries;
+
+	useEffect(() => {
+		if (isSeriesCreatorOpen) {
+			seriesNameInputRef.current?.focus();
+		}
+	}, [isSeriesCreatorOpen]);
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
 	const handleSubmit = () => {
+		if (isCreatingSeries) {
+			return;
+		}
+
 		if (settings.blog === null) {
 			cologSelectRef.current?.focus();
 		}
@@ -86,6 +122,42 @@ export default function PublishSettingsModal({
 	// 공용 ImageUploader가 label과 숨겨진 file input의 연결을 소유하며 같은 파일을 다시 선택할 수 있도록 초기화
 	const resetFileInput = (event: ChangeEvent<HTMLInputElement>) => {
 		event.currentTarget.value = '';
+	};
+
+	const handleCreateSeries = async () => {
+		const seriesName = newSeriesName.trim();
+
+		if (seriesName === '') {
+			setSeriesCreationError('시리즈 이름을 입력해 주세요.');
+			return;
+		}
+
+		setIsCreatingSeries(true);
+		setSeriesCreationError(undefined);
+
+		try {
+			const createdChapter = await onCreateChapter(seriesName);
+			setCreatedPersonalChapterOptions((currentOptions) => [...currentOptions, createdChapter]);
+			setSelectedChapterValues((currentValues) => ({
+				...currentValues,
+				'personal-blog': createdChapter.value,
+			}));
+			setNewSeriesName('');
+			setIsSeriesCreatorOpen(false);
+		} catch (error) {
+			setSeriesCreationError(error instanceof Error ? error.message : '시리즈 생성에 실패했습니다.');
+		} finally {
+			setIsCreatingSeries(false);
+		}
+	};
+
+	const handleSeriesNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+		if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
+			return;
+		}
+
+		event.preventDefault();
+		void handleCreateSeries();
 	};
 
 	return (
@@ -99,7 +171,7 @@ export default function PublishSettingsModal({
 			scrollMode="custom"
 			showCloseButton={false}
 			closeOnBackdrop={false}
-			isPending={isPublishing}
+			isPending={isModalPending}
 			cancelAction={{}}
 			primaryAction={{ label: '발행', type: 'submit', form: PUBLISH_FORM_ID }}
 		>
@@ -114,7 +186,7 @@ export default function PublishSettingsModal({
 										aria-describedby={describedBy}
 										fullWidth
 										buttonLabel={hasRepresentativeImage ? '이미지 변경' : '이미지 선택'}
-										disabled={isPublishing}
+										disabled={isModalPending}
 										onChange={resetFileInput}
 										onFileChange={onImageChange}
 									/>
@@ -123,7 +195,7 @@ export default function PublishSettingsModal({
 											size="md"
 											variant="ghost"
 											className="w-full focus-visible:-outline-offset-2"
-											disabled={isPublishing}
+											disabled={isModalPending}
 											onClick={() => onImageChange(null)}
 										>
 											이미지 제거
@@ -152,7 +224,7 @@ export default function PublishSettingsModal({
 					</section>
 
 					<div className="space-y-8">
-						<fieldset disabled={isPublishing}>
+						<fieldset disabled={isModalPending}>
 							<legend className="text-body-2 font-semibold text-text-primary">카테고리</legend>
 							<div className="mt-3 grid grid-cols-2 gap-3">
 								{POST_CATEGORY_OPTIONS.map(({ value, label }) => (
@@ -184,7 +256,7 @@ export default function PublishSettingsModal({
 											ref={cologSelectRef}
 											id={id}
 											value={settings.blog?.id ?? ''}
-											disabled={isPublishing}
+											disabled={isModalPending}
 											aria-invalid={cologError !== undefined}
 											aria-describedby={cologError === undefined ? undefined : errorId}
 											className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
@@ -211,22 +283,72 @@ export default function PublishSettingsModal({
 							}}
 						</Field>
 
-						<Field label={chapterLabel} controlId="post-chapter">
+						<Field
+							label={chapterLabel}
+							controlId="post-chapter"
+							labelAction={
+								settings.blog === null ? (
+									<Button
+										variant="ghost"
+										size="sm"
+										aria-label={isSeriesCreatorOpen ? '시리즈 추가 취소' : '새 시리즈 추가'}
+										disabled={isModalPending}
+										onClick={() => {
+											setSeriesCreationError(undefined);
+
+											if (isSeriesCreatorOpen) {
+												setNewSeriesName('');
+												setIsSeriesCreatorOpen(false);
+												return;
+											}
+
+											setIsSeriesCreatorOpen(true);
+										}}
+									>
+										<span aria-hidden="true">{isSeriesCreatorOpen ? '취소' : '추가 +'}</span>
+									</Button>
+								) : undefined
+							}
+						>
 							{({ id }) => (
-								<select
-									key={settings.blog?.id ?? 'personal-blog'}
-									id={id}
-									defaultValue=""
-									disabled={isPublishing}
-									className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
-								>
-									<option value="">선택 안 함</option>
-									{chapterOptions.map((option) => (
-										<option key={option.value} value={option.value}>
-											{option.label}
-										</option>
-									))}
-								</select>
+								<div className="flex flex-col gap-3">
+									{settings.blog === null && isSeriesCreatorOpen && (
+										<Input
+											ref={seriesNameInputRef}
+											aria-label="새로운 시리즈 이름"
+											placeholder="새로운 시리즈 이름을 입력하세요."
+											value={newSeriesName}
+											disabled={isModalPending}
+											status={seriesCreationError === undefined ? 'default' : 'error'}
+											helperText={seriesCreationError}
+											onChange={(event) => {
+												setNewSeriesName(event.currentTarget.value);
+												setSeriesCreationError(undefined);
+											}}
+											onKeyDown={handleSeriesNameKeyDown}
+										/>
+									)}
+									<select
+										id={id}
+										value={selectedChapterValue}
+										disabled={isModalPending}
+										className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+										onChange={(event) => {
+											const selectedValue = event.currentTarget.value;
+											setSelectedChapterValues((currentValues) => ({
+												...currentValues,
+												[chapterScopeKey]: selectedValue,
+											}));
+										}}
+									>
+										<option value="">선택 안 함</option>
+										{chapterOptions.map((option) => (
+											<option key={option.value} value={option.value}>
+												{option.label}
+											</option>
+										))}
+									</select>
+								</div>
 							)}
 						</Field>
 

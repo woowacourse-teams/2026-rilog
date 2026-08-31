@@ -9,6 +9,7 @@ interface FieldRenderProps {
 
 interface FieldProps {
 	label?: ReactNode;
+	labelAction?: ReactNode;
 	description?: ReactNode;
 	controlId?: string;
 	required?: boolean;
@@ -17,6 +18,7 @@ interface FieldProps {
 
 export default function Field({
 	label,
+	labelAction,
 	description,
 	controlId: providedControlId,
 	required = false,
@@ -31,14 +33,17 @@ export default function Field({
 		<div className="flex w-full flex-col gap-3">
 			{label && (
 				<div className="flex flex-col gap-1">
-					<label htmlFor={controlId} className="text-body-2 font-semibold text-text-primary">
-						{label}
-						{required ? (
-							<span aria-hidden="true" className="ml-0.5 text-danger">
-								*
-							</span>
-						) : null}
-					</label>
+					<div className="flex items-center justify-between gap-3">
+						<label htmlFor={controlId} className="text-body-2 font-semibold text-text-primary">
+							{label}
+							{required ? (
+								<span aria-hidden="true" className="ml-0.5 text-danger">
+									*
+								</span>
+							) : null}
+						</label>
+						{labelAction}
+					</div>
 					{description && (
 						<div id={descriptionId} className="text-label-2 text-text-secondary">
 							{description}

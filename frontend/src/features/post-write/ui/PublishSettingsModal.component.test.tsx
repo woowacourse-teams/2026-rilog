@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -90,6 +90,74 @@ describe('PublishSettingsModal', () => {
 		expect(chapterSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
+	});
+
+	it('새 시리즈를 생성하는 동안 모달 action을 잠그고 성공한 시리즈를 선택한다', async () => {
+		const user = userEvent.setup();
+		let resolveCreateChapter!: (option: { value: string; label: string }) => void;
+		const handleCreateChapter = vi.fn(
+			() =>
+				new Promise<{ value: string; label: string }>((resolve) => {
+					resolveCreateChapter = resolve;
+				}),
+		);
+		const handlePublish = vi.fn();
+		renderModal({ onCreateChapter: handleCreateChapter, onPublish: handlePublish });
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		expect(seriesNameInput).toHaveFocus();
+		expect(seriesNameInput).toHaveAttribute('placeholder', '새로운 시리즈 이름을 입력하세요.');
+
+		await user.type(seriesNameInput, '새 시리즈{Enter}');
+		await waitFor(() => expect(handleCreateChapter).toHaveBeenCalledWith('새 시리즈'));
+
+		expect(handlePublish).not.toHaveBeenCalled();
+		expect(seriesNameInput).toBeDisabled();
+		expect(screen.getByRole('button', { name: '시리즈 추가 취소' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
+		expect(screen.getByLabelText('이미지 선택')).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
+		expect(screen.getAllByRole('radio')[0]).toBeDisabled();
+
+		act(() => {
+			resolveCreateChapter({ value: 'new-series', label: '새 시리즈' });
+		});
+
+		await waitFor(() => expect(screen.getByRole('combobox', { name: '시리즈' })).toHaveDisplayValue('새 시리즈'));
+		expect(screen.queryByRole('textbox', { name: '새로운 시리즈 이름' })).not.toBeInTheDocument();
+	});
+
+	it('시리즈 이름 input이 열리면 추가 버튼을 취소 버튼으로 바꾸고 입력값을 초기화한다', async () => {
+		const user = userEvent.setup();
+		renderModal();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		await user.type(seriesNameInput, '작성 중인 이름');
+
+		await user.click(screen.getByRole('button', { name: '시리즈 추가 취소' }));
+		expect(screen.queryByRole('textbox', { name: '새로운 시리즈 이름' })).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		expect(screen.getByRole('textbox', { name: '새로운 시리즈 이름' })).toHaveValue('');
+	});
+
+	it('시리즈 생성에 실패하면 input에 오류 메시지를 표시한다', async () => {
+		const user = userEvent.setup();
+		const handleCreateChapter = vi.fn().mockRejectedValue(new Error('이미 사용 중인 시리즈 이름입니다.'));
+		renderModal({ onCreateChapter: handleCreateChapter });
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		await user.type(seriesNameInput, '중복 시리즈{Enter}');
+
+		await waitFor(() => expect(seriesNameInput).toHaveAccessibleDescription('이미 사용 중인 시리즈 이름입니다.'));
+		expect(seriesNameInput).toHaveAttribute('aria-invalid', 'true');
+		expect(seriesNameInput).toBeEnabled();
 	});
 
 	it('대표 이미지를 선택하고 제거할 수 있다', async () => {
