@@ -13,8 +13,8 @@ export default function CologChapterManagementSection({ drafts }: CologChapterMa
 
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
-			<div className="overflow-x-auto overflow-y-hidden overscroll-x-contain contain-[paint]">
-				<table className="w-full min-w-3xl table-fixed border-collapse text-left">
+			<div>
+				<table className="w-full table-fixed border-collapse text-left">
 					<caption className="sr-only">팀 챕터 목록</caption>
 					<colgroup>
 						<col className="w-1/3" />
