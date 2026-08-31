@@ -14,6 +14,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.Objects;
 
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_REPLY_DEPTH_EXCEEDED;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
 
@@ -90,10 +91,24 @@ public class Comment extends BaseEntity {
         return getDeletedAt() != null;
     }
 
-    public boolean belongsTo(Long postId) {
-        return post != null
-                && post.getId() != null
-                && Objects.equals(post.getId(), postId);
+    public void validateBelongsTo(Post targetPost) {
+        if (!belongsTo(targetPost)) {
+            throw new CommentException(COMMENT_NOT_FOUND);
+        }
+    }
+
+    private boolean belongsTo(Post targetPost) {
+        if (post == null || targetPost == null) {
+            return false;
+        }
+
+        if (post == targetPost) {
+            return true;
+        }
+
+        return post.getId() != null
+                && targetPost.getId() != null
+                && Objects.equals(post.getId(), targetPost.getId());
     }
 
     private void validateRoot() {

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_REPLY_DEPTH_EXCEEDED;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,20 @@ class CommentTest {
                 .isInstanceOf(CommentException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(COMMENT_REPLY_DEPTH_EXCEEDED);
+    }
+
+    @Test
+    @DisplayName("댓글이 속한 게시글이 아니면 댓글을 찾을 수 없는 것으로 처리한다")
+    void validateBelongsToRejectsOtherPost() {
+        // given
+        Comment comment = Comment.createRoot(createPost(1L), createUser(AUTHOR_ID), "댓글입니다.");
+        Post otherPost = createPost(2L);
+
+        // when - then
+        assertThatThrownBy(() -> comment.validateBelongsTo(otherPost))
+                .isInstanceOf(CommentException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(COMMENT_NOT_FOUND);
     }
 
     @Test
@@ -142,11 +157,15 @@ class CommentTest {
     }
 
     private Post createPost() {
+        return createPost(1L);
+    }
+
+    private Post createPost(Long id) {
         User author = createUser(AUTHOR_ID);
         Blog rilog = Blog.builder()
-                .id(1L)
+                .id(id)
                 .owner(author)
-                .slug(Slug.from("author-rilog"))
+                .slug(Slug.from("author-rilog-" + id))
                 .profile(Profile.createRilog(
                         "작성자",
                         "소개",
@@ -159,7 +178,7 @@ class CommentTest {
                 .build();
 
         return Post.builder()
-                .id(1L)
+                .id(id)
                 .user(author)
                 .rilog(rilog)
                 .title("게시글 제목")

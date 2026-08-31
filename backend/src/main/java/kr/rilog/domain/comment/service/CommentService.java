@@ -69,7 +69,7 @@ public class CommentService {
         Post post = getPublishedPost(postId);
         User user = getUser(requesterId);
         Comment parent = getComment(parentCommentId);
-        validateCommentBelongsToPost(parent, post);
+        parent.validateBelongsTo(post);
         Comment reply = Comment.createReply(parent, user, command.content());
         return CommentCreateResponse.from(commentRepository.save(reply));
     }
@@ -105,11 +105,5 @@ public class CommentService {
     private Comment getComment(Long commentId) {
         return commentRepository.findByIdAndDeletedAtIsNull(commentId)
                 .orElseThrow(() -> new CommentException(COMMENT_NOT_FOUND));
-    }
-
-    private void validateCommentBelongsToPost(Comment comment, Post post) {
-        if (!comment.belongsTo(post.getId())) {
-            throw new CommentException(COMMENT_NOT_FOUND);
-        }
     }
 }

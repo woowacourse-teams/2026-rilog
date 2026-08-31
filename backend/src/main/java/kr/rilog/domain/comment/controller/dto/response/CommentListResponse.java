@@ -18,29 +18,25 @@ public record CommentListResponse(
     public static CommentListResponse from(Post post, List<Comment> comments, Set<Long> activeMemberUserIds) {
         Map<Long, List<Comment>> repliesByParentId = comments.stream()
                 .filter(Comment::isReply)
-                .filter(comment -> !comment.isDeleted())
+                .filter(reply -> !reply.isDeleted())
                 .collect(Collectors.groupingBy(
-                        comment -> comment.getParent().getId(),
+                        reply -> reply.getParent().getId(),
                         LinkedHashMap::new,
                         Collectors.toList()
                 ));
 
         List<CommentResponse> rootComments = comments.stream()
-                .filter(comment -> !comment.isReply())
-                .filter(comment -> shouldShowRootComment(comment, repliesByParentId))
-                .map(comment -> CommentResponse.from(
+                .filter(root -> !root.isReply())
+                .filter(root -> !root.isDeleted())
+                .map(root -> CommentResponse.from(
                         post,
-                        comment,
+                        root,
                         activeMemberUserIds,
-                        repliesByParentId.getOrDefault(comment.getId(), List.of())
+                        repliesByParentId.getOrDefault(root.getId(), List.of())
                 ))
                 .toList();
 
         return new CommentListResponse(rootComments);
-    }
-
-    private static boolean shouldShowRootComment(Comment comment, Map<Long, List<Comment>> repliesByParentId) {
-        return !comment.isDeleted() || !repliesByParentId.getOrDefault(comment.getId(), List.of()).isEmpty();
     }
 
     public record CommentResponse(
@@ -56,32 +52,17 @@ public record CommentListResponse(
 
         private static CommentResponse from(
                 Post post,
-                Comment comment,
+                Comment root,
                 Set<Long> activeMemberUserIds,
                 List<Comment> replies
         ) {
-            if (comment.isDeleted()) {
-                return new CommentResponse(
-                        comment.getId(),
-                        null,
-                        true,
-                        null,
-                        comment.getCreatedAt(),
-                        comment.getUpdatedAt(),
-                        replies.size(),
-                        replies.stream()
-                                .map(reply -> ReplyResponse.from(post, reply, activeMemberUserIds))
-                                .toList()
-                );
-            }
-
             return new CommentResponse(
-                    comment.getId(),
-                    comment.getContent(),
+                    root.getId(),
+                    root.getContent(),
                     false,
-                    AuthorResponse.from(post, comment.getUser(), activeMemberUserIds),
-                    comment.getCreatedAt(),
-                    comment.getUpdatedAt(),
+                    AuthorResponse.from(post, root.getUser(), activeMemberUserIds),
+                    root.getCreatedAt(),
+                    root.getUpdatedAt(),
                     replies.size(),
                     replies.stream()
                             .map(reply -> ReplyResponse.from(post, reply, activeMemberUserIds))
@@ -98,13 +79,13 @@ public record CommentListResponse(
             LocalDateTime updatedAt
     ) {
 
-        private static ReplyResponse from(Post post, Comment comment, Set<Long> activeMemberUserIds) {
+        private static ReplyResponse from(Post post, Comment reply, Set<Long> activeMemberUserIds) {
             return new ReplyResponse(
-                    comment.getId(),
-                    comment.getContent(),
-                    AuthorResponse.from(post, comment.getUser(), activeMemberUserIds),
-                    comment.getCreatedAt(),
-                    comment.getUpdatedAt()
+                    reply.getId(),
+                    reply.getContent(),
+                    AuthorResponse.from(post, reply.getUser(), activeMemberUserIds),
+                    reply.getCreatedAt(),
+                    reply.getUpdatedAt()
             );
         }
     }

@@ -22,6 +22,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             JOIN FETCH comment.user user
             LEFT JOIN FETCH comment.parent parent
             WHERE comment.post.id = :postId
+              AND comment.deletedAt IS NULL
             ORDER BY comment.createdAt ASC, comment.id ASC
             """)
     List<Comment> findAllByPostIdOrderByCreatedAtAscIdAsc(@Param("postId") Long postId);

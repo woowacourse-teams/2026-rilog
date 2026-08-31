@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -100,6 +101,27 @@ class CommentServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(savedRootComment.getDeletedAt()).isNotNull();
             softly.assertThat(savedReply.getDeletedAt()).isNotNull();
         });
+    }
+
+    @Test
+    @DisplayName("댓글 목록 조회용 쿼리는 삭제된 댓글을 제외한다.")
+    void findAllByPostIdExcludesDeletedComments() {
+        // given
+        User writer = saveCompletedUser(300L, "조회작성자", "find-writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(rilog, writer);
+        Comment deletedComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "삭제된 댓글입니다."));
+        Comment activeComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "활성 댓글입니다."));
+        deletedComment.deleteBy(writer.getId());
+        commentRepository.saveAndFlush(deletedComment);
+
+        // when
+        List<Comment> comments = commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(post.getId());
+
+        // then
+        assertThat(comments)
+                .extracting(Comment::getId)
+                .containsExactly(activeComment.getId());
     }
 
     private User saveCompletedUser(Long githubId, String nickname, String slug) {

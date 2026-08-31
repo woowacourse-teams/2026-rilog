@@ -246,8 +246,8 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("삭제된 루트 댓글은 활성 답글이 있으면 구조 유지를 위해 반환한다")
-    void readCommentsKeepsDeletedRootWithActiveReply() {
+    @DisplayName("삭제된 루트 댓글은 활성 답글이 있어도 목록에서 제외한다")
+    void readCommentsExcludesDeletedRootWithActiveReply() {
         // given
         Post post = createPost(POST_ID);
         Comment deletedRoot = createRootComment(COMMENT_ID, post, createUser(USER_ID), "삭제된 루트 댓글입니다.");
@@ -264,11 +264,7 @@ class CommentServiceTest {
         CommentListResponse response = commentService.readComments(POST_ID);
 
         // then
-        CommentListResponse.CommentResponse rootResponse = response.comments().getFirst();
-        assertThat(rootResponse.deleted()).isTrue();
-        assertThat(rootResponse.content()).isNull();
-        assertThat(rootResponse.author()).isNull();
-        assertThat(rootResponse.replyCount()).isEqualTo(1);
+        assertThat(response.comments()).isEmpty();
     }
 
     @Test
