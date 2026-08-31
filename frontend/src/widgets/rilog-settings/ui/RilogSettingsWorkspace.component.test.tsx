@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -81,8 +81,7 @@ describe('RilogSettingsWorkspace', () => {
 
 		await user.click(screen.getByRole('button', { name: '시리즈 수정' }));
 		const seriesName = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
-		await user.clear(seriesName);
-		await user.type(seriesName, '프론트엔드');
+		fireEvent.change(seriesName, { target: { value: '프론트엔드' } });
 		await user.click(screen.getByRole('button', { name: '저장' }));
 
 		await waitFor(() => expect(screen.getByText('프론트엔드')).toBeInTheDocument());

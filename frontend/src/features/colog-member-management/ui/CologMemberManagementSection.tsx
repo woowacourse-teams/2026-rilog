@@ -128,14 +128,14 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 		<section className="px-6 sm:px-8 lg:px-0">
 			<form id="member-settings-form" onSubmit={handleSave}>
 				<div className="overflow-x-auto overflow-y-hidden overscroll-x-contain contain-[paint]">
-					<table className="w-full min-w-3xl table-fixed border-collapse text-left">
+					<table className="w-full table-fixed border-collapse text-left">
 						<caption className="sr-only">팀 멤버 목록</caption>
 						<colgroup>
-							<col className="w-52" />
-							<col className="w-31" />
+							<col className="w-2/5" />
+							<col className="w-1/5" />
 							{/* <col className="w-40" /> */}
-							<col className="w-37" />
-							<col className="w-24" />
+							<col className="w-1/5" />
+							<col className="w-1/5" />
 						</colgroup>
 						<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
 							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
