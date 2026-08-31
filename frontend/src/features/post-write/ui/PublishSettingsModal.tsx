@@ -9,6 +9,7 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import Button from '@/shared/ui/button/Button';
+import Divider from '@/shared/ui/divider/Divider';
 import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
 import Input from '@/shared/ui/input/Input';
@@ -61,6 +62,13 @@ const MOCK_COLOG_CHAPTER_OPTIONS = [
 	{ value: 'retrospective', label: '회고' },
 ];
 
+const BLOG_OPTIONS = [
+	{ value: 'rilog', label: '개인' },
+	{ value: 'colog', label: '코로그' },
+] as const;
+
+type BlogOption = (typeof BLOG_OPTIONS)[number]['value'];
+
 let nextMockChapterId = 1;
 
 const createMockChapter: CreateChapter = (name) =>
@@ -84,6 +92,8 @@ export default function PublishSettingsModal({
 	onPublish,
 	onCreateChapter = createMockChapter,
 }: PublishSettingsModalProps) {
+	// 블로그 선택
+	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(BLOG_OPTIONS[0].value);
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const seriesNameInputRef = useRef<HTMLInputElement>(null);
@@ -251,7 +261,31 @@ export default function PublishSettingsModal({
 							</div>
 						</fieldset>
 
-						<Field label="코로그" description="코로그를 선택하지 않으면 개인 블로그로 발행돼요." controlId="post-colog">
+						<Divider />
+
+						<fieldset disabled={isModalPending}>
+							<legend className="text-body-2 font-semibold text-text-primary">블로그</legend>
+							<div className="mt-3 grid grid-cols-2 gap-3">
+								{BLOG_OPTIONS.map(({ value, label }) => (
+									<label
+										key={value}
+										className={`flex min-h-11 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${selectedBlog === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
+									>
+										<input
+											type="radio"
+											name="post-category"
+											value={value}
+											checked={selectedBlog === value}
+											className="sr-only"
+											onChange={() => setSelectedBlog(value)}
+										/>
+										{label}
+									</label>
+								))}
+							</div>
+						</fieldset>
+
+						<Field label="코로그" controlId="post-colog">
 							{({ id }) => {
 								const errorId = `${id}-error`;
 
@@ -267,8 +301,8 @@ export default function PublishSettingsModal({
 											className="native-select"
 											onChange={(event) => {
 												const selectedValue = event.currentTarget.value;
-												const selectedBlog = cologOptions.find((option) => option.id === Number(selectedValue));
-												onCoLogChange(selectedBlog ?? null);
+												const selectedColog = cologOptions.find((option) => option.id === Number(selectedValue));
+												onCoLogChange(selectedColog ?? null);
 											}}
 										>
 											<option value="">선택 안 함</option>
