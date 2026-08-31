@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
+import { useCologChapterDrafts } from '@/features/colog-chapter-management/hooks/use-colog-chapter-drafts';
 import type { CologChapter } from '@/features/colog-chapter-management/model/colog-chapter';
 import ChapterCreateModal from '@/features/colog-chapter-management/ui/ChapterCreateModal';
 import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
@@ -155,26 +156,22 @@ function CologSettingsWorkspaceContent({
 	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
-	const [isChapterCreateModalOpen, setIsChapterCreateModalOpen] = useState(false);
-	const [chapters, setChapters] = useState(() => INITIAL_MOCK_CHAPTERS);
-	const [chapterDrafts, setChapterDrafts] = useState<CologChapter[]>([]);
-	const [isChapterEditing, setIsChapterEditing] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
+	const chapterDrafts = useCologChapterDrafts({ initialChapters: INITIAL_MOCK_CHAPTERS });
 	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
 	const saveCologProfile = useSaveCologProfile();
 	const nameAvailability = useCheckNicknameAvailabilityMutation();
 
 	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
-	const isChapterDirty = chapterDrafts.some((chapter, index) => chapter.name !== chapters[index]?.name);
 	const isWorkspaceDirty =
 		activeTab === 'profile'
 			? isProfileDirty
 			: activeTab === 'members'
 				? memberDrafts.isDirty
 				: activeTab === 'chapters'
-					? isChapterDirty
+					? chapterDrafts.isDirty
 					: false;
 
 	const commitTabChange = useCallback(
@@ -183,13 +180,12 @@ function CologSettingsWorkspaceContent({
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
-			setChapterDrafts([]);
-			setIsChapterEditing(false);
-			setIsChapterCreateModalOpen(false);
+			chapterDrafts.handleCancelEditing();
+			chapterDrafts.setIsCreateModalOpen(false);
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', path);
 		},
-		[memberDrafts, nameAvailability, profileForm, savedProfile],
+		[chapterDrafts, memberDrafts, nameAvailability, profileForm, savedProfile],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
@@ -245,38 +241,6 @@ function CologSettingsWorkspaceContent({
 		} catch {
 			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
 		}
-	};
-
-	const handleAddMockChapter = (chapterName: string) => {
-		setChapters((currentChapters) => [
-			...currentChapters,
-			{
-				id: Math.max(0, ...currentChapters.map((chapter) => chapter.id)) + 1,
-				name: chapterName,
-				postCount: 0,
-			},
-		]);
-	};
-
-	const handleStartChapterEditing = () => {
-		setChapterDrafts(chapters.map((chapter) => ({ ...chapter })));
-		setIsChapterEditing(true);
-	};
-
-	const handleCancelChapterEditing = () => {
-		setChapterDrafts([]);
-		setIsChapterEditing(false);
-	};
-
-	const handleChapterNameChange = (chapterId: number, name: string) => {
-		setChapterDrafts((currentChapters) =>
-			currentChapters.map((chapter) => (chapter.id === chapterId ? { ...chapter, name } : chapter)),
-		);
-	};
-
-	const handleSaveChapterEditing = () => {
-		setChapters(chapterDrafts);
-		handleCancelChapterEditing();
 	};
 
 	const profileErrorMessage = saveCologProfile.isError
@@ -358,7 +322,7 @@ function CologSettingsWorkspaceContent({
 		}
 
 		if (activeTab === 'chapters') {
-			if (isChapterEditing) {
+			if (chapterDrafts.isEditing) {
 				return (
 					<>
 						<Button
@@ -366,7 +330,7 @@ function CologSettingsWorkspaceContent({
 							variant="secondary"
 							size="md"
 							className="w-full sm:w-30"
-							onClick={handleCancelChapterEditing}
+							onClick={chapterDrafts.handleCancelEditing}
 						>
 							취소
 						</Button>
@@ -374,8 +338,8 @@ function CologSettingsWorkspaceContent({
 							type="button"
 							size="md"
 							className="w-full sm:w-30"
-							disabled={!isChapterDirty}
-							onClick={handleSaveChapterEditing}
+							disabled={!chapterDrafts.isDirty}
+							onClick={chapterDrafts.handleSave}
 						>
 							저장
 						</Button>
@@ -390,11 +354,16 @@ function CologSettingsWorkspaceContent({
 						variant="secondary"
 						size="md"
 						className="w-full sm:w-30"
-						onClick={handleStartChapterEditing}
+						onClick={chapterDrafts.handleStartEditing}
 					>
 						챕터 수정
 					</Button>
-					<Button type="button" size="md" className="w-full sm:w-30" onClick={() => setIsChapterCreateModalOpen(true)}>
+					<Button
+						type="button"
+						size="md"
+						className="w-full sm:w-30"
+						onClick={() => chapterDrafts.setIsCreateModalOpen(true)}
+					>
 						+ 챕터 추가
 					</Button>
 				</>
@@ -454,14 +423,14 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'chapters' && (
 					<>
 						<CologChapterManagementSection
-							chapters={isChapterEditing ? chapterDrafts : chapters}
-							isEditing={isChapterEditing}
-							onChapterNameChange={handleChapterNameChange}
+							chapters={chapterDrafts.displayedChapters}
+							isEditing={chapterDrafts.isEditing}
+							onChapterNameChange={chapterDrafts.handleNameChange}
 						/>
 						<ChapterCreateModal
-							open={isChapterCreateModalOpen}
-							onClose={() => setIsChapterCreateModalOpen(false)}
-							onCreate={handleAddMockChapter}
+							open={chapterDrafts.isCreateModalOpen}
+							onClose={() => chapterDrafts.setIsCreateModalOpen(false)}
+							onCreate={chapterDrafts.handleAddChapter}
 						/>
 					</>
 				)}
