@@ -61,7 +61,7 @@ export function usePostPublicationSettings({ initialSettings }: UsePostPublicati
 
 	const validatePublicationSettings = useCallback(() => {
 		if (settings.blog === null) {
-			setCologError('Co-log를 선택해 주세요.');
+			setCologError('코로그를 선택해 주세요.');
 			return false;
 		}
 
