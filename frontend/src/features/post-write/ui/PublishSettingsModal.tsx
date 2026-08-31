@@ -110,7 +110,6 @@ export default function PublishSettingsModal({
 								직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.
 							</p>
 							<div className={`mt-4 grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
-								{/* 브라우저에서 선택한 이미지 파일은 공용 ImageUploader를 통해 부모에 전달됩니다. */}
 								<ImageUploader
 									fullWidth
 									buttonLabel={hasRepresentativeImage ? '이미지 변경' : '이미지 선택'}
