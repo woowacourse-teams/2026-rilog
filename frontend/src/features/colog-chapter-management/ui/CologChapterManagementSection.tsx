@@ -1,5 +1,6 @@
 import type { CologChapter } from '../model/colog-chapter';
 
+import ChapterCreateModal from './ChapterCreateModal';
 import CologChapterRow from './CologChapterRow';
 
 interface CologChapterManagementSectionProps {
@@ -7,6 +8,9 @@ interface CologChapterManagementSectionProps {
 	isEditing?: boolean;
 	onChapterNameChange?: (chapterId: number, name: string) => void;
 	onDeleteChapter?: (chapter: CologChapter) => void;
+	isCreateModalOpen?: boolean;
+	onCloseCreateModal?: () => void;
+	onCreateChapter?: (name: string) => void;
 }
 
 export default function CologChapterManagementSection({
@@ -14,6 +18,9 @@ export default function CologChapterManagementSection({
 	isEditing = false,
 	onChapterNameChange,
 	onDeleteChapter,
+	isCreateModalOpen = false,
+	onCloseCreateModal,
+	onCreateChapter,
 }: CologChapterManagementSectionProps) {
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
@@ -51,6 +58,9 @@ export default function CologChapterManagementSection({
 					</tbody>
 				</table>
 			</div>
+			{onCloseCreateModal !== undefined && onCreateChapter !== undefined && (
+				<ChapterCreateModal open={isCreateModalOpen} onClose={onCloseCreateModal} onCreate={onCreateChapter} />
+			)}
 		</section>
 	);
 }

@@ -7,7 +7,6 @@ import type { FormEvent } from 'react';
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
 import { useCologChapterDrafts } from '@/features/colog-chapter-management/hooks/use-colog-chapter-drafts';
 import type { CologChapter } from '@/features/colog-chapter-management/model/colog-chapter';
-import ChapterCreateModal from '@/features/colog-chapter-management/ui/ChapterCreateModal';
 import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
@@ -421,18 +420,14 @@ function CologSettingsWorkspaceContent({
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
 				{activeTab === 'chapters' && (
-					<>
-						<CologChapterManagementSection
-							chapters={chapterDrafts.displayedChapters}
-							isEditing={chapterDrafts.isEditing}
-							onChapterNameChange={chapterDrafts.handleNameChange}
-						/>
-						<ChapterCreateModal
-							open={chapterDrafts.isCreateModalOpen}
-							onClose={() => chapterDrafts.setIsCreateModalOpen(false)}
-							onCreate={chapterDrafts.handleAddChapter}
-						/>
-					</>
+					<CologChapterManagementSection
+						chapters={chapterDrafts.displayedChapters}
+						isEditing={chapterDrafts.isEditing}
+						onChapterNameChange={chapterDrafts.handleNameChange}
+						isCreateModalOpen={chapterDrafts.isCreateModalOpen}
+						onCloseCreateModal={() => chapterDrafts.setIsCreateModalOpen(false)}
+						onCreateChapter={chapterDrafts.handleAddChapter}
+					/>
 				)}
 				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>

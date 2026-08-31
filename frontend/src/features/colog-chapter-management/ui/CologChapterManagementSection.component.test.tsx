@@ -20,4 +20,17 @@ describe('CologChapterManagementSection', () => {
 		expect(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '백엔드 챕터 삭제' })).toBeInTheDocument();
 	});
+
+	it('전달받은 상태에 따라 챕터 추가 모달을 렌더링한다', () => {
+		render(
+			<CologChapterManagementSection
+				chapters={CHAPTERS}
+				isCreateModalOpen
+				onCloseCreateModal={vi.fn()}
+				onCreateChapter={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
+	});
 });
