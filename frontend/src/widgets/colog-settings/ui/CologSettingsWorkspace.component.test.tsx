@@ -274,6 +274,17 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('table', { name: '팀 멤버 목록' })).toBeInTheDocument();
 	});
 
+	it('챕터 관리 탭을 선택하면 챕터 목록을 렌더링한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+
+		expect(screen.getByRole('tab', { name: '챕터 관리' })).toHaveAttribute('aria-selected', 'true');
+		expect(screen.getByRole('heading', { name: '챕터 관리' })).toBeInTheDocument();
+		expect(screen.getByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
+	});
+
 	it('프로필, 멤버 관리, 위험 영역을 같은 설정 패널 위치에서 전환한다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace slug="team-rilog" />);

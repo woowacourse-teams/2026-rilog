@@ -5,7 +5,7 @@ export const APP_ROUTES = {
 	write: '/write',
 } as const;
 
-export const COLOG_SETTINGS_TAB_IDS = ['profile', 'members', 'danger'] as const;
+export const COLOG_SETTINGS_TAB_IDS = ['profile', 'members', 'chapters', 'danger'] as const;
 export type CologSettingsTab = (typeof COLOG_SETTINGS_TAB_IDS)[number];
 
 export const RILOG_SETTINGS_TAB_IDS = ['profile', 'danger'] as const;

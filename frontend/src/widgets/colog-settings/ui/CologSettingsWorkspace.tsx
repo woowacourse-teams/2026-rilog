@@ -5,6 +5,8 @@ import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
+import type { CologChapter } from '@/features/colog-chapter-management/model/colog-chapter';
+import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
 import { mapCologMembersResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
@@ -49,11 +51,30 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 		title: '멤버 관리',
 		description: '팀 멤버의 프로필, 역할, 권한을 관리합니다.',
 	},
+	chapters: {
+		title: '챕터 관리',
+		description: '팀의 챕터와 게시글을 관리합니다.',
+	},
 	danger: {
 		title: '위험 영역',
 		description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.',
 	},
 };
+
+// TODO: 챕터 조회 API의 게시글 수 계약이 준비되면 이 목업 목록을 조회 결과로 대체한다.
+const MOCK_CHAPTERS: CologChapter[] = [
+	{ id: 1, name: '프론트엔드', postCount: 3 },
+	{ id: 2, name: '백엔드', postCount: 7 },
+	{ id: 3, name: '백엔드', postCount: 7 },
+	{ id: 4, name: '백엔드', postCount: 7 },
+	{ id: 5, name: '백엔드', postCount: 7 },
+	{ id: 6, name: '백엔드', postCount: 7 },
+	{ id: 7, name: '백엔드', postCount: 7 },
+	{ id: 8, name: '백엔드', postCount: 7 },
+	{ id: 9, name: '백엔드', postCount: 7 },
+	{ id: 10, name: '백엔드', postCount: 7 },
+	{ id: 11, name: '백엔드', postCount: 7 },
+];
 
 const getChangedProfileFields = (
 	previousValue: CologProfileSettingsValue,
@@ -339,6 +360,7 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'members' && (
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
+				{activeTab === 'chapters' && <CologChapterManagementSection chapters={MOCK_CHAPTERS} />}
 				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 

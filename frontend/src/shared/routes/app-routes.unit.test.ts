@@ -37,6 +37,7 @@ describe('app routes', () => {
 	it('코로그 설정 탭 경로를 만든다', () => {
 		expect(buildCologSettingsPath('rilog', 'profile')).toBe('/@rilog/settings?tab=profile');
 		expect(buildCologSettingsPath('rilog', 'members')).toBe('/@rilog/settings?tab=members');
+		expect(buildCologSettingsPath('rilog', 'chapters')).toBe('/@rilog/settings?tab=chapters');
 		expect(buildCologSettingsPath('rilog', 'danger')).toBe('/@rilog/settings?tab=danger');
 	});
 
