@@ -310,6 +310,21 @@ function CologSettingsWorkspaceContent({
 			);
 		}
 
+		if (activeTab === 'chapters') {
+			return (
+				<>
+					{/* TODO: 챕터 수정 기능 연동 */}
+					<Button type="button" variant="secondary" size="md" className="w-full sm:w-30">
+						챕터 수정
+					</Button>
+					{/* TODO: 챕터 추가 기능 연동 */}
+					<Button type="button" size="md" className="w-full sm:w-30">
+						+ 챕터 추가
+					</Button>
+				</>
+			);
+		}
+
 		return undefined;
 	};
 
