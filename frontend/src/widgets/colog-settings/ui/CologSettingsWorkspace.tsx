@@ -419,16 +419,7 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'members' && (
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
-				{activeTab === 'chapters' && (
-					<CologChapterManagementSection
-						chapters={chapterDrafts.displayedChapters}
-						isEditing={chapterDrafts.isEditing}
-						onChapterNameChange={chapterDrafts.handleNameChange}
-						isCreateModalOpen={chapterDrafts.isCreateModalOpen}
-						onCloseCreateModal={() => chapterDrafts.setIsCreateModalOpen(false)}
-						onCreateChapter={chapterDrafts.handleAddChapter}
-					/>
-				)}
+				{activeTab === 'chapters' && <CologChapterManagementSection drafts={chapterDrafts} />}
 				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 

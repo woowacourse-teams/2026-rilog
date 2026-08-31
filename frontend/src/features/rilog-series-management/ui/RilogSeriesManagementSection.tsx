@@ -1,27 +1,16 @@
-import type { RilogSeries } from '../model/rilog-series';
+import type { useRilogSeriesDrafts } from '../hooks/use-rilog-series-drafts';
 
 import RilogSeriesRow from './RilogSeriesRow';
 import SeriesCreateModal from './SeriesCreateModal';
 
 interface RilogSeriesManagementSectionProps {
-	series: RilogSeries[];
-	isEditing?: boolean;
-	onSeriesNameChange?: (seriesId: number, name: string) => void;
-	onDeleteSeries?: (series: RilogSeries) => void;
-	isCreateModalOpen?: boolean;
-	onCloseCreateModal?: () => void;
-	onCreateSeries?: (name: string) => void;
+	drafts: ReturnType<typeof useRilogSeriesDrafts>;
 }
 
-export default function RilogSeriesManagementSection({
-	series,
-	isEditing = false,
-	onSeriesNameChange,
-	onDeleteSeries,
-	isCreateModalOpen = false,
-	onCloseCreateModal,
-	onCreateSeries,
-}: RilogSeriesManagementSectionProps) {
+export default function RilogSeriesManagementSection({ drafts }: RilogSeriesManagementSectionProps) {
+	const { displayedSeries, isEditing, isCreateModalOpen, setIsCreateModalOpen, handleNameChange, handleCreateSeries } =
+		drafts;
+
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
 			<div className="overflow-x-auto overflow-y-hidden overscroll-x-contain contain-[paint]">
@@ -46,21 +35,18 @@ export default function RilogSeriesManagementSection({
 						</tr>
 					</thead>
 					<tbody>
-						{series.map((item) => (
-							<RilogSeriesRow
-								key={item.id}
-								series={item}
-								isEditing={isEditing}
-								onNameChange={onSeriesNameChange}
-								onDelete={onDeleteSeries}
-							/>
+						{displayedSeries.map((item) => (
+							<RilogSeriesRow key={item.id} series={item} isEditing={isEditing} onNameChange={handleNameChange} />
 						))}
 					</tbody>
 				</table>
 			</div>
-			{onCloseCreateModal !== undefined && onCreateSeries !== undefined && (
-				<SeriesCreateModal open={isCreateModalOpen} onClose={onCloseCreateModal} onCreate={onCreateSeries} />
-			)}
+
+			<SeriesCreateModal
+				open={isCreateModalOpen}
+				onClose={() => setIsCreateModalOpen(false)}
+				onCreate={handleCreateSeries}
+			/>
 		</section>
 	);
 }

@@ -286,16 +286,7 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 						)}
 					</>
 				)}
-				{activeTab === 'series' && (
-					<RilogSeriesManagementSection
-						series={seriesDrafts.displayedSeries}
-						isEditing={seriesDrafts.isEditing}
-						onSeriesNameChange={seriesDrafts.handleNameChange}
-						isCreateModalOpen={seriesDrafts.isCreateModalOpen}
-						onCloseCreateModal={() => seriesDrafts.setIsCreateModalOpen(false)}
-						onCreateSeries={seriesDrafts.handleCreateSeries}
-					/>
-				)}
+				{activeTab === 'series' && <RilogSeriesManagementSection drafts={seriesDrafts} />}
 				{activeTab === 'danger' && <RilogDangerZoneSection />}
 			</div>
 			<ConfirmModal

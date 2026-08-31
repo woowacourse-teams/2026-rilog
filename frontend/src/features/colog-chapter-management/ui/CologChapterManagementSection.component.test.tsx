@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { useCologChapterDrafts } from '../hooks/use-colog-chapter-drafts';
 import type { CologChapter } from '../model/colog-chapter';
 
 import CologChapterManagementSection from './CologChapterManagementSection';
@@ -10,9 +11,24 @@ const CHAPTERS: CologChapter[] = [
 	{ id: 2, name: '백엔드', postCount: 7 },
 ];
 
+const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useCologChapterDrafts> => ({
+	chapters: CHAPTERS,
+	displayedChapters: CHAPTERS,
+	draftChapters: [],
+	isEditing: false,
+	isDirty: false,
+	isCreateModalOpen,
+	setIsCreateModalOpen: vi.fn(),
+	handleStartEditing: vi.fn(),
+	handleCancelEditing: vi.fn(),
+	handleSave: vi.fn(),
+	handleNameChange: vi.fn(),
+	handleAddChapter: vi.fn(),
+});
+
 describe('CologChapterManagementSection', () => {
 	it('챕터 목록과 삭제 작업을 렌더링한다', () => {
-		render(<CologChapterManagementSection chapters={CHAPTERS} onDeleteChapter={vi.fn()} />);
+		render(<CologChapterManagementSection drafts={createDrafts()} />);
 
 		expect(screen.getByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '챕터' })).toBeInTheDocument();
@@ -22,14 +38,7 @@ describe('CologChapterManagementSection', () => {
 	});
 
 	it('전달받은 상태에 따라 챕터 추가 모달을 렌더링한다', () => {
-		render(
-			<CologChapterManagementSection
-				chapters={CHAPTERS}
-				isCreateModalOpen
-				onCloseCreateModal={vi.fn()}
-				onCreateChapter={vi.fn()}
-			/>,
-		);
+		render(<CologChapterManagementSection drafts={createDrafts(true)} />);
 
 		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
 	});

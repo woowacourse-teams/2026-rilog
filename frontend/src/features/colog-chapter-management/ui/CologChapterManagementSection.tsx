@@ -1,27 +1,16 @@
-import type { CologChapter } from '../model/colog-chapter';
+import type { useCologChapterDrafts } from '../hooks/use-colog-chapter-drafts';
 
 import ChapterCreateModal from './ChapterCreateModal';
 import CologChapterRow from './CologChapterRow';
 
 interface CologChapterManagementSectionProps {
-	chapters: CologChapter[];
-	isEditing?: boolean;
-	onChapterNameChange?: (chapterId: number, name: string) => void;
-	onDeleteChapter?: (chapter: CologChapter) => void;
-	isCreateModalOpen?: boolean;
-	onCloseCreateModal?: () => void;
-	onCreateChapter?: (name: string) => void;
+	drafts: ReturnType<typeof useCologChapterDrafts>;
 }
 
-export default function CologChapterManagementSection({
-	chapters,
-	isEditing = false,
-	onChapterNameChange,
-	onDeleteChapter,
-	isCreateModalOpen = false,
-	onCloseCreateModal,
-	onCreateChapter,
-}: CologChapterManagementSectionProps) {
+export default function CologChapterManagementSection({ drafts }: CologChapterManagementSectionProps) {
+	const { displayedChapters, isEditing, isCreateModalOpen, setIsCreateModalOpen, handleNameChange, handleAddChapter } =
+		drafts;
+
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
 			<div className="overflow-x-auto overflow-y-hidden overscroll-x-contain contain-[paint]">
@@ -46,21 +35,23 @@ export default function CologChapterManagementSection({
 						</tr>
 					</thead>
 					<tbody>
-						{chapters.map((chapter) => (
+						{displayedChapters.map((chapter) => (
 							<CologChapterRow
 								key={chapter.id}
 								chapter={chapter}
 								isEditing={isEditing}
-								onNameChange={onChapterNameChange}
-								onDelete={onDeleteChapter}
+								onNameChange={handleNameChange}
 							/>
 						))}
 					</tbody>
 				</table>
 			</div>
-			{onCloseCreateModal !== undefined && onCreateChapter !== undefined && (
-				<ChapterCreateModal open={isCreateModalOpen} onClose={onCloseCreateModal} onCreate={onCreateChapter} />
-			)}
+
+			<ChapterCreateModal
+				open={isCreateModalOpen}
+				onClose={() => setIsCreateModalOpen(false)}
+				onCreate={handleAddChapter}
+			/>
 		</section>
 	);
 }
