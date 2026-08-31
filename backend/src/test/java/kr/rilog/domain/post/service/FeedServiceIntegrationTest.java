@@ -7,7 +7,7 @@ import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.Post;
     import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.exception.PostException;
@@ -188,12 +188,12 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.publicPublishedRilogPost(otherRilog, otherAuthor));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(targetRilog.getSlug(), null, DEFAULT_SEARCH);
+        BlogFeedPostResponse result = feedService.readBlogPosts(targetRilog.getSlug(), null, DEFAULT_SEARCH);
 
         // then
         assertThat(result.type()).isEqualTo(RILOG.name());
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(targetPost.getId());
     }
 
@@ -207,7 +207,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, DEFAULT_SEARCH);
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts().getFirst().chapter())
@@ -228,15 +228,15 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.publicPublishedColog(rilog, otherColog, author));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, DEFAULT_SEARCH);
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, DEFAULT_SEARCH);
 
         // then
         assertThat(result.type()).isEqualTo(COLOG.name());
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(latestPost.getId(), olderPost.getId());
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::owner)
+                .extracting(BlogFeedPostResponse.PostItemResponse::owner)
                 .containsOnly(expectedPublicBlogOwner(colog));
     }
 
@@ -251,7 +251,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.publicPublishedColog(rilog, colog, author, chapter));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, DEFAULT_SEARCH);
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts().getFirst().chapter())
@@ -269,11 +269,11 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post cologPost = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, DEFAULT_SEARCH);
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(cologPost.getId(), rilogPost.getId());
     }
 
@@ -288,7 +288,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post privateCologPost = savePost(PostFixture.privatePublishedCologPost(rilog, colog, owner));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(
+        BlogFeedPostResponse result = feedService.readBlogPosts(
                 rilog.getSlug(),
                 owner.getId(),
                 DEFAULT_SEARCH
@@ -296,7 +296,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(privateCologPost.getId(), privateRilogPost.getId());
     }
 
@@ -311,7 +311,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.privatePublishedRilogPost(rilog, owner));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(
+        BlogFeedPostResponse result = feedService.readBlogPosts(
                 rilog.getSlug(),
                 requester.getId(),
                 DEFAULT_SEARCH
@@ -319,7 +319,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(publicPost.getId());
     }
 
@@ -337,7 +337,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.privatePublishedCologPost(otherRilog, colog, otherAuthor));
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(
+        BlogFeedPostResponse result = feedService.readBlogPosts(
                 colog.getSlug(),
                 requester.getId(),
                 DEFAULT_SEARCH
@@ -345,7 +345,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(requesterPrivatePost.getId(), publicPost.getId());
     }
 
@@ -361,11 +361,11 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(Category.DAILY, null, null, 0, 10);
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, command);
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, command);
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(dailyCologPost.getId());
     }
 
@@ -381,11 +381,11 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(Category.DAILY, null, null, 0, 10);
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, command);
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, command);
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(dailyPost.getId());
     }
 
@@ -402,11 +402,11 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, targetChapter.getId(), null, 0, 10);
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, command);
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, command);
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(targetPost.getId());
     }
 
@@ -422,7 +422,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, cologChapter.getId(), null, 0, 10);
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, command);
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, command);
 
         // then
         assertThat(result.posts()).isEmpty();
@@ -443,7 +443,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, targetChapter.getId(), null, 0, 10);
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(
+        BlogFeedPostResponse result = feedService.readBlogPosts(
                 colog.getSlug(),
                 requester.getId(),
                 command
@@ -451,7 +451,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(privatePost.getId(), publicPost.getId());
     }
 
@@ -479,11 +479,11 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         );
 
         // when
-        PublicBlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), owner.getId(), command);
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), owner.getId(), command);
 
         // then
         assertThat(result.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(targetPrivateDailyPost.getId(), targetDailyPost.getId());
     }
 
@@ -607,8 +607,8 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         );
     }
 
-    private PublicBlogFeedPostResponse.OwnerResponse expectedPublicBlogOwner(Blog owner) {
-        return new PublicBlogFeedPostResponse.OwnerResponse(
+    private BlogFeedPostResponse.OwnerResponse expectedPublicBlogOwner(Blog owner) {
+        return new BlogFeedPostResponse.OwnerResponse(
                 owner.getBlogType(),
                 owner.getId(),
                 owner.getSlug(),

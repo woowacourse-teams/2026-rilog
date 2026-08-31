@@ -6,7 +6,7 @@ import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
@@ -43,7 +43,7 @@ public class FeedService {
         return FullFeedPostResponse.from(feed);
     }
 
-    public PublicBlogFeedPostResponse readBlogPosts(String slug, Long requesterId, BlogFeedSearchCommand command) {
+    public BlogFeedPostResponse readBlogPosts(String slug, Long requesterId, BlogFeedSearchCommand command) {
         Blog blog = getBlog(slug);
         validateFeedFilters(blog, command);
         Long targetCologId = getTargetCologId(command);
@@ -53,7 +53,7 @@ public class FeedService {
                 ? readCologPosts(blog, requesterId, command, pageable)
                 : readRilogPosts(blog, targetCologId, requesterId, command, pageable);
 
-        return PublicBlogFeedPostResponse.from(blog.getBlogType(), posts);
+        return BlogFeedPostResponse.from(blog.getBlogType(), posts);
     }
 
     private Slice<PostFullFeedRow> readCologPosts(

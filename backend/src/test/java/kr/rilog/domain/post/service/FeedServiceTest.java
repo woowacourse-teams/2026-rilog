@@ -6,7 +6,7 @@ import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
@@ -147,23 +147,23 @@ class FeedServiceTest {
         )).thenReturn(new SliceImpl<>(rows, pageable, true));
 
         // when
-        PublicBlogFeedPostResponse response = feedService.readBlogPosts(RILOG_SLUG, null, DEFAULT_SEARCH);
+        BlogFeedPostResponse response = feedService.readBlogPosts(RILOG_SLUG, null, DEFAULT_SEARCH);
 
         // then
         assertThat(response.type()).isEqualTo("RILOG");
         assertThat(response.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
         assertThat(response.posts())
                 .extracting(post -> post.author().nickname())
                 .containsExactly("작성자", "작성자");
         assertThat(response.posts().get(0).owner())
-                .extracting(PublicBlogFeedPostResponse.OwnerResponse::type)
+                .extracting(BlogFeedPostResponse.OwnerResponse::type)
                 .isEqualTo(BlogType.RILOG);
         assertThat(response.posts().get(1).owner())
                 .extracting(
-                        PublicBlogFeedPostResponse.OwnerResponse::type,
-                        PublicBlogFeedPostResponse.OwnerResponse::slug
+                        BlogFeedPostResponse.OwnerResponse::type,
+                        BlogFeedPostResponse.OwnerResponse::slug
                 )
                 .containsExactly(BlogType.COLOG, COLOG_SLUG);
         assertThat(response.page()).isEqualTo(PAGE);
@@ -202,12 +202,12 @@ class FeedServiceTest {
         )).thenReturn(new SliceImpl<>(rows, pageable, false));
 
         // when
-        PublicBlogFeedPostResponse response = feedService.readBlogPosts(COLOG_SLUG, null, DEFAULT_SEARCH);
+        BlogFeedPostResponse response = feedService.readBlogPosts(COLOG_SLUG, null, DEFAULT_SEARCH);
 
         // then
         assertThat(response.type()).isEqualTo("COLOG");
         assertThat(response.posts())
-                .extracting(PublicBlogFeedPostResponse.PostItemResponse::postId)
+                .extracting(BlogFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(2L, 1L);
         assertThat(response.posts())
                 .extracting(post -> post.author().nickname())

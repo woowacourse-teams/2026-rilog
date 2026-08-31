@@ -10,7 +10,7 @@ import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.service.FeedService;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
@@ -128,9 +128,9 @@ class FeedControllerTest {
         FeedService feedService = mock(FeedService.class);
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, null, null, 1, 2);
         when(feedService.readBlogPosts("rilog-team", null, command))
-                .thenReturn(new PublicBlogFeedPostResponse(
+                .thenReturn(new BlogFeedPostResponse(
                         "COLOG",
-                        List.of(new PublicBlogFeedPostResponse.PostItemResponse(
+                        List.of(new BlogFeedPostResponse.PostItemResponse(
                                 10L,
                                 "팀 게시글 제목",
                                 "https://example.com/thumbnail.png",
@@ -138,13 +138,13 @@ class FeedControllerTest {
                                 "PUBLIC",
                                 LocalDateTime.of(2026, 8, 13, 12, 0),
                                 new ChapterResponse(21L, "회고", 1),
-                                new PublicBlogFeedPostResponse.AuthorResponse(
+                                new BlogFeedPostResponse.AuthorResponse(
                                         1L,
                                         "작성자",
                                         "writer",
                                         "https://example.com/profile.png"
                                 ),
-                                new PublicBlogFeedPostResponse.OwnerResponse(
+                                new BlogFeedPostResponse.OwnerResponse(
                                         BlogType.COLOG,
                                         2L,
                                         "rilog-team",
@@ -250,8 +250,8 @@ class FeedControllerTest {
                 .build();
     }
 
-    private PublicBlogFeedPostResponse emptyBlogFeedResponse(String blogType) {
-        return new PublicBlogFeedPostResponse(blogType, List.of(), 0, 12, 0, false);
+    private BlogFeedPostResponse emptyBlogFeedResponse(String blogType) {
+        return new BlogFeedPostResponse(blogType, List.of(), 0, 12, 0, false);
     }
 
     private static class FixedAccessTokenProvider implements AccessTokenProvider {

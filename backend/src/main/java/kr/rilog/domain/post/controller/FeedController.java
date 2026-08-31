@@ -4,7 +4,7 @@ import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.post.controller.apispec.FeedApiSpec;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.service.FeedService;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
@@ -31,7 +31,7 @@ public class FeedController implements FeedApiSpec {
 
     @OptionalAuthGuard
     @GetMapping("/blogs/{slug}/posts")
-    public ApiResponse<PublicBlogFeedPostResponse> getBlogPosts(
+    public ApiResponse<BlogFeedPostResponse> getBlogPosts(
             @PathVariable String slug,
             @NullableLoginUserId Long requesterId,
             @RequestParam(required = false) Category category,
@@ -47,7 +47,7 @@ public class FeedController implements FeedApiSpec {
                 page,
                 size
         );
-        PublicBlogFeedPostResponse data = feedService.readBlogPosts(slug, requesterId, command);
+        BlogFeedPostResponse data = feedService.readBlogPosts(slug, requesterId, command);
         return ApiResponse.response(HttpStatus.OK, "블로그 게시글 목록 조회에 성공했습니다.", data);
     }
 
