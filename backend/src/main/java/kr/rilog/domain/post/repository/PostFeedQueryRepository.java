@@ -1,6 +1,7 @@
 package kr.rilog.domain.post.repository;
 
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
@@ -86,14 +87,21 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             LEFT JOIN post.chapter chapter
             WHERE post.rilog.id = :rilogId
               AND post.status = :status
-              AND post.visibility = :visibility
+              AND (post.visibility = :publicVisibility OR post.user.id = :requesterId)
+              AND (:category IS NULL OR post.category = :category)
+              AND (:chapterId IS NULL OR (chapter.id = :chapterId AND chapter.blog.id = :rilogId))
+              AND (:targetCologId IS NULL OR colog.id = :targetCologId)
               AND post.deletedAt IS NULL
             ORDER BY post.publishedAt DESC, post.id DESC
             """)
-    Slice<PostFullFeedRow> findPublicRilogPosts(
+    Slice<PostFullFeedRow> findRilogFeedPosts(
             @Param("rilogId") Long rilogId,
+            @Param("requesterId") Long requesterId,
             @Param("status") PostStatus status,
-            @Param("visibility") PostVisibility visibility,
+            @Param("publicVisibility") PostVisibility publicVisibility,
+            @Param("category") Category category,
+            @Param("chapterId") Long chapterId,
+            @Param("targetCologId") Long targetCologId,
             Pageable pageable
     );
 
@@ -127,14 +135,19 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             LEFT JOIN post.chapter chapter
             WHERE post.colog.id = :cologId
               AND post.status = :status
-              AND post.visibility = :visibility
+              AND (post.visibility = :publicVisibility OR post.user.id = :requesterId)
+              AND (:category IS NULL OR post.category = :category)
+              AND (:chapterId IS NULL OR (chapter.id = :chapterId AND chapter.blog.id = :cologId))
               AND post.deletedAt IS NULL
             ORDER BY post.publishedAt DESC, post.id DESC
             """)
-    Slice<PostFullFeedRow> findPublicCologPosts(
+    Slice<PostFullFeedRow> findCologFeedPosts(
             @Param("cologId") Long cologId,
+            @Param("requesterId") Long requesterId,
             @Param("status") PostStatus status,
-            @Param("visibility") PostVisibility visibility,
+            @Param("publicVisibility") PostVisibility publicVisibility,
+            @Param("category") Category category,
+            @Param("chapterId") Long chapterId,
             Pageable pageable
     );
 
