@@ -3,6 +3,7 @@ import type { SettingsTabItem } from '@/shared/ui/settings/settings-tabs';
 
 const RILOG_SETTINGS_TAB_LABELS = {
 	profile: '프로필',
+	series: '시리즈 관리',
 	danger: '위험 영역',
 } satisfies Record<RilogSettingsTab, string>;
 

@@ -12,6 +12,9 @@ import { mapRilogProfileSettingsResponse } from '@/features/rilog-profile-manage
 import { isRilogProfileSettingsEqual } from '@/features/rilog-profile-management/lib/validate-rilog-profile-settings';
 import type { RilogProfileSettingsValue } from '@/features/rilog-profile-management/model/rilog-profile-settings';
 import RilogProfileSection from '@/features/rilog-profile-management/ui/RilogProfileSection';
+import { useRilogSeriesDrafts } from '@/features/rilog-series-management/hooks/use-rilog-series-drafts';
+import type { RilogSeries } from '@/features/rilog-series-management/model/rilog-series';
+import RilogSeriesManagementSection from '@/features/rilog-series-management/ui/RilogSeriesManagementSection';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
@@ -37,8 +40,15 @@ interface RilogSettingsWorkspaceContentProps {
 
 const TAB_HEADER_CONFIG: Record<RilogSettingsTab, { title: string; description: string }> = {
 	profile: { title: '프로필', description: '개인 기본 정보와 소개를 관리합니다.' },
+	series: { title: '시리즈 관리', description: '시리즈와 게시글을 관리합니다.' },
 	danger: { title: '위험 영역', description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.' },
 };
+
+// TODO: 시리즈 조회 API의 게시글 수 계약이 준비되면 이 목업 목록을 조회 결과로 대체한다.
+const INITIAL_MOCK_SERIES: RilogSeries[] = [
+	{ id: 1, name: '웹 개발', postCount: 3 },
+	{ id: 2, name: '기록', postCount: 7 },
+];
 
 export default function RilogSettingsWorkspace({ slug, initialTab = 'profile' }: RilogSettingsWorkspaceProps) {
 	const profileQuery = useBlogPublicProfileQuery({
@@ -80,20 +90,24 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 	const [isNicknameAvailabilityRequired, setIsNicknameAvailabilityRequired] = useState(false);
 
 	const profileForm = useRilogProfileForm({ initialValue: savedProfile });
+	const seriesDrafts = useRilogSeriesDrafts({ initialSeries: INITIAL_MOCK_SERIES });
 	const saveRilogProfile = useSaveRilogProfile();
 	const nicknameAvailability = useCheckNicknameAvailabilityMutation();
 	const isProfileDirty = !isRilogProfileSettingsEqual(profileForm.value, savedProfile);
-	const isWorkspaceDirty = activeTab === 'profile' && isProfileDirty;
+	const isWorkspaceDirty =
+		activeTab === 'profile' ? isProfileDirty : activeTab === 'series' ? seriesDrafts.isDirty : false;
 
 	const commitTabChange = useCallback(
 		(nextTab: RilogSettingsTab, path: string) => {
 			profileForm.setValue(savedProfile);
 			nicknameAvailability.reset();
 			setIsNicknameAvailabilityRequired(false);
+			seriesDrafts.handleCancelEditing();
+			seriesDrafts.setIsCreateModalOpen(false);
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', path);
 		},
-		[nicknameAvailability, profileForm, savedProfile],
+		[nicknameAvailability, profileForm, savedProfile, seriesDrafts],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
@@ -161,18 +175,72 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 		? '닉네임 중복 확인이 필요합니다.'
 		: nicknameAvailabilityMessage;
 
-	const profileActions =
-		activeTab === 'profile' && isProfileDirty ? (
-			<Button
-				type="submit"
-				form="profile-settings-form"
-				size="md"
-				className="w-full sm:w-30"
-				isPending={saveRilogProfile.isPending}
-			>
-				변경사항 저장
-			</Button>
-		) : undefined;
+	const renderHeaderActions = () => {
+		if (activeTab === 'profile' && isProfileDirty) {
+			return (
+				<Button
+					type="submit"
+					form="profile-settings-form"
+					size="md"
+					className="w-full sm:w-30"
+					isPending={saveRilogProfile.isPending}
+				>
+					변경사항 저장
+				</Button>
+			);
+		}
+
+		if (activeTab === 'series') {
+			if (seriesDrafts.isEditing) {
+				return (
+					<>
+						<Button
+							type="button"
+							variant="secondary"
+							size="md"
+							className="w-full sm:w-30"
+							onClick={seriesDrafts.handleCancelEditing}
+						>
+							취소
+						</Button>
+						<Button
+							type="button"
+							size="md"
+							className="w-full sm:w-30"
+							disabled={!seriesDrafts.isDirty}
+							onClick={seriesDrafts.handleSave}
+						>
+							저장
+						</Button>
+					</>
+				);
+			}
+
+			return (
+				<>
+					<Button
+						type="button"
+						variant="secondary"
+						size="md"
+						className="w-full sm:w-30"
+						onClick={seriesDrafts.handleStartEditing}
+					>
+						시리즈 수정
+					</Button>
+					<Button
+						type="button"
+						size="md"
+						className="w-full sm:w-30"
+						onClick={() => seriesDrafts.setIsCreateModalOpen(true)}
+					>
+						+ 시리즈 추가
+					</Button>
+				</>
+			);
+		}
+
+		return undefined;
+	};
 
 	return (
 		<PageShell
@@ -185,7 +253,7 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 					idPrefix="rilog-settings"
 					title={TAB_HEADER_CONFIG[activeTab].title}
 					description={TAB_HEADER_CONFIG[activeTab].description}
-					actions={profileActions}
+					actions={renderHeaderActions()}
 					onTabChangeRequest={onTabChangeRequest}
 				/>
 			}
@@ -217,6 +285,16 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 							</p>
 						)}
 					</>
+				)}
+				{activeTab === 'series' && (
+					<RilogSeriesManagementSection
+						series={seriesDrafts.displayedSeries}
+						isEditing={seriesDrafts.isEditing}
+						onSeriesNameChange={seriesDrafts.handleNameChange}
+						isCreateModalOpen={seriesDrafts.isCreateModalOpen}
+						onCloseCreateModal={() => seriesDrafts.setIsCreateModalOpen(false)}
+						onCreateSeries={seriesDrafts.handleCreateSeries}
+					/>
 				)}
 				{activeTab === 'danger' && <RilogDangerZoneSection />}
 			</div>

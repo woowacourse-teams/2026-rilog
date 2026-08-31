@@ -48,7 +48,9 @@ describe('app routes', () => {
 
 	it('개인 설정 탭 경로를 만들고 지원하지 않는 값은 프로필로 해석한다', () => {
 		expect(buildRilogSettingsPath('rilog', 'profile')).toBe('/@rilog/settings?tab=profile');
+		expect(buildRilogSettingsPath('rilog', 'series')).toBe('/@rilog/settings?tab=series');
 		expect(buildRilogSettingsPath('rilog', 'danger')).toBe('/@rilog/settings?tab=danger');
+		expect(parseRilogSettingsTab('series')).toBe('series');
 		expect(parseRilogSettingsTab('members')).toBe('profile');
 		expect(parseRilogSettingsTab(['danger', 'profile'])).toBe('danger');
 	});
