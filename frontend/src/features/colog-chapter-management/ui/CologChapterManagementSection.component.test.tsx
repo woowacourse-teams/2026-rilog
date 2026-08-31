@@ -1,17 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { useCologChapterDrafts } from '../hooks/use-colog-chapter-drafts';
-import type { CologChapter } from '../model/colog-chapter';
+import type { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
+import type { Chapter } from '@/features/chapter-management/model/chapter';
 
 import CologChapterManagementSection from './CologChapterManagementSection';
 
-const CHAPTERS: CologChapter[] = [
+const CHAPTERS: Chapter[] = [
 	{ id: 1, name: '프론트엔드', postCount: 3 },
 	{ id: 2, name: '백엔드', postCount: 7 },
 ];
 
-const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useCologChapterDrafts> => ({
+const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useChapterDrafts> => ({
 	chapters: CHAPTERS,
 	displayedChapters: CHAPTERS,
 	draftChapters: [],

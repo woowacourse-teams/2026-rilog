@@ -1,20 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { useRilogSeriesDrafts } from '../hooks/use-rilog-series-drafts';
-import type { RilogSeries } from '../model/rilog-series';
+import type { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
+import type { Chapter } from '@/features/chapter-management/model/chapter';
 
 import RilogSeriesManagementSection from './RilogSeriesManagementSection';
 
-const SERIES: RilogSeries[] = [
+const SERIES: Chapter[] = [
 	{ id: 1, name: '웹 개발', postCount: 3 },
 	{ id: 2, name: '기록', postCount: 7 },
 ];
 
-const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useRilogSeriesDrafts> => ({
-	series: SERIES,
-	displayedSeries: SERIES,
-	draftSeries: [],
+const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useChapterDrafts> => ({
+	chapters: SERIES,
+	displayedChapters: SERIES,
+	draftChapters: [],
 	isEditing: false,
 	isDirty: false,
 	isCreateModalOpen,
@@ -23,7 +23,7 @@ const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useRilogSeri
 	handleCancelEditing: vi.fn(),
 	handleSave: vi.fn(),
 	handleNameChange: vi.fn(),
-	handleCreateSeries: vi.fn(),
+	handleAddChapter: vi.fn(),
 });
 
 describe('RilogSeriesManagementSection', () => {

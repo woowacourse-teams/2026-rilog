@@ -1,14 +1,13 @@
 'use client';
 
-import type { RilogSeries } from '../model/rilog-series';
-
+import type { Chapter } from '@/features/chapter-management/model/chapter';
 import Input from '@/shared/ui/input/Input';
 
 interface RilogSeriesRowProps {
-	series: RilogSeries;
+	series: Chapter;
 	isEditing?: boolean;
 	onNameChange?: (seriesId: number, name: string) => void;
-	onDelete?: (series: RilogSeries) => void;
+	onDelete?: (series: Chapter) => void;
 }
 
 export default function RilogSeriesRow({ series, isEditing = false, onNameChange, onDelete }: RilogSeriesRowProps) {

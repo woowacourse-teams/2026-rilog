@@ -1,14 +1,14 @@
-import type { useRilogSeriesDrafts } from '../hooks/use-rilog-series-drafts';
+import type { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
 
 import RilogSeriesRow from './RilogSeriesRow';
 import SeriesCreateModal from './SeriesCreateModal';
 
 interface RilogSeriesManagementSectionProps {
-	drafts: ReturnType<typeof useRilogSeriesDrafts>;
+	drafts: ReturnType<typeof useChapterDrafts>;
 }
 
 export default function RilogSeriesManagementSection({ drafts }: RilogSeriesManagementSectionProps) {
-	const { displayedSeries, isEditing, isCreateModalOpen, setIsCreateModalOpen, handleNameChange, handleCreateSeries } =
+	const { displayedChapters, isEditing, isCreateModalOpen, setIsCreateModalOpen, handleNameChange, handleAddChapter } =
 		drafts;
 
 	return (
@@ -35,7 +35,7 @@ export default function RilogSeriesManagementSection({ drafts }: RilogSeriesMana
 						</tr>
 					</thead>
 					<tbody>
-						{displayedSeries.map((item) => (
+						{displayedChapters.map((item) => (
 							<RilogSeriesRow key={item.id} series={item} isEditing={isEditing} onNameChange={handleNameChange} />
 						))}
 					</tbody>
@@ -45,7 +45,7 @@ export default function RilogSeriesManagementSection({ drafts }: RilogSeriesMana
 			<SeriesCreateModal
 				open={isCreateModalOpen}
 				onClose={() => setIsCreateModalOpen(false)}
-				onCreate={handleCreateSeries}
+				onCreate={handleAddChapter}
 			/>
 		</section>
 	);

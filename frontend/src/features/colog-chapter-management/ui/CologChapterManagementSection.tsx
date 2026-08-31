@@ -1,10 +1,10 @@
-import type { useCologChapterDrafts } from '../hooks/use-colog-chapter-drafts';
+import type { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
 
 import ChapterCreateModal from './ChapterCreateModal';
 import CologChapterRow from './CologChapterRow';
 
 interface CologChapterManagementSectionProps {
-	drafts: ReturnType<typeof useCologChapterDrafts>;
+	drafts: ReturnType<typeof useChapterDrafts>;
 }
 
 export default function CologChapterManagementSection({ drafts }: CologChapterManagementSectionProps) {

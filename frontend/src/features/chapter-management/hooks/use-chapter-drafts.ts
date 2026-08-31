@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { CologChapter } from '../model/colog-chapter';
+import type { Chapter } from '../model/chapter';
 
-export type CologChapterDraft = Pick<CologChapter, 'id' | 'name'>;
+export type ChapterDraft = Pick<Chapter, 'id' | 'name'>;
 
-interface UseCologChapterDraftsOptions {
-	initialChapters?: CologChapter[];
+interface UseChapterDraftsOptions {
+	initialChapters?: Chapter[];
 }
 
-export function useCologChapterDrafts({ initialChapters }: UseCologChapterDraftsOptions = {}) {
+export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = {}) {
 	const hasInitializedChapters = useRef(initialChapters !== undefined);
 	// TODO: 챕터 API 연동 시 state 대신 query 기반으로 변경
 	const [chapters, setChapters] = useState(() => initialChapters?.map((chapter) => ({ ...chapter })) ?? []);
-	const [draftChapters, setDraftChapters] = useState<CologChapterDraft[]>([]);
+	const [draftChapters, setDraftChapters] = useState<ChapterDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -62,7 +62,7 @@ export function useCologChapterDrafts({ initialChapters }: UseCologChapterDrafts
 
 		setDraftChapters((currentDrafts) => {
 			const currentDraft = currentDrafts.find((draft) => draft.id === chapterId);
-			const nextDraft: CologChapterDraft = { id: chapterId, name };
+			const nextDraft: ChapterDraft = { id: chapterId, name };
 
 			if (nextDraft.name === originalChapter.name) {
 				return currentDrafts.filter((draft) => draft.id !== chapterId);

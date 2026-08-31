@@ -5,8 +5,8 @@ import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
-import { useCologChapterDrafts } from '@/features/colog-chapter-management/hooks/use-colog-chapter-drafts';
-import type { CologChapter } from '@/features/colog-chapter-management/model/colog-chapter';
+import { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
+import type { Chapter } from '@/features/chapter-management/model/chapter';
 import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
@@ -63,7 +63,7 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 };
 
 // TODO: 챕터 조회 API의 게시글 수 계약이 준비되면 이 목업 목록을 조회 결과로 대체한다.
-const INITIAL_MOCK_CHAPTERS: CologChapter[] = [
+const INITIAL_MOCK_CHAPTERS: Chapter[] = [
 	{ id: 1, name: '프론트엔드', postCount: 3 },
 	{ id: 2, name: '백엔드', postCount: 7 },
 	{ id: 3, name: '백엔드', postCount: 7 },
@@ -157,7 +157,7 @@ function CologSettingsWorkspaceContent({
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
-	const chapterDrafts = useCologChapterDrafts({ initialChapters: INITIAL_MOCK_CHAPTERS });
+	const chapterDrafts = useChapterDrafts({ initialChapters: INITIAL_MOCK_CHAPTERS });
 	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
 	const saveCologProfile = useSaveCologProfile();

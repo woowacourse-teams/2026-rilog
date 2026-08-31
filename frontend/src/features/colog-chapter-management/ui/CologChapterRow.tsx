@@ -1,14 +1,13 @@
 'use client';
 
-import type { CologChapter } from '../model/colog-chapter';
-
+import type { Chapter } from '@/features/chapter-management/model/chapter';
 import Input from '@/shared/ui/input/Input';
 
 interface CologChapterRowProps {
-	chapter: CologChapter;
+	chapter: Chapter;
 	isEditing?: boolean;
 	onNameChange?: (chapterId: number, name: string) => void;
-	onDelete?: (chapter: CologChapter) => void;
+	onDelete?: (chapter: Chapter) => void;
 }
 
 export default function CologChapterRow({ chapter, isEditing = false, onNameChange, onDelete }: CologChapterRowProps) {
