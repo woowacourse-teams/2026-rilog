@@ -122,90 +122,89 @@ class BlogMemberTest {
     }
 
     @Test
-    @DisplayName("활성 OWNER와 ADMIN 멤버는 사용자를 초대할 수 있다")
-    void validateCanInviteAllowsActiveOwnerAndAdmin() {
+    @DisplayName("활성 OWNER와 ADMIN은 사용자를 초대할 수 있다.")
+    void inviteMemberAllowsActiveOwnerAndAdmin() {
         // given
         BlogMember ownerMember = createMember(BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember adminMember = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatCode(() -> ownerMember.validateCanInvite())
+        assertThatCode(() -> ownerMember.validateAdminPermission())
                 .doesNotThrowAnyException();
-        assertThatCode(() -> adminMember.validateCanInvite())
+        assertThatCode(() -> adminMember.validateAdminPermission())
                 .doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("MEMBER 권한의 팀 멤버는 사용자를 초대할 수 없다")
-    void validateCanInviteRejectsMemberPermission() {
+    @DisplayName("MEMBER는 사용자를 초대할 수 없다.")
+    void inviteMemberRejectsMemberPermission() {
         // given
         BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> member.validateCanInvite())
+        assertThatThrownBy(() -> member.validateAdminPermission())
                 .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_MEMBER_INVITE_FORBIDDEN.getMessage());
+                .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
     }
 
     @Test
-    @DisplayName("활성 상태가 아닌 팀 멤버는 사용자를 초대할 수 없다")
-    void validateCanInviteRejectsInactiveMember() {
+    @DisplayName("활성 상태가 아닌 팀 멤버는 사용자를 초대할 수 없다.")
+    void inviteMemberRejectsInactiveOwner() {
         // given
         BlogMember member = createMember(BlogPermission.OWNER, BlogMemberStatus.LEFT);
 
         // when & then
-        assertThatThrownBy(() -> member.validateCanInvite())
+        assertThatThrownBy(() -> member.validateAdminPermission())
                 .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_MEMBER_INVITE_FORBIDDEN.getMessage());
+                .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
     }
 
     @Test
-    @DisplayName("개인 블로그 멤버는 OWNER 권한이어도 사용자를 초대할 수 없다")
-    void validateCanInviteRejectsRilogMember() {
+    @DisplayName("개인 블로그 OWNER는 블로그를 관리할 수 있다.")
+    void manageBlogAllowsRilogOwner() {
         // given
         User owner = createUser(OWNER_ID);
         Blog rilog = createRilog(owner);
         BlogMember ownerMember = BlogMember.createOwner(rilog, owner, pastDate());
 
         // when & then
-        assertThatThrownBy(() -> ownerMember.validateCanInvite())
-                .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_MEMBER_INVITATION_PERMISSION_INVALID.getMessage());
-    }
-
-    @Test
-    @DisplayName("활성 ADMIN 멤버는 ADMIN 권한 검증을 통과한다.")
-    void validateHasAdminPermissionAllowsActiveAdmin() {
-        // given
-        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
-
-        // when & then
-        assertThatCode(admin::validateHasAdminPermission)
+        assertThatCode(ownerMember::validateAdminPermission)
                 .doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("ADMIN 권한이 아닌 멤버는 ADMIN 권한 검증에 실패한다.")
-    void validateHasAdminPermissionRejectsNonAdmin() {
+    @DisplayName("활성 ADMIN은 챕터를 관리할 수 있다.")
+    void manageChapterAllowsActiveAdmin() {
+        // given
+        BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatCode(admin::validateAdminPermission)
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("MEMBER는 챕터를 관리할 수 없다.")
+    void manageChapterRejectsMember() {
         // given
         BlogMember member = createMember(BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(member::validateHasAdminPermission)
+        assertThatThrownBy(member::validateAdminPermission)
                 .isInstanceOf(BlogException.class)
-                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
+                .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
     }
 
     @Test
-    @DisplayName("활성 상태가 아닌 ADMIN 멤버는 ADMIN 권한 검증에 실패한다.")
-    void validateHasAdminPermissionRejectsInactiveAdmin() {
+    @DisplayName("활성 상태가 아닌 ADMIN은 챕터를 관리할 수 없다.")
+    void manageChapterRejectsInactiveAdmin() {
         // given
         BlogMember admin = createMember(BlogPermission.ADMIN, BlogMemberStatus.LEFT);
 
         // when & then
-        assertThatThrownBy(admin::validateHasAdminPermission)
+        assertThatThrownBy(admin::validateAdminPermission)
                 .isInstanceOf(BlogException.class)
-                .hasMessage(ADMIN_PERMISSION_INVALID.getMessage());
+                .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
     }
 
     @Test

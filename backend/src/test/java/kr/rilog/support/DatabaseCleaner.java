@@ -4,14 +4,12 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Table;
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-@RequiredArgsConstructor
 public class DatabaseCleaner {
 
     private final JdbcTemplate jdbcTemplate;
@@ -19,6 +17,16 @@ public class DatabaseCleaner {
     private final PhysicalNamingStrategy physicalNamingStrategy;
 
     private List<String> tableNames;
+
+    public DatabaseCleaner(
+            JdbcTemplate jdbcTemplate,
+            EntityManagerFactory entityManagerFactory,
+            PhysicalNamingStrategy physicalNamingStrategy
+    ) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.entityManagerFactory = entityManagerFactory;
+        this.physicalNamingStrategy = physicalNamingStrategy;
+    }
 
     public void clean() {
         if (tableNames == null) {
