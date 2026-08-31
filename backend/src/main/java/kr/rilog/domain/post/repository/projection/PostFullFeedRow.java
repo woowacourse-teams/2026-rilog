@@ -14,6 +14,10 @@ public record PostFullFeedRow(
         PostVisibility visibility,
         LocalDateTime publishedAt,
 
+        Long chapterId,
+        String chapterName,
+        Integer chapterOrder,
+
         Long authorId,
         String authorNickname,
         String authorSlug,

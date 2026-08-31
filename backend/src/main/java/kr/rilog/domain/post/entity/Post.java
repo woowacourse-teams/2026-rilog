@@ -3,6 +3,7 @@ package kr.rilog.domain.post.entity;
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
@@ -58,6 +59,10 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "colog_id", nullable = true)
     private Blog colog;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chapter_id")
+    private Chapter chapter;
+
     @Column(length = 512)
     private String title;
 
@@ -80,19 +85,19 @@ public class Post extends BaseEntity {
 
     private LocalDateTime publishedAt;
 
-//    private Chapter chapter; // TODO 챕터 or 시리즈 추가 시, 구현 필요
-
     // THINK Mapper ... ?
     public static Post create(
             Blog colog,
             Blog rilog,
             User owner,
-            PostDetail detail
+            PostDetail detail,
+            Chapter chapter
     ) {
         return Post.builder()
                 .colog(colog)
                 .rilog(rilog)
                 .user(owner)
+                .chapter(chapter)
                 .title(detail.title())
                 .content(PostContent.from(detail.content()))
                 .category(detail.category())
@@ -106,12 +111,14 @@ public class Post extends BaseEntity {
     public static Post create( // THINK Mapper ... ?
                                Blog rilog,
                                User owner,
-                               PostDetail detail
+                               PostDetail detail,
+                               Chapter chapter
     ) {
         return Post.builder()
                 .colog(null)
                 .rilog(rilog)
                 .user(owner)
+                .chapter(chapter)
                 .title(detail.title())
                 .content(PostContent.from(detail.content()))
                 .category(detail.category())
@@ -134,7 +141,7 @@ public class Post extends BaseEntity {
                 .build();
     }
 
-    public void update(PostDetail detail, Blog targetBlog) {
+    public void update(PostDetail detail, Blog targetBlog, Chapter chapter) {
         validateTargetBlog(targetBlog);
         this.category = detail.category();
         this.visibility = detail.visibility();
@@ -142,9 +149,14 @@ public class Post extends BaseEntity {
         this.content = PostContent.from(detail.content());
         this.thumbnailImageUrl = detail.thumbnailUrl();
         this.colog = targetBlog.isColog() ? targetBlog : null;
+        this.chapter = chapter;
     }
 
-    public void publish(Blog rilog, Blog targetBlog, PostDetail detail) {
+    public void update(PostDetail detail, Blog targetBlog) {
+        update(detail, targetBlog, null);
+    }
+
+    public void publish(Blog rilog, Blog targetBlog, PostDetail detail, Chapter chapter) {
         validateIsDraft();
         this.rilog = rilog;
         this.colog = targetBlog.isColog() ? targetBlog : null;
@@ -153,8 +165,13 @@ public class Post extends BaseEntity {
         this.title = detail.title();
         this.content = PostContent.from(detail.content());
         this.thumbnailImageUrl = detail.thumbnailUrl();
+        this.chapter = chapter;
         this.status = PUBLISHED;
         this.publishedAt = LocalDateTime.now();
+    }
+
+    public void publish(Blog rilog, Blog targetBlog, PostDetail detail) {
+        publish(rilog, targetBlog, detail, null);
     }
 
     public void overwriteDraft(DraftOverwriteCommand command) {
@@ -196,8 +213,7 @@ public class Post extends BaseEntity {
     }
 
     public boolean isWrittenBy(Long requesterId) {
-        return requesterId != null
-                && user != null
+        return user != null
                 && user.getId() != null
                 && user.getId().equals(requesterId);
     }

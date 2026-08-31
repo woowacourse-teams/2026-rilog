@@ -6,6 +6,7 @@ import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.exception.PostException;
@@ -60,6 +61,9 @@ class PostServiceTagAssetsLifecycleTest {
     private UserRepository userRepository;
 
     @Mock
+    private ChapterRepository chapterRepository;
+
+    @Mock
     private TagAssetsLifecycle tagAssetsLifecycle;
 
     private PostService postService;
@@ -71,6 +75,7 @@ class PostServiceTagAssetsLifecycleTest {
                 blogRepository,
                 blogMemberRepository,
                 userRepository,
+                chapterRepository,
                 tagAssetsLifecycle
         );
     }

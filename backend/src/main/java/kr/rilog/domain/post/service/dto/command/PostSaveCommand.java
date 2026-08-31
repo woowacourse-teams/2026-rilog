@@ -12,9 +12,11 @@ public record PostSaveCommand(
         JsonNode content,
         Category category,
         PostVisibility visibility,
-        String thumbnailImageUrl
+        String thumbnailImageUrl,
+        Long chapterId
 
 ) {
+
     public PostDetail toDetail() {
         return new PostDetail(
                 title,
@@ -24,4 +26,5 @@ public record PostSaveCommand(
                 thumbnailImageUrl
         );
     }
+
 }

@@ -93,7 +93,7 @@ public class BlogMember extends BaseEntity {
     }
 
     public void validateHasAdminPermission() {
-        if (!isCologMember() || !hasInvitePermission()) {
+        if (!hasInvitePermission()) {
             throw new BlogException(ADMIN_PERMISSION_INVALID);
         }
     }

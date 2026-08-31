@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -66,6 +67,9 @@ class DraftServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private ChapterRepository chapterRepository;
+
+    @Mock
     private TagAssetsLifecycle tagAssetsLifecycle;
 
     private DraftService draftService;
@@ -77,6 +81,7 @@ class DraftServiceTest {
                 blogRepository,
                 blogMemberRepository,
                 userRepository,
+                chapterRepository,
                 tagAssetsLifecycle
         );
     }
@@ -163,7 +168,8 @@ class DraftServiceTest {
                 content(imageBlock(IMAGE_URL_B)).getContent(),
                 Category.TECH,
                 PostVisibility.PUBLIC,
-                THUMBNAIL_URL
+                THUMBNAIL_URL,
+                null
         );
         BlogMember membership = BlogMember.createOwner(rilog, writer, NOW);
         TagAssets previous = draft.getTagAssets();
@@ -193,7 +199,8 @@ class DraftServiceTest {
                 content(imageBlock(IMAGE_URL_B)).getContent(),
                 Category.TECH,
                 PostVisibility.PUBLIC,
-                THUMBNAIL_URL
+                THUMBNAIL_URL,
+                null
         );
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
