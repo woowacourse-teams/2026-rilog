@@ -15,6 +15,15 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
 
     List<Chapter> findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(Long blogId);
 
+    @Query("""
+            SELECT chapter
+            FROM Chapter chapter
+            WHERE chapter.blog.id IN :blogIds
+              AND chapter.deletedAt IS NULL
+            ORDER BY chapter.blog.id ASC, chapter.order ASC
+            """)
+    List<Chapter> findAllByBlogIds(@Param("blogIds") List<Long> blogIds);
+
     Optional<Chapter> findByIdAndBlogIdAndDeletedAtIsNull(Long chapterId, Long blogId);
 
     @Query("""

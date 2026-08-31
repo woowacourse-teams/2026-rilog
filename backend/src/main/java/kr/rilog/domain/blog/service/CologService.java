@@ -12,7 +12,10 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
+import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
@@ -38,6 +41,7 @@ public class CologService {
 
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
+    private final ChapterRepository chapterRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagAssetsLifecycle tagAssetsLifecycle;
@@ -115,9 +119,26 @@ public class CologService {
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
     }
 
-    public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
-        return blogRepository.findAllActiveCologsByUserId(requesterId).stream()
-                .map(MyCologResponse::of)
+    public List<MyCologResponse> getMyCologsOverview(Long requesterId) {
+        List<Blog> cologs = blogRepository.findAllActiveCologsByUserId(requesterId);
+        List<Chapter> chapters = findChaptersByCologs(cologs);
+
+        return CologOverview.group(cologs, chapters).stream()
+                .map(MyCologResponse::from)
+                .toList();
+    }
+
+    private List<Chapter> findChaptersByCologs(List<Blog> cologs) {
+        if (cologs.isEmpty()) {
+            return List.of();
+        }
+
+        return chapterRepository.findAllByBlogIds(getCologIds(cologs));
+    }
+
+    private List<Long> getCologIds(List<Blog> cologs) {
+        return cologs.stream()
+                .map(Blog::getId)
                 .toList();
     }
 
