@@ -91,7 +91,7 @@ public interface CologApiSpec {
             @PathVariable("memberId") Long memberId
     );
 
-    @Operation(description = "나의 블로그 목록 요약 조회 API", summary = "나의 블로그 목록 요약 조회 API")
-    ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId);
+    @Operation(description = "나의 팀 목록과 챕터 요약 조회 API", summary = "나의 팀 목록 요약 조회 API")
+    ApiResponse<List<MyCologResponse>> getMyCologsOverview(@LoginUserId Long requesterId);
 
 }

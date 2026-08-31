@@ -13,6 +13,8 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
@@ -27,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.groupingBy;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -38,6 +43,7 @@ public class CologService {
 
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
+    private final ChapterRepository chapterRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagAssetsLifecycle tagAssetsLifecycle;
@@ -115,9 +121,23 @@ public class CologService {
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
     }
 
-    public List<MyCologResponse> getMyCologsPreview(Long requesterId) {
-        return blogRepository.findAllActiveCologsByUserId(requesterId).stream()
-                .map(MyCologResponse::of)
+    public List<MyCologResponse> getMyCologsOverview(Long requesterId) {
+        List<Blog> cologs = blogRepository.findAllActiveCologsByUserId(requesterId);
+        if (cologs.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> cologIds = cologs.stream()
+                .map(Blog::getId)
+                .toList();
+        Map<Long, List<Chapter>> chaptersByBlogId = chapterRepository.findAllByBlogIds(cologIds).stream()
+                .collect(groupingBy(chapter -> chapter.getBlog().getId()));
+
+        return cologs.stream()
+                .map(colog -> MyCologResponse.of(
+                        colog,
+                        chaptersByBlogId.getOrDefault(colog.getId(), List.of())
+                ))
                 .toList();
     }
 

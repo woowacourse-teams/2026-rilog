@@ -3,6 +3,7 @@ package kr.rilog.domain.blog.controller;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
@@ -130,24 +131,33 @@ class CologControllerTest {
     }
 
     @Test
-    @DisplayName("GET /v1/users/me/cologs/preview는 인증된 사용자의 팀 목록을 조회한다")
-    void getMyCologsPreviewReturnsAuthenticatedUsersCologs() throws Exception {
+    @DisplayName("GET /v1/users/me/cologs/overview는 인증된 사용자의 팀 목록과 챕터를 조회한다")
+    void getMyCologsOverviewReturnsAuthenticatedUsersCologsWithChapters() throws Exception {
         // given
         CologService cologService = mock(CologService.class);
-        when(cologService.getMyCologsPreview(7L))
-                .thenReturn(List.of(new MyCologResponse(1L, "rilog-team", "리로그 팀", "https://example.com/logo.png")));
+        when(cologService.getMyCologsOverview(7L))
+                .thenReturn(List.of(new MyCologResponse(
+                        1L,
+                        "rilog-team",
+                        "리로그 팀",
+                        "https://example.com/logo.png",
+                        List.of(new ChapterResponse(10L, "Spring", 0))
+                )));
         MockMvc mockMvc = mockMvc(cologService);
 
         // when - then
-        mockMvc.perform(get("/v1/users/me/cologs/preview")
+        mockMvc.perform(get("/v1/users/me/cologs/overview")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].cologId").value(1L))
                 .andExpect(jsonPath("$.data[0].slug").value("rilog-team"))
                 .andExpect(jsonPath("$.data[0].name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/logo.png"));
+                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/logo.png"))
+                .andExpect(jsonPath("$.data[0].chapters[0].chapterId").value(10L))
+                .andExpect(jsonPath("$.data[0].chapters[0].name").value("Spring"))
+                .andExpect(jsonPath("$.data[0].chapters[0].order").value(0));
 
-        verify(cologService).getMyCologsPreview(7L);
+        verify(cologService).getMyCologsOverview(7L);
     }
 
     @Test

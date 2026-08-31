@@ -14,6 +14,10 @@ import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.entity.vo.ChapterName;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -66,6 +70,9 @@ class CologServiceTest {
     private BlogMemberRepository blogMemberRepository;
 
     @Mock
+    private ChapterRepository chapterRepository;
+
+    @Mock
     private PostRepository postRepository;
 
     @Mock
@@ -81,6 +88,7 @@ class CologServiceTest {
         cologService = new CologService(
                 blogRepository,
                 blogMemberRepository,
+                chapterRepository,
                 postRepository,
                 userRepository,
                 tagAssetsLifecycle,
@@ -690,24 +698,44 @@ class CologServiceTest {
     }
 
     @Test
-    @DisplayName("나의 팀 목록을 조회하면 요청자가 활동 중인 팀을 조회한다")
-    void getMyCologsPreviewFindsActiveCologsByRequesterId() {
+    @DisplayName("나의 팀 목록을 조회하면 요청자가 활동 중인 팀과 각 팀의 챕터를 조회한다")
+    void getMyCologsOverviewFindsActiveCologsAndChaptersByRequesterId() {
         // given
         Blog colog = createColog(createOwner());
         when(blogRepository.findAllActiveCologsByUserId(OWNER_ID))
                 .thenReturn(List.of(colog));
+        when(chapterRepository.findAllByBlogIds(List.of(COLOG_ID)))
+                .thenReturn(List.of(createChapter(10L, colog, "Spring", 0)));
 
         // when
-        List<MyCologResponse> result = cologService.getMyCologsPreview(OWNER_ID);
+        List<MyCologResponse> result = cologService.getMyCologsOverview(OWNER_ID);
 
         // then
         verify(blogRepository).findAllActiveCologsByUserId(OWNER_ID);
+        verify(chapterRepository).findAllByBlogIds(List.of(COLOG_ID));
         assertThat(result).containsExactly(new MyCologResponse(
                 COLOG_ID,
                 COLOG_SLUG,
                 "리로그 팀",
-                "https://example.com/profile.png"
+                "https://example.com/profile.png",
+                List.of(new ChapterResponse(10L, "Spring", 0))
         ));
+    }
+
+    @Test
+    @DisplayName("나의 팀 목록이 없으면 챕터를 조회하지 않고 빈 목록을 반환한다")
+    void getMyCologsOverviewReturnsEmptyListWithoutFindingChapters() {
+        // given
+        when(blogRepository.findAllActiveCologsByUserId(OWNER_ID))
+                .thenReturn(List.of());
+
+        // when
+        List<MyCologResponse> result = cologService.getMyCologsOverview(OWNER_ID);
+
+        // then
+        verify(blogRepository).findAllActiveCologsByUserId(OWNER_ID);
+        verify(chapterRepository, never()).findAllByBlogIds(any());
+        assertThat(result).isEmpty();
     }
 
     private User createOwner() {
@@ -752,6 +780,15 @@ class CologServiceTest {
                 .permission(permission)
                 .status(BlogMemberStatus.ACTIVE)
                 .joinedAt(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))
+                .build();
+    }
+
+    private Chapter createChapter(Long id, Blog blog, String name, int order) {
+        return Chapter.builder()
+                .id(id)
+                .blog(blog)
+                .name(ChapterName.from(name))
+                .order(order)
                 .build();
     }
 
