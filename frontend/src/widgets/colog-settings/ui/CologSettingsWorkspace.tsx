@@ -6,6 +6,7 @@ import type { FormEvent } from 'react';
 
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
 import type { CologChapter } from '@/features/colog-chapter-management/model/colog-chapter';
+import ChapterCreateModal from '@/features/colog-chapter-management/ui/ChapterCreateModal';
 import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
@@ -62,7 +63,7 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 };
 
 // TODO: 챕터 조회 API의 게시글 수 계약이 준비되면 이 목업 목록을 조회 결과로 대체한다.
-const MOCK_CHAPTERS: CologChapter[] = [
+const INITIAL_MOCK_CHAPTERS: CologChapter[] = [
 	{ id: 1, name: '프론트엔드', postCount: 3 },
 	{ id: 2, name: '백엔드', postCount: 7 },
 	{ id: 3, name: '백엔드', postCount: 7 },
@@ -154,6 +155,8 @@ function CologSettingsWorkspaceContent({
 	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
+	const [isChapterCreateModalOpen, setIsChapterCreateModalOpen] = useState(false);
+	const [chapters, setChapters] = useState(() => INITIAL_MOCK_CHAPTERS);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
 	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
@@ -230,6 +233,17 @@ function CologSettingsWorkspaceContent({
 		} catch {
 			// 오류 메시지는 mutation 상태를 통해 입력 하단에 표시한다.
 		}
+	};
+
+	const handleAddMockChapter = (chapterName: string) => {
+		setChapters((currentChapters) => [
+			...currentChapters,
+			{
+				id: Math.max(0, ...currentChapters.map((chapter) => chapter.id)) + 1,
+				name: chapterName,
+				postCount: 0,
+			},
+		]);
 	};
 
 	const profileErrorMessage = saveCologProfile.isError
@@ -317,8 +331,7 @@ function CologSettingsWorkspaceContent({
 					<Button type="button" variant="secondary" size="md" className="w-full sm:w-30">
 						챕터 수정
 					</Button>
-					{/* TODO: 챕터 추가 기능 연동 */}
-					<Button type="button" size="md" className="w-full sm:w-30">
+					<Button type="button" size="md" className="w-full sm:w-30" onClick={() => setIsChapterCreateModalOpen(true)}>
 						+ 챕터 추가
 					</Button>
 				</>
@@ -375,7 +388,16 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'members' && (
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
-				{activeTab === 'chapters' && <CologChapterManagementSection chapters={MOCK_CHAPTERS} />}
+				{activeTab === 'chapters' && (
+					<>
+						<CologChapterManagementSection chapters={chapters} />
+						<ChapterCreateModal
+							open={isChapterCreateModalOpen}
+							onClose={() => setIsChapterCreateModalOpen(false)}
+							onCreate={handleAddMockChapter}
+						/>
+					</>
+				)}
 				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 

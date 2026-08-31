@@ -295,6 +295,30 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('button', { name: '+ 챕터 추가' })).toBeInTheDocument();
 	});
 
+	it('챕터 추가 버튼을 누르면 챕터 이름 입력 모달을 연다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(screen.getByRole('button', { name: '+ 챕터 추가' }));
+
+		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '챕터 이름' })).toHaveFocus();
+	});
+
+	it('챕터 이름을 입력하고 추가하면 목업 목록에 반영한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(screen.getByRole('button', { name: '+ 챕터 추가' }));
+		await user.type(screen.getByRole('textbox', { name: '챕터 이름' }), '인프라');
+		await user.click(screen.getByRole('button', { name: '추가' }));
+
+		expect(screen.getByText('인프라')).toBeInTheDocument();
+		expect(screen.getByText('0개')).toBeInTheDocument();
+	});
+
 	it('프로필, 멤버 관리, 위험 영역을 같은 설정 패널 위치에서 전환한다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace slug="team-rilog" />);
