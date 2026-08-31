@@ -12,6 +12,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
+import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
@@ -29,9 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-
-import static java.util.stream.Collectors.groupingBy;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -123,21 +121,24 @@ public class CologService {
 
     public List<MyCologResponse> getMyCologsOverview(Long requesterId) {
         List<Blog> cologs = blogRepository.findAllActiveCologsByUserId(requesterId);
+        List<Chapter> chapters = findChaptersByCologs(cologs);
+
+        return CologOverview.group(cologs, chapters).stream()
+                .map(MyCologResponse::from)
+                .toList();
+    }
+
+    private List<Chapter> findChaptersByCologs(List<Blog> cologs) {
         if (cologs.isEmpty()) {
             return List.of();
         }
 
-        List<Long> cologIds = cologs.stream()
-                .map(Blog::getId)
-                .toList();
-        Map<Long, List<Chapter>> chaptersByBlogId = chapterRepository.findAllByBlogIds(cologIds).stream()
-                .collect(groupingBy(chapter -> chapter.getBlog().getId()));
+        return chapterRepository.findAllByBlogIds(getCologIds(cologs));
+    }
 
+    private List<Long> getCologIds(List<Blog> cologs) {
         return cologs.stream()
-                .map(colog -> MyCologResponse.of(
-                        colog,
-                        chaptersByBlogId.getOrDefault(colog.getId(), List.of())
-                ))
+                .map(Blog::getId)
                 .toList();
     }
 
