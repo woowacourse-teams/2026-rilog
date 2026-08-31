@@ -62,7 +62,12 @@
 
 	.native-select::picker(select) {
 		display: none;
+		gap: 0.25rem;
+		position-area: block-end;
+		position-try-fallbacks: none;
 		max-height: min(18rem, 50vh);
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		margin-block: 0.375rem;
 		border: 1px solid var(--border-default);
 		border-radius: 0.5rem;
@@ -81,7 +86,6 @@
 
 	.native-select:open::picker(select) {
 		display: grid;
-		gap: 0.25rem;
 		opacity: 1;
 		pointer-events: auto;
 		transform: translateY(0);
@@ -97,6 +101,7 @@
 	.native-select option {
 		min-height: 2.5rem;
 		border-radius: 0.375rem;
+		background: var(--surface);
 		padding: 0.625rem 0.75rem;
 		color: var(--text-primary);
 		transition: background-color 120ms ease;

@@ -56,6 +56,9 @@ const MOCK_COLOG_CHAPTER_OPTIONS = [
 	{ value: 'planning', label: '기획' },
 	{ value: 'development', label: '개발' },
 	{ value: 'retrospective', label: '회고' },
+	{ value: 'planning', label: '기획' },
+	{ value: 'development', label: '개발' },
+	{ value: 'retrospective', label: '회고' },
 ];
 
 let nextMockChapterId = 1;
