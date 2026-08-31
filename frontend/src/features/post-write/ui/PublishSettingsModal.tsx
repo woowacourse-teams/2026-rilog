@@ -265,16 +265,16 @@ export default function PublishSettingsModal({
 						</Field>
 
 						<fieldset disabled={isModalPending}>
-							<legend className="text-body-2 font-semibold text-text-primary">블로그</legend>
-							<div className="mt-3 grid grid-cols-2 gap-3">
+							<legend className="text-body-2 font-semibold text-text-primary">발행 위치</legend>
+							<div className="mt-3 grid grid-cols-2 overflow-hidden rounded-lg border border-border-default bg-surface">
 								{BLOG_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-10 items-center justify-center rounded-lg border px-4 text-label-2 font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${selectedBlog === value ? 'border-brand-primary bg-brand-primary text-on-brand-primary' : 'border-border-default bg-surface text-text-secondary hover:bg-surface-hover'}`}
+										className={`flex min-h-10 items-center justify-center px-4 text-label-2 font-semibold transition-colors has-focus-visible:z-10 has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${value === BLOG_OPTIONS[0].value ? 'border-r border-border-default' : ''} ${selectedBlog === value ? 'bg-brand-primary text-on-brand-primary' : 'bg-surface text-text-secondary hover:bg-surface-hover active:bg-surface-active'}`}
 									>
 										<input
 											type="radio"
-											name="post-category"
+											name="post-blog-type"
 											value={value}
 											checked={selectedBlog === value}
 											className="sr-only"

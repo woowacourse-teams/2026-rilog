@@ -81,6 +81,20 @@ describe('PublishSettingsModal', () => {
 		expect(handleCategoryChange).toHaveBeenCalledWith('DAILY');
 	});
 
+	it('발행할 블로그 유형을 radio로 선택한다', async () => {
+		const user = userEvent.setup();
+		renderModal();
+
+		const personalBlogRadio = screen.getByRole('radio', { name: '개인' });
+		const cologRadio = screen.getByRole('radio', { name: '코로그' });
+		expect(personalBlogRadio).toBeChecked();
+		expect(cologRadio).not.toBeChecked();
+
+		await user.click(cologRadio);
+		expect(cologRadio).toBeChecked();
+		expect(personalBlogRadio).not.toBeChecked();
+	});
+
 	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
 		const { rerender } = renderModal();
 
@@ -136,6 +150,8 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: '카테고리' })).toBeDisabled();
+		expect(screen.getByRole('radio', { name: '개인' })).toBeDisabled();
+		expect(screen.getByRole('radio', { name: '코로그' })).toBeDisabled();
 
 		act(() => {
 			resolveCreateChapter({ value: 'new-series', label: '새 시리즈' });
