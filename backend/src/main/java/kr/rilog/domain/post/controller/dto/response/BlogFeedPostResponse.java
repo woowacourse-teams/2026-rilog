@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Schema(description = "공개 블로그 게시글 목록 조회 응답")
-public record PublicBlogFeedPostResponse(
+public record BlogFeedPostResponse(
 
         @Schema(description = "공개 블로그 타입", example = "COLOG")
         String type,
@@ -31,8 +31,8 @@ public record PublicBlogFeedPostResponse(
         boolean hasNext
 ) {
 
-    public static PublicBlogFeedPostResponse from(BlogType blogType, Slice<PostFullFeedRow> slice) {
-        return new PublicBlogFeedPostResponse(
+    public static BlogFeedPostResponse from(BlogType blogType, Slice<PostFullFeedRow> slice) {
+        return new BlogFeedPostResponse(
                 blogType.name(),
                 slice.getContent().stream()
                         .map(PostItemResponse::from)

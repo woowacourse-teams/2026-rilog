@@ -1,23 +1,29 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
-import kr.rilog.domain.post.controller.dto.response.PublicBlogFeedPostResponse;
+import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
-import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_BLOG_FEED_FILTER;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FeedService {
 
@@ -37,15 +43,53 @@ public class FeedService {
         return FullFeedPostResponse.from(feed);
     }
 
-    public PublicBlogFeedPostResponse readPublicBlogPosts(String slug, int page, int size) {
+    public BlogFeedPostResponse readBlogPosts(String slug, Long requesterId, BlogFeedSearchCommand command) {
         Blog blog = getBlog(slug);
-        PageRequest pageable = PageRequest.of(page, size);
+        validateFeedFilters(blog, command);
+        Long targetCologId = getTargetCologId(command);
+        PageRequest pageable = PageRequest.of(command.page(), command.size());
 
         Slice<PostFullFeedRow> posts = blog.isColog()
-                ? readPublicCologPosts(blog, pageable)
-                : readPublicRilogPosts(blog, pageable);
+                ? readCologPosts(blog, requesterId, command, pageable)
+                : readRilogPosts(blog, targetCologId, requesterId, command, pageable);
 
-        return PublicBlogFeedPostResponse.from(blog.getBlogType(), posts);
+        return BlogFeedPostResponse.from(blog.getBlogType(), posts);
+    }
+
+    private Slice<PostFullFeedRow> readCologPosts(
+            Blog colog,
+            Long requesterId,
+            BlogFeedSearchCommand command,
+            PageRequest pageable
+    ) {
+        return postFeedQueryRepository.findCologFeedPosts(
+                colog.getId(),
+                requesterId,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC,
+                command.category(),
+                command.chapterId(),
+                pageable
+        );
+    }
+
+    private Slice<PostFullFeedRow> readRilogPosts(
+            Blog rilog,
+            Long targetCologId,
+            Long requesterId,
+            BlogFeedSearchCommand command,
+            PageRequest pageable
+    ) {
+        return postFeedQueryRepository.findRilogFeedPosts(
+                rilog.getId(),
+                requesterId,
+                PostStatus.PUBLISHED,
+                PostVisibility.PUBLIC,
+                command.category(),
+                command.chapterId(),
+                targetCologId,
+                pageable
+        );
     }
 
     private Blog getBlog(String slug) {
@@ -53,22 +97,27 @@ public class FeedService {
                 .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
-    private Slice<PostFullFeedRow> readPublicCologPosts(Blog colog, PageRequest pageable) {
-        return postFeedQueryRepository.findPublicCologPosts(
-                colog.getId(),
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC,
-                pageable
-        );
+    private Long getTargetCologId(BlogFeedSearchCommand command) {
+        if (!command.hasTargetCologFilter()) {
+            return null;
+        }
+
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(
+                        Slug.from(command.targetCologSlug()),
+                        BlogType.COLOG
+                )
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND))
+                .getId();
     }
 
-    private Slice<PostFullFeedRow> readPublicRilogPosts(Blog rilog, PageRequest pageable) {
-        return postFeedQueryRepository.findPublicRilogPosts(
-                rilog.getId(),
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC,
-                pageable
-        );
+    private void validateFeedFilters(Blog blog, BlogFeedSearchCommand command) {
+        if (!command.hasTargetCologFilter()) {
+            return;
+        }
+
+        if (blog.isColog() || command.hasChapterFilter()) {
+            throw new PostException(INVALID_BLOG_FEED_FILTER);
+        }
     }
 
 }
