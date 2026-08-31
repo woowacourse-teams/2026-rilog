@@ -3,6 +3,7 @@ package kr.rilog.domain.blog.repository;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.blog.repository.projection.CologIndexProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -82,5 +83,33 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
             ORDER BY blogMember.joinedAt DESC, blogMember.blog.id DESC
             """)
     List<Blog> findAllActiveCologsByUserId(@Param("userId") Long userId);
+
+    @Query("""
+        SELECT new kr.rilog.domain.blog.repository.projection.CologIndexProjection(
+            blogMember.blog.id,
+            blogMember.blog.profile.name,
+            COUNT(post.id)
+        )
+        FROM BlogMember blogMember
+        LEFT JOIN Post post
+               ON post.colog = blogMember.blog
+              AND post.user.id = :userId
+              AND post.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
+              AND post.visibility = kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC
+              AND post.deletedAt IS NULL
+        WHERE blogMember.user.id = :userId
+          AND blogMember.status = kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE
+          AND blogMember.deletedAt IS NULL
+          AND blogMember.blog.blogType = kr.rilog.domain.blog.entity.enums.BlogType.COLOG
+          AND blogMember.blog.deletedAt IS NULL
+        GROUP BY
+            blogMember.blog.id,
+            blogMember.blog.profile.name,
+            blogMember.joinedAt
+        ORDER BY blogMember.joinedAt DESC
+        """)
+    List<CologIndexProjection> findCologIndexByUserId(
+            @Param("userId") Long userId
+    );
 
 }

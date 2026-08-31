@@ -11,6 +11,7 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
@@ -61,11 +62,14 @@ class BlogServiceTest {
     @Mock
     private TagAssetsLifecycle tagAssetsLifecycle;
 
+    @Mock
+    private ChapterRepository chapterRepository;
+
     private BlogService blogService;
 
     @BeforeEach
     void setUp() {
-        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, tagAssetsLifecycle);
+        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, chapterRepository, tagAssetsLifecycle);
     }
 
     @Test

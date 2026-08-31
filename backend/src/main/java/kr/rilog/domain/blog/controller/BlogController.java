@@ -7,9 +7,10 @@ import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
+import kr.rilog.domain.blog.controller.dto.response.BlogIndexResponse;
 import kr.rilog.domain.blog.controller.dto.response.BlogPublicProfileResponse;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.service.BlogService;
+import kr.rilog.domain.blog.service.dto.result.BlogIndexResult;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,15 @@ public class BlogController implements BlogApiSpec {
     ) {
         blogService.changeBlogProfile(requesterId, slug, dto.toCommand());
         return ApiResponse.response(HttpStatus.OK, "프로필을 수정했습니다.");
+    }
+
+    @GetMapping("/blogs/{slug}/index")
+    public ApiResponse<BlogIndexResponse> getBlogIndex(
+            @PathVariable("slug") String slug
+    ) {
+        BlogIndexResult result = blogService.readBlogIndex(slug);
+        BlogIndexResponse data = BlogIndexResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "블로그 인덱스 조회에 성공했습니다.", data);
     }
 
 }

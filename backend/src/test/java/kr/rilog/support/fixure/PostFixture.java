@@ -127,6 +127,13 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post privatePublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .chapter(chapter)
+                .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
     public static Post privatePublishedRilogPost() {
         User writer = BlogFixture.createUser(DEFAULT_WRITER_ID);
         Blog rilog = BlogFixture.createRilog(writer);
@@ -140,8 +147,22 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post publicDraftRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .chapter(chapter)
+                .status(PostStatus.DRAFT)
+                .publishedAt(null)
+                .build();
+    }
+
     public static Post deletedPublicPublishedRilogPost(Blog rilog, User writer) {
         Post post = publicPublishedRilogPost(rilog, writer);
+        post.delete();
+        return post;
+    }
+
+    public static Post deletedPublicPublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        Post post = publicPublishedRilogPost(rilog, writer, chapter);
         post.delete();
         return post;
     }
@@ -180,6 +201,13 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post privatePublishedCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .chapter(chapter)
+                .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
     public static Post publicDraftCologPost(Blog rilog, Blog colog, User writer) {
         return builderForColog(rilog, colog, writer)
                 .status(PostStatus.DRAFT)
@@ -187,8 +215,22 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post publicDraftCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .chapter(chapter)
+                .status(PostStatus.DRAFT)
+                .publishedAt(null)
+                .build();
+    }
+
     public static Post deletedPublicPublishedCologPost(Blog rilog, Blog colog, User writer) {
         Post post = publicPublishedColog(rilog, colog, writer);
+        post.delete();
+        return post;
+    }
+
+    public static Post deletedPublicPublishedCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        Post post = publicPublishedColog(rilog, colog, writer, chapter);
         post.delete();
         return post;
     }
