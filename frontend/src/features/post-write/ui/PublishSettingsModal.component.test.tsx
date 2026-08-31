@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -39,33 +39,41 @@ describe('PublishSettingsModal', () => {
 		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
 	});
 
-	it('선택 가능한 Co-log가 하나뿐이면 빈 선택값을 자동으로 채운다', async () => {
+	it('Co-log는 선택 안 함을 기본값으로 제공하고 선택 후 다시 해제할 수 있다', async () => {
+		const user = userEvent.setup();
 		const handleCoLogChange = vi.fn();
-		renderModal({
-			cologOptions: [{ id: 9, slug: 'only-colog', name: '유일한 Co-log' }],
+		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log' };
+		const { rerender } = renderModal({
+			cologOptions: [onlyColog],
 			onCoLogChange: handleCoLogChange,
 		});
 
-		await waitFor(() =>
-			expect(handleCoLogChange).toHaveBeenCalledWith({ id: 9, slug: 'only-colog', name: '유일한 Co-log' }),
-		);
-	});
-
-	it('기존 Co-log 선택값은 자동 선택으로 덮어쓰지 않는다', () => {
-		const handleCoLogChange = vi.fn();
-		renderModal({
-			settings: { ...DEFAULT_PROPS.settings, blog: { id: 4, slug: 'selected-colog', name: '선택된 Co-log' } },
-			cologOptions: [{ id: 9, slug: 'only-colog', name: '유일한 Co-log' }],
-			onCoLogChange: handleCoLogChange,
-		});
-
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		expect(cologSelect).toHaveDisplayValue('선택 안 함');
 		expect(handleCoLogChange).not.toHaveBeenCalled();
+
+		await user.selectOptions(cologSelect, '9');
+		expect(handleCoLogChange).toHaveBeenLastCalledWith(onlyColog);
+
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{ ...DEFAULT_PROPS.settings, blog: onlyColog }}
+				cologOptions={[onlyColog]}
+				onCoLogChange={handleCoLogChange}
+			/>,
+		);
+
+		await user.selectOptions(screen.getByRole('combobox', { name: '코로그' }), '');
+		expect(handleCoLogChange).toHaveBeenLastCalledWith(null);
 	});
 
 	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
 		const { rerender } = renderModal();
 
-		expect(screen.getByRole('combobox', { name: '시리즈' })).toHaveDisplayValue('시리즈를 선택하세요');
+		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
+		expect(seriesSelect).toHaveDisplayValue('선택 안 함');
+		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
 
 		rerender(
@@ -78,7 +86,9 @@ describe('PublishSettingsModal', () => {
 			/>,
 		);
 
-		expect(screen.getByRole('combobox', { name: '챕터' })).toHaveDisplayValue('챕터를 선택하세요');
+		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
+		expect(chapterSelect).toHaveDisplayValue('선택 안 함');
+		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
 	});
 

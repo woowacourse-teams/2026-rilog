@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
@@ -73,15 +73,6 @@ export default function PublishSettingsModal({
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
 	const chapterLabel = settings.blog === null ? '시리즈' : '챕터';
 	const chapterOptions = settings.blog === null ? MOCK_PERSONAL_CHAPTER_OPTIONS : MOCK_COLOG_CHAPTER_OPTIONS;
-	// 선택 가능한 Co-log가 하나뿐일 때 자동 선택할 blog
-	const onlyBlog = cologOptions.length === 1 ? cologOptions[0] : undefined;
-
-	// 모달을 열었을 때 유일한 Co-log가 있고 기존 선택값이 없다면 자동 선택
-	useEffect(() => {
-		if (open && settings.blog === null && onlyBlog !== undefined) {
-			onCoLogChange(onlyBlog);
-		}
-	}, [onlyBlog, onCoLogChange, open, settings.blog]);
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
 	const handleSubmit = () => {
@@ -203,7 +194,7 @@ export default function PublishSettingsModal({
 												onCoLogChange(selectedBlog ?? null);
 											}}
 										>
-											<option value="">Co-log를 선택하세요</option>
+											<option value="">선택 안 함</option>
 											{cologOptions.map((option) => (
 												<option key={option.id} value={option.id}>
 													{option.name}
@@ -229,7 +220,7 @@ export default function PublishSettingsModal({
 									disabled={isPublishing}
 									className="h-11 w-full rounded-lg border border-border-default bg-surface px-3 text-body-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
 								>
-									<option value="">{chapterLabel}를 선택하세요</option>
+									<option value="">선택 안 함</option>
 									{chapterOptions.map((option) => (
 										<option key={option.value} value={option.value}>
 											{option.label}
