@@ -65,7 +65,7 @@
 		gap: 0.25rem;
 		position-area: block-end;
 		position-try-fallbacks: none;
-		max-height: min(18rem, 50vh);
+		max-height: min(11rem, 50vh);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		margin-block: 0.375rem;
