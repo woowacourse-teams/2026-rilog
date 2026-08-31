@@ -115,6 +115,12 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post dailyPublicPublishedRilogPost(Blog rilog, User writer) {
+        return builderForRilog(rilog, writer)
+                .category(Category.DAILY)
+                .build();
+    }
+
     public static Post publicPublishedRilogPostAt(Blog rilog, User writer, LocalDateTime publishedAt) {
         return builderForRilog(rilog, writer)
                 .publishedAt(publishedAt)
@@ -124,6 +130,13 @@ public final class PostFixture {
     public static Post privatePublishedRilogPost(Blog rilog, User writer) {
         return builderForRilog(rilog, writer)
                 .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
+    public static Post privatePublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .chapter(chapter)
                 .build();
     }
 
@@ -156,6 +169,12 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post dailyPublicPublishedCologPost(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer)
+                .category(Category.DAILY)
+                .build();
+    }
+
     public static Post publicPublishedCologPost() {
         User writer = BlogFixture.createUser(DEFAULT_WRITER_ID);
         Blog rilog = BlogFixture.createRilog(writer);
@@ -176,6 +195,20 @@ public final class PostFixture {
 
     public static Post privatePublishedCologPost(Blog rilog, Blog colog, User writer) {
         return builderForColog(rilog, colog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
+    public static Post privatePublishedCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .chapter(chapter)
+                .build();
+    }
+
+    public static Post dailyPrivatePublishedCologPost(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer)
+                .category(Category.DAILY)
                 .visibility(PostVisibility.PRIVATE)
                 .build();
     }
@@ -291,6 +324,11 @@ public final class PostFixture {
 
         private Builder visibility(PostVisibility visibility) {
             this.visibility = visibility;
+            return this;
+        }
+
+        private Builder category(Category category) {
+            this.category = category;
             return this;
         }
 

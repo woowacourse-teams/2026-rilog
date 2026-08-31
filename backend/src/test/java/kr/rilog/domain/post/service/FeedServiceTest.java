@@ -13,6 +13,7 @@ import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,13 @@ class FeedServiceTest {
     private static final String RILOG_SLUG = "writer";
     private static final int PAGE = 1;
     private static final int SIZE = 2;
+    private static final BlogFeedSearchCommand DEFAULT_SEARCH = new BlogFeedSearchCommand(
+            null,
+            null,
+            null,
+            PAGE,
+            SIZE
+    );
 
     @Mock
     private PostFeedQueryRepository postFeedQueryRepository;
@@ -127,15 +135,19 @@ class FeedServiceTest {
                 createCologFeedRow(1L)
         );
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(rilog));
-        when(postFeedQueryRepository.findPublicRilogPosts(
+        when(postFeedQueryRepository.findRilogFeedPosts(
                 RILOG_ID,
+                null,
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                null,
+                null,
+                null,
                 pageable
         )).thenReturn(new SliceImpl<>(rows, pageable, true));
 
         // when
-        PublicBlogFeedPostResponse response = feedService.readPublicBlogPosts(RILOG_SLUG, PAGE, SIZE);
+        PublicBlogFeedPostResponse response = feedService.readBlogPosts(RILOG_SLUG, null, DEFAULT_SEARCH);
 
         // then
         assertThat(response.type()).isEqualTo("RILOG");
@@ -156,10 +168,14 @@ class FeedServiceTest {
                 .containsExactly(BlogType.COLOG, COLOG_SLUG);
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.hasNext()).isTrue();
-        verify(postFeedQueryRepository).findPublicRilogPosts(
+        verify(postFeedQueryRepository).findRilogFeedPosts(
                 RILOG_ID,
+                null,
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                null,
+                null,
+                null,
                 pageable
         );
     }
@@ -175,15 +191,18 @@ class FeedServiceTest {
                 createCologFeedRow(1L)
         );
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(colog));
-        when(postFeedQueryRepository.findPublicCologPosts(
+        when(postFeedQueryRepository.findCologFeedPosts(
                 COLOG_ID,
+                null,
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                null,
+                null,
                 pageable
         )).thenReturn(new SliceImpl<>(rows, pageable, false));
 
         // when
-        PublicBlogFeedPostResponse response = feedService.readPublicBlogPosts(COLOG_SLUG, PAGE, SIZE);
+        PublicBlogFeedPostResponse response = feedService.readBlogPosts(COLOG_SLUG, null, DEFAULT_SEARCH);
 
         // then
         assertThat(response.type()).isEqualTo("COLOG");
@@ -201,10 +220,13 @@ class FeedServiceTest {
                 .containsExactly("팀 블로그", "팀 블로그");
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.hasNext()).isFalse();
-        verify(postFeedQueryRepository).findPublicCologPosts(
+        verify(postFeedQueryRepository).findCologFeedPosts(
                 COLOG_ID,
+                null,
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                null,
+                null,
                 pageable
         );
     }
@@ -216,7 +238,7 @@ class FeedServiceTest {
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("unknown"))).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> feedService.readPublicBlogPosts("unknown", PAGE, SIZE))
+        assertThatThrownBy(() -> feedService.readBlogPosts("unknown", null, DEFAULT_SEARCH))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);
