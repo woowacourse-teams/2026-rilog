@@ -148,7 +148,7 @@ vi.mock('./EditPostController', async () => {
 				{initialPublicationSettings === undefined ? null : (
 					<>
 						<p>카테고리 {initialPublicationSettings.category}</p>
-						<p>블로그 {initialPublicationSettings.blog?.name}</p>
+						<p>블로그 {initialPublicationSettings.blog?.slug}</p>
 						<p>썸네일 {initialPublicationSettings.representativeImageUrl}</p>
 					</>
 				)}
@@ -179,7 +179,7 @@ const initialData: PostWriteInitialData = {
 	document: initialDocument,
 	settings: {
 		category: 'DAILY',
-		blog: { id: 3, slug: 'author', name: '작성자 블로그' },
+		blog: { type: 'RILOG', slug: 'author' },
 		representativeImage: null,
 		representativeImageUrl: 'posts/existing-thumbnail.png',
 	},
@@ -323,7 +323,7 @@ describe('PostWriteLoader', () => {
 		expect(screen.getByText('불러온 제목')).toBeInTheDocument();
 		expect(screen.getByText('본문 블록 1개')).toBeInTheDocument();
 		expect(screen.getByText('카테고리 DAILY')).toBeInTheDocument();
-		expect(screen.getByText('블로그 작성자 블로그')).toBeInTheDocument();
+		expect(screen.getByText('블로그 author')).toBeInTheDocument();
 		expect(screen.getByText('썸네일 posts/existing-thumbnail.png')).toBeInTheDocument();
 		expect(screen.getByText('접근 가드 작성자 7')).toBeInTheDocument();
 		expect(screen.getByText('수정 게시글 31')).toBeInTheDocument();

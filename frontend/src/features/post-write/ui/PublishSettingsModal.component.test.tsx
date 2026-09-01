@@ -11,10 +11,16 @@ import PublishSettingsModal from './PublishSettingsModal';
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
 	postTitle: '게시글 제목',
-	settings: { category: 'IT', blog: null, representativeImage: null, representativeImageUrl: null },
+	settings: {
+		category: 'IT',
+		blog: { type: 'RILOG', slug: 'personal-blog' },
+		representativeImage: null,
+		representativeImageUrl: null,
+	},
 	selectedImageUrl: null,
 	bodyBlocks: [],
 	defaultImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+	userSlug: 'personal-blog',
 	cologOptions: [
 		{ id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
 		{ id: 2, slug: 'second-colog', name: '두 번째 Co-log' },
@@ -22,7 +28,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	isPublishing: false,
 	onClose: vi.fn(),
 	onCategoryChange: vi.fn(),
-	onCoLogChange: vi.fn(),
+	onTargetBlogChange: vi.fn(),
 	onImageChange: vi.fn(),
 	onPublish: vi.fn(),
 };
@@ -41,11 +47,11 @@ describe('PublishSettingsModal', () => {
 
 	it('Co-log는 선택 안 함을 기본값으로 제공하고 선택 후 다시 해제할 수 있다', async () => {
 		const user = userEvent.setup();
-		const handleCoLogChange = vi.fn();
+		const handleTargetBlogChange = vi.fn();
 		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log' };
 		const { rerender } = renderModal({
 			cologOptions: [onlyColog],
-			onCoLogChange: handleCoLogChange,
+			onTargetBlogChange: handleTargetBlogChange,
 		});
 
 		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
@@ -53,22 +59,29 @@ describe('PublishSettingsModal', () => {
 		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
 		expect(cologSelect).toHaveClass('native-select');
 		expect(cologSelect).toHaveDisplayValue('선택 안 함');
-		expect(handleCoLogChange).not.toHaveBeenCalled();
+		expect(handleTargetBlogChange).toHaveBeenCalledWith(null);
 
 		await user.selectOptions(cologSelect, '9');
-		expect(handleCoLogChange).toHaveBeenLastCalledWith(onlyColog);
+		expect(handleTargetBlogChange).toHaveBeenLastCalledWith({
+			type: 'COLOG',
+			id: onlyColog.id,
+			slug: onlyColog.slug,
+		});
 
 		rerender(
 			<PublishSettingsModal
 				{...DEFAULT_PROPS}
-				settings={{ ...DEFAULT_PROPS.settings, blog: onlyColog }}
+				settings={{
+					...DEFAULT_PROPS.settings,
+					blog: { type: 'COLOG', id: onlyColog.id, slug: onlyColog.slug },
+				}}
 				cologOptions={[onlyColog]}
-				onCoLogChange={handleCoLogChange}
+				onTargetBlogChange={handleTargetBlogChange}
 			/>,
 		);
 
 		await user.selectOptions(screen.getByRole('combobox', { name: '코로그' }), '');
-		expect(handleCoLogChange).toHaveBeenLastCalledWith(null);
+		expect(handleTargetBlogChange).toHaveBeenLastCalledWith(null);
 	});
 
 	it('카테고리를 select에서 변경한다', async () => {
@@ -113,7 +126,7 @@ describe('PublishSettingsModal', () => {
 		renderModal({
 			settings: {
 				...DEFAULT_PROPS.settings,
-				blog: { id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
+				blog: { type: 'COLOG', id: 1, slug: 'first-colog' },
 			},
 		});
 

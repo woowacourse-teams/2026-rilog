@@ -15,11 +15,10 @@ export const mapPostDetailToPostWriteInitialData = (response: PostDetailResponse
 	},
 	settings: {
 		category: mapPostCategory(response.category),
-		blog: {
-			id: response.owner.blogId,
-			slug: response.owner.slug,
-			name: response.owner.name,
-		},
+		blog:
+			response.owner.type === 'COLOG'
+				? { type: 'COLOG', id: response.owner.blogId, slug: response.owner.slug }
+				: { type: 'RILOG', slug: response.owner.slug },
 		representativeImage: null,
 		representativeImageUrl: response.thumbnailImageUrl,
 	},

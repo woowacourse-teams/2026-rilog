@@ -19,6 +19,7 @@ import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal'
 interface PostEditorProps {
 	children: (editor: PostWriteEditorContext) => ReactNode;
 	cologOptions: CologOption[];
+	userSlug: string | null;
 	workspace: PostWriteWorkspaceState;
 	uploadFile: UploadPostBodyFile;
 	editorComponent?: ComponentType<PostBodyEditorProps>;
@@ -28,6 +29,7 @@ interface PostEditorProps {
 export default function PostEditor({
 	children,
 	cologOptions,
+	userSlug,
 	workspace,
 	uploadFile,
 	editorComponent = DynamicBlockNoteEditor,
@@ -75,14 +77,15 @@ export default function PostEditor({
 				bodyBlocks={publication.document?.blocks ?? []}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}
+				userSlug={userSlug}
 				cologError={publication.cologError}
 				publishError={publication.publishError}
 				isPublishing={publication.isPublishing}
 				onClose={publication.close}
 				onCategoryChange={publication.handleCategoryChange}
-				onCoLogChange={publication.handleCoLogChange}
+				onTargetBlogChange={publication.handleTargetBlogChange}
 				onImageChange={publication.handleImageChange}
-				onPublish={() => void publication.publish()}
+				onPublish={(targetBlogType) => void publication.publish(targetBlogType)}
 			/>
 		</div>
 	);

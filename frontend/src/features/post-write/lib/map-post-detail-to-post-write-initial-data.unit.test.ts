@@ -27,7 +27,7 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 			},
 			settings: {
 				category: 'DAILY',
-				blog: { id: 3, slug: 'author', name: '작성자 블로그' },
+				blog: { type: 'RILOG', slug: 'author' },
 				representativeImage: null,
 				representativeImageUrl: 'posts/existing-thumbnail.png',
 			},

@@ -119,7 +119,7 @@ export const analytics = {
 		postId: string;
 		ownerType: BlogType;
 		category: PostCategory;
-		cologId: number;
+		cologId: number | null;
 		imageSource: ImageSource;
 		blockCountBucket: BlockCountBucket;
 	}) =>

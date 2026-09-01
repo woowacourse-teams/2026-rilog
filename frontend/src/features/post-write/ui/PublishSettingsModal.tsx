@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { PublicationSettings } from '../model/post-publication';
 import type { Block } from '@blocknote/core';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
+import type { PublicationSettings, TargetBlog } from '@/features/post-write/model/post-publication';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
@@ -25,14 +25,15 @@ interface PublishSettingsModalProps {
 	bodyBlocks: Block[];
 	defaultImageUrl: string;
 	cologOptions: CologOption[];
+	userSlug: string | null;
 	cologError?: string;
 	publishError?: string;
 	isPublishing: boolean;
 	onClose: () => void;
 	onCategoryChange: (category: PostCategory) => void;
-	onCoLogChange: (blog: CologOption | null) => void;
+	onTargetBlogChange: (targetBlog: TargetBlog | null) => void;
 	onImageChange: (file: File | null) => void;
-	onPublish: () => void;
+	onPublish: (targetBlogType: BlogOption) => void;
 	onCreateChapter?: CreateChapter;
 }
 
@@ -84,18 +85,19 @@ export default function PublishSettingsModal({
 	bodyBlocks,
 	defaultImageUrl,
 	cologOptions,
+	userSlug,
 	cologError,
 	publishError,
 	isPublishing,
 	onClose,
 	onCategoryChange,
-	onCoLogChange,
+	onTargetBlogChange,
 	onImageChange,
 	onPublish,
 	onCreateChapter = createMockChapter,
 }: PublishSettingsModalProps) {
 	// 블로그 선택
-	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => (settings.blog === null ? RILOG : COLOG));
+	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => settings.blog?.type ?? RILOG);
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const seriesNameInputRef = useRef<HTMLInputElement>(null);
@@ -108,12 +110,12 @@ export default function PublishSettingsModal({
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
-	const isCologSelected = settings.blog !== null;
+	const isCologSelected = settings.blog?.type === COLOG;
 	const chapterLabel = isCologSelected ? '챕터' : '시리즈';
 	const chapterOptions = isCologSelected
 		? MOCK_COLOG_CHAPTER_OPTIONS
 		: [...MOCK_PERSONAL_CHAPTER_OPTIONS, ...createdPersonalChapterOptions];
-	const chapterScopeKey = settings.blog === null ? 'personal-blog' : `colog-${settings.blog.id}`;
+	const chapterScopeKey = settings.blog?.type === COLOG ? `colog-${settings.blog.id}` : 'personal-blog';
 	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
 	const isModalPending = isPublishing || isCreatingSeries;
 
@@ -133,7 +135,7 @@ export default function PublishSettingsModal({
 			cologSelectRef.current?.focus();
 		}
 
-		onPublish();
+		onPublish(selectedBlog);
 	};
 
 	// 공용 ImageUploader가 label과 숨겨진 file input의 연결을 소유하며 같은 파일을 다시 선택할 수 있도록 초기화
@@ -181,9 +183,11 @@ export default function PublishSettingsModal({
 		setSelectedBlog(blog);
 
 		if (blog === RILOG) {
-			onCoLogChange(null);
+			onTargetBlogChange(userSlug === null ? null : { type: RILOG, slug: userSlug });
 			return;
 		}
+
+		onTargetBlogChange(null);
 
 		setSeriesCreationError(undefined);
 		setNewSeriesName('');
@@ -317,7 +321,7 @@ export default function PublishSettingsModal({
 											<select
 												ref={cologSelectRef}
 												id={id}
-												value={settings.blog?.id ?? ''}
+												value={settings.blog?.type === COLOG ? settings.blog.id : ''}
 												disabled={isModalPending}
 												aria-invalid={cologError !== undefined}
 												aria-describedby={cologError === undefined ? undefined : errorId}
@@ -325,7 +329,11 @@ export default function PublishSettingsModal({
 												onChange={(event) => {
 													const selectedValue = event.currentTarget.value;
 													const selectedColog = cologOptions.find((option) => option.id === Number(selectedValue));
-													onCoLogChange(selectedColog ?? null);
+													onTargetBlogChange(
+														selectedColog === undefined
+															? null
+															: { type: COLOG, id: selectedColog.id, slug: selectedColog.slug },
+													);
 												}}
 											>
 												<option value="">선택 안 함</option>

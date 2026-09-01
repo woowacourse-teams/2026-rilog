@@ -43,7 +43,7 @@ const command: PublishPostCommand = {
 	document: { title: '게시글 제목', blocks: [paragraph] },
 	settings: {
 		category: 'IT',
-		blog: { id: 1, slug: 'rilog', name: 'Rilog' },
+		blog: { type: 'RILOG', slug: 'rilog' },
 		representativeImage: null,
 		representativeImageUrl: 'posts/existing.png',
 	},
