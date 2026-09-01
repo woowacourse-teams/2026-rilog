@@ -1,4 +1,4 @@
-@container page-shell (min-width: 75rem) {
+@container page-shell (min-width: 74rem) {
 	.mobileNavTrigger {
 		display: none;
 	}
