@@ -1,12 +1,23 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import * as blogsApi from '@/shared/api/blogs/api';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import PublishSettingsModal from './PublishSettingsModal';
+
+const { refetchChaptersMock, usePostPublishChaptersMock } = vi.hoisted(() => ({
+	refetchChaptersMock: vi.fn(),
+	usePostPublishChaptersMock: vi.fn(),
+}));
+
+vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
+	usePostPublishChapters: usePostPublishChaptersMock,
+}));
 
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
@@ -14,6 +25,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	settings: {
 		category: 'IT',
 		blog: { type: 'RILOG', slug: 'personal-blog' },
+		chapterId: null,
 		representativeImage: null,
 		representativeImageUrl: null,
 	},
@@ -22,21 +34,51 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	defaultImageUrl: POST_THUMBNAIL_FALLBACK_URL,
 	userSlug: 'personal-blog',
 	cologOptions: [
-		{ id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
-		{ id: 2, slug: 'second-colog', name: '두 번째 Co-log' },
+		{
+			id: 1,
+			slug: 'first-colog',
+			name: '첫 번째 Co-log',
+			chapters: [{ value: '12', label: '개발' }],
+		},
+		{
+			id: 2,
+			slug: 'second-colog',
+			name: '두 번째 Co-log',
+			chapters: [{ value: '21', label: '프로덕트' }],
+		},
 	],
+	isCologOptionsPending: false,
+	isCologOptionsError: false,
+	isCologOptionsRefetching: false,
 	isPublishing: false,
+	onCologOptionsRefetch: vi.fn(),
 	onClose: vi.fn(),
 	onCategoryChange: vi.fn(),
 	onTargetBlogChange: vi.fn(),
+	onChapterChange: vi.fn(),
 	onImageChange: vi.fn(),
 	onPublish: vi.fn(),
 };
 
 const renderModal = (overrides: Partial<ComponentProps<typeof PublishSettingsModal>> = {}) =>
-	render(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
+	renderWithQuery(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
 
 describe('PublishSettingsModal', () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+		refetchChaptersMock.mockReset();
+		usePostPublishChaptersMock.mockReset();
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [
+				{ value: '7', label: '프론트엔드 성장 기록' },
+				{ value: '12', label: '개발' },
+			],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+	});
+
 	it('피드와 상세 화면의 기본 썸네일을 미리보기로 표시한다', () => {
 		renderModal();
 
@@ -48,7 +90,7 @@ describe('PublishSettingsModal', () => {
 	it('Co-log는 선택 안 함을 기본값으로 제공하고 선택 후 다시 해제할 수 있다', async () => {
 		const user = userEvent.setup();
 		const handleTargetBlogChange = vi.fn();
-		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log' };
+		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log', chapters: [] };
 		const { rerender } = renderModal({
 			cologOptions: [onlyColog],
 			onTargetBlogChange: handleTargetBlogChange,
@@ -84,6 +126,63 @@ describe('PublishSettingsModal', () => {
 		expect(handleTargetBlogChange).toHaveBeenLastCalledWith(null);
 	});
 
+	it('코로그 목록 조회 중에는 select를 잠그고 상태를 알린다', async () => {
+		const user = userEvent.setup();
+		renderModal({ cologOptions: [], isCologOptionsPending: true });
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveAttribute('aria-busy', 'true');
+		expect(screen.getByText('코로그 목록을 불러오는 중...')).toHaveAttribute('role', 'status');
+	});
+
+	it('조회에 성공했지만 소속된 코로그가 없으면 빈 상태를 알린다', async () => {
+		const user = userEvent.setup();
+		renderModal({ cologOptions: [] });
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeEnabled();
+		expect(screen.getByText('소속된 코로그가 없습니다.')).toHaveAttribute('role', 'status');
+	});
+
+	it('코로그 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		const handleRefetch = vi.fn();
+		renderModal({
+			cologOptions: [],
+			isCologOptionsError: true,
+			onCologOptionsRefetch: handleRefetch,
+		});
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		const error = screen.getByRole('alert');
+		expect(cologSelect).toBeDisabled();
+		expect(cologSelect).toHaveAccessibleDescription('코로그 목록을 불러오지 못했습니다.');
+		expect(error).toHaveTextContent('코로그 목록을 불러오지 못했습니다.');
+
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(handleRefetch).toHaveBeenCalledOnce();
+	});
+
+	it('코로그 목록을 다시 불러오는 동안 재시도 버튼을 잠근다', async () => {
+		const user = userEvent.setup();
+		renderModal({
+			cologOptions: [],
+			isCologOptionsError: true,
+			isCologOptionsRefetching: true,
+		});
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '다시 시도' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '다시 시도' })).toHaveAttribute('aria-busy', 'true');
+	});
+
 	it('카테고리를 select에서 변경한다', async () => {
 		const user = userEvent.setup();
 		const handleCategoryChange = vi.fn();
@@ -109,11 +208,12 @@ describe('PublishSettingsModal', () => {
 		expect(cologRadio).toBeChecked();
 		expect(personalBlogRadio).not.toBeChecked();
 		expect(screen.getByRole('combobox', { name: '코로그' })).toBeInTheDocument();
-		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeInTheDocument();
-		expect(screen.queryByRole('combobox', { name: '챕터' })).not.toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '챕터' })).toBeDisabled();
+		expect(screen.queryByRole('combobox', { name: '시리즈' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
 	});
 
-	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
+	it('개인 블로그는 조회한 시리즈를, 선택한 코로그는 overview의 챕터를 표시한다', () => {
 		const { unmount } = renderModal();
 
 		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
@@ -121,6 +221,8 @@ describe('PublishSettingsModal', () => {
 		expect(seriesSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'personal-blog', isEnabled: true });
+		const queryCallCount = usePostPublishChaptersMock.mock.calls.length;
 
 		unmount();
 		renderModal({
@@ -137,19 +239,105 @@ describe('PublishSettingsModal', () => {
 		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(within(chapterSelect).getByRole('option', { name: '개발' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenCalledTimes(queryCallCount);
+	});
+
+	it('코로그 선택이 바뀌면 추가 조회 없이 overview 챕터를 즉시 교체한다', () => {
+		const { rerender } = renderModal({
+			settings: {
+				...DEFAULT_PROPS.settings,
+				blog: { type: 'COLOG', id: 1, slug: 'first-colog' },
+			},
+		});
+		const queryCallCount = usePostPublishChaptersMock.mock.calls.length;
+
+		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{
+					...DEFAULT_PROPS.settings,
+					blog: { type: 'COLOG', id: 2, slug: 'second-colog' },
+				}}
+			/>,
+		);
+
+		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
+		expect(within(chapterSelect).queryByRole('option', { name: '개발' })).not.toBeInTheDocument();
+		expect(within(chapterSelect).getByRole('option', { name: '프로덕트' })).toBeInTheDocument();
+		expect(screen.queryByText('챕터 목록을 불러오는 중...')).not.toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenCalledTimes(queryCallCount);
+	});
+
+	it('선택한 챕터 ID와 선택 해제를 게시 설정에 반영한다', async () => {
+		const user = userEvent.setup();
+		const handleChapterChange = vi.fn();
+		renderModal({ onChapterChange: handleChapterChange });
+
+		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
+		await user.selectOptions(seriesSelect, '12');
+		expect(handleChapterChange).toHaveBeenLastCalledWith(12);
+
+		await user.selectOptions(seriesSelect, '');
+		expect(handleChapterChange).toHaveBeenLastCalledWith(null);
+	});
+
+	it('챕터 목록 조회 중에는 select를 잠그고 상태를 알린다', () => {
+		usePostPublishChaptersMock.mockReturnValue({
+			data: undefined,
+			isError: false,
+			isPending: true,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
+		expect(screen.getByRole('status')).toHaveTextContent('시리즈 목록을 불러오는 중...');
+	});
+
+	it('챕터 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		usePostPublishChaptersMock.mockReturnValue({
+			data: undefined,
+			isError: true,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('alert')).toHaveTextContent('시리즈 목록을 불러오지 못했습니다.');
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(refetchChaptersMock).toHaveBeenCalledOnce();
+	});
+
+	it('등록된 시리즈가 없으면 빈 목록 상태를 표시한다', () => {
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('status')).toHaveTextContent('등록된 시리즈가 없습니다.');
 	});
 
 	it('새 시리즈를 생성하는 동안 모달 action을 잠그고 성공한 시리즈를 선택한다', async () => {
 		const user = userEvent.setup();
-		let resolveCreateChapter!: (option: { value: string; label: string }) => void;
-		const handleCreateChapter = vi.fn(
+		let resolveCreateChapter!: (response: {
+			status: number;
+			message: string;
+			data: { chapterId: number; name: string; order: number };
+		}) => void;
+		const createChapter = vi.spyOn(blogsApi, 'createBlogChapter').mockImplementation(
 			() =>
-				new Promise<{ value: string; label: string }>((resolve) => {
+				new Promise((resolve) => {
 					resolveCreateChapter = resolve;
 				}),
 		);
 		const handlePublish = vi.fn();
-		renderModal({ onCreateChapter: handleCreateChapter, onPublish: handlePublish });
+		const handleChapterChange = vi.fn();
+		renderModal({ onPublish: handlePublish, onChapterChange: handleChapterChange });
 
 		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
@@ -157,7 +345,11 @@ describe('PublishSettingsModal', () => {
 		expect(seriesNameInput).toHaveAttribute('placeholder', '새로운 시리즈 이름을 입력하세요.');
 
 		await user.type(seriesNameInput, '새 시리즈{Enter}');
-		await waitFor(() => expect(handleCreateChapter).toHaveBeenCalledWith('새 시리즈'));
+		await waitFor(() =>
+			expect(createChapter).toHaveBeenCalledWith('personal-blog', {
+				name: '새 시리즈',
+			}),
+		);
 
 		expect(handlePublish).not.toHaveBeenCalled();
 		expect(seriesNameInput).toBeDisabled();
@@ -172,10 +364,28 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('radio', { name: '코로그' })).toBeDisabled();
 
 		act(() => {
-			resolveCreateChapter({ value: 'new-series', label: '새 시리즈' });
+			resolveCreateChapter({
+				status: 201,
+				message: '챕터를 생성했습니다.',
+				data: { chapterId: 19, name: '새 시리즈', order: 2 },
+			});
 		});
 
-		await waitFor(() => expect(screen.getByRole('combobox', { name: '시리즈' })).toHaveDisplayValue('새 시리즈'));
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [
+				{ value: '7', label: '프론트엔드 성장 기록' },
+				{ value: '12', label: '개발' },
+				{ value: '19', label: '새 시리즈' },
+			],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+
+		await waitFor(() => expect(handleChapterChange).toHaveBeenCalledWith(19));
+		expect(
+			within(screen.getByRole('combobox', { name: '시리즈' })).getByRole('option', { name: '새 시리즈' }),
+		).toBeInTheDocument();
 		expect(screen.queryByRole('textbox', { name: '새로운 시리즈 이름' })).not.toBeInTheDocument();
 	});
 
@@ -196,8 +406,8 @@ describe('PublishSettingsModal', () => {
 
 	it('시리즈 생성에 실패하면 input에 오류 메시지를 표시한다', async () => {
 		const user = userEvent.setup();
-		const handleCreateChapter = vi.fn().mockRejectedValue(new Error('이미 사용 중인 시리즈 이름입니다.'));
-		renderModal({ onCreateChapter: handleCreateChapter });
+		vi.spyOn(blogsApi, 'createBlogChapter').mockRejectedValue(new Error('이미 사용 중인 시리즈 이름입니다.'));
+		renderModal();
 
 		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });

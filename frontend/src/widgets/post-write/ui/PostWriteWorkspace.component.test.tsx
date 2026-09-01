@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,7 @@ import type {
 import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
+import { renderWithQuery as render } from '@/test/render-with-query';
 
 import DraftPostController from './DraftPostController';
 import EditPostController from './EditPostController';
@@ -102,12 +103,20 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 	}),
 }));
 
-vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
-	useMyCologsPreviewQuery: () => ({
+vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
+	useMyCologsOverviewQuery: () => ({
 		data: {
 			status: 200,
 			message: 'OK',
-			data: [{ cologId: 20, slug: 'rilog-team', name: 'Rilog Team' }],
+			data: [
+				{
+					cologId: 20,
+					slug: 'rilog-team',
+					name: 'Rilog Team',
+					profileImageUrl: 'cologs/rilog-team.png',
+					chapters: [{ chapterId: 12, name: '제품 개발', order: 0 }],
+				},
+			],
 		},
 	}),
 }));
@@ -156,6 +165,26 @@ vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
 		isFetchNextPageError: false,
 		refetch: vi.fn(),
 		fetchNextPage: vi.fn(),
+	}),
+}));
+
+vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
+	usePostPublishChapters: () => ({
+		data: [{ value: '12', label: '제품 개발' }],
+		isPending: false,
+		isError: false,
+		refetch: vi.fn(),
+	}),
+}));
+
+vi.mock('@/shared/api/blogs/mutations/use-create-blog-chapter-mutation', () => ({
+	CREATE_BLOG_CHAPTER_MUTATION_KEY: ['blogs', 'chapters', 'create'],
+	useCreateBlogChapterMutation: () => ({
+		mutateAsync: vi.fn(),
+		reset: vi.fn(),
+		isPending: false,
+		isError: false,
+		error: null,
 	}),
 }));
 
@@ -501,6 +530,7 @@ describe('NewPostController', () => {
 				category: 'TECH',
 				visibility: 'PUBLIC',
 				thumbnailImageUrl: '/images/thumbnail-fallback.svg',
+				chapterId: null,
 			},
 		});
 		expect(requestPostPublicationMock).not.toHaveBeenCalled();
@@ -558,6 +588,7 @@ describe('NewPostController', () => {
 				initialPublicationSettings={{
 					category: 'DAILY',
 					blog: { type: 'RILOG', slug: 'personal-blog' },
+					chapterId: 12,
 					representativeImage: null,
 					representativeImageUrl: 'posts/existing-thumbnail.png',
 				}}
@@ -603,6 +634,7 @@ describe('NewPostController', () => {
 				initialPublicationSettings={{
 					category: 'DAILY',
 					blog: { type: 'COLOG', id: 20, slug: 'rilog-team' },
+					chapterId: null,
 					representativeImage: null,
 					representativeImageUrl: null,
 				}}
@@ -957,6 +989,7 @@ describe('NewPostController', () => {
 		const coverImage = new File(['image'], 'cover.png', { type: 'image/png' });
 		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
 		await selectFirstCoLog(user);
+		await user.selectOptions(screen.getByRole('combobox', { name: '챕터' }), '12');
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/with-cover'));
@@ -980,6 +1013,7 @@ describe('NewPostController', () => {
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
 		await selectFirstCoLog(user);
+		await user.selectOptions(screen.getByRole('combobox', { name: '챕터' }), '12');
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
@@ -991,6 +1025,7 @@ describe('NewPostController', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: 'posts/cover-object-key.png',
+			chapterId: 12,
 		});
 
 		unmount();
@@ -1008,6 +1043,7 @@ describe('NewPostController', () => {
 				initialPublicationSettings={{
 					category: 'DAILY',
 					blog: { type: 'RILOG', slug: 'personal-blog' },
+					chapterId: 12,
 					representativeImage: null,
 					representativeImageUrl: 'posts/existing-thumbnail.png',
 				}}
@@ -1030,6 +1066,7 @@ describe('NewPostController', () => {
 		expect(updateVariables?.request).toMatchObject({
 			category: 'DAILY',
 			thumbnailImageUrl: 'posts/existing-thumbnail.png',
+			chapterId: 12,
 		});
 	});
 

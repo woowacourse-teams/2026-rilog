@@ -34,6 +34,7 @@ describe('publishPost', () => {
 			category: 'TECH' as const,
 			visibility: 'PUBLIC' as const,
 			thumbnailImageUrl: 'posts/cover.png',
+			chapterId: 12,
 		};
 
 		await expect(publishPost(requestBody)).resolves.toEqual(responseBody);
@@ -59,6 +60,7 @@ describe('readPostDetail', () => {
 				publishedAt: '2026-08-17T00:00:00Z',
 				thumbnailImageUrl: null,
 				category: 'TECH',
+				chapter: null,
 				author: {
 					userId: 1,
 					nickname: 'jetproc',
@@ -108,6 +110,7 @@ describe('updatePost', () => {
 			category: 'TECH' as const,
 			visibility: 'PUBLIC' as const,
 			thumbnailImageUrl: null,
+			chapterId: 8,
 		};
 
 		await expect(updatePost(42, requestBody)).resolves.toEqual(responseBody);

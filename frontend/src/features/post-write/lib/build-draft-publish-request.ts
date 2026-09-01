@@ -32,5 +32,6 @@ export const buildDraftPublishRequest = async (
 		category: settings.category === 'IT' ? 'TECH' : settings.category,
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,
+		chapterId: settings.chapterId,
 	};
 };

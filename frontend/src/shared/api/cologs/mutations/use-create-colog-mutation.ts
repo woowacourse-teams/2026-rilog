@@ -37,6 +37,6 @@ export const useCreateCologMutation = () => {
 
 			return createColog(request);
 		},
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsPreview() }),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsOverview() }),
 	});
 };

@@ -42,7 +42,7 @@ describe('useCreateCologMutation', () => {
 			coverImageFile: null,
 		});
 
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsPreview() });
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
 		expect(invalidateQueries).toHaveBeenCalledOnce();
 	});
 });

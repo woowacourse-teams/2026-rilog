@@ -64,11 +64,12 @@ describe('DraftListModal', () => {
 		render(
 			<DraftListModal
 				{...defaultProps}
-				draftPosts={[{ id: 42, title: '작성 중인 글', savedAt: '2026-08-27T10:29:46.466Z' }]}
+				draftPosts={[{ id: 42, title: '작성 중인 글', savedAt: '2026-08-27T23:29:46.466Z' }]}
 			/>,
 		);
 
 		expect(screen.getByRole('link', { name: /작성 중인 글/ })).toHaveAttribute('href', '/write?draftId=42');
+		expect(screen.getByText('2026년 8월 28일')).toBeInTheDocument();
 	});
 
 	it('임시저장 글로 이동하기 직전에 분석 진입 컨텍스트를 기록한다', async () => {

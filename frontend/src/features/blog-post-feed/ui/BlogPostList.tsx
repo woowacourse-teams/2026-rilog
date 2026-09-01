@@ -6,6 +6,7 @@ import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-deta
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
+import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 interface BlogPostListProps {
 	posts: readonly PostSummary[];
@@ -62,10 +63,10 @@ export default function BlogPostList({ posts, slug }: BlogPostListProps) {
 								/>
 								<span className="min-w-0 truncate">{post.author.nickname}</span>
 								<span aria-hidden="true">·</span>
-								<time dateTime={post.publishedAt} className="hidden sm:inline">
+								<time dateTime={toApiUtcISOString(post.publishedAt)} className="hidden sm:inline">
 									{formatPublishedDate(post.publishedAt)}
 								</time>
-								<time dateTime={post.publishedAt} aria-hidden={true} className="sm:hidden">
+								<time dateTime={toApiUtcISOString(post.publishedAt)} aria-hidden={true} className="sm:hidden">
 									{formatPublishedDate(post.publishedAt, true)}
 								</time>
 							</div>

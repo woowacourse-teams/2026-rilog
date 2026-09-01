@@ -33,5 +33,6 @@ export const buildPostWriteRequest = async (
 		// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,
+		chapterId: settings.chapterId,
 	};
 };

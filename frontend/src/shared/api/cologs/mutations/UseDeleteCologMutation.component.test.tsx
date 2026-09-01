@@ -26,7 +26,7 @@ describe('useDeleteCologMutation', () => {
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: cologsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsPreview() });
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
 		expect(invalidateQueries).toHaveBeenCalledTimes(4);
 	});
 

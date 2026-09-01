@@ -12,6 +12,7 @@ describe('mapPostDetailResponse', () => {
 			publishedAt: '2026-08-17T04:30:00',
 			thumbnailImageUrl: null,
 			category: 'TECH',
+			chapter: null,
 			author: {
 				userId: 7,
 				nickname: '파라디',
@@ -52,6 +53,7 @@ describe('mapPostDetailResponse', () => {
 			publishedAt: '2026-08-17T04:40:00',
 			thumbnailImageUrl: 'https://images.rilog.test/cover.png',
 			category: 'DAILY',
+			chapter: null,
 			author: {
 				userId: 7,
 				nickname: '파라디',

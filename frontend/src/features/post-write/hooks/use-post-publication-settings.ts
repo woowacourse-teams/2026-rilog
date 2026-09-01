@@ -14,6 +14,7 @@ interface UsePostPublicationSettingsOptions {
 const DEFAULT_PUBLICATION_SETTINGS: PublicationSettings = {
 	category: 'IT',
 	blog: null,
+	chapterId: null,
 	representativeImage: null,
 	representativeImageUrl: null,
 };
@@ -62,8 +63,12 @@ export function usePostPublicationSettings({ initialSettings, userSlug }: UsePos
 
 	const handleTargetBlogChange = useCallback((targetBlog: TargetBlog | null) => {
 		setHasUserChangedTargetBlog(true);
-		setSettings((currentSettings) => ({ ...currentSettings, blog: targetBlog }));
+		setSettings((currentSettings) => ({ ...currentSettings, blog: targetBlog, chapterId: null }));
 		setCologError(undefined);
+	}, []);
+
+	const handleChapterChange = useCallback((chapterId: number | null) => {
+		setSettings((currentSettings) => ({ ...currentSettings, chapterId }));
 	}, []);
 
 	const validatePublicationSettings = useCallback(
@@ -91,6 +96,7 @@ export function usePostPublicationSettings({ initialSettings, userSlug }: UsePos
 		handleImageChange,
 		handleCategoryChange,
 		handleTargetBlogChange,
+		handleChapterChange,
 		validatePublicationSettings,
 		clearSelectedImageUrl,
 	};

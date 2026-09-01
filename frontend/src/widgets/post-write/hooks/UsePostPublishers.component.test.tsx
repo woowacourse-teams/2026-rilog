@@ -44,6 +44,7 @@ const command: PublishPostCommand = {
 	settings: {
 		category: 'IT',
 		blog: { type: 'RILOG', slug: 'rilog' },
+		chapterId: 12,
 		representativeImage: null,
 		representativeImageUrl: 'posts/existing.png',
 	},

@@ -52,6 +52,7 @@ export interface DraftPublishRequest {
 	category: DraftPublishCategoryRequest;
 	visibility: DraftPublishVisibilityRequest;
 	thumbnailImageUrl: string | null;
+	chapterId: number | null;
 }
 
 export interface DraftPublishResponse {

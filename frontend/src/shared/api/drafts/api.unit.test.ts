@@ -164,6 +164,7 @@ describe('publishDraft', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: null,
+			chapterId: 12,
 		};
 
 		await expect(publishDraft(7, requestBody)).resolves.toEqual(responseBody);
