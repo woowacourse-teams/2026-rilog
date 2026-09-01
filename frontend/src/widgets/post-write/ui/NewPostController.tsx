@@ -65,11 +65,16 @@ export default function NewPostController({
 			uploadFile={uploadFile}
 			navigate={navigate}
 			onPublished={(result, settings, document) => {
+				const targetBlog = settings.blog;
+				if (targetBlog === null) {
+					return;
+				}
+
 				analytics.postPublished({
 					postId: result.postId,
-					ownerType: 'COLOG',
+					ownerType: targetBlog.type,
 					category: settings.category,
-					cologId: settings.blog?.id ?? 0,
+					cologId: targetBlog.type === 'COLOG' ? targetBlog.id : null,
 					imageSource: resolveRepresentativeImageSource(settings, document.blocks),
 					blockCountBucket: getBlockCountBucket(document.blocks.length),
 				});

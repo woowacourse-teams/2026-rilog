@@ -20,20 +20,20 @@ describe('usePostPublicationSettings', () => {
 		expect(result.current.settings).toBe(initialSettings);
 		expect(result.current.representativeImagePreviewUrl).toBe('posts/existing-thumbnail.png');
 
-		act(() => expect(result.current.validatePublicationSettings()).toBe(false));
-		expect(result.current.cologError).toBe('Co-log를 선택해 주세요.');
+		act(() => expect(result.current.validatePublicationSettings('COLOG')).toBe(false));
+		expect(result.current.cologError).toBe('코로그를 선택해 주세요.');
 
 		act(() => {
 			result.current.handleCategoryChange('IT');
-			result.current.handleCoLogChange({ id: 7, slug: 'rilog-team', name: 'Rilog Team' });
+			result.current.handleTargetBlogChange({ type: 'COLOG', id: 7, slug: 'rilog-team' });
 		});
 
 		expect(result.current.settings).toMatchObject({
 			category: 'IT',
-			blog: { id: 7, slug: 'rilog-team', name: 'Rilog Team' },
+			blog: { type: 'COLOG', id: 7, slug: 'rilog-team' },
 		});
 		expect(result.current.cologError).toBeUndefined();
-		act(() => expect(result.current.validatePublicationSettings()).toBe(true));
+		act(() => expect(result.current.validatePublicationSettings('COLOG')).toBe(true));
 	});
 
 	it('선택 이미지를 교체·제거·unmount할 때 생성한 object URL만 해제한다', () => {

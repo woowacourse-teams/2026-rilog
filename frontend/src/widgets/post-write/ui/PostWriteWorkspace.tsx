@@ -19,6 +19,7 @@ import type {
 } from '@/features/post-write/model/post-publication';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
 import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
+import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
@@ -47,6 +48,7 @@ export default function PostWriteWorkspace({
 	navigate,
 	onPublished,
 }: PostWriteWorkspaceProps) {
+	const { data: myInfoResponse } = useMyInfoQuery();
 	const { data: myCologsResponse } = useMyCologsPreviewQuery();
 	const hasTrackedEditorOpenRef = useRef(false);
 
@@ -72,21 +74,24 @@ export default function PostWriteWorkspace({
 		[uploadFileToStorage],
 	);
 
+	const userSlug = myInfoResponse?.data?.slug ?? null;
+
 	const cologOptions = useMemo(() => {
 		const availableBlogs =
 			myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
-		const initialBlog = initialPublicationSettings?.blog;
+		const initialTarget = initialPublicationSettings?.blog;
 
-		if (initialBlog === null || initialBlog === undefined || availableBlogs.some(({ id }) => id === initialBlog.id)) {
+		if (initialTarget?.type !== 'COLOG' || availableBlogs.some(({ id }) => id === initialTarget.id)) {
 			return availableBlogs;
 		}
 
-		return [initialBlog, ...availableBlogs];
+		return availableBlogs;
 	}, [initialPublicationSettings?.blog, myCologsResponse?.data]);
 
 	const workspace = usePostWriteWorkspace({
 		initialDocument,
 		initialPublicationSettings,
+		userSlug,
 		publishPost,
 		navigate,
 		onPublished,
@@ -97,6 +102,7 @@ export default function PostWriteWorkspace({
 			<PostEditor
 				workspace={workspace}
 				cologOptions={cologOptions}
+				userSlug={userSlug}
 				uploadFile={uploadFile ?? uploadPostBodyFileWithApi}
 				editorComponent={editorComponent}
 				initialDocument={initialDocument}

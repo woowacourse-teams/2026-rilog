@@ -12,7 +12,7 @@ export const buildDraftPublishRequest = async (
 	uploadRepresentativeImage: UploadRepresentativeImage,
 ): Promise<DraftPublishRequest> => {
 	if (settings.blog === null) {
-		throw new Error('Co-log를 선택해 주세요.');
+		throw new Error('코로그를 선택해 주세요.');
 	}
 
 	let thumbnailImageUrl =

@@ -1,6 +1,5 @@
 import type { Block } from '@blocknote/core';
 
-import type { CologOption } from '@/domains/blog/model/colog';
 import type { PostCategory } from '@/domains/post/model/post';
 
 export interface EditorDocument {
@@ -8,9 +7,11 @@ export interface EditorDocument {
 	blocks: Block[];
 }
 
+export type TargetBlog = { type: 'RILOG'; slug: string } | { type: 'COLOG'; id: number; slug: string };
+
 export interface PublicationSettings {
 	category: PostCategory;
-	blog: CologOption | null;
+	blog: TargetBlog | null;
 	representativeImage: File | null;
 	representativeImageUrl: string | null;
 }

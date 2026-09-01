@@ -62,6 +62,26 @@ describe('analytics events', () => {
 		});
 	});
 
+	it('개인 글 발행은 게시글 ID를 PostHog post_id로 전송한다', () => {
+		analytics.postPublished({
+			postId: '77',
+			ownerType: 'RILOG',
+			cologId: null,
+			category: 'IT',
+			imageSource: 'default',
+			blockCountBucket: '1-5',
+		});
+
+		expect(captureMock).toHaveBeenCalledWith('post published', {
+			post_id: '77',
+			owner_type: 'RILOG',
+			colog_id: null,
+			category: 'IT',
+			image_source: 'default',
+			block_count_bucket: '1-5',
+		});
+	});
+
 	it('기존 비-P0 이벤트는 유지한다', () => {
 		analytics.cologProfileUpdated({ changedFields: ['name'] });
 		analytics.blogProfileViewed({ blogType: 'COLOG' });
