@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { BaseModalAccessibility } from './modal.types';
 import type { MouseEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
 
+import { BASE_MODAL_CLASS_NAME } from './modal.styles';
+
 interface BaseModalProps {
 	open: boolean;
 	children: ReactNode;
@@ -17,8 +19,6 @@ interface BaseModalProps {
 	className?: string;
 }
 
-const MODAL_CLASS_NAME =
-	'm-auto max-h-modal-max-height scale-(--modal-closed-scale) overflow-hidden rounded-modal border-0 bg-surface p-0 text-text-primary opacity-0 shadow-modal transition-[opacity,scale,overlay,display] duration-(--modal-exit-duration) ease-out [transition-behavior:allow-discrete] backdrop:bg-modal-backdrop backdrop:opacity-0 backdrop:transition-opacity backdrop:duration-(--modal-exit-duration) data-[state=open]:scale-100 data-[state=open]:opacity-100 data-[state=open]:duration-(--modal-enter-duration) data-[state=open]:backdrop:opacity-100 data-[state=open]:backdrop:duration-(--modal-enter-duration) md:max-h-modal-max-height-md';
 const EXIT_DURATION_MS = 120;
 
 export default function BaseModal({
@@ -126,7 +126,7 @@ export default function BaseModal({
 			role={accessibility.role}
 			aria-labelledby={accessibility.labelledBy}
 			aria-describedby={accessibility.describedBy}
-			className={`${MODAL_CLASS_NAME} ${className ?? ''}`}
+			className={`${BASE_MODAL_CLASS_NAME} ${className ?? ''}`}
 			onCancel={handleCancel}
 			onClick={handleBackdropClick}
 		>
