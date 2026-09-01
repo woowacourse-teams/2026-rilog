@@ -25,12 +25,18 @@ const renderInTable = (ui: React.ReactElement) =>
 
 describe('CologMemberRow', () => {
 	it('읽기 모드에서는 텍스트 정보를 렌더링한다', () => {
-		renderInTable(<CologMemberRow member={BASE_MEMBER} />);
+		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '2024-05-19T23:30:00' }} />);
 
 		expect(screen.getByText('김지연')).toBeInTheDocument();
 		expect(screen.getByText('@jiyeon')).toBeInTheDocument();
 		expect(screen.getByText('Owner')).toBeInTheDocument();
 		expect(screen.getByText('2024. 5. 20')).toBeInTheDocument();
+	});
+
+	it('가입일이 잘못된 문자열이면 원문을 보존한다', () => {
+		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '알 수 없음' }} />);
+
+		expect(screen.getByText('알 수 없음')).toBeInTheDocument();
 	});
 
 	it('편집 모드에서 권한 select를 변경하면 콜백을 호출한다', async () => {

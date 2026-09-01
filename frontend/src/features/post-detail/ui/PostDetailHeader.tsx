@@ -3,6 +3,7 @@ import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
+import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 import PostDetailActions from './PostDetailActions';
 
@@ -35,7 +36,7 @@ export default function PostDetailHeader({ postId, slug, title, publishedAt, aut
 					<span>{author.nickname}</span>
 				</CustomLink>
 				<span aria-hidden="true">·</span>
-				<time dateTime={publishedAt}>{formatPublishedDate(publishedAt)}</time>
+				<time dateTime={toApiUtcISOString(publishedAt)}>{formatPublishedDate(publishedAt)}</time>
 
 				<PostDetailActions authorId={author.id} slug={slug} postId={postId} />
 			</div>
