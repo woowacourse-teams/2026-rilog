@@ -46,4 +46,25 @@ describe('useChapterDrafts', () => {
 		expect(result.current.chapters[0].name).toBe('플랫폼');
 		expect(result.current.isEditing).toBe(false);
 	});
+
+	it('공백뿐인 이름은 저장하지 않고, 저장할 이름은 공백을 제거한다', () => {
+		const { result } = renderHook(() => useChapterDrafts({ initialChapters: [CHAPTER] }));
+
+		act(() => {
+			result.current.handleStartEditing();
+			result.current.handleNameChange(CHAPTER.id, '   ');
+		});
+		act(() => result.current.handleSave());
+
+		expect(result.current.chapters[0].name).toBe('프론트엔드');
+		expect(result.current.isEditing).toBe(true);
+
+		act(() => {
+			result.current.handleNameChange(CHAPTER.id, ' 플랫폼 ');
+		});
+		act(() => result.current.handleSave());
+
+		expect(result.current.chapters[0].name).toBe('플랫폼');
+		expect(result.current.isEditing).toBe(false);
+	});
 });

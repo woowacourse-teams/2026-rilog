@@ -11,6 +11,8 @@ interface RilogSeriesRowProps {
 }
 
 export default function RilogSeriesRow({ series, isEditing = false, onNameChange, onDelete }: RilogSeriesRowProps) {
+	const hasEmptyName = series.name.trim().length === 0;
+
 	return (
 		<tr className="h-18.5 border-b border-border-default">
 			<td className="py-3 pl-6 text-body-1 font-semibold text-text-primary">
@@ -19,6 +21,8 @@ export default function RilogSeriesRow({ series, isEditing = false, onNameChange
 						className="w-4/5!"
 						aria-label={`${series.name} 시리즈 이름`}
 						value={series.name}
+						status={hasEmptyName ? 'error' : 'default'}
+						helperText={hasEmptyName ? '시리즈 이름을 입력해 주세요.' : undefined}
 						onChange={(event) => onNameChange?.(series.id, event.target.value)}
 					/>
 				) : (

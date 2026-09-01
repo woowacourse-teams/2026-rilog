@@ -87,6 +87,20 @@ describe('RilogSettingsWorkspace', () => {
 		await waitFor(() => expect(screen.getByText('프론트엔드')).toBeInTheDocument());
 	});
 
+	it('시리즈 이름이 공백뿐이면 입력 오류를 안내하고 저장을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
+
+		await user.click(screen.getByRole('tab', { name: '시리즈 관리' }));
+		await user.click(screen.getByRole('button', { name: '시리즈 수정' }));
+		const seriesName = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
+		await user.clear(seriesName);
+
+		expect(seriesName).toBeInvalid();
+		expect(seriesName).toHaveAccessibleDescription('시리즈 이름을 입력해 주세요.');
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+	});
+
 	it('저장하지 않은 프로필은 탭 이동을 확인하고 취소하면 유지한다', async () => {
 		const user = userEvent.setup();
 		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);

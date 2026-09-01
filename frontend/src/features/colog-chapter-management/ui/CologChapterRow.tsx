@@ -11,6 +11,8 @@ interface CologChapterRowProps {
 }
 
 export default function CologChapterRow({ chapter, isEditing = false, onNameChange, onDelete }: CologChapterRowProps) {
+	const hasEmptyName = chapter.name.trim().length === 0;
+
 	return (
 		<tr className="h-18.5 border-b border-border-default">
 			<td className="py-3 pl-6 text-body-1 font-semibold text-text-primary">
@@ -19,6 +21,8 @@ export default function CologChapterRow({ chapter, isEditing = false, onNameChan
 						className="w-4/5!"
 						aria-label={`${chapter.name} 챕터 이름`}
 						value={chapter.name}
+						status={hasEmptyName ? 'error' : 'default'}
+						helperText={hasEmptyName ? '챕터 이름을 입력해 주세요.' : undefined}
 						onChange={(event) => onNameChange?.(chapter.id, event.target.value)}
 					/>
 				) : (

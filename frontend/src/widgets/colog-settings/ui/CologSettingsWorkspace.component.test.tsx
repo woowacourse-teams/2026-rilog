@@ -315,6 +315,20 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.queryByRole('textbox', { name: '플랫폼 챕터 이름' })).not.toBeInTheDocument();
 	});
 
+	it('챕터 이름이 공백뿐이면 입력 오류를 안내하고 저장을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(screen.getByRole('button', { name: '챕터 수정' }));
+		const nameInput = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
+		await user.clear(nameInput);
+
+		expect(nameInput).toBeInvalid();
+		expect(nameInput).toHaveAccessibleDescription('챕터 이름을 입력해 주세요.');
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+	});
+
 	it('챕터 추가 버튼을 누르면 챕터 이름 입력 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(<CologSettingsWorkspace slug="team-rilog" />);

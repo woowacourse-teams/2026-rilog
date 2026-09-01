@@ -44,10 +44,14 @@ export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = 
 	};
 
 	const handleSave = () => {
+		if (draftChapters.some((draft) => draft.name.trim().length === 0)) {
+			return;
+		}
+
 		setChapters((currentChapters) =>
 			currentChapters.map((chapter) => {
 				const draftChapter = draftChapters.find((draft) => draft.id === chapter.id);
-				return draftChapter === undefined ? chapter : { ...chapter, ...draftChapter };
+				return draftChapter === undefined ? chapter : { ...chapter, ...draftChapter, name: draftChapter.name.trim() };
 			}),
 		);
 		setDraftChapters([]);

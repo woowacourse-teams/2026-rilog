@@ -172,6 +172,8 @@ function CologSettingsWorkspaceContent({
 				: activeTab === 'chapters'
 					? chapterDrafts.isDirty
 					: false;
+	const isChapterSaveDisabled =
+		!chapterDrafts.isDirty || chapterDrafts.draftChapters.some((draft) => draft.name.trim().length === 0);
 
 	const commitTabChange = useCallback(
 		(nextTab: CologSettingsTab, path: string) => {
@@ -337,7 +339,7 @@ function CologSettingsWorkspaceContent({
 							type="button"
 							size="md"
 							className="w-full sm:w-30"
-							disabled={!chapterDrafts.isDirty}
+							disabled={isChapterSaveDisabled}
 							onClick={chapterDrafts.handleSave}
 						>
 							저장
