@@ -159,6 +159,15 @@ vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
 	}),
 }));
 
+vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
+	usePostPublishChapters: () => ({
+		data: [],
+		isPending: false,
+		isError: false,
+		refetch: vi.fn(),
+	}),
+}));
+
 vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
 	useUpdatePostMutation: () => ({ mutateAsync: requestPostUpdateMock }),
 }));

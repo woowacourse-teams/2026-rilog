@@ -7,6 +7,8 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
+import { usePostPublishChapters } from '@/features/post-write/hooks/use-post-publish-chapters';
+import type { BlogChapterOption } from '@/features/post-write/lib/map-blog-chapter-response';
 import type { PublicationSettings, TargetBlog } from '@/features/post-write/model/post-publication';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
@@ -37,30 +39,10 @@ interface PublishSettingsModalProps {
 	onCreateChapter?: CreateChapter;
 }
 
-interface ChapterOption {
-	value: string;
-	label: string;
-}
-
-type CreateChapter = (name: string) => Promise<ChapterOption>;
+type CreateChapter = (name: string) => Promise<BlogChapterOption>;
 
 // 모달 footer의 발행 버튼을 내부 form과 연결하는 ID
 const PUBLISH_FORM_ID = 'post-publish-settings-form';
-
-const MOCK_PERSONAL_CHAPTER_OPTIONS = [
-	{ value: 'frontend-growth', label: '프론트엔드 성장 기록' },
-	{ value: 'project-retrospective', label: '프로젝트 회고' },
-	{ value: 'developer-life', label: '개발자 일상' },
-];
-
-const MOCK_COLOG_CHAPTER_OPTIONS = [
-	{ value: 'planning', label: '기획' },
-	{ value: 'development', label: '개발' },
-	{ value: 'retrospective', label: '회고' },
-	{ value: 'planning-advanced', label: '기획 심화' },
-	{ value: 'development-advanced', label: '개발 심화' },
-	{ value: 'retrospective-advanced', label: '회고 심화' },
-];
 
 const RILOG = 'RILOG';
 const COLOG = 'COLOG';
@@ -101,7 +83,7 @@ export default function PublishSettingsModal({
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const seriesNameInputRef = useRef<HTMLInputElement>(null);
-	const [createdPersonalChapterOptions, setCreatedPersonalChapterOptions] = useState<ChapterOption[]>([]);
+	const [createdPersonalChapterOptions, setCreatedPersonalChapterOptions] = useState<BlogChapterOption[]>([]);
 	const [selectedChapterValues, setSelectedChapterValues] = useState<Record<string, string>>({});
 	const [isSeriesCreatorOpen, setIsSeriesCreatorOpen] = useState(false);
 	const [newSeriesName, setNewSeriesName] = useState('');
@@ -110,14 +92,35 @@ export default function PublishSettingsModal({
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
-	const isCologSelected = settings.blog?.type === COLOG;
+	const selectedColog = settings.blog?.type === COLOG ? settings.blog : null;
+	const isCologSelected = selectedColog !== null;
 	const chapterLabel = isCologSelected ? '챕터' : '시리즈';
-	const chapterOptions = isCologSelected
-		? MOCK_COLOG_CHAPTER_OPTIONS
-		: [...MOCK_PERSONAL_CHAPTER_OPTIONS, ...createdPersonalChapterOptions];
-	const chapterScopeKey = settings.blog?.type === COLOG ? `colog-${settings.blog.id}` : 'personal-blog';
+	const chapterQuerySlug = selectedColog?.slug ?? (selectedBlog === RILOG ? userSlug : null);
+	const isChapterQueryEnabled = open && chapterQuerySlug !== null;
+	const chaptersQuery = usePostPublishChapters({
+		slug: chapterQuerySlug ?? '',
+		isEnabled: isChapterQueryEnabled,
+	});
+	const chapterOptions = [
+		...(chapterQuerySlug === null ? [] : (chaptersQuery.data ?? [])),
+		...(!isCologSelected ? createdPersonalChapterOptions : []),
+	];
+	const chapterScopeKey = selectedColog === null ? 'personal-blog' : `colog-${selectedColog.id}`;
 	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
 	const isModalPending = isPublishing || isCreatingSeries;
+	const isChapterSelectDisabled =
+		isModalPending || !isChapterQueryEnabled || chaptersQuery.isPending || chaptersQuery.isError;
+	const chapterStatusMessage = !isChapterQueryEnabled
+		? selectedBlog === COLOG
+			? '코로그를 선택하면 챕터 목록을 확인할 수 있어요.'
+			: '시리즈 목록을 확인할 수 없어요.'
+		: chaptersQuery.isPending
+			? `${chapterLabel} 목록을 불러오는 중...`
+			: chaptersQuery.isError
+				? `${chapterLabel} 목록을 불러오지 못했습니다.`
+				: chapterOptions.length === 0
+					? `등록된 ${chapterLabel}가 없습니다.`
+					: undefined;
 
 	useEffect(() => {
 		if (isSeriesCreatorOpen) {
@@ -328,11 +331,13 @@ export default function PublishSettingsModal({
 												className="native-select"
 												onChange={(event) => {
 													const selectedValue = event.currentTarget.value;
-													const selectedColog = cologOptions.find((option) => option.id === Number(selectedValue));
+													const selectedCologOption = cologOptions.find(
+														(option) => option.id === Number(selectedValue),
+													);
 													onTargetBlogChange(
-														selectedColog === undefined
+														selectedCologOption === undefined
 															? null
-															: { type: COLOG, id: selectedColog.id, slug: selectedColog.slug },
+															: { type: COLOG, id: selectedCologOption.id, slug: selectedCologOption.slug },
 													);
 												}}
 											>
@@ -402,7 +407,8 @@ export default function PublishSettingsModal({
 									<select
 										id={id}
 										value={selectedChapterValue}
-										disabled={isModalPending}
+										disabled={isChapterSelectDisabled}
+										aria-busy={chaptersQuery.isPending || undefined}
 										className="native-select"
 										onChange={(event) => {
 											const selectedValue = event.currentTarget.value;
@@ -419,6 +425,21 @@ export default function PublishSettingsModal({
 											</option>
 										))}
 									</select>
+									{chapterStatusMessage !== undefined && (
+										<div className="flex items-center justify-between gap-3 text-label-2 text-text-secondary">
+											<p role={chaptersQuery.isError ? 'alert' : 'status'}>{chapterStatusMessage}</p>
+											{chaptersQuery.isError && (
+												<Button
+													variant="ghost"
+													size="sm"
+													disabled={isModalPending}
+													onClick={() => void chaptersQuery.refetch()}
+												>
+													다시 시도
+												</Button>
+											)}
+										</div>
+									)}
 								</div>
 							)}
 						</Field>

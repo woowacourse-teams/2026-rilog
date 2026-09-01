@@ -1,12 +1,21 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 
 import PublishSettingsModal from './PublishSettingsModal';
+
+const { refetchChaptersMock, usePostPublishChaptersMock } = vi.hoisted(() => ({
+	refetchChaptersMock: vi.fn(),
+	usePostPublishChaptersMock: vi.fn(),
+}));
+
+vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
+	usePostPublishChapters: usePostPublishChaptersMock,
+}));
 
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
@@ -37,6 +46,20 @@ const renderModal = (overrides: Partial<ComponentProps<typeof PublishSettingsMod
 	render(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
 
 describe('PublishSettingsModal', () => {
+	beforeEach(() => {
+		refetchChaptersMock.mockReset();
+		usePostPublishChaptersMock.mockReset();
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [
+				{ value: '7', label: '프론트엔드 성장 기록' },
+				{ value: '12', label: '개발' },
+			],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+	});
+
 	it('피드와 상세 화면의 기본 썸네일을 미리보기로 표시한다', () => {
 		renderModal();
 
@@ -113,7 +136,7 @@ describe('PublishSettingsModal', () => {
 		expect(screen.queryByRole('combobox', { name: '챕터' })).not.toBeInTheDocument();
 	});
 
-	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
+	it('개인 블로그와 선택한 Co-log의 챕터 목록 조회 결과를 표시한다', () => {
 		const { unmount } = renderModal();
 
 		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
@@ -121,6 +144,7 @@ describe('PublishSettingsModal', () => {
 		expect(seriesSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'personal-blog', isEnabled: true });
 
 		unmount();
 		renderModal({
@@ -137,6 +161,47 @@ describe('PublishSettingsModal', () => {
 		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(within(chapterSelect).getByRole('option', { name: '개발' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'first-colog', isEnabled: true });
+	});
+
+	it('챕터 목록 조회 중에는 select를 잠그고 상태를 알린다', () => {
+		usePostPublishChaptersMock.mockReturnValue({
+			data: undefined,
+			isError: false,
+			isPending: true,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
+		expect(screen.getByRole('status')).toHaveTextContent('시리즈 목록을 불러오는 중...');
+	});
+
+	it('챕터 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		usePostPublishChaptersMock.mockReturnValue({
+			data: undefined,
+			isError: true,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('alert')).toHaveTextContent('시리즈 목록을 불러오지 못했습니다.');
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(refetchChaptersMock).toHaveBeenCalledOnce();
+	});
+
+	it('등록된 시리즈가 없으면 빈 목록 상태를 표시한다', () => {
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('status')).toHaveTextContent('등록된 시리즈가 없습니다.');
 	});
 
 	it('새 시리즈를 생성하는 동안 모달 action을 잠그고 성공한 시리즈를 선택한다', async () => {
