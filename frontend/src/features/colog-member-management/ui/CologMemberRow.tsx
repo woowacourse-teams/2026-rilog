@@ -1,5 +1,6 @@
 import type { CologMember, CologMemberPermission } from '@/domains/blog/model/colog';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { parseApiUtcDate } from '@/shared/utils/parse-api-utc-date';
 
 const PERMISSION_LABELS: Record<CologMemberPermission, string> = {
 	OWNER: 'Owner',
@@ -31,7 +32,8 @@ export default function CologMemberRow({
 	onRemove,
 	canRemove = false,
 }: CologMemberRowProps) {
-	const joinedAt = JOINED_AT_FORMATTER.format(new Date(member.joinedAt)).replace(/\.$/, '');
+	const joinedAtDate = parseApiUtcDate(member.joinedAt);
+	const joinedAt = joinedAtDate ? JOINED_AT_FORMATTER.format(joinedAtDate).replace(/\.$/, '') : member.joinedAt;
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">

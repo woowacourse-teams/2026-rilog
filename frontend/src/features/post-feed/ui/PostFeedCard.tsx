@@ -5,6 +5,7 @@ import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
+import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 import PostFeedCologBadge from './PostFeedCologBadge';
 import PostFeedImage from './PostFeedImage';
@@ -57,7 +58,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 							/>
 							<span className="min-w-0 truncate font-medium">{post.author.nickname}</span>
 							<span aria-hidden="true">·</span>
-							<time dateTime={post.publishedAt} className="shrink-0 pr-1">
+							<time dateTime={toApiUtcISOString(post.publishedAt)} className="shrink-0 pr-1">
 								{formatPublishedDate(post.publishedAt)}
 							</time>
 						</div>
