@@ -88,6 +88,8 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
         SELECT new kr.rilog.domain.blog.repository.projection.CologIndexProjection(
             blogMember.blog.id,
             blogMember.blog.profile.name,
+            blogMember.blog.slug.value,
+            blogMember.blog.profile.profileImageUrl,
             COUNT(post.id)
         )
         FROM BlogMember blogMember

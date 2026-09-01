@@ -57,6 +57,8 @@ public record BlogIndexResult(
     public record CologIndexResult(
             Long cologId,
             String cologName,
+            String cologSlug,
+            String cologProfileImageUrl,
             long authoredPostCount
     ) {
 
@@ -64,6 +66,8 @@ public record BlogIndexResult(
             return new CologIndexResult(
                     projection.cologId(),
                     projection.cologName(),
+                    projection.cologSlug(),
+                    projection.cologProfileImageUrl(),
                     projection.authoredPostCount()
             );
         }
