@@ -39,7 +39,7 @@ public record BlogIndexResponse(
     }
 
     public record ChapterIndexResponse(
-            Long id,
+            Long chapterId,
             String name,
             long postCount
     ) {
@@ -55,7 +55,7 @@ public record BlogIndexResponse(
     }
 
     public record CologIndexResponse(
-            Long id,
+            Long cologId,
             String name,
             String slug,
             String profileImageUrl,
