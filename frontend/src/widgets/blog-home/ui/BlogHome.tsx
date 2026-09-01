@@ -6,6 +6,7 @@ import CologSettingsButton from '@/features/colog-settings-access/ui/CologSettin
 import RilogSettingsButton from '@/features/rilog-settings-access/ui/RilogSettingsButton';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
+import BlogHomeCologAside from './BlogHomeCologAside';
 import BlogHomeNavigation from './BlogHomeNavigation';
 import BlogHomeToolbar from './BlogHomeToolbar';
 import BlogPostFeedSection from './BlogPostFeedSection';
@@ -21,12 +22,16 @@ export default function BlogHome({ profile }: BlogHomeProps) {
 		) : (
 			<RilogSettingsButton slug={profile.slug} />
 		);
-	const memberAside =
+	const rightAside =
 		profile.type === 'COLOG' ? (
 			<div className="py-11">
 				<CologMemberAside slug={profile.slug} />
 			</div>
-		) : undefined;
+		) : (
+			<div className="py-11">
+				<BlogHomeCologAside />
+			</div>
+		);
 
 	return (
 		<PageShell
@@ -39,7 +44,7 @@ export default function BlogHome({ profile }: BlogHomeProps) {
 					</div>
 				</div>
 			}
-			rightAside={memberAside}
+			rightAside={rightAside}
 		>
 			<div className="px-6 py-11 aside-right:px-0">
 				<BlogHomeToolbar blogType={profile.type} />

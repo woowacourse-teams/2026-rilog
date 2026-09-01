@@ -80,13 +80,14 @@ describe('BlogHome', () => {
 		expect(screen.getByText('멤버 목록: rilog-team')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveAttribute('href', '/@rilog-team/settings?tab=profile');
 		expect(screen.getByRole('heading', { name: '챕터' })).toBeInTheDocument();
+		expect(screen.queryByRole('region', { name: 'Cologs' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '시리즈' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '코로그' })).not.toBeInTheDocument();
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('COLOG');
 	});
 
-	it('RILOG에는 settings와 시리즈·코로그 탐색을 조립하고 feed slug를 유지한다', () => {
+	it('RILOG에는 settings와 시리즈·코로그 탐색, 참여 코로그 aside를 조립한다', () => {
 		render(<BlogHome profile={{ ...COLOG_PROFILE, type: 'RILOG', name: '파라디', slug: 'jetproc', memberCount: 1 }} />);
 
 		expect(screen.getByText('프로필: RILOG')).toBeInTheDocument();
@@ -95,6 +96,8 @@ describe('BlogHome', () => {
 		expect(screen.getByTestId('feed-slot')).toHaveTextContent('게시글 목록: jetproc');
 		expect(screen.getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: '코로그' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: 'Cologs' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: 'Rilog 로고' })).toBeInTheDocument();
 		expect(screen.getByTestId('feed-slot')).toHaveTextContent('게시글 목록: jetproc');
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('RILOG');
