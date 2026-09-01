@@ -20,7 +20,7 @@ export default function BlogHomeToolbar({ blogType }: BlogHomeToolbarProps) {
 
 	return (
 		<div className="mb-8">
-			<div className="flex items-end border-b border-border-default">
+			<div className="flex items-end">
 				<div aria-label="글 카테고리" className="flex items-center gap-6">
 					{CATEGORIES.map((category) => {
 						const isSelected = selectedCategory === category;
@@ -29,10 +29,10 @@ export default function BlogHomeToolbar({ blogType }: BlogHomeToolbarProps) {
 								key={category}
 								type="button"
 								aria-pressed={isSelected}
-								className={`relative min-h-11 px-1 pb-3 text-body-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transition-none ${
+								className={`min-h-11 border-b-2 px-1 pb-3 text-body-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transition-none ${
 									isSelected
-										? 'font-semibold text-text-primary after:absolute after:right-0 after:bottom-[-1px] after:left-0 after:h-0.5 after:bg-brand-primary'
-										: 'text-text-secondary hover:text-text-primary'
+										? 'border-brand-primary font-semibold text-text-primary'
+										: 'border-transparent text-text-secondary hover:text-text-primary'
 								}`}
 								onClick={() => setSelectedCategory(category)}
 							>

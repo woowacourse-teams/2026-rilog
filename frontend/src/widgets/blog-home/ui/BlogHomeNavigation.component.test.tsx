@@ -10,6 +10,7 @@ describe('BlogHomeNavigation', () => {
 
 		const navigation = screen.getByRole('navigation', { name: '시리즈와 코로그 탐색' });
 
+		expect(within(navigation).getByText('전체보기')).toHaveAttribute('aria-current', 'page');
 		expect(within(navigation).getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
 		expect(within(navigation).getByRole('heading', { name: '코로그' })).toBeInTheDocument();
 		expect(within(navigation).getByText('우테코에서 살아남기')).toBeInTheDocument();
@@ -37,7 +38,9 @@ describe('BlogHomeNavigation', () => {
 	it('COLOG은 챕터 목록만 정적으로 보여준다', () => {
 		render(<BlogHomeNavigation blogType="COLOG" />);
 
-		expect(screen.getByRole('navigation', { name: '챕터 탐색' })).toBeInTheDocument();
+		const navigation = screen.getByRole('navigation', { name: '챕터 탐색' });
+
+		expect(within(navigation).getByText('전체보기')).toHaveAttribute('aria-current', 'page');
 		expect(screen.getByRole('heading', { name: '챕터' })).toBeInTheDocument();
 		expect(screen.getByText('FE')).toBeInTheDocument();
 		expect(screen.queryByRole('heading', { name: '시리즈' })).not.toBeInTheDocument();

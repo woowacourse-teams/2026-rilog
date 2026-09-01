@@ -29,6 +29,14 @@ function NavigationRow({ item, isNested = false }: { item: PublicationNavigation
 	);
 }
 
+function AllPostsRow() {
+	return (
+		<div aria-current="page" className="min-h-7 py-0.5 text-body-1 font-semibold text-text-primary">
+			전체보기
+		</div>
+	);
+}
+
 export default function BlogHomeNavigation({ blogType }: BlogHomeNavigationProps) {
 	const [expandedCologIds, setExpandedCologIds] = useState<Set<string>>(() => new Set());
 
@@ -47,7 +55,8 @@ export default function BlogHomeNavigation({ blogType }: BlogHomeNavigationProps
 	if (blogType === 'COLOG') {
 		return (
 			<nav aria-label="챕터 탐색" className="w-full">
-				<h2 className="mb-3 text-body-2 font-semibold text-text-primary">챕터</h2>
+				<AllPostsRow />
+				<h2 className="mt-6 mb-3 text-body-2 font-semibold text-text-primary">챕터</h2>
 				<div className="flex flex-col">
 					{COLOG_CHAPTERS.map((chapter) => (
 						<NavigationRow key={chapter.id} item={chapter} />
@@ -60,6 +69,7 @@ export default function BlogHomeNavigation({ blogType }: BlogHomeNavigationProps
 	return (
 		<nav aria-label="시리즈와 코로그 탐색" className="w-full">
 			<h2 className="sr-only">시리즈와 코로그</h2>
+			<AllPostsRow />
 			<section aria-labelledby="series-navigation-title" className="mt-6">
 				<h3 id="series-navigation-title" className="mb-1 text-body-2 font-semibold text-text-primary">
 					시리즈
