@@ -22,6 +22,7 @@ const createDrafts = (isCreateModalOpen = false): ReturnType<typeof useChapterDr
 	handleStartEditing: vi.fn(),
 	handleCancelEditing: vi.fn(),
 	handleSave: vi.fn(),
+	handleSaveChapters: vi.fn(),
 	handleNameChange: vi.fn(),
 	handleAddChapter: vi.fn(),
 });
