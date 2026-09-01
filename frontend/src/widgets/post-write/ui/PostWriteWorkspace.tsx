@@ -18,7 +18,7 @@ import type {
 	PublishPostResult,
 } from '@/features/post-write/model/post-publication';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
-import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
+import { useMyCologsOverviewQuery } from '@/shared/api/users/queries/my-cologs-overview/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
@@ -49,7 +49,7 @@ export default function PostWriteWorkspace({
 	onPublished,
 }: PostWriteWorkspaceProps) {
 	const { data: myInfoResponse } = useMyInfoQuery();
-	const { data: myCologsResponse } = useMyCologsPreviewQuery();
+	const { data: myCologsResponse } = useMyCologsOverviewQuery();
 	const hasTrackedEditorOpenRef = useRef(false);
 
 	useEffect(() => {

@@ -2,17 +2,17 @@
 
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { recordCologCreationEntryContext } from '@/features/analytics/lib/colog-creation-entry-context';
-import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
+import { useMyCologsOverviewQuery } from '@/shared/api/users/queries/my-cologs-overview/use-query';
 import { APP_ROUTES, buildBlogHomePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
-import { mapMyCologsPreviewResponse } from '../lib/map-my-cologs-preview-response';
+import { mapMyCologsOverviewResponse } from '../lib/map-my-cologs-overview-response';
 
 import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME } from './sidebar-class-names';
 import SidebarNavigationLink from './SidebarNavigationLink';
 
 export default function CologNavigation() {
-	const { data: myCologs, isPending } = useMyCologsPreviewQuery({ select: mapMyCologsPreviewResponse });
+	const { data: myCologs, isPending } = useMyCologsOverviewQuery({ select: mapMyCologsOverviewResponse });
 
 	return (
 		<nav aria-label="내 팀">

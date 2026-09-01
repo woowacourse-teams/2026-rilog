@@ -102,12 +102,20 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 	}),
 }));
 
-vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
-	useMyCologsPreviewQuery: () => ({
+vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
+	useMyCologsOverviewQuery: () => ({
 		data: {
 			status: 200,
 			message: 'OK',
-			data: [{ cologId: 20, slug: 'rilog-team', name: 'Rilog Team' }],
+			data: [
+				{
+					cologId: 20,
+					slug: 'rilog-team',
+					name: 'Rilog Team',
+					profileImageUrl: 'cologs/rilog-team.png',
+					chapters: [{ chapterId: 12, name: '제품 개발', order: 0 }],
+				},
+			],
 		},
 	}),
 }));

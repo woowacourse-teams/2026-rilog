@@ -1,10 +1,12 @@
 import type { User } from '@/domains/user/model/user';
+import type { ChapterResponse } from '@/shared/api/blogs/types';
 
-export interface MyCologPreviewResponse {
+export interface MyCologOverviewResponse {
 	cologId: number;
 	slug: string;
 	name: string;
 	profileImageUrl: string;
+	chapters: ChapterResponse[];
 }
 
 export interface MyInfoResponse {

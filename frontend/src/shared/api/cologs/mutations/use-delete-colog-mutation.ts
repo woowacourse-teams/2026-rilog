@@ -18,7 +18,7 @@ export const useDeleteCologMutation = () => {
 				queryClient.invalidateQueries({ queryKey: cologsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
-				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsPreview() }),
+				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsOverview() }),
 			]);
 		},
 	});

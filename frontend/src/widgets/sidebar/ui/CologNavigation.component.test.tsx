@@ -12,8 +12,8 @@ vi.mock('@/features/analytics/lib/colog-creation-entry-context', () => ({
 	recordCologCreationEntryContext: recordCologCreationEntryContextMock,
 }));
 
-vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
-	useMyCologsPreviewQuery: vi.fn(() => ({
+vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
+	useMyCologsOverviewQuery: vi.fn(() => ({
 		data: [
 			{ id: 1, slug: 'test-colog', name: '테스트 코로그', logoUrl: null },
 			{ id: 2, slug: 'another-colog', name: '다른 코로그', logoUrl: null },

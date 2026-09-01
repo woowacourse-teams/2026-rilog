@@ -7,8 +7,8 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import Sidebar from './Sidebar';
 
-vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
-	useMyCologsPreviewQuery: vi.fn(() => ({
+vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
+	useMyCologsOverviewQuery: vi.fn(() => ({
 		data: [],
 		isPending: false,
 	})),
