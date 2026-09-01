@@ -39,8 +39,8 @@ public record BlogIndexResponse(
     }
 
     public record ChapterIndexResponse(
-            Long chapterId,
-            String chapterName,
+            Long id,
+            String name,
             long postCount
     ) {
 
@@ -55,8 +55,10 @@ public record BlogIndexResponse(
     }
 
     public record CologIndexResponse(
-            Long cologId,
-            String cologName,
+            Long id,
+            String name,
+            String slug,
+            String profileImageUrl,
             long authoredPostCount
     ) {
 
@@ -64,6 +66,8 @@ public record BlogIndexResponse(
             return new CologIndexResponse(
                     result.cologId(),
                     result.cologName(),
+                    result.cologSlug(),
+                    result.coloProfileImageUrl(),
                     result.authoredPostCount()
             );
         }

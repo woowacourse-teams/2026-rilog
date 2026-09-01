@@ -170,9 +170,9 @@ class BlogServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result.cologs()).containsExactlyInAnyOrder(
-                new BlogIndexResult.CologIndexResult(emptyColog.getId(), "빈 팀", 0L),
-                new BlogIndexResult.CologIndexResult(secondColog.getId(), "두 번째 팀", 1L),
-                new BlogIndexResult.CologIndexResult(firstColog.getId(), "첫 번째 팀", 2L)
+                new BlogIndexResult.CologIndexResult(emptyColog.getId(), "빈 팀", "empty-team","https://example.com/profile.png",0L),
+                new BlogIndexResult.CologIndexResult(secondColog.getId(), "두 번째 팀", "second-team","https://example.com/profile.png",1L),
+                new BlogIndexResult.CologIndexResult(firstColog.getId(), "첫 번째 팀", "first-team","https://example.com/profile.png",2L)
         );
     }
 
