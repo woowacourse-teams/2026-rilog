@@ -3,14 +3,13 @@
 import type { PostWriteWorkspaceState } from '../hooks/use-post-write-workspace';
 import type { ComponentType, ReactNode } from 'react';
 
-import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type {
 	PostEditorProps as PostBodyEditorProps,
 	PostWriteEditorContext,
 	UploadPostBodyFile,
 } from '@/features/post-write/model/post-editor';
-import type { EditorDocument } from '@/features/post-write/model/post-publication';
+import type { EditorDocument, PostPublishCologOption } from '@/features/post-write/model/post-publication';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -18,7 +17,7 @@ import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal'
 
 interface PostEditorProps {
 	children: (editor: PostWriteEditorContext) => ReactNode;
-	cologOptions: CologOption[];
+	cologOptions: PostPublishCologOption[];
 	userSlug: string | null;
 	workspace: PostWriteWorkspaceState;
 	uploadFile: UploadPostBodyFile;

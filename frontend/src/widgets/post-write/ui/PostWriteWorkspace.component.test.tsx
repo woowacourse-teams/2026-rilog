@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,7 @@ import type {
 import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
+import { renderWithQuery as render } from '@/test/render-with-query';
 
 import DraftPostController from './DraftPostController';
 import EditPostController from './EditPostController';
@@ -177,6 +178,7 @@ vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
 }));
 
 vi.mock('@/shared/api/blogs/mutations/use-create-blog-chapter-mutation', () => ({
+	CREATE_BLOG_CHAPTER_MUTATION_KEY: ['blogs', 'chapters', 'create'],
 	useCreateBlogChapterMutation: () => ({
 		mutateAsync: vi.fn(),
 		reset: vi.fn(),

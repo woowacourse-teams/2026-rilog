@@ -12,10 +12,13 @@ interface CreateBlogChapterVariables {
 	request: ChapterCreateRequest;
 }
 
+export const CREATE_BLOG_CHAPTER_MUTATION_KEY = ['blogs', 'chapters', 'create'] as const;
+
 export const useCreateBlogChapterMutation = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
+		mutationKey: CREATE_BLOG_CHAPTER_MUTATION_KEY,
 		mutationFn: ({ slug, request }: CreateBlogChapterVariables) => createBlogChapter(slug, request),
 		onSuccess: (_, { slug }) =>
 			queryClient.invalidateQueries({

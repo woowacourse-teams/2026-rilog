@@ -34,8 +34,18 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	defaultImageUrl: POST_THUMBNAIL_FALLBACK_URL,
 	userSlug: 'personal-blog',
 	cologOptions: [
-		{ id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
-		{ id: 2, slug: 'second-colog', name: '두 번째 Co-log' },
+		{
+			id: 1,
+			slug: 'first-colog',
+			name: '첫 번째 Co-log',
+			chapters: [{ value: '12', label: '개발' }],
+		},
+		{
+			id: 2,
+			slug: 'second-colog',
+			name: '두 번째 Co-log',
+			chapters: [{ value: '21', label: '프로덕트' }],
+		},
 	],
 	isPublishing: false,
 	onClose: vi.fn(),
@@ -76,7 +86,7 @@ describe('PublishSettingsModal', () => {
 	it('Co-log는 선택 안 함을 기본값으로 제공하고 선택 후 다시 해제할 수 있다', async () => {
 		const user = userEvent.setup();
 		const handleTargetBlogChange = vi.fn();
-		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log' };
+		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log', chapters: [] };
 		const { rerender } = renderModal({
 			cologOptions: [onlyColog],
 			onTargetBlogChange: handleTargetBlogChange,
@@ -137,12 +147,12 @@ describe('PublishSettingsModal', () => {
 		expect(cologRadio).toBeChecked();
 		expect(personalBlogRadio).not.toBeChecked();
 		expect(screen.getByRole('combobox', { name: '코로그' })).toBeInTheDocument();
-		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeInTheDocument();
-		expect(screen.queryByRole('combobox', { name: '챕터' })).not.toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '챕터' })).toBeDisabled();
+		expect(screen.queryByRole('combobox', { name: '시리즈' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
 	});
 
-	it('개인 블로그와 선택한 Co-log의 챕터 목록 조회 결과를 표시한다', () => {
+	it('개인 블로그는 조회한 시리즈를, 선택한 코로그는 overview의 챕터를 표시한다', () => {
 		const { unmount } = renderModal();
 
 		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
@@ -151,6 +161,7 @@ describe('PublishSettingsModal', () => {
 		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
 		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'personal-blog', isEnabled: true });
+		const queryCallCount = usePostPublishChaptersMock.mock.calls.length;
 
 		unmount();
 		renderModal({
@@ -167,7 +178,34 @@ describe('PublishSettingsModal', () => {
 		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(within(chapterSelect).getByRole('option', { name: '개발' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
-		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'first-colog', isEnabled: true });
+		expect(usePostPublishChaptersMock).toHaveBeenCalledTimes(queryCallCount);
+	});
+
+	it('코로그 선택이 바뀌면 추가 조회 없이 overview 챕터를 즉시 교체한다', () => {
+		const { rerender } = renderModal({
+			settings: {
+				...DEFAULT_PROPS.settings,
+				blog: { type: 'COLOG', id: 1, slug: 'first-colog' },
+			},
+		});
+		const queryCallCount = usePostPublishChaptersMock.mock.calls.length;
+
+		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{
+					...DEFAULT_PROPS.settings,
+					blog: { type: 'COLOG', id: 2, slug: 'second-colog' },
+				}}
+			/>,
+		);
+
+		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
+		expect(within(chapterSelect).queryByRole('option', { name: '개발' })).not.toBeInTheDocument();
+		expect(within(chapterSelect).getByRole('option', { name: '프로덕트' })).toBeInTheDocument();
+		expect(screen.queryByText('챕터 목록을 불러오는 중...')).not.toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenCalledTimes(queryCallCount);
 	});
 
 	it('선택한 챕터 ID와 선택 해제를 게시 설정에 반영한다', async () => {

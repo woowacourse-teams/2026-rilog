@@ -6,6 +6,7 @@ import type { ComponentType, ReactNode } from 'react';
 
 import { consumeEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { analytics } from '@/features/analytics/model/events';
+import { mapMyCologsOverviewResponse } from '@/features/post-write/lib/map-my-cologs-overview-response';
 import type {
 	PostEditorProps,
 	PostWriteEditorContext,
@@ -77,16 +78,8 @@ export default function PostWriteWorkspace({
 	const userSlug = myInfoResponse?.data?.slug ?? null;
 
 	const cologOptions = useMemo(() => {
-		const availableBlogs =
-			myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
-		const initialTarget = initialPublicationSettings?.blog;
-
-		if (initialTarget?.type !== 'COLOG' || availableBlogs.some(({ id }) => id === initialTarget.id)) {
-			return availableBlogs;
-		}
-
-		return availableBlogs;
-	}, [initialPublicationSettings?.blog, myCologsResponse?.data]);
+		return mapMyCologsOverviewResponse(myCologsResponse?.data ?? []);
+	}, [myCologsResponse?.data]);
 
 	const workspace = usePostWriteWorkspace({
 		initialDocument,

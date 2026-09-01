@@ -1,10 +1,10 @@
 'use client';
 
-import type { BlogChapterOption } from '@/features/post-write/lib/map-blog-chapter-response';
+import type { PostPublishChapterOption } from '@/features/post-write/model/post-publication';
 import Field from '@/shared/ui/field/Field';
 
 interface CologChapterFieldProps {
-	chapters: BlogChapterOption[] | null;
+	chapters: PostPublishChapterOption[] | null;
 	selectedChapterId: number | null;
 	isDisabled: boolean;
 	onChapterChange: (chapterId: number | null) => void;

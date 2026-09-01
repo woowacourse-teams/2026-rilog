@@ -1,9 +1,6 @@
+import type { PostPublishChapterOption } from '../model/post-publication';
+
 import type { ChapterResponse } from '@/shared/api/blogs/types';
 
-export interface BlogChapterOption {
-	value: string;
-	label: string;
-}
-
-export const mapBlogChapterResponse = (chapters: ChapterResponse[]): BlogChapterOption[] =>
+export const mapBlogChapterResponse = (chapters: ChapterResponse[]): PostPublishChapterOption[] =>
 	chapters.map(({ chapterId, name }) => ({ value: String(chapterId), label: name }));
