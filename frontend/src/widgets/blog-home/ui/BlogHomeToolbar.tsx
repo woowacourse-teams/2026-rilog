@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import Button from '@/shared/ui/button/Button';
 import BottomSheet from '@/shared/ui/modal/BottomSheet';
 
@@ -11,9 +12,17 @@ import styles from './BlogHomeToolbar.module.css';
 
 interface BlogHomeToolbarProps {
 	blogType: BlogType;
+	slug: string;
+	filter: PublicBlogPostsFilter;
+	initialIndexRequestFailed?: boolean;
 }
 
-export default function BlogHomeToolbar({ blogType }: BlogHomeToolbarProps) {
+export default function BlogHomeToolbar({
+	blogType,
+	slug,
+	filter,
+	initialIndexRequestFailed = false,
+}: BlogHomeToolbarProps) {
 	const [isNavigationOpen, setIsNavigationOpen] = useState(false);
 
 	return (
@@ -35,7 +44,13 @@ export default function BlogHomeToolbar({ blogType }: BlogHomeToolbarProps) {
 				closeButtonLabel="인덱스 닫기"
 				onClose={() => setIsNavigationOpen(false)}
 			>
-				<BlogHomeNavigation blogType={blogType} />
+				<BlogHomeNavigation
+					blogType={blogType}
+					slug={slug}
+					filter={filter}
+					initialIndexRequestFailed={initialIndexRequestFailed}
+					onNavigate={() => setIsNavigationOpen(false)}
+				/>
 			</BottomSheet>
 		</div>
 	);

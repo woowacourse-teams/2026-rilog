@@ -1,6 +1,6 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 
-import type { PublicBlogFeedPostResponse } from '../../types';
+import type { PublicBlogFeedPostResponse, PublicBlogPostsFilter } from '../../types';
 
 import type { ApiResponse } from '@/shared/api/shared.types';
 
@@ -11,16 +11,14 @@ export const PUBLIC_BLOG_POSTS_PAGE_SIZE = 12;
 
 export interface PublicBlogPostsQueryOptions {
 	slug: string;
-	size?: number;
+	filter: PublicBlogPostsFilter;
 }
 
-export const publicBlogPostsQueryOptions = ({
-	slug,
-	size = PUBLIC_BLOG_POSTS_PAGE_SIZE,
-}: PublicBlogPostsQueryOptions) =>
+export const publicBlogPostsQueryOptions = ({ slug, filter }: PublicBlogPostsQueryOptions) =>
 	infiniteQueryOptions<ApiResponse<PublicBlogFeedPostResponse>>({
-		queryKey: blogsQueryKeys.publicBlogPosts(slug),
-		queryFn: ({ pageParam }) => readPublicBlogPosts({ slug, page: Number(pageParam), size }),
+		queryKey: blogsQueryKeys.publicBlogPostsFilter(slug, filter),
+		queryFn: ({ pageParam }) =>
+			readPublicBlogPosts({ slug, page: Number(pageParam), size: PUBLIC_BLOG_POSTS_PAGE_SIZE, filter }),
 		initialPageParam: 0,
 		getNextPageParam: (lastPage) => {
 			const page = lastPage?.data?.page;

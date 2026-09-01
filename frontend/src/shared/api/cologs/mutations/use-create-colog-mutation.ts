@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { CologCreateValue } from '@/features/colog-create/model/colog-create';
+import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { createColog } from '@/shared/api/cologs/api';
 import type { CologCreateRequest, CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
@@ -37,6 +38,10 @@ export const useCreateCologMutation = () => {
 
 			return createColog(request);
 		},
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsOverview() }),
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsOverview() }),
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
+			]),
 	});
 };

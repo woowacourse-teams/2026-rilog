@@ -111,11 +111,38 @@ describe('readPublicBlogPosts', () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(readPublicBlogPosts({ slug: '@rilog-team', page: 2, size: 12 })).resolves.toEqual(responseBody);
+		await expect(
+			readPublicBlogPosts({ slug: '@rilog-team', page: 2, size: 12, filter: { type: 'all' } }),
+		).resolves.toEqual(responseBody);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts?page=2&size=12');
+	});
+
+	it.each([
+		[
+			{ type: 'chapterId', chapterId: 17 } as const,
+			'https://api.rilog.test/v1/blogs/rilog-team/posts?page=0&size=12&chapterId=17',
+		],
+		[
+			{ type: 'targetCologSlug', targetCologSlug: 'woowa-tech' } as const,
+			'https://api.rilog.test/v1/blogs/rilog-team/posts?page=0&size=12&targetCologSlug=woowa-tech',
+		],
+	])('상호배타 필터 %o를 게시글 query에 직렬화한다', async (filter, expectedUrl) => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			Response.json({
+				status: 200,
+				message: '공개 블로그 게시글 목록 조회에 성공했습니다.',
+				data: { type: 'RILOG', posts: [], page: 0, size: 12, numberOfElements: 0, hasNext: false },
+			}),
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await readPublicBlogPosts({ slug: 'rilog-team', page: 0, size: 12, filter });
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.url).toBe(expectedUrl);
 	});
 });
 

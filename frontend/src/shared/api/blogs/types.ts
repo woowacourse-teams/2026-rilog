@@ -116,4 +116,8 @@ export interface PublicBlogFeedPostsRequest {
 	slug: string;
 	page: number;
 	size: number;
+	filter: PublicBlogPostsFilter;
 }
+
+export type PublicBlogPostsFilter =
+	{ type: 'all' } | { type: 'chapterId'; chapterId: number } | { type: 'targetCologSlug'; targetCologSlug: string };

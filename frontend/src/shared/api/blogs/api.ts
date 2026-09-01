@@ -32,8 +32,14 @@ export const readBlogIndex = (slug: string) => {
 	return apiClient.get<ApiResponse<BlogIndexResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/index`);
 };
 
-export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsRequest) => {
+export const readPublicBlogPosts = ({ slug, page, size, filter }: PublicBlogFeedPostsRequest) => {
 	const normalizedSlug = stripAtPrefix(slug);
+	const filterSearchParams =
+		filter.type === 'chapterId'
+			? { chapterId: filter.chapterId }
+			: filter.type === 'targetCologSlug'
+				? { targetCologSlug: filter.targetCologSlug }
+				: {};
 
 	return apiClient.get<ApiResponse<PublicBlogFeedPostResponse>>(
 		`v1/blogs/${encodeURIComponent(normalizedSlug)}/posts`,
@@ -41,6 +47,7 @@ export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsReq
 			searchParams: {
 				page,
 				size,
+				...filterSearchParams,
 			},
 		},
 	);
