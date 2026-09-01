@@ -38,6 +38,7 @@ describe('usePublishPostMutation', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: null,
+			chapterId: null,
 		});
 
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });

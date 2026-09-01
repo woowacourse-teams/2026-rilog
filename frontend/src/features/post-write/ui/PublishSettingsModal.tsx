@@ -1,21 +1,27 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useIsMutating } from '@tanstack/react-query';
+import { type ChangeEvent, useRef, useState } from 'react';
 
 import type { Block } from '@blocknote/core';
-import type { ChangeEvent, KeyboardEvent } from 'react';
 
-import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
-import type { PublicationSettings, TargetBlog } from '@/features/post-write/model/post-publication';
+import type {
+	PostPublishCologOption,
+	PublicationSettings,
+	TargetBlog,
+} from '@/features/post-write/model/post-publication';
+import { CREATE_BLOG_CHAPTER_MUTATION_KEY } from '@/shared/api/blogs/mutations/use-create-blog-chapter-mutation';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
-import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
 import { resolveRepresentativeImagePreview } from '../lib/resolve-representative-image';
+
+import CologChapterField from './CologChapterField';
+import RilogSeriesField from './RilogSeriesField';
 
 interface PublishSettingsModalProps {
 	open: boolean;
@@ -24,7 +30,10 @@ interface PublishSettingsModalProps {
 	selectedImageUrl: string | null;
 	bodyBlocks: Block[];
 	defaultImageUrl: string;
-	cologOptions: CologOption[];
+	cologOptions: PostPublishCologOption[];
+	isCologOptionsPending: boolean;
+	isCologOptionsError: boolean;
+	isCologOptionsRefetching: boolean;
 	userSlug: string | null;
 	cologError?: string;
 	publishError?: string;
@@ -32,35 +41,14 @@ interface PublishSettingsModalProps {
 	onClose: () => void;
 	onCategoryChange: (category: PostCategory) => void;
 	onTargetBlogChange: (targetBlog: TargetBlog | null) => void;
+	onChapterChange: (chapterId: number | null) => void;
 	onImageChange: (file: File | null) => void;
+	onCologOptionsRefetch: () => void;
 	onPublish: (targetBlogType: BlogOption) => void;
-	onCreateChapter?: CreateChapter;
 }
-
-interface ChapterOption {
-	value: string;
-	label: string;
-}
-
-type CreateChapter = (name: string) => Promise<ChapterOption>;
 
 // 모달 footer의 발행 버튼을 내부 form과 연결하는 ID
 const PUBLISH_FORM_ID = 'post-publish-settings-form';
-
-const MOCK_PERSONAL_CHAPTER_OPTIONS = [
-	{ value: 'frontend-growth', label: '프론트엔드 성장 기록' },
-	{ value: 'project-retrospective', label: '프로젝트 회고' },
-	{ value: 'developer-life', label: '개발자 일상' },
-];
-
-const MOCK_COLOG_CHAPTER_OPTIONS = [
-	{ value: 'planning', label: '기획' },
-	{ value: 'development', label: '개발' },
-	{ value: 'retrospective', label: '회고' },
-	{ value: 'planning-advanced', label: '기획 심화' },
-	{ value: 'development-advanced', label: '개발 심화' },
-	{ value: 'retrospective-advanced', label: '회고 심화' },
-];
 
 const RILOG = 'RILOG';
 const COLOG = 'COLOG';
@@ -72,11 +60,6 @@ const BLOG_OPTIONS = [
 
 type BlogOption = (typeof BLOG_OPTIONS)[number]['value'];
 
-let nextMockChapterId = 1;
-
-const createMockChapter: CreateChapter = (name) =>
-	Promise.resolve({ value: `mock-chapter-${nextMockChapterId++}`, label: name });
-
 export default function PublishSettingsModal({
 	open,
 	postTitle,
@@ -85,6 +68,9 @@ export default function PublishSettingsModal({
 	bodyBlocks,
 	defaultImageUrl,
 	cologOptions,
+	isCologOptionsPending,
+	isCologOptionsError,
+	isCologOptionsRefetching,
 	userSlug,
 	cologError,
 	publishError,
@@ -92,38 +78,35 @@ export default function PublishSettingsModal({
 	onClose,
 	onCategoryChange,
 	onTargetBlogChange,
+	onChapterChange,
 	onImageChange,
+	onCologOptionsRefetch,
 	onPublish,
-	onCreateChapter = createMockChapter,
 }: PublishSettingsModalProps) {
 	// 블로그 선택
 	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => settings.blog?.type ?? RILOG);
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
-	const seriesNameInputRef = useRef<HTMLInputElement>(null);
-	const [createdPersonalChapterOptions, setCreatedPersonalChapterOptions] = useState<ChapterOption[]>([]);
-	const [selectedChapterValues, setSelectedChapterValues] = useState<Record<string, string>>({});
-	const [isSeriesCreatorOpen, setIsSeriesCreatorOpen] = useState(false);
-	const [newSeriesName, setNewSeriesName] = useState('');
-	const [seriesCreationError, setSeriesCreationError] = useState<string>();
-	const [isCreatingSeries, setIsCreatingSeries] = useState(false);
+	const isCreatingSeries = useIsMutating({ mutationKey: CREATE_BLOG_CHAPTER_MUTATION_KEY }) > 0;
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
-	const isCologSelected = settings.blog?.type === COLOG;
-	const chapterLabel = isCologSelected ? '챕터' : '시리즈';
-	const chapterOptions = isCologSelected
-		? MOCK_COLOG_CHAPTER_OPTIONS
-		: [...MOCK_PERSONAL_CHAPTER_OPTIONS, ...createdPersonalChapterOptions];
-	const chapterScopeKey = settings.blog?.type === COLOG ? `colog-${settings.blog.id}` : 'personal-blog';
-	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
+	const selectedColog = settings.blog?.type === COLOG ? settings.blog : null;
+	const isRilog = selectedBlog === RILOG;
+	const isCologSelected = selectedColog !== null;
+	const selectedCologOption = isCologSelected
+		? (cologOptions.find((option) => option.id === selectedColog.id) ?? null)
+		: null;
 	const isModalPending = isPublishing || isCreatingSeries;
-
-	useEffect(() => {
-		if (isSeriesCreatorOpen) {
-			seriesNameInputRef.current?.focus();
-		}
-	}, [isSeriesCreatorOpen]);
+	const isCologSelectDisabled =
+		isModalPending || isCologOptionsPending || isCologOptionsError || isCologOptionsRefetching;
+	const cologOptionsStatusMessage = isCologOptionsPending
+		? '코로그 목록을 불러오는 중...'
+		: isCologOptionsError
+			? '코로그 목록을 불러오지 못했습니다.'
+			: cologOptions.length === 0
+				? '소속된 코로그가 없습니다.'
+				: undefined;
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
 	const handleSubmit = () => {
@@ -143,42 +126,6 @@ export default function PublishSettingsModal({
 		event.currentTarget.value = '';
 	};
 
-	const handleCreateSeries = async () => {
-		const seriesName = newSeriesName.trim();
-
-		if (seriesName === '') {
-			setSeriesCreationError('시리즈 이름을 입력해 주세요.');
-			return;
-		}
-
-		setIsCreatingSeries(true);
-		setSeriesCreationError(undefined);
-
-		try {
-			const createdChapter = await onCreateChapter(seriesName);
-			setCreatedPersonalChapterOptions((currentOptions) => [...currentOptions, createdChapter]);
-			setSelectedChapterValues((currentValues) => ({
-				...currentValues,
-				'personal-blog': createdChapter.value,
-			}));
-			setNewSeriesName('');
-			setIsSeriesCreatorOpen(false);
-		} catch (error) {
-			setSeriesCreationError(error instanceof Error ? error.message : '시리즈 생성에 실패했습니다.');
-		} finally {
-			setIsCreatingSeries(false);
-		}
-	};
-
-	const handleSeriesNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-		if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
-			return;
-		}
-
-		event.preventDefault();
-		void handleCreateSeries();
-	};
-
 	const handleBlogChange = (blog: BlogOption) => {
 		setSelectedBlog(blog);
 
@@ -188,10 +135,6 @@ export default function PublishSettingsModal({
 		}
 
 		onTargetBlogChange(null);
-
-		setSeriesCreationError(undefined);
-		setNewSeriesName('');
-		setIsSeriesCreatorOpen(false);
 	};
 
 	return (
@@ -315,24 +258,32 @@ export default function PublishSettingsModal({
 							<Field label="코로그" controlId="post-colog" required>
 								{({ id }) => {
 									const errorId = `${id}-error`;
+									const statusId = `${id}-options-status`;
+									const describedBy = [
+										cologOptionsStatusMessage === undefined ? undefined : statusId,
+										cologError === undefined ? undefined : errorId,
+									]
+										.filter((descriptionId) => descriptionId !== undefined)
+										.join(' ');
 
 									return (
-										<div>
+										<div className="flex flex-col gap-3">
 											<select
 												ref={cologSelectRef}
 												id={id}
 												value={settings.blog?.type === COLOG ? settings.blog.id : ''}
-												disabled={isModalPending}
+												disabled={isCologSelectDisabled}
+												aria-busy={isCologOptionsPending || isCologOptionsRefetching || undefined}
 												aria-invalid={cologError !== undefined}
-												aria-describedby={cologError === undefined ? undefined : errorId}
+												aria-describedby={describedBy === '' ? undefined : describedBy}
 												className="native-select"
 												onChange={(event) => {
 													const selectedValue = event.currentTarget.value;
-													const selectedColog = cologOptions.find((option) => option.id === Number(selectedValue));
+													const nextCologOption = cologOptions.find((option) => option.id === Number(selectedValue));
 													onTargetBlogChange(
-														selectedColog === undefined
+														nextCologOption === undefined
 															? null
-															: { type: COLOG, id: selectedColog.id, slug: selectedColog.slug },
+															: { type: COLOG, id: nextCologOption.id, slug: nextCologOption.slug },
 													);
 												}}
 											>
@@ -343,6 +294,24 @@ export default function PublishSettingsModal({
 													</option>
 												))}
 											</select>
+											{cologOptionsStatusMessage !== undefined && (
+												<div className="flex items-center justify-between gap-3 text-label-2 text-text-secondary">
+													<p id={statusId} role={isCologOptionsError ? 'alert' : 'status'}>
+														{cologOptionsStatusMessage}
+													</p>
+													{isCologOptionsError && (
+														<Button
+															variant="ghost"
+															size="sm"
+															disabled={isModalPending}
+															isPending={isCologOptionsRefetching}
+															onClick={onCologOptionsRefetch}
+														>
+															다시 시도
+														</Button>
+													)}
+												</div>
+											)}
 											{cologError !== undefined && (
 												<p id={errorId} className="mt-2 text-body-1 text-danger-text" role="alert">
 													{cologError}
@@ -354,74 +323,22 @@ export default function PublishSettingsModal({
 							</Field>
 						)}
 
-						<Field
-							label={chapterLabel}
-							controlId="post-chapter"
-							labelAction={
-								!isCologSelected ? (
-									<Button
-										variant="ghost"
-										size="sm"
-										aria-label={isSeriesCreatorOpen ? '시리즈 추가 취소' : '새 시리즈 추가'}
-										disabled={isModalPending}
-										onClick={() => {
-											setSeriesCreationError(undefined);
-
-											if (isSeriesCreatorOpen) {
-												setNewSeriesName('');
-												setIsSeriesCreatorOpen(false);
-												return;
-											}
-
-											setIsSeriesCreatorOpen(true);
-										}}
-									>
-										<span aria-hidden="true">{isSeriesCreatorOpen ? '취소' : '추가 +'}</span>
-									</Button>
-								) : undefined
-							}
-						>
-							{({ id }) => (
-								<div className="flex flex-col gap-3">
-									{!isCologSelected && isSeriesCreatorOpen && (
-										<Input
-											ref={seriesNameInputRef}
-											aria-label="새로운 시리즈 이름"
-											placeholder="새로운 시리즈 이름을 입력하세요."
-											value={newSeriesName}
-											disabled={isModalPending}
-											status={seriesCreationError === undefined ? 'default' : 'error'}
-											helperText={seriesCreationError}
-											onChange={(event) => {
-												setNewSeriesName(event.currentTarget.value);
-												setSeriesCreationError(undefined);
-											}}
-											onKeyDown={handleSeriesNameKeyDown}
-										/>
-									)}
-									<select
-										id={id}
-										value={selectedChapterValue}
-										disabled={isModalPending}
-										className="native-select"
-										onChange={(event) => {
-											const selectedValue = event.currentTarget.value;
-											setSelectedChapterValues((currentValues) => ({
-												...currentValues,
-												[chapterScopeKey]: selectedValue,
-											}));
-										}}
-									>
-										<option value="">선택 안 함</option>
-										{chapterOptions.map((option) => (
-											<option key={option.value} value={option.value}>
-												{option.label}
-											</option>
-										))}
-									</select>
-								</div>
-							)}
-						</Field>
+						{isRilog ? (
+							<RilogSeriesField
+								open={open}
+								userSlug={userSlug}
+								selectedChapterId={settings.chapterId}
+								isDisabled={isModalPending}
+								onChapterChange={onChapterChange}
+							/>
+						) : (
+							<CologChapterField
+								chapters={selectedCologOption?.chapters ?? null}
+								selectedChapterId={settings.chapterId}
+								isDisabled={isModalPending}
+								onChapterChange={onChapterChange}
+							/>
+						)}
 
 						{publishError !== undefined && (
 							<div

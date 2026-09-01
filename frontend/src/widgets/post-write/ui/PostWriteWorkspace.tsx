@@ -6,6 +6,7 @@ import type { ComponentType, ReactNode } from 'react';
 
 import { consumeEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { analytics } from '@/features/analytics/model/events';
+import { mapMyCologsOverviewResponse } from '@/features/post-write/lib/map-my-cologs-overview-response';
 import type {
 	PostEditorProps,
 	PostWriteEditorContext,
@@ -18,7 +19,7 @@ import type {
 	PublishPostResult,
 } from '@/features/post-write/model/post-publication';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
-import { useMyCologsPreviewQuery } from '@/shared/api/users/queries/my-cologs-preview/use-query';
+import { useMyCologsOverviewQuery } from '@/shared/api/users/queries/my-cologs-overview/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
@@ -49,7 +50,8 @@ export default function PostWriteWorkspace({
 	onPublished,
 }: PostWriteWorkspaceProps) {
 	const { data: myInfoResponse } = useMyInfoQuery();
-	const { data: myCologsResponse } = useMyCologsPreviewQuery();
+	const myCologsOverviewQuery = useMyCologsOverviewQuery();
+	const { data: myCologsResponse } = myCologsOverviewQuery;
 	const hasTrackedEditorOpenRef = useRef(false);
 
 	useEffect(() => {
@@ -77,16 +79,8 @@ export default function PostWriteWorkspace({
 	const userSlug = myInfoResponse?.data?.slug ?? null;
 
 	const cologOptions = useMemo(() => {
-		const availableBlogs =
-			myCologsResponse?.data?.map(({ cologId, slug, name }) => ({ id: cologId, slug, name })) ?? [];
-		const initialTarget = initialPublicationSettings?.blog;
-
-		if (initialTarget?.type !== 'COLOG' || availableBlogs.some(({ id }) => id === initialTarget.id)) {
-			return availableBlogs;
-		}
-
-		return availableBlogs;
-	}, [initialPublicationSettings?.blog, myCologsResponse?.data]);
+		return mapMyCologsOverviewResponse(myCologsResponse?.data ?? []);
+	}, [myCologsResponse?.data]);
 
 	const workspace = usePostWriteWorkspace({
 		initialDocument,
@@ -102,10 +96,14 @@ export default function PostWriteWorkspace({
 			<PostEditor
 				workspace={workspace}
 				cologOptions={cologOptions}
+				isCologOptionsPending={myCologsOverviewQuery.isPending}
+				isCologOptionsError={myCologsOverviewQuery.isError}
+				isCologOptionsRefetching={myCologsOverviewQuery.isRefetching}
 				userSlug={userSlug}
 				uploadFile={uploadFile ?? uploadPostBodyFileWithApi}
 				editorComponent={editorComponent}
 				initialDocument={initialDocument}
+				onCologOptionsRefetch={() => void myCologsOverviewQuery.refetch()}
 			>
 				{children}
 			</PostEditor>

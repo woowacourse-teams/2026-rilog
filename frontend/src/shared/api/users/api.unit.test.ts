@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { completeOnboarding, readUserBySlug } from './api';
+import { completeOnboarding, readMyCologsOverview, readUserBySlug } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -9,6 +9,32 @@ vi.hoisted(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
+});
+
+describe('readMyCologsOverview', () => {
+	it('내 코로그와 챕터 요약을 overview endpoint에서 조회한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '나의 팀 목록 요약 조회에 성공했습니다.',
+			data: [
+				{
+					cologId: 20,
+					slug: 'rilog-team',
+					name: 'Rilog Team',
+					profileImageUrl: 'cologs/rilog-team.png',
+					chapters: [{ chapterId: 12, name: '제품 개발', order: 0 }],
+				},
+			],
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readMyCologsOverview()).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/users/me/cologs/overview');
+	});
 });
 
 describe('completeOnboarding', () => {

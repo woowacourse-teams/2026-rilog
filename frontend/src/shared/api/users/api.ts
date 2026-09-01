@@ -1,5 +1,5 @@
 import type {
-	MyCologPreviewResponse,
+	MyCologOverviewResponse,
 	MyInfoResponse,
 	OnboardingRequest,
 	ReadUserBySlugRequest,
@@ -16,8 +16,8 @@ export const readUserBySlug = ({ slug }: ReadUserBySlugRequest) => {
 	return apiClient.get<ApiResponse<ReadUserBySlugResponse>>(`v1/users/${encodeURIComponent(normalizedSlug)}`);
 };
 
-export const readMyCologsPreview = () =>
-	apiClient.get<ApiResponse<MyCologPreviewResponse[]>>('v1/users/me/cologs/preview');
+export const readMyCologsOverview = () =>
+	apiClient.get<ApiResponse<MyCologOverviewResponse[]>>('v1/users/me/cologs/overview');
 
 export const readMyInfo = () => apiClient.get<ApiResponse<MyInfoResponse>>('v1/users/me');
 

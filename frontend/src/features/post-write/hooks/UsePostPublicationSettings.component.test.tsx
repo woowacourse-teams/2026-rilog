@@ -12,6 +12,7 @@ describe('usePostPublicationSettings', () => {
 		const initialSettings = {
 			category: 'DAILY' as const,
 			blog: null,
+			chapterId: 4,
 			representativeImage: null,
 			representativeImageUrl: 'posts/existing-thumbnail.png',
 		};
@@ -31,9 +32,13 @@ describe('usePostPublicationSettings', () => {
 		expect(result.current.settings).toMatchObject({
 			category: 'IT',
 			blog: { type: 'COLOG', id: 7, slug: 'rilog-team' },
+			chapterId: null,
 		});
 		expect(result.current.cologError).toBeUndefined();
 		act(() => expect(result.current.validatePublicationSettings('COLOG')).toBe(true));
+
+		act(() => result.current.handleChapterChange(12));
+		expect(result.current.settings.chapterId).toBe(12);
 	});
 
 	it('선택 이미지를 교체·제거·unmount할 때 생성한 object URL만 해제한다', () => {
@@ -45,6 +50,7 @@ describe('usePostPublicationSettings', () => {
 				initialSettings: {
 					category: 'IT',
 					blog: null,
+					chapterId: null,
 					representativeImage: null,
 					representativeImageUrl: 'posts/existing-thumbnail.png',
 				},
