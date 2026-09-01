@@ -4,6 +4,7 @@ import { useId, useRef, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
+import { CHAPTER_NAME_MAX_LENGTH } from '@/features/chapter-management/model/chapter';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
@@ -72,6 +73,7 @@ export default function SeriesCreateModal({
 					ref={inputRef}
 					id={inputId}
 					value={seriesName}
+					maxLength={CHAPTER_NAME_MAX_LENGTH}
 					placeholder="시리즈 이름을 입력해 주세요."
 					disabled={isPending}
 					onChange={(event) => setSeriesName(event.target.value)}

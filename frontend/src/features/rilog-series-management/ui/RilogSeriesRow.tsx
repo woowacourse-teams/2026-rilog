@@ -1,6 +1,6 @@
 'use client';
 
-import type { Chapter } from '@/features/chapter-management/model/chapter';
+import { CHAPTER_NAME_MAX_LENGTH, type Chapter } from '@/features/chapter-management/model/chapter';
 import Input from '@/shared/ui/input/Input';
 
 interface RilogSeriesRowProps {
@@ -21,6 +21,7 @@ export default function RilogSeriesRow({ series, isEditing = false, onNameChange
 						className="w-4/5!"
 						aria-label={`${series.name} 시리즈 이름`}
 						value={series.name}
+						maxLength={CHAPTER_NAME_MAX_LENGTH}
 						status={hasEmptyName ? 'error' : 'default'}
 						helperText={hasEmptyName ? '시리즈 이름을 입력해 주세요.' : undefined}
 						onChange={(event) => onNameChange?.(series.id, event.target.value)}

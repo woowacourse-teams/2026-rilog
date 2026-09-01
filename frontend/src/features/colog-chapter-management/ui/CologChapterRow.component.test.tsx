@@ -43,6 +43,7 @@ describe('CologChapterRow', () => {
 		renderInTable(<CologChapterRow chapter={CHAPTER} isEditing onNameChange={onNameChange} />);
 
 		const input = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
+		expect(input).toHaveAttribute('maxlength', '20');
 		fireEvent.change(input, { target: { value: '프론트엔드 팀' } });
 
 		expect(onNameChange).toHaveBeenCalledWith(1, '프론트엔드 팀');

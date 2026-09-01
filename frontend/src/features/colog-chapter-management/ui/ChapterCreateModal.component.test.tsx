@@ -11,6 +11,7 @@ describe('ChapterCreateModal', () => {
 		const input = screen.getByRole('textbox', { name: '챕터 이름' });
 		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
 		expect(input).toHaveFocus();
+		expect(input).toHaveAttribute('maxlength', '20');
 	});
 
 	it('취소하면 입력값을 초기화하고 닫기를 알린다', async () => {
@@ -53,5 +54,15 @@ describe('ChapterCreateModal', () => {
 		expect(input).toHaveValue('프론트엔드');
 		expect(screen.getByRole('alert')).toHaveTextContent('챕터를 추가하지 못했어요.');
 		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it('챕터 이름은 20자까지만 입력한다', async () => {
+		const user = userEvent.setup();
+		render(<ChapterCreateModal open onClose={vi.fn()} onCreate={vi.fn().mockResolvedValue(undefined)} />);
+
+		const input = screen.getByRole('textbox', { name: '챕터 이름' });
+		await user.type(input, '123456789012345678901');
+
+		expect(input).toHaveValue('12345678901234567890');
 	});
 });

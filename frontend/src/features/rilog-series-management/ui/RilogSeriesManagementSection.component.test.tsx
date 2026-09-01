@@ -73,6 +73,13 @@ describe('RilogSeriesManagementSection', () => {
 		render(<RilogSeriesManagementSection management={createManagement({ isCreateModalOpen: true })} />);
 
 		expect(screen.getByRole('dialog', { name: '시리즈 추가' })).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '시리즈 이름' })).toHaveAttribute('maxlength', '20');
+	});
+
+	it('시리즈 이름 수정 입력을 20자로 제한한다', () => {
+		render(<RilogSeriesManagementSection management={createManagement({ isEditing: true })} />);
+
+		expect(screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' })).toHaveAttribute('maxlength', '20');
 	});
 
 	it('조회 중 상태와 빈 상태를 렌더링한다', () => {

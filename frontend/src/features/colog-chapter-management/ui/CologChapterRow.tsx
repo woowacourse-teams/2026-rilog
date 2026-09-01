@@ -1,6 +1,6 @@
 'use client';
 
-import type { Chapter } from '@/features/chapter-management/model/chapter';
+import { CHAPTER_NAME_MAX_LENGTH, type Chapter } from '@/features/chapter-management/model/chapter';
 import Input from '@/shared/ui/input/Input';
 
 interface CologChapterRowProps {
@@ -21,6 +21,7 @@ export default function CologChapterRow({ chapter, isEditing = false, onNameChan
 						className="w-4/5!"
 						aria-label={`${chapter.name} 챕터 이름`}
 						value={chapter.name}
+						maxLength={CHAPTER_NAME_MAX_LENGTH}
 						status={hasEmptyName ? 'error' : 'default'}
 						helperText={hasEmptyName ? '챕터 이름을 입력해 주세요.' : undefined}
 						onChange={(event) => onNameChange?.(chapter.id, event.target.value)}
