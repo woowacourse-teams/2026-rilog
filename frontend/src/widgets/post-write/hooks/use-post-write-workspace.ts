@@ -98,14 +98,14 @@ export function usePostWriteWorkspace({
 	});
 
 	const handlePublished = useCallback(
-		(result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => {
+		(result: PublishPostResult, publishedSettings: PublicationSettings, document: EditorDocument) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
 			recordPostDetailEntryContext({
 				postId: Number(result.postId),
 				entrySource: 'publish_redirect',
 				feedPosition: null,
 			});
-			onPublished?.(result, settings, document);
+			onPublished?.(result, publishedSettings, document);
 
 			clearSelectedImageUrl();
 			navigateAfterCompletion(postDetailPath);
