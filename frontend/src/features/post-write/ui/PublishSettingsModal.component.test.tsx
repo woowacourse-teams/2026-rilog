@@ -47,7 +47,11 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 			chapters: [{ value: '21', label: '프로덕트' }],
 		},
 	],
+	isCologOptionsPending: false,
+	isCologOptionsError: false,
+	isCologOptionsRefetching: false,
 	isPublishing: false,
+	onCologOptionsRefetch: vi.fn(),
 	onClose: vi.fn(),
 	onCategoryChange: vi.fn(),
 	onTargetBlogChange: vi.fn(),
@@ -120,6 +124,63 @@ describe('PublishSettingsModal', () => {
 
 		await user.selectOptions(screen.getByRole('combobox', { name: '코로그' }), '');
 		expect(handleTargetBlogChange).toHaveBeenLastCalledWith(null);
+	});
+
+	it('코로그 목록 조회 중에는 select를 잠그고 상태를 알린다', async () => {
+		const user = userEvent.setup();
+		renderModal({ cologOptions: [], isCologOptionsPending: true });
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveAttribute('aria-busy', 'true');
+		expect(screen.getByText('코로그 목록을 불러오는 중...')).toHaveAttribute('role', 'status');
+	});
+
+	it('조회에 성공했지만 소속된 코로그가 없으면 빈 상태를 알린다', async () => {
+		const user = userEvent.setup();
+		renderModal({ cologOptions: [] });
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeEnabled();
+		expect(screen.getByText('소속된 코로그가 없습니다.')).toHaveAttribute('role', 'status');
+	});
+
+	it('코로그 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		const handleRefetch = vi.fn();
+		renderModal({
+			cologOptions: [],
+			isCologOptionsError: true,
+			onCologOptionsRefetch: handleRefetch,
+		});
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		const error = screen.getByRole('alert');
+		expect(cologSelect).toBeDisabled();
+		expect(cologSelect).toHaveAccessibleDescription('코로그 목록을 불러오지 못했습니다.');
+		expect(error).toHaveTextContent('코로그 목록을 불러오지 못했습니다.');
+
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(handleRefetch).toHaveBeenCalledOnce();
+	});
+
+	it('코로그 목록을 다시 불러오는 동안 재시도 버튼을 잠근다', async () => {
+		const user = userEvent.setup();
+		renderModal({
+			cologOptions: [],
+			isCologOptionsError: true,
+			isCologOptionsRefetching: true,
+		});
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '다시 시도' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '다시 시도' })).toHaveAttribute('aria-busy', 'true');
 	});
 
 	it('카테고리를 select에서 변경한다', async () => {

@@ -50,7 +50,8 @@ export default function PostWriteWorkspace({
 	onPublished,
 }: PostWriteWorkspaceProps) {
 	const { data: myInfoResponse } = useMyInfoQuery();
-	const { data: myCologsResponse } = useMyCologsOverviewQuery();
+	const myCologsOverviewQuery = useMyCologsOverviewQuery();
+	const { data: myCologsResponse } = myCologsOverviewQuery;
 	const hasTrackedEditorOpenRef = useRef(false);
 
 	useEffect(() => {
@@ -95,10 +96,14 @@ export default function PostWriteWorkspace({
 			<PostEditor
 				workspace={workspace}
 				cologOptions={cologOptions}
+				isCologOptionsPending={myCologsOverviewQuery.isPending}
+				isCologOptionsError={myCologsOverviewQuery.isError}
+				isCologOptionsRefetching={myCologsOverviewQuery.isRefetching}
 				userSlug={userSlug}
 				uploadFile={uploadFile ?? uploadPostBodyFileWithApi}
 				editorComponent={editorComponent}
 				initialDocument={initialDocument}
+				onCologOptionsRefetch={() => void myCologsOverviewQuery.refetch()}
 			>
 				{children}
 			</PostEditor>

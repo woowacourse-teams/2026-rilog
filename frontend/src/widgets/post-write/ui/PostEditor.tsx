@@ -18,21 +18,29 @@ import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal'
 interface PostEditorProps {
 	children: (editor: PostWriteEditorContext) => ReactNode;
 	cologOptions: PostPublishCologOption[];
+	isCologOptionsPending: boolean;
+	isCologOptionsError: boolean;
+	isCologOptionsRefetching: boolean;
 	userSlug: string | null;
 	workspace: PostWriteWorkspaceState;
 	uploadFile: UploadPostBodyFile;
 	editorComponent?: ComponentType<PostBodyEditorProps>;
 	initialDocument?: EditorDocument;
+	onCologOptionsRefetch: () => void;
 }
 
 export default function PostEditor({
 	children,
 	cologOptions,
+	isCologOptionsPending,
+	isCologOptionsError,
+	isCologOptionsRefetching,
 	userSlug,
 	workspace,
 	uploadFile,
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
+	onCologOptionsRefetch,
 }: PostEditorProps) {
 	const { isDirty, document: postDocument, publication } = workspace;
 
@@ -76,6 +84,9 @@ export default function PostEditor({
 				bodyBlocks={publication.document?.blocks ?? []}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}
+				isCologOptionsPending={isCologOptionsPending}
+				isCologOptionsError={isCologOptionsError}
+				isCologOptionsRefetching={isCologOptionsRefetching}
 				userSlug={userSlug}
 				cologError={publication.cologError}
 				publishError={publication.publishError}
@@ -85,6 +96,7 @@ export default function PostEditor({
 				onTargetBlogChange={publication.handleTargetBlogChange}
 				onChapterChange={publication.handleChapterChange}
 				onImageChange={publication.handleImageChange}
+				onCologOptionsRefetch={onCologOptionsRefetch}
 				onPublish={(targetBlogType) => void publication.publish(targetBlogType)}
 			/>
 		</div>

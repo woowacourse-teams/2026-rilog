@@ -31,6 +31,9 @@ interface PublishSettingsModalProps {
 	bodyBlocks: Block[];
 	defaultImageUrl: string;
 	cologOptions: PostPublishCologOption[];
+	isCologOptionsPending: boolean;
+	isCologOptionsError: boolean;
+	isCologOptionsRefetching: boolean;
 	userSlug: string | null;
 	cologError?: string;
 	publishError?: string;
@@ -40,6 +43,7 @@ interface PublishSettingsModalProps {
 	onTargetBlogChange: (targetBlog: TargetBlog | null) => void;
 	onChapterChange: (chapterId: number | null) => void;
 	onImageChange: (file: File | null) => void;
+	onCologOptionsRefetch: () => void;
 	onPublish: (targetBlogType: BlogOption) => void;
 }
 
@@ -64,6 +68,9 @@ export default function PublishSettingsModal({
 	bodyBlocks,
 	defaultImageUrl,
 	cologOptions,
+	isCologOptionsPending,
+	isCologOptionsError,
+	isCologOptionsRefetching,
 	userSlug,
 	cologError,
 	publishError,
@@ -73,6 +80,7 @@ export default function PublishSettingsModal({
 	onTargetBlogChange,
 	onChapterChange,
 	onImageChange,
+	onCologOptionsRefetch,
 	onPublish,
 }: PublishSettingsModalProps) {
 	// 블로그 선택
@@ -90,6 +98,15 @@ export default function PublishSettingsModal({
 		? (cologOptions.find((option) => option.id === selectedColog.id) ?? null)
 		: null;
 	const isModalPending = isPublishing || isCreatingSeries;
+	const isCologSelectDisabled =
+		isModalPending || isCologOptionsPending || isCologOptionsError || isCologOptionsRefetching;
+	const cologOptionsStatusMessage = isCologOptionsPending
+		? '코로그 목록을 불러오는 중...'
+		: isCologOptionsError
+			? '코로그 목록을 불러오지 못했습니다.'
+			: cologOptions.length === 0
+				? '소속된 코로그가 없습니다.'
+				: undefined;
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
 	const handleSubmit = () => {
@@ -241,16 +258,24 @@ export default function PublishSettingsModal({
 							<Field label="코로그" controlId="post-colog" required>
 								{({ id }) => {
 									const errorId = `${id}-error`;
+									const statusId = `${id}-options-status`;
+									const describedBy = [
+										cologOptionsStatusMessage === undefined ? undefined : statusId,
+										cologError === undefined ? undefined : errorId,
+									]
+										.filter((descriptionId) => descriptionId !== undefined)
+										.join(' ');
 
 									return (
-										<div>
+										<div className="flex flex-col gap-3">
 											<select
 												ref={cologSelectRef}
 												id={id}
 												value={settings.blog?.type === COLOG ? settings.blog.id : ''}
-												disabled={isModalPending}
+												disabled={isCologSelectDisabled}
+												aria-busy={isCologOptionsPending || isCologOptionsRefetching || undefined}
 												aria-invalid={cologError !== undefined}
-												aria-describedby={cologError === undefined ? undefined : errorId}
+												aria-describedby={describedBy === '' ? undefined : describedBy}
 												className="native-select"
 												onChange={(event) => {
 													const selectedValue = event.currentTarget.value;
@@ -269,6 +294,24 @@ export default function PublishSettingsModal({
 													</option>
 												))}
 											</select>
+											{cologOptionsStatusMessage !== undefined && (
+												<div className="flex items-center justify-between gap-3 text-label-2 text-text-secondary">
+													<p id={statusId} role={isCologOptionsError ? 'alert' : 'status'}>
+														{cologOptionsStatusMessage}
+													</p>
+													{isCologOptionsError && (
+														<Button
+															variant="ghost"
+															size="sm"
+															disabled={isModalPending}
+															isPending={isCologOptionsRefetching}
+															onClick={onCologOptionsRefetch}
+														>
+															다시 시도
+														</Button>
+													)}
+												</div>
+											)}
 											{cologError !== undefined && (
 												<p id={errorId} className="mt-2 text-body-1 text-danger-text" role="alert">
 													{cologError}
