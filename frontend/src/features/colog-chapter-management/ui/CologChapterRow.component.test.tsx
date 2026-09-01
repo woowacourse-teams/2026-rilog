@@ -20,11 +20,11 @@ const renderInTable = (ui: React.ReactElement) =>
 	);
 
 describe('CologChapterRow', () => {
-	it('챕터 이름과 게시글 수, 삭제 버튼을 렌더링한다', () => {
+	it('챕터 이름과 삭제 버튼을 렌더링한다', () => {
 		renderInTable(<CologChapterRow chapter={CHAPTER} />);
 
 		expect(screen.getByText('프론트엔드')).toBeInTheDocument();
-		expect(screen.getByText('3개')).toBeInTheDocument();
+		expect(screen.queryByText('3개')).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' })).toBeInTheDocument();
 	});
 

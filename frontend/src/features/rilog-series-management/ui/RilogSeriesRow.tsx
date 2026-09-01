@@ -29,7 +29,8 @@ export default function RilogSeriesRow({ series, isEditing = false, onNameChange
 					series.name
 				)}
 			</td>
-			<td className="px-2 py-3 text-label-1 text-text-secondary">{series.postCount}개</td>
+			{/* TODO: 챕터 조회 API가 게시글 수를 제공하면 셀을 다시 노출한다. */}
+			{/* <td className="px-2 py-3 text-label-1 text-text-secondary">{series.postCount}개</td> */}
 			<td className="py-3 pr-8 text-right">
 				{!isEditing && (
 					<button

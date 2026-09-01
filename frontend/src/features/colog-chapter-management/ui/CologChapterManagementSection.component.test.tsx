@@ -32,7 +32,7 @@ describe('CologChapterManagementSection', () => {
 
 		expect(screen.getByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '챕터' })).toBeInTheDocument();
-		expect(screen.getByRole('columnheader', { name: '게시글 수' })).toBeInTheDocument();
+		expect(screen.queryByRole('columnheader', { name: '게시글 수' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '백엔드 챕터 삭제' })).toBeInTheDocument();
 	});
