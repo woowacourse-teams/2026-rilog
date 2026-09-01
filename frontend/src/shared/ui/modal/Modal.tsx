@@ -9,6 +9,7 @@ import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 
 import BaseModal from './BaseModal';
+import { CENTERED_MODAL_CLASS_NAME } from './modal.styles';
 
 interface ModalCommonProps {
 	open: boolean;
@@ -104,7 +105,7 @@ export default function Modal({
 			closeOnEscape={closeOnEscape}
 			dismissDisabled={isPending}
 			initialFocusRef={initialFocusRef}
-			className={`w-modal-viewport md:w-modal-viewport-md ${SIZE_CLASS_NAMES[size]}`}
+			className={`${CENTERED_MODAL_CLASS_NAME} w-modal-viewport md:w-modal-viewport-md ${SIZE_CLASS_NAMES[size]}`}
 		>
 			<div
 				className={`flex max-h-[inherit] min-h-0 flex-col overflow-hidden ${size === 'full' ? 'h-full' : ''} ${PADDING_CLASS_NAMES[padding]}`}

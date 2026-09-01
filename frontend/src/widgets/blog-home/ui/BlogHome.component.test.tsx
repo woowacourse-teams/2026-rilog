@@ -51,7 +51,7 @@ vi.mock('@/features/rilog-settings-access/ui/RilogSettingsButton', () => ({
 
 vi.mock('./BlogPostFeedSection', () => ({
 	default: function MockBlogPostFeedSection({ slug }: { slug: string }) {
-		return <div>게시글 목록: {slug}</div>;
+		return <div data-testid="feed-slot">게시글 목록: {slug}</div>;
 	},
 }));
 
@@ -72,25 +72,33 @@ describe('BlogHome', () => {
 		profileViewTrackerRenderMock.mockClear();
 	});
 
-	it('COLOG에는 멤버 aside와 공통 프로필·게시글 영역을 조립한다', () => {
+	it('COLOG에는 멤버 aside와 챕터 탐색을 유지하고 RILOG 전용 섹션을 노출하지 않는다', () => {
 		render(<BlogHome profile={COLOG_PROFILE} />);
 
 		expect(screen.getByText('프로필: COLOG')).toBeInTheDocument();
 		expect(screen.getByText('게시글 목록: rilog-team')).toBeInTheDocument();
 		expect(screen.getByText('멤버 목록: rilog-team')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveAttribute('href', '/@rilog-team/settings?tab=profile');
+		expect(screen.getByRole('heading', { name: '챕터' })).toBeInTheDocument();
+		expect(screen.queryByRole('region', { name: 'Cologs' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: '시리즈' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: '코로그' })).not.toBeInTheDocument();
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('COLOG');
 	});
 
-	it('RILOG에는 본인 설정 버튼만 조립하고 멤버 aside를 생성하지 않는다', () => {
+	it('RILOG에는 settings와 시리즈·코로그 탐색, 참여 코로그 aside를 조립한다', () => {
 		render(<BlogHome profile={{ ...COLOG_PROFILE, type: 'RILOG', name: '파라디', slug: 'jetproc', memberCount: 1 }} />);
 
 		expect(screen.getByText('프로필: RILOG')).toBeInTheDocument();
-		expect(screen.getByText('게시글 목록: jetproc')).toBeInTheDocument();
-		expect(screen.queryByText(/멤버 목록:/)).not.toBeInTheDocument();
-		expect(screen.queryByRole('link', { name: '팀 설정' })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '개인 설정' })).toHaveAttribute('href', '/@jetproc/settings?tab=profile');
+		expect(screen.queryByText(/멤버 목록:/)).not.toBeInTheDocument();
+		expect(screen.getByTestId('feed-slot')).toHaveTextContent('게시글 목록: jetproc');
+		expect(screen.getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: '코로그' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: 'Cologs' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: 'Rilog 로고' })).toBeInTheDocument();
+		expect(screen.getByTestId('feed-slot')).toHaveTextContent('게시글 목록: jetproc');
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('RILOG');
 	});
