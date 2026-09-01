@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -66,6 +66,39 @@ describe('RilogSettingsWorkspace', () => {
 		expect(screen.getByRole('heading', { name: '위험 영역' })).toBeInTheDocument();
 		expect(window.location.pathname + window.location.search).toBe('/@rilogger/settings?tab=danger');
 		expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'rilog-settings-tab-danger');
+	});
+
+	it('시리즈 관리에서 시리즈를 추가하고 이름을 수정한다', async () => {
+		const user = userEvent.setup();
+		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
+
+		await user.click(screen.getByRole('tab', { name: '시리즈 관리' }));
+		expect(screen.getByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '+ 시리즈 추가' }));
+		await user.type(screen.getByRole('textbox', { name: '시리즈 이름' }), '회고');
+		await user.click(screen.getByRole('button', { name: '추가' }));
+		expect(screen.getByText('회고')).toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: '시리즈 수정' }));
+		const seriesName = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
+		fireEvent.change(seriesName, { target: { value: '프론트엔드' } });
+		await user.click(screen.getByRole('button', { name: '저장' }));
+
+		await waitFor(() => expect(screen.getByText('프론트엔드')).toBeInTheDocument());
+	});
+
+	it('시리즈 이름이 공백뿐이면 입력 오류를 안내하고 저장을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
+
+		await user.click(screen.getByRole('tab', { name: '시리즈 관리' }));
+		await user.click(screen.getByRole('button', { name: '시리즈 수정' }));
+		const seriesName = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
+		await user.clear(seriesName);
+
+		expect(seriesName).toBeInvalid();
+		expect(seriesName).toHaveAccessibleDescription('시리즈 이름을 입력해 주세요.');
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
 	});
 
 	it('저장하지 않은 프로필은 탭 이동을 확인하고 취소하면 유지한다', async () => {
