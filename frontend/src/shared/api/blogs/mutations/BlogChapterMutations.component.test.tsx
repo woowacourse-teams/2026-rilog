@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe('blog chapter mutations', () => {
-	it('챕터 생성 성공 후 정규화한 블로그의 챕터 목록 cache만 정확히 무효화한다', async () => {
+	it('챕터 생성 성공 후 정규화한 블로그의 챕터 목록과 인덱스를 정확히 무효화한다', async () => {
 		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'createBlogChapter').mockResolvedValue({
@@ -33,10 +33,11 @@ describe('blog chapter mutations', () => {
 			queryKey: blogsQueryKeys.chapters('rilog'),
 			exact: true,
 		});
-		expect(invalidateQueries).toHaveBeenCalledTimes(1);
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
+		expect(invalidateQueries).toHaveBeenCalledTimes(2);
 	});
 
-	it('챕터 이름 변경 성공 후 정규화한 블로그의 챕터 목록 cache만 정확히 무효화한다', async () => {
+	it('챕터 이름 변경 성공 후 정규화한 블로그의 챕터 목록과 인덱스를 정확히 무효화한다', async () => {
 		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'renameBlogChapter').mockResolvedValue({
@@ -54,10 +55,11 @@ describe('blog chapter mutations', () => {
 			queryKey: blogsQueryKeys.chapters('rilog'),
 			exact: true,
 		});
-		expect(invalidateQueries).toHaveBeenCalledTimes(1);
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
+		expect(invalidateQueries).toHaveBeenCalledTimes(2);
 	});
 
-	it('챕터 삭제 성공 후 정규화한 블로그의 챕터 목록 cache만 정확히 무효화한다', async () => {
+	it('챕터 삭제 성공 후 정규화한 블로그의 챕터 목록과 인덱스를 정확히 무효화한다', async () => {
 		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'deleteBlogChapter').mockResolvedValue(new Response(null, { status: 204 }));
@@ -71,6 +73,7 @@ describe('blog chapter mutations', () => {
 			queryKey: blogsQueryKeys.chapters('rilog'),
 			exact: true,
 		});
-		expect(invalidateQueries).toHaveBeenCalledTimes(1);
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
+		expect(invalidateQueries).toHaveBeenCalledTimes(2);
 	});
 });

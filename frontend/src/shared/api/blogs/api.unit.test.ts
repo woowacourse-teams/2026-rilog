@@ -6,6 +6,7 @@ import {
 	createBlogChapter,
 	deleteBlogChapter,
 	readBlogChapters,
+	readBlogIndex,
 	readBlogPublicProfile,
 	readPublicBlogPosts,
 	renameBlogChapter,
@@ -115,6 +116,37 @@ describe('readPublicBlogPosts', () => {
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts?page=2&size=12');
+	});
+});
+
+describe('readBlogIndex', () => {
+	it('신규 코로그 slug와 이미지 필드를 포함한 블로그 인덱스 fixture를 그대로 반환한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '블로그 인덱스 조회에 성공했습니다.',
+			data: {
+				blogType: 'RILOG',
+				totalCount: 8,
+				chapterIndexes: [{ chapterId: 3, name: '회고', postCount: 5 }],
+				cologIndexes: [
+					{
+						cologId: 7,
+						slug: 'rilog-team',
+						name: '리로그 팀',
+						profileImageUrl: 'https://images.rilog.test/team.png',
+						authoredPostCount: 3,
+					},
+				],
+			},
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readBlogIndex('@rilog-user')).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-user/index');
 	});
 });
 

@@ -57,6 +57,27 @@ export interface BlogPublicProfileRequest {
 	slug: string;
 }
 
+export interface ChapterIndexResponse {
+	chapterId: number;
+	name: string;
+	postCount: number;
+}
+
+export interface CologIndexResponse {
+	cologId: number;
+	slug: string;
+	name: string;
+	profileImageUrl: string | null;
+	authoredPostCount: number;
+}
+
+export interface BlogIndexResponse {
+	blogType: BlogType;
+	totalCount: number;
+	chapterIndexes: ChapterIndexResponse[] | null;
+	cologIndexes: CologIndexResponse[] | null;
+}
+
 export interface ChapterResponse {
 	chapterId: number;
 	name: string;

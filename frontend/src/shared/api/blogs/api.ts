@@ -1,5 +1,6 @@
 import type {
 	BlogProfileUpdateRequest,
+	BlogIndexResponse,
 	BlogPublicProfileResponse,
 	ChapterCreateRequest,
 	ChapterRenameRequest,
@@ -23,6 +24,12 @@ export const readBlogPublicProfile = ({ slug }: { slug: string }): Promise<ApiRe
 	const normalizedSlug = stripAtPrefix(slug);
 
 	return apiClient.get<ApiResponse<BlogPublicProfileResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}`);
+};
+
+export const readBlogIndex = (slug: string) => {
+	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.get<ApiResponse<BlogIndexResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/index`);
 };
 
 export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsRequest) => {

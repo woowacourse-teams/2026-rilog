@@ -20,10 +20,13 @@ export const useCreateBlogChapterMutation = () => {
 	return useMutation({
 		mutationKey: CREATE_BLOG_CHAPTER_MUTATION_KEY,
 		mutationFn: ({ slug, request }: CreateBlogChapterVariables) => createBlogChapter(slug, request),
-		onSuccess: (_, { slug }) =>
-			queryClient.invalidateQueries({
-				queryKey: blogsQueryKeys.chapters(stripAtPrefix(slug)),
-				exact: true,
-			}),
+		onSuccess: (_, { slug }) => {
+			const normalizedSlug = stripAtPrefix(slug);
+
+			return Promise.all([
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.chapters(normalizedSlug), exact: true }),
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.index(normalizedSlug), exact: true }),
+			]);
+		},
 	});
 };

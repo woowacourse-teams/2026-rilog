@@ -16,10 +16,13 @@ export const useDeleteBlogChapterMutation = () => {
 
 	return useMutation({
 		mutationFn: ({ slug, chapterId }: DeleteBlogChapterVariables) => deleteBlogChapter(slug, chapterId),
-		onSuccess: (_, { slug }) =>
-			queryClient.invalidateQueries({
-				queryKey: blogsQueryKeys.chapters(stripAtPrefix(slug)),
-				exact: true,
-			}),
+		onSuccess: (_, { slug }) => {
+			const normalizedSlug = stripAtPrefix(slug);
+
+			return Promise.all([
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.chapters(normalizedSlug), exact: true }),
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.index(normalizedSlug), exact: true }),
+			]);
+		},
 	});
 };
