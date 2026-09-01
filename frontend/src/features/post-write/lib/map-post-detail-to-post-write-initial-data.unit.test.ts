@@ -10,6 +10,7 @@ const createResponse = (overrides: Partial<PostDetailResponse> = {}): PostDetail
 	publishedAt: '2026-08-24T00:00:00Z',
 	thumbnailImageUrl: 'posts/existing-thumbnail.png',
 	category: 'DAILY',
+	chapter: { chapterId: 12, name: '회고', order: 1 },
 	author: { userId: 7, nickname: '작성자', slug: 'author', profileImageUrl: null },
 	owner: { type: 'RILOG', blogId: 3, slug: 'author', name: '작성자 블로그', profileImageUrl: null },
 	...overrides,
@@ -28,6 +29,7 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 			settings: {
 				category: 'DAILY',
 				blog: { type: 'RILOG', slug: 'author' },
+				chapterId: 12,
 				representativeImage: null,
 				representativeImageUrl: 'posts/existing-thumbnail.png',
 			},

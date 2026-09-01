@@ -180,6 +180,7 @@ const initialData: PostWriteInitialData = {
 	settings: {
 		category: 'DAILY',
 		blog: { type: 'RILOG', slug: 'author' },
+		chapterId: null,
 		representativeImage: null,
 		representativeImageUrl: 'posts/existing-thumbnail.png',
 	},

@@ -25,6 +25,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	settings: {
 		category: 'IT',
 		blog: { type: 'RILOG', slug: 'personal-blog' },
+		chapterId: null,
 		representativeImage: null,
 		representativeImageUrl: null,
 	},
@@ -40,6 +41,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	onClose: vi.fn(),
 	onCategoryChange: vi.fn(),
 	onTargetBlogChange: vi.fn(),
+	onChapterChange: vi.fn(),
 	onImageChange: vi.fn(),
 	onPublish: vi.fn(),
 };
@@ -168,6 +170,19 @@ describe('PublishSettingsModal', () => {
 		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'first-colog', isEnabled: true });
 	});
 
+	it('선택한 챕터 ID와 선택 해제를 게시 설정에 반영한다', async () => {
+		const user = userEvent.setup();
+		const handleChapterChange = vi.fn();
+		renderModal({ onChapterChange: handleChapterChange });
+
+		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
+		await user.selectOptions(seriesSelect, '12');
+		expect(handleChapterChange).toHaveBeenLastCalledWith(12);
+
+		await user.selectOptions(seriesSelect, '');
+		expect(handleChapterChange).toHaveBeenLastCalledWith(null);
+	});
+
 	it('챕터 목록 조회 중에는 select를 잠그고 상태를 알린다', () => {
 		usePostPublishChaptersMock.mockReturnValue({
 			data: undefined,
@@ -222,7 +237,8 @@ describe('PublishSettingsModal', () => {
 				}),
 		);
 		const handlePublish = vi.fn();
-		renderModal({ onPublish: handlePublish });
+		const handleChapterChange = vi.fn();
+		renderModal({ onPublish: handlePublish, onChapterChange: handleChapterChange });
 
 		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
@@ -267,7 +283,10 @@ describe('PublishSettingsModal', () => {
 			refetch: refetchChaptersMock,
 		});
 
-		await waitFor(() => expect(screen.getByRole('combobox', { name: '시리즈' })).toHaveDisplayValue('새 시리즈'));
+		await waitFor(() => expect(handleChapterChange).toHaveBeenCalledWith(19));
+		expect(
+			within(screen.getByRole('combobox', { name: '시리즈' })).getByRole('option', { name: '새 시리즈' }),
+		).toBeInTheDocument();
 		expect(screen.queryByRole('textbox', { name: '새로운 시리즈 이름' })).not.toBeInTheDocument();
 	});
 

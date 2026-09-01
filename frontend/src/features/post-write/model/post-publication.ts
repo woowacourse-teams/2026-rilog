@@ -12,6 +12,7 @@ export type TargetBlog = { type: 'RILOG'; slug: string } | { type: 'COLOG'; id: 
 export interface PublicationSettings {
 	category: PostCategory;
 	blog: TargetBlog | null;
+	chapterId: number | null;
 	representativeImage: File | null;
 	representativeImageUrl: string | null;
 }

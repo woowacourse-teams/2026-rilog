@@ -19,6 +19,7 @@ export const mapPostDetailToPostWriteInitialData = (response: PostDetailResponse
 			response.owner.type === 'COLOG'
 				? { type: 'COLOG', id: response.owner.blogId, slug: response.owner.slug }
 				: { type: 'RILOG', slug: response.owner.slug },
+		chapterId: response.chapter?.chapterId ?? null,
 		representativeImage: null,
 		representativeImageUrl: response.thumbnailImageUrl,
 	},

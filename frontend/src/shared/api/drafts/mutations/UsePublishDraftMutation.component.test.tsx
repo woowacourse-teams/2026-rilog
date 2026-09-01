@@ -39,6 +39,7 @@ describe('usePublishDraftMutation', () => {
 			category: 'TECH' as const,
 			visibility: 'PUBLIC' as const,
 			thumbnailImageUrl: null,
+			chapterId: null,
 		};
 
 		await result.current.mutateAsync({ draftId: 42, request });

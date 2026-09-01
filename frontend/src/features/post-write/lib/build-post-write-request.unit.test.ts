@@ -20,6 +20,7 @@ const createCommand = (): PublishPostCommand => ({
 	settings: {
 		category: 'IT',
 		blog: { type: 'RILOG', slug: 'rilog' },
+		chapterId: 12,
 		representativeImage: null,
 		representativeImageUrl: 'posts/existing.png',
 	},
@@ -38,6 +39,7 @@ describe('buildPostWriteRequest', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: 'posts/existing.png',
+			chapterId: 12,
 		});
 		expect(uploadRepresentativeImage).not.toHaveBeenCalled();
 	});

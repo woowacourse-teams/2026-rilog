@@ -35,6 +35,7 @@ interface PublishSettingsModalProps {
 	onClose: () => void;
 	onCategoryChange: (category: PostCategory) => void;
 	onTargetBlogChange: (targetBlog: TargetBlog | null) => void;
+	onChapterChange: (chapterId: number | null) => void;
 	onImageChange: (file: File | null) => void;
 	onPublish: (targetBlogType: BlogOption) => void;
 }
@@ -67,6 +68,7 @@ export default function PublishSettingsModal({
 	onClose,
 	onCategoryChange,
 	onTargetBlogChange,
+	onChapterChange,
 	onImageChange,
 	onPublish,
 }: PublishSettingsModalProps) {
@@ -75,7 +77,6 @@ export default function PublishSettingsModal({
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const seriesNameInputRef = useRef<HTMLInputElement>(null);
-	const [selectedChapterValues, setSelectedChapterValues] = useState<Record<string, string>>({});
 	const [isSeriesCreatorOpen, setIsSeriesCreatorOpen] = useState(false);
 	const [newSeriesName, setNewSeriesName] = useState('');
 	const [seriesNameValidationError, setSeriesNameValidationError] = useState<string>();
@@ -95,8 +96,7 @@ export default function PublishSettingsModal({
 		isEnabled: isChapterQueryEnabled,
 	});
 	const chapterOptions = chapterQuerySlug === null ? [] : (chaptersQuery.data ?? []);
-	const chapterScopeKey = selectedColog === null ? 'personal-blog' : `colog-${selectedColog.id}`;
-	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
+	const selectedChapterValue = settings.chapterId === null ? '' : String(settings.chapterId);
 	const seriesCreationError =
 		seriesNameValidationError ??
 		(createChapterMutation.isError
@@ -166,10 +166,7 @@ export default function PublishSettingsModal({
 				return;
 			}
 
-			setSelectedChapterValues((currentValues) => ({
-				...currentValues,
-				'personal-blog': String(createdChapter.chapterId),
-			}));
+			onChapterChange(createdChapter.chapterId);
 			setNewSeriesName('');
 			setIsSeriesCreatorOpen(false);
 		} catch {
@@ -419,10 +416,7 @@ export default function PublishSettingsModal({
 										className="native-select"
 										onChange={(event) => {
 											const selectedValue = event.currentTarget.value;
-											setSelectedChapterValues((currentValues) => ({
-												...currentValues,
-												[chapterScopeKey]: selectedValue,
-											}));
+											onChapterChange(selectedValue === '' ? null : Number(selectedValue));
 										}}
 									>
 										<option value="">선택 안 함</option>

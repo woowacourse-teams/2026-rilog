@@ -62,6 +62,7 @@ export function usePostWriteWorkspace({
 		handleImageChange,
 		handleCategoryChange,
 		handleTargetBlogChange,
+		handleChapterChange,
 		validatePublicationSettings,
 		clearSelectedImageUrl,
 	} = usePostPublicationSettings({
@@ -186,6 +187,7 @@ export function usePostWriteWorkspace({
 			handleImageChange,
 			handleCategoryChange,
 			handleTargetBlogChange,
+			handleChapterChange,
 			publish: handlePublish,
 		},
 		leaveGuard: {

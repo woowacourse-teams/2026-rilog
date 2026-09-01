@@ -84,6 +84,7 @@ export default function PostEditor({
 				onClose={publication.close}
 				onCategoryChange={publication.handleCategoryChange}
 				onTargetBlogChange={publication.handleTargetBlogChange}
+				onChapterChange={publication.handleChapterChange}
 				onImageChange={publication.handleImageChange}
 				onPublish={(targetBlogType) => void publication.publish(targetBlogType)}
 			/>

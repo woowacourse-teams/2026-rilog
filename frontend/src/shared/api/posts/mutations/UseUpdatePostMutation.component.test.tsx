@@ -26,6 +26,7 @@ describe('useUpdatePostMutation', () => {
 			category: 'DAILY' as const,
 			visibility: 'PUBLIC' as const,
 			thumbnailImageUrl: null,
+			chapterId: 8,
 		};
 		const { result } = renderHook(() => useUpdatePostMutation(), {
 			wrapper: ({ children }) => createElement(QueryClientProvider, { client: queryClient }, children),
