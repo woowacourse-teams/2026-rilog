@@ -70,7 +70,6 @@ const BLOG_OPTIONS = [
 ] as const;
 
 type BlogOption = (typeof BLOG_OPTIONS)[number]['value'];
-type SelectedBlog = BlogOption | CologOption;
 
 let nextMockChapterId = 1;
 
@@ -96,7 +95,7 @@ export default function PublishSettingsModal({
 	onCreateChapter = createMockChapter,
 }: PublishSettingsModalProps) {
 	// 블로그 선택
-	const [selectedBlog, setSelectedBlog] = useState<SelectedBlog>(() => settings.blog ?? RILOG);
+	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => (settings.blog === null ? RILOG : COLOG));
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const seriesNameInputRef = useRef<HTMLInputElement>(null);
@@ -109,12 +108,12 @@ export default function PublishSettingsModal({
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
-	const isCologSelected = selectedBlog !== RILOG;
+	const isCologSelected = settings.blog !== null;
 	const chapterLabel = isCologSelected ? '챕터' : '시리즈';
 	const chapterOptions = isCologSelected
 		? MOCK_COLOG_CHAPTER_OPTIONS
 		: [...MOCK_PERSONAL_CHAPTER_OPTIONS, ...createdPersonalChapterOptions];
-	const chapterScopeKey = isCologSelected ? `colog-${settings.blog?.id ?? 'unselected'}` : 'personal-blog';
+	const chapterScopeKey = settings.blog === null ? 'personal-blog' : `colog-${settings.blog.id}`;
 	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
 	const isModalPending = isPublishing || isCreatingSeries;
 
@@ -130,7 +129,7 @@ export default function PublishSettingsModal({
 			return;
 		}
 
-		if (isCologSelected && settings.blog === null) {
+		if (selectedBlog === COLOG && !isCologSelected) {
 			cologSelectRef.current?.focus();
 		}
 
@@ -292,13 +291,13 @@ export default function PublishSettingsModal({
 								{BLOG_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-10 items-center justify-center px-4 text-label-2 font-semibold transition-colors has-focus-visible:z-10 has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${value === BLOG_OPTIONS[0].value ? 'border-r border-border-default' : ''} ${(value === COLOG) === isCologSelected ? 'bg-brand-primary text-on-brand-primary' : 'bg-surface text-text-secondary hover:bg-surface-hover active:bg-surface-active'}`}
+										className={`flex min-h-10 items-center justify-center px-4 text-label-2 font-semibold transition-colors has-focus-visible:z-10 has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${value === BLOG_OPTIONS[0].value ? 'border-r border-border-default' : ''} ${selectedBlog === value ? 'bg-brand-primary text-on-brand-primary' : 'bg-surface text-text-secondary hover:bg-surface-hover active:bg-surface-active'}`}
 									>
 										<input
 											type="radio"
 											name="post-blog-type"
 											value={value}
-											checked={value === COLOG ? isCologSelected : selectedBlog === value}
+											checked={selectedBlog === value}
 											className="sr-only"
 											onChange={() => handleBlogChange(value)}
 										/>
@@ -308,7 +307,7 @@ export default function PublishSettingsModal({
 							</div>
 						</fieldset>
 
-						{isCologSelected && (
+						{selectedBlog === COLOG && (
 							<Field label="코로그" controlId="post-colog" required>
 								{({ id }) => {
 									const errorId = `${id}-error`;

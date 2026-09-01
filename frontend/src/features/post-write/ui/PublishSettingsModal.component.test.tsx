@@ -96,6 +96,8 @@ describe('PublishSettingsModal', () => {
 		expect(cologRadio).toBeChecked();
 		expect(personalBlogRadio).not.toBeChecked();
 		expect(screen.getByRole('combobox', { name: '코로그' })).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeInTheDocument();
+		expect(screen.queryByRole('combobox', { name: '챕터' })).not.toBeInTheDocument();
 	});
 
 	it('개인 블로그에는 시리즈를, Co-log에는 챕터를 선택할 수 있다', () => {
