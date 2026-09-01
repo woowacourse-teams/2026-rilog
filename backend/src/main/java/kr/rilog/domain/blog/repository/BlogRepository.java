@@ -107,6 +107,8 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
         GROUP BY
             blogMember.blog.id,
             blogMember.blog.profile.name,
+            blogMember.blog.slug.value,
+            blogMember.blog.profile.profileImageUrl,
             blogMember.joinedAt
         ORDER BY blogMember.joinedAt DESC
         """)
