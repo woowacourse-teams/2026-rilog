@@ -67,7 +67,7 @@ public record BlogIndexResponse(
                     result.cologId(),
                     result.cologName(),
                     result.cologSlug(),
-                    result.coloProfileImageUrl(),
+                    result.cologProfileImageUrl(),
                     result.authoredPostCount()
             );
         }

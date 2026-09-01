@@ -72,7 +72,7 @@ public interface BlogApiSpec {
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
-            description = "프로필 수정 성공"
+            description = "블로그 인덱스 조회 성공"
     )
     ApiResponse<BlogIndexResponse> getBlogIndex(
             @PathVariable("slug") String slug

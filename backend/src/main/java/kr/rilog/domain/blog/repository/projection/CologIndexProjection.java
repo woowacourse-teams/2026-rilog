@@ -4,7 +4,7 @@ public record CologIndexProjection(
         Long cologId,
         String cologName,
         String cologSlug,
-        String coloProfileImageUrl,
+        String cologProfileImageUrl,
         long authoredPostCount
 ) {
 }
