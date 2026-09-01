@@ -8,8 +8,9 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import { usePostPublishChapters } from '@/features/post-write/hooks/use-post-publish-chapters';
-import type { BlogChapterOption } from '@/features/post-write/lib/map-blog-chapter-response';
 import type { PublicationSettings, TargetBlog } from '@/features/post-write/model/post-publication';
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { useCreateBlogChapterMutation } from '@/shared/api/blogs/mutations/use-create-blog-chapter-mutation';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
@@ -36,10 +37,7 @@ interface PublishSettingsModalProps {
 	onTargetBlogChange: (targetBlog: TargetBlog | null) => void;
 	onImageChange: (file: File | null) => void;
 	onPublish: (targetBlogType: BlogOption) => void;
-	onCreateChapter?: CreateChapter;
 }
-
-type CreateChapter = (name: string) => Promise<BlogChapterOption>;
 
 // 모달 footer의 발행 버튼을 내부 form과 연결하는 ID
 const PUBLISH_FORM_ID = 'post-publish-settings-form';
@@ -53,11 +51,6 @@ const BLOG_OPTIONS = [
 ] as const;
 
 type BlogOption = (typeof BLOG_OPTIONS)[number]['value'];
-
-let nextMockChapterId = 1;
-
-const createMockChapter: CreateChapter = (name) =>
-	Promise.resolve({ value: `mock-chapter-${nextMockChapterId++}`, label: name });
 
 export default function PublishSettingsModal({
 	open,
@@ -76,38 +69,40 @@ export default function PublishSettingsModal({
 	onTargetBlogChange,
 	onImageChange,
 	onPublish,
-	onCreateChapter = createMockChapter,
 }: PublishSettingsModalProps) {
 	// 블로그 선택
 	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => settings.blog?.type ?? RILOG);
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const seriesNameInputRef = useRef<HTMLInputElement>(null);
-	const [createdPersonalChapterOptions, setCreatedPersonalChapterOptions] = useState<BlogChapterOption[]>([]);
 	const [selectedChapterValues, setSelectedChapterValues] = useState<Record<string, string>>({});
 	const [isSeriesCreatorOpen, setIsSeriesCreatorOpen] = useState(false);
 	const [newSeriesName, setNewSeriesName] = useState('');
-	const [seriesCreationError, setSeriesCreationError] = useState<string>();
-	const [isCreatingSeries, setIsCreatingSeries] = useState(false);
+	const [seriesNameValidationError, setSeriesNameValidationError] = useState<string>();
+	const createChapterMutation = useCreateBlogChapterMutation();
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
 	const hasRepresentativeImage = settings.representativeImage !== null || settings.representativeImageUrl !== null;
 	const selectedColog = settings.blog?.type === COLOG ? settings.blog : null;
+
+	const isRilog = selectedBlog === RILOG;
 	const isCologSelected = selectedColog !== null;
 	const chapterLabel = isCologSelected ? '챕터' : '시리즈';
-	const chapterQuerySlug = selectedColog?.slug ?? (selectedBlog === RILOG ? userSlug : null);
+	const chapterQuerySlug = selectedColog?.slug ?? (isRilog ? userSlug : null);
 	const isChapterQueryEnabled = open && chapterQuerySlug !== null;
 	const chaptersQuery = usePostPublishChapters({
 		slug: chapterQuerySlug ?? '',
 		isEnabled: isChapterQueryEnabled,
 	});
-	const chapterOptions = [
-		...(chapterQuerySlug === null ? [] : (chaptersQuery.data ?? [])),
-		...(!isCologSelected ? createdPersonalChapterOptions : []),
-	];
+	const chapterOptions = chapterQuerySlug === null ? [] : (chaptersQuery.data ?? []);
 	const chapterScopeKey = selectedColog === null ? 'personal-blog' : `colog-${selectedColog.id}`;
 	const selectedChapterValue = selectedChapterValues[chapterScopeKey] ?? '';
-	const isModalPending = isPublishing || isCreatingSeries;
+	const seriesCreationError =
+		seriesNameValidationError ??
+		(createChapterMutation.isError
+			? getApiErrorMessage(createChapterMutation.error, '시리즈 생성에 실패했습니다.')
+			: undefined);
+	const isModalPending = isPublishing || createChapterMutation.isPending;
 	const isChapterSelectDisabled =
 		isModalPending || !isChapterQueryEnabled || chaptersQuery.isPending || chaptersQuery.isError;
 	const chapterStatusMessage = !isChapterQueryEnabled
@@ -130,7 +125,7 @@ export default function PublishSettingsModal({
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
 	const handleSubmit = () => {
-		if (isCreatingSeries) {
+		if (createChapterMutation.isPending) {
 			return;
 		}
 
@@ -150,26 +145,35 @@ export default function PublishSettingsModal({
 		const seriesName = newSeriesName.trim();
 
 		if (seriesName === '') {
-			setSeriesCreationError('시리즈 이름을 입력해 주세요.');
+			setSeriesNameValidationError('시리즈 이름을 입력해 주세요.');
 			return;
 		}
 
-		setIsCreatingSeries(true);
-		setSeriesCreationError(undefined);
+		if (userSlug === null) {
+			setSeriesNameValidationError('시리즈를 생성할 블로그 정보를 확인할 수 없어요.');
+			return;
+		}
 
 		try {
-			const createdChapter = await onCreateChapter(seriesName);
-			setCreatedPersonalChapterOptions((currentOptions) => [...currentOptions, createdChapter]);
+			const response = await createChapterMutation.mutateAsync({
+				slug: userSlug,
+				request: { name: seriesName },
+			});
+			const createdChapter = response.data;
+
+			if (createdChapter === undefined) {
+				setSeriesNameValidationError('생성한 시리즈 정보를 확인할 수 없어요.');
+				return;
+			}
+
 			setSelectedChapterValues((currentValues) => ({
 				...currentValues,
-				'personal-blog': createdChapter.value,
+				'personal-blog': String(createdChapter.chapterId),
 			}));
 			setNewSeriesName('');
 			setIsSeriesCreatorOpen(false);
-		} catch (error) {
-			setSeriesCreationError(error instanceof Error ? error.message : '시리즈 생성에 실패했습니다.');
-		} finally {
-			setIsCreatingSeries(false);
+		} catch {
+			// mutation의 error 상태를 input helper text로 표시한다.
 		}
 	};
 
@@ -192,7 +196,8 @@ export default function PublishSettingsModal({
 
 		onTargetBlogChange(null);
 
-		setSeriesCreationError(undefined);
+		setSeriesNameValidationError(undefined);
+		createChapterMutation.reset();
 		setNewSeriesName('');
 		setIsSeriesCreatorOpen(false);
 	};
@@ -363,14 +368,15 @@ export default function PublishSettingsModal({
 							label={chapterLabel}
 							controlId="post-chapter"
 							labelAction={
-								!isCologSelected ? (
+								isRilog ? (
 									<Button
 										variant="ghost"
 										size="sm"
 										aria-label={isSeriesCreatorOpen ? '시리즈 추가 취소' : '새 시리즈 추가'}
 										disabled={isModalPending}
 										onClick={() => {
-											setSeriesCreationError(undefined);
+											setSeriesNameValidationError(undefined);
+											createChapterMutation.reset();
 
 											if (isSeriesCreatorOpen) {
 												setNewSeriesName('');
@@ -388,7 +394,7 @@ export default function PublishSettingsModal({
 						>
 							{({ id }) => (
 								<div className="flex flex-col gap-3">
-									{!isCologSelected && isSeriesCreatorOpen && (
+									{isRilog && isSeriesCreatorOpen && (
 										<Input
 											ref={seriesNameInputRef}
 											aria-label="새로운 시리즈 이름"
@@ -399,7 +405,8 @@ export default function PublishSettingsModal({
 											helperText={seriesCreationError}
 											onChange={(event) => {
 												setNewSeriesName(event.currentTarget.value);
-												setSeriesCreationError(undefined);
+												setSeriesNameValidationError(undefined);
+												createChapterMutation.reset();
 											}}
 											onKeyDown={handleSeriesNameKeyDown}
 										/>

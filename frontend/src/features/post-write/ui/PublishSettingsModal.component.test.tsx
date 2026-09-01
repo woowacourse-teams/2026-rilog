@@ -1,10 +1,12 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import * as blogsApi from '@/shared/api/blogs/api';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import PublishSettingsModal from './PublishSettingsModal';
 
@@ -43,10 +45,11 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 };
 
 const renderModal = (overrides: Partial<ComponentProps<typeof PublishSettingsModal>> = {}) =>
-	render(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
+	renderWithQuery(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
 
 describe('PublishSettingsModal', () => {
 	beforeEach(() => {
+		vi.restoreAllMocks();
 		refetchChaptersMock.mockReset();
 		usePostPublishChaptersMock.mockReset();
 		usePostPublishChaptersMock.mockReturnValue({
@@ -134,6 +137,7 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('combobox', { name: '코로그' })).toBeInTheDocument();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeInTheDocument();
 		expect(screen.queryByRole('combobox', { name: '챕터' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
 	});
 
 	it('개인 블로그와 선택한 Co-log의 챕터 목록 조회 결과를 표시한다', () => {
@@ -206,15 +210,19 @@ describe('PublishSettingsModal', () => {
 
 	it('새 시리즈를 생성하는 동안 모달 action을 잠그고 성공한 시리즈를 선택한다', async () => {
 		const user = userEvent.setup();
-		let resolveCreateChapter!: (option: { value: string; label: string }) => void;
-		const handleCreateChapter = vi.fn(
+		let resolveCreateChapter!: (response: {
+			status: number;
+			message: string;
+			data: { chapterId: number; name: string; order: number };
+		}) => void;
+		const createChapter = vi.spyOn(blogsApi, 'createBlogChapter').mockImplementation(
 			() =>
-				new Promise<{ value: string; label: string }>((resolve) => {
+				new Promise((resolve) => {
 					resolveCreateChapter = resolve;
 				}),
 		);
 		const handlePublish = vi.fn();
-		renderModal({ onCreateChapter: handleCreateChapter, onPublish: handlePublish });
+		renderModal({ onPublish: handlePublish });
 
 		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
@@ -222,7 +230,11 @@ describe('PublishSettingsModal', () => {
 		expect(seriesNameInput).toHaveAttribute('placeholder', '새로운 시리즈 이름을 입력하세요.');
 
 		await user.type(seriesNameInput, '새 시리즈{Enter}');
-		await waitFor(() => expect(handleCreateChapter).toHaveBeenCalledWith('새 시리즈'));
+		await waitFor(() =>
+			expect(createChapter).toHaveBeenCalledWith('personal-blog', {
+				name: '새 시리즈',
+			}),
+		);
 
 		expect(handlePublish).not.toHaveBeenCalled();
 		expect(seriesNameInput).toBeDisabled();
@@ -237,7 +249,22 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('radio', { name: '코로그' })).toBeDisabled();
 
 		act(() => {
-			resolveCreateChapter({ value: 'new-series', label: '새 시리즈' });
+			resolveCreateChapter({
+				status: 201,
+				message: '챕터를 생성했습니다.',
+				data: { chapterId: 19, name: '새 시리즈', order: 2 },
+			});
+		});
+
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [
+				{ value: '7', label: '프론트엔드 성장 기록' },
+				{ value: '12', label: '개발' },
+				{ value: '19', label: '새 시리즈' },
+			],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
 		});
 
 		await waitFor(() => expect(screen.getByRole('combobox', { name: '시리즈' })).toHaveDisplayValue('새 시리즈'));
@@ -261,8 +288,8 @@ describe('PublishSettingsModal', () => {
 
 	it('시리즈 생성에 실패하면 input에 오류 메시지를 표시한다', async () => {
 		const user = userEvent.setup();
-		const handleCreateChapter = vi.fn().mockRejectedValue(new Error('이미 사용 중인 시리즈 이름입니다.'));
-		renderModal({ onCreateChapter: handleCreateChapter });
+		vi.spyOn(blogsApi, 'createBlogChapter').mockRejectedValue(new Error('이미 사용 중인 시리즈 이름입니다.'));
+		renderModal();
 
 		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });

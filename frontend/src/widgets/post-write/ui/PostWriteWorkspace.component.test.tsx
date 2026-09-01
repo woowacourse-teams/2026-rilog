@@ -168,6 +168,16 @@ vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
 	}),
 }));
 
+vi.mock('@/shared/api/blogs/mutations/use-create-blog-chapter-mutation', () => ({
+	useCreateBlogChapterMutation: () => ({
+		mutateAsync: vi.fn(),
+		reset: vi.fn(),
+		isPending: false,
+		isError: false,
+		error: null,
+	}),
+}));
+
 vi.mock('@/shared/api/posts/mutations/use-update-post-mutation', () => ({
 	useUpdatePostMutation: () => ({ mutateAsync: requestPostUpdateMock }),
 }));
