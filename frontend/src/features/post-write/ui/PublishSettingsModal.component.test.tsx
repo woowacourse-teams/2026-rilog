@@ -264,7 +264,7 @@ describe('PublishSettingsModal', () => {
 	it('Co-log 오류를 select와 연결하고 발행 시 해당 입력으로 focus한다', async () => {
 		const user = userEvent.setup();
 		const handlePublish = vi.fn();
-		renderModal({ cologError: 'Co-log를 선택해 주세요.', onPublish: handlePublish });
+		renderModal({ cologError: '코로그를 선택해 주세요.', onPublish: handlePublish });
 
 		await user.click(screen.getByRole('radio', { name: '코로그' }));
 		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
