@@ -1,6 +1,7 @@
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import Button from '@/shared/ui/button/Button';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import RilogSeriesRow from './RilogSeriesRow';
 import SeriesCreateModal from './SeriesCreateModal';
@@ -24,6 +25,12 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 		createError,
 		resetCreateError,
 		saveError,
+		chapterToDelete,
+		requestChapterDelete,
+		cancelChapterDelete,
+		confirmChapterDelete,
+		isDeletingChapter,
+		chapterDeleteError,
 	} = management;
 
 	if (isLoading) {
@@ -82,7 +89,13 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 							</tr>
 						) : (
 							displayedChapters.map((item) => (
-								<RilogSeriesRow key={item.id} series={item} isEditing={isEditing} onNameChange={handleNameChange} />
+								<RilogSeriesRow
+									key={item.id}
+									series={item}
+									isEditing={isEditing}
+									onNameChange={handleNameChange}
+									onDelete={requestChapterDelete}
+								/>
 							))
 						)}
 					</tbody>
@@ -101,6 +114,31 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 					{getApiErrorMessage(saveError, '일부 시리즈 이름을 변경하지 못했어요.')}
 				</p>
 			)}
+
+			<ConfirmModal
+				open={chapterToDelete !== null}
+				title={`${chapterToDelete?.name ?? ''} 시리즈를 삭제할까요?`}
+				description={
+					<>
+						<span>
+							시리즈는 삭제 후 복구할 수 없습니다.
+							<br />
+							포함된 게시글은 시리즈에서 분리되며 그대로 유지됩니다.
+						</span>
+						{chapterDeleteError !== null && (
+							<span className="mt-2 block text-danger" role="alert">
+								{getApiErrorMessage(chapterDeleteError, '시리즈를 삭제하지 못했어요. 다시 시도해 주세요.')}
+							</span>
+						)}
+					</>
+				}
+				confirmLabel="삭제"
+				cancelLabel="취소"
+				variant="danger"
+				isPending={isDeletingChapter}
+				onConfirm={() => void confirmChapterDelete()}
+				onCancel={cancelChapterDelete}
+			/>
 		</section>
 	);
 }

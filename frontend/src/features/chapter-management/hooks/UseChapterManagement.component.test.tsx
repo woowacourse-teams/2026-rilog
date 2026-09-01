@@ -124,4 +124,44 @@ describe('useChapterManagement', () => {
 		expect(result.current.isEditing).toBe(true);
 		expect(result.current.saveError).toEqual(new Error('이름 변경 실패'));
 	});
+
+	it('삭제를 확인하면 선택한 챕터를 삭제하고 재조회한 목록을 반영한다', async () => {
+		let chapters = [
+			{ chapterId: 1, name: '프론트엔드', order: 0 },
+			{ chapterId: 2, name: '백엔드', order: 1 },
+		];
+		vi.spyOn(blogsApi, 'readBlogChapters').mockImplementation(() =>
+			Promise.resolve({ status: 200, message: '챕터 목록을 조회했습니다.', data: chapters }),
+		);
+		const deleteBlogChapter = vi.spyOn(blogsApi, 'deleteBlogChapter').mockImplementation((_slug, chapterId) => {
+			chapters = chapters.filter((chapter) => chapter.chapterId !== chapterId);
+			return Promise.resolve(new Response(null, { status: 204 }));
+		});
+		const { result } = renderHook(() => useChapterManagement({ slug: '@rilog' }), { wrapper: createWrapper() });
+		await waitFor(() => expect(result.current.chapters).toHaveLength(2));
+
+		act(() => result.current.requestChapterDelete(result.current.chapters[0]));
+		await act(() => result.current.confirmChapterDelete());
+
+		expect(deleteBlogChapter).toHaveBeenCalledWith('@rilog', 1);
+		await waitFor(() => expect(result.current.chapters).toEqual([{ id: 2, name: '백엔드' }]));
+		expect(result.current.chapterToDelete).toBeNull();
+	});
+
+	it('삭제에 실패하면 선택한 챕터와 오류를 유지한다', async () => {
+		vi.spyOn(blogsApi, 'readBlogChapters').mockResolvedValue({
+			status: 200,
+			message: '챕터 목록을 조회했습니다.',
+			data: [{ chapterId: 1, name: '프론트엔드', order: 0 }],
+		});
+		vi.spyOn(blogsApi, 'deleteBlogChapter').mockRejectedValue(new Error('삭제 실패'));
+		const { result } = renderHook(() => useChapterManagement({ slug: '@rilog' }), { wrapper: createWrapper() });
+		await waitFor(() => expect(result.current.chapters).toHaveLength(1));
+
+		act(() => result.current.requestChapterDelete(result.current.chapters[0]));
+		await act(() => result.current.confirmChapterDelete());
+
+		expect(result.current.chapterToDelete).toEqual({ id: 1, name: '프론트엔드' });
+		await waitFor(() => expect(result.current.chapterDeleteError).toEqual(new Error('삭제 실패')));
+	});
 });

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
@@ -36,17 +37,36 @@ const createManagement = (
 	resetCreateError: vi.fn(),
 	isSaving: false,
 	saveError: null,
+	chapterToDelete: null,
+	requestChapterDelete: vi.fn(),
+	cancelChapterDelete: vi.fn(),
+	confirmChapterDelete: vi.fn().mockResolvedValue(undefined),
+	isDeletingChapter: false,
+	chapterDeleteError: null,
 	...overrides,
 });
 
 describe('RilogSeriesManagementSection', () => {
-	it('시리즈 목록과 삭제 작업을 렌더링한다', () => {
-		render(<RilogSeriesManagementSection management={createManagement()} />);
+	it('시리즈 목록을 렌더링하고 삭제 요청을 전달한다', async () => {
+		const user = userEvent.setup();
+		const requestChapterDelete = vi.fn();
+		render(<RilogSeriesManagementSection management={createManagement({ requestChapterDelete })} />);
 
 		expect(screen.getByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '시리즈' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '기록 시리즈 삭제' })).toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' }));
+		expect(requestChapterDelete).toHaveBeenCalledWith(SERIES[0]);
+	});
+
+	it('삭제할 시리즈를 확인 모달에 표시한다', () => {
+		render(<RilogSeriesManagementSection management={createManagement({ chapterToDelete: SERIES[0] })} />);
+
+		expect(screen.getByRole('dialog', { name: '웹 개발 시리즈를 삭제할까요?' })).toBeInTheDocument();
+		expect(screen.getByText(/시리즈는 삭제 후 복구할 수 없습니다/)).toBeInTheDocument();
+		expect(screen.getByText(/포함된 게시글은 시리즈에서 분리되며 그대로 유지됩니다/)).toBeInTheDocument();
 	});
 
 	it('전달받은 상태에 따라 시리즈 추가 모달을 렌더링한다', () => {

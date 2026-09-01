@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
+import type { Chapter } from '@/features/chapter-management/model/chapter';
 import { useCreateBlogChapterMutation } from '@/shared/api/blogs/mutations/use-create-blog-chapter-mutation';
+import { useDeleteBlogChapterMutation } from '@/shared/api/blogs/mutations/use-delete-blog-chapter-mutation';
 import { useRenameBlogChapterMutation } from '@/shared/api/blogs/mutations/use-rename-blog-chapter-mutation';
 import { useBlogChaptersQuery } from '@/shared/api/blogs/queries/chapters/use-query';
 
@@ -22,8 +24,10 @@ export function useChapterManagement({ slug }: UseChapterManagementOptions) {
 	const drafts = useChapterDrafts({ initialChapters: chaptersQuery.data });
 	const createChapter = useCreateBlogChapterMutation();
 	const renameChapter = useRenameBlogChapterMutation();
+	const deleteChapter = useDeleteBlogChapterMutation();
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<unknown>(null);
+	const [chapterToDelete, setChapterToDelete] = useState<Chapter | null>(null);
 
 	const handleStartEditing = () => {
 		setSaveError(null);
@@ -66,12 +70,39 @@ export function useChapterManagement({ slug }: UseChapterManagementOptions) {
 		await createChapter.mutateAsync({ slug, request: { name: name.trim() } });
 	};
 
+	const requestChapterDelete = (chapter: Chapter) => {
+		deleteChapter.reset();
+		setChapterToDelete(chapter);
+	};
+
+	const cancelChapterDelete = () => {
+		deleteChapter.reset();
+		setChapterToDelete(null);
+	};
+
+	const confirmChapterDelete = async () => {
+		if (chapterToDelete === null || deleteChapter.isPending) {
+			return;
+		}
+
+		try {
+			await deleteChapter.mutateAsync({ slug, chapterId: chapterToDelete.id });
+			setChapterToDelete(null);
+		} catch {
+			// mutation 오류는 삭제 확인 모달에 표시한다.
+		}
+	};
+
 	return {
 		...drafts,
 		handleStartEditing,
 		handleNameChange,
 		handleSave,
 		handleAddChapter,
+		chapterToDelete,
+		requestChapterDelete,
+		cancelChapterDelete,
+		confirmChapterDelete,
 		isLoading: chaptersQuery.isPending,
 		isLoadError: chaptersQuery.isError || (!chaptersQuery.isPending && chaptersQuery.data === undefined),
 		loadError: chaptersQuery.error,
@@ -81,5 +112,7 @@ export function useChapterManagement({ slug }: UseChapterManagementOptions) {
 		resetCreateError: createChapter.reset,
 		isSaving,
 		saveError,
+		isDeletingChapter: deleteChapter.isPending,
+		chapterDeleteError: deleteChapter.error,
 	};
 }
