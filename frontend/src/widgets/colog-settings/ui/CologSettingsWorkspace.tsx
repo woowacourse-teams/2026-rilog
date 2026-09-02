@@ -5,8 +5,7 @@ import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
-import { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
-import type { Chapter } from '@/features/chapter-management/model/chapter';
+import { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
 import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
@@ -61,21 +60,6 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 		description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.',
 	},
 };
-
-// TODO: 챕터 조회 API의 게시글 수 계약이 준비되면 이 목업 목록을 조회 결과로 대체한다.
-const INITIAL_MOCK_CHAPTERS: Chapter[] = [
-	{ id: 1, name: '프론트엔드', postCount: 3 },
-	{ id: 2, name: '백엔드', postCount: 7 },
-	{ id: 3, name: '백엔드', postCount: 7 },
-	{ id: 4, name: '백엔드', postCount: 7 },
-	{ id: 5, name: '백엔드', postCount: 7 },
-	{ id: 6, name: '백엔드', postCount: 7 },
-	{ id: 7, name: '백엔드', postCount: 7 },
-	{ id: 8, name: '백엔드', postCount: 7 },
-	{ id: 9, name: '백엔드', postCount: 7 },
-	{ id: 10, name: '백엔드', postCount: 7 },
-	{ id: 11, name: '백엔드', postCount: 7 },
-];
 
 const getChangedProfileFields = (
 	previousValue: CologProfileSettingsValue,
@@ -157,7 +141,7 @@ function CologSettingsWorkspaceContent({
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
-	const chapterDrafts = useChapterDrafts({ initialChapters: INITIAL_MOCK_CHAPTERS });
+	const chapterManagement = useChapterManagement({ slug });
 	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
 	const memberDrafts = useCologMemberDrafts({ initialMembers });
 	const saveCologProfile = useSaveCologProfile();
@@ -170,10 +154,12 @@ function CologSettingsWorkspaceContent({
 			: activeTab === 'members'
 				? memberDrafts.isDirty
 				: activeTab === 'chapters'
-					? chapterDrafts.isDirty
+					? chapterManagement.isDirty
 					: false;
 	const isChapterSaveDisabled =
-		!chapterDrafts.isDirty || chapterDrafts.draftChapters.some((draft) => draft.name.trim().length === 0);
+		!chapterManagement.isDirty ||
+		chapterManagement.isSaving ||
+		chapterManagement.draftChapters.some((draft) => draft.name.trim().length === 0);
 
 	const commitTabChange = useCallback(
 		(nextTab: CologSettingsTab, path: string) => {
@@ -181,12 +167,12 @@ function CologSettingsWorkspaceContent({
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
-			chapterDrafts.handleCancelEditing();
-			chapterDrafts.setIsCreateModalOpen(false);
+			chapterManagement.handleCancelEditing();
+			chapterManagement.setIsCreateModalOpen(false);
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', path);
 		},
-		[chapterDrafts, memberDrafts, nameAvailability, profileForm, savedProfile],
+		[chapterManagement, memberDrafts, nameAvailability, profileForm, savedProfile],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
@@ -323,7 +309,7 @@ function CologSettingsWorkspaceContent({
 		}
 
 		if (activeTab === 'chapters') {
-			if (chapterDrafts.isEditing) {
+			if (chapterManagement.isEditing) {
 				return (
 					<>
 						<Button
@@ -331,7 +317,7 @@ function CologSettingsWorkspaceContent({
 							variant="secondary"
 							size="md"
 							className="w-full sm:w-30"
-							onClick={chapterDrafts.handleCancelEditing}
+							onClick={chapterManagement.handleCancelEditing}
 						>
 							취소
 						</Button>
@@ -340,7 +326,8 @@ function CologSettingsWorkspaceContent({
 							size="md"
 							className="w-full sm:w-30"
 							disabled={isChapterSaveDisabled}
-							onClick={chapterDrafts.handleSave}
+							isPending={chapterManagement.isSaving}
+							onClick={() => void chapterManagement.handleSave()}
 						>
 							저장
 						</Button>
@@ -355,7 +342,10 @@ function CologSettingsWorkspaceContent({
 						variant="secondary"
 						size="md"
 						className="w-full sm:w-30"
-						onClick={chapterDrafts.handleStartEditing}
+						disabled={
+							chapterManagement.isLoading || chapterManagement.isLoadError || chapterManagement.chapters.length === 0
+						}
+						onClick={chapterManagement.handleStartEditing}
 					>
 						챕터 수정
 					</Button>
@@ -363,7 +353,8 @@ function CologSettingsWorkspaceContent({
 						type="button"
 						size="md"
 						className="w-full sm:w-30"
-						onClick={() => chapterDrafts.setIsCreateModalOpen(true)}
+						disabled={chapterManagement.isLoading || chapterManagement.isLoadError}
+						onClick={() => chapterManagement.setIsCreateModalOpen(true)}
 					>
 						+ 챕터 추가
 					</Button>
@@ -421,7 +412,7 @@ function CologSettingsWorkspaceContent({
 				{activeTab === 'members' && (
 					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
 				)}
-				{activeTab === 'chapters' && <CologChapterManagementSection drafts={chapterDrafts} />}
+				{activeTab === 'chapters' && <CologChapterManagementSection management={chapterManagement} />}
 				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 

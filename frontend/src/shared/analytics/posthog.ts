@@ -1,7 +1,33 @@
 import posthog from 'posthog-js';
 
+type PostHogOperation = 'init' | 'capture' | 'identify' | 'reset';
+
+let isAnalyticsDisabled = false;
+
 const isAnalyticsConfigured = () =>
 	Boolean(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST);
+
+const warnPostHogFailure = (operation: PostHogOperation) => {
+	if (process.env.NODE_ENV === 'development') {
+		console.warn(`[PostHog] ${operation} 실패`);
+	}
+};
+
+const runPostHogOperation = (operation: PostHogOperation, callback: () => void, disableOnFailure = false) => {
+	if (isAnalyticsDisabled) {
+		return;
+	}
+
+	try {
+		callback();
+	} catch {
+		if (disableOnFailure) {
+			isAnalyticsDisabled = true;
+		}
+
+		warnPostHogFailure(operation);
+	}
+};
 
 export const initializeAnalytics = () => {
 	const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
@@ -15,15 +41,20 @@ export const initializeAnalytics = () => {
 		return;
 	}
 
-	posthog.init(projectToken, {
-		api_host: host,
-		defaults: '2026-08-29',
-		autocapture: false,
-		disable_session_recording: true,
-		capture_pageview: true,
-		capture_pageleave: true,
-		debug: process.env.NODE_ENV === 'development',
-	});
+	runPostHogOperation(
+		'init',
+		() =>
+			posthog.init(projectToken, {
+				api_host: host,
+				defaults: '2026-08-29',
+				autocapture: false,
+				disable_session_recording: true,
+				capture_pageview: true,
+				capture_pageleave: true,
+				debug: process.env.NODE_ENV === 'development',
+			}),
+		true,
+	);
 };
 
 /**
@@ -35,7 +66,7 @@ export const captureAnalyticsEvent = (eventName: string, properties?: Record<str
 		return;
 	}
 
-	posthog.capture(eventName, properties);
+	runPostHogOperation('capture', () => posthog.capture(eventName, properties));
 };
 
 /**
@@ -47,7 +78,7 @@ export const identifyAnalyticsUser = (userId: string, properties: { slug: string
 		return;
 	}
 
-	posthog.identify(userId, properties);
+	runPostHogOperation('identify', () => posthog.identify(userId, properties));
 };
 
 /**
@@ -58,5 +89,5 @@ export const resetAnalyticsIdentity = () => {
 		return;
 	}
 
-	posthog.reset();
+	runPostHogOperation('reset', () => posthog.reset());
 };

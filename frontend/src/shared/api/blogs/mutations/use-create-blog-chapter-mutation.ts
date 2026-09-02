@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createBlogChapter } from '@/shared/api/blogs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import type { ChapterCreateRequest } from '@/shared/api/blogs/types';
+import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 
 interface CreateBlogChapterVariables {
@@ -26,6 +27,7 @@ export const useCreateBlogChapterMutation = () => {
 			return Promise.all([
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.chapters(normalizedSlug), exact: true }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.index(normalizedSlug), exact: true }),
+				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsOverview() }),
 			]);
 		},
 	});

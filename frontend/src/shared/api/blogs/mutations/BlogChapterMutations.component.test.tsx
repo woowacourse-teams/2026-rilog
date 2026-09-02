@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import * as blogsApi from '@/shared/api/blogs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
+import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 
 import { useCreateBlogChapterMutation } from './use-create-blog-chapter-mutation';
 import { useDeleteBlogChapterMutation } from './use-delete-blog-chapter-mutation';
@@ -15,7 +16,7 @@ afterEach(() => {
 });
 
 describe('blog chapter mutations', () => {
-	it('챕터 생성 성공 후 정규화한 블로그의 챕터 목록과 인덱스를 정확히 무효화한다', async () => {
+	it('챕터 생성 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
 		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'createBlogChapter').mockResolvedValue({
@@ -34,10 +35,11 @@ describe('blog chapter mutations', () => {
 			exact: true,
 		});
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
-		expect(invalidateQueries).toHaveBeenCalledTimes(2);
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
+		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 
-	it('챕터 이름 변경 성공 후 정규화한 블로그의 챕터 목록과 인덱스를 정확히 무효화한다', async () => {
+	it('챕터 이름 변경 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
 		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'renameBlogChapter').mockResolvedValue({
@@ -56,10 +58,11 @@ describe('blog chapter mutations', () => {
 			exact: true,
 		});
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
-		expect(invalidateQueries).toHaveBeenCalledTimes(2);
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
+		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 
-	it('챕터 삭제 성공 후 정규화한 블로그의 챕터 목록과 인덱스를 정확히 무효화한다', async () => {
+	it('챕터 삭제 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
 		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'deleteBlogChapter').mockResolvedValue(new Response(null, { status: 204 }));
@@ -74,6 +77,7 @@ describe('blog chapter mutations', () => {
 			exact: true,
 		});
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
-		expect(invalidateQueries).toHaveBeenCalledTimes(2);
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
+		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 });

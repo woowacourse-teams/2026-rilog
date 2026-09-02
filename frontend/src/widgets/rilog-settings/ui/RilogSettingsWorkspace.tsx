@@ -5,8 +5,7 @@ import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { normalizeUserNickname } from '@/domains/user/lib/validate-user-profile';
-import { useChapterDrafts } from '@/features/chapter-management/hooks/use-chapter-drafts';
-import type { Chapter } from '@/features/chapter-management/model/chapter';
+import { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
 import RilogDangerZoneSection from '@/features/rilog-danger-zone/ui/RilogDangerZoneSection';
 import { useRilogProfileForm } from '@/features/rilog-profile-management/hooks/use-rilog-profile-form';
 import { useSaveRilogProfile } from '@/features/rilog-profile-management/hooks/use-save-rilog-profile';
@@ -43,12 +42,6 @@ const TAB_HEADER_CONFIG: Record<RilogSettingsTab, { title: string; description: 
 	series: { title: '시리즈 관리', description: '블로그 시리즈를 관리합니다.' },
 	danger: { title: '위험 영역', description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.' },
 };
-
-// TODO: 챕터 조회 API의 게시글 수 계약이 준비되면 이 목업 목록을 조회 결과로 대체한다.
-const INITIAL_MOCK_CHAPTERS: Chapter[] = [
-	{ id: 1, name: '웹 개발', postCount: 3 },
-	{ id: 2, name: '기록', postCount: 7 },
-];
 
 export default function RilogSettingsWorkspace({ slug, initialTab = 'profile' }: RilogSettingsWorkspaceProps) {
 	const profileQuery = useBlogPublicProfileQuery({
@@ -90,26 +83,28 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 	const [isNicknameAvailabilityRequired, setIsNicknameAvailabilityRequired] = useState(false);
 
 	const profileForm = useRilogProfileForm({ initialValue: savedProfile });
-	const chapterDrafts = useChapterDrafts({ initialChapters: INITIAL_MOCK_CHAPTERS });
+	const chapterManagement = useChapterManagement({ slug });
 	const saveRilogProfile = useSaveRilogProfile();
 	const nicknameAvailability = useCheckNicknameAvailabilityMutation();
 	const isProfileDirty = !isRilogProfileSettingsEqual(profileForm.value, savedProfile);
 	const isWorkspaceDirty =
-		activeTab === 'profile' ? isProfileDirty : activeTab === 'series' ? chapterDrafts.isDirty : false;
+		activeTab === 'profile' ? isProfileDirty : activeTab === 'series' ? chapterManagement.isDirty : false;
 	const isChapterSaveDisabled =
-		!chapterDrafts.isDirty || chapterDrafts.draftChapters.some((draft) => draft.name.trim().length === 0);
+		!chapterManagement.isDirty ||
+		chapterManagement.isSaving ||
+		chapterManagement.draftChapters.some((draft) => draft.name.trim().length === 0);
 
 	const commitTabChange = useCallback(
 		(nextTab: RilogSettingsTab, path: string) => {
 			profileForm.setValue(savedProfile);
 			nicknameAvailability.reset();
 			setIsNicknameAvailabilityRequired(false);
-			chapterDrafts.handleCancelEditing();
-			chapterDrafts.setIsCreateModalOpen(false);
+			chapterManagement.handleCancelEditing();
+			chapterManagement.setIsCreateModalOpen(false);
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', path);
 		},
-		[chapterDrafts, nicknameAvailability, profileForm, savedProfile],
+		[chapterManagement, nicknameAvailability, profileForm, savedProfile],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
@@ -193,7 +188,7 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 		}
 
 		if (activeTab === 'series') {
-			if (chapterDrafts.isEditing) {
+			if (chapterManagement.isEditing) {
 				return (
 					<>
 						<Button
@@ -201,7 +196,7 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 							variant="secondary"
 							size="md"
 							className="w-full sm:w-30"
-							onClick={chapterDrafts.handleCancelEditing}
+							onClick={chapterManagement.handleCancelEditing}
 						>
 							취소
 						</Button>
@@ -210,7 +205,8 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 							size="md"
 							className="w-full sm:w-30"
 							disabled={isChapterSaveDisabled}
-							onClick={chapterDrafts.handleSave}
+							isPending={chapterManagement.isSaving}
+							onClick={() => void chapterManagement.handleSave()}
 						>
 							저장
 						</Button>
@@ -225,7 +221,10 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 						variant="secondary"
 						size="md"
 						className="w-full sm:w-30"
-						onClick={chapterDrafts.handleStartEditing}
+						disabled={
+							chapterManagement.isLoading || chapterManagement.isLoadError || chapterManagement.chapters.length === 0
+						}
+						onClick={chapterManagement.handleStartEditing}
 					>
 						시리즈 수정
 					</Button>
@@ -233,7 +232,8 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 						type="button"
 						size="md"
 						className="w-full sm:w-30"
-						onClick={() => chapterDrafts.setIsCreateModalOpen(true)}
+						disabled={chapterManagement.isLoading || chapterManagement.isLoadError}
+						onClick={() => chapterManagement.setIsCreateModalOpen(true)}
 					>
 						+ 시리즈 추가
 					</Button>
@@ -288,7 +288,7 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 						)}
 					</>
 				)}
-				{activeTab === 'series' && <RilogSeriesManagementSection drafts={chapterDrafts} />}
+				{activeTab === 'series' && <RilogSeriesManagementSection management={chapterManagement} />}
 				{activeTab === 'danger' && <RilogDangerZoneSection />}
 			</div>
 			<ConfirmModal

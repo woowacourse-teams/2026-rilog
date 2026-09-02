@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { deleteBlogChapter } from '@/shared/api/blogs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
+import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 
 interface DeleteBlogChapterVariables {
@@ -22,6 +23,7 @@ export const useDeleteBlogChapterMutation = () => {
 			return Promise.all([
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.chapters(normalizedSlug), exact: true }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.index(normalizedSlug), exact: true }),
+				queryClient.invalidateQueries({ queryKey: usersQueryKeys.myCologsOverview() }),
 			]);
 		},
 	});

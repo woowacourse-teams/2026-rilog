@@ -28,7 +28,7 @@ describe('PostFeedCard', () => {
 		expect(screen.getByText('리로거')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '리로거 프로필' })).toHaveTextContent('리');
 		expect(screen.getAllByRole('link')).toHaveLength(1);
-		expect(screen.getByText('2026년 8월 4일')).toHaveAttribute('datetime', PERSONAL_POST.publishedAt);
+		expect(screen.getByText('2026년 8월 5일')).toHaveAttribute('datetime', '2026-08-04T23:59:59.000Z');
 	});
 
 	it('작성자 프로필 이미지가 있으면 UserAvatar에 표시한다', () => {
