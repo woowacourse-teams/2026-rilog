@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
 			{
 				source: '/',
 				destination: '/feeds',
-				permanent: false,
+				permanent: true,
 			},
 		];
 	},

@@ -1,36 +1,86 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Block } from '@blocknote/core';
 import type { ComponentProps } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import * as blogsApi from '@/shared/api/blogs/api';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import PublishSettingsModal from './PublishSettingsModal';
+
+const { refetchChaptersMock, usePostPublishChaptersMock } = vi.hoisted(() => ({
+	refetchChaptersMock: vi.fn(),
+	usePostPublishChaptersMock: vi.fn(),
+}));
+
+vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
+	usePostPublishChapters: usePostPublishChaptersMock,
+}));
 
 const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
 	postTitle: '게시글 제목',
-	settings: { category: 'IT', blog: null, representativeImage: null, representativeImageUrl: null },
+	settings: {
+		category: 'IT',
+		blog: { type: 'RILOG', slug: 'personal-blog' },
+		chapterId: null,
+		representativeImage: null,
+		representativeImageUrl: null,
+	},
 	selectedImageUrl: null,
 	bodyBlocks: [],
 	defaultImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+	userSlug: 'personal-blog',
 	cologOptions: [
-		{ id: 1, slug: 'first-colog', name: '첫 번째 Co-log' },
-		{ id: 2, slug: 'second-colog', name: '두 번째 Co-log' },
+		{
+			id: 1,
+			slug: 'first-colog',
+			name: '첫 번째 Co-log',
+			chapters: [{ value: '12', label: '개발' }],
+		},
+		{
+			id: 2,
+			slug: 'second-colog',
+			name: '두 번째 Co-log',
+			chapters: [{ value: '21', label: '프로덕트' }],
+		},
 	],
+	isCologOptionsPending: false,
+	isCologOptionsError: false,
+	isCologOptionsRefetching: false,
 	isPublishing: false,
+	onCologOptionsRefetch: vi.fn(),
 	onClose: vi.fn(),
 	onCategoryChange: vi.fn(),
-	onCoLogChange: vi.fn(),
+	onTargetBlogChange: vi.fn(),
+	onChapterChange: vi.fn(),
 	onImageChange: vi.fn(),
 	onPublish: vi.fn(),
 };
 
 const renderModal = (overrides: Partial<ComponentProps<typeof PublishSettingsModal>> = {}) =>
-	render(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
+	renderWithQuery(<PublishSettingsModal {...DEFAULT_PROPS} {...overrides} />);
 
 describe('PublishSettingsModal', () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+		refetchChaptersMock.mockReset();
+		usePostPublishChaptersMock.mockReset();
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [
+				{ value: '7', label: '프론트엔드 성장 기록' },
+				{ value: '12', label: '개발' },
+			],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+	});
+
 	it('피드와 상세 화면의 기본 썸네일을 미리보기로 표시한다', () => {
 		renderModal();
 
@@ -39,27 +89,345 @@ describe('PublishSettingsModal', () => {
 		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
 	});
 
-	it('선택 가능한 Co-log가 하나뿐이면 빈 선택값을 자동으로 채운다', async () => {
-		const handleCoLogChange = vi.fn();
+	it('수정 초기값의 대표 이미지 URL이 기본 썸네일과 같으면 제거 동작을 제공하지 않는다', () => {
 		renderModal({
-			cologOptions: [{ id: 9, slug: 'only-colog', name: '유일한 Co-log' }],
-			onCoLogChange: handleCoLogChange,
+			settings: { ...DEFAULT_PROPS.settings, representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL },
+			selectedImageUrl: POST_THUMBNAIL_FALLBACK_URL,
 		});
 
-		await waitFor(() =>
-			expect(handleCoLogChange).toHaveBeenCalledWith({ id: 9, slug: 'only-colog', name: '유일한 Co-log' }),
-		);
+		expect(screen.getByLabelText('대표 이미지 추가')).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '이미지 제거' })).not.toBeInTheDocument();
 	});
 
-	it('기존 Co-log 선택값은 자동 선택으로 덮어쓰지 않는다', () => {
-		const handleCoLogChange = vi.fn();
-		renderModal({
-			settings: { ...DEFAULT_PROPS.settings, blog: { id: 4, slug: 'selected-colog', name: '선택된 Co-log' } },
-			cologOptions: [{ id: 9, slug: 'only-colog', name: '유일한 Co-log' }],
-			onCoLogChange: handleCoLogChange,
+	it('Co-log는 선택 안 함을 기본값으로 제공하고 선택 후 다시 해제할 수 있다', async () => {
+		const user = userEvent.setup();
+		const handleTargetBlogChange = vi.fn();
+		const onlyColog = { id: 9, slug: 'only-colog', name: '유일한 Co-log', chapters: [] };
+		const { rerender } = renderModal({
+			cologOptions: [onlyColog],
+			onTargetBlogChange: handleTargetBlogChange,
 		});
 
-		expect(handleCoLogChange).not.toHaveBeenCalled();
+		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		expect(cologSelect).toHaveClass('native-select');
+		expect(cologSelect).toHaveDisplayValue('선택 안 함');
+		expect(handleTargetBlogChange).toHaveBeenCalledWith(null);
+
+		await user.selectOptions(cologSelect, '9');
+		expect(handleTargetBlogChange).toHaveBeenLastCalledWith({
+			type: 'COLOG',
+			id: onlyColog.id,
+			slug: onlyColog.slug,
+		});
+
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{
+					...DEFAULT_PROPS.settings,
+					blog: { type: 'COLOG', id: onlyColog.id, slug: onlyColog.slug },
+				}}
+				cologOptions={[onlyColog]}
+				onTargetBlogChange={handleTargetBlogChange}
+			/>,
+		);
+
+		await user.selectOptions(screen.getByRole('combobox', { name: '코로그' }), '');
+		expect(handleTargetBlogChange).toHaveBeenLastCalledWith(null);
+	});
+
+	it('코로그 목록 조회 중에는 select를 잠그고 상태를 알린다', async () => {
+		const user = userEvent.setup();
+		renderModal({ cologOptions: [], isCologOptionsPending: true });
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveAttribute('aria-busy', 'true');
+		expect(screen.getByText('코로그 목록을 불러오는 중...')).toHaveAttribute('role', 'status');
+	});
+
+	it('조회에 성공했지만 소속된 코로그가 없으면 빈 상태를 알린다', async () => {
+		const user = userEvent.setup();
+		renderModal({ cologOptions: [] });
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeEnabled();
+		expect(screen.getByText('소속된 코로그가 없습니다.')).toHaveAttribute('role', 'status');
+	});
+
+	it('코로그 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		const handleRefetch = vi.fn();
+		renderModal({
+			cologOptions: [],
+			isCologOptionsError: true,
+			onCologOptionsRefetch: handleRefetch,
+		});
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		const error = screen.getByRole('alert');
+		expect(cologSelect).toBeDisabled();
+		expect(cologSelect).toHaveAccessibleDescription('코로그 목록을 불러오지 못했습니다.');
+		expect(error).toHaveTextContent('코로그 목록을 불러오지 못했습니다.');
+
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(handleRefetch).toHaveBeenCalledOnce();
+	});
+
+	it('코로그 목록을 다시 불러오는 동안 재시도 버튼을 잠근다', async () => {
+		const user = userEvent.setup();
+		renderModal({
+			cologOptions: [],
+			isCologOptionsError: true,
+			isCologOptionsRefetching: true,
+		});
+
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '다시 시도' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '다시 시도' })).toHaveAttribute('aria-busy', 'true');
+	});
+
+	it('카테고리를 select에서 변경한다', async () => {
+		const user = userEvent.setup();
+		const handleCategoryChange = vi.fn();
+		renderModal({ onCategoryChange: handleCategoryChange });
+
+		const categorySelect = screen.getByRole('combobox', { name: '카테고리' });
+		expect(categorySelect).toHaveDisplayValue('IT');
+
+		await user.selectOptions(categorySelect, 'DAILY');
+		expect(handleCategoryChange).toHaveBeenCalledWith('DAILY');
+	});
+
+	it('발행할 블로그 유형을 radio로 선택한다', async () => {
+		const user = userEvent.setup();
+		renderModal();
+
+		const personalBlogRadio = screen.getByRole('radio', { name: '개인' });
+		const cologRadio = screen.getByRole('radio', { name: '코로그' });
+		expect(personalBlogRadio).toBeChecked();
+		expect(cologRadio).not.toBeChecked();
+
+		await user.click(cologRadio);
+		expect(cologRadio).toBeChecked();
+		expect(personalBlogRadio).not.toBeChecked();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '챕터' })).toBeDisabled();
+		expect(screen.queryByRole('combobox', { name: '시리즈' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
+	});
+
+	it('개인 블로그는 조회한 시리즈를, 선택한 코로그는 overview의 챕터를 표시한다', () => {
+		const { unmount } = renderModal();
+
+		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
+		expect(seriesSelect).toHaveClass('native-select');
+		expect(seriesSelect).toHaveDisplayValue('선택 안 함');
+		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
+		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenLastCalledWith({ slug: 'personal-blog', isEnabled: true });
+		const queryCallCount = usePostPublishChaptersMock.mock.calls.length;
+
+		unmount();
+		renderModal({
+			settings: {
+				...DEFAULT_PROPS.settings,
+				blog: { type: 'COLOG', id: 1, slug: 'first-colog' },
+			},
+		});
+
+		expect(screen.getByRole('radio', { name: '코로그' })).toBeChecked();
+		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveValue('1');
+		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
+		expect(chapterSelect).toHaveDisplayValue('선택 안 함');
+		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
+		expect(within(chapterSelect).getByRole('option', { name: '개발' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenCalledTimes(queryCallCount);
+	});
+
+	it('코로그 선택이 바뀌면 추가 조회 없이 overview 챕터를 즉시 교체한다', () => {
+		const { rerender } = renderModal({
+			settings: {
+				...DEFAULT_PROPS.settings,
+				blog: { type: 'COLOG', id: 1, slug: 'first-colog' },
+			},
+		});
+		const queryCallCount = usePostPublishChaptersMock.mock.calls.length;
+
+		expect(screen.getByRole('option', { name: '개발' })).toBeInTheDocument();
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{
+					...DEFAULT_PROPS.settings,
+					blog: { type: 'COLOG', id: 2, slug: 'second-colog' },
+				}}
+			/>,
+		);
+
+		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
+		expect(within(chapterSelect).queryByRole('option', { name: '개발' })).not.toBeInTheDocument();
+		expect(within(chapterSelect).getByRole('option', { name: '프로덕트' })).toBeInTheDocument();
+		expect(screen.queryByText('챕터 목록을 불러오는 중...')).not.toBeInTheDocument();
+		expect(usePostPublishChaptersMock).toHaveBeenCalledTimes(queryCallCount);
+	});
+
+	it('선택한 챕터 ID와 선택 해제를 게시 설정에 반영한다', async () => {
+		const user = userEvent.setup();
+		const handleChapterChange = vi.fn();
+		renderModal({ onChapterChange: handleChapterChange });
+
+		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
+		await user.selectOptions(seriesSelect, '12');
+		expect(handleChapterChange).toHaveBeenLastCalledWith(12);
+
+		await user.selectOptions(seriesSelect, '');
+		expect(handleChapterChange).toHaveBeenLastCalledWith(null);
+	});
+
+	it('챕터 목록 조회 중에는 select를 잠그고 상태를 알린다', () => {
+		usePostPublishChaptersMock.mockReturnValue({
+			data: undefined,
+			isError: false,
+			isPending: true,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
+		expect(screen.getByRole('status')).toHaveTextContent('시리즈 목록을 불러오는 중...');
+	});
+
+	it('챕터 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		usePostPublishChaptersMock.mockReturnValue({
+			data: undefined,
+			isError: true,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('alert')).toHaveTextContent('시리즈 목록을 불러오지 못했습니다.');
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(refetchChaptersMock).toHaveBeenCalledOnce();
+	});
+
+	it('등록된 시리즈가 없으면 빈 목록 상태를 표시한다', () => {
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+		renderModal();
+
+		expect(screen.getByRole('status')).toHaveTextContent('등록된 시리즈가 없습니다.');
+	});
+
+	it('새 시리즈를 생성하는 동안 모달 action을 잠그고 성공한 시리즈를 선택한다', async () => {
+		const user = userEvent.setup();
+		let resolveCreateChapter!: (response: {
+			status: number;
+			message: string;
+			data: { chapterId: number; name: string; order: number };
+		}) => void;
+		const createChapter = vi.spyOn(blogsApi, 'createBlogChapter').mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveCreateChapter = resolve;
+				}),
+		);
+		const handlePublish = vi.fn();
+		const handleChapterChange = vi.fn();
+		renderModal({ onPublish: handlePublish, onChapterChange: handleChapterChange });
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		expect(seriesNameInput).toHaveFocus();
+		expect(seriesNameInput).toHaveAttribute('placeholder', '새로운 시리즈 이름을 입력하세요.');
+
+		await user.type(seriesNameInput, '새 시리즈{Enter}');
+		await waitFor(() =>
+			expect(createChapter).toHaveBeenCalledWith('personal-blog', {
+				name: '새 시리즈',
+			}),
+		);
+
+		expect(handlePublish).not.toHaveBeenCalled();
+		expect(seriesNameInput).toBeDisabled();
+		expect(screen.getByRole('button', { name: '시리즈 추가 취소' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
+		expect(screen.getByLabelText('대표 이미지 추가')).toBeDisabled();
+		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toBeDisabled();
+		expect(screen.getByRole('radio', { name: '개인' })).toBeDisabled();
+		expect(screen.getByRole('radio', { name: '코로그' })).toBeDisabled();
+
+		act(() => {
+			resolveCreateChapter({
+				status: 201,
+				message: '챕터를 생성했습니다.',
+				data: { chapterId: 19, name: '새 시리즈', order: 2 },
+			});
+		});
+
+		usePostPublishChaptersMock.mockReturnValue({
+			data: [
+				{ value: '7', label: '프론트엔드 성장 기록' },
+				{ value: '12', label: '개발' },
+				{ value: '19', label: '새 시리즈' },
+			],
+			isError: false,
+			isPending: false,
+			refetch: refetchChaptersMock,
+		});
+
+		await waitFor(() => expect(handleChapterChange).toHaveBeenCalledWith(19));
+		expect(
+			within(screen.getByRole('combobox', { name: '시리즈' })).getByRole('option', { name: '새 시리즈' }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole('textbox', { name: '새로운 시리즈 이름' })).not.toBeInTheDocument();
+	});
+
+	it('시리즈 이름 input이 열리면 추가 버튼을 취소 버튼으로 바꾸고 입력값을 초기화한다', async () => {
+		const user = userEvent.setup();
+		renderModal();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		await user.type(seriesNameInput, '작성 중인 이름');
+
+		await user.click(screen.getByRole('button', { name: '시리즈 추가 취소' }));
+		expect(screen.queryByRole('textbox', { name: '새로운 시리즈 이름' })).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		expect(screen.getByRole('textbox', { name: '새로운 시리즈 이름' })).toHaveValue('');
+	});
+
+	it('시리즈 생성에 실패하면 input에 오류 메시지를 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.spyOn(blogsApi, 'createBlogChapter').mockRejectedValue(new Error('이미 사용 중인 시리즈 이름입니다.'));
+		renderModal();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		await user.type(seriesNameInput, '중복 시리즈{Enter}');
+
+		await waitFor(() => expect(seriesNameInput).toHaveAccessibleDescription('이미 사용 중인 시리즈 이름입니다.'));
+		expect(seriesNameInput).toHaveAttribute('aria-invalid', 'true');
+		expect(seriesNameInput).toBeEnabled();
 	});
 
 	it('대표 이미지를 선택하고 제거할 수 있다', async () => {
@@ -68,7 +436,7 @@ describe('PublishSettingsModal', () => {
 		const imageFile = new File(['image'], 'cover.png', { type: 'image/png' });
 		const { rerender } = renderModal({ onImageChange: handleImageChange });
 
-		await user.upload(screen.getByLabelText('이미지 선택'), imageFile);
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), imageFile);
 		expect(handleImageChange).toHaveBeenCalledWith(imageFile);
 
 		rerender(
@@ -82,6 +450,68 @@ describe('PublishSettingsModal', () => {
 		expect(handleImageChange).toHaveBeenLastCalledWith(null);
 	});
 
+	it('본문 첫 이미지로 자동 설정된 대표 이미지도 제거할 수 있다', async () => {
+		const user = userEvent.setup();
+		const handleImageChange = vi.fn();
+		const bodyImage = {
+			id: 'body-image',
+			type: 'image',
+			props: { url: 'https://example.com/body.png' },
+			content: [],
+			children: [],
+		} as unknown as Block;
+		renderModal({ bodyBlocks: [bodyImage], onImageChange: handleImageChange });
+
+		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'https://example.com/body.png',
+		);
+		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
+
+		expect(handleImageChange).toHaveBeenCalledWith(null);
+	});
+
+	it('10MB를 초과한 대표 이미지는 반영하지 않고 오류를 안내하며 정상 파일을 선택하면 오류를 해제한다', async () => {
+		const user = userEvent.setup();
+		const handleImageChange = vi.fn();
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
+			type: 'image/png',
+		});
+		const validImage = new File(['image'], 'cover.png', { type: 'image/png' });
+		renderModal({ onImageChange: handleImageChange });
+
+		const imageInput = screen.getByLabelText('대표 이미지 추가');
+		await user.upload(imageInput, oversizedImage);
+
+		expect(handleImageChange).not.toHaveBeenCalled();
+		expect(imageInput).toHaveAttribute('aria-invalid', 'true');
+		expect(imageInput).toHaveAccessibleDescription(/대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요\./);
+		expect(screen.getByRole('alert')).toHaveTextContent('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+
+		await user.upload(imageInput, validImage);
+
+		expect(handleImageChange).toHaveBeenCalledWith(validImage);
+		expect(imageInput).not.toHaveAttribute('aria-invalid', 'true');
+		expect(screen.queryByText('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.')).not.toBeInTheDocument();
+	});
+
+	it('이미지 용량 오류는 모달을 닫았다 다시 열면 유지하지 않는다', async () => {
+		const user = userEvent.setup();
+		const oversizedImage = new File([], 'oversized.png', { type: 'image/png' });
+		Object.defineProperty(oversizedImage, 'size', { value: MAX_IMAGE_FILE_SIZE_BYTES + 1 });
+		const { rerender } = renderModal();
+
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), oversizedImage);
+		expect(screen.getByRole('alert')).toHaveTextContent('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+
+		await user.click(screen.getByRole('button', { name: '취소' }));
+		rerender(<PublishSettingsModal {...DEFAULT_PROPS} open={false} />);
+		rerender(<PublishSettingsModal {...DEFAULT_PROPS} open />);
+
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+		expect(screen.getByLabelText('대표 이미지 추가')).not.toHaveAttribute('aria-invalid', 'true');
+	});
+
 	it('기존 대표 이미지 URL이 있으면 변경과 제거 동작을 제공한다', async () => {
 		const user = userEvent.setup();
 		const handleImageChange = vi.fn();
@@ -91,7 +521,7 @@ describe('PublishSettingsModal', () => {
 			onImageChange: handleImageChange,
 		});
 
-		expect(screen.getByLabelText('이미지 변경')).toBeInTheDocument();
+		expect(screen.getByLabelText('대표 이미지 변경')).toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
 
 		expect(handleImageChange).toHaveBeenCalledWith(null);
@@ -105,8 +535,9 @@ describe('PublishSettingsModal', () => {
 		const dialog = screen.getByRole('dialog', { name: '게시 설정' });
 		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
-		expect(screen.getByRole('combobox', { name: 'Co-log' })).toBeDisabled();
-		expect(screen.getByLabelText('이미지 선택')).toBeDisabled();
+		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
+		expect(screen.getByLabelText('대표 이미지 추가')).toBeDisabled();
 
 		fireEvent.click(dialog);
 		fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));
@@ -117,9 +548,10 @@ describe('PublishSettingsModal', () => {
 	it('Co-log 오류를 select와 연결하고 발행 시 해당 입력으로 focus한다', async () => {
 		const user = userEvent.setup();
 		const handlePublish = vi.fn();
-		renderModal({ cologError: 'Co-log를 선택해 주세요.', onPublish: handlePublish });
+		renderModal({ cologError: '코로그를 선택해 주세요.', onPublish: handlePublish });
 
-		const cologSelect = screen.getByRole('combobox', { name: 'Co-log' });
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
 		const error = screen.getByRole('alert');
 		expect(cologSelect).toHaveAttribute('aria-describedby', error.id);
 

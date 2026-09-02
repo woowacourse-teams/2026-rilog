@@ -1,6 +1,7 @@
 package kr.rilog.support.fixure;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
@@ -53,7 +54,8 @@ public final class PostFixture {
                 ),
                 DEFAULT_CATEGORY,
                 PostVisibility.PUBLIC,
-                DEFAULT_THUMBNAIL_URL
+                DEFAULT_THUMBNAIL_URL,
+                null
         );
     }
 
@@ -92,7 +94,8 @@ public final class PostFixture {
                 content(),
                 DEFAULT_CATEGORY,
                 PostVisibility.PUBLIC,
-                DEFAULT_THUMBNAIL_URL
+                DEFAULT_THUMBNAIL_URL,
+                null
         );
     }
 
@@ -106,6 +109,18 @@ public final class PostFixture {
         return builderForRilog(rilog, writer).build();
     }
 
+    public static Post publicPublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .chapter(chapter)
+                .build();
+    }
+
+    public static Post dailyPublicPublishedRilogPost(Blog rilog, User writer) {
+        return builderForRilog(rilog, writer)
+                .category(Category.DAILY)
+                .build();
+    }
+
     public static Post publicPublishedRilogPostAt(Blog rilog, User writer, LocalDateTime publishedAt) {
         return builderForRilog(rilog, writer)
                 .publishedAt(publishedAt)
@@ -115,6 +130,13 @@ public final class PostFixture {
     public static Post privatePublishedRilogPost(Blog rilog, User writer) {
         return builderForRilog(rilog, writer)
                 .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
+    public static Post privatePublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .chapter(chapter)
                 .build();
     }
 
@@ -131,14 +153,40 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post publicDraftRilogPost(Blog rilog, User writer, Chapter chapter) {
+        return builderForRilog(rilog, writer)
+                .chapter(chapter)
+                .status(PostStatus.DRAFT)
+                .publishedAt(null)
+                .build();
+    }
+
     public static Post deletedPublicPublishedRilogPost(Blog rilog, User writer) {
         Post post = publicPublishedRilogPost(rilog, writer);
         post.delete();
         return post;
     }
 
+    public static Post deletedPublicPublishedRilogPost(Blog rilog, User writer, Chapter chapter) {
+        Post post = publicPublishedRilogPost(rilog, writer, chapter);
+        post.delete();
+        return post;
+    }
+
     public static Post publicPublishedColog(Blog rilog, Blog colog, User writer) {
         return builderForColog(rilog, colog, writer).build();
+    }
+
+    public static Post publicPublishedColog(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .chapter(chapter)
+                .build();
+    }
+
+    public static Post dailyPublicPublishedCologPost(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer)
+                .category(Category.DAILY)
+                .build();
     }
 
     public static Post publicPublishedCologPost() {
@@ -165,6 +213,20 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post privatePublishedCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .chapter(chapter)
+                .build();
+    }
+
+    public static Post dailyPrivatePublishedCologPost(Blog rilog, Blog colog, User writer) {
+        return builderForColog(rilog, colog, writer)
+                .category(Category.DAILY)
+                .visibility(PostVisibility.PRIVATE)
+                .build();
+    }
+
     public static Post publicDraftCologPost(Blog rilog, Blog colog, User writer) {
         return builderForColog(rilog, colog, writer)
                 .status(PostStatus.DRAFT)
@@ -172,8 +234,22 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post publicDraftCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        return builderForColog(rilog, colog, writer)
+                .chapter(chapter)
+                .status(PostStatus.DRAFT)
+                .publishedAt(null)
+                .build();
+    }
+
     public static Post deletedPublicPublishedCologPost(Blog rilog, Blog colog, User writer) {
         Post post = publicPublishedColog(rilog, colog, writer);
+        post.delete();
+        return post;
+    }
+
+    public static Post deletedPublicPublishedCologPost(Blog rilog, Blog colog, User writer, Chapter chapter) {
+        Post post = publicPublishedColog(rilog, colog, writer, chapter);
         post.delete();
         return post;
     }
@@ -196,7 +272,9 @@ public final class PostFixture {
                         rilog.getSlug(),
                         rilog.getName(),
                         rilog.getProfileImageUrl()
-                ));
+                ),
+                PostDetailResponse.ViewerPermissionsResponse.none()
+        );
     }
 
     public static PostDetail updatedPostDetail() {
@@ -219,7 +297,8 @@ public final class PostFixture {
                 detail.content(),
                 detail.category(),
                 detail.visibility(),
-                detail.thumbnailUrl()
+                detail.thumbnailUrl(),
+                null
         );
     }
 
@@ -242,6 +321,7 @@ public final class PostFixture {
         private final Blog rilog;
         private final User writer;
         private Blog colog;
+        private Chapter chapter;
         private String title = DEFAULT_TITLE;
         private JsonNode content = PostFixture.content();
         private Category category = DEFAULT_CATEGORY;
@@ -260,6 +340,11 @@ public final class PostFixture {
             return this;
         }
 
+        private Builder chapter(Chapter chapter) {
+            this.chapter = chapter;
+            return this;
+        }
+
         private Builder status(PostStatus status) {
             this.status = status;
             return this;
@@ -267,6 +352,11 @@ public final class PostFixture {
 
         private Builder visibility(PostVisibility visibility) {
             this.visibility = visibility;
+            return this;
+        }
+
+        private Builder category(Category category) {
+            this.category = category;
             return this;
         }
 
@@ -280,6 +370,7 @@ public final class PostFixture {
                     .user(writer)
                     .rilog(rilog)
                     .colog(colog)
+                    .chapter(chapter)
                     .title(title)
                     .content(PostContent.from(content))
                     .category(category)

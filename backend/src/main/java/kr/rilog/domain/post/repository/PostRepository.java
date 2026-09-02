@@ -37,7 +37,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             Pageable pageable
     );
 
-    long countByStatusAndVisibility(PostStatus status, PostVisibility visibility);
+    long countByStatusAndVisibilityAndDeletedAtIsNull(PostStatus status, PostVisibility visibility);
 
     @Query("""
             SELECT COUNT(post)
@@ -60,12 +60,29 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             """)
     long countPublicPublishedPostsByRilogId(@Param("rilogId") Long rilogId);
 
+    /**
+     * Rilog 사용자가 작성한 전체 게시글 수
+     * 개인 Rilog에 발행한 글과 Colog에 발행한 글을 모두 집계.
+     */
+    @Query("""
+        SELECT COUNT(post.id)
+        FROM Post post
+        WHERE post.rilog.id = :rilogId
+          AND post.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
+          AND post.visibility = kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC
+          AND post.deletedAt IS NULL
+        """)
+    long countAllPublicPublishedPostsByRilogId(
+            @Param("rilogId") Long rilogId
+    );
+
     @Query("""
             SELECT p
             FROM Post p
             JOIN FETCH p.user u
             JOIN FETCH p.rilog r
             LEFT JOIN FETCH p.colog c
+            LEFT JOIN FETCH p.chapter ch
             WHERE p.id = :postId
               AND p.deletedAt IS NULL
             """)
@@ -79,6 +96,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         JOIN FETCH p.user u
         JOIN FETCH p.rilog r
         LEFT JOIN FETCH p.colog c
+        LEFT JOIN FETCH p.chapter ch
         WHERE p.id = :postId
           AND p.status = :status
           AND p.deletedAt IS NULL
@@ -116,5 +134,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("cologId") Long cologId,
             @Param("deletedAt") LocalDateTime deletedAt
     );
+
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            UPDATE Post post
+            SET post.chapter = NULL
+            WHERE post.chapter.id = :chapterId
+            """)
+    int clearChapterByChapterId(@Param("chapterId") Long chapterId);
 
 }

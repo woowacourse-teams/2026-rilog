@@ -16,7 +16,13 @@ vi.mock('@/features/settings-access/ui/SettingsAccessGuard', () => ({
 	),
 }));
 vi.mock('@/widgets/colog-settings/ui/CologSettingsWorkspace', () => ({
-	default: ({ initialTab }: { initialTab: string }) => <div>Co-log 설정: {initialTab}</div>,
+	default: ({
+		initialTab,
+		isMemberInviteInitiallyOpen,
+	}: {
+		initialTab: string;
+		isMemberInviteInitiallyOpen: boolean;
+	}) => <div data-member-invite-open={isMemberInviteInitiallyOpen}>Co-log 설정: {initialTab}</div>,
 }));
 vi.mock('@/widgets/rilog-settings/ui/RilogSettingsWorkspace', () => ({
 	default: ({ initialTab }: { initialTab: string }) => <div>Rilog 설정: {initialTab}</div>,
@@ -67,6 +73,18 @@ describe('SettingsWorkspaceRouter', () => {
 		expect(screen.getByRole('generic', { name: 'COLOG rilog 설정 접근 가드' })).toBeInTheDocument();
 		expect(screen.getByText('Co-log 설정: members')).toBeInTheDocument();
 		expect(screen.queryByText(/Rilog 설정/)).not.toBeInTheDocument();
+	});
+
+	it('members 탭의 invite=true를 멤버 초대 모달 초기 상태로 전달한다', () => {
+		useBlogPublicProfileQueryMock.mockReturnValue({
+			data: { data: { type: 'COLOG' } },
+			isError: false,
+			isPending: false,
+		});
+
+		render(<SettingsWorkspaceRouter slug="rilog" tab="members" invite="true" />);
+
+		expect(screen.getByText('Co-log 설정: members')).toHaveAttribute('data-member-invite-open', 'true');
 	});
 
 	it('지원하지 않는 프로필 타입을 Co-log로 처리하지 않는다', () => {

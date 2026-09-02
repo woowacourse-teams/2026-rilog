@@ -42,7 +42,7 @@ class PublisherTest {
         PostDetail detail = publicDraftPublishCommand(colog.getSlug()).toDetail();
 
         // when
-        publisher.publishDraft(draft, detail);
+        publisher.publishDraft(draft, detail, null);
 
         // then
         PostDetail publishedDetail = new PostDetail(
@@ -69,7 +69,7 @@ class PublisherTest {
         Post draft = draftRilogPostAt(rilog, writer, "발행 전 제목", DRAFT_SAVED_AT);
 
         // when
-        publisher.publishDraft(draft, publicDraftPublishCommand(colog.getSlug()).toDetail());
+        publisher.publishDraft(draft, publicDraftPublishCommand(colog.getSlug()).toDetail(), null);
 
         // then
         assertSoftly(softly -> {
@@ -88,7 +88,7 @@ class PublisherTest {
         Post draft = draftRilogPostAt(rilog, writer, "발행 전 제목", DRAFT_SAVED_AT);
 
         // when
-        publisher.publishDraft(draft, publicDraftPublishCommand(rilog.getSlug()).toDetail());
+        publisher.publishDraft(draft, publicDraftPublishCommand(rilog.getSlug()).toDetail(), null);
 
         // then
         assertSoftly(softly -> {
@@ -111,7 +111,8 @@ class PublisherTest {
         // when & then
         assertThatThrownBy(() -> publisher.publishDraft(
                 draft,
-                publicDraftPublishCommand(colog.getSlug()).toDetail()
+                publicDraftPublishCommand(colog.getSlug()).toDetail(),
+                null
         ))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
@@ -133,7 +134,8 @@ class PublisherTest {
         // when & then
         assertThatThrownBy(() -> publisher.publishDraft(
                 draft,
-                publicDraftPublishCommand(colog.getSlug()).toDetail()
+                publicDraftPublishCommand(colog.getSlug()).toDetail(),
+                null
         ))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());

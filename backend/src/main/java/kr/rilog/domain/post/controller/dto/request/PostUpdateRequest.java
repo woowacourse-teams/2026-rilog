@@ -30,7 +30,9 @@ public record PostUpdateRequest(
         PostVisibility visibility,
 
         @Size(max = 512, message = "썸네일 이미지 URL은 512자 이하여야 합니다.")
-        String thumbnailImageUrl
+        String thumbnailImageUrl,
+
+        Long chapterId
 
 ) {
 
@@ -41,7 +43,8 @@ public record PostUpdateRequest(
                 content,
                 category,
                 visibility,
-                thumbnailImageUrl
+                thumbnailImageUrl,
+                chapterId
         );
     }
 

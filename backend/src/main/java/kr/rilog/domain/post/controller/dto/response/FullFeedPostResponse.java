@@ -1,6 +1,7 @@
 package kr.rilog.domain.post.controller.dto.response;
 
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
 import org.springframework.data.domain.Slice;
 
@@ -34,6 +35,7 @@ public record FullFeedPostResponse(
             String category,
             String visibility,
             LocalDateTime publishedAt,
+            ChapterResponse chapter,
             AuthorResponse author,
             OwnerResponse owner
     ) {
@@ -46,6 +48,7 @@ public record FullFeedPostResponse(
                     row.category().getName(),
                     row.visibility().name(),
                     row.publishedAt(),
+                    ChapterResponse.from(row.chapterId(), row.chapterName(), row.chapterOrder()),
                     new AuthorResponse(
                             row.authorId(),
                             row.authorNickname(),

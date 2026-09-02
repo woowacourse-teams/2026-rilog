@@ -31,7 +31,7 @@ describe('BlogPostList', () => {
 			'href',
 			'/@rilog/posts/101',
 		);
-		expect(screen.getByText('2026년 8월 16일')).toHaveAttribute('datetime', '2026-08-16');
+		expect(screen.getByText('2026년 8월 16일')).toHaveAttribute('datetime', '2026-08-16T00:00:00.000Z');
 		expect(screen.getByRole('img', { name: '접근 가능한 인터페이스 만들기 썸네일' })).toBeInTheDocument();
 	});
 

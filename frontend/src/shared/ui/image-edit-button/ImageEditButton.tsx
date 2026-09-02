@@ -10,8 +10,10 @@ interface ImageEditButtonProps {
 	validateFile?: (file: File) => boolean;
 	disabled?: boolean;
 	required?: boolean;
+	id?: string;
 	inputRef?: Ref<HTMLInputElement>;
 	className?: string;
+	fullWidth?: boolean;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
 }
@@ -24,18 +26,25 @@ export default function ImageEditButton({
 	validateFile,
 	disabled = false,
 	required = false,
+	id,
 	inputRef,
 	className,
+	fullWidth = false,
 	'aria-describedby': ariaDescribedBy,
 	'aria-invalid': ariaInvalid,
 }: ImageEditButtonProps) {
 	return (
 		<ImageUploader
 			ref={inputRef}
+			id={id}
 			required={required}
 			disabled={disabled}
 			buttonLabel={`${imageLabel} ${hasImage ? '변경' : '추가'}`}
 			className={className}
+			fullWidth={fullWidth}
+			onChange={(event) => {
+				event.currentTarget.value = '';
+			}}
 			aria-describedby={ariaDescribedBy}
 			aria-invalid={ariaInvalid}
 			validateFile={validateFile}

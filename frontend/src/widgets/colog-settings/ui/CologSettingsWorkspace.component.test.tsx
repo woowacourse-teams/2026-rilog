@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CologProfileSettingsValue } from '@/features/colog-profile-management/model/colog-profile-settings';
 import { checkNicknameAvailability } from '@/shared/api/availability/api';
-import type { BlogPublicProfileResponse } from '@/shared/api/blogs/types';
+import * as blogsApi from '@/shared/api/blogs/api';
+import type { BlogPublicProfileResponse, ChapterResponse } from '@/shared/api/blogs/types';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import CologSettingsWorkspace from './CologSettingsWorkspace';
 
 const {
+	cologMemberInvitationEntryClickedMock,
 	cologProfileUpdatedMock,
 	mutateAsyncMock,
 	refetchProfileMock,
@@ -20,6 +22,7 @@ const {
 	useCologMembersQueryMock,
 	useSaveCologProfileMock,
 } = vi.hoisted(() => ({
+	cologMemberInvitationEntryClickedMock: vi.fn(),
 	cologProfileUpdatedMock: vi.fn(),
 	mutateAsyncMock: vi.fn(),
 	refetchProfileMock: vi.fn(),
@@ -42,13 +45,22 @@ vi.mock('@/shared/api/cologs/queries/members/use-query', () => ({
 	useCologMembersQuery: useCologMembersQueryMock,
 }));
 
+vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
+	useMyInfoQuery: () => ({ data: { slug: 'current-user' } }),
+}));
+
 vi.mock('@/features/colog-profile-management/hooks/use-save-colog-profile', () => ({
 	useSaveCologProfile: useSaveCologProfileMock,
 }));
 
 vi.mock('@/shared/api/availability/api');
 
-vi.mock('@/features/analytics/model/events', () => ({ analytics: { cologProfileUpdated: cologProfileUpdatedMock } }));
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		cologMemberInvitationEntryClicked: cologMemberInvitationEntryClickedMock,
+		cologProfileUpdated: cologProfileUpdatedMock,
+	},
+}));
 
 const PROFILE_SETTINGS: CologProfileSettingsValue = {
 	name: 'API 리로그',
@@ -78,7 +90,13 @@ const PROFILE_RESPONSE: BlogPublicProfileResponse = {
 
 describe('CologSettingsWorkspace', () => {
 	beforeEach(() => {
+		let chapters: ChapterResponse[] = [
+			{ chapterId: 1, name: '프론트엔드', order: 0 },
+			{ chapterId: 2, name: '백엔드', order: 1 },
+		];
+
 		mutateAsyncMock.mockReset();
+		cologMemberInvitationEntryClickedMock.mockReset();
 		cologProfileUpdatedMock.mockReset();
 		refetchProfileMock.mockClear();
 		replaceMock.mockClear();
@@ -113,7 +131,26 @@ describe('CologSettingsWorkspace', () => {
 			refetch: refetchProfileMock,
 		});
 		useCologMembersQueryMock.mockReturnValue({
-			data: { status: 200, message: '팀 멤버 목록 조회에 성공했습니다.', data: [] },
+			data: [],
+		});
+		vi.spyOn(blogsApi, 'readBlogChapters').mockImplementation(() =>
+			Promise.resolve({ status: 200, message: '챕터 목록을 조회했습니다.', data: chapters }),
+		);
+		vi.spyOn(blogsApi, 'createBlogChapter').mockImplementation((_slug, request) => {
+			const createdChapter = { chapterId: chapters.length + 1, name: request.name, order: chapters.length };
+			chapters = [...chapters, createdChapter];
+			return Promise.resolve({ status: 201, message: '챕터를 생성했습니다.', data: createdChapter });
+		});
+		vi.spyOn(blogsApi, 'renameBlogChapter').mockImplementation((_slug, chapterId, request) => {
+			const renamedChapter = chapters.find((chapter) => chapter.chapterId === chapterId)!;
+			chapters = chapters.map((chapter) =>
+				chapter.chapterId === chapterId ? { ...chapter, name: request.name } : chapter,
+			);
+			return Promise.resolve({
+				status: 200,
+				message: '챕터 이름을 변경했습니다.',
+				data: { ...renamedChapter, name: request.name },
+			});
 		});
 		window.history.replaceState(null, '', '/');
 	});
@@ -268,6 +305,84 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('tab', { name: '멤버 관리' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
 		expect(screen.getByRole('table', { name: '팀 멤버 목록' })).toBeInTheDocument();
+	});
+
+	it('챕터 관리 탭을 선택하면 챕터 목록을 렌더링한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+
+		expect(screen.getByRole('tab', { name: '챕터 관리' })).toHaveAttribute('aria-selected', 'true');
+		expect(screen.getByRole('heading', { name: '챕터 관리' })).toBeInTheDocument();
+		expect(await screen.findByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
+	});
+
+	it('챕터 관리 탭 헤더에 챕터 수정과 추가 버튼을 표시한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+
+		expect(await screen.findByRole('button', { name: '챕터 수정' })).toBeEnabled();
+		expect(screen.getByRole('button', { name: '+ 챕터 추가' })).toBeInTheDocument();
+	});
+
+	it('챕터 수정 모드에서 이름을 편집하고 저장한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(await screen.findByRole('button', { name: '챕터 수정' }));
+
+		const nameInput = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
+		expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+		expect(screen.queryByRole('button', { name: '+ 챕터 추가' })).not.toBeInTheDocument();
+		await user.clear(nameInput);
+		await user.type(nameInput, '플랫폼');
+		await user.click(screen.getByRole('button', { name: '저장' }));
+
+		expect(await screen.findByText('플랫폼')).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '챕터 수정' })).toBeInTheDocument();
+		expect(screen.queryByRole('textbox', { name: '플랫폼 챕터 이름' })).not.toBeInTheDocument();
+	});
+
+	it('챕터 이름이 공백뿐이면 입력 오류를 안내하고 저장을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(await screen.findByRole('button', { name: '챕터 수정' }));
+		const nameInput = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
+		await user.clear(nameInput);
+
+		expect(nameInput).toBeInvalid();
+		expect(nameInput).toHaveAccessibleDescription('챕터 이름을 입력해 주세요.');
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+	});
+
+	it('챕터 추가 버튼을 누르면 챕터 이름 입력 모달을 연다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(await screen.findByRole('button', { name: '+ 챕터 추가' }));
+
+		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '챕터 이름' })).toHaveFocus();
+	});
+
+	it('챕터 이름을 입력하고 추가하면 재조회한 목록에 반영한다', async () => {
+		const user = userEvent.setup();
+		render(<CologSettingsWorkspace slug="team-rilog" />);
+
+		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
+		await user.click(await screen.findByRole('button', { name: '+ 챕터 추가' }));
+		await user.type(screen.getByRole('textbox', { name: '챕터 이름' }), '인프라');
+		await user.click(screen.getByRole('button', { name: '추가' }));
+
+		expect(await screen.findByText('인프라')).toBeInTheDocument();
 	});
 
 	it('프로필, 멤버 관리, 위험 영역을 같은 설정 패널 위치에서 전환한다', async () => {
@@ -432,10 +547,27 @@ describe('CologSettingsWorkspace', () => {
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 		await user.click(screen.getByRole('button', { name: '+ 멤버 초대' }));
 
-		expect(useCologMembersQueryMock).toHaveBeenCalledWith({ slug: 'team-rilog' });
+		expect(cologMemberInvitationEntryClickedMock).toHaveBeenCalledWith({ entrySource: 'settings' });
+		const [memberQueryOptions] = useCologMembersQueryMock.mock.calls[0] as [{ slug: string; select: unknown }];
+		expect(memberQueryOptions.slug).toBe('team-rilog');
+		expect(memberQueryOptions.select).toBeTypeOf('function');
 		expect(screen.getByRole('dialog', { name: '멤버 초대' })).toBeInTheDocument();
 		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
 		expect(input).toHaveFocus();
 		expect(input).toHaveAttribute('placeholder', '@user');
+		expect(window.location.pathname + window.location.search).toBe('/@team-rilog/settings?tab=members&invite=true');
+	});
+
+	it('invite=true로 진입하면 초대 모달을 열고 닫을 때 URL에서 invite를 제거한다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/@team-rilog/settings?tab=members&invite=true');
+
+		render(<CologSettingsWorkspace slug="team-rilog" initialTab="members" isMemberInviteInitiallyOpen />);
+
+		expect(screen.getByRole('dialog', { name: '멤버 초대' })).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '취소' }));
+
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: '멤버 초대' })).not.toBeInTheDocument());
+		expect(window.location.pathname + window.location.search).toBe('/@team-rilog/settings?tab=members');
 	});
 });

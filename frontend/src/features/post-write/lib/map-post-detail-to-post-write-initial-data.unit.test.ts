@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
 
 import { mapPostDetailToPostWriteInitialData } from './map-post-detail-to-post-write-initial-data';
@@ -10,6 +11,7 @@ const createResponse = (overrides: Partial<PostDetailResponse> = {}): PostDetail
 	publishedAt: '2026-08-24T00:00:00Z',
 	thumbnailImageUrl: 'posts/existing-thumbnail.png',
 	category: 'DAILY',
+	chapter: { chapterId: 12, name: '회고', order: 1 },
 	author: { userId: 7, nickname: '작성자', slug: 'author', profileImageUrl: null },
 	owner: { type: 'RILOG', blogId: 3, slug: 'author', name: '작성자 블로그', profileImageUrl: null },
 	...overrides,
@@ -27,7 +29,8 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 			},
 			settings: {
 				category: 'DAILY',
-				blog: { id: 3, slug: 'author', name: '작성자 블로그' },
+				blog: { type: 'RILOG', slug: 'author' },
+				chapterId: 12,
 				representativeImage: null,
 				representativeImageUrl: 'posts/existing-thumbnail.png',
 			},
@@ -45,5 +48,14 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 
 	it('본문이 배열이 아니면 안전하게 빈 본문을 사용한다', () => {
 		expect(mapPostDetailToPostWriteInitialData(createResponse({ content: null })).document.blocks).toEqual([]);
+	});
+
+	it('기본 썸네일 경로를 명시적으로 선택한 상태로 보존한다', () => {
+		expect(
+			mapPostDetailToPostWriteInitialData(createResponse({ thumbnailImageUrl: POST_THUMBNAIL_FALLBACK_URL })).settings,
+		).toMatchObject({
+			representativeImage: null,
+			representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+		});
 	});
 });

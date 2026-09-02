@@ -11,7 +11,8 @@ public record PostUpdateCommand(
         JsonNode content,
         Category category,
         PostVisibility visibility,
-        String thumbnailImageUrl
+        String thumbnailImageUrl,
+        Long chapterId
 ) {
 
     public PostDetail toDetail() {
@@ -23,4 +24,5 @@ public record PostUpdateCommand(
                 thumbnailImageUrl
         );
     }
+
 }

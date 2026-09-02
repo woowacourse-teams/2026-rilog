@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+
 import { usePostPublicationSettings } from './use-post-publication-settings';
 
 afterEach(() => {
@@ -12,6 +14,7 @@ describe('usePostPublicationSettings', () => {
 		const initialSettings = {
 			category: 'DAILY' as const,
 			blog: null,
+			chapterId: 4,
 			representativeImage: null,
 			representativeImageUrl: 'posts/existing-thumbnail.png',
 		};
@@ -20,20 +23,24 @@ describe('usePostPublicationSettings', () => {
 		expect(result.current.settings).toBe(initialSettings);
 		expect(result.current.representativeImagePreviewUrl).toBe('posts/existing-thumbnail.png');
 
-		act(() => expect(result.current.validatePublicationSettings()).toBe(false));
-		expect(result.current.cologError).toBe('Co-log를 선택해 주세요.');
+		act(() => expect(result.current.validatePublicationSettings('COLOG')).toBe(false));
+		expect(result.current.cologError).toBe('코로그를 선택해 주세요.');
 
 		act(() => {
 			result.current.handleCategoryChange('IT');
-			result.current.handleCoLogChange({ id: 7, slug: 'rilog-team', name: 'Rilog Team' });
+			result.current.handleTargetBlogChange({ type: 'COLOG', id: 7, slug: 'rilog-team' });
 		});
 
 		expect(result.current.settings).toMatchObject({
 			category: 'IT',
-			blog: { id: 7, slug: 'rilog-team', name: 'Rilog Team' },
+			blog: { type: 'COLOG', id: 7, slug: 'rilog-team' },
+			chapterId: null,
 		});
 		expect(result.current.cologError).toBeUndefined();
-		act(() => expect(result.current.validatePublicationSettings()).toBe(true));
+		act(() => expect(result.current.validatePublicationSettings('COLOG')).toBe(true));
+
+		act(() => result.current.handleChapterChange(12));
+		expect(result.current.settings.chapterId).toBe(12);
 	});
 
 	it('선택 이미지를 교체·제거·unmount할 때 생성한 object URL만 해제한다', () => {
@@ -45,6 +52,7 @@ describe('usePostPublicationSettings', () => {
 				initialSettings: {
 					category: 'IT',
 					blog: null,
+					chapterId: null,
 					representativeImage: null,
 					representativeImageUrl: 'posts/existing-thumbnail.png',
 				},
@@ -62,7 +70,11 @@ describe('usePostPublicationSettings', () => {
 
 		act(() => result.current.handleImageChange(null));
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:first-cover');
-		expect(result.current.representativeImagePreviewUrl).toBeNull();
+		expect(result.current.representativeImagePreviewUrl).toBe(POST_THUMBNAIL_FALLBACK_URL);
+		expect(result.current.settings).toMatchObject({
+			representativeImage: null,
+			representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+		});
 
 		act(() => result.current.handleImageChange(secondImage));
 		unmount();

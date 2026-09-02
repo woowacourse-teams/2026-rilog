@@ -1,8 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { BlogProfileUpdateRequest } from './types';
+import type { BlogProfileUpdateRequest, ChapterCreateRequest, ChapterRenameRequest } from './types';
 
-import { readBlogPublicProfile, readPublicBlogPosts, updateBlogProfile } from './api';
+import {
+	createBlogChapter,
+	deleteBlogChapter,
+	readBlogChapters,
+	readBlogIndex,
+	readBlogPublicProfile,
+	readPublicBlogPosts,
+	renameBlogChapter,
+	updateBlogProfile,
+} from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -102,10 +111,152 @@ describe('readPublicBlogPosts', () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(readPublicBlogPosts({ slug: '@rilog-team', page: 2, size: 12 })).resolves.toEqual(responseBody);
+		await expect(
+			readPublicBlogPosts({ slug: '@rilog-team', page: 2, size: 12, filter: { type: 'all' } }),
+		).resolves.toEqual(responseBody);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts?page=2&size=12');
+	});
+
+	it.each([
+		[
+			{ type: 'chapterId', chapterId: 17 } as const,
+			'https://api.rilog.test/v1/blogs/rilog-team/posts?page=0&size=12&chapterId=17',
+		],
+		[
+			{ type: 'targetCologSlug', targetCologSlug: 'woowa-tech' } as const,
+			'https://api.rilog.test/v1/blogs/rilog-team/posts?page=0&size=12&targetCologSlug=woowa-tech',
+		],
+	])('상호배타 필터 %o를 게시글 query에 직렬화한다', async (filter, expectedUrl) => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			Response.json({
+				status: 200,
+				message: '공개 블로그 게시글 목록 조회에 성공했습니다.',
+				data: { type: 'RILOG', posts: [], page: 0, size: 12, numberOfElements: 0, hasNext: false },
+			}),
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await readPublicBlogPosts({ slug: 'rilog-team', page: 0, size: 12, filter });
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.url).toBe(expectedUrl);
+	});
+});
+
+describe('readBlogIndex', () => {
+	it('신규 코로그 slug와 이미지 필드를 포함한 블로그 인덱스 fixture를 그대로 반환한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '블로그 인덱스 조회에 성공했습니다.',
+			data: {
+				blogType: 'RILOG',
+				totalCount: 8,
+				chapterIndexes: [{ chapterId: 3, name: '회고', postCount: 5 }],
+				cologIndexes: [
+					{
+						cologId: 7,
+						slug: 'rilog-team',
+						name: '리로그 팀',
+						profileImageUrl: 'https://images.rilog.test/team.png',
+						authoredPostCount: 3,
+					},
+				],
+			},
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readBlogIndex('@rilog-user')).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-user/index');
+	});
+});
+
+describe('readBlogChapters', () => {
+	it('slug의 @ 접두사를 제거하고 URL 경로를 인코딩해 챕터 목록을 조회한다', async () => {
+		const responseBody = {
+			status: 200,
+			message: '챕터 목록을 조회했습니다.',
+			data: [{ chapterId: 1, name: '프론트엔드', order: 0 }],
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readBlogChapters('@rilog/team')).resolves.toEqual(responseBody);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/chapters');
+	});
+});
+
+describe('createBlogChapter', () => {
+	it('정규화한 slug와 요청 본문으로 챕터 생성 POST 요청을 보낸다', async () => {
+		let capturedRequest: Request | undefined;
+		let capturedBody: unknown;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			capturedRequest = input as Request;
+			capturedBody = await capturedRequest.clone().json();
+			return Response.json(
+				{
+					status: 201,
+					message: '챕터를 생성했습니다.',
+					data: { chapterId: 2, name: '백엔드', order: 1 },
+				},
+				{ status: 201 },
+			);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const request: ChapterCreateRequest = { name: '백엔드' };
+
+		await createBlogChapter('@rilog/team', request);
+
+		expect(capturedRequest?.method).toBe('POST');
+		expect(capturedRequest?.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/chapters');
+		expect(capturedBody).toEqual(request);
+	});
+});
+
+describe('renameBlogChapter', () => {
+	it('정규화한 slug, chapterId와 요청 본문으로 챕터 이름 변경 PATCH 요청을 보낸다', async () => {
+		let capturedRequest: Request | undefined;
+		let capturedBody: unknown;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			capturedRequest = input as Request;
+			capturedBody = await capturedRequest.clone().json();
+			return Response.json({
+				status: 200,
+				message: '챕터 이름을 변경했습니다.',
+				data: { chapterId: 2, name: '서버', order: 1 },
+			});
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const request: ChapterRenameRequest = { name: '서버' };
+
+		await renameBlogChapter('@rilog/team', 2, request);
+
+		expect(capturedRequest?.method).toBe('PATCH');
+		expect(capturedRequest?.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/chapters/2');
+		expect(capturedBody).toEqual(request);
+	});
+});
+
+describe('deleteBlogChapter', () => {
+	it('정규화한 slug와 chapterId로 DELETE 요청을 보내고 204 Response를 반환한다', async () => {
+		const response = new Response(null, { status: 204 });
+		const fetchMock = vi.fn().mockResolvedValue(response);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(deleteBlogChapter('@rilog/team', 2)).resolves.toBe(response);
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('DELETE');
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/chapters/2');
+		expect(response.status).toBe(204);
 	});
 });

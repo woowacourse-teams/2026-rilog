@@ -8,6 +8,13 @@ import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQ
 import AuthProvider from '@/features/auth/ui/AuthProvider';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
+import {
+	createSocialMetadata,
+	DEFAULT_OG_IMAGE,
+	SITE_DESCRIPTION,
+	SITE_NAME,
+} from '@/shared/seo/create-social-metadata';
+import { siteUrl } from '@/shared/seo/site-url';
 
 import './globals.css';
 
@@ -20,10 +27,19 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-	title: 'Rilog',
-	description: '기록을 작성하고 함께 나누는 공간',
+	metadataBase: siteUrl,
+	title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+	description: SITE_DESCRIPTION,
+	applicationName: SITE_NAME,
+	...createSocialMetadata({
+		description: SITE_DESCRIPTION,
+		image: DEFAULT_OG_IMAGE,
+		title: SITE_NAME,
+		type: 'website',
+		url: '/feeds',
+	}),
 	icons: {
-		icon: '/brand/favicon.png',
+		icon: '/brand/favicon.svg',
 	},
 };
 

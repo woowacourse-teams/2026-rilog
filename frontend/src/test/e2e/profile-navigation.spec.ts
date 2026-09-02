@@ -4,7 +4,7 @@ import { mockCologSettingsAccess } from './fixtures/colog-settings-access';
 
 test('모바일 내 avatar와 공개 멤버 avatar에서 개인 블로그로 이동할 수 있다', async ({ page }) => {
 	await mockCologSettingsAccess(page);
-	await page.route('**/v1/users/me/cologs/preview', (route) =>
+	await page.route('**/v1/users/me/cologs/overview', (route) =>
 		route.fulfill({
 			contentType: 'application/json',
 			body: JSON.stringify({ status: 200, message: 'OK', data: [] }),

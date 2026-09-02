@@ -12,7 +12,7 @@ export const buildPostWriteRequest = async (
 	uploadRepresentativeImage: UploadRepresentativeImage,
 ): Promise<PostWriteRequest> => {
 	if (settings.blog === null) {
-		throw new Error('Co-log를 선택해 주세요.');
+		throw new Error('코로그를 선택해 주세요.');
 	}
 
 	let thumbnailImageUrl =
@@ -33,5 +33,6 @@ export const buildPostWriteRequest = async (
 		// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,
+		chapterId: settings.chapterId,
 	};
 };

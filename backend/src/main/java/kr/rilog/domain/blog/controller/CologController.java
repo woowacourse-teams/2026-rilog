@@ -83,9 +83,9 @@ public class CologController implements CologApiSpec {
     }
 
     @AuthGuard
-    @GetMapping("/users/me/cologs/preview")
-    public ApiResponse<List<MyCologResponse>> getMyCologsPreview(@LoginUserId Long requesterId) {
-        List<MyCologResponse> data = cologService.getMyCologsPreview(requesterId);
+    @GetMapping("/users/me/cologs/overview")
+    public ApiResponse<List<MyCologResponse>> getMyCologsOverview(@LoginUserId Long requesterId) {
+        List<MyCologResponse> data = cologService.getMyCologsOverview(requesterId);
         return ApiResponse.response(HttpStatus.OK, "나의 팀 목록을 조회합니다.", data);
     }
 

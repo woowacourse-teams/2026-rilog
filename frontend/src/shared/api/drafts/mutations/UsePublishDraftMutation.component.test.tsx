@@ -39,6 +39,7 @@ describe('usePublishDraftMutation', () => {
 			category: 'TECH' as const,
 			visibility: 'PUBLIC' as const,
 			thumbnailImageUrl: null,
+			chapterId: null,
 		};
 
 		await result.current.mutateAsync({ draftId: 42, request });
@@ -47,9 +48,8 @@ describe('usePublishDraftMutation', () => {
 		expect(removeQueries).toHaveBeenCalledWith({ queryKey: draftsQueryKeys.detail(42), exact: true });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: draftsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.publicBlogPosts('rilog') });
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.publicProfile('rilog') });
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: postsQueryKeys.count() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(5);
+		expect(invalidateQueries).toHaveBeenCalledTimes(4);
 	});
 });

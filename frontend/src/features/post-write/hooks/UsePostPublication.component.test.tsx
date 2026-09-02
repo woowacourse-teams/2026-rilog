@@ -20,7 +20,8 @@ const document: EditorDocument = {
 
 const settings: PublicationSettings = {
 	category: 'IT',
-	blog: { id: 7, slug: 'rilog-team', name: 'Rilog Team' },
+	blog: { type: 'COLOG', id: 7, slug: 'rilog-team' },
+	chapterId: null,
 	representativeImage: null,
 	representativeImageUrl: null,
 };

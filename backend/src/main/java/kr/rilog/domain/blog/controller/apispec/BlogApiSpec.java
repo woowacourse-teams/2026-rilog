@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
+import kr.rilog.domain.blog.controller.dto.response.BlogIndexResponse;
 import kr.rilog.domain.blog.controller.dto.response.BlogPublicProfileResponse;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,4 +65,17 @@ public interface BlogApiSpec {
             @PathVariable("slug") String slug,
             @Valid @RequestBody BlogProfileUpdateRequest dto
     );
+
+    @Operation(
+            summary = "Slug기반 블로그 인덱스 조회 API",
+            description = "Slug를 사용해 블로그의 인덱스를 조회합니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "블로그 인덱스 조회 성공"
+    )
+    ApiResponse<BlogIndexResponse> getBlogIndex(
+            @PathVariable("slug") String slug
+    );
+
 }

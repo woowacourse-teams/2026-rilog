@@ -38,12 +38,12 @@ describe('usePublishPostMutation', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: null,
+			chapterId: null,
 		});
 
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.publicBlogPosts('rilog') });
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.publicProfile('rilog') });
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: postsQueryKeys.count() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(4);
+		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 });

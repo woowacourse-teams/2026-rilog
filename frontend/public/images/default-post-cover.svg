@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title description">
   <title id="title">Rilog 기본 대표 이미지</title>
-  <desc id="description">짙은 남색 배경 위에 Rilog 글자가 표시된 기본 이미지</desc>
+  <desc id="description">Rilog 로고가 표시된 기본 이미지</desc>
   <rect width="1200" height="675" fill="#061a40" />
   <circle cx="1015" cy="120" r="190" fill="#f2b84b" opacity="0.92" />
   <circle cx="1120" cy="560" r="270" fill="#0c2d5b" />
-  <text x="96" y="380" fill="#ffffff" font-family="Pretendard, system-ui, sans-serif" font-size="128" font-weight="700">Rilog</text>
-  <text x="104" y="450" fill="#d7dee8" font-family="Pretendard, system-ui, sans-serif" font-size="36">기록을 작성하고 함께 나누는 공간</text>
+  <rect x="72" y="192" width="1056" height="292" rx="28" fill="#f7f9fd" />
+  <image href="../brand/logo.svg" x="322" y="214" width="556" height="221" preserveAspectRatio="xMidYMid meet" />
+  <text x="600" y="460" fill="#61759e" font-family="Pretendard, system-ui, sans-serif" font-size="30" font-weight="600" text-anchor="middle">기록을 작성하고 함께 나누는 공간</text>
 </svg>

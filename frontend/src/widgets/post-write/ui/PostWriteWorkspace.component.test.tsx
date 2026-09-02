@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,7 @@ import type {
 import type { PostWriteRequest, PostWriteResponse } from '@/shared/api/posts/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import type { UploadFileOptions } from '@/shared/api/uploads/types';
+import { renderWithQuery as render } from '@/test/render-with-query';
 
 import DraftPostController from './DraftPostController';
 import EditPostController from './EditPostController';
@@ -102,12 +103,20 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 	}),
 }));
 
-vi.mock('@/shared/api/users/queries/my-cologs-preview/use-query', () => ({
-	useMyCologsPreviewQuery: () => ({
+vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
+	useMyCologsOverviewQuery: () => ({
 		data: {
 			status: 200,
 			message: 'OK',
-			data: [{ cologId: 20, slug: 'rilog-team', name: 'Rilog Team' }],
+			data: [
+				{
+					cologId: 20,
+					slug: 'rilog-team',
+					name: 'Rilog Team',
+					profileImageUrl: 'cologs/rilog-team.png',
+					chapters: [{ chapterId: 12, name: '제품 개발', order: 0 }],
+				},
+			],
 		},
 	}),
 }));
@@ -156,6 +165,26 @@ vi.mock('@/features/post-write/hooks/use-post-draft-list', () => ({
 		isFetchNextPageError: false,
 		refetch: vi.fn(),
 		fetchNextPage: vi.fn(),
+	}),
+}));
+
+vi.mock('@/features/post-write/hooks/use-post-publish-chapters', () => ({
+	usePostPublishChapters: () => ({
+		data: [{ value: '12', label: '제품 개발' }],
+		isPending: false,
+		isError: false,
+		refetch: vi.fn(),
+	}),
+}));
+
+vi.mock('@/shared/api/blogs/mutations/use-create-blog-chapter-mutation', () => ({
+	CREATE_BLOG_CHAPTER_MUTATION_KEY: ['blogs', 'chapters', 'create'],
+	useCreateBlogChapterMutation: () => ({
+		mutateAsync: vi.fn(),
+		reset: vi.fn(),
+		isPending: false,
+		isError: false,
+		error: null,
 	}),
 }));
 
@@ -326,8 +355,9 @@ const fillValidPost = async (user: ReturnType<typeof userEvent.setup>) => {
 
 // 여러 발행 시나리오에서 반복되는 필수 Co-log 선택 동작
 const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
-	const select = screen.getByRole('combobox', { name: 'Co-log' });
-	const firstCoLogOption = screen.getAllByRole('option')[1];
+	await user.click(screen.getByRole('radio', { name: '코로그' }));
+	const select = screen.getByRole('combobox', { name: '코로그' });
+	const firstCoLogOption = within(select).getAllByRole('option')[1];
 	await user.selectOptions(select, firstCoLogOption);
 	return firstCoLogOption.getAttribute('value')!;
 };
@@ -500,6 +530,7 @@ describe('NewPostController', () => {
 				category: 'TECH',
 				visibility: 'PUBLIC',
 				thumbnailImageUrl: '/images/thumbnail-fallback.svg',
+				chapterId: null,
 			},
 		});
 		expect(requestPostPublicationMock).not.toHaveBeenCalled();
@@ -545,7 +576,7 @@ describe('NewPostController', () => {
 		).not.toBeInTheDocument();
 	});
 
-	it('수정할 게시글의 카테고리, 블로그와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
+	it('수정할 개인 게시글의 카테고리와 기존 썸네일을 게시 설정 초기값으로 유지한다', async () => {
 		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
 		const user = userEvent.setup();
 		const publishPost = vi.fn<PublishPost>().mockResolvedValue({ postId: '31', slug: 'personal-blog' });
@@ -556,7 +587,8 @@ describe('NewPostController', () => {
 				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
 				initialPublicationSettings={{
 					category: 'DAILY',
-					blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+					blog: { type: 'RILOG', slug: 'personal-blog' },
+					chapterId: 12,
 					representativeImage: null,
 					representativeImageUrl: 'posts/existing-thumbnail.png',
 				}}
@@ -567,14 +599,12 @@ describe('NewPostController', () => {
 		expect(screen.queryByRole('button', { name: '임시저장' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /임시 저장된 글/ })).not.toBeInTheDocument();
 		const publishButton = screen.getByRole('button', { name: '수정' });
-		expect(publishButton).toBeDisabled();
-		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
 		expect(publishButton).toBeEnabled();
 		await user.click(publishButton);
 
-		expect(screen.getByRole('radio', { name: '일상' })).toBeChecked();
-		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue('3');
-		expect(screen.getByRole('option', { name: '내 블로그' })).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('일상');
+		expect(screen.getByRole('radio', { name: '개인' })).toBeChecked();
+		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			'https://images.rilog.test/posts/existing-thumbnail.png',
@@ -585,7 +615,7 @@ describe('NewPostController', () => {
 		await waitFor(() => expect(publishPost).toHaveBeenCalledOnce());
 		expect(publishPost.mock.calls[0]?.[0].settings).toMatchObject({
 			category: 'DAILY',
-			blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+			blog: { type: 'RILOG', slug: 'personal-blog' },
 			representativeImage: null,
 			representativeImageUrl: 'posts/existing-thumbnail.png',
 		});
@@ -601,7 +631,8 @@ describe('NewPostController', () => {
 				initialDocument={{ title: '임시저장 제목', blocks: [createParagraph('임시저장 본문')] }}
 				initialPublicationSettings={{
 					category: 'DAILY',
-					blog: { id: 20, slug: 'rilog-team', name: 'Rilog Team' },
+					blog: { type: 'COLOG', id: 20, slug: 'rilog-team' },
+					chapterId: null,
 					representativeImage: null,
 					representativeImageUrl: null,
 				}}
@@ -724,9 +755,11 @@ describe('NewPostController', () => {
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		expect(postPublishSettingsOpenedMock).toHaveBeenCalledOnce();
+		await user.click(screen.getByRole('radio', { name: '코로그' }));
 
-		expect(screen.queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
-		expect(screen.getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
+		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		expect(within(cologSelect).queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
+		expect(within(cologSelect).getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
 	});
 
 	it('본문 이미지를 스토리지에 업로드하고 완성된 URL을 에디터에 전달한다', async () => {
@@ -770,14 +803,14 @@ describe('NewPostController', () => {
 		fireEvent.click(dialog);
 		expect(dialog).toBeInTheDocument();
 
-		await user.click(screen.getByRole('radio', { name: '일상' }));
+		await user.selectOptions(screen.getByRole('combobox', { name: '카테고리' }), 'DAILY');
 		const selectedCoLogId = await selectFirstCoLog(user);
 		await user.click(screen.getByRole('button', { name: '취소' }));
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: '게시 설정' })).not.toBeInTheDocument());
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
-		expect(screen.getByRole('radio', { name: '일상' })).toBeChecked();
-		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('일상');
+		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveValue(selectedCoLogId);
 	});
 
 	it('선택한 대표 이미지를 유지하고 교체·제거·unmount 때 object URL을 해제한다', async () => {
@@ -795,10 +828,16 @@ describe('NewPostController', () => {
 
 		const thumbnailPreview = screen.getByRole('figure', { name: '게시글 썸네일 미리보기' });
 		expect(within(thumbnailPreview).getByText('BlockNote 도입기')).toBeInTheDocument();
-		await user.upload(screen.getByLabelText('이미지 선택'), new File(['first'], 'first.png', { type: 'image/png' }));
+		await user.upload(
+			screen.getByLabelText('대표 이미지 추가'),
+			new File(['first'], 'first.png', { type: 'image/png' }),
+		);
 		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute('src', 'blob:first-cover');
 
-		await user.upload(screen.getByLabelText('이미지 변경'), new File(['second'], 'second.png', { type: 'image/png' }));
+		await user.upload(
+			screen.getByLabelText('대표 이미지 변경'),
+			new File(['second'], 'second.png', { type: 'image/png' }),
+		);
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:first-cover');
 		await user.click(screen.getByRole('button', { name: '취소' }));
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: '게시 설정' })).not.toBeInTheDocument());
@@ -815,7 +854,10 @@ describe('NewPostController', () => {
 			'/images/thumbnail-fallback.svg',
 		);
 
-		await user.upload(screen.getByLabelText('이미지 선택'), new File(['third'], 'third.png', { type: 'image/png' }));
+		await user.upload(
+			screen.getByLabelText('대표 이미지 추가'),
+			new File(['third'], 'third.png', { type: 'image/png' }),
+		);
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:third-cover');
@@ -872,6 +914,26 @@ describe('NewPostController', () => {
 		historyBackSpy.mockRestore();
 	});
 
+	it('개인 블로그를 선택하면 개인 slug와 analytics 대상 타입을 사용한다', async () => {
+		const user = userEvent.setup();
+		render(<NewPostController editorComponent={FakeEditor} />);
+		await fillValidPost(user);
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
+
+		await waitFor(() => expect(requestPostPublicationMock).toHaveBeenCalledOnce());
+		expect(requestPostPublicationMock).toHaveBeenCalledWith(expect.objectContaining({ slug: 'jetproc' }));
+		expect(postPublishStartedMock).toHaveBeenCalledWith({
+			ownerType: 'RILOG',
+			category: 'IT',
+			imageSource: 'default',
+		});
+		expect(postPublishedMock).toHaveBeenCalledWith(
+			expect.objectContaining({ postId: '77', ownerType: 'RILOG', cologId: null }),
+		);
+	});
+
 	it('발행 결과의 게시글 ID가 잘못되면 모달과 이탈 보호를 유지한다', async () => {
 		const user = userEvent.setup();
 		const navigate = vi.fn();
@@ -911,7 +973,7 @@ describe('NewPostController', () => {
 			errorCode: 'UNKNOWN_ERROR',
 			errorKind: 'unknown',
 		});
-		expect(screen.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveValue(selectedCoLogId);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/retry-success'));
@@ -932,8 +994,9 @@ describe('NewPostController', () => {
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		const coverImage = new File(['image'], 'cover.png', { type: 'image/png' });
-		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), coverImage);
 		await selectFirstCoLog(user);
+		await user.selectOptions(screen.getByRole('combobox', { name: '챕터' }), '12');
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/with-cover'));
@@ -955,8 +1018,9 @@ describe('NewPostController', () => {
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
-		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), coverImage);
 		await selectFirstCoLog(user);
+		await user.selectOptions(screen.getByRole('combobox', { name: '챕터' }), '12');
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team/posts/77'));
@@ -968,6 +1032,7 @@ describe('NewPostController', () => {
 			category: 'TECH',
 			visibility: 'PUBLIC',
 			thumbnailImageUrl: 'posts/cover-object-key.png',
+			chapterId: 12,
 		});
 
 		unmount();
@@ -984,7 +1049,8 @@ describe('NewPostController', () => {
 				initialDocument={{ title: '기존 제목', blocks: [createParagraph('기존 본문')] }}
 				initialPublicationSettings={{
 					category: 'DAILY',
-					blog: { id: 3, slug: 'personal-blog', name: '내 블로그' },
+					blog: { type: 'RILOG', slug: 'personal-blog' },
+					chapterId: 12,
 					representativeImage: null,
 					representativeImageUrl: 'posts/existing-thumbnail.png',
 				}}
@@ -1007,6 +1073,7 @@ describe('NewPostController', () => {
 		expect(updateVariables?.request).toMatchObject({
 			category: 'DAILY',
 			thumbnailImageUrl: 'posts/existing-thumbnail.png',
+			chapterId: 12,
 		});
 	});
 

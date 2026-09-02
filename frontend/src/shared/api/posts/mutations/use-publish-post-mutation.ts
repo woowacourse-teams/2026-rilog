@@ -12,11 +12,10 @@ export const usePublishPostMutation = () => {
 
 	return useMutation({
 		mutationFn: publishPost,
-		onSuccess: (_, { slug }) =>
+		onSuccess: () =>
 			Promise.all([
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
-				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.publicBlogPosts(slug) }),
-				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.publicProfile(slug) }),
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: postsQueryKeys.count() }),
 			]),
 	});

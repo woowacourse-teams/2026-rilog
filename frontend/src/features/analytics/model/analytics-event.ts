@@ -13,6 +13,8 @@ export type PostEntrySource = 'feed' | 'blog_profile' | 'publish_redirect' | 'di
 export type EditorEntrySource = 'sidebar' | 'post_detail_edit' | 'draft_list' | 'direct';
 // Co-log 생성 화면에 들어온 위치, 현재는 사이드바 또는 직접 접근만 구분 가능, 추후 Co-log 생성 기능을 어디에 노출해야 효과적인지 판단할 수 있음
 export type CologCreationEntrySource = 'sidebar' | 'direct';
+// Co-log 멤버 초대 진입 위치별 사용량과 이후 초대 전환을 비교하기 위해 필요
+export type CologMemberInvitationEntrySource = 'member_aside' | 'settings';
 //  사용자가 이미지를 어떻게 마련하는지 파악해 업로드 UX나 자동 대표 이미지 정책을 개선할 수 있음
 export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 // 게시글을 온전히 소비했는지 지표

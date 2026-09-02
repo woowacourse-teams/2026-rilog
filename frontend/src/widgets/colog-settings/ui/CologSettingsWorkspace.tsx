@@ -4,10 +4,12 @@ import { useCallback, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
-import type { CologMember } from '@/domains/blog/model/colog';
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
+import { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
+import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
 import CologDangerZoneSection from '@/features/colog-danger-zone/ui/CologDangerZoneSection';
 import { useCologMemberDrafts } from '@/features/colog-member-management/hooks/use-colog-member-drafts';
+import { mapCologMembersResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
 import CologMemberManagementSection from '@/features/colog-member-management/ui/CologMemberManagementSection';
 import { useCologProfileForm } from '@/features/colog-profile-management/hooks/use-colog-profile-form';
 import { useSaveCologProfile } from '@/features/colog-profile-management/hooks/use-save-colog-profile';
@@ -18,8 +20,9 @@ import CologProfileSection from '@/features/colog-profile-management/ui/CologPro
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/mutations/use-check-nickname-availability-mutation';
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
+import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
 import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
-import { buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
+import { buildCologMemberInvitePath, buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
@@ -30,15 +33,15 @@ import { COLOG_SETTINGS_TABS } from '../lib/colog-settings-tabs';
 interface CologSettingsWorkspaceProps {
 	slug: string;
 	initialTab?: CologSettingsTab;
-	initialMembers?: CologMember[];
+	isMemberInviteInitiallyOpen?: boolean;
 }
 
 interface CologSettingsWorkspaceContentProps {
 	cologId: number;
 	slug: string;
 	initialTab: CologSettingsTab;
-	initialMembers?: CologMember[];
 	initialProfile: CologProfileSettingsValue;
+	isMemberInviteInitiallyOpen: boolean;
 }
 
 const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: string }> = {
@@ -49,6 +52,10 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 	members: {
 		title: '멤버 관리',
 		description: '팀 멤버의 프로필, 역할, 권한을 관리합니다.',
+	},
+	chapters: {
+		title: '챕터 관리',
+		description: '팀의 챕터를 관리합니다.',
 	},
 	danger: {
 		title: '위험 영역',
@@ -81,8 +88,9 @@ const getChangedProfileFields = (
 export default function CologSettingsWorkspace({
 	slug,
 	initialTab = 'profile',
-	initialMembers,
+	isMemberInviteInitiallyOpen = false,
 }: CologSettingsWorkspaceProps) {
+	// TODO: profile 섹션 내부로 이동
 	const profileQuery = useBlogPublicProfileQuery({
 		slug,
 		select: (response) =>
@@ -123,8 +131,8 @@ export default function CologSettingsWorkspace({
 			cologId={profileQuery.data.cologId}
 			slug={slug}
 			initialTab={initialTab}
-			initialMembers={initialMembers}
 			initialProfile={profileQuery.data.profile}
+			isMemberInviteInitiallyOpen={isMemberInviteInitiallyOpen}
 		/>
 	);
 }
@@ -133,21 +141,45 @@ function CologSettingsWorkspaceContent({
 	cologId,
 	slug,
 	initialTab,
-	initialMembers,
 	initialProfile,
+	isMemberInviteInitiallyOpen,
 }: CologSettingsWorkspaceContentProps) {
 	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
 
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
-	const memberDrafts = useCologMemberDrafts({ initialMembers });
+	const chapterManagement = useChapterManagement({ slug });
+	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
+	const memberDrafts = useCologMemberDrafts({
+		initialMembers,
+		isInviteModalInitiallyOpen: isMemberInviteInitiallyOpen,
+	});
 	const saveCologProfile = useSaveCologProfile();
 	const nameAvailability = useCheckNicknameAvailabilityMutation();
 
 	const isProfileDirty = !isCologProfileSettingsEqual(profileForm.value, savedProfile);
 	const isWorkspaceDirty =
-		activeTab === 'profile' ? isProfileDirty : activeTab === 'members' ? memberDrafts.isDirty : false;
+		activeTab === 'profile'
+			? isProfileDirty
+			: activeTab === 'members'
+				? memberDrafts.isDirty
+				: activeTab === 'chapters'
+					? chapterManagement.isDirty
+					: false;
+	const isChapterSaveDisabled =
+		!chapterManagement.isDirty ||
+		chapterManagement.isSaving ||
+		chapterManagement.draftChapters.some((draft) => draft.name.trim().length === 0);
+
+	const handleInviteModalOpen = () => {
+		analytics.cologMemberInvitationEntryClicked({ entrySource: 'settings' });
+		memberDrafts.setIsInviteModalOpen(true);
+		window.history.replaceState(window.history.state, '', buildCologMemberInvitePath(slug));
+	};
+	const handleInviteModalClose = () => {
+		window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, 'members'));
+	};
 
 	const commitTabChange = useCallback(
 		(nextTab: CologSettingsTab, path: string) => {
@@ -155,10 +187,13 @@ function CologSettingsWorkspaceContent({
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
+			memberDrafts.setIsInviteModalOpen(false);
+			chapterManagement.handleCancelEditing();
+			chapterManagement.setIsCreateModalOpen(false);
 			setActiveTab(nextTab);
 			window.history.replaceState(window.history.state, '', path);
 		},
-		[memberDrafts, nameAvailability, profileForm, savedProfile],
+		[chapterManagement, memberDrafts, nameAvailability, profileForm, savedProfile],
 	);
 
 	const { isLeaveModalOpen, onTabChangeRequest, onLeaveCancel, onLeaveConfirm } = useSettingsLeaveGuard({
@@ -282,13 +317,62 @@ function CologSettingsWorkspaceContent({
 					>
 						멤버 정보 수정
 					</Button> */}
+					<Button type="button" size="md" className="w-full sm:w-30" onClick={handleInviteModalOpen}>
+						+ 멤버 초대
+					</Button>
+				</>
+			);
+		}
+
+		if (activeTab === 'chapters') {
+			if (chapterManagement.isEditing) {
+				return (
+					<>
+						<Button
+							type="button"
+							variant="secondary"
+							size="md"
+							className="w-full sm:w-30"
+							onClick={chapterManagement.handleCancelEditing}
+						>
+							취소
+						</Button>
+						<Button
+							type="button"
+							size="md"
+							className="w-full sm:w-30"
+							disabled={isChapterSaveDisabled}
+							isPending={chapterManagement.isSaving}
+							onClick={() => void chapterManagement.handleSave()}
+						>
+							저장
+						</Button>
+					</>
+				);
+			}
+
+			return (
+				<>
+					<Button
+						type="button"
+						variant="secondary"
+						size="md"
+						className="w-full sm:w-30"
+						disabled={
+							chapterManagement.isLoading || chapterManagement.isLoadError || chapterManagement.chapters.length === 0
+						}
+						onClick={chapterManagement.handleStartEditing}
+					>
+						챕터 수정
+					</Button>
 					<Button
 						type="button"
 						size="md"
 						className="w-full sm:w-30"
-						onClick={() => memberDrafts.setIsInviteModalOpen(true)}
+						disabled={chapterManagement.isLoading || chapterManagement.isLoadError}
+						onClick={() => chapterManagement.setIsCreateModalOpen(true)}
 					>
-						+ 멤버 초대
+						+ 챕터 추가
 					</Button>
 				</>
 			);
@@ -342,9 +426,15 @@ function CologSettingsWorkspaceContent({
 					</>
 				)}
 				{activeTab === 'members' && (
-					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
+					<CologMemberManagementSection
+						cologId={cologId}
+						slug={slug}
+						drafts={memberDrafts}
+						onInviteModalClose={handleInviteModalClose}
+					/>
 				)}
-				{activeTab === 'danger' && <CologDangerZoneSection />}
+				{activeTab === 'chapters' && <CologChapterManagementSection management={chapterManagement} />}
+				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}
 			</div>
 
 			<ConfirmModal

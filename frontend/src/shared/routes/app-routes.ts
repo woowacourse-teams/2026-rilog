@@ -5,10 +5,10 @@ export const APP_ROUTES = {
 	write: '/write',
 } as const;
 
-export const COLOG_SETTINGS_TAB_IDS = ['profile', 'members', 'danger'] as const;
+export const COLOG_SETTINGS_TAB_IDS = ['profile', 'members', 'chapters', 'danger'] as const;
 export type CologSettingsTab = (typeof COLOG_SETTINGS_TAB_IDS)[number];
 
-export const RILOG_SETTINGS_TAB_IDS = ['profile', 'danger'] as const;
+export const RILOG_SETTINGS_TAB_IDS = ['profile', 'series', 'danger'] as const;
 export type RilogSettingsTab = (typeof RILOG_SETTINGS_TAB_IDS)[number];
 
 const normalizeSegment = (value: string, errorMessage: string) => {
@@ -38,6 +38,8 @@ export const hasBlogSlugPrefix = (slug: string) => decodeSegment(slug).trim().st
 
 export const buildCologSettingsPath = (slug: string, tab: CologSettingsTab) =>
 	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
+
+export const buildCologMemberInvitePath = (slug: string) => `${buildCologSettingsPath(slug, 'members')}&invite=true`;
 
 export const buildRilogSettingsPath = (slug: string, tab: RilogSettingsTab) =>
 	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;

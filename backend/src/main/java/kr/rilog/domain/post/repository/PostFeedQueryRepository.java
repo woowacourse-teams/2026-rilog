@@ -1,6 +1,7 @@
 package kr.rilog.domain.post.repository;
 
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
@@ -23,6 +24,10 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 p.category,
                 p.visibility,
                 p.publishedAt,
+
+                chapter.id,
+                chapter.name.value,
+                chapter.order,
             
                 author.id,
                 author.nickname.value,
@@ -39,6 +44,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             JOIN p.user author
             JOIN p.rilog rilog
             LEFT JOIN p.colog colog
+            LEFT JOIN p.chapter chapter
             WHERE p.status = :status
               AND p.visibility = :visibility
               AND p.deletedAt IS NULL
@@ -59,6 +65,10 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 post.visibility,
                 post.publishedAt,
 
+                chapter.id,
+                chapter.name.value,
+                chapter.order,
+
                 author.id,
                 author.nickname.value,
                 author.slug.value,
@@ -74,16 +84,24 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             JOIN post.user author
             JOIN post.rilog rilog
             LEFT JOIN post.colog colog
+            LEFT JOIN post.chapter chapter
             WHERE post.rilog.id = :rilogId
               AND post.status = :status
-              AND post.visibility = :visibility
+              AND (post.visibility = :publicVisibility OR post.user.id = :requesterId)
+              AND (:category IS NULL OR post.category = :category)
+              AND (:chapterId IS NULL OR (chapter.id = :chapterId AND chapter.blog.id = :rilogId))
+              AND (:targetCologId IS NULL OR colog.id = :targetCologId)
               AND post.deletedAt IS NULL
             ORDER BY post.publishedAt DESC, post.id DESC
             """)
-    Slice<PostFullFeedRow> findPublicRilogPosts(
+    Slice<PostFullFeedRow> findRilogFeedPosts(
             @Param("rilogId") Long rilogId,
+            @Param("requesterId") Long requesterId,
             @Param("status") PostStatus status,
-            @Param("visibility") PostVisibility visibility,
+            @Param("publicVisibility") PostVisibility publicVisibility,
+            @Param("category") Category category,
+            @Param("chapterId") Long chapterId,
+            @Param("targetCologId") Long targetCologId,
             Pageable pageable
     );
 
@@ -95,6 +113,10 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 post.category,
                 post.visibility,
                 post.publishedAt,
+
+                chapter.id,
+                chapter.name.value,
+                chapter.order,
 
                 author.id,
                 author.nickname.value,
@@ -110,16 +132,22 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             FROM Post post
             JOIN post.user author
             JOIN post.colog colog
+            LEFT JOIN post.chapter chapter
             WHERE post.colog.id = :cologId
               AND post.status = :status
-              AND post.visibility = :visibility
+              AND (post.visibility = :publicVisibility OR post.user.id = :requesterId)
+              AND (:category IS NULL OR post.category = :category)
+              AND (:chapterId IS NULL OR (chapter.id = :chapterId AND chapter.blog.id = :cologId))
               AND post.deletedAt IS NULL
             ORDER BY post.publishedAt DESC, post.id DESC
             """)
-    Slice<PostFullFeedRow> findPublicCologPosts(
+    Slice<PostFullFeedRow> findCologFeedPosts(
             @Param("cologId") Long cologId,
+            @Param("requesterId") Long requesterId,
             @Param("status") PostStatus status,
-            @Param("visibility") PostVisibility visibility,
+            @Param("publicVisibility") PostVisibility publicVisibility,
+            @Param("category") Category category,
+            @Param("chapterId") Long chapterId,
             Pageable pageable
     );
 

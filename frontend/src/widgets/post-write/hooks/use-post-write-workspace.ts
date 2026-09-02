@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 
+import type { BlogType } from '@/domains/blog/model/blog';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
@@ -23,6 +24,7 @@ import { buildPostDetailPath } from '@/shared/routes/app-routes';
 interface UsePostWriteWorkspaceOptions {
 	initialDocument?: EditorDocument;
 	initialPublicationSettings?: PublicationSettings;
+	userSlug: string | null;
 	publishPost: PublishPost;
 	navigate?: (href: string) => void;
 	onPublished?: (result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => void;
@@ -31,6 +33,7 @@ interface UsePostWriteWorkspaceOptions {
 export function usePostWriteWorkspace({
 	initialDocument,
 	initialPublicationSettings,
+	userSlug,
 	publishPost,
 	navigate,
 	onPublished,
@@ -53,15 +56,19 @@ export function usePostWriteWorkspace({
 	} = usePostDocument({ initialDocument });
 
 	const {
-		settings: publicationSettings,
+		settings,
 		representativeImagePreviewUrl,
 		cologError,
 		handleImageChange,
 		handleCategoryChange,
-		handleCoLogChange,
+		handleTargetBlogChange,
+		handleChapterChange,
 		validatePublicationSettings,
 		clearSelectedImageUrl,
-	} = usePostPublicationSettings({ initialSettings: initialPublicationSettings });
+	} = usePostPublicationSettings({
+		initialSettings: initialPublicationSettings,
+		userSlug,
+	});
 
 	const {
 		isLeaveModalOpen,
@@ -92,14 +99,14 @@ export function usePostWriteWorkspace({
 	});
 
 	const handlePublished = useCallback(
-		(result: PublishPostResult, settings: PublicationSettings, document: EditorDocument) => {
+		(result: PublishPostResult, publishedSettings: PublicationSettings, document: EditorDocument) => {
 			const postDetailPath = buildPostDetailPath(result.slug, result.postId);
 			recordPostDetailEntryContext({
 				postId: Number(result.postId),
 				entrySource: 'publish_redirect',
 				feedPosition: null,
 			});
-			onPublished?.(result, settings, document);
+			onPublished?.(result, publishedSettings, document);
 
 			clearSelectedImageUrl();
 			navigateAfterCompletion(postDetailPath);
@@ -139,18 +146,18 @@ export function usePostWriteWorkspace({
 		analytics.postPublishSettingsOpened();
 	};
 
-	const handlePublish = async () => {
-		if (!validatePublicationSettings()) {
+	const handlePublish = async (targetBlogType: BlogType) => {
+		if (!validatePublicationSettings(targetBlogType)) {
 			analytics.postPublishValidationFailed({ invalidFields: ['colog'] });
 			return;
 		}
 
 		analytics.postPublishStarted({
-			ownerType: 'COLOG',
-			category: publicationSettings.category,
-			imageSource: resolveRepresentativeImageSource(publicationSettings, publicationDocument?.blocks ?? []),
+			ownerType: targetBlogType,
+			category: settings.category,
+			imageSource: resolveRepresentativeImageSource(settings, publicationDocument?.blocks ?? []),
 		});
-		await publishDocument(publicationSettings);
+		await publishDocument(settings);
 	};
 
 	return {
@@ -168,7 +175,7 @@ export function usePostWriteWorkspace({
 			markClean,
 		},
 		publication: {
-			settings: publicationSettings,
+			settings,
 			representativeImagePreviewUrl,
 			document: publicationDocument,
 			isModalOpen: isPublishModalOpen,
@@ -179,7 +186,8 @@ export function usePostWriteWorkspace({
 			close: closePublication,
 			handleImageChange,
 			handleCategoryChange,
-			handleCoLogChange,
+			handleTargetBlogChange,
+			handleChapterChange,
 			publish: handlePublish,
 		},
 		leaveGuard: {

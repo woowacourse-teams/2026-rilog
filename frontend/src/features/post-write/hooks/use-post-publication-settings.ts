@@ -2,26 +2,34 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { CologOption } from '@/domains/blog/model/colog';
+import type { BlogType } from '@/domains/blog/model/blog';
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostCategory } from '@/domains/post/model/post';
-import type { PublicationSettings } from '@/features/post-write/model/post-publication';
+import type { PublicationSettings, TargetBlog } from '@/features/post-write/model/post-publication';
 
 interface UsePostPublicationSettingsOptions {
 	initialSettings?: PublicationSettings;
+	userSlug?: string | null;
 }
 
 const DEFAULT_PUBLICATION_SETTINGS: PublicationSettings = {
 	category: 'IT',
 	blog: null,
+	chapterId: null,
 	representativeImage: null,
 	representativeImageUrl: null,
 };
 
-export function usePostPublicationSettings({ initialSettings }: UsePostPublicationSettingsOptions = {}) {
+export function usePostPublicationSettings({ initialSettings, userSlug }: UsePostPublicationSettingsOptions = {}) {
 	const selectedImageUrlRef = useRef<string | null>(null);
 	const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 	const [settings, setSettings] = useState(initialSettings ?? DEFAULT_PUBLICATION_SETTINGS);
 	const [cologError, setCologError] = useState<string>();
+	const [hasUserChangedTargetBlog, setHasUserChangedTargetBlog] = useState(false);
+	const resolvedSettings: PublicationSettings =
+		settings.blog === null && !hasUserChangedTargetBlog && userSlug !== null && userSlug !== undefined
+			? { ...settings, blog: { type: 'RILOG', slug: userSlug } }
+			: settings;
 
 	const revokeSelectedImageUrl = useCallback(() => {
 		if (selectedImageUrlRef.current === null) {
@@ -44,7 +52,7 @@ export function usePostPublicationSettings({ initialSettings }: UsePostPublicati
 			setSettings((currentSettings) => ({
 				...currentSettings,
 				representativeImage: file,
-				representativeImageUrl: null,
+				representativeImageUrl: file === null ? POST_THUMBNAIL_FALLBACK_URL : null,
 			}));
 		},
 		[revokeSelectedImageUrl],
@@ -54,20 +62,28 @@ export function usePostPublicationSettings({ initialSettings }: UsePostPublicati
 		setSettings((currentSettings) => ({ ...currentSettings, category }));
 	}, []);
 
-	const handleCoLogChange = useCallback((blog: CologOption | null) => {
-		setSettings((currentSettings) => ({ ...currentSettings, blog }));
+	const handleTargetBlogChange = useCallback((targetBlog: TargetBlog | null) => {
+		setHasUserChangedTargetBlog(true);
+		setSettings((currentSettings) => ({ ...currentSettings, blog: targetBlog, chapterId: null }));
 		setCologError(undefined);
 	}, []);
 
-	const validatePublicationSettings = useCallback(() => {
-		if (settings.blog === null) {
-			setCologError('Co-log를 선택해 주세요.');
-			return false;
-		}
+	const handleChapterChange = useCallback((chapterId: number | null) => {
+		setSettings((currentSettings) => ({ ...currentSettings, chapterId }));
+	}, []);
 
-		setCologError(undefined);
-		return true;
-	}, [settings.blog]);
+	const validatePublicationSettings = useCallback(
+		(selectedBlog: BlogType) => {
+			if (selectedBlog === 'COLOG' && resolvedSettings.blog?.type !== 'COLOG') {
+				setCologError('코로그를 선택해 주세요.');
+				return false;
+			}
+
+			setCologError(undefined);
+			return true;
+		},
+		[resolvedSettings.blog],
+	);
 
 	const clearSelectedImageUrl = useCallback(() => {
 		revokeSelectedImageUrl();
@@ -75,12 +91,13 @@ export function usePostPublicationSettings({ initialSettings }: UsePostPublicati
 	}, [revokeSelectedImageUrl]);
 
 	return {
-		settings,
-		representativeImagePreviewUrl: selectedImageUrl ?? settings.representativeImageUrl,
+		settings: resolvedSettings,
+		representativeImagePreviewUrl: selectedImageUrl ?? resolvedSettings.representativeImageUrl,
 		cologError,
 		handleImageChange,
 		handleCategoryChange,
-		handleCoLogChange,
+		handleTargetBlogChange,
+		handleChapterChange,
 		validatePublicationSettings,
 		clearSelectedImageUrl,
 	};

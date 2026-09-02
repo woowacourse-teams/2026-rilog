@@ -1,42 +1,96 @@
 'use client';
 
-import { useSettingsAccess } from '@/features/settings-access/hooks/use-settings-access';
-import SettingsIcon from '@/shared/assets/icons/settings.svg';
+import { useState } from 'react';
+
+import BlogManagementMenu from '@/features/blog-management/ui/BlogManagementMenu';
+import { useCurrentCologPermission } from '@/features/colog-settings-access/hooks/use-current-colog-permission';
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { useLeaveCologMutation } from '@/shared/api/cologs/mutations/use-leave-colog-mutation';
 import { buildCologSettingsPath } from '@/shared/routes/app-routes';
-import ButtonLink from '@/shared/ui/button/ButtonLink';
+import AlertModal from '@/shared/ui/modal/AlertModal';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface CologSettingsButtonProps {
 	isOnCover?: boolean;
 	slug: string;
 }
 
-export default function CologSettingsButton({ isOnCover = false, slug }: CologSettingsButtonProps) {
-	const accessStatus = useSettingsAccess({ type: 'COLOG', slug });
-	const iconColor = isOnCover ? 'var(--text-on-dark)' : 'var(--text-secondary)';
+const LEAVE_ERROR_FALLBACK_MESSAGE = '팀 블로그에서 탈퇴하지 못했어요. 다시 시도해 주세요.';
 
-	if (accessStatus !== 'authorized') {
+export default function CologSettingsButton({ isOnCover = false, slug }: CologSettingsButtonProps) {
+	const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+	const [isLeaveCompleteModalOpen, setIsLeaveCompleteModalOpen] = useState(false);
+	const permission = useCurrentCologPermission(slug);
+	const leaveCologMutation = useLeaveCologMutation();
+	const iconColor = isOnCover ? 'var(--text-on-dark)' : 'var(--text-secondary)';
+	const leaveErrorMessage = leaveCologMutation.isError
+		? getApiErrorMessage(leaveCologMutation.error, LEAVE_ERROR_FALLBACK_MESSAGE)
+		: undefined;
+
+	if (permission === undefined && !isLeaveCompleteModalOpen) {
 		return null;
 	}
 
+	const handleLeaveRequest = () => {
+		leaveCologMutation.reset();
+		setIsLeaveModalOpen(true);
+	};
+
+	const handleLeaveCancel = () => {
+		leaveCologMutation.reset();
+		setIsLeaveModalOpen(false);
+	};
+
+	const handleLeaveConfirm = () => {
+		leaveCologMutation.mutate(slug, {
+			onSuccess: () => {
+				setIsLeaveModalOpen(false);
+				setIsLeaveCompleteModalOpen(true);
+			},
+		});
+	};
+
 	return (
-		<span className="group/settings relative inline-flex">
-			<ButtonLink
-				href={buildCologSettingsPath(slug, 'profile')}
-				variant="ghost"
-				size="icon"
-				aria-label="팀 설정"
-				className="size-7! bg-transparent hover:bg-surface/20 active:bg-surface/30"
-				style={{ color: iconColor }}
-			>
-				<SettingsIcon aria-hidden="true" focusable="false" className="size-4" />
-			</ButtonLink>
-			<span
-				role="tooltip"
-				aria-hidden="true"
-				className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 -translate-x-1/2 rounded-md bg-brand-primary px-2 py-1 text-caption-1 font-medium whitespace-nowrap text-text-on-dark opacity-0 shadow-sm transition-opacity duration-150 group-focus-within/settings:opacity-100 group-hover/settings:opacity-100"
-			>
-				팀 설정
-			</span>
-		</span>
+		<>
+			{permission === undefined ? null : (
+				<BlogManagementMenu
+					ariaLabel="팀 블로그 메뉴"
+					onLeave={handleLeaveRequest}
+					settingsHref={permission === 'MEMBER' ? undefined : buildCologSettingsPath(slug, 'profile')}
+					showLeave={permission !== 'OWNER'}
+					triggerColor={iconColor}
+				/>
+			)}
+
+			<ConfirmModal
+				open={isLeaveModalOpen}
+				title="팀을 탈퇴할까요?"
+				description={
+					<>
+						<span>
+							팀으로 발행한 모든 게시글이 팀 소유로 전환되며,
+							<br />
+							본인이 수정하거나 삭제할 수 없습니다.
+						</span>
+						{leaveErrorMessage === undefined ? null : (
+							<span className="mt-2 block text-danger">{leaveErrorMessage}</span>
+						)}
+					</>
+				}
+				confirmLabel="탈퇴"
+				cancelLabel="취소"
+				variant="danger"
+				isPending={leaveCologMutation.isPending}
+				onConfirm={handleLeaveConfirm}
+				onCancel={handleLeaveCancel}
+			/>
+
+			<AlertModal
+				open={isLeaveCompleteModalOpen}
+				title="탈퇴가 완료되었습니다."
+				onAction={() => undefined}
+				onClose={() => setIsLeaveCompleteModalOpen(false)}
+			/>
+		</>
 	);
 }

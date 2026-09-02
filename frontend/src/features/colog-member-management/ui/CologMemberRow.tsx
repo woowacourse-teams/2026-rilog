@@ -1,5 +1,6 @@
 import type { CologMember, CologMemberPermission } from '@/domains/blog/model/colog';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { parseApiUtcDate } from '@/shared/utils/parse-api-utc-date';
 
 const PERMISSION_LABELS: Record<CologMemberPermission, string> = {
 	OWNER: 'Owner',
@@ -19,6 +20,8 @@ interface CologMemberRowProps {
 	isEditing?: boolean;
 	onPermissionChange?: (memberId: number, permission: CologMemberPermission) => void;
 	onBlogRoleChange?: (memberId: number, blogRole: string) => void;
+	onRemove?: () => void;
+	canRemove?: boolean;
 }
 
 export default function CologMemberRow({
@@ -26,8 +29,11 @@ export default function CologMemberRow({
 	isEditing = false,
 	onPermissionChange,
 	onBlogRoleChange: _onBlogRoleChange,
+	onRemove,
+	canRemove = false,
 }: CologMemberRowProps) {
-	const joinedAt = JOINED_AT_FORMATTER.format(new Date(member.joinedAt)).replace(/\.$/, '');
+	const joinedAtDate = parseApiUtcDate(member.joinedAt);
+	const joinedAt = joinedAtDate ? JOINED_AT_FORMATTER.format(joinedAtDate).replace(/\.$/, '') : member.joinedAt;
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">
@@ -78,15 +84,18 @@ export default function CologMemberRow({
 			</td> */}
 			<td className="px-2 py-3 text-label-1 text-text-secondary">{joinedAt}</td>
 			<td className="py-3 pr-8 text-right">
-				<button
-					type="button"
-					aria-label={`${member.nickname} 멤버 내보내기`}
-					className="inline-flex size-6 items-center justify-center rounded-full bg-surface-active text-danger transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-focus-ring"
-				>
-					<span aria-hidden="true" className="text-body-2 leading-none font-bold">
-						−
-					</span>
-				</button>
+				{canRemove && !isEditing && (
+					<button
+						type="button"
+						aria-label={`${member.nickname} 멤버 내보내기`}
+						onClick={onRemove}
+						className="inline-flex size-6 items-center justify-center rounded-full bg-surface-active text-danger transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-focus-ring"
+					>
+						<span aria-hidden="true" className="text-body-2 leading-none font-bold">
+							−
+						</span>
+					</button>
+				)}
 			</td>
 		</tr>
 	);

@@ -46,4 +46,15 @@ describe('Field', () => {
 			'공백 없이 입력해 주세요. 아이디는 4~20자 사이로 입력 가능해요.',
 		);
 	});
+
+	it('label 우측에 독립적인 action을 배치한다', () => {
+		render(
+			<Field label="시리즈" labelAction={<button type="button">새 시리즈 추가</button>}>
+				{({ id }) => <select id={id} />}
+			</Field>,
+		);
+
+		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '새 시리즈 추가' })).toBeInTheDocument();
+	});
 });

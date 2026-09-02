@@ -17,7 +17,7 @@ const IPHONE_13 = {
 	viewport: devices['iPhone 13'].viewport,
 };
 
-const MY_COLOGS_PREVIEW_ROUTE = '**/v1/users/me/cologs/preview';
+const MY_COLOGS_OVERVIEW_ROUTE = '**/v1/users/me/cologs/overview';
 const PRESIGNED_URL_ROUTE = '**/v1/uploads/presigned-url';
 const MOCK_UPLOAD_ROUTE = '**/e2e-upload';
 const PUBLISH_POST_ROUTE = '**/v1/posts';
@@ -35,13 +35,21 @@ const expectBodyImage = async (page: Page) => {
 
 const enableWriteAccess = async (page: Page) => {
 	await mockAuthenticatedAccess(page);
-	await page.route(MY_COLOGS_PREVIEW_ROUTE, (route) =>
+	await page.route(MY_COLOGS_OVERVIEW_ROUTE, (route) =>
 		route.fulfill({
 			contentType: 'application/json',
 			body: JSON.stringify({
 				status: 200,
-				message: '내 Co-log 미리보기 조회에 성공했습니다.',
-				data: [{ cologId: 7, slug: 'rilog', name: 'Rilog' }],
+				message: '나의 팀 목록 요약 조회에 성공했습니다.',
+				data: [
+					{
+						cologId: 7,
+						slug: 'rilog',
+						name: 'Rilog',
+						profileImageUrl: 'cologs/rilog.png',
+						chapters: [],
+					},
+				],
 			}),
 		}),
 	);

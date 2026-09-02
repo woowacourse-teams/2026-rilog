@@ -57,6 +57,41 @@ export interface BlogPublicProfileRequest {
 	slug: string;
 }
 
+export interface ChapterIndexResponse {
+	chapterId: number;
+	name: string;
+	postCount: number;
+}
+
+export interface CologIndexResponse {
+	cologId: number;
+	slug: string;
+	name: string;
+	profileImageUrl: string | null;
+	authoredPostCount: number;
+}
+
+export interface BlogIndexResponse {
+	blogType: BlogType;
+	totalCount: number;
+	chapterIndexes: ChapterIndexResponse[] | null;
+	cologIndexes: CologIndexResponse[] | null;
+}
+
+export interface ChapterResponse {
+	chapterId: number;
+	name: string;
+	order: number;
+}
+
+export interface ChapterCreateRequest {
+	name: string;
+}
+
+export interface ChapterRenameRequest {
+	name: string;
+}
+
 export interface PostItemResponse {
 	postId: number;
 	title: string;
@@ -81,4 +116,8 @@ export interface PublicBlogFeedPostsRequest {
 	slug: string;
 	page: number;
 	size: number;
+	filter: PublicBlogPostsFilter;
 }
+
+export type PublicBlogPostsFilter =
+	{ type: 'all' } | { type: 'chapterId'; chapterId: number } | { type: 'targetCologSlug'; targetCologSlug: string };

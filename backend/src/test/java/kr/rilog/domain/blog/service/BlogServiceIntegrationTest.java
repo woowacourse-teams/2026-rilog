@@ -10,13 +10,17 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogIndexResult;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.vo.Email;
 import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
+import kr.rilog.support.fixure.BlogMemberFixture;
 import kr.rilog.support.fixure.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,6 +50,156 @@ class BlogServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private ChapterRepository chapterRepository;
+
+    @Test
+    @DisplayName("COLOG 인덱스는 블로그 유형과 공개 발행 게시글의 전체 개수를 반환한다.")
+    void readBlogIndexReturnsCologTypeAndTotalPublicPublishedPostCount() {
+        // given
+        User owner = userRepository.save(createCompletedUser(100L, "소유자", "owner"));
+        User member = userRepository.save(createCompletedUser(200L, "멤버", "member"));
+        Blog ownerRilog = blogRepository.save(Blog.createRilog(owner));
+        Blog memberRilog = blogRepository.save(Blog.createRilog(member));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-a", "팀 A"));
+
+        postRepository.save(PostFixture.publicPublishedColog(ownerRilog, colog, owner)); // PUBLIC
+        postRepository.save(PostFixture.publicPublishedColog(memberRilog, colog, member)); // PUBLIC
+        postRepository.save(PostFixture.privatePublishedCologPost(ownerRilog, colog, owner)); // PRIVATE
+        postRepository.save(PostFixture.publicDraftCologPost(ownerRilog, colog, owner)); // DRAFT
+        postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(ownerRilog, colog, owner));
+
+        // when
+        BlogIndexResult result = blogService.readBlogIndex("team-a");
+
+        // then
+        assertThat(result.blogType()).isEqualTo(BlogType.COLOG);
+        assertThat(result.totalCount()).isEqualTo(2L);
+        assertThat(result.cologs()).isNull();
+    }
+
+    @Test
+    @DisplayName("COLOG 인덱스는 모든 챕터와 챕터별 공개 발행 게시글 수를 챕터 순서대로 반환한다.")
+    void readBlogIndexReturnsOrderedCologChapterIndexes() {
+        // given
+        User owner = userRepository.save(createCompletedUser(300L, "소유자", "colog-owner"));
+        Blog rilog = blogRepository.save(Blog.createRilog(owner));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-b", "팀 B"));
+        Chapter firstChapter = chapterRepository.save(Chapter.create(colog, "첫 번째 챕터", 0));
+        Chapter secondChapter = chapterRepository.save(Chapter.create(colog, "두 번째 챕터", 1));
+        Chapter emptyChapter = chapterRepository.saveAndFlush(Chapter.create(colog, "빈 챕터", 2));
+
+        postRepository.save(PostFixture.publicPublishedColog(rilog, colog, owner, firstChapter));
+        postRepository.save(PostFixture.publicPublishedColog(rilog, colog, owner, firstChapter));
+        postRepository.save(PostFixture.publicPublishedColog(rilog, colog, owner, secondChapter));
+        postRepository.save(PostFixture.privatePublishedCologPost(rilog, colog, owner, firstChapter));
+        postRepository.save(PostFixture.publicDraftCologPost(rilog, colog, owner, firstChapter));
+        postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner, firstChapter));
+
+        // when
+        BlogIndexResult result = blogService.readBlogIndex("team-b");
+
+        // then
+        assertThat(result.chapters()).containsExactly(
+                new BlogIndexResult.ChapterIndexResult(firstChapter.getId(), "첫 번째 챕터", 2L),
+                new BlogIndexResult.ChapterIndexResult(secondChapter.getId(), "두 번째 챕터", 1L),
+                new BlogIndexResult.ChapterIndexResult(emptyChapter.getId(), "빈 챕터", 0L)
+        );
+    }
+
+    @Test
+    @DisplayName("RILOG 인덱스는 모든 챕터와 챕터별 공개 발행 게시글 수를 챕터 순서대로 반환한다.")
+    void readBlogIndexReturnsOrderedRilogChapterIndexes() {
+        // given
+        User owner = userRepository.save(createCompletedUser(400L, "러로", "riro-index"));
+        Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner));
+        Chapter firstChapter = chapterRepository.save(Chapter.create(rilog, "Java", 0));
+        Chapter secondChapter = chapterRepository.saveAndFlush(Chapter.create(rilog, "회고", 1));
+
+        postRepository.save(PostFixture.publicPublishedRilogPost(rilog, owner, firstChapter)); // PUBLIC
+        postRepository.save(PostFixture.publicPublishedRilogPost(rilog, owner, firstChapter)); // PUBLIC
+        postRepository.save(PostFixture.privatePublishedRilogPost(rilog, owner, firstChapter)); //  PRIVATE
+        postRepository.save(PostFixture.publicDraftRilogPost(rilog, owner, firstChapter)); // DRAFT
+        postRepository.saveAndFlush(PostFixture.deletedPublicPublishedRilogPost(rilog, owner, firstChapter)); // DELETED
+
+        // when
+        BlogIndexResult result = blogService.readBlogIndex("riro-index");
+
+        // then
+        assertThat(result.chapters()).containsExactly(
+                new BlogIndexResult.ChapterIndexResult(firstChapter.getId(), "Java", 2L),
+                new BlogIndexResult.ChapterIndexResult(secondChapter.getId(), "회고", 0L)
+        );
+    }
+
+    @Test
+    @DisplayName("RILOG 인덱스는 사용자가 속한 모든 활성 COLOG와 사용자의 공개 발행 게시글 수를 반환한다.")
+    void readBlogIndexReturnsActiveCologIndexesWithAuthoredPostCount() {
+        // given
+        User owner = userRepository.save(createCompletedUser(500L, "러로", "riro-teams"));
+        User otherUser = userRepository.save(createCompletedUser(600L, "다른 사용자", "other-user"));
+        Blog rilog = blogRepository.save(Blog.createRilog(owner));
+        Blog otherRilog = blogRepository.save(Blog.createRilog(otherUser));
+        Blog firstColog = blogRepository.save(createColog(otherUser, "first-team", "첫 번째 팀"));
+        Blog secondColog = blogRepository.save(createColog(otherUser, "second-team", "두 번째 팀"));
+        Blog emptyColog = blogRepository.save(createColog(otherUser, "empty-team", "빈 팀"));
+        Blog leftColog = blogRepository.saveAndFlush(createColog(otherUser, "left-team", "탈퇴한 팀"));
+
+        blogMemberRepository.save(BlogMember.invite(
+                firstColog, owner, "Backend", BlogPermission.MEMBER, LocalDateTime.of(2026, 8, 1, 12, 0)
+        ));
+        blogMemberRepository.save(BlogMember.invite(
+                secondColog, owner, "Backend", BlogPermission.MEMBER, LocalDateTime.of(2026, 8, 2, 12, 0)
+        ));
+        blogMemberRepository.save(BlogMember.invite(
+                emptyColog, owner, "Backend", BlogPermission.MEMBER, LocalDateTime.of(2026, 8, 3, 12, 0)
+        ));
+        blogMemberRepository.saveAndFlush(BlogMemberFixture.leftMember(leftColog, owner));
+
+        postRepository.save(PostFixture.publicPublishedColog(rilog, firstColog, owner));
+        postRepository.save(PostFixture.publicPublishedColog(rilog, firstColog, owner));
+        postRepository.save(PostFixture.publicPublishedColog(rilog, secondColog, owner));
+        postRepository.save(PostFixture.publicPublishedColog(otherRilog, firstColog, otherUser));
+        postRepository.save(PostFixture.privatePublishedCologPost(rilog, firstColog, owner));
+        postRepository.save(PostFixture.publicDraftCologPost(rilog, firstColog, owner));
+        postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(rilog, firstColog, owner));
+
+        // when
+        BlogIndexResult result = blogService.readBlogIndex("riro-teams");
+
+        // then
+        assertThat(result.cologs()).containsExactlyInAnyOrder(
+                new BlogIndexResult.CologIndexResult(emptyColog.getId(), "빈 팀", "empty-team","https://example.com/profile.png",0L),
+                new BlogIndexResult.CologIndexResult(secondColog.getId(), "두 번째 팀", "second-team","https://example.com/profile.png",1L),
+                new BlogIndexResult.CologIndexResult(firstColog.getId(), "첫 번째 팀", "first-team","https://example.com/profile.png",2L)
+        );
+    }
+
+    @Test
+    @DisplayName("RILOG 인덱스는 개인 블로그와 COLOG에 작성한 공개 발행 게시글의 전체 개수를 반환한다.")
+    void readBlogIndexReturnsTotalPublicPublishedPostCountAuthoredByRilogUser() {
+        // given
+        User owner = userRepository.save(createCompletedUser(700L, "러로", "riro-total"));
+        Blog rilog = blogRepository.save(Blog.createRilog(owner));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-total", "집계 팀"));
+        blogMemberRepository.saveAndFlush(BlogMember.createOwner(
+                colog, owner, LocalDateTime.of(2026, 8, 1, 12, 0)
+        ));
+
+        postRepository.save(PostFixture.publicPublishedRilogPost(rilog, owner)); // RILOG - PUBLIC
+        postRepository.save(PostFixture.publicPublishedColog(rilog, colog, owner)); // PUBLIC - COLOG
+        postRepository.save(PostFixture.privatePublishedRilogPost(rilog, owner)); // PRIVATE
+        postRepository.save(PostFixture.publicDraftCologPost(rilog, colog, owner)); // DRAFT
+        postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner)); // DELETED
+
+        // when
+        BlogIndexResult result = blogService.readBlogIndex("riro-total");
+
+        // then
+        assertThat(result.blogType()).isEqualTo(BlogType.RILOG);
+        assertThat(result.totalCount()).isEqualTo(2L);
+    }
 
     @Test
     @DisplayName("활성 블로그의 slug와 중복되면 예외가 발생한다")

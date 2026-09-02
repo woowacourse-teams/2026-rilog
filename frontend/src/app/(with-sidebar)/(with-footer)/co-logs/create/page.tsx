@@ -4,7 +4,8 @@ import CologCreateForm from '@/features/colog-create/ui/CologCreateForm';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 export const metadata: Metadata = {
-	title: '팀 생성 | Rilog',
+	robots: { follow: false, index: false },
+	title: '팀 생성',
 };
 
 export default function CologCreatePage() {

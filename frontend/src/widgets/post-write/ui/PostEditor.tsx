@@ -3,14 +3,13 @@
 import type { PostWriteWorkspaceState } from '../hooks/use-post-write-workspace';
 import type { ComponentType, ReactNode } from 'react';
 
-import type { CologOption } from '@/domains/blog/model/colog';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type {
 	PostEditorProps as PostBodyEditorProps,
 	PostWriteEditorContext,
 	UploadPostBodyFile,
 } from '@/features/post-write/model/post-editor';
-import type { EditorDocument } from '@/features/post-write/model/post-publication';
+import type { EditorDocument, PostPublishCologOption } from '@/features/post-write/model/post-publication';
 import DynamicBlockNoteEditor from '@/features/post-write/ui/DynamicBlockNoteEditor';
 import PostBodyField from '@/features/post-write/ui/PostBodyField';
 import PostTitleField from '@/features/post-write/ui/PostTitleField';
@@ -18,20 +17,30 @@ import PublishSettingsModal from '@/features/post-write/ui/PublishSettingsModal'
 
 interface PostEditorProps {
 	children: (editor: PostWriteEditorContext) => ReactNode;
-	cologOptions: CologOption[];
+	cologOptions: PostPublishCologOption[];
+	isCologOptionsPending: boolean;
+	isCologOptionsError: boolean;
+	isCologOptionsRefetching: boolean;
+	userSlug: string | null;
 	workspace: PostWriteWorkspaceState;
 	uploadFile: UploadPostBodyFile;
 	editorComponent?: ComponentType<PostBodyEditorProps>;
 	initialDocument?: EditorDocument;
+	onCologOptionsRefetch: () => void;
 }
 
 export default function PostEditor({
 	children,
 	cologOptions,
+	isCologOptionsPending,
+	isCologOptionsError,
+	isCologOptionsRefetching,
+	userSlug,
 	workspace,
 	uploadFile,
 	editorComponent = DynamicBlockNoteEditor,
 	initialDocument,
+	onCologOptionsRefetch,
 }: PostEditorProps) {
 	const { isDirty, document: postDocument, publication } = workspace;
 
@@ -75,14 +84,20 @@ export default function PostEditor({
 				bodyBlocks={publication.document?.blocks ?? []}
 				defaultImageUrl={POST_THUMBNAIL_FALLBACK_URL}
 				cologOptions={cologOptions}
+				isCologOptionsPending={isCologOptionsPending}
+				isCologOptionsError={isCologOptionsError}
+				isCologOptionsRefetching={isCologOptionsRefetching}
+				userSlug={userSlug}
 				cologError={publication.cologError}
 				publishError={publication.publishError}
 				isPublishing={publication.isPublishing}
 				onClose={publication.close}
 				onCategoryChange={publication.handleCategoryChange}
-				onCoLogChange={publication.handleCoLogChange}
+				onTargetBlogChange={publication.handleTargetBlogChange}
+				onChapterChange={publication.handleChapterChange}
 				onImageChange={publication.handleImageChange}
-				onPublish={() => void publication.publish()}
+				onCologOptionsRefetch={onCologOptionsRefetch}
+				onPublish={(targetBlogType) => void publication.publish(targetBlogType)}
 			/>
 		</div>
 	);

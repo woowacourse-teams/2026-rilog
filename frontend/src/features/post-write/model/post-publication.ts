@@ -8,9 +8,21 @@ export interface EditorDocument {
 	blocks: Block[];
 }
 
+export type TargetBlog = { type: 'RILOG'; slug: string } | { type: 'COLOG'; id: number; slug: string };
+
+export interface PostPublishChapterOption {
+	value: string;
+	label: string;
+}
+
+export interface PostPublishCologOption extends CologOption {
+	chapters: PostPublishChapterOption[];
+}
+
 export interface PublicationSettings {
 	category: PostCategory;
-	blog: CologOption | null;
+	blog: TargetBlog | null;
+	chapterId: number | null;
 	representativeImage: File | null;
 	representativeImageUrl: string | null;
 }

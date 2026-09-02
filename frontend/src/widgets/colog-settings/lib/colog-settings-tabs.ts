@@ -4,6 +4,7 @@ import type { SettingsTabItem } from '@/shared/ui/settings/settings-tabs';
 const COLOG_SETTINGS_TAB_LABELS = {
 	profile: '프로필',
 	members: '멤버 관리',
+	chapters: '챕터 관리',
 	danger: '위험 영역',
 } satisfies Record<CologSettingsTab, string>;
 
