@@ -18,5 +18,8 @@ describe('ImageEditButton', () => {
 
 		expect(screen.getByText('팀 로고 변경')).toBeInTheDocument();
 		expect(onFileChange).toHaveBeenCalledWith(file);
+
+		await user.upload(screen.getByLabelText('팀 로고 변경'), file);
+		expect(onFileChange).toHaveBeenCalledTimes(2);
 	});
 });

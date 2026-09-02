@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostCategory } from '@/domains/post/model/post';
 import type { PublicationSettings, TargetBlog } from '@/features/post-write/model/post-publication';
 
@@ -51,7 +52,7 @@ export function usePostPublicationSettings({ initialSettings, userSlug }: UsePos
 			setSettings((currentSettings) => ({
 				...currentSettings,
 				representativeImage: file,
-				representativeImageUrl: null,
+				representativeImageUrl: file === null ? POST_THUMBNAIL_FALLBACK_URL : null,
 			}));
 		},
 		[revokeSelectedImageUrl],

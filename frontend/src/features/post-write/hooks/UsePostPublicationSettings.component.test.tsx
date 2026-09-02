@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+
 import { usePostPublicationSettings } from './use-post-publication-settings';
 
 afterEach(() => {
@@ -68,7 +70,11 @@ describe('usePostPublicationSettings', () => {
 
 		act(() => result.current.handleImageChange(null));
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:first-cover');
-		expect(result.current.representativeImagePreviewUrl).toBeNull();
+		expect(result.current.representativeImagePreviewUrl).toBe(POST_THUMBNAIL_FALLBACK_URL);
+		expect(result.current.settings).toMatchObject({
+			representativeImage: null,
+			representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+		});
 
 		act(() => result.current.handleImageChange(secondImage));
 		unmount();

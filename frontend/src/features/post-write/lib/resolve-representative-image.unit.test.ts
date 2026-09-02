@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
-import { findFirstBodyImageUrl, resolveRepresentativeImagePreview } from './resolve-representative-image';
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+
+import {
+	findFirstBodyImageUrl,
+	resolveRepresentativeImagePreview,
+	resolveRepresentativeImageSource,
+} from './resolve-representative-image';
 
 interface TestBlockInput {
 	type?: string;
@@ -48,5 +54,24 @@ describe('resolveRepresentativeImagePreview', () => {
 
 	it('선택 이미지와 본문 이미지가 없으면 기본 이미지를 사용한다', () => {
 		expect(resolveRepresentativeImagePreview(null, [createBlock({})], '/default.png')).toBe('/default.png');
+	});
+});
+
+describe('resolveRepresentativeImageSource', () => {
+	it('사용자가 기본 썸네일을 선택하면 본문 이미지가 있어도 default로 분류한다', () => {
+		const bodyBlocks = [createBlock({ type: 'image', props: { url: 'https://example.com/body.png' } })];
+
+		expect(
+			resolveRepresentativeImageSource(
+				{
+					category: 'IT',
+					blog: { type: 'RILOG', slug: 'rilog' },
+					chapterId: null,
+					representativeImage: null,
+					representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+				},
+				bodyBlocks,
+			),
+		).toBe('default');
 	});
 });

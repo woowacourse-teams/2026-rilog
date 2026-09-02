@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 
@@ -42,6 +43,22 @@ describe('buildDraftPublishRequest', () => {
 			chapterId: 12,
 		});
 		expect(uploadRepresentativeImage).not.toHaveBeenCalled();
+	});
+
+	it('대표 이미지를 제거하면 본문 이미지가 있어도 기본 썸네일을 요청에 사용한다', async () => {
+		const command = createCommand();
+		command.document.blocks = [
+			{
+				...paragraph,
+				type: 'image',
+				props: { ...paragraph.props, url: 'https://example.com/body.png' },
+			} as unknown as Block,
+		];
+		command.settings.representativeImageUrl = POST_THUMBNAIL_FALLBACK_URL;
+
+		const request = await buildDraftPublishRequest(command, vi.fn());
+
+		expect(request.thumbnailImageUrl).toBe(POST_THUMBNAIL_FALLBACK_URL);
 	});
 
 	it('대표 이미지 업로드 실패 단계를 보존한다', async () => {
