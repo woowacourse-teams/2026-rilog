@@ -546,5 +546,19 @@ describe('CologSettingsWorkspace', () => {
 		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
 		expect(input).toHaveFocus();
 		expect(input).toHaveAttribute('placeholder', '@user');
+		expect(window.location.pathname + window.location.search).toBe('/@team-rilog/settings?tab=members&invite=true');
+	});
+
+	it('invite=true로 진입하면 초대 모달을 열고 닫을 때 URL에서 invite를 제거한다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/@team-rilog/settings?tab=members&invite=true');
+
+		render(<CologSettingsWorkspace slug="team-rilog" initialTab="members" isMemberInviteInitiallyOpen />);
+
+		expect(screen.getByRole('dialog', { name: '멤버 초대' })).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '취소' }));
+
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: '멤버 초대' })).not.toBeInTheDocument());
+		expect(window.location.pathname + window.location.search).toBe('/@team-rilog/settings?tab=members');
 	});
 });

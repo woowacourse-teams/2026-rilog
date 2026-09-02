@@ -22,7 +22,7 @@ import { useCheckNicknameAvailabilityMutation } from '@/shared/api/availability/
 import { useBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/use-query';
 import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
 import { useSettingsLeaveGuard } from '@/shared/hooks/use-settings-leave-guard';
-import { buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
+import { buildCologMemberInvitePath, buildCologSettingsPath, type CologSettingsTab } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import PageShell from '@/shared/ui/page-shell/PageShell';
@@ -33,6 +33,7 @@ import { COLOG_SETTINGS_TABS } from '../lib/colog-settings-tabs';
 interface CologSettingsWorkspaceProps {
 	slug: string;
 	initialTab?: CologSettingsTab;
+	isMemberInviteInitiallyOpen?: boolean;
 }
 
 interface CologSettingsWorkspaceContentProps {
@@ -40,6 +41,7 @@ interface CologSettingsWorkspaceContentProps {
 	slug: string;
 	initialTab: CologSettingsTab;
 	initialProfile: CologProfileSettingsValue;
+	isMemberInviteInitiallyOpen: boolean;
 }
 
 const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: string }> = {
@@ -83,7 +85,11 @@ const getChangedProfileFields = (
 	return changedFields;
 };
 
-export default function CologSettingsWorkspace({ slug, initialTab = 'profile' }: CologSettingsWorkspaceProps) {
+export default function CologSettingsWorkspace({
+	slug,
+	initialTab = 'profile',
+	isMemberInviteInitiallyOpen = false,
+}: CologSettingsWorkspaceProps) {
 	// TODO: profile 섹션 내부로 이동
 	const profileQuery = useBlogPublicProfileQuery({
 		slug,
@@ -126,6 +132,7 @@ export default function CologSettingsWorkspace({ slug, initialTab = 'profile' }:
 			slug={slug}
 			initialTab={initialTab}
 			initialProfile={profileQuery.data.profile}
+			isMemberInviteInitiallyOpen={isMemberInviteInitiallyOpen}
 		/>
 	);
 }
@@ -135,6 +142,7 @@ function CologSettingsWorkspaceContent({
 	slug,
 	initialTab,
 	initialProfile,
+	isMemberInviteInitiallyOpen,
 }: CologSettingsWorkspaceContentProps) {
 	const [activeTab, setActiveTab] = useState<CologSettingsTab>(initialTab);
 	const [savedProfile, setSavedProfile] = useState(() => ({ ...initialProfile }));
@@ -143,7 +151,10 @@ function CologSettingsWorkspaceContent({
 	const profileForm = useCologProfileForm({ initialValue: savedProfile });
 	const chapterManagement = useChapterManagement({ slug });
 	const { data: initialMembers } = useCologMembersQuery({ slug, select: mapCologMembersResponse });
-	const memberDrafts = useCologMemberDrafts({ initialMembers });
+	const memberDrafts = useCologMemberDrafts({
+		initialMembers,
+		isInviteModalInitiallyOpen: isMemberInviteInitiallyOpen,
+	});
 	const saveCologProfile = useSaveCologProfile();
 	const nameAvailability = useCheckNicknameAvailabilityMutation();
 
@@ -161,12 +172,21 @@ function CologSettingsWorkspaceContent({
 		chapterManagement.isSaving ||
 		chapterManagement.draftChapters.some((draft) => draft.name.trim().length === 0);
 
+	const handleInviteModalOpen = () => {
+		memberDrafts.setIsInviteModalOpen(true);
+		window.history.replaceState(window.history.state, '', buildCologMemberInvitePath(slug));
+	};
+	const handleInviteModalClose = () => {
+		window.history.replaceState(window.history.state, '', buildCologSettingsPath(slug, 'members'));
+	};
+
 	const commitTabChange = useCallback(
 		(nextTab: CologSettingsTab, path: string) => {
 			profileForm.setValue(savedProfile);
 			nameAvailability.reset();
 			setIsNameAvailabilityRequired(false);
 			memberDrafts.handleCancelEditing();
+			memberDrafts.setIsInviteModalOpen(false);
 			chapterManagement.handleCancelEditing();
 			chapterManagement.setIsCreateModalOpen(false);
 			setActiveTab(nextTab);
@@ -296,12 +316,7 @@ function CologSettingsWorkspaceContent({
 					>
 						멤버 정보 수정
 					</Button> */}
-					<Button
-						type="button"
-						size="md"
-						className="w-full sm:w-30"
-						onClick={() => memberDrafts.setIsInviteModalOpen(true)}
-					>
+					<Button type="button" size="md" className="w-full sm:w-30" onClick={handleInviteModalOpen}>
 						+ 멤버 초대
 					</Button>
 				</>
@@ -410,7 +425,12 @@ function CologSettingsWorkspaceContent({
 					</>
 				)}
 				{activeTab === 'members' && (
-					<CologMemberManagementSection cologId={cologId} slug={slug} drafts={memberDrafts} />
+					<CologMemberManagementSection
+						cologId={cologId}
+						slug={slug}
+						drafts={memberDrafts}
+						onInviteModalClose={handleInviteModalClose}
+					/>
 				)}
 				{activeTab === 'chapters' && <CologChapterManagementSection management={chapterManagement} />}
 				{activeTab === 'danger' && <CologDangerZoneSection slug={slug} />}

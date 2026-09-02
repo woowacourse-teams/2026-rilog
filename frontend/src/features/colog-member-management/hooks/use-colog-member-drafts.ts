@@ -11,15 +11,19 @@ export type CologMemberDraftChange = Partial<Pick<CologMember, 'permission' | 'b
 
 interface UseCologMemberDraftsOptions {
 	initialMembers?: CologMember[];
+	isInviteModalInitiallyOpen?: boolean;
 }
 
-export function useCologMemberDrafts({ initialMembers }: UseCologMemberDraftsOptions = {}) {
+export function useCologMemberDrafts({
+	initialMembers,
+	isInviteModalInitiallyOpen = false,
+}: UseCologMemberDraftsOptions = {}) {
 	const hasInitializedMembers = useRef(initialMembers !== undefined);
 	// TODO: 멤버 수정 api 연동 시 state 대신 query 기반으로 변경
 	const [members, setMembers] = useState(() => initialMembers?.map((member) => ({ ...member })) ?? []);
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
-	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+	const [isInviteModalOpen, setIsInviteModalOpen] = useState(isInviteModalInitiallyOpen);
 
 	useEffect(() => {
 		if (initialMembers === undefined || hasInitializedMembers.current) {

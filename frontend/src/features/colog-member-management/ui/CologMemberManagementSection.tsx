@@ -23,6 +23,7 @@ interface CologMemberManagementSectionProps {
 	cologId: number;
 	slug: string;
 	drafts: ReturnType<typeof useCologMemberDrafts>;
+	onInviteModalClose?: () => void;
 }
 
 const REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 내보내지 못했어요. 다시 시도해 주세요.';
@@ -48,7 +49,12 @@ const getInvitationErrorCode = (error: unknown) => {
 	return getAnalyticsErrorProperties(error).errorCode;
 };
 
-export default function CologMemberManagementSection({ cologId, slug, drafts }: CologMemberManagementSectionProps) {
+export default function CologMemberManagementSection({
+	cologId,
+	slug,
+	drafts,
+	onInviteModalClose,
+}: CologMemberManagementSectionProps) {
 	const {
 		displayedMembers,
 		isEditing,
@@ -124,6 +130,11 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 		setMemberToRemove(null);
 	};
 
+	const handleInviteModalClose = () => {
+		setIsInviteModalOpen(false);
+		onInviteModalClose?.();
+	};
+
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
 			<form id="member-settings-form" onSubmit={handleSave}>
@@ -186,7 +197,7 @@ export default function CologMemberManagementSection({ cologId, slug, drafts }: 
 			<MemberInviteModal
 				slug={slug}
 				open={isInviteModalOpen}
-				onClose={() => setIsInviteModalOpen(false)}
+				onClose={handleInviteModalClose}
 				onInvite={(candidates) => void handleInvite(candidates)}
 			/>
 

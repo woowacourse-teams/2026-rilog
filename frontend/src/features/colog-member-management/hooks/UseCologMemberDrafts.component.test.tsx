@@ -20,6 +20,12 @@ const MEMBER: CologMember = {
 };
 
 describe('useCologMemberDrafts', () => {
+	it('요청받은 경우 초대 모달을 열린 상태로 초기화한다', () => {
+		const { result } = renderHook(() => useCologMemberDrafts({ isInviteModalInitiallyOpen: true }));
+
+		expect(result.current.isInviteModalOpen).toBe(true);
+	});
+
 	it('비동기로 도착한 최초 멤버 목록을 초기 상태에 반영한다', () => {
 		const initialProps: HookProps = { initialMembers: undefined };
 		const { result, rerender } = renderHook(

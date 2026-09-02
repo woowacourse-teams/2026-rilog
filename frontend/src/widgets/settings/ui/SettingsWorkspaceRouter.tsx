@@ -20,6 +20,7 @@ import RilogSettingsWorkspace from '@/widgets/rilog-settings/ui/RilogSettingsWor
 interface SettingsWorkspaceRouterProps {
 	slug: string;
 	tab?: string | string[];
+	invite?: string | string[];
 }
 
 type SettingsRoute =
@@ -44,13 +45,17 @@ const getSettingsRoute = (
 	return null;
 };
 
-export default function SettingsWorkspaceRouter({ slug, tab }: SettingsWorkspaceRouterProps) {
+export default function SettingsWorkspaceRouter({ slug, tab, invite }: SettingsWorkspaceRouterProps) {
 	const profileQuery = useBlogPublicProfileQuery({ slug });
 	const requestedTab = Array.isArray(tab) ? tab[0] : tab;
 	const profile = profileQuery.data?.data;
 	const settingsRoute = getSettingsRoute(profile?.type, slug, tab);
 	const normalizedTab = settingsRoute?.initialTab;
 	const canonicalPath = settingsRoute?.canonicalPath;
+	const isMemberInviteRequested =
+		settingsRoute?.type === 'COLOG' &&
+		settingsRoute.initialTab === 'members' &&
+		(Array.isArray(invite) ? invite[0] : invite) === 'true';
 
 	useEffect(() => {
 		if (canonicalPath !== undefined && requestedTab !== normalizedTab) {
@@ -89,7 +94,11 @@ export default function SettingsWorkspaceRouter({ slug, tab }: SettingsWorkspace
 	if (settingsRoute.type === 'COLOG') {
 		return (
 			<SettingsAccessGuard type="COLOG" slug={slug}>
-				<CologSettingsWorkspace slug={slug} initialTab={settingsRoute.initialTab} />
+				<CologSettingsWorkspace
+					slug={slug}
+					initialTab={settingsRoute.initialTab}
+					isMemberInviteInitiallyOpen={isMemberInviteRequested}
+				/>
 			</SettingsAccessGuard>
 		);
 	}
