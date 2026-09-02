@@ -62,6 +62,18 @@ describe('analytics events', () => {
 		});
 	});
 
+	it('Co-log 멤버 초대 진입 위치를 canonical 속성으로 전송한다', () => {
+		analytics.cologMemberInvitationEntryClicked({ entrySource: 'member_aside' });
+		analytics.cologMemberInvitationEntryClicked({ entrySource: 'settings' });
+
+		expect(captureMock).toHaveBeenNthCalledWith(1, 'colog member invitation entry clicked', {
+			entry_source: 'member_aside',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'colog member invitation entry clicked', {
+			entry_source: 'settings',
+		});
+	});
+
 	it('개인 글 발행은 게시글 ID를 PostHog post_id로 전송한다', () => {
 		analytics.postPublished({
 			postId: '77',

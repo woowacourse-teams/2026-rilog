@@ -1,3 +1,6 @@
+'use client';
+
+import { analytics } from '@/features/analytics/model/events';
 import { buildCologMemberInvitePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
@@ -13,6 +16,7 @@ export default function CologMemberInviteButton({ slug }: CologMemberInviteButto
 			variant="secondary"
 			size="icon"
 			className="rounded-full! border-dashed bg-white text-title-1"
+			onClick={() => analytics.cologMemberInvitationEntryClicked({ entrySource: 'member_aside' })}
 		>
 			<span aria-hidden="true">+</span>
 		</ButtonLink>

@@ -173,6 +173,7 @@ function CologSettingsWorkspaceContent({
 		chapterManagement.draftChapters.some((draft) => draft.name.trim().length === 0);
 
 	const handleInviteModalOpen = () => {
+		analytics.cologMemberInvitationEntryClicked({ entrySource: 'settings' });
 		memberDrafts.setIsInviteModalOpen(true);
 		window.history.replaceState(window.history.state, '', buildCologMemberInvitePath(slug));
 	};

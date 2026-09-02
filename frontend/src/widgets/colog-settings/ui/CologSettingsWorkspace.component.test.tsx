@@ -12,6 +12,7 @@ import { renderWithQuery as render } from '@/test/render-with-query';
 import CologSettingsWorkspace from './CologSettingsWorkspace';
 
 const {
+	cologMemberInvitationEntryClickedMock,
 	cologProfileUpdatedMock,
 	mutateAsyncMock,
 	refetchProfileMock,
@@ -21,6 +22,7 @@ const {
 	useCologMembersQueryMock,
 	useSaveCologProfileMock,
 } = vi.hoisted(() => ({
+	cologMemberInvitationEntryClickedMock: vi.fn(),
 	cologProfileUpdatedMock: vi.fn(),
 	mutateAsyncMock: vi.fn(),
 	refetchProfileMock: vi.fn(),
@@ -53,7 +55,12 @@ vi.mock('@/features/colog-profile-management/hooks/use-save-colog-profile', () =
 
 vi.mock('@/shared/api/availability/api');
 
-vi.mock('@/features/analytics/model/events', () => ({ analytics: { cologProfileUpdated: cologProfileUpdatedMock } }));
+vi.mock('@/features/analytics/model/events', () => ({
+	analytics: {
+		cologMemberInvitationEntryClicked: cologMemberInvitationEntryClickedMock,
+		cologProfileUpdated: cologProfileUpdatedMock,
+	},
+}));
 
 const PROFILE_SETTINGS: CologProfileSettingsValue = {
 	name: 'API 리로그',
@@ -89,6 +96,7 @@ describe('CologSettingsWorkspace', () => {
 		];
 
 		mutateAsyncMock.mockReset();
+		cologMemberInvitationEntryClickedMock.mockReset();
 		cologProfileUpdatedMock.mockReset();
 		refetchProfileMock.mockClear();
 		replaceMock.mockClear();
@@ -539,6 +547,7 @@ describe('CologSettingsWorkspace', () => {
 		await user.click(screen.getByRole('tab', { name: '멤버 관리' }));
 		await user.click(screen.getByRole('button', { name: '+ 멤버 초대' }));
 
+		expect(cologMemberInvitationEntryClickedMock).toHaveBeenCalledWith({ entrySource: 'settings' });
 		const [memberQueryOptions] = useCologMembersQueryMock.mock.calls[0] as [{ slug: string; select: unknown }];
 		expect(memberQueryOptions.slug).toBe('team-rilog');
 		expect(memberQueryOptions.select).toBeTypeOf('function');
