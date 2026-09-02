@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { createPostMetadata, getPostCanonicalPath } from '@/features/post-detail/lib/create-post-metadata';
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
 import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
+import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import PostDetail from '@/widgets/post-detail/PostDetail';
 
 import './post-detail.css';
@@ -35,7 +36,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 	const post = await getPublicPostDetail(parsePostId(postId));
 	if (post === null) notFound();
 	const canonical = getPostCanonicalPath(post);
-	if (slug !== `@${post.blog.slug}`) permanentRedirect(canonical);
+	if (stripAtPrefix(slug) !== post.blog.slug) permanentRedirect(canonical);
 
 	return <PostDetail post={post} />;
 }
