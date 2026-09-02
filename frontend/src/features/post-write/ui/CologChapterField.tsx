@@ -19,7 +19,7 @@ export default function CologChapterField({
 	const selectedChapterValue = selectedChapterId === null ? '' : String(selectedChapterId);
 	const statusMessage =
 		chapters === null
-			? '코로그를 선택하면 챕터 목록을 확인할 수 있어요.'
+			? 'Colog를 선택하면 챕터 목록을 확인할 수 있어요.'
 			: chapters.length === 0
 				? '등록된 챕터가 없습니다.'
 				: undefined;

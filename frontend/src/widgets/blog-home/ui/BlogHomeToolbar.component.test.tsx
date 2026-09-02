@@ -68,14 +68,14 @@ describe('BlogHomeToolbar', () => {
 
 		const trigger = screen.getByRole('button', { name: '인덱스 보기' });
 		expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
-		expect(screen.queryByRole('navigation', { name: '시리즈와 코로그 탐색' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('navigation', { name: '시리즈와 Colog 탐색' })).not.toBeInTheDocument();
 
 		await user.click(trigger);
 
 		const dialog = screen.getByRole('dialog', { name: '인덱스' });
-		const navigation = within(dialog).getByRole('navigation', { name: '시리즈와 코로그 탐색' });
+		const navigation = within(dialog).getByRole('navigation', { name: '시리즈와 Colog 탐색' });
 		expect(within(navigation).getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
-		expect(within(navigation).getByRole('heading', { name: '코로그' })).toBeInTheDocument();
+		expect(within(navigation).getByRole('heading', { name: 'Colog' })).toBeInTheDocument();
 		expect(within(navigation).getByRole('link', { name: 'Rilog, 글 6개' })).toBeInTheDocument();
 	});
 

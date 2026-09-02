@@ -151,8 +151,8 @@ export default function BlogHomeNavigation({
 	}
 
 	return (
-		<nav aria-label="시리즈와 코로그 탐색" className="w-full">
-			<h2 className="sr-only">시리즈와 코로그</h2>
+		<nav aria-label="시리즈와 Colog 탐색" className="w-full">
+			<h2 className="sr-only">시리즈와 Colog</h2>
 			{allPostsRow}
 			<section aria-labelledby="series-navigation-title" className="mt-6">
 				<h3 id="series-navigation-title" className="mb-1 text-body-2 font-semibold text-text-primary">
@@ -175,7 +175,7 @@ export default function BlogHomeNavigation({
 
 			<section aria-labelledby="colog-navigation-title" className="mt-6">
 				<h3 id="colog-navigation-title" className="mb-1 text-body-2 font-semibold text-text-primary">
-					코로그
+					Colog
 				</h3>
 				<div className="flex flex-col">
 					{index.cologIndexes.map((colog) => (
@@ -189,7 +189,7 @@ export default function BlogHomeNavigation({
 						/>
 					))}
 					{index.cologIndexes.length === 0 ? (
-						<EmptyIndexMessage>아직 코로그에 작성한 글이 없습니다.</EmptyIndexMessage>
+						<EmptyIndexMessage>아직 Colog에 작성한 글이 없습니다.</EmptyIndexMessage>
 					) : null}
 				</div>
 			</section>

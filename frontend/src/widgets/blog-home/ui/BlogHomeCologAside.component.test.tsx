@@ -32,9 +32,9 @@ describe('BlogHomeCologAside', () => {
 	it('API 코로그 이미지와 slug로 aside 링크를 제공하고 null 이미지는 fallback한다', () => {
 		render(<BlogHomeCologAside slug="jetproc" />);
 
-		const cologs = screen.getByRole('region', { name: 'Cologs' });
+		const cologs = screen.getByRole('region', { name: 'Colog' });
 		expect(within(cologs).getByRole('img', { name: '우아한형제들 로고' })).toBeInTheDocument();
-		expect(within(cologs).getByRole('link', { name: '우아한형제들 코로그로 이동' })).toHaveAttribute(
+		expect(within(cologs).getByRole('link', { name: '우아한형제들 Colog로 이동' })).toHaveAttribute(
 			'href',
 			'/@woowa-bros',
 		);
@@ -50,6 +50,6 @@ describe('BlogHomeCologAside', () => {
 
 		render(<BlogHomeCologAside slug="jetproc" />);
 
-		expect(screen.getByText('아직 참여한 코로그가 없습니다.')).toBeInTheDocument();
+		expect(screen.getByText('아직 참여한 Colog가 없습니다.')).toBeInTheDocument();
 	});
 });

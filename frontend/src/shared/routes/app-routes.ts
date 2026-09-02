@@ -1,6 +1,6 @@
 export const APP_ROUTES = {
 	feeds: '/feeds',
-	cologCreate: '/co-logs/create',
+	cologCreate: '/colog/create',
 	signUp: '/sign-up',
 	write: '/write',
 } as const;
