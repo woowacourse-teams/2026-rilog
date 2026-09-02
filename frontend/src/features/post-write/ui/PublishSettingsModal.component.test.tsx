@@ -354,7 +354,7 @@ describe('PublishSettingsModal', () => {
 		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
 		expect(seriesNameInput).toHaveFocus();
-		expect(seriesNameInput).toHaveAttribute('placeholder', '새로운 시리즈 이름을 입력하세요.');
+		expect(seriesNameInput).toHaveAttribute('placeholder', '시리즈 이름을 입력하고 Enter를 눌러 추가하세요.');
 
 		await user.type(seriesNameInput, '새 시리즈{Enter}');
 		await waitFor(() =>

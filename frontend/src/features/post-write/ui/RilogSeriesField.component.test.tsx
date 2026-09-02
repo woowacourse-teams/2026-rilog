@@ -67,6 +67,29 @@ describe('RilogSeriesField', () => {
 		expect(screen.getByRole('status')).toHaveTextContent('시리즈 목록을 확인할 수 없어요.');
 	});
 
+	it('새 시리즈 입력과 추가 버튼을 함께 제공한다', async () => {
+		const user = userEvent.setup();
+		const createChapter = vi.spyOn(blogsApi, 'createBlogChapter').mockResolvedValue({
+			status: 201,
+			message: '챕터를 생성했습니다.',
+			data: { chapterId: 19, name: '새 시리즈', order: 2 },
+		});
+		renderField();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+
+		const input = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		const addButton = screen.getByRole('button', { name: '추가' });
+		expect(input).toHaveAttribute('placeholder', '시리즈 이름을 입력하고 Enter를 눌러 추가하세요.');
+		expect(addButton).toBeDisabled();
+
+		await user.type(input, '새 시리즈');
+		expect(addButton).toBeEnabled();
+		await user.click(addButton);
+
+		await waitFor(() => expect(createChapter).toHaveBeenCalledWith('personal-blog', { name: '새 시리즈' }));
+	});
+
 	it('새 시리즈 생성 중 필드를 잠그고 생성한 chapterId를 선택값으로 전달한다', async () => {
 		const user = userEvent.setup();
 		let resolveCreateChapter!: (response: {
