@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	APP_ROUTES,
 	buildBlogHomePath,
+	buildCologMemberInvitePath,
 	buildCologSettingsPath,
 	buildDraftWritePath,
 	buildRilogSettingsPath,
@@ -39,6 +40,10 @@ describe('app routes', () => {
 		expect(buildCologSettingsPath('rilog', 'members')).toBe('/@rilog/settings?tab=members');
 		expect(buildCologSettingsPath('rilog', 'chapters')).toBe('/@rilog/settings?tab=chapters');
 		expect(buildCologSettingsPath('rilog', 'danger')).toBe('/@rilog/settings?tab=danger');
+	});
+
+	it('멤버 초대 모달을 여는 코로그 설정 경로를 만든다', () => {
+		expect(buildCologMemberInvitePath('rilog')).toBe('/@rilog/settings?tab=members&invite=true');
 	});
 
 	it('지원하지 않는 설정 탭은 프로필 탭으로 해석한다', () => {

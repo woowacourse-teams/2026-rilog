@@ -6,10 +6,23 @@ import type { BlogMemberResponse } from '@/shared/api/cologs/types';
 
 import CologMemberAside from './CologMemberAside';
 
-const useCologMembersQueryMock = vi.hoisted(() => vi.fn());
+const { useCologMembersQueryMock, useCurrentCologPermissionMock } = vi.hoisted(() => ({
+	useCologMembersQueryMock: vi.fn(),
+	useCurrentCologPermissionMock: vi.fn(),
+}));
+
+vi.mock('@/features/colog-settings-access/hooks/use-current-colog-permission', () => ({
+	useCurrentCologPermission: useCurrentCologPermissionMock,
+}));
 
 vi.mock('@/shared/api/cologs/queries/members/use-query', () => ({
 	useCologMembersQuery: useCologMembersQueryMock,
+}));
+
+vi.mock('./CologMemberInviteButton', () => ({
+	default: function MockCologMemberInviteButton() {
+		return <button type="button">멤버 추가</button>;
+	},
 }));
 
 const MEMBERS: BlogMemberResponse[] = [
@@ -37,6 +50,7 @@ const MEMBERS: BlogMemberResponse[] = [
 
 describe('CologMemberAside', () => {
 	it('API 멤버 응답을 우측 멤버 목록에 표시한다', () => {
+		useCurrentCologPermissionMock.mockReturnValue('OWNER');
 		useCologMembersQueryMock.mockReturnValue({
 			data: { status: 200, message: 'OK', data: MEMBERS },
 			isPending: false,
@@ -48,6 +62,20 @@ describe('CologMemberAside', () => {
 		const members = screen.getByRole('region', { name: 'Members' });
 		expect(within(members).getByRole('img', { name: '새봄 프로필' })).toBeInTheDocument();
 		expect(within(members).getByRole('img', { name: '여름 프로필' })).toBeInTheDocument();
+		expect(within(members).getByRole('button', { name: '멤버 추가' })).toBeInTheDocument();
+	});
+
+	it('일반 멤버에게 멤버 추가 action을 표시하지 않는다', () => {
+		useCurrentCologPermissionMock.mockReturnValue('MEMBER');
+		useCologMembersQueryMock.mockReturnValue({
+			data: { status: 200, message: 'OK', data: MEMBERS },
+			isPending: false,
+			isError: false,
+		});
+
+		render(<CologMemberAside slug="rilog-team" />);
+
+		expect(screen.queryByRole('button', { name: '멤버 추가' })).not.toBeInTheDocument();
 	});
 
 	it('불러오는 동안 상태를 안내한다', () => {

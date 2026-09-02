@@ -5,15 +5,15 @@ import SettingsWorkspaceRouter from '@/widgets/settings/ui/SettingsWorkspaceRout
 
 interface CologSettingsPageProps {
 	params: Promise<{ slug: string }>;
-	searchParams: Promise<{ tab?: string | string[] }>;
+	searchParams: Promise<{ tab?: string | string[]; invite?: string | string[] }>;
 }
 
 export default async function CologSettingsPage({ params, searchParams }: CologSettingsPageProps) {
 	const { slug } = await params;
-	const { tab } = await searchParams;
+	const { tab, invite } = await searchParams;
 	if (!hasBlogSlugPrefix(slug)) {
 		notFound();
 	}
 
-	return <SettingsWorkspaceRouter slug={slug} tab={tab} />;
+	return <SettingsWorkspaceRouter slug={slug} tab={tab} invite={invite} />;
 }

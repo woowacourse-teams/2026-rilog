@@ -67,10 +67,21 @@ vi.mock('./CologMemberRow', () => ({
 }));
 
 vi.mock('./MemberInviteModal', () => ({
-	default: ({ onInvite }: { onInvite?: (candidates: Array<{ userId: number; slug: string }>) => void }) => (
-		<button type="button" onClick={() => onInvite?.([{ userId: 7, slug: 'new-member' }])}>
-			초대 제출
-		</button>
+	default: ({
+		onInvite,
+		onClose,
+	}: {
+		onInvite?: (candidates: Array<{ userId: number; slug: string }>) => void;
+		onClose: () => void;
+	}) => (
+		<>
+			<button type="button" onClick={() => onInvite?.([{ userId: 7, slug: 'new-member' }])}>
+				초대 제출
+			</button>
+			<button type="button" onClick={onClose}>
+				초대 닫기
+			</button>
+		</>
 	),
 }));
 
@@ -97,6 +108,25 @@ describe('CologMemberManagementSection', () => {
 			mutateAsync: removeMemberMock,
 			reset: resetRemoveMemberMock,
 		});
+	});
+
+	it('초대 모달을 닫고 외부에 닫힘 이벤트를 알린다', async () => {
+		const user = userEvent.setup();
+		const setIsInviteModalOpen = vi.fn();
+		const onInviteModalClose = vi.fn();
+
+		render(
+			<CologMemberManagementSection
+				cologId={11}
+				slug="rilog"
+				drafts={{ ...drafts, setIsInviteModalOpen }}
+				onInviteModalClose={onInviteModalClose}
+			/>,
+		);
+		await user.click(screen.getByRole('button', { name: '초대 닫기' }));
+
+		expect(setIsInviteModalOpen).toHaveBeenCalledWith(false);
+		expect(onInviteModalClose).toHaveBeenCalledOnce();
 	});
 
 	it('확인 후 선택한 멤버를 내보내고 화면 목록에서 제거한다', async () => {

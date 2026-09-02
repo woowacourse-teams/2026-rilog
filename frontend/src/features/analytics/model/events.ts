@@ -2,6 +2,7 @@ import type {
 	AnalyticsErrorProperties,
 	BlockCountBucket,
 	CologCreationEntrySource,
+	CologMemberInvitationEntrySource,
 	ContentLoadPhase,
 	ContentLoadSurface,
 	EditingTimeBucket,
@@ -176,6 +177,8 @@ export const analytics = {
 		}),
 	cologCreationFailed: ({ errorCode, invalidFields }: { errorCode: string; invalidFields: string[] }) =>
 		captureAnalyticsEvent('colog creation failed', { error_code: errorCode, invalid_fields: invalidFields }),
+	cologMemberInvitationEntryClicked: ({ entrySource }: { entrySource: CologMemberInvitationEntrySource }) =>
+		captureAnalyticsEvent('colog member invitation entry clicked', { entry_source: entrySource }),
 	cologMemberInvitationStarted: ({ cologId, candidateCount }: { cologId: number; candidateCount: number }) =>
 		captureAnalyticsEvent('colog member invitation started', { colog_id: cologId, candidate_count: candidateCount }),
 	cologMemberInvitationCompleted: ({

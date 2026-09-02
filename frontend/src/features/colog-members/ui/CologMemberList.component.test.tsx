@@ -32,4 +32,22 @@ describe('CologMemberList', () => {
 
 		expect(screen.getByText('아직 참여한 멤버가 없습니다.')).toBeInTheDocument();
 	});
+
+	it('action을 멤버 목록의 마지막 항목으로 표시한다', () => {
+		render(<CologMemberList members={MEMBER_FIXTURES} action={<button type="button">멤버 추가</button>} />);
+
+		const memberSection = screen.getByRole('region', { name: 'Members' });
+		const listItems = within(memberSection).getAllByRole('listitem');
+		const action = within(memberSection).getByRole('button', { name: '멤버 추가' });
+
+		expect(listItems).toHaveLength(3);
+		expect(listItems.at(-1)).toContainElement(action);
+	});
+
+	it('멤버가 없어도 action이 있으면 action을 표시한다', () => {
+		render(<CologMemberList members={[]} action={<button type="button">멤버 추가</button>} />);
+
+		expect(screen.getByRole('button', { name: '멤버 추가' })).toBeInTheDocument();
+		expect(screen.queryByText('아직 참여한 멤버가 없습니다.')).not.toBeInTheDocument();
+	});
 });

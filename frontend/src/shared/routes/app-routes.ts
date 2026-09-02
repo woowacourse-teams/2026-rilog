@@ -39,6 +39,8 @@ export const hasBlogSlugPrefix = (slug: string) => decodeSegment(slug).trim().st
 export const buildCologSettingsPath = (slug: string, tab: CologSettingsTab) =>
 	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
 
+export const buildCologMemberInvitePath = (slug: string) => `${buildCologSettingsPath(slug, 'members')}&invite=true`;
+
 export const buildRilogSettingsPath = (slug: string, tab: RilogSettingsTab) =>
 	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
 
