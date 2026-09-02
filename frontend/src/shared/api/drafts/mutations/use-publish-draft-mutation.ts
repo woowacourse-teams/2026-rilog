@@ -19,14 +19,13 @@ export const usePublishDraftMutation = () => {
 
 	return useMutation({
 		mutationFn: ({ draftId, request }: PublishDraftVariables) => publishDraft(draftId, request),
-		onSuccess: (_, { draftId, request }) => {
+		onSuccess: (_, { draftId }) => {
 			queryClient.removeQueries({ queryKey: draftsQueryKeys.detail(draftId), exact: true });
 
 			return Promise.all([
 				queryClient.invalidateQueries({ queryKey: draftsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
-				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.publicBlogPosts(request.slug) }),
-				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.publicProfile(request.slug) }),
+				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: postsQueryKeys.count() }),
 			]);
 		},

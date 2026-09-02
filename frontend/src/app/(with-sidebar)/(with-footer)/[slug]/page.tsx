@@ -1,37 +1,41 @@
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 
-import { mapBlogPublicProfileResponse } from '@/features/blog-profile/lib/map-blog-public-profile-response';
-import { readBlogPublicProfile } from '@/shared/api/blogs/api';
+import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import BlogHome from '@/widgets/blog-home/ui/BlogHome';
 
 interface BlogHomePageProps {
 	params: Promise<{ slug: string }>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function BlogHomePage({ params }: BlogHomePageProps) {
-	const { slug } = await params;
+export default async function BlogHomePage({ params, searchParams }: BlogHomePageProps) {
+	const [{ slug }, resolvedSearchParams] = await Promise.all([params, searchParams]);
 	if (!hasBlogSlugPrefix(slug)) {
 		notFound();
 	}
 
 	const normalizedSlug = stripAtPrefix(slug);
-	let profileResponse;
+	const queryClient = new QueryClient();
+	const initialState = await prefetchBlogHomeInitialState(queryClient, {
+		slug: normalizedSlug,
+		searchParams: resolvedSearchParams,
+	});
 
-	try {
-		profileResponse = await readBlogPublicProfile({ slug: normalizedSlug });
-	} catch {
+	if (initialState.status === 'not-found') {
 		notFound();
 	}
 
-	if (profileResponse.data === undefined) {
-		notFound();
-	}
-
-	if (profileResponse.data.type !== 'COLOG' && profileResponse.data.type !== 'RILOG') {
-		notFound();
-	}
-
-	return <BlogHome profile={mapBlogPublicProfileResponse(profileResponse.data)} />;
+	return (
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<BlogHome
+				profile={initialState.profile}
+				filter={initialState.filter}
+				initialIndexRequestFailed={initialState.isInitialIndexRequestFailed}
+				initialPostsRequestFailed={initialState.isInitialPostsRequestFailed}
+			/>
+		</HydrationBoundary>
+	);
 }

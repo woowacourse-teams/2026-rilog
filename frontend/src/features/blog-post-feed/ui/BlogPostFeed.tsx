@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
 import BlogPostList from '@/features/blog-post-feed/ui/BlogPostList';
 import { deduplicatePostFeedItems } from '@/features/post-feed/lib/deduplicate-post-feed-items';
+import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import Button from '@/shared/ui/button/Button';
 
 import { usePublicBlogPosts } from '../hooks/use-public-blog-posts';
@@ -13,13 +14,25 @@ import BlogPostFeedSkeleton from './BlogPostFeedSkeleton';
 
 interface BlogPostFeedProps {
 	slug: string;
+	filter: PublicBlogPostsFilter;
 	initialRequestFailed?: boolean;
 }
 
-export default function BlogPostFeed({ slug, initialRequestFailed = false }: BlogPostFeedProps) {
-	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
+export default function BlogPostFeed({ slug, filter, initialRequestFailed = false }: BlogPostFeedProps) {
+	const filterIdentity =
+		filter.type === 'chapterId'
+			? `${filter.type}:${filter.chapterId}`
+			: filter.type === 'targetCologSlug'
+				? `${filter.type}:${filter.targetCologSlug}`
+				: filter.type;
+	const queryIdentity = `${slug}:${filterIdentity}:${initialRequestFailed}`;
+	const [queryControl, setQueryControl] = useState({
+		identity: queryIdentity,
+		isEnabled: !initialRequestFailed,
+	});
+	const isQueryEnabled = queryControl.identity === queryIdentity ? queryControl.isEnabled : !initialRequestFailed;
 	const sentinelRef = useRef<HTMLDivElement>(null);
-	const query = usePublicBlogPosts({ slug, isEnabled: isQueryEnabled });
+	const query = usePublicBlogPosts({ slug, filter, isEnabled: isQueryEnabled });
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
 
 	const posts = useMemo(
@@ -65,7 +78,7 @@ export default function BlogPostFeed({ slug, initialRequestFailed = false }: Blo
 						variant="secondary"
 						onClick={() => {
 							if (!isQueryEnabled) {
-								setIsQueryEnabled(true);
+								setQueryControl({ identity: queryIdentity, isEnabled: true });
 								return;
 							}
 							void query.refetch();

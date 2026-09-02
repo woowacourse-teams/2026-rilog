@@ -1,5 +1,6 @@
 import type {
 	BlogProfileUpdateRequest,
+	BlogIndexResponse,
 	BlogPublicProfileResponse,
 	ChapterCreateRequest,
 	ChapterRenameRequest,
@@ -25,8 +26,20 @@ export const readBlogPublicProfile = ({ slug }: { slug: string }): Promise<ApiRe
 	return apiClient.get<ApiResponse<BlogPublicProfileResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}`);
 };
 
-export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsRequest) => {
+export const readBlogIndex = (slug: string) => {
 	const normalizedSlug = stripAtPrefix(slug);
+
+	return apiClient.get<ApiResponse<BlogIndexResponse>>(`v1/blogs/${encodeURIComponent(normalizedSlug)}/index`);
+};
+
+export const readPublicBlogPosts = ({ slug, page, size, filter }: PublicBlogFeedPostsRequest) => {
+	const normalizedSlug = stripAtPrefix(slug);
+	const filterSearchParams =
+		filter.type === 'chapterId'
+			? { chapterId: filter.chapterId }
+			: filter.type === 'targetCologSlug'
+				? { targetCologSlug: filter.targetCologSlug }
+				: {};
 
 	return apiClient.get<ApiResponse<PublicBlogFeedPostResponse>>(
 		`v1/blogs/${encodeURIComponent(normalizedSlug)}/posts`,
@@ -34,6 +47,7 @@ export const readPublicBlogPosts = ({ slug, page, size }: PublicBlogFeedPostsReq
 			searchParams: {
 				page,
 				size,
+				...filterSearchParams,
 			},
 		},
 	);
