@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as availabilityApi from '@/shared/api/availability/api';
 import * as blogsApi from '@/shared/api/blogs/api';
+import type { ChapterResponse } from '@/shared/api/blogs/types';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import RilogSettingsWorkspace from './RilogSettingsWorkspace';
@@ -31,6 +32,11 @@ const initialProfile = {
 
 describe('RilogSettingsWorkspace', () => {
 	beforeEach(() => {
+		let chapters: ChapterResponse[] = [
+			{ chapterId: 1, name: '웹 개발', order: 0 },
+			{ chapterId: 2, name: '기록', order: 1 },
+		];
+
 		vi.restoreAllMocks();
 		refetchMock.mockReset();
 		useBlogPublicProfileQueryMock.mockReset();
@@ -48,6 +54,25 @@ describe('RilogSettingsWorkspace', () => {
 		vi.spyOn(blogsApi, 'updateBlogProfile').mockResolvedValue({
 			status: 200,
 			message: '개인 프로필을 수정했습니다.',
+		});
+		vi.spyOn(blogsApi, 'readBlogChapters').mockImplementation(() =>
+			Promise.resolve({ status: 200, message: '챕터 목록을 조회했습니다.', data: chapters }),
+		);
+		vi.spyOn(blogsApi, 'createBlogChapter').mockImplementation((_slug, request) => {
+			const createdChapter = { chapterId: chapters.length + 1, name: request.name, order: chapters.length };
+			chapters = [...chapters, createdChapter];
+			return Promise.resolve({ status: 201, message: '챕터를 생성했습니다.', data: createdChapter });
+		});
+		vi.spyOn(blogsApi, 'renameBlogChapter').mockImplementation((_slug, chapterId, request) => {
+			const renamedChapter = chapters.find((chapter) => chapter.chapterId === chapterId)!;
+			chapters = chapters.map((chapter) =>
+				chapter.chapterId === chapterId ? { ...chapter, name: request.name } : chapter,
+			);
+			return Promise.resolve({
+				status: 200,
+				message: '챕터 이름을 변경했습니다.',
+				data: { ...renamedChapter, name: request.name },
+			});
 		});
 	});
 
@@ -73,13 +98,13 @@ describe('RilogSettingsWorkspace', () => {
 		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
 
 		await user.click(screen.getByRole('tab', { name: '시리즈 관리' }));
-		expect(screen.getByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
+		expect(await screen.findByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '+ 시리즈 추가' }));
 		await user.type(screen.getByRole('textbox', { name: '시리즈 이름' }), '회고');
 		await user.click(screen.getByRole('button', { name: '추가' }));
-		expect(screen.getByText('회고')).toBeInTheDocument();
+		expect(await screen.findByText('회고')).toBeInTheDocument();
 
-		await user.click(screen.getByRole('button', { name: '시리즈 수정' }));
+		await user.click(await screen.findByRole('button', { name: '시리즈 수정' }));
 		const seriesName = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
 		fireEvent.change(seriesName, { target: { value: '프론트엔드' } });
 		await user.click(screen.getByRole('button', { name: '저장' }));
@@ -92,7 +117,7 @@ describe('RilogSettingsWorkspace', () => {
 		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
 
 		await user.click(screen.getByRole('tab', { name: '시리즈 관리' }));
-		await user.click(screen.getByRole('button', { name: '시리즈 수정' }));
+		await user.click(await screen.findByRole('button', { name: '시리즈 수정' }));
 		const seriesName = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
 		await user.clear(seriesName);
 

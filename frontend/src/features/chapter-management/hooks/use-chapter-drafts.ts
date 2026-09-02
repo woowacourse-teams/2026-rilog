@@ -10,22 +10,31 @@ interface UseChapterDraftsOptions {
 	initialChapters?: Chapter[];
 }
 
+const isEqualChapter = (left: Chapter[] | undefined, right: Chapter[]) =>
+	left !== undefined &&
+	left.length === right.length &&
+	left.every(
+		(chapter, index) =>
+			chapter.id === right[index].id &&
+			chapter.name === right[index].name &&
+			chapter.postCount === right[index].postCount,
+	);
+
 export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = {}) {
-	const hasInitializedChapters = useRef(initialChapters !== undefined);
-	// TODO: 챕터 API 연동 시 state 대신 query 기반으로 변경
+	const lastSyncedChapters = useRef(initialChapters);
 	const [chapters, setChapters] = useState(() => initialChapters?.map((chapter) => ({ ...chapter })) ?? []);
 	const [draftChapters, setDraftChapters] = useState<ChapterDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
 	useEffect(() => {
-		if (initialChapters === undefined || hasInitializedChapters.current) {
+		if (initialChapters === undefined || isEqualChapter(lastSyncedChapters.current, initialChapters) || isEditing) {
 			return;
 		}
 
 		setChapters(initialChapters.map((chapter) => ({ ...chapter })));
-		hasInitializedChapters.current = true;
-	}, [initialChapters]);
+		lastSyncedChapters.current = initialChapters;
+	}, [initialChapters, isEditing]);
 
 	const isDirty = draftChapters.length > 0;
 	const displayedChapters = chapters.map((chapter) => {
@@ -43,19 +52,30 @@ export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = 
 		setIsEditing(false);
 	};
 
-	const handleSave = () => {
-		if (draftChapters.some((draft) => draft.name.trim().length === 0)) {
+	const handleSaveChapters = (savedChapterIds: number[]) => {
+		const savedChapterIdSet = new Set(savedChapterIds);
+		const savedDrafts = draftChapters.filter((draft) => savedChapterIdSet.has(draft.id));
+
+		if (savedDrafts.some((draft) => draft.name.trim().length === 0)) {
 			return;
 		}
 
 		setChapters((currentChapters) =>
 			currentChapters.map((chapter) => {
-				const draftChapter = draftChapters.find((draft) => draft.id === chapter.id);
+				const draftChapter = savedDrafts.find((draft) => draft.id === chapter.id);
 				return draftChapter === undefined ? chapter : { ...chapter, ...draftChapter, name: draftChapter.name.trim() };
 			}),
 		);
-		setDraftChapters([]);
-		setIsEditing(false);
+
+		const remainingDrafts = draftChapters.filter((draft) => !savedChapterIdSet.has(draft.id));
+		setDraftChapters(remainingDrafts);
+		if (remainingDrafts.length === 0) {
+			setIsEditing(false);
+		}
+	};
+
+	const handleSave = () => {
+		handleSaveChapters(draftChapters.map((draft) => draft.id));
 	};
 
 	const handleNameChange = (chapterId: number, name: string) => {
@@ -102,6 +122,7 @@ export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = 
 		handleStartEditing,
 		handleCancelEditing,
 		handleSave,
+		handleSaveChapters,
 		handleNameChange,
 		handleAddChapter,
 	};

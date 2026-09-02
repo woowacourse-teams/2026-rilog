@@ -67,4 +67,20 @@ describe('useChapterDrafts', () => {
 		expect(result.current.chapters[0].name).toBe('플랫폼');
 		expect(result.current.isEditing).toBe(false);
 	});
+
+	it('저장에 성공한 챕터만 반영하고 실패한 챕터 draft는 유지한다', () => {
+		const otherChapter: Chapter = { id: 8, name: '백엔드' };
+		const { result } = renderHook(() => useChapterDrafts({ initialChapters: [CHAPTER, otherChapter] }));
+
+		act(() => {
+			result.current.handleStartEditing();
+			result.current.handleNameChange(CHAPTER.id, '웹');
+			result.current.handleNameChange(otherChapter.id, '서버');
+		});
+		act(() => result.current.handleSaveChapters([CHAPTER.id]));
+
+		expect(result.current.chapters).toEqual([{ ...CHAPTER, name: '웹' }, otherChapter]);
+		expect(result.current.draftChapters).toEqual([{ id: otherChapter.id, name: '서버' }]);
+		expect(result.current.isEditing).toBe(true);
+	});
 });
