@@ -8,6 +8,7 @@ import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQ
 import AuthProvider from '@/features/auth/ui/AuthProvider';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import QueryProvider from '@/shared/query/QueryProvider';
+import { siteUrl } from '@/shared/seo/site-url';
 
 import './globals.css';
 
@@ -20,8 +21,18 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-	title: 'Rilog',
+	metadataBase: siteUrl,
+	title: { default: 'Rilog', template: '%s | Rilog' },
 	description: '기록을 작성하고 함께 나누는 공간',
+	applicationName: 'Rilog',
+	openGraph: {
+		description: '기록을 작성하고 함께 나누는 공간',
+		images: ['/opengraph-image'],
+		locale: 'ko_KR',
+		siteName: 'Rilog',
+		type: 'website',
+	},
+	twitter: { card: 'summary_large_image', images: ['/opengraph-image'] },
 	icons: {
 		icon: '/brand/favicon.png',
 	},

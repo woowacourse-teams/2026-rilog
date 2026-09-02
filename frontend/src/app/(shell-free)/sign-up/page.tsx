@@ -5,7 +5,8 @@ import SignUpForm from '@/features/sign-up/ui/SignUpForm';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 export const metadata: Metadata = {
-	title: '회원가입 | Rilog',
+	robots: { follow: false, index: false },
+	title: '회원가입',
 };
 
 export default function SignUpPage() {

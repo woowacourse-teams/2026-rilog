@@ -1,9 +1,17 @@
+import type { Metadata } from 'next';
+
 import AccessFeedback from '@/features/auth/ui/AccessFeedback';
 import { PROXY_AUTH_REQUIRED_NOTICE, PROXY_NOTICE_QUERY_KEY } from '@/shared/api/proxy/constants';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import PostFeed from '@/widgets/post-feed/PostFeed';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+	alternates: { canonical: '/feeds' },
+	title: { absolute: 'Rilog' },
+	openGraph: { url: '/feeds' },
+};
 
 interface FeedsPageProps {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
