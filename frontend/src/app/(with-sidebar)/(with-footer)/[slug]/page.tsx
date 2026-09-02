@@ -34,8 +34,8 @@ export default async function BlogHomePage({ params, searchParams }: BlogHomePag
 				profile={initialState.profile}
 				filter={initialState.filter}
 				postsFilter={initialState.postsFilter}
-				initialIndexRequestFailed={initialState.initialIndexRequestFailed}
-				initialPostsRequestFailed={initialState.initialPostsRequestFailed}
+				initialIndexRequestFailed={initialState.isInitialIndexRequestFailed}
+				initialPostsRequestFailed={initialState.isInitialPostsRequestFailed}
 			/>
 		</HydrationBoundary>
 	);

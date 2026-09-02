@@ -84,8 +84,8 @@ describe('prefetchBlogHomeInitialState', () => {
 			profile: { type: 'RILOG', slug: 'jetproc' },
 			filter: { type: 'targetCologSlug', targetCologSlug: 'rilog-team' },
 			postsFilter: { type: 'targetCologSlug', targetCologSlug: 'rilog-team' },
-			initialIndexRequestFailed: false,
-			initialPostsRequestFailed: false,
+			isInitialIndexRequestFailed: false,
+			isInitialPostsRequestFailed: false,
 		});
 	});
 
@@ -112,7 +112,7 @@ describe('prefetchBlogHomeInitialState', () => {
 			status: 'ready',
 			filter: { type: 'chapterId', chapterId: 99 },
 			postsFilter: { type: 'all' },
-			initialIndexRequestFailed: true,
+			isInitialIndexRequestFailed: true,
 		});
 	});
 
@@ -151,6 +151,6 @@ describe('prefetchBlogHomeInitialState', () => {
 			searchParams: {},
 		});
 
-		expect(result).toMatchObject({ status: 'ready', initialPostsRequestFailed: true });
+		expect(result).toMatchObject({ status: 'ready', isInitialPostsRequestFailed: true });
 	});
 });

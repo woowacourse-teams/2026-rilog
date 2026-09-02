@@ -31,8 +31,8 @@ interface BlogHomeInitialReadyState {
 	profile: BlogPublicProfile;
 	filter: PublicBlogPostsFilter;
 	postsFilter: PublicBlogPostsFilter;
-	initialIndexRequestFailed: boolean;
-	initialPostsRequestFailed: boolean;
+	isInitialIndexRequestFailed: boolean;
+	isInitialPostsRequestFailed: boolean;
 }
 
 export type BlogHomeInitialState = BlogHomeInitialNotFoundState | BlogHomeInitialReadyState;
@@ -62,7 +62,7 @@ export const prefetchBlogHomeInitialState = async (
 	}
 
 	const indexResponse = queryClient.getQueryData(indexQueryOptions.queryKey);
-	const initialIndexRequestFailed = indexResponse?.data === undefined;
+	const isInitialIndexRequestFailed = indexResponse?.data === undefined;
 	let postsFilter = filter;
 
 	if (indexResponse?.data !== undefined) {
@@ -77,14 +77,14 @@ export const prefetchBlogHomeInitialState = async (
 
 	const postsQueryOptions = publicBlogPostsQueryOptions({ slug, filter: postsFilter });
 	await prefetchPublicBlogPostsQuery(queryClient, slug, postsFilter);
-	const initialPostsRequestFailed = queryClient.getQueryState(postsQueryOptions.queryKey)?.status === 'error';
+	const isInitialPostsRequestFailed = queryClient.getQueryState(postsQueryOptions.queryKey)?.status === 'error';
 
 	return {
 		status: 'ready',
 		profile,
 		filter,
 		postsFilter,
-		initialIndexRequestFailed,
-		initialPostsRequestFailed,
+		isInitialIndexRequestFailed,
+		isInitialPostsRequestFailed,
 	};
 };

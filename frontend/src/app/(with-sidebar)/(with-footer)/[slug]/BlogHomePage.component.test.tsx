@@ -36,8 +36,8 @@ const READY_STATE: BlogHomeInitialState = {
 	},
 	filter: { type: 'all' },
 	postsFilter: { type: 'all' },
-	initialIndexRequestFailed: false,
-	initialPostsRequestFailed: false,
+	isInitialIndexRequestFailed: false,
+	isInitialPostsRequestFailed: false,
 };
 
 const renderPage = async (slug = '@jetproc', searchParams: Record<string, string | string[] | undefined> = {}) => {
