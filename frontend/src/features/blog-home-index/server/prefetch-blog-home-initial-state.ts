@@ -2,11 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 import type { BlogHomeSearchParams } from '@/features/blog-home-index/lib/blog-home-filter';
-import {
-	ALL_BLOG_POSTS_FILTER,
-	isBlogHomeFilterAvailable,
-	parseBlogHomeFilter,
-} from '@/features/blog-home-index/lib/blog-home-filter';
+import { isBlogHomeFilterAvailable, parseBlogHomeFilter } from '@/features/blog-home-index/lib/blog-home-filter';
 import { mapBlogIndexResponse } from '@/features/blog-home-index/lib/map-blog-index-response';
 import { mapBlogPublicProfileResponse } from '@/features/blog-profile/lib/map-blog-public-profile-response';
 import { prefetchBlogIndexQuery } from '@/shared/api/blogs/queries/index/prefetch-query';
@@ -30,7 +26,6 @@ interface BlogHomeInitialReadyState {
 	status: 'ready';
 	profile: BlogPublicProfile;
 	filter: PublicBlogPostsFilter;
-	postsFilter: PublicBlogPostsFilter;
 	isInitialIndexRequestFailed: boolean;
 	isInitialPostsRequestFailed: boolean;
 }
@@ -63,7 +58,6 @@ export const prefetchBlogHomeInitialState = async (
 
 	const indexResponse = queryClient.getQueryData(indexQueryOptions.queryKey);
 	const isInitialIndexRequestFailed = indexResponse?.data === undefined;
-	let postsFilter = filter;
 
 	if (indexResponse?.data !== undefined) {
 		const index = mapBlogIndexResponse(indexResponse.data);
@@ -72,18 +66,16 @@ export const prefetchBlogHomeInitialState = async (
 		}
 	} else {
 		queryClient.removeQueries({ queryKey: indexQueryOptions.queryKey, exact: true });
-		postsFilter = ALL_BLOG_POSTS_FILTER;
 	}
 
-	const postsQueryOptions = publicBlogPostsQueryOptions({ slug, filter: postsFilter });
-	await prefetchPublicBlogPostsQuery(queryClient, slug, postsFilter);
+	const postsQueryOptions = publicBlogPostsQueryOptions({ slug, filter });
+	await prefetchPublicBlogPostsQuery(queryClient, slug, filter);
 	const isInitialPostsRequestFailed = queryClient.getQueryState(postsQueryOptions.queryKey)?.status === 'error';
 
 	return {
 		status: 'ready',
 		profile,
 		filter,
-		postsFilter,
 		isInitialIndexRequestFailed,
 		isInitialPostsRequestFailed,
 	};

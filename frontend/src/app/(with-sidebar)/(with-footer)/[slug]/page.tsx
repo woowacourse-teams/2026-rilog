@@ -33,7 +33,6 @@ export default async function BlogHomePage({ params, searchParams }: BlogHomePag
 			<BlogHome
 				profile={initialState.profile}
 				filter={initialState.filter}
-				postsFilter={initialState.postsFilter}
 				initialIndexRequestFailed={initialState.isInitialIndexRequestFailed}
 				initialPostsRequestFailed={initialState.isInitialPostsRequestFailed}
 			/>

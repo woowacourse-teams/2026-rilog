@@ -35,7 +35,6 @@ const READY_STATE: BlogHomeInitialState = {
 		postCount: 7,
 	},
 	filter: { type: 'all' },
-	postsFilter: { type: 'all' },
 	isInitialIndexRequestFailed: false,
 	isInitialPostsRequestFailed: false,
 };

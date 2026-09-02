@@ -16,7 +16,6 @@ import BlogHomeToolbar from './BlogHomeToolbar';
 interface BlogHomeProps {
 	profile: BlogPublicProfile;
 	filter: PublicBlogPostsFilter;
-	postsFilter?: PublicBlogPostsFilter;
 	initialIndexRequestFailed?: boolean;
 	initialPostsRequestFailed?: boolean;
 }
@@ -24,7 +23,6 @@ interface BlogHomeProps {
 export default function BlogHome({
 	profile,
 	filter,
-	postsFilter = filter,
 	initialIndexRequestFailed = false,
 	initialPostsRequestFailed = false,
 }: BlogHomeProps) {
@@ -70,7 +68,7 @@ export default function BlogHome({
 					filter={filter}
 					initialIndexRequestFailed={initialIndexRequestFailed}
 				/>
-				<BlogPostFeed slug={profile.slug} filter={postsFilter} initialRequestFailed={initialPostsRequestFailed} />
+				<BlogPostFeed slug={profile.slug} filter={filter} initialRequestFailed={initialPostsRequestFailed} />
 			</div>
 			{initialIndexRequestFailed ? <BlogHomeIndexRecovery slug={profile.slug} /> : null}
 			<BlogProfileViewTracker blogType={profile.type} />

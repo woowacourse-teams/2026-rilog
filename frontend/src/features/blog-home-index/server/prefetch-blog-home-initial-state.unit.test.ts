@@ -83,7 +83,6 @@ describe('prefetchBlogHomeInitialState', () => {
 			status: 'ready',
 			profile: { type: 'RILOG', slug: 'jetproc' },
 			filter: { type: 'targetCologSlug', targetCologSlug: 'rilog-team' },
-			postsFilter: { type: 'targetCologSlug', targetCologSlug: 'rilog-team' },
 			isInitialIndexRequestFailed: false,
 			isInitialPostsRequestFailed: false,
 		});
@@ -99,7 +98,7 @@ describe('prefetchBlogHomeInitialState', () => {
 		expect(readPublicBlogPostsMock).not.toHaveBeenCalled();
 	});
 
-	it('인덱스 실패 중에는 URL 필터를 유지하고 전체 게시글을 준비한다', async () => {
+	it('인덱스 실패 중에도 URL 필터로 게시글을 준비한다', async () => {
 		readBlogIndexMock.mockRejectedValue(new Error('index failed'));
 
 		const result = await prefetchBlogHomeInitialState(createQueryClient(), {
@@ -107,11 +106,12 @@ describe('prefetchBlogHomeInitialState', () => {
 			searchParams: { series: '99' },
 		});
 
-		expect(readPublicBlogPostsMock).toHaveBeenCalledWith(expect.objectContaining({ filter: { type: 'all' } }));
+		expect(readPublicBlogPostsMock).toHaveBeenCalledWith(
+			expect.objectContaining({ filter: { type: 'chapterId', chapterId: 99 } }),
+		);
 		expect(result).toMatchObject({
 			status: 'ready',
 			filter: { type: 'chapterId', chapterId: 99 },
-			postsFilter: { type: 'all' },
 			isInitialIndexRequestFailed: true,
 		});
 	});
