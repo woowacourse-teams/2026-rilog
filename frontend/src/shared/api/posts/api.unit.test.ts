@@ -74,6 +74,10 @@ describe('readPostDetail', () => {
 					name: '제트프로크',
 					profileImageUrl: 'https://cdn.example.com/blog.png',
 				},
+				viewerPermissions: {
+					canEdit: false,
+					canDelete: false,
+				},
 			},
 		};
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));

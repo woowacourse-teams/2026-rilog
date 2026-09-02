@@ -58,6 +58,11 @@ interface CologPostDetailOwnerResponse extends BasePostDetailOwnerResponse {
 
 type PostDetailOwnerResponse = RilogPostDetailOwnerResponse | CologPostDetailOwnerResponse;
 
+interface PostViewerPermissionsResponse {
+	canEdit: boolean;
+	canDelete: boolean;
+}
+
 export interface PostDetailResponse {
 	title: string;
 	content: unknown;
@@ -67,4 +72,5 @@ export interface PostDetailResponse {
 	chapter: ChapterResponse | null;
 	author: PostDetailAuthorResponse;
 	owner: PostDetailOwnerResponse;
+	viewerPermissions: PostViewerPermissionsResponse;
 }

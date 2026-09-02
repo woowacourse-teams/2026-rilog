@@ -33,6 +33,7 @@ const POST_DETAIL: PostDetail = {
 	publishedAt: '2026-09-01T00:00:00+09:00',
 	thumbnailUrl: null,
 	category: 'IT',
+	viewerPermissions: { canEdit: true, canDelete: true },
 	author: {
 		id: 1,
 		nickname: '파라디',
