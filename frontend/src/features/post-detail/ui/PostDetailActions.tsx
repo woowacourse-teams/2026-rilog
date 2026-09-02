@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import type { PostViewerPermissions } from '@/domains/post/model/post';
 import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
+import { usePostViewerPermissions } from '@/features/post-detail/hooks/use-post-viewer-permissions';
 import { useDeletePostMutation } from '@/shared/api/posts/mutations/use-delete-post-mutation';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -19,7 +20,10 @@ export default function PostDetailActions({ slug, postId, viewerPermissions }: P
 	const router = useRouter();
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const deletePostMutation = useDeletePostMutation();
-	const { canEdit, canDelete } = viewerPermissions;
+	const { canEdit, canDelete } = usePostViewerPermissions({
+		postId,
+		initialPermissions: viewerPermissions,
+	});
 
 	if (!canEdit && !canDelete) {
 		return null;
