@@ -46,5 +46,6 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 		author,
 		category,
 		blog,
+		viewerPermissions: response.viewerPermissions,
 	};
 };

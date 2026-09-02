@@ -1,4 +1,5 @@
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
+import type { PostViewerPermissions } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
@@ -13,9 +14,17 @@ interface PostDetailHeaderProps {
 	title: string;
 	publishedAt: string;
 	author: User;
+	viewerPermissions: PostViewerPermissions;
 }
 
-export default function PostDetailHeader({ postId, slug, title, publishedAt, author }: PostDetailHeaderProps) {
+export default function PostDetailHeader({
+	postId,
+	slug,
+	title,
+	publishedAt,
+	author,
+	viewerPermissions,
+}: PostDetailHeaderProps) {
 	return (
 		<header className="flex flex-col items-center pt-12 pb-9 text-center sm:pt-14">
 			<h1 className="text-heading-4 font-extrabold wrap-break-word break-keep text-text-primary sm:text-heading-2">
@@ -38,7 +47,7 @@ export default function PostDetailHeader({ postId, slug, title, publishedAt, aut
 				<span aria-hidden="true">·</span>
 				<time dateTime={toApiUtcISOString(publishedAt)}>{formatPublishedDate(publishedAt)}</time>
 
-				<PostDetailActions authorId={author.id} slug={slug} postId={postId} />
+				<PostDetailActions slug={slug} postId={postId} viewerPermissions={viewerPermissions} />
 			</div>
 		</header>
 	);

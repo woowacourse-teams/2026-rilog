@@ -3,28 +3,29 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import type { PostViewerPermissions } from '@/domains/post/model/post';
 import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
-import { useAuth } from '@/features/auth/model/use-auth';
+import { usePostViewerPermissions } from '@/features/post-detail/hooks/use-post-viewer-permissions';
 import { useDeletePostMutation } from '@/shared/api/posts/mutations/use-delete-post-mutation';
-import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 interface PostDetailActionsProps {
-	authorId: number;
 	slug: string;
 	postId: number;
+	viewerPermissions: PostViewerPermissions;
 }
 
-export default function PostDetailActions({ authorId, slug, postId }: PostDetailActionsProps) {
+export default function PostDetailActions({ slug, postId, viewerPermissions }: PostDetailActionsProps) {
 	const router = useRouter();
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-	const { isAuthenticated, isInitialized } = useAuth();
-	const myInfoQuery = useMyInfoQuery({ isEnabled: isInitialized });
 	const deletePostMutation = useDeletePostMutation();
-	const isAuthor = isInitialized && isAuthenticated && myInfoQuery.data?.data?.id === authorId;
+	const { canEdit, canDelete } = usePostViewerPermissions({
+		postId,
+		initialPermissions: viewerPermissions,
+	});
 
-	if (!isAuthor) {
+	if (!canEdit && !canDelete) {
 		return null;
 	}
 
@@ -51,20 +52,22 @@ export default function PostDetailActions({ authorId, slug, postId }: PostDetail
 	return (
 		<>
 			<div className="absolute top-1/2 right-0 flex -translate-y-1/2 gap-2">
-				<button onClick={handleEdit}>수정</button>
-				<button onClick={handleDeleteRequest}>삭제</button>
+				{canEdit ? <button onClick={handleEdit}>수정</button> : null}
+				{canDelete ? <button onClick={handleDeleteRequest}>삭제</button> : null}
 			</div>
 
-			<ConfirmModal
-				open={isDeleteModalOpen}
-				title="게시글을 삭제할까요?"
-				description="삭제한 게시글은 복구할 수 없습니다."
-				confirmLabel="삭제"
-				variant="danger"
-				isPending={deletePostMutation.isPending}
-				onConfirm={handleDeleteConfirm}
-				onCancel={handleDeleteCancel}
-			/>
+			{canDelete ? (
+				<ConfirmModal
+					open={isDeleteModalOpen}
+					title="게시글을 삭제할까요?"
+					description="삭제한 게시글은 복구할 수 없습니다."
+					confirmLabel="삭제"
+					variant="danger"
+					isPending={deletePostMutation.isPending}
+					onConfirm={handleDeleteConfirm}
+					onCancel={handleDeleteCancel}
+				/>
+			) : null}
 		</>
 	);
 }

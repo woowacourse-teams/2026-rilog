@@ -20,10 +20,16 @@ export interface PostSummary {
 	author: User;
 }
 
+export interface PostViewerPermissions {
+	canEdit: boolean;
+	canDelete: boolean;
+}
+
 export interface PostDetail extends PostSummary {
 	content: Block[];
 	category: PostCategory;
 	blog: Blog;
+	viewerPermissions: PostViewerPermissions;
 }
 
 export interface PostFeedItem extends PostSummary {

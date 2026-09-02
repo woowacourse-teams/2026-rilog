@@ -26,6 +26,10 @@ describe('mapPostDetailResponse', () => {
 				name: '파라디',
 				profileImageUrl: null,
 			},
+			viewerPermissions: {
+				canEdit: false,
+				canDelete: false,
+			},
 		};
 
 		const postDetail = mapPostDetailResponse(response, 42);
@@ -44,6 +48,7 @@ describe('mapPostDetailResponse', () => {
 			expect(postDetail.blog.owner).toEqual(postDetail.author);
 		}
 		expect(postDetail.category).toBe('IT');
+		expect(postDetail.viewerPermissions).toEqual({ canEdit: false, canDelete: false });
 	});
 
 	it('팀 블로그(COLOG) 상세 응답을 PostDetail 도메인 모델로 올바르게 매핑한다', () => {
@@ -70,6 +75,10 @@ describe('mapPostDetailResponse', () => {
 				memberCount: 8,
 				postCount: 42,
 			},
+			viewerPermissions: {
+				canEdit: true,
+				canDelete: true,
+			},
 		};
 
 		const postDetail = mapPostDetailResponse(response, 100);
@@ -84,5 +93,6 @@ describe('mapPostDetailResponse', () => {
 			expect(postDetail.blog.postCount).toBe(42);
 		}
 		expect(postDetail.category).toBe('DAILY');
+		expect(postDetail.viewerPermissions).toEqual({ canEdit: true, canDelete: true });
 	});
 });

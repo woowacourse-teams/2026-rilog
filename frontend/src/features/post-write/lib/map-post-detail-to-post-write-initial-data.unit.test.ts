@@ -14,6 +14,7 @@ const createResponse = (overrides: Partial<PostDetailResponse> = {}): PostDetail
 	chapter: { chapterId: 12, name: '회고', order: 1 },
 	author: { userId: 7, nickname: '작성자', slug: 'author', profileImageUrl: null },
 	owner: { type: 'RILOG', blogId: 3, slug: 'author', name: '작성자 블로그', profileImageUrl: null },
+	viewerPermissions: { canEdit: true, canDelete: true },
 	...overrides,
 });
 

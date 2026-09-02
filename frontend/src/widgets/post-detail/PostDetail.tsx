@@ -28,6 +28,7 @@ export default async function PostDetail({ post }: PostDetailProps) {
 						title={post.title}
 						publishedAt={post.publishedAt}
 						author={post.author}
+						viewerPermissions={post.viewerPermissions}
 					/>
 					{post.blog.type === 'COLOG' ? <PostDetailCoLogSummary colog={post.blog} /> : null}
 					<Divider aria-label="게시글 정보와 본문 구분" />

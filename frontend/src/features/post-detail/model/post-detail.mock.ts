@@ -216,6 +216,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		publishedAt: '2024-05-20T09:00:00+09:00',
 		thumbnailUrl: null,
 		category: 'IT',
+		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
 			id: 1,
 			nickname: '김지연',
@@ -243,6 +244,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		publishedAt: '2024-06-03T11:30:00+09:00',
 		thumbnailUrl: '/images/default-post-cover.svg',
 		category: 'IT',
+		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
 			id: 2,
 			nickname: '박리로그',
