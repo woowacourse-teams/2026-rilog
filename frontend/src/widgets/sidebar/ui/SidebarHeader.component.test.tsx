@@ -11,7 +11,13 @@ describe('SidebarBrand', () => {
 
 		const brandLink = screen.getByRole('link');
 		expect(brandLink).toHaveAttribute('href', '/feeds');
-		expect(brandLink).toHaveTextContent('Rilog.');
+
+		const [collapsedBrand, expandedBrand] = brandLink.querySelectorAll('img');
+		expect(collapsedBrand).toHaveAttribute('src', '/brand/sidebar-icon.svg');
+		expect(collapsedBrand).toHaveClass('top-0', 'h-5.5', 'group-hover:opacity-0');
+
+		expect(expandedBrand).toHaveAttribute('src', '/brand/logo.svg');
+		expect(expandedBrand).toHaveClass('top-0', 'h-7', 'opacity-0', 'group-hover:opacity-100');
 
 		await user.tab();
 		expect(brandLink).toHaveFocus();

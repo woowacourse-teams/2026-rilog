@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
+import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-public-profile';
 
 import BlogHomePage from './page';
 
@@ -15,6 +16,7 @@ const { notFoundMock } = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({ notFound: notFoundMock }));
 vi.mock('@/features/blog-home-index/server/prefetch-blog-home-initial-state');
+vi.mock('@/features/blog-profile/lib/get-blog-public-profile');
 
 vi.mock('@/widgets/blog-home/ui/BlogHome', () => ({
 	default: function MockBlogHome() {
@@ -39,6 +41,24 @@ const READY_STATE: BlogHomeInitialState = {
 	isInitialPostsRequestFailed: false,
 };
 
+const PROFILE_RESPONSE = {
+	status: 200,
+	message: '블로그 프로필을 조회했습니다.',
+	data: {
+		type: 'RILOG' as const,
+		id: 2,
+		name: '파라디',
+		slug: 'jetproc',
+		introduction: null,
+		profileImageUrl: null,
+		coverImageUrl: null,
+		serviceUrl: null,
+		githubUrl: null,
+		memberCount: 1,
+		postCount: 7,
+	},
+};
+
 const renderPage = async (slug = '@jetproc', searchParams: Record<string, string | string[] | undefined> = {}) => {
 	const page = await BlogHomePage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve(searchParams) });
 	return render(<QueryClientProvider client={new QueryClient()}>{page}</QueryClientProvider>);
@@ -49,6 +69,8 @@ describe('BlogHomePage', () => {
 		notFoundMock.mockClear();
 		vi.mocked(prefetchBlogHomeInitialState).mockReset();
 		vi.mocked(prefetchBlogHomeInitialState).mockResolvedValue(READY_STATE);
+		vi.mocked(getBlogPublicProfile).mockReset();
+		vi.mocked(getBlogPublicProfile).mockResolvedValue({ profile: READY_STATE.profile, response: PROFILE_RESPONSE });
 	});
 
 	it('정규화한 route 입력으로 블로그 홈 초기 상태를 준비하고 화면을 조립한다', async () => {
@@ -57,6 +79,7 @@ describe('BlogHomePage', () => {
 		expect(prefetchBlogHomeInitialState).toHaveBeenCalledWith(expect.any(QueryClient), {
 			slug: 'jetproc',
 			searchParams: { notice: 'keep' },
+			profileResponse: PROFILE_RESPONSE,
 		});
 		expect(screen.getByText('블로그 홈')).toBeInTheDocument();
 	});
@@ -77,6 +100,7 @@ describe('BlogHomePage', () => {
 		).rejects.toThrow('NEXT_NOT_FOUND');
 
 		expect(prefetchBlogHomeInitialState).not.toHaveBeenCalled();
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
 		expect(notFoundMock).toHaveBeenCalledOnce();
 	});
 });

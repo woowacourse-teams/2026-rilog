@@ -31,7 +31,7 @@ export default function PostFeed() {
 					src="/brand/logo.svg"
 					alt=""
 					width={629}
-					height={237}
+					height={250}
 					priority
 					className="h-auto w-[clamp(14rem,42vw,36rem)]"
 				/>

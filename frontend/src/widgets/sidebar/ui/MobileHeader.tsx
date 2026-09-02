@@ -38,7 +38,7 @@ export default function MobileHeader() {
 			className="flex h-16 w-full items-center justify-between border-b border-border-default bg-white px-5"
 		>
 			<CustomLink href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
-				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={32} priority />
+				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={34} priority />
 			</CustomLink>
 
 			{isAuthenticated ? (
