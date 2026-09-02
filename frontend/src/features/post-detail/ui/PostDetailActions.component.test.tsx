@@ -4,39 +4,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PostDetailActions from './PostDetailActions';
 
-const {
-	deletePostMutateMock,
-	deletePostResetMock,
-	routerPushMock,
-	routerReplaceMock,
-	useAuthMock,
-	useDeletePostMutationMock,
-	useMyInfoQueryMock,
-} = vi.hoisted(() => ({
-	deletePostMutateMock: vi.fn(),
-	deletePostResetMock: vi.fn(),
-	routerPushMock: vi.fn(),
-	routerReplaceMock: vi.fn(),
-	useAuthMock: vi.fn(),
-	useDeletePostMutationMock: vi.fn(),
-	useMyInfoQueryMock: vi.fn(),
-}));
+const { deletePostMutateMock, deletePostResetMock, routerPushMock, routerReplaceMock, useDeletePostMutationMock } =
+	vi.hoisted(() => ({
+		deletePostMutateMock: vi.fn(),
+		deletePostResetMock: vi.fn(),
+		routerPushMock: vi.fn(),
+		routerReplaceMock: vi.fn(),
+		useDeletePostMutationMock: vi.fn(),
+	}));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ push: routerPushMock, replace: routerReplaceMock }),
 }));
 
-vi.mock('@/features/auth/model/use-auth', () => ({
-	useAuth: useAuthMock,
-}));
-
-vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
-	useMyInfoQuery: useMyInfoQueryMock,
-}));
-
 vi.mock('@/shared/api/posts/mutations/use-delete-post-mutation', () => ({
 	useDeletePostMutation: useDeletePostMutationMock,
 }));
+
+const ALL_PERMISSIONS = { canEdit: true, canDelete: true };
 
 describe('PostDetailActions', () => {
 	beforeEach(() => {
@@ -44,7 +29,6 @@ describe('PostDetailActions', () => {
 		deletePostResetMock.mockReset();
 		routerPushMock.mockReset();
 		routerReplaceMock.mockReset();
-		useAuthMock.mockReturnValue({ isAuthenticated: true, isInitialized: true });
 		useDeletePostMutationMock.mockReturnValue({
 			mutate: deletePostMutateMock,
 			reset: deletePostResetMock,
@@ -52,12 +36,11 @@ describe('PostDetailActions', () => {
 			isError: false,
 			error: null,
 		});
-		useMyInfoQueryMock.mockReturnValue({ data: { data: { id: 7 } } });
 	});
 
-	it('로그인한 사용자가 작성자이면 수정과 삭제 버튼을 렌더링하고 수정 페이지로 이동한다', async () => {
+	it('수정과 삭제 권한이 있으면 두 버튼을 렌더링하고 수정 페이지로 이동한다', async () => {
 		const user = userEvent.setup();
-		render(<PostDetailActions authorId={7} slug="rilog-team" postId={31} />);
+		render(<PostDetailActions slug="rilog-team" postId={31} viewerPermissions={ALL_PERMISSIONS} />);
 
 		await user.click(screen.getByRole('button', { name: '수정' }));
 
@@ -65,27 +48,28 @@ describe('PostDetailActions', () => {
 		expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
 	});
 
-	it('로그인한 사용자가 작성자가 아니면 수정과 삭제 버튼을 렌더링하지 않는다', () => {
-		render(<PostDetailActions authorId={8} slug="rilog-team" postId={31} />);
+	it('수정과 삭제 권한이 모두 없으면 버튼을 렌더링하지 않는다', () => {
+		render(
+			<PostDetailActions slug="rilog-team" postId={31} viewerPermissions={{ canEdit: false, canDelete: false }} />,
+		);
 
 		expect(screen.queryByRole('button', { name: '수정' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
 	});
 
 	it.each([
-		{ isAuthenticated: false, isInitialized: true },
-		{ isAuthenticated: false, isInitialized: false },
-	])('인증되지 않았거나 인증 초기화 전이면 버튼을 렌더링하지 않는다', (authState) => {
-		useAuthMock.mockReturnValue(authState);
+		[{ canEdit: true, canDelete: false }, '수정', '삭제'],
+		[{ canEdit: false, canDelete: true }, '삭제', '수정'],
+	] as const)('%s만 허용되면 %s 버튼만 렌더링한다', (viewerPermissions, visibleName, hiddenName) => {
+		render(<PostDetailActions slug="rilog-team" postId={31} viewerPermissions={viewerPermissions} />);
 
-		render(<PostDetailActions authorId={7} slug="rilog-team" postId={31} />);
-
-		expect(screen.queryByRole('button')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: visibleName })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: hiddenName })).not.toBeInTheDocument();
 	});
 
 	it('삭제 전에 복구할 수 없음을 안내하고 취소할 수 있다', async () => {
 		const user = userEvent.setup();
-		render(<PostDetailActions authorId={7} slug="rilog-team" postId={31} />);
+		render(<PostDetailActions slug="rilog-team" postId={31} viewerPermissions={ALL_PERMISSIONS} />);
 
 		await user.click(screen.getByRole('button', { name: '삭제' }));
 
@@ -101,7 +85,7 @@ describe('PostDetailActions', () => {
 
 	it('삭제를 확정하면 API를 요청하고 성공 후 블로그 홈으로 이동한다', async () => {
 		const user = userEvent.setup();
-		render(<PostDetailActions authorId={7} slug="@rilog-team" postId={31} />);
+		render(<PostDetailActions slug="@rilog-team" postId={31} viewerPermissions={ALL_PERMISSIONS} />);
 
 		await user.click(screen.getByRole('button', { name: '삭제' }));
 		await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
