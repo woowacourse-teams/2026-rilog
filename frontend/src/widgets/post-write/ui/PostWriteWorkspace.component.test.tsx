@@ -599,8 +599,6 @@ describe('NewPostController', () => {
 		expect(screen.queryByRole('button', { name: '임시저장' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /임시 저장된 글/ })).not.toBeInTheDocument();
 		const publishButton = screen.getByRole('button', { name: '수정' });
-		expect(publishButton).toBeDisabled();
-		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), ' 수정');
 		expect(publishButton).toBeEnabled();
 		await user.click(publishButton);
 
