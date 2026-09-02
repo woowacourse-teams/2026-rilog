@@ -88,6 +88,16 @@ describe('PublishSettingsModal', () => {
 		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
 	});
 
+	it('수정 초기값의 대표 이미지 URL이 기본 썸네일과 같으면 제거 동작을 제공하지 않는다', () => {
+		renderModal({
+			settings: { ...DEFAULT_PROPS.settings, representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL },
+			selectedImageUrl: POST_THUMBNAIL_FALLBACK_URL,
+		});
+
+		expect(screen.getByLabelText('대표 이미지 추가')).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '이미지 제거' })).not.toBeInTheDocument();
+	});
+
 	it('Co-log는 선택 안 함을 기본값으로 제공하고 선택 후 다시 해제할 수 있다', async () => {
 		const user = userEvent.setup();
 		const handleTargetBlogChange = vi.fn();

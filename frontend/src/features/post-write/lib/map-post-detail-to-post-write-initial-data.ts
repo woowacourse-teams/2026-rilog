@@ -1,5 +1,6 @@
 import type { Block } from '@blocknote/core';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostCategory } from '@/domains/post/model/post';
 import type { PostWriteInitialData } from '@/features/post-write/model/post-publication';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
@@ -21,6 +22,7 @@ export const mapPostDetailToPostWriteInitialData = (response: PostDetailResponse
 				: { type: 'RILOG', slug: response.owner.slug },
 		chapterId: response.chapter?.chapterId ?? null,
 		representativeImage: null,
-		representativeImageUrl: response.thumbnailImageUrl,
+		representativeImageUrl:
+			response.thumbnailImageUrl === POST_THUMBNAIL_FALLBACK_URL ? null : response.thumbnailImageUrl,
 	},
 });

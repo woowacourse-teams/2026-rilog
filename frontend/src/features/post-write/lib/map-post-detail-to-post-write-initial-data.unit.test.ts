@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
 
 import { mapPostDetailToPostWriteInitialData } from './map-post-detail-to-post-write-initial-data';
@@ -47,5 +48,14 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 
 	it('본문이 배열이 아니면 안전하게 빈 본문을 사용한다', () => {
 		expect(mapPostDetailToPostWriteInitialData(createResponse({ content: null })).document.blocks).toEqual([]);
+	});
+
+	it('기본 썸네일 경로는 사용자 대표 이미지가 없는 상태로 정규화한다', () => {
+		expect(
+			mapPostDetailToPostWriteInitialData(createResponse({ thumbnailImageUrl: POST_THUMBNAIL_FALLBACK_URL })).settings,
+		).toMatchObject({
+			representativeImage: null,
+			representativeImageUrl: null,
+		});
 	});
 });
