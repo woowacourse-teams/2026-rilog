@@ -1,9 +1,11 @@
 'use client';
 
 import { mapCologMemberResponse } from '@/features/colog-member-management/lib/map-colog-member-response';
+import { useCurrentCologPermission } from '@/features/colog-settings-access/hooks/use-current-colog-permission';
 import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
 import Button from '@/shared/ui/button/Button';
 
+import CologMemberInviteButton from './CologMemberInviteButton';
 import CologMemberList from './CologMemberList';
 
 interface CologMemberAsideProps {
@@ -12,6 +14,7 @@ interface CologMemberAsideProps {
 
 export default function CologMemberAside({ slug }: CologMemberAsideProps) {
 	const membersQuery = useCologMembersQuery({ slug });
+	const permission = useCurrentCologPermission(slug);
 
 	if (membersQuery.isPending) {
 		return (
@@ -33,6 +36,9 @@ export default function CologMemberAside({ slug }: CologMemberAsideProps) {
 	}
 
 	const members = membersQuery.data?.data?.map(mapCologMemberResponse) ?? [];
+	const canInviteMember = permission === 'OWNER' || permission === 'ADMIN';
 
-	return <CologMemberList members={members} />;
+	return (
+		<CologMemberList members={members} action={canInviteMember ? <CologMemberInviteButton slug={slug} /> : undefined} />
+	);
 }
