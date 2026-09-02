@@ -18,9 +18,9 @@ interface BlogHomePageProps {
 export async function generateMetadata({ params }: BlogHomePageProps): Promise<Metadata> {
 	const { slug } = await params;
 	if (!hasBlogSlugPrefix(slug)) notFound();
-	const profile = await getBlogPublicProfile(stripAtPrefix(slug));
-	if (profile === null) notFound();
-	return createBlogMetadata(profile);
+	const profileData = await getBlogPublicProfile(stripAtPrefix(slug));
+	if (profileData === null) notFound();
+	return createBlogMetadata(profileData.profile);
 }
 
 export default async function BlogHomePage({ params, searchParams }: BlogHomePageProps) {
@@ -30,10 +30,13 @@ export default async function BlogHomePage({ params, searchParams }: BlogHomePag
 	}
 
 	const normalizedSlug = stripAtPrefix(slug);
+	const profileData = await getBlogPublicProfile(normalizedSlug);
+	if (profileData === null) notFound();
 	const queryClient = new QueryClient();
 	const initialState = await prefetchBlogHomeInitialState(queryClient, {
 		slug: normalizedSlug,
 		searchParams: resolvedSearchParams,
+		profileResponse: profileData.response,
 	});
 
 	if (initialState.status === 'not-found') {

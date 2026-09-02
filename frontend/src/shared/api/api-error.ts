@@ -55,6 +55,15 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 	return { type: 'unknown', cause: error };
 };
 
+export const isNotFoundApiError = (
+	error: unknown,
+): error is Extract<NormalizedApiError, { response: Response }> =>
+	typeof error === 'object' &&
+	error !== null &&
+	'response' in error &&
+	error.response instanceof Response &&
+	error.response.status === 404;
+
 /**
  * NormalizedApiError에서 필드 오류(invalidParams)만 추출하여 폼 에러 형태(Record<string, string>)로 반환합니다.
  * 에러가 필드 오류가 아니거나 파라미터가 없으면 null을 반환합니다.

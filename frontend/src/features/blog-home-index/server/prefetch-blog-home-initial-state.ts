@@ -12,10 +12,13 @@ import { publicBlogPostsQueryOptions } from '@/shared/api/blogs/queries/public-b
 import { prefetchBlogPublicProfileQuery } from '@/shared/api/blogs/queries/public-profile/prefetch-query';
 import { blogPublicProfileQueryOptions } from '@/shared/api/blogs/queries/public-profile/query-options';
 import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
+import type { BlogPublicProfileResponse } from '@/shared/api/blogs/types';
+import type { ApiResponse } from '@/shared/api/shared.types';
 
 interface PrefetchBlogHomeInitialStateOptions {
 	slug: string;
 	searchParams: BlogHomeSearchParams;
+	profileResponse?: ApiResponse<BlogPublicProfileResponse>;
 }
 
 interface BlogHomeInitialNotFoundState {
@@ -34,12 +37,17 @@ export type BlogHomeInitialState = BlogHomeInitialNotFoundState | BlogHomeInitia
 
 export const prefetchBlogHomeInitialState = async (
 	queryClient: QueryClient,
-	{ slug, searchParams }: PrefetchBlogHomeInitialStateOptions,
+	{ slug, searchParams, profileResponse: initialProfileResponse }: PrefetchBlogHomeInitialStateOptions,
 ): Promise<BlogHomeInitialState> => {
 	const profileQueryOptions = blogPublicProfileQueryOptions(slug);
 	const indexQueryOptions = blogIndexQueryOptions(slug);
 
-	await Promise.all([prefetchBlogPublicProfileQuery(queryClient, slug), prefetchBlogIndexQuery(queryClient, slug)]);
+	if (initialProfileResponse !== undefined) {
+		queryClient.setQueryData(profileQueryOptions.queryKey, initialProfileResponse);
+		await prefetchBlogIndexQuery(queryClient, slug);
+	} else {
+		await Promise.all([prefetchBlogPublicProfileQuery(queryClient, slug), prefetchBlogIndexQuery(queryClient, slug)]);
+	}
 
 	const profileResponse = queryClient.getQueryData(profileQueryOptions.queryKey);
 	if (profileResponse?.data === undefined) {
