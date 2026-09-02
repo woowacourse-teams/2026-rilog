@@ -495,6 +495,23 @@ describe('PublishSettingsModal', () => {
 		expect(screen.queryByText('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.')).not.toBeInTheDocument();
 	});
 
+	it('이미지 용량 오류는 모달을 닫았다 다시 열면 유지하지 않는다', async () => {
+		const user = userEvent.setup();
+		const oversizedImage = new File([], 'oversized.png', { type: 'image/png' });
+		Object.defineProperty(oversizedImage, 'size', { value: MAX_IMAGE_FILE_SIZE_BYTES + 1 });
+		const { rerender } = renderModal();
+
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), oversizedImage);
+		expect(screen.getByRole('alert')).toHaveTextContent('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+
+		await user.click(screen.getByRole('button', { name: '취소' }));
+		rerender(<PublishSettingsModal {...DEFAULT_PROPS} open={false} />);
+		rerender(<PublishSettingsModal {...DEFAULT_PROPS} open />);
+
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+		expect(screen.getByLabelText('대표 이미지 추가')).not.toHaveAttribute('aria-invalid', 'true');
+	});
+
 	it('기존 대표 이미지 URL이 있으면 변경과 제거 동작을 제공한다', async () => {
 		const user = userEvent.setup();
 		const handleImageChange = vi.fn();

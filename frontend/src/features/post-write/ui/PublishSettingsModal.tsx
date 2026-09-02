@@ -128,6 +128,11 @@ export default function PublishSettingsModal({
 		onImageChange(file);
 	};
 
+	const handleClose = () => {
+		setImageFileSizeError(null);
+		onClose();
+	};
+
 	const handleBlogChange = (blog: BlogOption) => {
 		setSelectedBlog(blog);
 
@@ -144,7 +149,7 @@ export default function PublishSettingsModal({
 			open={open}
 			title="게시 설정"
 			description="발행 전에 게시글 정보를 확인해 주세요."
-			onClose={onClose}
+			onClose={handleClose}
 			size="xl"
 			padding="xl"
 			scrollMode="custom"
