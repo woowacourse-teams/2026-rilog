@@ -19,7 +19,7 @@ export default function SidebarHeader() {
 						alt=""
 						width={418}
 						height={364}
-						className="absolute top-0 h-5.5 w-auto transition-opacity duration-150 group-hover:opacity-0"
+						className="absolute top-0 h-5.5 w-auto transition-opacity duration-150"
 						priority
 					/>
 					<Image
