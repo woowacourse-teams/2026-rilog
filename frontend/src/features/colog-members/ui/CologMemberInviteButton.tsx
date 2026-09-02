@@ -1,4 +1,4 @@
-import { buildCologSettingsPath } from '@/shared/routes/app-routes';
+import { buildCologMemberInvitePath } from '@/shared/routes/app-routes';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 interface CologMemberInviteButtonProps {
@@ -8,7 +8,7 @@ interface CologMemberInviteButtonProps {
 export default function CologMemberInviteButton({ slug }: CologMemberInviteButtonProps) {
 	return (
 		<ButtonLink
-			href={buildCologSettingsPath(slug, 'members')}
+			href={buildCologMemberInvitePath(slug)}
 			aria-label="멤버 추가"
 			variant="secondary"
 			size="icon"

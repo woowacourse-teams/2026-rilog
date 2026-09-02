@@ -9,7 +9,7 @@ describe('CologMemberInviteButton', () => {
 
 		expect(screen.getByRole('link', { name: '멤버 추가' })).toHaveAttribute(
 			'href',
-			'/@rilog-team/settings?tab=members',
+			'/@rilog-team/settings?tab=members&invite=true',
 		);
 	});
 });
