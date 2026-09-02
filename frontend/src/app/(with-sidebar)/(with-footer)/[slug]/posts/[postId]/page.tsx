@@ -2,12 +2,12 @@ import { notFound, permanentRedirect } from 'next/navigation';
 
 import type { Metadata } from 'next';
 
-import { createPostMetadata, getPostCanonicalPath } from '@/features/post-detail/lib/create-post-metadata';
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
 import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import PostDetail from '@/widgets/post-detail/PostDetail';
 
+import { createPostMetadata, getPostCanonicalPath } from './metadata';
 import './post-detail.css';
 
 interface PostDetailPageProps {
@@ -17,6 +17,7 @@ interface PostDetailPageProps {
 const parsePostId = (postId: string) => {
 	const value = Number(postId);
 	if (!Number.isSafeInteger(value) || value < 1) notFound();
+
 	return value;
 };
 
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 	const { postId } = await params;
 	const post = await getPublicPostDetail(parsePostId(postId));
 	if (post === null) notFound();
+
 	return createPostMetadata(post);
 }
 
@@ -35,6 +37,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
 	const post = await getPublicPostDetail(parsePostId(postId));
 	if (post === null) notFound();
+
 	const canonical = getPostCanonicalPath(post);
 	if (stripAtPrefix(slug) !== post.blog.slug) permanentRedirect(canonical);
 

@@ -22,6 +22,7 @@ export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 	}
 
 	const detail = value as Partial<ErrorDetail>;
+
 	return (
 		typeof detail.status === 'number' &&
 		typeof detail.error === 'string' &&
@@ -41,6 +42,7 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 				response: error.response,
 			};
 		}
+
 		return { type: 'http', response: error.response, cause: error };
 	}
 
@@ -55,9 +57,7 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 	return { type: 'unknown', cause: error };
 };
 
-export const isNotFoundApiError = (
-	error: unknown,
-): error is Extract<NormalizedApiError, { response: Response }> =>
+export const isNotFoundApiError = (error: unknown): error is Extract<NormalizedApiError, { response: Response }> =>
 	typeof error === 'object' &&
 	error !== null &&
 	'response' in error &&

@@ -4,11 +4,12 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
-import { createBlogMetadata } from '@/features/blog-profile/lib/create-blog-metadata';
 import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-public-profile';
 import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import BlogHome from '@/widgets/blog-home/ui/BlogHome';
+
+import { createBlogMetadata } from './metadata';
 
 interface BlogHomePageProps {
 	params: Promise<{ slug: string }>;
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: BlogHomePageProps): Promise<M
 	if (!hasBlogSlugPrefix(slug)) notFound();
 	const profileData = await getBlogPublicProfile(stripAtPrefix(slug));
 	if (profileData === null) notFound();
+
 	return createBlogMetadata(profileData.profile);
 }
 
@@ -32,6 +34,7 @@ export default async function BlogHomePage({ params, searchParams }: BlogHomePag
 	const normalizedSlug = stripAtPrefix(slug);
 	const profileData = await getBlogPublicProfile(normalizedSlug);
 	if (profileData === null) notFound();
+
 	const queryClient = new QueryClient();
 	const initialState = await prefetchBlogHomeInitialState(queryClient, {
 		slug: normalizedSlug,
