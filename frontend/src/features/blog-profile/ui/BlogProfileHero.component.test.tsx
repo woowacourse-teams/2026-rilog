@@ -38,6 +38,7 @@ describe('BlogProfileHero', () => {
 		);
 		expect(screen.getByRole('button', { name: '팀 설정' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '팀 설정' }).parentElement).toHaveClass(
+			'z-20',
 			'text-on-brand-primary',
 			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
 		);

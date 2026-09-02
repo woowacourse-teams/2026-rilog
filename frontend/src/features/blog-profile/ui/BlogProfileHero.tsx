@@ -48,7 +48,7 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 					</h1>
 					{action ? (
 						<div
-							className={`absolute top-1/2 left-full ml-2 -translate-y-1/2 text-on-brand-primary ${coverTextShadowClassName}`}
+							className={`absolute top-1/2 left-full z-20 ml-2 -translate-y-1/2 text-on-brand-primary ${coverTextShadowClassName}`}
 						>
 							{action}
 						</div>

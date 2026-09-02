@@ -137,20 +137,33 @@ export default function RilogSeriesField({
 			{({ id }) => (
 				<div className="flex flex-col gap-3">
 					{isCreatorOpen && (
-						<Input
-							ref={seriesNameInputRef}
-							aria-label="새로운 시리즈 이름"
-							placeholder="새로운 시리즈 이름을 입력하세요."
-							value={newSeriesName}
-							disabled={isPending}
-							status={creationError === undefined ? 'default' : 'error'}
-							helperText={creationError}
-							onChange={(event) => {
-								setNewSeriesName(event.currentTarget.value);
-								resetCreation();
-							}}
-							onKeyDown={handleSeriesNameKeyDown}
-						/>
+						<div className="flex items-start gap-2 rounded-md bg-surface-hover p-1.5">
+							<Input
+								ref={seriesNameInputRef}
+								aria-label="새로운 시리즈 이름"
+								placeholder="시리즈 이름을 입력하고 Enter를 눌러 추가하세요."
+								value={newSeriesName}
+								disabled={isPending}
+								status={creationError === undefined ? 'default' : 'error'}
+								helperText={creationError}
+								className="border-0 bg-transparent px-3"
+								onChange={(event) => {
+									setNewSeriesName(event.currentTarget.value);
+									resetCreation();
+								}}
+								onKeyDown={handleSeriesNameKeyDown}
+							/>
+							<Button
+								type="button"
+								size="md"
+								className="shrink-0 px-5"
+								disabled={isPending || !newSeriesName.trim()}
+								isPending={createChapterMutation.isPending}
+								onClick={() => void handleCreateSeries()}
+							>
+								추가
+							</Button>
+						</div>
 					)}
 					<select
 						id={id}
