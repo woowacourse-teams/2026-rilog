@@ -50,12 +50,12 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 		expect(mapPostDetailToPostWriteInitialData(createResponse({ content: null })).document.blocks).toEqual([]);
 	});
 
-	it('기본 썸네일 경로는 사용자 대표 이미지가 없는 상태로 정규화한다', () => {
+	it('기본 썸네일 경로를 명시적으로 선택한 상태로 보존한다', () => {
 		expect(
 			mapPostDetailToPostWriteInitialData(createResponse({ thumbnailImageUrl: POST_THUMBNAIL_FALLBACK_URL })).settings,
 		).toMatchObject({
 			representativeImage: null,
-			representativeImageUrl: null,
+			representativeImageUrl: POST_THUMBNAIL_FALLBACK_URL,
 		});
 	});
 });

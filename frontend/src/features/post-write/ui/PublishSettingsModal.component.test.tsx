@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Block } from '@blocknote/core';
 import type { ComponentProps } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
@@ -447,6 +448,27 @@ describe('PublishSettingsModal', () => {
 		);
 		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
 		expect(handleImageChange).toHaveBeenLastCalledWith(null);
+	});
+
+	it('본문 첫 이미지로 자동 설정된 대표 이미지도 제거할 수 있다', async () => {
+		const user = userEvent.setup();
+		const handleImageChange = vi.fn();
+		const bodyImage = {
+			id: 'body-image',
+			type: 'image',
+			props: { url: 'https://example.com/body.png' },
+			content: [],
+			children: [],
+		} as unknown as Block;
+		renderModal({ bodyBlocks: [bodyImage], onImageChange: handleImageChange });
+
+		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
+			'src',
+			'https://example.com/body.png',
+		);
+		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
+
+		expect(handleImageChange).toHaveBeenCalledWith(null);
 	});
 
 	it('10MB를 초과한 대표 이미지는 반영하지 않고 오류를 안내하며 정상 파일을 선택하면 오류를 해제한다', async () => {

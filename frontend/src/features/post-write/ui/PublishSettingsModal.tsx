@@ -92,9 +92,7 @@ export default function PublishSettingsModal({
 	const isCreatingSeries = useIsMutating({ mutationKey: CREATE_BLOG_CHAPTER_MUTATION_KEY }) > 0;
 	// 선택 이미지, 본문 첫 이미지, 기본 이미지 순서로 최종 썸네일 URL 결정
 	const previewUrl = resolveRepresentativeImagePreview(selectedImageUrl, bodyBlocks, defaultImageUrl);
-	const hasRepresentativeImage =
-		settings.representativeImage !== null ||
-		(settings.representativeImageUrl !== null && settings.representativeImageUrl !== defaultImageUrl);
+	const hasRepresentativeImage = settings.representativeImage !== null || previewUrl !== defaultImageUrl;
 	const selectedColog = settings.blog?.type === COLOG ? settings.blog : null;
 	const isRilog = selectedBlog === RILOG;
 	const isCologSelected = selectedColog !== null;

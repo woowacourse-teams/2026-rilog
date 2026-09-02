@@ -1,5 +1,6 @@
 import type { Block } from '@blocknote/core';
 
+import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { ImageSource } from '@/features/analytics/model/analytics-event';
 import type { PublicationSettings } from '@/features/post-write/model/post-publication';
 const getImageUrl = (block: Block): string | null => {
@@ -35,6 +36,7 @@ export const resolveRepresentativeImagePreview = (
 
 export const resolveRepresentativeImageSource = (settings: PublicationSettings, blocks: Block[]): ImageSource => {
 	if (settings.representativeImage !== null) return 'uploaded';
+	if (settings.representativeImageUrl === POST_THUMBNAIL_FALLBACK_URL) return 'default';
 	if (settings.representativeImageUrl !== null) return 'existing';
 	return findFirstBodyImageUrl(blocks) === null ? 'default' : 'body';
 };
