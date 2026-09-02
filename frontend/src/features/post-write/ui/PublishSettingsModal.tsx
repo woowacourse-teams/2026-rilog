@@ -1,7 +1,7 @@
 'use client';
 
 import { useIsMutating } from '@tanstack/react-query';
-import { type ChangeEvent, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { Block } from '@blocknote/core';
 
@@ -12,9 +12,10 @@ import type {
 	TargetBlog,
 } from '@/features/post-write/model/post-publication';
 import { CREATE_BLOG_CHAPTER_MUTATION_KEY } from '@/shared/api/blogs/mutations/use-create-blog-chapter-mutation';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
-import ImageUploader from '@/shared/ui/image-uploader/ImageUploader';
+import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import Modal from '@/shared/ui/modal/Modal';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
@@ -85,6 +86,7 @@ export default function PublishSettingsModal({
 }: PublishSettingsModalProps) {
 	// 블로그 선택
 	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => settings.blog?.type ?? RILOG);
+	const [imageFileSizeError, setImageFileSizeError] = useState<string | null>(null);
 	// 제출 시 Co-log가 비어 있으면 해당 select로 focus하기 위한 ref
 	const cologSelectRef = useRef<HTMLSelectElement>(null);
 	const isCreatingSeries = useIsMutating({ mutationKey: CREATE_BLOG_CHAPTER_MUTATION_KEY }) > 0;
@@ -121,9 +123,9 @@ export default function PublishSettingsModal({
 		onPublish(selectedBlog);
 	};
 
-	// 공용 ImageUploader가 label과 숨겨진 file input의 연결을 소유하며 같은 파일을 다시 선택할 수 있도록 초기화
-	const resetFileInput = (event: ChangeEvent<HTMLInputElement>) => {
-		event.currentTarget.value = '';
+	const handleImageChange = (file: File | null) => {
+		setImageFileSizeError(null);
+		onImageChange(file);
 	};
 
 	const handleBlogChange = (blog: BlogOption) => {
@@ -157,26 +159,42 @@ export default function PublishSettingsModal({
 					<section>
 						<Field label="대표 이미지" description="직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.">
 							{({ id, describedBy }) => (
-								<div className={`grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
-									<ImageUploader
-										id={id}
-										aria-describedby={describedBy}
-										fullWidth
-										buttonLabel={hasRepresentativeImage ? '이미지 변경' : '이미지 선택'}
-										disabled={isModalPending}
-										onChange={resetFileInput}
-										onFileChange={onImageChange}
-									/>
-									{hasRepresentativeImage && (
-										<Button
-											size="md"
-											variant="ghost"
-											className="w-full focus-visible:-outline-offset-2"
+								<div className="flex flex-col gap-2">
+									<div className={`grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
+										<ImageEditButton
+											id={id}
+											imageLabel="대표 이미지"
+											hasImage={hasRepresentativeImage}
+											fullWidth
 											disabled={isModalPending}
-											onClick={() => onImageChange(null)}
-										>
-											이미지 제거
-										</Button>
+											aria-describedby={
+												imageFileSizeError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy
+											}
+											aria-invalid={imageFileSizeError !== null}
+											validateFile={(file) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES}
+											onFileRejected={(file) => {
+												if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+													setImageFileSizeError('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+												}
+											}}
+											onFileChange={(file) => handleImageChange(file)}
+										/>
+										{hasRepresentativeImage && (
+											<Button
+												size="md"
+												variant="ghost"
+												className="w-full focus-visible:-outline-offset-2"
+												disabled={isModalPending}
+												onClick={() => handleImageChange(null)}
+											>
+												이미지 제거
+											</Button>
+										)}
+									</div>
+									{imageFileSizeError && (
+										<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+											{imageFileSizeError}
+										</p>
 									)}
 								</div>
 							)}

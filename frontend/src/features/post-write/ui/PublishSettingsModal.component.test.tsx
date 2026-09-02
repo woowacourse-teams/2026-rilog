@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import * as blogsApi from '@/shared/api/blogs/api';
+import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import PublishSettingsModal from './PublishSettingsModal';
@@ -356,7 +357,7 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('button', { name: '시리즈 추가 취소' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
-		expect(screen.getByLabelText('이미지 선택')).toBeDisabled();
+		expect(screen.getByLabelText('대표 이미지 추가')).toBeDisabled();
 		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: '카테고리' })).toBeDisabled();
@@ -424,7 +425,7 @@ describe('PublishSettingsModal', () => {
 		const imageFile = new File(['image'], 'cover.png', { type: 'image/png' });
 		const { rerender } = renderModal({ onImageChange: handleImageChange });
 
-		await user.upload(screen.getByLabelText('이미지 선택'), imageFile);
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), imageFile);
 		expect(handleImageChange).toHaveBeenCalledWith(imageFile);
 
 		rerender(
@@ -438,6 +439,30 @@ describe('PublishSettingsModal', () => {
 		expect(handleImageChange).toHaveBeenLastCalledWith(null);
 	});
 
+	it('10MB를 초과한 대표 이미지는 반영하지 않고 오류를 안내하며 정상 파일을 선택하면 오류를 해제한다', async () => {
+		const user = userEvent.setup();
+		const handleImageChange = vi.fn();
+		const oversizedImage = new File([new Uint8Array(MAX_IMAGE_FILE_SIZE_BYTES + 1)], 'oversized.png', {
+			type: 'image/png',
+		});
+		const validImage = new File(['image'], 'cover.png', { type: 'image/png' });
+		renderModal({ onImageChange: handleImageChange });
+
+		const imageInput = screen.getByLabelText('대표 이미지 추가');
+		await user.upload(imageInput, oversizedImage);
+
+		expect(handleImageChange).not.toHaveBeenCalled();
+		expect(imageInput).toHaveAttribute('aria-invalid', 'true');
+		expect(imageInput).toHaveAccessibleDescription(/대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요\./);
+		expect(screen.getByRole('alert')).toHaveTextContent('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.');
+
+		await user.upload(imageInput, validImage);
+
+		expect(handleImageChange).toHaveBeenCalledWith(validImage);
+		expect(imageInput).not.toHaveAttribute('aria-invalid', 'true');
+		expect(screen.queryByText('대표 이미지는 10MB 이하의 이미지만 업로드할 수 있어요.')).not.toBeInTheDocument();
+	});
+
 	it('기존 대표 이미지 URL이 있으면 변경과 제거 동작을 제공한다', async () => {
 		const user = userEvent.setup();
 		const handleImageChange = vi.fn();
@@ -447,7 +472,7 @@ describe('PublishSettingsModal', () => {
 			onImageChange: handleImageChange,
 		});
 
-		expect(screen.getByLabelText('이미지 변경')).toBeInTheDocument();
+		expect(screen.getByLabelText('대표 이미지 변경')).toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '이미지 제거' }));
 
 		expect(handleImageChange).toHaveBeenCalledWith(null);
@@ -463,7 +488,7 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
 		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
-		expect(screen.getByLabelText('이미지 선택')).toBeDisabled();
+		expect(screen.getByLabelText('대표 이미지 추가')).toBeDisabled();
 
 		fireEvent.click(dialog);
 		fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));

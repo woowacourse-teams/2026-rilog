@@ -828,10 +828,16 @@ describe('NewPostController', () => {
 
 		const thumbnailPreview = screen.getByRole('figure', { name: '게시글 썸네일 미리보기' });
 		expect(within(thumbnailPreview).getByText('BlockNote 도입기')).toBeInTheDocument();
-		await user.upload(screen.getByLabelText('이미지 선택'), new File(['first'], 'first.png', { type: 'image/png' }));
+		await user.upload(
+			screen.getByLabelText('대표 이미지 추가'),
+			new File(['first'], 'first.png', { type: 'image/png' }),
+		);
 		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute('src', 'blob:first-cover');
 
-		await user.upload(screen.getByLabelText('이미지 변경'), new File(['second'], 'second.png', { type: 'image/png' }));
+		await user.upload(
+			screen.getByLabelText('대표 이미지 변경'),
+			new File(['second'], 'second.png', { type: 'image/png' }),
+		);
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:first-cover');
 		await user.click(screen.getByRole('button', { name: '취소' }));
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: '게시 설정' })).not.toBeInTheDocument());
@@ -848,7 +854,10 @@ describe('NewPostController', () => {
 			'/images/thumbnail-fallback.svg',
 		);
 
-		await user.upload(screen.getByLabelText('이미지 선택'), new File(['third'], 'third.png', { type: 'image/png' }));
+		await user.upload(
+			screen.getByLabelText('대표 이미지 추가'),
+			new File(['third'], 'third.png', { type: 'image/png' }),
+		);
 
 		unmount();
 		expect(revokeObjectUrl).toHaveBeenCalledWith('blob:third-cover');
@@ -985,7 +994,7 @@ describe('NewPostController', () => {
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		const coverImage = new File(['image'], 'cover.png', { type: 'image/png' });
-		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), coverImage);
 		await selectFirstCoLog(user);
 		await user.selectOptions(screen.getByRole('combobox', { name: '챕터' }), '12');
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
@@ -1009,7 +1018,7 @@ describe('NewPostController', () => {
 
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
-		await user.upload(screen.getByLabelText('이미지 선택'), coverImage);
+		await user.upload(screen.getByLabelText('대표 이미지 추가'), coverImage);
 		await selectFirstCoLog(user);
 		await user.selectOptions(screen.getByRole('combobox', { name: '챕터' }), '12');
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
