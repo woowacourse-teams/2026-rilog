@@ -22,7 +22,7 @@ export default function Footer() {
 						href={APP_ROUTES.feeds}
 						aria-label="Rilog 홈"
 					>
-						<Image src="/brand/logo.svg" alt="Rilog." width={85} height={32} priority />
+						<Image src="/brand/logo.svg" alt="Rilog." width={85} height={34} priority />
 					</CustomLink>
 					<p className="w-max text-caption-2 font-medium">기록을 작성하고 함께 나누는 공간</p>
 				</div>

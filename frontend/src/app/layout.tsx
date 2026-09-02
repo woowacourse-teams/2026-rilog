@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 		url: '/feeds',
 	}),
 	icons: {
-		icon: '/brand/favicon.png',
+		icon: '/brand/favicon.svg',
 	},
 };
 
