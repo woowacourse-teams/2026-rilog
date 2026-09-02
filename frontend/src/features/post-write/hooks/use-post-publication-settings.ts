@@ -75,7 +75,7 @@ export function usePostPublicationSettings({ initialSettings, userSlug }: UsePos
 	const validatePublicationSettings = useCallback(
 		(selectedBlog: BlogType) => {
 			if (selectedBlog === 'COLOG' && resolvedSettings.blog?.type !== 'COLOG') {
-				setCologError('코로그를 선택해 주세요.');
+				setCologError('Colog를 선택해 주세요.');
 				return false;
 			}
 

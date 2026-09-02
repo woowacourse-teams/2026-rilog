@@ -37,10 +37,10 @@ describe('BlogHomeNavigation', () => {
 	it('RILOG은 API 시리즈와 코로그를 필터 링크로 보여주고 다른 query를 보존한다', () => {
 		render(<BlogHomeNavigation blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
 
-		const navigation = screen.getByRole('navigation', { name: '시리즈와 코로그 탐색' });
+		const navigation = screen.getByRole('navigation', { name: '시리즈와 Colog 탐색' });
 		expect(within(navigation).getByRole('link', { name: '전체보기, 글 23개' })).toHaveAttribute('aria-current', 'page');
 		expect(within(navigation).getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
-		expect(within(navigation).getByRole('heading', { name: '코로그' })).toBeInTheDocument();
+		expect(within(navigation).getByRole('heading', { name: 'Colog' })).toBeInTheDocument();
 		expect(within(navigation).getByRole('link', { name: '우테코에서 살아남기, 글 12개' })).toHaveAttribute(
 			'href',
 			'/@jetproc?notice=keep&series=3',
@@ -67,7 +67,7 @@ describe('BlogHomeNavigation', () => {
 			'/@jetproc?notice=keep&chapter=3',
 		);
 		expect(screen.queryByRole('heading', { name: '시리즈' })).not.toBeInTheDocument();
-		expect(screen.queryByRole('heading', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: 'Colog' })).not.toBeInTheDocument();
 	});
 
 	it('인덱스 실패에는 retry를, 빈 배열에는 빈 상태를 제공한다', () => {

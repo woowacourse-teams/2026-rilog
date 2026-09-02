@@ -14,5 +14,6 @@ describe('robots', () => {
 			expect.objectContaining({ userAgent: ['OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot'], allow: '/' }),
 		);
 		expect(result.sitemap).toBe('https://rilog.kr/sitemap.xml');
+		expect(rules[0]?.disallow).toContain('/colog/create');
 	});
 });

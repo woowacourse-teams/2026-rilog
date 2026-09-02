@@ -17,7 +17,7 @@ describe('app routes', () => {
 	it('정적 페이지 경로를 제공한다', () => {
 		expect(APP_ROUTES).toEqual({
 			feeds: '/feeds',
-			cologCreate: '/co-logs/create',
+			cologCreate: '/colog/create',
 			signUp: '/sign-up',
 			write: '/write',
 		});
