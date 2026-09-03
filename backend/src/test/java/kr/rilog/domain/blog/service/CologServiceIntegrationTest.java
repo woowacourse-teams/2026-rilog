@@ -45,43 +45,15 @@ class CologServiceIntegrationTest extends ServiceSupport {
     private PostRepository postRepository;
 
     @Test
-    @DisplayName("OWNER는 사용자를 ADMIN 멤버로 초대한다.")
-    void inviteMemberPersistsActiveAdminMember() {
+    @DisplayName("OWNER는 사용자를 MEMBER 멤버로 초대한다.")
+    void inviteMemberPersistsActiveMemberByOwner() {
         // given
         InvitationScenario scenario = createInvitationScenario();
 
         CologMemberInviteCommand command = new CologMemberInviteCommand(
                 scenario.invitee().getId(),
-                BlogPermission.ADMIN,
                 "Backend"
         );
-
-        // when
-        CologMemberInviteResult result = cologService.inviteMember(
-                scenario.owner().getId(),
-                COLOG_SLUG,
-                command
-        );
-
-        // then
-        BlogMember savedMember = getBlogMember(scenario);
-
-        assertThat(savedMember.getPermission()).isEqualTo(BlogPermission.ADMIN);
-        assertThat(result.permission()).isEqualTo(BlogPermission.ADMIN);
-    }
-
-    @Test
-    @DisplayName("OWNER는 사용자를 MEMBER 멤버로 초대한다.")
-    void inviteMemberPersistsActiveMember() {
-        // given
-        InvitationScenario scenario = createInvitationScenario();
-
-        CologMemberInviteCommand command =
-                new CologMemberInviteCommand(
-                        scenario.invitee().getId(),
-                        BlogPermission.MEMBER,
-                        "Backend"
-                );
 
         // when
         CologMemberInviteResult result = cologService.inviteMember(

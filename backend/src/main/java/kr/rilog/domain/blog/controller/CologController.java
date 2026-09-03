@@ -6,6 +6,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.apispec.CologApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
+import kr.rilog.domain.blog.controller.dto.request.CologMemberUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
@@ -80,6 +81,18 @@ public class CologController implements CologApiSpec {
     ) {
         cologService.removeMember(requesterId, slug, memberId);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 멤버를 내보냈습니다.");
+    }
+
+    @AuthGuard
+    @PatchMapping("/cologs/{slug}/members/{memberId}")
+    public ApiResponse<Void> updateMember(
+            @LoginUserId Long requesterId,
+            @PathVariable("slug") String slug,
+            @PathVariable("memberId") Long memberId,
+            @Valid @RequestBody CologMemberUpdateRequest request
+    ) {
+        cologService.updateMember(requesterId, slug, memberId, request.toCommand());
+        return ApiResponse.response(HttpStatus.OK, "팀 멤버 정보를 수정했습니다.");
     }
 
     @AuthGuard

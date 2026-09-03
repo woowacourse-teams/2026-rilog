@@ -7,6 +7,7 @@ import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -165,7 +167,7 @@ class CologControllerTest {
     void inviteMemberInvitesCologMemberForLoginUser() throws Exception {
         // given
         CologService cologService = mock(CologService.class);
-        CologMemberInviteCommand command = new CologMemberInviteCommand(10L, BlogPermission.MEMBER, "Backend");
+        CologMemberInviteCommand command = new CologMemberInviteCommand(10L, "Backend");
         when(cologService.inviteMember(1L, "rilog-team", command))
                 .thenReturn(new CologMemberInviteResult(3L, 10L, BlogPermission.MEMBER, "Backend"));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
@@ -178,7 +180,6 @@ class CologControllerTest {
                         .content("""
                                 {
                                   "userId": 10,
-                                  "permission": "MEMBER",
                                   "blogRole": "Backend"
                                 }
                                 """))
@@ -223,6 +224,35 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.message").value("팀 멤버를 내보냈습니다."));
 
         verify(cologService).removeMember(7L, "rilog-team", 3L);
+    }
+
+    @Test
+    @DisplayName("PATCH /v1/cologs/{slug}/members/{memberId}는 팀 멤버 정보 수정을 처리한다")
+    void updateMemberUpdatesTargetMember() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        MockMvc mockMvc = mockMvc(cologService);
+
+        // when - then
+        mockMvc.perform(patch("/v1/cologs/{slug}/members/{memberId}", "rilog-team", 3L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "permission": "ADMIN",
+                                  "blogRole": "Frontend"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("팀 멤버 정보를 수정했습니다."));
+
+        verify(cologService).updateMember(
+                7L,
+                "rilog-team",
+                3L,
+                new CologMemberUpdateCommand(BlogPermission.ADMIN, "Frontend")
+        );
     }
 
     @Test

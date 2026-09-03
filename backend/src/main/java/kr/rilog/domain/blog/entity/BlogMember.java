@@ -98,6 +98,16 @@ public class BlogMember extends BaseEntity {
         throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
     }
 
+    public void update(BlogMember target, BlogPermission newPermission, String newBlogRole) {
+        validateActiveMember();
+        target.validateActiveMember();
+        validateCanUpdateBlogRole(target, newBlogRole);
+        validateCanUpdatePermission(target, newPermission);
+
+        target.blogRole = newBlogRole;
+        updatePermission(target, newPermission);
+    }
+
     public void validateActiveMember() {
         if (status != ACTIVE) {
             throw new BlogException(ALREADY_BLOG_MEMBER_LEFT);
@@ -155,6 +165,54 @@ public class BlogMember extends BaseEntity {
         }
 
         return permission == ADMIN && target.permission == MEMBER;
+    }
+
+    private void validateCanUpdateBlogRole(BlogMember target, String newBlogRole) {
+        if (newBlogRole == null) {
+            return;
+        }
+        if (canUpdateBlogRole(target)) {
+            return;
+        }
+
+        throw new BlogException(COLOG_MEMBER_UPDATE_FORBIDDEN);
+    }
+
+    private boolean canUpdateBlogRole(BlogMember target) {
+        if (permission == OWNER) {
+            return target.permission == ADMIN || target.permission == MEMBER;
+        }
+
+        return permission == ADMIN && target.permission == MEMBER;
+    }
+
+    private void validateCanUpdatePermission(BlogMember target, BlogPermission newPermission) {
+        if (newPermission == null) {
+            return;
+        }
+        if (isSameMember(target)) {
+            throw new BlogException(COLOG_SELF_PERMISSION_UPDATE_FORBIDDEN);
+        }
+        if (target.permission == newPermission) {
+            return;
+        }
+        if (!isOwner() || target.isOwner()) {
+            throw new BlogException(COLOG_MEMBER_UPDATE_FORBIDDEN);
+        }
+    }
+
+    private void updatePermission(BlogMember target, BlogPermission newPermission) {
+        if (newPermission == OWNER) {
+            transferOwnershipTo(target);
+            return;
+        }
+
+        target.permission = newPermission;
+    }
+
+    private void transferOwnershipTo(BlogMember target) {
+        this.permission = ADMIN;
+        target.permission = OWNER;
     }
 
     private boolean isCologMember() {

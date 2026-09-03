@@ -12,6 +12,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
@@ -252,8 +253,8 @@ class CologServiceTest {
     }
 
     @Test
-    @DisplayName("OWNER 권한 팀 멤버는 사용자를 ADMIN 멤버로 초대할 수 있다")
-    void inviteMemberAllowsOwnerToInviteAdmin() {
+    @DisplayName("OWNER 권한 팀 멤버는 사용자를 MEMBER 멤버로 초대할 수 있다")
+    void inviteMemberAllowsOwnerToInviteMember() {
         // given
         User owner = createOwner();
         User invitee = createInvitee();
@@ -286,7 +287,7 @@ class CologServiceTest {
         CologMemberInviteResult result = cologService.inviteMember(
                 OWNER_ID,
                 COLOG_SLUG,
-                new CologMemberInviteCommand(INVITEE_ID, BlogPermission.ADMIN, "Backend")
+                new CologMemberInviteCommand(INVITEE_ID, "Backend")
         );
 
         // then
@@ -305,14 +306,14 @@ class CologServiceTest {
                         colog,
                         invitee,
                         "Backend",
-                        BlogPermission.ADMIN,
+                        BlogPermission.MEMBER,
                         BlogMemberStatus.ACTIVE,
                         LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)
                 );
         assertThat(result).isEqualTo(new CologMemberInviteResult(
                 10L,
                 INVITEE_ID,
-                BlogPermission.ADMIN,
+                BlogPermission.MEMBER,
                 "Backend"
         ));
     }
@@ -341,7 +342,7 @@ class CologServiceTest {
         cologService.inviteMember(
                 OWNER_ID,
                 COLOG_SLUG,
-                new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
+                new CologMemberInviteCommand(INVITEE_ID, "Frontend")
         );
 
         // then
@@ -368,7 +369,7 @@ class CologServiceTest {
         assertThatThrownBy(() -> cologService.inviteMember(
                 OWNER_ID,
                 COLOG_SLUG,
-                new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
+                new CologMemberInviteCommand(INVITEE_ID, "Frontend")
         ))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
@@ -399,7 +400,7 @@ class CologServiceTest {
         assertThatThrownBy(() -> cologService.inviteMember(
                 OWNER_ID,
                 COLOG_SLUG,
-                new CologMemberInviteCommand(INVITEE_ID, BlogPermission.MEMBER, "Frontend")
+                new CologMemberInviteCommand(INVITEE_ID, "Frontend")
         ))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
@@ -638,6 +639,115 @@ class CologServiceTest {
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_MEMBER_DOESNT_NOT_BELONG);
+    }
+
+    @Test
+    @DisplayName("OWNER는 MEMBER를 ADMIN으로 변경할 수 있다")
+    void updateMemberAllowsOwnerToPromoteMemberToAdmin() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when
+        cologService.updateMember(
+                OWNER_ID,
+                COLOG_SLUG,
+                TARGET_MEMBER_ID,
+                new CologMemberUpdateCommand(BlogPermission.ADMIN, null)
+        );
+
+        // then
+        assertThat(targetMember.getPermission()).isEqualTo(BlogPermission.ADMIN);
+    }
+
+    @Test
+    @DisplayName("OWNER가 OWNER를 부여하면 기존 OWNER는 ADMIN이 되고 대상 멤버는 OWNER가 된다")
+    void updateMemberTransfersOwnerPermission() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.OWNER);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when
+        cologService.updateMember(
+                OWNER_ID,
+                COLOG_SLUG,
+                TARGET_MEMBER_ID,
+                new CologMemberUpdateCommand(BlogPermission.OWNER, null)
+        );
+
+        // then
+        assertThat(requesterMember.getPermission()).isEqualTo(BlogPermission.ADMIN);
+        assertThat(targetMember.getPermission()).isEqualTo(BlogPermission.OWNER);
+    }
+
+    @Test
+    @DisplayName("ADMIN은 MEMBER의 팀 내 역할명을 수정할 수 있다")
+    void updateMemberAllowsAdminToUpdateMemberBlogRole() {
+        // given
+        User owner = createOwner();
+        User targetUser = createInvitee();
+        Blog colog = createColog(owner);
+        BlogMember requesterMember = createMember(REQUESTER_MEMBER_ID, colog, owner, BlogPermission.ADMIN);
+        BlogMember targetMember = createMember(TARGET_MEMBER_ID, colog, targetUser, BlogPermission.MEMBER);
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(colog));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID,
+                OWNER_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(requesterMember));
+        when(blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(
+                TARGET_MEMBER_ID,
+                COLOG_ID,
+                BlogMemberStatus.ACTIVE
+        ))
+                .thenReturn(Optional.of(targetMember));
+
+        // when
+        cologService.updateMember(
+                OWNER_ID,
+                COLOG_SLUG,
+                TARGET_MEMBER_ID,
+                new CologMemberUpdateCommand(null, "Frontend")
+        );
+
+        // then
+        assertThat(targetMember.getBlogRole()).isEqualTo("Frontend");
     }
 
     @Test
