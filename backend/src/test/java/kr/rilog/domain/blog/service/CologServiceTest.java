@@ -19,10 +19,10 @@ import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.entity.vo.ChapterName;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +79,7 @@ class CologServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private TagAssetsLifecycle tagAssetsLifecycle;
+    private TagAssetsPublisher tagAssetsPublisher;
 
     private CologService cologService;
 
@@ -91,7 +91,7 @@ class CologServiceTest {
                 chapterRepository,
                 postRepository,
                 userRepository,
-                tagAssetsLifecycle,
+                tagAssetsPublisher,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
@@ -177,7 +177,7 @@ class CologServiceTest {
         cologService.create(OWNER_ID, command);
 
         // then
-        verify(tagAssetsLifecycle).attach(new TagAssets(Set.of(
+        verify(tagAssetsPublisher).attach(new TagAssets(Set.of(
                 command.profileImageUrl(),
                 command.coverImageUrl()
         )));
@@ -197,7 +197,7 @@ class CologServiceTest {
                 .isEqualTo(BLOG_SLUG_ALREADY_EXISTS);
         verify(blogRepository, never()).saveAndFlush(any(Blog.class));
         verify(blogMemberRepository, never()).save(any(BlogMember.class));
-        verify(tagAssetsLifecycle, never()).attach(any());
+        verify(tagAssetsPublisher, never()).attach(any());
     }
 
     @Test

@@ -23,11 +23,17 @@ public class S3ObjectTagger {
     }
 
     private void changeS3ObjectTag(S3TagTarget uploadTarget) {
-        s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
-                .bucket(properties.bucket())
-                .key(uploadTarget.key())
-                .tagging(uploadTarget.tagStatus().toTagging())
-                .build());
+        try{
+            s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
+                    .bucket(properties.bucket())
+                    .key(uploadTarget.key())
+                    .tagging(uploadTarget.tagStatus().toTagging())
+                    .build());
+        } catch (Exception e){
+            log.error(e.getMessage());
+        }
+
+
     }
 
 }
