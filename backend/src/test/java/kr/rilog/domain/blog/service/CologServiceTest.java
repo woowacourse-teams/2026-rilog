@@ -643,7 +643,7 @@ class CologServiceTest {
 
     @Test
     @DisplayName("OWNER는 MEMBER를 ADMIN으로 변경할 수 있다")
-    void updateMemberAllowsOwnerToPromoteMemberToAdmin() {
+    void updateMemberAllowsOwnerToPromoteMemberAuthorizationToAdmin() {
         // given
         User owner = createOwner();
         User targetUser = createInvitee();

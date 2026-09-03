@@ -119,7 +119,7 @@ public class CologService {
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
 
-        requesterMember.update(targetMember, command.permission(), command.blogRole());
+        requesterMember.changeAuthorityOf(targetMember, command.permission(), command.blogRole());
     }
 
     @Transactional

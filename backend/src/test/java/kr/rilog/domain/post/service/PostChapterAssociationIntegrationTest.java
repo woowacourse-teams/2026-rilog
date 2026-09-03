@@ -207,7 +207,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 수정할 때 챕터를 지정하면 챕터 연결이 저장된다.")
     void updateAssignsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(9L, "update-assign");
+        PublishingScenario scenario = createRilogScenario(9L, "changeAuthorityOf-assign");
         Chapter chapter = saveChapter(scenario.blog(), "지정할 챕터", 0);
         Post post = savePublishedPost(scenario);
 
@@ -227,7 +227,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 수정할 때 다른 챕터를 지정하면 챕터 연결이 변경된다.")
     void updateChangesChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(10L, "update-change");
+        PublishingScenario scenario = createRilogScenario(10L, "changeAuthorityOf-change");
         Chapter previousChapter = saveChapter(scenario.blog(), "기존 챕터", 0);
         Chapter targetChapter = saveChapter(scenario.blog(), "변경 챕터", 1);
         Post post = savePublishedPost(scenario, previousChapter);
@@ -248,7 +248,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 수정할 때 챕터를 생략하면 기존 챕터 연결이 해제된다.")
     void updateClearsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(11L, "update-clear");
+        PublishingScenario scenario = createRilogScenario(11L, "changeAuthorityOf-clear");
         Chapter chapter = saveChapter(scenario.blog(), "해제할 챕터", 0);
         Post post = savePublishedPost(scenario, chapter);
 
