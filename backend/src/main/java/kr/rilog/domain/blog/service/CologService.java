@@ -11,6 +11,8 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
@@ -32,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -82,7 +85,7 @@ public class CologService {
                 colog,
                 invitee,
                 command.blogRole(),
-                command.permission(),
+                MEMBER,
                 LocalDateTime.now(clock)
         );
         BlogMember savedMember = blogMemberRepository.save(member);
@@ -108,6 +111,19 @@ public class CologService {
     }
 
     @Transactional
+    public void updateMember(Long requesterId, String slug, Long memberId, CologMemberUpdateCommand command) {
+        if (command.isEmpty()) {
+            throw new BlogException(COLOG_MEMBER_UPDATE_REQUEST_EMPTY);
+        }
+
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
+
+        requesterMember.updateMemberInformation(targetMember, command.permission(), command.blogRole());
+    }
+
+    @Transactional
     public void deleteColog(Long requesterId, String slug) {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
@@ -117,6 +133,19 @@ public class CologService {
         colog.delete();
         blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
+    }
+
+    public List<BlogMemberResult> getCologMembers(String slug) {
+        Blog colog = getColog(slug);
+
+        return blogMemberRepository.findAllWithUserByBlogIdAndStatus(colog.getId(), BlogMemberStatus.ACTIVE).stream()
+                .map(BlogMemberResult::from)
+                .toList();
+    }
+
+    private Blog getColog(String slug) {
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
     public List<MyCologResponse> getMyCologsOverview(Long requesterId) {

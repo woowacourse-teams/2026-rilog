@@ -462,6 +462,121 @@ class BlogMemberTest {
         assertThat(admin.hasDeletePermission()).isFalse();
     }
 
+    @Test
+    @DisplayName("OWNER는 MEMBER를 ADMIN으로 변경할 수 있다.")
+    void updateMemberInfoAllowsOwnerToPromoteMemberToAdmin() {
+        // given
+        BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        owner.updateMemberInformation(member, BlogPermission.ADMIN, null);
+
+        // then
+        assertThat(owner.getPermission()).isEqualTo(BlogPermission.OWNER);
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.ADMIN);
+    }
+
+    @Test
+    @DisplayName("OWNER는 ADMIN을 MEMBER로 변경할 수 있다.")
+    void updateMemberInfoAllowsOwnerToDemoteAdminToMember() {
+        // given
+        BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember admin = createMember(2L, 2L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when
+        owner.updateMemberInformation(admin, BlogPermission.MEMBER, null);
+
+        // then
+        assertThat(admin.getPermission()).isEqualTo(BlogPermission.MEMBER);
+    }
+
+    @Test
+    @DisplayName("OWNER를 부여하면 기존 OWNER는 ADMIN이 되고 대상 멤버는 OWNER가 된다.")
+    void updateMemberInformationTransfersOwnerPermission() {
+        // given
+        BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        owner.updateMemberInformation(member, BlogPermission.OWNER, null);
+
+        // then
+        assertThat(owner.getPermission()).isEqualTo(BlogPermission.ADMIN);
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.OWNER);
+    }
+
+    @Test
+    @DisplayName("ADMIN은 MEMBER의 팀 내 역할명을 수정할 수 있다.")
+    void updateAllowsAdminToChangeAuthorityOfMemberBlogRole() {
+        // given
+        BlogMember admin = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        admin.updateMemberInformation(member, null, "Frontend");
+
+        // then
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
+        assertThat(member.getBlogRole()).isEqualTo("Frontend");
+    }
+
+    @Test
+    @DisplayName("ADMIN이 MEMBER의 기존 권한을 함께 보내도 팀 내 역할명을 수정할 수 있다.")
+    void updateAllowsAdminToChangeAuthorityOfMemberBlogRoleWithSamePermission() {
+        // given
+        BlogMember admin = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when
+        admin.updateMemberInformation(member, BlogPermission.MEMBER, "Frontend");
+
+        // then
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
+        assertThat(member.getBlogRole()).isEqualTo("Frontend");
+    }
+
+    @Test
+    @DisplayName("ADMIN은 MEMBER의 권한을 변경할 수 없다.")
+    void updateMemberInformationRejectsAdminChangingPermission() {
+        // given
+        BlogMember admin = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+        BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(() -> admin.updateMemberInformation(member, BlogPermission.ADMIN, null))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_MEMBER_UPDATE_FORBIDDEN.getMessage());
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
+    }
+
+    @Test
+    @DisplayName("자기 자신의 권한은 멤버 정보 수정 API로 변경할 수 없다.")
+    void updateMemberInformationRejectsSelfPermissionChange() {
+        // given
+        BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(() -> owner.updateMemberInformation(owner, BlogPermission.ADMIN, null))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_SELF_PERMISSION_UPDATE_FORBIDDEN.getMessage());
+        assertThat(owner.getPermission()).isEqualTo(BlogPermission.OWNER);
+    }
+
+    @Test
+    @DisplayName("MEMBER는 팀 멤버 정보를 수정할 수 없다.")
+    void updateMemberInfoRejectsMemberUpdatingBlogRole() {
+        // given
+        BlogMember requester = createMember(1L, 1L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+        BlogMember target = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+
+        // when & then
+        assertThatThrownBy(() -> requester.updateMemberInformation(target, null, "Frontend"))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_MEMBER_UPDATE_FORBIDDEN.getMessage());
+        assertThat(target.getBlogRole()).isNull();
+    }
+
     private BlogMember createMember(BlogPermission permission, BlogMemberStatus status) {
         User owner = createUser(OWNER_ID);
         Blog colog = createColog(owner);
