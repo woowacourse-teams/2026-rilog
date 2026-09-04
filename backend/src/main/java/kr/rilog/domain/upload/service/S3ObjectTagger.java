@@ -32,8 +32,6 @@ public class S3ObjectTagger {
         } catch (Exception e){
             log.error(e.getMessage());
         }
-
-
     }
 
 }

@@ -18,11 +18,10 @@ public class TagAssetsListener {
 
     private final S3TagAssetsLifecycle lifecycle;
 
-//    @Async(S3_TAGGING_EXECUTOR)
+    @Async(S3_TAGGING_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(TagAssetsEvent.Attach event) {
         log.info("TAG ATTACH LISTENER 수행");
-        log.info(event.toString());
         lifecycle.attach(event.assets());
     }
 
@@ -37,6 +36,7 @@ public class TagAssetsListener {
     @Async(S3_TAGGING_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(TagAssetsEvent.Detach event) {
+        log.info("TAG DETACH LISTENER 수행");
         lifecycle.detach(event.assets());
     }
 
