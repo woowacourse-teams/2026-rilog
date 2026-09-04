@@ -8,6 +8,7 @@ import kr.rilog.domain.blog.service.CologService;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
@@ -160,6 +162,42 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data[0].chapters[0].order").value(0));
 
         verify(cologService).getMyCologsOverview(7L);
+    }
+
+    @Test
+    @DisplayName("GET /v1/cologs/{slug}/members는 팀 멤버 목록을 조회한다")
+    void getCologMembersReturnsMembers() throws Exception {
+        // given
+        CologService cologService = mock(CologService.class);
+        when(cologService.getCologMembers("rilog-team"))
+                .thenReturn(List.of(
+                        new BlogMemberResult(
+                                1L,
+                                10L,
+                                "리로",
+                                "jinriro",
+                                "https://example.com/profile.png",
+                                BlogPermission.OWNER,
+                                "Backend",
+                                LocalDateTime.of(2026, 8, 13, 12, 0)
+                        )
+                ));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+                .build();
+
+        // when - then
+        mockMvc.perform(get("/v1/cologs/{slug}/members", "rilog-team"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].id").value(1L))
+                .andExpect(jsonPath("$.data[0].userId").value(10L))
+                .andExpect(jsonPath("$.data[0].nickname").value("리로"))
+                .andExpect(jsonPath("$.data[0].slug").value("jinriro"))
+                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/profile.png"))
+                .andExpect(jsonPath("$.data[0].permission").value("OWNER"))
+                .andExpect(jsonPath("$.data[0].blogRole").value("Backend"))
+                .andExpect(jsonPath("$.data[0].joinedAt").value("2026-08-13T12:00:00"));
+
+        verify(cologService).getCologMembers("rilog-team");
     }
 
     @Test

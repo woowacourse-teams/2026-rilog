@@ -8,6 +8,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberUpdateRequest;
+import kr.rilog.domain.blog.controller.dto.response.BlogMemberResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
@@ -46,6 +47,19 @@ public interface CologApiSpec {
             @Parameter(description = "멤버를 초대할 팀 블로그 slug", example = "rilog-team")
             @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
+    );
+
+    @Operation(
+            summary = "팀 멤버 목록 조회 API",
+            description = "팀 블로그 slug로 활동 중인 팀 멤버 목록을 조회합니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "팀 멤버 목록 조회 성공"
+    )
+    ApiResponse<List<BlogMemberResponse>> getCologMembers(
+            @Parameter(description = "멤버를 조회할 팀 블로그 slug", example = "rilog-team")
+            @PathVariable("slug") String slug
     );
 
     @Operation(

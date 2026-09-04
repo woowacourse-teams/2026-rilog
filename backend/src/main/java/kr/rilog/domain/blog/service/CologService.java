@@ -12,6 +12,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
@@ -132,6 +133,19 @@ public class CologService {
         colog.delete();
         blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
+    }
+
+    public List<BlogMemberResult> getCologMembers(String slug) {
+        Blog colog = getColog(slug);
+
+        return blogMemberRepository.findAllWithUserByBlogIdAndStatus(colog.getId(), BlogMemberStatus.ACTIVE).stream()
+                .map(BlogMemberResult::from)
+                .toList();
+    }
+
+    private Blog getColog(String slug) {
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
     public List<MyCologResponse> getMyCologsOverview(Long requesterId) {
