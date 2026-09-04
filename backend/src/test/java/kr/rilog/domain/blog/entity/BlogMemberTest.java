@@ -470,7 +470,7 @@ class BlogMemberTest {
         BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when
-        owner.updateMemberInfo(member, BlogPermission.ADMIN, null);
+        owner.updateMemberInformation(member, BlogPermission.ADMIN, null);
 
         // then
         assertThat(owner.getPermission()).isEqualTo(BlogPermission.OWNER);
@@ -485,7 +485,7 @@ class BlogMemberTest {
         BlogMember admin = createMember(2L, 2L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
 
         // when
-        owner.updateMemberInfo(admin, BlogPermission.MEMBER, null);
+        owner.updateMemberInformation(admin, BlogPermission.MEMBER, null);
 
         // then
         assertThat(admin.getPermission()).isEqualTo(BlogPermission.MEMBER);
@@ -493,13 +493,13 @@ class BlogMemberTest {
 
     @Test
     @DisplayName("OWNER를 부여하면 기존 OWNER는 ADMIN이 되고 대상 멤버는 OWNER가 된다.")
-    void updateMemberInfoTransfersOwnerPermission() {
+    void updateMemberInformationTransfersOwnerPermission() {
         // given
         BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
         BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when
-        owner.updateMemberInfo(member, BlogPermission.OWNER, null);
+        owner.updateMemberInformation(member, BlogPermission.OWNER, null);
 
         // then
         assertThat(owner.getPermission()).isEqualTo(BlogPermission.ADMIN);
@@ -514,7 +514,7 @@ class BlogMemberTest {
         BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when
-        admin.updateMemberInfo(member, null, "Frontend");
+        admin.updateMemberInformation(member, null, "Frontend");
 
         // then
         assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
@@ -529,7 +529,7 @@ class BlogMemberTest {
         BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when
-        admin.updateMemberInfo(member, BlogPermission.MEMBER, "Frontend");
+        admin.updateMemberInformation(member, BlogPermission.MEMBER, "Frontend");
 
         // then
         assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
@@ -538,13 +538,13 @@ class BlogMemberTest {
 
     @Test
     @DisplayName("ADMIN은 MEMBER의 권한을 변경할 수 없다.")
-    void updateMemberInfoRejectsAdminChangingPermission() {
+    void updateMemberInformationRejectsAdminChangingPermission() {
         // given
         BlogMember admin = createMember(1L, 1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
         BlogMember member = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> admin.updateMemberInfo(member, BlogPermission.ADMIN, null))
+        assertThatThrownBy(() -> admin.updateMemberInformation(member, BlogPermission.ADMIN, null))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_MEMBER_UPDATE_FORBIDDEN.getMessage());
         assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
@@ -552,12 +552,12 @@ class BlogMemberTest {
 
     @Test
     @DisplayName("자기 자신의 권한은 멤버 정보 수정 API로 변경할 수 없다.")
-    void updateMemberInfoRejectsSelfPermissionChange() {
+    void updateMemberInformationRejectsSelfPermissionChange() {
         // given
         BlogMember owner = createMember(1L, 1L, BlogPermission.OWNER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> owner.updateMemberInfo(owner, BlogPermission.ADMIN, null))
+        assertThatThrownBy(() -> owner.updateMemberInformation(owner, BlogPermission.ADMIN, null))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_SELF_PERMISSION_UPDATE_FORBIDDEN.getMessage());
         assertThat(owner.getPermission()).isEqualTo(BlogPermission.OWNER);
@@ -571,7 +571,7 @@ class BlogMemberTest {
         BlogMember target = createMember(2L, 2L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
 
         // when & then
-        assertThatThrownBy(() -> requester.updateMemberInfo(target, null, "Frontend"))
+        assertThatThrownBy(() -> requester.updateMemberInformation(target, null, "Frontend"))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_MEMBER_UPDATE_FORBIDDEN.getMessage());
         assertThat(target.getBlogRole()).isNull();

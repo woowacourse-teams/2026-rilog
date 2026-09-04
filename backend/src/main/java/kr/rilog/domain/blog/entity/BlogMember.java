@@ -98,7 +98,7 @@ public class BlogMember extends BaseEntity {
         throw new BlogException(COLOG_MEMBER_REMOVE_FORBIDDEN);
     }
 
-    public void updateMemberInfo(BlogMember target, BlogPermission newPermission, String newBlogRole) {
+    public void updateMemberInformation(BlogMember target, BlogPermission newPermission, String newBlogRole) {
         this.validateActiveMember();
         target.validateActiveMember();
         validateCanUpdateBlogRole(target, newBlogRole);
