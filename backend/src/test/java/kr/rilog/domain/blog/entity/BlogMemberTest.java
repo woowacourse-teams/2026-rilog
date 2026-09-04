@@ -517,6 +517,7 @@ class BlogMemberTest {
         admin.changeAuthorityOf(member, null, "Frontend");
 
         // then
+        assertThat(member.getPermission()).isEqualTo(BlogPermission.MEMBER);
         assertThat(member.getBlogRole()).isEqualTo("Frontend");
     }
 

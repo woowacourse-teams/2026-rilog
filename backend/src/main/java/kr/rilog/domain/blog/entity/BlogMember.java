@@ -104,8 +104,12 @@ public class BlogMember extends BaseEntity {
         validateCanUpdateBlogRole(target, newBlogRole);
         validateCanUpdatePermission(target, newPermission);
 
-        target.blogRole = newBlogRole;
-        updatePermission(target, newPermission);
+        if (newBlogRole != null) {
+            target.blogRole = newBlogRole;
+        }
+        if (newPermission != null) {
+            updatePermission(target, newPermission);
+        }
     }
 
     public void validateActiveMember() {
