@@ -237,7 +237,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("같은 개인 블로그에서 게시글을 수정하면 상세 정보가 저장되고 현재 소속을 반환한다.")
     void updateInSameRilogPersistsDetailAndReturnsCurrentAffiliation() {
         // given
-        User writer = saveCompletedUser(23L, "수정작성자", "changeAuthorityOf-writer");
+        User writer = saveCompletedUser(23L, "수정작성자", "chg-auth-writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
@@ -258,7 +258,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         // given
         User writer = saveCompletedUser(24L, "팀이동작성자", "move-to-colog-writer");
         Blog rilog = saveRilog(writer);
-        Blog targetColog = saveColog(writer, "changeAuthorityOf-target-colog");
+        Blog targetColog = saveColog(writer, "chg-auth-target");
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
         PostUpdateCommand command = PostFixture.updateCommandTo(targetColog.getSlug());
 
@@ -278,7 +278,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         // given
         User writer = saveCompletedUser(25L, "개인이동작성자", "move-to-rilog-writer");
         Blog rilog = saveRilog(writer);
-        Blog colog = saveColog(writer, "changeAuthorityOf-source-colog");
+        Blog colog = saveColog(writer, "chg-auth-source");
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
@@ -296,7 +296,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("초안 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
     void updateDraftPostThrowsAndPreservesDetail() {
         // given
-        User writer = saveCompletedUser(26L, "초안작성자", "draft-changeAuthorityOf-writer");
+        User writer = saveCompletedUser(26L, "초안작성자", "draft-chg-auth");
         Blog rilog = saveRilog(writer);
         Post draftPost = savePost(PostFixture.publicDraftRilogPost(rilog, writer));
         PostDetail originalDetail = detailOf(draftPost);
@@ -318,7 +318,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User writer = saveCompletedUser(27L, "원본작성자", "original-writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
-        User requester = saveCompletedUser(28L, "다른수정자", "other-changeAuthorityOf-writer");
+        User requester = saveCompletedUser(28L, "다른수정자", "other-chg-auth");
         PostDetail originalDetail = detailOf(post);
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
