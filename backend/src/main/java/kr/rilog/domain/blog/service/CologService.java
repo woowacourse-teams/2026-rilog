@@ -18,8 +18,8 @@ import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -47,7 +47,7 @@ public class CologService {
     private final ChapterRepository chapterRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final TagAssetsLifecycle tagAssetsLifecycle;
+    private final TagAssetsPublisher tagAssetsPublisher;
     private final Clock clock;
 
     @Transactional
@@ -66,7 +66,7 @@ public class CologService {
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));
         blogMemberRepository.save(ownerMember);
 
-        tagAssetsLifecycle.attach(savedColog.getTagAssets());
+        tagAssetsPublisher.attach(savedColog.getTagAssets());
 
         return CologCreateResult.from(savedColog);
     }
