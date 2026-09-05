@@ -36,6 +36,16 @@ class S3ObjectKeyResolverTest {
         assertThat(objectKey).contains("images/2026/a b.png");
     }
 
+    @Test
+    @DisplayName("설정된 루트 디렉터리의 객체 키는 그대로 반환한다.")
+    void resolveObjectKey() {
+        String objectKey = "images/2026/image.png"; // 테스트에서 ROOT가 images
+
+        Optional<String> resolvedObjectKey = resolver.resolve(objectKey);
+
+        assertThat(resolvedObjectKey).contains(objectKey);
+    }
+
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", " "})
