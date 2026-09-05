@@ -14,15 +14,19 @@ public class S3ObjectKeyResolver {
     private static final String HTTPS_SCHEME = "https";
     private final S3Properties properties;
 
-    public Optional<String> resolve(String objectUrl) {
-        if (objectUrl == null || objectUrl.isBlank()) {
+    public Optional<String> resolve(String objectReference) {
+        if (objectReference == null || objectReference.isBlank()) {
             return Optional.empty();
+        }
+
+        if (isInRootDirectory(objectReference)) {
+            return Optional.of(objectReference);
         }
 
         URI uri;
 
         try {
-            uri = URI.create(objectUrl);
+            uri = URI.create(objectReference);
         } catch (IllegalArgumentException exception) {
             return Optional.empty();
         }
@@ -41,12 +45,16 @@ public class S3ObjectKeyResolver {
         }
 
         String objectKey = path.substring(1);
-        if (!objectKey.startsWith(properties.rootDirectory() + "/")) {
+        if (!isInRootDirectory(objectKey)) {
             return Optional.empty();
         }
 
         return Optional.of(objectKey);
 
+    }
+
+    private boolean isInRootDirectory(String objectKey) {
+        return objectKey.startsWith(properties.rootDirectory() + "/");
     }
 
     private String expectedHost() {
