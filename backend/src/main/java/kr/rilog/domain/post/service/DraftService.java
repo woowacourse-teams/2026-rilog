@@ -22,7 +22,7 @@ import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -48,7 +48,7 @@ public class DraftService {
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
-    private final TagAssetsLifecycle tagAssetsLifecycle;
+    private final TagAssetsPublisher tagAssetsPublisher;
 
     // THINK 멱등성.
     @Transactional
@@ -57,7 +57,7 @@ public class DraftService {
         Blog rilog = getRilog(writer);
 
         Post saved = postRepository.save(Post.draft(command, writer, rilog));
-        tagAssetsLifecycle.attach(saved.getTagAssets());
+        tagAssetsPublisher.attach(saved.getTagAssets());
         return DraftIdResult.from(saved.getId());
     }
 
@@ -87,7 +87,7 @@ public class DraftService {
         Chapter chapter = getChapterIfPresent(command.chapterId(), targetMemberShip.getBlog());
         publisher.publishDraft(draft, command.toDetail(), chapter);
         TagAssets current = draft.getTagAssets();
-        tagAssetsLifecycle.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(previous, current);
 
         return PostPublishResult.of(draft);
     }
@@ -100,7 +100,7 @@ public class DraftService {
         TagAssets previous = draft.getTagAssets();
         draft.overwriteDraft(command);
         TagAssets current = draft.getTagAssets();
-        tagAssetsLifecycle.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(previous, current);
         return DraftIdResult.from(draft.getId());
     }
 
@@ -110,7 +110,7 @@ public class DraftService {
         draft.validateWrittenBy(requesterId);
 
         draft.delete();
-        tagAssetsLifecycle.detach(draft.getTagAssets());
+        tagAssetsPublisher.detach(draft.getTagAssets());
     }
 
     private User getUser(Long requesterId) {

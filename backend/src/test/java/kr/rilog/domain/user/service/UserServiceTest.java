@@ -5,12 +5,12 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
@@ -38,12 +38,12 @@ class UserServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final BlogRepository blogRepository = mock(BlogRepository.class);
     private final BlogMemberRepository blogMemberRepository = mock(BlogMemberRepository.class);
-    private final TagAssetsLifecycle tagAssetsLifecycle = mock(TagAssetsLifecycle.class);
+    private final TagAssetsPublisher tagAssetsPublisher = mock(TagAssetsPublisher.class);
     private final UserService userService = new UserService(
             userRepository,
             blogRepository,
             blogMemberRepository,
-            tagAssetsLifecycle
+            tagAssetsPublisher
     );
 
     @Test
@@ -158,7 +158,7 @@ class UserServiceTest {
         userService.completeOnboarding(1L, command);
 
         // then
-        verify(tagAssetsLifecycle).attach(new TagAssets(Set.of(command.profileImageUrl())));
+        verify(tagAssetsPublisher).attach(new TagAssets(Set.of(command.profileImageUrl())));
     }
 
     @Test
@@ -217,7 +217,7 @@ class UserServiceTest {
                 .extracting("errorInformation")
                 .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
         verify(userRepository, never()).saveAndFlush(any(User.class));
-        verify(tagAssetsLifecycle, never()).attach(any());
+        verify(tagAssetsPublisher, never()).attach(any());
     }
 
     @Test
