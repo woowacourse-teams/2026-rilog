@@ -19,6 +19,7 @@ const note = {
 	title: '업데이트 안내',
 	publishedAt: '2026-09-05',
 	items: [{ title: '개선 사항', description: '첫째 줄\n둘째 줄' }],
+	links: [{ label: '업데이트 자세히 보기', href: 'https://example.com/release-notes' }],
 };
 
 beforeEach(() => {
@@ -45,6 +46,18 @@ describe('업데이트 안내', () => {
 		expect(screen.getByRole('heading', { name: '개선 사항' })).toBeVisible();
 		expect(screen.getByText('첫째 줄 둘째 줄')).toBeVisible();
 		expect(screen.getByRole('button', { name: '닫기' })).toHaveFocus();
+	});
+	it('관련 외부 링크를 새 탭으로 안전하게 연다', () => {
+		render(<ReleaseNoteModal />);
+		const link = screen.getByRole('link', { name: '업데이트 자세히 보기' });
+		expect(link).toHaveAttribute('href', 'https://example.com/release-notes');
+		expect(link).toHaveAttribute('target', '_blank');
+		expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+	});
+	it('관련 링크가 없으면 링크 영역을 표시하지 않는다', () => {
+		notes[0] = { ...note, links: undefined };
+		render(<ReleaseNoteModal />);
+		expect(screen.queryByRole('navigation', { name: '업데이트 관련 링크' })).not.toBeInTheDocument();
 	});
 	it.each(['닫기', '모달 닫기'])('%s는 세션에만 기록하고 같은 탭 재진입에서 숨긴다', async (name) => {
 		const view = render(<ReleaseNoteModal />);

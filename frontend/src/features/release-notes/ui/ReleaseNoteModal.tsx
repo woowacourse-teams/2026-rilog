@@ -62,6 +62,24 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 					</li>
 				))}
 			</ul>
+			{note.links?.length ? (
+				<nav aria-label="업데이트 관련 링크" className="mt-6 border-t border-border-default pt-4">
+					<ul className="flex flex-col items-start gap-2">
+						{note.links.map((link) => (
+							<li key={link.href}>
+								<a
+									href={link.href}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+								>
+									{link.label}
+								</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+			) : null}
 		</Modal>
 	);
 }
