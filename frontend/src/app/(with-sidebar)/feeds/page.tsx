@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import AccessFeedback from '@/features/auth/ui/AccessFeedback';
+import ReleaseNoteModal from '@/features/release-notes/ui/ReleaseNoteModal';
 import { PROXY_AUTH_REQUIRED_NOTICE, PROXY_NOTICE_QUERY_KEY } from '@/shared/api/proxy/constants';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import {
@@ -37,6 +38,7 @@ export default async function FeedsPage({ searchParams }: FeedsPageProps) {
 	return (
 		<main className="min-h-screen">
 			<AccessFeedback isOpen={isAuthRequired} reason="auth-required" redirectPath={APP_ROUTES.feeds} />
+			{!isAuthRequired && <ReleaseNoteModal />}
 			<PostFeed />
 		</main>
 	);
