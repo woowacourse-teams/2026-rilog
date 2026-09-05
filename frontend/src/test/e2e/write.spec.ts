@@ -253,7 +253,7 @@ test.describe('글 작성', () => {
 		await page.getByRole('textbox', { name: '게시글 제목' }).fill('불러온 게시글 제목 수정');
 		await page.getByRole('button', { name: '수정' }).click();
 		await expect(page.getByRole('radio', { name: '일상' })).toBeChecked();
-		await expect(page.getByRole('combobox', { name: 'Co-log' })).toHaveValue('1');
+		await expect(page.getByRole('combobox', { name: 'Colog' })).toHaveValue('1');
 		await expect(page.getByRole('option', { name: 'E2E 사용자' })).toHaveCount(1);
 		await expect(page.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
 			'src',
@@ -370,7 +370,7 @@ test.describe('글 작성', () => {
 		const publishDialog = page.getByRole('dialog', { name: '게시 설정' });
 		await expect(publishDialog).toBeVisible();
 		await publishDialog.getByText('일상', { exact: true }).click();
-		const cologSelect = publishDialog.getByRole('combobox', { name: 'Co-log' });
+		const cologSelect = publishDialog.getByRole('combobox', { name: 'Colog' });
 		await cologSelect.selectOption({ index: 1 });
 		const selectedCoLogId = await cologSelect.inputValue();
 		await publishDialog.getByRole('button', { name: '취소' }).click();
@@ -378,7 +378,7 @@ test.describe('글 작성', () => {
 
 		await page.getByRole('button', { name: '발행' }).click();
 		await expect(publishDialog.getByRole('radio', { name: '일상' })).toBeChecked();
-		await expect(publishDialog.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		await expect(publishDialog.getByRole('combobox', { name: 'Colog' })).toHaveValue(selectedCoLogId);
 		await publishDialog.getByRole('button', { name: '발행' }).click();
 		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
 		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();

@@ -355,8 +355,8 @@ const fillValidPost = async (user: ReturnType<typeof userEvent.setup>) => {
 
 // 여러 발행 시나리오에서 반복되는 필수 Co-log 선택 동작
 const selectFirstCoLog = async (user: ReturnType<typeof userEvent.setup>) => {
-	await user.click(screen.getByRole('radio', { name: '코로그' }));
-	const select = screen.getByRole('combobox', { name: '코로그' });
+	await user.click(screen.getByRole('radio', { name: 'Colog' }));
+	const select = screen.getByRole('combobox', { name: 'Colog' });
 	const firstCoLogOption = within(select).getAllByRole('option')[1];
 	await user.selectOptions(select, firstCoLogOption);
 	return firstCoLogOption.getAttribute('value')!;
@@ -604,7 +604,7 @@ describe('NewPostController', () => {
 
 		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('일상');
 		expect(screen.getByRole('radio', { name: '개인' })).toBeChecked();
-		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('combobox', { name: 'Colog' })).not.toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			'https://images.rilog.test/posts/existing-thumbnail.png',
@@ -755,9 +755,9 @@ describe('NewPostController', () => {
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
 		expect(postPublishSettingsOpenedMock).toHaveBeenCalledOnce();
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
 
-		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		const cologSelect = screen.getByRole('combobox', { name: 'Colog' });
 		expect(within(cologSelect).queryByRole('option', { name: '내 블로그' })).not.toBeInTheDocument();
 		expect(within(cologSelect).getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
 	});
@@ -810,7 +810,7 @@ describe('NewPostController', () => {
 		await user.click(screen.getByRole('button', { name: '발행' }));
 
 		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('일상');
-		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveValue(selectedCoLogId);
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toHaveValue(selectedCoLogId);
 	});
 
 	it('선택한 대표 이미지를 유지하고 교체·제거·unmount 때 object URL을 해제한다', async () => {
@@ -973,7 +973,7 @@ describe('NewPostController', () => {
 			errorCode: 'UNKNOWN_ERROR',
 			errorKind: 'unknown',
 		});
-		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveValue(selectedCoLogId);
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toHaveValue(selectedCoLogId);
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 
 		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog/posts/retry-success'));

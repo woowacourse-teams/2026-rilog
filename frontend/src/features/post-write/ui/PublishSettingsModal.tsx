@@ -56,7 +56,7 @@ const COLOG = 'COLOG';
 
 const BLOG_OPTIONS = [
 	{ value: RILOG, label: '개인' },
-	{ value: COLOG, label: '코로그' },
+	{ value: COLOG, label: 'Colog' },
 ] as const;
 
 type BlogOption = (typeof BLOG_OPTIONS)[number]['value'];
@@ -103,11 +103,11 @@ export default function PublishSettingsModal({
 	const isCologSelectDisabled =
 		isModalPending || isCologOptionsPending || isCologOptionsError || isCologOptionsRefetching;
 	const cologOptionsStatusMessage = isCologOptionsPending
-		? '코로그 목록을 불러오는 중...'
+		? 'Colog 목록을 불러오는 중...'
 		: isCologOptionsError
-			? '코로그 목록을 불러오지 못했습니다.'
+			? 'Colog 목록을 불러오지 못했습니다.'
 			: cologOptions.length === 0
-				? '소속된 코로그가 없습니다.'
+				? '소속된 Colog가 없습니다.'
 				: undefined;
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
@@ -278,7 +278,7 @@ export default function PublishSettingsModal({
 						</fieldset>
 
 						{selectedBlog === COLOG && (
-							<Field label="코로그" controlId="post-colog" required>
+							<Field label="Colog" controlId="post-colog" required>
 								{({ id }) => {
 									const errorId = `${id}-error`;
 									const statusId = `${id}-options-status`;

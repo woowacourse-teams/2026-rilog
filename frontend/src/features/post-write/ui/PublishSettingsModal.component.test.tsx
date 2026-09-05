@@ -108,9 +108,9 @@ describe('PublishSettingsModal', () => {
 			onTargetBlogChange: handleTargetBlogChange,
 		});
 
-		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
-		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		expect(screen.queryByRole('combobox', { name: 'Colog' })).not.toBeInTheDocument();
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
+		const cologSelect = screen.getByRole('combobox', { name: 'Colog' });
 		expect(cologSelect).toHaveClass('native-select');
 		expect(cologSelect).toHaveDisplayValue('선택 안 함');
 		expect(handleTargetBlogChange).toHaveBeenCalledWith(null);
@@ -134,7 +134,7 @@ describe('PublishSettingsModal', () => {
 			/>,
 		);
 
-		await user.selectOptions(screen.getByRole('combobox', { name: '코로그' }), '');
+		await user.selectOptions(screen.getByRole('combobox', { name: 'Colog' }), '');
 		expect(handleTargetBlogChange).toHaveBeenLastCalledWith(null);
 	});
 
@@ -142,21 +142,21 @@ describe('PublishSettingsModal', () => {
 		const user = userEvent.setup();
 		renderModal({ cologOptions: [], isCologOptionsPending: true });
 
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
 
-		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
-		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveAttribute('aria-busy', 'true');
-		expect(screen.getByText('코로그 목록을 불러오는 중...')).toHaveAttribute('role', 'status');
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toHaveAttribute('aria-busy', 'true');
+		expect(screen.getByText('Colog 목록을 불러오는 중...')).toHaveAttribute('role', 'status');
 	});
 
 	it('조회에 성공했지만 소속된 코로그가 없으면 빈 상태를 알린다', async () => {
 		const user = userEvent.setup();
 		renderModal({ cologOptions: [] });
 
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
 
-		expect(screen.getByRole('combobox', { name: '코로그' })).toBeEnabled();
-		expect(screen.getByText('소속된 코로그가 없습니다.')).toHaveAttribute('role', 'status');
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toBeEnabled();
+		expect(screen.getByText('소속된 Colog가 없습니다.')).toHaveAttribute('role', 'status');
 	});
 
 	it('코로그 목록 조회 실패를 알리고 다시 시도할 수 있다', async () => {
@@ -168,13 +168,13 @@ describe('PublishSettingsModal', () => {
 			onCologOptionsRefetch: handleRefetch,
 		});
 
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
 
-		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		const cologSelect = screen.getByRole('combobox', { name: 'Colog' });
 		const error = screen.getByRole('alert');
 		expect(cologSelect).toBeDisabled();
-		expect(cologSelect).toHaveAccessibleDescription('코로그 목록을 불러오지 못했습니다.');
-		expect(error).toHaveTextContent('코로그 목록을 불러오지 못했습니다.');
+		expect(cologSelect).toHaveAccessibleDescription('Colog 목록을 불러오지 못했습니다.');
+		expect(error).toHaveTextContent('Colog 목록을 불러오지 못했습니다.');
 
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 		expect(handleRefetch).toHaveBeenCalledOnce();
@@ -188,9 +188,9 @@ describe('PublishSettingsModal', () => {
 			isCologOptionsRefetching: true,
 		});
 
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
 
-		expect(screen.getByRole('combobox', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '다시 시도' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '다시 시도' })).toHaveAttribute('aria-busy', 'true');
 	});
@@ -212,14 +212,14 @@ describe('PublishSettingsModal', () => {
 		renderModal();
 
 		const personalBlogRadio = screen.getByRole('radio', { name: '개인' });
-		const cologRadio = screen.getByRole('radio', { name: '코로그' });
+		const cologRadio = screen.getByRole('radio', { name: 'Colog' });
 		expect(personalBlogRadio).toBeChecked();
 		expect(cologRadio).not.toBeChecked();
 
 		await user.click(cologRadio);
 		expect(cologRadio).toBeChecked();
 		expect(personalBlogRadio).not.toBeChecked();
-		expect(screen.getByRole('combobox', { name: '코로그' })).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toBeInTheDocument();
 		expect(screen.getByRole('combobox', { name: '챕터' })).toBeDisabled();
 		expect(screen.queryByRole('combobox', { name: '시리즈' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '새 시리즈 추가' })).not.toBeInTheDocument();
@@ -244,8 +244,8 @@ describe('PublishSettingsModal', () => {
 			},
 		});
 
-		expect(screen.getByRole('radio', { name: '코로그' })).toBeChecked();
-		expect(screen.getByRole('combobox', { name: '코로그' })).toHaveValue('1');
+		expect(screen.getByRole('radio', { name: 'Colog' })).toBeChecked();
+		expect(screen.getByRole('combobox', { name: 'Colog' })).toHaveValue('1');
 		const chapterSelect = screen.getByRole('combobox', { name: '챕터' });
 		expect(chapterSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(chapterSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
@@ -369,11 +369,11 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
 		expect(screen.getByLabelText('대표 이미지 추가')).toBeDisabled();
-		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('combobox', { name: 'Colog' })).not.toBeInTheDocument();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
 		expect(screen.getByRole('combobox', { name: '카테고리' })).toBeDisabled();
 		expect(screen.getByRole('radio', { name: '개인' })).toBeDisabled();
-		expect(screen.getByRole('radio', { name: '코로그' })).toBeDisabled();
+		expect(screen.getByRole('radio', { name: 'Colog' })).toBeDisabled();
 
 		act(() => {
 			resolveCreateChapter({
@@ -535,7 +535,7 @@ describe('PublishSettingsModal', () => {
 		const dialog = screen.getByRole('dialog', { name: '게시 설정' });
 		expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
 		expect(screen.getByRole('button', { name: '발행' })).toBeDisabled();
-		expect(screen.queryByRole('combobox', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('combobox', { name: 'Colog' })).not.toBeInTheDocument();
 		expect(screen.getByRole('combobox', { name: '시리즈' })).toBeDisabled();
 		expect(screen.getByLabelText('대표 이미지 추가')).toBeDisabled();
 
@@ -548,10 +548,10 @@ describe('PublishSettingsModal', () => {
 	it('Co-log 오류를 select와 연결하고 발행 시 해당 입력으로 focus한다', async () => {
 		const user = userEvent.setup();
 		const handlePublish = vi.fn();
-		renderModal({ cologError: '코로그를 선택해 주세요.', onPublish: handlePublish });
+		renderModal({ cologError: 'Colog를 선택해 주세요.', onPublish: handlePublish });
 
-		await user.click(screen.getByRole('radio', { name: '코로그' }));
-		const cologSelect = screen.getByRole('combobox', { name: '코로그' });
+		await user.click(screen.getByRole('radio', { name: 'Colog' }));
+		const cologSelect = screen.getByRole('combobox', { name: 'Colog' });
 		const error = screen.getByRole('alert');
 		expect(cologSelect).toHaveAttribute('aria-describedby', error.id);
 

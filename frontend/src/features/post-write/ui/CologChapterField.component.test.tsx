@@ -23,7 +23,7 @@ describe('CologChapterField', () => {
 		renderField();
 
 		expect(screen.getByRole('combobox', { name: '챕터' })).toBeDisabled();
-		expect(screen.getByRole('status')).toHaveTextContent('코로그를 선택하면 챕터 목록을 확인할 수 있어요.');
+		expect(screen.getByRole('status')).toHaveTextContent('Colog를 선택하면 챕터 목록을 확인할 수 있어요.');
 	});
 
 	it('전달받은 코로그 챕터를 즉시 표시하고 선택값을 변경한다', async () => {

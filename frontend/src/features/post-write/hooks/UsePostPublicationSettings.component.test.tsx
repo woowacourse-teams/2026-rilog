@@ -24,7 +24,7 @@ describe('usePostPublicationSettings', () => {
 		expect(result.current.representativeImagePreviewUrl).toBe('posts/existing-thumbnail.png');
 
 		act(() => expect(result.current.validatePublicationSettings('COLOG')).toBe(false));
-		expect(result.current.cologError).toBe('코로그를 선택해 주세요.');
+		expect(result.current.cologError).toBe('Colog를 선택해 주세요.');
 
 		act(() => {
 			result.current.handleCategoryChange('IT');
