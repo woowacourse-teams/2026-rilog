@@ -7,6 +7,7 @@ const getMermaid = () => {
 		mermaid.initialize({
 			securityLevel: 'strict',
 			startOnLoad: false,
+			suppressErrorRendering: true,
 			theme: 'neutral',
 			themeVariables: {
 				fontSize: '14px',

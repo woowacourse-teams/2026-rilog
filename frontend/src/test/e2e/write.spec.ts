@@ -206,6 +206,12 @@ test.describe('글 작성', () => {
 		await expect(diagram.locator('.nodeLabel').first()).toHaveCSS('font-size', '14px');
 		await expect(diagram).toContainText('Start');
 		await expect(diagram).toContainText('End');
+
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('not a diagram');
+		await expect(codeBlock.getByRole('alert')).toHaveText('Mermaid 문법을 확인해 주세요.');
+		await expect(page.getByText('Syntax error in text', { exact: true })).toHaveCount(0);
+		await expect(page.locator('body > div[id^="dmermaid-"]')).toHaveCount(0);
 	});
 
 	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
