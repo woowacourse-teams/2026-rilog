@@ -3,6 +3,11 @@ export interface ReleaseNoteItem {
 	description: string;
 }
 
+export interface ReleaseNoteLink {
+	label: string;
+	href: string;
+}
+
 export interface ReleaseNote {
 	/** 새 공지를 공개할 때마다 고유한 ID를 사용한다. */
 	id: string;
@@ -10,6 +15,7 @@ export interface ReleaseNote {
 	/** 공개 날짜, YYYY-MM-DD 형식. 같은 날짜는 목록 앞 항목을 우선한다. */
 	publishedAt: string;
 	items: readonly ReleaseNoteItem[];
+	links?: readonly ReleaseNoteLink[];
 }
 
 // 실제 공개 문구가 확정된 공지만 추가한다. 예약 공개는 지원하지 않는다.
@@ -26,6 +32,12 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
 			{
 				title: '파라디가 아직도!!! 아프대요~',
 				description: '다들 위로해주세요 ㅠㅠ',
+			},
+		],
+		links: [
+			{
+				label: '업데이트 자세히 보기',
+				href: 'https://www.rilog.kr/@rilog/posts/42',
 			},
 		],
 	},
