@@ -75,6 +75,10 @@ public class Blog extends BaseEntity {
         this.profile = newProfile;
     }
 
+    public void transferOwnerTo(User newOwner) {
+        this.owner = newOwner;
+    }
+
     public boolean isColog() {
         return this.blogType == BlogType.COLOG;
     }

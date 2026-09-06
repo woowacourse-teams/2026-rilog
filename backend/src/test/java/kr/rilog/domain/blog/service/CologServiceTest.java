@@ -714,6 +714,7 @@ class CologServiceTest {
         // then
         assertThat(requesterMember.getPermission()).isEqualTo(BlogPermission.ADMIN);
         assertThat(targetMember.getPermission()).isEqualTo(BlogPermission.OWNER);
+        assertThat(colog.getOwner()).isEqualTo(targetUser);
     }
 
     @Test
