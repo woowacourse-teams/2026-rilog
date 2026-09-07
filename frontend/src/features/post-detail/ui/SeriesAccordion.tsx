@@ -12,7 +12,7 @@ interface SeriesAccordionProps {
 }
 
 export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) {
-	const { chapter, chapterId, postCount, posts } = MOCK_SERIES_CHAPTER;
+	const { id, name, postCount, posts } = MOCK_SERIES_CHAPTER;
 
 	return (
 		<section aria-labelledby="series-accordion-title" className="overflow-hidden border-y border-border-strong">
@@ -20,14 +20,14 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 				게시글 시리즈
 			</h2>
 
-			<details data-chapter-id={chapterId} className={`group ${styles.accordion}`}>
+			<details data-chapter-id={id} className={`group ${styles.accordion}`}>
 				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-3 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden">
 					<span className="min-w-0">
 						<CustomLink
-							href={buildBlogHomePath(slug, { seriesId: chapterId })}
+							href={buildBlogHomePath(slug, { seriesId: id })}
 							className="wrap-break-word transition-colors hover:text-blue-600"
 						>
-							{chapter}
+							{name}
 						</CustomLink>
 						<span className="ml-2 text-label-2 font-normal text-text-secondary">{postCount}</span>
 					</span>
@@ -36,12 +36,12 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 
 				<ol className="pt-1 pb-3">
 					{posts.map((post, index) => {
-						const isCurrentPost = post.postId === postId;
+						const isCurrentPost = post.id === postId;
 
 						return (
-							<li key={post.postId}>
+							<li key={post.id}>
 								<CustomLink
-									href={buildPostDetailPath(slug, String(post.postId))}
+									href={buildPostDetailPath(slug, String(post.id))}
 									className="group/link flex items-center gap-3 rounded-md px-2 py-2.5 text-body-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
 								>
 									<span aria-hidden="true" className="w-5 shrink-0 text-right text-label-2 text-text-placeholder">
