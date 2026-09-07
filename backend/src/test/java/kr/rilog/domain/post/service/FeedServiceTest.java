@@ -14,6 +14,7 @@ import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
+import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,12 @@ class FeedServiceTest {
     private static final String RILOG_SLUG = "writer";
     private static final int PAGE = 1;
     private static final int SIZE = 2;
+    private static final FullFeedSearchCommand DEFAULT_FULL_FEED_SEARCH = new FullFeedSearchCommand(
+            null,
+            null,
+            PAGE,
+            SIZE
+    );
     private static final BlogFeedSearchCommand DEFAULT_SEARCH = new BlogFeedSearchCommand(
             null,
             null,
@@ -66,23 +73,31 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("전체 피드는 발행된 공개 게시글을 요청한 페이지 조건으로 조회한다")
+    @DisplayName("전체 피드는 로그인 사용자와 필터 및 페이지 조건으로 발행된 게시글을 조회한다.")
     void readFullFeedPostListRequestsPublishedPublicPosts() {
         // given
+        Long requesterId = 3L;
+        FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, BlogType.COLOG, PAGE, SIZE);
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
         when(postFeedQueryRepository.findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                requesterId,
+                Category.DAILY,
+                BlogType.COLOG,
                 pageable
         )).thenReturn(new SliceImpl<>(List.of(), pageable, false));
 
         // when
-        feedService.readFullFeedPostList(PAGE, SIZE);
+        feedService.readFullFeedPostList(requesterId, command);
 
         // then
         verify(postFeedQueryRepository).findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                requesterId,
+                Category.DAILY,
+                BlogType.COLOG,
                 pageable
         );
     }
@@ -99,11 +114,14 @@ class FeedServiceTest {
         when(postFeedQueryRepository.findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                null,
+                null,
+                null,
                 pageable
         )).thenReturn(new SliceImpl<>(rows, pageable, true));
 
         // when
-        FullFeedPostResponse response = feedService.readFullFeedPostList(PAGE, SIZE);
+        FullFeedPostResponse response = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(response.posts())
