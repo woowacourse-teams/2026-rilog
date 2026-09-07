@@ -36,12 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FeedControllerTest {
 
     @Test
-    @DisplayName("GET /v1/feeds/posts는 로그인 사용자와 전체 피드 필터를 전달한다.")
+    @DisplayName("GET /v1/feeds/posts는 전체 피드 필터를 전달한다.")
     void readFullFeedPostsReturnsPosts() throws Exception {
         // given
         FeedService feedService = mock(FeedService.class);
         FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, BlogType.COLOG, 1, 2);
-        when(feedService.readFullFeedPostList(7L, command))
+        when(feedService.readFullFeedPostList(command))
                 .thenReturn(new FullFeedPostResponse(
                         List.of(
                                 new FullFeedPostResponse.PostItemResponse(
@@ -123,7 +123,7 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.numberOfElements").value(2))
                 .andExpect(jsonPath("$.data.hasNext").value(false));
 
-        verify(feedService).readFullFeedPostList(7L, command);
+        verify(feedService).readFullFeedPostList(command);
     }
 
     @Test

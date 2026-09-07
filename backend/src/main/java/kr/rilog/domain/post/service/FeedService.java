@@ -33,17 +33,16 @@ public class FeedService {
 
     /**
      * 2차 MVP 피드 조회 정책
-     * 게시됨 + 공개, 나의 PRIVATE 글
+     * 게시됨 + 공개
      * 카테고리 필터링
      * 블로그타입 필터링
      * */
-    public FullFeedPostResponse readFullFeedPostList(Long requesterId, FullFeedSearchCommand command) {
+    public FullFeedPostResponse readFullFeedPostList(FullFeedSearchCommand command) {
         PageRequest pageable = PageRequest.of(command.page(), command.size());
 
         Slice<PostFullFeedRow> feed = postFeedQueryRepository.findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
-                requesterId,
                 command.category(),
                 command.blogType(),
                 pageable

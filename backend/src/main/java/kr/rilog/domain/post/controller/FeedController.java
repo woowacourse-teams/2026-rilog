@@ -25,7 +25,6 @@ public class FeedController implements FeedApiSpec {
     @OptionalAuthGuard
     @GetMapping("/feeds/posts")
     public ApiResponse<FullFeedPostResponse> readFullFeedPosts(
-            @NullableLoginUserId Long requesterId,
             @RequestParam(required = false) Category category,
             @RequestParam(required = false) BlogType blogType,
             @RequestParam int page,
@@ -38,7 +37,7 @@ public class FeedController implements FeedApiSpec {
                 size
         );
 
-        FullFeedPostResponse data = feedService.readFullFeedPostList(requesterId, command);
+        FullFeedPostResponse data = feedService.readFullFeedPostList(command);
         return ApiResponse.response(HttpStatus.OK, "전체피드의 게시물 목록 조회에 성공했습니다.", data);
     }
 

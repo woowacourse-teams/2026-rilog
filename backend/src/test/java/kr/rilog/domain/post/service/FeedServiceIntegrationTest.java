@@ -78,7 +78,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, author));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -98,7 +98,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, null, 0, 10);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, command);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
 
         // then
         assertThat(result.posts())
@@ -118,7 +118,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedSearchCommand command = new FullFeedSearchCommand(null, COLOG, 0, 10);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, command);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
 
         // then
         assertThat(result.posts())
@@ -138,7 +138,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedSearchCommand command = new FullFeedSearchCommand(null, RILOG, 0, 10);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, command);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
 
         // then
         assertThat(result.posts())
@@ -147,42 +147,18 @@ class FeedServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("로그인 사용자의 전체 피드는 자신이 발행한 비공개 게시글을 반환한다.")
-    void readFullFeedReturnsRequesterPrivatePosts() {
+    @DisplayName("전체 피드는 작성자가 발행한 비공개 게시글을 반환하지 않는다.")
+    void readFullFeedExcludesAuthorPrivatePosts() {
         // given
-        User requester = saveCompletedUser(30L, "비공개글작성자", "full-private-author");
-        Blog rilog = saveRilog(requester);
-        Blog colog = saveColog(requester, "full-private-colog");
-        Post privateRilogPost = savePost(PostFixture.privatePublishedRilogPost(rilog, requester));
-        Post privateCologPost = savePost(PostFixture.privatePublishedCologPost(rilog, colog, requester));
+        User author = saveCompletedUser(30L, "비공개글작성자", "full-private-author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "full-private-colog");
+        Post publicPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        savePost(PostFixture.privatePublishedRilogPost(rilog, author));
+        savePost(PostFixture.privatePublishedCologPost(rilog, colog, author));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(
-                requester.getId(),
-                DEFAULT_FULL_FEED_SEARCH
-        );
-
-        // then
-        assertThat(result.posts())
-                .extracting(FullFeedPostResponse.PostItemResponse::postId)
-                .containsExactly(privateCologPost.getId(), privateRilogPost.getId());
-    }
-
-    @Test
-    @DisplayName("로그인 사용자의 전체 피드는 다른 사용자가 발행한 비공개 게시글을 반환하지 않는다.")
-    void readFullFeedExcludesOtherUsersPrivatePosts() {
-        // given
-        User requester = saveCompletedUser(31L, "전체피드조회자", "full-feed-requester");
-        User otherAuthor = saveCompletedUser(32L, "다른비공개작성자", "other-private-full");
-        Blog otherRilog = saveRilog(otherAuthor);
-        Post publicPost = savePost(PostFixture.publicPublishedRilogPost(otherRilog, otherAuthor));
-        savePost(PostFixture.privatePublishedRilogPost(otherRilog, otherAuthor));
-
-        // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(
-                requester.getId(),
-                DEFAULT_FULL_FEED_SEARCH
-        );
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -201,7 +177,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post latestPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.plusMinutes(1)));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -221,7 +197,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
         // when
         FullFeedSearchCommand command = new FullFeedSearchCommand(null, null, 0, 2);
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, command);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
 
         // then
         assertSoftly(softly -> {
@@ -245,7 +221,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, rilog);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts()).containsExactly(expected);
@@ -262,7 +238,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, colog);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts()).containsExactly(expected);
@@ -278,7 +254,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts().getFirst().chapter())

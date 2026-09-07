@@ -73,29 +73,26 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("전체 피드는 로그인 사용자와 필터 및 페이지 조건으로 발행된 게시글을 조회한다.")
+    @DisplayName("전체 피드는 공개 상태와 필터 및 페이지 조건으로 발행된 게시글을 조회한다.")
     void readFullFeedPostListRequestsPublishedPublicPosts() {
         // given
-        Long requesterId = 3L;
         FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, BlogType.COLOG, PAGE, SIZE);
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
         when(postFeedQueryRepository.findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
-                requesterId,
                 Category.DAILY,
                 BlogType.COLOG,
                 pageable
         )).thenReturn(new SliceImpl<>(List.of(), pageable, false));
 
         // when
-        feedService.readFullFeedPostList(requesterId, command);
+        feedService.readFullFeedPostList(command);
 
         // then
         verify(postFeedQueryRepository).findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
-                requesterId,
                 Category.DAILY,
                 BlogType.COLOG,
                 pageable
@@ -116,12 +113,11 @@ class FeedServiceTest {
                 PostVisibility.PUBLIC,
                 null,
                 null,
-                null,
                 pageable
         )).thenReturn(new SliceImpl<>(rows, pageable, true));
 
         // when
-        FullFeedPostResponse response = feedService.readFullFeedPostList(null, DEFAULT_FULL_FEED_SEARCH);
+        FullFeedPostResponse response = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(response.posts())

@@ -47,7 +47,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             LEFT JOIN p.colog colog
             LEFT JOIN p.chapter chapter
             WHERE p.status = :status
-              AND (p.visibility = :publicVisibility OR p.user.id = :requesterId)
+              AND p.visibility = :publicVisibility
               AND (:category IS NULL OR p.category = :category)
               AND (
                   :blogType IS NULL
@@ -60,7 +60,6 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
     Slice<PostFullFeedRow> findFullFeed(
             @Param("status") PostStatus status,
             @Param("publicVisibility") PostVisibility publicVisibility,
-            @Param("requesterId") Long requesterId,
             @Param("category") Category category,
             @Param("blogType") BlogType blogType,
             Pageable pageable

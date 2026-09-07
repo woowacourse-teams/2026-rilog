@@ -20,7 +20,6 @@ public interface FeedApiSpec {
             summary = "전체 피드 게시물 목록 조회 API"
     )
     ApiResponse<FullFeedPostResponse> readFullFeedPosts(
-            @Parameter(hidden = true) @NullableLoginUserId Long requesterId,
             @Parameter(description = "게시글 카테고리", example = "TECH")
             @RequestParam(required = false) Category category,
             @Parameter(description = "게시 대상 블로그 유형", example = "COLOG")
