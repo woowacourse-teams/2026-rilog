@@ -35,6 +35,7 @@ import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.OWNER;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -121,6 +122,9 @@ public class CologService {
         BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
 
         requesterMember.updateMemberInformation(targetMember, command.permission(), command.blogRole());
+        if (command.permission() == OWNER) {
+            colog.transferOwnerTo(targetMember.getUser());
+        }
     }
 
     @Transactional
