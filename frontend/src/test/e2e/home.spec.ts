@@ -39,17 +39,22 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	const firstTitle = firstCard.getByRole('heading');
 	await expect(firstTitle).toHaveCSS('word-break', 'keep-all');
 	await expect(firstTitle).toHaveCSS('overflow-wrap', 'break-word');
-	const initialTitleColor = await firstTitle.evaluate((element) => getComputedStyle(element).color);
+	const titleText = firstTitle.locator('span');
+	const initialTitleColor = await titleText.evaluate((element) => getComputedStyle(element).color);
 	const thumbnail = firstCard.locator('img[alt$="썸네일"]');
 	const initialThumbnailBox = await thumbnail.boundingBox();
-	await firstCard.hover();
+	await firstCard.hover({ position: { x: 1, y: 1 } });
 	await expect(firstCard).toHaveCSS('cursor', 'pointer');
-	await expect
-		.poll(() => firstTitle.evaluate((element) => getComputedStyle(element).color))
-		.not.toBe(initialTitleColor);
+	await expect(titleText).toHaveCSS('color', initialTitleColor);
 	await expect
 		.poll(async () => (await thumbnail.boundingBox())?.width)
 		.toBeGreaterThan(initialThumbnailBox?.width ?? 0);
+	const profileLink = firstCard.locator('a').filter({ hasNot: page.getByRole('heading') });
+	await profileLink.hover();
+	await expect(titleText).toHaveCSS('color', initialTitleColor);
+	await expect(profileLink.locator('span').last()).toHaveCSS('text-decoration-line', 'underline');
+	await titleText.hover();
+	await expect.poll(() => titleText.evaluate((element) => getComputedStyle(element).color)).not.toBe(initialTitleColor);
 
 	await page.mouse.wheel(0, 10_000);
 	await expect(postCards(page)).toHaveCount(24);
@@ -163,4 +168,48 @@ test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자
 
 	await page.waitForTimeout(1_200);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
+});
+
+test('제목 텍스트에만 hover 색상을 적용한다', async ({ page }) => {
+	await page.goto('/feeds');
+	const card = postCards(page).first();
+	const heading = card.getByRole('heading');
+	const text = heading.locator('span');
+	await expect(text).toBeVisible();
+	await expect
+		.poll(() =>
+			page
+				.locator('#post-feed-categories')
+				.evaluate((element) =>
+					Math.abs(
+						Math.round(
+							element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+						),
+					),
+				),
+		)
+		.toBe(0);
+	await page.keyboard.press('Escape');
+	await text.evaluate((element) => {
+		element.textContent = '짧은 제목';
+	});
+	await heading.scrollIntoViewIfNeeded();
+	const box = (await heading.boundingBox())!;
+	await page.mouse.move(box.x + box.width, box.y + box.height);
+	const normalColor = await text.evaluate((element) => getComputedStyle(element).color);
+	await text.hover();
+	await expect.poll(() => text.evaluate((element) => getComputedStyle(element).color)).not.toBe(normalColor);
+	await page.mouse.move(box.x + box.width - 2, box.y + box.height - 2);
+	await expect(text).toHaveCSS('color', normalColor);
+	for (const area of [card.locator('img[alt$="썸네일"]'), card.locator('time')]) {
+		await area.scrollIntoViewIfNeeded();
+		const bounds = (await area.boundingBox())!;
+		await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+		await expect(text).toHaveCSS('color', normalColor);
+	}
+	await card
+		.locator('a')
+		.filter({ hasNot: page.getByRole('heading') })
+		.hover();
+	await expect(text).toHaveCSS('color', normalColor);
 });

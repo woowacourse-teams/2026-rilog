@@ -84,8 +84,10 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 					onClick={handleClick}
 					className="group/title mt-1 flex-1 before:absolute before:inset-0 before:z-0 before:rounded-xl before:content-[''] focus-visible:outline-none focus-visible:before:outline-2 focus-visible:before:outline-offset-4 focus-visible:before:outline-focus-ring"
 				>
-					<h3 className="relative z-10 line-clamp-2 min-h-[2lh] text-body-3 font-semibold wrap-break-word break-keep text-text-primary transition-colors duration-200 hover:text-focus-ring motion-reduce:transition-none">
-						{post.title}
+					<h3 className="relative z-10 line-clamp-2 min-h-[2lh] text-body-3 font-semibold wrap-break-word break-keep">
+						<span className="text-text-primary transition-colors duration-200 hover:text-focus-ring motion-reduce:transition-none">
+							{post.title}
+						</span>
 					</h3>
 				</CustomLink>
 				<time dateTime={toApiUtcISOString(post.publishedAt)} className="mt-3 text-left text-caption-2 text-navy-600">
