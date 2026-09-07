@@ -41,4 +41,18 @@ public interface FeedApiSpec {
             @RequestParam int size
     );
 
+    @Operation(
+            description = "Rilog의 시리즈 또는 Colog의 챕터에 연결된 게시글 목록을 조회합니다.",
+            summary = "시리즈/챕터 게시글 목록 조회 API"
+    )
+    ApiResponse<BlogFeedPostResponse> getChapterPosts(
+            @Parameter(description = "블로그 slug", example = "writer")
+            @PathVariable String slug,
+            @Parameter(description = "챕터 ID", example = "1")
+            @PathVariable Long chapterId,
+            @Parameter(hidden = true) @NullableLoginUserId Long requesterId,
+            @RequestParam int page,
+            @RequestParam int size
+    );
+
 }
