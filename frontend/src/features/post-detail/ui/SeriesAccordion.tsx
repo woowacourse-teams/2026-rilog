@@ -4,6 +4,8 @@ import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { MOCK_SERIES_CHAPTER } from '../model/series.mock';
 
+import styles from './SeriesAccordion.module.css';
+
 interface SeriesAccordionProps {
 	slug: string;
 	postId: number;
@@ -18,7 +20,7 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 				게시글 시리즈
 			</h2>
 
-			<details data-chapter-id={chapterId} className="group">
+			<details data-chapter-id={chapterId} className={`group ${styles.accordion}`}>
 				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-3 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden">
 					<span className="min-w-0">
 						<CustomLink
