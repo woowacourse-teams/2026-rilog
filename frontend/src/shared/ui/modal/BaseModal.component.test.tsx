@@ -110,6 +110,7 @@ describe('BaseModal', () => {
 		);
 		const dialog = screen.getByRole('dialog', { name: '정책 모달' });
 
+		expect(dialog).toHaveAttribute('closedby', 'none');
 		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
 		fireEvent.click(dialog);
 		fireEvent.click(screen.getByRole('button', { name: '내부 버튼' }));
@@ -127,6 +128,7 @@ describe('BaseModal', () => {
 				<button type="button">내부 버튼</button>
 			</BaseModal>,
 		);
+		expect(dialog).not.toHaveAttribute('closedby');
 		fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
 		expect(onDismiss).toHaveBeenCalledOnce();
 		fireEvent.click(dialog);

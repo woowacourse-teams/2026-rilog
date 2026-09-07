@@ -123,6 +123,7 @@ export default function BaseModal({
 	return (
 		<dialog
 			ref={dialogRef}
+			closedby={closeOnEscape ? undefined : 'none'}
 			role={accessibility.role}
 			aria-labelledby={accessibility.labelledBy}
 			aria-describedby={accessibility.describedBy}
