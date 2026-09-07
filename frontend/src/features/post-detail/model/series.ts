@@ -1,11 +1,11 @@
 export interface SeriesPost {
+	id: number;
 	title: string;
-	postId: number;
 }
 
 export interface SeriesChapter {
-	chapter: string;
-	chapterId: number;
+	id: number;
+	name: string;
 	postCount: number;
 	posts: SeriesPost[];
 }
