@@ -7,6 +7,7 @@ import PostFeedCard from './PostFeedCard';
 
 const PERSONAL_POST: PostFeedItem = {
 	id: 17,
+	chapterName: null,
 	title: '함께 기록하는 방법',
 	thumbnailUrl: 'https://images.rilog.test/post.png',
 	publishedAt: '2026-08-04T23:59:59',
