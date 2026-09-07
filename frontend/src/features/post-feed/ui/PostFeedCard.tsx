@@ -43,7 +43,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 					{post.blog.type === 'RILOG' && (
 						<CustomLink
 							href={buildBlogHomePath(post.author.slug)}
-							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 						>
 							<UserAvatar
 								src={post.author.profileImageUrl ?? undefined}
@@ -51,7 +51,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 								label={`${post.author.nickname} 프로필`}
 								size="sm"
 							/>
-							<span className="truncate group-hover:underline group-focus-visible:underline">
+							<span className="truncate group-hover:underline group-focus-visible:underline group-active:underline">
 								{post.author.nickname}
 							</span>
 						</CustomLink>
@@ -59,7 +59,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 					{post.blog.type === 'COLOG' && (
 						<CustomLink
 							href={buildBlogHomePath(post.blog.slug)}
-							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 						>
 							<span className="size-5 shrink-0 overflow-hidden rounded-md border border-border-default bg-background">
 								<PostFeedImage
@@ -71,7 +71,9 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 									fallbackClassName="object-contain p-1"
 								/>
 							</span>
-							<span className="truncate group-hover:underline group-focus-visible:underline">{post.blog.name}</span>
+							<span className="truncate group-hover:underline group-focus-visible:underline group-active:underline">
+								{post.blog.name}
+							</span>
 						</CustomLink>
 					)}
 					<span aria-hidden="true" className="shrink-0 text-text-secondary">
@@ -85,7 +87,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 					className="group/title mt-1 flex-1 before:absolute before:inset-0 before:z-0 before:rounded-xl before:content-[''] focus-visible:outline-none focus-visible:before:outline-2 focus-visible:before:outline-offset-4 focus-visible:before:outline-focus-ring"
 				>
 					<h3 className="relative z-10 line-clamp-2 min-h-[2lh] text-body-3 font-semibold wrap-break-word break-keep">
-						<span className="text-text-primary transition-colors duration-200 hover:text-focus-ring motion-reduce:transition-none">
+						<span className="text-text-primary transition-colors duration-200 hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none">
 							{post.title}
 						</span>
 					</h3>

@@ -213,3 +213,40 @@ test('제목 텍스트에만 hover 색상을 적용한다', async ({ page }) => 
 		.hover();
 	await expect(text).toHaveCSS('color', normalColor);
 });
+
+test.describe('모바일 카드 피드백', () => {
+	test.use({ isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 } });
+	test('hover 없는 모바일 환경에서 제목과 홈 링크의 active 피드백을 표시한다', async ({ page }) => {
+		await page.goto('/feeds');
+		const card = postCards(page).first();
+		const title = card.getByRole('heading').locator('span');
+		const home = card.locator('a').filter({ hasNot: page.getByRole('heading') });
+		await expect(title).toBeVisible();
+		await expect
+			.poll(() =>
+				page
+					.locator('#post-feed-categories')
+					.evaluate((element) =>
+						Math.abs(
+							Math.round(
+								element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+							),
+						),
+					),
+			)
+			.toBe(0);
+		expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true);
+		for (const target of [title, home]) {
+			await target.scrollIntoViewIfNeeded();
+			const bounds = (await target.boundingBox())!;
+			const normalColor = await target.evaluate((element) => getComputedStyle(element).color);
+			await page.mouse.move(bounds.x + 4, bounds.y + bounds.height / 2);
+			await page.mouse.down();
+			await expect.poll(() => target.evaluate((element) => getComputedStyle(element).color)).not.toBe(normalColor);
+			if (target === home) await expect(home.locator('span').last()).toHaveCSS('text-decoration-line', 'underline');
+			await page.mouse.move(0, 0);
+			await page.mouse.up();
+			await expect(target).toHaveCSS('color', normalColor);
+		}
+	});
+});
