@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
@@ -19,6 +20,11 @@ public interface FeedApiSpec {
             summary = "전체 피드 게시물 목록 조회 API"
     )
     ApiResponse<FullFeedPostResponse> readFullFeedPosts(
+            @Parameter(hidden = true) @NullableLoginUserId Long requesterId,
+            @Parameter(description = "게시글 카테고리", example = "TECH")
+            @RequestParam(required = false) Category category,
+            @Parameter(description = "게시 대상 블로그 유형", example = "COLOG")
+            @RequestParam(required = false) BlogType blogType,
             @RequestParam int page,
             @RequestParam int size
     );
