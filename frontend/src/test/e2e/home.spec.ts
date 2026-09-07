@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
-const postLinks = (page: Page) => page.locator('a[href^="/@"][href*="/posts/"]');
+const postCards = (page: Page) => page.locator('#post-feed-content article');
 
 test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 탐색한다', async ({ page, request }) => {
 	// TODO(API 연동): API 응답을 fixture로 고정해 게시글 문구와 페이지 개수를 결정적으로 검증
@@ -18,7 +18,7 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	await expect(page).toHaveURL('http://localhost:3000/feeds');
 	await expect(page).toHaveTitle(/Rilog/);
 	await expect(page.getByRole('heading', { name: 'Rilog' })).toBeVisible();
-	await expect(postLinks(page)).toHaveCount(12);
+	await expect(postCards(page)).toHaveCount(12);
 	const viewportWidth = page.viewportSize()?.width;
 	await expect
 		.poll(async () => {
@@ -30,8 +30,8 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 		})
 		.toBe(0);
 	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
-	const firstCard = postLinks(page).nth(0);
-	const secondCard = postLinks(page).nth(1);
+	const firstCard = postCards(page).nth(0);
+	const secondCard = postCards(page).nth(1);
 	const firstMeta = await firstCard.locator('time').boundingBox();
 	const secondMeta = await secondCard.locator('time').boundingBox();
 	expect(firstMeta?.y).toBe(secondMeta?.y);
@@ -43,6 +43,7 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	const thumbnail = firstCard.locator('img[alt$="썸네일"]');
 	const initialThumbnailBox = await thumbnail.boundingBox();
 	await firstCard.hover();
+	await expect(firstCard).toHaveCSS('cursor', 'pointer');
 	await expect
 		.poll(() => firstTitle.evaluate((element) => getComputedStyle(element).color))
 		.not.toBe(initialTitleColor);
@@ -51,25 +52,25 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 		.toBeGreaterThan(initialThumbnailBox?.width ?? 0);
 
 	await page.mouse.wheel(0, 10_000);
-	await expect(postLinks(page)).toHaveCount(24);
+	await expect(postCards(page)).toHaveCount(24);
 	await page.mouse.wheel(0, 10_000);
-	await expect(postLinks(page)).toHaveCount(36);
+	await expect(postCards(page)).toHaveCount(36);
 	await expect(page.getByText('모든 게시글을 확인했어요.')).not.toBeAttached();
 	await expect(page).toHaveURL('http://localhost:3000/feeds');
 
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.reload();
-	await expect(postLinks(page)).toHaveCount(12);
+	await expect(postCards(page)).toHaveCount(12);
 	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /^\S+$/);
 	const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 	expect(hasHorizontalOverflow).toBe(false);
 });
 
-test('같은 행의 제목 줄 수가 달라도 작성자 프로필을 하단에 정렬한다', async ({ page }) => {
+test('같은 행의 제목 줄 수가 달라도 날짜를 하단에 정렬한다', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await page.goto('/feeds');
-	const firstCard = postLinks(page).nth(0);
-	const secondCard = postLinks(page).nth(1);
+	const firstCard = postCards(page).nth(0);
+	const secondCard = postCards(page).nth(1);
 	const feedGrid = page.locator('#post-feed-content ul');
 	await expect(firstCard).toBeVisible();
 	await expect(secondCard).toBeVisible();
@@ -84,7 +85,7 @@ test('같은 행의 제목 줄 수가 달라도 작성자 프로필을 하단에
 		element.textContent = '같은 행에서 두 줄을 차지하는 충분히 긴 게시글 제목입니다';
 	});
 	await expect
-		.poll(async () => (await secondTitle.boundingBox())!.height > (await firstTitle.boundingBox())!.height)
+		.poll(async () => (await secondTitle.boundingBox())!.height === (await firstTitle.boundingBox())!.height)
 		.toBe(true);
 	const firstMeta = await firstCard.locator('time').boundingBox();
 	const secondMeta = await secondCard.locator('time').boundingBox();
