@@ -29,7 +29,7 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 				: Math.round(logoBox.x + logoBox.width / 2 - (sidebarBox.x + sidebarBox.width + viewportWidth) / 2);
 		})
 		.toBe(0);
-	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
+	await expect(page.locator('#post-feed-content ul')).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
 	const firstCard = postCards(page).nth(0);
 	const secondCard = postCards(page).nth(1);
 	const firstMeta = await firstCard.locator('time').boundingBox();
@@ -61,7 +61,7 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.reload();
 	await expect(postCards(page)).toHaveCount(12);
-	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /^\S+$/);
+	await expect(page.locator('#post-feed-content ul')).toHaveCSS('grid-template-columns', /^\S+$/);
 	const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 	expect(hasHorizontalOverflow).toBe(false);
 });
@@ -132,7 +132,7 @@ test('@가 없는 코로그 경로는 찾을 수 없다', async ({ request }) =>
 });
 
 test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자동 이동을 취소한다', async ({ page }) => {
-	const feedContent = page.locator('#post-feed-content');
+	const feedContent = page.locator('#post-feed-categories');
 
 	await page.goto('/feeds');
 	await expect(feedContent).toBeVisible();
