@@ -12,7 +12,9 @@ export default function GuestSidebarFooter() {
 	return (
 		<footer className="w-full shrink-0 border-t border-border-default p-3">
 			<Button aria-label="로그인" fullWidth className={EXPANDING_ACTION_CLASS_NAME} onClick={handleLoginClick}>
-				<LogInIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
+				<span className="flex h-full w-11.25 shrink-0 items-center justify-center">
+					<LogInIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
+				</span>
 				<span className={EXPANDED_TEXT_CLASS_NAME}>로그인</span>
 			</Button>
 		</footer>

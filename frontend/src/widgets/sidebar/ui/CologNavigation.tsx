@@ -29,6 +29,7 @@ export default function CologNavigation() {
 										fallback={colog.name.charAt(0)}
 										src={colog.logoUrl ?? undefined}
 										size="md"
+										className="size-8.75!"
 										// TODO: 추후 톤이나 색상 정책 적용
 										tone="strong"
 									/>
@@ -44,13 +45,15 @@ export default function CologNavigation() {
 				onClick={() => recordCologCreationEntryContext('sidebar')}
 				variant="secondary"
 				aria-label="팀 만들기"
-				fullWidth
-				className={`mt-3 border-dashed text-text-secondary ${EXPANDING_ACTION_CLASS_NAME}`}
+				className={`mx-1.25 mt-3 flex! h-8.75! w-[calc(100%-10px)]! border-dashed text-text-secondary ${EXPANDING_ACTION_CLASS_NAME}`}
 			>
-				<span aria-hidden="true" className="shrink-0 text-body-2 leading-none">
+				<span
+					aria-hidden="true"
+					className="flex h-full w-8.75 shrink-0 items-center justify-center text-body-2 leading-none"
+				>
 					+
 				</span>
-				<span className={EXPANDED_TEXT_CLASS_NAME}>팀 만들기</span>
+				<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>팀 만들기</span>
 			</ButtonLink>
 		</nav>
 	);

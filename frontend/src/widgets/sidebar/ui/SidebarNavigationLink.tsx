@@ -3,6 +3,8 @@ import type { ComponentPropsWithRef, ReactNode } from 'react';
 
 import CustomLink from '@/shared/ui/link/CustomLink';
 
+import { EXPANDED_TEXT_CLASS_NAME, FOCUS_CLASS_NAME } from './sidebar-class-names';
+
 type SidebarNavigationLinkSize = 'sm' | 'md';
 
 interface SidebarNavigationLinkProps
@@ -16,12 +18,9 @@ interface SidebarNavigationLinkProps
 }
 
 const SIZE_CLASS_NAMES: Record<SidebarNavigationLinkSize, string> = {
-	sm: 'h-10 px-1 text-text-secondary hover:bg-surface-hover hover:text-text-primary active:bg-surface-active',
-	md: 'h-11 px-3.5',
+	sm: 'h-10 w-full px-1 text-text-secondary hover:bg-surface-hover hover:text-text-primary active:bg-surface-active',
+	md: 'mx-1.25 h-8.75 w-[calc(100%-10px)] text-text-secondary hover:bg-navy-50 hover:text-brand-primary active:bg-navy-200',
 };
-
-const COLLAPSED_LABEL_CLASS_NAME = 'hidden min-w-0 whitespace-nowrap group-hover:block';
-const FOCUS_CLASS_NAME = 'focus-visible:outline-2 focus-visible:outline-focus-ring focus-visible:outline-focus-ring';
 
 export default function SidebarNavigationLink({
 	accessibilityLabel,
@@ -38,13 +37,13 @@ export default function SidebarNavigationLink({
 			{...linkProps}
 			aria-label={accessibilityLabel ?? label}
 			aria-current={isCurrent ? 'page' : undefined}
-			className={`flex w-full items-center justify-center gap-3 rounded-lg text-label-2 transition-colors duration-200 group-hover:justify-start ${SIZE_CLASS_NAMES[size]} ${isCurrent ? 'bg-navy-100 text-brand-primary hover:bg-navy-50 active:bg-navy-200' : ''} ${FOCUS_CLASS_NAME} ${className ?? ''}`.trim()}
+			className={`flex items-center gap-2 overflow-hidden rounded-lg text-label-2 transition-colors duration-200 ${SIZE_CLASS_NAMES[size]} ${isCurrent ? 'bg-navy-100 text-brand-primary! hover:bg-navy-100 active:bg-navy-200' : ''} ${FOCUS_CLASS_NAME} ${className ?? ''}`.trim()}
 		>
-			{icon}
-			<span className={`truncate font-semibold ${COLLAPSED_LABEL_CLASS_NAME}`}>{label}</span>
+			<span className="flex size-8.75 shrink-0 items-center justify-center">{icon}</span>
+			<span className={`truncate font-semibold ${EXPANDED_TEXT_CLASS_NAME}`}>{label}</span>
 			{badge !== undefined && (
 				<span
-					className={`ml-auto rounded-full bg-surface px-2 py-0.5 text-caption-1 font-semibold text-text-secondary ${COLLAPSED_LABEL_CLASS_NAME}`}
+					className={`mr-2 ml-auto rounded-full bg-surface px-2 py-0.5 text-caption-1 font-semibold text-text-secondary ${EXPANDED_TEXT_CLASS_NAME}`}
 				>
 					{badge}
 				</span>
