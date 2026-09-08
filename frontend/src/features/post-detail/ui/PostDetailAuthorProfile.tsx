@@ -22,7 +22,7 @@ export default function PostDetailAuthorProfile({ author }: PostDetailAuthorProf
 				/>
 				<h2
 					id="post-author-heading"
-					className="mt-4 text-title-1 font-semibold wrap-break-word text-text-primary transition-colors group-hover:text-brand-primary-hover sm:text-title-2"
+					className="mt-4 text-title-1 font-semibold wrap-break-word text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-title-2"
 				>
 					{author.nickname}
 				</h2>

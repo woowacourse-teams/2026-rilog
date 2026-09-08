@@ -54,7 +54,7 @@ export default function PostDetailActions({ slug, postId, viewerPermissions }: P
 			<div className="flex items-center gap-2 before:content-['·']">
 				{canEdit ? (
 					<button
-						className="rounded-sm transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+						className="rounded-sm transition-colors hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 						onClick={handleEdit}
 					>
 						수정

@@ -46,7 +46,7 @@ export default function PostDetailHeader({
 			<div className="mt-6 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-3 text-label-2 text-text-secondary sm:mt-7">
 				<CustomLink
 					href={buildBlogHomePath(author.slug)}
-					className="flex items-center gap-1.5 rounded-full transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
+					className="flex items-center gap-1.5 rounded-full transition-colors hover:text-focus-ring hover:underline hover:underline-offset-2 focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring active:text-focus-ring"
 				>
 					<UserAvatar
 						src={author.profileImageUrl ?? undefined}
