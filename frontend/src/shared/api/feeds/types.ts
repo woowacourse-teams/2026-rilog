@@ -1,4 +1,5 @@
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { ChapterResponse } from '@/shared/api/blogs/types';
 
 export interface FullFeedPostsRequest {
 	page: number;
@@ -44,6 +45,7 @@ export interface PostItemResponse {
 	publishedAt: string;
 	author: AuthorResponse;
 	owner: PostOwnerResponse;
+	chapter?: ChapterResponse | null;
 }
 
 export interface FullFeedPostResponse {

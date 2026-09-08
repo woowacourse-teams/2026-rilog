@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
-const postLinks = (page: Page) => page.locator('a[href^="/@"][href*="/posts/"]');
+const postCards = (page: Page) => page.locator('#post-feed-content article');
 
 test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 탐색한다', async ({ page, request }) => {
 	// TODO(API 연동): API 응답을 fixture로 고정해 게시글 문구와 페이지 개수를 결정적으로 검증
@@ -18,7 +18,7 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	await expect(page).toHaveURL('http://localhost:3000/feeds');
 	await expect(page).toHaveTitle(/Rilog/);
 	await expect(page.getByRole('heading', { name: 'Rilog' })).toBeVisible();
-	await expect(postLinks(page)).toHaveCount(12);
+	await expect(postCards(page)).toHaveCount(12);
 	const viewportWidth = page.viewportSize()?.width;
 	await expect
 		.poll(async () => {
@@ -29,9 +29,9 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 				: Math.round(logoBox.x + logoBox.width / 2 - (sidebarBox.x + sidebarBox.width + viewportWidth) / 2);
 		})
 		.toBe(0);
-	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
-	const firstCard = postLinks(page).nth(0);
-	const secondCard = postLinks(page).nth(1);
+	await expect(page.locator('#post-feed-content ul')).toHaveCSS('grid-template-columns', /\S+ \S+ \S+ \S+/);
+	const firstCard = postCards(page).nth(0);
+	const secondCard = postCards(page).nth(1);
 	const firstMeta = await firstCard.locator('time').boundingBox();
 	const secondMeta = await secondCard.locator('time').boundingBox();
 	expect(firstMeta?.y).toBe(secondMeta?.y);
@@ -39,37 +39,43 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	const firstTitle = firstCard.getByRole('heading');
 	await expect(firstTitle).toHaveCSS('word-break', 'keep-all');
 	await expect(firstTitle).toHaveCSS('overflow-wrap', 'break-word');
-	const initialTitleColor = await firstTitle.evaluate((element) => getComputedStyle(element).color);
+	const titleText = firstTitle.locator('span');
+	const initialTitleColor = await titleText.evaluate((element) => getComputedStyle(element).color);
 	const thumbnail = firstCard.locator('img[alt$="썸네일"]');
 	const initialThumbnailBox = await thumbnail.boundingBox();
-	await firstCard.hover();
-	await expect
-		.poll(() => firstTitle.evaluate((element) => getComputedStyle(element).color))
-		.not.toBe(initialTitleColor);
+	await firstCard.hover({ position: { x: 1, y: 1 } });
+	await expect(firstCard).toHaveCSS('cursor', 'pointer');
+	await expect(titleText).toHaveCSS('color', initialTitleColor);
 	await expect
 		.poll(async () => (await thumbnail.boundingBox())?.width)
 		.toBeGreaterThan(initialThumbnailBox?.width ?? 0);
+	const profileLink = firstCard.locator('a').filter({ hasNot: page.getByRole('heading') });
+	await profileLink.hover();
+	await expect(titleText).toHaveCSS('color', initialTitleColor);
+	await expect(profileLink.locator('span').last()).toHaveCSS('text-decoration-line', 'underline');
+	await titleText.hover();
+	await expect.poll(() => titleText.evaluate((element) => getComputedStyle(element).color)).not.toBe(initialTitleColor);
 
 	await page.mouse.wheel(0, 10_000);
-	await expect(postLinks(page)).toHaveCount(24);
+	await expect(postCards(page)).toHaveCount(24);
 	await page.mouse.wheel(0, 10_000);
-	await expect(postLinks(page)).toHaveCount(36);
+	await expect(postCards(page)).toHaveCount(36);
 	await expect(page.getByText('모든 게시글을 확인했어요.')).not.toBeAttached();
 	await expect(page).toHaveURL('http://localhost:3000/feeds');
 
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.reload();
-	await expect(postLinks(page)).toHaveCount(12);
-	await expect(page.locator('ul')).toHaveCSS('grid-template-columns', /^\S+$/);
+	await expect(postCards(page)).toHaveCount(12);
+	await expect(page.locator('#post-feed-content ul')).toHaveCSS('grid-template-columns', /^\S+$/);
 	const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 	expect(hasHorizontalOverflow).toBe(false);
 });
 
-test('같은 행의 제목 줄 수가 달라도 작성자 프로필을 하단에 정렬한다', async ({ page }) => {
+test('같은 행의 제목 줄 수가 달라도 날짜를 하단에 정렬한다', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await page.goto('/feeds');
-	const firstCard = postLinks(page).nth(0);
-	const secondCard = postLinks(page).nth(1);
+	const firstCard = postCards(page).nth(0);
+	const secondCard = postCards(page).nth(1);
 	const feedGrid = page.locator('#post-feed-content ul');
 	await expect(firstCard).toBeVisible();
 	await expect(secondCard).toBeVisible();
@@ -84,7 +90,7 @@ test('같은 행의 제목 줄 수가 달라도 작성자 프로필을 하단에
 		element.textContent = '같은 행에서 두 줄을 차지하는 충분히 긴 게시글 제목입니다';
 	});
 	await expect
-		.poll(async () => (await secondTitle.boundingBox())!.height > (await firstTitle.boundingBox())!.height)
+		.poll(async () => (await secondTitle.boundingBox())!.height === (await firstTitle.boundingBox())!.height)
 		.toBe(true);
 	const firstMeta = await firstCard.locator('time').boundingBox();
 	const secondMeta = await secondCard.locator('time').boundingBox();
@@ -131,7 +137,7 @@ test('@가 없는 코로그 경로는 찾을 수 없다', async ({ request }) =>
 });
 
 test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자동 이동을 취소한다', async ({ page }) => {
-	const feedContent = page.locator('#post-feed-content');
+	const feedContent = page.locator('#post-feed-categories');
 
 	await page.goto('/feeds');
 	await expect(feedContent).toBeVisible();
@@ -162,4 +168,85 @@ test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자
 
 	await page.waitForTimeout(1_200);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
+});
+
+test('제목 텍스트에만 hover 색상을 적용한다', async ({ page }) => {
+	await page.goto('/feeds');
+	const card = postCards(page).first();
+	const heading = card.getByRole('heading');
+	const text = heading.locator('span');
+	await expect(text).toBeVisible();
+	await expect
+		.poll(() =>
+			page
+				.locator('#post-feed-categories')
+				.evaluate((element) =>
+					Math.abs(
+						Math.round(
+							element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+						),
+					),
+				),
+		)
+		.toBe(0);
+	await page.keyboard.press('Escape');
+	await text.evaluate((element) => {
+		element.textContent = '짧은 제목';
+	});
+	await heading.scrollIntoViewIfNeeded();
+	const box = (await heading.boundingBox())!;
+	await page.mouse.move(box.x + box.width, box.y + box.height);
+	const normalColor = await text.evaluate((element) => getComputedStyle(element).color);
+	await text.hover();
+	await expect.poll(() => text.evaluate((element) => getComputedStyle(element).color)).not.toBe(normalColor);
+	await page.mouse.move(box.x + box.width - 2, box.y + box.height - 2);
+	await expect(text).toHaveCSS('color', normalColor);
+	for (const area of [card.locator('img[alt$="썸네일"]'), card.locator('time')]) {
+		await area.scrollIntoViewIfNeeded();
+		const bounds = (await area.boundingBox())!;
+		await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+		await expect(text).toHaveCSS('color', normalColor);
+	}
+	await card
+		.locator('a')
+		.filter({ hasNot: page.getByRole('heading') })
+		.hover();
+	await expect(text).toHaveCSS('color', normalColor);
+});
+
+test.describe('모바일 카드 피드백', () => {
+	test.use({ isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 } });
+	test('hover 없는 모바일 환경에서 제목과 홈 링크의 active 피드백을 표시한다', async ({ page }) => {
+		await page.goto('/feeds');
+		const card = postCards(page).first();
+		const title = card.getByRole('heading').locator('span');
+		const home = card.locator('a').filter({ hasNot: page.getByRole('heading') });
+		await expect(title).toBeVisible();
+		await expect
+			.poll(() =>
+				page
+					.locator('#post-feed-categories')
+					.evaluate((element) =>
+						Math.abs(
+							Math.round(
+								element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+							),
+						),
+					),
+			)
+			.toBe(0);
+		expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true);
+		for (const target of [title, home]) {
+			await target.scrollIntoViewIfNeeded();
+			const bounds = (await target.boundingBox())!;
+			const normalColor = await target.evaluate((element) => getComputedStyle(element).color);
+			await page.mouse.move(bounds.x + 4, bounds.y + bounds.height / 2);
+			await page.mouse.down();
+			await expect.poll(() => target.evaluate((element) => getComputedStyle(element).color)).not.toBe(normalColor);
+			if (target === home) await expect(home.locator('span').last()).toHaveCSS('text-decoration-line', 'underline');
+			await page.mouse.move(0, 0);
+			await page.mouse.up();
+			await expect(target).toHaveCSS('color', normalColor);
+		}
+	});
 });

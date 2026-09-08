@@ -38,6 +38,7 @@ const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 
 	return {
 		id: postId,
+		chapterName: null,
 		title,
 		thumbnailUrl: thumbnailImageUrl || null,
 		publishedAt,

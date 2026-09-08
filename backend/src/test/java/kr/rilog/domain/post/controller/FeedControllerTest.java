@@ -14,6 +14,7 @@ import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.service.FeedService;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
+import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,11 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FeedControllerTest {
 
     @Test
-    @DisplayName("GET /v1/feeds/posts는 전체 피드 게시글 목록을 조회한다")
+    @DisplayName("GET /v1/feeds/posts는 전체 피드 필터를 전달한다.")
     void readFullFeedPostsReturnsPosts() throws Exception {
         // given
         FeedService feedService = mock(FeedService.class);
-        when(feedService.readFullFeedPostList(1, 2))
+        FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, BlogType.COLOG, 1, 2);
+        when(feedService.readFullFeedPostList(command))
                 .thenReturn(new FullFeedPostResponse(
                         List.of(
                                 new FullFeedPostResponse.PostItemResponse(
@@ -96,6 +98,9 @@ class FeedControllerTest {
 
         // when - then
         mockMvc.perform(get("/v1/feeds/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .param("category", "DAILY")
+                        .param("blogType", "COLOG")
                         .param("page", "1")
                         .param("size", "2"))
                 .andExpect(status().isOk())
@@ -118,7 +123,7 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.numberOfElements").value(2))
                 .andExpect(jsonPath("$.data.hasNext").value(false));
 
-        verify(feedService).readFullFeedPostList(1, 2);
+        verify(feedService).readFullFeedPostList(command);
     }
 
     @Test

@@ -33,6 +33,7 @@ export interface PostDetail extends PostSummary {
 }
 
 export interface PostFeedItem extends PostSummary {
+	chapterName: string | null;
 	blog: BaseBlog;
 }
 
