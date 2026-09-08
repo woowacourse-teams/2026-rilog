@@ -1,6 +1,7 @@
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
+import ChapterPostSuggestionSection from '@/features/post-detail/ui/ChapterPostSuggestionSection';
 import PostDetailCoLogSummary from '@/features/post-detail/ui/PostDetailCoLogSummary';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHeader from '@/features/post-detail/ui/PostDetailHeader';
@@ -45,6 +46,10 @@ export default async function PostDetail({ post }: PostDetailProps) {
 						/>
 						{tableOfContents.length === 0 ? null : <PostTableOfContents items={tableOfContents} />}
 					</div>
+				</div>
+
+				<div className="mx-auto max-w-5xl">
+					<ChapterPostSuggestionSection slug={post.blog.slug} />
 				</div>
 			</div>
 		</main>
