@@ -25,6 +25,7 @@ describe('mapFullFeedPostResponse', () => {
 						publishedAt: '2026-08-17T00:00:00',
 						author: { userId: 10, name: '리로', slug: 'riro', profileImageUrl: '' },
 						owner: { type: 'RILOG' as const, blogId: 10, name: '리로', slug: 'riro', profileImageUrl: '' },
+						chapter: { chapterId: 1, name: 'Education', order: 1 },
 					},
 					{
 						postId: 2,
@@ -52,10 +53,12 @@ describe('mapFullFeedPostResponse', () => {
 		const page = mapFullFeedPostResponse(response, 0);
 
 		expect(page.items[0]).toMatchObject({
+			chapterName: 'Education',
 			author: { id: 10, nickname: '리로', slug: 'riro' },
 			blog: { id: 10, name: '리로', slug: 'riro', type: 'RILOG' },
 		});
 		expect(page.items[1]).toMatchObject({
+			chapterName: null,
 			author: { id: 10, nickname: '리로', slug: 'riro' },
 			blog: {
 				id: 20,
