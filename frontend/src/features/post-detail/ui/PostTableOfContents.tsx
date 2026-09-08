@@ -92,7 +92,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 						);
 					})}
 				</ol>
-				<ol className="pointer-events-none absolute inset-x-0 top-0 space-y-2.5 border-l border-border-default pl-5 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 motion-reduce:transition-none">
+				<ol className="pointer-events-none absolute inset-x-0 top-0 space-y-2 border-l border-border-default pl-5 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 motion-reduce:transition-none">
 					{items.map((item) => {
 						const isActive = item.id === activeId;
 
@@ -101,7 +101,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 								<a
 									href={`#${encodeURIComponent(item.id)}`}
 									aria-current={isActive ? 'location' : undefined}
-									className={`block rounded-sm text-label-2 leading-4 transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
+									className={`block rounded-sm text-label-2 leading-[1.125rem] transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
 									onClick={(event) => handleAnchorClick(event, item.id)}
 								>
 									{item.text}
