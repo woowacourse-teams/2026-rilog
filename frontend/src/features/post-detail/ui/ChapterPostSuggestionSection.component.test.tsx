@@ -23,7 +23,8 @@ describe('ChapterPostSuggestionSection', () => {
 		expect(screen.getByRole('heading', { name: '프론트엔드 챕터의 더 많은 글' })).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '프론트엔드' })).toHaveAttribute('href', '/@rilog-team?chapter=7');
 		expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3);
-		expect(screen.getByRole('link', { name: /게시글 1/ })).toHaveAttribute('href', '/@rilog-team/posts/1');
+		expect(screen.getByRole('link', { name: '게시글 1' })).toHaveAttribute('href', '/@rilog-team/posts/1');
+		expect(screen.getByRole('link', { name: '게시글 1 썸네일' })).toHaveAttribute('href', '/@rilog-team/posts/1');
 		expect(screen.getByRole('link', { name: '작성자 1' })).toHaveAttribute('href', '/@author-1');
 		expect(screen.queryByRole('heading', { name: '게시글 4' })).not.toBeInTheDocument();
 	});
