@@ -10,6 +10,7 @@ import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import BlogHomeCologAside from './BlogHomeCologAside';
+import BlogHomeFeedHeading from './BlogHomeFeedHeading';
 import BlogHomeNavigation from './BlogHomeNavigation';
 import BlogHomeToolbar from './BlogHomeToolbar';
 
@@ -68,7 +69,21 @@ export default function BlogHome({
 					filter={filter}
 					initialIndexRequestFailed={initialIndexRequestFailed}
 				/>
-				<BlogPostFeed slug={profile.slug} filter={filter} initialRequestFailed={initialPostsRequestFailed} />
+				<BlogPostFeed
+					blogType={profile.type}
+					slug={profile.slug}
+					filter={filter}
+					initialRequestFailed={initialPostsRequestFailed}
+					heading={
+						profile.type === 'COLOG' ? (
+							<BlogHomeFeedHeading
+								slug={profile.slug}
+								filter={filter}
+								initialIndexRequestFailed={initialIndexRequestFailed}
+							/>
+						) : undefined
+					}
+				/>
 			</div>
 			{initialIndexRequestFailed ? <BlogHomeIndexRecovery slug={profile.slug} /> : null}
 			<BlogProfileViewTracker blogType={profile.type} />

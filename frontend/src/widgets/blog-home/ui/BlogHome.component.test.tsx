@@ -7,10 +7,18 @@ import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 
 import BlogHome from './BlogHome';
 
-const { memberAsideRenderMock, profileViewTrackerRenderMock } = vi.hoisted(() => ({
-	memberAsideRenderMock: vi.fn(),
-	profileViewTrackerRenderMock: vi.fn(),
-}));
+const { feedRenderMock, feedState, headingRenderMock, memberAsideRenderMock, profileViewTrackerRenderMock } =
+	vi.hoisted(() => {
+		const mutableFeedState: { current: 'ready' | 'loading' | 'empty' | 'error' } = { current: 'ready' };
+
+		return {
+			feedRenderMock: vi.fn(),
+			feedState: mutableFeedState,
+			headingRenderMock: vi.fn(),
+			memberAsideRenderMock: vi.fn(),
+			profileViewTrackerRenderMock: vi.fn(),
+		};
+	});
 
 vi.mock('@/features/analytics/ui/BlogProfileViewTracker', () => ({
 	default: function MockBlogProfileViewTracker({ blogType }: { blogType: BlogPublicProfile['type'] }) {
@@ -22,8 +30,25 @@ vi.mock('@/features/analytics/ui/BlogProfileViewTracker', () => ({
 vi.mock('@/features/blog-home-index/ui/BlogHomeIndexRecovery', () => ({ default: () => null }));
 
 vi.mock('@/features/blog-post-feed/ui/BlogPostFeed', () => ({
-	default: function MockBlogPostFeed({ slug }: { slug: string }) {
-		return <div data-testid="feed-slot">게시글 목록: {slug}</div>;
+	default: function MockBlogPostFeed({
+		slug,
+		blogType,
+		heading,
+	}: {
+		slug: string;
+		blogType: BlogPublicProfile['type'];
+		heading?: ReactNode;
+	}) {
+		feedRenderMock(blogType);
+		if (feedState.current === 'loading') return <div role="status">게시글 로딩 중</div>;
+		if (feedState.current === 'empty') return <div>빈 게시글 목록</div>;
+		if (feedState.current === 'error') return <div role="alert">게시글 오류</div>;
+		return (
+			<>
+				{heading}
+				<div data-testid="feed-slot">게시글 목록: {slug}</div>
+			</>
+		);
 	},
 }));
 
@@ -63,6 +88,19 @@ vi.mock('./BlogHomeNavigation', () => ({
 	},
 }));
 
+vi.mock('./BlogHomeFeedHeading', () => ({
+	default: function MockBlogHomeFeedHeading({
+		filter,
+		initialIndexRequestFailed,
+	}: {
+		filter: { type: string };
+		initialIndexRequestFailed?: boolean;
+	}) {
+		headingRenderMock({ filter, initialIndexRequestFailed });
+		return <h2>{filter.type === 'all' ? '전체' : '챕터 제목'}</h2>;
+	},
+}));
+
 vi.mock('./BlogHomeToolbar', () => ({ default: () => <div>모바일 인덱스</div> }));
 
 vi.mock('./BlogHomeCologAside', () => ({
@@ -88,6 +126,8 @@ const COLOG_PROFILE: BlogPublicProfile = {
 
 describe('BlogHome', () => {
 	beforeEach(() => {
+		feedState.current = 'ready';
+		headingRenderMock.mockClear();
 		memberAsideRenderMock.mockClear();
 		profileViewTrackerRenderMock.mockClear();
 	});
@@ -103,6 +143,8 @@ describe('BlogHome', () => {
 		expect(screen.queryByRole('region', { name: 'Colog' })).not.toBeInTheDocument();
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('COLOG');
+		expect(feedRenderMock).toHaveBeenCalledWith('COLOG');
+		expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
 	});
 
 	it('RILOG에는 개인 settings와 시리즈·코로그 탐색, API 코로그 aside를 조립한다', () => {
@@ -121,5 +163,23 @@ describe('BlogHome', () => {
 		expect(screen.getByRole('region', { name: 'Colog' })).toBeInTheDocument();
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('RILOG');
+		expect(feedRenderMock).toHaveBeenCalledWith('RILOG');
+		expect(screen.queryByRole('heading', { level: 2, name: '전체' })).not.toBeInTheDocument();
+		expect(headingRenderMock).not.toHaveBeenCalled();
+	});
+
+	it('COLOG 피드에 제목을 전달해 toolbar와 게시글 목록 사이에 표시한다', () => {
+		render(<BlogHome profile={COLOG_PROFILE} filter={{ type: 'all' }} initialIndexRequestFailed />);
+
+		const toolbar = screen.getByText('모바일 인덱스');
+		const heading = screen.getByRole('heading', { level: 2, name: '전체' });
+		const feed = screen.getByTestId('feed-slot');
+
+		expect(toolbar.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(heading.compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(headingRenderMock).toHaveBeenCalledWith({
+			filter: { type: 'all' },
+			initialIndexRequestFailed: true,
+		});
 	});
 });

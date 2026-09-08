@@ -1,4 +1,10 @@
-export default function BlogPostFeedSkeleton() {
+import type { BlogPublicProfile } from '@/domains/blog/model/blog';
+
+interface BlogPostFeedSkeletonProps {
+	blogType: BlogPublicProfile['type'];
+}
+
+export default function BlogPostFeedSkeleton({ blogType }: BlogPostFeedSkeletonProps) {
 	const items = Array.from({ length: 5 }, (_, i) => i);
 
 	return (
@@ -9,14 +15,31 @@ export default function BlogPostFeedSkeleton() {
 						<div className="aspect-3/2 h-24 shrink-0 rounded-lg bg-surface-active sm:h-27" />
 
 						<div className="flex min-w-0 flex-1 flex-col justify-between py-1">
-							<div className="flex flex-col gap-2">
-								<div className="h-5 w-4/5 rounded bg-surface-active sm:h-6" />
-								<div className="h-5 w-3/5 rounded bg-surface-active sm:h-6" />
-							</div>
-							<div className="flex items-center gap-1.5">
-								<div className="size-5 shrink-0 rounded-full bg-surface-active" />
-								<div className="h-4 w-24 rounded bg-surface-active" />
-							</div>
+							{blogType === 'RILOG' && (
+								<>
+									<div className="flex flex-col gap-2">
+										<div className="h-5 w-4/5 rounded bg-surface-active sm:h-6" />
+										<div className="h-5 w-3/5 rounded bg-surface-active sm:h-6" />
+									</div>
+									<div className="flex items-center gap-1.5">
+										<div className="size-5 shrink-0 rounded-full bg-surface-active" />
+										<div className="h-4 w-24 rounded bg-surface-active" />
+									</div>
+								</>
+							)}
+							{blogType === 'COLOG' && (
+								<>
+									<div>
+										<div className="h-7 w-4/5 rounded bg-surface-active" />
+										<div className="mt-1 flex items-center gap-1.5">
+											<div className="size-5 shrink-0 rounded-full bg-surface-active" />
+											<div className="h-4 w-1/3 rounded bg-surface-active" />
+											<div className="h-4 w-1/3 rounded bg-surface-active" />
+										</div>
+									</div>
+									<div className="h-4 w-3/5 rounded bg-surface-active" />
+								</>
+							)}
 						</div>
 					</li>
 				))}
