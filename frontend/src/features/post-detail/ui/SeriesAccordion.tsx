@@ -1,0 +1,67 @@
+import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
+import ChevronIcon from '@/shared/assets/icons/chevron.svg';
+import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
+import CustomLink from '@/shared/ui/link/CustomLink';
+
+import { MOCK_SERIES_CHAPTER } from '../model/series.mock';
+
+import styles from './SeriesAccordion.module.css';
+
+interface SeriesAccordionProps {
+	slug: string;
+	postId: number;
+}
+
+export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) {
+	const { id, name, postCount, posts } = MOCK_SERIES_CHAPTER;
+	const seriesHref = buildBlogHomeFilterHref(
+		buildBlogHomePath(slug),
+		'',
+		{ type: 'chapterId', chapterId: id },
+		'RILOG',
+	);
+
+	return (
+		<section aria-labelledby="series-accordion-title" className="overflow-hidden border-y border-border-strong">
+			<h2 id="series-accordion-title" className="sr-only">
+				게시글 시리즈
+			</h2>
+
+			<details data-chapter-id={id} className={`group ${styles.accordion}`}>
+				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-3 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden">
+					<span className="min-w-0">
+						<CustomLink href={seriesHref} className="wrap-break-word transition-colors hover:text-blue-600">
+							{name}
+						</CustomLink>
+						<span className="ml-2 text-label-2 font-normal text-text-secondary">{postCount}</span>
+					</span>
+					<ChevronIcon className="size-5 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
+				</summary>
+
+				<ol className="pt-1 pb-3">
+					{posts.map((post, index) => {
+						const isCurrentPost = post.id === postId;
+
+						return (
+							<li key={post.id}>
+								<CustomLink
+									href={buildPostDetailPath(slug, String(post.id))}
+									className="group/link flex items-center gap-3 rounded-md px-2 py-2.5 text-body-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+								>
+									<span aria-hidden="true" className="w-5 shrink-0 text-right text-label-2 text-text-placeholder">
+										{index + 1}
+									</span>
+									<span
+										className={`wrap-break-word transition-colors group-hover/link:text-blue-600 group-hover/link:underline group-hover/link:underline-offset-4 group-focus-visible/link:text-blue-600 group-active/link:text-blue-600 ${isCurrentPost ? 'font-medium text-text-primary' : 'text-text-secondary'}`}
+									>
+										{post.title}
+									</span>
+								</CustomLink>
+							</li>
+						);
+					})}
+				</ol>
+			</details>
+		</section>
+	);
+}

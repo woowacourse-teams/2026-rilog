@@ -11,6 +11,17 @@ export type CologSettingsTab = (typeof COLOG_SETTINGS_TAB_IDS)[number];
 export const RILOG_SETTINGS_TAB_IDS = ['profile', 'series', 'danger'] as const;
 export type RilogSettingsTab = (typeof RILOG_SETTINGS_TAB_IDS)[number];
 
+export const BLOG_HOME_FILTER_SEARCH_PARAMS = {
+	series: 'series',
+	chapter: 'chapter',
+	colog: 'colog',
+} as const;
+
+export type BlogHomePathOptions =
+	| { seriesId: number; chapterId?: never; cologSlug?: never }
+	| { seriesId?: never; chapterId: number; cologSlug?: never }
+	| { seriesId?: never; chapterId?: never; cologSlug: string };
+
 const normalizeSegment = (value: string, errorMessage: string) => {
 	const normalizedValue = value.trim();
 
@@ -29,9 +40,24 @@ const decodeSegment = (value: string) => {
 	}
 };
 
-export const buildBlogHomePath = (slug: string) => {
+export const buildBlogHomePath = (slug: string, options?: BlogHomePathOptions) => {
 	const normalizedSlug = decodeSegment(slug).trim().replace(/^@/, '');
-	return `/@${normalizeSegment(normalizedSlug, '블로그 slug가 필요합니다.')}`;
+	const pathname = `/@${normalizeSegment(normalizedSlug, '블로그 slug가 필요합니다.')}`;
+
+	if (options === undefined) {
+		return pathname;
+	}
+
+	const searchParams = new URLSearchParams();
+	if ('seriesId' in options) {
+		searchParams.set(BLOG_HOME_FILTER_SEARCH_PARAMS.series, String(options.seriesId));
+	} else if ('chapterId' in options) {
+		searchParams.set(BLOG_HOME_FILTER_SEARCH_PARAMS.chapter, String(options.chapterId));
+	} else {
+		searchParams.set(BLOG_HOME_FILTER_SEARCH_PARAMS.colog, options.cologSlug);
+	}
+
+	return `${pathname}?${searchParams.toString()}`;
 };
 
 export const hasBlogSlugPrefix = (slug: string) => decodeSegment(slug).trim().startsWith('@');

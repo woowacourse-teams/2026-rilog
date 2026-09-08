@@ -9,6 +9,7 @@ public enum Category {
 
     TECH("기술"),
     DAILY("일상"),
+    RETROSPECT("회고"),
     ;
 
     private final String name;

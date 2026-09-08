@@ -35,6 +35,12 @@ describe('app routes', () => {
 		expect(buildBlogHomePath('team/name')).toBe('/@team%2Fname');
 	});
 
+	it('블로그 홈 필터를 상호배타적인 query로 만든다', () => {
+		expect(buildBlogHomePath('rilog', { seriesId: 3 })).toBe('/@rilog?series=3');
+		expect(buildBlogHomePath('team', { chapterId: 7 })).toBe('/@team?chapter=7');
+		expect(buildBlogHomePath('rilog', { cologSlug: 'rilog-team' })).toBe('/@rilog?colog=rilog-team');
+	});
+
 	it('코로그 설정 탭 경로를 만든다', () => {
 		expect(buildCologSettingsPath('rilog', 'profile')).toBe('/@rilog/settings?tab=profile');
 		expect(buildCologSettingsPath('rilog', 'members')).toBe('/@rilog/settings?tab=members');

@@ -19,6 +19,7 @@ const readFullFeedPostsMock = vi.mocked(readFullFeedPosts);
 
 const createPost = (id: number): PostFeedItem => ({
 	id,
+	chapterName: null,
 	title: `게시글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-14T09:00:00',
@@ -145,7 +146,7 @@ describe('PostFeedGrid', () => {
 		expect(screen.getByText('피드를 불러오지 못했어요.')).toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 
-		expect(await screen.findByRole('link', { name: /게시글 1/ })).toBeInTheDocument();
+		expect(await screen.findByRole('link', { name: '게시글 1' })).toBeInTheDocument();
 		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12 });
 	});
 
@@ -155,7 +156,7 @@ describe('PostFeedGrid', () => {
 		readFullFeedPostsMock.mockReturnValueOnce(firstNextPage.promise).mockReturnValueOnce(lastPage.promise);
 		renderGrid({ initialPage: createPage(createPosts(1, 12), 0, true) });
 
-		expect(screen.getAllByRole('link')).toHaveLength(12);
+		expect(screen.getAllByRole('link', { name: /^게시글 \d+$/ })).toHaveLength(12);
 		const firstObserverCallback = observerCallback;
 
 		act(() => {
@@ -165,7 +166,7 @@ describe('PostFeedGrid', () => {
 		act(() => {
 			firstNextPage.resolve(toApiResponse(createPage(createPosts(13, 12), 1, true)));
 		});
-		await waitFor(() => expect(screen.getAllByRole('link')).toHaveLength(24));
+		await waitFor(() => expect(screen.getAllByRole('link', { name: /^게시글 \d+$/ })).toHaveLength(24));
 		await waitFor(() => expect(observerCallback).not.toBe(firstObserverCallback));
 
 		act(() => {
@@ -175,7 +176,7 @@ describe('PostFeedGrid', () => {
 		act(() => {
 			lastPage.resolve(toApiResponse(createPage(createPosts(25, 12), 2, false)));
 		});
-		await waitFor(() => expect(screen.getAllByRole('link')).toHaveLength(36));
+		await waitFor(() => expect(screen.getAllByRole('link', { name: /^게시글 \d+$/ })).toHaveLength(36));
 
 		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(1, { page: 1, size: 12 });
 		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(2, { page: 2, size: 12 });
@@ -190,8 +191,8 @@ describe('PostFeedGrid', () => {
 			observerCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
 		});
 
-		expect(await screen.findByRole('link', { name: /게시글 2/ })).toBeInTheDocument();
-		expect(screen.getAllByRole('link', { name: /게시글 1/ })).toHaveLength(1);
+		expect(await screen.findByRole('link', { name: '게시글 2' })).toBeInTheDocument();
+		expect(screen.getAllByRole('link', { name: '게시글 1' })).toHaveLength(1);
 		expect(readFullFeedPostsMock).toHaveBeenCalledTimes(1);
 		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 1, size: 12 });
 	});
@@ -208,11 +209,11 @@ describe('PostFeedGrid', () => {
 		});
 
 		expect(await screen.findByText('다음 게시글을 불러오지 못했어요.')).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: /게시글 1/ })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: '게시글 1' })).toBeInTheDocument();
 
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 
-		expect(await screen.findByRole('link', { name: /게시글 2/ })).toBeInTheDocument();
+		expect(await screen.findByRole('link', { name: '게시글 2' })).toBeInTheDocument();
 		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(1, { page: 1, size: 12 });
 		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(2, { page: 1, size: 12 });
 	});
