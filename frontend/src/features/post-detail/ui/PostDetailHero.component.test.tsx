@@ -4,11 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PostDetailHero from './PostDetailHero';
 
 const getSourceImageUrl = (name: string) => {
-	const optimizedImageUrl = screen.getByRole('img', { name }).getAttribute('src');
-	if (optimizedImageUrl === null) return null;
+	const imageUrl = screen.getByRole('img', { name }).getAttribute('src');
+	if (imageUrl === null) return null;
 
-	const parsedImageUrl = new URL(optimizedImageUrl, 'http://localhost');
-	return parsedImageUrl.searchParams.get('url') ?? parsedImageUrl.pathname;
+	const parsedImageUrl = new URL(imageUrl, 'http://localhost');
+	const sourceImageUrl = new URL(parsedImageUrl.searchParams.get('url') ?? parsedImageUrl.href, 'http://localhost');
+
+	return sourceImageUrl.origin === 'http://localhost' ? sourceImageUrl.pathname : sourceImageUrl.href;
 };
 
 describe('PostDetailHero', () => {
