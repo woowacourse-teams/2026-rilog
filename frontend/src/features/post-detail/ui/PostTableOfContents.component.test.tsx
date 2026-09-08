@@ -49,6 +49,17 @@ describe('PostTableOfContents', () => {
 		vi.unstubAllGlobals();
 	});
 
+	it('장식 목록은 접근성 트리에서 숨기고 하나의 링크 목록으로 목차를 제공한다', () => {
+		const { container } = render(<PostTableOfContents items={ITEMS} />);
+
+		expect(screen.getByRole('navigation', { name: '게시글 목차' })).toBeInTheDocument();
+		expect(container.querySelector('ol[aria-hidden="true"]')).toBeInTheDocument();
+		expect(screen.getAllByRole('list')).toHaveLength(1);
+		expect(screen.getAllByRole('link')).toHaveLength(ITEMS.length);
+		expect(screen.getByRole('link', { name: '문제 상황' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: '해결 방법' })).toBeInTheDocument();
+	});
+
 	it('본문 스크롤에 따라 현재 헤딩을 표시한다', () => {
 		render(
 			<>
