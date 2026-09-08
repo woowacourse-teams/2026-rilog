@@ -17,13 +17,12 @@ const AUTHOR = {
 };
 
 describe('PostDetailHeader', () => {
-	it('제목, 요약, 저자, 카테고리, 챕터와 발행일을 하나의 헤더에 표시한다', () => {
+	it('제목, 저자, 카테고리, 챕터와 발행일을 하나의 헤더에 표시한다', () => {
 		render(
 			<PostDetailHeader
 				postId={31}
 				slug="riloger"
 				title="컴포넌트 시스템, 이렇게 도입했어요"
-				description="프로젝트의 컴포넌트 시스템을 개선한 과정을 소개합니다."
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="IT"
 				chapter={{ id: 3, name: '프론트엔드', order: 1 }}
@@ -33,20 +32,20 @@ describe('PostDetailHeader', () => {
 		);
 
 		expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('컴포넌트 시스템, 이렇게 도입했어요');
-		expect(screen.getByText('프로젝트의 컴포넌트 시스템을 개선한 과정을 소개합니다.')).toBeInTheDocument();
+		// TODO: 게시글 상세 API에 description 필드가 추가되면 표시 검증을 다시 활성화한다.
+		// expect(screen.getByText('프로젝트의 컴포넌트 시스템을 개선한 과정을 소개합니다.')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: /리로거/ })).toHaveAttribute('href', '/@riloger');
 		expect(screen.getByText('기술')).toBeInTheDocument();
 		expect(screen.getByText('프론트엔드')).toBeInTheDocument();
 		expect(screen.getByText('2026년 9월 8일')).toBeInTheDocument();
 	});
 
-	it('챕터와 요약이 없으면 해당 정보를 생략한다', () => {
+	it('챕터가 없으면 해당 정보를 생략한다', () => {
 		render(
 			<PostDetailHeader
 				postId={31}
 				slug="riloger"
 				title="짧은 글"
-				description=""
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="DAILY"
 				chapter={null}
