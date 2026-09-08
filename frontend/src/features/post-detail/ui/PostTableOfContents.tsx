@@ -76,7 +76,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 			<nav aria-label="게시글 목차" className="group sticky top-20">
 				<ol
 					aria-hidden="true"
-					className="border-l border-border-default pl-5 transition-opacity group-focus-within:opacity-0 group-hover:opacity-0 motion-reduce:transition-none"
+					className="border-l border-border-default pl-5 transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 motion-reduce:transition-none"
 				>
 					{items.map((item) => {
 						const isActive = item.id === activeId;
@@ -92,7 +92,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 						);
 					})}
 				</ol>
-				<ol className="pointer-events-none absolute inset-x-0 top-0 space-y-2 border-l border-border-default pl-5 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 motion-reduce:transition-none">
+				<ol className="pointer-events-none absolute inset-x-0 top-0 space-y-2 border-l border-border-default pl-5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none">
 					{items.map((item) => {
 						const isActive = item.id === activeId;
 
