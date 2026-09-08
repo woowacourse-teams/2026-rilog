@@ -1,3 +1,4 @@
+import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -13,6 +14,12 @@ interface SeriesAccordionProps {
 
 export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) {
 	const { id, name, postCount, posts } = MOCK_SERIES_CHAPTER;
+	const seriesHref = buildBlogHomeFilterHref(
+		buildBlogHomePath(slug),
+		'',
+		{ type: 'chapterId', chapterId: id },
+		'RILOG',
+	);
 
 	return (
 		<section aria-labelledby="series-accordion-title" className="overflow-hidden border-y border-border-strong">
@@ -23,10 +30,7 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 			<details data-chapter-id={id} className={`group ${styles.accordion}`}>
 				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-3 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden">
 					<span className="min-w-0">
-						<CustomLink
-							href={buildBlogHomePath(slug, { seriesId: id })}
-							className="wrap-break-word transition-colors hover:text-blue-600"
-						>
+						<CustomLink href={seriesHref} className="wrap-break-word transition-colors hover:text-blue-600">
 							{name}
 						</CustomLink>
 						<span className="ml-2 text-label-2 font-normal text-text-secondary">{postCount}</span>
