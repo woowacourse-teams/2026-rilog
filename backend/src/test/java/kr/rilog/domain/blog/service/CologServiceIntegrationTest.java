@@ -7,8 +7,10 @@ import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.post.entity.Post;
@@ -22,12 +24,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_MEMBER_COUNT_EXCEEDED;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.USER_COLOG_COUNT_EXCEEDED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CologServiceIntegrationTest extends ServiceSupport {
 
     private static final String COLOG_SLUG = "rilog-team";
+    private static final int MAX_COLOG_MEMBER_COUNT = 20;
+    private static final int MAX_COLOG_COUNT_PER_USER = 10;
 
     @Autowired
     private CologService cologService;
@@ -67,6 +75,68 @@ class CologServiceIntegrationTest extends ServiceSupport {
 
         assertThat(savedMember.getPermission()).isEqualTo(BlogPermission.MEMBER);
         assertThat(result.permission()).isEqualTo(BlogPermission.MEMBER);
+    }
+
+    @Test
+    @DisplayName("활성 멤버가 20명인 Colog에는 새 멤버를 초대할 수 없다.")
+    void inviteMemberRejectsInviteWhenCologHasMaximumMembers() {
+        // given
+        InvitationScenario scenario = createInvitationScenario();
+        saveAdditionalMembers(scenario.colog(), MAX_COLOG_MEMBER_COUNT - 1);
+        CologMemberInviteCommand command = new CologMemberInviteCommand(
+                scenario.invitee().getId(),
+                "Backend"
+        );
+
+        // when & then
+        assertThatThrownBy(() -> cologService.inviteMember(
+                scenario.owner().getId(),
+                COLOG_SLUG,
+                command
+        ))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(COLOG_MEMBER_COUNT_EXCEEDED.getMessage());
+        assertThat(blogMemberRepository.countActiveMembersByBlogId(scenario.colog().getId()))
+                .isEqualTo(MAX_COLOG_MEMBER_COUNT);
+    }
+
+    @Test
+    @DisplayName("활성 Colog에 10개 속한 사용자는 새 Colog를 만들 수 없다.")
+    void createRejectsCreationWhenOwnerHasMaximumCologs() {
+        // given
+        User owner = userRepository.saveAndFlush(createUser(300L, "colog-owner"));
+        saveActiveCologMemberships(owner, MAX_COLOG_COUNT_PER_USER);
+        CologCreateCommand command = createCommand("new-team", "새로운 팀");
+
+        // when & then
+        assertThatThrownBy(() -> cologService.create(owner.getId(), command))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(USER_COLOG_COUNT_EXCEEDED.getMessage());
+        assertThat(blogMemberRepository.countActiveCologsByUserId(owner.getId()))
+                .isEqualTo(MAX_COLOG_COUNT_PER_USER);
+    }
+
+    @Test
+    @DisplayName("활성 Colog에 10개 속한 사용자는 다른 Colog에 초대할 수 없다.")
+    void inviteMemberRejectsInviteWhenInviteeHasMaximumCologs() {
+        // given
+        InvitationScenario scenario = createInvitationScenario();
+        saveActiveCologMemberships(scenario.invitee(), MAX_COLOG_COUNT_PER_USER);
+        CologMemberInviteCommand command = new CologMemberInviteCommand(
+                scenario.invitee().getId(),
+                "Backend"
+        );
+
+        // when & then
+        assertThatThrownBy(() -> cologService.inviteMember(
+                scenario.owner().getId(),
+                COLOG_SLUG,
+                command
+        ))
+                .isInstanceOf(BlogException.class)
+                .hasMessage(USER_COLOG_COUNT_EXCEEDED.getMessage());
+        assertThat(blogMemberRepository.countActiveCologsByUserId(scenario.invitee().getId()))
+                .isEqualTo(MAX_COLOG_COUNT_PER_USER);
     }
 
     @Test
@@ -217,6 +287,61 @@ class CologServiceIntegrationTest extends ServiceSupport {
                 ))
                 .blogType(BlogType.RILOG)
                 .build());
+    }
+
+    private void saveAdditionalMembers(Blog colog, int count) {
+        IntStream.range(0, count)
+                .mapToObj(index -> userRepository.save(createUser(1_000L + index, "member-" + index)))
+                .map(user -> BlogMember.invite(
+                        colog,
+                        user,
+                        "Backend",
+                        BlogPermission.MEMBER,
+                        LocalDateTime.now()
+                ))
+                .forEach(blogMemberRepository::save);
+        blogMemberRepository.flush();
+    }
+
+    private void saveActiveCologMemberships(User user, int count) {
+        IntStream.range(0, count).forEach(index -> {
+            Blog colog = blogRepository.save(createColog(
+                    user,
+                    "joined-team-" + index,
+                    "가입한 팀 " + index
+            ));
+            blogMemberRepository.save(BlogMember.createOwner(colog, user, LocalDateTime.now()));
+        });
+        blogMemberRepository.flush();
+    }
+
+    private Blog createColog(User owner, String slug, String name) {
+        return Blog.createColog(
+                owner,
+                slug,
+                Profile.createColog(
+                        name,
+                        "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                        "https://example.com/profile.png",
+                        "https://example.com/cover.png",
+                        "https://rilog.example.com",
+                        "https://github.com/rilog",
+                        "test@test.com"
+                )
+        );
+    }
+
+    private CologCreateCommand createCommand(String slug, String name) {
+        return new CologCreateCommand(
+                name,
+                slug,
+                "세계 최고의 블로그 플랫폼 Rilog. 입니다.",
+                "https://example.com/profile.png",
+                "https://example.com/cover.png",
+                "https://rilog.example.com",
+                "https://github.com/rilog",
+                "test@test.com"
+        );
     }
 
     private record InvitationScenario(
