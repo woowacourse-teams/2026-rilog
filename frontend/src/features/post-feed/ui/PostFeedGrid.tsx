@@ -13,12 +13,16 @@ import PostFeedCard from './PostFeedCard';
 import PostFeedSkeleton from './PostFeedSkeleton';
 
 interface PostFeedGridProps {
+	scrollTargetId?: string;
 	initialRequestFailed?: boolean;
 }
 
 const POST_FEED_CONTENT_ID = 'post-feed-content';
 
-export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedGridProps) {
+export default function PostFeedGrid({
+	initialRequestFailed = false,
+	scrollTargetId = POST_FEED_CONTENT_ID,
+}: PostFeedGridProps) {
 	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const query = usePostFeed({ isEnabled: isQueryEnabled });
@@ -32,7 +36,7 @@ export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedG
 	const hasInitialError = (!isQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
 	usePostFeedEntryAutoScroll({
 		isReady: hasInitialError || !query.isPending,
-		targetId: POST_FEED_CONTENT_ID,
+		targetId: scrollTargetId,
 	});
 
 	useEffect(() => {
