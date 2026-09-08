@@ -230,6 +230,26 @@ class FeedControllerTest {
     }
 
     @Test
+    @DisplayName("GET /v1/blogs/{slug}/chapters/{chapterId}/posts는 시리즈와 챕터 게시글 목록을 조회한다.")
+    void getChapterPostsPassesChapterFilter() throws Exception {
+        // given
+        FeedService feedService = mock(FeedService.class);
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, 21L, null, 0, 3);
+        when(feedService.readBlogPosts("writer", 7L, command))
+                .thenReturn(emptyBlogFeedResponse("RILOG"));
+        MockMvc mockMvc = mockMvc(feedService);
+
+        // when - then
+        mockMvc.perform(get("/v1/blogs/{slug}/chapters/{chapterId}/posts", "writer", 21L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .param("page", "0")
+                        .param("size", "3"))
+                .andExpect(status().isOk());
+
+        verify(feedService).readBlogPosts("writer", 7L, command);
+    }
+
+    @Test
     @DisplayName("기존 팀 피드 조회 경로는 제공하지 않는다")
     void getTeamPostsPathIsRemoved() throws Exception {
         // given
