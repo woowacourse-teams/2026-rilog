@@ -47,7 +47,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 					setActiveId(firstVisibleHeading.target.id);
 				}
 			},
-			{ rootMargin: '-15% 0px -70%', threshold: 0 },
+			{ rootMargin: '0px 0px -94%', threshold: 0 },
 		);
 
 		headings.forEach((heading) => observer.observe(heading));
