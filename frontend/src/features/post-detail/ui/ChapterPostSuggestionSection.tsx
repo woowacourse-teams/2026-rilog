@@ -42,15 +42,15 @@ export default function ChapterPostSuggestionSection({
 				챕터의 더 많은 글
 			</h2>
 
-			<ul className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<ul className="mt-3 flex flex-col gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3">
 				{posts.map((post) => (
 					<li key={post.id} className="min-w-0">
-						<article>
+						<article className="flex sm:flex-col">
 							<CustomLink
 								href={buildPostDetailPath(slug, String(post.id))}
-								className="group block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
+								className="h-full pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:pb-2"
 							>
-								<div className="aspect-video overflow-hidden rounded-xl bg-thumbnail-background">
+								<div className="aspect-video h-19 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-auto sm:rounded-xl">
 									<PostFeedImage
 										src={post.thumbnailUrl}
 										fallbackSrc={POST_THUMBNAIL_FALLBACK_URL}
@@ -61,16 +61,23 @@ export default function ChapterPostSuggestionSection({
 										isScaledOnInteraction
 									/>
 								</div>
-								<h3 className="mt-2 line-clamp-2 text-body-3 font-medium wrap-break-word break-keep text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring motion-reduce:transition-none">
-									{post.title}
-								</h3>
 							</CustomLink>
-							<CustomLink
-								href={buildBlogHomePath(post.author.slug)}
-								className="mt-2 inline-block w-full truncate text-label-2 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-							>
-								{post.author.nickname}
-							</CustomLink>
+							<div className="flex flex-col gap-2">
+								<CustomLink
+									href={buildPostDetailPath(slug, String(post.id))}
+									className="line-clamp-2 flex-1 text-body-2 font-medium wrap-break-word break-keep text-text-primary sm:text-body-3"
+								>
+									<h3 className="transition-colors hover:text-focus-ring focus-visible:text-focus-ring active:text-focus-ring motion-reduce:transition-none">
+										{post.title}
+									</h3>
+								</CustomLink>
+								<CustomLink
+									href={buildBlogHomePath(post.author.slug)}
+									className="inline-block w-full truncate text-label-2 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+								>
+									{post.author.nickname}
+								</CustomLink>
+							</div>
 						</article>
 					</li>
 				))}
