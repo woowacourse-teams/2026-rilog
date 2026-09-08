@@ -1,16 +1,17 @@
 import type { Block } from '@blocknote/core';
 
 import type { Blog } from '@/domains/blog/model/blog';
-import type { PostCategory, PostDetail } from '@/domains/post/model/post';
-import type { User } from '@/domains/user/model/user';
+import type { PostCategory, PostDetail, PostDetailAuthor } from '@/domains/post/model/post';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
 
 export const mapPostDetailResponse = (response: PostDetailResponse, postId?: number): PostDetail => {
-	const author: User = {
+	const author: PostDetailAuthor = {
 		id: response.author.userId,
 		nickname: response.author.nickname || response.author.name || '알 수 없음',
 		slug: response.author.slug,
 		profileImageUrl: response.author.profileImageUrl ?? null,
+		// 저자 소개는 게시글 상세 API 계약에 추가된 뒤 연결한다.
+		description: null,
 	};
 
 	const blog: Blog =
@@ -45,6 +46,14 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 		thumbnailUrl: response.thumbnailImageUrl ?? null,
 		author,
 		category,
+		chapter:
+			response.chapter === null
+				? null
+				: {
+						id: response.chapter.chapterId,
+						name: response.chapter.name,
+						order: response.chapter.order,
+					},
 		blog,
 		viewerPermissions: response.viewerPermissions,
 	};
