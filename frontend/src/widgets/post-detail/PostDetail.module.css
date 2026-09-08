@@ -1,0 +1,47 @@
+.postDetailCard {
+	container-name: post-detail-card;
+	container-type: inline-size;
+}
+
+.contentLayout {
+	display: grid;
+	grid-template-columns: minmax(0, 48rem);
+	justify-content: center;
+}
+
+.articleColumn {
+	grid-column: 1;
+	min-width: 0;
+}
+
+.tableOfContentsColumn {
+	display: none;
+}
+
+@container post-detail-card (min-width: 85rem) {
+	.contentLayout {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 48rem) minmax(0, 1fr);
+		justify-content: stretch;
+	}
+
+	.articleColumn {
+		grid-column: 2;
+	}
+
+	.tableOfContentsColumn {
+		display: block;
+		grid-column: 3;
+		align-self: stretch;
+		width: 12rem;
+		margin-left: 4rem;
+		padding-block: 5rem;
+	}
+
+	.tableOfContentsSticky {
+		--post-toc-max-height: calc(100dvh - 5rem);
+
+		position: sticky;
+		top: 5rem;
+		overflow-wrap: anywhere;
+	}
+}
