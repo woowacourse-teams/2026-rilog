@@ -12,6 +12,7 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -78,6 +79,30 @@ class CologServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("활성 멤버가 19명인 Colog에 새 멤버를 초대하면 활성 멤버가 20명이 된다.")
+    void inviteMemberAllowsInviteUntilCologReachesMaximumMembers() {
+        // given
+        InvitationScenario scenario = createInvitationScenario();
+        saveAdditionalMembers(scenario.colog(), MAX_COLOG_MEMBER_COUNT - 2);
+        CologMemberInviteCommand command = new CologMemberInviteCommand(
+                scenario.invitee().getId(),
+                "Backend"
+        );
+
+        // when
+        CologMemberInviteResult result = cologService.inviteMember(
+                scenario.owner().getId(),
+                COLOG_SLUG,
+                command
+        );
+
+        // then
+        assertThat(result.userId()).isEqualTo(scenario.invitee().getId());
+        assertThat(blogMemberRepository.countActiveMembersByBlogId(scenario.colog().getId()))
+                .isEqualTo(MAX_COLOG_MEMBER_COUNT);
+    }
+
+    @Test
     @DisplayName("활성 멤버가 20명인 Colog에는 새 멤버를 초대할 수 없다.")
     void inviteMemberRejectsInviteWhenCologHasMaximumMembers() {
         // given
@@ -101,6 +126,23 @@ class CologServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("활성 Colog에 9개 속한 사용자가 새 Colog를 만들면 활성 Colog가 10개가 된다.")
+    void createAllowsCreationUntilOwnerReachesMaximumCologs() {
+        // given
+        User owner = userRepository.saveAndFlush(createUser(300L, "colog-owner"));
+        saveActiveCologMemberships(owner, MAX_COLOG_COUNT_PER_USER - 1);
+        CologCreateCommand command = createCommand("new-team", "새로운 팀");
+
+        // when
+        CologCreateResult result = cologService.create(owner.getId(), command);
+
+        // then
+        assertThat(result.slug()).isEqualTo(command.slug());
+        assertThat(blogMemberRepository.countActiveCologsByUserId(owner.getId()))
+                .isEqualTo(MAX_COLOG_COUNT_PER_USER);
+    }
+
+    @Test
     @DisplayName("활성 Colog에 10개 속한 사용자는 새 Colog를 만들 수 없다.")
     void createRejectsCreationWhenOwnerHasMaximumCologs() {
         // given
@@ -113,6 +155,30 @@ class CologServiceIntegrationTest extends ServiceSupport {
                 .isInstanceOf(BlogException.class)
                 .hasMessage(USER_COLOG_COUNT_EXCEEDED.getMessage());
         assertThat(blogMemberRepository.countActiveCologsByUserId(owner.getId()))
+                .isEqualTo(MAX_COLOG_COUNT_PER_USER);
+    }
+
+    @Test
+    @DisplayName("활성 Colog에 9개 속한 사용자를 다른 Colog에 초대하면 활성 Colog가 10개가 된다.")
+    void inviteMemberAllowsInviteUntilInviteeReachesMaximumCologs() {
+        // given
+        InvitationScenario scenario = createInvitationScenario();
+        saveActiveCologMemberships(scenario.invitee(), MAX_COLOG_COUNT_PER_USER - 1);
+        CologMemberInviteCommand command = new CologMemberInviteCommand(
+                scenario.invitee().getId(),
+                "Backend"
+        );
+
+        // when
+        CologMemberInviteResult result = cologService.inviteMember(
+                scenario.owner().getId(),
+                COLOG_SLUG,
+                command
+        );
+
+        // then
+        assertThat(result.userId()).isEqualTo(scenario.invitee().getId());
+        assertThat(blogMemberRepository.countActiveCologsByUserId(scenario.invitee().getId()))
                 .isEqualTo(MAX_COLOG_COUNT_PER_USER);
     }
 
