@@ -46,7 +46,7 @@ public interface FeedApiSpec {
             summary = "시리즈/챕터 게시글 목록 조회 API"
     )
     ApiResponse<BlogFeedPostResponse> getChapterPosts(
-            @Parameter(description = "블로그 slug", example = "writer")
+            @Parameter(description = "블로그 slug", example = "rilog")
             @PathVariable String slug,
             @Parameter(description = "챕터 ID", example = "1")
             @PathVariable Long chapterId,
