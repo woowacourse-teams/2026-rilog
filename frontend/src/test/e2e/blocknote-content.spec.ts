@@ -264,6 +264,33 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		);
 	});
 
+	test('상세 코드 블록과 Mermaid에 기본 테두리를 한 겹 표시한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">const value = 1;</code></pre>',
+				},
+				{
+					contentType: 'codeBlock',
+					innerHtml:
+						'<pre><code class="bn-inline-content">flowchart LR</code></pre><div class="mermaid-diagram" data-state="ready"><svg></svg></div>',
+				},
+			],
+			true,
+		);
+
+		const codeBlock = page.locator('.bn-block-content[data-content-type="codeBlock"]').first();
+		const mermaidCodeBlock = page.locator('.bn-block-content[data-content-type="codeBlock"]').last();
+		const mermaidDiagram = page.locator('.mermaid-diagram');
+
+		await expect(codeBlock).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+		await expect(mermaidCodeBlock).toHaveCSS('border-width', '0px');
+		await expect(mermaidDiagram).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+	});
+
 	test('plain text 코드 블록은 라이트 전경색을 사용한다', async ({ page }) => {
 		await renderBlockNoteFixture(
 			page,
