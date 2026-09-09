@@ -19,16 +19,19 @@ import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
 import kr.rilog.support.fixure.PostFixture;
+import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_REQUIRED;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_DOESNT_NOT_BELONG;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_COUNT_EXCEEDED;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ChapterServiceIntegrationTest extends ServiceSupport {
 
+    private static final int MAX_CHAPTER_COUNT = 30;
     private static final String BLOG_SLUG = "rilog-team";
     private static final LocalDateTime JOINED_AT = LocalDateTime.of(2026, 8, 30, 12, 0);
 
@@ -102,6 +106,78 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         Chapter saved = chapterRepository.findById(result.chapterId()).orElseThrow();
         assertThat(result.order()).isEqualTo(1);
         assertThat(saved.getOrder()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("활성 챕터가 30개이면 추가 생성을 거부하고 기존 챕터를 유지한다.")
+    void createRejectsChapterWhenBlogHasMaximumChapters() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        saveChapters(scenario.blog(), MAX_CHAPTER_COUNT);
+        ChapterCreateCommand command = new ChapterCreateCommand("초과 챕터");
+
+        // when & then
+        assertThatThrownBy(() -> chapterService.create(BLOG_SLUG, scenario.requester().getId(), command))
+                .isInstanceOf(ChapterException.class)
+                .hasMessage(CHAPTER_COUNT_EXCEEDED.getMessage());
+        assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
+                .hasSize(MAX_CHAPTER_COUNT);
+    }
+
+    @Test
+    @DisplayName("삭제된 챕터는 최대 개수에 포함하지 않고 새 챕터를 저장한다.")
+    void createExcludesDeletedChapterFromMaximumCount() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        List<Chapter> chapters = createChapters(scenario.blog(), MAX_CHAPTER_COUNT);
+        chapters.getLast().delete();
+        chapterRepository.saveAllAndFlush(chapters);
+        ChapterCreateCommand command = new ChapterCreateCommand("새 챕터");
+
+        // when
+        chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
+
+        // then
+        assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
+                .hasSize(MAX_CHAPTER_COUNT);
+    }
+
+    @Test
+    @DisplayName("다른 블로그의 챕터 수는 대상 블로그의 생성 제한에 포함하지 않는다.")
+    void createCountsOnlyChaptersOfTargetBlog() {
+        // given
+        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
+        User otherOwner = saveUser(300L, "other-owner");
+        Blog otherBlog = blogRepository.saveAndFlush(
+                Blog.createColog(otherOwner, "other-team", BlogFixture.cologProfile())
+        );
+        saveChapters(otherBlog, MAX_CHAPTER_COUNT);
+        ChapterCreateCommand command = new ChapterCreateCommand("대상 블로그 챕터");
+
+        // when
+        chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
+
+        // then
+        assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
+                .hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Rilog도 활성 챕터가 30개이면 추가 생성을 거부한다.")
+    void createRejectsChapterWhenRilogHasMaximumChapters() {
+        // given
+        ChapterCreationScenario scenario = createRilogOwnerScenario();
+        saveChapters(scenario.blog(), MAX_CHAPTER_COUNT);
+        ChapterCreateCommand command = new ChapterCreateCommand("초과 시리즈");
+
+        // when & then
+        assertThatThrownBy(() -> chapterService.create(
+                scenario.blog().getSlug(),
+                scenario.requester().getId(),
+                command
+        ))
+                .isInstanceOf(ChapterException.class)
+                .hasMessage(CHAPTER_COUNT_EXCEEDED.getMessage());
     }
 
     @Test
@@ -442,6 +518,25 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, BLOG_SLUG, BlogFixture.cologProfile()));
         blogMemberRepository.saveAndFlush(BlogMember.createOwner(blog, owner, JOINED_AT));
         return new ChapterCreationScenario(blog, requester);
+    }
+
+    private ChapterCreationScenario createRilogOwnerScenario() {
+        User owner = userRepository.saveAndFlush(
+                UserFixture.completedWithNicknameAndSlug("러로", "owner-rilog")
+        );
+        Blog blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
+        blogMemberRepository.saveAndFlush(BlogMember.createOwner(blog, owner, JOINED_AT));
+        return new ChapterCreationScenario(blog, owner);
+    }
+
+    private void saveChapters(Blog blog, int count) {
+        chapterRepository.saveAllAndFlush(createChapters(blog, count));
+    }
+
+    private List<Chapter> createChapters(Blog blog, int count) {
+        return IntStream.range(0, count)
+                .mapToObj(order -> Chapter.create(blog, "챕터 " + order, order))
+                .toList();
     }
 
     private User saveUser(Long githubId, String githubLogin) {

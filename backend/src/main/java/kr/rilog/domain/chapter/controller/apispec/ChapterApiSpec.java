@@ -16,7 +16,7 @@ import java.util.List;
 @Tag(name = "챕터 API")
 public interface ChapterApiSpec {
 
-    @Operation(summary = "챕터 생성", description = "블로그의 마지막 순서에 새 챕터를 생성합니다.")
+    @Operation(summary = "챕터 생성", description = "블로그의 마지막 순서에 새 챕터를 생성합니다. 블로그마다 활성 챕터를 최대 30개까지 생성할 수 있습니다.")
     ApiResponse<ChapterResponse> create(
             @PathVariable String slug,
             @LoginUserId Long requesterId,

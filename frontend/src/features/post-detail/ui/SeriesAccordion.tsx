@@ -52,7 +52,7 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 										{index + 1}
 									</span>
 									<span
-										className={`wrap-break-word transition-colors group-hover/link:text-blue-600 group-hover/link:underline group-hover/link:underline-offset-4 group-focus-visible/link:text-blue-600 group-active/link:text-blue-600 ${isCurrentPost ? 'font-medium text-text-primary' : 'text-text-secondary'}`}
+										className={`wrap-break-word transition-colors group-hover/link:text-blue-600 group-hover/link:underline group-hover/link:underline-offset-4 group-focus-visible/link:text-blue-600 group-active/link:text-blue-600 ${isCurrentPost ? 'font-medium text-text-primary' : 'text-text-placeholder'}`}
 									>
 										{post.title}
 									</span>

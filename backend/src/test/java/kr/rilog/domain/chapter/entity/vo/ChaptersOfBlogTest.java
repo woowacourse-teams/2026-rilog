@@ -8,7 +8,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_COUNT_EXCEEDED;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.support.fixure.BlogFixture.createColog;
@@ -17,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 class ChaptersOfBlogTest {
 
+    private static final int MAX_CHAPTER_COUNT = 30;
     private static final Long OWNER_ID = 1L;
 
     @Test
@@ -48,6 +51,33 @@ class ChaptersOfBlogTest {
 
         // then
         assertThat(created.getOrder()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("기존 챕터가 29개이면 30번째 챕터를 생성한다.")
+    void createThirtiethChapter() {
+        // given
+        Blog blog = createBlog();
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(createChapters(blog, MAX_CHAPTER_COUNT - 1));
+
+        // when
+        Chapter created = chapters.createNextChapter(blog, "마지막 챕터");
+
+        // then
+        assertThat(created.getOrder()).isEqualTo(MAX_CHAPTER_COUNT - 1);
+    }
+
+    @Test
+    @DisplayName("기존 챕터가 30개이면 추가 생성을 거부한다.")
+    void rejectChapterOverMaximumCount() {
+        // given
+        Blog blog = createBlog();
+        ChaptersOfBlog chapters = ChaptersOfBlog.from(createChapters(blog, MAX_CHAPTER_COUNT));
+
+        // when & then
+        assertThatThrownBy(() -> chapters.createNextChapter(blog, "초과 챕터"))
+                .isInstanceOf(ChapterException.class)
+                .hasMessage(CHAPTER_COUNT_EXCEEDED.getMessage());
     }
 
     @Test
@@ -203,6 +233,12 @@ class ChaptersOfBlogTest {
     private Blog createBlog() {
         User owner = createUser(OWNER_ID);
         return createColog(owner);
+    }
+
+    private List<Chapter> createChapters(Blog blog, int count) {
+        return IntStream.range(0, count)
+                .mapToObj(order -> Chapter.create(blog, "챕터 " + order, order))
+                .toList();
     }
 
     private Chapter chapterWithId(Long id, Blog blog, String name, int order) {
