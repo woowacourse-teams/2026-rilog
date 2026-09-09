@@ -88,7 +88,13 @@ export default function PostDetail({ post }: PostDetailProps) {
 					</div>
 				</>
 			}
-			afterProfile={post.chapter ? <ChapterPostSuggestionSection slug={post.blog.slug} /> : null}
+			afterProfile={
+				post.chapter ? (
+					<div className="mt-20 sm:mt-24">
+						<ChapterPostSuggestionSection slug={post.blog.slug} />
+					</div>
+				) : null
+			}
 		/>
 	);
 }

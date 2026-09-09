@@ -31,7 +31,7 @@ export default function ChapterPostSuggestionSection({
 	);
 
 	return (
-		<section aria-labelledby="chapter-post-suggestions-title" className="mt-20 pb-20 sm:mt-24">
+		<section aria-labelledby="chapter-post-suggestions-title">
 			<h2 id="chapter-post-suggestions-title" className="text-body-2 font-semibold text-text-primary">
 				<CustomLink
 					href={chapterHref}
