@@ -62,8 +62,9 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 	const feed = navigation.getByRole('link', { name: /피드 글/ });
 	const personal = navigation.getByRole('link', { name: '개인', exact: true });
 	const colog = navigation.getByRole('link', { name: 'Colog', exact: true });
+	const loginButton = sidebar.getByRole('button', { name: '로그인' });
 	await expect(page).toHaveTitle(/Rilog/);
-	await expect(sidebar.getByRole('button', { name: '로그인' })).toBeVisible();
+	await expect(loginButton).toBeVisible();
 	await expect(sidebar).toHaveCSS('width', '70px');
 	for (const link of [feed, personal, colog]) {
 		await expect(link).toBeVisible();
@@ -80,6 +81,14 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 		await expect(icon).toHaveCSS('height', '20px');
 		await expect(icon.locator('..')).toHaveCSS('height', '35px');
 	}
+	const [loginButtonBox, loginLabelBox] = await Promise.all([
+		loginButton.boundingBox(),
+		loginButton.getByText('로그인', { exact: true }).boundingBox(),
+	]);
+	if (loginButtonBox === null || loginLabelBox === null) {
+		throw new Error('로그인 버튼의 위치를 확인할 수 없습니다.');
+	}
+	expect(loginLabelBox.x + loginLabelBox.width / 2).toBeCloseTo(loginButtonBox.x + loginButtonBox.width / 2, 1);
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-guest-hover.png' });
 	const cards = page.locator('#post-feed-content article a');
 	await expect(cards.first()).toBeVisible();
@@ -106,7 +115,7 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 	await expect(personal).toHaveCSS('outline-style', 'solid');
 	await expect(personal).toHaveCSS('background-color', 'rgb(237, 241, 247)');
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-keyboard.png' });
-	await sidebar.getByRole('button', { name: '로그인' }).click();
+	await loginButton.click();
 	await expect(page.getByRole('dialog')).toBeVisible();
 	expect(errors).toEqual([]);
 });

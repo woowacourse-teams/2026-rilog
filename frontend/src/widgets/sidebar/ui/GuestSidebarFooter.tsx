@@ -15,7 +15,7 @@ export default function GuestSidebarFooter() {
 				<span className="flex h-full w-11.25 shrink-0 items-center justify-center">
 					<LogInIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 				</span>
-				<span className={EXPANDED_TEXT_CLASS_NAME}>로그인</span>
+				<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>로그인</span>
 			</Button>
 		</footer>
 	);
