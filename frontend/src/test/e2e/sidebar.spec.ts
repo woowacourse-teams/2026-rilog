@@ -70,15 +70,15 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 		await expect(link).toBeVisible();
 		await expect(link).toHaveCSS('width', '35px');
 		await expect(link).toHaveCSS('height', '35px');
-		await expect(link.locator('svg')).toHaveCSS('width', '20px');
-		await expect(link.locator('svg')).toHaveCSS('height', '20px');
+		await expect(link.locator('svg')).toHaveCSS('width', '24px');
+		await expect(link.locator('svg')).toHaveCSS('height', '24px');
 	}
 	await expect(feed).toHaveAttribute('aria-current', 'page');
 	await personal.hover();
 	await expect(sidebar).toHaveCSS('width', '240px');
 	for (const icon of await navigation.locator('svg').all()) {
-		await expect(icon).toHaveCSS('width', '20px');
-		await expect(icon).toHaveCSS('height', '20px');
+		await expect(icon).toHaveCSS('width', '24px');
+		await expect(icon).toHaveCSS('height', '24px');
 		await expect(icon.locator('..')).toHaveCSS('height', '35px');
 	}
 	const [loginButtonBox, loginLabelBox] = await Promise.all([
@@ -149,6 +149,13 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 						profileImageUrl: '/images/colog-placeholder.svg',
 						chapters: [],
 					},
+					{
+						cologId: 2,
+						slug: 'sidebar-team-two',
+						name: '두 번째 코로그',
+						profileImageUrl: null,
+						chapters: [],
+					},
 				],
 			},
 		}),
@@ -156,23 +163,97 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 	await page.route('**/v1/auth/logout', (route) => route.fulfill({ status: 204 }));
 	await openFeed(page);
 	const sidebar = page.getByRole('complementary', { name: '사이드바' });
+	const navigation = sidebar.getByRole('navigation', { name: '주요 메뉴', exact: true });
+	const feed = navigation.getByRole('link', { name: /피드 글/ });
+	const personal = navigation.getByRole('link', { name: '개인', exact: true });
+	const cologMenu = navigation.getByRole('link', { name: 'Colog', exact: true });
 	const team = sidebar.getByRole('link', { name: '우아한형제들' });
+	const secondTeam = sidebar.getByRole('link', { name: '두 번째 코로그' });
 	const createTeam = sidebar.getByRole('link', { name: '팀 만들기' });
 	await expect(team).toBeVisible();
 	await expectStationarySidebarIcons(page);
 	await expect(sidebar).toHaveCSS('width', '70px');
-	await expect(team.locator(':scope > span').first()).toHaveCSS('width', '35px');
-	await expect(team.locator(':scope > span').first()).toHaveCSS('height', '35px');
+	for (const link of [feed, personal, team, secondTeam]) {
+		await expect(link).toHaveCSS('width', '35px');
+		await expect(link).toHaveCSS('height', '35px');
+		await expect(link.locator(':scope > span').first()).toHaveCSS('width', '35px');
+		await expect(link.locator(':scope > span').first()).toHaveCSS('height', '35px');
+	}
+	const [feedBox, personalBox, cologMenuBox, teamBox, secondTeamBox, feedIconSlotBox, teamIconSlotBox] =
+		await Promise.all([
+			feed.boundingBox(),
+			personal.boundingBox(),
+			cologMenu.boundingBox(),
+			team.boundingBox(),
+			secondTeam.boundingBox(),
+			feed.locator(':scope > span').first().boundingBox(),
+			team.locator(':scope > span').first().boundingBox(),
+		]);
+	if (
+		feedBox === null ||
+		personalBox === null ||
+		cologMenuBox === null ||
+		teamBox === null ||
+		secondTeamBox === null ||
+		feedIconSlotBox === null ||
+		teamIconSlotBox === null
+	) {
+		throw new Error('사이드바 행의 위치를 확인할 수 없습니다.');
+	}
+	expect(teamBox.x).toBeCloseTo(feedBox.x, 1);
+	expect(teamBox.width).toBeCloseTo(feedBox.width, 1);
+	expect(teamIconSlotBox.x).toBeCloseTo(feedIconSlotBox.x, 1);
+	const pageNavigationGap = cologMenuBox.y - (personalBox.y + personalBox.height);
+	const cologNavigationGap = secondTeamBox.y - (teamBox.y + teamBox.height);
+	expect(cologNavigationGap).toBeCloseTo(pageNavigationGap, 1);
+	expect(cologNavigationGap).toBeCloseTo(4, 1);
+	await expect(createTeam).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+	await expect(createTeam.getByText('팀 만들기', { exact: true })).toHaveCSS('opacity', '0');
 	await expect(createTeam).toHaveCSS('width', '35px');
 	await expect(createTeam).toHaveCSS('height', '35px');
-	const [teamBox, createTeamBox] = await Promise.all([team.boundingBox(), createTeam.boundingBox()]);
-	if (teamBox === null || createTeamBox === null) throw new Error('사이드바 링크의 위치를 확인할 수 없습니다.');
+	const createTeamBox = await createTeam.boundingBox();
+	if (createTeamBox === null) throw new Error('팀 만들기 링크의 위치를 확인할 수 없습니다.');
 	expect(createTeamBox.x + createTeamBox.width / 2).toBeCloseTo(teamBox.x + teamBox.width / 2, 1);
+	for (const avatar of [team, secondTeam]) {
+		await expect(avatar.locator(':scope > span > span')).toHaveCSS('width', '24px');
+		await expect(avatar.locator(':scope > span > span')).toHaveCSS('height', '24px');
+	}
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-auth-collapsed.png' });
 	await team.hover();
 	await expect(sidebar).toHaveCSS('width', '240px');
-	await expect(team.locator(':scope > span').first()).toHaveCSS('width', '35px');
-	await expect(team.locator(':scope > span').first()).toHaveCSS('height', '35px');
+	for (const link of [feed, personal, team, secondTeam]) {
+		await expect(link).toHaveCSS('width', '205px');
+		await expect(link).toHaveCSS('height', '35px');
+		await expect(link.locator(':scope > span').first()).toHaveCSS('width', '35px');
+	}
+	await expect(createTeam).toHaveCSS(
+		'border-top-color',
+		await sidebar.evaluate((element) => getComputedStyle(element).borderRightColor),
+	);
+	const [expandedFeedBox, expandedTeamBox, expandedFeedIconSlotBox, expandedTeamIconSlotBox] = await Promise.all([
+		feed.boundingBox(),
+		team.boundingBox(),
+		feed.locator(':scope > span').first().boundingBox(),
+		team.locator(':scope > span').first().boundingBox(),
+	]);
+	if (
+		expandedFeedBox === null ||
+		expandedTeamBox === null ||
+		expandedFeedIconSlotBox === null ||
+		expandedTeamIconSlotBox === null
+	) {
+		throw new Error('펼쳐진 사이드바 행의 위치를 확인할 수 없습니다.');
+	}
+	expect(expandedTeamBox.x).toBeCloseTo(expandedFeedBox.x, 1);
+	expect(expandedTeamIconSlotBox.x).toBeCloseTo(expandedFeedIconSlotBox.x, 1);
+	await expect(team).toHaveCSS('background-color', 'rgb(245, 247, 251)');
+	await expect(team).toHaveCSS('color', 'rgb(6, 26, 64)');
+	await personal.hover();
+	await expect(personal).toHaveCSS('background-color', 'rgb(245, 247, 251)');
+	await expect(personal).toHaveCSS('color', 'rgb(6, 26, 64)');
+	await page.mouse.down();
+	await expect(personal).toHaveCSS('background-color', 'rgb(222, 230, 240)');
+	await page.mouse.up();
 	await expect(createTeam).toHaveCSS('height', '35px');
 	const writeLink = sidebar.getByRole('link', { name: '글쓰기' });
 	const [expandedCreateTeamBox, createTeamLabelBox] = await Promise.all([
@@ -194,10 +275,13 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 		throw new Error('글쓰기 버튼의 위치를 확인할 수 없습니다.');
 	}
 	expect(writeLabelBox.x + writeLabelBox.width / 2).toBeCloseTo(writeLinkBox.x + writeLinkBox.width / 2, 1);
-	const personal = sidebar.getByRole('link', { name: '개인', exact: true });
 	await personal.click();
 	await expect(personal).toHaveAttribute('aria-current', 'page');
 	await expect(personal).toHaveCSS('background-color', 'rgb(237, 241, 247)');
+	for (const avatar of [team, secondTeam]) {
+		await expect(avatar.locator(':scope > span > span')).toHaveCSS('width', '24px');
+		await expect(avatar.locator(':scope > span > span')).toHaveCSS('height', '24px');
+	}
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-auth-personal.png' });
 	await expect(team).toHaveAttribute('href', '/@sidebar-team');
 	await expect(sidebar.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');

@@ -1,12 +1,15 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithQuery } from '@/test/render-with-query';
 
 import CologNavigation from './CologNavigation';
 
 const { recordCologCreationEntryContextMock } = vi.hoisted(() => ({ recordCologCreationEntryContextMock: vi.fn() }));
+const route = vi.hoisted(() => ({ pathname: '/feeds' }));
+
+vi.mock('next/navigation', () => ({ usePathname: () => route.pathname }));
 
 vi.mock('@/features/analytics/lib/colog-creation-entry-context', () => ({
 	recordCologCreationEntryContext: recordCologCreationEntryContextMock,
@@ -23,6 +26,39 @@ vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
 }));
 
 describe('CologNavigation', () => {
+	beforeEach(() => {
+		route.pathname = '/feeds';
+	});
+
+	it('현재 코로그 홈 링크만 활성화한다', () => {
+		route.pathname = '/@test-colog';
+		renderWithQuery(<CologNavigation />);
+
+		expect(screen.getByRole('link', { name: '테스트 코로그' })).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByRole('link', { name: '다른 코로그' })).not.toHaveAttribute('aria-current');
+	});
+
+	it.each(['/@test-colog/posts/1', '/@test-colog/settings', '/@not-owned', '/feeds'])(
+		'%s에서 코로그 홈 링크를 활성화하지 않는다',
+		(pathname) => {
+			route.pathname = pathname;
+			renderWithQuery(<CologNavigation />);
+
+			expect(screen.getAllByRole('link').every((link) => !link.hasAttribute('aria-current'))).toBe(true);
+		},
+	);
+
+	it('경로가 바뀌면 활성 코로그를 전환한다', () => {
+		route.pathname = '/@test-colog';
+		const { rerender } = renderWithQuery(<CologNavigation />);
+
+		route.pathname = '/@another-colog';
+		rerender(<CologNavigation />);
+
+		expect(screen.getByRole('link', { name: '테스트 코로그' })).not.toHaveAttribute('aria-current');
+		expect(screen.getByRole('link', { name: '다른 코로그' })).toHaveAttribute('aria-current', 'page');
+	});
+
 	it('내 팀 링크와 생성 링크를 제공한다', () => {
 		renderWithQuery(<CologNavigation />);
 
