@@ -63,6 +63,11 @@ export default function BlogHome({
 			rightAside={rightAside}
 		>
 			<div className={profile.type === 'COLOG' ? 'px-6 py-11' : 'px-6 py-11 aside-right:px-0'}>
+				{profile.type === 'COLOG' ? (
+					<div className="mb-8 @[74rem]/page-shell:hidden">
+						<CologMemberAside slug={profile.slug} />
+					</div>
+				) : null}
 				<BlogHomeToolbar
 					blogType={profile.type}
 					slug={profile.slug}

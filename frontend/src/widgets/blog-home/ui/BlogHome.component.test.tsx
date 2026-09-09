@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
@@ -137,14 +137,29 @@ describe('BlogHome', () => {
 
 		expect(screen.getByText('프로필: COLOG')).toBeInTheDocument();
 		expect(screen.getByText('게시글 목록: rilog-team')).toBeInTheDocument();
-		expect(screen.getByText('멤버 목록: rilog-team')).toBeInTheDocument();
+		expect(screen.getAllByText('멤버 목록: rilog-team')).toHaveLength(2);
 		expect(screen.getByRole('link', { name: '팀 설정' })).toHaveAttribute('href', '/@rilog-team/settings?tab=profile');
 		expect(screen.getByText('챕터 탐색')).toBeInTheDocument();
 		expect(screen.queryByRole('region', { name: 'Colog' })).not.toBeInTheDocument();
+		expect(memberAsideRenderMock).toHaveBeenCalledTimes(2);
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('COLOG');
 		expect(feedRenderMock).toHaveBeenCalledWith('COLOG');
 		expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
+	});
+
+	it('COLOG의 본문 Members를 toolbar 앞에 추가하고 기존 우측 aside를 유지한다', () => {
+		render(<BlogHome profile={COLOG_PROFILE} filter={{ type: 'all' }} />);
+
+		const main = screen.getByRole('main');
+		const compactMembers = within(main).getByText('멤버 목록: rilog-team');
+		const toolbar = within(main).getByText('모바일 인덱스');
+		const wideMembers = screen
+			.getAllByText('멤버 목록: rilog-team')
+			.find((members) => members.closest('aside') !== null);
+
+		expect(compactMembers.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(wideMembers).toBeInTheDocument();
 	});
 
 	it('RILOG에는 개인 settings와 시리즈·코로그 탐색, API 코로그 aside를 조립한다', () => {
