@@ -10,6 +10,7 @@ import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import BlogHomeCologAside from './BlogHomeCologAside';
+import BlogHomeFeedHeading from './BlogHomeFeedHeading';
 import BlogHomeNavigation from './BlogHomeNavigation';
 import BlogHomeToolbar from './BlogHomeToolbar';
 
@@ -61,14 +62,33 @@ export default function BlogHome({
 			}
 			rightAside={rightAside}
 		>
-			<div className="px-6 py-11 aside-right:px-0">
+			<div className={profile.type === 'COLOG' ? 'px-6 py-11' : 'px-6 py-11 aside-right:px-0'}>
+				{profile.type === 'COLOG' ? (
+					<div className="mb-8 @[74rem]/page-shell:hidden">
+						<CologMemberAside slug={profile.slug} />
+					</div>
+				) : null}
 				<BlogHomeToolbar
 					blogType={profile.type}
 					slug={profile.slug}
 					filter={filter}
 					initialIndexRequestFailed={initialIndexRequestFailed}
 				/>
-				<BlogPostFeed slug={profile.slug} filter={filter} initialRequestFailed={initialPostsRequestFailed} />
+				<BlogPostFeed
+					blogType={profile.type}
+					slug={profile.slug}
+					filter={filter}
+					initialRequestFailed={initialPostsRequestFailed}
+					heading={
+						profile.type === 'COLOG' ? (
+							<BlogHomeFeedHeading
+								slug={profile.slug}
+								filter={filter}
+								initialIndexRequestFailed={initialIndexRequestFailed}
+							/>
+						) : undefined
+					}
+				/>
 			</div>
 			{initialIndexRequestFailed ? <BlogHomeIndexRecovery slug={profile.slug} /> : null}
 			<BlogProfileViewTracker blogType={profile.type} />

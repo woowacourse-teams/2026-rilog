@@ -43,7 +43,7 @@ function NavigationRow({
 			scroll={false}
 			aria-label={`${item.name}, 글 ${item.postCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
-			className={isCurrent ? `${ROW_CLASS_NAME} font-semibold text-text-primary` : ROW_CLASS_NAME}
+			className={isCurrent ? `${ROW_CLASS_NAME} bg-surface-hover font-semibold text-text-primary` : ROW_CLASS_NAME}
 			onClick={onNavigate}
 		>
 			<span className="min-w-0 truncate">{item.name}</span>
@@ -70,12 +70,12 @@ function AllPostsRow({
 		<CustomLink
 			href={buildBlogHomeFilterHref(pathname, searchParams, ALL_BLOG_POSTS_FILTER, blogType)}
 			scroll={false}
-			aria-label={`전체보기, 글 ${totalCount}개`}
+			aria-label={`전체, 글 ${totalCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
-			className={`${ROW_CLASS_NAME} w-full ${isCurrent ? 'font-semibold text-text-primary' : ''}`}
+			className={`${ROW_CLASS_NAME} w-full ${isCurrent ? 'bg-surface-hover font-semibold text-text-primary' : ''}`}
 			onClick={onNavigate}
 		>
-			<span className="min-w-0 truncate">전체보기</span>
+			<span className="min-w-0 truncate">전체</span>
 			<span className="shrink-0 text-label-1 text-text-disabled">{totalCount}</span>
 		</CustomLink>
 	);

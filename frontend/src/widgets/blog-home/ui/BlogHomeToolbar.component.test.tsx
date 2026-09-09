@@ -104,7 +104,7 @@ describe('BlogHomeToolbar', () => {
 		const user = userEvent.setup();
 		render(<BlogHomeToolbar blogType="COLOG" slug="rilog-team" filter={{ type: 'all' }} />);
 
-		await user.click(screen.getByRole('button', { name: '인덱스 보기' }));
+		await user.click(screen.getByRole('button', { name: '챕터 보기' }));
 
 		const dialog = screen.getByRole('dialog', { name: '인덱스' });
 		expect(within(dialog).getByRole('navigation', { name: '챕터 탐색' })).toBeInTheDocument();
