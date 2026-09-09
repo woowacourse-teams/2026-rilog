@@ -4,7 +4,7 @@ import type { PublicBlogFeedPostResponse, PostItemResponse } from '@/shared/api/
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
-	const { author, owner, postId, publishedAt, thumbnailImageUrl, title } = post;
+	const { author, owner, postId, publishedAt, thumbnailImageUrl, title, chapter, category } = post;
 	const authorName = author?.nickname || author?.name || null;
 
 	if (
@@ -38,10 +38,11 @@ const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 
 	return {
 		id: postId,
-		chapterName: null,
+		chapterName: chapter?.name ?? null,
 		title,
 		thumbnailUrl: thumbnailImageUrl || null,
 		publishedAt,
+		categoryLabel: category ?? null,
 		author: {
 			id: author.userId ?? 0,
 			nickname: authorName,

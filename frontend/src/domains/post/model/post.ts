@@ -46,6 +46,7 @@ export interface PostDetail extends PostSummary {
 
 export interface PostFeedItem extends PostSummary {
 	chapterName: string | null;
+	categoryLabel?: string | null;
 	blog: BaseBlog;
 }
 
