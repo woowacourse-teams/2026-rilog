@@ -97,7 +97,7 @@ export interface PostItemResponse {
 	title: string;
 	thumbnailImageUrl: string | null;
 	category: string;
-	chapter?: ChapterResponse | null;
+	chapter: ChapterResponse | null;
 	visibility: string;
 	publishedAt: string;
 	author: AuthorResponse;
