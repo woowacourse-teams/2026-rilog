@@ -65,12 +65,6 @@ export default function PostDetailHeader({
 				</CustomLink>
 				<span aria-hidden="true">·</span>
 				<span>{category === 'IT' ? '기술' : '일상'}</span>
-				{chapter ? (
-					<>
-						<span aria-hidden="true">·</span>
-						<span>{chapter.name}</span>
-					</>
-				) : null}
 				<span aria-hidden="true">·</span>
 				<time dateTime={toApiUtcISOString(publishedAt)}>{formatPublishedDate(publishedAt)}</time>
 
