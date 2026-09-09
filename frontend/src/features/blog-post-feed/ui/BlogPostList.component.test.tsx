@@ -39,6 +39,7 @@ describe('BlogPostList', () => {
 		);
 		expect(screen.getByText('2026년 8월 16일')).toHaveAttribute('datetime', '2026-08-16T00:00:00.000Z');
 		expect(screen.getByRole('img', { name: '접근 가능한 인터페이스 만들기 썸네일' })).toBeInTheDocument();
+		expect(screen.queryByRole('img', { name: '새봄 프로필' })).not.toBeInTheDocument();
 	});
 
 	it('게시글이 없으면 공통 빈 상태를 렌더링한다', () => {
@@ -63,7 +64,7 @@ describe('BlogPostList', () => {
 	});
 });
 
-describe('코로그 홈 게시글', () => {
+describe('공통 블로그 홈 게시글 행', () => {
 	beforeEach(() => window.sessionStorage.clear());
 
 	it('이름과 시리즈, 카테고리를 포함한 카드 전체를 상세 링크로 제공한다', async () => {
@@ -104,9 +105,9 @@ describe('코로그 홈 게시글', () => {
 		expect(screen.getByText('2026년 8월 16일')).toHaveAttribute('datetime', '2026-08-16T00:00:00.000Z');
 	});
 
-	it('키보드 탭은 각 게시글 카드를 한 번씩 방문한다', async () => {
+	it.each(['RILOG', 'COLOG'] as const)('%s 홈에서 키보드 탭은 각 게시글 카드를 한 번씩 방문한다', async (blogType) => {
 		const user = userEvent.setup();
-		render(<BlogPostList blogType="COLOG" slug="team" posts={POST_FIXTURES} />);
+		render(<BlogPostList blogType={blogType} slug="team" posts={POST_FIXTURES} />);
 		expect(screen.getAllByRole('link')).toHaveLength(2);
 		for (const link of screen.getAllByRole('link')) {
 			await user.tab();
@@ -114,20 +115,71 @@ describe('코로그 홈 게시글', () => {
 		}
 	});
 
-	it('개인 홈에 코로그 게시글이 있어도 기존 행 전체 링크와 이름을 유지한다', () => {
+	it('개인 홈에서 글 유형과 챕터 유무에 맞는 네 가지 메타 조합을 이미지 없이 표시한다', () => {
 		const posts = [
 			{
 				...POST_FIXTURES[0],
-				chapterName: '개발 기록',
+				chapterName: '개인 시리즈',
 				categoryLabel: '기술',
-				blog: { type: 'COLOG' as const, id: 1, name: '팀', slug: 'team', profileImageUrl: null },
+			},
+			{
+				...POST_FIXTURES[1],
+				author: { ...POST_FIXTURES[1].author, nickname: '개인 작성자' },
+			},
+			{
+				...POST_FIXTURES[0],
+				id: 103,
+				title: '코로그 챕터 글',
+				chapterName: '코로그 챕터',
+				blog: { type: 'COLOG' as const, id: 3, name: '리로그 팀', slug: 'team', profileImageUrl: '/team.png' },
+			},
+			{
+				...POST_FIXTURES[1],
+				id: 104,
+				title: '코로그 단독 글',
+				blog: {
+					type: 'COLOG' as const,
+					id: 4,
+					name: '프론트엔드 팀',
+					slug: 'frontend',
+					profileImageUrl: '/frontend.png',
+				},
 			},
 		];
 		render(<BlogPostList blogType="RILOG" slug="saebom" posts={posts} />);
-		expect(screen.getAllByRole('link')).toHaveLength(1);
+
+		expect(screen.getAllByRole('link')).toHaveLength(4);
 		expect(screen.getByText('새봄').closest('a')).toHaveAttribute('href', '/@saebom/posts/101');
-		expect(screen.queryByText('개발 기록')).not.toBeInTheDocument();
-		expect(screen.queryByText('기술')).not.toBeInTheDocument();
-		expect(screen.getByRole('heading', { level: 2, name: '접근 가능한 인터페이스 만들기' })).toBeInTheDocument();
+		expect(screen.getByText('개인 시리즈')).toBeInTheDocument();
+		expect(screen.getByText('개인 작성자')).toBeInTheDocument();
+		expect(screen.getByText('리로그 팀')).toBeInTheDocument();
+		expect(screen.getByText('코로그 챕터')).toBeInTheDocument();
+		expect(screen.getByText('프론트엔드 팀')).toBeInTheDocument();
+		expect(screen.getAllByText('.')).toHaveLength(4);
+		expect(screen.getByText('기술')).toBeInTheDocument();
+		expect(screen.getAllByRole('img')).toHaveLength(4);
+		expect(screen.queryByRole('img', { name: /프로필/ })).not.toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 3, name: '접근 가능한 인터페이스 만들기' })).toBeInTheDocument();
+	});
+
+	it('개인 홈의 긴 이름과 챕터는 각각 말줄임 영역을 유지한다', () => {
+		const longName = '아주 긴 코로그 이름을 가진 프론트엔드 아키텍처 연구 모임';
+		const longChapter = '아주 긴 챕터 이름을 가진 렌더링 성능 개선 연재';
+		render(
+			<BlogPostList
+				blogType="RILOG"
+				slug="saebom"
+				posts={[
+					{
+						...POST_FIXTURES[0],
+						chapterName: longChapter,
+						blog: { type: 'COLOG', id: 3, name: longName, slug: 'team', profileImageUrl: null },
+					},
+				]}
+			/>,
+		);
+
+		expect(screen.getByText(longName)).toHaveClass('truncate');
+		expect(screen.getByText(longChapter)).toHaveClass('truncate');
 	});
 });
