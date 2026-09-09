@@ -75,7 +75,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 		<nav aria-label="게시글 목차" className="group relative">
 			<ol
 				aria-hidden="true"
-				className="max-h-[var(--post-toc-max-height)] space-y-2 overflow-hidden border-l border-border-default pl-5 transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 motion-reduce:transition-none"
+				className="max-h-[var(--post-toc-max-height)] overflow-hidden border-l border-border-default pl-5 transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 motion-reduce:transition-none"
 			>
 				{items.map((item) => {
 					const isActive = item.id === activeId;
