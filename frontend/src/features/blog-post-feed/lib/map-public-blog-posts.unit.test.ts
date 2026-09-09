@@ -10,6 +10,7 @@ const POST: PostItemResponse = {
 	title: '코로그 기록',
 	thumbnailImageUrl: null,
 	category: 'IT',
+	chapter: null,
 	visibility: 'PUBLIC',
 	publishedAt: '2026-09-08T00:00:00',
 	author: { userId: 10, name: '리로', slug: 'riro', profileImageUrl: null },
@@ -29,7 +30,6 @@ describe('mapPublicBlogPosts', () => {
 	it.each([
 		{ chapter: { chapterId: 3, name: '개발 기록', order: 1 }, expectedName: '개발 기록' },
 		{ chapter: null, expectedName: null },
-		{ chapter: undefined, expectedName: null },
 	])('챕터 $expectedName 및 카테고리를 블로그 목록에 전달한다', ({ chapter, expectedName }) => {
 		const response: ApiResponse<PublicBlogFeedPostResponse> = {
 			status: 200,
