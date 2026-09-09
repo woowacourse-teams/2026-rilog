@@ -90,13 +90,15 @@ vi.mock('./BlogHomeNavigation', () => ({
 
 vi.mock('./BlogHomeFeedHeading', () => ({
 	default: function MockBlogHomeFeedHeading({
+		blogType,
 		filter,
 		initialIndexRequestFailed,
 	}: {
+		blogType: BlogPublicProfile['type'];
 		filter: { type: string };
 		initialIndexRequestFailed?: boolean;
 	}) {
-		headingRenderMock({ filter, initialIndexRequestFailed });
+		headingRenderMock({ blogType, filter, initialIndexRequestFailed });
 		return <h2>{filter.type === 'all' ? '전체' : '챕터 제목'}</h2>;
 	},
 }));
@@ -179,8 +181,14 @@ describe('BlogHome', () => {
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('RILOG');
 		expect(feedRenderMock).toHaveBeenCalledWith('RILOG');
-		expect(screen.queryByRole('heading', { level: 2, name: '전체' })).not.toBeInTheDocument();
-		expect(headingRenderMock).not.toHaveBeenCalled();
+		expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
+		expect(headingRenderMock).toHaveBeenCalledWith({
+			blogType: 'RILOG',
+			filter: { type: 'all' },
+			initialIndexRequestFailed: false,
+		});
+		expect(screen.getByTestId('feed-slot').parentElement).toHaveClass('px-6', 'py-11');
+		expect(screen.getByTestId('feed-slot').parentElement).not.toHaveClass('aside-right:px-0');
 	});
 
 	it('COLOG 피드에 제목을 전달해 toolbar와 게시글 목록 사이에 표시한다', () => {
@@ -193,6 +201,7 @@ describe('BlogHome', () => {
 		expect(toolbar.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(heading.compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(headingRenderMock).toHaveBeenCalledWith({
+			blogType: 'COLOG',
 			filter: { type: 'all' },
 			initialIndexRequestFailed: true,
 		});

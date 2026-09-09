@@ -86,6 +86,15 @@ describe('BlogPostFeed', () => {
 		expect(screen.queryByRole('heading', { level: 2, name: '전체' })).not.toBeInTheDocument();
 	});
 
+	it('개인 홈 게시글이 없으면 제목을 숨긴다', () => {
+		vi.mocked(usePublicBlogPosts).mockReturnValue(createPublicBlogPostsResult([]));
+
+		render(<BlogPostFeed blogType="RILOG" slug="rilog" filter={{ type: 'all' }} heading={<h2>전체</h2>} />);
+
+		expect(screen.getByText('아직 작성된 게시글이 없습니다.')).toBeInTheDocument();
+		expect(screen.queryByRole('heading', { level: 2, name: '전체' })).not.toBeInTheDocument();
+	});
+
 	it('게시글 조회에 실패하면 블로그 공통 오류 영역을 제공한다', () => {
 		vi.mocked(usePublicBlogPosts).mockReturnValue({
 			...createPublicBlogPostsResult([]),
@@ -93,9 +102,10 @@ describe('BlogPostFeed', () => {
 			isError: true,
 		} as unknown as PublicBlogPostsResult);
 
-		render(<BlogPostFeed blogType="RILOG" slug="rilog" filter={{ type: 'all' }} />);
+		render(<BlogPostFeed blogType="RILOG" slug="rilog" filter={{ type: 'all' }} heading={<h2>전체</h2>} />);
 
 		expect(screen.getByRole('region', { name: '블로그 게시글 오류' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
 	});
 
 	it('SSR 게시글 조회 실패 후 재시도하면 query를 활성화한다', async () => {
@@ -155,6 +165,9 @@ it.each(['RILOG', 'COLOG'] as const)('%s 홈의 대기 상태를 표시한다', 
 		...createPublicBlogPostsResult([]),
 		isPending: true,
 	} as PublicBlogPostsResult);
-	render(<BlogPostFeed blogType={blogType} slug="team" filter={{ type: 'all' }} />);
-	expect(screen.getByRole('status', { name: '블로그 게시글 로딩 중' })).toBeInTheDocument();
+	render(<BlogPostFeed blogType={blogType} slug="team" filter={{ type: 'all' }} heading={<h2>전체</h2>} />);
+	const skeleton = screen.getByRole('status', { name: '블로그 게시글 로딩 중' });
+	expect(skeleton).toBeInTheDocument();
+	expect(screen.queryByRole('heading', { level: 2, name: '전체' })).not.toBeInTheDocument();
+	expect(skeleton.querySelectorAll('.rounded-full')).toHaveLength(blogType === 'COLOG' ? 5 : 0);
 });

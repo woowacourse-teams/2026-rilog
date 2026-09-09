@@ -62,7 +62,7 @@ export default function BlogHome({
 			}
 			rightAside={rightAside}
 		>
-			<div className={profile.type === 'COLOG' ? 'px-6 py-11' : 'px-6 py-11 aside-right:px-0'}>
+			<div className="px-6 py-11">
 				{profile.type === 'COLOG' ? (
 					<div className="mb-8 @[74rem]/page-shell:hidden">
 						<CologMemberAside slug={profile.slug} />
@@ -80,13 +80,12 @@ export default function BlogHome({
 					filter={filter}
 					initialRequestFailed={initialPostsRequestFailed}
 					heading={
-						profile.type === 'COLOG' ? (
-							<BlogHomeFeedHeading
-								slug={profile.slug}
-								filter={filter}
-								initialIndexRequestFailed={initialIndexRequestFailed}
-							/>
-						) : undefined
+						<BlogHomeFeedHeading
+							blogType={profile.type}
+							slug={profile.slug}
+							filter={filter}
+							initialIndexRequestFailed={initialIndexRequestFailed}
+						/>
 					}
 				/>
 			</div>
