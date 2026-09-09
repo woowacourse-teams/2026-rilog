@@ -1,5 +1,7 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { recordCologCreationEntryContext } from '@/features/analytics/lib/colog-creation-entry-context';
 import { useMyCologsOverviewQuery } from '@/shared/api/users/queries/my-cologs-overview/use-query';
@@ -12,11 +14,12 @@ import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME } from './sidebar
 import SidebarNavigationLink from './SidebarNavigationLink';
 
 export default function CologNavigation() {
+	const pathname = usePathname();
 	const { data: myCologs, isPending } = useMyCologsOverviewQuery({ select: mapMyCologsOverviewResponse });
 
 	return (
 		<nav aria-label="내 팀">
-			<ul className="mt-2 flex w-full flex-col gap-0.5">
+			<ul className="mt-2 flex w-full flex-col gap-1">
 				{isPending ? (
 					<li className="px-2 py-1 text-xs text-text-secondary">로딩 중...</li>
 				) : (
@@ -28,12 +31,13 @@ export default function CologNavigation() {
 									<CologAvatar
 										fallback={colog.name.charAt(0)}
 										src={colog.logoUrl ?? undefined}
-										size="md"
+										size="sm"
 										// TODO: 추후 톤이나 색상 정책 적용
 										tone="strong"
 									/>
 								}
 								label={colog.name}
+								isCurrent={pathname === buildBlogHomePath(colog.slug)}
 							/>
 						</li>
 					))
@@ -44,13 +48,15 @@ export default function CologNavigation() {
 				onClick={() => recordCologCreationEntryContext('sidebar')}
 				variant="secondary"
 				aria-label="팀 만들기"
-				fullWidth
-				className={`mt-3 border-dashed text-text-secondary ${EXPANDING_ACTION_CLASS_NAME}`}
+				className={`mx-1.25 mt-3 flex! h-8.75! w-[calc(100%-10px)]! border-dashed border-transparent! text-text-secondary group-hover:border-border-default! ${EXPANDING_ACTION_CLASS_NAME}`}
 			>
-				<span aria-hidden="true" className="shrink-0 text-body-2 leading-none">
+				<span
+					aria-hidden="true"
+					className="flex h-full w-8.75 shrink-0 items-center justify-center text-body-2 leading-none"
+				>
 					+
 				</span>
-				<span className={EXPANDED_TEXT_CLASS_NAME}>팀 만들기</span>
+				<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>팀 만들기</span>
 			</ButtonLink>
 		</nav>
 	);
