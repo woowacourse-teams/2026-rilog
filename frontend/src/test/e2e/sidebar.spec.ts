@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
 
@@ -65,7 +65,12 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 	const loginButton = sidebar.getByRole('button', { name: '로그인' });
 	await expect(page).toHaveTitle(/Rilog/);
 	await expect(loginButton).toBeVisible();
-	await expect(sidebar).toHaveCSS('width', '70px');
+	await expect(sidebar).toHaveCSS('width', '60px');
+	expect(
+		await sidebar.evaluate((element) =>
+			getComputedStyle(element.parentElement?.nextElementSibling ?? element).getPropertyValue('padding-left'),
+		),
+	).toBe('60px');
 	for (const link of [feed, personal, colog]) {
 		await expect(link).toBeVisible();
 		await expect(link).toHaveCSS('width', '35px');
@@ -73,9 +78,17 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 		await expect(link.locator('svg')).toHaveCSS('width', '24px');
 		await expect(link.locator('svg')).toHaveCSS('height', '24px');
 	}
+	await expect(feed.locator('svg rect')).toHaveCount(0);
+	await expect(feed.locator('svg path')).toHaveCount(1);
+	await expectRoundedCorners(feed, 8, 8);
+	await expectRoundedCorners(personal, 8, 8);
+	await expectRoundedCorners(colog, 8, 8);
 	await expect(feed).toHaveAttribute('aria-current', 'page');
 	await personal.hover();
 	await expect(sidebar).toHaveCSS('width', '240px');
+	await expectRoundedCorners(feed, 8, 8);
+	await expectRoundedCorners(personal, 0, 8);
+	await expectRoundedCorners(colog, 0, 8);
 	for (const icon of await navigation.locator('svg').all()) {
 		await expect(icon).toHaveCSS('width', '24px');
 		await expect(icon).toHaveCSS('height', '24px');
@@ -102,16 +115,16 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 		await expect(feed).toHaveAccessibleName('피드 글 123개');
 		expect(await cards.evaluateAll((items) => items.map((item) => item.getAttribute('href')))).toEqual(links);
 		await page.mouse.move(600, 50);
-		await expect(sidebar).toHaveCSS('width', '70px');
+		await expect(sidebar).toHaveCSS('width', '60px');
 	}
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-guest-collapsed.png' });
 	await feed.focus();
 	await page.keyboard.press('Tab');
 	await expect(personal).toBeFocused();
-	await expect(sidebar).toHaveCSS('width', '70px');
+	await expect(sidebar).toHaveCSS('width', '60px');
 	await page.keyboard.press('Enter');
 	await expect(personal).toHaveAttribute('aria-current', 'page');
-	await expect(sidebar).toHaveCSS('width', '70px');
+	await expect(sidebar).toHaveCSS('width', '60px');
 	await expect(personal).toHaveCSS('outline-style', 'solid');
 	await expect(personal).toHaveCSS('background-color', 'rgb(237, 241, 247)');
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-keyboard.png' });
@@ -172,7 +185,7 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 	const createTeam = sidebar.getByRole('link', { name: '팀 만들기' });
 	await expect(team).toBeVisible();
 	await expectStationarySidebarIcons(page);
-	await expect(sidebar).toHaveCSS('width', '70px');
+	await expect(sidebar).toHaveCSS('width', '60px');
 	for (const link of [feed, personal, team, secondTeam]) {
 		await expect(link).toHaveCSS('width', '35px');
 		await expect(link).toHaveCSS('height', '35px');
@@ -218,14 +231,22 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 		await expect(avatar.locator(':scope > span > span')).toHaveCSS('width', '24px');
 		await expect(avatar.locator(':scope > span > span')).toHaveCSS('height', '24px');
 	}
+	await expectRoundedCorners(feed, 8, 8);
+	await expectRoundedCorners(personal, 8, 8);
+	await expectRoundedCorners(cologMenu, 8, 8);
+	await expectRoundedCorners(team, 8, 8);
 	await sidebar.screenshot({ path: '/tmp/rilog-sidebar-auth-collapsed.png' });
 	await team.hover();
 	await expect(sidebar).toHaveCSS('width', '240px');
 	for (const link of [feed, personal, team, secondTeam]) {
-		await expect(link).toHaveCSS('width', '205px');
+		await expect(link).toHaveCSS('width', '215px');
 		await expect(link).toHaveCSS('height', '35px');
 		await expect(link.locator(':scope > span').first()).toHaveCSS('width', '35px');
 	}
+	await expectRoundedCorners(feed, 8, 8);
+	await expectRoundedCorners(personal, 0, 8);
+	await expectRoundedCorners(cologMenu, 0, 8);
+	await expectRoundedCorners(team, 8, 8);
 	await expect(createTeam).toHaveCSS(
 		'border-top-color',
 		await sidebar.evaluate((element) => getComputedStyle(element).borderRightColor),
@@ -292,6 +313,14 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 	await expect(sidebar.getByRole('link', { name: 'Colog', exact: true })).toHaveAttribute('aria-current', 'page');
 	await expect(sidebar.locator('nav[aria-label="주요 메뉴"] [aria-current="page"]')).toHaveCount(1);
 	const nickname = sidebar.locator('footer strong');
+	const footer = sidebar.locator('footer');
+	const profileLink = footer.getByRole('link');
+	const profileDivider = footer.locator(':scope > div > [aria-hidden="true"]');
+	await expect(footer).toHaveCSS('border-top-width', '0px');
+	await expect(profileDivider).toHaveCSS('width', '1px');
+	await expect(profileDivider).toHaveCSS('height', '28px');
+	await expect(profileLink.locator(':scope > span').first()).toHaveCSS('width', '40px');
+	await expect(profileLink.locator(':scope > span').first()).toHaveCSS('height', '40px');
 	await nickname.evaluate((element) => {
 		element.textContent = '아주 긴 닉네임을 사용해도 로그아웃 버튼을 가리지 않습니다';
 	});
@@ -300,6 +329,14 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 	const logoutBox = (await logout.boundingBox())!;
 	expect(nicknameBox.x + nicknameBox.width).toBeLessThanOrEqual(logoutBox.x);
 	await expect(nickname).toHaveCSS('text-overflow', 'ellipsis');
+	await profileLink.hover();
+	await expect(profileLink).toHaveCSS('background-color', 'rgb(241, 244, 248)');
+	await logout.hover();
+	await expect(profileLink).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+	await profileLink.focus();
+	await page.keyboard.press('Tab');
+	await expect(logout).toBeFocused();
+	await expect(logout).toHaveCSS('outline-style', 'solid');
 	await sidebar.getByRole('button', { name: '로그아웃' }).click();
 	await expect(sidebar.getByRole('button', { name: '로그인' })).toBeVisible();
 	await expect(team).not.toBeAttached();
@@ -341,4 +378,25 @@ async function expectStationarySidebarIcons(page: Page) {
 test('펼침과 접힘 애니메이션 동안 메뉴와 푸터 아이콘의 위치를 유지한다', async ({ page }) => {
 	await openFeed(page);
 	await expectStationarySidebarIcons(page);
+	const sidebar = page.getByRole('complementary', { name: '사이드바' });
+	for (let index = 0; index < 3; index++) {
+		await page.mouse.move(30, 90);
+		await page.waitForTimeout(40);
+		await page.mouse.move(600, 90);
+		await page.waitForTimeout(40);
+	}
+	await expect(sidebar).toHaveCSS('width', '60px');
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.mouse.move(30, 90);
+	await expect(sidebar).toHaveCSS('width', '240px');
+	await expect(sidebar).toHaveCSS('transition-property', 'none');
+	await page.mouse.move(600, 90);
+	await expect(sidebar).toHaveCSS('width', '60px');
 });
+
+async function expectRoundedCorners(locator: Locator, left: number, right: number) {
+	await expect(locator).toHaveCSS('border-top-left-radius', `${left}px`);
+	await expect(locator).toHaveCSS('border-bottom-left-radius', `${left}px`);
+	await expect(locator).toHaveCSS('border-top-right-radius', `${right}px`);
+	await expect(locator).toHaveCSS('border-bottom-right-radius', `${right}px`);
+}

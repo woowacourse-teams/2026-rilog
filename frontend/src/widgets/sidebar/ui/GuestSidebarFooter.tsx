@@ -10,7 +10,7 @@ export default function GuestSidebarFooter() {
 	const handleLoginClick = useAuthAction({ entrySurface: 'sidebar' });
 
 	return (
-		<footer className="w-full shrink-0 border-t border-border-default p-3">
+		<footer className="w-full shrink-0 border-t border-border-default px-1.75 py-3">
 			<Button aria-label="로그인" fullWidth className={EXPANDING_ACTION_CLASS_NAME} onClick={handleLoginClick}>
 				<span className="flex h-full w-11.25 shrink-0 items-center justify-center">
 					<LogInIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />

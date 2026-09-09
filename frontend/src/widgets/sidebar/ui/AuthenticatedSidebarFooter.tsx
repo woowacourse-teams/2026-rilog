@@ -33,7 +33,7 @@ export default function AuthenticatedSidebarFooter() {
 
 	return (
 		<>
-			<div className="w-full shrink-0 px-3 pb-3">
+			<div className="w-full shrink-0 px-1.75 pb-3">
 				<ButtonLink
 					href={APP_ROUTES.write}
 					onClick={() => recordEditorEntryContext('sidebar')}
@@ -47,12 +47,12 @@ export default function AuthenticatedSidebarFooter() {
 				</ButtonLink>
 			</div>
 
-			<footer className="w-full shrink-0 border-t border-border-default p-3">
-				<div className="flex w-53.75 items-center gap-1 rounded-xl bg-transparent px-0.5 py-1.5 transition-colors group-hover:bg-surface-hover">
+			<footer className="w-full shrink-0 px-1.75 py-3">
+				<div className="flex w-56.25 items-center px-0.5 py-1.5">
 					<CustomLink
 						href={slug ? buildBlogHomePath(slug) : '#'}
 						aria-label={`${nickname} @${slug}`}
-						className={`flex min-w-0 flex-1 items-center justify-start gap-2 rounded-lg ${FOCUS_CLASS_NAME}`}
+						className={`flex min-w-0 flex-1 items-center justify-start gap-2 rounded-lg transition-colors hover:bg-surface-hover active:bg-surface-active ${FOCUS_CLASS_NAME}`}
 					>
 						<UserAvatar src={profileImageUrl} fallback={fallback} size="lg" />
 						<span className={`min-w-0 ${EXPANDED_TEXT_CLASS_NAME}`}>
@@ -60,6 +60,10 @@ export default function AuthenticatedSidebarFooter() {
 							<span className="block truncate text-caption-1 text-text-secondary">@{slug}</span>
 						</span>
 					</CustomLink>
+					<span
+						aria-hidden="true"
+						className="invisible mx-1 h-7 w-px shrink-0 bg-border-default opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 motion-reduce:transition-none"
+					/>
 					<Button
 						aria-label="로그아웃"
 						onClick={handleLogout}

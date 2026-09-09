@@ -55,6 +55,7 @@ export default function PageNavigation() {
 							icon={icon}
 							label={label}
 							isCurrent={isFeedPage && selection === value}
+							className="group-hover:rounded-l-none"
 						/>
 					</li>
 				))}
