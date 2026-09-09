@@ -15,6 +15,8 @@ public enum BlogErrorInformation implements ErrorInformation {
     BLOG_MEMBER_INVITE_FORBIDDEN(HttpStatus.FORBIDDEN, "팀 멤버 초대 권한이 없습니다."),
     ADMIN_PERMISSION_REQUIRED(HttpStatus.FORBIDDEN, "블로그 관리 권한이 필요합니다."),
     BLOG_MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 팀에 참여 중인 사용자입니다."),
+    COLOG_MEMBER_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "Colog에는 최대 20명의 멤버가 속할 수 있습니다."),
+    USER_COLOG_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "사용자는 최대 10개의 Colog에 속할 수 있습니다."),
     BLOG_MEMBER_DOESNT_NOT_BELONG(HttpStatus.BAD_REQUEST, "해당 팀에 속해있지 않습니다."),
     ALREADY_BLOG_MEMBER_LEFT(HttpStatus.FORBIDDEN, "이미 탈퇴한 회원입니다."),
     COLOG_REQUIRED(HttpStatus.FORBIDDEN, "Colog만 사용할 수 있는 기능입니다."),

@@ -43,6 +43,9 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 @RequiredArgsConstructor
 public class CologService {
 
+    private static final int MAX_COLOG_MEMBER_COUNT = 20;
+    private static final int MAX_COLOG_COUNT_PER_USER = 10;
+
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final ChapterRepository chapterRepository;
@@ -54,6 +57,7 @@ public class CologService {
     @Transactional
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
         User owner = getUser(ownerId);
+        validateUserCologCount(owner.getId());
         validateSlugUnique(command.slug());
         validateProfileNameUnique(command.name());
 
@@ -81,6 +85,8 @@ public class CologService {
 
         User invitee = getUser(command.userId());
         validateNotActiveMember(colog.getId(), invitee.getId());
+        validateCologMemberCount(colog.getId());
+        validateUserCologCount(invitee.getId());
 
         BlogMember member = BlogMember.invite(
                 colog,
@@ -198,6 +204,18 @@ public class CologService {
     private void validateNotActiveMember(Long blodIg, Long userId) {
         if (blogMemberRepository.existsByBlogIdAndUserIdAndStatus(blodIg, userId, BlogMemberStatus.ACTIVE)) {
             throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateCologMemberCount(Long cologId) {
+        if (blogMemberRepository.countActiveMembersByBlogId(cologId) >= MAX_COLOG_MEMBER_COUNT) {
+            throw new BlogException(COLOG_MEMBER_COUNT_EXCEEDED);
+        }
+    }
+
+    private void validateUserCologCount(Long userId) {
+        if (blogMemberRepository.countActiveCologsByUserId(userId) >= MAX_COLOG_COUNT_PER_USER) {
+            throw new BlogException(USER_COLOG_COUNT_EXCEEDED);
         }
     }
 

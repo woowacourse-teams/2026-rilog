@@ -63,4 +63,24 @@ public class FeedController implements FeedApiSpec {
         return ApiResponse.response(HttpStatus.OK, "블로그 게시글 목록 조회에 성공했습니다.", data);
     }
 
+    @OptionalAuthGuard
+    @GetMapping("/blogs/{slug}/chapters/{chapterId}/posts")
+    public ApiResponse<BlogFeedPostResponse> getChapterPosts(
+            @PathVariable String slug,
+            @PathVariable Long chapterId,
+            @NullableLoginUserId Long requesterId,
+            @RequestParam int page,
+            @RequestParam int size
+    ) {
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(
+                null,
+                chapterId,
+                null,
+                page,
+                size
+        );
+        BlogFeedPostResponse data = feedService.readBlogPosts(slug, requesterId, command);
+        return ApiResponse.response(HttpStatus.OK, "시리즈와 챕터 게시글 목록 조회에 성공했습니다.", data);
+    }
+
 }
