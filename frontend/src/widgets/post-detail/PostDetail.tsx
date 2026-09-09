@@ -3,7 +3,8 @@
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
-import PostDetailAuthorProfile from '@/features/post-detail/ui/PostDetailAuthorProfile';
+import PostDetailAuthorProfileSmall from '@/features/post-detail/ui/PostDetailAuthorProfileSmall';
+import PostDetailBlogProfile from '@/features/post-detail/ui/PostDetailBlogProfile';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHeader from '@/features/post-detail/ui/PostDetailHeader';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
@@ -20,6 +21,7 @@ export default async function PostDetail({ post }: PostDetailProps) {
 	const tableOfContents = extractPostTableOfContents(post.content);
 	const contentHtml = await renderPostDetailContent(post.content);
 	// const description = extractPostDescription(post.content, 150);
+	const isCologPost = post.blog.type === 'COLOG';
 
 	return (
 		<main className="min-h-dvh bg-background px-4 py-5 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
@@ -49,7 +51,15 @@ export default async function PostDetail({ post }: PostDetailProps) {
 							category={post.category}
 						/>
 						<Divider className="mt-30 mb-20 sm:mt-40 sm:mb-30" />
-						<PostDetailAuthorProfile author={post.author} />
+
+						<div className="mx-auto max-w-lg">
+							<PostDetailBlogProfile profile={post.blog} />
+							{isCologPost ? (
+								<div className="mx-auto mt-6 w-fit min-w-20 border-t border-border-default px-6 pt-6 sm:min-w-100">
+									<PostDetailAuthorProfileSmall author={post.author} />
+								</div>
+							) : null}
+						</div>
 					</div>
 
 					{tableOfContents.length === 0 ? null : (
