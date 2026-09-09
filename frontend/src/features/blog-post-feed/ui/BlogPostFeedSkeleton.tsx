@@ -12,9 +12,9 @@ export default function BlogPostFeedSkeleton({ blogType }: BlogPostFeedSkeletonP
 			<ul className="flex flex-col gap-7">
 				{items.map((item) => (
 					<li key={item} className="flex animate-pulse gap-4 motion-reduce:animate-none">
-						<div className="aspect-3/2 h-24 shrink-0 rounded-lg bg-surface-active sm:h-27" />
+						<div className="aspect-3/2 h-24 shrink-0 rounded-lg bg-surface-active sm:h-32" />
 
-						<div className="flex min-w-0 flex-1 flex-col justify-between py-1">
+						<div className="flex min-h-28 min-w-0 flex-1 flex-col justify-between gap-2 py-1">
 							{blogType === 'RILOG' && (
 								<>
 									<div className="flex flex-col gap-2">

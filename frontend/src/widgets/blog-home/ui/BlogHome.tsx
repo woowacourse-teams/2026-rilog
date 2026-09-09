@@ -62,7 +62,7 @@ export default function BlogHome({
 			}
 			rightAside={rightAside}
 		>
-			<div className="px-6 py-11 aside-right:px-0">
+			<div className={profile.type === 'COLOG' ? 'px-6 py-11' : 'px-6 py-11 aside-right:px-0'}>
 				<BlogHomeToolbar
 					blogType={profile.type}
 					slug={profile.slug}
