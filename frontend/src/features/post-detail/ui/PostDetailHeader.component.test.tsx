@@ -57,4 +57,25 @@ describe('PostDetailHeader', () => {
 		expect(screen.getByText('일상')).toBeInTheDocument();
 		expect(screen.queryByText('프론트엔드')).not.toBeInTheDocument();
 	});
+
+	it('publisher를 제목 위에 표시한다', () => {
+		render(
+			<PostDetailHeader
+				publisher={<span>리로그 팀</span>}
+				postId={31}
+				slug="rilog-team"
+				title="팀이 함께 작성한 글"
+				publishedAt="2026-09-08T10:00:00+09:00"
+				category="IT"
+				chapter={null}
+				author={AUTHOR}
+				viewerPermissions={{ canEdit: false, canDelete: false }}
+			/>,
+		);
+
+		const publisher = screen.getByText('리로그 팀');
+		const title = screen.getByRole('heading', { level: 1, name: '팀이 함께 작성한 글' });
+
+		expect(publisher.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
 });

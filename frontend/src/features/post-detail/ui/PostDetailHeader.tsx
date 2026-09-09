@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import type { PostCategory, PostDetailChapter, PostViewerPermissions } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
@@ -9,6 +11,7 @@ import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 import PostDetailActions from './PostDetailActions';
 
 interface PostDetailHeaderProps {
+	publisher?: ReactNode;
 	postId: number;
 	slug: string;
 	title: string;
@@ -21,6 +24,7 @@ interface PostDetailHeaderProps {
 }
 
 export default function PostDetailHeader({
+	publisher,
 	postId,
 	slug,
 	title,
@@ -33,6 +37,8 @@ export default function PostDetailHeader({
 }: PostDetailHeaderProps) {
 	return (
 		<header className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 pt-12 pb-8 text-center sm:px-8 sm:pt-16 sm:pb-10 lg:px-0 lg:pt-20 lg:pb-10">
+			{publisher}
+
 			<h1 className="text-heading-4 font-extrabold wrap-break-word break-keep text-text-primary sm:text-heading-1">
 				{title}
 			</h1>

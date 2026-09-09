@@ -30,8 +30,13 @@ vi.mock('./BasePostDetail', () => ({
 	},
 }));
 vi.mock('@/features/post-detail/ui/PostDetailHeader', () => ({
-	default: function MockPostDetailHeader() {
-		return <div>상세 헤더</div>;
+	default: function MockPostDetailHeader({ publisher }: { publisher?: ReactNode }) {
+		return (
+			<div>
+				{publisher}
+				상세 헤더
+			</div>
+		);
 	},
 }));
 vi.mock('@/features/post-detail/ui/PostDetailBlogProfile', () => ({
@@ -94,6 +99,7 @@ describe('PostDetail', () => {
 		expect(screen.getByText('시리즈 글')).toBeInTheDocument();
 		expect(screen.queryByText('챕터 글')).not.toBeInTheDocument();
 		expect(screen.queryByText('작성자 프로필')).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: /파라디/ })).not.toBeInTheDocument();
 	});
 
 	it('Colog 글에는 작성자 프로필과 챕터 글을 표시하고 시리즈는 표시하지 않는다', () => {
@@ -114,6 +120,7 @@ describe('PostDetail', () => {
 		expect(screen.getByText('블로그 프로필')).toBeInTheDocument();
 		expect(screen.getByText('작성자 프로필')).toBeInTheDocument();
 		expect(screen.getByText('챕터 글')).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /리로그 팀/ })).toHaveAttribute('href', '/@rilog-team');
 		expect(screen.queryByText('시리즈 글')).not.toBeInTheDocument();
 	});
 
