@@ -264,6 +264,59 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		);
 	});
 
+	test('상세 코드 블록과 Mermaid에 기본 테두리를 한 겹 표시한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">const value = 1;</code></pre>',
+				},
+				{
+					contentType: 'codeBlock',
+					innerHtml:
+						'<pre><code class="bn-inline-content">flowchart LR</code></pre><div class="mermaid-diagram" data-state="ready"><svg></svg></div>',
+				},
+			],
+			true,
+		);
+
+		const codeBlock = page.locator('.bn-block-content[data-content-type="codeBlock"]').first();
+		const mermaidCodeBlock = page.locator('.bn-block-content[data-content-type="codeBlock"]').last();
+		const mermaidDiagram = page.locator('.mermaid-diagram');
+
+		await expect(codeBlock).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+		await expect(mermaidCodeBlock).toHaveCSS('border-width', '0px');
+		await expect(mermaidDiagram).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+	});
+
+	test('에디터의 코드 블록과 Mermaid 미리보기에 기본 테두리를 표시한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-write-blocknote',
+			[
+				{
+					contentType: 'codeBlock',
+					innerHtml: '<pre><code class="bn-inline-content">const value = 1;</code></pre>',
+				},
+				{
+					contentType: 'codeBlock',
+					innerHtml:
+						'<pre><code class="bn-inline-content">flowchart LR</code></pre><div class="mermaid-diagram" data-state="ready"><svg></svg></div>',
+				},
+			],
+			true,
+		);
+
+		const codeBlocks = page.locator('.bn-block-content[data-content-type="codeBlock"]');
+		const mermaidDiagram = page.locator('.mermaid-diagram');
+
+		await expect(codeBlocks.first()).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+		await expect(codeBlocks.last()).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+		await expect(mermaidDiagram).toHaveCSS('border', '1px solid rgb(215, 222, 232)');
+	});
+
 	test('plain text 코드 블록은 라이트 전경색을 사용한다', async ({ page }) => {
 		await renderBlockNoteFixture(
 			page,
@@ -278,6 +331,25 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		);
 
 		await expect(page.locator('code.bn-inline-content')).toHaveCSS('color', 'rgb(31, 35, 40)');
+	});
+
+	test('상세 본문의 공백 없는 긴 문자열은 본문 너비 안에서 줄바꿈한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[{ contentType: 'paragraph', content: 'unbroken'.repeat(80) }],
+			true,
+		);
+		await page.locator('.post-detail-body').evaluate((element) => {
+			(element as HTMLElement).style.width = '18rem';
+		});
+
+		const inlineContent = page.locator('.bn-inline-content');
+
+		await expect(inlineContent).toHaveCSS('overflow-wrap', 'anywhere');
+		expect(
+			await page.locator('.post-detail-body').evaluate((element) => element.scrollWidth === element.clientWidth),
+		).toBe(true);
 	});
 
 	test('긴 코드는 코드 블록 안에서만 가로 스크롤한다', async ({ page }) => {
