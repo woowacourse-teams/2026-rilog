@@ -12,7 +12,7 @@ describe('mapPostDetailResponse', () => {
 			publishedAt: '2026-08-17T04:30:00',
 			thumbnailImageUrl: null,
 			category: 'TECH',
-			chapter: null,
+			chapter: { chapterId: 11, name: 'Spring 깊게 보기', order: 2 },
 			author: {
 				userId: 7,
 				nickname: '파라디',
@@ -48,6 +48,7 @@ describe('mapPostDetailResponse', () => {
 			expect(postDetail.blog.owner).toEqual(postDetail.author);
 		}
 		expect(postDetail.category).toBe('IT');
+		expect(postDetail.chapter).toEqual({ id: 11, name: 'Spring 깊게 보기', order: 2 });
 		expect(postDetail.viewerPermissions).toEqual({ canEdit: false, canDelete: false });
 	});
 

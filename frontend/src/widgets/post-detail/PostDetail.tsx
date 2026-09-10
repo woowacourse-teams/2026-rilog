@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
@@ -7,7 +9,7 @@ import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHeader from '@/features/post-detail/ui/PostDetailHeader';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
-import SeriesAccordion from '@/features/post-detail/ui/SeriesAccordion';
+import SeriesAccordionSection from '@/features/post-detail/ui/SeriesAccordionSection';
 import Divider from '@/shared/ui/divider/Divider';
 
 interface PostDetailProps {
@@ -35,7 +37,21 @@ export default async function PostDetail({ post }: PostDetailProps) {
 					{post.blog.type === 'COLOG' ? <PostDetailCoLogSummary colog={post.blog} /> : null}
 					<Divider aria-label="게시글 정보와 본문 구분" />
 					<div className="mt-10" />
-					<SeriesAccordion slug={post.blog.slug} postId={post.id} />
+					{post.blog.type === 'RILOG' && post.chapter !== null ? (
+						<Suspense
+							fallback={
+								<div
+									role="status"
+									aria-label="시리즈 로딩 중"
+									className="border-y border-border-strong px-5 py-3 text-body-3 text-text-secondary"
+								>
+									<div className="h-7 w-50 animate-pulse rounded bg-surface-active sm:w-100" />
+								</div>
+							}
+						>
+							<SeriesAccordionSection slug={post.blog.slug} postId={post.id} chapter={post.chapter} />
+						</Suspense>
+					) : null}
 
 					<div className="relative mt-10">
 						<PostDetailContent

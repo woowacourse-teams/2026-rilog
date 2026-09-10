@@ -3,9 +3,20 @@ import { describe, expect, it } from 'vitest';
 
 import SeriesAccordion from './SeriesAccordion';
 
+const SERIES = {
+	id: 3,
+	name: 'Next.js로 블로그 만들기',
+	postCount: 3,
+	posts: [
+		{ id: 65, title: '프로젝트 구조와 App Router 설계' },
+		{ id: 102, title: 'Server Component로 데이터 가져오기' },
+		{ id: 103, title: '검색 엔진이 이해하는 게시글 페이지 만들기' },
+	],
+};
+
 describe('SeriesAccordion', () => {
-	it('시리즈의 게시글 수와 게시글 링크를 렌더링한다', () => {
-		render(<SeriesAccordion slug="rilog-team" postId={65} />);
+	it('전달받은 시리즈의 게시글 수와 게시글 링크를 렌더링한다', () => {
+		render(<SeriesAccordion slug="rilog-team" postId={65} series={SERIES} />);
 		const seriesLink = screen.getByRole('link', { name: 'Next.js로 블로그 만들기' });
 
 		expect(seriesLink).toHaveAttribute('href', '/@rilog-team?series=3');

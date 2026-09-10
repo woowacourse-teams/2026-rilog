@@ -216,6 +216,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		publishedAt: '2024-05-20T09:00:00+09:00',
 		thumbnailUrl: null,
 		category: 'IT',
+		chapter: { id: 3, name: '컴포넌트 시스템', order: 1 },
 		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
 			id: 1,
@@ -244,6 +245,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		publishedAt: '2024-06-03T11:30:00+09:00',
 		thumbnailUrl: '/images/default-post-cover.svg',
 		category: 'IT',
+		chapter: { id: 7, name: '컴포넌트 설계', order: 1 },
 		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
 			id: 2,

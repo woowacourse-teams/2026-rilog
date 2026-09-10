@@ -45,6 +45,14 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 		thumbnailUrl: response.thumbnailImageUrl ?? null,
 		author,
 		category,
+		chapter:
+			response.chapter === null
+				? null
+				: {
+						id: response.chapter.chapterId,
+						name: response.chapter.name,
+						order: response.chapter.order,
+					},
 		blog,
 		viewerPermissions: response.viewerPermissions,
 	};
