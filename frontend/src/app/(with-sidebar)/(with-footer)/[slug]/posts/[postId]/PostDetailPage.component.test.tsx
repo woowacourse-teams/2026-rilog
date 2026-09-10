@@ -33,12 +33,14 @@ const POST_DETAIL: PostDetail = {
 	publishedAt: '2026-09-01T00:00:00+09:00',
 	thumbnailUrl: null,
 	category: 'TECH',
+	chapter: { id: 3, name: '프론트엔드', order: 1 },
 	viewerPermissions: { canEdit: true, canDelete: true },
 	author: {
 		id: 1,
 		nickname: '파라디',
 		slug: 'jetproc',
 		profileImageUrl: null,
+		description: '기록하며 성장하는 개발자입니다.',
 	},
 	blog: {
 		id: 1,

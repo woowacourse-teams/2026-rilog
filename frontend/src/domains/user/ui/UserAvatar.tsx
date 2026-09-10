@@ -3,7 +3,7 @@ import type { ComponentPropsWithRef } from 'react';
 import Avatar from '@/shared/ui/avatar/Avatar';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
-type UserAvatarSize = 'sm' | 'md' | 'lg';
+type UserAvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 type UserAvatarTone = 'subtle' | 'strong';
 
 interface UserAvatarProps extends Omit<ComponentPropsWithRef<typeof Avatar>, 'src'> {
@@ -16,6 +16,7 @@ const SIZE_CLASS_NAMES: Record<UserAvatarSize, string> = {
 	sm: 'size-5 rounded-full text-caption-1',
 	md: 'size-8 rounded-full text-caption-2',
 	lg: 'size-10 rounded-full text-caption-2',
+	xl: 'size-24 rounded-full text-heading-3 sm:size-32',
 };
 
 const TONE_CLASS_NAMES: Record<UserAvatarTone, string> = {
