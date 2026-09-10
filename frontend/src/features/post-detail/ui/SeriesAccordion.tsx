@@ -31,7 +31,7 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 			</h2>
 
 			<details data-chapter-id={id} className={`group ${styles.accordion}`}>
-				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-3 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden">
+				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-1 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring sm:text-body-3 [&::-webkit-details-marker]:hidden">
 					<span className="min-w-0">
 						<CustomLink href={seriesHref} className="wrap-break-word transition-colors hover:text-blue-600">
 							{name}
@@ -49,9 +49,12 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 							<li key={post.id}>
 								<CustomLink
 									href={buildPostDetailPath(slug, String(post.id))}
-									className="group/link flex items-center gap-3 rounded-md px-2 py-2.5 text-body-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+									className="group/link flex items-center gap-3 rounded-md px-2 py-2.5 text-label-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring sm:text-body-2"
 								>
-									<span aria-hidden="true" className="w-5 shrink-0 text-right text-label-2 text-text-placeholder">
+									<span
+										aria-hidden="true"
+										className="w-5 shrink-0 text-right text-label-1 text-text-placeholder sm:text-label-2"
+									>
 										{index + 1}
 									</span>
 									<span
