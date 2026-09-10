@@ -220,14 +220,6 @@
 	line-height: 1.65;
 }
 
-.featureMedia {
-	grid-column: 2;
-	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(6rem, 1fr);
-	align-items: start;
-	gap: 1.5rem;
-}
-
 .imagePlaceholder {
 	min-height: 24rem;
 	background-color: var(--navy-100);
@@ -241,52 +233,28 @@
 	border: 1px solid var(--navy-400);
 }
 
-.featureImageLarge {
-	min-height: 34rem;
-}
-
-.featureImageSmall {
-	min-height: 12rem;
-}
-
-.featureRowLandscapeStack {
-	grid-template-columns: repeat(12, minmax(0, 1fr));
-}
-
-.featureRowLandscapeStack .featureCopy {
-	grid-column: 1 / 4;
-}
-
-.featureRowLandscapeStack .featureMedia {
-	grid-column: 4 / -1;
-	grid-template-columns: minmax(0, 1fr);
-}
-
-.featureRowLandscapeStack .featureImageLarge {
+.productImage,
+.roadmapImage {
+	position: relative;
 	min-height: 0;
-	aspect-ratio: 16 / 7;
+	overflow: hidden;
+	background: var(--neutral-100);
+	border: 1px solid var(--navy-200);
 }
 
-.featureRowLandscapeStack .featureImageLarge:last-child {
-	width: 78%;
-	justify-self: end;
+.productImage img,
+.roadmapImage img {
+	object-fit: cover;
 }
 
-.featureRowReverse .featureMedia {
-	grid-column: 1;
-	grid-row: 1;
-}
-
-.featureRowReverse .featureCopy {
+.productImage {
 	grid-column: 2;
-	grid-row: 1;
-	justify-self: start;
-	text-align: left;
+	aspect-ratio: 1303 / 726;
 }
 
-.featureRowSingle .singleFeatureImage {
+.roadmapImage {
 	grid-column: 2;
-	min-height: 38rem;
+	aspect-ratio: 942 / 330;
 }
 
 .intermission {
@@ -533,7 +501,6 @@
 	}
 
 	.featureCopy,
-	.featureRowReverse .featureCopy,
 	.roadmapCopy,
 	.roadmapCompact .roadmapCopy,
 	.roadmapWide .roadmapCopy,
@@ -545,23 +512,13 @@
 		text-align: left;
 	}
 
-	.featureMedia,
-	.featureRowReverse .featureMedia,
-	.featureRowSingle .singleFeatureImage,
+	.productImage,
+	.roadmapRow > .roadmapImage,
 	.roadmapRow > .imagePlaceholder {
 		order: 2;
 		width: 100%;
 	}
 
-	.featureImageLarge {
-		min-height: 24rem;
-	}
-
-	.featureImageSmall {
-		min-height: 9rem;
-	}
-
-	.featureRowSingle .singleFeatureImage,
 	.roadmapTall > .imagePlaceholder,
 	.roadmapLast > .imagePlaceholder {
 		min-height: 26rem;

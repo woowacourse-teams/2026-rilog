@@ -1,4 +1,5 @@
 import { Cormorant_Garamond } from 'next/font/google';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import type { Metadata } from 'next';
@@ -35,19 +36,30 @@ export const metadata: Metadata = {
 	}),
 };
 
-function ImagePlaceholder({
-	label,
-	className = '',
-	staggered = false,
-}: Readonly<{ label: string; className?: string; staggered?: boolean }>) {
+function ImagePlaceholder({ label, className = '' }: Readonly<{ label: string; className?: string }>) {
 	return (
 		<div
 			className={`${styles.imagePlaceholder} ${className}`}
 			role="img"
 			aria-label={label}
 			data-about-reveal="media"
-			data-about-reveal-delay={staggered ? 'staggered' : undefined}
 		/>
+	);
+}
+
+function ProductImage({ src, alt }: Readonly<{ src: string; alt: string }>) {
+	return (
+		<div className={styles.productImage} data-about-reveal="media">
+			<Image src={src} alt={alt} fill sizes="(max-width: 47.99rem) 100vw, 75vw" />
+		</div>
+	);
+}
+
+function RoadmapImage({ src, alt }: Readonly<{ src: string; alt: string }>) {
+	return (
+		<div className={styles.roadmapImage} data-about-reveal="media">
+			<Image src={src} alt={alt} fill sizes="(max-width: 47.99rem) 100vw, 66vw" />
+		</div>
 	);
 }
 
@@ -90,7 +102,7 @@ export default function AboutPage() {
 			</section>
 
 			<section className={styles.productSection} aria-label="현재 기능">
-				<article className={`${styles.featureRow} ${styles.featureRowSingle}`}>
+				<article className={styles.featureRow}>
 					<div className={styles.featureCopy} data-about-reveal="copy">
 						<h3>집중해서 쓰는 공간.</h3>
 						<p>
@@ -99,7 +111,7 @@ export default function AboutPage() {
 							깊이 있는 글을 완성합니다.
 						</p>
 					</div>
-					<ImagePlaceholder label="Rilog 에디터 전체 화면 이미지 자리" className={styles.singleFeatureImage} />
+					<ProductImage src="/about/product-editor.png" alt="Rilog 에디터에서 글을 작성하는 화면" />
 				</article>
 
 				<article className={styles.featureRow}>
@@ -117,13 +129,10 @@ export default function AboutPage() {
 							유사한 글들을 모아 관리할 수 있습니다.
 						</p>
 					</div>
-					<div className={styles.featureMedia}>
-						<ImagePlaceholder label="Rilog 개인 블로그 전체 화면 이미지 자리" className={styles.featureImageLarge} />
-						<ImagePlaceholder label="Rilog 프로필 상세 이미지 자리" className={styles.featureImageSmall} staggered />
-					</div>
+					<ProductImage src="/about/product-user-blog-home.png" alt="Rilog 개인 블로그 홈 화면" />
 				</article>
 
-				<article className={`${styles.featureRow} ${styles.featureRowLandscapeStack}`}>
+				<article className={styles.featureRow}>
 					<div className={styles.featureCopy} data-about-reveal="copy">
 						<h3>
 							함께 쓰며
@@ -139,14 +148,7 @@ export default function AboutPage() {
 							<br />내 프로필에서 한 번에 관리할 수 있습니다.
 						</p>
 					</div>
-					<div className={styles.featureMedia}>
-						<ImagePlaceholder
-							label="Rilog Colog 전체 화면 이미지 자리"
-							className={styles.featureImageLarge}
-							staggered
-						/>
-						<ImagePlaceholder label="Rilog Colog 전체 화면 이미지 자리" className={styles.featureImageLarge} />
-					</div>
+					<ProductImage src="/about/product-colog-blog-home.png" alt="Rilog Colog 홈 화면" />
 				</article>
 			</section>
 
@@ -183,7 +185,7 @@ export default function AboutPage() {
 							<br />더 구체적인 대화를 이어갑니다.
 						</p>
 					</div>
-					<ImagePlaceholder label="좋아요, 구독, 인라인 댓글 기능 이미지 자리" />
+					<RoadmapImage src="/about/roadmap-inline-comment.png" alt="게시글의 특정 문장에 인라인 댓글이 달린 화면" />
 				</article>
 
 				<article className={`${styles.roadmapRow} ${styles.roadmapCompact}`}>
