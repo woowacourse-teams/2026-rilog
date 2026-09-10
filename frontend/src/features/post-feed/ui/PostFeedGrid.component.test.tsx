@@ -41,29 +41,17 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	publishedAt: post.publishedAt,
 	author: {
 		userId: post.author.id,
-		name: post.author.nickname,
 		nickname: post.author.nickname,
 		slug: post.author.slug,
 		profileImageUrl: post.author.profileImageUrl,
 	},
-	owner: post.blog
-		? {
-				type: 'COLOG',
-				blogId: post.blog.id,
-				name: post.blog.name,
-				slug: post.blog.slug,
-				profileImageUrl: post.blog.profileImageUrl ?? null,
-				coverImageUrl: null,
-				memberCount: 1,
-				postCount: 1,
-			}
-		: {
-				type: 'RILOG',
-				blogId: post.id,
-				name: '개인 블로그',
-				slug: `blog-${post.id}`,
-				profileImageUrl: null,
-			},
+	owner: {
+		type: post.blog.type,
+		blogId: post.blog.id,
+		name: post.blog.name,
+		slug: post.blog.slug,
+		profileImageUrl: post.blog.profileImageUrl ?? null,
+	},
 });
 
 const toApiResponse = (page: PostFeedPage): ApiResponse<FullFeedPostResponse> => ({
