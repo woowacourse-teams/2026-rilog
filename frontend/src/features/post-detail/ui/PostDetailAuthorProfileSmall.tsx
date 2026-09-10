@@ -25,7 +25,7 @@ export default function PostDetailAuthorProfileSmall({ author }: PostDetailAutho
 				<div className={`flex flex-col`}>
 					<h2
 						id="post-author-heading"
-						className="text-body-2 font-semibold wrap-break-word text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-body-2"
+						className="text-body-2 font-semibold [overflow-wrap:anywhere] text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-body-2"
 					>
 						{author.nickname}
 					</h2>

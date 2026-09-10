@@ -65,7 +65,7 @@ export default function ChapterPostSuggestionSection({
 							<div className="flex flex-col gap-2">
 								<CustomLink
 									href={buildPostDetailPath(slug, String(post.id))}
-									className="line-clamp-2 flex-1 rounded-sm text-body-2 font-medium wrap-break-word break-keep text-text-primary sm:text-body-3"
+									className="line-clamp-2 flex-1 rounded-sm text-body-2 font-medium [overflow-wrap:anywhere] break-keep text-text-primary sm:text-body-3"
 								>
 									<h3 className="transition-colors hover:text-focus-ring focus-visible:text-focus-ring active:text-focus-ring motion-reduce:transition-none">
 										{post.title}

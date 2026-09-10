@@ -333,6 +333,25 @@ test.describe('BlockNote 콘텐츠 여백', () => {
 		await expect(page.locator('code.bn-inline-content')).toHaveCSS('color', 'rgb(31, 35, 40)');
 	});
 
+	test('상세 본문의 공백 없는 긴 문자열은 본문 너비 안에서 줄바꿈한다', async ({ page }) => {
+		await renderBlockNoteFixture(
+			page,
+			'post-detail-body',
+			[{ contentType: 'paragraph', content: 'unbroken'.repeat(80) }],
+			true,
+		);
+		await page.locator('.post-detail-body').evaluate((element) => {
+			(element as HTMLElement).style.width = '18rem';
+		});
+
+		const inlineContent = page.locator('.bn-inline-content');
+
+		await expect(inlineContent).toHaveCSS('overflow-wrap', 'anywhere');
+		expect(
+			await page.locator('.post-detail-body').evaluate((element) => element.scrollWidth === element.clientWidth),
+		).toBe(true);
+	});
+
 	test('긴 코드는 코드 블록 안에서만 가로 스크롤한다', async ({ page }) => {
 		await renderBlockNoteFixture(
 			page,

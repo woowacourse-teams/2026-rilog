@@ -1,6 +1,7 @@
 .postDetailCard {
 	container-name: post-detail-card;
 	container-type: inline-size;
+	overflow-wrap: anywhere;
 }
 
 .contentLayout {
