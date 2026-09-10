@@ -44,8 +44,8 @@ vi.mock('@/features/post-detail/ui/PostDetailBlogProfileSection', () => ({
 		return <div>블로그 프로필</div>;
 	},
 }));
-vi.mock('@/features/post-detail/ui/PostDetailAuthorProfileSmall', () => ({
-	default: function MockPostDetailAuthorProfileSmall() {
+vi.mock('@/features/post-detail/ui/PostDetailAuthorProfileSection', () => ({
+	default: function MockPostDetailAuthorProfileSection() {
 		return <div>작성자 프로필</div>;
 	},
 }));

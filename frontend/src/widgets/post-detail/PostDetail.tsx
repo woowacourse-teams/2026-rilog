@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post';
 import ChapterPostSuggestionSection from '@/features/post-detail/ui/ChapterPostSuggestionSection';
+import PostDetailAuthorProfileSection from '@/features/post-detail/ui/PostDetailAuthorProfileSection';
 import PostDetailAuthorProfileSmall from '@/features/post-detail/ui/PostDetailAuthorProfileSmall';
 import PostDetailBlogProfile from '@/features/post-detail/ui/PostDetailBlogProfile';
 import PostDetailBlogProfileSection from '@/features/post-detail/ui/PostDetailBlogProfileSection';
@@ -91,7 +92,9 @@ export default function PostDetail({ post }: PostDetailProps) {
 				<>
 					{blogProfile}
 					<div className="mx-auto mt-6 w-fit min-w-20 border-t border-border-default px-6 pt-6 sm:min-w-100">
-						<PostDetailAuthorProfileSmall author={post.author} />
+						<Suspense fallback={<PostDetailAuthorProfileSmall author={post.author} />}>
+							<PostDetailAuthorProfileSection authorSlug={post.author.slug} />
+						</Suspense>
 					</div>
 				</>
 			}
