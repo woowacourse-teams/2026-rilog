@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AuthGuard {
 
-    TokenType value() default TokenType.ACCESS;
+    TokenType[] value() default {TokenType.ACCESS};
 
     GlobalRole[] roles() default {};
 }
