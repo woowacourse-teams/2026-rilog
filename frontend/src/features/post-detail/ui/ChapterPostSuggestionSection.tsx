@@ -5,10 +5,15 @@ import ChapterPostSuggestion from '@/features/post-detail/ui/ChapterPostSuggesti
 interface ChapterPostSuggestionSectionProps {
 	slug: string;
 	chapter: OrderedChapter;
+	currentPostId: number;
 }
 
-export default async function ChapterPostSuggestionSection({ slug, chapter }: ChapterPostSuggestionSectionProps) {
-	const suggestions = await getChapterPostSuggestions({ slug, chapter });
+export default async function ChapterPostSuggestionSection({
+	slug,
+	chapter,
+	currentPostId,
+}: ChapterPostSuggestionSectionProps) {
+	const suggestions = await getChapterPostSuggestions({ slug, chapter, currentPostId });
 
 	if (suggestions === null || suggestions.posts.length === 0) {
 		return null;

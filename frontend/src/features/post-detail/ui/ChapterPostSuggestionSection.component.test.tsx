@@ -28,16 +28,36 @@ describe('ChapterPostSuggestionSection', () => {
 			],
 		});
 
-		render(await ChapterPostSuggestionSection({ slug: 'rilog-team', chapter: CHAPTER }));
+		render(await ChapterPostSuggestionSection({ slug: 'rilog-team', chapter: CHAPTER, currentPostId: 65 }));
 
-		expect(getChapterPostSuggestions).toHaveBeenCalledWith({ slug: 'rilog-team', chapter: CHAPTER });
+		expect(getChapterPostSuggestions).toHaveBeenCalledWith({
+			slug: 'rilog-team',
+			chapter: CHAPTER,
+			currentPostId: 65,
+		});
 		expect(screen.getByRole('heading', { name: '서버 컴포넌트 설계' })).toBeInTheDocument();
 	});
 
 	it('조회 결과가 없으면 추천 영역을 렌더링하지 않는다', async () => {
 		vi.mocked(getChapterPostSuggestions).mockResolvedValue(null);
 
-		const { container } = render(await ChapterPostSuggestionSection({ slug: 'rilog-team', chapter: CHAPTER }));
+		const { container } = render(
+			await ChapterPostSuggestionSection({ slug: 'rilog-team', chapter: CHAPTER, currentPostId: 65 }),
+		);
+
+		expect(container).toBeEmptyDOMElement();
+	});
+
+	it('현재 글을 필터링한 뒤 추천 게시글이 없으면 추천 영역을 렌더링하지 않는다', async () => {
+		vi.mocked(getChapterPostSuggestions).mockResolvedValue({
+			id: 7,
+			name: '프론트엔드',
+			posts: [],
+		});
+
+		const { container } = render(
+			await ChapterPostSuggestionSection({ slug: 'rilog-team', chapter: CHAPTER, currentPostId: 65 }),
+		);
 
 		expect(container).toBeEmptyDOMElement();
 	});

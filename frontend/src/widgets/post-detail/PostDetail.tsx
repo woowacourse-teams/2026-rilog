@@ -78,7 +78,7 @@ export default async function PostDetail({ post }: PostDetailProps) {
 								</div>
 							}
 						>
-							<ChapterPostSuggestionSection slug={post.blog.slug} chapter={post.chapter} />
+							<ChapterPostSuggestionSection slug={post.blog.slug} chapter={post.chapter} currentPostId={post.id} />
 						</Suspense>
 					</div>
 				) : null}
