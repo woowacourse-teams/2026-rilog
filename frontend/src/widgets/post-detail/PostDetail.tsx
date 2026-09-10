@@ -64,9 +64,24 @@ export default async function PostDetail({ post }: PostDetailProps) {
 					</div>
 				</div>
 
-				<div className="mx-auto max-w-5xl">
-					<ChapterPostSuggestionSection slug={post.blog.slug} />
-				</div>
+				{post.blog.type === 'COLOG' && post.chapter !== null ? (
+					<div className="mx-auto max-w-5xl">
+						<Suspense
+							fallback={
+								<div role="status" aria-label="챕터 게시글 추천 로딩 중" className="mt-20 pb-20 sm:mt-24">
+									<div className="h-5 w-40 animate-pulse rounded bg-surface-active" />
+									<div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+										{Array.from({ length: 3 }, (_, index) => (
+											<div key={index} className="aspect-video animate-pulse rounded-xl bg-surface-active" />
+										))}
+									</div>
+								</div>
+							}
+						>
+							<ChapterPostSuggestionSection slug={post.blog.slug} chapter={post.chapter} />
+						</Suspense>
+					</div>
+				) : null}
 			</div>
 		</main>
 	);
