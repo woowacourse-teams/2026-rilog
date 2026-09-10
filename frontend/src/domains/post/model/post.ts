@@ -1,6 +1,7 @@
 import type { Block } from '@blocknote/core';
 
 import type { BaseBlog, Blog } from '@/domains/blog/model/blog';
+import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import type { User } from '@/domains/user/model/user';
 
 export const POST_TITLE_MAX_LENGTH = 512;
@@ -25,16 +26,10 @@ export interface PostViewerPermissions {
 	canDelete: boolean;
 }
 
-export interface PostDetailChapter {
-	id: number;
-	name: string;
-	order: number;
-}
-
 export interface PostDetail extends PostSummary {
 	content: Block[];
 	category: PostCategory;
-	chapter: PostDetailChapter | null;
+	chapter: OrderedChapter | null;
 	blog: Blog;
 	viewerPermissions: PostViewerPermissions;
 }

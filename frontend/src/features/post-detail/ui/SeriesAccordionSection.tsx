@@ -1,11 +1,11 @@
-import type { PostDetailChapter } from '@/domains/post/model/post';
+import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import { getSeriesPosts } from '@/features/post-detail/lib/get-series-posts';
 import SeriesAccordion from '@/features/post-detail/ui/SeriesAccordion';
 
 interface SeriesAccordionSectionProps {
 	slug: string;
 	postId: number;
-	chapter: PostDetailChapter;
+	chapter: OrderedChapter;
 }
 
 export default async function SeriesAccordionSection({ slug, postId, chapter }: SeriesAccordionSectionProps) {

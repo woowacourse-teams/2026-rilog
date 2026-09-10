@@ -4,7 +4,7 @@ import { useId, useRef, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
-import { CHAPTER_NAME_MAX_LENGTH } from '@/features/chapter-management/model/chapter';
+import { CHAPTER_NAME_MAX_LENGTH } from '@/domains/chapter/model/chapter';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 

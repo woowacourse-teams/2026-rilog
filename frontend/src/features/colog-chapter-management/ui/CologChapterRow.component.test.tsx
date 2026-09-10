@@ -2,14 +2,13 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Chapter } from '@/features/chapter-management/model/chapter';
+import type { Chapter } from '@/domains/chapter/model/chapter';
 
 import CologChapterRow from './CologChapterRow';
 
 const CHAPTER: Chapter = {
 	id: 1,
 	name: '프론트엔드',
-	postCount: 3,
 };
 
 const renderInTable = (ui: React.ReactElement) =>

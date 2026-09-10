@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Chapter } from '@/domains/chapter/model/chapter';
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
-import type { Chapter } from '@/features/chapter-management/model/chapter';
 
 import CologChapterManagementSection from './CologChapterManagementSection';
 
 const CHAPTERS: Chapter[] = [
-	{ id: 1, name: '프론트엔드', postCount: 3 },
-	{ id: 2, name: '백엔드', postCount: 7 },
+	{ id: 1, name: '프론트엔드' },
+	{ id: 2, name: '백엔드' },
 ];
 
 const createManagement = (

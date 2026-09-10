@@ -1,4 +1,4 @@
-import type { PostDetailChapter } from '@/domains/post/model/post';
+import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import type { SeriesChapter } from '@/features/post-detail/model/series';
 import { readPublicBlogPosts } from '@/shared/api/blogs/api';
 
@@ -9,7 +9,7 @@ const SERIES_POSTS_PAGE_SIZE = 30;
 
 interface GetSeriesPostsOptions {
 	slug: string;
-	chapter: PostDetailChapter;
+	chapter: OrderedChapter;
 }
 
 export const getSeriesPosts = async ({ slug, chapter }: GetSeriesPostsOptions): Promise<SeriesChapter | null> => {

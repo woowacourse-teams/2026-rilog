@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Chapter } from '@/domains/chapter/model/chapter';
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
-import type { Chapter } from '@/features/chapter-management/model/chapter';
 
 import RilogSeriesManagementSection from './RilogSeriesManagementSection';
 
 const SERIES: Chapter[] = [
-	{ id: 1, name: '웹 개발', postCount: 3 },
-	{ id: 2, name: '기록', postCount: 7 },
+	{ id: 1, name: '웹 개발' },
+	{ id: 2, name: '기록' },
 ];
 
 const createManagement = (
