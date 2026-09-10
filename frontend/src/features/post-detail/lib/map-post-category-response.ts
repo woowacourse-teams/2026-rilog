@@ -1,11 +1,11 @@
-import type { PostCategory } from '@/domains/post/model/post';
+import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import type { PostCategoryResponse } from '@/shared/api/posts/types';
 
-const POST_CATEGORY_BY_RESPONSE_VALUE: Record<PostCategoryResponse, PostCategory> = {
-	기술: 'TECH',
-	일상: 'DAILY',
-	회고: 'RETROSPECT',
-};
+export const mapPostCategoryResponse = (category: PostCategoryResponse): PostCategory => {
+	const categoryOption = POST_CATEGORY_OPTIONS.find(({ label }) => label === category);
+	if (categoryOption === undefined) {
+		throw new Error(`지원하지 않는 게시글 카테고리입니다: ${category}`);
+	}
 
-export const mapPostCategoryResponse = (category: PostCategoryResponse): PostCategory =>
-	POST_CATEGORY_BY_RESPONSE_VALUE[category];
+	return categoryOption.value;
+};

@@ -1,9 +1,10 @@
 import type { Block } from '@blocknote/core';
 
+import type { PostCategory, PostCategoryLabel } from '@/domains/post/model/post';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
 
-export type PostCategoryRequest = 'TECH' | 'DAILY' | 'RETROSPECT';
-export type PostCategoryResponse = '기술' | '일상' | '회고';
+export type PostCategoryRequest = PostCategory;
+export type PostCategoryResponse = PostCategoryLabel;
 export type PostVisibilityRequest = 'PUBLIC' | 'PRIVATE';
 
 export interface PostWriteRequest {

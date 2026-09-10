@@ -12,6 +12,7 @@ export const POST_CATEGORY_OPTIONS = [
 ] as const;
 
 export type PostCategory = (typeof POST_CATEGORY_OPTIONS)[number]['value'];
+export type PostCategoryLabel = (typeof POST_CATEGORY_OPTIONS)[number]['label'];
 
 export interface PostSummary {
 	id: number;
