@@ -56,7 +56,7 @@ export default function Footer() {
 				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-1 font-semibold">
 					<a
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
-						href=""
+						href="/about"
 						role="link"
 					>
 						Rilog. 이야기
