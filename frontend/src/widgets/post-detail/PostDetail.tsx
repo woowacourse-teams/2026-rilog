@@ -1,8 +1,11 @@
+import { Suspense } from 'react';
+
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post';
 import ChapterPostSuggestionSection from '@/features/post-detail/ui/ChapterPostSuggestionSection';
 import PostDetailAuthorProfileSmall from '@/features/post-detail/ui/PostDetailAuthorProfileSmall';
 import PostDetailBlogProfile from '@/features/post-detail/ui/PostDetailBlogProfile';
+import PostDetailBlogProfileSection from '@/features/post-detail/ui/PostDetailBlogProfileSection';
 import PostDetailHeader from '@/features/post-detail/ui/PostDetailHeader';
 import SeriesAccordion from '@/features/post-detail/ui/SeriesAccordion';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
@@ -27,7 +30,11 @@ export default function PostDetail({ post }: PostDetailProps) {
 			viewerPermissions={post.viewerPermissions}
 		/>
 	);
-	const blogProfile = <PostDetailBlogProfile profile={post.blog} />;
+	const blogProfile = (
+		<Suspense fallback={<PostDetailBlogProfile profile={post.blog} />}>
+			<PostDetailBlogProfileSection blogSlug={post.blog.slug} />
+		</Suspense>
+	);
 
 	if (post.blog.type === 'RILOG') {
 		return (

@@ -39,8 +39,8 @@ vi.mock('@/features/post-detail/ui/PostDetailHeader', () => ({
 		);
 	},
 }));
-vi.mock('@/features/post-detail/ui/PostDetailBlogProfile', () => ({
-	default: function MockPostDetailBlogProfile() {
+vi.mock('@/features/post-detail/ui/PostDetailBlogProfileSection', () => ({
+	default: function MockPostDetailBlogProfileSection() {
 		return <div>블로그 프로필</div>;
 	},
 }));
