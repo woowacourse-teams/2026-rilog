@@ -48,7 +48,7 @@ export default function ChapterPostSuggestionSection({
 						<article className="flex sm:flex-col">
 							<CustomLink
 								href={buildPostDetailPath(slug, String(post.id))}
-								className="h-full rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:rounded-xl sm:pb-2"
+								className="group/card h-full rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:rounded-xl sm:pb-2"
 							>
 								<div className="aspect-video h-19 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-auto sm:rounded-xl">
 									<PostFeedImage
