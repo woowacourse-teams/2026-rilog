@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
+import { RELEASE_NOTE_STORAGE_KEY } from '@/features/release-notes/model/release-note-storage';
+import { getLatestReleaseNote, RELEASE_NOTES } from '@/features/release-notes/model/release-notes';
+
 const postCards = (page: Page) => page.locator('#post-feed-content article');
 
 test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 탐색한다', async ({ page, request }) => {
@@ -168,6 +171,66 @@ test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자
 
 	await page.waitForTimeout(1_200);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
+});
+
+test('피드 필터를 바꿔도 자동 스크롤이 완료된 위치를 유지한다', async ({ page }) => {
+	const latestReleaseNote = getLatestReleaseNote(RELEASE_NOTES);
+	if (latestReleaseNote !== undefined) {
+		await page.addInitScript(({ key, id }) => window.sessionStorage.setItem(key, id), {
+			key: RELEASE_NOTE_STORAGE_KEY,
+			id: latestReleaseNote.id,
+		});
+	}
+	await page.goto('/feeds');
+	const feedContent = page.locator('#post-feed-categories');
+	await expect(feedContent).toBeVisible();
+	await expect
+		.poll(() =>
+			feedContent.evaluate((element) =>
+				Math.abs(
+					Math.round(
+						element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+					),
+				),
+			),
+		)
+		.toBe(0);
+
+	await page.evaluate(() => {
+		const trackedWindow = window as Window & { feedFilterScrollPositions?: number[] };
+		trackedWindow.feedFilterScrollPositions = [window.scrollY];
+		window.addEventListener(
+			'scroll',
+			() => {
+				trackedWindow.feedFilterScrollPositions?.push(window.scrollY);
+			},
+			{ passive: true },
+		);
+	});
+
+	await page.getByRole('link', { name: '일상', exact: true }).click();
+	await expect(page).toHaveURL(/category=DAILY/);
+	await page.getByRole('link', { name: '개인', exact: true }).click();
+	await expect(page).toHaveURL(/blogType=RILOG/);
+	await page.getByRole('link', { name: 'Colog', exact: true }).click();
+	await expect(page).toHaveURL(/blogType=COLOG/);
+	await page.waitForTimeout(1_200);
+
+	const scrollPositions = await page.evaluate(
+		() => (window as Window & { feedFilterScrollPositions?: number[] }).feedFilterScrollPositions ?? [],
+	);
+	expect(Math.min(...scrollPositions)).toBeGreaterThan(0);
+	await expect
+		.poll(() =>
+			feedContent.evaluate((element) =>
+				Math.abs(
+					Math.round(
+						element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+					),
+				),
+			),
+		)
+		.toBe(0);
 });
 
 test('제목 텍스트에만 hover 색상을 적용한다', async ({ page }) => {
