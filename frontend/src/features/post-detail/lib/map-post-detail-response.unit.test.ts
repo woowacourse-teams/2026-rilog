@@ -95,4 +95,26 @@ describe('mapPostDetailResponse', () => {
 		expect(postDetail.category).toBe('DAILY');
 		expect(postDetail.viewerPermissions).toEqual({ canEdit: true, canDelete: true });
 	});
+
+	it('회고 카테고리를 상세 도메인 모델에 보존한다', () => {
+		const response: PostDetailResponse = {
+			title: '스프린트 회고',
+			content: [],
+			publishedAt: '2026-08-17T04:40:00',
+			thumbnailImageUrl: null,
+			category: '회고',
+			chapter: null,
+			author: { userId: 7, nickname: '파라디', slug: 'jetproc', profileImageUrl: null },
+			owner: {
+				type: 'RILOG',
+				blogId: 3,
+				slug: 'jetproc',
+				name: '파라디',
+				profileImageUrl: null,
+			},
+			viewerPermissions: { canEdit: true, canDelete: true },
+		};
+
+		expect(mapPostDetailResponse(response, 42).category).toBe('RETROSPECT');
+	});
 });

@@ -45,6 +45,15 @@ describe('buildDraftPublishRequest', () => {
 		expect(uploadRepresentativeImage).not.toHaveBeenCalled();
 	});
 
+	it('회고 카테고리를 임시저장 발행 API 요청에 보존한다', async () => {
+		const command = createCommand();
+		command.settings.category = 'RETROSPECT';
+
+		const request = await buildDraftPublishRequest(command, vi.fn());
+
+		expect(request.category).toBe('RETROSPECT');
+	});
+
 	it('대표 이미지를 제거하면 본문 이미지가 있어도 기본 썸네일을 요청에 사용한다', async () => {
 		const command = createCommand();
 		command.document.blocks = [
