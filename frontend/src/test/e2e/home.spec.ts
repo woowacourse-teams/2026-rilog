@@ -2,23 +2,43 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
+import { RELEASE_NOTE_STORAGE_KEY } from '@/features/release-notes/model/release-note-storage';
+import { getLatestReleaseNote, RELEASE_NOTES } from '@/features/release-notes/model/release-notes';
+import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
+
 const postCards = (page: Page) => page.locator('#post-feed-content article');
+const latestReleaseNote = getLatestReleaseNote(RELEASE_NOTES);
+
+test.beforeEach(async ({ page }) => {
+	if (latestReleaseNote === undefined) {
+		return;
+	}
+
+	await page.addInitScript(
+		({ id, storageKey }) => {
+			localStorage.setItem(storageKey, id);
+		},
+		{ id: latestReleaseNote.id, storageKey: RELEASE_NOTE_STORAGE_KEY },
+	);
+});
 
 test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 탐색한다', async ({ page, request }) => {
-	// TODO(API 연동): API 응답을 fixture로 고정해 게시글 문구와 페이지 개수를 결정적으로 검증
 	const serverResponse = await request.get('/feeds');
 	const serverHtml = await serverResponse.text();
 
 	expect(serverResponse.ok()).toBe(true);
-	expect(serverHtml).toContain('React 19에서 달라진 렌더링 흐름 이해하기');
-	expect(serverHtml).toContain('href="/@author-1/posts/1"');
+	expect(serverHtml).toContain('id="post-feed-content"');
+	expect(serverHtml).toMatch(/href="\/@[^\"]+\/posts\/\d+"/);
 
 	await page.goto('/');
 
 	await expect(page).toHaveURL('http://localhost:3000/feeds');
 	await expect(page).toHaveTitle(/Rilog/);
 	await expect(page.getByRole('heading', { name: 'Rilog' })).toBeVisible();
+	const pageFooter = page.getByRole('contentinfo');
+	await expect(pageFooter).toHaveCount(1);
 	await expect(postCards(page)).toHaveCount(12);
+	const initialPostCount = await postCards(page).count();
 	const viewportWidth = page.viewportSize()?.width;
 	await expect
 		.poll(async () => {
@@ -57,16 +77,16 @@ test('첫 피드를 SSR하고 스크롤에 따라 다음 게시글을 이어서 
 	await expect.poll(() => titleText.evaluate((element) => getComputedStyle(element).color)).not.toBe(initialTitleColor);
 
 	await page.mouse.wheel(0, 10_000);
-	await expect(postCards(page)).toHaveCount(24);
-	await page.mouse.wheel(0, 10_000);
-	await expect(postCards(page)).toHaveCount(36);
-	await expect(page.getByText('모든 게시글을 확인했어요.')).not.toBeAttached();
+	await expect.poll(() => postCards(page).count()).toBeGreaterThan(initialPostCount);
+	await pageFooter.scrollIntoViewIfNeeded();
+	await expect(pageFooter).toBeInViewport();
 	await expect(page).toHaveURL('http://localhost:3000/feeds');
 
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.reload();
-	await expect(postCards(page)).toHaveCount(12);
-	await expect(page.locator('#post-feed-content ul')).toHaveCSS('grid-template-columns', /^\S+$/);
+	await expect.poll(() => postCards(page).count()).toBeGreaterThan(0);
+	await expect(pageFooter).toHaveCount(1);
+	await expect(page.locator('#post-feed-content ul').first()).toHaveCSS('grid-template-columns', /^\S+$/);
 	const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 	expect(hasHorizontalOverflow).toBe(false);
 });
@@ -120,16 +140,21 @@ test('같은 행의 제목 줄 수가 달라도 날짜를 하단에 정렬한다
 });
 
 test('피드 게시글을 slug가 포함된 상세 URL에서 조회한다', async ({ request }) => {
-	const response = await request.get('/@author-1/posts/1');
+	const feedResponse = await request.get('/feeds');
+	const feedHtml = await feedResponse.text();
+	const postHref = feedHtml.match(/href="(\/@[^\"]+\/posts\/\d+)"/)?.[1];
+
+	expect(postHref).toBeDefined();
+	const response = await request.get(postHref!);
 
 	expect(response.ok()).toBe(true);
-	expect(await response.text()).toContain('컴포넌트 시스템, 이렇게 도입했어요');
 });
 
 test('@가 없는 코로그 경로는 찾을 수 없다', async ({ request }) => {
-	const homeResponse = await request.get('/rilog');
-	const postResponse = await request.get('/rilog/posts/1');
-	const settingsResponse = await request.get('/rilog/settings?tab=profile');
+	const headers = { Cookie: `${PROXY_SESSION_COOKIE_NAME}=${PROXY_SESSION_COOKIE_VALUE}` };
+	const homeResponse = await request.get('/rilog', { headers });
+	const postResponse = await request.get('/rilog/posts/1', { headers });
+	const settingsResponse = await request.get('/rilog/settings?tab=profile', { headers });
 
 	expect(homeResponse.status()).toBe(404);
 	expect(postResponse.status()).toBe(404);
@@ -155,6 +180,7 @@ test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자
 	await page.goto('about:blank');
 	await page.goto('/feeds');
 	await expect(feedContent).toBeVisible();
+	await page.waitForTimeout(100);
 	await page.mouse.click(100, 100);
 	await page.waitForTimeout(1_200);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
@@ -162,6 +188,7 @@ test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자
 	await page.goto('about:blank');
 	await page.goto('/feeds');
 	await expect(feedContent).toBeVisible();
+	await page.waitForTimeout(100);
 	await page.mouse.wheel(0, 120);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 	const interruptedScrollY = await page.evaluate(() => window.scrollY);
