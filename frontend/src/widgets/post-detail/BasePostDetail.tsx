@@ -41,7 +41,7 @@ export default async function BasePostDetail({
 				{beforeContent}
 
 				<div className={`${styles.contentLayout} px-5 sm:px-10`}>
-					<div className={`${styles.articleColumn} pt-4 pb-30 sm:pt-8 sm:pb-35`}>
+					<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
 						<PostDetailContent
 							html={contentHtml}
 							postId={post.id}

@@ -22,7 +22,10 @@ export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) 
 	);
 
 	return (
-		<section aria-labelledby="series-accordion-title" className="overflow-hidden border-y border-border-strong">
+		<section
+			aria-labelledby="series-accordion-title"
+			className="mt-5 overflow-hidden border-y border-border-strong sm:mt-10"
+		>
 			<h2 id="series-accordion-title" className="sr-only">
 				게시글 시리즈
 			</h2>
