@@ -216,13 +216,14 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		publishedAt: '2024-05-20T09:00:00+09:00',
 		thumbnailUrl: null,
 		category: 'IT',
-		chapter: { id: 3, name: '컴포넌트 시스템', order: 1 },
+		chapter: { id: 1, name: '프론트엔드', order: 1 },
 		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
 			id: 1,
 			nickname: '김지연',
 			slug: 'kim-jiyeon',
 			profileImageUrl: null,
+			description: '사용자 경험을 고민하며 기록하는 개발자입니다.',
 		},
 		blog: {
 			id: 1,
@@ -245,13 +246,14 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		publishedAt: '2024-06-03T11:30:00+09:00',
 		thumbnailUrl: '/images/default-post-cover.svg',
 		category: 'IT',
-		chapter: { id: 7, name: '컴포넌트 설계', order: 1 },
+		chapter: null,
 		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
 			id: 2,
 			nickname: '박리로그',
 			slug: 'park-rilog',
 			profileImageUrl: null,
+			description: '함께 만드는 개발 문화를 기록합니다.',
 		},
 		blog: {
 			id: 5,

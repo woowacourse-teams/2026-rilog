@@ -19,7 +19,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 	);
 
 	return (
-		<section aria-labelledby="chapter-post-suggestions-title" className="mt-20 pb-20 sm:mt-24">
+		<section aria-labelledby="chapter-post-suggestions-title">
 			<h2 id="chapter-post-suggestions-title" className="text-body-2 font-semibold text-text-primary">
 				<CustomLink
 					href={chapterHref}
@@ -36,7 +36,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 						<article className="flex sm:flex-col">
 							<CustomLink
 								href={buildPostDetailPath(slug, String(post.id))}
-								className="h-full rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:rounded-xl sm:pb-2"
+								className="group/card h-full rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:rounded-xl sm:pb-2"
 							>
 								<div className="aspect-video h-19 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-auto sm:rounded-xl">
 									<PostFeedImage
@@ -53,7 +53,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 							<div className="flex flex-col gap-2">
 								<CustomLink
 									href={buildPostDetailPath(slug, String(post.id))}
-									className="line-clamp-2 flex-1 rounded-sm text-body-2 font-medium wrap-break-word break-keep text-text-primary sm:text-body-3"
+									className="line-clamp-2 flex-1 rounded-sm text-body-2 font-medium [overflow-wrap:anywhere] break-keep text-text-primary sm:text-body-3"
 								>
 									<h3 className="transition-colors hover:text-focus-ring focus-visible:text-focus-ring active:text-focus-ring motion-reduce:transition-none">
 										{post.title}

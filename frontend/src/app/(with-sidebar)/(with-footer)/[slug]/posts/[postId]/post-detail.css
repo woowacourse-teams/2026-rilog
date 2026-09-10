@@ -4,6 +4,18 @@
 	scroll-margin-top: 2.5rem;
 }
 
+.post-detail-body .bn-block-content:not([data-content-type='codeBlock']) .bn-inline-content {
+	overflow-wrap: anywhere;
+}
+
+.post-detail-body .bn-block-content[data-content-type='codeBlock']:not(:has(> .mermaid-diagram[data-state='ready'])) {
+	border: 1px solid var(--border-default);
+}
+
+.post-detail-body .mermaid-diagram[data-state='ready'] {
+	border: 1px solid var(--border-default);
+}
+
 .post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram) {
 	flex-direction: column;
 }

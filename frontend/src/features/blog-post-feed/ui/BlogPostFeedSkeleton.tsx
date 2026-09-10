@@ -15,31 +15,15 @@ export default function BlogPostFeedSkeleton({ blogType }: BlogPostFeedSkeletonP
 						<div className="aspect-3/2 h-24 shrink-0 rounded-lg bg-surface-active sm:h-32" />
 
 						<div className="flex min-h-28 min-w-0 flex-1 flex-col justify-between gap-2 py-1">
-							{blogType === 'RILOG' && (
-								<>
-									<div className="flex flex-col gap-2">
-										<div className="h-5 w-4/5 rounded bg-surface-active sm:h-6" />
-										<div className="h-5 w-3/5 rounded bg-surface-active sm:h-6" />
-									</div>
-									<div className="flex items-center gap-1.5">
-										<div className="size-5 shrink-0 rounded-full bg-surface-active" />
-										<div className="h-4 w-24 rounded bg-surface-active" />
-									</div>
-								</>
-							)}
-							{blogType === 'COLOG' && (
-								<>
-									<div>
-										<div className="h-7 w-4/5 rounded bg-surface-active" />
-										<div className="mt-1 flex items-center gap-1.5">
-											<div className="size-5 shrink-0 rounded-full bg-surface-active" />
-											<div className="h-4 w-1/3 rounded bg-surface-active" />
-											<div className="h-4 w-1/3 rounded bg-surface-active" />
-										</div>
-									</div>
-									<div className="h-4 w-3/5 rounded bg-surface-active" />
-								</>
-							)}
+							<div>
+								<div className="h-7 w-4/5 rounded bg-surface-active" />
+								<div className="mt-1 flex items-center gap-1.5">
+									{blogType === 'COLOG' ? <div className="size-5 shrink-0 rounded-full bg-surface-active" /> : null}
+									<div className="h-4 w-1/3 rounded bg-surface-active" />
+									<div className="h-4 w-1/3 rounded bg-surface-active" />
+								</div>
+							</div>
+							<div className="h-4 w-3/5 rounded bg-surface-active" />
 						</div>
 					</li>
 				))}

@@ -26,7 +26,12 @@ export interface PostViewerPermissions {
 	canDelete: boolean;
 }
 
+export interface PostDetailAuthor extends User {
+	description: string | null;
+}
+
 export interface PostDetail extends PostSummary {
+	author: PostDetailAuthor;
 	content: Block[];
 	category: PostCategory;
 	chapter: OrderedChapter | null;
