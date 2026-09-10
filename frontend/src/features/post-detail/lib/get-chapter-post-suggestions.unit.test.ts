@@ -12,20 +12,17 @@ const createPostResponse = (postId: number): PostItemResponse => ({
 	postId,
 	title: `게시글 ${postId}`,
 	thumbnailImageUrl: null,
-	category: 'TECH',
+	category: '기술',
 	chapter: { chapterId: 7, name: '프론트엔드', order: 1 },
 	visibility: 'PUBLIC',
 	publishedAt: '2026-09-01T00:00:00+09:00',
-	author: { userId: postId, name: `작성자 ${postId}`, slug: `author-${postId}`, profileImageUrl: null },
+	author: { userId: postId, nickname: `작성자 ${postId}`, slug: `author-${postId}`, profileImageUrl: null },
 	owner: {
 		type: 'COLOG',
 		blogId: 1,
 		slug: 'rilog-team',
 		name: '리로그 팀',
 		profileImageUrl: null,
-		coverImageUrl: null,
-		memberCount: 3,
-		postCount: 10,
 	},
 });
 

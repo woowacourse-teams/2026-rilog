@@ -19,7 +19,7 @@ const document: EditorDocument = {
 };
 
 const settings: PublicationSettings = {
-	category: 'IT',
+	category: 'TECH',
 	blog: { type: 'COLOG', id: 7, slug: 'rilog-team' },
 	chapterId: null,
 	representativeImage: null,

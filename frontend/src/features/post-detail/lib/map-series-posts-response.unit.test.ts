@@ -15,7 +15,7 @@ const RESPONSE: ApiResponse<PublicBlogFeedPostResponse> = {
 				postId: 65,
 				title: '프로젝트 구조와 App Router 설계',
 				thumbnailImageUrl: null,
-				category: 'TECH',
+				category: '기술',
 				chapter: { chapterId: 3, name: 'Next.js로 블로그 만들기', order: 1 },
 				visibility: 'PUBLIC',
 				publishedAt: '2026-09-01T00:00:00+09:00',

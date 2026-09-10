@@ -1,5 +1,7 @@
 import type { Block } from '@blocknote/core';
 
+import type { PostCategoryRequest } from '@/shared/api/posts/types';
+
 export interface DraftSaveRequest {
 	title: string;
 	content: Block[];
@@ -42,14 +44,13 @@ export interface DraftDetailResponse {
 	publishedAt: string;
 }
 
-export type DraftPublishCategoryRequest = 'TECH' | 'DAILY';
 export type DraftPublishVisibilityRequest = 'PUBLIC' | 'PRIVATE';
 
 export interface DraftPublishRequest {
 	slug: string;
 	title: string;
 	content: Block[];
-	category: DraftPublishCategoryRequest;
+	category: PostCategoryRequest;
 	visibility: DraftPublishVisibilityRequest;
 	thumbnailImageUrl: string | null;
 	chapterId: number | null;

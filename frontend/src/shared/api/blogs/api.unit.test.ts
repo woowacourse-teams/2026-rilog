@@ -101,10 +101,28 @@ describe('readPublicBlogPosts', () => {
 			message: '공개 블로그 게시글 목록 조회에 성공했습니다.',
 			data: {
 				type: 'COLOG',
-				posts: [],
+				posts: [
+					{
+						postId: 1,
+						title: '코로그 기록',
+						thumbnailImageUrl: null,
+						category: 'IT',
+						chapter: null,
+						visibility: 'PUBLIC',
+						publishedAt: '2026-09-08T00:00:00',
+						author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: null },
+						owner: {
+							type: 'COLOG',
+							blogId: 20,
+							name: '리로그 팀',
+							slug: 'rilog-team',
+							profileImageUrl: null,
+						},
+					},
+				],
 				page: 2,
 				size: 12,
-				numberOfElements: 0,
+				numberOfElements: 1,
 				hasNext: false,
 			},
 		};

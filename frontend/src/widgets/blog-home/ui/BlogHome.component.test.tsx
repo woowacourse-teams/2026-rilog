@@ -33,13 +33,17 @@ vi.mock('@/features/blog-post-feed/ui/BlogPostFeed', () => ({
 	default: function MockBlogPostFeed({
 		slug,
 		blogType,
+		filter,
+		initialRequestFailed,
 		heading,
 	}: {
 		slug: string;
 		blogType: BlogPublicProfile['type'];
+		filter: { type: string };
+		initialRequestFailed?: boolean;
 		heading?: ReactNode;
 	}) {
-		feedRenderMock(blogType);
+		feedRenderMock({ slug, blogType, filter, initialRequestFailed });
 		if (feedState.current === 'loading') return <div role="status">게시글 로딩 중</div>;
 		if (feedState.current === 'empty') return <div>빈 게시글 목록</div>;
 		if (feedState.current === 'error') return <div role="alert">게시글 오류</div>;
@@ -146,7 +150,12 @@ describe('BlogHome', () => {
 		expect(memberAsideRenderMock).toHaveBeenCalledTimes(2);
 		expect(memberAsideRenderMock).toHaveBeenCalledWith('rilog-team');
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('COLOG');
-		expect(feedRenderMock).toHaveBeenCalledWith('COLOG');
+		expect(feedRenderMock).toHaveBeenCalledWith({
+			slug: 'rilog-team',
+			blogType: 'COLOG',
+			filter: { type: 'all' },
+			initialRequestFailed: false,
+		});
 		expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
 	});
 
@@ -180,7 +189,12 @@ describe('BlogHome', () => {
 		expect(screen.getByRole('region', { name: 'Colog' })).toBeInTheDocument();
 		expect(memberAsideRenderMock).not.toHaveBeenCalled();
 		expect(profileViewTrackerRenderMock).toHaveBeenCalledWith('RILOG');
-		expect(feedRenderMock).toHaveBeenCalledWith('RILOG');
+		expect(feedRenderMock).toHaveBeenCalledWith({
+			slug: 'jetproc',
+			blogType: 'RILOG',
+			filter: { type: 'all' },
+			initialRequestFailed: false,
+		});
 		expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
 		expect(headingRenderMock).toHaveBeenCalledWith({
 			blogType: 'RILOG',
@@ -192,18 +206,31 @@ describe('BlogHome', () => {
 	});
 
 	it('COLOG 피드에 제목을 전달해 toolbar와 게시글 목록 사이에 표시한다', () => {
-		render(<BlogHome profile={COLOG_PROFILE} filter={{ type: 'all' }} initialIndexRequestFailed />);
+		render(
+			<BlogHome
+				profile={COLOG_PROFILE}
+				filter={{ type: 'chapterId', chapterId: 3 }}
+				initialIndexRequestFailed
+				initialPostsRequestFailed
+			/>,
+		);
 
 		const toolbar = screen.getByText('모바일 인덱스');
-		const heading = screen.getByRole('heading', { level: 2, name: '전체' });
+		const heading = screen.getByRole('heading', { level: 2, name: '챕터 제목' });
 		const feed = screen.getByTestId('feed-slot');
 
 		expect(toolbar.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(heading.compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(headingRenderMock).toHaveBeenCalledWith({
 			blogType: 'COLOG',
-			filter: { type: 'all' },
+			filter: { type: 'chapterId', chapterId: 3 },
 			initialIndexRequestFailed: true,
+		});
+		expect(feedRenderMock).toHaveBeenCalledWith({
+			slug: 'rilog-team',
+			blogType: 'COLOG',
+			filter: { type: 'chapterId', chapterId: 3 },
+			initialRequestFailed: true,
 		});
 	});
 });

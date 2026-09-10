@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
-import type { PostCategory, PostViewerPermissions } from '@/domains/post/model/post';
+import { POST_CATEGORY_OPTIONS, type PostCategory, type PostViewerPermissions } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
@@ -36,6 +36,8 @@ export default function PostDetailHeader({
 	author,
 	viewerPermissions,
 }: PostDetailHeaderProps) {
+	const categoryLabel = POST_CATEGORY_OPTIONS.find(({ value }) => value === category)?.label;
+
 	return (
 		<header className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 pt-12 pb-8 text-center sm:px-8 sm:pt-16 sm:pb-10 lg:px-0 lg:pt-20 lg:pb-10">
 			{publisher}
@@ -65,7 +67,7 @@ export default function PostDetailHeader({
 					<span>{author.nickname}</span>
 				</CustomLink>
 				<span aria-hidden="true">·</span>
-				<span>{category === 'IT' ? '기술' : '일상'}</span>
+				<span>{categoryLabel}</span>
 				{chapter && !publisher ? (
 					<>
 						<span aria-hidden="true">·</span>

@@ -25,7 +25,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
 	postTitle: '게시글 제목',
 	settings: {
-		category: 'IT',
+		category: 'TECH',
 		blog: { type: 'RILOG', slug: 'personal-blog' },
 		chapterId: null,
 		representativeImage: null,
@@ -198,13 +198,22 @@ describe('PublishSettingsModal', () => {
 	it('카테고리를 select에서 변경한다', async () => {
 		const user = userEvent.setup();
 		const handleCategoryChange = vi.fn();
-		renderModal({ onCategoryChange: handleCategoryChange });
+		const { rerender } = renderModal({ onCategoryChange: handleCategoryChange });
 
 		const categorySelect = screen.getByRole('combobox', { name: '카테고리' });
-		expect(categorySelect).toHaveDisplayValue('IT');
+		expect(categorySelect).toHaveDisplayValue('기술');
 
-		await user.selectOptions(categorySelect, 'DAILY');
-		expect(handleCategoryChange).toHaveBeenCalledWith('DAILY');
+		await user.selectOptions(categorySelect, 'RETROSPECT');
+		expect(handleCategoryChange).toHaveBeenCalledWith('RETROSPECT');
+
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{ ...DEFAULT_PROPS.settings, category: 'RETROSPECT' }}
+				onCategoryChange={handleCategoryChange}
+			/>,
+		);
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('회고');
 	});
 
 	it('발행할 블로그 유형을 radio로 선택한다', async () => {

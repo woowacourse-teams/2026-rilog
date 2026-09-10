@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 							postId: 1,
 							title: '사이드바 검증 게시글',
 							thumbnailImageUrl: null,
-							category: 'TECH',
+							category: '기술',
 							visibility: 'PUBLIC',
 							publishedAt: '2026-09-08T00:00:00',
 							author: { userId: 1, nickname: '테스터', slug: 'sidebar-user', profileImageUrl: null },

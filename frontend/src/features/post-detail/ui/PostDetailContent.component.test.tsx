@@ -79,7 +79,7 @@ describe('PostDetailContent', () => {
 				</div>
 			</div>
 		`;
-		render(<PostDetailContent html={html} postId={1} ownerType="RILOG" category="IT" />);
+		render(<PostDetailContent html={html} postId={1} ownerType="RILOG" category="TECH" />);
 
 		const diagram = await screen.findByRole('img', { name: 'Mermaid 다이어그램' });
 		expect(diagram.querySelector('svg')).toHaveTextContent('Rendered diagram');
@@ -88,7 +88,7 @@ describe('PostDetailContent', () => {
 
 	it('클릭과 키보드로 토글 상태와 접근성 속성을 동기화한다', async () => {
 		const user = userEvent.setup();
-		render(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="IT" />);
+		render(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="TECH" />);
 		const [outerToggle] = screen.getAllByRole('button', { name: '하위 내용 펼치기' });
 
 		await user.click(outerToggle);
@@ -106,13 +106,13 @@ describe('PostDetailContent', () => {
 
 	it('중첩 토글 상태를 독립적으로 유지하고 동일 HTML 재렌더에서 초기화하지 않는다', async () => {
 		const user = userEvent.setup();
-		const { rerender } = render(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="IT" />);
+		const { rerender } = render(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="TECH" />);
 		const [outerToggle, innerToggle] = screen.getAllByRole('button', { name: '하위 내용 펼치기' });
 
 		await user.click(outerToggle);
 		await user.click(innerToggle);
 		await user.click(screen.getByRole('button', { name: '다른 버튼' }));
-		rerender(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="IT" />);
+		rerender(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="TECH" />);
 		const [rerenderedOuterToggle, rerenderedInnerToggle] = screen.getAllByRole('button', { name: '하위 내용 접기' });
 
 		expect(rerenderedOuterToggle).toHaveAttribute('aria-expanded', 'true');
@@ -123,7 +123,7 @@ describe('PostDetailContent', () => {
 
 	it('다른 게시글로 전환하면 토글 상태를 초기화한다', async () => {
 		const user = userEvent.setup();
-		const { rerender } = render(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="IT" />);
+		const { rerender } = render(<PostDetailContent html={TOGGLE_HTML} postId={1} ownerType="RILOG" category="TECH" />);
 		const [outerToggle] = screen.getAllByRole('button', { name: '하위 내용 펼치기' });
 
 		await user.click(outerToggle);
@@ -168,13 +168,13 @@ describe('PostDetailContent', () => {
 	});
 
 	it('entry context가 없으면 direct로 조회 이벤트를 기록한다', () => {
-		render(<PostDetailContent html="<p>본문</p>" postId={102} ownerType="RILOG" category="IT" />);
+		render(<PostDetailContent html="<p>본문</p>" postId={102} ownerType="RILOG" category="TECH" />);
 
 		return waitFor(() => {
 			expect(postDetailViewedMock).toHaveBeenCalledWith({
 				postId: 102,
 				ownerType: 'RILOG',
-				category: 'IT',
+				category: 'TECH',
 				entrySource: 'direct',
 				feedPosition: null,
 			});
@@ -184,7 +184,7 @@ describe('PostDetailContent', () => {
 	it('Strict Mode 재마운트에서도 조회 이벤트를 중복 전송하지 않는다', () => {
 		render(
 			<StrictMode>
-				<PostDetailContent html="<p>본문</p>" postId={103} ownerType="RILOG" category="IT" />
+				<PostDetailContent html="<p>본문</p>" postId={103} ownerType="RILOG" category="TECH" />
 			</StrictMode>,
 		);
 
@@ -229,7 +229,7 @@ describe('PostDetailContent', () => {
 			};
 		});
 
-		render(<PostDetailContent html="<p>본문</p>" postId={104} ownerType="RILOG" category="IT" />);
+		render(<PostDetailContent html="<p>본문</p>" postId={104} ownerType="RILOG" category="TECH" />);
 
 		window.dispatchEvent(new Event('scroll'));
 		expect(postReadEngagedMock).not.toHaveBeenCalled();

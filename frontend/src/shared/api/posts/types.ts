@@ -1,8 +1,10 @@
 import type { Block } from '@blocknote/core';
 
+import type { PostCategory, PostCategoryLabel } from '@/domains/post/model/post';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
 
-export type PostCategoryRequest = 'TECH' | 'DAILY';
+export type PostCategoryRequest = PostCategory;
+export type PostCategoryResponse = PostCategoryLabel;
 export type PostVisibilityRequest = 'PUBLIC' | 'PRIVATE';
 
 export interface PostWriteRequest {
@@ -68,7 +70,7 @@ export interface PostDetailResponse {
 	content: unknown;
 	publishedAt: string;
 	thumbnailImageUrl: string | null;
-	category: string;
+	category: PostCategoryResponse;
 	chapter: ChapterResponse | null;
 	author: PostDetailAuthorResponse;
 	owner: PostDetailOwnerResponse;

@@ -20,7 +20,7 @@ export const mapChapterPostSuggestionsResponse = (
 			thumbnailUrl: post.thumbnailImageUrl,
 			author: {
 				slug: post.author.slug,
-				nickname: post.author.nickname || post.author.name || '알 수 없음',
+				nickname: post.author.nickname,
 			},
 		})),
 	};

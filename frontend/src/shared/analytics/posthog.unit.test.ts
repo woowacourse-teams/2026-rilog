@@ -173,7 +173,7 @@ describe('PostHog analytics', () => {
 			analytics.postPublished({
 				postId: '42',
 				ownerType: 'COLOG',
-				category: 'IT',
+				category: 'TECH',
 				cologId: 1,
 				imageSource: 'default',
 				blockCountBucket: '1-5',

@@ -9,20 +9,17 @@ const POST: PostItemResponse = {
 	postId: 1,
 	title: '코로그 기록',
 	thumbnailImageUrl: null,
-	category: 'IT',
+	category: '기술',
 	chapter: null,
 	visibility: 'PUBLIC',
 	publishedAt: '2026-09-08T00:00:00',
-	author: { userId: 10, name: '리로', slug: 'riro', profileImageUrl: null },
+	author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: null },
 	owner: {
 		type: 'COLOG',
 		blogId: 20,
 		name: '리로그 팀',
 		slug: 'rilog-team',
 		profileImageUrl: null,
-		coverImageUrl: null,
-		memberCount: 3,
-		postCount: 1,
 	},
 };
 
@@ -45,7 +42,47 @@ describe('mapPublicBlogPosts', () => {
 		};
 
 		expect(mapPublicBlogPosts(response, 0).items).toEqual([
-			expect.objectContaining({ chapterName: expectedName, categoryLabel: 'IT' }),
+			expect.objectContaining({ chapterName: expectedName, categoryLabel: '기술' }),
 		]);
+	});
+
+	it.each(['RILOG', 'COLOG'] as const)('%s owner를 공통 블로그 모델로 변환한다', (type) => {
+		const response: ApiResponse<PublicBlogFeedPostResponse> = {
+			status: 200,
+			message: 'OK',
+			data: {
+				type,
+				posts: [{ ...POST, owner: { ...POST.owner, type } }],
+				page: 0,
+				size: 12,
+				numberOfElements: 1,
+				hasNext: false,
+			},
+		};
+
+		expect(mapPublicBlogPosts(response, 0).items[0]?.blog).toEqual({
+			id: 20,
+			name: '리로그 팀',
+			slug: 'rilog-team',
+			type,
+			profileImageUrl: null,
+		});
+	});
+
+	it('nickname이 공백뿐인 계약 위반 게시글은 목록에서 제외한다', () => {
+		const response: ApiResponse<PublicBlogFeedPostResponse> = {
+			status: 200,
+			message: 'OK',
+			data: {
+				type: 'RILOG',
+				posts: [{ ...POST, author: { ...POST.author, nickname: '   ' } }],
+				page: 0,
+				size: 12,
+				numberOfElements: 1,
+				hasNext: false,
+			},
+		};
+
+		expect(mapPublicBlogPosts(response, 0).items).toEqual([]);
 	});
 });
