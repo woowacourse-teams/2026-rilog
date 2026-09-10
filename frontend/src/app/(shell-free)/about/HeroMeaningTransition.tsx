@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 
+import ChevronIcon from '@/shared/assets/icons/chevron.svg';
+
 import styles from './AboutPage.module.css';
 
 const clampProgress = (value: number) => Math.min(Math.max(value, 0), 1);
@@ -18,6 +20,7 @@ export default function HeroMeaningTransition() {
 	const continuationRef = useRef<HTMLSpanElement>(null);
 	const continuationTextRef = useRef<HTMLSpanElement>(null);
 	const meaningRef = useRef<HTMLParagraphElement>(null);
+	const scrollCueRef = useRef<HTMLSpanElement>(null);
 
 	useEffect(() => {
 		const sequence = sequenceRef.current;
@@ -25,8 +28,9 @@ export default function HeroMeaningTransition() {
 		const continuation = continuationRef.current;
 		const continuationText = continuationTextRef.current;
 		const meaning = meaningRef.current;
+		const scrollCue = scrollCueRef.current;
 
-		if (!sequence || !lockup || !continuation || !continuationText || !meaning) {
+		if (!sequence || !lockup || !continuation || !continuationText || !meaning || !scrollCue) {
 			return;
 		}
 
@@ -60,12 +64,14 @@ export default function HeroMeaningTransition() {
 			const progress = scrollDistance > 0 ? clampProgress(-sequence.getBoundingClientRect().top / scrollDistance) : 1;
 			const continuationProgress = smoothProgress(getRangeProgress(progress, 0.1, 0.62));
 			const meaningProgress = smoothProgress(getRangeProgress(progress, 0.6, 0.76));
+			const scrollCueProgress = smoothProgress(getRangeProgress(progress, 0, 0.12));
 
 			lockup.style.transform = `translate3d(${-targetHorizontalShift * continuationProgress}px, 0, 0)`;
 			continuation.style.width = `${continuationWidth * continuationProgress}px`;
 			continuation.style.opacity = String(getRangeProgress(progress, 0.08, 0.18));
 			meaning.style.opacity = String(meaningProgress);
 			meaning.style.transform = `translate3d(-50%, ${32 * (1 - meaningProgress)}px, 0)`;
+			scrollCue.style.opacity = String(1 - scrollCueProgress);
 		};
 
 		const requestRender = () => {
@@ -108,6 +114,9 @@ export default function HeroMeaningTransition() {
 					점은 끝이 아니라, 한 단계 더 깊이 들어가는 시작점입니다.
 				</p>
 			</section>
+			<span ref={scrollCueRef} className={styles.scrollCue} aria-hidden="true">
+				<ChevronIcon aria-hidden="true" focusable="false" />
+			</span>
 			<span id="meaning" className={styles.meaningAnchor} aria-hidden="true" />
 		</div>
 	);

@@ -122,6 +122,28 @@
 	height: 1px;
 }
 
+.scrollCue {
+	position: absolute;
+	z-index: 1;
+	top: calc(100dvh - clamp(4.5rem, 8vh, 6rem));
+	left: 50%;
+	display: grid;
+	width: 2.75rem;
+	height: 2.75rem;
+	place-items: center;
+	border-radius: 9999px;
+	color: var(--navy-900);
+	pointer-events: none;
+	transform: translateX(-50%);
+	will-change: opacity;
+}
+
+.scrollCue svg {
+	display: block;
+	width: 2rem;
+	height: 2rem;
+}
+
 .manifestoSection {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -554,6 +576,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+	.scrollCue svg {
+		animation: scroll-cue-bounce 1.6s ease-in-out infinite;
+	}
+
 	.closingActions a {
 		transition: color 160ms ease;
 	}
@@ -586,6 +612,17 @@
 	.page [data-about-reveal-visible='true'] {
 		opacity: 1;
 		transform: translate3d(0, 0, 0);
+	}
+
+	@keyframes scroll-cue-bounce {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+
+		50% {
+			transform: translateY(0.5rem);
+		}
 	}
 }
 
