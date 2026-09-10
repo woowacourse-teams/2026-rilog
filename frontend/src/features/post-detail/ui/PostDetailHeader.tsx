@@ -1,12 +1,8 @@
 import type { ReactNode } from 'react';
 
+import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
-import {
-	POST_CATEGORY_OPTIONS,
-	type PostCategory,
-	type PostDetailChapter,
-	type PostViewerPermissions,
-} from '@/domains/post/model/post';
+import { POST_CATEGORY_OPTIONS, type PostCategory, type PostViewerPermissions } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
@@ -23,7 +19,7 @@ interface PostDetailHeaderProps {
 	// description: string;
 	publishedAt: string;
 	category: PostCategory;
-	chapter: PostDetailChapter | null;
+	chapter: OrderedChapter | null;
 	author: User;
 	viewerPermissions: PostViewerPermissions;
 }
@@ -72,7 +68,7 @@ export default function PostDetailHeader({
 				</CustomLink>
 				<span aria-hidden="true">·</span>
 				<span>{categoryLabel}</span>
-				{chapter ? (
+				{chapter && !publisher ? (
 					<>
 						<span aria-hidden="true">·</span>
 						<span>{chapter.name}</span>

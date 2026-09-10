@@ -1,6 +1,6 @@
 'use client';
 
-import { CHAPTER_NAME_MAX_LENGTH, type Chapter } from '@/features/chapter-management/model/chapter';
+import { CHAPTER_NAME_MAX_LENGTH, type Chapter } from '@/domains/chapter/model/chapter';
 import Input from '@/shared/ui/input/Input';
 
 interface RilogSeriesRowProps {
@@ -30,8 +30,6 @@ export default function RilogSeriesRow({ series, isEditing = false, onNameChange
 					series.name
 				)}
 			</td>
-			{/* TODO: 챕터 조회 API가 게시글 수를 제공하면 셀을 다시 노출한다. */}
-			{/* <td className="px-2 py-3 text-label-1 text-text-secondary">{series.postCount}개</td> */}
 			<td className="py-3 pr-8 text-right">
 				{!isEditing && (
 					<button

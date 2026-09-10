@@ -1,19 +1,19 @@
 import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
+import type { SeriesChapter } from '@/features/post-detail/model/series';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
-
-import { MOCK_SERIES_CHAPTER } from '../model/series.mock';
 
 import styles from './SeriesAccordion.module.css';
 
 interface SeriesAccordionProps {
 	slug: string;
 	postId: number;
+	series: SeriesChapter;
 }
 
-export default function SeriesAccordion({ slug, postId }: SeriesAccordionProps) {
-	const { id, name, postCount, posts } = MOCK_SERIES_CHAPTER;
+export default function SeriesAccordion({ slug, postId, series }: SeriesAccordionProps) {
+	const { id, name, postCount, posts } = series;
 	const seriesHref = buildBlogHomeFilterHref(
 		buildBlogHomePath(slug),
 		'',

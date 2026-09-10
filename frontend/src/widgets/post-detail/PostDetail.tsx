@@ -8,7 +8,7 @@ import PostDetailAuthorProfileSmall from '@/features/post-detail/ui/PostDetailAu
 import PostDetailBlogProfile from '@/features/post-detail/ui/PostDetailBlogProfile';
 import PostDetailBlogProfileSection from '@/features/post-detail/ui/PostDetailBlogProfileSection';
 import PostDetailHeader from '@/features/post-detail/ui/PostDetailHeader';
-import SeriesAccordion from '@/features/post-detail/ui/SeriesAccordion';
+import SeriesAccordionSection from '@/features/post-detail/ui/SeriesAccordionSection';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
@@ -46,7 +46,19 @@ export default function PostDetail({ post }: PostDetailProps) {
 				beforeContent={
 					post.chapter ? (
 						<div className="mx-auto w-full max-w-[848px] px-5 sm:px-10">
-							<SeriesAccordion slug={post.blog.slug} postId={post.id} />
+							<Suspense
+								fallback={
+									<div
+										role="status"
+										aria-label="시리즈 로딩 중"
+										className="mt-5 border-y border-border-strong px-5 py-3 text-body-3 text-text-secondary sm:mt-10"
+									>
+										<div className="h-7 w-50 animate-pulse rounded bg-surface-active sm:w-100" />
+									</div>
+								}
+							>
+								<SeriesAccordionSection slug={post.blog.slug} postId={post.id} chapter={post.chapter} />
+							</Suspense>
 						</div>
 					) : null
 				}
@@ -101,7 +113,20 @@ export default function PostDetail({ post }: PostDetailProps) {
 			afterProfile={
 				post.chapter ? (
 					<div className="mt-20 sm:mt-24">
-						<ChapterPostSuggestionSection slug={post.blog.slug} />
+						<Suspense
+							fallback={
+								<div role="status" aria-label="챕터 게시글 추천 로딩 중">
+									<div className="h-5 w-40 animate-pulse rounded bg-surface-active" />
+									<div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+										{Array.from({ length: 3 }, (_, index) => (
+											<div key={index} className="aspect-video animate-pulse rounded-xl bg-surface-active" />
+										))}
+									</div>
+								</div>
+							}
+						>
+							<ChapterPostSuggestionSection slug={post.blog.slug} chapter={post.chapter} currentPostId={post.id} />
+						</Suspense>
 					</div>
 				) : null
 			}
