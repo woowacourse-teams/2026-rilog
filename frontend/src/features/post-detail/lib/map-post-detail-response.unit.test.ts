@@ -11,7 +11,7 @@ describe('mapPostDetailResponse', () => {
 			content: [{ id: '1', type: 'paragraph', props: {}, content: [], children: [] }],
 			publishedAt: '2026-08-17T04:30:00',
 			thumbnailImageUrl: null,
-			category: 'TECH',
+			category: '기술',
 			chapter: null,
 			author: {
 				userId: 7,
@@ -47,7 +47,7 @@ describe('mapPostDetailResponse', () => {
 		if (postDetail.blog.type === 'RILOG') {
 			expect(postDetail.blog.owner).toEqual(postDetail.author);
 		}
-		expect(postDetail.category).toBe('IT');
+		expect(postDetail.category).toBe('TECH');
 		expect(postDetail.viewerPermissions).toEqual({ canEdit: false, canDelete: false });
 	});
 
@@ -57,7 +57,7 @@ describe('mapPostDetailResponse', () => {
 			content: [],
 			publishedAt: '2026-08-17T04:40:00',
 			thumbnailImageUrl: 'https://images.rilog.test/cover.png',
-			category: 'DAILY',
+			category: '일상',
 			chapter: null,
 			author: {
 				userId: 7,

@@ -19,7 +19,7 @@ const paragraph: Block = {
 const createCommand = (): PublishPostCommand => ({
 	document: { title: '게시글 제목', blocks: [paragraph] },
 	settings: {
-		category: 'IT',
+		category: 'TECH',
 		blog: { type: 'RILOG', slug: 'rilog' },
 		chapterId: 12,
 		representativeImage: null,

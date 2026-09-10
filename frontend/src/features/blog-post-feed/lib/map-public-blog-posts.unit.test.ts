@@ -9,7 +9,7 @@ const POST: PostItemResponse = {
 	postId: 1,
 	title: '코로그 기록',
 	thumbnailImageUrl: null,
-	category: 'IT',
+	category: '기술',
 	chapter: null,
 	visibility: 'PUBLIC',
 	publishedAt: '2026-09-08T00:00:00',
@@ -45,7 +45,7 @@ describe('mapPublicBlogPosts', () => {
 		};
 
 		expect(mapPublicBlogPosts(response, 0).items).toEqual([
-			expect.objectContaining({ chapterName: expectedName, categoryLabel: 'IT' }),
+			expect.objectContaining({ chapterName: expectedName, categoryLabel: '기술' }),
 		]);
 	});
 });

@@ -1,9 +1,11 @@
 import type { Block } from '@blocknote/core';
 
 import type { Blog } from '@/domains/blog/model/blog';
-import type { PostCategory, PostDetail } from '@/domains/post/model/post';
+import type { PostDetail } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
+
+import { mapPostCategoryResponse } from './map-post-category-response';
 
 export const mapPostDetailResponse = (response: PostDetailResponse, postId?: number): PostDetail => {
 	const author: User = {
@@ -35,8 +37,6 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 					owner: author,
 				};
 
-	const category: PostCategory = response.category === 'DAILY' ? 'DAILY' : 'IT';
-
 	return {
 		id: postId ?? response.owner.blogId,
 		title: response.title,
@@ -44,7 +44,7 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 		publishedAt: response.publishedAt,
 		thumbnailUrl: response.thumbnailImageUrl ?? null,
 		author,
-		category,
+		category: mapPostCategoryResponse(response.category),
 		blog,
 		viewerPermissions: response.viewerPermissions,
 	};
