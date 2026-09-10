@@ -9,7 +9,7 @@ describe('SidebarBrand', () => {
 		const user = userEvent.setup();
 		render(<SidebarHeader />);
 
-		const brandLink = screen.getByRole('link');
+		const brandLink = screen.getByRole('link', { name: 'Rilog 메인으로 이동' });
 		expect(brandLink).toHaveAttribute('href', '/feeds');
 
 		const [collapsedBrand, expandedBrand] = brandLink.querySelectorAll('img');
@@ -22,5 +22,13 @@ describe('SidebarBrand', () => {
 
 		await user.tab();
 		expect(brandLink).toHaveFocus();
+	});
+
+	it('리로그 이야기 링크는 사이드바가 펼쳐질 때만 보이도록 제공한다', () => {
+		render(<SidebarHeader />);
+
+		const aboutLink = screen.getByRole('link', { name: 'Rilog. 이야기 ↗', hidden: true });
+
+		expect(aboutLink).toHaveClass('invisible', 'opacity-0', 'group-hover:visible', 'group-hover:opacity-100');
 	});
 });
