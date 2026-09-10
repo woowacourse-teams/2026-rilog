@@ -35,9 +35,7 @@ const readAllValues = (searchParams: FeedSearchParams | SearchParamsReader, name
 };
 
 const readFilterValue = <T extends string>(values: string[], allowedValues: readonly T[]): T | undefined =>
-	values.length === 1 && allowedValues.some((allowedValue) => allowedValue === values[0])
-		? (values[0] as T)
-		: undefined;
+	values.length === 1 ? allowedValues.find((allowedValue) => allowedValue === values[0]?.toUpperCase()) : undefined;
 
 export const parseFeedFilters = (searchParams: FeedSearchParams | SearchParamsReader): FullFeedPostsFilters => ({
 	blogType: readFilterValue(readAllValues(searchParams, BLOG_TYPE_PARAM), BLOG_TYPES),
@@ -71,10 +69,10 @@ export const buildFeedFilterHref = (searchParams: FeedSearchParams | SearchParam
 	currentSearchParams.delete(CATEGORY_PARAM);
 
 	if (nextFilters.blogType !== undefined) {
-		currentSearchParams.set(BLOG_TYPE_PARAM, nextFilters.blogType);
+		currentSearchParams.set(BLOG_TYPE_PARAM, nextFilters.blogType.toLowerCase());
 	}
 	if (nextFilters.category !== undefined) {
-		currentSearchParams.set(CATEGORY_PARAM, nextFilters.category);
+		currentSearchParams.set(CATEGORY_PARAM, nextFilters.category.toLowerCase());
 	}
 
 	const query = currentSearchParams.toString();

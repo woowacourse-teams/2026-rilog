@@ -209,11 +209,11 @@ test('피드 필터를 바꿔도 자동 스크롤이 완료된 위치를 유지�
 	});
 
 	await page.getByRole('link', { name: '일상', exact: true }).click();
-	await expect(page).toHaveURL(/category=DAILY/);
+	await expect(page).toHaveURL(/category=daily/);
 	await page.getByRole('link', { name: '개인', exact: true }).click();
-	await expect(page).toHaveURL(/blogType=RILOG/);
+	await expect(page).toHaveURL(/blogType=rilog/);
 	await page.getByRole('link', { name: 'Colog', exact: true }).click();
-	await expect(page).toHaveURL(/blogType=COLOG/);
+	await expect(page).toHaveURL(/blogType=colog/);
 	await page.waitForTimeout(1_200);
 
 	const scrollPositions = await page.evaluate(
