@@ -1,0 +1,591 @@
+.page {
+	--about-gutter: clamp(1.25rem, 4.2vw, 5rem);
+	--about-grid-gap: clamp(0.75rem, 1.3vw, 1.5rem);
+	min-width: 0;
+	overflow-x: clip;
+	background: var(--neutral-50);
+	color: var(--navy-900);
+}
+
+.manifestoSection h2 span {
+	color: var(--blue-600);
+}
+
+.manifestoSection h2,
+.intermission h2,
+.closingSection h2 {
+	font-family: var(--font-petit-formal-script), cursive;
+}
+
+.closingActions a:focus-visible {
+	border-radius: 0.125rem;
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 0.25rem;
+}
+
+.heroMeaningSequence {
+	position: relative;
+	height: 240dvh;
+}
+
+.hero {
+	position: sticky;
+	top: 0;
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	grid-template-rows: auto minmax(26rem, 1fr) auto;
+	column-gap: var(--about-grid-gap);
+	height: 100dvh;
+	min-height: max(43rem, 100dvh);
+	overflow: hidden;
+	padding: clamp(2rem, 4vw, 3.5rem) var(--about-gutter) clamp(2rem, 4vw, 3.5rem);
+}
+
+.heroIntroduction {
+	position: absolute;
+	bottom: clamp(3.5rem, 8vh, 6rem);
+	left: 50%;
+	width: min(calc(100% - 2 * var(--about-gutter)), 30rem);
+	margin: 0;
+	opacity: 0;
+	font-size: var(--text-body-1);
+	line-height: 1.6;
+	text-align: center;
+	transform: translate3d(-50%, 2.5rem, 0);
+	will-change: opacity, transform;
+}
+
+.heroIconHeading {
+	grid-column: 1 / -1;
+	display: flex;
+	align-self: center;
+	align-items: flex-end;
+	width: max-content;
+	margin: 0;
+	transform-origin: left center;
+	will-change: transform;
+}
+
+.heroIconHeading img {
+	display: block;
+	flex: none;
+	width: clamp(18rem, 54vw, 52rem);
+	height: auto;
+}
+
+.continuationClip {
+	display: block;
+	flex: none;
+	width: 0;
+	padding-bottom: clamp(0.5rem, 2vw, 2rem);
+	overflow: hidden;
+	opacity: 0;
+	will-change: width, opacity;
+}
+
+.continuationText {
+	display: block;
+	padding-right: 0.08em;
+	color: var(--navy-900);
+	font-size: clamp(7rem, 21.5vw, 20.5rem);
+	font-weight: 550;
+	line-height: 1;
+	letter-spacing: -0.065em;
+	white-space: nowrap;
+}
+
+.heroMeaningCopy {
+	position: absolute;
+	bottom: clamp(10rem, 22vh, 14rem);
+	left: 50%;
+	width: min(calc(100% - 2 * var(--about-gutter)), 46rem);
+	margin: 0;
+	opacity: 0;
+	font-size: clamp(1rem, 1.55vw, 1.5rem);
+	font-weight: 450;
+	line-height: 1.18;
+	letter-spacing: -0.04em;
+	text-align: center;
+	transform: translate3d(-50%, 2rem, 0);
+	will-change: opacity, transform;
+}
+
+.meaningAnchor {
+	position: absolute;
+	bottom: 100dvh;
+	left: 0;
+	width: 1px;
+	height: 1px;
+}
+
+.manifestoSection {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	align-items: start;
+	gap: var(--about-grid-gap);
+	min-height: 42rem;
+	padding: clamp(7rem, 14vw, 14rem) var(--about-gutter);
+}
+
+.manifestoOpening {
+	padding-top: clamp(14rem, 26vw, 26rem);
+}
+
+.manifestoSection h2 {
+	grid-column: 2 / 10;
+	margin: 0;
+	font-size: clamp(4.5rem, 11vw, 10.5rem);
+	font-weight: 400;
+	line-height: 0.92;
+	letter-spacing: -0.045em;
+}
+
+.manifestoSection > p {
+	grid-column: 10 / -1;
+	align-self: end;
+	max-width: 21rem;
+	margin: 0;
+	font-size: var(--text-body-1);
+	line-height: 1.65;
+}
+
+.manifestoReverse h2 {
+	grid-column: 5 / -1;
+	text-align: right;
+}
+
+.manifestoReverse > p {
+	grid-column: 1 / 5;
+	grid-row: 1;
+	justify-self: end;
+	text-align: right;
+}
+
+.productSection,
+.roadmapSection {
+	padding: clamp(7rem, 12vw, 12rem) var(--about-gutter);
+}
+
+.productSection {
+	padding-top: clamp(11rem, 18vw, 18rem);
+}
+
+.roadmapTransition {
+	width: 1px;
+	height: clamp(9rem, 14vw, 14rem);
+	margin: 0 auto clamp(8rem, 14vw, 14rem);
+	background: var(--navy-400);
+}
+
+.featureRow,
+.roadmapRow {
+	display: grid;
+	align-items: start;
+	column-gap: 1.5rem;
+	margin-bottom: clamp(10rem, 18vw, 18rem);
+}
+
+.featureRow {
+	grid-template-columns: minmax(14rem, 3fr) minmax(0, 9fr);
+}
+
+.roadmapRow {
+	grid-template-columns: minmax(14rem, 4fr) minmax(0, 8fr);
+}
+
+.featureCopy {
+	grid-column: 1;
+	justify-self: end;
+	max-width: 17rem;
+	text-align: right;
+}
+
+.featureCopy h3,
+.roadmapCopy h3 {
+	margin: 0 0 1.25rem;
+	font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+	font-weight: 700;
+	line-height: 1.08;
+	letter-spacing: -0.04em;
+}
+
+.featureCopy p,
+.roadmapCopy p {
+	margin: 0;
+	font-size: var(--text-body-1);
+	line-height: 1.65;
+}
+
+.featureMedia {
+	grid-column: 2;
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(6rem, 1fr);
+	align-items: start;
+	gap: 1.5rem;
+}
+
+.imagePlaceholder {
+	min-height: 24rem;
+	background-color: var(--navy-100);
+	background-image: repeating-linear-gradient(
+		135deg,
+		transparent 0,
+		transparent 0.75rem,
+		var(--navy-200) 0.75rem,
+		var(--navy-200) 0.8125rem
+	);
+	border: 1px solid var(--navy-400);
+}
+
+.featureImageLarge {
+	min-height: 34rem;
+}
+
+.featureImageSmall {
+	min-height: 12rem;
+}
+
+.featureRowReverse .featureMedia {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.featureRowReverse .featureCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.featureRowSingle .singleFeatureImage {
+	grid-column: 2;
+	min-height: 38rem;
+}
+
+.intermission {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	align-items: end;
+	gap: var(--about-grid-gap);
+	min-height: 48rem;
+	padding: clamp(5rem, 8vw, 8rem) var(--about-gutter);
+	background: var(--navy-900);
+	color: var(--text-on-dark);
+}
+
+.intermission h2 {
+	grid-column: 1 / 11;
+	align-self: center;
+	margin: 0;
+	font-size: clamp(4.5rem, 10vw, 9.5rem);
+	font-weight: 400;
+	line-height: 0.94;
+	letter-spacing: -0.045em;
+}
+
+.intermission h2 span {
+	color: var(--navy-400);
+}
+
+.intermission p {
+	grid-column: 9 / -1;
+	max-width: 21rem;
+	margin: 0;
+	color: var(--navy-300);
+	font-size: var(--text-body-1);
+	line-height: 1.65;
+	text-align: right;
+}
+
+.roadmapSection {
+	background: var(--navy-100);
+}
+
+.roadmapCopy {
+	grid-column: 1;
+	justify-self: end;
+	max-width: 18rem;
+	text-align: right;
+}
+
+.roadmapRow > .imagePlaceholder {
+	grid-column: 2;
+	min-height: 27rem;
+}
+
+.roadmapCompact {
+	grid-template-columns: minmax(0, 7fr) minmax(14rem, 3fr);
+	padding-left: 8.333%;
+}
+
+.roadmapCompact > .imagePlaceholder {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 17rem;
+}
+
+.roadmapCompact .roadmapCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.roadmapTall {
+	grid-template-columns: minmax(14rem, 3fr) minmax(0, 9fr);
+}
+
+.roadmapTall .roadmapCopy {
+	grid-column: 1;
+}
+
+.roadmapTall > .imagePlaceholder {
+	grid-column: 2;
+	min-height: 35rem;
+}
+
+.roadmapWide {
+	grid-template-columns: minmax(0, 8fr) minmax(14rem, 4fr);
+}
+
+.roadmapWide > .imagePlaceholder {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 23rem;
+}
+
+.roadmapWide .roadmapCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.roadmapInset {
+	grid-template-columns: minmax(14rem, 3fr) minmax(0, 5fr);
+	padding-inline: 8.333%;
+}
+
+.roadmapInset .roadmapCopy {
+	grid-column: 1;
+}
+
+.roadmapInset > .imagePlaceholder {
+	grid-column: 2;
+	min-height: 19rem;
+}
+
+.roadmapLast {
+	grid-template-columns: minmax(0, 8fr) minmax(14rem, 4fr);
+}
+
+.roadmapLast > .imagePlaceholder {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 30rem;
+}
+
+.roadmapLast .roadmapCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.closingSection {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	grid-template-rows: 1fr auto;
+	align-items: end;
+	gap: var(--about-grid-gap);
+	min-height: 100dvh;
+	padding: clamp(5rem, 8vw, 8rem) var(--about-gutter) 2.5rem;
+	background: var(--brand-primary);
+	color: var(--white);
+}
+
+.closingSection h2 {
+	grid-column: 1 / 11;
+	align-self: center;
+	margin: 0;
+	font-size: clamp(4.5rem, 10vw, 9.5rem);
+	font-weight: 400;
+	line-height: 0.94;
+	letter-spacing: -0.045em;
+}
+
+.closingSection h2 span {
+	color: var(--navy-200);
+}
+
+.closingActions {
+	grid-column: 8 / -1;
+	display: grid;
+	align-self: end;
+}
+
+.closingActions a {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 3.5rem;
+	border-top: 1px solid color-mix(in srgb, var(--white) 65%, transparent);
+	color: inherit;
+	font-size: var(--text-body-2);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.closingActions a:hover,
+.closingActions a:active {
+	color: var(--focus-ring);
+}
+
+@media (width < 48rem) {
+	.hero {
+		grid-template-rows: auto minmax(21rem, 1fr) auto;
+		min-height: max(40rem, 100dvh);
+	}
+
+	.heroIntroduction {
+		bottom: clamp(3rem, 8vh, 5rem);
+		width: min(calc(100% - 2 * var(--about-gutter)), 24rem);
+	}
+
+	.heroIconHeading img {
+		width: clamp(15rem, 72vw, 22rem);
+	}
+
+	.continuationClip {
+		padding-bottom: clamp(0.4rem, 2vw, 0.75rem);
+	}
+
+	.continuationText {
+		font-size: clamp(5.5rem, 22vw, 7.5rem);
+	}
+
+	.heroMeaningCopy {
+		bottom: clamp(9rem, 24vh, 12rem);
+		font-size: clamp(1rem, 4vw, 1.125rem);
+	}
+
+	.manifestoSection {
+		min-height: 36rem;
+	}
+
+	.manifestoSection h2,
+	.manifestoReverse h2 {
+		grid-column: 1 / -1;
+		text-align: left;
+	}
+
+	.manifestoSection > p,
+	.manifestoReverse > p {
+		grid-column: 4 / -1;
+		grid-row: auto;
+		justify-self: start;
+		text-align: left;
+	}
+
+	.featureRow,
+	.roadmapRow {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		padding-inline: 0;
+	}
+
+	.featureCopy,
+	.featureRowReverse .featureCopy,
+	.roadmapCopy,
+	.roadmapCompact .roadmapCopy,
+	.roadmapWide .roadmapCopy,
+	.roadmapLast .roadmapCopy {
+		order: 1;
+		align-self: flex-start;
+		justify-self: start;
+		max-width: 22rem;
+		text-align: left;
+	}
+
+	.featureMedia,
+	.featureRowReverse .featureMedia,
+	.featureRowSingle .singleFeatureImage,
+	.roadmapRow > .imagePlaceholder {
+		order: 2;
+		width: 100%;
+	}
+
+	.featureImageLarge {
+		min-height: 24rem;
+	}
+
+	.featureImageSmall {
+		min-height: 9rem;
+	}
+
+	.featureRowSingle .singleFeatureImage,
+	.roadmapTall > .imagePlaceholder,
+	.roadmapLast > .imagePlaceholder {
+		min-height: 26rem;
+	}
+
+	.roadmapCompact > .imagePlaceholder,
+	.roadmapInset > .imagePlaceholder {
+		width: 82%;
+		min-height: 17rem;
+	}
+
+	.intermission {
+		display: flex;
+		min-height: 42rem;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.intermission p {
+		align-self: flex-end;
+	}
+
+	.closingSection {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.closingActions {
+		width: min(100%, 23rem);
+		align-self: flex-end;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.closingActions a {
+		transition: color 160ms ease;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.heroMeaningSequence {
+		height: auto;
+	}
+
+	.hero {
+		position: relative;
+	}
+
+	.continuationClip {
+		width: auto;
+		opacity: 1;
+	}
+
+	.heroMeaningCopy {
+		opacity: 1;
+		transform: translate3d(-50%, 0, 0);
+	}
+
+	.heroIntroduction {
+		opacity: 1;
+		transform: translate3d(-50%, 0, 0);
+	}
+}
