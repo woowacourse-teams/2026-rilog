@@ -215,7 +215,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		content: POST_DETAIL_READABILITY_CONTENT,
 		publishedAt: '2024-05-20T09:00:00+09:00',
 		thumbnailUrl: null,
-		category: 'IT',
+		category: 'TECH',
 		chapter: { id: 1, name: '프론트엔드', order: 1 },
 		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {
@@ -245,7 +245,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		content: cologPostContent,
 		publishedAt: '2024-06-03T11:30:00+09:00',
 		thumbnailUrl: '/images/default-post-cover.svg',
-		category: 'IT',
+		category: 'TECH',
 		chapter: null,
 		viewerPermissions: { canEdit: true, canDelete: true },
 		author: {

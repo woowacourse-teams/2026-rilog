@@ -43,7 +43,7 @@ describe('analytics events', () => {
 			postId: '12',
 			ownerType: 'COLOG',
 			cologId: 3,
-			category: 'IT',
+			category: 'TECH',
 			imageSource: 'body',
 			blockCountBucket: '1-5',
 		});
@@ -79,7 +79,7 @@ describe('analytics events', () => {
 			postId: '77',
 			ownerType: 'RILOG',
 			cologId: null,
-			category: 'IT',
+			category: 'TECH',
 			imageSource: 'default',
 			blockCountBucket: '1-5',
 		});
@@ -88,7 +88,7 @@ describe('analytics events', () => {
 			post_id: '77',
 			owner_type: 'RILOG',
 			colog_id: null,
-			category: 'IT',
+			category: 'TECH',
 			image_source: 'default',
 			block_count_bucket: '1-5',
 		});

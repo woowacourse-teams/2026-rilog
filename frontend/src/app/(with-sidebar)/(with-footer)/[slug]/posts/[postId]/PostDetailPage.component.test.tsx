@@ -32,7 +32,7 @@ const POST_DETAIL: PostDetail = {
 	content: [],
 	publishedAt: '2026-09-01T00:00:00+09:00',
 	thumbnailUrl: null,
-	category: 'IT',
+	category: 'TECH',
 	chapter: { id: 3, name: '프론트엔드', order: 1 },
 	viewerPermissions: { canEdit: true, canDelete: true },
 	author: {

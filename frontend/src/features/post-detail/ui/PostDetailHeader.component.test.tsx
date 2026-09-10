@@ -24,7 +24,7 @@ describe('PostDetailHeader', () => {
 				slug="riloger"
 				title="컴포넌트 시스템, 이렇게 도입했어요"
 				publishedAt="2026-09-08T10:00:00+09:00"
-				category="IT"
+				category="TECH"
 				chapter={{ id: 3, name: '프론트엔드', order: 1 }}
 				author={AUTHOR}
 				viewerPermissions={{ canEdit: true, canDelete: true }}
@@ -58,6 +58,23 @@ describe('PostDetailHeader', () => {
 		expect(screen.queryByText('프론트엔드')).not.toBeInTheDocument();
 	});
 
+	it('회고 카테고리를 표시한다', () => {
+		render(
+			<PostDetailHeader
+				postId={31}
+				slug="riloger"
+				title="스프린트 회고"
+				publishedAt="2026-09-08T10:00:00+09:00"
+				category="RETROSPECT"
+				chapter={null}
+				author={AUTHOR}
+				viewerPermissions={{ canEdit: false, canDelete: false }}
+			/>,
+		);
+
+		expect(screen.getByText('회고')).toBeInTheDocument();
+	});
+
 	it('publisher를 제목 위에 표시한다', () => {
 		render(
 			<PostDetailHeader
@@ -66,7 +83,7 @@ describe('PostDetailHeader', () => {
 				slug="rilog-team"
 				title="팀이 함께 작성한 글"
 				publishedAt="2026-09-08T10:00:00+09:00"
-				category="IT"
+				category="TECH"
 				chapter={null}
 				author={AUTHOR}
 				viewerPermissions={{ canEdit: false, canDelete: false }}

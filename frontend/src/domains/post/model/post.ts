@@ -6,11 +6,13 @@ import type { User } from '@/domains/user/model/user';
 export const POST_TITLE_MAX_LENGTH = 512;
 
 export const POST_CATEGORY_OPTIONS = [
-	{ value: 'IT', label: 'IT' },
+	{ value: 'TECH', label: '기술' },
 	{ value: 'DAILY', label: '일상' },
+	{ value: 'RETROSPECT', label: '회고' },
 ] as const;
 
 export type PostCategory = (typeof POST_CATEGORY_OPTIONS)[number]['value'];
+export type PostCategoryLabel = (typeof POST_CATEGORY_OPTIONS)[number]['label'];
 
 export interface PostSummary {
 	id: number;

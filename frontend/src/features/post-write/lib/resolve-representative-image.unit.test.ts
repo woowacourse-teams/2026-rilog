@@ -64,7 +64,7 @@ describe('resolveRepresentativeImageSource', () => {
 		expect(
 			resolveRepresentativeImageSource(
 				{
-					category: 'IT',
+					category: 'TECH',
 					blog: { type: 'RILOG', slug: 'rilog' },
 					chapterId: null,
 					representativeImage: null,

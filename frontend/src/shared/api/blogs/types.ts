@@ -1,4 +1,5 @@
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { PostCategoryResponse } from '@/shared/api/posts/types';
 
 export interface BlogProfileUpdateRequest {
 	name: string;
@@ -96,7 +97,7 @@ export interface PostItemResponse {
 	postId: number;
 	title: string;
 	thumbnailImageUrl: string | null;
-	category: string;
+	category: PostCategoryResponse;
 	chapter: ChapterResponse | null;
 	visibility: string;
 	publishedAt: string;

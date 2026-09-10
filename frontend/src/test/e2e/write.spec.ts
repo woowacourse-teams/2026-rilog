@@ -238,7 +238,7 @@ test.describe('글 작성', () => {
 						],
 						publishedAt: '2026-08-24T00:00:00Z',
 						thumbnailImageUrl: 'posts/edit-thumbnail.png',
-						category: 'DAILY',
+						category: '일상',
 						author: { userId: 1, nickname: 'E2E 사용자', slug: 'e2e-user', profileImageUrl: null },
 						owner: {
 							type: 'RILOG',
@@ -258,9 +258,8 @@ test.describe('글 작성', () => {
 		await expect(page.getByRole('textbox', { name: '게시글 내용' })).toContainText('불러온 게시글 본문');
 		await page.getByRole('textbox', { name: '게시글 제목' }).fill('불러온 게시글 제목 수정');
 		await page.getByRole('button', { name: '수정' }).click();
-		await expect(page.getByRole('radio', { name: '일상' })).toBeChecked();
-		await expect(page.getByRole('combobox', { name: 'Colog' })).toHaveValue('1');
-		await expect(page.getByRole('option', { name: 'E2E 사용자' })).toHaveCount(1);
+		await expect(page.getByRole('combobox', { name: '카테고리' })).toHaveValue('DAILY');
+		await expect(page.getByRole('radio', { name: '개인' })).toBeChecked();
 		await expect(page.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			/posts\/edit-thumbnail\.png$/,

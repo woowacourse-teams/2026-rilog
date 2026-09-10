@@ -36,7 +36,7 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	postId: post.id,
 	title: post.title,
 	thumbnailImageUrl: post.thumbnailUrl ?? null,
-	category: 'TECH',
+	category: '기술',
 	visibility: 'PUBLIC',
 	publishedAt: post.publishedAt,
 	author: {

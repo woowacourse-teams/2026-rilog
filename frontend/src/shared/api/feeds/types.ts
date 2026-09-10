@@ -1,5 +1,6 @@
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
+import type { PostCategoryResponse } from '@/shared/api/posts/types';
 
 export interface FullFeedPostsRequest {
 	page: number;
@@ -40,7 +41,7 @@ export interface PostItemResponse {
 	postId: number;
 	title: string;
 	thumbnailImageUrl: string | null;
-	category: string;
+	category: PostCategoryResponse;
 	visibility: string;
 	publishedAt: string;
 	author: AuthorResponse;

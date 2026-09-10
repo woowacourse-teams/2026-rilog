@@ -19,7 +19,7 @@ const paragraph: Block = {
 const createCommand = (): PublishPostCommand => ({
 	document: { title: '게시글 제목', blocks: [paragraph] },
 	settings: {
-		category: 'IT',
+		category: 'TECH',
 		blog: { type: 'RILOG', slug: 'rilog' },
 		chapterId: 12,
 		representativeImage: null,
@@ -43,6 +43,15 @@ describe('buildPostWriteRequest', () => {
 			chapterId: 12,
 		});
 		expect(uploadRepresentativeImage).not.toHaveBeenCalled();
+	});
+
+	it('회고 카테고리를 게시글 API 요청에 보존한다', async () => {
+		const command = createCommand();
+		command.settings.category = 'RETROSPECT';
+
+		const request = await buildPostWriteRequest(command, vi.fn());
+
+		expect(request.category).toBe('RETROSPECT');
 	});
 
 	it('선택한 대표 이미지를 업로드한 object key를 요청에 사용한다', async () => {
