@@ -5,7 +5,11 @@ import { APP_ROUTES } from '@/shared/routes/app-routes';
 
 const BLOG_TYPE_PARAM = 'blogType';
 const CATEGORY_PARAM = 'category';
-const BLOG_TYPES = ['RILOG', 'COLOG'] as const satisfies readonly BlogType[];
+const BLOG_TYPE_URL_VALUES: Readonly<Record<string, BlogType>> = {
+	personal: 'RILOG',
+	rilog: 'RILOG',
+	colog: 'COLOG',
+};
 const CATEGORIES = POST_CATEGORY_OPTIONS.map(({ value }) => value);
 
 export type FeedSearchParams = Record<string, string | readonly string[] | undefined>;
@@ -37,8 +41,11 @@ const readAllValues = (searchParams: FeedSearchParams | SearchParamsReader, name
 const readFilterValue = <T extends string>(values: string[], allowedValues: readonly T[]): T | undefined =>
 	values.length === 1 ? allowedValues.find((allowedValue) => allowedValue === values[0]?.toUpperCase()) : undefined;
 
+const readBlogTypeFilter = (values: string[]): BlogType | undefined =>
+	values.length === 1 ? BLOG_TYPE_URL_VALUES[values[0]?.toLowerCase() ?? ''] : undefined;
+
 export const parseFeedFilters = (searchParams: FeedSearchParams | SearchParamsReader): FullFeedPostsFilters => ({
-	blogType: readFilterValue(readAllValues(searchParams, BLOG_TYPE_PARAM), BLOG_TYPES),
+	blogType: readBlogTypeFilter(readAllValues(searchParams, BLOG_TYPE_PARAM)),
 	category: readFilterValue(readAllValues(searchParams, CATEGORY_PARAM), CATEGORIES),
 });
 
@@ -69,7 +76,7 @@ export const buildFeedFilterHref = (searchParams: FeedSearchParams | SearchParam
 	currentSearchParams.delete(CATEGORY_PARAM);
 
 	if (nextFilters.blogType !== undefined) {
-		currentSearchParams.set(BLOG_TYPE_PARAM, nextFilters.blogType.toLowerCase());
+		currentSearchParams.set(BLOG_TYPE_PARAM, nextFilters.blogType === 'RILOG' ? 'personal' : 'colog');
 	}
 	if (nextFilters.category !== undefined) {
 		currentSearchParams.set(CATEGORY_PARAM, nextFilters.category.toLowerCase());

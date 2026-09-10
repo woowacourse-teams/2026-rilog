@@ -41,7 +41,7 @@ export default async function FeedsPage({ searchParams }: FeedsPageProps) {
 		<main className="min-h-screen">
 			<AccessFeedback isOpen={isAuthRequired} reason="auth-required" redirectPath={APP_ROUTES.feeds} />
 			{!isAuthRequired && <ReleaseNoteModal />}
-			<PostFeed filters={filters} searchParams={query} />
+			<PostFeed filters={filters} />
 		</main>
 	);
 }

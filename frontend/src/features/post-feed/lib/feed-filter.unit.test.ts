@@ -5,7 +5,7 @@ import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import { buildFeedFilterHref, parseFeedFilters } from './feed-filter';
 
 const CATEGORIES = [undefined, 'tech', 'daily', 'retrospect'] as const;
-const BLOG_TYPES = [undefined, 'rilog', 'colog'] as const;
+const BLOG_TYPES = [undefined, 'personal', 'colog'] as const;
 
 describe('parseFeedFilters', () => {
 	it.each(
@@ -22,12 +22,12 @@ describe('parseFeedFilters', () => {
 
 		expect(parseFeedFilters(searchParams)).toEqual({
 			category: category?.toUpperCase(),
-			blogType: blogType?.toUpperCase(),
+			blogType: blogType === 'personal' ? 'RILOG' : blogType?.toUpperCase(),
 		});
 	});
 
-	it('기존 대문자 URL도 내부 enum으로 해석한다', () => {
-		expect(parseFeedFilters(new URLSearchParams('category=TECH&blogType=RILOG'))).toEqual({
+	it.each(['RILOG', 'rilog'] as const)('기존 blogType=%s URL도 내부 enum으로 해석한다', (blogType) => {
+		expect(parseFeedFilters(new URLSearchParams(`category=TECH&blogType=${blogType}`))).toEqual({
 			category: 'TECH',
 			blogType: 'RILOG',
 		});
@@ -52,7 +52,7 @@ describe('buildFeedFilterHref', () => {
 
 	it('블로그 유형만 바꿀 때 category와 notice를 유지한다', () => {
 		expect(
-			buildFeedFilterHref(new URLSearchParams('blogType=rilog&category=retrospect&notice=auth-required'), {
+			buildFeedFilterHref(new URLSearchParams('blogType=personal&category=retrospect&notice=auth-required'), {
 				blogType: 'COLOG',
 			}),
 		).toBe('/feeds?notice=auth-required&blogType=colog&category=retrospect');
@@ -65,14 +65,16 @@ describe('buildFeedFilterHref', () => {
 			notice: 'auth-required',
 		};
 
-		expect(buildFeedFilterHref(searchParams, { blogType: 'RILOG' })).toBe('/feeds?notice=auth-required&blogType=rilog');
+		expect(buildFeedFilterHref(searchParams, { blogType: 'RILOG' })).toBe(
+			'/feeds?notice=auth-required&blogType=personal',
+		);
 	});
 
 	it('한 축의 전체 선택은 해당 축만 제거한다', () => {
-		const filters: FullFeedPostsFilters = parseFeedFilters(new URLSearchParams('blogType=rilog&category=tech'));
+		const filters: FullFeedPostsFilters = parseFeedFilters(new URLSearchParams('blogType=personal&category=tech'));
 
 		expect(
 			buildFeedFilterHref({ blogType: filters.blogType, category: filters.category }, { category: undefined }),
-		).toBe('/feeds?blogType=rilog');
+		).toBe('/feeds?blogType=personal');
 	});
 });

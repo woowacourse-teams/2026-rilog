@@ -20,6 +20,7 @@ describe('fullFeedPostsQueryOptions', () => {
 
 		expect(options.queryKey).toEqual(feedsQueryKeys.fullFeedPosts({ size: 12, category: 'DAILY', blogType: 'COLOG' }));
 		expect(options.initialPageParam).toBe(0);
+		expect(options.staleTime).toBe(60_000);
 
 		await options.queryFn?.({ pageParam: 0 } as never);
 		expect(readFullFeedPosts).toHaveBeenCalledWith({
