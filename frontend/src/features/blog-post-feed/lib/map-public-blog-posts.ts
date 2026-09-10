@@ -5,7 +5,7 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 
 const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 	const { author, owner, postId, publishedAt, thumbnailImageUrl, title, chapter, category } = post;
-	const authorName = author?.nickname || author?.name || null;
+	const authorName = author?.nickname?.trim() || null;
 
 	if (
 		postId === undefined ||
@@ -19,22 +19,13 @@ const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 		return null;
 	}
 
-	const blog: BaseBlog =
-		owner.type === 'COLOG'
-			? {
-					id: owner.blogId ?? 0,
-					name: owner.name,
-					slug: owner.slug,
-					type: 'COLOG',
-					profileImageUrl: owner.profileImageUrl || null,
-				}
-			: {
-					id: owner.blogId ?? 0,
-					name: owner.name,
-					slug: owner.slug,
-					type: 'RILOG',
-					profileImageUrl: owner.profileImageUrl || null,
-				};
+	const blog: BaseBlog = {
+		id: owner.blogId ?? 0,
+		name: owner.name,
+		slug: owner.slug,
+		type: owner.type,
+		profileImageUrl: owner.profileImageUrl || null,
+	};
 
 	return {
 		id: postId,

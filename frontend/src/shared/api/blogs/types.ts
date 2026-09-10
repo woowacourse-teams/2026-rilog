@@ -12,33 +12,18 @@ export interface BlogProfileUpdateRequest {
 
 export interface AuthorResponse {
 	userId: number;
-	name?: string;
-	nickname?: string;
+	nickname: string;
 	slug: string;
 	profileImageUrl: string | null;
 }
 
-interface BaseOwnerResponse {
+export interface OwnerResponse {
 	type: BlogType;
 	blogId: number;
 	slug: string;
 	name: string;
-}
-
-export interface RilogOwnerResponse extends BaseOwnerResponse {
-	type: 'RILOG';
 	profileImageUrl: string | null;
 }
-
-export interface CologOwnerResponse extends BaseOwnerResponse {
-	type: 'COLOG';
-	profileImageUrl: string | null;
-	coverImageUrl: string | null;
-	memberCount: number;
-	postCount: number;
-}
-
-export type PostOwnerResponse = RilogOwnerResponse | CologOwnerResponse;
 
 export interface BlogPublicProfileResponse {
 	type: BlogType;
@@ -102,7 +87,7 @@ export interface PostItemResponse {
 	visibility: string;
 	publishedAt: string;
 	author: AuthorResponse;
-	owner: PostOwnerResponse;
+	owner: OwnerResponse;
 }
 
 export interface PublicBlogFeedPostResponse {
