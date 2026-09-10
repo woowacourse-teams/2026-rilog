@@ -7,6 +7,7 @@ import { APP_ROUTES } from '@/shared/routes/app-routes';
 import { createSocialMetadata, DEFAULT_OG_IMAGE, SITE_NAME } from '@/shared/seo/create-social-metadata';
 
 import styles from './AboutPage.module.css';
+import AboutViewportReveal from './AboutViewportReveal';
 import HeroMeaningTransition from './HeroMeaningTransition';
 
 const ABOUT_DESCRIPTION =
@@ -34,22 +35,35 @@ export const metadata: Metadata = {
 	}),
 };
 
-function ImagePlaceholder({ label, className = '' }: Readonly<{ label: string; className?: string }>) {
-	return <div className={`${styles.imagePlaceholder} ${className}`} role="img" aria-label={label} />;
+function ImagePlaceholder({
+	label,
+	className = '',
+	staggered = false,
+}: Readonly<{ label: string; className?: string; staggered?: boolean }>) {
+	return (
+		<div
+			className={`${styles.imagePlaceholder} ${className}`}
+			role="img"
+			aria-label={label}
+			data-about-reveal="media"
+			data-about-reveal-delay={staggered ? 'staggered' : undefined}
+		/>
+	);
 }
 
 export default function AboutPage() {
 	return (
 		<main className={`${styles.page} ${cormorantGaramond.variable}`}>
+			<AboutViewportReveal />
 			<HeroMeaningTransition />
 
 			<section className={`${styles.manifestoSection} ${styles.manifestoOpening}`}>
-				<h2>
+				<h2 data-about-reveal="copy">
 					Write
 					<br />
 					deeper<span>.</span>
 				</h2>
-				<p>
+				<p data-about-reveal="copy" data-about-reveal-delay="staggered">
 					코드에서 점(.)을 통해 객체의 내부로 들어가듯,
 					<br />
 					Rilog.라는 공간 안에서 각자의 블로그는 하나의 객체가 됩니다.
@@ -59,12 +73,12 @@ export default function AboutPage() {
 			</section>
 
 			<section className={`${styles.manifestoSection} ${styles.manifestoReverse}`}>
-				<h2>
+				<h2 data-about-reveal="copy">
 					Grow
 					<br />
 					together<span>.</span>
 				</h2>
-				<p>
+				<p data-about-reveal="copy" data-about-reveal-delay="staggered">
 					하나의 개인으로서 그리고 내가 속한 집단으로서 함께하세요.
 					<br />
 					<br />
@@ -77,7 +91,7 @@ export default function AboutPage() {
 
 			<section className={styles.productSection} aria-label="현재 기능">
 				<article className={`${styles.featureRow} ${styles.featureRowSingle}`}>
-					<div className={styles.featureCopy}>
+					<div className={styles.featureCopy} data-about-reveal="copy">
 						<h3>집중해서 쓰는 공간.</h3>
 						<p>
 							생각의 흐름을 방해하지 않는 에디터에서
@@ -89,7 +103,7 @@ export default function AboutPage() {
 				</article>
 
 				<article className={styles.featureRow}>
-					<div className={styles.featureCopy}>
+					<div className={styles.featureCopy} data-about-reveal="copy">
 						<h3>
 							나만의 기록이
 							<br />
@@ -105,12 +119,12 @@ export default function AboutPage() {
 					</div>
 					<div className={styles.featureMedia}>
 						<ImagePlaceholder label="Rilog 개인 블로그 전체 화면 이미지 자리" className={styles.featureImageLarge} />
-						<ImagePlaceholder label="Rilog 프로필 상세 이미지 자리" className={styles.featureImageSmall} />
+						<ImagePlaceholder label="Rilog 프로필 상세 이미지 자리" className={styles.featureImageSmall} staggered />
 					</div>
 				</article>
 
 				<article className={`${styles.featureRow} ${styles.featureRowLandscapeStack}`}>
-					<div className={styles.featureCopy}>
+					<div className={styles.featureCopy} data-about-reveal="copy">
 						<h3>
 							함께 쓰며
 							<br />
@@ -126,19 +140,23 @@ export default function AboutPage() {
 						</p>
 					</div>
 					<div className={styles.featureMedia}>
-						<ImagePlaceholder label="Rilog Colog 전체 화면 이미지 자리" className={styles.featureImageLarge} />
+						<ImagePlaceholder
+							label="Rilog Colog 전체 화면 이미지 자리"
+							className={styles.featureImageLarge}
+							staggered
+						/>
 						<ImagePlaceholder label="Rilog Colog 전체 화면 이미지 자리" className={styles.featureImageLarge} />
 					</div>
 				</article>
 			</section>
 
 			<section className={styles.intermission}>
-				<h2>
+				<h2 data-about-reveal="copy">
 					Writing doesn&apos;t
 					<br />
 					end at publishing<span>.</span>
 				</h2>
-				<p>
+				<p data-about-reveal="copy" data-about-reveal-delay="staggered">
 					기록을 발견하고, 나누고, 돌아보고, 자유롭게 옮길 수 있도록
 					<br />
 					Rilog.의 다음 장을 만들고 있습니다.
@@ -149,10 +167,10 @@ export default function AboutPage() {
 			</section>
 
 			<section className={styles.roadmapSection} aria-label="업데이트 예정 기능">
-				<div className={styles.roadmapTransition} aria-hidden="true" />
+				<div className={styles.roadmapTransition} aria-hidden="true" data-about-reveal="line" />
 
 				<article className={styles.roadmapRow}>
-					<div className={styles.roadmapCopy}>
+					<div className={styles.roadmapCopy} data-about-reveal="copy">
 						<h3>
 							반응하고, 구독하고,
 							<br />
@@ -170,7 +188,7 @@ export default function AboutPage() {
 
 				<article className={`${styles.roadmapRow} ${styles.roadmapCompact}`}>
 					<ImagePlaceholder label="게시글과 블로그 통합 검색 화면 이미지 자리" />
-					<div className={styles.roadmapCopy}>
+					<div className={styles.roadmapCopy} data-about-reveal="copy">
 						<h3>
 							필요한 기록을
 							<br />
@@ -185,7 +203,7 @@ export default function AboutPage() {
 				</article>
 
 				<article className={`${styles.roadmapRow} ${styles.roadmapWide}`}>
-					<div className={styles.roadmapCopy}>
+					<div className={styles.roadmapCopy} data-about-reveal="copy">
 						<h3>
 							내 기록이 어떻게
 							<br />
@@ -201,7 +219,7 @@ export default function AboutPage() {
 
 				<article className={`${styles.roadmapRow} ${styles.roadmapInset}`}>
 					<ImagePlaceholder label="RSS XML 파일 가져오기 화면 이미지 자리" />
-					<div className={styles.roadmapCopy}>
+					<div className={styles.roadmapCopy} data-about-reveal="copy">
 						<h3>기존 기록을 가볍게 옮기기.</h3>
 						<p>
 							RSS를 활용해 기존 블로그 글을 가져오고
@@ -212,7 +230,7 @@ export default function AboutPage() {
 				</article>
 
 				<article className={`${styles.roadmapRow} ${styles.roadmapLast}`}>
-					<div className={styles.roadmapCopy}>
+					<div className={styles.roadmapCopy} data-about-reveal="copy">
 						<h3>어디서든 바로 발행하기.</h3>
 						<p>
 							게시글 발행 MCP를 통해 외부 도구에서도
@@ -225,7 +243,7 @@ export default function AboutPage() {
 
 				<article className={`${styles.roadmapRow} ${styles.roadmapTall}`}>
 					<ImagePlaceholder label="다크 모드 메인 피드 이미지 자리" />
-					<div className={styles.roadmapCopy}>
+					<div className={styles.roadmapCopy} data-about-reveal="copy">
 						<h3>더 편안한 읽기 환경.</h3>
 						<p>
 							사용 환경과 취향에 맞춰 화면 테마를 선택할 수 있도록
@@ -237,12 +255,12 @@ export default function AboutPage() {
 			</section>
 
 			<section className={styles.closingSection}>
-				<h2>
+				<h2 data-about-reveal="copy">
 					Your next thought
 					<br />
 					could begin here<span>.</span>
 				</h2>
-				<div className={styles.closingActions}>
+				<div className={styles.closingActions} data-about-reveal="copy" data-about-reveal-delay="staggered">
 					<Link href={APP_ROUTES.feeds}>
 						<span>피드 둘러보기</span>
 						<span aria-hidden="true">↗</span>

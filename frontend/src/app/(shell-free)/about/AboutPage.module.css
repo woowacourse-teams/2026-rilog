@@ -600,6 +600,36 @@
 	.closingActions a {
 		transition: color 160ms ease;
 	}
+
+	.page [data-about-reveal] {
+		opacity: 0;
+		transform: translate3d(0, 1.75rem, 0);
+		transition:
+			opacity 700ms ease,
+			transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+		transition-delay: 0ms;
+		will-change: opacity, transform;
+	}
+
+	.page [data-about-reveal='media'] {
+		transform: translate3d(0, 3rem, 0);
+		transition-duration: 850ms, 1000ms;
+	}
+
+	.page [data-about-reveal='line'] {
+		opacity: 1;
+		transform: scaleY(0);
+		transform-origin: top;
+	}
+
+	.page [data-about-reveal-delay='staggered'] {
+		transition-delay: 140ms;
+	}
+
+	.page [data-about-reveal-visible='true'] {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -619,6 +649,11 @@
 	.heroMeaningCopy {
 		opacity: 1;
 		transform: translate3d(-50%, 0, 0);
+	}
+
+	.page [data-about-reveal] {
+		opacity: 1;
+		transform: none;
 	}
 
 	.heroIntroduction {
