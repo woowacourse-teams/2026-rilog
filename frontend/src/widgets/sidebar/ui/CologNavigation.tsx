@@ -24,18 +24,30 @@ export default function CologNavigation() {
 	const myCologsQuery = useMyCologsOverviewQuery({ select: mapMyCologsOverviewResponse });
 	const isInitialPending = myCologsQuery.data === undefined && myCologsQuery.isPending;
 	const hasInitialError = myCologsQuery.data === undefined && !isInitialPending;
-	const cologStatus = isInitialPending
-		? { fallback: '…', message: '내 팀을 불러오는 중...', role: 'status' as const }
-		: hasInitialError
-			? { fallback: '!', message: '내 팀을 불러오지 못했어요.', role: 'alert' as const }
-			: myCologsQuery.data?.length === 0
-				? { fallback: '–', message: '아직 소속된 Colog가 없어요.', role: 'status' as const }
-				: null;
+	const cologStatus = hasInitialError
+		? { fallback: '!', message: '내 팀을 불러오지 못했어요.', role: 'alert' as const }
+		: myCologsQuery.data?.length === 0
+			? { fallback: '–', message: '아직 소속된 Colog가 없어요.', role: 'status' as const }
+			: null;
 
 	return (
 		<nav aria-label="내 팀">
 			<ul className="mt-2 flex w-full flex-col gap-1">
-				{cologStatus ? (
+				{isInitialPending ? (
+					<li
+						aria-label="내 팀을 불러오는 중"
+						className="mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden"
+						role="status"
+					>
+						<span className="flex size-8.75 shrink-0 items-center justify-center" aria-hidden="true">
+							<span className="size-6 animate-pulse rounded bg-surface-active motion-reduce:animate-none" />
+						</span>
+						<span
+							aria-hidden="true"
+							className="h-3 w-24 animate-pulse rounded bg-surface-active motion-reduce:animate-none"
+						/>
+					</li>
+				) : cologStatus ? (
 					<li
 						className="mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden text-label-2 text-text-secondary"
 						role={cologStatus.role}

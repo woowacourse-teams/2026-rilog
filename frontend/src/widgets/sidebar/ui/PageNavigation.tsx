@@ -40,7 +40,14 @@ export default function PageNavigation() {
 				? '피드 글 수 불러오는 중'
 				: '피드 글 수를 불러오지 못함';
 	const feedBadge =
-		postsCount.status === 'success' ? postsCount.totalPostsCount : postsCount.status === 'pending' ? '…' : undefined;
+		postsCount.status === 'success' ? (
+			postsCount.totalPostsCount
+		) : postsCount.status === 'pending' ? (
+			<span
+				aria-hidden="true"
+				className="block h-3 w-5 animate-pulse rounded bg-surface-active motion-reduce:animate-none"
+			/>
+		) : undefined;
 	const isFeedPage = pathname === APP_ROUTES.feeds;
 
 	return (

@@ -120,8 +120,8 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		renderFooter();
 
-		expect(screen.getByRole('status')).toHaveTextContent('내 정보를 불러오는 중...');
-		expect(screen.getByRole('status')).toHaveTextContent('…');
+		expect(screen.getByRole('status', { name: '내 정보를 불러오는 중' })).toBeInTheDocument();
+		expect(screen.getByRole('status').querySelectorAll('.animate-pulse')).toHaveLength(2);
 		expect(screen.getAllByRole('link')).toHaveLength(1);
 		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');
 		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();

@@ -121,7 +121,9 @@ describe('PageNavigation', () => {
 		render(<PageNavigation />);
 
 		expect(screen.getByRole('link', { name: '피드 글 수 불러오는 중' })).toBeInTheDocument();
-		expect(screen.getByText('…')).toBeInTheDocument();
+		expect(
+			screen.getByRole('link', { name: '피드 글 수 불러오는 중' }).querySelector('.animate-pulse'),
+		).toBeInTheDocument();
 		expect(screen.queryByText('0')).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: /0개/ })).not.toBeInTheDocument();
 	});

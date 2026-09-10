@@ -28,7 +28,7 @@ export default function AuthenticatedSidebarFooter() {
 
 	const user = myInfoQuery.data;
 	const hasInitialError = user === null || (user === undefined && !myInfoQuery.isPending);
-	const profileStatusMessage = hasInitialError ? '내 정보를 불러오지 못했어요.' : '내 정보를 불러오는 중...';
+	const profileStatusMessage = hasInitialError ? '내 정보를 불러오지 못했어요.' : '내 정보를 불러오는 중';
 	const nickname = user?.nickname ?? '';
 	const slug = user?.slug ?? '';
 	const fallback = user?.nickname.slice(0, 1).toUpperCase() ?? '';
@@ -63,7 +63,7 @@ export default function AuthenticatedSidebarFooter() {
 								<span className="block truncate text-caption-1 text-text-secondary">@{slug}</span>
 							</span>
 						</CustomLink>
-					) : (
+					) : hasInitialError ? (
 						<div
 							className="flex min-w-0 flex-1 items-center justify-start gap-2"
 							aria-label={profileStatusMessage}
@@ -78,6 +78,20 @@ export default function AuthenticatedSidebarFooter() {
 									{hasInitialError ? '내 정보 오류' : profileStatusMessage}
 								</strong>
 							</span>
+						</div>
+					) : (
+						<div
+							className="flex min-w-0 flex-1 items-center justify-start gap-2"
+							aria-label={profileStatusMessage}
+							role="status"
+						>
+							<span className="flex size-10 shrink-0 items-center justify-center" aria-hidden="true">
+								<span className="size-6 animate-pulse rounded-full bg-surface-active motion-reduce:animate-none" />
+							</span>
+							<span
+								aria-hidden="true"
+								className="h-3 w-20 animate-pulse rounded bg-surface-active motion-reduce:animate-none"
+							/>
 						</div>
 					)}
 					<span

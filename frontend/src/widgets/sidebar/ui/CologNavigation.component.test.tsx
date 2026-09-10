@@ -133,8 +133,8 @@ describe('CologNavigation', () => {
 
 		renderWithQuery(<CologNavigation />);
 
-		expect(screen.getByRole('status')).toHaveTextContent('내 팀을 불러오는 중...');
-		expect(screen.getByRole('status')).toHaveTextContent('…');
+		expect(screen.getByRole('status', { name: '내 팀을 불러오는 중' })).toBeInTheDocument();
+		expect(screen.getByRole('status').querySelectorAll('.animate-pulse')).toHaveLength(2);
 		expect(screen.queryByText('아직 소속된 Colog가 없어요.')).not.toBeInTheDocument();
 	});
 
