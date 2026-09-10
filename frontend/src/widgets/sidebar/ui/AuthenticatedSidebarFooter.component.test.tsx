@@ -1,26 +1,41 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
-const { mutateMock } = vi.hoisted(() => ({
-	mutateMock: vi.fn(),
-}));
+const { MY_INFO_RESPONSE, mutateMock, myInfoQuery } = vi.hoisted(() => {
+	const myInfoResponse = {
+		status: 200,
+		message: 'OK',
+		data: {
+			id: 1,
+			slug: 'jetproc',
+			nickname: '파라디',
+			profileImageUrl: null,
+		},
+	};
+	const current: {
+		response: typeof myInfoResponse | undefined;
+		isPending: boolean;
+		isError: boolean;
+		isFetching: boolean;
+	} = {
+		response: myInfoResponse,
+		isPending: false,
+		isError: false,
+		isFetching: false,
+	};
 
-const MY_INFO_RESPONSE = {
-	status: 200,
-	message: 'OK',
-	data: {
-		id: 1,
-		slug: 'jetproc',
-		nickname: '파라디',
-		profileImageUrl: null,
-	},
-};
+	return {
+		MY_INFO_RESPONSE: myInfoResponse,
+		mutateMock: vi.fn(),
+		myInfoQuery: { current },
+	};
+});
 
 vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
 	useLogoutMutation: () => ({ mutate: mutateMock }),
@@ -29,7 +44,11 @@ vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
 vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 	useMyInfoQuery: vi.fn(({ select }: { select?: (response: typeof MY_INFO_RESPONSE) => unknown }) => {
 		return {
-			data: select ? select(MY_INFO_RESPONSE) : MY_INFO_RESPONSE,
+			...myInfoQuery.current,
+			data:
+				myInfoQuery.current.response === undefined
+					? undefined
+					: (select?.(myInfoQuery.current.response) ?? myInfoQuery.current.response),
 		};
 	}),
 }));
@@ -43,6 +62,16 @@ function renderFooter() {
 }
 
 describe('AuthenticatedSidebarFooter', () => {
+	beforeEach(() => {
+		myInfoQuery.current = {
+			response: MY_INFO_RESPONSE,
+			isPending: false,
+			isError: false,
+			isFetching: false,
+		};
+		mutateMock.mockReset();
+	});
+
 	it('글쓰기와 프로필 진입점, 로그아웃 버튼을 제공한다', () => {
 		renderFooter();
 
@@ -79,5 +108,60 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		expect(mutateMock).toHaveBeenCalledOnce();
 		expect(mutateMock).toHaveBeenCalledWith();
+	});
+
+	it('내 정보를 불러오는 동안 깨진 프로필 링크를 노출하지 않는다', () => {
+		myInfoQuery.current = {
+			response: undefined,
+			isPending: true,
+			isError: false,
+			isFetching: true,
+		};
+
+		renderFooter();
+
+		expect(screen.getByRole('status')).toHaveTextContent('내 정보를 불러오는 중...');
+		expect(screen.getByRole('status')).toHaveTextContent('…');
+		expect(screen.getAllByRole('link')).toHaveLength(1);
+		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');
+		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: '' })).not.toBeInTheDocument();
+	});
+
+	it('내 정보 조회가 실패하면 깨진 링크 대신 느낌표 아바타와 안내를 표시한다', () => {
+		myInfoQuery.current = {
+			response: undefined,
+			isPending: false,
+			isError: true,
+			isFetching: false,
+		};
+		renderFooter();
+
+		expect(screen.getByRole('alert', { name: '내 정보를 불러오지 못했어요.' })).toHaveTextContent('내 정보 오류');
+		expect(screen.getByText('내 정보 오류')).toHaveAttribute('title', '내 정보를 불러오지 못했어요.');
+		expect(screen.getByRole('alert')).toHaveTextContent('!');
+		expect(screen.getAllByRole('link')).toHaveLength(1);
+		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument();
+	});
+
+	it('내 정보 실패 상태에서 글쓰기와 로그아웃으로 키보드 이동한다', async () => {
+		myInfoQuery.current = {
+			response: undefined,
+			isPending: false,
+			isError: true,
+			isFetching: false,
+		};
+		const user = userEvent.setup();
+
+		renderFooter();
+
+		for (const control of [
+			screen.getByRole('link', { name: '글쓰기' }),
+			screen.getByRole('button', { name: '로그아웃' }),
+		]) {
+			await user.tab();
+			expect(control).toHaveFocus();
+		}
 	});
 });

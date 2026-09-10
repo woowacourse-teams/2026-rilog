@@ -13,22 +13,46 @@ import { mapMyCologsOverviewResponse } from '../lib/map-my-cologs-overview-respo
 import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME } from './sidebar-class-names';
 import SidebarNavigationLink from './SidebarNavigationLink';
 
+const isCurrentCologPath = (pathname: string, slug: string) => {
+	const cologHomePath = buildBlogHomePath(slug);
+
+	return pathname === cologHomePath || pathname.startsWith(`${cologHomePath}/`);
+};
+
 export default function CologNavigation() {
 	const pathname = usePathname();
-	const { data: myCologs, isPending } = useMyCologsOverviewQuery({ select: mapMyCologsOverviewResponse });
+	const myCologsQuery = useMyCologsOverviewQuery({ select: mapMyCologsOverviewResponse });
+	const isInitialPending = myCologsQuery.data === undefined && myCologsQuery.isPending;
+	const hasInitialError = myCologsQuery.data === undefined && !isInitialPending;
+	const cologStatus = isInitialPending
+		? { fallback: '…', message: '내 팀을 불러오는 중...', role: 'status' as const }
+		: hasInitialError
+			? { fallback: '!', message: '내 팀을 불러오지 못했어요.', role: 'alert' as const }
+			: myCologsQuery.data?.length === 0
+				? { fallback: '–', message: '아직 소속된 Colog가 없어요.', role: 'status' as const }
+				: null;
 
 	return (
 		<nav aria-label="내 팀">
 			<ul className="mt-2 flex w-full flex-col gap-1">
-				{isPending ? (
-					<li className="px-2 py-1 text-xs text-text-secondary">로딩 중...</li>
+				{cologStatus ? (
+					<li
+						className="mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden text-label-2 text-text-secondary"
+						role={cologStatus.role}
+					>
+						<span className="flex size-8.75 shrink-0 items-center justify-center">
+							<CologAvatar className="size-6" fallback={cologStatus.fallback} size="sm" tone="subtle" />
+						</span>
+						<span className={`truncate ${EXPANDED_TEXT_CLASS_NAME}`}>{cologStatus.message}</span>
+					</li>
 				) : (
-					myCologs?.map((colog) => (
+					myCologsQuery.data?.map((colog) => (
 						<li key={colog.id} className="w-full">
 							<SidebarNavigationLink
 								href={buildBlogHomePath(colog.slug)}
 								icon={
 									<CologAvatar
+										className="size-6"
 										fallback={colog.name.charAt(0)}
 										src={colog.logoUrl ?? undefined}
 										size="sm"
@@ -37,7 +61,7 @@ export default function CologNavigation() {
 									/>
 								}
 								label={colog.name}
-								isCurrent={pathname === buildBlogHomePath(colog.slug)}
+								isCurrent={isCurrentCologPath(pathname, colog.slug)}
 							/>
 						</li>
 					))
