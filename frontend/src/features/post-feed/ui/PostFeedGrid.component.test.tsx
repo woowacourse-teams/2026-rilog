@@ -83,10 +83,13 @@ const renderGrid = ({ initialPage, ...props }: RenderGridProps = {}) => {
 	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 	if (initialPage !== undefined) {
-		queryClient.setQueryData(feedsQueryKeys.fullFeedPosts(12), {
-			pages: [toApiResponse(initialPage)],
-			pageParams: [initialPage.page],
-		});
+		queryClient.setQueryData(
+			feedsQueryKeys.fullFeedPosts({ size: 12, category: props.category, blogType: props.blogType }),
+			{
+				pages: [toApiResponse(initialPage)],
+				pageParams: [initialPage.page],
+			},
+		);
 	}
 
 	return render(

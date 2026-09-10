@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
+import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import Button from '@/shared/ui/button/Button';
 
 import { usePostFeed } from '../hooks/use-post-feed';
@@ -12,7 +13,7 @@ import { deduplicatePostFeedItems } from '../lib/deduplicate-post-feed-items';
 import PostFeedCard from './PostFeedCard';
 import PostFeedSkeleton from './PostFeedSkeleton';
 
-interface PostFeedGridProps {
+interface PostFeedGridProps extends FullFeedPostsFilters {
 	scrollTargetId?: string;
 	initialRequestFailed?: boolean;
 }
@@ -22,10 +23,12 @@ const POST_FEED_CONTENT_ID = 'post-feed-content';
 export default function PostFeedGrid({
 	initialRequestFailed = false,
 	scrollTargetId = POST_FEED_CONTENT_ID,
+	category,
+	blogType,
 }: PostFeedGridProps) {
 	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
 	const sentinelRef = useRef<HTMLDivElement>(null);
-	const query = usePostFeed({ isEnabled: isQueryEnabled });
+	const query = usePostFeed({ isEnabled: isQueryEnabled, category, blogType });
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
 
 	const posts = useMemo(
