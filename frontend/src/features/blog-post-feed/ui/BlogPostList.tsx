@@ -26,102 +26,81 @@ export default function BlogPostList({ posts, slug, blogType }: BlogPostListProp
 
 	return (
 		<ul className="flex flex-col gap-7">
-			{posts.map((post, index) => (
-				<li key={post.id}>
-					<CustomLink
-						href={buildPostDetailPath(slug, String(post.id))}
-						onClick={() =>
-							recordPostDetailEntryContext({
-								postId: post.id,
-								entrySource: 'blog_profile',
-								feedPosition: index + 1,
-							})
-						}
-						className="group group/card flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
-					>
-						<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-32">
-							<PostFeedImage
-								src={post.thumbnailUrl}
-								fallbackSrc={POST_THUMBNAIL_FALLBACK_URL}
-								alt={`${post.title} 썸네일`}
-								width={640}
-								height={360}
-								className="size-full object-cover"
-								isScaledOnInteraction
-							/>
-						</div>
+			{posts.map((post, index) => {
+				const metadataName = blogType === 'COLOG' || post.blog.type === 'RILOG' ? post.author.nickname : post.blog.name;
 
-						<article className="flex min-h-28 min-w-0 flex-1 flex-col justify-between gap-2 py-1">
-							{blogType === 'RILOG' ? (
-								<>
-									<h2 className="line-clamp-2 text-body-3 font-semibold text-text-primary transition-colors duration-200 group-focus-visible:text-focus-ring hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none sm:text-body-4">
+				return (
+					<li key={post.id}>
+						<CustomLink
+							href={buildPostDetailPath(slug, String(post.id))}
+							onClick={() =>
+								recordPostDetailEntryContext({
+									postId: post.id,
+									entrySource: 'blog_profile',
+									feedPosition: index + 1,
+								})
+							}
+							className="group group/card flex gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
+						>
+							<div className="relative aspect-3/2 h-24 shrink-0 overflow-hidden rounded-lg bg-thumbnail-background sm:h-32">
+								<PostFeedImage
+									src={post.thumbnailUrl}
+									fallbackSrc={POST_THUMBNAIL_FALLBACK_URL}
+									alt={`${post.title} 썸네일`}
+									width={640}
+									height={360}
+									className="size-full object-cover"
+									isScaledOnInteraction
+								/>
+							</div>
+
+							<article className="flex min-h-28 min-w-0 flex-1 flex-col justify-between gap-2 py-1">
+								<div className="min-w-0">
+									<h3 className="line-clamp-2 text-body-3 font-semibold text-text-primary transition-colors duration-200 group-focus-visible:text-focus-ring hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none">
 										{post.title}
-									</h2>
-									<div className="flex items-center gap-1.5 text-label-2 text-navy-600">
-										<UserAvatar
-											src={post.author.profileImageUrl ?? undefined}
-											fallback={post.author.nickname.slice(0, 1)}
-											label={`${post.author.nickname} 프로필`}
-											size="sm"
-											className="bg-navy-100"
-										/>
-										<span className="min-w-0 truncate">{post.author.nickname}</span>
-										<span aria-hidden="true">·</span>
-										<time dateTime={toApiUtcISOString(post.publishedAt)} className="hidden sm:inline">
-											{formatPublishedDate(post.publishedAt)}
-										</time>
-										<time dateTime={toApiUtcISOString(post.publishedAt)} aria-hidden={true} className="sm:hidden">
-											{formatPublishedDate(post.publishedAt, true)}
-										</time>
-									</div>
-								</>
-							) : (
-								<>
-									<div className="min-w-0">
-										<h3 className="line-clamp-2 text-body-3 font-semibold text-text-primary transition-colors duration-200 group-focus-visible:text-focus-ring hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none">
-											{post.title}
-										</h3>
-										<div className="mt-1 flex min-w-0 items-center text-label-2">
-											<span
-												className={`flex min-w-0 items-center gap-1.5 text-text-secondary ${post.chapterName ? 'max-w-1/2' : ''}`}
-											>
-												<UserAvatar
-													src={post.author.profileImageUrl}
-													fallback={post.author.nickname.slice(0, 1)}
-													label={`${post.author.nickname} 프로필`}
-													size="sm"
-													className="bg-navy-100"
-												/>
-												<span className="truncate">{post.author.nickname}</span>
-											</span>
-											<span aria-hidden="true" className="shrink-0 text-text-secondary">
+									</h3>
+									<div className="mt-1 flex min-w-0 items-center text-label-2">
+										{blogType === 'COLOG' ? (
+											<UserAvatar
+												src={post.author.profileImageUrl}
+												fallback={post.author.nickname.slice(0, 1)}
+												label={`${post.author.nickname} 프로필`}
+												size="sm"
+												className="bg-navy-100"
+											/>
+										) : null}
+										<span
+											className={`flex min-w-0 items-center text-text-secondary ${blogType === 'COLOG' ? 'ml-1.5' : ''} ${post.chapterName ? 'max-w-1/2' : ''}`}
+										>
+											<span className="truncate">{metadataName}</span>
+											<span aria-hidden="true" className="shrink-0">
 												.
 											</span>
-											{post.chapterName ? (
-												<span className="ml-1 min-w-0 flex-1 truncate text-navy-400">{post.chapterName}</span>
-											) : null}
-										</div>
-									</div>
-									<div className="flex items-center gap-1 text-label-1 text-navy-600">
-										{post.categoryLabel ? (
-											<>
-												<span>{post.categoryLabel}</span>
-												<span aria-hidden="true">·</span>
-											</>
+										</span>
+										{post.chapterName ? (
+											<span className="ml-1 min-w-0 flex-1 truncate text-navy-400">{post.chapterName}</span>
 										) : null}
-										<time dateTime={toApiUtcISOString(post.publishedAt)} className="hidden sm:inline">
-											{formatPublishedDate(post.publishedAt)}
-										</time>
-										<time dateTime={toApiUtcISOString(post.publishedAt)} aria-hidden={true} className="sm:hidden">
-											{formatPublishedDate(post.publishedAt, true)}
-										</time>
 									</div>
-								</>
-							)}
-						</article>
-					</CustomLink>
-				</li>
-			))}
+								</div>
+								<div className="flex items-center gap-1 text-label-1 text-navy-600">
+									{post.categoryLabel ? (
+										<>
+											<span>{post.categoryLabel}</span>
+											<span aria-hidden="true">·</span>
+										</>
+									) : null}
+									<time dateTime={toApiUtcISOString(post.publishedAt)} className="hidden sm:inline">
+										{formatPublishedDate(post.publishedAt)}
+									</time>
+									<time dateTime={toApiUtcISOString(post.publishedAt)} aria-hidden={true} className="sm:hidden">
+										{formatPublishedDate(post.publishedAt, true)}
+									</time>
+								</div>
+							</article>
+						</CustomLink>
+					</li>
+				);
+			})}
 		</ul>
 	);
 }
