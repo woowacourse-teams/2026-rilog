@@ -19,6 +19,13 @@ const MEMBER: CologMember = {
 	joinedAt: '2026-08-20T10:00:00Z',
 };
 
+const INVITED_MEMBER: CologMember = {
+	...MEMBER,
+	id: 8,
+	nickname: '새 멤버',
+	slug: 'new-member',
+};
+
 describe('useCologMemberDrafts', () => {
 	it('요청받은 경우 초대 모달을 열린 상태로 초기화한다', () => {
 		const { result } = renderHook(() => useCologMemberDrafts({ isInviteModalInitiallyOpen: true }));
@@ -40,15 +47,31 @@ describe('useCologMemberDrafts', () => {
 		expect(result.current.members).toEqual([MEMBER]);
 	});
 
-	it('내보낸 멤버를 현재 목록과 수정안에서 제거한다', () => {
-		const { result } = renderHook(() => useCologMemberDrafts({ initialMembers: [MEMBER] }));
+	it('query cache에서 갱신된 멤버 목록을 현재 목록에 반영한다', () => {
+		const initialMemberList = [MEMBER];
+		const { result, rerender } = renderHook(
+			({ initialMembers }: HookProps) => useCologMemberDrafts({ initialMembers }),
+			{ initialProps: { initialMembers: initialMemberList } },
+		);
+
+		rerender({ initialMembers: [MEMBER, INVITED_MEMBER] });
+
+		expect(result.current.members).toEqual([MEMBER, INVITED_MEMBER]);
+	});
+
+	it('query cache에서 제거된 멤버의 수정안은 현재 상태에서 제외한다', () => {
+		const { result, rerender } = renderHook(
+			({ initialMembers }: HookProps) => useCologMemberDrafts({ initialMembers }),
+			{ initialProps: { initialMembers: [MEMBER] } },
+		);
 
 		act(() => {
 			result.current.handlePermissionChange(MEMBER.id, 'ADMIN');
-			result.current.handleRemoveMember(MEMBER.id);
 		});
+		rerender({ initialMembers: [] });
 
 		expect(result.current.members).toEqual([]);
 		expect(result.current.draftMembers).toEqual([]);
+		expect(result.current.isDirty).toBe(false);
 	});
 });

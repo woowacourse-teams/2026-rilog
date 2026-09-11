@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
 import type { MemberInviteCandidate, MemberInviteResult } from '../model/member-invite-candidate';
@@ -64,11 +64,9 @@ export default function CologMemberManagementSection({
 		handleSave,
 		handlePermissionChange,
 		handleBlogRoleChange,
-		handleRemoveMember,
 	} = drafts;
 	const [memberToRemove, setMemberToRemove] = useState<CologMember | null>(null);
 	const [isRemoveCompleteModalOpen, setIsRemoveCompleteModalOpen] = useState(false);
-	const hasSuccessfulInvitationsRef = useRef(false);
 
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
 	const removeMember = useRemoveCologMemberMutation();
@@ -107,10 +105,6 @@ export default function CologMemberManagementSection({
 			analytics.cologMemberInvitationFailed({ cologId, errorCode });
 		}
 
-		if (successfulInvitationCount > 0) {
-			hasSuccessfulInvitationsRef.current = true;
-		}
-
 		return {
 			failures: results.flatMap((result, index) =>
 				result.status === 'rejected'
@@ -132,7 +126,6 @@ export default function CologMemberManagementSection({
 
 		try {
 			await removeMember.mutateAsync({ slug, memberId: memberToRemove.id });
-			handleRemoveMember(memberToRemove.id);
 			setMemberToRemove(null);
 			setIsRemoveCompleteModalOpen(true);
 		} catch {
@@ -148,11 +141,6 @@ export default function CologMemberManagementSection({
 	const handleInviteModalClose = () => {
 		setIsInviteModalOpen(false);
 		onInviteModalClose?.();
-
-		if (hasSuccessfulInvitationsRef.current) {
-			hasSuccessfulInvitationsRef.current = false;
-			window.location.reload();
-		}
 	};
 
 	return (

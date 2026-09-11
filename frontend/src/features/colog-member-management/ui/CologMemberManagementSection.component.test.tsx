@@ -115,7 +115,6 @@ const drafts = {
 	handleSave: vi.fn(),
 	handlePermissionChange: vi.fn(),
 	handleBlogRoleChange: vi.fn(),
-	handleRemoveMember: vi.fn(),
 } as unknown as ComponentProps<typeof CologMemberManagementSection>['drafts'];
 
 describe('CologMemberManagementSection', () => {
@@ -151,9 +150,8 @@ describe('CologMemberManagementSection', () => {
 		expect(onInviteModalClose).toHaveBeenCalledOnce();
 	});
 
-	it('확인 후 선택한 멤버를 내보내고 화면 목록에서 제거한다', async () => {
+	it('확인 후 선택한 멤버를 내보내고 완료 모달을 표시한다', async () => {
 		const user = userEvent.setup();
-		const handleRemoveMember = vi.fn();
 		const draftsWithMember = {
 			...drafts,
 			displayedMembers: [
@@ -176,7 +174,6 @@ describe('CologMemberManagementSection', () => {
 					joinedAt: '2026-08-20T10:00:00Z',
 				},
 			],
-			handleRemoveMember,
 		};
 		render(<CologMemberManagementSection cologId={11} slug="@rilog" drafts={draftsWithMember} />);
 
@@ -185,7 +182,6 @@ describe('CologMemberManagementSection', () => {
 		await user.click(within(dialog).getByRole('button', { name: '내보내기' }));
 
 		await waitFor(() => expect(removeMemberMock).toHaveBeenCalledWith({ slug: '@rilog', memberId: 7 }));
-		expect(handleRemoveMember).toHaveBeenCalledWith(7);
 		expect(screen.queryByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' })).not.toBeInTheDocument();
 
 		const completeDialog = screen.getByRole('alertdialog', { name: '성공적으로 내보냈어요.' });
