@@ -18,7 +18,7 @@ export default function BlogPostFeedSkeleton({ blogType }: BlogPostFeedSkeletonP
 							<div>
 								<div className="h-7 w-4/5 rounded bg-surface-active" />
 								<div className="mt-1 flex items-center gap-1.5">
-									{blogType === 'COLOG' ? <div className="size-5 shrink-0 rounded-full bg-surface-active" /> : null}
+									{blogType === 'COLOG' ? <div className="size-6 shrink-0 rounded-full bg-surface-active" /> : null}
 									<div className="h-4 w-1/3 rounded bg-surface-active" />
 									<div className="h-4 w-1/3 rounded bg-surface-active" />
 								</div>
