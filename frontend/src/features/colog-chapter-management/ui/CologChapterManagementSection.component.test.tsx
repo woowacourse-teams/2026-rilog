@@ -53,10 +53,14 @@ describe('CologChapterManagementSection', () => {
 		render(<CologChapterManagementSection management={createManagement({ requestChapterDelete })} />);
 
 		expect(screen.getByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '챕터' })).toBeInTheDocument();
 		expect(screen.queryByRole('columnheader', { name: '게시글 수' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '백엔드 챕터 삭제' })).toBeInTheDocument();
+		const chapterRows = screen.getAllByRole('row').slice(1);
+		expect(chapterRows[0]).toHaveTextContent('1');
+		expect(chapterRows[1]).toHaveTextContent('2');
 
 		await user.click(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' }));
 		expect(requestChapterDelete).toHaveBeenCalledWith(CHAPTERS[0]);

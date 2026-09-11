@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
+import { MAX_COLOG_CHAPTER_COUNT } from '@/domains/chapter/model/chapter';
 import { analytics, type CologProfileChangedField } from '@/features/analytics/model/events';
 import { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
 import CologChapterManagementSection from '@/features/colog-chapter-management/ui/CologChapterManagementSection';
@@ -55,7 +56,7 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 	},
 	chapters: {
 		title: '챕터 관리',
-		description: '팀의 챕터를 관리합니다.',
+		description: `팀의 챕터를 관리합니다.\n챕터는 최대 ${MAX_COLOG_CHAPTER_COUNT}개까지 추가할 수 있습니다.`,
 	},
 	danger: {
 		title: '위험 영역',

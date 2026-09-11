@@ -1,4 +1,5 @@
 export const CHAPTER_NAME_MAX_LENGTH = 20;
+export const MAX_COLOG_CHAPTER_COUNT = 30;
 
 export interface Chapter {
 	id: number;
