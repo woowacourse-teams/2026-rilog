@@ -311,7 +311,7 @@
 }
 
 .linkSection {
-	padding: clamp(3rem, 6vw, 6rem) var(--about-gutter);
+	padding: 0 var(--about-gutter) clamp(3rem, 6vw, 6rem);
 }
 
 .linkSection a {
