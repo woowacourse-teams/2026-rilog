@@ -10,6 +10,7 @@ const {
 	cologMemberInvitationCompletedMock,
 	cologMemberInvitationFailedMock,
 	cologMemberInvitationStartedMock,
+	inviteResultMock,
 	inviteMemberMock,
 	removeMemberMock,
 	resetRemoveMemberMock,
@@ -18,6 +19,7 @@ const {
 	cologMemberInvitationCompletedMock: vi.fn(),
 	cologMemberInvitationFailedMock: vi.fn(),
 	cologMemberInvitationStartedMock: vi.fn(),
+	inviteResultMock: vi.fn(),
 	inviteMemberMock: vi.fn(),
 	removeMemberMock: vi.fn(),
 	resetRemoveMemberMock: vi.fn(),
@@ -74,11 +76,28 @@ vi.mock('./MemberInviteModal', () => ({
 		onInvite,
 		onClose,
 	}: {
-		onInvite?: (candidates: Array<{ userId: number; slug: string }>) => void;
+		onInvite: (
+			candidates: Array<{ userId: number; slug: string; nickname: string; profileImageUrl: null }>,
+		) => Promise<{
+			failures: Array<{
+				candidate: { userId: number; slug: string; nickname: string; profileImageUrl: null };
+				message: string;
+			}>;
+		}>;
 		onClose: () => void;
 	}) => (
 		<>
-			<button type="button" onClick={() => onInvite?.([{ userId: 7, slug: 'new-member' }])}>
+			<button
+				type="button"
+				onClick={() => {
+					void onInvite([{ userId: 7, slug: 'new-member', nickname: '새 멤버', profileImageUrl: null }]).then(
+						(result) => {
+							inviteResultMock(result);
+							if (result.failures.length === 0) onClose();
+						},
+					);
+				}}
+			>
 				초대 제출
 			</button>
 			<button type="button" onClick={onClose}>
@@ -335,6 +354,14 @@ describe('CologMemberManagementSection', () => {
 		expect(cologMemberInvitationFailedMock).toHaveBeenCalledWith({
 			cologId: 11,
 			errorCode: 'COLOG_MEMBER_ALREADY_EXISTS',
+		});
+		expect(inviteResultMock).toHaveBeenCalledWith({
+			failures: [
+				{
+					candidate: { userId: 7, slug: 'new-member', nickname: '새 멤버', profileImageUrl: null },
+					message: '이미 등록된 멤버입니다.',
+				},
+			],
 		});
 	});
 });

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
-import type { MemberInviteCandidate } from '../model/member-invite-candidate';
+import type { MemberInviteCandidate, MemberInviteResult } from '../model/member-invite-candidate';
 
 import type { CologMember } from '@/domains/blog/model/colog';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
@@ -27,6 +27,7 @@ interface CologMemberManagementSectionProps {
 }
 
 const REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 내보내지 못했어요. 다시 시도해 주세요.';
+const INVITE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 초대하지 못했어요. 다시 시도해 주세요.';
 
 const getInvitationErrorCode = (error: unknown) => {
 	if (
@@ -67,6 +68,7 @@ export default function CologMemberManagementSection({
 	} = drafts;
 	const [memberToRemove, setMemberToRemove] = useState<CologMember | null>(null);
 	const [isRemoveCompleteModalOpen, setIsRemoveCompleteModalOpen] = useState(false);
+	const hasSuccessfulInvitationsRef = useRef(false);
 
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
 	const removeMember = useRemoveCologMemberMutation();
@@ -75,7 +77,7 @@ export default function CologMemberManagementSection({
 		? getApiErrorMessage(removeMember.error, REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE)
 		: undefined;
 
-	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
+	const handleInvite = async (candidates: MemberInviteCandidate[]): Promise<MemberInviteResult> => {
 		analytics.cologMemberInvitationStarted({ cologId, candidateCount: candidates.length });
 
 		const results = await Promise.allSettled(
@@ -106,8 +108,21 @@ export default function CologMemberManagementSection({
 		}
 
 		if (successfulInvitationCount > 0) {
-			window.location.reload();
+			hasSuccessfulInvitationsRef.current = true;
 		}
+
+		return {
+			failures: results.flatMap((result, index) =>
+				result.status === 'rejected'
+					? [
+							{
+								candidate: candidates[index],
+								message: getApiErrorMessage(result.reason, INVITE_MEMBER_ERROR_FALLBACK_MESSAGE),
+							},
+						]
+					: [],
+			),
+		};
 	};
 
 	const handleRemoveConfirm = async () => {
@@ -133,6 +148,11 @@ export default function CologMemberManagementSection({
 	const handleInviteModalClose = () => {
 		setIsInviteModalOpen(false);
 		onInviteModalClose?.();
+
+		if (hasSuccessfulInvitationsRef.current) {
+			hasSuccessfulInvitationsRef.current = false;
+			window.location.reload();
+		}
 	};
 
 	return (
@@ -204,7 +224,7 @@ export default function CologMemberManagementSection({
 				slug={slug}
 				open={isInviteModalOpen}
 				onClose={handleInviteModalClose}
-				onInvite={(candidates) => void handleInvite(candidates)}
+				onInvite={handleInvite}
 			/>
 
 			<ConfirmModal
