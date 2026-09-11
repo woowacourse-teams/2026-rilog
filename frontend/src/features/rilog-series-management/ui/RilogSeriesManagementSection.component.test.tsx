@@ -53,9 +53,13 @@ describe('RilogSeriesManagementSection', () => {
 		render(<RilogSeriesManagementSection management={createManagement({ requestChapterDelete })} />);
 
 		expect(screen.getByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '시리즈' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '기록 시리즈 삭제' })).toBeInTheDocument();
+		const seriesRows = screen.getAllByRole('row').slice(1);
+		expect(seriesRows[0]).toHaveTextContent('1');
+		expect(seriesRows[1]).toHaveTextContent('2');
 
 		await user.click(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' }));
 		expect(requestChapterDelete).toHaveBeenCalledWith(SERIES[0]);
