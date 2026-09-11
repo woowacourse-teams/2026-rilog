@@ -142,7 +142,8 @@ export default function CologMemberManagementSection({
 					<table className="w-full table-fixed border-collapse text-left">
 						<caption className="sr-only">팀 멤버 목록</caption>
 						<colgroup>
-							<col className="w-2/5" />
+							<col className="w-16" />
+							<col />
 							<col className="w-1/5" />
 							{/* <col className="w-40" /> */}
 							<col className="w-1/5" />
@@ -150,7 +151,10 @@ export default function CologMemberManagementSection({
 						</colgroup>
 						<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
 							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
-								<th scope="col" className="pl-6 font-semibold">
+								<th scope="col">
+									<span className="sr-only">번호</span>
+								</th>
+								<th scope="col" className="px-2 font-semibold">
 									멤버
 								</th>
 								<th scope="col" className="px-2 font-semibold">
@@ -168,11 +172,12 @@ export default function CologMemberManagementSection({
 							</tr>
 						</thead>
 						<tbody>
-							{displayedMembers.map((member) =>
+							{displayedMembers.map((member, index) =>
 								isEditing ? (
 									<CologMemberRow
 										key={member.id}
 										member={member}
+										rowNumber={index + 1}
 										isEditing
 										onPermissionChange={handlePermissionChange}
 										onBlogRoleChange={handleBlogRoleChange}
@@ -181,6 +186,7 @@ export default function CologMemberManagementSection({
 									<CologMemberRow
 										key={member.id}
 										member={member}
+										rowNumber={index + 1}
 										canRemove={canRemoveCologMember(currentUser?.slug, displayedMembers, member)}
 										onRemove={() => {
 											removeMember.reset();

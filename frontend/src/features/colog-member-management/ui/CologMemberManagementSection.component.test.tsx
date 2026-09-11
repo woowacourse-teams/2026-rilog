@@ -47,14 +47,17 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 vi.mock('./CologMemberRow', () => ({
 	default: ({
 		member,
+		rowNumber,
 		onRemove,
 		canRemove,
 	}: {
 		member: { nickname: string };
+		rowNumber: number;
 		onRemove?: () => void;
 		canRemove?: boolean;
 	}) => (
 		<tr>
+			<td>{rowNumber}</td>
 			<td>
 				{canRemove && (
 					<button type="button" onClick={onRemove}>
@@ -253,6 +256,39 @@ describe('CologMemberManagementSection', () => {
 
 		expect(screen.queryByRole('button', { name: '다른 관리자 멤버 내보내기' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '팀 소유자 멤버 내보내기' })).not.toBeInTheDocument();
+	});
+
+	it('멤버 행을 목록 순서대로 넘버링한다', () => {
+		const draftsWithMembers = {
+			...drafts,
+			displayedMembers: [
+				{
+					id: 1,
+					nickname: '팀 소유자',
+					slug: 'owner',
+					profileImageUrl: null,
+					permission: 'OWNER' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+				{
+					id: 2,
+					nickname: '팀 멤버',
+					slug: 'member',
+					profileImageUrl: null,
+					permission: 'MEMBER' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+			],
+		};
+
+		render(<CologMemberManagementSection cologId={11} slug="rilog" drafts={draftsWithMembers} />);
+
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
+		const memberRows = screen.getAllByRole('row').slice(1);
+		expect(within(memberRows[0]).getByText('1')).toBeInTheDocument();
+		expect(within(memberRows[1]).getByText('2')).toBeInTheDocument();
 	});
 
 	it('초대 시작과 완료 이벤트를 같은 cologId로 기록한다', async () => {

@@ -65,7 +65,7 @@ export default function SettingsHeader<T extends string>({
 					<h1 id={`${idPrefix}-${activeTab}-title`} className="text-heading-3 font-bold text-text-primary">
 						{title}
 					</h1>
-					<p className="mt-0.5 text-body-1 text-text-secondary">{description}</p>
+					<p className="mt-0.5 text-body-1 whitespace-pre-wrap text-text-secondary">{description}</p>
 				</div>
 				{actions !== undefined && (
 					<div className="ml-auto flex w-full shrink-0 justify-end gap-2 sm:w-auto">{actions}</div>
