@@ -1,11 +1,19 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type * as NextNavigation from 'next/navigation';
+
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import Sidebar from './Sidebar';
+
+vi.mock('next/navigation', async (importOriginal) => ({
+	...(await importOriginal<typeof NextNavigation>()),
+	usePathname: () => '/feeds',
+	useSearchParams: () => new URLSearchParams(),
+}));
 
 vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
 	useMyCologsOverviewQuery: vi.fn(() => ({

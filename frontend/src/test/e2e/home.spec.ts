@@ -150,6 +150,34 @@ test('피드 게시글을 slug가 포함된 상세 URL에서 조회한다', asyn
 	expect(response.ok()).toBe(true);
 });
 
+test('직접 일상 필터 URL을 열면 SSR 결과를 hydrate하고 브라우저에서 피드를 다시 요청하지 않는다', async ({ page }) => {
+	let browserFeedRequestCount = 0;
+	page.on('request', (request) => {
+		if (new URL(request.url()).pathname === '/v1/feeds/posts') browserFeedRequestCount += 1;
+	});
+	await page.route('**/v1/feeds/posts?**', async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 200,
+				message: 'OK',
+				data: { posts: [], page: 0, size: 12, numberOfElements: 0, hasNext: false },
+			}),
+		});
+	});
+
+	const response = await page.goto('/feeds?category=daily');
+	const serverHtml = await response?.text();
+
+	expect(serverHtml).toContain('id="post-feed-content"');
+	expect(serverHtml).toContain('href="/feeds?category=daily"');
+	await expect(page.getByRole('link', { name: '일상', exact: true })).toHaveAttribute('aria-current', 'page');
+	await expect(page.locator('#post-feed-content')).toBeVisible();
+	await page.waitForLoadState('networkidle');
+	expect(browserFeedRequestCount).toBe(0);
+});
+
 test('@가 없는 코로그 경로는 찾을 수 없다', async ({ request }) => {
 	const headers = { Cookie: `${PROXY_SESSION_COOKIE_NAME}=${PROXY_SESSION_COOKIE_VALUE}` };
 	const homeResponse = await request.get('/rilog', { headers });
@@ -195,6 +223,157 @@ test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자
 
 	await page.waitForTimeout(1_200);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
+});
+
+test('피드 필터 cache는 history 탐색에도 API, RSC, skeleton을 다시 만들지 않는다', async ({ page }) => {
+	let dailyRequestCount = 0;
+	let browserFeedRequestCount = 0;
+	const rscRequests: string[] = [];
+	page.on('request', (request) => {
+		const url = new URL(request.url());
+		if (url.pathname === '/v1/feeds/posts') browserFeedRequestCount += 1;
+		if (url.pathname === '/feeds' && (url.searchParams.has('_rsc') || request.headers().rsc === '1')) {
+			rscRequests.push(request.url());
+		}
+	});
+	await page.route('**/v1/feeds/posts?**', async (route) => {
+		const url = new URL(route.request().url());
+		if (url.searchParams.get('category') === 'DAILY' && !url.searchParams.has('blogType')) {
+			dailyRequestCount += 1;
+		}
+
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 200,
+				message: 'OK',
+				data: {
+					posts: [],
+					page: Number(url.searchParams.get('page') ?? 0),
+					size: 12,
+					numberOfElements: 0,
+					hasNext: false,
+				},
+			}),
+		});
+	});
+	await page.goto('/feeds');
+	const feedContent = page.locator('#post-feed-categories');
+	await expect(feedContent).toBeVisible();
+	await expect
+		.poll(() =>
+			feedContent.evaluate((element) =>
+				Math.abs(
+					Math.round(
+						element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+					),
+				),
+			),
+		)
+		.toBe(0);
+
+	await page.evaluate(() => {
+		const trackedWindow = window as Window & {
+			feedFilterScrollPositions?: number[];
+			feedSkeletonTransitions?: number;
+		};
+		trackedWindow.feedFilterScrollPositions = [window.scrollY];
+		trackedWindow.feedSkeletonTransitions = 0;
+		let wasSkeletonVisible = false;
+		window.addEventListener(
+			'scroll',
+			() => {
+				trackedWindow.feedFilterScrollPositions?.push(window.scrollY);
+			},
+			{ passive: true },
+		);
+		new MutationObserver(() => {
+			const isSkeletonVisible = document.querySelector('[aria-label="피드를 불러오는 중"]') !== null;
+			if (isSkeletonVisible && !wasSkeletonVisible) {
+				trackedWindow.feedSkeletonTransitions = (trackedWindow.feedSkeletonTransitions ?? 0) + 1;
+			}
+			wasSkeletonVisible = isSkeletonVisible;
+		}).observe(document.body, { childList: true, subtree: true });
+	});
+
+	await page.getByRole('link', { name: '일상', exact: true }).click();
+	await expect(page).toHaveURL(/category=daily/);
+	await expect(page.getByRole('link', { name: '일상', exact: true })).toHaveAttribute('aria-current', 'page');
+	await expect(page.getByText('아직 발행된 게시글이 없어요.')).toBeVisible();
+	const skeletonTransitionsAfterFirstVisit = await page.evaluate(
+		() => (window as Window & { feedSkeletonTransitions?: number }).feedSkeletonTransitions ?? 0,
+	);
+	expect(dailyRequestCount).toBe(1);
+
+	await page.getByRole('link', { name: '전체', exact: true }).click();
+	await expect(page).toHaveURL(/\/feeds$/);
+	await expect(page.getByRole('link', { name: '전체', exact: true })).toHaveAttribute('aria-current', 'page');
+	const apiRequestsBeforeHistoryNavigation = browserFeedRequestCount;
+	const rscRequestsBeforeHistoryNavigation = rscRequests.length;
+	await page.goBack();
+	await expect(page).toHaveURL(/category=daily/);
+	await expect(page.getByRole('link', { name: '일상', exact: true })).toHaveAttribute('aria-current', 'page');
+	await expect(page.getByText('아직 발행된 게시글이 없어요.')).toBeVisible();
+	await page.goForward();
+	await expect(page).toHaveURL(/\/feeds$/);
+	await expect(page.getByRole('link', { name: '전체', exact: true })).toHaveAttribute('aria-current', 'page');
+	expect(dailyRequestCount).toBe(1);
+	expect(browserFeedRequestCount).toBe(apiRequestsBeforeHistoryNavigation);
+	expect(rscRequests).toHaveLength(rscRequestsBeforeHistoryNavigation);
+	expect(
+		await page.evaluate(() => (window as Window & { feedSkeletonTransitions?: number }).feedSkeletonTransitions ?? 0),
+	).toBe(skeletonTransitionsAfterFirstVisit);
+
+	await page.getByRole('link', { name: '개인', exact: true }).click();
+	await expect(page).toHaveURL(/blogType=personal/);
+	await page.getByRole('link', { name: 'Colog', exact: true }).click();
+	await expect(page).toHaveURL(/blogType=colog/);
+	await page.waitForTimeout(1_200);
+
+	const scrollPositions = await page.evaluate(
+		() => (window as Window & { feedFilterScrollPositions?: number[] }).feedFilterScrollPositions ?? [],
+	);
+	expect(rscRequests).toHaveLength(0);
+	expect(Math.min(...scrollPositions)).toBeGreaterThan(0);
+	await expect
+		.poll(() =>
+			feedContent.evaluate((element) =>
+				Math.abs(
+					Math.round(
+						element.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(element).scrollMarginTop),
+					),
+				),
+			),
+		)
+		.toBe(0);
+});
+
+test('수정키 클릭은 client filter navigation을 실행하지 않는다', async ({ page }) => {
+	await page.goto('/feeds');
+	const currentUrl = page.url();
+	await page.evaluate(() => {
+		const trackedWindow = window as Window & { feedFilterPushStateCallCount?: number };
+		const originalPushState = window.history.pushState.bind(window.history);
+		trackedWindow.feedFilterPushStateCallCount = 0;
+		window.history.pushState = (...args) => {
+			trackedWindow.feedFilterPushStateCallCount = (trackedWindow.feedFilterPushStateCallCount ?? 0) + 1;
+			return originalPushState(...args);
+		};
+	});
+
+	await page.getByRole('link', { name: '일상', exact: true }).dispatchEvent('click', {
+		metaKey: true,
+		ctrlKey: true,
+		button: 0,
+	});
+
+	await expect(page).toHaveURL(currentUrl);
+	expect(
+		await page.evaluate(
+			() => (window as Window & { feedFilterPushStateCallCount?: number }).feedFilterPushStateCallCount,
+		),
+	).toBe(0);
 });
 
 test('제목 텍스트에만 hover 색상을 적용한다', async ({ page }) => {

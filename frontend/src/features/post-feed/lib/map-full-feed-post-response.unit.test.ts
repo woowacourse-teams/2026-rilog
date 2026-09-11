@@ -6,7 +6,7 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 import { mapFullFeedPostResponse } from './map-full-feed-post-response';
 
 describe('mapFullFeedPostResponse', () => {
-	it('실제 응답의 author.name과 owner.type 구조를 올바르게 매핑한다', () => {
+	it('실제 응답의 author.nickname과 공통 owner 구조를 올바르게 매핑한다', () => {
 		const response = {
 			status: 200,
 			message: 'OK',
@@ -23,7 +23,7 @@ describe('mapFullFeedPostResponse', () => {
 						category: '기술',
 						visibility: 'PUBLIC',
 						publishedAt: '2026-08-17T00:00:00',
-						author: { userId: 10, name: '리로', slug: 'riro', profileImageUrl: '' },
+						author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: '' },
 						owner: { type: 'RILOG' as const, blogId: 10, name: '리로', slug: 'riro', profileImageUrl: '' },
 						chapter: { chapterId: 1, name: 'Education', order: 1 },
 					},
@@ -34,16 +34,13 @@ describe('mapFullFeedPostResponse', () => {
 						category: '기술',
 						visibility: 'PUBLIC',
 						publishedAt: '2026-08-17T00:00:00',
-						author: { userId: 10, name: '리로', slug: 'riro', profileImageUrl: '' },
+						author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: '' },
 						owner: {
 							type: 'COLOG' as const,
 							blogId: 20,
 							name: '리로그 팀',
 							slug: 'rilog',
 							profileImageUrl: 'https://images.rilog.test/team.png',
-							coverImageUrl: '',
-							memberCount: 7,
-							postCount: 3,
 						},
 					},
 				],

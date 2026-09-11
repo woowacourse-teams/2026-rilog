@@ -1,51 +1,41 @@
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { PostCategory, PostCategoryLabel } from '@/domains/post/model/post';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
-import type { PostCategoryResponse } from '@/shared/api/posts/types';
 
-export interface FullFeedPostsRequest {
+export interface FullFeedPostsFilters {
+	category?: PostCategory;
+	blogType?: BlogType;
+}
+
+export interface FullFeedPostsRequest extends FullFeedPostsFilters {
 	page: number;
 	size: number;
 }
 
-export interface AuthorResponse {
+interface FullFeedAuthorResponse {
 	userId: number;
-	name?: string;
-	nickname?: string;
+	nickname: string;
 	slug: string;
 	profileImageUrl: string | null;
 }
 
-interface BaseOwnerResponse {
+interface FullFeedOwnerResponse {
 	type: BlogType;
 	blogId: number;
 	slug: string;
 	name: string;
-}
-
-export interface RilogOwnerResponse extends BaseOwnerResponse {
-	type: 'RILOG';
 	profileImageUrl: string | null;
 }
-
-export interface CologOwnerResponse extends BaseOwnerResponse {
-	type: 'COLOG';
-	profileImageUrl: string | null;
-	coverImageUrl: string | null;
-	memberCount: number;
-	postCount: number;
-}
-
-export type PostOwnerResponse = RilogOwnerResponse | CologOwnerResponse;
 
 export interface PostItemResponse {
 	postId: number;
 	title: string;
 	thumbnailImageUrl: string | null;
-	category: PostCategoryResponse;
+	category: PostCategoryLabel;
 	visibility: string;
 	publishedAt: string;
-	author: AuthorResponse;
-	owner: PostOwnerResponse;
+	author: FullFeedAuthorResponse;
+	owner: FullFeedOwnerResponse;
 	chapter?: ChapterResponse | null;
 }
 
