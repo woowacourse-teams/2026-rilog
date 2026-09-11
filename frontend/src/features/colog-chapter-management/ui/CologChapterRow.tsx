@@ -5,17 +5,25 @@ import Input from '@/shared/ui/input/Input';
 
 interface CologChapterRowProps {
 	chapter: Chapter;
+	rowNumber: number;
 	isEditing?: boolean;
 	onNameChange?: (chapterId: number, name: string) => void;
 	onDelete?: (chapter: Chapter) => void;
 }
 
-export default function CologChapterRow({ chapter, isEditing = false, onNameChange, onDelete }: CologChapterRowProps) {
+export default function CologChapterRow({
+	chapter,
+	rowNumber,
+	isEditing = false,
+	onNameChange,
+	onDelete,
+}: CologChapterRowProps) {
 	const hasEmptyName = chapter.name.trim().length === 0;
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">
-			<td className="py-3 pl-6 text-body-1 font-semibold text-text-primary">
+			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
+			<td className="px-2 py-3 text-body-1 font-semibold text-text-primary">
 				{isEditing ? (
 					<Input
 						className="w-4/5!"

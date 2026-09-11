@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { KeyboardEvent } from 'react';
 
+import { getBlogChapterCreateErrorMessage } from '@/features/chapter-management/lib/get-blog-chapter-create-error-message';
 import { usePostPublishChapters } from '@/features/post-write/hooks/use-post-publish-chapters';
-import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useCreateBlogChapterMutation } from '@/shared/api/blogs/mutations/use-create-blog-chapter-mutation';
 import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
@@ -41,7 +41,7 @@ export default function RilogSeriesField({
 	const creationError =
 		seriesNameValidationError ??
 		(createChapterMutation.isError
-			? getApiErrorMessage(createChapterMutation.error, '시리즈 생성에 실패했습니다.')
+			? getBlogChapterCreateErrorMessage(createChapterMutation.error, '시리즈')
 			: undefined);
 	const isPending = isDisabled || createChapterMutation.isPending;
 	const isSelectDisabled = isPending || !isQueryEnabled || chaptersQuery.isPending || chaptersQuery.isError;

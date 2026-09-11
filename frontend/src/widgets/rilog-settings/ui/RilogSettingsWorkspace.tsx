@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 
 import type { FormEvent } from 'react';
 
+import { MAX_BLOG_CHAPTER_COUNT } from '@/domains/chapter/model/chapter';
 import { normalizeUserNickname } from '@/domains/user/lib/validate-user-profile';
 import { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
 import RilogDangerZoneSection from '@/features/rilog-danger-zone/ui/RilogDangerZoneSection';
@@ -39,7 +40,10 @@ interface RilogSettingsWorkspaceContentProps {
 
 const TAB_HEADER_CONFIG: Record<RilogSettingsTab, { title: string; description: string }> = {
 	profile: { title: '프로필', description: '개인 기본 정보와 소개를 관리합니다.' },
-	series: { title: '시리즈 관리', description: '블로그 시리즈를 관리합니다.' },
+	series: {
+		title: '시리즈 관리',
+		description: `블로그 시리즈를 관리합니다.\n시리즈는 최대 ${MAX_BLOG_CHAPTER_COUNT}개까지 추가할 수 있습니다.`,
+	},
 	danger: { title: '위험 영역', description: '되돌릴 수 없는 작업입니다. 진행하기 전에 내용을 확인해 주세요.' },
 };
 
