@@ -72,7 +72,7 @@ export default function DraftListModal({
 							const content = (
 								<>
 									<span className="flex min-w-0 items-center gap-2">
-										<strong className="min-w-0 truncate text-body-3">{post.title}</strong>
+										<strong className="ph-mask min-w-0 truncate text-body-3">{post.title}</strong>
 										{isSelected && (
 											<span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-caption-1 font-semibold text-brand-primary">
 												현재 작성 중
@@ -99,6 +99,7 @@ export default function DraftListModal({
 										<CustomLink
 											replace
 											href={buildDraftWritePath(post.id)}
+											data-ph-sensitive-attribute
 											onClick={() => recordEditorEntryContext('draft_list')}
 											className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pt-4 pr-3 pb-5 pl-5 text-left ${DRAFT_BUTTON_CLASS_NAME}`}
 										>
@@ -108,9 +109,9 @@ export default function DraftListModal({
 									{!isSelected && (
 										<button
 											type="button"
+											className={`ph-mask shrink-0 px-7 ${DRAFT_BUTTON_CLASS_NAME}`}
 											aria-label={`${post.title} 임시 저장 글 삭제`}
 											onClick={() => onDelete(post.id)}
-											className={`shrink-0 px-7 ${DRAFT_BUTTON_CLASS_NAME}`}
 										>
 											<XIcon className="size-5 text-text-secondary" />
 										</button>

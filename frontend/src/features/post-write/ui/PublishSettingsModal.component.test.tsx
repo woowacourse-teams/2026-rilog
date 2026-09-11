@@ -86,6 +86,8 @@ describe('PublishSettingsModal', () => {
 
 		const previewImage = screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' });
 		expect(previewImage).toHaveAttribute('src', POST_THUMBNAIL_FALLBACK_URL);
+		expect(previewImage.closest('[data-ph-sensitive-media]')).toBeInTheDocument();
+		expect(screen.getByText('게시글 제목')).toHaveClass('ph-mask');
 		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
 	});
 
