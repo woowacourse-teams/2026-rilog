@@ -106,7 +106,8 @@ export default function HeroMeaningTransition() {
 					<Image src="/brand/logo.svg" alt="Rilog." width={1186} height={472} priority />
 					<span ref={continuationRef} className={styles.continuationClip} aria-hidden="true">
 						<span ref={continuationTextRef} className={styles.continuationText}>
-							continue()
+							continue<span className={styles.continuationParenthesis}>(</span>
+							<span className={styles.continuationParenthesis}>)</span>
 						</span>
 					</span>
 				</h1>
