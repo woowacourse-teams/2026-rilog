@@ -23,6 +23,8 @@ describe('PostTitleField', () => {
 		render(<ControlledPostTitleField onEnter={handleEnter} />);
 
 		const titleField = screen.getByRole('textbox', { name: '게시글 제목' });
+		expect(titleField).toHaveClass('ph-mask');
+		expect(titleField).toHaveAttribute('data-ph-sensitive-input');
 		await user.type(titleField, '제목{enter}');
 
 		expect(titleField).toHaveValue('제목');
