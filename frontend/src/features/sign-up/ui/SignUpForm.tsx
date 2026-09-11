@@ -216,7 +216,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	};
 
 	return (
-		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={handleSignUpSubmit}>
+		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" data-ph-sensitive-inputs onSubmit={handleSignUpSubmit}>
 			<div
 				role="group"
 				aria-labelledby={profileImageLabelId}
@@ -232,7 +232,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 				</ul>
 				<div className="flex flex-col gap-2">
 					<div className="flex items-end gap-4">
-						<div className="group relative shrink-0">
+						<div className="group relative shrink-0" data-ph-sensitive-media>
 							<ImagePreview
 								src={previewUrl}
 								alt="프로필 이미지 미리보기"
