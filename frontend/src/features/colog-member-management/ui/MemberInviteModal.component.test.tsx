@@ -125,6 +125,50 @@ describe('MemberInviteModal', () => {
 		expect(readUserBySlug).not.toHaveBeenCalled();
 	});
 
+	it('현재 멤버와 초대 후보가 20명을 초과하면 초대하지 않고 후보와 오류를 유지한다', async () => {
+		const user = userEvent.setup();
+		const onInvite = vi.fn();
+		vi.mocked(readCologMembers).mockResolvedValue({
+			status: 200,
+			message: '팀 멤버 목록 조회에 성공했습니다.',
+			data: Array.from({ length: 19 }, (_, index) => ({
+				id: index + 1,
+				userId: index + 1,
+				nickname: `기존 멤버 ${index + 1}`,
+				slug: `existing-member-${index + 1}`,
+				profileImageUrl: null,
+				permission: index === 0 ? ('OWNER' as const) : ('MEMBER' as const),
+				blogRole: '',
+				joinedAt: '2026-08-20T00:00:00',
+			})),
+		});
+		vi.mocked(readUserBySlug)
+			.mockResolvedValueOnce({
+				status: 200,
+				message: '사용자 조회에 성공했습니다.',
+				data: { id: 20, slug: 'first-candidate', nickname: '첫 번째 후보', profileImageUrl: null },
+			})
+			.mockResolvedValueOnce({
+				status: 200,
+				message: '사용자 조회에 성공했습니다.',
+				data: { id: 21, slug: 'second-candidate', nickname: '두 번째 후보', profileImageUrl: null },
+			});
+
+		renderWithProvider(<MemberInviteModal slug={COLOG_SLUG} open onClose={vi.fn()} onInvite={onInvite} />);
+
+		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
+		await user.type(input, '@first-candidate{Enter}');
+		await screen.findByText('첫 번째 후보');
+		await user.type(input, '@second-candidate{Enter}');
+		await screen.findByText('두 번째 후보');
+		await user.click(screen.getByRole('button', { name: '초대' }));
+
+		expect(onInvite).not.toHaveBeenCalled();
+		expect(screen.getByText('코로그 멤버는 최대 20명까지 등록할 수 있습니다. (현재 19/20)')).toBeInTheDocument();
+		expect(screen.getByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('첫 번째 후보');
+		expect(screen.getByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('두 번째 후보');
+	});
+
 	it('추가한 멤버를 전달하고 모달을 닫는다', async () => {
 		const user = userEvent.setup();
 		const onClose = vi.fn();

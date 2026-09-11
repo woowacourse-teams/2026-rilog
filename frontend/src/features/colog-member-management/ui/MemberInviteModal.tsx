@@ -11,6 +11,8 @@ import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
+import { MAX_COLOG_MEMBER_COUNT, willExceedCologMemberLimit } from '../lib/colog-member-limit';
+
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
 interface MemberInviteModalProps {
@@ -98,12 +100,25 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 
 	const handleRemoveCandidate = (candidateSlug: string) => {
 		setCandidates((currentCandidates) => currentCandidates.filter((candidate) => candidate.slug !== candidateSlug));
+		setErrorMessage(undefined);
 	};
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
 		if (candidates.length === 0) {
+			return;
+		}
+
+		if (cologMembers?.data === undefined) {
+			setErrorMessage('멤버를 초대할 수 없습니다. 새로고침 후에도 같은 문제가 발생하면 관리자에게 문의해 주세요.');
+			return;
+		}
+
+		if (willExceedCologMemberLimit(cologMembers.data.length, candidates.length)) {
+			setErrorMessage(
+				`코로그 멤버는 최대 ${MAX_COLOG_MEMBER_COUNT}명까지 등록할 수 있습니다. (현재 ${cologMembers.data.length}/${MAX_COLOG_MEMBER_COUNT})`,
+			);
 			return;
 		}
 
