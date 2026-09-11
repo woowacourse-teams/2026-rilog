@@ -1,8 +1,8 @@
 import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
 import type { SeriesChapter } from '@/features/post-detail/model/series';
+import PostNavigationTracker from '@/features/post-detail/ui/PostNavigationTracker';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 
 import styles from './SeriesAccordion.module.css';
 
@@ -30,12 +30,20 @@ export default function SeriesAccordion({ slug, postId, series }: SeriesAccordio
 				게시글 시리즈
 			</h2>
 
-			<details data-chapter-id={id} className={`group ${styles.accordion}`}>
+			<PostNavigationTracker.SeriesDetails data-chapter-id={id} className={`group ${styles.accordion}`}>
+				<PostNavigationTracker.AvailableTracker surface="series" />
 				<summary className="flex list-none items-center justify-between gap-4 px-5 py-3 text-body-1 font-medium text-text-primary transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring sm:text-body-3 [&::-webkit-details-marker]:hidden">
 					<span className="min-w-0">
-						<CustomLink href={seriesHref} className="[overflow-wrap:anywhere] transition-colors hover:text-blue-600">
+						<PostNavigationTracker.Link
+							href={seriesHref}
+							className="[overflow-wrap:anywhere] transition-colors hover:text-blue-600"
+							surface="series"
+							targetType="collection_title"
+							position={0}
+							clickPart="title"
+						>
 							{name}
-						</CustomLink>
+						</PostNavigationTracker.Link>
 						<span className="ml-2 text-label-2 font-normal text-text-secondary">{postCount}</span>
 					</span>
 					<ChevronIcon className="size-5 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
@@ -47,9 +55,14 @@ export default function SeriesAccordion({ slug, postId, series }: SeriesAccordio
 
 						return (
 							<li key={post.id}>
-								<CustomLink
+								<PostNavigationTracker.Link
 									href={buildPostDetailPath(slug, String(post.id))}
 									className="group/link flex items-center gap-3 rounded-md px-2 py-2.5 text-label-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring sm:text-body-2"
+									surface="series"
+									targetType="post"
+									targetPostId={post.id}
+									position={index + 1}
+									clickPart="title"
 								>
 									<span
 										aria-hidden="true"
@@ -62,12 +75,12 @@ export default function SeriesAccordion({ slug, postId, series }: SeriesAccordio
 									>
 										{post.title}
 									</span>
-								</CustomLink>
+								</PostNavigationTracker.Link>
 							</li>
 						);
 					})}
 				</ol>
-			</details>
+			</PostNavigationTracker.SeriesDetails>
 		</section>
 	);
 }
