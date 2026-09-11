@@ -1,4 +1,5 @@
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
+import { getBlogChapterCreateErrorMessage } from '@/features/chapter-management/lib/get-blog-chapter-create-error-message';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -112,7 +113,7 @@ export default function CologChapterManagementSection({ management }: CologChapt
 				onClose={handleCreateModalClose}
 				onCreate={handleAddChapter}
 				isPending={isCreating}
-				errorMessage={createError === null ? undefined : getApiErrorMessage(createError, '챕터를 추가하지 못했어요.')}
+				errorMessage={createError === null ? undefined : getBlogChapterCreateErrorMessage(createError, '챕터')}
 			/>
 			{saveError !== null && (
 				<p className="mt-4 rounded-md border border-danger p-3 text-label-2 text-danger" role="alert">

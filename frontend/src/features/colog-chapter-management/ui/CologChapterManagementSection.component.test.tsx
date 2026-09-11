@@ -88,6 +88,29 @@ describe('CologChapterManagementSection', () => {
 		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
 	});
 
+	it('챕터 개수 제한 오류를 프론트엔드 문구로 표시한다', () => {
+		render(
+			<CologChapterManagementSection
+				management={createManagement({
+					isCreateModalOpen: true,
+					createError: {
+						type: 'api',
+						detail: {
+							status: 400,
+							error: 'BAD_REQUEST',
+							errorCode: 'CHAPTER_COUNT_EXCEEDED',
+							message: '백엔드 챕터 제한 메시지',
+							invalidParams: null,
+						},
+					} as unknown as Error,
+				})}
+			/>,
+		);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('챕터는 최대 30개까지 추가할 수 있습니다.');
+		expect(screen.getByRole('alert')).not.toHaveTextContent('백엔드 챕터 제한 메시지');
+	});
+
 	it('조회 중 상태와 조회 실패 재시도를 렌더링한다', () => {
 		const { rerender } = render(<CologChapterManagementSection management={createManagement({ isLoading: true })} />);
 		expect(screen.getByRole('status')).toHaveTextContent('챕터를 불러오는 중...');
