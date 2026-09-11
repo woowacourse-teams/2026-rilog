@@ -8,7 +8,7 @@ import { prefetchFullFeedPostsQuery } from '@/shared/api/feeds/queries/full-feed
 import { fullFeedPostsQueryOptions } from '@/shared/api/feeds/queries/full-feed-posts/query-options';
 import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 
-import PostFeedCategories from './PostFeedCategories';
+import PostFeedHeader from './PostFeedHeader';
 
 const POST_FEED_CATEGORIES_ID = 'post-feed-categories';
 
@@ -49,7 +49,7 @@ export default function PostFeed({ filters }: PostFeedProps) {
 					className="h-auto w-[clamp(14rem,42vw,36rem)]"
 				/>
 			</header>
-			<PostFeedCategories id={POST_FEED_CATEGORIES_ID} />
+			<PostFeedHeader id={POST_FEED_CATEGORIES_ID} />
 			<div className="min-h-dvh">
 				<Suspense fallback={<PostFeedSkeleton />}>
 					<PostFeedContent filters={filters} />
