@@ -695,7 +695,7 @@
 	.manifestoMeaningBody {
 		grid-column: 1;
 		width: 75%;
-		justify-self: center;
+		justify-self: start;
 	}
 
 	.hero {
@@ -786,6 +786,12 @@
 	.closingActions {
 		width: min(100%, 23rem);
 		align-self: flex-end;
+	}
+}
+
+@media (width < 40rem) {
+	.manifestoMeaningBody {
+		width: 100%;
 	}
 }
 
