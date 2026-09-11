@@ -34,6 +34,8 @@ const COLOG_CREATE_INVALID_FIELD_ALLOWLIST = new Set([
 	'githubUrl',
 ]);
 
+const COLOG_CREATE_ERROR_FALLBACK_MESSAGE = '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
+
 const getApiErrorDetail = (error: unknown) => {
 	if (
 		typeof error === 'object' &&
@@ -170,7 +172,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		}
 	};
 
-	const errorMessage = error?.message || '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
+	const errorMessage = getApiErrorMessage(error, COLOG_CREATE_ERROR_FALLBACK_MESSAGE);
 	const nameAvailabilityMessage = nameAvailability.isSuccess
 		? nameAvailability.data.message
 		: nameAvailability.isError
