@@ -1,5 +1,6 @@
 package kr.rilog.global.config;
 
+import kr.rilog.global.logging.RequestIdFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +19,7 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(corsProperties.allowedOriginArray())
                 .allowedMethods("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD")
                 .allowedHeaders("*")
-                .exposedHeaders(HttpHeaders.AUTHORIZATION, "Cache-Control", "Content-Type")
+                .exposedHeaders(HttpHeaders.AUTHORIZATION, "Cache-Control", "Content-Type", RequestIdFilter.REQUEST_ID_HEADER)
                 .allowCredentials(true);
     }
 
