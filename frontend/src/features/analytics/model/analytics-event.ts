@@ -40,6 +40,13 @@ export type ContentLoadSurface = 'feed' | 'blog_post_list' | 'post_editor' | 'po
 export type ContentLoadPhase =
 	'initial' | 'pagination' | 'edit_initial_data' | 'draft_initial_data' | 'editor_bundle' | 'detail';
 
+// 상세 페이지의 후속 탐색 영역이 어떤 종류인지 구분해, 영역 제공 방문을 분모로 행동을 비교한다.
+export type PostNavigationSurface = 'series' | 'chapter_suggestions';
+// 컬렉션 제목과 개별 글 탐색을 독립적으로 집계한다.
+export type PostNavigationTargetType = 'collection_title' | 'post';
+// 같은 글 링크라도 썸네일과 제목 중 어느 부분을 선택했는지 확인한다.
+export type PostNavigationClickPart = 'title' | 'thumbnail';
+
 export interface AnalyticsStagedError extends Error {
 	analyticsFailureStage: PublishFailureStage;
 }
