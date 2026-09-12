@@ -19,6 +19,7 @@ export default function RilogSeriesRow({ series, isEditing = false, onNameChange
 				{isEditing ? (
 					<Input
 						className="w-4/5!"
+						data-ph-sensitive-attribute
 						aria-label={`${series.name} 시리즈 이름`}
 						value={series.name}
 						maxLength={CHAPTER_NAME_MAX_LENGTH}
