@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
 
+import { POST_FEED_SCROLL_TARGET_ID } from '@/features/post-feed/lib/navigate-feed-filter';
+
 import PostFeedHeader from './PostFeedHeader';
 
 type MockNextLinkProps = ComponentProps<'a'> & {
@@ -36,6 +38,7 @@ describe('PostFeedHeader', () => {
 	});
 
 	afterEach(() => {
+		document.getElementById(POST_FEED_SCROLL_TARGET_ID)?.remove();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
@@ -130,15 +133,36 @@ describe('PostFeedHeader', () => {
 		expect(header).toHaveClass('-translate-y-full');
 	});
 
-	it('일반 클릭은 필터를 전환하고 최상단으로 부드럽게 이동하며 modifier 클릭은 보존한다', () => {
+	it('깊은 스크롤의 일반 클릭은 비-sticky 피드 시작점으로 이동하며 modifier 클릭은 보존한다', () => {
 		route.searchParams = new URLSearchParams('category=tech');
 		const pushState = vi.spyOn(window.history, 'pushState');
 		const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+		const animationFrames: FrameRequestCallback[] = [];
+		vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+			animationFrames.push(callback);
+			return animationFrames.length;
+		});
+		vi.spyOn(window, 'scrollY', 'get').mockReturnValue(1_200);
+		const scrollTarget = document.createElement('div');
+		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
+		document.body.append(scrollTarget);
+		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockReturnValue({ top: -800 } as DOMRect);
 		render(<PostFeedHeader id="post-feed-categories" />);
+		const header = screen.getByRole('banner', { name: 'All.' });
+		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
+		vi.spyOn(window, 'getComputedStyle').mockImplementation(
+			(element) =>
+				({
+					scrollMarginTop: element === scrollTarget ? '32px' : '0px',
+					getPropertyValue: () => '',
+				}) as unknown as CSSStyleDeclaration,
+		);
 
 		fireEvent.click(screen.getByRole('link', { name: '일상' }));
 		expect(pushState).toHaveBeenCalledWith(null, '', '/feeds?category=daily');
-		expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+		animationFrames.shift()?.(0);
+		animationFrames.shift()?.(1_000);
+		expect(scrollTo).toHaveBeenLastCalledWith({ top: 368, behavior: 'auto' });
 
 		pushState.mockClear();
 		scrollTo.mockClear();
@@ -147,16 +171,63 @@ describe('PostFeedHeader', () => {
 		expect(scrollTo).not.toHaveBeenCalled();
 	});
 
-	it('모션 감소 설정에서는 필터 전환 후 즉시 최상단으로 이동한다', () => {
+	it('모션 감소 설정에서는 깊은 스크롤에서도 같은 피드 시작점으로 즉시 이동한다', () => {
 		vi.stubGlobal(
 			'matchMedia',
 			vi.fn(() => ({ matches: true })),
 		);
 		const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+		vi.spyOn(window, 'scrollY', 'get').mockReturnValue(1_200);
+		const scrollTarget = document.createElement('div');
+		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
+		document.body.append(scrollTarget);
+		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockReturnValue({ top: -800 } as DOMRect);
 		render(<PostFeedHeader id="post-feed-categories" />);
+		const header = screen.getByRole('banner', { name: 'All.' });
+		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
+		vi.spyOn(window, 'getComputedStyle').mockImplementation(
+			(element) =>
+				({
+					scrollMarginTop: element === scrollTarget ? '32px' : '0px',
+					getPropertyValue: () => '',
+				}) as unknown as CSSStyleDeclaration,
+		);
 
 		fireEvent.click(screen.getByRole('link', { name: '일상' }));
 
-		expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'auto' });
+		expect(scrollTo).toHaveBeenCalledWith({ top: 368, behavior: 'auto' });
+	});
+
+	it('필터 이동 중 사용자 입력이나 헤더 unmount가 발생하면 예약된 스크롤을 취소한다', () => {
+		vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+		const animationFrames: FrameRequestCallback[] = [];
+		let nextFrameId = 0;
+		vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+			animationFrames.push(callback);
+			nextFrameId += 1;
+			return nextFrameId;
+		});
+		const cancelAnimationFrame = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+		vi.spyOn(window, 'scrollY', 'get').mockReturnValue(1_200);
+		const scrollTarget = document.createElement('div');
+		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
+		document.body.append(scrollTarget);
+		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockReturnValue({ top: -800 } as DOMRect);
+		vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+			scrollMarginTop: '32px',
+			getPropertyValue: () => '',
+		} as unknown as CSSStyleDeclaration);
+		const { unmount } = render(<PostFeedHeader id="post-feed-categories" />);
+
+		fireEvent.click(screen.getByRole('link', { name: '일상' }));
+		animationFrames.shift()?.(0);
+		fireEvent.wheel(window);
+		expect(cancelAnimationFrame).toHaveBeenLastCalledWith(2);
+
+		animationFrames.length = 0;
+		fireEvent.click(screen.getByRole('link', { name: '기술' }));
+		animationFrames.shift()?.(0);
+		unmount();
+		expect(cancelAnimationFrame).toHaveBeenLastCalledWith(4);
 	});
 });

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
 
+import { POST_FEED_SCROLL_TARGET_ID } from '@/features/post-feed/lib/navigate-feed-filter';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import PageNavigation from './PageNavigation';
@@ -67,6 +68,7 @@ describe('PageNavigation', () => {
 	});
 
 	afterEach(() => {
+		document.getElementById(POST_FEED_SCROLL_TARGET_ID)?.remove();
 		vi.restoreAllMocks();
 	});
 
@@ -121,17 +123,36 @@ describe('PageNavigation', () => {
 		for (const link of screen.getAllByRole('link')) expect(link).toHaveAttribute('data-next-scroll', 'true');
 	});
 
-	it('/feeds 내부의 일반 클릭은 category를 초기화하고 최상단으로 부드럽게 이동한다', () => {
+	it('/feeds 깊은 스크롤의 일반 클릭은 category를 초기화하고 비-sticky 피드 시작점으로 이동한다', () => {
 		route.searchParams = new URLSearchParams('blogType=personal&category=retrospect');
 		const pushState = vi.spyOn(window.history, 'pushState');
 		const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+		const animationFrames: FrameRequestCallback[] = [];
+		vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+			animationFrames.push(callback);
+			return animationFrames.length;
+		});
+		vi.spyOn(window, 'scrollY', 'get').mockReturnValue(1_200);
+		const scrollTarget = document.createElement('div');
+		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
+		document.body.append(scrollTarget);
+		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockReturnValue({ top: -800 } as DOMRect);
+		vi.spyOn(window, 'getComputedStyle').mockImplementation(
+			(element) =>
+				({
+					scrollMarginTop: element === scrollTarget ? '32px' : '0px',
+					getPropertyValue: () => '',
+				}) as unknown as CSSStyleDeclaration,
+		);
 		render(<PageNavigation />);
 
 		const isDefaultPrevented = fireEvent.click(screen.getByRole('link', { name: '피드 글 123개' }));
 
 		expect(isDefaultPrevented).toBe(false);
 		expect(pushState).toHaveBeenCalledWith(null, '', '/feeds');
-		expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+		animationFrames.shift()?.(0);
+		animationFrames.shift()?.(1_000);
+		expect(scrollTo).toHaveBeenLastCalledWith({ top: 368, behavior: 'auto' });
 	});
 
 	it('피드 밖에서는 링크의 기본 navigation을 막지 않는다', () => {
