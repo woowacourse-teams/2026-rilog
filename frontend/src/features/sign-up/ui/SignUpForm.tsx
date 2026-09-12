@@ -216,7 +216,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	};
 
 	return (
-		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" data-ph-sensitive-inputs onSubmit={handleSignUpSubmit}>
+		<form noValidate className="mt-8 flex flex-col gap-8 pb-24" onSubmit={handleSignUpSubmit}>
 			<div
 				role="group"
 				aria-labelledby={profileImageLabelId}

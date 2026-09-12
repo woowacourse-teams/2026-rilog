@@ -72,27 +72,6 @@ const sanitizeAnalyticsUrl = (value: string): string => {
 	}
 };
 
-const maskInput = (text: string, element?: HTMLElement) => {
-	try {
-		if (element === undefined) {
-			return MASKED_VALUE;
-		}
-
-		const inputType = element.getAttribute('type')?.toLowerCase();
-		const shouldMask =
-			inputType === 'password' ||
-			inputType === 'email' ||
-			element.hasAttribute('data-ph-sensitive-input') ||
-			element.closest('[data-ph-sensitive-inputs]') !== null ||
-			element.classList.contains('ph-mask') ||
-			element.closest('.ph-mask') !== null;
-
-		return shouldMask ? MASKED_VALUE : text;
-	} catch {
-		return MASKED_VALUE;
-	}
-};
-
 const maskAttribute = (name: string, value: string, element?: Element) => {
 	try {
 		const normalizedName = name.toLowerCase();
@@ -212,7 +191,6 @@ export const initializeAnalytics = () => {
 					maskTextClass: 'ph-mask',
 					blockClass: 'ph-no-capture',
 					blockSelector: '[data-ph-sensitive-media] img',
-					maskInputFn: (text, element) => maskInput(text, element),
 					maskAttributeFn: (name, value, element) => maskAttribute(name, value, element),
 					maskCapturedNetworkRequestFn: (request) => maskCapturedNetworkRequest(request),
 				},

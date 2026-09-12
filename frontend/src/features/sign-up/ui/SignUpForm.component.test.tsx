@@ -93,9 +93,6 @@ describe('SignUpForm', () => {
 	it('프로필 설정에 필요한 입력과 action을 제공한다', () => {
 		renderSignUpForm();
 
-		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' }).closest('form')).toHaveAttribute(
-			'data-ph-sensitive-inputs',
-		);
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
 		expect(
 			screen.getByRole('img', { name: '프로필 이미지 미리보기' }).closest('[data-ph-sensitive-media]'),

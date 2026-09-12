@@ -74,10 +74,11 @@ describe('PostHog analytics', () => {
 			blockClass: 'ph-no-capture',
 			blockSelector: '[data-ph-sensitive-media] img',
 		});
+		expect(options.session_recording).not.toHaveProperty('maskInputFn');
 		expect(captureMock).toHaveBeenCalledWith('test event', { enabled: true });
 	});
 
-	it('세션 리플레이 마스킹 콜백은 민감한 값을 fail-closed로 처리한다', async () => {
+	it('세션 리플레이 마스킹 콜백은 비입력 민감 속성과 네트워크 값을 fail-closed로 처리한다', async () => {
 		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'phc_test');
 		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
 		const { initializeAnalytics } = await import('./posthog');
@@ -86,43 +87,10 @@ describe('PostHog analytics', () => {
 		expect(initMock).toHaveBeenCalledOnce();
 		const options = initMock.mock.calls[0]?.[1] as {
 			session_recording: {
-				maskInputFn: (value: string, element?: HTMLElement) => string;
 				maskAttributeFn: (name: string, value: string, element?: Element) => string;
 				maskCapturedNetworkRequestFn: (request: unknown) => Record<string, unknown>;
 			};
 		};
-
-		const createInputElement = (config: {
-			type?: string;
-			sensitive?: boolean;
-			insideSensitiveGroup?: boolean;
-			masked?: boolean;
-		}) =>
-			({
-				getAttribute: (name: string) => (name === 'type' ? (config.type ?? 'text') : null),
-				hasAttribute: (name: string) => name === 'data-ph-sensitive-input' && config.sensitive === true,
-				closest: (selector: string) => {
-					if (selector === '[data-ph-sensitive-inputs]' && config.insideSensitiveGroup === true) {
-						return {} as Element;
-					}
-					if (selector === '.ph-mask' && config.masked === true) {
-						return {} as Element;
-					}
-					return null;
-				},
-				classList: { contains: (className: string) => className === 'ph-mask' && config.masked === true },
-			}) as unknown as HTMLElement;
-
-		expect(options.session_recording.maskInputFn('public profile', createInputElement({}))).toBe('public profile');
-		expect(options.session_recording.maskInputFn('password', createInputElement({ type: 'password' }))).toBe(
-			'[Masked]',
-		);
-		expect(options.session_recording.maskInputFn('email', createInputElement({ type: 'email' }))).toBe('[Masked]');
-		expect(options.session_recording.maskInputFn('title', createInputElement({ sensitive: true }))).toBe('[Masked]');
-		expect(options.session_recording.maskInputFn('nickname', createInputElement({ insideSensitiveGroup: true }))).toBe(
-			'[Masked]',
-		);
-		expect(options.session_recording.maskInputFn('private', createInputElement({ masked: true }))).toBe('[Masked]');
 		const createAttributeElement = (config: {
 			masked?: boolean;
 			sensitive?: boolean;
@@ -181,18 +149,12 @@ describe('PostHog analytics', () => {
 		expect(maskedRequest.requestBody).toBeUndefined();
 		expect(maskedRequest.responseBody).toBeUndefined();
 
-		const throwingInput = () => {
-			throw new Error('mask input failed');
-		};
 		const throwingAttribute = () => {
 			throw new Error('mask attribute failed');
 		};
 		const throwingNetwork = () => {
 			throw new Error('mask network failed');
 		};
-		expect(() =>
-			options.session_recording.maskInputFn.call(null, throwingInput as unknown as string, null as never),
-		).not.toThrow();
 		expect(() =>
 			options.session_recording.maskAttributeFn.call(null, 'aria-label', throwingAttribute as unknown as string),
 		).not.toThrow();
