@@ -47,7 +47,7 @@ export default function RilogProfileImageField({
 			{({ id, describedBy }) => (
 				<div id={id} className="flex flex-col gap-2">
 					<div className="flex items-end gap-4">
-						<div className="group relative shrink-0">
+						<div className="group relative shrink-0" data-ph-sensitive-media>
 							<ImagePreview
 								src={previewUrl || '/images/profile-placeholder.svg'}
 								alt="프로필 이미지 미리보기"

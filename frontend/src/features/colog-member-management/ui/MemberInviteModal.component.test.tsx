@@ -87,6 +87,9 @@ describe('MemberInviteModal', () => {
 		await user.type(input, '@jetproc{Enter}');
 
 		expect(await screen.findByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('김지연');
+		const candidateRow = screen.getByText('김지연').closest('li');
+		expect(candidateRow).toHaveClass('ph-mask');
+		expect(candidateRow).toHaveAttribute('data-ph-sensitive-media');
 		expect(screen.getByRole('button', { name: '초대' })).toBeEnabled();
 
 		await user.click(screen.getByRole('button', { name: '김지연 초대 목록에서 제거' }));

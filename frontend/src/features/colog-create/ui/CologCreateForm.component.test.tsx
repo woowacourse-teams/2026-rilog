@@ -95,6 +95,12 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '팀 로고 미리보기' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '기본 팀 커버 이미지' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
 		expect(screen.getByLabelText('팀 로고 변경')).toBeRequired();
 		expect(screen.getByLabelText('커버 이미지 변경')).not.toBeRequired();
 		for (const label of ['팀 로고', '팀 이름', '팀 고유 아이디']) {
