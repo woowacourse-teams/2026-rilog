@@ -90,7 +90,7 @@ export default function BlogHome({
 				/>
 			</div>
 			{initialIndexRequestFailed ? <BlogHomeIndexRecovery slug={profile.slug} /> : null}
-			<BlogProfileViewTracker blogType={profile.type} />
+			<BlogProfileViewTracker blogType={profile.type} blogId={profile.id} />
 		</PageShell>
 	);
 }

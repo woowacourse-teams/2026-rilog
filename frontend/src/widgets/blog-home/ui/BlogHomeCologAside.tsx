@@ -1,10 +1,10 @@
 'use client';
 
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { useBlogHomeIndex } from '@/features/blog-home-index/hooks/use-blog-home-index';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
-import CustomLink from '@/shared/ui/link/CustomLink';
 import ProfileAsideList from '@/shared/ui/profile/ProfileAsideList';
 
 interface BlogHomeCologAsideProps {
@@ -47,8 +47,9 @@ export default function BlogHomeCologAside({ slug, initialIndexRequestFailed = f
 		>
 			{index.cologIndexes.map((colog) => (
 				<li key={colog.id}>
-					<CustomLink
+					<BlogProfileEntryLink
 						href={buildBlogHomePath(colog.slug)}
+						entrySource="profile_colog_list"
 						aria-label={`${colog.name} Colog로 이동`}
 						className="inline-flex rounded-lg focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 					>
@@ -59,7 +60,7 @@ export default function BlogHomeCologAside({ slug, initialIndexRequestFailed = f
 							size="aside"
 							tone="subtle"
 						/>
-					</CustomLink>
+					</BlogProfileEntryLink>
 				</li>
 			))}
 		</ProfileAsideList>

@@ -1,4 +1,5 @@
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
 import type { CologChapterPostSuggestions } from '@/features/post-detail/model/chapter';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
@@ -21,12 +22,13 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 	return (
 		<section aria-labelledby="chapter-post-suggestions-title">
 			<h2 id="chapter-post-suggestions-title" className="text-body-2 font-semibold text-text-primary">
-				<CustomLink
+				<BlogProfileEntryLink
 					href={chapterHref}
+					entrySource="post_detail_chapter_title"
 					className="rounded-sm transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
 					{chapter.name}
-				</CustomLink>{' '}
+				</BlogProfileEntryLink>{' '}
 				챕터의 더 많은 글
 			</h2>
 
@@ -59,12 +61,13 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 										{post.title}
 									</h3>
 								</CustomLink>
-								<CustomLink
+								<BlogProfileEntryLink
 									href={buildBlogHomePath(post.author.slug)}
+									entrySource="post_detail_recommendation_author"
 									className="inline-block w-full truncate rounded-sm text-label-2 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 								>
 									{post.author.nickname}
-								</CustomLink>
+								</BlogProfileEntryLink>
 							</div>
 						</article>
 					</li>
