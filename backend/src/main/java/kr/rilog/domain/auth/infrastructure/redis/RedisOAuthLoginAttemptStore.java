@@ -3,7 +3,9 @@ package kr.rilog.domain.auth.infrastructure.redis;
 import kr.rilog.domain.auth.application.oauth.model.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthLoginAttemptStore;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,9 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
 
 @Component
 @RequiredArgsConstructor
@@ -25,14 +30,36 @@ public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
     @Override
     public void save(SocialLoginProvider provider, OAuthLoginAttempt attempt, Duration ttl) {
-        redisTemplate.opsForValue().set(keyOf(provider, attempt.state()), attempt.redirectUrl(), ttl);
+        runRedisOperation(
+                "Redis OAuth login attempt save failed",
+                () -> redisTemplate.opsForValue().set(keyOf(provider, attempt.state()), attempt.redirectUrl(), ttl)
+        );
     }
 
     @Override
     public Optional<OAuthLoginAttempt> consume(SocialLoginProvider provider, String state) {
-        String redirectUrl = redisTemplate.opsForValue().getAndDelete(keyOf(provider, state));
+        String redirectUrl = getRedisValue(
+                "Redis OAuth login attempt consume failed",
+                () -> redisTemplate.opsForValue().getAndDelete(keyOf(provider, state))
+        );
         return Optional.ofNullable(redirectUrl)
                 .map(value -> new OAuthLoginAttempt(state, value));
+    }
+
+    private void runRedisOperation(String failureMessage, Runnable operation) {
+        try {
+            operation.run();
+        } catch (DataAccessException exception) {
+            throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR, failureMessage, exception);
+        }
+    }
+
+    private String getRedisValue(String failureMessage, Supplier<String> operation) {
+        try {
+            return operation.get();
+        } catch (DataAccessException exception) {
+            throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR, failureMessage, exception);
+        }
     }
 
     private String keyOf(SocialLoginProvider provider, String state) {

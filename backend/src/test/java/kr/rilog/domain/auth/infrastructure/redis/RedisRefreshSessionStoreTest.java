@@ -1,11 +1,14 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
 import kr.rilog.domain.auth.entity.RefreshSession;
+import kr.rilog.global.exception.GlobalExceptionInformation;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -13,7 +16,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -101,5 +107,44 @@ class RedisRefreshSessionStoreTest {
 
         // then
         verify(redisTemplate).delete("refresh:hashed-refresh-token");
+    }
+
+    @Test
+    @DisplayName("Redis 세션 폐기 실패는 작업 문맥과 원인 예외를 보존하되 token hash를 메시지에 담지 않는다.")
+    void revokeFailurePreservesOperationContextAndCause() {
+        // given
+        RedisConnectionFailureException failure =
+                new RedisConnectionFailureException("redis failed token=hashed-refresh-token");
+        doThrow(failure).when(redisTemplate).delete(anyString());
+        RedisRefreshSessionStore store = new RedisRefreshSessionStore(redisTemplate);
+
+        // when - then
+        assertThatThrownBy(() -> store.revoke(
+                        "hashed-refresh-token",
+                        LocalDateTime.of(2026, 8, 13, 0, 0)
+                ))
+                .isInstanceOf(RilogInfrastructureException.class)
+                .hasMessage("Redis refresh session revoke failed")
+                .hasMessageNotContaining("hashed-refresh-token")
+                .hasCause(failure)
+                .extracting("errorInformation")
+                .isEqualTo(GlobalExceptionInformation.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    @DisplayName("Redis 세션 폐기 중 데이터 접근 예외가 아닌 런타임 예외는 인프라 예외로 감싸지 않는다.")
+    void revokeFailureDoesNotWrapNonDataAccessException() {
+        // given
+        IllegalArgumentException failure = new IllegalArgumentException("invalid argument");
+        doThrow(failure).when(redisTemplate).delete(anyString());
+        RedisRefreshSessionStore store = new RedisRefreshSessionStore(redisTemplate);
+
+        // when - then
+        assertThatThrownBy(() -> store.revoke(
+                        "hashed-refresh-token",
+                        LocalDateTime.of(2026, 8, 13, 0, 0)
+                ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .isSameAs(failure);
     }
 }

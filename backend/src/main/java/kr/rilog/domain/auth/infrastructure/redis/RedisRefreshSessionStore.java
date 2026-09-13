@@ -2,7 +2,9 @@ package kr.rilog.domain.auth.infrastructure.redis;
 
 import kr.rilog.domain.auth.application.port.token.RefreshSessionStore;
 import kr.rilog.domain.auth.entity.RefreshSession;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +12,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
 
 @Component
 @RequiredArgsConstructor
@@ -23,30 +28,58 @@ public class RedisRefreshSessionStore implements RefreshSessionStore {
 
     @Override
     public void save(RefreshSession refreshSession, Duration ttl) {
-        redisTemplate.opsForValue().set(
-                keyOf(refreshSession.getTokenHash()),
-                valueOf(refreshSession),
-                ttl
+        runRedisOperation(
+                "Redis refresh session save failed",
+                () -> redisTemplate.opsForValue().set(
+                        keyOf(refreshSession.getTokenHash()),
+                        valueOf(refreshSession),
+                        ttl
+                )
         );
     }
 
     @Override
     public Optional<RefreshSession> findByTokenHash(String tokenHash) {
-        String value = redisTemplate.opsForValue().get(keyOf(tokenHash));
+        String value = getRedisValue(
+                "Redis refresh session find failed",
+                () -> redisTemplate.opsForValue().get(keyOf(tokenHash))
+        );
         return Optional.ofNullable(value)
                 .map(storedValue -> refreshSessionOf(tokenHash, storedValue));
     }
 
     @Override
     public Optional<RefreshSession> consume(String tokenHash) {
-        String value = redisTemplate.opsForValue().getAndDelete(keyOf(tokenHash));
+        String value = getRedisValue(
+                "Redis refresh session consume failed",
+                () -> redisTemplate.opsForValue().getAndDelete(keyOf(tokenHash))
+        );
         return Optional.ofNullable(value)
                 .map(storedValue -> refreshSessionOf(tokenHash, storedValue));
     }
 
     @Override
     public void revoke(String tokenHash, LocalDateTime revokedAt) {
-        redisTemplate.delete(keyOf(tokenHash));
+        runRedisOperation(
+                "Redis refresh session revoke failed",
+                () -> redisTemplate.delete(keyOf(tokenHash))
+        );
+    }
+
+    private void runRedisOperation(String failureMessage, Runnable operation) {
+        try {
+            operation.run();
+        } catch (DataAccessException exception) {
+            throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR, failureMessage, exception);
+        }
+    }
+
+    private String getRedisValue(String failureMessage, Supplier<String> operation) {
+        try {
+            return operation.get();
+        } catch (DataAccessException exception) {
+            throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR, failureMessage, exception);
+        }
     }
 
     private String keyOf(String tokenHash) {

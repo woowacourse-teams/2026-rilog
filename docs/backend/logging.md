@@ -26,6 +26,14 @@
 
 개발 프로필인 `local`, `dev`는 애플리케이션 패키지 `kr.rilog`를 `debug` 이상으로 출력한다. 운영 프로필인 `prod`는 `kr.rilog`를 `info` 이상으로 출력하고 Hibernate SQL 및 바인딩 파라미터 상세 로그를 출력하지 않는다.
 
+## 예외 로그 레벨
+
+HTTP 요청 처리 중 발생한 예상 가능한 4xx 예외는 `INFO`로 기록하고 stack trace를 남기지 않는다. 미처리 예외, 미분류 데이터 무결성 예외, 외부 연동 실패와 설정 오류처럼 5xx로 응답하는 서버 장애는 최종 HTTP 예외 처리 지점에서 `ERROR`로 한 번 기록한다.
+
+HTTP 요청 처리 흐름에서 외부 연동 예외를 애플리케이션 예외로 변환할 때는 `RilogInfrastructureException`을 사용한다. 공개 응답에는 내부 context를 담지 않고, 로그 추적을 위해 안전한 작업 문맥과 원인 예외 `cause`만 보존한다.
+
+비동기 S3 작업은 요청 스레드의 MDC를 작업 실행 시점까지 전달하고, 실행 종료 후 이전 MDC를 복원한다. S3 객체별 태깅 실패는 `event=s3_object_tagging_failed`와 안전한 대상 정보, 원인 예외를 `ERROR`로 한 번 기록하고 후속 객체 처리는 계속한다. `@Async` 메서드에서 처리되지 않은 예외는 `event=async_uncaught_exception`으로 기록한다.
+
 ## 민감정보 제외 규칙
 
 로그에는 토큰, 인증 코드, OAuth state, 쿠키, 비밀번호, secret, API key, private key 원문을 남기지 않는다. 예외를 함께 기록할 때는 원인 예외, suppressed 예외와 stack frame은 유지하되 예외 메시지 안의 민감값만 `<redacted>`로 치환한다.
