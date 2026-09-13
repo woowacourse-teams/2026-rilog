@@ -238,7 +238,7 @@
 }
 
 .manifestoMeaningSection {
-	padding: clamp(7rem, 14vw, 14rem) var(--about-gutter);
+	padding: clamp(7rem, 14vw, 14rem) var(--about-gutter) clamp(1.4rem, 2.8vw, 2.8rem);
 	background: var(--surface);
 }
 
@@ -300,9 +300,7 @@
 }
 
 .linkSection {
-	max-width: 48rem;
-	margin: 0 auto;
-	padding-bottom: clamp(2rem, 4vw, 3rem);
+	padding-block: clamp(4rem, 8vw, 8rem) 0;
 }
 
 .linkSection a {
@@ -310,8 +308,8 @@
 	width: 100%;
 	border-top: 1px solid var(--navy-300);
 	color: inherit;
-	font-size: clamp(var(--text-body-4), 2vw, var(--text-title-2));
-	font-weight: 500;
+	font-size: clamp(1.75rem, 6vw, 4.5rem);
+	font-weight: 400;
 	letter-spacing: -0.025em;
 	text-decoration: none;
 }
@@ -321,10 +319,41 @@
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	max-width: 48rem;
-	min-height: clamp(5rem, 8vw, 7rem);
-	margin: 0 auto;
+	min-height: clamp(6rem, 14vw, 12rem);
 	padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.linkLabel {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3em;
+	white-space: nowrap;
+}
+
+.linkLogo {
+	position: relative;
+	display: inline-block;
+	width: 2.5em;
+	aspect-ratio: 1186 / 472;
+	background: currentColor;
+	-webkit-mask: url('/brand/logo.svg') center / contain no-repeat;
+	mask: url('/brand/logo.svg') center / contain no-repeat;
+	transform: translateY(0.08em);
+}
+
+.linkLogo::after {
+	position: absolute;
+	top: 60.1%;
+	left: 92.78%;
+	width: 7.2%;
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: var(--navy-500);
+	content: '';
+}
+
+.linkSection a:is(:hover, :focus-visible, :active) .linkLogo::after {
+	background: var(--focus-ring);
 }
 
 .linkSection a:last-child {
@@ -332,6 +361,7 @@
 }
 
 .linkSection a:hover,
+.linkSection a:focus-visible,
 .linkSection a:active {
 	color: var(--focus-ring);
 }
@@ -615,12 +645,6 @@
 .closingActions a:hover,
 .closingActions a:active {
 	color: var(--focus-ring);
-}
-
-@media (width >= 64rem) {
-	.linkContent {
-		min-height: clamp(5rem, 6vw, 6rem);
-	}
 }
 
 @media (width < 64rem) {

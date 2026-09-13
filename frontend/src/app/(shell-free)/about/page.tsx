@@ -98,7 +98,10 @@ export default function AboutPage() {
 				<footer className={styles.linkSection} aria-label="Rilog 둘러보기">
 					<Link href={APP_ROUTES.feeds}>
 						<span className={styles.linkContent}>
-							<span>continue to Rilog.</span>
+							<span className={styles.linkLabel}>
+								<span>continue to</span>
+								<span className={styles.linkLogo} role="img" aria-label="Rilog." />
+							</span>
 							<span aria-hidden="true">↗</span>
 						</span>
 					</Link>
