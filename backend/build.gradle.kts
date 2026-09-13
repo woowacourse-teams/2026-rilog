@@ -39,7 +39,7 @@ dependencies {
 	implementation(platform("software.amazon.awssdk:bom:2.25.0"))
 	implementation("software.amazon.awssdk:s3")
 
-	// PostgresSQL
+	// MySQL
 	runtimeOnly("com.mysql:mysql-connector-j")
 
 	// DB migration tools
