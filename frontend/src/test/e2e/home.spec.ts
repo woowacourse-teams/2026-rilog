@@ -419,7 +419,7 @@ test('깊은 위치에서 사이드바 탭을 바꾸는 동안 헤더가 고정�
 			{ passive: true },
 		);
 	});
-	await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '개인' }).click();
+	await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: 'Personal' }).click();
 	await expect(page).toHaveURL(/blogType=personal/);
 	await expectFeedHeaderAligned(page);
 	const headerPositions = await page.evaluate(
@@ -513,7 +513,7 @@ test('피드 필터 cache는 history 탐색에도 API, RSC, skeleton을 다시 �
 	await page.getByRole('link', { name: '일상', exact: true }).click();
 	await expect(page).toHaveURL(/category=daily/);
 	await scrollFeedDeepAndRevealHeader(page, 0);
-	await page.getByRole('link', { name: '개인', exact: true }).click();
+	await page.getByRole('link', { name: 'Personal', exact: true }).click();
 	await expect(page).toHaveURL('/feeds?blogType=personal');
 	await expectFeedHeaderAligned(page);
 	await expect(page.getByRole('link', { name: '전체', exact: true })).toHaveAttribute('aria-current', 'page');

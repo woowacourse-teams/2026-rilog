@@ -60,7 +60,7 @@ test('비로그인 메뉴 선택 후에도 hover 중에만 펼쳐지고 35px 크
 	const sidebar = page.getByRole('complementary', { name: '사이드바' });
 	const navigation = sidebar.getByRole('navigation', { name: '주요 메뉴', exact: true });
 	const feed = navigation.getByRole('link', { name: /피드 글/ });
-	const personal = navigation.getByRole('link', { name: '개인', exact: true });
+	const personal = navigation.getByRole('link', { name: 'Personal', exact: true });
 	const colog = navigation.getByRole('link', { name: 'Colog', exact: true });
 	const loginButton = sidebar.getByRole('button', { name: '로그인' });
 	await expect(page).toHaveTitle(/Rilog/);
@@ -178,7 +178,7 @@ test('로그인 코로그 이미지, 기존 이동과 다른 페이지에서 하
 	const sidebar = page.getByRole('complementary', { name: '사이드바' });
 	const navigation = sidebar.getByRole('navigation', { name: '주요 메뉴', exact: true });
 	const feed = navigation.getByRole('link', { name: /피드 글/ });
-	const personal = navigation.getByRole('link', { name: '개인', exact: true });
+	const personal = navigation.getByRole('link', { name: 'Personal', exact: true });
 	const cologMenu = navigation.getByRole('link', { name: 'Colog', exact: true });
 	const team = sidebar.getByRole('link', { name: '우아한형제들' });
 	const secondTeam = sidebar.getByRole('link', { name: '두 번째 코로그' });
