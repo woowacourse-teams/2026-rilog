@@ -33,16 +33,13 @@ export default function BlogHome({
 		) : (
 			<RilogSettingsButton slug={profile.slug} />
 		);
-	const rightAside =
+	const asideContent =
 		profile.type === 'COLOG' ? (
-			<div className="py-11">
-				<CologMemberAside slug={profile.slug} />
-			</div>
+			<CologMemberAside slug={profile.slug} />
 		) : (
-			<div className="py-11">
-				<BlogHomeCologAside slug={profile.slug} initialIndexRequestFailed={initialIndexRequestFailed} />
-			</div>
+			<BlogHomeCologAside slug={profile.slug} initialIndexRequestFailed={initialIndexRequestFailed} />
 		);
+	const rightAside = <div className="py-11">{asideContent}</div>;
 
 	return (
 		<PageShell
@@ -63,11 +60,7 @@ export default function BlogHome({
 			rightAside={rightAside}
 		>
 			<div className="px-6 py-11">
-				{profile.type === 'COLOG' ? (
-					<div className="mb-8 @[74rem]/page-shell:hidden">
-						<CologMemberAside slug={profile.slug} />
-					</div>
-				) : null}
+				<div className="mb-8 @[74rem]/page-shell:hidden">{asideContent}</div>
 				<BlogHomeToolbar
 					blogType={profile.type}
 					slug={profile.slug}

@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useBlogHomeIndex } from '@/features/blog-home-index/hooks/use-blog-home-index';
@@ -51,5 +52,35 @@ describe('BlogHomeCologAside', () => {
 		render(<BlogHomeCologAside slug="jetproc" />);
 
 		expect(screen.getByText('아직 참여한 Colog가 없습니다.')).toBeInTheDocument();
+	});
+
+	it('목록을 불러오는 동안 상태를 안내한다', () => {
+		vi.mocked(useBlogHomeIndex).mockReturnValue({
+			index: undefined,
+			hasError: false,
+			isPending: true,
+			retry: vi.fn(),
+		});
+
+		render(<BlogHomeCologAside slug="jetproc" />);
+
+		expect(screen.getByText('Colog 목록을 불러오는 중...')).toBeInTheDocument();
+	});
+
+	it('목록 조회 오류에서 재시도 동작을 제공한다', async () => {
+		const user = userEvent.setup();
+		const retry = vi.fn();
+		vi.mocked(useBlogHomeIndex).mockReturnValue({
+			index: undefined,
+			hasError: true,
+			isPending: false,
+			retry,
+		});
+
+		render(<BlogHomeCologAside slug="jetproc" />);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('Colog 목록을 불러오지 못했어요.');
+		await user.click(screen.getByRole('button', { name: '다시 시도' }));
+		expect(retry).toHaveBeenCalledOnce();
 	});
 });
