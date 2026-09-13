@@ -5,7 +5,7 @@ import type { CapturedNetworkRequest, CaptureResult } from 'posthog-js';
 type PostHogOperation = 'init' | 'capture' | 'identify' | 'reset';
 
 const MASKED_VALUE = '[Masked]';
-const SENSITIVE_QUERY_KEYS = new Set(['email', 'invite', 'error', 'errordescription']);
+const SENSITIVE_QUERY_KEYS = new Set(['email', 'invite', 'error', 'errordescription', 'nickname', 'slug']);
 const SENSITIVE_QUERY_KEY_PATTERN =
 	/(?:^|[_-])(?:auth|authorization|access|refresh|id)?token(?:$|[_-])|(?:^|[_-])(?:auth|authorization|code|state|nonce|secret|signature|credential|password|passwd)(?:$|[_-])|(?:^|[_-])api[_-]?key(?:$|[_-])|^x-amz(?:-|$)/i;
 const SENSITIVE_ATTRIBUTE_NAMES = new Set(['value', 'aria-label', 'alt', 'title', 'href', 'src']);
@@ -13,6 +13,7 @@ const SENSITIVE_ATTRIBUTE_MARKER_SELECTOR = '.ph-mask, [data-ph-sensitive-media]
 const OAUTH_CALLBACK_PATH_PATTERN =
 	/(?:oauth\d?|auth)(?:\/[^/]+)*\/(?:callback|redirect)(?:\/|$)|\/callback(?:\/|$)|\/login\/oauth2\/code(?:\/|$)/i;
 const DRAFT_API_PATH_PATTERN = /(\/v\d+\/drafts\/)([^/?#]+)/gi;
+const USER_LOOKUP_API_PATH_PATTERN = /^(\/v1\/users\/)([^/?#]+)$/i;
 const WRITE_ROUTE_PATH_PATTERN = /^\/write(?:\/|$)/i;
 
 const isAbsoluteUrl = (value: string) => /^[a-z][a-z\d+.-]*:/i.test(value);
@@ -47,6 +48,15 @@ const maskDraftApiPathId = (pathname: string) =>
 		return `${prefix}${MASKED_VALUE}`;
 	});
 
+const maskUserLookupApiPathSlug = (pathname: string) =>
+	pathname.replace(USER_LOOKUP_API_PATH_PATTERN, (match, prefix: string, slug: string) => {
+		if (slug.toLowerCase() === 'me') {
+			return match;
+		}
+
+		return `${prefix}${MASKED_VALUE}`;
+	});
+
 /**
  * URL fields can contain OAuth credentials, access tokens, signed object-store URLs,
  * or write identifiers. Public navigation filters, safe query values, and hash
@@ -60,6 +70,7 @@ const sanitizeAnalyticsUrl = (value: string): string => {
 
 		const url = new URL(value, 'https://rilog.kr');
 		url.pathname = maskDraftApiPathId(url.pathname);
+		url.pathname = maskUserLookupApiPathSlug(url.pathname);
 		maskUrlQuery(url);
 
 		if (isAbsoluteUrl(value)) {

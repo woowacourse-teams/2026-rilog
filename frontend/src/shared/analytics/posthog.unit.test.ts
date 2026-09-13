@@ -174,8 +174,9 @@ describe('PostHog analytics', () => {
 		const event = options.before_send({
 			properties: {
 				current_url:
-					'https://rilog.kr/feeds?blogType=TECH&page=2&size=12&safe=kept&EMAIL=alice%40example.com&e-mail=other%40example.com&invite=invite-secret&INVITE=other-invite&error=oauth-error&ERROR=other-error&error-description=oauth-description&ERROR_DESCRIPTION=other-description&series=public-series&chapter=1&colog=team&category=TECH&tab=all#chapter-1',
-				referrer: 'https://rilog.kr/write?draftId=42&postId=7&safe=kept&category=TECH#editor',
+					'https://rilog.kr/feeds?blogType=TECH&page=2&size=12&safe=kept&EMAIL=alice%40example.com&e-mail=other%40example.com&invite=invite-secret&INVITE=other-invite&error=oauth-error&ERROR=other-error&error-description=oauth-description&ERROR_DESCRIPTION=other-description&nickname=private-nickname&Nick_name=other-private-nickname&nick-name=hyphenated-nickname&slug=private-slug&SLUG=other-private-slug&sl-ug=hyphenated-slug&series=public-series&chapter=1&colog=team&category=TECH&tab=all#chapter-1',
+				referrer:
+					'https://rilog.kr/write?draftId=42&postId=7&nickname=referrer-nickname&slug=referrer-slug&safe=kept&category=TECH#editor',
 			},
 		});
 		if (event === null) {
@@ -196,6 +197,12 @@ describe('PostHog analytics', () => {
 		expect(currentUrl.searchParams.get('ERROR')).toBe('[Masked]');
 		expect(currentUrl.searchParams.get('error-description')).toBe('[Masked]');
 		expect(currentUrl.searchParams.get('ERROR_DESCRIPTION')).toBe('[Masked]');
+		expect(currentUrl.searchParams.get('nickname')).toBe('[Masked]');
+		expect(currentUrl.searchParams.get('Nick_name')).toBe('[Masked]');
+		expect(currentUrl.searchParams.get('nick-name')).toBe('[Masked]');
+		expect(currentUrl.searchParams.get('slug')).toBe('[Masked]');
+		expect(currentUrl.searchParams.get('SLUG')).toBe('[Masked]');
+		expect(currentUrl.searchParams.get('sl-ug')).toBe('[Masked]');
 		expect(currentUrl.searchParams.get('series')).toBe('public-series');
 		expect(currentUrl.searchParams.get('chapter')).toBe('1');
 		expect(currentUrl.searchParams.get('colog')).toBe('team');
@@ -204,6 +211,8 @@ describe('PostHog analytics', () => {
 		expect(currentUrl.hash).toBe('#chapter-1');
 		expect(referrer.searchParams.get('draftId')).not.toBe('42');
 		expect(referrer.searchParams.get('postId')).not.toBe('7');
+		expect(referrer.searchParams.get('nickname')).toBe('[Masked]');
+		expect(referrer.searchParams.get('slug')).toBe('[Masked]');
 		expect(referrer.searchParams.get('safe')).toBe('kept');
 		expect(referrer.searchParams.get('category')).toBe('TECH');
 		expect(referrer.hash).toBe('#editor');
@@ -225,6 +234,45 @@ describe('PostHog analytics', () => {
 		expect(draftUrl.searchParams.get('safe')).toBe('kept');
 		expect(draftUrl.searchParams.get('series')).toBe('public-series');
 		expect(draftUrl.hash).toBe('#draft');
+
+		const nicknameAvailabilityRequest = options.session_recording.maskCapturedNetworkRequestFn({
+			name: '/v1/availability/nickname?nickname=private-nickname&safe=kept#availability',
+		});
+		const nicknameAvailabilityUrl = new URL(String(nicknameAvailabilityRequest.name), 'https://rilog.kr');
+		expect(nicknameAvailabilityUrl.searchParams.get('nickname')).toBe('[Masked]');
+		expect(nicknameAvailabilityUrl.searchParams.get('safe')).toBe('kept');
+		expect(nicknameAvailabilityUrl.hash).toBe('#availability');
+
+		const slugAvailabilityRequest = options.session_recording.maskCapturedNetworkRequestFn({
+			name: '/v1/availability/slug?slug=private-slug&safe=kept',
+		});
+		const slugAvailabilityUrl = new URL(String(slugAvailabilityRequest.name), 'https://rilog.kr');
+		expect(slugAvailabilityUrl.searchParams.get('slug')).toBe('[Masked]');
+		expect(slugAvailabilityUrl.searchParams.get('safe')).toBe('kept');
+
+		const userLookupRequest = options.session_recording.maskCapturedNetworkRequestFn({
+			name: '/v1/users/private-slug?tab=profile#activity',
+		});
+		const userLookupUrl = new URL(String(userLookupRequest.name), 'https://rilog.kr');
+		expect(userLookupUrl.pathname).toBe('/v1/users/[Masked]');
+		expect(userLookupUrl.searchParams.get('tab')).toBe('profile');
+		expect(userLookupUrl.hash).toBe('#activity');
+
+		const absoluteUserLookupRequest = options.session_recording.maskCapturedNetworkRequestFn({
+			name: 'https://api.rilog.test/v1/users/private-slug?tab=profile',
+		});
+		const absoluteUserLookupUrl = new URL(String(absoluteUserLookupRequest.name));
+		expect(absoluteUserLookupUrl.origin).toBe('https://api.rilog.test');
+		expect(absoluteUserLookupUrl.pathname).toBe('/v1/users/[Masked]');
+		expect(absoluteUserLookupUrl.searchParams.get('tab')).toBe('profile');
+
+		const myUserRequest = options.session_recording.maskCapturedNetworkRequestFn({ name: '/v1/users/me?tab=profile' });
+		expect(myUserRequest.name).toBe('/v1/users/me?tab=profile');
+
+		const publicProfileRequest = options.session_recording.maskCapturedNetworkRequestFn({
+			name: '/@public-slug?colog=team&series=public-series#chapter-1',
+		});
+		expect(publicProfileRequest.name).toBe('/@public-slug?colog=team&series=public-series#chapter-1');
 
 		const malformedRequest = options.session_recording.maskCapturedNetworkRequestFn({ name: 'http://[malformed' });
 		expect(malformedRequest.name).toBe('[Masked]');
