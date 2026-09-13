@@ -40,7 +40,7 @@ dependencies {
 	implementation("software.amazon.awssdk:s3")
 
 	// PostgresSQL
-	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("com.mysql:mysql-connector-j")
 
 	// Actuactor
     implementation("org.springframework.boot:spring-boot-starter-actuator")
