@@ -25,11 +25,12 @@ const renderInTable = (ui: React.ReactElement) =>
 
 describe('CologMemberRow', () => {
 	it('읽기 모드에서는 텍스트 정보를 렌더링하고 멤버별 리플레이 마스킹 경계를 둔다', () => {
-		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '2024-05-19T23:30:00' }} />);
+		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '2024-05-19T23:30:00' }} rowNumber={1} />);
 
 		const memberRow = screen.getByText('김지연').closest('tr');
 		expect(memberRow).toHaveClass('ph-mask');
 		expect(memberRow).toHaveAttribute('data-ph-sensitive-media');
+		expect(screen.getByText('1')).toBeInTheDocument();
 		expect(screen.getByText('김지연')).toBeInTheDocument();
 		expect(screen.getByText('@jiyeon')).toBeInTheDocument();
 		expect(screen.getByText('Owner')).toBeInTheDocument();
@@ -37,7 +38,7 @@ describe('CologMemberRow', () => {
 	});
 
 	it('가입일이 잘못된 문자열이면 원문을 보존한다', () => {
-		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '알 수 없음' }} />);
+		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '알 수 없음' }} rowNumber={1} />);
 
 		expect(screen.getByText('알 수 없음')).toBeInTheDocument();
 	});
@@ -49,6 +50,7 @@ describe('CologMemberRow', () => {
 		renderInTable(
 			<CologMemberRow
 				member={BASE_MEMBER}
+				rowNumber={1}
 				isEditing
 				onPermissionChange={onPermissionChange}
 				onBlogRoleChange={vi.fn()}
@@ -67,7 +69,7 @@ describe('CologMemberRow', () => {
 		const user = userEvent.setup();
 		const onRemove = vi.fn();
 
-		renderInTable(<CologMemberRow member={BASE_MEMBER} canRemove onRemove={onRemove} />);
+		renderInTable(<CologMemberRow member={BASE_MEMBER} rowNumber={1} canRemove onRemove={onRemove} />);
 		const removeButton = screen.getByRole('button', { name: '김지연 멤버 내보내기' });
 		expect(removeButton.closest('tr')).toHaveClass('ph-mask');
 		await user.click(removeButton);
@@ -76,13 +78,13 @@ describe('CologMemberRow', () => {
 	});
 
 	it('내보낼 수 없는 멤버에게는 내보내기 버튼을 표시하지 않는다', () => {
-		renderInTable(<CologMemberRow member={BASE_MEMBER} />);
+		renderInTable(<CologMemberRow member={BASE_MEMBER} rowNumber={1} />);
 
 		expect(screen.queryByRole('button', { name: '김지연 멤버 내보내기' })).not.toBeInTheDocument();
 	});
 
 	it('편집 모드에서는 내보내기 버튼을 표시하지 않는다', () => {
-		renderInTable(<CologMemberRow member={BASE_MEMBER} isEditing canRemove />);
+		renderInTable(<CologMemberRow member={BASE_MEMBER} rowNumber={1} isEditing canRemove />);
 
 		expect(screen.queryByRole('button', { name: '김지연 멤버 내보내기' })).not.toBeInTheDocument();
 	});

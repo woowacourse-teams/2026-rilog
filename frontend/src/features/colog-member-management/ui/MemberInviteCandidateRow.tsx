@@ -5,10 +5,15 @@ import Button from '@/shared/ui/button/Button';
 
 interface MemberInviteCandidateRowProps {
 	candidate: MemberInviteCandidate;
+	disabled?: boolean;
 	onRemove: (slug: string) => void;
 }
 
-export default function MemberInviteCandidateRow({ candidate, onRemove }: MemberInviteCandidateRowProps) {
+export default function MemberInviteCandidateRow({
+	candidate,
+	disabled = false,
+	onRemove,
+}: MemberInviteCandidateRowProps) {
 	return (
 		<li
 			className="ph-mask flex min-h-15 items-center gap-3.5 border-b border-border-default py-2"
@@ -32,6 +37,7 @@ export default function MemberInviteCandidateRow({ candidate, onRemove }: Member
 				size="icon"
 				variant="ghost"
 				aria-label={`${candidate.nickname} 초대 목록에서 제거`}
+				disabled={disabled}
 				onClick={() => onRemove(candidate.slug)}
 			>
 				<span aria-hidden="true">×</span>

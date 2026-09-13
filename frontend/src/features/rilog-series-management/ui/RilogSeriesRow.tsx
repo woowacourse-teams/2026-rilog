@@ -5,17 +5,25 @@ import Input from '@/shared/ui/input/Input';
 
 interface RilogSeriesRowProps {
 	series: Chapter;
+	rowNumber: number;
 	isEditing?: boolean;
 	onNameChange?: (seriesId: number, name: string) => void;
 	onDelete?: (series: Chapter) => void;
 }
 
-export default function RilogSeriesRow({ series, isEditing = false, onNameChange, onDelete }: RilogSeriesRowProps) {
+export default function RilogSeriesRow({
+	series,
+	rowNumber,
+	isEditing = false,
+	onNameChange,
+	onDelete,
+}: RilogSeriesRowProps) {
 	const hasEmptyName = series.name.trim().length === 0;
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">
-			<td className="py-3 pl-6 text-body-1 font-semibold text-text-primary">
+			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
+			<td className="px-2 py-3 text-body-1 font-semibold text-text-primary">
 				{isEditing ? (
 					<Input
 						className="w-4/5!"

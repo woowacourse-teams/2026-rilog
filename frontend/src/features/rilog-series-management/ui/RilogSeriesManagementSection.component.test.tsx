@@ -53,9 +53,13 @@ describe('RilogSeriesManagementSection', () => {
 		render(<RilogSeriesManagementSection management={createManagement({ requestChapterDelete })} />);
 
 		expect(screen.getByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '시리즈' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '기록 시리즈 삭제' })).toBeInTheDocument();
+		const seriesRows = screen.getAllByRole('row').slice(1);
+		expect(seriesRows[0]).toHaveTextContent('1');
+		expect(seriesRows[1]).toHaveTextContent('2');
 
 		await user.click(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' }));
 		expect(requestChapterDelete).toHaveBeenCalledWith(SERIES[0]);
@@ -74,6 +78,29 @@ describe('RilogSeriesManagementSection', () => {
 
 		expect(screen.getByRole('dialog', { name: '시리즈 추가' })).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '시리즈 이름' })).toHaveAttribute('maxlength', '20');
+	});
+
+	it('챕터 개수 제한 오류를 시리즈 맥락의 프론트엔드 문구로 표시한다', () => {
+		render(
+			<RilogSeriesManagementSection
+				management={createManagement({
+					isCreateModalOpen: true,
+					createError: {
+						type: 'api',
+						detail: {
+							status: 400,
+							error: 'BAD_REQUEST',
+							errorCode: 'CHAPTER_COUNT_EXCEEDED',
+							message: '챕터는 최대 30개까지 생성할 수 있습니다.',
+							invalidParams: null,
+						},
+					} as unknown as Error,
+				})}
+			/>,
+		);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('시리즈는 최대 30개까지 추가할 수 있습니다.');
+		expect(screen.getByRole('alert')).not.toHaveTextContent('챕터는 최대 30개까지 생성할 수 있습니다.');
 	});
 
 	it('시리즈 이름 수정 입력을 20자로 제한한다', () => {

@@ -53,10 +53,14 @@ describe('CologChapterManagementSection', () => {
 		render(<CologChapterManagementSection management={createManagement({ requestChapterDelete })} />);
 
 		expect(screen.getByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '챕터' })).toBeInTheDocument();
 		expect(screen.queryByRole('columnheader', { name: '게시글 수' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '백엔드 챕터 삭제' })).toBeInTheDocument();
+		const chapterRows = screen.getAllByRole('row').slice(1);
+		expect(chapterRows[0]).toHaveTextContent('1');
+		expect(chapterRows[1]).toHaveTextContent('2');
 
 		await user.click(screen.getByRole('button', { name: '프론트엔드 챕터 삭제' }));
 		expect(requestChapterDelete).toHaveBeenCalledWith(CHAPTERS[0]);
@@ -82,6 +86,29 @@ describe('CologChapterManagementSection', () => {
 		render(<CologChapterManagementSection management={createManagement({ isCreateModalOpen: true })} />);
 
 		expect(screen.getByRole('dialog', { name: '챕터 추가' })).toBeInTheDocument();
+	});
+
+	it('챕터 개수 제한 오류를 프론트엔드 문구로 표시한다', () => {
+		render(
+			<CologChapterManagementSection
+				management={createManagement({
+					isCreateModalOpen: true,
+					createError: {
+						type: 'api',
+						detail: {
+							status: 400,
+							error: 'BAD_REQUEST',
+							errorCode: 'CHAPTER_COUNT_EXCEEDED',
+							message: '백엔드 챕터 제한 메시지',
+							invalidParams: null,
+						},
+					} as unknown as Error,
+				})}
+			/>,
+		);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('챕터는 최대 30개까지 추가할 수 있습니다.');
+		expect(screen.getByRole('alert')).not.toHaveTextContent('백엔드 챕터 제한 메시지');
 	});
 
 	it('조회 중 상태와 조회 실패 재시도를 렌더링한다', () => {

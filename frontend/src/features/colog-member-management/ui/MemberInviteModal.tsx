@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from 'react';
 
-import type { MemberInviteCandidate } from '../model/member-invite-candidate';
+import type { MemberInviteCandidate, MemberInviteResult } from '../model/member-invite-candidate';
 import type { FormEvent, KeyboardEvent } from 'react';
 
 import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
@@ -11,13 +11,16 @@ import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
+import { MAX_COLOG_MEMBER_COUNT, willExceedCologMemberLimit } from '../lib/colog-member-limit';
+import { formatMemberInviteFailures } from '../lib/format-member-invite-failures';
+
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
 interface MemberInviteModalProps {
 	slug: string;
 	open: boolean;
 	onClose: () => void;
-	onInvite?: (candidates: MemberInviteCandidate[]) => void;
+	onInvite: (candidates: MemberInviteCandidate[]) => Promise<MemberInviteResult>;
 }
 
 export default function MemberInviteModal({ slug, open, onClose, onInvite }: MemberInviteModalProps) {
@@ -28,8 +31,9 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 	const [slugInput, setSlugInput] = useState('');
 	const [candidates, setCandidates] = useState<MemberInviteCandidate[]>([]);
 	const [errorMessage, setErrorMessage] = useState<string>();
+	const [isInviting, setIsInviting] = useState(false);
 
-	const { mutateAsync: readUserBySlug, isPending } = useReadUserBySlugMutation();
+	const { mutateAsync: readUserBySlug, isPending: isReadingUser } = useReadUserBySlugMutation();
 	const { data: cologMembers } = useCologMembersQuery({ slug });
 	const cologMemberSlugs = cologMembers?.data?.map((member) => member.slug) ?? [];
 	const candidateSlugs = candidates.map((candidate) => candidate.slug);
@@ -98,17 +102,46 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 
 	const handleRemoveCandidate = (candidateSlug: string) => {
 		setCandidates((currentCandidates) => currentCandidates.filter((candidate) => candidate.slug !== candidateSlug));
+		setErrorMessage(undefined);
 	};
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
-		if (candidates.length === 0) {
+		if (candidates.length === 0 || isInviting) {
 			return;
 		}
 
-		onInvite?.(candidates);
-		handleClose();
+		if (cologMembers?.data === undefined) {
+			setErrorMessage('멤버를 초대할 수 없습니다. 새로고침 후에도 같은 문제가 발생하면 관리자에게 문의해 주세요.');
+			return;
+		}
+
+		if (willExceedCologMemberLimit(cologMembers.data.length, candidates.length)) {
+			setErrorMessage(
+				`코로그 멤버는 최대 ${MAX_COLOG_MEMBER_COUNT}명까지 등록할 수 있습니다. (현재 ${cologMembers.data.length}/${MAX_COLOG_MEMBER_COUNT})`,
+			);
+			return;
+		}
+
+		setErrorMessage(undefined);
+		setIsInviting(true);
+
+		try {
+			const result = await onInvite(candidates);
+
+			if (result.failures.length === 0) {
+				handleClose();
+				return;
+			}
+
+			setCandidates(result.failures.map((failure) => failure.candidate));
+			setErrorMessage(formatMemberInviteFailures(result.failures));
+		} catch {
+			setErrorMessage('멤버를 초대하지 못했어요. 잠시 후 다시 시도해 주세요.');
+		} finally {
+			setIsInviting(false);
+		}
 	};
 
 	return (
@@ -122,6 +155,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 			scrollMode="custom"
 			showCloseButton={false}
 			initialFocusRef={inputRef}
+			isPending={isInviting}
 			cancelAction={{ label: '취소' }}
 			primaryAction={{
 				type: 'submit',
@@ -130,7 +164,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 				disabled: candidates.length === 0,
 			}}
 		>
-			<form id={formId} className="flex min-h-96 flex-col md:h-128" onSubmit={handleSubmit}>
+			<form id={formId} className="flex min-h-96 flex-col md:h-128" onSubmit={(event) => void handleSubmit(event)}>
 				<div className="shrink-0">
 					<label htmlFor={inputId} className="text-label-2 font-semibold text-text-primary">
 						고유 아이디 입력
@@ -140,6 +174,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 							ref={inputRef}
 							id={inputId}
 							value={slugInput}
+							disabled={isInviting}
 							aria-label="초대할 멤버 고유 아이디"
 							aria-describedby={helperTextId}
 							placeholder="@user"
@@ -155,8 +190,8 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 							type="button"
 							size="md"
 							className="shrink-0 px-5"
-							disabled={!slugInput.trim()}
-							isPending={isPending}
+							disabled={!slugInput.trim() || isInviting}
+							isPending={isReadingUser}
 							onClick={() => void handleAddCandidate()}
 						>
 							추가
@@ -164,7 +199,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 					</div>
 					<p
 						id={helperTextId}
-						className={`mt-1.5 text-label-1 ${errorMessage ? 'ph-mask text-danger' : 'text-text-secondary'}`}
+						className={`mt-1.5 text-label-1 whitespace-pre-line ${errorMessage ? 'ph-mask text-danger' : 'text-text-secondary'}`}
 						aria-live="polite"
 					>
 						{errorMessage ?? 'Enter로 여러 사용자 추가하세요.'}
@@ -180,7 +215,12 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 					) : (
 						<ul aria-label="추가할 멤버 정보" className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3">
 							{candidates.map((candidate) => (
-								<MemberInviteCandidateRow key={candidate.slug} candidate={candidate} onRemove={handleRemoveCandidate} />
+								<MemberInviteCandidateRow
+									key={candidate.slug}
+									candidate={candidate}
+									disabled={isInviting}
+									onRemove={handleRemoveCandidate}
+								/>
 							))}
 						</ul>
 					)}

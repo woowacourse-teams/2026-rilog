@@ -436,9 +436,35 @@ describe('PublishSettingsModal', () => {
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
 		await user.type(seriesNameInput, '중복 시리즈{Enter}');
 
-		await waitFor(() => expect(seriesNameInput).toHaveAccessibleDescription('이미 사용 중인 시리즈 이름입니다.'));
+		await waitFor(() =>
+			expect(seriesNameInput).toHaveAccessibleDescription('시리즈를 추가하지 못했어요. 다시 시도해 주세요.'),
+		);
 		expect(seriesNameInput).toHaveAttribute('aria-invalid', 'true');
 		expect(seriesNameInput).toBeEnabled();
+	});
+
+	it('시리즈 개수 제한 오류는 백엔드의 챕터 문구 대신 시리즈 문구로 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.spyOn(blogsApi, 'createBlogChapter').mockRejectedValue({
+			type: 'api',
+			detail: {
+				status: 400,
+				error: 'BAD_REQUEST',
+				errorCode: 'CHAPTER_COUNT_EXCEEDED',
+				message: '챕터는 최대 30개까지 생성할 수 있습니다.',
+				invalidParams: null,
+			},
+		});
+		renderModal();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		await user.type(seriesNameInput, '새 시리즈{Enter}');
+
+		await waitFor(() =>
+			expect(seriesNameInput).toHaveAccessibleDescription('시리즈는 최대 30개까지 추가할 수 있습니다.'),
+		);
+		expect(seriesNameInput).not.toHaveAccessibleDescription('챕터는 최대 30개까지 생성할 수 있습니다.');
 	});
 
 	it('대표 이미지를 선택하고 제거할 수 있다', async () => {
