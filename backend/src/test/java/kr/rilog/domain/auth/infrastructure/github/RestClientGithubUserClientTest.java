@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.time.Duration;
@@ -94,7 +95,7 @@ class RestClientGithubUserClientTest {
 
     @Test
     @DisplayName("GitHub 사용자 조회 실패 예외에는 access token을 담지 않는다")
-    void getUserFailureDoesNotExposeAccessToken() {
+    void getUserFailurePreservesCauseAndDoesNotExposeAccessToken() {
         // given
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
@@ -107,6 +108,7 @@ class RestClientGithubUserClientTest {
         // when - then
         assertThatThrownBy(() -> client.getUser(new OAuthAccessToken("github-access-token")))
                 .isInstanceOf(AuthException.class)
+                .hasCauseInstanceOf(RestClientException.class)
                 .hasMessageNotContaining("github-access-token")
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.GITHUB_USER_FETCH_FAILED);

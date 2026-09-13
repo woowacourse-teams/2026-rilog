@@ -8,4 +8,8 @@ public class AuthException extends RilogBusinessException {
         super(errorInformation);
     }
 
+    public AuthException(AuthErrorInformation errorInformation, Throwable cause) {
+        super(errorInformation, cause);
+    }
+
 }

@@ -13,6 +13,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.time.Duration;
@@ -98,7 +99,7 @@ class RestClientGithubAccessTokenClientTest {
 
     @Test
     @DisplayName("GitHub Access Token 교환 실패 예외에는 code와 secret을 담지 않는다")
-    void exchangeFailureDoesNotExposeSensitiveValues() {
+    void exchangeFailurePreservesCauseAndDoesNotExposeSensitiveValues() {
         // given
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
@@ -114,6 +115,9 @@ class RestClientGithubAccessTokenClientTest {
         // when - then
         assertThatThrownBy(() -> client.exchange("github-code"))
                 .isInstanceOf(AuthException.class)
+                .hasCauseInstanceOf(RestClientException.class)
+                .hasMessageNotContaining("github-code")
+                .hasMessageNotContaining("github-client-secret")
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
         server.verify();
