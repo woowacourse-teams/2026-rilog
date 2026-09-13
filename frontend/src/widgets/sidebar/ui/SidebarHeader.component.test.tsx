@@ -24,11 +24,9 @@ describe('SidebarBrand', () => {
 		expect(brandLink).toHaveFocus();
 	});
 
-	it('리로그 이야기 링크는 사이드바가 펼쳐질 때만 보이도록 제공한다', () => {
+	it('브랜드 헤더에는 메인 이동 링크만 제공한다', () => {
 		render(<SidebarHeader />);
 
-		const aboutLink = screen.getByRole('link', { name: 'Rilog. 이야기 ↗', hidden: true });
-
-		expect(aboutLink).toHaveClass('invisible', 'opacity-0', 'group-hover:visible', 'group-hover:opacity-100');
+		expect(screen.queryByRole('link', { name: 'Rilog. 이야기 ↗' })).not.toBeInTheDocument();
 	});
 });

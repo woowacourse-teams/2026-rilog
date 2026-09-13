@@ -18,7 +18,7 @@ const FEED_ICON_CLASS_NAME = 'size-6 shrink-0';
 const SUB_MENUS = [
 	{
 		blogType: 'RILOG',
-		label: '개인',
+		label: 'Personal',
 		icon: <PersonalIcon aria-hidden="true" focusable="false" className={FEED_ICON_CLASS_NAME} />,
 	},
 	{

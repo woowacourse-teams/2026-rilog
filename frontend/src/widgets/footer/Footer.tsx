@@ -20,7 +20,7 @@ export default function Footer() {
 
 				<section aria-label="연락 및 SNS" className="mt-1 sm:mt-2">
 					<div className="flex items-center">
-						<a className={ICON_LINK_CLASS_NAME} href="mailto:contact@rilog.dev" aria-label="Rilog 이메일 문의">
+						<a className={ICON_LINK_CLASS_NAME} href="mailto:rilog.admin@gmail.com" aria-label="Rilog 이메일 문의">
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/email.svg" alt="" width={24} height={24} />
 						</a>
 						<a

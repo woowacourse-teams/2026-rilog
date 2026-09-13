@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type * as NextNavigation from 'next/navigation';
@@ -33,6 +34,28 @@ function renderSidebar(isAuthenticated = false) {
 }
 
 describe('Sidebar', () => {
+	it('스크롤 영역 뒤와 인증 푸터 앞에 소개와 이메일 링크를 순서대로 둔다', async () => {
+		const user = userEvent.setup();
+		renderSidebar(false);
+
+		const sidebar = screen.getByRole('complementary', { name: '사이드바' });
+		const infoNavigation = within(sidebar).getByRole('navigation', { name: 'Rilog 정보' });
+		const [aboutLink, emailLink] = within(infoNavigation).getAllByRole('link');
+		const loginButton = within(sidebar).getByRole('button', { name: '로그인' });
+
+		expect([aboutLink.textContent, emailLink.textContent]).toEqual(['Rilog. 이야기 ↗', 'rilog.admin@gmail.com']);
+		expect(aboutLink).toHaveAttribute('href', '/about');
+		expect(aboutLink).toHaveAttribute('target', '_blank');
+		expect(emailLink).toHaveAttribute('href', 'mailto:rilog.admin@gmail.com');
+		expect(infoNavigation.compareDocumentPosition(loginButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+		aboutLink.focus();
+		await user.tab();
+		expect(emailLink).toHaveFocus();
+		await user.tab();
+		expect(loginButton).toHaveFocus();
+	});
+
 	it('로그인 사용자용 코로그 탐색과 푸터를 조립한다', () => {
 		renderSidebar(true);
 
@@ -40,6 +63,9 @@ describe('Sidebar', () => {
 		expect(screen.getByRole('separator')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '글쓰기' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
+		const infoNavigation = screen.getByRole('navigation', { name: 'Rilog 정보' });
+		const writeLink = screen.getByRole('link', { name: '글쓰기' });
+		expect(infoNavigation.compareDocumentPosition(writeLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 	});
 
 	it('비로그인 사용자용 푸터를 조립하고 코로그 탐색을 제외한다', () => {

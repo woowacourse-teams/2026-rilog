@@ -7,9 +7,6 @@ import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 
 import styles from './AboutPage.module.css';
 
-const MOBILE_BREAKPOINT = 768;
-const MOBILE_LOCKUP_MAX_SHIFT_RATIO = 0.64;
-
 const clampProgress = (value: number) => Math.min(Math.max(value, 0), 1);
 
 const getRangeProgress = (progress: number, start: number, end: number) =>

@@ -76,7 +76,7 @@ describe('PageNavigation', () => {
 		render(<PageNavigation />);
 		expect(screen.getByRole('link', { name: '피드 글 123개' })).toHaveAttribute('aria-current', 'page');
 		expect(screen.getByRole('link', { name: '피드 글 123개' })).toHaveAttribute('href', '/feeds');
-		expect(screen.getByRole('link', { name: '개인' })).toHaveAttribute('href', '/feeds?blogType=personal');
+		expect(screen.getByRole('link', { name: 'Personal' })).toHaveAttribute('href', '/feeds?blogType=personal');
 		expect(screen.getByRole('link', { name: 'Colog' })).toHaveAttribute('href', '/feeds?blogType=colog');
 		for (const link of screen.getAllByRole('link')) expect(link).toHaveAttribute('data-next-scroll', 'false');
 		expect(screen.getAllByRole('link')).toHaveLength(3);
@@ -84,7 +84,7 @@ describe('PageNavigation', () => {
 
 	it.each([
 		[undefined, '피드 글 123개'],
-		['personal', '개인'],
+		['personal', 'Personal'],
 		['colog', 'Colog'],
 	] as const)('URL blogType=%s에 해당하는 메뉴만 활성화하고 전체 글 수 배지를 유지한다', (blogType, name) => {
 		route.searchParams = new URLSearchParams(blogType === undefined ? '' : `blogType=${blogType}`);
@@ -101,7 +101,7 @@ describe('PageNavigation', () => {
 		render(<PageNavigation />);
 
 		expect(screen.getByRole('link', { name: '피드 글 123개' })).toHaveAttribute('href', '/feeds?notice=auth-required');
-		expect(screen.getByRole('link', { name: '개인' })).toHaveAttribute(
+		expect(screen.getByRole('link', { name: 'Personal' })).toHaveAttribute(
 			'href',
 			'/feeds?notice=auth-required&blogType=personal',
 		);
@@ -118,7 +118,7 @@ describe('PageNavigation', () => {
 
 		expect(screen.getAllByRole('link').every((link) => !link.hasAttribute('aria-current'))).toBe(true);
 		expect(screen.getByRole('link', { name: '피드 글 123개' })).toHaveAttribute('href', '/feeds');
-		expect(screen.getByRole('link', { name: '개인' })).toHaveAttribute('href', '/feeds?blogType=personal');
+		expect(screen.getByRole('link', { name: 'Personal' })).toHaveAttribute('href', '/feeds?blogType=personal');
 		expect(screen.getByRole('link', { name: 'Colog' })).toHaveAttribute('href', '/feeds?blogType=colog');
 		for (const link of screen.getAllByRole('link')) expect(link).toHaveAttribute('data-next-scroll', 'true');
 	});
@@ -160,7 +160,7 @@ describe('PageNavigation', () => {
 		const pushState = vi.spyOn(window.history, 'pushState');
 		render(<PageNavigation />);
 
-		const isDefaultPrevented = fireEvent.click(screen.getByRole('link', { name: '개인' }));
+		const isDefaultPrevented = fireEvent.click(screen.getByRole('link', { name: 'Personal' }));
 
 		expect(isDefaultPrevented).toBe(true);
 		expect(pushState).not.toHaveBeenCalled();
