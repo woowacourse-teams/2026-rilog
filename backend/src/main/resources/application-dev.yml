@@ -3,11 +3,10 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -15,6 +14,7 @@ spring:
 
 logging:
   level:
+    kr.rilog: debug
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
 

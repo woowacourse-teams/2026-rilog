@@ -5,48 +5,42 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 
 const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 	const { author, owner, postId, publishedAt, thumbnailImageUrl, title } = post;
-	const authorName = author?.nickname || author?.name || null;
+	const authorName = author?.nickname || null;
 
 	if (
 		postId === undefined ||
 		title === undefined ||
 		publishedAt === undefined ||
 		authorName === null ||
+		author?.userId === undefined ||
 		author?.slug === undefined ||
+		owner?.blogId === undefined ||
 		owner?.slug === undefined ||
-		owner?.name === undefined
+		owner?.name === undefined ||
+		(owner?.type !== 'RILOG' && owner?.type !== 'COLOG')
 	) {
 		return null;
 	}
 
-	const blog: BaseBlog =
-		owner.type === 'COLOG'
-			? {
-					id: owner.blogId ?? 0,
-					name: owner.name,
-					slug: owner.slug,
-					type: 'COLOG',
-					profileImageUrl: owner.profileImageUrl || null,
-				}
-			: {
-					id: owner.blogId ?? 0,
-					name: owner.name,
-					slug: owner.slug,
-					type: 'RILOG',
-					profileImageUrl: owner.profileImageUrl || null,
-				};
+	const blog: BaseBlog = {
+		id: owner.blogId,
+		name: owner.name,
+		slug: owner.slug,
+		type: owner.type,
+		profileImageUrl: owner.profileImageUrl ?? null,
+	};
 
 	return {
 		id: postId,
 		chapterName: post.chapter?.name ?? null,
 		title,
-		thumbnailUrl: thumbnailImageUrl || null,
+		thumbnailUrl: thumbnailImageUrl ?? null,
 		publishedAt,
 		author: {
-			id: author.userId ?? 0,
+			id: author.userId,
 			nickname: authorName,
 			slug: author.slug,
-			profileImageUrl: author.profileImageUrl || null,
+			profileImageUrl: author.profileImageUrl ?? null,
 		},
 		blog,
 	};

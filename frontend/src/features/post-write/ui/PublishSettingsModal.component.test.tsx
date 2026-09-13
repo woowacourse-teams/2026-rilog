@@ -25,7 +25,7 @@ const DEFAULT_PROPS: ComponentProps<typeof PublishSettingsModal> = {
 	open: true,
 	postTitle: '게시글 제목',
 	settings: {
-		category: 'IT',
+		category: 'TECH',
 		blog: { type: 'RILOG', slug: 'personal-blog' },
 		chapterId: null,
 		representativeImage: null,
@@ -86,6 +86,8 @@ describe('PublishSettingsModal', () => {
 
 		const previewImage = screen.getByRole('img', { name: '게시글 대표 이미지 미리보기' });
 		expect(previewImage).toHaveAttribute('src', POST_THUMBNAIL_FALLBACK_URL);
+		expect(previewImage.closest('[data-ph-sensitive-media]')).toBeInTheDocument();
+		expect(screen.getByText('게시글 제목')).toHaveClass('ph-mask');
 		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
 	});
 
@@ -198,13 +200,22 @@ describe('PublishSettingsModal', () => {
 	it('카테고리를 select에서 변경한다', async () => {
 		const user = userEvent.setup();
 		const handleCategoryChange = vi.fn();
-		renderModal({ onCategoryChange: handleCategoryChange });
+		const { rerender } = renderModal({ onCategoryChange: handleCategoryChange });
 
 		const categorySelect = screen.getByRole('combobox', { name: '카테고리' });
-		expect(categorySelect).toHaveDisplayValue('IT');
+		expect(categorySelect).toHaveDisplayValue('기술');
 
-		await user.selectOptions(categorySelect, 'DAILY');
-		expect(handleCategoryChange).toHaveBeenCalledWith('DAILY');
+		await user.selectOptions(categorySelect, 'RETROSPECT');
+		expect(handleCategoryChange).toHaveBeenCalledWith('RETROSPECT');
+
+		rerender(
+			<PublishSettingsModal
+				{...DEFAULT_PROPS}
+				settings={{ ...DEFAULT_PROPS.settings, category: 'RETROSPECT' }}
+				onCategoryChange={handleCategoryChange}
+			/>,
+		);
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('회고');
 	});
 
 	it('발행할 블로그 유형을 radio로 선택한다', async () => {
@@ -425,9 +436,35 @@ describe('PublishSettingsModal', () => {
 		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
 		await user.type(seriesNameInput, '중복 시리즈{Enter}');
 
-		await waitFor(() => expect(seriesNameInput).toHaveAccessibleDescription('이미 사용 중인 시리즈 이름입니다.'));
+		await waitFor(() =>
+			expect(seriesNameInput).toHaveAccessibleDescription('시리즈를 추가하지 못했어요. 다시 시도해 주세요.'),
+		);
 		expect(seriesNameInput).toHaveAttribute('aria-invalid', 'true');
 		expect(seriesNameInput).toBeEnabled();
+	});
+
+	it('시리즈 개수 제한 오류는 백엔드의 챕터 문구 대신 시리즈 문구로 표시한다', async () => {
+		const user = userEvent.setup();
+		vi.spyOn(blogsApi, 'createBlogChapter').mockRejectedValue({
+			type: 'api',
+			detail: {
+				status: 400,
+				error: 'BAD_REQUEST',
+				errorCode: 'CHAPTER_COUNT_EXCEEDED',
+				message: '챕터는 최대 30개까지 생성할 수 있습니다.',
+				invalidParams: null,
+			},
+		});
+		renderModal();
+
+		await user.click(screen.getByRole('button', { name: '새 시리즈 추가' }));
+		const seriesNameInput = screen.getByRole('textbox', { name: '새로운 시리즈 이름' });
+		await user.type(seriesNameInput, '새 시리즈{Enter}');
+
+		await waitFor(() =>
+			expect(seriesNameInput).toHaveAccessibleDescription('시리즈는 최대 30개까지 추가할 수 있습니다.'),
+		);
+		expect(seriesNameInput).not.toHaveAccessibleDescription('챕터는 최대 30개까지 생성할 수 있습니다.');
 	});
 
 	it('대표 이미지를 선택하고 제거할 수 있다', async () => {

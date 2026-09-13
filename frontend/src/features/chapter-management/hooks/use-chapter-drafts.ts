@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { Chapter } from '../model/chapter';
+import type { Chapter } from '@/domains/chapter/model/chapter';
 
 export type ChapterDraft = Pick<Chapter, 'id' | 'name'>;
 
@@ -13,12 +13,7 @@ interface UseChapterDraftsOptions {
 const isEqualChapter = (left: Chapter[] | undefined, right: Chapter[]) =>
 	left !== undefined &&
 	left.length === right.length &&
-	left.every(
-		(chapter, index) =>
-			chapter.id === right[index].id &&
-			chapter.name === right[index].name &&
-			chapter.postCount === right[index].postCount,
-	);
+	left.every((chapter, index) => chapter.id === right[index].id && chapter.name === right[index].name);
 
 export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = {}) {
 	const lastSyncedChapters = useRef(initialChapters);
@@ -106,7 +101,6 @@ export function useChapterDrafts({ initialChapters }: UseChapterDraftsOptions = 
 			{
 				id: Math.max(0, ...currentChapters.map((chapter) => chapter.id)) + 1,
 				name,
-				postCount: 0,
 			},
 		]);
 	};

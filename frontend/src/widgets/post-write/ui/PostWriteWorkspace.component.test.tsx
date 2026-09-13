@@ -883,7 +883,7 @@ describe('NewPostController', () => {
 		await user.click(screen.getAllByRole('button', { name: '발행' }).at(-1)!);
 		expect(postPublishStartedMock).toHaveBeenCalledWith({
 			ownerType: 'COLOG',
-			category: 'IT',
+			category: 'TECH',
 			imageSource: 'default',
 		});
 
@@ -900,7 +900,7 @@ describe('NewPostController', () => {
 		expect(postPublishedMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				postId: 'post/40',
-				category: 'IT',
+				category: 'TECH',
 				cologId: 20,
 				ownerType: 'COLOG',
 				imageSource: 'default',
@@ -926,7 +926,7 @@ describe('NewPostController', () => {
 		expect(requestPostPublicationMock).toHaveBeenCalledWith(expect.objectContaining({ slug: 'jetproc' }));
 		expect(postPublishStartedMock).toHaveBeenCalledWith({
 			ownerType: 'RILOG',
-			category: 'IT',
+			category: 'TECH',
 			imageSource: 'default',
 		});
 		expect(postPublishedMock).toHaveBeenCalledWith(

@@ -3,9 +3,9 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { ChapterSummary } from '@/domains/chapter/model/chapter';
 import { useBlogHomeIndex } from '@/features/blog-home-index/hooks/use-blog-home-index';
 import { ALL_BLOG_POSTS_FILTER, buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
-import type { BlogHomeIndexItem } from '@/features/blog-home-index/model/blog-home-index';
 import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import Button from '@/shared/ui/button/Button';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -28,7 +28,7 @@ function NavigationRow({
 	isCurrent,
 	onNavigate,
 }: {
-	item: BlogHomeIndexItem;
+	item: ChapterSummary;
 	filter: PublicBlogPostsFilter;
 	blogType: BlogType;
 	isCurrent: boolean;

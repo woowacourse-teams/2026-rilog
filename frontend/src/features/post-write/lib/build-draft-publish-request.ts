@@ -29,7 +29,7 @@ export const buildDraftPublishRequest = async (
 		slug: settings.blog.slug,
 		title: document.title,
 		content: document.blocks,
-		category: settings.category === 'IT' ? 'TECH' : settings.category,
+		category: settings.category,
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,
 		chapterId: settings.chapterId,

@@ -13,7 +13,7 @@ interface UsePostPublicationSettingsOptions {
 }
 
 const DEFAULT_PUBLICATION_SETTINGS: PublicationSettings = {
-	category: 'IT',
+	category: 'TECH',
 	blog: null,
 	chapterId: null,
 	representativeImage: null,

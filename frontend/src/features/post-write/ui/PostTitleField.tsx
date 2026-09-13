@@ -51,10 +51,10 @@ export default function PostTitleField({ value, error, inputRef, onChange, onEnt
 				rows={1}
 				maxLength={512}
 				value={value}
+				className="w-full resize-none overflow-hidden bg-transparent text-heading-2 font-semibold text-text-primary outline-none placeholder:text-text-disabled sm:text-heading-1"
 				aria-label="게시글 제목"
 				aria-invalid={error !== undefined}
 				aria-describedby={error === undefined ? undefined : POST_TITLE_ERROR_ID}
-				className="w-full resize-none overflow-hidden bg-transparent text-heading-2 font-semibold text-text-primary outline-none placeholder:text-text-disabled sm:text-heading-1"
 				placeholder="제목을 입력하세요"
 				onChange={handleChange}
 				onKeyDown={handleKeyDown}

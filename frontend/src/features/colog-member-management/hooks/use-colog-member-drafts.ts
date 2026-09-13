@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import type { FormEvent } from 'react';
 
@@ -18,26 +18,15 @@ export function useCologMemberDrafts({
 	initialMembers,
 	isInviteModalInitiallyOpen = false,
 }: UseCologMemberDraftsOptions = {}) {
-	const hasInitializedMembers = useRef(initialMembers !== undefined);
-	// TODO: 멤버 수정 api 연동 시 state 대신 query 기반으로 변경
-	const [members, setMembers] = useState(() => initialMembers?.map((member) => ({ ...member })) ?? []);
 	const [draftMembers, setDraftMembers] = useState<CologMemberDraft[]>([]);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInviteModalOpen, setIsInviteModalOpen] = useState(isInviteModalInitiallyOpen);
-
-	useEffect(() => {
-		if (initialMembers === undefined || hasInitializedMembers.current) {
-			return;
-		}
-
-		setMembers(initialMembers.map((member) => ({ ...member })));
-		hasInitializedMembers.current = true;
-	}, [initialMembers]);
-
-	const isDirty = draftMembers.length > 0;
+	const members = initialMembers ?? [];
+	const applicableDraftMembers = draftMembers.filter((draft) => members.some((member) => member.id === draft.id));
+	const isDirty = applicableDraftMembers.length > 0;
 
 	const displayedMembers = members.map((member) => {
-		const draftMember = draftMembers.find((draft) => draft.id === member.id);
+		const draftMember = applicableDraftMembers.find((draft) => draft.id === member.id);
 		return draftMember === undefined ? member : { ...member, ...draftMember };
 	});
 
@@ -53,12 +42,7 @@ export function useCologMemberDrafts({
 
 	const handleSave = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		setMembers((currentMembers) =>
-			currentMembers.map((member) => {
-				const draftMember = draftMembers.find((draft) => draft.id === member.id);
-				return draftMember === undefined ? member : { ...member, ...draftMember };
-			}),
-		);
+		// TODO: 멤버 수정 API 연동 후 mutation 성공 시 query cache를 갱신한다.
 		setDraftMembers([]);
 		setIsEditing(false);
 	};
@@ -98,15 +82,10 @@ export function useCologMemberDrafts({
 		updateDraftMember(memberId, { blogRole });
 	};
 
-	const handleRemoveMember = (memberId: number) => {
-		setMembers((currentMembers) => currentMembers.filter((member) => member.id !== memberId));
-		setDraftMembers((currentDrafts) => currentDrafts.filter((member) => member.id !== memberId));
-	};
-
 	return {
 		members,
 		displayedMembers,
-		draftMembers,
+		draftMembers: applicableDraftMembers,
 		isEditing,
 		isDirty,
 		isInviteModalOpen,
@@ -116,6 +95,5 @@ export function useCologMemberDrafts({
 		handleSave,
 		handlePermissionChange,
 		handleBlogRoleChange,
-		handleRemoveMember,
 	};
 }

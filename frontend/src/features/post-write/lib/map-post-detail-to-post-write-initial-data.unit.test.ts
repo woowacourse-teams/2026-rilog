@@ -10,7 +10,7 @@ const createResponse = (overrides: Partial<PostDetailResponse> = {}): PostDetail
 	content: [{ id: 'paragraph', type: 'paragraph', content: [] }],
 	publishedAt: '2026-08-24T00:00:00Z',
 	thumbnailImageUrl: 'posts/existing-thumbnail.png',
-	category: 'DAILY',
+	category: '일상',
 	chapter: { chapterId: 12, name: '회고', order: 1 },
 	author: { userId: 7, nickname: '작성자', slug: 'author', profileImageUrl: null },
 	owner: { type: 'RILOG', blogId: 3, slug: 'author', name: '작성자 블로그', profileImageUrl: null },
@@ -39,10 +39,9 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 	});
 
 	it.each([
-		['TECH', 'IT'],
-		['기술', 'IT'],
-		['DAILY', 'DAILY'],
+		['기술', 'TECH'],
 		['일상', 'DAILY'],
+		['회고', 'RETROSPECT'],
 	] as const)('API 카테고리 %s를 편집 카테고리 %s로 변환한다', (category, expectedCategory) => {
 		expect(mapPostDetailToPostWriteInitialData(createResponse({ category })).settings.category).toBe(expectedCategory);
 	});

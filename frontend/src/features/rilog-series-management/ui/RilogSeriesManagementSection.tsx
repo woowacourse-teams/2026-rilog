@@ -1,4 +1,5 @@
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
+import { getBlogChapterCreateErrorMessage } from '@/features/chapter-management/lib/get-blog-chapter-create-error-message';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import Button from '@/shared/ui/button/Button';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -63,12 +64,16 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 				<table className="w-full table-fixed border-collapse text-left">
 					<caption className="sr-only">시리즈 목록</caption>
 					<colgroup>
-						<col className="w-1/2" />
+						<col className="w-16" />
+						<col />
 						<col className="w-1/2" />
 					</colgroup>
 					<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
 						<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
-							<th scope="col" className="pl-6 font-semibold">
+							<th scope="col">
+								<span className="sr-only">번호</span>
+							</th>
+							<th scope="col" className="px-2 font-semibold">
 								시리즈
 							</th>
 							{/* TODO: 챕터 조회 API가 게시글 수를 제공하면 열을 다시 노출한다. */}
@@ -83,15 +88,16 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 					<tbody>
 						{displayedChapters.length === 0 ? (
 							<tr>
-								<td colSpan={2} className="px-6 py-12 text-center text-body-2 text-text-secondary">
+								<td colSpan={3} className="px-6 py-12 text-center text-body-2 text-text-secondary">
 									아직 등록된 시리즈가 없어요.
 								</td>
 							</tr>
 						) : (
-							displayedChapters.map((item) => (
+							displayedChapters.map((item, index) => (
 								<RilogSeriesRow
 									key={item.id}
 									series={item}
+									rowNumber={index + 1}
 									isEditing={isEditing}
 									onNameChange={handleNameChange}
 									onDelete={requestChapterDelete}
@@ -107,7 +113,7 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 				onClose={handleCreateModalClose}
 				onCreate={handleAddChapter}
 				isPending={isCreating}
-				errorMessage={createError === null ? undefined : getApiErrorMessage(createError, '시리즈를 추가하지 못했어요.')}
+				errorMessage={createError === null ? undefined : getBlogChapterCreateErrorMessage(createError, '시리즈')}
 			/>
 			{saveError !== null && (
 				<p className="mt-4 rounded-md border border-danger p-3 text-label-2 text-danger" role="alert">

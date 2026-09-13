@@ -57,7 +57,7 @@ describe('BlogHomeToolbar', () => {
 		render(<BlogHomeToolbar blogType={blogType} slug="jetproc" filter={{ type: 'all' }} />);
 
 		expect(screen.queryByRole('button', { name: '전체' })).not.toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: 'IT' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기술' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '일상' })).not.toBeInTheDocument();
 		expect(screen.queryByLabelText('글 카테고리')).not.toBeInTheDocument();
 	});

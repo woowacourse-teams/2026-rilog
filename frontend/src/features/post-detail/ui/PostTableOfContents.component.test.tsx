@@ -51,8 +51,9 @@ describe('PostTableOfContents', () => {
 
 	it('장식 목록은 접근성 트리에서 숨기고 하나의 링크 목록으로 목차를 제공한다', () => {
 		const { container } = render(<PostTableOfContents items={ITEMS} />);
+		const navigation = screen.getByRole('navigation', { name: '게시글 목차' });
 
-		expect(screen.getByRole('navigation', { name: '게시글 목차' })).toBeInTheDocument();
+		expect(container.firstElementChild).toBe(navigation);
 		expect(container.querySelector('ol[aria-hidden="true"]')).toBeInTheDocument();
 		expect(screen.getAllByRole('list')).toHaveLength(1);
 		expect(screen.getAllByRole('link')).toHaveLength(ITEMS.length);

@@ -11,8 +11,8 @@ describe('mapPostDetailResponse', () => {
 			content: [{ id: '1', type: 'paragraph', props: {}, content: [], children: [] }],
 			publishedAt: '2026-08-17T04:30:00',
 			thumbnailImageUrl: null,
-			category: 'TECH',
-			chapter: null,
+			category: '기술',
+			chapter: { chapterId: 12, name: 'Spring', order: 1 },
 			author: {
 				userId: 7,
 				nickname: '파라디',
@@ -41,13 +41,15 @@ describe('mapPostDetailResponse', () => {
 			nickname: '파라디',
 			slug: 'jetproc',
 			profileImageUrl: null,
+			description: null,
 		});
 		expect(postDetail.blog.type).toBe('RILOG');
 		expect(postDetail.blog.name).toBe('파라디');
 		if (postDetail.blog.type === 'RILOG') {
 			expect(postDetail.blog.owner).toEqual(postDetail.author);
 		}
-		expect(postDetail.category).toBe('IT');
+		expect(postDetail.category).toBe('TECH');
+		expect(postDetail.chapter).toEqual({ id: 12, name: 'Spring', order: 1 });
 		expect(postDetail.viewerPermissions).toEqual({ canEdit: false, canDelete: false });
 	});
 
@@ -57,7 +59,7 @@ describe('mapPostDetailResponse', () => {
 			content: [],
 			publishedAt: '2026-08-17T04:40:00',
 			thumbnailImageUrl: 'https://images.rilog.test/cover.png',
-			category: 'DAILY',
+			category: '일상',
 			chapter: null,
 			author: {
 				userId: 7,
@@ -93,6 +95,29 @@ describe('mapPostDetailResponse', () => {
 			expect(postDetail.blog.postCount).toBe(42);
 		}
 		expect(postDetail.category).toBe('DAILY');
+		expect(postDetail.chapter).toBeNull();
 		expect(postDetail.viewerPermissions).toEqual({ canEdit: true, canDelete: true });
+	});
+
+	it('회고 카테고리를 상세 도메인 모델에 보존한다', () => {
+		const response: PostDetailResponse = {
+			title: '스프린트 회고',
+			content: [],
+			publishedAt: '2026-08-17T04:40:00',
+			thumbnailImageUrl: null,
+			category: '회고',
+			chapter: null,
+			author: { userId: 7, nickname: '파라디', slug: 'jetproc', profileImageUrl: null },
+			owner: {
+				type: 'RILOG',
+				blogId: 3,
+				slug: 'jetproc',
+				name: '파라디',
+				profileImageUrl: null,
+			},
+			viewerPermissions: { canEdit: true, canDelete: true },
+		};
+
+		expect(mapPostDetailResponse(response, 42).category).toBe('RETROSPECT');
 	});
 });

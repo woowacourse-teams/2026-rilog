@@ -27,12 +27,12 @@ describe('usePostPublicationSettings', () => {
 		expect(result.current.cologError).toBe('Colog를 선택해 주세요.');
 
 		act(() => {
-			result.current.handleCategoryChange('IT');
+			result.current.handleCategoryChange('TECH');
 			result.current.handleTargetBlogChange({ type: 'COLOG', id: 7, slug: 'rilog-team' });
 		});
 
 		expect(result.current.settings).toMatchObject({
-			category: 'IT',
+			category: 'TECH',
 			blog: { type: 'COLOG', id: 7, slug: 'rilog-team' },
 			chapterId: null,
 		});
@@ -50,7 +50,7 @@ describe('usePostPublicationSettings', () => {
 		const { result, unmount } = renderHook(() =>
 			usePostPublicationSettings({
 				initialSettings: {
-					category: 'IT',
+					category: 'TECH',
 					blog: null,
 					chapterId: null,
 					representativeImage: null,

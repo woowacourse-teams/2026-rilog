@@ -1,4 +1,5 @@
 export const APP_ROUTES = {
+	about: '/about',
 	feeds: '/feeds',
 	cologCreate: '/colog/create',
 	signUp: '/sign-up',

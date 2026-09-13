@@ -190,6 +190,8 @@ export default function BlockNoteEditor({
 			return;
 		}
 
+		editorElement.classList.add('ph-mask');
+		editorElement.setAttribute('data-ph-sensitive-media', '');
 		editorElement.setAttribute('aria-label', '게시글 내용');
 		if (ariaDescribedBy === undefined) {
 			editorElement.removeAttribute('aria-describedby');

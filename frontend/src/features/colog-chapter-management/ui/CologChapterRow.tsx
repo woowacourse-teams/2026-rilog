@@ -1,24 +1,33 @@
 'use client';
 
-import { CHAPTER_NAME_MAX_LENGTH, type Chapter } from '@/features/chapter-management/model/chapter';
+import { CHAPTER_NAME_MAX_LENGTH, type Chapter } from '@/domains/chapter/model/chapter';
 import Input from '@/shared/ui/input/Input';
 
 interface CologChapterRowProps {
 	chapter: Chapter;
+	rowNumber: number;
 	isEditing?: boolean;
 	onNameChange?: (chapterId: number, name: string) => void;
 	onDelete?: (chapter: Chapter) => void;
 }
 
-export default function CologChapterRow({ chapter, isEditing = false, onNameChange, onDelete }: CologChapterRowProps) {
+export default function CologChapterRow({
+	chapter,
+	rowNumber,
+	isEditing = false,
+	onNameChange,
+	onDelete,
+}: CologChapterRowProps) {
 	const hasEmptyName = chapter.name.trim().length === 0;
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">
-			<td className="py-3 pl-6 text-body-1 font-semibold text-text-primary">
+			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
+			<td className="px-2 py-3 text-body-1 font-semibold text-text-primary">
 				{isEditing ? (
 					<Input
 						className="w-4/5!"
+						data-ph-sensitive-attribute
 						aria-label={`${chapter.name} 챕터 이름`}
 						value={chapter.name}
 						maxLength={CHAPTER_NAME_MAX_LENGTH}
@@ -30,8 +39,6 @@ export default function CologChapterRow({ chapter, isEditing = false, onNameChan
 					chapter.name
 				)}
 			</td>
-			{/* TODO: 챕터 조회 API가 게시글 수를 제공하면 셀을 다시 노출한다. */}
-			{/* <td className="px-2 py-3 text-label-1 text-text-secondary">{chapter.postCount}개</td> */}
 			<td className="py-3 pr-8 text-right">
 				{!isEditing && (
 					<button

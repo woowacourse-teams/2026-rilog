@@ -304,6 +304,7 @@ describe('CologSettingsWorkspace', () => {
 
 		expect(screen.getByRole('tab', { name: '멤버 관리' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '멤버 관리' })).toBeInTheDocument();
+		expect(screen.getByText(/멤버는 최대 20명까지 초대할 수 있습니다\./)).toBeInTheDocument();
 		expect(screen.getByRole('table', { name: '팀 멤버 목록' })).toBeInTheDocument();
 	});
 
@@ -313,6 +314,7 @@ describe('CologSettingsWorkspace', () => {
 
 		await user.click(screen.getByRole('tab', { name: '챕터 관리' }));
 
+		expect(screen.getByText(/챕터는 최대 30개까지 추가할 수 있습니다\./)).toBeInTheDocument();
 		expect(screen.getByRole('tab', { name: '챕터 관리' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByRole('heading', { name: '챕터 관리' })).toBeInTheDocument();
 		expect(await screen.findByRole('table', { name: '팀 챕터 목록' })).toBeInTheDocument();
