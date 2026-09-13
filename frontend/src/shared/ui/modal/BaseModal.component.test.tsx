@@ -96,11 +96,13 @@ describe('BaseModal', () => {
 
 	it('Escape와 backdrop 정책을 각각 적용한다', () => {
 		const onDismiss = vi.fn();
+		const onBackdropClick = vi.fn();
 		const { rerender } = render(
 			<BaseModal
 				open
 				accessibility={{ labelledBy: 'policy-modal-title' }}
 				onDismiss={onDismiss}
+				onBackdropClick={onBackdropClick}
 				closeOnBackdrop={false}
 				closeOnEscape={false}
 			>
@@ -115,12 +117,14 @@ describe('BaseModal', () => {
 		fireEvent.click(dialog);
 		fireEvent.click(screen.getByRole('button', { name: '내부 버튼' }));
 		expect(onDismiss).not.toHaveBeenCalled();
+		expect(onBackdropClick).toHaveBeenCalledOnce();
 
 		rerender(
 			<BaseModal
 				open
 				accessibility={{ labelledBy: 'policy-modal-title' }}
 				onDismiss={onDismiss}
+				onBackdropClick={onBackdropClick}
 				closeOnBackdrop
 				closeOnEscape
 			>
@@ -133,6 +137,7 @@ describe('BaseModal', () => {
 		expect(onDismiss).toHaveBeenCalledOnce();
 		fireEvent.click(dialog);
 		expect(onDismiss).toHaveBeenCalledTimes(2);
+		expect(onBackdropClick).toHaveBeenCalledTimes(2);
 	});
 
 	it('dismissDisabled이면 backdrop과 Escape를 함께 차단한다', () => {

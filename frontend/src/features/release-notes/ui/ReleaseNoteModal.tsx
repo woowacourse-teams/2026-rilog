@@ -1,10 +1,14 @@
 'use client';
 
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import type { ReleaseNote } from '../model/release-notes';
 
+import type { ReleaseNoteCloseMethod, ReleaseNoteLinkTarget } from '@/features/analytics/model/analytics-event';
+import { analytics } from '@/features/analytics/model/events';
+import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
+import CustomLink from '@/shared/ui/link/CustomLink';
 import Modal from '@/shared/ui/modal/Modal';
 
 import {
@@ -23,32 +27,48 @@ export default function ReleaseNoteModal() {
 function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 	const [isDismissed, setIsDismissed] = useState(false);
 	const closeButtonRef = useRef<HTMLButtonElement>(null);
+	const hasTrackedViewRef = useRef(false);
 	const isVisible = useSyncExternalStore(
 		subscribeReleaseNote,
 		() => shouldShowReleaseNote(note.id),
 		getServerReleaseNoteVisibility,
 	);
-	const close = (permanently = false) => {
-		dismissReleaseNote(note.id, permanently);
+	const isOpen = isVisible && !isDismissed;
+
+	useEffect(() => {
+		if (isOpen && !hasTrackedViewRef.current) {
+			hasTrackedViewRef.current = true;
+			analytics.releaseNoteViewed({ releaseNoteId: note.id });
+		}
+	}, [isOpen, note.id]);
+
+	const close = (closeMethod: ReleaseNoteCloseMethod) => {
+		analytics.releaseNoteClosed({ releaseNoteId: note.id, closeMethod });
+		dismissReleaseNote(note.id, closeMethod === 'dismiss_forever');
 		setIsDismissed(true);
+	};
+
+	const trackLinkClick = (linkTarget: ReleaseNoteLinkTarget) => {
+		analytics.releaseNoteLinkClicked({ releaseNoteId: note.id, linkTarget });
 	};
 
 	return (
 		<Modal
-			open={isVisible && !isDismissed}
+			open={isOpen}
 			title={note.title}
 			description={<time dateTime={note.publishedAt}>{note.publishedAt}</time>}
-			onClose={() => close()}
+			onClose={() => close('close_icon')}
+			onBackdropClick={() => analytics.releaseNoteBackdropClicked({ releaseNoteId: note.id })}
 			closeOnBackdrop={false}
 			closeOnEscape={false}
 			initialFocusRef={closeButtonRef}
 			padding="md"
 			footer={
 				<div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
-					<Button variant="secondary" onClick={() => close(true)}>
+					<Button variant="secondary" onClick={() => close('dismiss_forever')}>
 						이 업데이트 다시 보지 않기
 					</Button>
-					<Button ref={closeButtonRef} onClick={() => close()}>
+					<Button ref={closeButtonRef} onClick={() => close('close_button')}>
 						닫기
 					</Button>
 				</div>
@@ -62,24 +82,34 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 					</li>
 				))}
 			</ul>
-			{note.links?.length ? (
-				<nav aria-label="업데이트 관련 링크" className="mt-6 border-t border-border-default pt-4">
-					<ul className="flex flex-col items-start gap-2">
-						{note.links.map((link) => (
-							<li key={link.href}>
-								<a
-									href={link.href}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-								>
-									{link.label}
-								</a>
-							</li>
-						))}
-					</ul>
-				</nav>
-			) : null}
+			<nav aria-label="업데이트 관련 링크" className="mt-6 border-t border-border-default pt-4">
+				<ul className="flex flex-col items-start gap-2">
+					{note.links?.map((link) => (
+						<li key={link.href}>
+							<a
+								href={link.href}
+								target="_blank"
+								rel="noopener noreferrer"
+								onClick={() => trackLinkClick('release_note')}
+								className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+							>
+								{link.label}
+							</a>
+						</li>
+					))}
+					<li>
+						<CustomLink
+							href={APP_ROUTES.about}
+							target="_blank"
+							rel="noopener noreferrer"
+							onClick={() => trackLinkClick('about')}
+							className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+						>
+							Rilog. 이야기 ↗
+						</CustomLink>
+					</li>
+				</ul>
+			</nav>
 		</Modal>
 	);
 }

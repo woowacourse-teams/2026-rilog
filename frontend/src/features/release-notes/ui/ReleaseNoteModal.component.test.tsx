@@ -9,7 +9,14 @@ import { RELEASE_NOTE_STORAGE_KEY } from '../model/release-note-storage';
 import ReleaseNoteModal from './ReleaseNoteModal';
 
 const notes = vi.hoisted(() => [] as ReleaseNotesModule.ReleaseNote[]);
+const analyticsMock = vi.hoisted(() => ({
+	releaseNoteViewed: vi.fn(),
+	releaseNoteClosed: vi.fn(),
+	releaseNoteBackdropClicked: vi.fn(),
+	releaseNoteLinkClicked: vi.fn(),
+}));
 
+vi.mock('@/features/analytics/model/events', () => ({ analytics: analyticsMock }));
 vi.mock('../model/release-notes', async (importOriginal) => ({
 	...(await importOriginal<typeof ReleaseNotesModule>()),
 	RELEASE_NOTES: notes,
@@ -23,6 +30,7 @@ const note = {
 };
 
 beforeEach(() => {
+	vi.clearAllMocks();
 	sessionStorage.clear();
 	localStorage.clear();
 	notes.splice(0, notes.length, note);
@@ -46,6 +54,7 @@ describe('업데이트 안내', () => {
 		expect(screen.getByRole('heading', { name: '개선 사항' })).toBeVisible();
 		expect(screen.getByText('첫째 줄 둘째 줄')).toBeVisible();
 		expect(screen.getByRole('button', { name: '닫기' })).toHaveFocus();
+		expect(analyticsMock.releaseNoteViewed).toHaveBeenCalledExactlyOnceWith({ releaseNoteId: note.id });
 	});
 	it('관련 외부 링크를 새 탭으로 안전하게 연다', () => {
 		render(<ReleaseNoteModal />);
@@ -54,10 +63,24 @@ describe('업데이트 안내', () => {
 		expect(link).toHaveAttribute('target', '_blank');
 		expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 	});
-	it('관련 링크가 없으면 링크 영역을 표시하지 않는다', () => {
+	it('패치노트 링크가 없어도 About 링크를 항상 표시한다', () => {
 		notes[0] = { ...note, links: undefined };
 		render(<ReleaseNoteModal />);
-		expect(screen.queryByRole('navigation', { name: '업데이트 관련 링크' })).not.toBeInTheDocument();
+		const aboutLink = screen.getByRole('link', { name: 'Rilog. 이야기 ↗' });
+		expect(aboutLink).toHaveAttribute('href', '/about');
+		expect(aboutLink).toHaveAttribute('target', '_blank');
+		expect(aboutLink).toHaveAttribute('rel', 'noopener noreferrer');
+	});
+	it.each([
+		['업데이트 자세히 보기', 'release_note'],
+		['Rilog. 이야기 ↗', 'about'],
+	] as const)('%s 링크 클릭을 대상과 함께 기록한다', async (name, linkTarget) => {
+		render(<ReleaseNoteModal />);
+		await userEvent.click(screen.getByRole('link', { name }));
+		expect(analyticsMock.releaseNoteLinkClicked).toHaveBeenCalledExactlyOnceWith({
+			releaseNoteId: note.id,
+			linkTarget,
+		});
 	});
 	it.each(['닫기', '모달 닫기'])('%s는 세션에만 기록하고 같은 탭 재진입에서 숨긴다', async (name) => {
 		const view = render(<ReleaseNoteModal />);
@@ -68,6 +91,18 @@ describe('업데이트 안내', () => {
 		view.unmount();
 		render(<ReleaseNoteModal />);
 		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+	});
+	it.each([
+		['닫기', 'close_button'],
+		['모달 닫기', 'close_icon'],
+		['이 업데이트 다시 보지 않기', 'dismiss_forever'],
+	] as const)('%s 닫기를 경로와 함께 기록한다', async (name, closeMethod) => {
+		render(<ReleaseNoteModal />);
+		await userEvent.click(screen.getByRole('button', { name }));
+		expect(analyticsMock.releaseNoteClosed).toHaveBeenCalledExactlyOnceWith({
+			releaseNoteId: note.id,
+			closeMethod,
+		});
 	});
 	it('영구 숨김은 새 세션에서도 숨기고 새 업데이트 ID는 표시한다', async () => {
 		const view = render(<ReleaseNoteModal />);
@@ -90,7 +125,7 @@ describe('업데이트 안내', () => {
 		view.rerender(<ReleaseNoteModal />);
 		expect(screen.getByRole('dialog')).toBeVisible();
 	});
-	it('바깥 영역과 ESC는 닫기나 저장을 유발하지 않는다', () => {
+	it('바깥 영역 클릭은 닫기 시도로 기록하되 ESC와 함께 닫기나 저장을 유발하지 않는다', () => {
 		const save = vi.spyOn(Storage.prototype, 'setItem');
 		render(<ReleaseNoteModal />);
 		const dialog = screen.getByRole('dialog');
@@ -98,6 +133,8 @@ describe('업데이트 안내', () => {
 		fireEvent(dialog, new Event('cancel', { cancelable: true }));
 		expect(dialog).toBeVisible();
 		expect(save).not.toHaveBeenCalled();
+		expect(analyticsMock.releaseNoteBackdropClicked).toHaveBeenCalledExactlyOnceWith({ releaseNoteId: note.id });
+		expect(analyticsMock.releaseNoteClosed).not.toHaveBeenCalled();
 	});
 	it.each(['닫기', '모달 닫기', '이 업데이트 다시 보지 않기'])(
 		'읽기와 쓰기가 실패해도 %s는 현재 마운트 동안 닫는다',

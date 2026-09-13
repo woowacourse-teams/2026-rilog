@@ -16,6 +16,8 @@ import type {
 	PostDocumentState,
 	PostEntrySource,
 	PublishFailureStage,
+	ReleaseNoteCloseMethod,
+	ReleaseNoteLinkTarget,
 	ScrollDepthBucket,
 } from './analytics-event';
 
@@ -28,6 +30,26 @@ export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introd
 export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
 export const analytics = {
+	releaseNoteViewed: ({ releaseNoteId }: { releaseNoteId: string }) =>
+		captureAnalyticsEvent('release note viewed', { release_note_id: releaseNoteId }),
+	releaseNoteClosed: ({ releaseNoteId, closeMethod }: { releaseNoteId: string; closeMethod: ReleaseNoteCloseMethod }) =>
+		captureAnalyticsEvent('release note closed', {
+			release_note_id: releaseNoteId,
+			close_method: closeMethod,
+		}),
+	releaseNoteBackdropClicked: ({ releaseNoteId }: { releaseNoteId: string }) =>
+		captureAnalyticsEvent('release note backdrop clicked', { release_note_id: releaseNoteId }),
+	releaseNoteLinkClicked: ({
+		releaseNoteId,
+		linkTarget,
+	}: {
+		releaseNoteId: string;
+		linkTarget: ReleaseNoteLinkTarget;
+	}) =>
+		captureAnalyticsEvent('release note link clicked', {
+			release_note_id: releaseNoteId,
+			link_target: linkTarget,
+		}),
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>
 		captureAnalyticsEvent('github login started', { entry_surface: entrySurface, redirect_target: redirectTarget }),
 	githubLoginCompleted: ({ userType }: { userType: 'new' | 'returning' }) =>

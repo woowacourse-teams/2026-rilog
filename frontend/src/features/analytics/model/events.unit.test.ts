@@ -37,6 +37,28 @@ describe('analytics events', () => {
 		});
 	});
 
+	it('패치노트 모달 행동을 canonical payload로 전송한다', () => {
+		analytics.releaseNoteViewed({ releaseNoteId: '2026-09-feed-update' });
+		analytics.releaseNoteClosed({ releaseNoteId: '2026-09-feed-update', closeMethod: 'close_button' });
+		analytics.releaseNoteBackdropClicked({ releaseNoteId: '2026-09-feed-update' });
+		analytics.releaseNoteLinkClicked({ releaseNoteId: '2026-09-feed-update', linkTarget: 'about' });
+
+		expect(captureMock).toHaveBeenNthCalledWith(1, 'release note viewed', {
+			release_note_id: '2026-09-feed-update',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'release note closed', {
+			release_note_id: '2026-09-feed-update',
+			close_method: 'close_button',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(3, 'release note backdrop clicked', {
+			release_note_id: '2026-09-feed-update',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(4, 'release note link clicked', {
+			release_note_id: '2026-09-feed-update',
+			link_target: 'about',
+		});
+	});
+
 	it('읽기, 발행, Co-log 초대 이벤트를 canonical 이름으로 전송한다', () => {
 		analytics.postReadEngaged({ postId: 12, engagementSeconds: 8, scrollDepthBucket: '50_percent' });
 		analytics.postPublished({

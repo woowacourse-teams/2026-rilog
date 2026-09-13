@@ -25,6 +25,10 @@ export type BlogProfileEntrySource =
 	| 'post_detail_series_title'
 	| 'post_detail_chapter_title'
 	| 'post_detail_recommendation_author';
+// 패치노트 모달이 실제로 닫힌 경로별 사용량과 노출 후 닫기까지 걸린 시간을 비교한다.
+export type ReleaseNoteCloseMethod = 'close_icon' | 'close_button' | 'dismiss_forever';
+// 패치노트에서 어떤 후속 콘텐츠로 이동하는지 구분한다.
+export type ReleaseNoteLinkTarget = 'release_note' | 'about';
 //  사용자가 이미지를 어떻게 마련하는지 파악해 업로드 UX나 자동 대표 이미지 정책을 개선할 수 있음
 export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 // 게시글을 온전히 소비했는지 지표

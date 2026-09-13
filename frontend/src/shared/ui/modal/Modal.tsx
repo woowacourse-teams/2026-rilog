@@ -17,6 +17,7 @@ interface ModalCommonProps {
 	description?: ReactNode;
 	children?: ReactNode;
 	onClose: () => void;
+	onBackdropClick?: () => void;
 	size?: ModalSize;
 	padding?: ModalPadding;
 	scrollMode?: ModalScrollMode;
@@ -69,6 +70,7 @@ export default function Modal({
 	description,
 	children,
 	onClose,
+	onBackdropClick,
 	size = 'md',
 	padding = 'lg',
 	scrollMode = 'content',
@@ -97,6 +99,7 @@ export default function Modal({
 		<BaseModal
 			open={open}
 			onDismiss={onClose}
+			onBackdropClick={onBackdropClick}
 			accessibility={{
 				labelledBy: titleId,
 				describedBy: hasDescription ? descriptionId : undefined,
