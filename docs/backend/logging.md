@@ -10,7 +10,7 @@
 
 ## JSON 로그
 
-운영 프로필은 Spring Boot 구조화 로그 기본 기능의 `logstash` 콘솔 포맷을 사용한다. 로그는 한 줄 JSON으로 출력하며, MDC의 `requestId`는 JSON 최상위 필드로 포함된다.
+개발 서버와 운영 프로필은 Spring Boot 구조화 로그 기본 기능의 `logstash` 콘솔 포맷을 사용한다. 로그는 한 줄 JSON으로 출력하며, MDC의 `requestId`는 JSON 최상위 필드로 포함된다. 로컬 프로필은 개발자 콘솔 가독성을 위해 일반 콘솔 로그를 유지한다.
 
 공통으로 기대하는 주요 필드는 다음과 같다.
 
@@ -21,18 +21,23 @@
 | `logger_name` | 로거 이름 |
 | `thread_name` | 스레드 이름 |
 | `level` | 로그 레벨 |
+| `service` | 서비스 이름. 현재 값은 `rilog-backend` |
+| `environment` | 배포 환경. 현재 값은 `dev` 또는 `prod` |
 | `requestId` | 요청 단위 추적 ID |
 | `stack_trace` | 예외와 함께 기록한 경우의 스택 |
 
-개발 프로필인 `local`, `dev`는 애플리케이션 패키지 `kr.rilog`를 `debug` 이상으로 출력한다. 운영 프로필인 `prod`는 `kr.rilog`를 `info` 이상으로 출력하고 Hibernate SQL 및 바인딩 파라미터 상세 로그를 출력하지 않는다.
+로컬 프로필인 `local`은 애플리케이션 패키지 `kr.rilog`를 `debug` 이상으로 출력한다. 개발 서버 프로필인 `dev`는 `debug` 이상 앱 로그를 구조화 JSON으로 출력한다. 운영 프로필인 `prod`는 `kr.rilog`를 `info` 이상으로 출력한다. CloudWatch에 수집되는 `dev`, `prod` 프로필은 Hibernate SQL 및 바인딩 파라미터 상세 로그를 출력하지 않는다.
 
 ## 운영 이벤트
 
-정상 이벤트 로그는 메시지에 `event=<name>`을 포함하고, 요청 단위 조회에는 JSON 최상위 필드의 `requestId`를 사용한다.
+정상 이벤트 로그는 메시지와 JSON 최상위 필드에 `event`를 포함하고, 요청 단위 조회에는 JSON 최상위 필드의 `requestId`를 사용한다.
 
 | 이벤트 | 레벨 | 발생 시점 | 메시지 필드 | 기록하지 않는 값 |
 | --- | --- | --- | --- | --- |
 | `oauth_login_completed` | `INFO` | OAuth 인증, 토큰 발급과 응답 구성이 완료된 후 | `provider`, `userId`, `onboardingStatus` | 토큰, 인증 `code`, OAuth `state`, 쿠키, redirect URL |
+| `http_request_exception` | `INFO` 또는 `ERROR` | HTTP 요청 예외를 최종 핸들러에서 응답으로 변환할 때 | `errorCode`, `httpStatus` | 요청 본문, 외부 응답 본문, 토큰, 쿠키 |
+| `s3_object_tagging_failed` | `ERROR` | 비동기 S3 객체 태깅 중 객체 단위 실패가 발생할 때 | `bucket`, `key`, `tagStatus` | AWS credential, presigned URL, 외부 응답 본문 |
+| `async_uncaught_exception` | `ERROR` | `@Async` 메서드의 미처리 예외가 발생할 때 | `method` | 메서드 인자 원문, 토큰, 쿠키 |
 
 ## 예외 로그 레벨
 
@@ -58,3 +63,5 @@ HTTP 요청 처리 흐름에서 외부 연동 예외를 애플리케이션 예�
 | 외부 응답 본문 | GitHub, Redis, AWS 등 외부 시스템의 원문 응답 |
 
 운영 로그 이벤트를 추가할 때는 필요한 식별자와 상태만 남기고, 요청 본문 전체, 외부 응답 본문, 토큰, 쿠키, redirect URL, 내부 stack/context를 공개 응답에 노출하지 않는다.
+
+CloudWatch Logs 수집과 조회 방법은 [CloudWatch Logs 운영 가이드](cloudwatch-logs.md)를 따른다.

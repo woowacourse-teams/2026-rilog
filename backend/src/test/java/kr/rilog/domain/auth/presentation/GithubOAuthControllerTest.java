@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -148,6 +149,11 @@ class GithubOAuthControllerTest {
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getMDCPropertyMap()).containsEntry(RequestIdFilter.MDC_KEY, requestId);
+        assertThat(logFields(event))
+                .containsEntry("event", "oauth_login_completed")
+                .containsEntry("provider", "GITHUB")
+                .containsEntry("userId", "1")
+                .containsEntry("onboardingStatus", "PENDING");
         assertThat(event.getFormattedMessage())
                 .contains(
                         "event=oauth_login_completed",
@@ -222,6 +228,11 @@ class GithubOAuthControllerTest {
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getMDCPropertyMap()).containsEntry(RequestIdFilter.MDC_KEY, requestId);
+        assertThat(logFields(event))
+                .containsEntry("event", "oauth_login_completed")
+                .containsEntry("provider", "GITHUB")
+                .containsEntry("userId", "1")
+                .containsEntry("onboardingStatus", "COMPLETED");
         assertThat(event.getFormattedMessage())
                 .contains(
                         "event=oauth_login_completed",
@@ -433,6 +444,18 @@ class GithubOAuthControllerTest {
                   "state": "%s"
                 }
                 """.formatted(code, state);
+    }
+
+    private static Map<String, String> logFields(ILoggingEvent event) {
+        if (event.getKeyValuePairs() == null) {
+            return Map.of();
+        }
+        return event.getKeyValuePairs()
+                .stream()
+                .collect(toMap(
+                        keyValuePair -> keyValuePair.key,
+                        keyValuePair -> String.valueOf(keyValuePair.value)
+                ));
     }
 
     private static class InMemoryOAuthLoginAttemptStore implements OAuthLoginAttemptStore {

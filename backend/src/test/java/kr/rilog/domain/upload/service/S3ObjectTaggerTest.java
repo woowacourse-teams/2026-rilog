@@ -19,7 +19,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse;
 
 import java.util.List;
+import java.util.Map;
 
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -105,6 +107,11 @@ class S3ObjectTaggerTest {
 
             ILoggingEvent event = logCapture.onlyEvent();
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(logFields(event))
+                    .containsEntry("event", "s3_object_tagging_failed")
+                    .containsEntry("bucket", "rilog-bucket")
+                    .containsEntry("key", "images/2026/failed.png")
+                    .containsEntry("tagStatus", "CONFIRMED");
             assertThat(event.getFormattedMessage())
                     .contains("event=s3_object_tagging_failed")
                     .contains("bucket=rilog-bucket")
@@ -152,5 +159,17 @@ class S3ObjectTaggerTest {
             logger.detachAppender(appender);
             appender.stop();
         }
+    }
+
+    private static Map<String, String> logFields(ILoggingEvent event) {
+        if (event.getKeyValuePairs() == null) {
+            return Map.of();
+        }
+        return event.getKeyValuePairs()
+                .stream()
+                .collect(toMap(
+                        keyValuePair -> keyValuePair.key,
+                        keyValuePair -> String.valueOf(keyValuePair.value)
+                ));
     }
 }

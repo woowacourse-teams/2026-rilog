@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String HTTP_REQUEST_EXCEPTION_EVENT = "http_request_exception";
     private static final String EXCEPTION_LOG_FORMAT = "[{}] {}";
     private static final String UNKNOWN_EXCEPTION_LOG_FORMAT = "[{}] 예상치 못한 예외 발생";
 
@@ -50,7 +51,7 @@ public class GlobalExceptionHandler {
                 ))
                 .toList();
 
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+        logInfoException(errorInformation, invalidParams);
 
         ErrorDetail errorDetail = ErrorDetail.of(
                 errorInformation,
@@ -73,7 +74,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RilogInfrastructureException.class)
     public ResponseEntity<ErrorDetail> handleRilogInfrastructureException(RilogInfrastructureException e) {
         ErrorInformation errorInformation = e.getErrorInformation();
-        log.error(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage(), e);
+        logErrorException(errorInformation, e.getMessage(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -93,7 +94,7 @@ public class GlobalExceptionHandler {
                         )))
                 .toList();
 
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+        logInfoException(errorInformation, invalidParams);
 
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, invalidParams));
@@ -107,7 +108,7 @@ public class GlobalExceptionHandler {
                 GlobalExceptionInformation.INVALID_REQUEST_BODY;
 
         InvalidParam invalidParam = extractInvalidParam(e);
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParam);
+        logInfoException(errorInformation, invalidParam);
 
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, List.of(invalidParam)));
@@ -118,7 +119,7 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException e
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.METHOD_NOT_SUPPORTED;
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage());
+        logInfoException(errorInformation, errorInformation.getMessage());
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -146,7 +147,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorDetail> handleNoResourceFoundException(NoResourceFoundException e) {
         ErrorInformation errorInformation = GlobalExceptionInformation.STATIC_RESOURCE_NOT_FOUND;
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage());
+        logInfoException(errorInformation, errorInformation.getMessage());
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -158,7 +159,7 @@ public class GlobalExceptionHandler {
         ErrorInformation errorInformation = GlobalExceptionInformation.MISSING_REQUEST_PARAMETER;
         List<InvalidParam> invalidParams = List.of(InvalidParam.missingRequestParameters(e.getParameterName()));
 
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), invalidParams);
+        logInfoException(errorInformation, invalidParams);
         return ResponseEntity
                 .status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, invalidParams));
@@ -167,7 +168,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetail> handleUnknownException(Exception e) {
         ErrorInformation errorInformation = GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
-        log.error(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e);
+        log.atError()
+                .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
+                .addKeyValue("errorCode", errorInformation.getErrorCode())
+                .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
+                .setCause(e)
+                .log(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode());
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -200,11 +206,28 @@ public class GlobalExceptionHandler {
 
     private void logExceptionByStatus(ErrorInformation errorInformation, Exception exception) {
         if (errorInformation.getHttpStatus().is5xxServerError()) {
-            log.error(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage(), exception);
+            logErrorException(errorInformation, errorInformation.getMessage(), exception);
             return;
         }
 
-        log.info(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), errorInformation.getMessage());
+        logInfoException(errorInformation, errorInformation.getMessage());
+    }
+
+    private void logInfoException(ErrorInformation errorInformation, Object context) {
+        log.atInfo()
+                .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
+                .addKeyValue("errorCode", errorInformation.getErrorCode())
+                .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
+                .log(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), context);
+    }
+
+    private void logErrorException(ErrorInformation errorInformation, String context, Exception exception) {
+        log.atError()
+                .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
+                .addKeyValue("errorCode", errorInformation.getErrorCode())
+                .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
+                .setCause(exception)
+                .log(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), context);
     }
 
 }

@@ -81,7 +81,19 @@ jobs:
     environment: production
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Deploy to server
+        env:
+          DOCKER_USER_NAME: ${{ secrets.DOCKER_USER_NAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
+          DOCKER_TAG: prod
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          RILOG_ENV: prod
+          RILOG_CONTAINER_NAME: rilog-backend-prod
+          RILOG_LOG_GROUP: /rilog/backend/prod
+          RILOG_LOG_RETENTION_DAYS: 30
         run: |
-          cd /home/ubuntu
-          sudo ./deploy.sh
+          chmod +x backend/scripts/deploy-backend-container.sh
+          sudo -E backend/scripts/deploy-backend-container.sh

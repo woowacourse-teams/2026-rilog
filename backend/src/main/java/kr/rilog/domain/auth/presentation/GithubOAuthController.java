@@ -36,6 +36,7 @@ import static kr.rilog.domain.auth.exception.AuthErrorInformation.OAUTH_REQUEST_
 @Slf4j
 public class GithubOAuthController {
 
+    private static final String OAUTH_LOGIN_COMPLETED_EVENT = "oauth_login_completed";
     private static final String OAUTH_LOGIN_COMPLETED_LOG_FORMAT =
             "event=oauth_login_completed provider={} userId={} onboardingStatus={}";
 
@@ -111,12 +112,17 @@ public class GithubOAuthController {
     }
 
     private void logOAuthLoginCompleted(SocialLoginProvider provider, User loginUser) {
-        log.info(
-                OAUTH_LOGIN_COMPLETED_LOG_FORMAT,
-                provider,
-                loginUser.getId(),
-                loginUser.getOnboardingStatus()
-        );
+        log.atInfo()
+                .addKeyValue("event", OAUTH_LOGIN_COMPLETED_EVENT)
+                .addKeyValue("provider", provider)
+                .addKeyValue("userId", loginUser.getId())
+                .addKeyValue("onboardingStatus", loginUser.getOnboardingStatus())
+                .log(
+                        OAUTH_LOGIN_COMPLETED_LOG_FORMAT,
+                        provider,
+                        loginUser.getId(),
+                        loginUser.getOnboardingStatus()
+                );
     }
 
 }
