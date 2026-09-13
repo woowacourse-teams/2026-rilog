@@ -30,7 +30,9 @@
 
 HTTP 요청 처리 중 발생한 예상 가능한 4xx 예외는 `INFO`로 기록하고 stack trace를 남기지 않는다. 미처리 예외, 미분류 데이터 무결성 예외, 외부 연동 실패와 설정 오류처럼 5xx로 응답하는 서버 장애는 최종 HTTP 예외 처리 지점에서 `ERROR`로 한 번 기록한다.
 
-외부 연동 예외는 `RilogInfrastructureException`으로 변환한다. 공개 응답에는 내부 context를 담지 않고, 로그 추적을 위해 안전한 작업 문맥과 원인 예외 `cause`만 보존한다.
+HTTP 요청 처리 흐름에서 외부 연동 예외를 애플리케이션 예외로 변환할 때는 `RilogInfrastructureException`을 사용한다. 공개 응답에는 내부 context를 담지 않고, 로그 추적을 위해 안전한 작업 문맥과 원인 예외 `cause`만 보존한다.
+
+비동기 S3 작업은 요청 스레드의 MDC를 작업 실행 시점까지 전달하고, 실행 종료 후 이전 MDC를 복원한다. S3 객체별 태깅 실패는 `event=s3_object_tagging_failed`와 안전한 대상 정보, 원인 예외를 `ERROR`로 한 번 기록하고 후속 객체 처리는 계속한다. `@Async` 메서드에서 처리되지 않은 예외는 `event=async_uncaught_exception`으로 기록한다.
 
 ## 민감정보 제외 규칙
 

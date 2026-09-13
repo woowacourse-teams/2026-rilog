@@ -5,6 +5,7 @@ import kr.rilog.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
 
@@ -15,6 +16,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class S3ObjectTagger {
 
+    private static final String S3_TAGGING_FAILED_LOG_FORMAT =
+            "event=s3_object_tagging_failed bucket={} key={} tagStatus={}";
+
     private final S3Client s3Client;
     private final S3Properties properties;
 
@@ -23,14 +27,20 @@ public class S3ObjectTagger {
     }
 
     private void changeS3ObjectTag(S3TagTarget uploadTarget) {
-        try{
+        try {
             s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
                     .bucket(properties.bucket())
                     .key(uploadTarget.key())
                     .tagging(uploadTarget.tagStatus().toTagging())
                     .build());
-        } catch (Exception e){
-            log.error(e.getMessage());
+        } catch (SdkException exception) {
+            log.error(
+                    S3_TAGGING_FAILED_LOG_FORMAT,
+                    properties.bucket(),
+                    uploadTarget.key(),
+                    uploadTarget.tagStatus(),
+                    exception
+            );
         }
     }
 
