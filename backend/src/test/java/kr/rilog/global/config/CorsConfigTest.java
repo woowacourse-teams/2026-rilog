@@ -38,7 +38,7 @@ class CorsConfigTest {
         assertThat(configuration.getAllowedHeaders())
                 .containsExactly("*");
         assertThat(configuration.getExposedHeaders())
-                .containsExactly(HttpHeaders.AUTHORIZATION, "Cache-Control", "Content-Type");
+                .containsExactly(HttpHeaders.AUTHORIZATION, "Cache-Control", "Content-Type", "X-Request-ID");
         assertThat(configuration.getAllowCredentials()).isTrue();
     }
 
