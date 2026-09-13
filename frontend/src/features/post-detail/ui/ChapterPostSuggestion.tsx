@@ -1,7 +1,8 @@
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
 import type { CologChapterPostSuggestions } from '@/features/post-detail/model/chapter';
-import PostNavigationTracker from '@/features/post-detail/ui/PostNavigationTracker';
+import PostNavigationAvailableTracker from '@/features/post-detail/ui/PostNavigationAvailableTracker';
+import PostNavigationLink from '@/features/post-detail/ui/PostNavigationLink';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
 import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -21,9 +22,9 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 
 	return (
 		<section aria-labelledby="chapter-post-suggestions-title">
-			<PostNavigationTracker.AvailableTracker surface="chapter_suggestions" />
+			<PostNavigationAvailableTracker surface="chapter_suggestions" />
 			<h2 id="chapter-post-suggestions-title" className="text-body-2 font-semibold text-text-primary">
-				<PostNavigationTracker.Link
+				<PostNavigationLink
 					href={chapterHref}
 					className="rounded-sm transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 					surface="chapter_suggestions"
@@ -32,7 +33,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 					clickPart="title"
 				>
 					{chapter.name}
-				</PostNavigationTracker.Link>{' '}
+				</PostNavigationLink>{' '}
 				챕터의 더 많은 글
 			</h2>
 
@@ -40,7 +41,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 				{chapter.posts.map((post, index) => (
 					<li key={post.id} className="min-w-0">
 						<article className="flex sm:flex-col">
-							<PostNavigationTracker.Link
+							<PostNavigationLink
 								href={buildPostDetailPath(slug, String(post.id))}
 								className="group/card h-full rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:rounded-xl sm:pb-2"
 								surface="chapter_suggestions"
@@ -60,9 +61,9 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 										isScaledOnInteraction
 									/>
 								</div>
-							</PostNavigationTracker.Link>
+							</PostNavigationLink>
 							<div className="flex flex-col gap-2">
-								<PostNavigationTracker.Link
+								<PostNavigationLink
 									href={buildPostDetailPath(slug, String(post.id))}
 									className="line-clamp-2 flex-1 rounded-sm text-body-2 font-medium [overflow-wrap:anywhere] break-keep text-text-primary sm:text-body-3"
 									surface="chapter_suggestions"
@@ -74,7 +75,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 									<h3 className="transition-colors hover:text-focus-ring focus-visible:text-focus-ring active:text-focus-ring motion-reduce:transition-none">
 										{post.title}
 									</h3>
-								</PostNavigationTracker.Link>
+								</PostNavigationLink>
 								<CustomLink
 									href={buildBlogHomePath(post.author.slug)}
 									className="inline-block w-full truncate rounded-sm text-label-2 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"

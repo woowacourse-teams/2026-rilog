@@ -7,7 +7,7 @@ import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-p
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
-import PostNavigationTracker from '@/features/post-detail/ui/PostNavigationTracker';
+import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
 import Divider from '@/shared/ui/divider/Divider';
 
@@ -33,7 +33,7 @@ export default async function BasePostDetail({
 	// const description = extractPostDescription(post.content, 150);
 
 	return (
-		<PostNavigationTracker.VisitProvider
+		<PostNavigationVisitProvider
 			key={post.id}
 			postId={post.id}
 			ownerType={post.blog.type}
@@ -71,6 +71,6 @@ export default async function BasePostDetail({
 					</div>
 				</div>
 			</main>
-		</PostNavigationTracker.VisitProvider>
+		</PostNavigationVisitProvider>
 	);
 }
