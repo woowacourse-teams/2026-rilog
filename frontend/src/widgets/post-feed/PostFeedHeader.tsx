@@ -135,7 +135,9 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 								<Link
 									href={href}
 									scroll={false}
-									onClick={() => analytics.feedCategoryFilterClicked({ category: value ?? 'ALL' })}
+									onClick={
+										isCurrent ? undefined : () => analytics.feedCategoryFilterClicked({ category: value ?? 'ALL' })
+									}
 									onNavigate={(event) => {
 										event.preventDefault();
 										navigateFeedFilter(href);

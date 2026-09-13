@@ -70,16 +70,28 @@ describe('PageNavigation', () => {
 		};
 	});
 
-	it('Feed, Personal, Colog 클릭을 선택한 피드 범위와 함께 기록한다', () => {
+	it('현재 Feed를 제외한 Personal, Colog 클릭을 선택한 피드 범위와 함께 기록한다', () => {
 		render(<PageNavigation />);
 
 		fireEvent.click(screen.getByRole('link', { name: '피드 글 123개' }));
 		fireEvent.click(screen.getByRole('link', { name: 'Personal' }));
 		fireEvent.click(screen.getByRole('link', { name: 'Colog' }));
 
-		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(1, { feedScope: 'ALL' });
-		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(2, { feedScope: 'RILOG' });
-		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(3, { feedScope: 'COLOG' });
+		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(1, { feedScope: 'RILOG' });
+		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(2, { feedScope: 'COLOG' });
+	});
+
+	it.each([
+		['', '피드 글 123개'],
+		['blogType=personal', 'Personal'],
+		['blogType=colog', 'Colog'],
+	] as const)('URL %s에서 현재 활성 메뉴를 다시 클릭하면 기록하지 않는다', (searchParams, name) => {
+		route.searchParams = new URLSearchParams(searchParams);
+		render(<PageNavigation />);
+
+		fireEvent.click(screen.getByRole('link', { name }));
+
+		expect(analyticsMock.sidebarFeedFilterClicked).not.toHaveBeenCalled();
 	});
 
 	afterEach(() => {

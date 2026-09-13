@@ -59,34 +59,36 @@ export default function PageNavigation() {
 				}
 			: undefined;
 	const feedHref = buildFeedFilterHref(currentFeedSearchParams, { blogType: undefined });
+	const isFeedCurrent = isFeedPage && filters.blogType === undefined;
 
 	return (
 		<nav aria-label="주요 메뉴" className="pt-2">
 			<SidebarNavigationLink
 				href={feedHref}
-				onClick={() => analytics.sidebarFeedFilterClicked({ feedScope: 'ALL' })}
+				onClick={isFeedCurrent ? undefined : () => analytics.sidebarFeedFilterClicked({ feedScope: 'ALL' })}
 				scroll={!isFeedPage}
 				onNavigate={handleFeedNavigation(feedHref)}
 				accessibilityLabel={feedAccessibilityLabel}
 				icon={<FeedIcon aria-hidden="true" focusable="false" className={FEED_ICON_CLASS_NAME} />}
 				label="Feed"
 				badge={feedBadge}
-				isCurrent={isFeedPage && filters.blogType === undefined}
+				isCurrent={isFeedCurrent}
 			/>
 			<ul className="relative mt-1 flex flex-col gap-1 before:absolute before:inset-y-0 before:left-1 before:w-px before:bg-border-default before:opacity-0 before:transition-opacity before:duration-150 group-hover:before:opacity-100">
 				{SUB_MENUS.map(({ blogType, label, icon }) => {
 					const href = buildFeedFilterHref(currentFeedSearchParams, { blogType });
+					const isCurrent = isFeedPage && filters.blogType === blogType;
 
 					return (
 						<li key={blogType}>
 							<SidebarNavigationLink
 								href={href}
-								onClick={() => analytics.sidebarFeedFilterClicked({ feedScope: blogType })}
+								onClick={isCurrent ? undefined : () => analytics.sidebarFeedFilterClicked({ feedScope: blogType })}
 								scroll={!isFeedPage}
 								onNavigate={handleFeedNavigation(href)}
 								icon={icon}
 								label={label}
-								isCurrent={isFeedPage && filters.blogType === blogType}
+								isCurrent={isCurrent}
 								className="group-hover:rounded-l-none"
 							/>
 						</li>

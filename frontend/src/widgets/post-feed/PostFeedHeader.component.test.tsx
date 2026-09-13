@@ -41,17 +41,30 @@ describe('PostFeedHeader', () => {
 		route.searchParams = new URLSearchParams();
 	});
 
-	it('전체, 기술, 일상, 회고 클릭을 선택한 카테고리와 함께 기록한다', () => {
+	it('현재 전체를 제외한 기술, 일상, 회고 클릭을 선택한 카테고리와 함께 기록한다', () => {
 		render(<PostFeedHeader id="post-feed-categories" />);
 
 		for (const name of ['전체', '기술', '일상', '회고']) {
 			fireEvent.click(screen.getByRole('link', { name }));
 		}
 
-		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(1, { category: 'ALL' });
-		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(2, { category: 'TECH' });
-		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(3, { category: 'DAILY' });
-		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(4, { category: 'RETROSPECT' });
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(1, { category: 'TECH' });
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(2, { category: 'DAILY' });
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(3, { category: 'RETROSPECT' });
+	});
+
+	it.each([
+		['', '전체'],
+		['category=tech', '기술'],
+		['category=daily', '일상'],
+		['category=retrospect', '회고'],
+	] as const)('URL %s에서 현재 활성 카테고리를 다시 클릭하면 기록하지 않는다', (searchParams, name) => {
+		route.searchParams = new URLSearchParams(searchParams);
+		render(<PostFeedHeader id="post-feed-categories" />);
+
+		fireEvent.click(screen.getByRole('link', { name }));
+
+		expect(analyticsMock.feedCategoryFilterClicked).not.toHaveBeenCalled();
 	});
 
 	afterEach(() => {
