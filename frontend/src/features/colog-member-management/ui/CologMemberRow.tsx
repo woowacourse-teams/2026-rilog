@@ -17,6 +17,7 @@ const JOINED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
 
 interface CologMemberRowProps {
 	member: CologMember;
+	rowNumber: number;
 	isEditing?: boolean;
 	onPermissionChange?: (memberId: number, permission: CologMemberPermission) => void;
 	onBlogRoleChange?: (memberId: number, blogRole: string) => void;
@@ -26,6 +27,7 @@ interface CologMemberRowProps {
 
 export default function CologMemberRow({
 	member,
+	rowNumber,
 	isEditing = false,
 	onPermissionChange,
 	onBlogRoleChange: _onBlogRoleChange,
@@ -37,7 +39,8 @@ export default function CologMemberRow({
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">
-			<td className="py-3 pl-6">
+			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
+			<td className="px-2 py-3">
 				<div className="flex items-center gap-3.5">
 					<UserAvatar
 						src={member.profileImageUrl}
