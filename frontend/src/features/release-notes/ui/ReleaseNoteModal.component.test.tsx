@@ -10,6 +10,7 @@ import ReleaseNoteModal from './ReleaseNoteModal';
 
 const notes = vi.hoisted(() => [] as ReleaseNotesModule.ReleaseNote[]);
 const analyticsMock = vi.hoisted(() => ({
+	aboutPageEntryClicked: vi.fn(),
 	releaseNoteViewed: vi.fn(),
 	releaseNoteClosed: vi.fn(),
 	releaseNoteBackdropClicked: vi.fn(),

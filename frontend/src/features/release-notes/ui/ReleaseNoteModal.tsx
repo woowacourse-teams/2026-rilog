@@ -6,9 +6,8 @@ import type { ReleaseNote } from '../model/release-notes';
 
 import type { ReleaseNoteCloseMethod, ReleaseNoteLinkTarget } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
-import { APP_ROUTES } from '@/shared/routes/app-routes';
+import AboutPageEntryLink from '@/features/analytics/ui/AboutPageEntryLink';
 import Button from '@/shared/ui/button/Button';
-import CustomLink from '@/shared/ui/link/CustomLink';
 import Modal from '@/shared/ui/modal/Modal';
 
 import {
@@ -98,15 +97,15 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 						</li>
 					))}
 					<li>
-						<CustomLink
-							href={APP_ROUTES.about}
+						<AboutPageEntryLink
+							entrySource="release_note"
 							target="_blank"
 							rel="noopener noreferrer"
 							onClick={() => trackLinkClick('about')}
 							className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 						>
 							Rilog. 이야기 ↗
-						</CustomLink>
+						</AboutPageEntryLink>
 					</li>
 				</ul>
 			</nav>

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 
+import AboutPageEntryLink from '@/features/analytics/ui/AboutPageEntryLink';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
@@ -54,12 +55,12 @@ export default function Footer() {
 				</section>
 
 				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-1 font-semibold">
-					<CustomLink
+					<AboutPageEntryLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
-						href="/about"
+						entrySource="footer"
 					>
 						Rilog. 이야기
-					</CustomLink>
+					</AboutPageEntryLink>
 					<span aria-hidden="true">·</span>
 					<a
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}

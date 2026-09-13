@@ -29,6 +29,8 @@ export type BlogProfileEntrySource =
 export type ReleaseNoteCloseMethod = 'close_icon' | 'close_button' | 'dismiss_forever';
 // 패치노트에서 어떤 후속 콘텐츠로 이동하는지 구분한다.
 export type ReleaseNoteLinkTarget = 'release_note' | 'about';
+// About 페이지로 이동하는 내부 링크 중 어떤 위치가 주로 사용되는지 구분한다.
+export type AboutPageEntrySource = 'sidebar' | 'footer' | 'release_note';
 // 사이드바에서 선택한 전체·개인·Colog 피드 범위를 기존 API의 blog type과 같은 값으로 기록한다.
 export type FeedScope = 'ALL' | 'RILOG' | 'COLOG';
 // 피드 상단에서 선택한 전체·기술·일상·회고 카테고리를 기록한다.

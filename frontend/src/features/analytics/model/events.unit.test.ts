@@ -11,6 +11,14 @@ describe('analytics events', () => {
 		captureMock.mockReset();
 	});
 
+	it('About 페이지 진입 링크의 위치를 canonical payload로 전송한다', () => {
+		analytics.aboutPageEntryClicked({ entrySource: 'release_note' });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('about page entry clicked', {
+			entry_source: 'release_note',
+		});
+	});
+
 	it('노션 명세의 인증 및 가입 이벤트를 canonical payload로 전송한다', () => {
 		analytics.githubLoginStarted({ entrySurface: 'sidebar', redirectTarget: '/feeds' });
 		analytics.githubLoginFailed({ failureStage: 'callback_request', errorCode: 'NETWORK' });
