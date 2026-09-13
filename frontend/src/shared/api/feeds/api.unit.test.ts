@@ -33,4 +33,20 @@ describe('readFullFeedPosts', () => {
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/feeds/posts?page=2&size=12');
 	});
+
+	it('선택한 category와 blogType을 query parameter로 직렬화한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			Response.json({
+				status: 200,
+				message: 'OK',
+				data: { posts: [], page: 0, size: 12, numberOfElements: 0, hasNext: false },
+			}),
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await readFullFeedPosts({ page: 0, size: 12, category: 'RETROSPECT', blogType: 'COLOG' });
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.url).toBe('https://api.rilog.test/v1/feeds/posts?page=0&size=12&category=RETROSPECT&blogType=COLOG');
+	});
 });

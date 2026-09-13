@@ -70,7 +70,7 @@ export default function FileUploader({
 					multiple={false}
 					disabled={disabled || isPending}
 					onChange={handleChange}
-					className="sr-only"
+					className="ph-no-capture sr-only"
 					aria-busy={isPending || undefined}
 					aria-describedby={ariaDescribedBy}
 					aria-label={ariaLabel ?? displayedButtonLabel}

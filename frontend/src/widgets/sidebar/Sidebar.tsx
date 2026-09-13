@@ -1,5 +1,7 @@
 'use client';
 
+import { Suspense } from 'react';
+
 import { useAuth } from '@/features/auth/model/use-auth';
 import Divider from '@/shared/ui/divider/Divider';
 
@@ -21,7 +23,9 @@ export default function Sidebar() {
 				<SidebarHeader />
 
 				<div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-1.75 pb-4">
-					<PageNavigation />
+					<Suspense fallback={null}>
+						<PageNavigation />
+					</Suspense>
 					{isAuthenticated && (
 						<>
 							<Divider className="my-4" />

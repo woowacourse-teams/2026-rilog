@@ -49,8 +49,8 @@ vi.mock('@/features/post-detail/ui/PostDetailAuthorProfileSection', () => ({
 		return <div>작성자 프로필</div>;
 	},
 }));
-vi.mock('@/features/post-detail/ui/SeriesAccordion', () => ({
-	default: function MockSeriesAccordion() {
+vi.mock('@/features/post-detail/ui/SeriesAccordionSection', () => ({
+	default: function MockSeriesAccordionSection() {
 		return <div>시리즈 글</div>;
 	},
 }));

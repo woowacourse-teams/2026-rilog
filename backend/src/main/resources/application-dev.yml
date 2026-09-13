@@ -15,6 +15,7 @@ spring:
 
 logging:
   level:
+    kr.rilog: debug
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
 

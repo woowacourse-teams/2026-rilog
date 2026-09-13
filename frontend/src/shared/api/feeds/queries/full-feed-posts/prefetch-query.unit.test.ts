@@ -7,11 +7,11 @@ describe('prefetchFullFeedPostsQuery', () => {
 		const prefetchInfiniteQuery = vi.fn().mockResolvedValue(undefined);
 		const queryClient = { prefetchInfiniteQuery };
 
-		await prefetchFullFeedPostsQuery(queryClient as never);
+		await prefetchFullFeedPostsQuery(queryClient as never, { category: 'TECH', blogType: 'RILOG' });
 
 		expect(prefetchInfiniteQuery).toHaveBeenCalledOnce();
 		expect(prefetchInfiniteQuery.mock.calls[0]?.[0]).toMatchObject({
-			queryKey: ['feeds', 'posts', 'full', { size: 12 }],
+			queryKey: ['feeds', 'posts', 'full', { size: 12, blogType: 'RILOG', category: 'TECH' }],
 			initialPageParam: 0,
 		});
 	});

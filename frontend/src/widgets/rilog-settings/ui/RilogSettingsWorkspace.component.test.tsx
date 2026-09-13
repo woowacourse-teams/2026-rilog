@@ -98,6 +98,7 @@ describe('RilogSettingsWorkspace', () => {
 		renderWithQuery(<RilogSettingsWorkspace slug="rilogger" />);
 
 		await user.click(screen.getByRole('tab', { name: '시리즈 관리' }));
+		expect(screen.getByText(/시리즈는 최대 30개까지 추가할 수 있습니다\./)).toBeInTheDocument();
 		expect(await screen.findByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '+ 시리즈 추가' }));
 		await user.type(screen.getByRole('textbox', { name: '시리즈 이름' }), '회고');

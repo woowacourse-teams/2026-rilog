@@ -1,16 +1,12 @@
 import type { ReactNode } from 'react';
 
+import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
-import {
-	POST_CATEGORY_OPTIONS,
-	type PostCategory,
-	type PostDetailChapter,
-	type PostViewerPermissions,
-} from '@/domains/post/model/post';
+import { POST_CATEGORY_OPTIONS, type PostCategory, type PostViewerPermissions } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 import PostDetailActions from './PostDetailActions';
@@ -23,7 +19,7 @@ interface PostDetailHeaderProps {
 	// description: string;
 	publishedAt: string;
 	category: PostCategory;
-	chapter: PostDetailChapter | null;
+	chapter: OrderedChapter | null;
 	author: User;
 	viewerPermissions: PostViewerPermissions;
 }
@@ -58,8 +54,9 @@ export default function PostDetailHeader({
 			) : null} */}
 
 			<div className="mt-6 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-3 text-label-2 text-text-secondary sm:mt-7">
-				<CustomLink
+				<BlogProfileEntryLink
 					href={buildBlogHomePath(author.slug)}
+					entrySource="post_detail_header"
 					className="flex items-center gap-1.5 rounded-full transition-colors hover:text-focus-ring hover:underline hover:underline-offset-2 focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring active:text-focus-ring"
 				>
 					<UserAvatar
@@ -69,10 +66,10 @@ export default function PostDetailHeader({
 						size="sm"
 					/>
 					<span>{author.nickname}</span>
-				</CustomLink>
+				</BlogProfileEntryLink>
 				<span aria-hidden="true">·</span>
 				<span>{categoryLabel}</span>
-				{chapter ? (
+				{chapter && !publisher ? (
 					<>
 						<span aria-hidden="true">·</span>
 						<span>{chapter.name}</span>

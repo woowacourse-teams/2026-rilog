@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PostFeedItem, PostFeedPage } from '@/domains/post/model/post';
 import { readFullFeedPosts } from '@/shared/api/feeds/api';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
-import type { FullFeedPostResponse, PostItemResponse } from '@/shared/api/feeds/types';
+import type { FullFeedPostResponse, FullFeedPostsFilters, PostItemResponse } from '@/shared/api/feeds/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 
 import PostFeedGrid from './PostFeedGrid';
@@ -16,6 +16,11 @@ vi.mock('@/shared/api/feeds/api', () => ({
 }));
 
 const readFullFeedPostsMock = vi.mocked(readFullFeedPosts);
+
+const route = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
+vi.mock('next/navigation', () => ({
+	useSearchParams: () => route.searchParams,
+}));
 
 const createPost = (id: number): PostFeedItem => ({
 	id,
@@ -41,29 +46,17 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	publishedAt: post.publishedAt,
 	author: {
 		userId: post.author.id,
-		name: post.author.nickname,
 		nickname: post.author.nickname,
 		slug: post.author.slug,
 		profileImageUrl: post.author.profileImageUrl,
 	},
-	owner: post.blog
-		? {
-				type: 'COLOG',
-				blogId: post.blog.id,
-				name: post.blog.name,
-				slug: post.blog.slug,
-				profileImageUrl: post.blog.profileImageUrl ?? null,
-				coverImageUrl: null,
-				memberCount: 1,
-				postCount: 1,
-			}
-		: {
-				type: 'RILOG',
-				blogId: post.id,
-				name: '개인 블로그',
-				slug: `blog-${post.id}`,
-				profileImageUrl: null,
-			},
+	owner: {
+		type: post.blog.type,
+		blogId: post.blog.id,
+		name: post.blog.name,
+		slug: post.blog.slug,
+		profileImageUrl: post.blog.profileImageUrl ?? null,
+	},
 });
 
 const toApiResponse = (page: PostFeedPage): ApiResponse<FullFeedPostResponse> => ({
@@ -87,31 +80,36 @@ const createDeferred = <T,>() => {
 	return { promise, resolve };
 };
 
-interface RenderGridProps extends React.ComponentProps<typeof PostFeedGrid> {
+interface RenderGridProps extends Omit<React.ComponentProps<typeof PostFeedGrid>, 'initialFilters'> {
+	initialFilters?: FullFeedPostsFilters;
 	initialPage?: PostFeedPage;
 }
 
-const renderGrid = ({ initialPage, ...props }: RenderGridProps = {}) => {
+const renderGrid = ({ initialPage, initialFilters = {}, ...props }: RenderGridProps = {}) => {
 	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 	if (initialPage !== undefined) {
-		queryClient.setQueryData(feedsQueryKeys.fullFeedPosts(12), {
+		queryClient.setQueryData(feedsQueryKeys.fullFeedPosts({ size: 12, ...initialFilters }), {
 			pages: [toApiResponse(initialPage)],
 			pageParams: [initialPage.page],
 		});
 	}
 
-	return render(
-		<QueryClientProvider client={queryClient}>
-			<PostFeedGrid {...props} />
-		</QueryClientProvider>,
-	);
+	return {
+		queryClient,
+		...render(
+			<QueryClientProvider client={queryClient}>
+				<PostFeedGrid initialFilters={initialFilters} {...props} />
+			</QueryClientProvider>,
+		),
+	};
 };
 
 describe('PostFeedGrid', () => {
 	let observerCallback: IntersectionObserverCallback;
 
 	beforeEach(() => {
+		route.searchParams = new URLSearchParams();
 		readFullFeedPostsMock.mockReset();
 		class IntersectionObserverMock {
 			observe = vi.fn();
@@ -148,6 +146,47 @@ describe('PostFeedGrid', () => {
 
 		expect(await screen.findByRole('link', { name: '게시글 1' })).toBeInTheDocument();
 		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12 });
+	});
+
+	it('초기 서버 요청이 실패해도 다른 필터로 변경하면 해당 필터를 요청한다', async () => {
+		readFullFeedPostsMock.mockResolvedValue(toApiResponse(createPage([createPost(2)])));
+		const view = renderGrid({ initialRequestFailed: true });
+
+		expect(screen.getByText('피드를 불러오지 못했어요.')).toBeInTheDocument();
+
+		route.searchParams = new URLSearchParams('category=tech');
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={{}} initialRequestFailed />
+			</QueryClientProvider>,
+		);
+
+		expect(await screen.findByRole('link', { name: '게시글 2' })).toBeInTheDocument();
+		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, category: 'TECH' });
+	});
+
+	it('캐시된 필터를 다시 방문하면 요청과 스켈레톤 없이 즉시 표시한다', async () => {
+		readFullFeedPostsMock.mockResolvedValue(toApiResponse(createPage([createPost(2)])));
+		const view = renderGrid({ initialPage: createPage([createPost(1)]) });
+
+		route.searchParams = new URLSearchParams('category=tech');
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={{}} />
+			</QueryClientProvider>,
+		);
+		await screen.findByRole('link', { name: '게시글 2' });
+
+		route.searchParams = new URLSearchParams();
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={{}} />
+			</QueryClientProvider>,
+		);
+
+		expect(screen.getByRole('link', { name: '게시글 1' })).toBeInTheDocument();
+		expect(screen.queryByRole('status', { name: '피드를 불러오는 중' })).not.toBeInTheDocument();
+		expect(readFullFeedPostsMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('첫 12개를 표시하고 스크롤 진입마다 24개와 36개로 이어 붙인다', async () => {

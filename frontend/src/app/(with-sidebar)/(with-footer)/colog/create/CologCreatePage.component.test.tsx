@@ -8,6 +8,10 @@ vi.mock('next/navigation', () => ({
 	useRouter: () => ({ back: vi.fn() }),
 }));
 
+vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
+	useMyCologsOverviewQuery: vi.fn(() => ({ data: 0, isError: false })),
+}));
+
 describe('CologCreatePage', () => {
 	it('팀 생성 페이지의 목적을 안내한다', () => {
 		const queryClient = new QueryClient();
