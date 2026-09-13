@@ -1,7 +1,7 @@
 import type { PostDetailAuthor } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface PostDetailAuthorProfileSmallProps {
 	author: PostDetailAuthor;
@@ -12,8 +12,9 @@ export default function PostDetailAuthorProfileSmall({ author }: PostDetailAutho
 
 	return (
 		<section aria-labelledby="post-author-heading" className="flex justify-center">
-			<CustomLink
+			<BlogProfileEntryLink
 				href={buildBlogHomePath(author.slug)}
+				entrySource="post_detail_bottom_profile"
 				className={`group flex gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring ${hasDescription ? 'items-start' : 'items-center'}`}
 			>
 				<UserAvatar
@@ -31,7 +32,7 @@ export default function PostDetailAuthorProfileSmall({ author }: PostDetailAutho
 					</h2>
 					{hasDescription ? <p className="text-body-1 text-text-secondary">{author.description}</p> : null}
 				</div>
-			</CustomLink>
+			</BlogProfileEntryLink>
 		</section>
 	);
 }

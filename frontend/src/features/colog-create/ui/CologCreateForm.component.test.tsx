@@ -95,6 +95,12 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '팀 로고 미리보기' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '기본 팀 커버 이미지' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
 		expect(screen.getByLabelText('팀 로고 변경')).toBeRequired();
 		expect(screen.getByLabelText('커버 이미지 변경')).not.toBeRequired();
 		for (const label of ['팀 로고', '팀 이름', '팀 고유 아이디']) {
@@ -459,6 +465,33 @@ describe('CologCreateForm', () => {
 
 		unmount();
 		vi.unstubAllGlobals();
+	});
+
+	it('소속 가능한 팀 수를 초과하면 생성 API 메시지를 form-level 오류로 안내한다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(createColog).mockRejectedValue({
+			type: 'api',
+			kind: 'request',
+			detail: {
+				status: 400,
+				error: 'Bad Request',
+				errorCode: 'USER_COLOG_COUNT_EXCEEDED',
+				message: '사용자는 최대 10개의 Colog에 속할 수 있습니다.',
+				invalidParams: null,
+			},
+			response: new Response(null, { status: 400 }),
+		});
+		renderWithClient(<CologCreateForm />);
+		await fillRequiredFields(user);
+
+		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
+
+		expect(await screen.findByRole('alert')).toHaveTextContent('사용자는 최대 10개의 Colog에 속할 수 있습니다.');
+		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveValue('리로그');
+		expect(cologCreationFailedMock).toHaveBeenCalledWith({
+			errorCode: 'USER_COLOG_COUNT_EXCEEDED',
+			invalidFields: [],
+		});
 	});
 
 	it('생성 API 필드 오류를 allowlist 기반 invalid_fields로 기록한다', async () => {

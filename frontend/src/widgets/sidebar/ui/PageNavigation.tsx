@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 
 import { buildFeedFilterHref, parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
+import { navigateFeedFilter } from '@/features/post-feed/lib/navigate-feed-filter';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CologIcon from '@/widgets/sidebar/assets/colog.svg';
 import FeedIcon from '@/widgets/sidebar/assets/feed.svg';
@@ -53,7 +54,7 @@ export default function PageNavigation() {
 		isFeedPage
 			? (event: { preventDefault: () => void }) => {
 					event.preventDefault();
-					window.history.pushState(null, '', href);
+					navigateFeedFilter(href);
 				}
 			: undefined;
 	const feedHref = buildFeedFilterHref(currentFeedSearchParams, { blogType: undefined });

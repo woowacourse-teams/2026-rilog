@@ -63,7 +63,7 @@ export default function CologProfileImageFields({
 				{({ id, describedBy }) => (
 					<div id={id} className="flex flex-col gap-2">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-							<div className="group relative w-fit shrink-0">
+							<div className="group relative w-fit shrink-0" data-ph-sensitive-media>
 								<ImagePreview
 									src={logoPreviewUrl || '/images/colog-placeholder.svg'}
 									alt="팀 로고 미리보기"
@@ -121,7 +121,7 @@ export default function CologProfileImageFields({
 				{({ id, describedBy }) => (
 					<div id={id} className="flex flex-col gap-2">
 						<div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-							<div className="group relative min-w-0">
+							<div className="group relative min-w-0" data-ph-sensitive-media>
 								<ImagePreview
 									src={coverImagePreviewUrl || undefined}
 									alt="팀 커버 이미지 미리보기"

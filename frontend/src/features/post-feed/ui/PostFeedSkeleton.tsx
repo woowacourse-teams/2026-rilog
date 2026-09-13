@@ -8,7 +8,7 @@ export default function PostFeedSkeleton() {
 					<div key={item} className="animate-pulse motion-reduce:animate-none">
 						<div className="aspect-video rounded-xl bg-surface-active" />
 						<div className="mt-2 flex h-5.5 items-center gap-1.5">
-							<div className="size-5 rounded-full bg-surface-active" />
+							<div className="size-6 rounded-full bg-surface-active" />
 							<div className="h-4 w-2/5 rounded bg-surface-active" />
 						</div>
 						<div className="mt-1 h-14 rounded bg-surface-active" />

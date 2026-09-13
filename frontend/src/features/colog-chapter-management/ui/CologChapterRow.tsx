@@ -27,6 +27,7 @@ export default function CologChapterRow({
 				{isEditing ? (
 					<Input
 						className="w-4/5!"
+						data-ph-sensitive-attribute
 						aria-label={`${chapter.name} 챕터 이름`}
 						value={chapter.name}
 						maxLength={CHAPTER_NAME_MAX_LENGTH}

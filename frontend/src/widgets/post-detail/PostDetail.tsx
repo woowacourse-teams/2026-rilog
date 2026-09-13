@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import type { PostDetail as PostDetailModel } from '@/domains/post/model/post';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import ChapterPostSuggestionSection from '@/features/post-detail/ui/ChapterPostSuggestionSection';
 import PostDetailAuthorProfileSection from '@/features/post-detail/ui/PostDetailAuthorProfileSection';
 import PostDetailAuthorProfileSmall from '@/features/post-detail/ui/PostDetailAuthorProfileSmall';
@@ -10,7 +11,6 @@ import PostDetailBlogProfileSection from '@/features/post-detail/ui/PostDetailBl
 import PostDetailHeader from '@/features/post-detail/ui/PostDetailHeader';
 import SeriesAccordionSection from '@/features/post-detail/ui/SeriesAccordionSection';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 
 import BasePostDetail from './BasePostDetail';
 
@@ -68,8 +68,9 @@ export default function PostDetail({ post }: PostDetailProps) {
 
 	const publisher = (
 		<div className="mb-4 flex items-center gap-1 text-body-2 font-medium sm:mb-5">
-			<CustomLink
+			<BlogProfileEntryLink
 				href={buildBlogHomePath(post.blog.slug)}
+				entrySource="post_detail_header"
 				className="flex items-center gap-1 text-text-primary hover:text-focus-ring focus:text-focus-ring active:text-focus-ring"
 			>
 				<CologAvatar
@@ -79,7 +80,7 @@ export default function PostDetail({ post }: PostDetailProps) {
 					size="sm"
 				/>
 				<span className="hover:underline hover:underline-offset-2">{post.blog.name}.</span>
-			</CustomLink>
+			</BlogProfileEntryLink>
 			<span className="text-text-placeholder">{post.chapter?.name}</span>
 		</div>
 	);

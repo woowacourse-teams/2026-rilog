@@ -52,7 +52,7 @@ const TAB_HEADER_CONFIG: Record<CologSettingsTab, { title: string; description: 
 	},
 	members: {
 		title: '멤버 관리',
-		description: '팀 멤버의 프로필, 역할, 권한을 관리합니다.',
+		description: '팀 멤버의 프로필, 역할, 권한을 관리합니다.\n멤버는 최대 20명까지 초대할 수 있습니다.',
 	},
 	chapters: {
 		title: '챕터 관리',

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import type { useCologMemberDrafts } from '../hooks/use-colog-member-drafts';
-import type { MemberInviteCandidate } from '../model/member-invite-candidate';
+import type { MemberInviteCandidate, MemberInviteResult } from '../model/member-invite-candidate';
 
 import type { CologMember } from '@/domains/blog/model/colog';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
@@ -12,6 +12,7 @@ import { canRemoveCologMember } from '@/features/colog-member-management/lib/can
 import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 import { useRemoveCologMemberMutation } from '@/shared/api/cologs/mutations/use-remove-colog-member-mutation';
+import { API_ERROR_CODES } from '@/shared/api/error-codes';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -27,6 +28,8 @@ interface CologMemberManagementSectionProps {
 }
 
 const REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 내보내지 못했어요. 다시 시도해 주세요.';
+const INVITE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 초대하지 못했어요. 다시 시도해 주세요.';
+const USER_COLOG_COUNT_EXCEEDED_INVITATION_MESSAGE = '이미 10개 코로그에 소속된 유저는 초대할 수 없습니다.';
 
 const getInvitationErrorCode = (error: unknown) => {
 	if (
@@ -49,6 +52,11 @@ const getInvitationErrorCode = (error: unknown) => {
 	return getAnalyticsErrorProperties(error).errorCode;
 };
 
+const getInvitationErrorMessage = (error: unknown) =>
+	getInvitationErrorCode(error) === API_ERROR_CODES.USER_COLOG_COUNT_EXCEEDED
+		? USER_COLOG_COUNT_EXCEEDED_INVITATION_MESSAGE
+		: getApiErrorMessage(error, INVITE_MEMBER_ERROR_FALLBACK_MESSAGE);
+
 export default function CologMemberManagementSection({
 	cologId,
 	slug,
@@ -63,7 +71,6 @@ export default function CologMemberManagementSection({
 		handleSave,
 		handlePermissionChange,
 		handleBlogRoleChange,
-		handleRemoveMember,
 	} = drafts;
 	const [memberToRemove, setMemberToRemove] = useState<CologMember | null>(null);
 	const [isRemoveCompleteModalOpen, setIsRemoveCompleteModalOpen] = useState(false);
@@ -75,7 +82,7 @@ export default function CologMemberManagementSection({
 		? getApiErrorMessage(removeMember.error, REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE)
 		: undefined;
 
-	const handleInvite = async (candidates: MemberInviteCandidate[]) => {
+	const handleInvite = async (candidates: MemberInviteCandidate[]): Promise<MemberInviteResult> => {
 		analytics.cologMemberInvitationStarted({ cologId, candidateCount: candidates.length });
 
 		const results = await Promise.allSettled(
@@ -105,9 +112,18 @@ export default function CologMemberManagementSection({
 			analytics.cologMemberInvitationFailed({ cologId, errorCode });
 		}
 
-		if (successfulInvitationCount > 0) {
-			window.location.reload();
-		}
+		return {
+			failures: results.flatMap((result, index) =>
+				result.status === 'rejected'
+					? [
+							{
+								candidate: candidates[index],
+								message: getInvitationErrorMessage(result.reason),
+							},
+						]
+					: [],
+			),
+		};
 	};
 
 	const handleRemoveConfirm = async () => {
@@ -117,7 +133,6 @@ export default function CologMemberManagementSection({
 
 		try {
 			await removeMember.mutateAsync({ slug, memberId: memberToRemove.id });
-			handleRemoveMember(memberToRemove.id);
 			setMemberToRemove(null);
 			setIsRemoveCompleteModalOpen(true);
 		} catch {
@@ -142,7 +157,8 @@ export default function CologMemberManagementSection({
 					<table className="w-full table-fixed border-collapse text-left">
 						<caption className="sr-only">팀 멤버 목록</caption>
 						<colgroup>
-							<col className="w-2/5" />
+							<col className="w-16" />
+							<col />
 							<col className="w-1/5" />
 							{/* <col className="w-40" /> */}
 							<col className="w-1/5" />
@@ -150,7 +166,10 @@ export default function CologMemberManagementSection({
 						</colgroup>
 						<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
 							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
-								<th scope="col" className="pl-6 font-semibold">
+								<th scope="col">
+									<span className="sr-only">번호</span>
+								</th>
+								<th scope="col" className="px-2 font-semibold">
 									멤버
 								</th>
 								<th scope="col" className="px-2 font-semibold">
@@ -168,11 +187,12 @@ export default function CologMemberManagementSection({
 							</tr>
 						</thead>
 						<tbody>
-							{displayedMembers.map((member) =>
+							{displayedMembers.map((member, index) =>
 								isEditing ? (
 									<CologMemberRow
 										key={member.id}
 										member={member}
+										rowNumber={index + 1}
 										isEditing
 										onPermissionChange={handlePermissionChange}
 										onBlogRoleChange={handleBlogRoleChange}
@@ -181,6 +201,7 @@ export default function CologMemberManagementSection({
 									<CologMemberRow
 										key={member.id}
 										member={member}
+										rowNumber={index + 1}
 										canRemove={canRemoveCologMember(currentUser?.slug, displayedMembers, member)}
 										onRemove={() => {
 											removeMember.reset();
@@ -198,17 +219,17 @@ export default function CologMemberManagementSection({
 				slug={slug}
 				open={isInviteModalOpen}
 				onClose={handleInviteModalClose}
-				onInvite={(candidates) => void handleInvite(candidates)}
+				onInvite={handleInvite}
 			/>
 
 			<ConfirmModal
 				open={memberToRemove !== null}
-				title={`${memberToRemove?.nickname ?? ''} 님을 내보낼까요?`}
+				title={<span className="ph-mask">{`${memberToRemove?.nickname ?? ''} 님을 내보낼까요?`}</span>}
 				description={
 					<>
 						<span>내보낸 멤버는 나중에 다시 초대할 수 있습니다.</span>
 						{removeMemberErrorMessage === undefined ? null : (
-							<span className="mt-2 block text-danger">{removeMemberErrorMessage}</span>
+							<span className="ph-mask mt-2 block text-danger">{removeMemberErrorMessage}</span>
 						)}
 					</>
 				}

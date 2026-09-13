@@ -13,7 +13,7 @@ interface UserAvatarProps extends Omit<ComponentPropsWithRef<typeof Avatar>, 'sr
 }
 
 const SIZE_CLASS_NAMES: Record<UserAvatarSize, string> = {
-	sm: 'size-5 rounded-full text-caption-1',
+	sm: 'size-6 rounded-full text-caption-1',
 	md: 'size-8 rounded-full text-caption-2',
 	lg: 'size-10 rounded-full text-caption-2',
 	xl: 'size-24 rounded-full text-heading-3 sm:size-32',

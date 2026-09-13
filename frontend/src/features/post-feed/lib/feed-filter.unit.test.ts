@@ -50,12 +50,16 @@ describe('buildFeedFilterHref', () => {
 		).toBe('/feeds?notice=auth-required&blogType=colog&category=daily');
 	});
 
-	it('블로그 유형만 바꿀 때 category와 notice를 유지한다', () => {
+	it.each([
+		[undefined, '/feeds?notice=auth-required'],
+		['RILOG', '/feeds?notice=auth-required&blogType=personal'],
+		['COLOG', '/feeds?notice=auth-required&blogType=colog'],
+	] as const)('블로그 유형을 %s로 바꾸면 카테고리를 전체로 초기화한다', (blogType, expectedHref) => {
 		expect(
 			buildFeedFilterHref(new URLSearchParams('blogType=personal&category=retrospect&notice=auth-required'), {
-				blogType: 'COLOG',
+				blogType,
 			}),
-		).toBe('/feeds?notice=auth-required&blogType=colog&category=retrospect');
+		).toBe(expectedHref);
 	});
 
 	it('잘못되거나 중복된 필터는 제거하고 다른 query parameter는 유지한다', () => {

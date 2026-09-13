@@ -70,7 +70,10 @@ const createSearchParams = (searchParams: FeedSearchParams | SearchParamsReader)
 export const buildFeedFilterHref = (searchParams: FeedSearchParams | SearchParamsReader, change: FeedFilterChange) => {
 	const currentSearchParams = createSearchParams(searchParams);
 	const filters = parseFeedFilters(currentSearchParams);
-	const nextFilters: FullFeedPostsFilters = { ...filters, ...change };
+	const nextFilters: FullFeedPostsFilters =
+		'blogType' in change
+			? { blogType: change.blogType, category: undefined }
+			: { ...filters, category: change.category };
 
 	currentSearchParams.delete(BLOG_TYPE_PARAM);
 	currentSearchParams.delete(CATEGORY_PARAM);
