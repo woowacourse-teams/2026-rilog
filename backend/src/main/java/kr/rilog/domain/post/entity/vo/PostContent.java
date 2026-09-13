@@ -26,7 +26,7 @@ public class PostContent {
     private static final Set<String> FILE_BLOCK_TYPES = Set.of("image", "file");
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "content", columnDefinition = "jsonb", nullable = false)
+    @Column(name = "content", columnDefinition = "json", nullable = false)
     private JsonNode value;
 
     private PostContent(JsonNode value) {

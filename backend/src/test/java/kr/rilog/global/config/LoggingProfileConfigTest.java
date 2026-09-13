@@ -38,6 +38,16 @@ class LoggingProfileConfigTest {
     }
 
     @Test
+    @DisplayName("운영 프로필은 Hibernate가 데이터베이스 스키마를 검증하도록 설정한다.")
+    void prodProfileValidatesDatabaseSchema() throws Exception {
+        // given
+        PropertySource<?> prodProperties = loadYaml("application-prod.yml");
+
+        // when - then
+        assertThat(prodProperties.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
+    }
+
+    @Test
     @DisplayName("개발 프로필은 앱 DEBUG 이상 로그를 사용한다.")
     void developmentProfilesUseDebugApplicationLogs() throws Exception {
         // given

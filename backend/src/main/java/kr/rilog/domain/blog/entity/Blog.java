@@ -33,6 +33,10 @@ public class Blog extends BaseEntity {
     private User owner;
 
     @Embedded
+    @AttributeOverride(
+            name = "value",
+            column = @Column(name = "slug", length = 20, nullable = false, unique = true)
+    )
     private Slug slug;
 
     @Embedded

@@ -78,6 +78,7 @@ public class Post extends BaseEntity {
     private PostStatus status;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PostVisibility visibility;
 
     @Column(length = 512)
