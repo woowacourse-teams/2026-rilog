@@ -20,12 +20,15 @@ const expectFeedHeaderAligned = async (page: Page) => {
 	await expect(scrollTarget).toBeAttached();
 	await expect
 		.poll(async () => {
-			const [headerBox, scrollMarginTop] = await Promise.all([
+			const [headerBox, stickyTop, scrollMarginTop] = await Promise.all([
 				feedHeader.boundingBox(),
+				feedHeader.evaluate((element) => Number.parseFloat(getComputedStyle(element).top)),
 				scrollTarget.evaluate((element) => Number.parseFloat(getComputedStyle(element).scrollMarginTop)),
 			]);
 
-			return headerBox === null ? null : Math.abs(headerBox.y - scrollMarginTop);
+			return headerBox === null
+				? null
+				: Math.max(Math.abs(headerBox.y - stickyTop), Math.abs(scrollMarginTop - stickyTop));
 		})
 		.toBeLessThanOrEqual(1);
 	await expect(feedHeader).not.toHaveClass(/-translate-y-full/);
@@ -50,7 +53,7 @@ const scrollFeedDeepAndRevealHeader = async (page: Page, stickyTop: number) => {
 	await expect
 		.poll(async () => {
 			const box = await feedHeader.boundingBox();
-			return box !== null && box.y >= stickyTop && box.y + box.height > stickyTop;
+			return box !== null && Math.abs(box.y - stickyTop) <= 1 && box.y + box.height > stickyTop;
 		})
 		.toBe(true);
 };
@@ -378,6 +381,54 @@ test('개인 회고 피드에서 Feed로 이동하면 범위와 카테고리를 
 	await expect(page.getByRole('link', { name: '전체', exact: true })).toHaveAttribute('aria-current', 'page');
 });
 
+test('페이지 최상단에서 카테고리를 선택해도 피드 헤더를 sticky 위치에 표시한다', async ({ page }) => {
+	await page.goto('/feeds');
+	await expectFeedHeaderAligned(page);
+	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+	await postFeedHeader(page).getByRole('link', { name: '기술', exact: true }).dispatchEvent('click', { button: 0 });
+
+	await expect(page).toHaveURL(/category=tech/);
+	await expectFeedHeaderAligned(page);
+});
+
+test('깊은 위치에서 사이드바 탭을 바꾸는 동안 헤더가 고정된 위치를 유지한다', async ({ page }) => {
+	await page.goto('/feeds');
+	await expectFeedHeaderAligned(page);
+	await page.addStyleTag({ content: '#post-feed-content { min-height: 2400px !important; }' });
+	await page.mouse.wheel(0, 1_000);
+	await page.evaluate(() => window.scrollBy({ top: 1_000, behavior: 'auto' }));
+	const feedHeader = postFeedHeader(page);
+	await expect
+		.poll(async () => {
+			const box = await feedHeader.boundingBox();
+			return box === null ? null : box.y + box.height <= 0;
+		})
+		.toBe(true);
+
+	await page.evaluate(() => {
+		const header = document.getElementById('post-feed-categories')!;
+		const trackedWindow = window as Window & { feedHeaderScrollPositions?: number[] };
+		trackedWindow.feedHeaderScrollPositions = [];
+		window.addEventListener(
+			'scroll',
+			() => {
+				if (location.search.includes('blogType=personal')) {
+					trackedWindow.feedHeaderScrollPositions?.push(header.getBoundingClientRect().top);
+				}
+			},
+			{ passive: true },
+		);
+	});
+	await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '개인' }).click();
+	await expect(page).toHaveURL(/blogType=personal/);
+	await expectFeedHeaderAligned(page);
+	const headerPositions = await page.evaluate(
+		() => (window as Window & { feedHeaderScrollPositions?: number[] }).feedHeaderScrollPositions ?? [],
+	);
+	expect(headerPositions.length).toBeGreaterThan(1);
+	expect(headerPositions.every((top) => top >= -1)).toBe(true);
+});
+
 test('피드 필터 cache는 history 탐색에도 API, RSC, skeleton을 다시 만들지 않는다', async ({ page }) => {
 	let dailyRequestCount = 0;
 	let browserFeedRequestCount = 0;
@@ -487,7 +538,7 @@ test.describe('모바일 피드 필터 기준점', () => {
 			.poll(() =>
 				postFeedScrollTarget(page).evaluate((element) => Number.parseFloat(getComputedStyle(element).scrollMarginTop)),
 			)
-			.toBe(80);
+			.toBe(64);
 
 		await scrollFeedDeepAndRevealHeader(page, 64);
 		await postFeedHeader(page).getByRole('link', { name: '일상', exact: true }).click();

@@ -50,7 +50,7 @@ export default function PostFeed({ filters }: PostFeedProps) {
 					className="h-auto w-[clamp(14rem,42vw,36rem)]"
 				/>
 			</header>
-			<div id={POST_FEED_SCROLL_TARGET_ID} aria-hidden="true" className="scroll-mt-20 sm:scroll-mt-8" />
+			<div id={POST_FEED_SCROLL_TARGET_ID} aria-hidden="true" className="scroll-mt-16 sm:scroll-mt-0" />
 			<PostFeedHeader id={POST_FEED_CATEGORIES_ID} />
 			<div className="min-h-dvh">
 				<Suspense fallback={<PostFeedSkeleton />}>

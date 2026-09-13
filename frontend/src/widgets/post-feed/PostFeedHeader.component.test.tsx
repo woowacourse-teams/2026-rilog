@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
@@ -129,6 +129,69 @@ describe('PostFeedHeader', () => {
 		expect(header).toHaveClass('translate-y-0');
 
 		scrollY = 76;
+		fireEvent.scroll(window);
+		expect(header).toHaveClass('-translate-y-full');
+	});
+
+	it('피드 시작점에 도착하면 표시하고 그 아래로 내리면 숨긴다', () => {
+		let scrollY = 0;
+		vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+		const scrollTarget = document.createElement('div');
+		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
+		document.body.append(scrollTarget);
+		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockImplementation(() => ({ top: 363 - scrollY }) as DOMRect);
+		render(<PostFeedHeader id="post-feed-categories" />);
+		const header = screen.getByRole('banner', { name: 'All.' });
+		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
+
+		fireEvent.wheel(window);
+		scrollY = 363;
+		fireEvent.scroll(window);
+		expect(header).toHaveClass('translate-y-0');
+
+		scrollY = 365;
+		fireEvent.scroll(window);
+		expect(header).toHaveClass('-translate-y-full');
+
+		scrollY = 340;
+		fireEvent.scroll(window);
+		expect(header).toHaveClass('translate-y-0');
+	});
+
+	it('필터 이동 중에는 숨겨진 헤더를 고정해 두고 완료 후 일반 스크롤 동작으로 돌아간다', () => {
+		let scrollY = 0;
+		vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+		const scrollTarget = document.createElement('div');
+		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
+		document.body.append(scrollTarget);
+		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockImplementation(() => ({ top: 400 - scrollY }) as DOMRect);
+		const animationFrames: FrameRequestCallback[] = [];
+		vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+			animationFrames.push(callback);
+			return animationFrames.length;
+		});
+		vi.spyOn(window, 'scrollTo').mockImplementation((options) => {
+			scrollY = Number((options as ScrollToOptions).top);
+			fireEvent.scroll(window);
+		});
+		render(<PostFeedHeader id="post-feed-categories" />);
+		const header = screen.getByRole('banner', { name: 'All.' });
+		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
+
+		fireEvent.wheel(window);
+		scrollY = 1000;
+		fireEvent.scroll(window);
+		expect(header).toHaveClass('-translate-y-full');
+
+		fireEvent.click(screen.getByRole('link', { name: '일상' }));
+		expect(header).toHaveClass('translate-y-0', 'transition-none');
+		act(() => animationFrames.shift()?.(0));
+		act(() => animationFrames.shift()?.(250));
+		expect(header).toHaveClass('translate-y-0', 'transition-none');
+		act(() => animationFrames.shift()?.(500));
+		expect(header).toHaveClass('translate-y-0', 'transition-transform');
+
+		scrollY = 402;
 		fireEvent.scroll(window);
 		expect(header).toHaveClass('-translate-y-full');
 	});

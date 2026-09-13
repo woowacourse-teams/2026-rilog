@@ -7,7 +7,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { BlogType } from '@/domains/blog/model/blog';
 import { POST_CATEGORY_OPTIONS } from '@/domains/post/model/post';
 import { buildFeedFilterHref, parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
-import { cancelFeedFilterScroll, navigateFeedFilter } from '@/features/post-feed/lib/navigate-feed-filter';
+import {
+	cancelFeedFilterScroll,
+	FEED_FILTER_SCROLL_CHANGE_EVENT,
+	navigateFeedFilter,
+	POST_FEED_SCROLL_TARGET_ID,
+} from '@/features/post-feed/lib/navigate-feed-filter';
 
 const CATEGORIES = [{ label: '전체', value: undefined }, ...POST_CATEGORY_OPTIONS] as const;
 const SCROLL_UP_REVEAL_THRESHOLD_PX = 24;
@@ -29,19 +34,32 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 	const previousScrollYRef = useRef(0);
 	const upwardScrollDistanceRef = useRef(0);
 	const hasUserInteractedRef = useRef(false);
+	const isFilterScrollingRef = useRef(false);
 	const [isHidden, setIsHidden] = useState(false);
+	const [isFilterScrolling, setIsFilterScrolling] = useState(false);
 	const title = TITLE_BY_BLOG_TYPE[filters.blogType ?? 'ALL'];
 
 	useEffect(() => {
 		previousScrollYRef.current = window.scrollY;
+		const scrollTarget = document.getElementById(POST_FEED_SCROLL_TARGET_ID);
 
 		const markUserInteracted = () => {
 			hasUserInteractedRef.current = true;
+		};
+		const handleFilterScrollChange = (event: Event) => {
+			const isScrolling = (event as CustomEvent<boolean>).detail;
+			isFilterScrollingRef.current = isScrolling;
+			setIsFilterScrolling(isScrolling);
+			if (isScrolling) {
+				upwardScrollDistanceRef.current = 0;
+				setIsHidden(false);
+			}
 		};
 		const handleScroll = () => {
 			const currentScrollY = window.scrollY;
 			const previousScrollY = previousScrollYRef.current;
 			previousScrollYRef.current = currentScrollY;
+			if (isFilterScrollingRef.current) return;
 
 			if (currentScrollY <= 0 || !hasUserInteractedRef.current) {
 				upwardScrollDistanceRef.current = 0;
@@ -68,7 +86,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 
 			const stickyTop = Number.parseFloat(window.getComputedStyle(header).top) || 0;
 			if (header.getBoundingClientRect().top <= stickyTop + 1) {
-				setIsHidden(true);
+				setIsHidden(scrollTarget === null || scrollTarget.getBoundingClientRect().top < stickyTop - 1);
 			}
 		};
 
@@ -76,9 +94,11 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 		window.addEventListener('touchstart', markUserInteracted, { passive: true });
 		window.addEventListener('wheel', markUserInteracted, { passive: true });
 		window.addEventListener('keydown', markUserInteracted);
+		window.addEventListener(FEED_FILTER_SCROLL_CHANGE_EVENT, handleFilterScrollChange);
 		window.addEventListener('scroll', handleScroll, { passive: true });
 
 		return () => {
+			window.removeEventListener(FEED_FILTER_SCROLL_CHANGE_EVENT, handleFilterScrollChange);
 			cancelFeedFilterScroll();
 			window.removeEventListener('pointerdown', markUserInteracted);
 			window.removeEventListener('touchstart', markUserInteracted);
@@ -93,7 +113,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 			ref={headerRef}
 			id={id}
 			aria-labelledby={`${id}-title`}
-			className={`sticky top-16 z-30 mb-6 w-full bg-background transition-transform duration-200 ease-out motion-reduce:transition-none sm:top-0 ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}
+			className={`sticky top-16 z-30 mb-6 w-full bg-background ${isFilterScrolling ? 'transition-none' : 'transition-transform duration-200 ease-out'} motion-reduce:transition-none sm:top-0 ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}
 		>
 			<div className="mx-auto flex w-full max-w-7xl min-w-0 items-center justify-between gap-2 px-6 pt-5 pb-3 sm:pt-6 sm:pb-4 md:px-16">
 				<h2 id={`${id}-title`} className="shrink-0 text-title-1 font-semibold text-logo-primary">
