@@ -10,6 +10,7 @@ import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
 import BlogHomeCologAside from './BlogHomeCologAside';
+import BlogHomeFeedHeading from './BlogHomeFeedHeading';
 import BlogHomeNavigation from './BlogHomeNavigation';
 import BlogHomeToolbar from './BlogHomeToolbar';
 
@@ -32,16 +33,13 @@ export default function BlogHome({
 		) : (
 			<RilogSettingsButton slug={profile.slug} />
 		);
-	const rightAside =
+	const asideContent =
 		profile.type === 'COLOG' ? (
-			<div className="py-11">
-				<CologMemberAside slug={profile.slug} />
-			</div>
+			<CologMemberAside slug={profile.slug} />
 		) : (
-			<div className="py-11">
-				<BlogHomeCologAside slug={profile.slug} initialIndexRequestFailed={initialIndexRequestFailed} />
-			</div>
+			<BlogHomeCologAside slug={profile.slug} initialIndexRequestFailed={initialIndexRequestFailed} />
 		);
+	const rightAside = <div className="py-11">{asideContent}</div>;
 
 	return (
 		<PageShell
@@ -61,17 +59,31 @@ export default function BlogHome({
 			}
 			rightAside={rightAside}
 		>
-			<div className="px-6 py-11 aside-right:px-0">
+			<div className="px-6 py-11">
+				<div className="mb-8 @[74rem]/page-shell:hidden">{asideContent}</div>
 				<BlogHomeToolbar
 					blogType={profile.type}
 					slug={profile.slug}
 					filter={filter}
 					initialIndexRequestFailed={initialIndexRequestFailed}
 				/>
-				<BlogPostFeed slug={profile.slug} filter={filter} initialRequestFailed={initialPostsRequestFailed} />
+				<BlogPostFeed
+					blogType={profile.type}
+					slug={profile.slug}
+					filter={filter}
+					initialRequestFailed={initialPostsRequestFailed}
+					heading={
+						<BlogHomeFeedHeading
+							blogType={profile.type}
+							slug={profile.slug}
+							filter={filter}
+							initialIndexRequestFailed={initialIndexRequestFailed}
+						/>
+					}
+				/>
 			</div>
 			{initialIndexRequestFailed ? <BlogHomeIndexRecovery slug={profile.slug} /> : null}
-			<BlogProfileViewTracker blogType={profile.type} />
+			<BlogProfileViewTracker blogType={profile.type} blogId={profile.id} />
 		</PageShell>
 	);
 }

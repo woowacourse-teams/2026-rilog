@@ -39,8 +39,16 @@ dependencies {
 	implementation(platform("software.amazon.awssdk:bom:2.25.0"))
 	implementation("software.amazon.awssdk:s3")
 
-	// PostgresSQL
-	runtimeOnly("org.postgresql:postgresql")
+	// MySQL
+	runtimeOnly("com.mysql:mysql-connector-j")
+
+	// DB migration tools
+	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	runtimeOnly("org.flywaydb:flyway-mysql")
+
+	// Actuactor
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")

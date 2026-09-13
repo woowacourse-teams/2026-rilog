@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { PostFeedItem } from '@/domains/post/model/post';
 
@@ -7,6 +7,7 @@ import PostFeedCard from './PostFeedCard';
 
 const PERSONAL_POST: PostFeedItem = {
 	id: 17,
+	chapterName: null,
 	title: '함께 기록하는 방법',
 	thumbnailUrl: 'https://images.rilog.test/post.png',
 	publishedAt: '2026-08-04T23:59:59',
@@ -20,18 +21,31 @@ const PERSONAL_POST: PostFeedItem = {
 };
 
 describe('PostFeedCard', () => {
-	it('게시글 제목을 이름으로 갖는 상세 링크와 작성 정보를 제공한다', () => {
-		render(<PostFeedCard post={PERSONAL_POST} position={3} />);
+	beforeEach(() => window.sessionStorage.clear());
 
-		expect(screen.getByRole('link', { name: /함께 기록하는 방법/ })).toHaveAttribute('href', '/@rilogger/posts/17');
-		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' })).toHaveClass('text-body-3');
-		expect(screen.getByText('리로거')).toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '리로거 프로필' })).toHaveTextContent('리');
-		expect(screen.getAllByRole('link')).toHaveLength(1);
+	it('개인 글 카드와 작성자 프로필을 각각 상세와 개인 홈으로 연결한다', () => {
+		render(
+			<PostFeedCard
+				post={{
+					...PERSONAL_POST,
+					chapterName: 'Education',
+					blog: { ...PERSONAL_POST.blog, slug: 'different-owner' },
+				}}
+				position={3}
+			/>,
+		);
+		expect(screen.getAllByRole('link')).toHaveLength(2);
+		expect(screen.getByRole('link', { name: '함께 기록하는 방법' })).toHaveAttribute(
+			'href',
+			'/@different-owner/posts/17',
+		);
+		expect(screen.getByRole('img', { name: '리로거 프로필' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /리로거/ })).toHaveAttribute('href', '/@rilogger');
+		expect(screen.getByText('Education').closest('a, button')).toBeNull();
 		expect(screen.getByText('2026년 8월 5일')).toHaveAttribute('datetime', '2026-08-04T23:59:59.000Z');
 	});
 
-	it('작성자 프로필 이미지가 있으면 UserAvatar에 표시한다', () => {
+	it('작성자 프로필 이미지가 있으면 표시한다', () => {
 		render(
 			<PostFeedCard
 				position={1}
@@ -41,89 +55,61 @@ describe('PostFeedCard', () => {
 				}}
 			/>,
 		);
-
-		const avatar = screen.getByRole('img', { name: '리로거 프로필' });
-
-		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://images.rilog.test/profile.png');
-		expect(avatar).toHaveClass('border', 'border-border-default');
-	});
-
-	it('썸네일을 불러오지 못하면 팀 커버 기본 이미지를 표시한다', () => {
-		render(<PostFeedCard post={PERSONAL_POST} position={1} />);
-
-		const thumbnail = screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' });
-		fireEvent.error(thumbnail);
-
-		expect(new URL(thumbnail.getAttribute('src')!, 'http://localhost').pathname).toBe('/images/thumbnail-fallback.svg');
-	});
-
-	it('썸네일 URL이 없으면 처음부터 팀 커버 기본 이미지를 표시한다', () => {
-		render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl: null }} position={1} />);
-
-		const postCard = screen.getByRole('link', { name: /함께 기록하는 방법/ });
-		expect(
-			new URL(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).getAttribute('src')!, 'http://localhost')
-				.pathname,
-		).toBe('/images/thumbnail-fallback.svg');
-		expect(postCard.querySelector('article > div')).toHaveClass('bg-thumbnail-background');
-		expect(screen.getByRole('heading', { name: '함께 기록하는 방법' }).parentElement).toHaveClass('mt-2');
-		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' })).not.toHaveClass(
-			'object-contain',
-			'p-10',
-			'sm:p-12',
-		);
-		expect(screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' }).parentElement).not.toHaveClass(
-			'border',
-			'border-border-default',
+		expect(screen.getByRole('img', { name: '리로거 프로필' }).querySelector('img')).toHaveAttribute(
+			'src',
+			'https://images.rilog.test/profile.png',
 		);
 	});
 
-	it('Colog 글에만 팀 이름 배지를 표시한다', () => {
-		const { rerender } = render(<PostFeedCard post={PERSONAL_POST} position={1} />);
+	it.each([null, 'https://images.rilog.test/broken.png'])(
+		'누락되거나 실패한 썸네일 %s에 기본 이미지를 표시한다',
+		(thumbnailUrl) => {
+			render(<PostFeedCard post={{ ...PERSONAL_POST, thumbnailUrl }} position={1} />);
+			const image = screen.getByRole('img', { name: '함께 기록하는 방법 썸네일' });
+			if (thumbnailUrl) fireEvent.error(image);
+			expect(new URL(image.getAttribute('src')!, 'http://localhost').pathname).toBe('/images/thumbnail-fallback.svg');
+		},
+	);
 
-		expect(screen.queryByText('리로그 팀')).not.toBeInTheDocument();
-
-		rerender(
+	it('코로그 로고와 이름은 코로그 홈으로 연결하고 챕터는 링크 밖에 표시한다', () => {
+		render(
 			<PostFeedCard
 				position={1}
 				post={{
 					...PERSONAL_POST,
+					chapterName: 'FE',
 					blog: {
-						id: 1,
+						...PERSONAL_POST.blog,
+						type: 'COLOG',
 						name: '리로그 팀',
 						slug: 'rilog-team',
-						type: 'COLOG',
 						profileImageUrl: 'https://images.rilog.test/team.png',
 					},
 				}}
 			/>,
 		);
+		expect(screen.getAllByRole('link')).toHaveLength(2);
+		const home = screen.getByRole('link', { name: /리로그 팀/ });
+		expect(home).toHaveAttribute('href', '/@rilog-team');
+		expect(home).toContainElement(screen.getByRole('img', { name: '리로그 팀' }));
+		expect(screen.queryByText('리로거')).not.toBeInTheDocument();
+		expect(screen.getByText('FE').closest('a')).toBeNull();
+		fireEvent.click(home);
+		expect(window.sessionStorage.getItem('rilog.post-detail-entry-context')).toBeNull();
+	});
 
-		expect(screen.getByText('리로그 팀')).toBeInTheDocument();
-		const cologLogoUrl = screen.getByRole('img', { name: '리로그 팀' }).getAttribute('src');
-		const parsedCologLogoUrl = new URL(cologLogoUrl!, 'http://localhost');
-
-		expect(parsedCologLogoUrl.searchParams.get('url') ?? parsedCologLogoUrl.href).toContain(
-			'https://images.rilog.test/team.png',
-		);
-		expect(screen.getByRole('img', { name: '리로그 팀' }).parentElement).toHaveClass(
-			'rounded-md',
-			'border',
-			'border-border-default',
-		);
+	it.each(['RILOG', 'COLOG'] as const)('%s는 챕터나 시리즈가 없어도 이름 뒤에 점을 표시한다', (type) => {
+		render(<PostFeedCard post={{ ...PERSONAL_POST, blog: { ...PERSONAL_POST.blog, type } }} position={1} />);
+		expect(screen.getByText('.')).toBeInTheDocument();
 	});
 
 	it('상세 링크를 활성화하면 피드 진입 context를 기록한다', () => {
 		render(<PostFeedCard post={PERSONAL_POST} position={3} />);
-
-		fireEvent.click(screen.getByRole('link', { name: /함께 기록하는 방법/ }));
-
-		expect(window.sessionStorage.getItem('rilog.post-detail-entry-context')).toBe(
-			JSON.stringify({
-				postId: 17,
-				entrySource: 'feed',
-				feedPosition: 3,
-			}),
-		);
+		fireEvent.click(screen.getByRole('link', { name: '함께 기록하는 방법' }));
+		expect(JSON.parse(window.sessionStorage.getItem('rilog.post-detail-entry-context')!)).toEqual({
+			postId: 17,
+			entrySource: 'feed',
+			feedPosition: 3,
+		});
 	});
 });

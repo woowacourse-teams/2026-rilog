@@ -19,7 +19,7 @@ describe('proxy', () => {
 	it('인증이 필요한 페이지 경로만 matcher에 포함한다', () => {
 		expect(config.matcher).toEqual([
 			'/write/:path*',
-			'/co-logs/create/:path*',
+			'/colog/create/:path*',
 			'/:slug/settings/:path*',
 			'/sign-up/:path*',
 		]);
@@ -31,7 +31,7 @@ describe('proxy', () => {
 		expect(response.headers.get('x-middleware-next')).toBe('1');
 	});
 
-	it.each(['/write', '/co-logs/create', '/@rilog/settings', '/sign-up'])(
+	it.each(['/write', '/colog/create', '/@rilog/settings', '/sign-up'])(
 		'proxy session이 없으면 %s 요청을 인증 안내가 포함된 피드로 이동시킨다',
 		(pathname) => {
 			const response = proxy(createRequest(pathname));

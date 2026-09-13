@@ -1,5 +1,6 @@
 import type {
 	AnalyticsErrorProperties,
+	BlogProfileEntrySource,
 	BlockCountBucket,
 	CologCreationEntrySource,
 	CologMemberInvitationEntrySource,
@@ -9,6 +10,9 @@ import type {
 	EditorEntrySource,
 	ImageSource,
 	LoginEntrySurface,
+	PostNavigationClickPart,
+	PostNavigationSurface,
+	PostNavigationTargetType,
 	PostDocumentState,
 	PostEntrySource,
 	PublishFailureStage,
@@ -21,7 +25,7 @@ import { captureAnalyticsEvent } from '@/shared/analytics/posthog';
 
 export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introduction' | 'service_url' | 'github_url';
 
-export type { EditorEntrySource, PostEntrySource } from './analytics-event';
+export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
 export const analytics = {
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>
@@ -83,6 +87,76 @@ export const analytics = {
 			post_id: postId,
 			engagement_seconds: engagementSeconds,
 			scroll_depth_bucket: scrollDepthBucket,
+		}),
+	postNavigationAvailable: ({
+		navigationVisitId,
+		postId,
+		ownerType,
+		chapterId,
+		surface,
+	}: {
+		navigationVisitId: string;
+		postId: number;
+		ownerType: BlogType;
+		chapterId: number;
+		surface: PostNavigationSurface;
+	}) =>
+		captureAnalyticsEvent('post navigation available', {
+			navigation_visit_id: navigationVisitId,
+			post_id: postId,
+			owner_type: ownerType,
+			chapter_id: chapterId,
+			surface,
+		}),
+	postNavigationClicked: ({
+		navigationVisitId,
+		postId,
+		ownerType,
+		chapterId,
+		surface,
+		targetType,
+		targetPostId,
+		position,
+		clickPart,
+	}: {
+		navigationVisitId: string;
+		postId: number;
+		ownerType: BlogType;
+		chapterId: number;
+		surface: PostNavigationSurface;
+		targetType: PostNavigationTargetType;
+		targetPostId: number | null;
+		position: number;
+		clickPart: PostNavigationClickPart;
+	}) =>
+		captureAnalyticsEvent('post navigation clicked', {
+			navigation_visit_id: navigationVisitId,
+			post_id: postId,
+			owner_type: ownerType,
+			chapter_id: chapterId,
+			surface,
+			target_type: targetType,
+			target_post_id: targetPostId,
+			position,
+			click_part: clickPart,
+		}),
+	postSeriesExpanded: ({
+		navigationVisitId,
+		postId,
+		ownerType,
+		chapterId,
+	}: {
+		navigationVisitId: string;
+		postId: number;
+		ownerType: BlogType;
+		chapterId: number;
+	}) =>
+		captureAnalyticsEvent('post series expanded', {
+			navigation_visit_id: navigationVisitId,
+			post_id: postId,
+			owner_type: ownerType,
+			chapter_id: chapterId,
+			surface: 'series',
 		}),
 	postEditorOpened: ({
 		entrySource,
@@ -211,6 +285,22 @@ export const analytics = {
 		}),
 	cologProfileUpdated: ({ changedFields }: { changedFields: CologProfileChangedField[] }) =>
 		captureAnalyticsEvent('colog profile updated', { changed_fields: changedFields }),
-	blogProfileViewed: ({ blogType }: { blogType: BlogType }) =>
-		captureAnalyticsEvent('blog profile viewed', { blog_type: blogType }),
+	blogProfileViewed: ({
+		blogType,
+		blogId,
+		entrySource,
+		profileVisitId,
+	}: {
+		blogType: BlogType;
+		blogId: number;
+		entrySource: BlogProfileEntrySource;
+		profileVisitId: string;
+	}) =>
+		captureAnalyticsEvent('blog profile viewed', {
+			blog_type: blogType,
+			blog_id: blogId,
+			entry_source: entrySource,
+			profile_visit_id: profileVisitId,
+			entry_tracking_version: 1,
+		}),
 };

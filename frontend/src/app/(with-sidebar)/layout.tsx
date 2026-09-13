@@ -12,7 +12,7 @@ export default function SidebarLAyout({ children }: Readonly<{ children: ReactNo
 			<div className="hidden sm:flex">
 				<Sidebar />
 			</div>
-			<div className="min-h-dvh sm:pl-17.5">{children}</div>
+			<div className="min-h-dvh sm:pl-15">{children}</div>
 		</div>
 	);
 }

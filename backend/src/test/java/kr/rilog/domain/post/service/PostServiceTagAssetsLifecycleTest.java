@@ -14,7 +14,7 @@ import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +64,7 @@ class PostServiceTagAssetsLifecycleTest {
     private ChapterRepository chapterRepository;
 
     @Mock
-    private TagAssetsLifecycle tagAssetsLifecycle;
+    private TagAssetsPublisher tagAssetsPublisher;
 
     private PostService postService;
 
@@ -76,7 +76,7 @@ class PostServiceTagAssetsLifecycleTest {
                 blogMemberRepository,
                 userRepository,
                 chapterRepository,
-                tagAssetsLifecycle
+                tagAssetsPublisher
         );
     }
 
@@ -96,7 +96,7 @@ class PostServiceTagAssetsLifecycleTest {
         postService.publish(command, WRITER_ID);
 
         // then
-        verify(tagAssetsLifecycle).attach(TagAssets.of(command.thumbnailImageUrl()));
+        verify(tagAssetsPublisher).attach(TagAssets.of(command.thumbnailImageUrl()));
     }
 
     @Test
@@ -111,7 +111,7 @@ class PostServiceTagAssetsLifecycleTest {
         assertThatThrownBy(() -> postService.publish(command, WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
-        verify(tagAssetsLifecycle, never()).attach(any());
+        verify(tagAssetsPublisher, never()).attach(any());
     }
 
     @Test
@@ -133,7 +133,7 @@ class PostServiceTagAssetsLifecycleTest {
         postService.update(command, POST_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsLifecycle).synchronize(previous, post.getTagAssets());
+        verify(tagAssetsPublisher).synchronize(previous, post.getTagAssets());
     }
 
     @Test
@@ -151,7 +151,7 @@ class PostServiceTagAssetsLifecycleTest {
         assertThatThrownBy(() -> postService.update(command, POST_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsLifecycle, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any());
     }
 
     @Test
@@ -167,7 +167,7 @@ class PostServiceTagAssetsLifecycleTest {
         assertThatThrownBy(() -> postService.deletePublishedPost(POST_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
-        verify(tagAssetsLifecycle, never()).detach(any());
+        verify(tagAssetsPublisher, never()).detach(any());
     }
 
 }

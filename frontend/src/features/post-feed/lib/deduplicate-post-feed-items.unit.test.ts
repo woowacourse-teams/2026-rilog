@@ -6,6 +6,7 @@ import { deduplicatePostFeedItems } from './deduplicate-post-feed-items';
 
 const createPostItem = (id: number): PostFeedItem => ({
 	id,
+	chapterName: null,
 	title: `게시글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-16',

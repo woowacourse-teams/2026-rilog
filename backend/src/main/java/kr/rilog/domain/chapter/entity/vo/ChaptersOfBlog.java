@@ -9,10 +9,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_COUNT_EXCEEDED;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 
 public record ChaptersOfBlog(List<Chapter> chapters) {
+
+    private static final int MAX_CHAPTER_COUNT = 30;
 
     public ChaptersOfBlog {
         chapters = List.copyOf(chapters);
@@ -25,6 +28,7 @@ public record ChaptersOfBlog(List<Chapter> chapters) {
     public Chapter createNextChapter(Blog blog, String name) {
         ChapterName chapterName = ChapterName.from(name);
         validateUniqueName(chapterName);
+        validateChapterCount();
         return Chapter.create(blog, chapterName.getValue(), chapters.size()); // NOTE order는 0-based
     }
 
@@ -56,6 +60,12 @@ public record ChaptersOfBlog(List<Chapter> chapters) {
     private void validateUniqueName(ChapterName name) {
         if (isDuplicatedName(name)) {
             throw new ChapterException(CHAPTER_NAME_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateChapterCount() {
+        if (chapters.size() >= MAX_CHAPTER_COUNT) {
+            throw new ChapterException(CHAPTER_COUNT_EXCEEDED);
         }
     }
 

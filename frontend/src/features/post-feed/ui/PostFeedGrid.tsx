@@ -1,8 +1,11 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
+import { parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
+import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import Button from '@/shared/ui/button/Button';
 
 import { usePostFeed } from '../hooks/use-post-feed';
@@ -13,15 +16,25 @@ import PostFeedCard from './PostFeedCard';
 import PostFeedSkeleton from './PostFeedSkeleton';
 
 interface PostFeedGridProps {
+	initialFilters: FullFeedPostsFilters;
+	scrollTargetId?: string;
 	initialRequestFailed?: boolean;
 }
 
 const POST_FEED_CONTENT_ID = 'post-feed-content';
 
-export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedGridProps) {
-	const [isQueryEnabled, setIsQueryEnabled] = useState(!initialRequestFailed);
+export default function PostFeedGrid({
+	initialFilters,
+	initialRequestFailed = false,
+	scrollTargetId = POST_FEED_CONTENT_ID,
+}: PostFeedGridProps) {
+	const searchParams = useSearchParams();
+	const filters = parseFeedFilters(searchParams);
+	const isInitialFilter = filters.category === initialFilters.category && filters.blogType === initialFilters.blogType;
+	const [isInitialQueryEnabled, setIsInitialQueryEnabled] = useState(!initialRequestFailed);
+	const isQueryEnabled = isInitialQueryEnabled || !isInitialFilter;
 	const sentinelRef = useRef<HTMLDivElement>(null);
-	const query = usePostFeed({ isEnabled: isQueryEnabled });
+	const query = usePostFeed({ isEnabled: isQueryEnabled, ...filters });
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
 
 	const posts = useMemo(
@@ -29,10 +42,11 @@ export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedG
 		[query.data?.pages],
 	);
 
-	const hasInitialError = (!isQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
+	const hasInitialError =
+		(isInitialFilter && !isInitialQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
 	usePostFeedEntryAutoScroll({
 		isReady: hasInitialError || !query.isPending,
-		targetId: POST_FEED_CONTENT_ID,
+		targetId: scrollTargetId,
 	});
 
 	useEffect(() => {
@@ -78,7 +92,7 @@ export default function PostFeedGrid({ initialRequestFailed = false }: PostFeedG
 						variant="secondary"
 						onClick={() => {
 							if (!isQueryEnabled) {
-								setIsQueryEnabled(true);
+								setIsInitialQueryEnabled(true);
 								return;
 							}
 

@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.repository;
 
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -46,13 +47,21 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             LEFT JOIN p.colog colog
             LEFT JOIN p.chapter chapter
             WHERE p.status = :status
-              AND p.visibility = :visibility
+              AND p.visibility = :publicVisibility
+              AND (:category IS NULL OR p.category = :category)
+              AND (
+                  :blogType IS NULL
+                  OR (colog.id IS NOT NULL AND colog.blogType = :blogType)
+                  OR (colog.id IS NULL AND rilog.blogType = :blogType)
+              )
               AND p.deletedAt IS NULL
             ORDER BY p.publishedAt DESC, p.id DESC
             """)
     Slice<PostFullFeedRow> findFullFeed(
             @Param("status") PostStatus status,
-            @Param("visibility") PostVisibility visibility,
+            @Param("publicVisibility") PostVisibility publicVisibility,
+            @Param("category") Category category,
+            @Param("blogType") BlogType blogType,
             Pageable pageable
     );
 

@@ -16,13 +16,19 @@ describe('fullFeedPostsQueryOptions', () => {
 			message: 'OK',
 			data: { page: 0, size: 12, numberOfElements: 0, hasNext: false, posts: [] },
 		});
-		const options = fullFeedPostsQueryOptions();
+		const options = fullFeedPostsQueryOptions({ category: 'DAILY', blogType: 'COLOG' });
 
-		expect(options.queryKey).toEqual(feedsQueryKeys.fullFeedPosts(12));
+		expect(options.queryKey).toEqual(feedsQueryKeys.fullFeedPosts({ size: 12, category: 'DAILY', blogType: 'COLOG' }));
 		expect(options.initialPageParam).toBe(0);
+		expect(options.staleTime).toBe(60_000);
 
 		await options.queryFn?.({ pageParam: 0 } as never);
-		expect(readFullFeedPosts).toHaveBeenCalledWith({ page: 0, size: 12 });
+		expect(readFullFeedPosts).toHaveBeenCalledWith({
+			page: 0,
+			size: 12,
+			category: 'DAILY',
+			blogType: 'COLOG',
+		});
 		expect(
 			options.getNextPageParam?.(
 				{ status: 200, message: 'OK', data: { page: 2, size: 12, numberOfElements: 0, posts: [], hasNext: true } },

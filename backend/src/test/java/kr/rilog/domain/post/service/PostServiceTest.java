@@ -21,10 +21,10 @@ import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -80,7 +80,7 @@ class PostServiceTest {
     private ChapterRepository chapterRepository;
 
     @Mock
-    private TagAssetsLifecycle tagAssetsLifecycle;
+    private TagAssetsPublisher tagAssetsPublisher;
 
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
@@ -94,7 +94,7 @@ class PostServiceTest {
                 blogMemberRepository,
                 userRepository,
                 chapterRepository,
-                tagAssetsLifecycle
+                tagAssetsPublisher
         );
     }
 

@@ -5,7 +5,7 @@ import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -31,7 +31,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
-    private final TagAssetsLifecycle tagAssetsLifecycle;
+
+    private final TagAssetsPublisher tagAssetsPublisher;
 
     public UserInfoResult getUserInformation(Long userId) {
         User user = getUser(userId);
@@ -67,7 +68,7 @@ public class UserService {
 
         User completedUser = userRepository.saveAndFlush(user);
         Blog rilog = createRilog(completedUser, command.serviceUrl());
-        tagAssetsLifecycle.attach(rilog.getTagAssets());
+        tagAssetsPublisher.attach(rilog.getTagAssets());
         return completedUser;
     }
 

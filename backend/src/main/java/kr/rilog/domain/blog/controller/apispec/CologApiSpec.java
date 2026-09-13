@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.request.CologCreateRequest;
 import kr.rilog.domain.blog.controller.dto.request.CologMemberInviteRequest;
+import kr.rilog.domain.blog.controller.dto.request.CologMemberUpdateRequest;
+import kr.rilog.domain.blog.controller.dto.response.BlogMemberResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
@@ -45,6 +47,19 @@ public interface CologApiSpec {
             @Parameter(description = "멤버를 초대할 팀 블로그 slug", example = "rilog-team")
             @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
+    );
+
+    @Operation(
+            summary = "팀 멤버 목록 조회 API",
+            description = "팀 블로그 slug로 활동 중인 팀 멤버 목록을 조회합니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "팀 멤버 목록 조회 성공"
+    )
+    ApiResponse<List<BlogMemberResponse>> getCologMembers(
+            @Parameter(description = "멤버를 조회할 팀 블로그 slug", example = "rilog-team")
+            @PathVariable("slug") String slug
     );
 
     @Operation(
@@ -89,6 +104,23 @@ public interface CologApiSpec {
             @PathVariable("slug") String slug,
             @Parameter(description = "내보낼 팀 멤버 ID", example = "3")
             @PathVariable("memberId") Long memberId
+    );
+
+    @Operation(
+            summary = "팀 멤버 정보 수정 API",
+            description = "팀 멤버의 역할명과 권한을 수정합니다. OWNER 권한 부여는 소유권 이전으로 처리합니다."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "팀 멤버 정보 수정 성공"
+    )
+    ApiResponse<Void> updateMember(
+            @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @Parameter(description = "멤버를 수정할 팀 블로그 slug", example = "rilog-team")
+            @PathVariable("slug") String slug,
+            @Parameter(description = "수정할 팀 멤버 ID", example = "3")
+            @PathVariable("memberId") Long memberId,
+            @Valid @RequestBody CologMemberUpdateRequest request
     );
 
     @Operation(description = "나의 팀 목록과 챕터 요약 조회 API", summary = "나의 팀 목록 요약 조회 API")

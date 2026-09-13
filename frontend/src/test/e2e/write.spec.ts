@@ -206,6 +206,12 @@ test.describe('글 작성', () => {
 		await expect(diagram.locator('.nodeLabel').first()).toHaveCSS('font-size', '14px');
 		await expect(diagram).toContainText('Start');
 		await expect(diagram).toContainText('End');
+
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('not a diagram');
+		await expect(codeBlock.getByRole('alert')).toHaveText('Mermaid 문법을 확인해 주세요.');
+		await expect(page.getByText('Syntax error in text', { exact: true })).toHaveCount(0);
+		await expect(page.locator('body > div[id^="dmermaid-"]')).toHaveCount(0);
 	});
 
 	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
@@ -232,7 +238,7 @@ test.describe('글 작성', () => {
 						],
 						publishedAt: '2026-08-24T00:00:00Z',
 						thumbnailImageUrl: 'posts/edit-thumbnail.png',
-						category: 'DAILY',
+						category: '일상',
 						author: { userId: 1, nickname: 'E2E 사용자', slug: 'e2e-user', profileImageUrl: null },
 						owner: {
 							type: 'RILOG',
@@ -252,9 +258,8 @@ test.describe('글 작성', () => {
 		await expect(page.getByRole('textbox', { name: '게시글 내용' })).toContainText('불러온 게시글 본문');
 		await page.getByRole('textbox', { name: '게시글 제목' }).fill('불러온 게시글 제목 수정');
 		await page.getByRole('button', { name: '수정' }).click();
-		await expect(page.getByRole('radio', { name: '일상' })).toBeChecked();
-		await expect(page.getByRole('combobox', { name: 'Co-log' })).toHaveValue('1');
-		await expect(page.getByRole('option', { name: 'E2E 사용자' })).toHaveCount(1);
+		await expect(page.getByRole('combobox', { name: '카테고리' })).toHaveValue('DAILY');
+		await expect(page.getByRole('radio', { name: '개인' })).toBeChecked();
 		await expect(page.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
 			'src',
 			/posts\/edit-thumbnail\.png$/,
@@ -370,7 +375,7 @@ test.describe('글 작성', () => {
 		const publishDialog = page.getByRole('dialog', { name: '게시 설정' });
 		await expect(publishDialog).toBeVisible();
 		await publishDialog.getByText('일상', { exact: true }).click();
-		const cologSelect = publishDialog.getByRole('combobox', { name: 'Co-log' });
+		const cologSelect = publishDialog.getByRole('combobox', { name: 'Colog' });
 		await cologSelect.selectOption({ index: 1 });
 		const selectedCoLogId = await cologSelect.inputValue();
 		await publishDialog.getByRole('button', { name: '취소' }).click();
@@ -378,7 +383,7 @@ test.describe('글 작성', () => {
 
 		await page.getByRole('button', { name: '발행' }).click();
 		await expect(publishDialog.getByRole('radio', { name: '일상' })).toBeChecked();
-		await expect(publishDialog.getByRole('combobox', { name: 'Co-log' })).toHaveValue(selectedCoLogId);
+		await expect(publishDialog.getByRole('combobox', { name: 'Colog' })).toHaveValue(selectedCoLogId);
 		await publishDialog.getByRole('button', { name: '발행' }).click();
 		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
 		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();

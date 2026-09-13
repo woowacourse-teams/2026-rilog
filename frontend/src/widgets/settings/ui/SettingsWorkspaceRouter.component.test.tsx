@@ -22,7 +22,7 @@ vi.mock('@/widgets/colog-settings/ui/CologSettingsWorkspace', () => ({
 	}: {
 		initialTab: string;
 		isMemberInviteInitiallyOpen: boolean;
-	}) => <div data-member-invite-open={isMemberInviteInitiallyOpen}>Co-log 설정: {initialTab}</div>,
+	}) => <div data-member-invite-open={isMemberInviteInitiallyOpen}>Colog 설정: {initialTab}</div>,
 }));
 vi.mock('@/widgets/rilog-settings/ui/RilogSettingsWorkspace', () => ({
 	default: ({ initialTab }: { initialTab: string }) => <div>Rilog 설정: {initialTab}</div>,
@@ -58,7 +58,7 @@ describe('SettingsWorkspaceRouter', () => {
 
 		expect(screen.getByRole('generic', { name: 'RILOG rilogger 설정 접근 가드' })).toBeInTheDocument();
 		expect(screen.getByText('Rilog 설정: danger')).toBeInTheDocument();
-		expect(screen.queryByText(/Co-log 설정/)).not.toBeInTheDocument();
+		expect(screen.queryByText(/Colog 설정/)).not.toBeInTheDocument();
 	});
 
 	it('Co-log 프로필은 Co-log 설정 워크스페이스로 연결한다', () => {
@@ -71,7 +71,7 @@ describe('SettingsWorkspaceRouter', () => {
 		render(<SettingsWorkspaceRouter slug="rilog" tab="members" />);
 
 		expect(screen.getByRole('generic', { name: 'COLOG rilog 설정 접근 가드' })).toBeInTheDocument();
-		expect(screen.getByText('Co-log 설정: members')).toBeInTheDocument();
+		expect(screen.getByText('Colog 설정: members')).toBeInTheDocument();
 		expect(screen.queryByText(/Rilog 설정/)).not.toBeInTheDocument();
 	});
 
@@ -84,7 +84,7 @@ describe('SettingsWorkspaceRouter', () => {
 
 		render(<SettingsWorkspaceRouter slug="rilog" tab="members" invite="true" />);
 
-		expect(screen.getByText('Co-log 설정: members')).toHaveAttribute('data-member-invite-open', 'true');
+		expect(screen.getByText('Colog 설정: members')).toHaveAttribute('data-member-invite-open', 'true');
 	});
 
 	it('지원하지 않는 프로필 타입을 Co-log로 처리하지 않는다', () => {
@@ -97,6 +97,6 @@ describe('SettingsWorkspaceRouter', () => {
 		render(<SettingsWorkspaceRouter slug="unknown" />);
 
 		expect(screen.getByRole('alert')).toHaveTextContent('설정 정보를 불러오지 못했습니다.');
-		expect(screen.queryByText(/Co-log 설정/)).not.toBeInTheDocument();
+		expect(screen.queryByText(/Colog 설정/)).not.toBeInTheDocument();
 	});
 });

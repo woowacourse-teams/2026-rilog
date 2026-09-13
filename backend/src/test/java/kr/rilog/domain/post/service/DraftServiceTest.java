@@ -17,7 +17,7 @@ import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -70,7 +70,7 @@ class DraftServiceTest {
     private ChapterRepository chapterRepository;
 
     @Mock
-    private TagAssetsLifecycle tagAssetsLifecycle;
+    private TagAssetsPublisher tagAssetsPublisher;
 
     private DraftService draftService;
 
@@ -82,7 +82,7 @@ class DraftServiceTest {
                 blogMemberRepository,
                 userRepository,
                 chapterRepository,
-                tagAssetsLifecycle
+                tagAssetsPublisher
         );
     }
 
@@ -101,7 +101,7 @@ class DraftServiceTest {
         draftService.saveDraft(command, WRITER_ID);
 
         // then
-        verify(tagAssetsLifecycle).attach(TagAssets.of(IMAGE_URL_A));
+        verify(tagAssetsPublisher).attach(TagAssets.of(IMAGE_URL_A));
     }
 
     @Test
@@ -115,7 +115,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.saveDraft(command, WRITER_ID))
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
-        verify(tagAssetsLifecycle, never()).attach(any());
+        verify(tagAssetsPublisher, never()).attach(any());
     }
 
     @Test
@@ -134,7 +134,7 @@ class DraftServiceTest {
         draftService.overwriteDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsLifecycle).synchronize(previous, TagAssets.of(IMAGE_URL_B));
+        verify(tagAssetsPublisher).synchronize(previous, TagAssets.of(IMAGE_URL_B));
     }
 
     @Test
@@ -152,7 +152,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.overwriteDraft(command, DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsLifecycle, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any());
     }
 
     @Test
@@ -182,7 +182,7 @@ class DraftServiceTest {
         draftService.publishDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsLifecycle).synchronize(
+        verify(tagAssetsPublisher).synchronize(
                 previous,
                 new TagAssets(Set.of(IMAGE_URL_B, THUMBNAIL_URL))
         );
@@ -208,7 +208,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.publishDraft(command, DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsLifecycle, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any());
     }
 
     @Test
@@ -223,7 +223,7 @@ class DraftServiceTest {
         draftService.deleteDraft(DRAFT_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsLifecycle).detach(assets);
+        verify(tagAssetsPublisher).detach(assets);
     }
 
     @Test
@@ -237,7 +237,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.deleteDraft(DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsLifecycle, never()).detach(any());
+        verify(tagAssetsPublisher, never()).detach(any());
     }
 
     private Post draftWithImage(String imageUrl) {

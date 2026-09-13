@@ -11,6 +11,7 @@ describe('FileUploader', () => {
 
 		const input = screen.getByLabelText('파일 선택');
 		expect(input).toHaveAttribute('type', 'file');
+		expect(input).toHaveClass('ph-no-capture');
 		expect(input).not.toHaveAttribute('accept');
 	});
 

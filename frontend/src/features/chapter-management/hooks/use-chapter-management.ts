@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { Chapter } from '@/features/chapter-management/model/chapter';
+import type { Chapter } from '@/domains/chapter/model/chapter';
 import { useCreateBlogChapterMutation } from '@/shared/api/blogs/mutations/use-create-blog-chapter-mutation';
 import { useDeleteBlogChapterMutation } from '@/shared/api/blogs/mutations/use-delete-blog-chapter-mutation';
 import { useRenameBlogChapterMutation } from '@/shared/api/blogs/mutations/use-rename-blog-chapter-mutation';

@@ -12,7 +12,7 @@ export const buildPostWriteRequest = async (
 	uploadRepresentativeImage: UploadRepresentativeImage,
 ): Promise<PostWriteRequest> => {
 	if (settings.blog === null) {
-		throw new Error('코로그를 선택해 주세요.');
+		throw new Error('Colog를 선택해 주세요.');
 	}
 
 	let thumbnailImageUrl =
@@ -29,7 +29,7 @@ export const buildPostWriteRequest = async (
 		slug: settings.blog.slug,
 		title: document.title,
 		content: document.blocks,
-		category: settings.category === 'IT' ? 'TECH' : settings.category,
+		category: settings.category,
 		// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,

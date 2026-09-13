@@ -42,7 +42,7 @@ export default function PostFeedImage({
 			loading="lazy"
 			className={`${className} ${hasFallback ? fallbackClassName : ''} ${
 				isScaledOnInteraction
-					? 'transition-transform duration-200 ease-out group-hover:scale-[1.05] group-focus-visible:scale-[1.05] group-active:scale-[1.05] motion-reduce:transform-none motion-reduce:transition-none'
+					? 'transition-transform duration-200 ease-out group-focus-within/card:scale-[1.05] group-hover/card:scale-[1.05] group-active/card:scale-[1.05] motion-reduce:transform-none motion-reduce:transition-none'
 					: ''
 			}`.trim()}
 			onError={() => {

@@ -4,7 +4,7 @@ import kr.rilog.domain.auth.application.oauth.model.OAuthAccessToken;
 import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.application.port.oauth.OAuthAccessTokenClient;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
-import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -47,14 +47,12 @@ public class RestClientGithubAccessTokenClient implements OAuthAccessTokenClient
                     .body(GithubAccessTokenResponse.class);
 
             if (response == null || !StringUtils.hasText(response.accessToken())) {
-                throw new AuthException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
+                throw new RilogInfrastructureException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
             }
 
             return new OAuthAccessToken(response.accessToken());
-        } catch (AuthException exception) {
-            throw exception;
         } catch (RestClientException exception) {
-            throw new AuthException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
+            throw new RilogInfrastructureException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED, exception);
         }
     }
 

@@ -3,7 +3,7 @@ package kr.rilog.global.exception;
 import lombok.Getter;
 
 @Getter
-public class RilogBusinessException extends RuntimeException{
+public class RilogBusinessException extends RuntimeException {
 
     private final ErrorInformation errorInformation;
 

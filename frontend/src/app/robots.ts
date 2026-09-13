@@ -4,7 +4,7 @@ import type { MetadataRoute } from 'next';
 
 import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
 
-const PRIVATE_PATHS = ['/api/', '/auth/', '/write', '/sign-up', '/co-logs/create', '/*/settings'];
+const PRIVATE_PATHS = ['/api/', '/auth/', '/write', '/sign-up', '/colog/create', '/*/settings'];
 
 export default function robots(): MetadataRoute.Robots {
 	return {

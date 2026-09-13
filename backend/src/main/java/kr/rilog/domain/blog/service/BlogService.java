@@ -16,7 +16,7 @@ import kr.rilog.domain.chapter.repository.projection.ChapterIndexProjection;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,7 @@ public class BlogService {
     private final BlogMemberRepository blogMemberRepository;
     private final PostRepository postRepository;
     private final ChapterRepository chapterRepository;
-    private final TagAssetsLifecycle tagAssetsLifecycle;
+    private final TagAssetsPublisher tagAssetsPublisher;
 
     @Transactional
     public void changeBlogProfile(Long requesterId, String slug, BlogProfileUpdateCommand command) {
@@ -51,7 +51,7 @@ public class BlogService {
         blog.changeProfile(command.toProfile());
         synchronizeOwnerProfileIfRilog(blog, command);
         TagAssets current = blog.getTagAssets();
-        tagAssetsLifecycle.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(previous, current);
     }
 
     public BlogIndexResult readBlogIndex(String slug) {

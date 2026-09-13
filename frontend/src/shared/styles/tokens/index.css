@@ -22,6 +22,8 @@
 	--color-surface-hover: var(--surface-hover);
 	--color-surface-active: var(--surface-active);
 	--color-thumbnail-background: var(--thumbnail-background);
+	--color-logo-primary: var(--logo-primary);
+	--color-logo-secondary: var(--logo-secondary);
 
 	--color-text-primary: var(--text-primary);
 	--color-text-secondary: var(--text-secondary);

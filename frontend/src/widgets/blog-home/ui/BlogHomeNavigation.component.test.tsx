@@ -37,10 +37,10 @@ describe('BlogHomeNavigation', () => {
 	it('RILOG은 API 시리즈와 코로그를 필터 링크로 보여주고 다른 query를 보존한다', () => {
 		render(<BlogHomeNavigation blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
 
-		const navigation = screen.getByRole('navigation', { name: '시리즈와 코로그 탐색' });
-		expect(within(navigation).getByRole('link', { name: '전체보기, 글 23개' })).toHaveAttribute('aria-current', 'page');
+		const navigation = screen.getByRole('navigation', { name: '시리즈와 Colog 탐색' });
+		expect(within(navigation).getByRole('link', { name: '전체, 글 23개' })).toHaveAttribute('aria-current', 'page');
 		expect(within(navigation).getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
-		expect(within(navigation).getByRole('heading', { name: '코로그' })).toBeInTheDocument();
+		expect(within(navigation).getByRole('heading', { name: 'Colog' })).toBeInTheDocument();
 		expect(within(navigation).getByRole('link', { name: '우테코에서 살아남기, 글 12개' })).toHaveAttribute(
 			'href',
 			'/@jetproc?notice=keep&series=3',
@@ -55,7 +55,7 @@ describe('BlogHomeNavigation', () => {
 		render(<BlogHomeNavigation blogType="RILOG" slug="jetproc" filter={{ type: 'chapterId', chapterId: 3 }} />);
 
 		expect(screen.getByRole('link', { name: '우테코에서 살아남기, 글 12개' })).toHaveAttribute('aria-current', 'page');
-		expect(screen.getByRole('link', { name: '전체보기, 글 23개' })).not.toHaveAttribute('aria-current');
+		expect(screen.getByRole('link', { name: '전체, 글 23개' })).not.toHaveAttribute('aria-current');
 	});
 
 	it('COLOG은 profile type을 기준으로 챕터만 보여준다', () => {
@@ -67,7 +67,7 @@ describe('BlogHomeNavigation', () => {
 			'/@jetproc?notice=keep&chapter=3',
 		);
 		expect(screen.queryByRole('heading', { name: '시리즈' })).not.toBeInTheDocument();
-		expect(screen.queryByRole('heading', { name: '코로그' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { name: 'Colog' })).not.toBeInTheDocument();
 	});
 
 	it('인덱스 실패에는 retry를, 빈 배열에는 빈 상태를 제공한다', () => {
@@ -92,7 +92,7 @@ describe('BlogHomeNavigation', () => {
 		rerender(<BlogHomeNavigation blogType="COLOG" slug="rilog-team" filter={{ type: 'all' }} />);
 
 		expect(screen.queryByText('아직 등록된 챕터가 없습니다.')).not.toBeInTheDocument();
-		expect(screen.getByRole('link', { name: '전체보기, 글 0개' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: '전체, 글 0개' })).toBeInTheDocument();
 
 		rerender(<BlogHomeNavigation blogType="RILOG" slug="rilog-team" filter={{ type: 'all' }} />);
 

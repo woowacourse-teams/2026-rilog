@@ -13,8 +13,8 @@ import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Email;
 import kr.rilog.domain.user.entity.vo.Nickname;
@@ -60,7 +60,7 @@ class BlogServiceTest {
     private PostRepository postRepository;
 
     @Mock
-    private TagAssetsLifecycle tagAssetsLifecycle;
+    private TagAssetsPublisher tagAssetsPublisher;
 
     @Mock
     private ChapterRepository chapterRepository;
@@ -69,7 +69,7 @@ class BlogServiceTest {
 
     @BeforeEach
     void setUp() {
-        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, chapterRepository, tagAssetsLifecycle);
+        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, chapterRepository, tagAssetsPublisher);
     }
 
     @Test
@@ -393,7 +393,7 @@ class BlogServiceTest {
         blogService.changeBlogProfile(REQUESTER_ID, "team_Rilog", command);
 
         // then
-        verify(tagAssetsLifecycle).synchronize(
+        verify(tagAssetsPublisher).synchronize(
                 previous,
                 new TagAssets(Set.of(command.profileImageUrl(), command.coverImageUrl()))
         );
@@ -414,7 +414,7 @@ class BlogServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
         verify(blogRepository, never()).existsByProfileNameExceptId(command.name(), RILOG_ID);
-        verify(tagAssetsLifecycle, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any());
         assertThat(rilog.getName()).isEqualTo("러로");
     }
 

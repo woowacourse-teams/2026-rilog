@@ -7,6 +7,7 @@ describe('API_ERROR_CODES', () => {
 		expect(getApiErrorKind(API_ERROR_CODES.REQUEST_VALIDATION_FAILED)).toBe('field');
 		expect(getApiErrorKind(API_ERROR_CODES.EXPIRED_ACCESS_TOKEN)).toBe('authentication');
 		expect(getApiErrorKind(API_ERROR_CODES.BLOG_MEMBER_INVITE_FORBIDDEN)).toBe('authorization');
+		expect(getApiErrorKind(API_ERROR_CODES.USER_COLOG_COUNT_EXCEEDED)).toBe('request');
 		expect(getApiErrorKind(API_ERROR_CODES.POST_NOT_FOUND)).toBe('not-found');
 		expect(getApiErrorKind(API_ERROR_CODES.SLUG_DUPLICATED)).toBe('conflict');
 		expect(getApiErrorKind(API_ERROR_CODES.INTERNAL_SERVER_ERROR)).toBe('server');

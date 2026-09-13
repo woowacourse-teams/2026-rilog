@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
@@ -19,6 +20,10 @@ public interface FeedApiSpec {
             summary = "전체 피드 게시물 목록 조회 API"
     )
     ApiResponse<FullFeedPostResponse> readFullFeedPosts(
+            @Parameter(description = "게시글 카테고리", example = "TECH")
+            @RequestParam(required = false) Category category,
+            @Parameter(description = "게시 대상 블로그 유형", example = "COLOG")
+            @RequestParam(required = false) BlogType blogType,
             @RequestParam int page,
             @RequestParam int size
     );
@@ -37,6 +42,20 @@ public interface FeedApiSpec {
             @RequestParam(required = false) Long chapterId,
             @Parameter(description = "Rilog 소유자가 글을 작성한 대상 Colog slug", example = "rilog-team")
             @RequestParam(required = false) String targetCologSlug,
+            @RequestParam int page,
+            @RequestParam int size
+    );
+
+    @Operation(
+            description = "Rilog의 시리즈 또는 Colog의 챕터에 연결된 게시글 목록을 조회합니다.",
+            summary = "시리즈/챕터 게시글 목록 조회 API"
+    )
+    ApiResponse<BlogFeedPostResponse> getChapterPosts(
+            @Parameter(description = "블로그 slug", example = "rilog")
+            @PathVariable String slug,
+            @Parameter(description = "챕터 ID", example = "1")
+            @PathVariable Long chapterId,
+            @Parameter(hidden = true) @NullableLoginUserId Long requesterId,
             @RequestParam int page,
             @RequestParam int size
     );

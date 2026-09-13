@@ -57,7 +57,7 @@ describe('BlogHomeToolbar', () => {
 		render(<BlogHomeToolbar blogType={blogType} slug="jetproc" filter={{ type: 'all' }} />);
 
 		expect(screen.queryByRole('button', { name: '전체' })).not.toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: 'IT' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '기술' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '일상' })).not.toBeInTheDocument();
 		expect(screen.queryByLabelText('글 카테고리')).not.toBeInTheDocument();
 	});
@@ -68,14 +68,14 @@ describe('BlogHomeToolbar', () => {
 
 		const trigger = screen.getByRole('button', { name: '인덱스 보기' });
 		expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
-		expect(screen.queryByRole('navigation', { name: '시리즈와 코로그 탐색' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('navigation', { name: '시리즈와 Colog 탐색' })).not.toBeInTheDocument();
 
 		await user.click(trigger);
 
 		const dialog = screen.getByRole('dialog', { name: '인덱스' });
-		const navigation = within(dialog).getByRole('navigation', { name: '시리즈와 코로그 탐색' });
+		const navigation = within(dialog).getByRole('navigation', { name: '시리즈와 Colog 탐색' });
 		expect(within(navigation).getByRole('heading', { name: '시리즈' })).toBeInTheDocument();
-		expect(within(navigation).getByRole('heading', { name: '코로그' })).toBeInTheDocument();
+		expect(within(navigation).getByRole('heading', { name: 'Colog' })).toBeInTheDocument();
 		expect(within(navigation).getByRole('link', { name: 'Rilog, 글 6개' })).toBeInTheDocument();
 	});
 
@@ -104,7 +104,7 @@ describe('BlogHomeToolbar', () => {
 		const user = userEvent.setup();
 		render(<BlogHomeToolbar blogType="COLOG" slug="rilog-team" filter={{ type: 'all' }} />);
 
-		await user.click(screen.getByRole('button', { name: '인덱스 보기' }));
+		await user.click(screen.getByRole('button', { name: '챕터 보기' }));
 
 		const dialog = screen.getByRole('dialog', { name: '인덱스' });
 		expect(within(dialog).getByRole('navigation', { name: '챕터 탐색' })).toBeInTheDocument();

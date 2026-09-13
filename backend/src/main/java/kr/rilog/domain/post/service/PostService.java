@@ -22,7 +22,7 @@ import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -49,7 +49,7 @@ public class PostService {
     private final BlogMemberRepository blogMemberRepository;
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
-    private final TagAssetsLifecycle tagAssetsLifecycle;
+    private final TagAssetsPublisher tagAssetsPublisher;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -62,7 +62,7 @@ public class PostService {
                 : publishToRilog(command, publishingBlog, writer, chapter);
 
         Post published = postRepository.save(post);
-        tagAssetsLifecycle.attach(published.getTagAssets());
+        tagAssetsPublisher.attach(published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
     }
 
@@ -99,8 +99,8 @@ public class PostService {
         TagAssets previous = post.getTagAssets();
         post.update(command.toDetail(), targetBlog, chapter);
         TagAssets current = post.getTagAssets();
-        tagAssetsLifecycle.synchronize(previous, current);
-
+        tagAssetsPublisher.synchronize(previous, current);
+        System.out.println("이벤트 발송");
         return PostUpdateResult.of(post, targetBlog);
     }
 
@@ -109,6 +109,7 @@ public class PostService {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
         post.delete();
+        tagAssetsPublisher.detach(post.getTagAssets());
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {

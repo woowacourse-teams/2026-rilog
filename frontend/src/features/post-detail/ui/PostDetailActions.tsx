@@ -51,9 +51,23 @@ export default function PostDetailActions({ slug, postId, viewerPermissions }: P
 	};
 	return (
 		<>
-			<div className="absolute top-1/2 right-0 flex -translate-y-1/2 gap-2">
-				{canEdit ? <button onClick={handleEdit}>수정</button> : null}
-				{canDelete ? <button onClick={handleDeleteRequest}>삭제</button> : null}
+			<div className="flex items-center gap-2 before:content-['·']">
+				{canEdit ? (
+					<button
+						className="rounded-sm transition-colors hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
+						onClick={handleEdit}
+					>
+						수정
+					</button>
+				) : null}
+				{canDelete ? (
+					<button
+						className="rounded-sm transition-colors hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+						onClick={handleDeleteRequest}
+					>
+						삭제
+					</button>
+				) : null}
 			</div>
 
 			{canDelete ? (

@@ -13,6 +13,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
+import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
@@ -36,6 +37,12 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 class FeedServiceIntegrationTest extends ServiceSupport {
 
     private static final LocalDateTime BASE_PUBLISHED_AT = LocalDateTime.of(2026, 8, 23, 12, 0);
+    private static final FullFeedSearchCommand DEFAULT_FULL_FEED_SEARCH = new FullFeedSearchCommand(
+            null,
+            null,
+            0,
+            10
+    );
     private static final BlogFeedSearchCommand DEFAULT_SEARCH = new BlogFeedSearchCommand(
             null,
             null,
@@ -71,12 +78,92 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, author));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResponse.PostItemResponse::postId)
                 .containsExactly(publicPublishedPost.getId());
+    }
+
+    @Test
+    @DisplayName("전체 피드에서 카테고리를 선택하면 해당 카테고리 게시글만 반환한다.")
+    void readFullFeedFiltersCategory() {
+        // given
+        User author = saveCompletedUser(27L, "카테고리필터작성자", "full-category-author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "full-category-colog");
+        savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post dailyPost = savePost(PostFixture.dailyPublicPublishedCologPost(rilog, colog, author));
+        FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, null, 0, 10);
+
+        // when
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
+
+        // then
+        assertThat(result.posts())
+                .extracting(FullFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(dailyPost.getId());
+    }
+
+    @Test
+    @DisplayName("전체 피드에서 Colog를 선택하면 Colog에 발행한 게시글만 반환한다.")
+    void readFullFeedFiltersCologPosts() {
+        // given
+        User author = saveCompletedUser(28L, "팀필터작성자", "full-colog-author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "full-colog-filter");
+        savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post cologPost = savePost(PostFixture.publicPublishedColog(rilog, colog, author));
+        FullFeedSearchCommand command = new FullFeedSearchCommand(null, COLOG, 0, 10);
+
+        // when
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
+
+        // then
+        assertThat(result.posts())
+                .extracting(FullFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(cologPost.getId());
+    }
+
+    @Test
+    @DisplayName("전체 피드에서 Rilog를 선택하면 Rilog에 발행한 게시글만 반환한다.")
+    void readFullFeedFiltersRilogPosts() {
+        // given
+        User author = saveCompletedUser(29L, "개인필터작성자", "full-rilog-author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "full-rilog-filter");
+        Post rilogPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        savePost(PostFixture.publicPublishedColog(rilog, colog, author));
+        FullFeedSearchCommand command = new FullFeedSearchCommand(null, RILOG, 0, 10);
+
+        // when
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
+
+        // then
+        assertThat(result.posts())
+                .extracting(FullFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(rilogPost.getId());
+    }
+
+    @Test
+    @DisplayName("전체 피드는 작성자가 발행한 비공개 게시글을 반환하지 않는다.")
+    void readFullFeedExcludesAuthorPrivatePosts() {
+        // given
+        User author = saveCompletedUser(30L, "비공개글작성자", "full-private-author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "full-private-colog");
+        Post publicPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        savePost(PostFixture.privatePublishedRilogPost(rilog, author));
+        savePost(PostFixture.privatePublishedCologPost(rilog, colog, author));
+
+        // when
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
+
+        // then
+        assertThat(result.posts())
+                .extracting(FullFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(publicPost.getId());
     }
 
     @Test
@@ -90,7 +177,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post latestPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.plusMinutes(1)));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -109,7 +196,8 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post latestPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.plusMinutes(2)));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 2);
+        FullFeedSearchCommand command = new FullFeedSearchCommand(null, null, 0, 2);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(command);
 
         // then
         assertSoftly(softly -> {
@@ -133,7 +221,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, rilog);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts()).containsExactly(expected);
@@ -150,7 +238,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, colog);
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts()).containsExactly(expected);
@@ -166,7 +254,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
 
         // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(0, 10);
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
         assertThat(result.posts().getFirst().chapter())

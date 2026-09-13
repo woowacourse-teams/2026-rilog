@@ -13,6 +13,7 @@ import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
+import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -30,13 +31,20 @@ public class FeedService {
     private final PostFeedQueryRepository postFeedQueryRepository;
     private final BlogRepository blogRepository;
 
-    /** 1차 MVP 전체 피드 조회 정책 - 게시됨 + 공개 */
-    public FullFeedPostResponse readFullFeedPostList(int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size);
+    /**
+     * 2차 MVP 피드 조회 정책
+     * 게시됨 + 공개
+     * 카테고리 필터링
+     * 블로그타입 필터링
+     * */
+    public FullFeedPostResponse readFullFeedPostList(FullFeedSearchCommand command) {
+        PageRequest pageable = PageRequest.of(command.page(), command.size());
 
         Slice<PostFullFeedRow> feed = postFeedQueryRepository.findFullFeed(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
+                command.category(),
+                command.blogType(),
                 pageable
         );
 

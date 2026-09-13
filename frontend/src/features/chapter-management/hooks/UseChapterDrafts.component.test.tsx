@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { Chapter } from '../model/chapter';
+import type { Chapter } from '@/domains/chapter/model/chapter';
 
 import { useChapterDrafts } from './use-chapter-drafts';
 
@@ -12,7 +12,6 @@ interface HookProps {
 const CHAPTER: Chapter = {
 	id: 7,
 	name: '프론트엔드',
-	postCount: 3,
 };
 
 describe('useChapterDrafts', () => {

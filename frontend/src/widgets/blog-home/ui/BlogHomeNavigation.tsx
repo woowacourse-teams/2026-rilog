@@ -3,9 +3,9 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { ChapterSummary } from '@/domains/chapter/model/chapter';
 import { useBlogHomeIndex } from '@/features/blog-home-index/hooks/use-blog-home-index';
 import { ALL_BLOG_POSTS_FILTER, buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
-import type { BlogHomeIndexItem } from '@/features/blog-home-index/model/blog-home-index';
 import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import Button from '@/shared/ui/button/Button';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -28,7 +28,7 @@ function NavigationRow({
 	isCurrent,
 	onNavigate,
 }: {
-	item: BlogHomeIndexItem;
+	item: ChapterSummary;
 	filter: PublicBlogPostsFilter;
 	blogType: BlogType;
 	isCurrent: boolean;
@@ -43,7 +43,7 @@ function NavigationRow({
 			scroll={false}
 			aria-label={`${item.name}, 글 ${item.postCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
-			className={isCurrent ? `${ROW_CLASS_NAME} font-semibold text-text-primary` : ROW_CLASS_NAME}
+			className={isCurrent ? `${ROW_CLASS_NAME} bg-surface-hover font-semibold text-text-primary` : ROW_CLASS_NAME}
 			onClick={onNavigate}
 		>
 			<span className="min-w-0 truncate">{item.name}</span>
@@ -70,12 +70,12 @@ function AllPostsRow({
 		<CustomLink
 			href={buildBlogHomeFilterHref(pathname, searchParams, ALL_BLOG_POSTS_FILTER, blogType)}
 			scroll={false}
-			aria-label={`전체보기, 글 ${totalCount}개`}
+			aria-label={`전체, 글 ${totalCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
-			className={`${ROW_CLASS_NAME} w-full ${isCurrent ? 'font-semibold text-text-primary' : ''}`}
+			className={`${ROW_CLASS_NAME} w-full ${isCurrent ? 'bg-surface-hover font-semibold text-text-primary' : ''}`}
 			onClick={onNavigate}
 		>
-			<span className="min-w-0 truncate">전체보기</span>
+			<span className="min-w-0 truncate">전체</span>
 			<span className="shrink-0 text-label-1 text-text-disabled">{totalCount}</span>
 		</CustomLink>
 	);
@@ -151,8 +151,8 @@ export default function BlogHomeNavigation({
 	}
 
 	return (
-		<nav aria-label="시리즈와 코로그 탐색" className="w-full">
-			<h2 className="sr-only">시리즈와 코로그</h2>
+		<nav aria-label="시리즈와 Colog 탐색" className="w-full">
+			<h2 className="sr-only">시리즈와 Colog</h2>
 			{allPostsRow}
 			<section aria-labelledby="series-navigation-title" className="mt-6">
 				<h3 id="series-navigation-title" className="mb-1 text-body-2 font-semibold text-text-primary">
@@ -175,7 +175,7 @@ export default function BlogHomeNavigation({
 
 			<section aria-labelledby="colog-navigation-title" className="mt-6">
 				<h3 id="colog-navigation-title" className="mb-1 text-body-2 font-semibold text-text-primary">
-					코로그
+					Colog
 				</h3>
 				<div className="flex flex-col">
 					{index.cologIndexes.map((colog) => (
@@ -189,7 +189,7 @@ export default function BlogHomeNavigation({
 						/>
 					))}
 					{index.cologIndexes.length === 0 ? (
-						<EmptyIndexMessage>아직 코로그에 작성한 글이 없습니다.</EmptyIndexMessage>
+						<EmptyIndexMessage>아직 Colog에 작성한 글이 없습니다.</EmptyIndexMessage>
 					) : null}
 				</div>
 			</section>

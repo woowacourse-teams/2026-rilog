@@ -2,10 +2,11 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import { COLOG_SLUG_MAX_LENGTH, COLOG_SLUG_MIN_LENGTH, COLOG_SLUG_PATTERN } from '@/domains/blog/model/colog';
 import type { BlogHomeIndex } from '@/features/blog-home-index/model/blog-home-index';
 import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
+import { BLOG_HOME_FILTER_SEARCH_PARAMS } from '@/shared/routes/app-routes';
 
-const SERIES_PARAM = 'series';
-const CHAPTER_PARAM = 'chapter';
-const COLOG_PARAM = 'colog';
+const SERIES_PARAM = BLOG_HOME_FILTER_SEARCH_PARAMS.series;
+const CHAPTER_PARAM = BLOG_HOME_FILTER_SEARCH_PARAMS.chapter;
+const COLOG_PARAM = BLOG_HOME_FILTER_SEARCH_PARAMS.colog;
 const LEGACY_CHAPTER_ID_PARAM = 'chapterId';
 const LEGACY_TARGET_COLOG_SLUG_PARAM = 'targetCologSlug';
 const FILTER_PARAMS = [SERIES_PARAM, CHAPTER_PARAM, COLOG_PARAM] as const;

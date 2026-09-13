@@ -56,7 +56,7 @@ const COLOG = 'COLOG';
 
 const BLOG_OPTIONS = [
 	{ value: RILOG, label: '개인' },
-	{ value: COLOG, label: '코로그' },
+	{ value: COLOG, label: 'Colog' },
 ] as const;
 
 type BlogOption = (typeof BLOG_OPTIONS)[number]['value'];
@@ -103,11 +103,11 @@ export default function PublishSettingsModal({
 	const isCologSelectDisabled =
 		isModalPending || isCologOptionsPending || isCologOptionsError || isCologOptionsRefetching;
 	const cologOptionsStatusMessage = isCologOptionsPending
-		? '코로그 목록을 불러오는 중...'
+		? 'Colog 목록을 불러오는 중...'
 		: isCologOptionsError
-			? '코로그 목록을 불러오지 못했습니다.'
+			? 'Colog 목록을 불러오지 못했습니다.'
 			: cologOptions.length === 0
-				? '소속된 코로그가 없습니다.'
+				? '소속된 Colog가 없습니다.'
 				: undefined;
 
 	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
@@ -208,7 +208,7 @@ export default function PublishSettingsModal({
 							aria-label="게시글 썸네일 미리보기"
 							className="mt-5 overflow-hidden rounded-lg border border-border-default bg-surface"
 						>
-							<div className="aspect-video bg-thumbnail-background">
+							<div className="aspect-video bg-thumbnail-background" data-ph-sensitive-media>
 								{/* 동적 blob/본문 URL을 그대로 미리보기 위한 UI 전용 이미지입니다. */}
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
@@ -218,7 +218,9 @@ export default function PublishSettingsModal({
 								/>
 							</div>
 							<figcaption className="px-4 py-4">
-								<p className="line-clamp-2 text-body-3 font-semibold wrap-break-word text-text-primary">{postTitle}</p>
+								<p className="ph-mask line-clamp-2 text-body-3 font-semibold wrap-break-word text-text-primary">
+									{postTitle}
+								</p>
 							</figcaption>
 						</figure>
 					</section>
@@ -278,7 +280,7 @@ export default function PublishSettingsModal({
 						</fieldset>
 
 						{selectedBlog === COLOG && (
-							<Field label="코로그" controlId="post-colog" required>
+							<Field label="Colog" controlId="post-colog" required>
 								{({ id }) => {
 									const errorId = `${id}-error`;
 									const statusId = `${id}-options-status`;

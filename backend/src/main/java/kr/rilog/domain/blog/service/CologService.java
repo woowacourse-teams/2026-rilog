@@ -11,13 +11,15 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
-import kr.rilog.domain.upload.service.TagAssetsLifecycle;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -32,6 +34,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.OWNER;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -39,17 +43,21 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 @RequiredArgsConstructor
 public class CologService {
 
+    private static final int MAX_COLOG_MEMBER_COUNT = 20;
+    private static final int MAX_COLOG_COUNT_PER_USER = 10;
+
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final ChapterRepository chapterRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final TagAssetsLifecycle tagAssetsLifecycle;
+    private final TagAssetsPublisher tagAssetsPublisher;
     private final Clock clock;
 
     @Transactional
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
         User owner = getUser(ownerId);
+        validateUserCologCount(owner.getId());
         validateSlugUnique(command.slug());
         validateProfileNameUnique(command.name());
 
@@ -63,7 +71,7 @@ public class CologService {
         BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));
         blogMemberRepository.save(ownerMember);
 
-        tagAssetsLifecycle.attach(savedColog.getTagAssets());
+        tagAssetsPublisher.attach(savedColog.getTagAssets());
 
         return CologCreateResult.from(savedColog);
     }
@@ -77,12 +85,14 @@ public class CologService {
 
         User invitee = getUser(command.userId());
         validateNotActiveMember(colog.getId(), invitee.getId());
+        validateCologMemberCount(colog.getId());
+        validateUserCologCount(invitee.getId());
 
         BlogMember member = BlogMember.invite(
                 colog,
                 invitee,
                 command.blogRole(),
-                command.permission(),
+                MEMBER,
                 LocalDateTime.now(clock)
         );
         BlogMember savedMember = blogMemberRepository.save(member);
@@ -108,6 +118,22 @@ public class CologService {
     }
 
     @Transactional
+    public void updateMember(Long requesterId, String slug, Long memberId, CologMemberUpdateCommand command) {
+        if (command.isEmpty()) {
+            throw new BlogException(COLOG_MEMBER_UPDATE_REQUEST_EMPTY);
+        }
+
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
+
+        requesterMember.updateMemberInformation(targetMember, command.permission(), command.blogRole());
+        if (command.permission() == OWNER) {
+            colog.transferOwnerTo(targetMember.getUser());
+        }
+    }
+
+    @Transactional
     public void deleteColog(Long requesterId, String slug) {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
@@ -117,6 +143,19 @@ public class CologService {
         colog.delete();
         blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
+    }
+
+    public List<BlogMemberResult> getCologMembers(String slug) {
+        Blog colog = getColog(slug);
+
+        return blogMemberRepository.findAllWithUserByBlogIdAndStatus(colog.getId(), BlogMemberStatus.ACTIVE).stream()
+                .map(BlogMemberResult::from)
+                .toList();
+    }
+
+    private Blog getColog(String slug) {
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
     }
 
     public List<MyCologResponse> getMyCologsOverview(Long requesterId) {
@@ -165,6 +204,18 @@ public class CologService {
     private void validateNotActiveMember(Long blodIg, Long userId) {
         if (blogMemberRepository.existsByBlogIdAndUserIdAndStatus(blodIg, userId, BlogMemberStatus.ACTIVE)) {
             throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateCologMemberCount(Long cologId) {
+        if (blogMemberRepository.countActiveMembersByBlogId(cologId) >= MAX_COLOG_MEMBER_COUNT) {
+            throw new BlogException(COLOG_MEMBER_COUNT_EXCEEDED);
+        }
+    }
+
+    private void validateUserCologCount(Long userId) {
+        if (blogMemberRepository.countActiveCologsByUserId(userId) >= MAX_COLOG_COUNT_PER_USER) {
+            throw new BlogException(USER_COLOG_COUNT_EXCEEDED);
         }
     }
 

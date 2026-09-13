@@ -1,0 +1,855 @@
+.page {
+	--about-gutter: clamp(1.25rem, 4.2vw, 5rem);
+	--about-grid-gap: clamp(0.75rem, 1.3vw, 1.5rem);
+	--about-display-font: 'Futura PT', Futura, 'Century Gothic', var(--font-sans);
+	--about-display-weight: 500;
+	min-width: 0;
+	overflow-x: clip;
+	background: var(--neutral-50);
+	color: var(--navy-900);
+	overflow-wrap: normal;
+	word-break: keep-all;
+}
+
+.manifestoSection h2 span {
+	color: var(--navy-500);
+}
+
+.manifestoSection h2,
+.intermission h2,
+.closingSection h2 {
+	font-family: var(--about-display-font);
+	font-style: normal;
+	font-weight: var(--about-display-weight);
+}
+
+.linkSection a:focus-visible,
+.closingActions a:focus-visible {
+	border-radius: 0.125rem;
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 0.25rem;
+}
+
+.heroMeaningSequence {
+	position: relative;
+	height: 240dvh;
+}
+
+.hero {
+	position: sticky;
+	top: 0;
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	grid-template-rows: auto minmax(26rem, 1fr) auto;
+	column-gap: var(--about-grid-gap);
+	height: 100dvh;
+	min-height: max(43rem, 100dvh);
+	overflow: hidden;
+	padding: clamp(2rem, 4vw, 3.5rem) var(--about-gutter) clamp(2rem, 4vw, 3.5rem);
+}
+
+.heroIntroduction {
+	position: absolute;
+	bottom: clamp(3.5rem, 8vh, 6rem);
+	left: 50%;
+	width: min(calc(100% - 2 * var(--about-gutter)), 30rem);
+	margin: 0;
+	opacity: 0;
+	font-size: var(--text-body-2);
+	font-weight: 500;
+	line-height: 1.6;
+	text-align: center;
+	transform: translate3d(-50%, 2.5rem, 0);
+	will-change: opacity, transform;
+}
+
+.heroIconHeading {
+	grid-column: 1 / -1;
+	display: flex;
+	align-self: center;
+	align-items: flex-end;
+	width: max-content;
+	margin: 0;
+	transform-origin: left center;
+	will-change: transform;
+}
+
+.heroIconHeading img {
+	display: block;
+	flex: none;
+	width: clamp(18rem, 54vw, 52rem);
+	height: auto;
+}
+
+.continuationClip {
+	display: block;
+	flex: none;
+	width: 0;
+	padding-bottom: clamp(0.5rem, 2vw, 2rem);
+	overflow: hidden;
+	opacity: 0;
+	will-change: width, opacity;
+}
+
+.continuationText {
+	display: block;
+	padding-right: 0.08em;
+	color: var(--navy-900);
+	font-family: var(--about-display-font);
+	font-size: clamp(7rem, 21.5vw, 20.5rem);
+	font-weight: var(--about-display-weight);
+	line-height: 1;
+	letter-spacing: -0.055em;
+	white-space: nowrap;
+}
+
+.continuationParenthesis {
+	display: inline-block;
+	padding-bottom: 0.08em;
+	font-size: 0.72em;
+	font-weight: 600;
+	letter-spacing: -0.025em;
+	transform: translateY(-0.08em);
+	vertical-align: baseline;
+}
+
+.heroMeaningCopy {
+	position: absolute;
+	top: 64%;
+	left: 50%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: clamp(1.5rem, 3vw, 2.5rem);
+	width: min(calc(100% - 2 * var(--about-gutter)), 46rem);
+	margin: 0;
+	opacity: 0;
+	text-align: center;
+	transform: translate3d(-50%, calc(-50% + 2rem), 0);
+	will-change: opacity, transform;
+}
+
+.heroMeaningStatement {
+	margin: 0;
+	font-size: clamp(1.375rem, 2vw, 2rem);
+	font-weight: 500;
+	line-height: 1.18;
+	letter-spacing: -0.04em;
+	text-align: center;
+}
+
+.heroMeaningDescription {
+	width: min(100%, 32rem);
+	margin: 0;
+	color: var(--color-text-secondary);
+	font-size: var(--text-body-2);
+	font-weight: 400;
+	line-height: 1.65;
+	text-align: center;
+}
+
+.meaningAnchor {
+	position: absolute;
+	bottom: 100dvh;
+	left: 0;
+	width: 1px;
+	height: 1px;
+}
+
+.scrollCue {
+	position: absolute;
+	z-index: 1;
+	top: calc(100dvh - clamp(4.5rem, 8vh, 6rem));
+	left: 50%;
+	display: grid;
+	width: 2.75rem;
+	height: 2.75rem;
+	place-items: center;
+	border-radius: 9999px;
+	color: var(--navy-900);
+	pointer-events: none;
+	transform: translateX(-50%);
+	will-change: opacity;
+}
+
+.scrollCue svg {
+	display: block;
+	width: 2rem;
+	height: 2rem;
+}
+
+.manifestoSection {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	align-items: start;
+	column-gap: clamp(0.5rem, 1vw, 1rem);
+	row-gap: clamp(2.25rem, 3.5vw, 4rem);
+	min-height: 42rem;
+	padding: clamp(7rem, 14vw, 14rem) 0;
+}
+
+.manifestoOpening {
+	grid-template-columns: repeat(9, minmax(0, 1fr));
+	min-height: auto;
+	padding-top: clamp(14rem, 26vw, 26rem);
+	padding-right: clamp(1.25rem, 2.5vw, 3rem);
+	padding-bottom: clamp(3rem, 6vw, 6rem);
+}
+
+.manifestoOpening h2 {
+	grid-column: 1 / -1;
+}
+
+.manifestoSection h2 {
+	grid-column: 1 / 9;
+	margin: 0;
+	font-size: clamp(5rem, 18vw, 14rem);
+	font-weight: var(--about-display-weight);
+	line-height: 0.92;
+	letter-spacing: -0em;
+}
+
+.manifestoReverse h2 {
+	grid-column: 1 / -1;
+	text-align: right;
+}
+
+.manifestoReverse {
+	grid-template-columns: repeat(9, minmax(0, 1fr));
+	min-height: auto;
+	padding-top: clamp(3rem, 6vw, 6rem);
+	padding-bottom: clamp(12rem, 24vw, 24rem);
+	padding-left: clamp(1.25rem, 2.5vw, 3rem);
+}
+
+.manifestoSeparator {
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	gap: 1.5rem;
+	margin-block: clamp(3.5rem, 7vw, 7rem);
+}
+
+.manifestoSeparator span {
+	width: 1.125rem;
+	height: 1.125rem;
+	border-radius: 50%;
+	background: var(--navy-500);
+}
+
+.manifestoMeaningSection {
+	padding: clamp(7rem, 14vw, 14rem) var(--about-gutter) clamp(1.4rem, 2.8vw, 2.8rem);
+	background: var(--surface);
+}
+
+.manifestoMeaningHeader {
+	max-width: 48rem;
+	margin: 0 auto;
+	padding: clamp(3rem, 5vw, 5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(2rem, 3vw, 2.5rem);
+	text-align: center;
+}
+
+.manifestoMeaningHeader h2 {
+	margin: 0;
+	font-size: clamp(var(--text-heading-4), 4vw, var(--text-heading-1));
+	font-weight: 800;
+	line-height: 1.18;
+	letter-spacing: -0.025em;
+}
+
+.manifestoMeaningDivider {
+	max-width: 48rem;
+	margin: 0;
+	margin-inline: auto;
+}
+
+.manifestoMeaningBody {
+	max-width: 48rem;
+	margin: 0 auto;
+	padding: clamp(2.5rem, 5vw, 5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(3rem, 5vw, 5rem);
+	font-size: var(--text-body-2);
+	line-height: 1.65;
+}
+
+.manifestoMeaningBody p,
+.manifestoMeaningBody blockquote {
+	margin: 0;
+}
+
+.manifestoMeaningBody > p + p,
+.manifestoMeaningBody blockquote,
+.manifestoMeaningBody blockquote + p {
+	margin-top: 2rem;
+}
+
+.manifestoMeaningBody blockquote {
+	padding-left: 1.25rem;
+	border-left: 3px solid var(--border-default);
+}
+
+.manifestoMeaningSubheading {
+	font-size: var(--text-title-2);
+	line-height: var(--text-title-2--line-height);
+}
+
+.manifestoMeaningBody code {
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+	background: var(--neutral-100);
+	font-size: 0.9em;
+}
+
+.linkSection {
+	padding-block: clamp(4rem, 8vw, 8rem) 0;
+}
+
+.linkSection a {
+	display: block;
+	width: 100%;
+	border-top: 1px solid var(--navy-300);
+	color: inherit;
+	font-size: clamp(1.75rem, 6vw, 4.5rem);
+	font-weight: 400;
+	letter-spacing: -0.025em;
+	text-decoration: none;
+}
+
+.linkContent {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-height: clamp(6rem, 14vw, 12rem);
+	padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.linkLabel {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3em;
+	white-space: nowrap;
+}
+
+.linkLogo {
+	position: relative;
+	display: inline-block;
+	width: 2.5em;
+	aspect-ratio: 1186 / 472;
+	background: currentColor;
+	-webkit-mask: url('/brand/logo.svg') center / contain no-repeat;
+	mask: url('/brand/logo.svg') center / contain no-repeat;
+	transform: translateY(0.08em);
+}
+
+.linkLogo::after {
+	position: absolute;
+	top: 60.1%;
+	left: 92.78%;
+	width: 7.2%;
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: var(--navy-500);
+	content: '';
+}
+
+.linkSection a:is(:hover, :focus-visible, :active) .linkLogo::after {
+	background: var(--focus-ring);
+}
+
+.linkSection a:last-child {
+	border-bottom: 1px solid var(--navy-300);
+}
+
+.linkSection a:hover,
+.linkSection a:focus-visible,
+.linkSection a:active {
+	color: var(--focus-ring);
+}
+
+.productSection,
+.roadmapSection {
+	padding: clamp(7rem, 12vw, 12rem) var(--about-gutter);
+}
+
+.productSection {
+	padding-top: clamp(11rem, 18vw, 18rem);
+}
+
+.roadmapTransition {
+	width: 1px;
+	height: clamp(9rem, 14vw, 14rem);
+	margin: 0 auto clamp(8rem, 14vw, 14rem);
+	background: var(--navy-400);
+}
+
+.featureRow,
+.roadmapRow {
+	display: grid;
+	align-items: start;
+	column-gap: 1.5rem;
+	margin-bottom: clamp(10rem, 18vw, 18rem);
+}
+
+.featureRow {
+	grid-template-columns: minmax(14rem, 3fr) minmax(0, 9fr);
+}
+
+.roadmapRow {
+	grid-template-columns: minmax(14rem, 4fr) minmax(0, 8fr);
+}
+
+.featureCopy {
+	grid-column: 1;
+	justify-self: end;
+	max-width: 17rem;
+	text-align: right;
+}
+
+.featureCopy h3,
+.roadmapCopy h3 {
+	margin: 0 0 1.25rem;
+	font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+	font-weight: 700;
+	line-height: 1.08;
+	letter-spacing: -0.04em;
+}
+
+.featureCopy p,
+.roadmapCopy p {
+	margin: 0;
+	font-size: var(--text-body-2);
+	font-weight: 500;
+	line-height: 1.65;
+}
+
+.imagePlaceholder {
+	min-height: 24rem;
+	background-color: var(--navy-100);
+	background-image: repeating-linear-gradient(
+		135deg,
+		transparent 0,
+		transparent 0.75rem,
+		var(--navy-200) 0.75rem,
+		var(--navy-200) 0.8125rem
+	);
+	border: 1px solid var(--navy-400);
+}
+
+.productImage,
+.roadmapImage {
+	position: relative;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--neutral-100);
+	border: 1px solid var(--navy-200);
+}
+
+.productImage img,
+.roadmapImage img {
+	object-fit: cover;
+}
+
+.productImage {
+	grid-column: 2;
+	aspect-ratio: 1303 / 726;
+}
+
+.roadmapImage {
+	grid-column: 2;
+	aspect-ratio: 942 / 330;
+}
+
+.intermission {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	align-items: end;
+	gap: var(--about-grid-gap);
+	min-height: 48rem;
+	padding: clamp(5rem, 8vw, 8rem) var(--about-gutter);
+	background: var(--navy-900);
+	color: var(--text-on-dark);
+}
+
+.intermission h2 {
+	grid-column: 1 / 11;
+	align-self: center;
+	margin: 0;
+	font-size: clamp(4.5rem, 10vw, 9.5rem);
+	font-weight: var(--about-display-weight);
+	line-height: 0.94;
+	letter-spacing: -0.045em;
+}
+
+.intermission h2 span {
+	color: var(--navy-400);
+}
+
+.intermission p {
+	grid-column: 9 / -1;
+	max-width: 21rem;
+	margin: 0;
+	color: var(--navy-300);
+	font-size: var(--text-body-2);
+	font-weight: 500;
+	line-height: 1.65;
+	text-align: left;
+}
+
+.roadmapSection {
+	background: var(--navy-100);
+}
+
+.roadmapCopy {
+	grid-column: 1;
+	justify-self: end;
+	max-width: 19rem;
+	text-align: right;
+}
+
+.roadmapRow > .imagePlaceholder {
+	grid-column: 2;
+	min-height: 27rem;
+}
+
+.roadmapCompact {
+	grid-template-columns: minmax(0, 7fr) minmax(14rem, 3fr);
+	padding-left: 8.333%;
+}
+
+.roadmapCompact > .imagePlaceholder {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 17rem;
+}
+
+.roadmapCompact .roadmapCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.roadmapTall {
+	grid-template-columns: minmax(0, 9fr) minmax(14rem, 3fr);
+}
+
+.roadmapTall .roadmapCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.roadmapTall > .imagePlaceholder {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 35rem;
+}
+
+.roadmapWide {
+	grid-template-columns: minmax(14rem, 4fr) minmax(0, 8fr);
+}
+
+.roadmapWide > .imagePlaceholder {
+	grid-column: 2;
+	grid-row: 1;
+	min-height: 23rem;
+}
+
+.roadmapWide .roadmapCopy {
+	grid-column: 1;
+	grid-row: 1;
+	justify-self: end;
+	text-align: right;
+}
+
+.roadmapInset {
+	grid-template-columns: minmax(0, 5fr) minmax(14rem, 3fr);
+	padding-inline: 8.333%;
+}
+
+.roadmapInset .roadmapCopy {
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+	text-align: left;
+}
+
+.roadmapInset > .imagePlaceholder {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 19rem;
+}
+
+.roadmapLast {
+	grid-template-columns: minmax(14rem, 4fr) minmax(0, 8fr);
+}
+
+.roadmapLast > .imagePlaceholder {
+	grid-column: 2;
+	grid-row: 1;
+	min-height: 30rem;
+}
+
+.roadmapLast .roadmapCopy {
+	grid-column: 1;
+	grid-row: 1;
+	justify-self: end;
+	text-align: right;
+}
+
+.closingSection {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	grid-template-rows: 1fr auto;
+	align-items: end;
+	gap: var(--about-grid-gap);
+	min-height: 100dvh;
+	padding: clamp(5rem, 8vw, 8rem) var(--about-gutter) 5rem;
+	background: var(--brand-primary);
+	color: var(--white);
+}
+
+.closingSection h2 {
+	grid-column: 1 / 11;
+	align-self: center;
+	margin: 0;
+	font-size: clamp(4.5rem, 10vw, 9.5rem);
+	font-weight: var(--about-display-weight);
+	line-height: 0.94;
+	letter-spacing: -0.045em;
+}
+
+.closingSection h2 span {
+	color: var(--navy-200);
+}
+
+.closingActions {
+	grid-column: 8 / -1;
+	display: grid;
+	align-self: end;
+}
+
+.closingActions a {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 3.5rem;
+	border-top: 1px solid color-mix(in srgb, var(--white) 65%, transparent);
+	color: inherit;
+	font-size: var(--text-body-2);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.closingActions a:hover,
+.closingActions a:active {
+	color: var(--focus-ring);
+}
+
+@media (width < 64rem) {
+	.manifestoSection {
+		align-content: start;
+		min-height: 36rem;
+		row-gap: clamp(2.25rem, 4vw, 3.25rem);
+	}
+
+	.manifestoOpening,
+	.manifestoReverse {
+		grid-template-columns: repeat(9, minmax(0, 1fr));
+	}
+
+	.manifestoSection h2 {
+		grid-column: 1 / -1;
+	}
+
+	.manifestoOpening h2 {
+		text-align: left;
+	}
+
+	.manifestoReverse h2 {
+		text-align: right;
+	}
+}
+
+@media (width < 48rem) {
+	.manifestoOpening,
+	.manifestoReverse {
+		grid-template-columns: 1fr;
+	}
+
+	.hero {
+		grid-template-rows: auto minmax(21rem, 1fr) auto;
+		min-height: max(40rem, 100dvh);
+	}
+
+	.heroIntroduction {
+		bottom: clamp(3rem, 8vh, 5rem);
+		width: min(calc(100% - 2 * var(--about-gutter)), 24rem);
+	}
+
+	.heroIconHeading img {
+		width: clamp(15rem, 72vw, 22rem);
+	}
+
+	.continuationClip {
+		padding-bottom: clamp(0.4rem, 2vw, 0.75rem);
+	}
+
+	.continuationText {
+		font-size: clamp(5.5rem, 22vw, 7.5rem);
+	}
+
+	.heroMeaningCopy {
+		top: 58%;
+	}
+
+	.heroMeaningStatement {
+		font-size: clamp(1.25rem, 5vw, 1.5rem);
+	}
+
+	.featureRow,
+	.roadmapRow {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		padding-inline: 0;
+	}
+
+	.featureCopy,
+	.roadmapCopy,
+	.roadmapCompact .roadmapCopy,
+	.roadmapWide .roadmapCopy,
+	.roadmapLast .roadmapCopy {
+		order: 1;
+		align-self: flex-start;
+		justify-self: start;
+		max-width: 22rem;
+		text-align: left;
+	}
+
+	.productImage,
+	.roadmapRow > .roadmapImage,
+	.roadmapRow > .imagePlaceholder {
+		order: 2;
+		width: 100%;
+	}
+
+	.roadmapTall > .imagePlaceholder,
+	.roadmapLast > .imagePlaceholder {
+		min-height: 26rem;
+	}
+
+	.roadmapCompact > .imagePlaceholder,
+	.roadmapInset > .imagePlaceholder {
+		width: 82%;
+		min-height: 17rem;
+	}
+
+	.intermission {
+		display: flex;
+		min-height: 42rem;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.intermission p {
+		align-self: flex-end;
+	}
+
+	.closingSection {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.closingActions {
+		width: min(100%, 23rem);
+		align-self: flex-end;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.scrollCue svg {
+		animation: scroll-cue-bounce 1.6s ease-in-out infinite;
+	}
+
+	.closingActions a {
+		transition: color 160ms ease;
+	}
+
+	.linkSection a {
+		transition: color 160ms ease;
+	}
+
+	.page [data-about-reveal] {
+		opacity: 0;
+		transform: translate3d(0, 1.75rem, 0);
+		transition:
+			opacity 700ms ease,
+			transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+		transition-delay: 0ms;
+		will-change: opacity, transform;
+	}
+
+	.page [data-about-reveal='media'] {
+		transform: translate3d(0, 3rem, 0);
+		transition-duration: 850ms, 1000ms;
+	}
+
+	.page [data-about-reveal='line'] {
+		opacity: 1;
+		transform: scaleY(0);
+		transform-origin: top;
+	}
+
+	.page [data-about-reveal-delay='staggered'] {
+		transition-delay: 140ms;
+	}
+
+	.page [data-about-reveal-visible='true'] {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+
+	@keyframes scroll-cue-bounce {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+
+		50% {
+			transform: translateY(0.5rem);
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.heroMeaningSequence {
+		height: auto;
+	}
+
+	.hero {
+		position: relative;
+	}
+
+	.continuationClip {
+		width: auto;
+		opacity: 1;
+	}
+
+	.heroMeaningCopy {
+		opacity: 1;
+		transform: translate3d(-50%, -50%, 0);
+	}
+
+	.page [data-about-reveal] {
+		opacity: 1;
+		transform: none;
+	}
+
+	.heroIntroduction {
+		opacity: 1;
+		transform: translate3d(-50%, 0, 0);
+	}
+}

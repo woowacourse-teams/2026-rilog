@@ -12,7 +12,7 @@ export const buildDraftPublishRequest = async (
 	uploadRepresentativeImage: UploadRepresentativeImage,
 ): Promise<DraftPublishRequest> => {
 	if (settings.blog === null) {
-		throw new Error('코로그를 선택해 주세요.');
+		throw new Error('Colog를 선택해 주세요.');
 	}
 
 	let thumbnailImageUrl =
@@ -29,7 +29,7 @@ export const buildDraftPublishRequest = async (
 		slug: settings.blog.slug,
 		title: document.title,
 		content: document.blocks,
-		category: settings.category === 'IT' ? 'TECH' : settings.category,
+		category: settings.category,
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,
 		chapterId: settings.chapterId,

@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Chapter } from '@/domains/chapter/model/chapter';
 import type { useChapterManagement } from '@/features/chapter-management/hooks/use-chapter-management';
-import type { Chapter } from '@/features/chapter-management/model/chapter';
 
 import RilogSeriesManagementSection from './RilogSeriesManagementSection';
 
 const SERIES: Chapter[] = [
-	{ id: 1, name: '웹 개발', postCount: 3 },
-	{ id: 2, name: '기록', postCount: 7 },
+	{ id: 1, name: '웹 개발' },
+	{ id: 2, name: '기록' },
 ];
 
 const createManagement = (
@@ -53,9 +53,13 @@ describe('RilogSeriesManagementSection', () => {
 		render(<RilogSeriesManagementSection management={createManagement({ requestChapterDelete })} />);
 
 		expect(screen.getByRole('table', { name: '시리즈 목록' })).toBeInTheDocument();
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: '시리즈' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '기록 시리즈 삭제' })).toBeInTheDocument();
+		const seriesRows = screen.getAllByRole('row').slice(1);
+		expect(seriesRows[0]).toHaveTextContent('1');
+		expect(seriesRows[1]).toHaveTextContent('2');
 
 		await user.click(screen.getByRole('button', { name: '웹 개발 시리즈 삭제' }));
 		expect(requestChapterDelete).toHaveBeenCalledWith(SERIES[0]);
@@ -76,10 +80,35 @@ describe('RilogSeriesManagementSection', () => {
 		expect(screen.getByRole('textbox', { name: '시리즈 이름' })).toHaveAttribute('maxlength', '20');
 	});
 
+	it('챕터 개수 제한 오류를 시리즈 맥락의 프론트엔드 문구로 표시한다', () => {
+		render(
+			<RilogSeriesManagementSection
+				management={createManagement({
+					isCreateModalOpen: true,
+					createError: {
+						type: 'api',
+						detail: {
+							status: 400,
+							error: 'BAD_REQUEST',
+							errorCode: 'CHAPTER_COUNT_EXCEEDED',
+							message: '챕터는 최대 30개까지 생성할 수 있습니다.',
+							invalidParams: null,
+						},
+					} as unknown as Error,
+				})}
+			/>,
+		);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('시리즈는 최대 30개까지 추가할 수 있습니다.');
+		expect(screen.getByRole('alert')).not.toHaveTextContent('챕터는 최대 30개까지 생성할 수 있습니다.');
+	});
+
 	it('시리즈 이름 수정 입력을 20자로 제한한다', () => {
 		render(<RilogSeriesManagementSection management={createManagement({ isEditing: true })} />);
 
-		expect(screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' })).toHaveAttribute('maxlength', '20');
+		const input = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
+		expect(input).toHaveAttribute('maxlength', '20');
+		expect(input).toHaveAttribute('data-ph-sensitive-attribute');
 	});
 
 	it('조회 중 상태와 빈 상태를 렌더링한다', () => {

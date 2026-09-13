@@ -21,6 +21,8 @@ import { INITIAL_COLOG_CREATE_VALUE } from '../model/colog-create';
 import CologCreateFormFields from './CologCreateFormFields';
 
 interface CologCreateFormProps {
+	creationDisabledDescriptionId?: string;
+	isCreationDisabled?: boolean;
 	navigate?: (href: string) => void;
 }
 
@@ -33,6 +35,8 @@ const COLOG_CREATE_INVALID_FIELD_ALLOWLIST = new Set([
 	'serviceUrl',
 	'githubUrl',
 ]);
+
+const COLOG_CREATE_ERROR_FALLBACK_MESSAGE = '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
 
 const getApiErrorDetail = (error: unknown) => {
 	if (
@@ -69,7 +73,11 @@ const getCologCreateErrorCode = (error: unknown) => {
 	return detail?.errorCode ?? getAnalyticsErrorProperties(error).errorCode;
 };
 
-export default function CologCreateForm({ navigate }: CologCreateFormProps) {
+export default function CologCreateForm({
+	creationDisabledDescriptionId,
+	isCreationDisabled = false,
+	navigate,
+}: CologCreateFormProps) {
 	const router = useRouter();
 	const form = useCologCreateForm({ initialValue: INITIAL_COLOG_CREATE_VALUE });
 	const [isNameAvailabilityRequired, setIsNameAvailabilityRequired] = useState(false);
@@ -114,7 +122,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
-		if (isCreating) {
+		if (isCreating || isCreationDisabled) {
 			return;
 		}
 
@@ -170,7 +178,7 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 		}
 	};
 
-	const errorMessage = error?.message || '팀을 만들지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.';
+	const errorMessage = getApiErrorMessage(error, COLOG_CREATE_ERROR_FALLBACK_MESSAGE);
 	const nameAvailabilityMessage = nameAvailability.isSuccess
 		? nameAvailability.data.message
 		: nameAvailability.isError
@@ -241,7 +249,14 @@ export default function CologCreateForm({ navigate }: CologCreateFormProps) {
 				>
 					취소
 				</Button>
-				<Button type="submit" size="lg" className="w-full sm:w-40" isPending={isCreating}>
+				<Button
+					type="submit"
+					size="lg"
+					className="w-full sm:w-40"
+					disabled={isCreationDisabled}
+					isPending={isCreating}
+					aria-describedby={creationDisabledDescriptionId}
+				>
 					{isCreating ? '팀 만드는 중' : '팀 만들기'}
 				</Button>
 			</div>

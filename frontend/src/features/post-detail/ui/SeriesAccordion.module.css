@@ -1,0 +1,31 @@
+.accordion {
+	interpolate-size: allow-keywords;
+}
+
+.accordion::details-content {
+	block-size: 0;
+	opacity: 0;
+	overflow-y: clip;
+	transition:
+		block-size 200ms ease-out,
+		opacity 150ms ease-out,
+		content-visibility 200ms allow-discrete;
+}
+
+.accordion[open]::details-content {
+	block-size: auto;
+	opacity: 1;
+}
+
+@starting-style {
+	.accordion[open]::details-content {
+		block-size: 0;
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.accordion::details-content {
+		transition: none;
+	}
+}
