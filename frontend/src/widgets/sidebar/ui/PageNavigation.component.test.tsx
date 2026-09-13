@@ -28,6 +28,8 @@ const { postsCountQuery } = vi.hoisted(() => {
 	return { postsCountQuery: { current } };
 });
 const route = vi.hoisted(() => ({ pathname: '/feeds', searchParams: new URLSearchParams() }));
+const analyticsMock = vi.hoisted(() => ({ sidebarFeedFilterClicked: vi.fn() }));
+vi.mock('@/features/analytics/model/events', () => ({ analytics: analyticsMock }));
 vi.mock('next/navigation', () => ({
 	usePathname: () => route.pathname,
 	useSearchParams: () => route.searchParams,
@@ -58,6 +60,7 @@ vi.mock('@/shared/api/posts/queries/posts-count/use-query', () => ({
 
 describe('PageNavigation', () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
 		route.pathname = '/feeds';
 		route.searchParams = new URLSearchParams();
 		postsCountQuery.current = {
@@ -65,6 +68,18 @@ describe('PageNavigation', () => {
 			isPending: false,
 			isFetching: false,
 		};
+	});
+
+	it('Feed, Personal, Colog 클릭을 선택한 피드 범위와 함께 기록한다', () => {
+		render(<PageNavigation />);
+
+		fireEvent.click(screen.getByRole('link', { name: '피드 글 123개' }));
+		fireEvent.click(screen.getByRole('link', { name: 'Personal' }));
+		fireEvent.click(screen.getByRole('link', { name: 'Colog' }));
+
+		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(1, { feedScope: 'ALL' });
+		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(2, { feedScope: 'RILOG' });
+		expect(analyticsMock.sidebarFeedFilterClicked).toHaveBeenNthCalledWith(3, { feedScope: 'COLOG' });
 	});
 
 	afterEach(() => {

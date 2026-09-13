@@ -29,6 +29,8 @@ export type BlogProfileEntrySource =
 export type ReleaseNoteCloseMethod = 'close_icon' | 'close_button' | 'dismiss_forever';
 // 패치노트에서 어떤 후속 콘텐츠로 이동하는지 구분한다.
 export type ReleaseNoteLinkTarget = 'release_note' | 'about';
+// 사이드바에서 선택한 전체·개인·Colog 피드 범위를 기존 API의 blog type과 같은 값으로 기록한다.
+export type FeedScope = 'ALL' | 'RILOG' | 'COLOG';
 //  사용자가 이미지를 어떻게 마련하는지 파악해 업로드 UX나 자동 대표 이미지 정책을 개선할 수 있음
 export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 // 게시글을 온전히 소비했는지 지표

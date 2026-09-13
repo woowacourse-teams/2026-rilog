@@ -8,6 +8,7 @@ import type {
 	ContentLoadSurface,
 	EditingTimeBucket,
 	EditorEntrySource,
+	FeedScope,
 	ImageSource,
 	LoginEntrySurface,
 	PostNavigationClickPart,
@@ -50,6 +51,8 @@ export const analytics = {
 			release_note_id: releaseNoteId,
 			link_target: linkTarget,
 		}),
+	sidebarFeedFilterClicked: ({ feedScope }: { feedScope: FeedScope }) =>
+		captureAnalyticsEvent('sidebar feed filter clicked', { feed_scope: feedScope }),
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>
 		captureAnalyticsEvent('github login started', { entry_surface: entrySurface, redirect_target: redirectTarget }),
 	githubLoginCompleted: ({ userType }: { userType: 'new' | 'returning' }) =>

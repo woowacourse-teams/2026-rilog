@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from 'next/navigation';
 
+import { analytics } from '@/features/analytics/model/events';
 import { buildFeedFilterHref, parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
 import { navigateFeedFilter } from '@/features/post-feed/lib/navigate-feed-filter';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
@@ -63,6 +64,7 @@ export default function PageNavigation() {
 		<nav aria-label="주요 메뉴" className="pt-2">
 			<SidebarNavigationLink
 				href={feedHref}
+				onClick={() => analytics.sidebarFeedFilterClicked({ feedScope: 'ALL' })}
 				scroll={!isFeedPage}
 				onNavigate={handleFeedNavigation(feedHref)}
 				accessibilityLabel={feedAccessibilityLabel}
@@ -79,6 +81,7 @@ export default function PageNavigation() {
 						<li key={blogType}>
 							<SidebarNavigationLink
 								href={href}
+								onClick={() => analytics.sidebarFeedFilterClicked({ feedScope: blogType })}
 								scroll={!isFeedPage}
 								onNavigate={handleFeedNavigation(href)}
 								icon={icon}

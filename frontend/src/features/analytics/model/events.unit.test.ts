@@ -59,6 +59,14 @@ describe('analytics events', () => {
 		});
 	});
 
+	it('사이드바 피드 필터를 canonical payload로 전송한다', () => {
+		analytics.sidebarFeedFilterClicked({ feedScope: 'RILOG' });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('sidebar feed filter clicked', {
+			feed_scope: 'RILOG',
+		});
+	});
+
 	it('읽기, 발행, Co-log 초대 이벤트를 canonical 이름으로 전송한다', () => {
 		analytics.postReadEngaged({ postId: 12, engagementSeconds: 8, scrollDepthBucket: '50_percent' });
 		analytics.postPublished({
