@@ -49,11 +49,11 @@ export default function AboutPage() {
 			</section>
 
 			<section className={styles.manifestoMeaningSection} aria-label="Rilog의 의미">
-				<header className={styles.manifestoMeaningHeader}>
+				<header className={styles.manifestoMeaningHeader} data-about-reveal="copy">
 					<h2>Rilog.는 사람들의 이야기와 생각이 쌓이는 공간입니다.</h2>
 				</header>
 				<Divider className={styles.manifestoMeaningDivider} />
-				<div className={styles.manifestoMeaningBody}>
+				<div className={styles.manifestoMeaningBody} data-about-reveal="copy" data-about-reveal-delay="staggered">
 					<p>
 						인터넷에는 수많은 정보와 이야기가 빠르게 흘러갑니다. 그 안에서 Rilog.는 조금 더 천천히 읽고, 깊이 생각하고,
 						오래 남길 수 있는 공간을 만들고자 합니다. 단순하고 편안한 글쓰기 경험을 제공하면서도, 각자의 이야기가 그것을
@@ -95,11 +95,11 @@ export default function AboutPage() {
 						기록합니다. 그렇게 쌓인 글에는 한 팀의 지식과 문화, 그리고 그 안에서 성장한 사람들의 이야기가 담깁니다.
 					</p>
 				</div>
-				<footer className={styles.linkSection} aria-label="Rilog 둘러보기">
+				<footer className={styles.linkSection} aria-label="Rilog 둘러보기" data-about-reveal="copy">
 					<Link href={APP_ROUTES.feeds}>
 						<span className={styles.linkContent}>
 							<span className={styles.linkLabel}>
-								<span>continue to</span>
+								<span>Continue to</span>
 								<span className={styles.linkLogo} role="img" aria-label="Rilog." />
 							</span>
 							<span aria-hidden="true">↗</span>
