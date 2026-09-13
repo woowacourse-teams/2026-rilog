@@ -115,7 +115,7 @@
 
 .heroMeaningCopy {
 	position: absolute;
-	bottom: clamp(10rem, 22vh, 14rem);
+	top: 64%;
 	left: 50%;
 	display: flex;
 	flex-direction: column;
@@ -124,18 +124,14 @@
 	width: min(calc(100% - 2 * var(--about-gutter)), 46rem);
 	margin: 0;
 	opacity: 0;
-	font-size: var(--text-body-4);
-	font-weight: 500;
-	line-height: var(--text-body-4--line-height);
-	letter-spacing: normal;
 	text-align: center;
-	transform: translate3d(-50%, 2rem, 0);
+	transform: translate3d(-50%, calc(-50% + 2rem), 0);
 	will-change: opacity, transform;
 }
 
 .heroMeaningStatement {
 	margin: 0;
-	font-size: clamp(1rem, 1.55vw, 1.5rem);
+	font-size: clamp(1.375rem, 2vw, 2rem);
 	font-weight: 500;
 	line-height: 1.18;
 	letter-spacing: -0.04em;
@@ -145,10 +141,11 @@
 .heroMeaningDescription {
 	width: min(100%, 32rem);
 	margin: 0;
+	color: var(--color-text-secondary);
 	font-size: var(--text-body-2);
-	font-weight: 500;
+	font-weight: 400;
 	line-height: 1.65;
-	text-align: left;
+	text-align: center;
 }
 
 .meaningAnchor {
@@ -642,11 +639,11 @@
 	}
 
 	.heroMeaningCopy {
-		bottom: clamp(9rem, 24vh, 12rem);
+		top: 58%;
 	}
 
 	.heroMeaningStatement {
-		font-size: clamp(1rem, 4vw, 1.125rem);
+		font-size: clamp(1.25rem, 5vw, 1.5rem);
 	}
 
 	.featureRow,
@@ -787,7 +784,7 @@
 
 	.heroMeaningCopy {
 		opacity: 1;
-		transform: translate3d(-50%, 0, 0);
+		transform: translate3d(-50%, -50%, 0);
 	}
 
 	.page [data-about-reveal] {

@@ -7,6 +7,9 @@ import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 
 import styles from './AboutPage.module.css';
 
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_LOCKUP_MAX_SHIFT_RATIO = 0.64;
+
 const clampProgress = (value: number) => Math.min(Math.max(value, 0), 1);
 
 const getRangeProgress = (progress: number, start: number, end: number) =>
@@ -19,7 +22,7 @@ export default function HeroMeaningTransition() {
 	const lockupRef = useRef<HTMLHeadingElement>(null);
 	const continuationRef = useRef<HTMLSpanElement>(null);
 	const continuationTextRef = useRef<HTMLSpanElement>(null);
-	const meaningRef = useRef<HTMLParagraphElement>(null);
+	const meaningRef = useRef<HTMLDivElement>(null);
 	const scrollCueRef = useRef<HTMLSpanElement>(null);
 
 	useEffect(() => {
@@ -40,7 +43,7 @@ export default function HeroMeaningTransition() {
 			continuation.style.width = 'auto';
 			continuation.style.opacity = '1';
 			meaning.style.opacity = '1';
-			meaning.style.transform = 'translate3d(-50%, 0, 0)';
+			meaning.style.transform = 'translate3d(-50%, -50%, 0)';
 			return;
 		}
 
@@ -70,7 +73,7 @@ export default function HeroMeaningTransition() {
 			continuation.style.width = `${continuationWidth * continuationProgress}px`;
 			continuation.style.opacity = String(getRangeProgress(progress, 0.08, 0.18));
 			meaning.style.opacity = String(meaningProgress);
-			meaning.style.transform = `translate3d(-50%, ${32 * (1 - meaningProgress)}px, 0)`;
+			meaning.style.transform = `translate3d(-50%, calc(-50% + ${32 * (1 - meaningProgress)}px), 0)`;
 			scrollCue.style.opacity = String(1 - scrollCueProgress);
 		};
 
@@ -111,9 +114,13 @@ export default function HeroMeaningTransition() {
 						</span>
 					</span>
 				</h1>
-				<p ref={meaningRef} className={styles.heroMeaningCopy}>
-					점은 끝이 아니라, 한 단계 더 깊이 들어가는 시작점입니다.
-				</p>
+				<div ref={meaningRef} className={styles.heroMeaningCopy}>
+					<h2 className={styles.heroMeaningStatement}>점은 끝이 아니라, 한 단계 더 깊이 들어가는 시작점입니다.</h2>
+					<p className={styles.heroMeaningDescription}>
+						코드에서 점을 통해 객체의 내부에 접근하듯, 이곳에서는 각자의 블로그를 통해
+						<br />한 사람의 생각과 경험, 한 팀의 이야기를 깊이 들여다봅니다.
+					</p>
+				</div>
 			</section>
 			<span ref={scrollCueRef} className={styles.scrollCue} aria-hidden="true">
 				<ChevronIcon aria-hidden="true" focusable="false" />
