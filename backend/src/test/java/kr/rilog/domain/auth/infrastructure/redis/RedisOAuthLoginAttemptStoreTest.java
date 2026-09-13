@@ -2,6 +2,8 @@ package kr.rilog.domain.auth.infrastructure.redis;
 
 import kr.rilog.domain.auth.application.oauth.model.OAuthLoginAttempt;
 import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
+import kr.rilog.global.exception.GlobalExceptionInformation;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -108,10 +110,31 @@ class RedisOAuthLoginAttemptStoreTest {
                         new OAuthLoginAttempt("plain-oauth-state", "/feeds"),
                         Duration.ofMinutes(5)
                 ))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage("Redis OAuth login attempt save failed")
                 .hasMessageNotContaining("plain-oauth-state")
-                .hasCause(failure);
+                .hasCause(failure)
+                .extracting("errorInformation")
+                .isEqualTo(GlobalExceptionInformation.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    @DisplayName("Redis 저장 중 데이터 접근 예외가 아닌 런타임 예외는 인프라 예외로 감싸지 않는다.")
+    void saveFailureDoesNotWrapNonDataAccessException() {
+        // given
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        IllegalArgumentException failure = new IllegalArgumentException("invalid argument");
+        doThrow(failure).when(valueOperations).set(anyString(), anyString(), any(Duration.class));
+        RedisOAuthLoginAttemptStore store = new RedisOAuthLoginAttemptStore(redisTemplate);
+
+        // when - then
+        assertThatThrownBy(() -> store.save(
+                        SocialLoginProvider.GITHUB,
+                        new OAuthLoginAttempt("plain-oauth-state", "/feeds"),
+                        Duration.ofMinutes(5)
+                ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .isSameAs(failure);
     }
 
     private static String sha256Hex(String value) {

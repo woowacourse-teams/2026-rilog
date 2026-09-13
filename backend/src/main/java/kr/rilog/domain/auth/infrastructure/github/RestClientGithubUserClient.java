@@ -5,7 +5,7 @@ import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.application.oauth.model.SocialLoginUser;
 import kr.rilog.domain.auth.application.port.oauth.OAuthUserClient;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
-import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -48,7 +48,7 @@ public class RestClientGithubUserClient implements OAuthUserClient {
                     .body(GithubUserResponse.class);
 
             if (isInvalid(response)) {
-                throw new AuthException(GITHUB_USER_FETCH_FAILED);
+                throw new RilogInfrastructureException(GITHUB_USER_FETCH_FAILED);
             }
 
             return new SocialLoginUser(
@@ -57,10 +57,8 @@ public class RestClientGithubUserClient implements OAuthUserClient {
                     response.login(),
                     response.avatarUrl()
             );
-        } catch (AuthException exception) {
-            throw exception;
         } catch (RestClientException exception) {
-            throw new AuthException(GITHUB_USER_FETCH_FAILED, exception);
+            throw new RilogInfrastructureException(GITHUB_USER_FETCH_FAILED, exception);
         }
     }
 

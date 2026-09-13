@@ -1,6 +1,8 @@
 package kr.rilog.domain.auth.infrastructure.redis;
 
 import kr.rilog.domain.auth.entity.RefreshSession;
+import kr.rilog.global.exception.GlobalExceptionInformation;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -121,9 +123,28 @@ class RedisRefreshSessionStoreTest {
                         "hashed-refresh-token",
                         LocalDateTime.of(2026, 8, 13, 0, 0)
                 ))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage("Redis refresh session revoke failed")
                 .hasMessageNotContaining("hashed-refresh-token")
-                .hasCause(failure);
+                .hasCause(failure)
+                .extracting("errorInformation")
+                .isEqualTo(GlobalExceptionInformation.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    @DisplayName("Redis 세션 폐기 중 데이터 접근 예외가 아닌 런타임 예외는 인프라 예외로 감싸지 않는다.")
+    void revokeFailureDoesNotWrapNonDataAccessException() {
+        // given
+        IllegalArgumentException failure = new IllegalArgumentException("invalid argument");
+        doThrow(failure).when(redisTemplate).delete(anyString());
+        RedisRefreshSessionStore store = new RedisRefreshSessionStore(redisTemplate);
+
+        // when - then
+        assertThatThrownBy(() -> store.revoke(
+                        "hashed-refresh-token",
+                        LocalDateTime.of(2026, 8, 13, 0, 0)
+                ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .isSameAs(failure);
     }
 }

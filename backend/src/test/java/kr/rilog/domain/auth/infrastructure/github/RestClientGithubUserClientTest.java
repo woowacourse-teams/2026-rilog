@@ -5,7 +5,7 @@ import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.application.oauth.model.SocialLoginUser;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
-import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -87,7 +87,7 @@ class RestClientGithubUserClientTest {
         // when
         // when - then
         assertThatThrownBy(() -> client.getUser(new OAuthAccessToken("github-access-token")))
-                .isInstanceOf(AuthException.class)
+                .isInstanceOf(RilogInfrastructureException.class)
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.GITHUB_USER_FETCH_FAILED);
         server.verify();
@@ -107,7 +107,7 @@ class RestClientGithubUserClientTest {
         // when
         // when - then
         assertThatThrownBy(() -> client.getUser(new OAuthAccessToken("github-access-token")))
-                .isInstanceOf(AuthException.class)
+                .isInstanceOf(RilogInfrastructureException.class)
                 .hasCauseInstanceOf(RestClientException.class)
                 .hasMessageNotContaining("github-access-token")
                 .extracting("errorInformation")

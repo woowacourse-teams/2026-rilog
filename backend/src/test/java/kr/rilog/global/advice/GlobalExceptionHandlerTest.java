@@ -7,12 +7,15 @@ import ch.qos.logback.core.read.ListAppender;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.global.exception.GlobalExceptionInformation;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -110,6 +113,30 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("인프라 예외는 안전한 작업 문맥과 cause를 ERROR 로그로 남기고 공개 응답은 오류 정보로 제한한다.")
+    void infrastructureExceptionRespondsWithErrorInformationAndLogsOperationContext() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        // when - then
+        mockMvc.perform(get("/v1/infrastructure-failure"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_SERVER_ERROR"))
+                .andExpect(jsonPath("$.message").value("서버 내부 오류가 발생했습니다."));
+
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(event.getFormattedMessage())
+                .contains("[INTERNAL_SERVER_ERROR] Redis refresh session revoke failed")
+                .doesNotContain("hashed-refresh-token");
+        assertThat(event.getThrowableProxy().getClassName())
+                .isEqualTo(RilogInfrastructureException.class.getName());
+        assertThat(event.getThrowableProxy().getCause().getClassName())
+                .isEqualTo(RedisConnectionFailureException.class.getName());
+    }
+
+    @Test
     @DisplayName("정적 리소스 404는 ERROR 로그와 내부 예외 메시지를 남기지 않는다.")
     void staticResourceNotFoundLogsInfoWithoutInternalMessage() {
         // given
@@ -192,6 +219,15 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/v1/business-5xx")
         String business5xx() {
             throw new AuthException(AuthErrorInformation.ACCESS_TOKEN_CONFIGURATION_INVALID);
+        }
+
+        @GetMapping("/v1/infrastructure-failure")
+        String infrastructureFailure() {
+            throw new RilogInfrastructureException(
+                    GlobalExceptionInformation.INTERNAL_SERVER_ERROR,
+                    "Redis refresh session revoke failed",
+                    new RedisConnectionFailureException("redis failed token=hashed-refresh-token")
+            );
         }
 
         @GetMapping("/v1/request-param-validation")

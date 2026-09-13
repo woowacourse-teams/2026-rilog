@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import kr.rilog.global.exception.ErrorInformation;
 import kr.rilog.global.exception.GlobalExceptionInformation;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.global.exception.RilogBusinessException;
 import kr.rilog.global.exception.dto.ErrorDetail;
 import kr.rilog.global.exception.dto.InvalidParam;
@@ -65,6 +66,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDetail> handleRilogBusinessException(RilogBusinessException e) {
         ErrorInformation errorInformation = e.getErrorInformation();
         logExceptionByStatus(errorInformation, e);
+        return ResponseEntity.status(errorInformation.getHttpStatus())
+                .body(ErrorDetail.of(errorInformation));
+    }
+
+    @ExceptionHandler(RilogInfrastructureException.class)
+    public ResponseEntity<ErrorDetail> handleRilogInfrastructureException(RilogInfrastructureException e) {
+        ErrorInformation errorInformation = e.getErrorInformation();
+        log.error(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), e.getMessage(), e);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }

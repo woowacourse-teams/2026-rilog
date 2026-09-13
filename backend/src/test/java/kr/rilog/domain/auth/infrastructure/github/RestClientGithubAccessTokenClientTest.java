@@ -4,7 +4,7 @@ import kr.rilog.domain.auth.application.oauth.model.OAuthAccessToken;
 import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
-import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -89,7 +89,7 @@ class RestClientGithubAccessTokenClientTest {
         // when
         // when - then
         assertThatThrownBy(() -> client.exchange("github-code"))
-                .isInstanceOf(AuthException.class)
+                .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessageNotContaining("github-code")
                 .hasMessageNotContaining("github-client-secret")
                 .extracting("errorInformation")
@@ -114,7 +114,7 @@ class RestClientGithubAccessTokenClientTest {
         // when
         // when - then
         assertThatThrownBy(() -> client.exchange("github-code"))
-                .isInstanceOf(AuthException.class)
+                .isInstanceOf(RilogInfrastructureException.class)
                 .hasCauseInstanceOf(RestClientException.class)
                 .hasMessageNotContaining("github-code")
                 .hasMessageNotContaining("github-client-secret")

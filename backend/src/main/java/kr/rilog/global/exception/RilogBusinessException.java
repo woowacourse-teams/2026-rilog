@@ -12,9 +12,4 @@ public class RilogBusinessException extends RuntimeException {
         this.errorInformation = errorInformation;
     }
 
-    protected RilogBusinessException(ErrorInformation errorInformation, Throwable cause) {
-        super(errorInformation.getMessage(), cause);
-        this.errorInformation = errorInformation;
-    }
-
 }
