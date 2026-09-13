@@ -13,6 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @Component
 @RequiredArgsConstructor
@@ -25,14 +26,36 @@ public class RedisOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
 
     @Override
     public void save(SocialLoginProvider provider, OAuthLoginAttempt attempt, Duration ttl) {
-        redisTemplate.opsForValue().set(keyOf(provider, attempt.state()), attempt.redirectUrl(), ttl);
+        runRedisOperation(
+                "Redis OAuth login attempt save failed",
+                () -> redisTemplate.opsForValue().set(keyOf(provider, attempt.state()), attempt.redirectUrl(), ttl)
+        );
     }
 
     @Override
     public Optional<OAuthLoginAttempt> consume(SocialLoginProvider provider, String state) {
-        String redirectUrl = redisTemplate.opsForValue().getAndDelete(keyOf(provider, state));
+        String redirectUrl = getRedisValue(
+                "Redis OAuth login attempt consume failed",
+                () -> redisTemplate.opsForValue().getAndDelete(keyOf(provider, state))
+        );
         return Optional.ofNullable(redirectUrl)
                 .map(value -> new OAuthLoginAttempt(state, value));
+    }
+
+    private void runRedisOperation(String failureMessage, Runnable operation) {
+        try {
+            operation.run();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException(failureMessage, exception);
+        }
+    }
+
+    private String getRedisValue(String failureMessage, Supplier<String> operation) {
+        try {
+            return operation.get();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException(failureMessage, exception);
+        }
     }
 
     private String keyOf(SocialLoginProvider provider, String state) {

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -15,7 +16,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,6 +90,28 @@ class RedisOAuthLoginAttemptStoreTest {
         // then
         assertThat(consumed).isEmpty();
         verify(valueOperations).getAndDelete(redisKey);
+    }
+
+    @Test
+    @DisplayName("Redis 저장 실패는 작업 문맥과 원인 예외를 보존하되 state 원문을 메시지에 담지 않는다.")
+    void saveFailurePreservesOperationContextAndCause() {
+        // given
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        RedisConnectionFailureException failure =
+                new RedisConnectionFailureException("redis failed state=plain-oauth-state");
+        doThrow(failure).when(valueOperations).set(anyString(), anyString(), any(Duration.class));
+        RedisOAuthLoginAttemptStore store = new RedisOAuthLoginAttemptStore(redisTemplate);
+
+        // when - then
+        assertThatThrownBy(() -> store.save(
+                        SocialLoginProvider.GITHUB,
+                        new OAuthLoginAttempt("plain-oauth-state", "/feeds"),
+                        Duration.ofMinutes(5)
+                ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Redis OAuth login attempt save failed")
+                .hasMessageNotContaining("plain-oauth-state")
+                .hasCause(failure);
     }
 
     private static String sha256Hex(String value) {

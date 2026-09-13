@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @Component
 @RequiredArgsConstructor
@@ -23,30 +24,58 @@ public class RedisRefreshSessionStore implements RefreshSessionStore {
 
     @Override
     public void save(RefreshSession refreshSession, Duration ttl) {
-        redisTemplate.opsForValue().set(
-                keyOf(refreshSession.getTokenHash()),
-                valueOf(refreshSession),
-                ttl
+        runRedisOperation(
+                "Redis refresh session save failed",
+                () -> redisTemplate.opsForValue().set(
+                        keyOf(refreshSession.getTokenHash()),
+                        valueOf(refreshSession),
+                        ttl
+                )
         );
     }
 
     @Override
     public Optional<RefreshSession> findByTokenHash(String tokenHash) {
-        String value = redisTemplate.opsForValue().get(keyOf(tokenHash));
+        String value = getRedisValue(
+                "Redis refresh session find failed",
+                () -> redisTemplate.opsForValue().get(keyOf(tokenHash))
+        );
         return Optional.ofNullable(value)
                 .map(storedValue -> refreshSessionOf(tokenHash, storedValue));
     }
 
     @Override
     public Optional<RefreshSession> consume(String tokenHash) {
-        String value = redisTemplate.opsForValue().getAndDelete(keyOf(tokenHash));
+        String value = getRedisValue(
+                "Redis refresh session consume failed",
+                () -> redisTemplate.opsForValue().getAndDelete(keyOf(tokenHash))
+        );
         return Optional.ofNullable(value)
                 .map(storedValue -> refreshSessionOf(tokenHash, storedValue));
     }
 
     @Override
     public void revoke(String tokenHash, LocalDateTime revokedAt) {
-        redisTemplate.delete(keyOf(tokenHash));
+        runRedisOperation(
+                "Redis refresh session revoke failed",
+                () -> redisTemplate.delete(keyOf(tokenHash))
+        );
+    }
+
+    private void runRedisOperation(String failureMessage, Runnable operation) {
+        try {
+            operation.run();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException(failureMessage, exception);
+        }
+    }
+
+    private String getRedisValue(String failureMessage, Supplier<String> operation) {
+        try {
+            return operation.get();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException(failureMessage, exception);
+        }
     }
 
     private String keyOf(String tokenHash) {

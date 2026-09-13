@@ -54,7 +54,7 @@ public class RestClientGithubAccessTokenClient implements OAuthAccessTokenClient
         } catch (AuthException exception) {
             throw exception;
         } catch (RestClientException exception) {
-            throw new AuthException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
+            throw new AuthException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED, exception);
         }
     }
 

@@ -60,7 +60,7 @@ public class RestClientGithubUserClient implements OAuthUserClient {
         } catch (AuthException exception) {
             throw exception;
         } catch (RestClientException exception) {
-            throw new AuthException(GITHUB_USER_FETCH_FAILED);
+            throw new AuthException(GITHUB_USER_FETCH_FAILED, exception);
         }
     }
 
