@@ -10,13 +10,20 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
     open-in-view: false
 
 logging:
+  structured:
+    format:
+      console: logstash
+    json:
+      stacktrace:
+        printer: kr.rilog.global.logging.SanitizingStackTracePrinter
   level:
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
+    kr.rilog: info
+    org.hibernate.SQL: info
+    org.hibernate.orm.jdbc.bind: info
 
 springdoc:
   api-docs:

@@ -1,3 +1,4 @@
+import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostFeedItem } from '@/domains/post/model/post';
@@ -64,16 +65,12 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 							entrySource="feed"
 							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 						>
-							<span className="size-5 shrink-0 overflow-hidden rounded-md border border-border-default bg-background">
-								<PostFeedImage
-									src={post.blog.profileImageUrl}
-									alt={post.blog.name}
-									width={20}
-									height={20}
-									className="size-full object-cover"
-									fallbackClassName="object-contain p-1"
-								/>
-							</span>
+							<CologAvatar
+								src={post.blog.profileImageUrl}
+								fallback={post.blog.name.slice(0, 1)}
+								label={post.blog.name}
+								size="sm"
+							/>
 							<span className="truncate group-hover:underline group-focus-visible:underline group-active:underline">
 								{post.blog.name}
 							</span>

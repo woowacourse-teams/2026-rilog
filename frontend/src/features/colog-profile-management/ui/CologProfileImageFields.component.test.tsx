@@ -30,6 +30,12 @@ describe('CologProfileImageFields', () => {
 		expect(screen.getByText('커버 이미지 추가')).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toBeInTheDocument();
 		expect(screen.getByRole('img', { name: '기본 팀 커버 이미지' })).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '팀 로고 미리보기' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '기본 팀 커버 이미지' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
 		expect(screen.getByLabelText('팀 로고 추가')).toHaveAccessibleDescription(
 			'로고 이미지는 360*360px(1:1) 사이즈를 권장해요. 10MB 이하의 파일만 업로드 가능해요.',
 		);

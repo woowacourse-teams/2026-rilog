@@ -43,6 +43,9 @@ describe('RilogProfileSection', () => {
 		render(<RilogProfileTestWorkspace />);
 
 		expect(screen.getByRole('img', { name: '프로필 이미지 미리보기' })).toBeInTheDocument();
+		expect(
+			screen.getByRole('img', { name: '프로필 이미지 미리보기' }).closest('[data-ph-sensitive-media]'),
+		).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toHaveValue('리로거');
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toHaveValue('rilogger');
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeDisabled();

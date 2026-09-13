@@ -10,6 +10,9 @@ import type {
 	EditorEntrySource,
 	ImageSource,
 	LoginEntrySurface,
+	PostNavigationClickPart,
+	PostNavigationSurface,
+	PostNavigationTargetType,
 	PostDocumentState,
 	PostEntrySource,
 	PublishFailureStage,
@@ -84,6 +87,76 @@ export const analytics = {
 			post_id: postId,
 			engagement_seconds: engagementSeconds,
 			scroll_depth_bucket: scrollDepthBucket,
+		}),
+	postNavigationAvailable: ({
+		navigationVisitId,
+		postId,
+		ownerType,
+		chapterId,
+		surface,
+	}: {
+		navigationVisitId: string;
+		postId: number;
+		ownerType: BlogType;
+		chapterId: number;
+		surface: PostNavigationSurface;
+	}) =>
+		captureAnalyticsEvent('post navigation available', {
+			navigation_visit_id: navigationVisitId,
+			post_id: postId,
+			owner_type: ownerType,
+			chapter_id: chapterId,
+			surface,
+		}),
+	postNavigationClicked: ({
+		navigationVisitId,
+		postId,
+		ownerType,
+		chapterId,
+		surface,
+		targetType,
+		targetPostId,
+		position,
+		clickPart,
+	}: {
+		navigationVisitId: string;
+		postId: number;
+		ownerType: BlogType;
+		chapterId: number;
+		surface: PostNavigationSurface;
+		targetType: PostNavigationTargetType;
+		targetPostId: number | null;
+		position: number;
+		clickPart: PostNavigationClickPart;
+	}) =>
+		captureAnalyticsEvent('post navigation clicked', {
+			navigation_visit_id: navigationVisitId,
+			post_id: postId,
+			owner_type: ownerType,
+			chapter_id: chapterId,
+			surface,
+			target_type: targetType,
+			target_post_id: targetPostId,
+			position,
+			click_part: clickPart,
+		}),
+	postSeriesExpanded: ({
+		navigationVisitId,
+		postId,
+		ownerType,
+		chapterId,
+	}: {
+		navigationVisitId: string;
+		postId: number;
+		ownerType: BlogType;
+		chapterId: number;
+	}) =>
+		captureAnalyticsEvent('post series expanded', {
+			navigation_visit_id: navigationVisitId,
+			post_id: postId,
+			owner_type: ownerType,
+			chapter_id: chapterId,
+			surface: 'series',
 		}),
 	postEditorOpened: ({
 		entrySource,

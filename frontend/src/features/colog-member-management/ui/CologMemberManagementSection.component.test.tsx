@@ -10,6 +10,7 @@ const {
 	cologMemberInvitationCompletedMock,
 	cologMemberInvitationFailedMock,
 	cologMemberInvitationStartedMock,
+	inviteResultMock,
 	inviteMemberMock,
 	removeMemberMock,
 	resetRemoveMemberMock,
@@ -18,6 +19,7 @@ const {
 	cologMemberInvitationCompletedMock: vi.fn(),
 	cologMemberInvitationFailedMock: vi.fn(),
 	cologMemberInvitationStartedMock: vi.fn(),
+	inviteResultMock: vi.fn(),
 	inviteMemberMock: vi.fn(),
 	removeMemberMock: vi.fn(),
 	resetRemoveMemberMock: vi.fn(),
@@ -47,14 +49,17 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 vi.mock('./CologMemberRow', () => ({
 	default: ({
 		member,
+		rowNumber,
 		onRemove,
 		canRemove,
 	}: {
 		member: { nickname: string };
+		rowNumber: number;
 		onRemove?: () => void;
 		canRemove?: boolean;
 	}) => (
 		<tr>
+			<td>{rowNumber}</td>
 			<td>
 				{canRemove && (
 					<button type="button" onClick={onRemove}>
@@ -71,11 +76,28 @@ vi.mock('./MemberInviteModal', () => ({
 		onInvite,
 		onClose,
 	}: {
-		onInvite?: (candidates: Array<{ userId: number; slug: string }>) => void;
+		onInvite: (
+			candidates: Array<{ userId: number; slug: string; nickname: string; profileImageUrl: null }>,
+		) => Promise<{
+			failures: Array<{
+				candidate: { userId: number; slug: string; nickname: string; profileImageUrl: null };
+				message: string;
+			}>;
+		}>;
 		onClose: () => void;
 	}) => (
 		<>
-			<button type="button" onClick={() => onInvite?.([{ userId: 7, slug: 'new-member' }])}>
+			<button
+				type="button"
+				onClick={() => {
+					void onInvite([{ userId: 7, slug: 'new-member', nickname: '새 멤버', profileImageUrl: null }]).then(
+						(result) => {
+							inviteResultMock(result);
+							if (result.failures.length === 0) onClose();
+						},
+					);
+				}}
+			>
 				초대 제출
 			</button>
 			<button type="button" onClick={onClose}>
@@ -93,7 +115,6 @@ const drafts = {
 	handleSave: vi.fn(),
 	handlePermissionChange: vi.fn(),
 	handleBlogRoleChange: vi.fn(),
-	handleRemoveMember: vi.fn(),
 } as unknown as ComponentProps<typeof CologMemberManagementSection>['drafts'];
 
 describe('CologMemberManagementSection', () => {
@@ -129,9 +150,8 @@ describe('CologMemberManagementSection', () => {
 		expect(onInviteModalClose).toHaveBeenCalledOnce();
 	});
 
-	it('확인 후 선택한 멤버를 내보내고 화면 목록에서 제거한다', async () => {
+	it('확인 후 선택한 멤버를 내보내고 완료 모달을 표시한다', async () => {
 		const user = userEvent.setup();
-		const handleRemoveMember = vi.fn();
 		const draftsWithMember = {
 			...drafts,
 			displayedMembers: [
@@ -154,16 +174,15 @@ describe('CologMemberManagementSection', () => {
 					joinedAt: '2026-08-20T10:00:00Z',
 				},
 			],
-			handleRemoveMember,
 		};
 		render(<CologMemberManagementSection cologId={11} slug="@rilog" drafts={draftsWithMember} />);
 
 		await user.click(screen.getByRole('button', { name: '내보낼 멤버 멤버 내보내기' }));
 		const dialog = screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' });
+		expect(within(dialog).getByText('내보낼 멤버 님을 내보낼까요?')).toHaveClass('ph-mask');
 		await user.click(within(dialog).getByRole('button', { name: '내보내기' }));
 
 		await waitFor(() => expect(removeMemberMock).toHaveBeenCalledWith({ slug: '@rilog', memberId: 7 }));
-		expect(handleRemoveMember).toHaveBeenCalledWith(7);
 		expect(screen.queryByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' })).not.toBeInTheDocument();
 
 		const completeDialog = screen.getByRole('alertdialog', { name: '성공적으로 내보냈어요.' });
@@ -174,7 +193,7 @@ describe('CologMemberManagementSection', () => {
 		);
 	});
 
-	it('멤버 내보내기에 실패하면 확인 모달 description에 오류 메시지를 추가한다', async () => {
+	it('멤버 내보내기에 실패하면 확인 모달 description에 마스킹된 오류 메시지를 추가한다', async () => {
 		const user = userEvent.setup();
 		useRemoveCologMemberMutationMock.mockReturnValue({
 			error: {},
@@ -210,9 +229,9 @@ describe('CologMemberManagementSection', () => {
 
 		await user.click(screen.getByRole('button', { name: '내보낼 멤버 멤버 내보내기' }));
 
-		expect(screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' })).toHaveAccessibleDescription(
-			/멤버를 내보내지 못했어요\. 다시 시도해 주세요\./,
-		);
+		const dialog = screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' });
+		expect(dialog).toHaveAccessibleDescription(/멤버를 내보내지 못했어요\. 다시 시도해 주세요\./);
+		expect(within(dialog).getByText('멤버를 내보내지 못했어요. 다시 시도해 주세요.')).toHaveClass('ph-mask');
 	});
 
 	it('현재 사용자와 권한이 같거나 높은 멤버에게는 내보내기 버튼을 표시하지 않는다', () => {
@@ -253,6 +272,39 @@ describe('CologMemberManagementSection', () => {
 
 		expect(screen.queryByRole('button', { name: '다른 관리자 멤버 내보내기' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '팀 소유자 멤버 내보내기' })).not.toBeInTheDocument();
+	});
+
+	it('멤버 행을 목록 순서대로 넘버링한다', () => {
+		const draftsWithMembers = {
+			...drafts,
+			displayedMembers: [
+				{
+					id: 1,
+					nickname: '팀 소유자',
+					slug: 'owner',
+					profileImageUrl: null,
+					permission: 'OWNER' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+				{
+					id: 2,
+					nickname: '팀 멤버',
+					slug: 'member',
+					profileImageUrl: null,
+					permission: 'MEMBER' as const,
+					blogRole: '',
+					joinedAt: '2026-08-20T10:00:00Z',
+				},
+			],
+		};
+
+		render(<CologMemberManagementSection cologId={11} slug="rilog" drafts={draftsWithMembers} />);
+
+		expect(screen.getByRole('columnheader', { name: '번호' })).toBeInTheDocument();
+		const memberRows = screen.getAllByRole('row').slice(1);
+		expect(within(memberRows[0]).getByText('1')).toBeInTheDocument();
+		expect(within(memberRows[1]).getByText('2')).toBeInTheDocument();
 	});
 
 	it('초대 시작과 완료 이벤트를 같은 cologId로 기록한다', async () => {
@@ -299,6 +351,45 @@ describe('CologMemberManagementSection', () => {
 		expect(cologMemberInvitationFailedMock).toHaveBeenCalledWith({
 			cologId: 11,
 			errorCode: 'COLOG_MEMBER_ALREADY_EXISTS',
+		});
+		expect(inviteResultMock).toHaveBeenCalledWith({
+			failures: [
+				{
+					candidate: { userId: 7, slug: 'new-member', nickname: '새 멤버', profileImageUrl: null },
+					message: '이미 등록된 멤버입니다.',
+				},
+			],
+		});
+	});
+
+	it('사용자의 코로그 소속 개수 초과 오류는 멤버 초대 문맥의 메시지로 안내한다', async () => {
+		inviteMemberMock.mockRejectedValue({
+			type: 'api',
+			detail: {
+				status: 400,
+				error: 'BAD_REQUEST',
+				errorCode: 'USER_COLOG_COUNT_EXCEEDED',
+				message: '사용자는 최대 10개의 Colog에 속할 수 있습니다.',
+				invalidParams: null,
+			},
+		});
+		render(<CologMemberManagementSection cologId={11} slug="rilog" drafts={drafts} />);
+
+		fireEvent.click(screen.getByRole('button', { name: '초대 제출' }));
+
+		await waitFor(() =>
+			expect(inviteResultMock).toHaveBeenCalledWith({
+				failures: [
+					{
+						candidate: { userId: 7, slug: 'new-member', nickname: '새 멤버', profileImageUrl: null },
+						message: '이미 10개 코로그에 소속된 유저는 초대할 수 없습니다.',
+					},
+				],
+			}),
+		);
+		expect(cologMemberInvitationFailedMock).toHaveBeenCalledWith({
+			cologId: 11,
+			errorCode: 'USER_COLOG_COUNT_EXCEEDED',
 		});
 	});
 });

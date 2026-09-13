@@ -68,7 +68,10 @@ describe('DraftListModal', () => {
 			/>,
 		);
 
-		expect(screen.getByRole('link', { name: /작성 중인 글/ })).toHaveAttribute('href', '/write?draftId=42');
+		const draftLink = screen.getByRole('link', { name: /작성 중인 글/ });
+		expect(draftLink).toHaveAttribute('href', '/write?draftId=42');
+		expect(draftLink).toHaveAttribute('data-ph-sensitive-attribute');
+		expect(screen.getByText('작성 중인 글')).toHaveClass('ph-mask');
 		expect(screen.getByText('2026년 8월 28일')).toBeInTheDocument();
 	});
 
@@ -103,7 +106,10 @@ describe('DraftListModal', () => {
 		expect(screen.getByText('현재 작성 중인 글').closest('[aria-current="page"]')).toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: /현재 작성 중인 글/ })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '현재 작성 중인 글 임시 저장 글 삭제' })).not.toBeInTheDocument();
-		expect(screen.getByRole('link', { name: /다른 임시저장 글/ })).toHaveAttribute('href', '/write?draftId=43');
+		const otherDraftLink = screen.getByRole('link', { name: /다른 임시저장 글/ });
+		expect(otherDraftLink).toHaveAttribute('href', '/write?draftId=43');
+		expect(otherDraftLink).toHaveAttribute('data-ph-sensitive-attribute');
 		expect(screen.getByRole('button', { name: '다른 임시저장 글 임시 저장 글 삭제' })).toBeEnabled();
+		expect(screen.getByRole('button', { name: '다른 임시저장 글 임시 저장 글 삭제' })).toHaveClass('ph-mask');
 	});
 });

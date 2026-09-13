@@ -106,7 +106,9 @@ describe('RilogSeriesManagementSection', () => {
 	it('시리즈 이름 수정 입력을 20자로 제한한다', () => {
 		render(<RilogSeriesManagementSection management={createManagement({ isEditing: true })} />);
 
-		expect(screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' })).toHaveAttribute('maxlength', '20');
+		const input = screen.getByRole('textbox', { name: '웹 개발 시리즈 이름' });
+		expect(input).toHaveAttribute('maxlength', '20');
+		expect(input).toHaveAttribute('data-ph-sensitive-attribute');
 	});
 
 	it('조회 중 상태와 빈 상태를 렌더링한다', () => {
