@@ -26,6 +26,14 @@
 
 개발 프로필인 `local`, `dev`는 애플리케이션 패키지 `kr.rilog`를 `debug` 이상으로 출력한다. 운영 프로필인 `prod`는 `kr.rilog`를 `info` 이상으로 출력하고 Hibernate SQL 및 바인딩 파라미터 상세 로그를 출력하지 않는다.
 
+## 운영 이벤트
+
+정상 이벤트 로그는 메시지에 `event=<name>`을 포함하고, 요청 단위 조회에는 JSON 최상위 필드의 `requestId`를 사용한다.
+
+| 이벤트 | 레벨 | 발생 시점 | 메시지 필드 | 기록하지 않는 값 |
+| --- | --- | --- | --- | --- |
+| `oauth_login_completed` | `INFO` | OAuth 인증, 토큰 발급과 응답 구성이 완료된 후 | `provider`, `userId`, `onboardingStatus` | 토큰, 인증 `code`, OAuth `state`, 쿠키, redirect URL |
+
 ## 예외 로그 레벨
 
 HTTP 요청 처리 중 발생한 예상 가능한 4xx 예외는 `INFO`로 기록하고 stack trace를 남기지 않는다. 미처리 예외, 미분류 데이터 무결성 예외, 외부 연동 실패와 설정 오류처럼 5xx로 응답하는 서버 장애는 최종 HTTP 예외 처리 지점에서 `ERROR`로 한 번 기록한다.
