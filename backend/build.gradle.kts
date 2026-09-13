@@ -42,6 +42,10 @@ dependencies {
 	// PostgresSQL
 	runtimeOnly("com.mysql:mysql-connector-j")
 
+	// DB migration tools
+	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	runtimeOnly("org.flywaydb:flyway-mysql")
+
 	// Actuactor
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
