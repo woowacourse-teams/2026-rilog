@@ -23,6 +23,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.Arrays;
+
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.AUTHORIZATION_HEADER_MISSING;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.AUTHORIZATION_FAILED;
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.AUTHENTICATION_ANNOTATION_MISSING;
@@ -57,7 +59,7 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         }
 
         String bearerToken = extractBearerToken(authorizationHeader);
-        AuthenticatedUser authenticatedUser = authenticate(bearerToken, tokenType(authGuard));
+        AuthenticatedUser authenticatedUser = authenticate(bearerToken, tokenTypes(authGuard));
         if (authGuard != null) {
             authorize(authGuard, authenticatedUser);
         }
@@ -69,7 +71,12 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         if (authGuard != null && optionalAuthGuard != null) {
             throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
         }
-        if (authGuard != null && authGuard.value() != TokenType.ACCESS && authGuard.roles().length > 0) {
+        if (authGuard != null && authGuard.value().length == 0) {
+            throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
+        }
+        if (authGuard != null
+                && authGuard.roles().length > 0
+                && Arrays.stream(authGuard.value()).anyMatch(tokenType -> tokenType != TokenType.ACCESS)) {
             throw new AuthException(AUTHENTICATION_ANNOTATION_MISSING);
         }
     }
@@ -126,11 +133,25 @@ public class BearerAuthenticationInterceptor implements HandlerInterceptor {
         return handlerMethod.getMethodAnnotation(OptionalAuthGuard.class);
     }
 
-    private TokenType tokenType(AuthGuard authGuard) {
+    private TokenType[] tokenTypes(AuthGuard authGuard) {
         if (authGuard == null) {
-            return TokenType.ACCESS;
+            return new TokenType[]{TokenType.ACCESS};
         }
         return authGuard.value();
+    }
+
+    private AuthenticatedUser authenticate(String bearerToken, TokenType[] tokenTypes) {
+        AuthException firstException = null;
+        for (TokenType tokenType : tokenTypes) {
+            try {
+                return authenticate(bearerToken, tokenType);
+            } catch (AuthException exception) {
+                if (firstException == null) {
+                    firstException = exception;
+                }
+            }
+        }
+        throw firstException;
     }
 
     private AuthenticatedUser authenticate(String bearerToken, TokenType tokenType) {
