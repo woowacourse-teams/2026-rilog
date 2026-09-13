@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
+import FeedScopeViewTracker from '@/features/analytics/ui/FeedScopeViewTracker';
 import { parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
 import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import Button from '@/shared/ui/button/Button';
@@ -44,6 +45,10 @@ export default function PostFeedGrid({
 
 	const hasInitialError =
 		(isInitialFilter && !isInitialQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
+	const feedScopeTracker = (
+		<FeedScopeViewTracker feedScope={filters.blogType ?? 'ALL'} isVisible={query.isSuccess && !hasInitialError} />
+	);
+
 	usePostFeedEntryAutoScroll({
 		isReady: hasInitialError || !query.isPending,
 		targetId: scrollTargetId,
@@ -77,41 +82,73 @@ export default function PostFeedGrid({
 
 	if (hasInitialError) {
 		return (
-			<section
-				id={POST_FEED_CONTENT_ID}
-				className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
-				aria-labelledby="post-feed-heading"
-			>
-				<ContentLoadFailureTracker surface="feed" loadPhase="initial" error={query.error} />
-				<h2 id="post-feed-heading" className="sr-only">
-					최신 게시글
-				</h2>
-				<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
-					<p className="text-body-2 text-text-secondary">피드를 불러오지 못했어요.</p>
-					<Button
-						variant="secondary"
-						onClick={() => {
-							if (!isQueryEnabled) {
-								setIsInitialQueryEnabled(true);
-								return;
-							}
+			<>
+				{feedScopeTracker}
+				<section
+					id={POST_FEED_CONTENT_ID}
+					className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
+					aria-labelledby="post-feed-heading"
+				>
+					<ContentLoadFailureTracker surface="feed" loadPhase="initial" error={query.error} />
+					<h2 id="post-feed-heading" className="sr-only">
+						최신 게시글
+					</h2>
+					<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
+						<p className="text-body-2 text-text-secondary">피드를 불러오지 못했어요.</p>
+						<Button
+							variant="secondary"
+							onClick={() => {
+								if (!isQueryEnabled) {
+									setIsInitialQueryEnabled(true);
+									return;
+								}
 
-							void query.refetch();
-						}}
-					>
-						다시 시도
-					</Button>
-				</div>
-			</section>
+								void query.refetch();
+							}}
+						>
+							다시 시도
+						</Button>
+					</div>
+				</section>
+			</>
 		);
 	}
 
 	if (query.isPending) {
-		return <PostFeedSkeleton />;
+		return (
+			<>
+				{feedScopeTracker}
+				<PostFeedSkeleton />
+			</>
+		);
 	}
 
 	if (posts.length === 0) {
 		return (
+			<>
+				{feedScopeTracker}
+				<section
+					id={POST_FEED_CONTENT_ID}
+					className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
+					aria-labelledby="post-feed-heading"
+				>
+					<h2 id="post-feed-heading" className="sr-only">
+						최신 게시글
+					</h2>
+					<p
+						className="flex min-h-64 items-center justify-center text-center text-body-2 text-text-secondary"
+						role="status"
+					>
+						아직 발행된 게시글이 없어요.
+					</p>
+				</section>
+			</>
+		);
+	}
+
+	return (
+		<>
+			{feedScopeTracker}
 			<section
 				id={POST_FEED_CONTENT_ID}
 				className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
@@ -120,46 +157,28 @@ export default function PostFeedGrid({
 				<h2 id="post-feed-heading" className="sr-only">
 					최신 게시글
 				</h2>
-				<p
-					className="flex min-h-64 items-center justify-center text-center text-body-2 text-text-secondary"
-					role="status"
-				>
-					아직 발행된 게시글이 없어요.
-				</p>
+				<ul className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{posts.map((post, index) => (
+						<PostFeedCard key={post.id} post={post} position={index + 1} />
+					))}
+				</ul>
+
+				<div ref={sentinelRef} aria-hidden="true" className="h-px" />
+				{(query.isFetchingNextPage || query.isFetchNextPageError) && (
+					<div className="mt-10 flex min-h-10 items-center justify-center text-center" aria-live="polite">
+						{query.isFetchingNextPage && <p className="text-body-1 text-text-secondary">게시글을 더 불러오는 중...</p>}
+						{query.isFetchNextPageError && (
+							<div className="flex flex-col items-center gap-3">
+								<ContentLoadFailureTracker surface="feed" loadPhase="pagination" error={query.error} />
+								<p className="text-body-1 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
+								<Button variant="secondary" onClick={() => void query.fetchNextPage()}>
+									다시 시도
+								</Button>
+							</div>
+						)}
+					</div>
+				)}
 			</section>
-		);
-	}
-
-	return (
-		<section
-			id={POST_FEED_CONTENT_ID}
-			className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
-			aria-labelledby="post-feed-heading"
-		>
-			<h2 id="post-feed-heading" className="sr-only">
-				최신 게시글
-			</h2>
-			<ul className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-				{posts.map((post, index) => (
-					<PostFeedCard key={post.id} post={post} position={index + 1} />
-				))}
-			</ul>
-
-			<div ref={sentinelRef} aria-hidden="true" className="h-px" />
-			{(query.isFetchingNextPage || query.isFetchNextPageError) && (
-				<div className="mt-10 flex min-h-10 items-center justify-center text-center" aria-live="polite">
-					{query.isFetchingNextPage && <p className="text-body-1 text-text-secondary">게시글을 더 불러오는 중...</p>}
-					{query.isFetchNextPageError && (
-						<div className="flex flex-col items-center gap-3">
-							<ContentLoadFailureTracker surface="feed" loadPhase="pagination" error={query.error} />
-							<p className="text-body-1 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
-							<Button variant="secondary" onClick={() => void query.fetchNextPage()}>
-								다시 시도
-							</Button>
-						</div>
-					)}
-				</div>
-			)}
-		</section>
+		</>
 	);
 }

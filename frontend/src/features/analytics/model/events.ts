@@ -53,6 +53,8 @@ export const analytics = {
 		}),
 	sidebarFeedFilterClicked: ({ feedScope }: { feedScope: FeedScope }) =>
 		captureAnalyticsEvent('sidebar feed filter clicked', { feed_scope: feedScope }),
+	feedScopeViewed: ({ feedScope }: { feedScope: FeedScope }) =>
+		captureAnalyticsEvent('feed scope viewed', { feed_scope: feedScope }),
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>
 		captureAnalyticsEvent('github login started', { entry_surface: entrySurface, redirect_target: redirectTarget }),
 	githubLoginCompleted: ({ userType }: { userType: 'new' | 'returning' }) =>
