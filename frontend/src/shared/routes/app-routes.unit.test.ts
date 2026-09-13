@@ -16,6 +16,7 @@ import {
 describe('app routes', () => {
 	it('정적 페이지 경로를 제공한다', () => {
 		expect(APP_ROUTES).toEqual({
+			about: '/about',
 			feeds: '/feeds',
 			cologCreate: '/colog/create',
 			signUp: '/sign-up',
