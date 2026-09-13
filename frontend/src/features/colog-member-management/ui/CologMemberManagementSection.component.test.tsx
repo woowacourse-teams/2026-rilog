@@ -179,6 +179,7 @@ describe('CologMemberManagementSection', () => {
 
 		await user.click(screen.getByRole('button', { name: '내보낼 멤버 멤버 내보내기' }));
 		const dialog = screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' });
+		expect(within(dialog).getByText('내보낼 멤버 님을 내보낼까요?')).toHaveClass('ph-mask');
 		await user.click(within(dialog).getByRole('button', { name: '내보내기' }));
 
 		await waitFor(() => expect(removeMemberMock).toHaveBeenCalledWith({ slug: '@rilog', memberId: 7 }));
@@ -192,7 +193,7 @@ describe('CologMemberManagementSection', () => {
 		);
 	});
 
-	it('멤버 내보내기에 실패하면 확인 모달 description에 오류 메시지를 추가한다', async () => {
+	it('멤버 내보내기에 실패하면 확인 모달 description에 마스킹된 오류 메시지를 추가한다', async () => {
 		const user = userEvent.setup();
 		useRemoveCologMemberMutationMock.mockReturnValue({
 			error: {},
@@ -228,9 +229,9 @@ describe('CologMemberManagementSection', () => {
 
 		await user.click(screen.getByRole('button', { name: '내보낼 멤버 멤버 내보내기' }));
 
-		expect(screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' })).toHaveAccessibleDescription(
-			/멤버를 내보내지 못했어요\. 다시 시도해 주세요\./,
-		);
+		const dialog = screen.getByRole('dialog', { name: '내보낼 멤버 님을 내보낼까요?' });
+		expect(dialog).toHaveAccessibleDescription(/멤버를 내보내지 못했어요\. 다시 시도해 주세요\./);
+		expect(within(dialog).getByText('멤버를 내보내지 못했어요. 다시 시도해 주세요.')).toHaveClass('ph-mask');
 	});
 
 	it('현재 사용자와 권한이 같거나 높은 멤버에게는 내보내기 버튼을 표시하지 않는다', () => {

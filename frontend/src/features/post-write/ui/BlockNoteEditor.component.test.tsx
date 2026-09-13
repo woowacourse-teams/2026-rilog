@@ -99,6 +99,8 @@ describe('BlockNoteEditor', () => {
 		await waitFor(() => {
 			expect(editorElement).toHaveAttribute('aria-label', '게시글 내용');
 			expect(editorElement).toHaveAttribute('aria-describedby', 'post-body-error');
+			expect(editorElement).toHaveClass('ph-mask');
+			expect(editorElement).toHaveAttribute('data-ph-sensitive-media');
 		});
 
 		rerender(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);

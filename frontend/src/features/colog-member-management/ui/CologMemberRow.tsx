@@ -38,7 +38,7 @@ export default function CologMemberRow({
 	const joinedAt = joinedAtDate ? JOINED_AT_FORMATTER.format(joinedAtDate).replace(/\.$/, '') : member.joinedAt;
 
 	return (
-		<tr className="h-18.5 border-b border-border-default">
+		<tr className="ph-mask h-18.5 border-b border-border-default" data-ph-sensitive-media>
 			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
 			<td className="px-2 py-3">
 				<div className="flex items-center gap-3.5">

@@ -92,6 +92,9 @@ describe('MemberInviteModal', () => {
 		await user.type(input, '@jetproc{Enter}');
 
 		expect(await screen.findByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('김지연');
+		const candidateRow = screen.getByText('김지연').closest('li');
+		expect(candidateRow).toHaveClass('ph-mask');
+		expect(candidateRow).toHaveAttribute('data-ph-sensitive-media');
 		expect(screen.getByRole('button', { name: '초대' })).toBeEnabled();
 
 		await user.click(screen.getByRole('button', { name: '김지연 초대 목록에서 제거' }));
@@ -99,7 +102,7 @@ describe('MemberInviteModal', () => {
 		expect(screen.getByRole('button', { name: '초대' })).toBeDisabled();
 	});
 
-	it('존재하지 않거나 중복된 고유 아이디에 오류를 안내한다', async () => {
+	it('존재하지 않거나 중복된 고유 아이디에 오류를 안내하고 조회 오류를 마스킹한다', async () => {
 		const user = userEvent.setup();
 		renderWithProvider(
 			<MemberInviteModal slug={COLOG_SLUG} open onClose={vi.fn()} onInvite={createSuccessfulInvite()} />,
@@ -109,7 +112,9 @@ describe('MemberInviteModal', () => {
 
 		// 없는 유저인 경우 (API 에러)
 		await user.type(input, '@unknown{Enter}');
-		expect(screen.getByText('해당 고유 아이디의 사용자를 찾을 수 없습니다.')).toBeInTheDocument();
+		const lookupError = screen.getByText('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
+		expect(lookupError).toBeInTheDocument();
+		expect(lookupError).toHaveClass('ph-mask');
 
 		await user.clear(input);
 		// 중복된 경우

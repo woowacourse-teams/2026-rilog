@@ -15,7 +15,10 @@ export default function MemberInviteCandidateRow({
 	onRemove,
 }: MemberInviteCandidateRowProps) {
 	return (
-		<li className="flex min-h-15 items-center gap-3.5 border-b border-border-default py-2">
+		<li
+			className="ph-mask flex min-h-15 items-center gap-3.5 border-b border-border-default py-2"
+			data-ph-sensitive-media
+		>
 			<UserAvatar
 				src={candidate.profileImageUrl}
 				fallback=""

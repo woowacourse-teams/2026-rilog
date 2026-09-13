@@ -224,12 +224,12 @@ export default function CologMemberManagementSection({
 
 			<ConfirmModal
 				open={memberToRemove !== null}
-				title={`${memberToRemove?.nickname ?? ''} 님을 내보낼까요?`}
+				title={<span className="ph-mask">{`${memberToRemove?.nickname ?? ''} 님을 내보낼까요?`}</span>}
 				description={
 					<>
 						<span>내보낸 멤버는 나중에 다시 초대할 수 있습니다.</span>
 						{removeMemberErrorMessage === undefined ? null : (
-							<span className="mt-2 block text-danger">{removeMemberErrorMessage}</span>
+							<span className="ph-mask mt-2 block text-danger">{removeMemberErrorMessage}</span>
 						)}
 					</>
 				}

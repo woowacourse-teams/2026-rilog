@@ -44,6 +44,7 @@ describe('CologChapterRow', () => {
 
 		const input = screen.getByRole('textbox', { name: '프론트엔드 챕터 이름' });
 		expect(input).toHaveAttribute('maxlength', '20');
+		expect(input).toHaveAttribute('data-ph-sensitive-attribute');
 		fireEvent.change(input, { target: { value: '프론트엔드 팀' } });
 
 		expect(onNameChange).toHaveBeenCalledWith(1, '프론트엔드 팀');
