@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
-import FeedScopeViewTracker from '@/features/analytics/ui/FeedScopeViewTracker';
+import FeedViewTracker from '@/features/analytics/ui/FeedViewTracker';
 import { parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
 import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import Button from '@/shared/ui/button/Button';
@@ -169,7 +169,11 @@ export default function PostFeedGrid({
 
 	return (
 		<>
-			<FeedScopeViewTracker feedScope={filters.blogType ?? 'ALL'} isVisible={query.isSuccess && !hasInitialError} />
+			<FeedViewTracker
+				feedScope={filters.blogType ?? 'ALL'}
+				category={filters.category ?? 'ALL'}
+				isVisible={query.isSuccess && !hasInitialError}
+			/>
 			{renderFeedContent()}
 		</>
 	);

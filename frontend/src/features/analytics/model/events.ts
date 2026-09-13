@@ -54,8 +54,8 @@ export const analytics = {
 		}),
 	sidebarFeedFilterClicked: ({ feedScope }: { feedScope: FeedScope }) =>
 		captureAnalyticsEvent('sidebar feed filter clicked', { feed_scope: feedScope }),
-	feedScopeViewed: ({ feedScope }: { feedScope: FeedScope }) =>
-		captureAnalyticsEvent('feed scope viewed', { feed_scope: feedScope }),
+	feedViewed: ({ feedScope, category }: { feedScope: FeedScope; category: FeedCategory }) =>
+		captureAnalyticsEvent('feed viewed', { feed_scope: feedScope, category }),
 	feedCategoryFilterClicked: ({ category }: { category: FeedCategory }) =>
 		captureAnalyticsEvent('feed category filter clicked', { category }),
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>

@@ -67,11 +67,12 @@ describe('analytics events', () => {
 		});
 	});
 
-	it('실제로 표시된 피드 범위를 canonical payload로 전송한다', () => {
-		analytics.feedScopeViewed({ feedScope: 'ALL' });
+	it('실제로 표시된 피드 범위와 카테고리를 canonical payload로 전송한다', () => {
+		analytics.feedViewed({ feedScope: 'COLOG', category: 'TECH' });
 
-		expect(captureMock).toHaveBeenCalledExactlyOnceWith('feed scope viewed', {
-			feed_scope: 'ALL',
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('feed viewed', {
+			feed_scope: 'COLOG',
+			category: 'TECH',
 		});
 	});
 
