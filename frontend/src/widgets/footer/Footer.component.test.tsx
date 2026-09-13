@@ -54,7 +54,10 @@ describe('Footer', () => {
 	it('각 연락 채널을 접근 가능한 링크로 제공한다', () => {
 		render(<Footer />);
 
-		expect(screen.getByRole('link', { name: 'Rilog 이메일 문의' })).toHaveAttribute('href', 'mailto:contact@rilog.dev');
+		expect(screen.getByRole('link', { name: 'Rilog 이메일 문의' })).toHaveAttribute(
+			'href',
+			'mailto:rilog.admin@gmail.com',
+		);
 
 		const externalLinks = [
 			['Rilog 오픈채팅방', 'https://open.kakao.com/o/s8RvBMJi'],

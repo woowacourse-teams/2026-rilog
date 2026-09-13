@@ -32,13 +32,6 @@ export default function SidebarHeader() {
 					/>
 				</span>
 			</CustomLink>
-			<CustomLink
-				href="/about"
-				target="_blank"
-				className={`invisible absolute right-3 rounded text-body-1 font-medium whitespace-nowrap text-text-secondary underline underline-offset-2 opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100 hover:text-focus-ring active:text-focus-ring motion-reduce:transition-none ${FOCUS_CLASS_NAME}`}
-			>
-				Rilog. 이야기 ↗
-			</CustomLink>
 		</header>
 	);
 }
