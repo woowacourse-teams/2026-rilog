@@ -198,76 +198,26 @@
 }
 
 .manifestoOpening h2 {
-	grid-column: 1 / 6;
+	grid-column: 1 / -1;
 }
 
 .manifestoSection h2 {
 	grid-column: 1 / 9;
 	margin: 0;
-	font-size: clamp(5rem, 12.5vw, 12rem);
+	font-size: clamp(5rem, 18vw, 14rem);
 	font-weight: var(--about-display-weight);
 	line-height: 0.92;
 	letter-spacing: -0em;
 }
 
-.manifestoSection > p {
-	grid-column: 5 / 9;
-	grid-row: 2;
-	justify-self: end;
-	max-width: 21rem;
-	margin: 0;
-	font-size: var(--text-body-2);
-	font-weight: 500;
-	line-height: 1.65;
-}
-
-.manifestoOpening > p {
-	grid-row: 2;
-	justify-self: stretch;
-	max-width: none;
-}
-
-.manifestoOpening > p:nth-of-type(1) {
-	grid-column: 6 / 8;
-}
-
-.manifestoOpening > p:nth-of-type(2) {
-	grid-column: 8 / -1;
-}
-
-.manifestoOpening > p br {
-	display: block;
-	margin-bottom: 1.5rem;
-	content: '';
-}
-
 .manifestoReverse h2 {
-	grid-column: 5 / -1;
+	grid-column: 1 / -1;
 	text-align: right;
 }
 
 .manifestoReverse {
 	grid-template-columns: repeat(9, minmax(0, 1fr));
 	padding-left: clamp(1.25rem, 2.5vw, 3rem);
-}
-
-.manifestoReverseBody {
-	grid-column: 1 / 5;
-	grid-row: 2;
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: clamp(0.5rem, 1vw, 1rem);
-	font-size: var(--text-body-2);
-	font-weight: 500;
-	line-height: 1.65;
-}
-
-.manifestoReverseBody p {
-	margin: 0;
-}
-
-.manifestoReverseBody p + p {
-	margin-top: 1.5rem;
 }
 
 .manifestoSeparator {
@@ -648,23 +598,6 @@
 		text-align: right;
 	}
 
-	.manifestoSection.manifestoOpening > p {
-		grid-column: 6 / -1;
-		grid-row: auto;
-		align-self: start;
-		justify-self: start;
-		padding-top: 0;
-		text-align: left;
-		transform: none;
-	}
-
-	.manifestoReverseBody {
-		grid-column: 1 / 5;
-		grid-row: auto;
-		grid-template-columns: 1fr;
-		row-gap: 1.5rem;
-	}
-
 	.manifestoMeaningBody {
 		grid-column: 1 / 5;
 	}
@@ -674,18 +607,6 @@
 	.manifestoOpening,
 	.manifestoReverse {
 		grid-template-columns: 1fr;
-	}
-
-	.manifestoSection.manifestoOpening > p {
-		grid-column: 1;
-		width: 75%;
-		justify-self: end;
-	}
-
-	.manifestoReverseBody {
-		grid-column: 1;
-		width: 75%;
-		justify-self: start;
 	}
 
 	.manifestoMeaningSection {
