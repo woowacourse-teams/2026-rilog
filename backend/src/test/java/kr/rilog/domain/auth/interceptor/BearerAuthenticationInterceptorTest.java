@@ -196,6 +196,53 @@ class BearerAuthenticationInterceptorTest {
         assertThat(accessTokenProvider.parsedToken).isNull();
     }
 
+    @Test
+    @DisplayName("여러 토큰 타입을 허용한 @AuthGuard는 Access Token을 인증한다.")
+    void multipleTokenTypeGuardParsesAccessToken() throws Exception {
+        // given
+        RecordingAccessTokenProvider accessTokenProvider = new RecordingAccessTokenProvider();
+        RecordingOnboardingTokenProvider onboardingTokenProvider = new RecordingOnboardingTokenProvider();
+        MockMvc mockMvc = mockMvc(accessTokenProvider, onboardingTokenProvider);
+
+        // when - then
+        mockMvc.perform(get("/v1/access-or-onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-access-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("multiple:7"));
+
+        assertThat(accessTokenProvider.parsedToken).isEqualTo("rilog-access-token");
+        assertThat(onboardingTokenProvider.parsedToken).isNull();
+    }
+
+    @Test
+    @DisplayName("여러 토큰 타입을 허용한 @AuthGuard는 Onboarding Token을 인증한다.")
+    void multipleTokenTypeGuardParsesOnboardingToken() throws Exception {
+        // given
+        RecordingOnboardingTokenProvider onboardingTokenProvider = new RecordingOnboardingTokenProvider();
+        MockMvc mockMvc = mockMvc(new InvalidAccessTokenProvider(), onboardingTokenProvider);
+
+        // when - then
+        mockMvc.perform(get("/v1/access-or-onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-onboarding-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("multiple:7"));
+
+        assertThat(onboardingTokenProvider.parsedToken).isEqualTo("rilog-onboarding-token");
+    }
+
+    @Test
+    @DisplayName("Onboarding Token을 허용하면서 역할을 요구한 @AuthGuard 설정은 거부한다.")
+    void rejectsRolesWithOnboardingTokenType() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new RecordingAccessTokenProvider());
+
+        // when - then
+        mockMvc.perform(get("/v1/misconfigured-multiple-token-role")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer rilog-access-token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("AUTHENTICATION_ANNOTATION_MISSING"));
+    }
+
     private MockMvc mockMvc(AccessTokenProvider accessTokenProvider) {
         return mockMvc(accessTokenProvider, new ThrowingOnboardingTokenProvider());
     }
@@ -245,6 +292,21 @@ class BearerAuthenticationInterceptorTest {
         @GetMapping("/v1/onboarding-only")
         public String onboardingOnly(@LoginUserId Long userId) {
             return "onboarding:" + userId;
+        }
+
+        @AuthGuard({TokenType.ACCESS, TokenType.ONBOARDING})
+        @GetMapping("/v1/access-or-onboarding")
+        public String accessOrOnboarding(@LoginUserId Long userId) {
+            return "multiple:" + userId;
+        }
+
+        @AuthGuard(
+                value = {TokenType.ACCESS, TokenType.ONBOARDING},
+                roles = GlobalRole.USER
+        )
+        @GetMapping("/v1/misconfigured-multiple-token-role")
+        public String misconfiguredMultipleTokenRole() {
+            return "misconfigured";
         }
 
         @GetMapping("/v1/misconfigured-user-id")
@@ -299,6 +361,19 @@ class BearerAuthenticationInterceptorTest {
         @Override
         public AccessTokenClaims parse(String accessToken) {
             throw new AuthException(AuthErrorInformation.EXPIRED_ACCESS_TOKEN);
+        }
+    }
+
+    private static class InvalidAccessTokenProvider implements AccessTokenProvider {
+
+        @Override
+        public AccessToken issue(Long userId, GlobalRole role, String slug) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public AccessTokenClaims parse(String accessToken) {
+            throw new AuthException(AuthErrorInformation.INVALID_ACCESS_TOKEN);
         }
     }
 
