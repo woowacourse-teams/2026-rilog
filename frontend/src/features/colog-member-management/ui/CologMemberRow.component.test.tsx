@@ -24,9 +24,12 @@ const renderInTable = (ui: React.ReactElement) =>
 	);
 
 describe('CologMemberRow', () => {
-	it('읽기 모드에서는 텍스트 정보를 렌더링한다', () => {
+	it('읽기 모드에서는 텍스트 정보를 렌더링하고 멤버별 리플레이 마스킹 경계를 둔다', () => {
 		renderInTable(<CologMemberRow member={{ ...BASE_MEMBER, joinedAt: '2024-05-19T23:30:00' }} />);
 
+		const memberRow = screen.getByText('김지연').closest('tr');
+		expect(memberRow).toHaveClass('ph-mask');
+		expect(memberRow).toHaveAttribute('data-ph-sensitive-media');
 		expect(screen.getByText('김지연')).toBeInTheDocument();
 		expect(screen.getByText('@jiyeon')).toBeInTheDocument();
 		expect(screen.getByText('Owner')).toBeInTheDocument();
@@ -53,6 +56,8 @@ describe('CologMemberRow', () => {
 		);
 
 		const select = screen.getByRole('combobox', { name: '김지연 권한' });
+		expect(select.closest('tr')).toHaveClass('ph-mask');
+		expect(select.closest('tr')).toHaveAttribute('data-ph-sensitive-media');
 		await user.selectOptions(select, 'ADMIN');
 
 		expect(onPermissionChange).toHaveBeenCalledWith(1, 'ADMIN');
@@ -63,7 +68,9 @@ describe('CologMemberRow', () => {
 		const onRemove = vi.fn();
 
 		renderInTable(<CologMemberRow member={BASE_MEMBER} canRemove onRemove={onRemove} />);
-		await user.click(screen.getByRole('button', { name: '김지연 멤버 내보내기' }));
+		const removeButton = screen.getByRole('button', { name: '김지연 멤버 내보내기' });
+		expect(removeButton.closest('tr')).toHaveClass('ph-mask');
+		await user.click(removeButton);
 
 		expect(onRemove).toHaveBeenCalledOnce();
 	});

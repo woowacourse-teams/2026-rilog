@@ -97,7 +97,7 @@ describe('MemberInviteModal', () => {
 		expect(screen.getByRole('button', { name: '초대' })).toBeDisabled();
 	});
 
-	it('존재하지 않거나 중복된 고유 아이디에 오류를 안내한다', async () => {
+	it('존재하지 않거나 중복된 고유 아이디에 오류를 안내하고 조회 오류를 마스킹한다', async () => {
 		const user = userEvent.setup();
 		renderWithProvider(<MemberInviteModal slug={COLOG_SLUG} open onClose={vi.fn()} />);
 
@@ -105,7 +105,9 @@ describe('MemberInviteModal', () => {
 
 		// 없는 유저인 경우 (API 에러)
 		await user.type(input, '@unknown{Enter}');
-		expect(screen.getByText('해당 고유 아이디의 사용자를 찾을 수 없습니다.')).toBeInTheDocument();
+		const lookupError = screen.getByText('해당 고유 아이디의 사용자를 찾을 수 없습니다.');
+		expect(lookupError).toBeInTheDocument();
+		expect(lookupError).toHaveClass('ph-mask');
 
 		await user.clear(input);
 		// 중복된 경우

@@ -36,7 +36,7 @@ export default function CologMemberRow({
 	const joinedAt = joinedAtDate ? JOINED_AT_FORMATTER.format(joinedAtDate).replace(/\.$/, '') : member.joinedAt;
 
 	return (
-		<tr className="h-18.5 border-b border-border-default">
+		<tr className="ph-mask h-18.5 border-b border-border-default" data-ph-sensitive-media>
 			<td className="py-3 pl-6">
 				<div className="flex items-center gap-3.5">
 					<UserAvatar

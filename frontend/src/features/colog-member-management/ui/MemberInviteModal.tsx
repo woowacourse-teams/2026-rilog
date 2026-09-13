@@ -164,7 +164,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 					</div>
 					<p
 						id={helperTextId}
-						className={`mt-1.5 text-label-1 ${errorMessage ? 'text-danger' : 'text-text-secondary'}`}
+						className={`mt-1.5 text-label-1 ${errorMessage ? 'ph-mask text-danger' : 'text-text-secondary'}`}
 						aria-live="polite"
 					>
 						{errorMessage ?? 'Enter로 여러 사용자 추가하세요.'}
