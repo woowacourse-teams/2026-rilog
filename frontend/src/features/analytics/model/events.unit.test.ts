@@ -96,9 +96,23 @@ describe('analytics events', () => {
 
 	it('기존 비-P0 이벤트는 유지한다', () => {
 		analytics.cologProfileUpdated({ changedFields: ['name'] });
-		analytics.blogProfileViewed({ blogType: 'COLOG' });
-
 		expect(captureMock).toHaveBeenNthCalledWith(1, 'colog profile updated', { changed_fields: ['name'] });
-		expect(captureMock).toHaveBeenNthCalledWith(2, 'blog profile viewed', { blog_type: 'COLOG' });
+	});
+
+	it('프로필 진입 출처와 방문 ID를 전송한다', () => {
+		analytics.blogProfileViewed({
+			blogType: 'COLOG',
+			blogId: 3,
+			entrySource: 'feed',
+			profileVisitId: 'visit-1',
+		});
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('blog profile viewed', {
+			blog_type: 'COLOG',
+			blog_id: 3,
+			entry_source: 'feed',
+			profile_visit_id: 'visit-1',
+			entry_tracking_version: 1,
+		});
 	});
 });

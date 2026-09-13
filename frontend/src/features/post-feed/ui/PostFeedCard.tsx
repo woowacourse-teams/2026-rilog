@@ -4,6 +4,7 @@ import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostFeedItem } from '@/domains/post/model/post';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
@@ -42,8 +43,9 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 				</div>
 				<div className="mt-2 flex min-w-0 items-center text-body-1">
 					{post.blog.type === 'RILOG' && (
-						<CustomLink
+						<BlogProfileEntryLink
 							href={buildBlogHomePath(post.author.slug)}
+							entrySource="feed"
 							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 						>
 							<UserAvatar
@@ -55,11 +57,12 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 							<span className="truncate group-hover:underline group-focus-visible:underline group-active:underline">
 								{post.author.nickname}
 							</span>
-						</CustomLink>
+						</BlogProfileEntryLink>
 					)}
 					{post.blog.type === 'COLOG' && (
-						<CustomLink
+						<BlogProfileEntryLink
 							href={buildBlogHomePath(post.blog.slug)}
+							entrySource="feed"
 							className="group relative z-20 flex min-w-0 items-center gap-1.5 rounded-sm text-text-secondary hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 						>
 							<CologAvatar
@@ -71,7 +74,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 							<span className="truncate group-hover:underline group-focus-visible:underline group-active:underline">
 								{post.blog.name}
 							</span>
-						</CustomLink>
+						</BlogProfileEntryLink>
 					)}
 					<span aria-hidden="true" className="shrink-0 text-text-secondary">
 						.

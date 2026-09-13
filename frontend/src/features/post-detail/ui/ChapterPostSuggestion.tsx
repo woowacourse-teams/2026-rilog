@@ -1,11 +1,11 @@
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
 import type { CologChapterPostSuggestions } from '@/features/post-detail/model/chapter';
 import PostNavigationAvailableTracker from '@/features/post-detail/ui/PostNavigationAvailableTracker';
 import PostNavigationLink from '@/features/post-detail/ui/PostNavigationLink';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
 import { buildBlogHomePath, buildPostDetailPath } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface ChapterPostSuggestionProps {
 	slug: string;
@@ -26,6 +26,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 			<h2 id="chapter-post-suggestions-title" className="text-body-2 font-semibold text-text-primary">
 				<PostNavigationLink
 					href={chapterHref}
+					entrySource="post_detail_chapter_title"
 					className="rounded-sm transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 					surface="chapter_suggestions"
 					targetType="collection_title"
@@ -76,12 +77,13 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 										{post.title}
 									</h3>
 								</PostNavigationLink>
-								<CustomLink
+								<BlogProfileEntryLink
 									href={buildBlogHomePath(post.author.slug)}
+									entrySource="post_detail_recommendation_author"
 									className="inline-block w-full truncate rounded-sm text-label-2 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 								>
 									{post.author.nickname}
-								</CustomLink>
+								</BlogProfileEntryLink>
 							</div>
 						</article>
 					</li>

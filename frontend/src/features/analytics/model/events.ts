@@ -1,5 +1,6 @@
 import type {
 	AnalyticsErrorProperties,
+	BlogProfileEntrySource,
 	BlockCountBucket,
 	CologCreationEntrySource,
 	CologMemberInvitationEntrySource,
@@ -24,7 +25,7 @@ import { captureAnalyticsEvent } from '@/shared/analytics/posthog';
 
 export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introduction' | 'service_url' | 'github_url';
 
-export type { EditorEntrySource, PostEntrySource } from './analytics-event';
+export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
 export const analytics = {
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>
@@ -284,6 +285,22 @@ export const analytics = {
 		}),
 	cologProfileUpdated: ({ changedFields }: { changedFields: CologProfileChangedField[] }) =>
 		captureAnalyticsEvent('colog profile updated', { changed_fields: changedFields }),
-	blogProfileViewed: ({ blogType }: { blogType: BlogType }) =>
-		captureAnalyticsEvent('blog profile viewed', { blog_type: blogType }),
+	blogProfileViewed: ({
+		blogType,
+		blogId,
+		entrySource,
+		profileVisitId,
+	}: {
+		blogType: BlogType;
+		blogId: number;
+		entrySource: BlogProfileEntrySource;
+		profileVisitId: string;
+	}) =>
+		captureAnalyticsEvent('blog profile viewed', {
+			blog_type: blogType,
+			blog_id: blogId,
+			entry_source: entrySource,
+			profile_visit_id: profileVisitId,
+			entry_tracking_version: 1,
+		}),
 };

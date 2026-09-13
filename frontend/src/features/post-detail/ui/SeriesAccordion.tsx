@@ -38,6 +38,7 @@ export default function SeriesAccordion({ slug, postId, series }: SeriesAccordio
 					<span className="min-w-0">
 						<PostNavigationLink
 							href={seriesHref}
+							entrySource="post_detail_series_title"
 							className="[overflow-wrap:anywhere] transition-colors hover:text-blue-600"
 							surface="series"
 							targetType="collection_title"
@@ -73,7 +74,7 @@ export default function SeriesAccordion({ slug, postId, series }: SeriesAccordio
 										{index + 1}
 									</span>
 									<span
-										className={`[overflow-wrap:anywhere] transition-colors group-hover/link:text-blue-600 group-hover/link:underline group-hover/link:underline-offset-4 group-focus-visible/link:text-blue-600 group-active/link:text-blue-600 ${isCurrentPost ? 'font-medium text-text-primary' : 'text-text-placeholder'}`}
+										className={`wrap-anywhere transition-colors group-hover/link:text-blue-600 group-hover/link:underline group-hover/link:underline-offset-4 group-focus-visible/link:text-blue-600 group-active/link:text-blue-600 ${isCurrentPost ? 'font-medium text-text-primary' : 'text-text-placeholder'}`}
 									>
 										{post.title}
 									</span>

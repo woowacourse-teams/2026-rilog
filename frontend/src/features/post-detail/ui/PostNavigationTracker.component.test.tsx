@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { consumeBlogProfileEntryContext } from '@/features/analytics/lib/blog-profile-entry-context';
 import type { analytics } from '@/features/analytics/model/events';
 
 import AvailableTracker from './PostNavigationAvailableTracker';
@@ -38,6 +39,45 @@ const expandSeries = () => {
 
 describe('게시글 탐색 계측', () => {
 	beforeEach(() => vi.clearAllMocks());
+
+	it.each([
+		{ surface: 'series', entrySource: 'post_detail_series_title' },
+		{ surface: 'chapter_suggestions', entrySource: 'post_detail_chapter_title' },
+	] as const)('$surface의 컬렉션 제목 클릭은 상세 탐색과 프로필 진입을 함께 기록한다', ({ surface, entrySource }) => {
+		consumeBlogProfileEntryContext('/@writer');
+		render(
+			<VisitProvider postId={1} chapterId={10} ownerType="RILOG">
+				<Link
+					href="/@writer?series=10"
+					entrySource={entrySource}
+					surface={surface}
+					targetType="collection_title"
+					position={0}
+					clickPart="title"
+				>
+					컬렉션 제목
+				</Link>
+			</VisitProvider>,
+		);
+
+		fireEvent.click(screen.getByRole('link', { name: '컬렉션 제목' }));
+
+		const navigationVisitId = tracking.postNavigationClicked.mock.calls[0][0].navigationVisitId;
+		expect(tracking.postNavigationClicked).toHaveBeenCalledExactlyOnceWith({
+			navigationVisitId,
+			postId: 1,
+			ownerType: 'RILOG',
+			chapterId: 10,
+			surface,
+			targetType: 'collection_title',
+			targetPostId: null,
+			position: 0,
+			clickPart: 'title',
+		});
+		expect(navigationVisitId).toEqual(expect.any(String));
+		expect(consumeBlogProfileEntryContext('/@writer')).toBe(entrySource);
+		expect(consumeBlogProfileEntryContext('/@writer')).toBeNull();
+	});
 
 	it('한 방문의 노출, 클릭, 펼침을 같은 ID와 게시글 정보로 기록한다', () => {
 		render(<Exploration />);

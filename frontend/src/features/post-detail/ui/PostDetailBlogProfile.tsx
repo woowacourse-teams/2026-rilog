@@ -1,8 +1,8 @@
 import type { BaseBlog } from '@/domains/blog/model/blog';
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface PostDetailBlogProfileProps {
 	profile: BaseBlog;
@@ -28,8 +28,9 @@ export default function PostDetailBlogProfile({ profile }: PostDetailBlogProfile
 
 	return (
 		<section aria-labelledby="post-blog-profile-heading" className="text-center">
-			<CustomLink
+			<BlogProfileEntryLink
 				href={buildBlogHomePath(profile.slug)}
+				entrySource="post_detail_bottom_profile"
 				className="group inline-flex flex-col items-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
 			>
 				{avatar}
@@ -40,7 +41,7 @@ export default function PostDetailBlogProfile({ profile }: PostDetailBlogProfile
 					{profile.name}
 				</h2>
 				{profile.description ? <p className="mt-1 text-body-1 text-text-secondary">{profile.description}</p> : null}
-			</CustomLink>
+			</BlogProfileEntryLink>
 		</section>
 	);
 }

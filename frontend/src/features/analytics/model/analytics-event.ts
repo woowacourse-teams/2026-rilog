@@ -15,6 +15,16 @@ export type EditorEntrySource = 'sidebar' | 'post_detail_edit' | 'draft_list' | 
 export type CologCreationEntrySource = 'sidebar' | 'direct';
 // Co-log 멤버 초대 진입 위치별 사용량과 이후 초대 전환을 비교하기 위해 필요
 export type CologMemberInvitationEntrySource = 'member_aside' | 'settings';
+// 프로필 홈에 실제로 도착한 방문의 직전 진입 위치를 구분해 콘텐츠 탐색 기여도를 비교한다.
+export type BlogProfileEntrySource =
+	| 'feed'
+	| 'post_detail_header'
+	| 'post_detail_bottom_profile'
+	| 'colog_members'
+	| 'profile_colog_list'
+	| 'post_detail_series_title'
+	| 'post_detail_chapter_title'
+	| 'post_detail_recommendation_author';
 //  사용자가 이미지를 어떻게 마련하는지 파악해 업로드 UX나 자동 대표 이미지 정책을 개선할 수 있음
 export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 // 게시글을 온전히 소비했는지 지표
