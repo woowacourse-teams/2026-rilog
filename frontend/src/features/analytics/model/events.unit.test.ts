@@ -75,6 +75,14 @@ describe('analytics events', () => {
 		});
 	});
 
+	it('피드 카테고리 필터 클릭을 canonical payload로 전송한다', () => {
+		analytics.feedCategoryFilterClicked({ category: 'RETROSPECT' });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('feed category filter clicked', {
+			category: 'RETROSPECT',
+		});
+	});
+
 	it('읽기, 발행, Co-log 초대 이벤트를 canonical 이름으로 전송한다', () => {
 		analytics.postReadEngaged({ postId: 12, engagementSeconds: 8, scrollDepthBucket: '50_percent' });
 		analytics.postPublished({

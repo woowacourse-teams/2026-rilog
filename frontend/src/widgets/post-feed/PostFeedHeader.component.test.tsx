@@ -13,6 +13,9 @@ type MockNextLinkProps = ComponentProps<'a'> & {
 };
 
 const route = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
+const analyticsMock = vi.hoisted(() => ({ feedCategoryFilterClicked: vi.fn() }));
+
+vi.mock('@/features/analytics/model/events', () => ({ analytics: analyticsMock }));
 
 vi.mock('next/navigation', () => ({
 	useSearchParams: () => route.searchParams,
@@ -34,7 +37,21 @@ vi.mock('next/link', () => ({
 
 describe('PostFeedHeader', () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
 		route.searchParams = new URLSearchParams();
+	});
+
+	it('전체, 기술, 일상, 회고 클릭을 선택한 카테고리와 함께 기록한다', () => {
+		render(<PostFeedHeader id="post-feed-categories" />);
+
+		for (const name of ['전체', '기술', '일상', '회고']) {
+			fireEvent.click(screen.getByRole('link', { name }));
+		}
+
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(1, { category: 'ALL' });
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(2, { category: 'TECH' });
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(3, { category: 'DAILY' });
+		expect(analyticsMock.feedCategoryFilterClicked).toHaveBeenNthCalledWith(4, { category: 'RETROSPECT' });
 	});
 
 	afterEach(() => {
