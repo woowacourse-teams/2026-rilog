@@ -12,6 +12,7 @@ import { canRemoveCologMember } from '@/features/colog-member-management/lib/can
 import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/api/api-error';
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 import { useRemoveCologMemberMutation } from '@/shared/api/cologs/mutations/use-remove-colog-member-mutation';
+import { API_ERROR_CODES } from '@/shared/api/error-codes';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
@@ -28,6 +29,7 @@ interface CologMemberManagementSectionProps {
 
 const REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 내보내지 못했어요. 다시 시도해 주세요.';
 const INVITE_MEMBER_ERROR_FALLBACK_MESSAGE = '멤버를 초대하지 못했어요. 다시 시도해 주세요.';
+const USER_COLOG_COUNT_EXCEEDED_INVITATION_MESSAGE = '이미 10개 코로그에 소속된 유저는 초대할 수 없습니다.';
 
 const getInvitationErrorCode = (error: unknown) => {
 	if (
@@ -49,6 +51,11 @@ const getInvitationErrorCode = (error: unknown) => {
 
 	return getAnalyticsErrorProperties(error).errorCode;
 };
+
+const getInvitationErrorMessage = (error: unknown) =>
+	getInvitationErrorCode(error) === API_ERROR_CODES.USER_COLOG_COUNT_EXCEEDED
+		? USER_COLOG_COUNT_EXCEEDED_INVITATION_MESSAGE
+		: getApiErrorMessage(error, INVITE_MEMBER_ERROR_FALLBACK_MESSAGE);
 
 export default function CologMemberManagementSection({
 	cologId,
@@ -111,7 +118,7 @@ export default function CologMemberManagementSection({
 					? [
 							{
 								candidate: candidates[index],
-								message: getApiErrorMessage(result.reason, INVITE_MEMBER_ERROR_FALLBACK_MESSAGE),
+								message: getInvitationErrorMessage(result.reason),
 							},
 						]
 					: [],

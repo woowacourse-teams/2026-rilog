@@ -360,4 +360,35 @@ describe('CologMemberManagementSection', () => {
 			],
 		});
 	});
+
+	it('사용자의 코로그 소속 개수 초과 오류는 멤버 초대 문맥의 메시지로 안내한다', async () => {
+		inviteMemberMock.mockRejectedValue({
+			type: 'api',
+			detail: {
+				status: 400,
+				error: 'BAD_REQUEST',
+				errorCode: 'USER_COLOG_COUNT_EXCEEDED',
+				message: '사용자는 최대 10개의 Colog에 속할 수 있습니다.',
+				invalidParams: null,
+			},
+		});
+		render(<CologMemberManagementSection cologId={11} slug="rilog" drafts={drafts} />);
+
+		fireEvent.click(screen.getByRole('button', { name: '초대 제출' }));
+
+		await waitFor(() =>
+			expect(inviteResultMock).toHaveBeenCalledWith({
+				failures: [
+					{
+						candidate: { userId: 7, slug: 'new-member', nickname: '새 멤버', profileImageUrl: null },
+						message: '이미 10개 코로그에 소속된 유저는 초대할 수 없습니다.',
+					},
+				],
+			}),
+		);
+		expect(cologMemberInvitationFailedMock).toHaveBeenCalledWith({
+			cologId: 11,
+			errorCode: 'USER_COLOG_COUNT_EXCEEDED',
+		});
+	});
 });

@@ -200,7 +200,63 @@ describe('MemberInviteModal', () => {
 		await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
 	});
 
-	it('초대에 실패하면 모달을 유지하고 실패한 후보와 오류를 안내한다', async () => {
+	it('모든 초대가 같은 이유로 실패하면 후보를 유지하고 오류를 한 번만 안내한다', async () => {
+		const user = userEvent.setup();
+		const onClose = vi.fn();
+		const firstCandidate = {
+			userId: 1,
+			slug: 'first-member',
+			nickname: '첫 번째 멤버',
+			profileImageUrl: null,
+		};
+		const secondCandidate = {
+			userId: 2,
+			slug: 'second-member',
+			nickname: '두 번째 멤버',
+			profileImageUrl: null,
+		};
+		const onInvite = vi.fn().mockResolvedValue({
+			failures: [
+				{
+					candidate: firstCandidate,
+					message: '멤버를 초대하지 못했어요. 다시 시도해 주세요.',
+				},
+				{
+					candidate: secondCandidate,
+					message: '멤버를 초대하지 못했어요. 다시 시도해 주세요.',
+				},
+			],
+		});
+		vi.mocked(readUserBySlug)
+			.mockResolvedValueOnce({
+				status: 200,
+				message: '사용자 조회에 성공했습니다.',
+				data: { id: 1, slug: 'first-member', nickname: '첫 번째 멤버', profileImageUrl: null },
+			})
+			.mockResolvedValueOnce({
+				status: 200,
+				message: '사용자 조회에 성공했습니다.',
+				data: { id: 2, slug: 'second-member', nickname: '두 번째 멤버', profileImageUrl: null },
+			});
+		renderWithProvider(<MemberInviteModal slug={COLOG_SLUG} open onClose={onClose} onInvite={onInvite} />);
+
+		const input = screen.getByRole('textbox', { name: '초대할 멤버 고유 아이디' });
+		await user.type(input, '@first-member{Enter}');
+		await screen.findByText('첫 번째 멤버');
+		await user.type(input, '@second-member{Enter}');
+		await screen.findByText('두 번째 멤버');
+		await user.click(screen.getByRole('button', { name: '초대' }));
+
+		expect(
+			await screen.findByText('멤버를 초대하지 못했어요. 다시 시도해 주세요. (첫 번째 멤버, 두 번째 멤버)'),
+		).toBeInTheDocument();
+		const candidateList = screen.getByRole('list', { name: '추가할 멤버 정보' });
+		expect(candidateList).toHaveTextContent('첫 번째 멤버');
+		expect(candidateList).toHaveTextContent('두 번째 멤버');
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it('초대에 실패하면 메시지 뒤에 해당 후보를 안내한다', async () => {
 		const user = userEvent.setup();
 		const onClose = vi.fn();
 		const onInvite = vi.fn().mockResolvedValue({
@@ -222,7 +278,7 @@ describe('MemberInviteModal', () => {
 		await screen.findByRole('list', { name: '추가할 멤버 정보' });
 		await user.click(screen.getByRole('button', { name: '초대' }));
 
-		expect(await screen.findByText(/김지연: 사용자는 최대 10개의 Colog에 속할 수 있습니다\./)).toBeInTheDocument();
+		expect(await screen.findByText('사용자는 최대 10개의 Colog에 속할 수 있습니다. (김지연)')).toBeInTheDocument();
 		expect(screen.getByRole('list', { name: '추가할 멤버 정보' })).toHaveTextContent('김지연');
 		expect(onClose).not.toHaveBeenCalled();
 	});
@@ -267,7 +323,7 @@ describe('MemberInviteModal', () => {
 		const candidateList = screen.getByRole('list', { name: '추가할 멤버 정보' });
 		await waitFor(() => expect(candidateList).not.toHaveTextContent('성공한 멤버'));
 		expect(candidateList).toHaveTextContent('실패한 멤버');
-		expect(screen.getByText(/실패한 멤버: 사용자는 최대 10개의 Colog에 속할 수 있습니다\./)).toBeInTheDocument();
+		expect(screen.getByText('사용자는 최대 10개의 Colog에 속할 수 있습니다. (실패한 멤버)')).toBeInTheDocument();
 		expect(onClose).not.toHaveBeenCalled();
 	});
 });

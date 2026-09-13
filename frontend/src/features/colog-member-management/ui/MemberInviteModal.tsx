@@ -12,6 +12,7 @@ import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
 import { MAX_COLOG_MEMBER_COUNT, willExceedCologMemberLimit } from '../lib/colog-member-limit';
+import { formatMemberInviteFailures } from '../lib/format-member-invite-failures';
 
 import MemberInviteCandidateRow from './MemberInviteCandidateRow';
 
@@ -135,7 +136,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 			}
 
 			setCandidates(result.failures.map((failure) => failure.candidate));
-			setErrorMessage(result.failures.map((failure) => `${failure.candidate.nickname}: ${failure.message}`).join('\n'));
+			setErrorMessage(formatMemberInviteFailures(result.failures));
 		} catch {
 			setErrorMessage('멤버를 초대하지 못했어요. 잠시 후 다시 시도해 주세요.');
 		} finally {
