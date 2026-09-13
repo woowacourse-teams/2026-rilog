@@ -45,9 +45,6 @@ export default function PostFeedGrid({
 
 	const hasInitialError =
 		(isInitialFilter && !isInitialQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
-	const feedScopeTracker = (
-		<FeedScopeViewTracker feedScope={filters.blogType ?? 'ALL'} isVisible={query.isSuccess && !hasInitialError} />
-	);
 
 	usePostFeedEntryAutoScroll({
 		isReady: hasInitialError || !query.isPending,
@@ -80,10 +77,9 @@ export default function PostFeedGrid({
 		};
 	}, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError]);
 
-	if (hasInitialError) {
-		return (
-			<>
-				{feedScopeTracker}
+	const renderFeedContent = () => {
+		if (hasInitialError) {
+			return (
 				<section
 					id={POST_FEED_CONTENT_ID}
 					className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
@@ -110,23 +106,15 @@ export default function PostFeedGrid({
 						</Button>
 					</div>
 				</section>
-			</>
-		);
-	}
+			);
+		}
 
-	if (query.isPending) {
-		return (
-			<>
-				{feedScopeTracker}
-				<PostFeedSkeleton />
-			</>
-		);
-	}
+		if (query.isPending) {
+			return <PostFeedSkeleton />;
+		}
 
-	if (posts.length === 0) {
-		return (
-			<>
-				{feedScopeTracker}
+		if (posts.length === 0) {
+			return (
 				<section
 					id={POST_FEED_CONTENT_ID}
 					className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
@@ -142,13 +130,10 @@ export default function PostFeedGrid({
 						아직 발행된 게시글이 없어요.
 					</p>
 				</section>
-			</>
-		);
-	}
+			);
+		}
 
-	return (
-		<>
-			{feedScopeTracker}
+		return (
 			<section
 				id={POST_FEED_CONTENT_ID}
 				className="mx-auto w-full max-w-7xl scroll-mt-8 px-6 pb-20 md:px-16"
@@ -179,6 +164,13 @@ export default function PostFeedGrid({
 					</div>
 				)}
 			</section>
+		);
+	};
+
+	return (
+		<>
+			<FeedScopeViewTracker feedScope={filters.blogType ?? 'ALL'} isVisible={query.isSuccess && !hasInitialError} />
+			{renderFeedContent()}
 		</>
 	);
 }
