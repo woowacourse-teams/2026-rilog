@@ -11,6 +11,22 @@ describe('analytics events', () => {
 		captureMock.mockReset();
 	});
 
+	it('About 페이지 조회와 링크 행동을 canonical payload로 전송한다', () => {
+		analytics.aboutPageViewed({ acquisitionSource: 'pre_registration_email' });
+		analytics.aboutPageEntryClicked({ entrySource: 'release_note' });
+		analytics.aboutPageLinkClicked({ linkTarget: 'feeds' });
+
+		expect(captureMock).toHaveBeenNthCalledWith(1, 'about page viewed', {
+			acquisition_source: 'pre_registration_email',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'about page entry clicked', {
+			entry_source: 'release_note',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(3, 'about page link clicked', {
+			link_target: 'feeds',
+		});
+	});
+
 	it('노션 명세의 인증 및 가입 이벤트를 canonical payload로 전송한다', () => {
 		analytics.githubLoginStarted({ entrySurface: 'sidebar', redirectTarget: '/feeds' });
 		analytics.githubLoginFailed({ failureStage: 'callback_request', errorCode: 'NETWORK' });
@@ -34,6 +50,53 @@ describe('analytics events', () => {
 			has_introduction: false,
 			has_service_url: true,
 			has_github_url: false,
+		});
+	});
+
+	it('패치노트 모달 행동을 canonical payload로 전송한다', () => {
+		analytics.releaseNoteViewed({ releaseNoteId: '2026-09-feed-update' });
+		analytics.releaseNoteClosed({ releaseNoteId: '2026-09-feed-update', closeMethod: 'close_button' });
+		analytics.releaseNoteBackdropClicked({ releaseNoteId: '2026-09-feed-update' });
+		analytics.releaseNoteLinkClicked({ releaseNoteId: '2026-09-feed-update', linkTarget: 'about' });
+
+		expect(captureMock).toHaveBeenNthCalledWith(1, 'release note viewed', {
+			release_note_id: '2026-09-feed-update',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'release note closed', {
+			release_note_id: '2026-09-feed-update',
+			close_method: 'close_button',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(3, 'release note backdrop clicked', {
+			release_note_id: '2026-09-feed-update',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(4, 'release note link clicked', {
+			release_note_id: '2026-09-feed-update',
+			link_target: 'about',
+		});
+	});
+
+	it('사이드바 피드 필터를 canonical payload로 전송한다', () => {
+		analytics.sidebarFeedFilterClicked({ feedScope: 'RILOG' });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('sidebar feed filter clicked', {
+			feed_scope: 'RILOG',
+		});
+	});
+
+	it('실제로 표시된 피드 범위와 카테고리를 canonical payload로 전송한다', () => {
+		analytics.feedViewed({ feedScope: 'COLOG', category: 'TECH' });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('feed viewed', {
+			feed_scope: 'COLOG',
+			category: 'TECH',
+		});
+	});
+
+	it('피드 카테고리 필터 클릭을 canonical payload로 전송한다', () => {
+		analytics.feedCategoryFilterClicked({ category: 'RETROSPECT' });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('feed category filter clicked', {
+			category: 'RETROSPECT',
 		});
 	});
 

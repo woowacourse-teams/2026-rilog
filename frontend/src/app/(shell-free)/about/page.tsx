@@ -1,7 +1,7 @@
-import Link from 'next/link';
-
 import type { Metadata } from 'next';
 
+import AboutPageLink from '@/features/analytics/ui/AboutPageLink';
+import AboutPageViewTracker from '@/features/analytics/ui/AboutPageViewTracker';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import { createSocialMetadata, DEFAULT_OG_IMAGE, SITE_NAME } from '@/shared/seo/create-social-metadata';
 import Divider from '@/shared/ui/divider/Divider';
@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
 	return (
 		<main className={styles.page}>
+			<AboutPageViewTracker />
 			<AboutViewportReveal />
 			<HeroMeaningTransition />
 
@@ -96,7 +97,7 @@ export default function AboutPage() {
 					</p>
 				</div>
 				<footer className={styles.linkSection} aria-label="Rilog 둘러보기" data-about-reveal="copy">
-					<Link href={APP_ROUTES.feeds}>
+					<AboutPageLink href={APP_ROUTES.feeds} linkTarget="feeds">
 						<span className={styles.linkContent}>
 							<span className={styles.linkLabel}>
 								<span>Continue to</span>
@@ -104,7 +105,7 @@ export default function AboutPage() {
 							</span>
 							<span aria-hidden="true">↗</span>
 						</span>
-					</Link>
+					</AboutPageLink>
 				</footer>
 			</section>
 		</main>

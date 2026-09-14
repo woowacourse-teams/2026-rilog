@@ -1,4 +1,7 @@
 import type {
+	AboutPageAcquisitionSource,
+	AboutPageEntrySource,
+	AboutPageLinkTarget,
 	AnalyticsErrorProperties,
 	BlogProfileEntrySource,
 	BlockCountBucket,
@@ -8,6 +11,8 @@ import type {
 	ContentLoadSurface,
 	EditingTimeBucket,
 	EditorEntrySource,
+	FeedCategory,
+	FeedScope,
 	ImageSource,
 	LoginEntrySurface,
 	PostNavigationClickPart,
@@ -16,6 +21,8 @@ import type {
 	PostDocumentState,
 	PostEntrySource,
 	PublishFailureStage,
+	ReleaseNoteCloseMethod,
+	ReleaseNoteLinkTarget,
 	ScrollDepthBucket,
 } from './analytics-event';
 
@@ -28,6 +35,38 @@ export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introd
 export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
 export const analytics = {
+	aboutPageViewed: ({ acquisitionSource }: { acquisitionSource: AboutPageAcquisitionSource }) =>
+		captureAnalyticsEvent('about page viewed', { acquisition_source: acquisitionSource }),
+	aboutPageEntryClicked: ({ entrySource }: { entrySource: AboutPageEntrySource }) =>
+		captureAnalyticsEvent('about page entry clicked', { entry_source: entrySource }),
+	aboutPageLinkClicked: ({ linkTarget }: { linkTarget: AboutPageLinkTarget }) =>
+		captureAnalyticsEvent('about page link clicked', { link_target: linkTarget }),
+	releaseNoteViewed: ({ releaseNoteId }: { releaseNoteId: string }) =>
+		captureAnalyticsEvent('release note viewed', { release_note_id: releaseNoteId }),
+	releaseNoteClosed: ({ releaseNoteId, closeMethod }: { releaseNoteId: string; closeMethod: ReleaseNoteCloseMethod }) =>
+		captureAnalyticsEvent('release note closed', {
+			release_note_id: releaseNoteId,
+			close_method: closeMethod,
+		}),
+	releaseNoteBackdropClicked: ({ releaseNoteId }: { releaseNoteId: string }) =>
+		captureAnalyticsEvent('release note backdrop clicked', { release_note_id: releaseNoteId }),
+	releaseNoteLinkClicked: ({
+		releaseNoteId,
+		linkTarget,
+	}: {
+		releaseNoteId: string;
+		linkTarget: ReleaseNoteLinkTarget;
+	}) =>
+		captureAnalyticsEvent('release note link clicked', {
+			release_note_id: releaseNoteId,
+			link_target: linkTarget,
+		}),
+	sidebarFeedFilterClicked: ({ feedScope }: { feedScope: FeedScope }) =>
+		captureAnalyticsEvent('sidebar feed filter clicked', { feed_scope: feedScope }),
+	feedViewed: ({ feedScope, category }: { feedScope: FeedScope; category: FeedCategory }) =>
+		captureAnalyticsEvent('feed viewed', { feed_scope: feedScope, category }),
+	feedCategoryFilterClicked: ({ category }: { category: FeedCategory }) =>
+		captureAnalyticsEvent('feed category filter clicked', { category }),
 	githubLoginStarted: ({ entrySurface, redirectTarget }: { entrySurface: LoginEntrySurface; redirectTarget: string }) =>
 		captureAnalyticsEvent('github login started', { entry_surface: entrySurface, redirect_target: redirectTarget }),
 	githubLoginCompleted: ({ userType }: { userType: 'new' | 'returning' }) =>

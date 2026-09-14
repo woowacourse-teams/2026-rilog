@@ -11,6 +11,7 @@ interface BaseModalProps {
 	open: boolean;
 	children: ReactNode;
 	onDismiss: () => void;
+	onBackdropClick?: () => void;
 	accessibility: BaseModalAccessibility;
 	closeOnBackdrop?: boolean;
 	closeOnEscape?: boolean;
@@ -25,6 +26,7 @@ export default function BaseModal({
 	open,
 	children,
 	onDismiss,
+	onBackdropClick,
 	accessibility,
 	closeOnBackdrop = true,
 	closeOnEscape = true,
@@ -103,12 +105,12 @@ export default function BaseModal({
 	}, [initialFocusRef, open, restoreFocus]);
 
 	const handleBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
-		if (
-			!dismissDisabled &&
-			closeOnBackdrop &&
-			event.target === event.currentTarget &&
-			event.currentTarget.dataset.state !== 'closing'
-		) {
+		if (event.target !== event.currentTarget || event.currentTarget.dataset.state === 'closing') {
+			return;
+		}
+
+		onBackdropClick?.();
+		if (!dismissDisabled && closeOnBackdrop) {
 			onDismiss();
 		}
 	};
