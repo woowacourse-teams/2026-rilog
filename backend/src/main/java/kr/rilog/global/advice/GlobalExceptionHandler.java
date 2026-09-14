@@ -3,6 +3,7 @@ package kr.rilog.global.advice;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.global.exception.ErrorInformation;
 import kr.rilog.global.exception.GlobalExceptionInformation;
 import kr.rilog.global.exception.RilogInfrastructureException;
@@ -66,7 +67,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RilogBusinessException.class)
     public ResponseEntity<ErrorDetail> handleRilogBusinessException(RilogBusinessException e) {
         ErrorInformation errorInformation = e.getErrorInformation();
-        logExceptionByStatus(errorInformation, e);
+        if (shouldLog(errorInformation)) {
+            logExceptionByStatus(errorInformation, e);
+        }
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
@@ -211,6 +214,10 @@ public class GlobalExceptionHandler {
         }
 
         logInfoException(errorInformation, errorInformation.getMessage());
+    }
+
+    private boolean shouldLog(ErrorInformation errorInformation) {
+        return errorInformation != AuthErrorInformation.EXPIRED_ACCESS_TOKEN;
     }
 
     private void logInfoException(ErrorInformation errorInformation, Object context) {
