@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,12 +10,14 @@ import { renderWithQuery as render } from '@/test/render-with-query';
 
 import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-session';
 
+import SignUpAccessGuard from './SignUpAccessGuard';
 import SignUpForm from './SignUpForm';
 
-const { onboardMock, signUpCompletedMock, signUpFailedMock, uploadFileMock } = vi.hoisted(() => ({
+const { onboardMock, signUpCompletedMock, signUpFailedMock, signUpStartedMock, uploadFileMock } = vi.hoisted(() => ({
 	onboardMock: vi.fn(),
 	signUpCompletedMock: vi.fn(),
 	signUpFailedMock: vi.fn(),
+	signUpStartedMock: vi.fn(),
 	uploadFileMock: vi.fn(),
 }));
 
@@ -40,6 +42,7 @@ vi.mock('@/features/analytics/model/events', () => ({
 	analytics: {
 		signUpCompleted: signUpCompletedMock,
 		signUpFailed: signUpFailedMock,
+		signUpStarted: signUpStartedMock,
 	},
 }));
 
@@ -407,6 +410,88 @@ describe('SignUpForm', () => {
 			hasServiceUrl: true,
 			hasGithubUrl: true,
 		});
+	});
+
+	it('성공 후 이동이 지연되어도 실제 폼의 상위 Guard가 접근 제한 모달을 표시하지 않는다', async () => {
+		const navigate = vi.fn();
+		startSignUpFlow();
+		render(
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+				<SignUpAccessGuard>
+					<SignUpForm completeSignUp={vi.fn().mockResolvedValue({ slug: 'rilog' })} navigate={navigate} />
+				</SignUpAccessGuard>
+			</AUTH_CONTEXT.Provider>,
+		);
+		await screen.findByRole('textbox', { name: '닉네임' });
+
+		await submitValidSignUp();
+
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/', { replace: true }));
+		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(screen.queryByRole('alertdialog', { name: '회원가입을 진행할 수 없습니다.' })).not.toBeInTheDocument();
+		expect(screen.getByRole('status')).toHaveTextContent('회원가입을 완료하고 이동하고 있습니다...');
+		expect(signUpStartedMock).toHaveBeenCalledOnce();
+		expect(signUpCompletedMock).toHaveBeenCalledOnce();
+	});
+
+	it('실패 후 재시도에 성공할 때까지 Guard와 회원가입 흐름을 유지한다', async () => {
+		const navigate = vi.fn();
+		const completeSignUp = vi
+			.fn()
+			.mockRejectedValueOnce(new Error('잠시 후 다시 시도해 주세요.'))
+			.mockResolvedValue({ slug: 'rilog' });
+		startSignUpFlow();
+		render(
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+				<SignUpAccessGuard>
+					<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />
+				</SignUpAccessGuard>
+			</AUTH_CONTEXT.Provider>,
+		);
+		await screen.findByRole('textbox', { name: '닉네임' });
+
+		await submitValidSignUp();
+		expect(await screen.findByRole('alert')).toHaveTextContent('잠시 후 다시 시도해 주세요.');
+		expect(hasActiveSignUpFlow()).toBe(true);
+		expect(navigate).not.toHaveBeenCalled();
+		expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+
+		await userEvent.setup().click(screen.getByRole('button', { name: '시작하기' }));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/', { replace: true }));
+		expect(completeSignUp).toHaveBeenCalledTimes(2);
+		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(screen.getByRole('status')).toHaveTextContent('회원가입을 완료하고 이동하고 있습니다...');
+		expect(signUpFailedMock).toHaveBeenCalledOnce();
+		expect(signUpCompletedMock).toHaveBeenCalledOnce();
+	});
+
+	it('요청 중 로그아웃되면 뒤늦은 성공 응답이 완료 화면과 이동을 되살리지 않는다', async () => {
+		let resolveSignUp!: (value: { slug: string }) => void;
+		const completeSignUp = vi.fn().mockImplementation(
+			() =>
+				new Promise<{ slug: string }>((resolve) => {
+					resolveSignUp = resolve;
+				}),
+		);
+		const navigate = vi.fn();
+		startSignUpFlow();
+		render(
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+				<SignUpAccessGuard>
+					<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />
+				</SignUpAccessGuard>
+			</AUTH_CONTEXT.Provider>,
+		);
+		await screen.findByRole('textbox', { name: '닉네임' });
+		await submitValidSignUp();
+		await waitFor(() => expect(completeSignUp).toHaveBeenCalledOnce());
+
+		await act(async () => tokenManager.publishLogout());
+		await act(async () => resolveSignUp({ slug: 'rilog' }));
+
+		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(screen.getByRole('alertdialog', { name: '회원가입을 진행할 수 없습니다.' })).toBeInTheDocument();
+		expect(navigate).not.toHaveBeenCalled();
 	});
 
 	it('유효하지 않은 소셜 링크를 제출하지 않고 첫 오류 입력으로 이동한다', async () => {
