@@ -78,19 +78,7 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Deploy to server
-        env:
-          DOCKER_USER_NAME: ${{ secrets.DOCKER_USER_NAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
-          DOCKER_TAG: ${{ secrets.DOCKER_TAG }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          RILOG_ENV: dev
-          RILOG_CONTAINER_NAME: rilog-backend-dev
-          RILOG_LOG_GROUP: /rilog/backend/dev
-          RILOG_LOG_RETENTION_DAYS: 7
         run: |
-          chmod +x backend/scripts/deploy-backend-container.sh
-          backend/scripts/deploy-backend-container.sh
+          cd /home/ubuntu
+          ./deploy.sh
