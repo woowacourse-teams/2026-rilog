@@ -28,7 +28,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 	const postPath = buildPostDetailPath(post.blog.slug, String(post.id));
 
 	return (
-		<li className="h-full [contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
+		<li className="h-full">
 			<article className="group/card relative isolate flex h-full cursor-pointer flex-col">
 				<div className="aspect-video overflow-hidden rounded-xl bg-thumbnail-background">
 					<PostFeedImage

@@ -47,7 +47,7 @@ export default function BlogHome({
 			header={<BlogProfileHero profile={profile} action={action} />}
 			leftAside={
 				<div className="h-full py-11">
-					<div className="sticky top-8 mx-auto w-full max-w-40">
+					<div className="mx-auto w-full max-w-40">
 						<BlogHomeNavigation
 							blogType={profile.type}
 							slug={profile.slug}
@@ -67,20 +67,22 @@ export default function BlogHome({
 					filter={filter}
 					initialIndexRequestFailed={initialIndexRequestFailed}
 				/>
-				<BlogPostFeed
-					blogType={profile.type}
-					slug={profile.slug}
-					filter={filter}
-					initialRequestFailed={initialPostsRequestFailed}
-					heading={
-						<BlogHomeFeedHeading
-							blogType={profile.type}
-							slug={profile.slug}
-							filter={filter}
-							initialIndexRequestFailed={initialIndexRequestFailed}
-						/>
-					}
-				/>
+				<div id="blog-home-feed-heading" className="min-h-dvh scroll-mt-16 sm:scroll-mt-8">
+					<BlogPostFeed
+						blogType={profile.type}
+						slug={profile.slug}
+						filter={filter}
+						initialRequestFailed={initialPostsRequestFailed}
+						heading={
+							<BlogHomeFeedHeading
+								blogType={profile.type}
+								slug={profile.slug}
+								filter={filter}
+								initialIndexRequestFailed={initialIndexRequestFailed}
+							/>
+						}
+					/>
+				</div>
 			</div>
 			{initialIndexRequestFailed ? <BlogHomeIndexRecovery slug={profile.slug} /> : null}
 			<BlogProfileViewTracker blogType={profile.type} blogId={profile.id} />

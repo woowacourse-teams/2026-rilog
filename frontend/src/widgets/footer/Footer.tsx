@@ -1,8 +1,8 @@
 import Image from 'next/image';
 
 import AboutPageEntryLink from '@/features/analytics/ui/AboutPageEntryLink';
-import { APP_ROUTES } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
+
+import FooterHomeLink from './FooterHomeLink';
 
 const LINK_CLASS_NAME =
 	'rounded-sm transition-[color,opacity,transform] duration-200 hover:text-brand-primary-hover active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transform-none';
@@ -81,13 +81,9 @@ export default function Footer() {
 					</a>
 				</nav>
 
-				<CustomLink
-					className={`${LINK_CLASS_NAME} mt-5 inline-flex hover:opacity-75 sm:mt-6`}
-					href={APP_ROUTES.feeds}
-					aria-label="Rilog 홈"
-				>
+				<FooterHomeLink className={`${LINK_CLASS_NAME} mt-5 inline-flex hover:opacity-75 sm:mt-6`}>
 					<Image className="h-auto w-[184px]" src="/brand/logo.svg" alt="Rilog." width={1186} height={472} priority />
-				</CustomLink>
+				</FooterHomeLink>
 			</div>
 		</footer>
 	);

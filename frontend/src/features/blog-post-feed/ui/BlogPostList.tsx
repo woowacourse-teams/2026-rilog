@@ -11,11 +11,10 @@ import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 interface BlogPostListProps {
 	posts: readonly PostFeedItem[];
-	slug: string;
 	blogType: BlogPublicProfile['type'];
 }
 
-export default function BlogPostList({ posts, slug, blogType }: BlogPostListProps) {
+export default function BlogPostList({ posts, blogType }: BlogPostListProps) {
 	if (posts.length === 0) {
 		return (
 			<div className="flex min-h-80 items-center justify-center text-center">
@@ -32,7 +31,7 @@ export default function BlogPostList({ posts, slug, blogType }: BlogPostListProp
 				return (
 					<li key={post.id}>
 						<CustomLink
-							href={buildPostDetailPath(slug, String(post.id))}
+							href={buildPostDetailPath(post.blog.slug, String(post.id))}
 							onClick={() =>
 								recordPostDetailEntryContext({
 									postId: post.id,

@@ -27,10 +27,9 @@ export const cancelFeedFilterScroll = () => {
 	setFilterScrolling(false);
 };
 
-export const navigateFeedFilter = (href: string) => {
+export const scrollToFeedTarget = (targetId = POST_FEED_SCROLL_TARGET_ID) => {
 	cancelFeedFilterScroll();
-	window.history.pushState(null, '', href);
-	const target = document.getElementById(POST_FEED_SCROLL_TARGET_ID);
+	const target = document.getElementById(targetId);
 	if (target === null) return;
 
 	const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
@@ -63,4 +62,9 @@ export const navigateFeedFilter = (href: string) => {
 		window.addEventListener(eventName, cancelFeedFilterScroll, { passive: true }),
 	);
 	animationFrameId = window.requestAnimationFrame(animateScroll);
+};
+
+export const navigateFeedFilter = (href: string) => {
+	window.history.pushState(null, '', href);
+	scrollToFeedTarget();
 };
