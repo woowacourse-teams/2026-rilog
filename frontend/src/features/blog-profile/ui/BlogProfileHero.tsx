@@ -37,6 +37,7 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 					fallback={profile.name.slice(0, 1)}
 					label={avatarLabel}
 					size="max"
+					hasBorder={false}
 					className={`size-32! sm:size-40! md:size-45! ${avatarShapeClassName}`}
 				/>
 

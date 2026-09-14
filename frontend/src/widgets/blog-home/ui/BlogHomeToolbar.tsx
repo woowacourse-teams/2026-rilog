@@ -35,7 +35,7 @@ export default function BlogHomeToolbar({
 				className="h-11! justify-start!"
 				onClick={() => setIsNavigationOpen(true)}
 			>
-				{blogType === 'COLOG' ? '챕터 보기' : '인덱스 보기'}
+				{blogType === 'COLOG' ? '챕터 보기' : '분류 전체보기'}
 			</Button>
 
 			<BottomSheet
