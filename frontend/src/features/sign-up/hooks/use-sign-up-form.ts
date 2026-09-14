@@ -10,7 +10,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
-import { clearSignUpFlow } from '../lib/sign-up-flow-session';
+import { completeSignUpFlow } from '../lib/sign-up-flow-session';
 import {
 	normalizeSignUpFields,
 	validateSignUpFields,
@@ -160,20 +160,6 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 				githubUrl: normalizedValue.githubUrl,
 				profileImageFile,
 			});
-			analytics.signUpCompleted({
-				hasProfileImage: profileImageFile !== null,
-				hasIntroduction: description.trim() !== '',
-				hasServiceUrl: normalizedValue.serviceUrl !== '',
-				hasGithubUrl: normalizedValue.githubUrl !== '',
-			});
-			clearSignUpFlow();
-
-			if (navigate !== undefined) {
-				navigate('/', { replace: true });
-				return;
-			}
-
-			window.location.replace('/');
 		} catch (error) {
 			const analyticsError = isSignUpFailure(error) ? error.cause : error;
 			const { errorCode } = getAnalyticsErrorProperties(analyticsError);
@@ -188,7 +174,25 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 					'회원가입을 완료하지 못했습니다. 입력한 내용은 유지되며 다시 시도할 수 있습니다.',
 				),
 			});
+			return;
 		}
+
+		analytics.signUpCompleted({
+			hasProfileImage: profileImageFile !== null,
+			hasIntroduction: description.trim() !== '',
+			hasServiceUrl: normalizedValue.serviceUrl !== '',
+			hasGithubUrl: normalizedValue.githubUrl !== '',
+		});
+		if (!completeSignUpFlow()) {
+			return;
+		}
+
+		if (navigate !== undefined) {
+			navigate('/', { replace: true });
+			return;
+		}
+
+		window.location.replace('/');
 	};
 
 	return {

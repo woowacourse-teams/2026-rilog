@@ -28,7 +28,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 	const postPath = buildPostDetailPath(post.blog.slug, String(post.id));
 
 	return (
-		<li className="h-full [contain-intrinsic-size:auto_24rem] [content-visibility:auto]">
+		<li className="h-full">
 			<article className="group/card relative isolate flex h-full cursor-pointer flex-col">
 				<div className="aspect-video overflow-hidden rounded-xl bg-thumbnail-background">
 					<PostFeedImage
@@ -76,7 +76,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 							</span>
 						</BlogProfileEntryLink>
 					)}
-					<span aria-hidden="true" className="shrink-0 text-text-secondary">
+					<span aria-hidden="true" className="shrink-0 text-navy-400">
 						.
 					</span>
 					{post.chapterName && <span className="ml-1 min-w-0 flex-1 truncate text-navy-400">{post.chapterName}</span>}

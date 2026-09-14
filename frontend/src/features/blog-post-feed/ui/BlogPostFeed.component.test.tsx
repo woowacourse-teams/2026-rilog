@@ -55,7 +55,7 @@ describe('BlogPostFeed', () => {
 		expect(within(postSection).getAllByRole('link')).toHaveLength(2);
 		expect(within(postSection).getByRole('link', { name: /접근 가능한 인터페이스 만들기/ })).toHaveAttribute(
 			'href',
-			'/@rilog/posts/101',
+			'/@saebom/posts/101',
 		);
 		expect(within(postSection).getByText('2026년 8월 16일')).toBeInTheDocument();
 		expect(within(postSection).getByRole('img', { name: '접근 가능한 인터페이스 만들기 썸네일' })).toHaveAttribute(
@@ -157,7 +157,7 @@ it('코로그 홈 종류를 리스트에 전달한다', () => {
 	render(<BlogPostFeed blogType="COLOG" slug="team" filter={{ type: 'all' }} heading={<h2>전체</h2>} />);
 	expect(screen.getByRole('heading', { level: 2, name: '전체' })).toBeInTheDocument();
 	expect(screen.getAllByRole('link')).toHaveLength(2);
-	expect(screen.getByText('새봄').closest('a')).toHaveAttribute('href', '/@team/posts/101');
+	expect(screen.getByText('새봄').closest('a')).toHaveAttribute('href', '/@saebom/posts/101');
 });
 
 it.each(['RILOG', 'COLOG'] as const)('%s 홈의 대기 상태를 표시한다', (blogType) => {

@@ -11,6 +11,11 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 
 import PostFeedGrid from './PostFeedGrid';
 
+const analyticsMock = vi.hoisted(() => ({
+	feedViewed: vi.fn(),
+	contentLoadFailed: vi.fn(),
+}));
+vi.mock('@/features/analytics/model/events', () => ({ analytics: analyticsMock }));
 vi.mock('@/shared/api/feeds/api', () => ({
 	readFullFeedPosts: vi.fn(),
 }));
@@ -109,6 +114,7 @@ describe('PostFeedGrid', () => {
 	let observerCallback: IntersectionObserverCallback;
 
 	beforeEach(() => {
+		vi.clearAllMocks();
 		route.searchParams = new URLSearchParams();
 		readFullFeedPostsMock.mockReset();
 		class IntersectionObserverMock {
@@ -129,6 +135,62 @@ describe('PostFeedGrid', () => {
 		vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
 	});
 
+	it.each([
+		['', {}, 'ALL'],
+		['blogType=personal', { blogType: 'RILOG' }, 'RILOG'],
+		['blogType=colog', { blogType: 'COLOG' }, 'COLOG'],
+	] as const)('URL %s의 피드 범위 표시를 한 번 기록한다', (searchParams, initialFilters, feedScope) => {
+		route.searchParams = new URLSearchParams(searchParams);
+		const view = renderGrid({ initialFilters, initialPage: createPage([]) });
+
+		expect(analyticsMock.feedViewed).toHaveBeenCalledExactlyOnceWith({ feedScope, category: 'ALL' });
+
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={initialFilters} />
+			</QueryClientProvider>,
+		);
+		expect(analyticsMock.feedViewed).toHaveBeenCalledOnce();
+	});
+
+	it('같은 필터 조합의 재표시는 합치고 범위·카테고리 전환은 순서대로 기록한다', async () => {
+		readFullFeedPostsMock.mockResolvedValue(toApiResponse(createPage([])));
+		const view = renderGrid({ initialPage: createPage([]) });
+
+		route.searchParams = new URLSearchParams('category=tech');
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={{}} />
+			</QueryClientProvider>,
+		);
+		await waitFor(() => expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, category: 'TECH' }));
+		await waitFor(() =>
+			expect(analyticsMock.feedViewed).toHaveBeenLastCalledWith({ feedScope: 'ALL', category: 'TECH' }),
+		);
+
+		route.searchParams = new URLSearchParams('blogType=colog&category=tech');
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={{}} />
+			</QueryClientProvider>,
+		);
+		await waitFor(() =>
+			expect(analyticsMock.feedViewed).toHaveBeenLastCalledWith({ feedScope: 'COLOG', category: 'TECH' }),
+		);
+
+		route.searchParams = new URLSearchParams();
+		view.rerender(
+			<QueryClientProvider client={view.queryClient}>
+				<PostFeedGrid initialFilters={{}} />
+			</QueryClientProvider>,
+		);
+
+		expect(analyticsMock.feedViewed).toHaveBeenNthCalledWith(1, { feedScope: 'ALL', category: 'ALL' });
+		expect(analyticsMock.feedViewed).toHaveBeenNthCalledWith(2, { feedScope: 'ALL', category: 'TECH' });
+		expect(analyticsMock.feedViewed).toHaveBeenNthCalledWith(3, { feedScope: 'COLOG', category: 'TECH' });
+		expect(analyticsMock.feedViewed).toHaveBeenNthCalledWith(4, { feedScope: 'ALL', category: 'ALL' });
+	});
+
 	it('빈 첫 페이지에는 빈 상태를 표시한다', () => {
 		renderGrid({ initialPage: createPage([]) });
 
@@ -142,10 +204,12 @@ describe('PostFeedGrid', () => {
 		renderGrid({ initialRequestFailed: true });
 
 		expect(screen.getByText('피드를 불러오지 못했어요.')).toBeInTheDocument();
+		expect(analyticsMock.feedViewed).not.toHaveBeenCalled();
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 
 		expect(await screen.findByRole('link', { name: '게시글 1' })).toBeInTheDocument();
 		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12 });
+		expect(analyticsMock.feedViewed).toHaveBeenCalledExactlyOnceWith({ feedScope: 'ALL', category: 'ALL' });
 	});
 
 	it('초기 서버 요청이 실패해도 다른 필터로 변경하면 해당 필터를 요청한다', async () => {

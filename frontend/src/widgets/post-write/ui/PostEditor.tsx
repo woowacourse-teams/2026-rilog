@@ -54,8 +54,8 @@ export default function PostEditor({
 				openPublishSettings: publication.open,
 			})}
 
-			<main className="mx-auto w-full max-w-4xl px-4 pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:px-8 sm:py-16">
-				<div className="min-h-136 px-5 py-8 sm:px-10 sm:py-12">
+			<main className="mx-auto w-full max-w-2xl pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] min-[512px]:pb-10 sm:py-16">
+				<div className="min-h-136">
 					<PostTitleField
 						value={postDocument.title}
 						error={postDocument.errors.title}

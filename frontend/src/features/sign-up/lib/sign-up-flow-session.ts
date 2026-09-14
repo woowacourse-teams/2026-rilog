@@ -3,7 +3,7 @@ const SIGN_UP_FLOW_SESSION_VALUE = 'pending';
 const SIGN_UP_STARTED_SESSION_KEY = 'rilog:sign-up-started';
 const signUpFlowListeners = new Set<() => void>();
 
-export type SignUpFlowStatus = 'checking' | 'allowed' | 'denied';
+export type SignUpFlowStatus = 'checking' | 'allowed' | 'completed' | 'denied';
 
 let signUpFlowStatus: SignUpFlowStatus = 'checking';
 
@@ -36,9 +36,23 @@ export const markSignUpStarted = () => {
 	sessionStorage.setItem(SIGN_UP_STARTED_SESSION_KEY, SIGN_UP_FLOW_SESSION_VALUE);
 };
 
-export const clearSignUpFlow = () => {
+const removeSignUpFlowSession = () => {
 	sessionStorage.removeItem(SIGN_UP_FLOW_SESSION_KEY);
 	sessionStorage.removeItem(SIGN_UP_STARTED_SESSION_KEY);
+};
+
+export const completeSignUpFlow = () => {
+	if (!hasActiveSignUpFlow()) {
+		return false;
+	}
+
+	removeSignUpFlowSession();
+	setSignUpFlowStatus('completed');
+	return true;
+};
+
+export const clearSignUpFlow = () => {
+	removeSignUpFlowSession();
 	setSignUpFlowStatus('denied');
 };
 

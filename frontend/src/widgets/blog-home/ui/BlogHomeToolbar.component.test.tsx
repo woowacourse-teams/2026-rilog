@@ -20,8 +20,9 @@ vi.mock('@/shared/ui/link/CustomLink', () => ({
 		href,
 		scroll: _scroll,
 		onClick,
+		onNavigate,
 		...props
-	}: ComponentProps<'a'> & { href: string; scroll?: boolean }) {
+	}: ComponentProps<'a'> & { href: string; scroll?: boolean; onNavigate?: () => void }) {
 		void _scroll;
 
 		return (
@@ -31,6 +32,7 @@ vi.mock('@/shared/ui/link/CustomLink', () => ({
 				onClick={(event) => {
 					event.preventDefault();
 					onClick?.(event);
+					if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.();
 				}}
 			/>
 		);
@@ -66,7 +68,7 @@ describe('BlogHomeToolbar', () => {
 		const user = userEvent.setup();
 		render(<BlogHomeToolbar blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
 
-		const trigger = screen.getByRole('button', { name: '인덱스 보기' });
+		const trigger = screen.getByRole('button', { name: '분류 전체보기' });
 		expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
 		expect(screen.queryByRole('navigation', { name: '시리즈와 Colog 탐색' })).not.toBeInTheDocument();
 
@@ -83,7 +85,7 @@ describe('BlogHomeToolbar', () => {
 		const user = userEvent.setup();
 		render(<BlogHomeToolbar blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
 
-		const trigger = screen.getByRole('button', { name: '인덱스 보기' });
+		const trigger = screen.getByRole('button', { name: '분류 전체보기' });
 		await user.click(trigger);
 		await user.click(screen.getByRole('button', { name: '인덱스 닫기' }));
 
@@ -94,7 +96,7 @@ describe('BlogHomeToolbar', () => {
 		const user = userEvent.setup();
 		render(<BlogHomeToolbar blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
 
-		await user.click(screen.getByRole('button', { name: '인덱스 보기' }));
+		await user.click(screen.getByRole('button', { name: '분류 전체보기' }));
 		await user.click(screen.getByRole('link', { name: 'Rilog, 글 6개' }));
 
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: '인덱스' })).not.toBeInTheDocument());

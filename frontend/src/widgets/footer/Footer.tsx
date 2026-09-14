@@ -1,7 +1,8 @@
 import Image from 'next/image';
 
-import { APP_ROUTES } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
+import AboutPageEntryLink from '@/features/analytics/ui/AboutPageEntryLink';
+
+import FooterHomeLink from './FooterHomeLink';
 
 const LINK_CLASS_NAME =
 	'rounded-sm transition-[color,opacity,transform] duration-200 hover:text-brand-primary-hover active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transform-none';
@@ -54,12 +55,12 @@ export default function Footer() {
 				</section>
 
 				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-1 font-semibold">
-					<CustomLink
+					<AboutPageEntryLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
-						href="/about"
+						entrySource="footer"
 					>
 						Rilog. 이야기
-					</CustomLink>
+					</AboutPageEntryLink>
 					<span aria-hidden="true">·</span>
 					<a
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
@@ -80,13 +81,9 @@ export default function Footer() {
 					</a>
 				</nav>
 
-				<CustomLink
-					className={`${LINK_CLASS_NAME} mt-5 inline-flex hover:opacity-75 sm:mt-6`}
-					href={APP_ROUTES.feeds}
-					aria-label="Rilog 홈"
-				>
+				<FooterHomeLink className={`${LINK_CLASS_NAME} mt-5 inline-flex hover:opacity-75 sm:mt-6`}>
 					<Image className="h-auto w-[184px]" src="/brand/logo.svg" alt="Rilog." width={1186} height={472} priority />
-				</CustomLink>
+				</FooterHomeLink>
 			</div>
 		</footer>
 	);

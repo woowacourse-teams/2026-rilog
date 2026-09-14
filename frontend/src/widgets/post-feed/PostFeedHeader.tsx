@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
 import { POST_CATEGORY_OPTIONS } from '@/domains/post/model/post';
+import { analytics } from '@/features/analytics/model/events';
 import { buildFeedFilterHref, parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
 import {
 	cancelFeedFilterScroll,
@@ -134,6 +135,9 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 								<Link
 									href={href}
 									scroll={false}
+									onClick={
+										isCurrent ? undefined : () => analytics.feedCategoryFilterClicked({ category: value ?? 'ALL' })
+									}
 									onNavigate={(event) => {
 										event.preventDefault();
 										navigateFeedFilter(href);

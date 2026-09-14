@@ -54,7 +54,7 @@ export const extractPostHeadingAnchors = (blocks: Block[]): PostHeadingAnchor[] 
 	const anchors: PostHeadingAnchor[] = [];
 	const usedIds = new Set<string>();
 
-	// 재귀로 목차 탑색
+	// 재귀로 목차 탐색
 	const visit = (currentBlocks: Block[]) => {
 		currentBlocks.forEach((block) => {
 			if (block.type === 'heading' && (block.props.level === 1 || block.props.level === 2 || block.props.level === 3)) {
@@ -68,6 +68,10 @@ export const extractPostHeadingAnchors = (blocks: Block[]): PostHeadingAnchor[] 
 						level: block.props.level,
 					});
 				}
+			}
+
+			if (block.type === 'toggleListItem' || (block.type === 'heading' && block.props.isToggleable)) {
+				return;
 			}
 
 			visit(block.children);

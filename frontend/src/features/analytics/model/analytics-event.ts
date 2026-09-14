@@ -25,6 +25,20 @@ export type BlogProfileEntrySource =
 	| 'post_detail_series_title'
 	| 'post_detail_chapter_title'
 	| 'post_detail_recommendation_author';
+// 패치노트 모달이 실제로 닫힌 경로별 사용량과 노출 후 닫기까지 걸린 시간을 비교한다.
+export type ReleaseNoteCloseMethod = 'close_icon' | 'close_button' | 'dismiss_forever';
+// 패치노트에서 어떤 후속 콘텐츠로 이동하는지 구분한다.
+export type ReleaseNoteLinkTarget = 'release_note' | 'about';
+// About 페이지로 이동하는 내부 링크 중 어떤 위치가 주로 사용되는지 구분한다.
+export type AboutPageEntrySource = 'sidebar' | 'footer' | 'release_note';
+// About 페이지 조회 시 현재 URL에 명시된 외부 획득 경로를 구분한다.
+export type AboutPageAcquisitionSource = 'pre_registration_email' | 'unattributed';
+// About 페이지에서 어떤 후속 화면으로 이동하는지 구분한다.
+export type AboutPageLinkTarget = 'feeds';
+// 사이드바에서 선택한 전체·개인·Colog 피드 범위를 기존 API의 blog type과 같은 값으로 기록한다.
+export type FeedScope = 'ALL' | 'RILOG' | 'COLOG';
+// 피드 상단에서 선택한 전체·기술·일상·회고 카테고리를 기록한다.
+export type FeedCategory = 'ALL' | 'TECH' | 'DAILY' | 'RETROSPECT';
 //  사용자가 이미지를 어떻게 마련하는지 파악해 업로드 UX나 자동 대표 이미지 정책을 개선할 수 있음
 export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 // 게시글을 온전히 소비했는지 지표

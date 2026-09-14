@@ -1,9 +1,13 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { ReactNode } from 'react';
 
 import { useBlogHomeIndex } from '@/features/blog-home-index/hooks/use-blog-home-index';
 
 import BlogHomeNavigation from './BlogHomeNavigation';
+
+const { scrollToFeedTargetMock } = vi.hoisted(() => ({ scrollToFeedTargetMock: vi.fn() }));
 
 vi.mock('next/navigation', () => ({
 	usePathname: () => '/@jetproc',
@@ -11,6 +15,34 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/features/blog-home-index/hooks/use-blog-home-index');
+
+vi.mock('@/features/post-feed/lib/navigate-feed-filter', () => ({
+	scrollToFeedTarget: scrollToFeedTargetMock,
+}));
+
+vi.mock('@/shared/ui/link/CustomLink', () => ({
+	default: ({
+		href,
+		onNavigate,
+		children,
+		...props
+	}: {
+		href: string;
+		onNavigate?: () => void;
+		children: ReactNode;
+	}) => (
+		<a
+			href={href}
+			{...props}
+			onClick={(event) => {
+				event.preventDefault();
+				if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.();
+			}}
+		>
+			{children}
+		</a>
+	),
+}));
 
 const INDEX = {
 	totalCount: 23,
@@ -110,5 +142,16 @@ describe('BlogHomeNavigation', () => {
 		render(<BlogHomeNavigation blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
 
 		expect(screen.getByText('인덱스를 불러오는 중...')).toHaveAttribute('aria-live', 'polite');
+	});
+
+	it('블로그 필터는 피드 제목으로 공통 스크롤을 시작하고 modifier 클릭은 보존한다', () => {
+		render(<BlogHomeNavigation blogType="RILOG" slug="jetproc" filter={{ type: 'all' }} />);
+
+		fireEvent.click(screen.getByRole('link', { name: '우테코에서 살아남기, 글 12개' }));
+		expect(scrollToFeedTargetMock).toHaveBeenCalledWith('blog-home-feed-heading');
+
+		scrollToFeedTargetMock.mockClear();
+		fireEvent.click(screen.getByRole('link', { name: '회고, 글 7개' }), { ctrlKey: true });
+		expect(scrollToFeedTargetMock).not.toHaveBeenCalled();
 	});
 });

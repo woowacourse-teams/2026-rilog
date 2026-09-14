@@ -13,7 +13,13 @@ vi.mock('@/features/analytics/model/events', () => ({
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 
-import { clearSignUpFlow, hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-session';
+import {
+	clearSignUpFlow,
+	completeSignUpFlow,
+	hasActiveSignUpFlow,
+	hasTrackedSignUpStarted,
+	startSignUpFlow,
+} from '../lib/sign-up-flow-session';
 
 import SignUpAccessGuard from './SignUpAccessGuard';
 
@@ -79,6 +85,26 @@ describe('SignUpAccessGuard', () => {
 
 		expect(await screen.findByText('회원가입 콘텐츠')).toBeInTheDocument();
 		expect(signUpStartedMock).toHaveBeenCalledOnce();
+	});
+
+	it('완료 뒤 다시 마운트하면 회원가입 권한을 복원하지 않는다', async () => {
+		startSignUpFlow();
+		const { unmount } = renderGuard();
+		await screen.findByText('회원가입 콘텐츠');
+		expect(hasTrackedSignUpStarted()).toBe(true);
+
+		act(() => {
+			expect(completeSignUpFlow()).toBe(true);
+		});
+		expect(screen.getByRole('status')).toHaveTextContent('회원가입을 완료하고 이동하고 있습니다...');
+		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(hasTrackedSignUpStarted()).toBe(false);
+		unmount();
+
+		renderGuard();
+		expect(screen.queryByText('회원가입 콘텐츠')).not.toBeInTheDocument();
+		expect(await screen.findByRole('alertdialog', { name: '회원가입을 진행할 수 없습니다.' })).toBeInTheDocument();
+		expect(completeSignUpFlow()).toBe(false);
 	});
 });
 

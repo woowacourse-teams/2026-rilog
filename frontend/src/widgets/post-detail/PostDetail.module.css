@@ -6,7 +6,7 @@
 
 .contentLayout {
 	display: grid;
-	grid-template-columns: minmax(0, 48rem);
+	grid-template-columns: minmax(0, 42rem);
 	justify-content: center;
 }
 
@@ -19,9 +19,9 @@
 	display: none;
 }
 
-@container post-detail-card (min-width: 85rem) {
+@container post-detail-card (min-width: 75rem) {
 	.contentLayout {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 48rem) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr) minmax(0, 42rem) minmax(0, 1fr);
 		justify-content: stretch;
 	}
 
@@ -33,8 +33,8 @@
 		display: block;
 		grid-column: 3;
 		align-self: stretch;
+		justify-self: end;
 		width: 12rem;
-		margin-left: 4rem;
 		padding-block: 5rem;
 	}
 
