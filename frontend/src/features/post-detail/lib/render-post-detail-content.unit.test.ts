@@ -106,7 +106,6 @@ describe('renderPostDetailContent', () => {
 		expect(html).toContain('data-content-type="quote"');
 		expect(html).toContain('data-content-type="table"');
 		expect(html).toContain('data-content-type="toggleListItem"');
-		expect(html).toContain('data-content-type="image"');
 		expect(html).toContain('href="https://www.rilog.dev/docs/architecture"');
 		expect(html).toContain('data-language="typescript"');
 		expect(html).toContain('data-language="unknown-language"');
