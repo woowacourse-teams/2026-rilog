@@ -16,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class S3ObjectTagger {
 
+    private static final String S3_TAGGING_FAILED_EVENT = "s3_object_tagging_failed";
     private static final String S3_TAGGING_FAILED_LOG_FORMAT =
             "event=s3_object_tagging_failed bucket={} key={} tagStatus={}";
 
@@ -34,13 +35,18 @@ public class S3ObjectTagger {
                     .tagging(uploadTarget.tagStatus().toTagging())
                     .build());
         } catch (SdkException exception) {
-            log.error(
-                    S3_TAGGING_FAILED_LOG_FORMAT,
-                    properties.bucket(),
-                    uploadTarget.key(),
-                    uploadTarget.tagStatus(),
-                    exception
-            );
+            log.atError()
+                    .addKeyValue("event", S3_TAGGING_FAILED_EVENT)
+                    .addKeyValue("bucket", properties.bucket())
+                    .addKeyValue("key", uploadTarget.key())
+                    .addKeyValue("tagStatus", uploadTarget.tagStatus())
+                    .setCause(exception)
+                    .log(
+                            S3_TAGGING_FAILED_LOG_FORMAT,
+                            properties.bucket(),
+                            uploadTarget.key(),
+                            uploadTarget.tagStatus()
+                    );
         }
     }
 

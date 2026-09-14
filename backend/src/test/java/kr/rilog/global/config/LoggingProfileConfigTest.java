@@ -20,9 +20,26 @@ class LoggingProfileConfigTest {
 
         // when - then
         assertThat(prodProperties.getProperty("logging.structured.format.console")).isEqualTo("logstash");
+        assertThat(prodProperties.getProperty("logging.structured.json.add.service")).isEqualTo("rilog-backend");
+        assertThat(prodProperties.getProperty("logging.structured.json.add.environment")).isEqualTo("prod");
         assertThat(prodProperties.getProperty("logging.structured.json.stacktrace.printer"))
                 .isEqualTo("kr.rilog.global.logging.SanitizingStackTracePrinter");
         assertThat(prodProperties.getProperty("logging.level.kr.rilog")).isEqualTo("info");
+    }
+
+    @Test
+    @DisplayName("개발 서버 프로필은 CloudWatch 수집을 위해 구조화 JSON 로그를 사용한다.")
+    void devProfileUsesJsonLogsForCloudWatchCollection() throws Exception {
+        // given
+        PropertySource<?> devProperties = loadYaml("application-dev.yml");
+
+        // when - then
+        assertThat(devProperties.getProperty("logging.structured.format.console")).isEqualTo("logstash");
+        assertThat(devProperties.getProperty("logging.structured.json.add.service")).isEqualTo("rilog-backend");
+        assertThat(devProperties.getProperty("logging.structured.json.add.environment")).isEqualTo("dev");
+        assertThat(devProperties.getProperty("logging.structured.json.stacktrace.printer"))
+                .isEqualTo("kr.rilog.global.logging.SanitizingStackTracePrinter");
+        assertThat(devProperties.getProperty("logging.level.kr.rilog")).isEqualTo("debug");
     }
 
     @Test
@@ -38,6 +55,18 @@ class LoggingProfileConfigTest {
     }
 
     @Test
+    @DisplayName("개발 서버 프로필은 CloudWatch에 SQL 바인딩 상세 로그를 수집하지 않는다.")
+    void devProfileDisablesDetailedSqlLogsForCloudWatchCollection() throws Exception {
+        // given
+        PropertySource<?> devProperties = loadYaml("application-dev.yml");
+
+        // when - then
+        assertThat(devProperties.getProperty("spring.jpa.properties.hibernate.format_sql")).isEqualTo(false);
+        assertThat(devProperties.getProperty("logging.level.org.hibernate.SQL")).isEqualTo("info");
+        assertThat(devProperties.getProperty("logging.level.org.hibernate.orm.jdbc.bind")).isEqualTo("info");
+    }
+
+    @Test
     @DisplayName("운영 프로필은 Hibernate가 데이터베이스 스키마를 검증하도록 설정한다.")
     void prodProfileValidatesDatabaseSchema() throws Exception {
         // given
@@ -48,15 +77,13 @@ class LoggingProfileConfigTest {
     }
 
     @Test
-    @DisplayName("개발 프로필은 앱 DEBUG 이상 로그를 사용한다.")
+    @DisplayName("로컬 프로필은 개발 편의를 위해 앱 DEBUG 이상 로그를 사용한다.")
     void developmentProfilesUseDebugApplicationLogs() throws Exception {
         // given
         PropertySource<?> localProperties = loadYaml("application-local.yml");
-        PropertySource<?> devProperties = loadYaml("application-dev.yml");
 
         // when - then
         assertThat(localProperties.getProperty("logging.level.kr.rilog")).isEqualTo("debug");
-        assertThat(devProperties.getProperty("logging.level.kr.rilog")).isEqualTo("debug");
     }
 
     private PropertySource<?> loadYaml(String name) throws IOException {

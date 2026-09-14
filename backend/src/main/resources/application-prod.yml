@@ -17,6 +17,9 @@ logging:
     format:
       console: logstash
     json:
+      add:
+        service: rilog-backend
+        environment: prod
       stacktrace:
         printer: kr.rilog.global.logging.SanitizingStackTracePrinter
   level:

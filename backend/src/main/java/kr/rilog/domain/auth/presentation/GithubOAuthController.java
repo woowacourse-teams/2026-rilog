@@ -15,6 +15,7 @@ import kr.rilog.domain.auth.presentation.dto.response.OAuthCallbackResponse;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -32,7 +33,12 @@ import static kr.rilog.domain.auth.exception.AuthErrorInformation.OAUTH_REQUEST_
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class GithubOAuthController {
+
+    private static final String OAUTH_LOGIN_COMPLETED_EVENT = "oauth_login_completed";
+    private static final String OAUTH_LOGIN_COMPLETED_LOG_FORMAT =
+            "event=oauth_login_completed provider={} userId={} onboardingStatus={}";
 
     private final StartOAuthLogin startOAuthLogin;
     private final CompleteOAuthLogin completeOAuthLogin;
@@ -64,15 +70,23 @@ public class GithubOAuthController {
         LoginTokenResult tokenResult = loginTokenIssueService.issue(loginUser);
 
         return switch (tokenResult) {
-            case LoginTokenResult.Pending pending -> onboardingResponse(
-                    pending.onboardingToken(),
-                    data
-            );
-            case LoginTokenResult.Completed completed -> loginResponse(
-                    completed.accessToken(),
-                    completed.refreshToken(),
-                    data
-            );
+            case LoginTokenResult.Pending pending -> {
+                ResponseEntity<ApiResponse<OAuthCallbackResponse>> response = onboardingResponse(
+                        pending.onboardingToken(),
+                        data
+                );
+                logOAuthLoginCompleted(SocialLoginProvider.GITHUB, loginUser);
+                yield response;
+            }
+            case LoginTokenResult.Completed completed -> {
+                ResponseEntity<ApiResponse<OAuthCallbackResponse>> response = loginResponse(
+                        completed.accessToken(),
+                        completed.refreshToken(),
+                        data
+                );
+                logOAuthLoginCompleted(SocialLoginProvider.GITHUB, loginUser);
+                yield response;
+            }
         };
     }
 
@@ -95,6 +109,20 @@ public class GithubOAuthController {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.value())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(ApiResponse.response(HttpStatus.OK, "GitHub 로그인에 성공했습니다.", data));
+    }
+
+    private void logOAuthLoginCompleted(SocialLoginProvider provider, User loginUser) {
+        log.atInfo()
+                .addKeyValue("event", OAUTH_LOGIN_COMPLETED_EVENT)
+                .addKeyValue("provider", provider)
+                .addKeyValue("userId", loginUser.getId())
+                .addKeyValue("onboardingStatus", loginUser.getOnboardingStatus())
+                .log(
+                        OAUTH_LOGIN_COMPLETED_LOG_FORMAT,
+                        provider,
+                        loginUser.getId(),
+                        loginUser.getOnboardingStatus()
+                );
     }
 
 }

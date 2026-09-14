@@ -17,6 +17,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class AsyncConfig implements AsyncConfigurer {
 
     public static final String S3_TAGGING_EXECUTOR = "s3TaggingExecutor";
+    private static final String ASYNC_UNCAUGHT_EXCEPTION_EVENT = "async_uncaught_exception";
+    private static final String ASYNC_UNCAUGHT_EXCEPTION_LOG_FORMAT =
+            "event=async_uncaught_exception method={}";
 
     @Bean(name = S3_TAGGING_EXECUTOR)
     public ThreadPoolTaskExecutor s3TaggingExecutor() {
@@ -42,6 +45,10 @@ public class AsyncConfig implements AsyncConfigurer {
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (exception, method, params) ->
-                log.error("event=async_uncaught_exception method={}", method.getName(), exception);
+                log.atError()
+                        .addKeyValue("event", ASYNC_UNCAUGHT_EXCEPTION_EVENT)
+                        .addKeyValue("method", method.getName())
+                        .setCause(exception)
+                        .log(ASYNC_UNCAUGHT_EXCEPTION_LOG_FORMAT, method.getName());
     }
 }

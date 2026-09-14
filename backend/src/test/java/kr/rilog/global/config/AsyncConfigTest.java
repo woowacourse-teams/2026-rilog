@@ -14,10 +14,12 @@ import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AsyncConfigTest {
@@ -64,6 +66,9 @@ class AsyncConfigTest {
 
             ILoggingEvent event = logCapture.onlyEvent();
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(logFields(event))
+                    .containsEntry("event", "async_uncaught_exception")
+                    .containsEntry("method", "fail");
             assertThat(event.getFormattedMessage())
                     .contains("event=async_uncaught_exception")
                     .contains("method=fail")
@@ -100,5 +105,17 @@ class AsyncConfigTest {
             logger.detachAppender(appender);
             appender.stop();
         }
+    }
+
+    private static Map<String, String> logFields(ILoggingEvent event) {
+        if (event.getKeyValuePairs() == null) {
+            return Map.of();
+        }
+        return event.getKeyValuePairs()
+                .stream()
+                .collect(toMap(
+                        keyValuePair -> keyValuePair.key,
+                        keyValuePair -> String.valueOf(keyValuePair.value)
+                ));
     }
 }
