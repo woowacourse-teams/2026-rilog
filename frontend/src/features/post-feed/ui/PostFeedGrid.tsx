@@ -10,7 +10,6 @@ import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import Button from '@/shared/ui/button/Button';
 
 import { usePostFeed } from '../hooks/use-post-feed';
-import { usePostFeedEntryAutoScroll } from '../hooks/use-post-feed-entry-auto-scroll';
 import { deduplicatePostFeedItems } from '../lib/deduplicate-post-feed-items';
 
 import PostFeedCard from './PostFeedCard';
@@ -18,17 +17,12 @@ import PostFeedSkeleton from './PostFeedSkeleton';
 
 interface PostFeedGridProps {
 	initialFilters: FullFeedPostsFilters;
-	scrollTargetId?: string;
 	initialRequestFailed?: boolean;
 }
 
 const POST_FEED_CONTENT_ID = 'post-feed-content';
 
-export default function PostFeedGrid({
-	initialFilters,
-	initialRequestFailed = false,
-	scrollTargetId = POST_FEED_CONTENT_ID,
-}: PostFeedGridProps) {
+export default function PostFeedGrid({ initialFilters, initialRequestFailed = false }: PostFeedGridProps) {
 	const searchParams = useSearchParams();
 	const filters = parseFeedFilters(searchParams);
 	const isInitialFilter = filters.category === initialFilters.category && filters.blogType === initialFilters.blogType;
@@ -45,12 +39,6 @@ export default function PostFeedGrid({
 
 	const hasInitialError =
 		(isInitialFilter && !isInitialQueryEnabled && initialRequestFailed) || (query.isError && posts.length === 0);
-
-	usePostFeedEntryAutoScroll({
-		isReady: hasInitialError || !query.isPending,
-		targetId: scrollTargetId,
-	});
-
 	useEffect(() => {
 		const sentinel = sentinelRef.current;
 

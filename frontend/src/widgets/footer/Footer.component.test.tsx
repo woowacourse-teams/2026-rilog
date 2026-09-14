@@ -1,7 +1,18 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { ReactNode } from 'react';
 
 import Footer from './Footer';
+
+vi.mock('./FooterHomeLink', () => ({
+	default: ({ className, children }: { className: string; children: ReactNode }) => (
+		// eslint-disable-next-line @next/next/no-html-link-for-pages
+		<a className={className} href="/feeds" aria-label="Rilog 홈">
+			{children}
+		</a>
+	),
+}));
 
 describe('Footer', () => {
 	it('저작권, 연락 채널, 정책, 브랜드 순서로 안내한다', () => {

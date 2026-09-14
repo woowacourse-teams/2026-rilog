@@ -13,6 +13,12 @@ const postFeedHeader = (page: Page) => page.locator(`#${POST_FEED_HEADER_ID}`);
 const postFeedScrollTarget = (page: Page) => page.locator(`#${POST_FEED_SCROLL_TARGET_ID}`);
 const latestReleaseNote = getLatestReleaseNote(RELEASE_NOTES);
 
+const scrollToFeedStart = async (page: Page) => {
+	await postFeedScrollTarget(page).evaluate((element) =>
+		element.scrollIntoView({ block: 'start', behavior: 'instant' }),
+	);
+};
+
 const expectFeedHeaderAligned = async (page: Page) => {
 	const feedHeader = postFeedHeader(page);
 	const scrollTarget = postFeedScrollTarget(page);
@@ -243,32 +249,429 @@ test('@가 없는 코로그 경로는 찾을 수 없다', async ({ request }) =>
 	expect(settingsResponse.status()).toBe(404);
 });
 
-test('진입 후 피드 시작점으로 이동하고 사용자 스크롤 시 자동 이동을 취소한다', async ({ page }) => {
-	const feedHeader = postFeedHeader(page);
-
+test('새 피드 진입은 최상단에서 시작한다', async ({ page }) => {
 	await page.goto('/feeds');
-	await expectFeedHeaderAligned(page);
-	await expect(page.locator('main > header img')).not.toBeInViewport();
-
-	await page.goto('about:blank');
-	await page.goto('/feeds');
-	await expect(feedHeader).toBeVisible();
-	await page.waitForTimeout(100);
-	await page.mouse.click(100, 100);
-	await page.waitForTimeout(1_200);
+	await expect(postFeedHeader(page)).toBeVisible();
+	await page.waitForTimeout(1_400);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(page.locator('main > header img')).toBeInViewport();
+});
 
-	await page.goto('about:blank');
+test('홈 루트에서 피드로 들어와도 최상단에서 시작한다', async ({ page }) => {
+	await page.goto('/');
+	await expect(page).toHaveURL('/feeds');
+	await page.waitForTimeout(1_400);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(page.locator('main > header img')).toBeInViewport();
+});
+
+test('피드 진입 뒤 사용자 스크롤은 그대로 유지된다', async ({ page }) => {
 	await page.goto('/feeds');
-	await expect(feedHeader).toBeVisible();
-	await page.waitForTimeout(100);
+	await expect(postFeedHeader(page)).toBeVisible();
 	await page.mouse.wheel(0, 120);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 	const interruptedScrollY = await page.evaluate(() => window.scrollY);
-
-	await page.waitForTimeout(1_200);
+	await page.waitForTimeout(1_400);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(interruptedScrollY);
 });
+
+test('모션 감소 설정에서도 새 모바일 피드는 최상단에서 시작한다', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('/feeds');
+	await page.waitForTimeout(1_400);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(page.locator('main > header img')).toBeInViewport();
+});
+
+test('피드 최상단에서 떠났다가 뒤로 오면 최상단을 유지한다', async ({ page }) => {
+	await page.goto('/feeds');
+	await expect(postFeedHeader(page)).toBeVisible();
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await page.evaluate(() => window.scrollTo(0, 0));
+	await page
+		.getByRole('contentinfo')
+		.getByRole('link', { name: 'Rilog. 이야기' })
+		.evaluate((link) => {
+			(link as HTMLAnchorElement).click();
+		});
+	await expect(page).toHaveURL('/about');
+	await page.goBack();
+	await expect(page).toHaveURL('/feeds');
+	await page.waitForTimeout(1_400);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('피드에서 상세를 거쳐 홈으로 다시 진입하면 최상단에서 시작한다', async ({ page }) => {
+	await page.goto('/feeds');
+	await expect(postFeedHeader(page)).toBeVisible();
+	await postCards(page).first().locator('a[href*="/posts/"]').click();
+	await expect(page).toHaveURL(/\/@[^/]+\/posts\/\d+$/);
+	const homeLink = page.getByRole('contentinfo').getByRole('link', { name: 'Rilog 홈' });
+	await homeLink.scrollIntoViewIfNeeded();
+	await homeLink.click();
+	await expect(page).toHaveURL('/feeds');
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(page.locator('main > header img')).toBeInViewport();
+});
+
+test('메인 피드에서 게시글 97을 열고 돌아오면 실제 카드 높이에서 스크롤을 복원한다', async ({ page }) => {
+	await page.goto('/feeds');
+	const detailLink = page.locator('#post-feed-content a[href="/@test123/posts/97"]');
+	await detailLink.scrollIntoViewIfNeeded();
+	await expect(detailLink).toBeInViewport();
+	const expectedScrollY = await page.evaluate(() => window.scrollY);
+	expect(expectedScrollY).toBeGreaterThan(0);
+
+	await detailLink.click();
+	await expect(page).toHaveURL('/@test123/posts/97');
+	await expect(page.getByRole('article', { name: '게시글 본문' })).toBeVisible();
+	await expect
+		.poll(() =>
+			page.locator('main img').evaluateAll((images) => images.every((image) => (image as HTMLImageElement).complete)),
+		)
+		.toBe(true);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await page.evaluate(() => window.scrollTo(0, 600));
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(600);
+	await page.goBack();
+	await expect(page).toHaveURL('/feeds');
+	await expect(detailLink).toBeInViewport();
+	await page.waitForTimeout(1_200);
+	await expect
+		.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - expectedScrollY))
+		.toBeLessThanOrEqual(10);
+	await page.goForward();
+	await expect(page).toHaveURL('/@test123/posts/97');
+	await expect(page.getByRole('article', { name: '게시글 본문' })).toBeVisible();
+	await expect
+		.poll(() =>
+			page.locator('main img').evaluateAll((images) => images.every((image) => (image as HTMLImageElement).complete)),
+		)
+		.toBe(true);
+	await page.waitForTimeout(300);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(600);
+	await page.goBack();
+	await expect(page).toHaveURL('/feeds');
+	await detailLink.click();
+	await expect(page).toHaveURL('/@test123/posts/97');
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('상세 하단에서 푸터 홈으로 이동해도 뒤로가기는 상세의 위치를 복원한다', async ({ page }) => {
+	await page.goto('/@test123/posts/97');
+	const homeLink = page.getByRole('contentinfo').getByRole('link', { name: 'Rilog 홈' });
+	await homeLink.scrollIntoViewIfNeeded();
+	await homeLink.evaluate((element) => {
+		element.addEventListener(
+			'click',
+			() => sessionStorage.setItem('rilog.e2e.detail-departure-y', String(window.scrollY)),
+			{ capture: true, once: true },
+		);
+	});
+	await homeLink.click();
+	await expect(page).toHaveURL('/feeds');
+	const previousScrollY = await page.evaluate(() => Number(sessionStorage.getItem('rilog.e2e.detail-departure-y')));
+	expect(previousScrollY).toBeGreaterThan(0);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(page.locator('main > header img')).toBeInViewport();
+	await page.goBack();
+	await expect(page).toHaveURL('/@test123/posts/97');
+	await expect
+		.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - previousScrollY))
+		.toBeLessThanOrEqual(10);
+});
+
+test('상세에서 즉시 또는 스크롤 후 돌아와도 필터 피드 위치를 복원한다', async ({ page }) => {
+	const visitDetailAndGoBack = async (shouldScrollDetail: boolean) => {
+		await page.goto('/feeds?category=tech');
+		await expect(postCards(page).first()).toBeVisible();
+		const card = postCards(page).nth(6);
+		const detailLink = card.locator('a').last();
+		await detailLink.scrollIntoViewIfNeeded();
+		await page.evaluate(() => window.scrollBy({ top: 180, behavior: 'auto' }));
+		const expectedScrollY = await page.evaluate(() => window.scrollY);
+
+		await detailLink.click();
+		await expect(page).toHaveURL(/\/@[^/]+\/posts\/\d+$/);
+		if (shouldScrollDetail) {
+			await page.evaluate(() => window.scrollTo({ top: 600, behavior: 'auto' }));
+		}
+
+		await page.goBack();
+		await expect(page).toHaveURL('/feeds?category=tech');
+		await expect(postCards(page).first()).toBeVisible();
+		await page.waitForTimeout(1_200);
+		await expect
+			.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - expectedScrollY))
+			.toBeLessThanOrEqual(10);
+	};
+
+	await visitDetailAndGoBack(false);
+	await visitDetailAndGoBack(true);
+});
+
+for (const [path, navigationName] of [
+	['/@jetproc', '시리즈와 Colog 탐색'],
+	['/@rhdk', '챕터 탐색'],
+] as const) {
+	test(`${navigationName}은 페이지와 함께 스크롤되어 화면 밖으로 사라진다`, async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto(path);
+		const navigation = page.getByRole('navigation', { name: navigationName });
+		await expect(navigation).toBeVisible();
+		await page.addStyleTag({ content: '.page-shell-main { min-height: 2600px !important; }' });
+		const initialTop = (await navigation.boundingBox())!.y;
+		await page.evaluate(() => window.scrollTo({ top: 1500, behavior: 'instant' }));
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1500);
+		const scrolledTop = (await navigation.boundingBox())!.y;
+		expect(Math.abs(scrolledTop - initialTop + 1500)).toBeLessThanOrEqual(2);
+		await expect(navigation).not.toBeInViewport();
+	});
+}
+
+for (const viewport of [
+	{ width: 1280, height: 900 },
+	{ width: 390, height: 844 },
+]) {
+	test.describe(`방문 기록 복원 ${viewport.width}px`, () => {
+		test.use({ viewport });
+		for (const source of ['blog', 'personal', 'colog', 'mixed', 'pagination'] as const) {
+			test(`${source} 목록과 상세의 위치를 독립적으로 복원한다`, async ({ page }) => {
+				const sourcePath =
+					source === 'blog'
+						? '/@test123'
+						: source === 'colog'
+							? '/@rhdk'
+							: source === 'pagination'
+								? '/feeds'
+								: '/@jetproc';
+				await page.goto(sourcePath);
+				const links =
+					source !== 'pagination'
+						? page.locator('section[aria-label="블로그 게시글"] a')
+						: page.locator('#post-feed-content article a').filter({ has: page.getByRole('heading') });
+				await expect(links.first()).toBeVisible();
+				if (source === 'pagination') {
+					await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+					await expect.poll(() => links.count()).toBeGreaterThan(12);
+				}
+				const count = await links.count();
+				const detailLink =
+					source === 'pagination'
+						? links.nth(13)
+						: source === 'blog'
+							? links.first()
+							: page.locator(
+									`section[aria-label="블로그 게시글"] a[href="${source === 'personal' ? '/@jetproc/posts/105' : '/@rhdk/posts/103'}"]`,
+								);
+				const detailPath = await detailLink.getAttribute('href');
+				if (source !== 'pagination') {
+					await expect
+						.poll(() =>
+							page
+								.locator('section[aria-label="블로그 게시글"] img')
+								.evaluateAll((images) => images.every((image) => (image as HTMLImageElement).complete)),
+						)
+						.toBe(true);
+					await page.evaluate(() => window.scrollTo(0, 210));
+					if (source === 'mixed') {
+						await detailLink.scrollIntoViewIfNeeded();
+					}
+				} else {
+					await detailLink.scrollIntoViewIfNeeded();
+				}
+				await expect(detailLink).toBeInViewport();
+				const sourceY = await page.evaluate(() => window.scrollY);
+				expect(sourceY).toBeGreaterThan(0);
+				await detailLink.click();
+				await expect(page).toHaveURL(detailPath!);
+				await expect(page.locator('article').first()).toBeVisible();
+				await expect
+					.poll(() =>
+						page
+							.locator('main img')
+							.evaluateAll((images) => images.every((image) => (image as HTMLImageElement).complete)),
+					)
+					.toBe(true);
+				await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+				await page.evaluate(() => window.scrollTo(0, 300));
+				await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(300);
+				await page.goBack();
+				await expect(page).toHaveURL(sourcePath);
+				await expect.poll(() => links.count()).toBeGreaterThanOrEqual(count);
+				await expect
+					.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - sourceY))
+					.toBeLessThanOrEqual(10);
+				await page.goForward();
+				await expect(page).toHaveURL(detailPath!);
+				await expect(page.locator('article').first()).toBeVisible();
+				await expect
+					.poll(() =>
+						page
+							.locator('main img')
+							.evaluateAll((images) => images.every((image) => (image as HTMLImageElement).complete)),
+					)
+					.toBe(true);
+				await page.waitForTimeout(300);
+				await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(300);
+			});
+		}
+
+		test('소개 페이지와 공개 블로그의 방문 위치를 각 기록에서 복원한다', async ({ page }) => {
+			await page.goto('/@rhdk');
+			await page.addStyleTag({ content: '.page-shell-main { min-height: 2000px !important; }' });
+			const aboutLink = page.getByRole('contentinfo').getByRole('link', { name: 'Rilog. 이야기' });
+			await aboutLink.scrollIntoViewIfNeeded();
+			const blogY = await page.evaluate(() => window.scrollY);
+			expect(blogY).toBeGreaterThan(0);
+
+			await aboutLink.click();
+			await expect(page).toHaveURL('/about');
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+			await page.evaluate(() => window.scrollTo(0, 600));
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(600);
+
+			await page.goBack();
+			await expect(page).toHaveURL('/@rhdk');
+			await expect
+				.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - blogY))
+				.toBeLessThanOrEqual(10);
+			await page.goForward();
+			await expect(page).toHaveURL('/about');
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(600);
+
+			const continueLink = page.locator('footer[aria-label="Rilog 둘러보기"] a');
+			await continueLink.scrollIntoViewIfNeeded();
+			const aboutY = await page.evaluate(() => window.scrollY);
+			expect(aboutY).toBeGreaterThan(600);
+			await continueLink.click();
+			await expect(page).toHaveURL('/feeds');
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+			await expect(page.locator('main > header img')).toBeInViewport();
+			await page.goBack();
+			await expect(page).toHaveURL('/about');
+			await expect
+				.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - aboutY))
+				.toBeLessThanOrEqual(10);
+		});
+
+		test('무한 피드 푸터에서 소개로 이동한 뒤 피드 방문 위치를 복원한다', async ({ page }) => {
+			await page.goto('/feeds');
+			const aboutLink = page.getByRole('contentinfo').getByRole('link', { name: 'Rilog. 이야기' });
+			await aboutLink.scrollIntoViewIfNeeded();
+			await aboutLink.evaluate((element) => {
+				element.addEventListener(
+					'click',
+					() => sessionStorage.setItem('rilog.e2e.feed-departure-y', String(window.scrollY)),
+					{ capture: true, once: true },
+				);
+			});
+
+			await aboutLink.click();
+			await expect(page).toHaveURL('/about');
+			const feedY = await page.evaluate(() => Number(sessionStorage.getItem('rilog.e2e.feed-departure-y')));
+			expect(feedY).toBeGreaterThan(0);
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+			await page.goBack();
+			await expect(page).toHaveURL('/feeds');
+			await expect
+				.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - feedY))
+				.toBeLessThanOrEqual(10);
+		});
+	});
+}
+
+test.describe('모바일 모달 후 방문 위치 복원', () => {
+	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+	test('인덱스와 로그인 모달을 닫고 상세에서 돌아와도 블로그 위치를 유지한다', async ({ page }) => {
+		await page.goto('/@jetproc');
+		const indexTrigger = page.getByRole('button', { name: '인덱스 보기' });
+		await expect(indexTrigger).toBeVisible();
+		await page.evaluate(() => window.scrollTo(0, 210));
+		const blogY = await page.evaluate(() => window.scrollY);
+		expect(blogY).toBeGreaterThan(0);
+
+		await indexTrigger.click();
+		await expect(page.getByRole('dialog', { name: '인덱스' })).toBeVisible();
+		await page.getByRole('button', { name: '인덱스 닫기' }).click();
+		await expect(page.getByRole('dialog', { name: '인덱스' })).not.toBeVisible();
+		await expect(indexTrigger).toBeFocused();
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(blogY);
+
+		const loginTrigger = page
+			.getByRole('navigation', { name: '모바일 주요 메뉴' })
+			.getByRole('button', { name: '로그인' });
+		await loginTrigger.click();
+		await expect(page.getByRole('dialog', { name: '로그인' })).toBeVisible();
+		await page.getByRole('button', { name: '모달 닫기' }).click();
+		await expect(page.getByRole('dialog', { name: '로그인' })).not.toBeVisible();
+		await expect(loginTrigger).toBeFocused();
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(blogY);
+
+		await page.locator('section[aria-label="블로그 게시글"] a[href="/@jetproc/posts/105"]').click();
+		await expect(page).toHaveURL('/@jetproc/posts/105');
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+		await page.goBack();
+		await expect(page).toHaveURL('/@jetproc');
+		await expect
+			.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - blogY))
+			.toBeLessThanOrEqual(10);
+	});
+});
+
+for (const viewport of [
+	{ width: 1280, height: 900 },
+	{ width: 390, height: 844 },
+]) {
+	test.describe(`짧은 블로그 필터 기준점 ${viewport.width}px`, () => {
+		test.use({ viewport });
+
+		for (const [blogType, sourcePath, filterPath, navigationName, postCount] of [
+			['RILOG', '/@jetproc', '/@jetproc?colog=rhdk', '시리즈와 Colog 탐색', 1],
+			['RILOG', '/@jetproc', '/@jetproc?series=4', '시리즈와 Colog 탐색', 2],
+			['RILOG', '/@jetproc', '/@jetproc?colog=asdfg', '시리즈와 Colog 탐색', 0],
+			['COLOG', '/@rhdk', '/@rhdk', '챕터 탐색', 1],
+			['COLOG', '/@rhdk6', '/@rhdk6', '챕터 탐색', 0],
+		] as const) {
+			test(`${blogType} ${postCount}글 목록도 필터 기준점을 헤더 아래에 정렬한다`, async ({ page }) => {
+				if (viewport.width === 390) await page.emulateMedia({ reducedMotion: 'reduce' });
+				await page.goto(sourcePath);
+				const posts = page.locator('section[aria-label="블로그 게시글"] a');
+				if (sourcePath === '/@rhdk6') {
+					await expect(page.getByText('아직 작성된 게시글이 없습니다.')).toBeVisible();
+				} else {
+					await expect(posts.first()).toBeVisible();
+				}
+				if (blogType === 'RILOG') {
+					await expect.poll(() => posts.count()).toBeGreaterThan(1);
+					await page.evaluate(() => window.scrollTo(0, 900));
+				}
+
+				const navigation =
+					viewport.width === 390
+						? page.getByRole('dialog', { name: '인덱스' })
+						: page.getByRole('navigation', { name: navigationName });
+				if (viewport.width === 390) {
+					await page.getByRole('button', { name: blogType === 'RILOG' ? '인덱스 보기' : '챕터 보기' }).click();
+					await expect(navigation).toBeVisible();
+				}
+				await navigation.locator(`a[href="${filterPath}"]`).click();
+				await expect(page).toHaveURL(filterPath);
+				await expect(posts).toHaveCount(postCount);
+				const expectedTop = viewport.width === 390 ? 64 : 32;
+				await expect
+					.poll(() =>
+						page
+							.locator('#blog-home-feed-heading')
+							.evaluate((element, top) => Math.abs(element.getBoundingClientRect().top - top), expectedTop),
+					)
+					.toBeLessThanOrEqual(1);
+			});
+		}
+	});
+}
 
 test('피드 헤더는 sticky 전환 방향과 모바일 겹침/오버플로를 처리한다', async ({ page }) => {
 	await page.goto('/feeds');
@@ -293,6 +696,7 @@ test('피드 헤더는 sticky 전환 방향과 모바일 겹침/오버플로를 
 		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 	};
 
+	await scrollToFeedStart(page);
 	await expectFeedHeaderAligned(page);
 	await page.waitForTimeout(1_200);
 	await page.addStyleTag({ content: '#post-feed-content { min-height: 2000px !important; }' });
@@ -314,6 +718,7 @@ test('피드 헤더는 sticky 전환 방향과 모바일 겹침/오버플로를 
 
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.reload();
+	await scrollToFeedStart(page);
 	await expectFeedHeaderAligned(page);
 	await page.mouse.move(200, 400);
 	await page.mouse.wheel(0, 1_000);
@@ -383,7 +788,7 @@ test('개인 회고 피드에서 Feed로 이동하면 범위와 카테고리를 
 
 test('페이지 최상단에서 카테고리를 선택해도 피드 헤더를 sticky 위치에 표시한다', async ({ page }) => {
 	await page.goto('/feeds');
-	await expectFeedHeaderAligned(page);
+	await expect(postFeedHeader(page)).toBeVisible();
 	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'auto' }));
 	await postFeedHeader(page).getByRole('link', { name: '기술', exact: true }).dispatchEvent('click', { button: 0 });
 
@@ -393,6 +798,7 @@ test('페이지 최상단에서 카테고리를 선택해도 피드 헤더를 st
 
 test('깊은 위치에서 사이드바 탭을 바꾸는 동안 헤더가 고정된 위치를 유지한다', async ({ page }) => {
 	await page.goto('/feeds');
+	await scrollToFeedStart(page);
 	await expectFeedHeaderAligned(page);
 	await page.addStyleTag({ content: '#post-feed-content { min-height: 2400px !important; }' });
 	await page.mouse.wheel(0, 1_000);
@@ -463,6 +869,7 @@ test('피드 필터 cache는 history 탐색에도 API, RSC, skeleton을 다시 �
 		});
 	});
 	await page.goto('/feeds');
+	await scrollToFeedStart(page);
 	await expectFeedHeaderAligned(page);
 
 	await page.evaluate(() => {
@@ -533,6 +940,7 @@ test.describe('모바일 피드 필터 기준점', () => {
 
 	test('깊은 스크롤에서 카테고리를 바꾸면 모바일 헤더 아래에 피드 헤더를 표시한다', async ({ page }) => {
 		await page.goto('/feeds');
+		await scrollToFeedStart(page);
 		await expectFeedHeaderAligned(page);
 		await expect
 			.poll(() =>
@@ -582,6 +990,7 @@ test('제목 텍스트에만 hover 색상을 적용한다', async ({ page }) => 
 	const heading = card.getByRole('heading');
 	const text = heading.locator('span');
 	await expect(text).toBeVisible();
+	await scrollToFeedStart(page);
 	await expectFeedHeaderAligned(page);
 	await page.keyboard.press('Escape');
 	await text.evaluate((element) => {
@@ -616,6 +1025,7 @@ test.describe('모바일 카드 피드백', () => {
 		const title = card.getByRole('heading').locator('span');
 		const home = card.locator('a').filter({ hasNot: page.getByRole('heading') });
 		await expect(title).toBeVisible();
+		await scrollToFeedStart(page);
 		await expectFeedHeaderAligned(page);
 		expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true);
 		for (const target of [title, home]) {

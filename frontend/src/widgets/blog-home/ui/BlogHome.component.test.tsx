@@ -224,8 +224,8 @@ describe('BlogHome', () => {
 			filter: { type: 'all' },
 			initialIndexRequestFailed: true,
 		});
-		expect(screen.getByTestId('feed-slot').parentElement).toHaveClass('px-6', 'py-11');
-		expect(screen.getByTestId('feed-slot').parentElement).not.toHaveClass('aside-right:px-0');
+		expect(screen.getByTestId('feed-slot').parentElement?.parentElement).toHaveClass('px-6', 'py-11');
+		expect(screen.getByTestId('feed-slot').parentElement?.parentElement).not.toHaveClass('aside-right:px-0');
 	});
 
 	it('COLOG 피드에 제목을 전달해 toolbar와 게시글 목록 사이에 표시한다', () => {
@@ -255,5 +255,22 @@ describe('BlogHome', () => {
 			filter: { type: 'chapterId', chapterId: 3 },
 			initialRequestFailed: true,
 		});
+	});
+
+	it.each(['RILOG', 'COLOG'] as const)('%s 홈은 목록 상태가 바뀌어도 같은 피드 기준점을 유지한다', (blogType) => {
+		const profile = blogType === 'COLOG' ? COLOG_PROFILE : { ...COLOG_PROFILE, type: 'RILOG' as const };
+		for (const [state, content] of [
+			['ready', '게시글 목록: rilog-team'],
+			['loading', '게시글 로딩 중'],
+			['empty', '빈 게시글 목록'],
+			['error', '게시글 오류'],
+		] as const) {
+			feedState.current = state;
+			const view = render(<BlogHome profile={profile} filter={{ type: 'all' }} />);
+			const feedStart = document.getElementById('blog-home-feed-heading');
+			expect(feedStart).toContainElement(screen.getByText(content));
+			expect(document.querySelectorAll('#blog-home-feed-heading')).toHaveLength(1);
+			view.unmount();
+		}
 	});
 });

@@ -221,6 +221,7 @@ describe('BaseModal', () => {
 		);
 
 		expect(initialFocusRef.current).toHaveFocus();
+		const restoreFocusSpy = vi.spyOn(openerRef.current!, 'focus');
 
 		rerender(
 			<>
@@ -243,6 +244,7 @@ describe('BaseModal', () => {
 
 		await act(() => vi.advanceTimersByTime(120));
 		expect(openerRef.current).toHaveFocus();
+		expect(restoreFocusSpy).toHaveBeenCalledWith({ preventScroll: true });
 	});
 
 	it('열린 상태에서 unmount되어도 opener에 focus를 복원한다', () => {
@@ -288,12 +290,14 @@ describe('BaseModal', () => {
 		);
 
 		expect(initialFocusRef.current).toHaveFocus();
+		const restoreFocusSpy = vi.spyOn(openerRef.current!, 'focus');
 		rerender(
 			<button ref={openerRef} type="button">
 				열기 버튼
 			</button>,
 		);
 		expect(openerRef.current).toHaveFocus();
+		expect(restoreFocusSpy).toHaveBeenCalledWith({ preventScroll: true });
 	});
 
 	it('alertdialog role과 연결된 accessible name을 전달한다', () => {

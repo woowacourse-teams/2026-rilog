@@ -27,11 +27,7 @@ async function PostFeedContent({ filters }: Pick<PostFeedProps, 'filters'>) {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<PostFeedGrid
-				initialFilters={filters}
-				initialRequestFailed={initialRequestFailed}
-				scrollTargetId={POST_FEED_SCROLL_TARGET_ID}
-			/>
+			<PostFeedGrid initialFilters={filters} initialRequestFailed={initialRequestFailed} />
 		</HydrationBoundary>
 	);
 }

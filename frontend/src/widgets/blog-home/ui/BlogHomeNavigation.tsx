@@ -6,6 +6,7 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import type { ChapterSummary } from '@/domains/chapter/model/chapter';
 import { useBlogHomeIndex } from '@/features/blog-home-index/hooks/use-blog-home-index';
 import { ALL_BLOG_POSTS_FILTER, buildBlogHomeFilterHref } from '@/features/blog-home-index/lib/blog-home-filter';
+import { scrollToFeedTarget } from '@/features/post-feed/lib/navigate-feed-filter';
 import type { PublicBlogPostsFilter } from '@/shared/api/blogs/types';
 import Button from '@/shared/ui/button/Button';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -20,6 +21,12 @@ interface BlogHomeNavigationProps {
 
 const ROW_CLASS_NAME =
 	'flex min-h-11 min-w-0 flex-1 items-center gap-1.5 rounded-sm px-2 text-left text-body-1 font-normal text-navy-600 transition-colors hover:bg-surface-hover hover:text-text-primary focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus-ring active:bg-surface-active motion-reduce:transition-none sm:min-h-7';
+const BLOG_HOME_FEED_HEADING_ID = 'blog-home-feed-heading';
+
+const handleFilterNavigation = (onNavigate?: () => void) => {
+	scrollToFeedTarget(BLOG_HOME_FEED_HEADING_ID);
+	onNavigate?.();
+};
 
 function NavigationRow({
 	item,
@@ -44,7 +51,7 @@ function NavigationRow({
 			aria-label={`${item.name}, 글 ${item.postCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
 			className={isCurrent ? `${ROW_CLASS_NAME} bg-surface-hover font-semibold text-text-primary` : ROW_CLASS_NAME}
-			onClick={onNavigate}
+			onNavigate={() => handleFilterNavigation(onNavigate)}
 		>
 			<span className="min-w-0 truncate">{item.name}</span>
 			<span className="shrink-0 text-label-1 text-text-disabled">{item.postCount}</span>
@@ -73,7 +80,7 @@ function AllPostsRow({
 			aria-label={`전체, 글 ${totalCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
 			className={`${ROW_CLASS_NAME} w-full ${isCurrent ? 'bg-surface-hover font-semibold text-text-primary' : ''}`}
-			onClick={onNavigate}
+			onNavigate={() => handleFilterNavigation(onNavigate)}
 		>
 			<span className="min-w-0 truncate">전체</span>
 			<span className="shrink-0 text-label-1 text-text-disabled">{totalCount}</span>

@@ -40,7 +40,7 @@ export default function BaseModal({
 
 	const restoreFocus = useCallback(() => {
 		if (openerRef.current?.isConnected) {
-			openerRef.current.focus();
+			openerRef.current.focus({ preventScroll: true });
 		}
 	}, []);
 
