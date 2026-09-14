@@ -1,5 +1,9 @@
 package kr.rilog.domain.auth.presentation;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import kr.rilog.domain.auth.application.GlobalRole;
 import kr.rilog.domain.auth.application.token.AuthTokenPairIssuer;
 import kr.rilog.domain.auth.application.oauth.usecase.CompleteOAuthLogin;
@@ -31,8 +35,11 @@ import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.global.logging.RequestIdFilter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -63,6 +71,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class GithubOAuthControllerTest {
+
+    private LogCapture logCapture;
+
+    @AfterEach
+    void stopLogCapture() {
+        if (logCapture != null) {
+            logCapture.stop();
+        }
+    }
 
     @Test
     @DisplayName("GET /v1/auth/github는 redirectUrl을 state와 함께 저장하고 GitHub 인증 페이지로 redirect한다")
@@ -112,6 +129,50 @@ class GithubOAuthControllerTest {
     }
 
     @Test
+    @DisplayName("PENDING 사용자의 callback 성공은 민감값 없이 OAuth 로그인 완료 로그를 남긴다")
+    void callbackLogsOauthLoginCompletionForPendingUserWithoutSensitiveValues() throws Exception {
+        // given
+        InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/feeds"), Duration.ofMinutes(5));
+        MockMvc mockMvc = mockMvc(store);
+        logCapture = LogCapture.start();
+
+        // when
+        MvcResult result = mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        String requestId = result.getResponse().getHeader(RequestIdFilter.REQUEST_ID_HEADER);
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(event.getLevel()).isEqualTo(Level.INFO);
+        assertThat(event.getMDCPropertyMap()).containsEntry(RequestIdFilter.MDC_KEY, requestId);
+        assertThat(logFields(event))
+                .containsEntry("event", "oauth_login_completed")
+                .containsEntry("provider", "GITHUB")
+                .containsEntry("userId", "1")
+                .containsEntry("onboardingStatus", "PENDING");
+        assertThat(event.getFormattedMessage())
+                .contains(
+                        "event=oauth_login_completed",
+                        "provider=GITHUB",
+                        "userId=1",
+                        "onboardingStatus=PENDING"
+                )
+                .doesNotContain(
+                        "github-code",
+                        "valid-state",
+                        "onboarding-token",
+                        "access-token",
+                        "raw-refresh-token",
+                        "refresh_token"
+                );
+        assertThat(event.getThrowableProxy()).isNull();
+    }
+
+    @Test
     @DisplayName("온보딩이 완료된 사용자의 callback은 Access Token과 Refresh Token을 발급한다")
     void callbackIssuesAccessTokenAndRefreshTokenForCompletedUser() throws Exception {
         // given
@@ -139,6 +200,55 @@ class GithubOAuthControllerTest {
                 )))
                 .andExpect(jsonPath("$.data.onboardingStatus").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.redirectUrl").value("/posts/1"));
+    }
+
+    @Test
+    @DisplayName("COMPLETED 사용자의 callback 성공은 민감값 없이 OAuth 로그인 완료 로그를 남긴다")
+    void callbackLogsOauthLoginCompletionForCompletedUserWithoutSensitiveValues() throws Exception {
+        // given
+        InMemoryOAuthLoginAttemptStore store = new InMemoryOAuthLoginAttemptStore();
+        store.save(SocialLoginProvider.GITHUB, new OAuthLoginAttempt("valid-state", "/posts/1"), Duration.ofMinutes(5));
+        MockMvc mockMvc = mockMvc(store, User.builder()
+                .id(1L)
+                .githubId(1L)
+                .slug(Slug.from("jinriro"))
+                .onboardingStatus(OnboardingStatus.COMPLETED)
+                .build());
+        logCapture = LogCapture.start();
+
+        // when
+        MvcResult result = mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(callbackRequest("github-code", "valid-state")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        String requestId = result.getResponse().getHeader(RequestIdFilter.REQUEST_ID_HEADER);
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(event.getLevel()).isEqualTo(Level.INFO);
+        assertThat(event.getMDCPropertyMap()).containsEntry(RequestIdFilter.MDC_KEY, requestId);
+        assertThat(logFields(event))
+                .containsEntry("event", "oauth_login_completed")
+                .containsEntry("provider", "GITHUB")
+                .containsEntry("userId", "1")
+                .containsEntry("onboardingStatus", "COMPLETED");
+        assertThat(event.getFormattedMessage())
+                .contains(
+                        "event=oauth_login_completed",
+                        "provider=GITHUB",
+                        "userId=1",
+                        "onboardingStatus=COMPLETED"
+                )
+                .doesNotContain(
+                        "github-code",
+                        "valid-state",
+                        "onboarding-token",
+                        "access-token",
+                        "raw-refresh-token",
+                        "refresh_token"
+                );
+        assertThat(event.getThrowableProxy()).isNull();
     }
 
     @Test
@@ -244,6 +354,27 @@ class GithubOAuthControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("OAUTH_REQUEST_FAILED"));
     }
 
+    @Test
+    @DisplayName("GitHub OAuth 실패 callback은 OAuth 로그인 완료 로그를 남기지 않는다")
+    void callbackDoesNotLogOauthLoginCompletionWhenGithubOAuthError() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc(new InMemoryOAuthLoginAttemptStore());
+        logCapture = LogCapture.start();
+
+        // when - then
+        mockMvc.perform(post("/v1/auth/github/callback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "error": "access_denied",
+                                  "state": "valid-state"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        assertThat(logCapture.events()).isEmpty();
+    }
+
     private MockMvc mockMvc(OAuthLoginAttemptStore store) {
         return mockMvc(store, User.builder()
                 .id(1L)
@@ -291,6 +422,7 @@ class GithubOAuthControllerTest {
 
         return MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .addFilters(new RequestIdFilter())
                 .build();
     }
 
@@ -312,6 +444,18 @@ class GithubOAuthControllerTest {
                   "state": "%s"
                 }
                 """.formatted(code, state);
+    }
+
+    private static Map<String, String> logFields(ILoggingEvent event) {
+        if (event.getKeyValuePairs() == null) {
+            return Map.of();
+        }
+        return event.getKeyValuePairs()
+                .stream()
+                .collect(toMap(
+                        keyValuePair -> keyValuePair.key,
+                        keyValuePair -> String.valueOf(keyValuePair.value)
+                ));
     }
 
     private static class InMemoryOAuthLoginAttemptStore implements OAuthLoginAttemptStore {
@@ -413,6 +557,31 @@ class GithubOAuthControllerTest {
                     Instant.parse("2026-08-13T00:00:00Z"),
                     Instant.parse("2026-08-13T00:15:00Z")
             );
+        }
+    }
+
+    private record LogCapture(Logger logger, ListAppender<ILoggingEvent> appender) {
+
+        private static LogCapture start() {
+            Logger logger = (Logger) LoggerFactory.getLogger(GithubOAuthController.class);
+            ListAppender<ILoggingEvent> appender = new ListAppender<>();
+            appender.start();
+            logger.addAppender(appender);
+            return new LogCapture(logger, appender);
+        }
+
+        private ILoggingEvent onlyEvent() {
+            assertThat(appender.list).hasSize(1);
+            return appender.list.getFirst();
+        }
+
+        private List<ILoggingEvent> events() {
+            return appender.list;
+        }
+
+        private void stop() {
+            logger.detachAppender(appender);
+            appender.stop();
         }
     }
 }

@@ -26,7 +26,6 @@ export default function PostDetail({ post }: PostDetailProps) {
 			title={post.title}
 			publishedAt={post.publishedAt}
 			category={post.category}
-			chapter={post.chapter}
 			author={post.author}
 			viewerPermissions={post.viewerPermissions}
 		/>
@@ -96,7 +95,6 @@ export default function PostDetail({ post }: PostDetailProps) {
 					title={post.title}
 					publishedAt={post.publishedAt}
 					category={post.category}
-					chapter={post.chapter}
 					author={post.author}
 					viewerPermissions={post.viewerPermissions}
 				/>

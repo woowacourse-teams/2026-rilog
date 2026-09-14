@@ -180,21 +180,6 @@ export const composePostPage = ({ domain, feature, widget }: PageDependencies) =
 			paragraph('readability-toggle-content', '토글을 펼쳤을 때 중첩 본문도 같은 행간과 문단 간격을 사용합니다.'),
 		],
 	},
-	{
-		id: 'readability-image',
-		type: 'image',
-		props: {
-			backgroundColor: 'default',
-			caption: '이미지와 본문 사이 간격 확인',
-			name: '가독성 점검 예시 이미지',
-			previewWidth: 640,
-			showPreview: true,
-			textAlignment: 'left',
-			url: '/images/default-post-cover.svg',
-		},
-		content: undefined,
-		children: [],
-	},
 ];
 
 const cologPostContent: Block[] = [
@@ -244,7 +229,7 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 		title: '함께 만드는 컴포넌트 설계 원칙',
 		content: cologPostContent,
 		publishedAt: '2024-06-03T11:30:00+09:00',
-		thumbnailUrl: '/images/default-post-cover.svg',
+		thumbnailUrl: null,
 		category: 'TECH',
 		chapter: null,
 		viewerPermissions: { canEdit: true, canDelete: true },

@@ -24,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.Map;
+
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -57,6 +60,7 @@ class GlobalExceptionHandlerTest {
 
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertLogFields(event, "INTERNAL_SERVER_ERROR", 500);
         assertThat(event.getThrowableProxy().getClassName()).isEqualTo(IllegalStateException.class.getName());
     }
 
@@ -74,7 +78,23 @@ class GlobalExceptionHandlerTest {
 
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
+        assertLogFields(event, "OAUTH_CALLBACK_PARAMETER_MISSING", 400);
         assertThat(event.getThrowableProxy()).isNull();
+    }
+
+    @Test
+    @DisplayName("Access Token 만료 예외는 401 응답으로 처리하고 로그를 남기지 않는다.")
+    void expiredAccessTokenRespondsUnauthorizedWithoutLog() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        // when - then
+        mockMvc.perform(get("/v1/expired-access-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("EXPIRED_ACCESS_TOKEN"));
+
+        logCapture.assertNoEvents();
     }
 
     @Test
@@ -92,6 +112,7 @@ class GlobalExceptionHandlerTest {
 
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
+        assertLogFields(event, "REQUEST_VALIDATION_FAILED", 400);
         assertThat(event.getThrowableProxy()).isNull();
     }
 
@@ -109,6 +130,7 @@ class GlobalExceptionHandlerTest {
 
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertLogFields(event, "ACCESS_TOKEN_CONFIGURATION_INVALID", 500);
         assertThat(event.getThrowableProxy().getClassName()).isEqualTo(AuthException.class.getName());
     }
 
@@ -127,6 +149,7 @@ class GlobalExceptionHandlerTest {
 
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertLogFields(event, "INTERNAL_SERVER_ERROR", 500);
         assertThat(event.getFormattedMessage())
                 .contains("[INTERNAL_SERVER_ERROR] Redis refresh session revoke failed")
                 .doesNotContain("hashed-refresh-token");
@@ -153,6 +176,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().message()).isEqualTo("요청한 정적 리소스를 찾을 수 없습니다.");
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
+        assertLogFields(event, "STATIC_RESOURCE_NOT_FOUND", 404);
         assertThat(event.getThrowableProxy()).isNull();
     }
 
@@ -173,6 +197,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().errorCode()).isEqualTo("DUPLICATE_KEY_CONFLICT");
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
+        assertLogFields(event, "DUPLICATE_KEY_CONFLICT", 409);
         assertThat(event.getThrowableProxy()).isNull();
     }
 
@@ -193,6 +218,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().status()).isEqualTo(500);
         ILoggingEvent event = logCapture.onlyEvent();
         assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertLogFields(event, "DATA_INTEGRITY_VIOLATION", 500);
         assertThat(event.getThrowableProxy().getClassName())
                 .isEqualTo(DataIntegrityViolationException.class.getName());
     }
@@ -214,6 +240,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/v1/business-4xx")
         String business4xx() {
             throw new AuthException(AuthErrorInformation.OAUTH_CALLBACK_PARAMETER_MISSING);
+        }
+
+        @GetMapping("/v1/expired-access-token")
+        String expiredAccessToken() {
+            throw new AuthException(AuthErrorInformation.EXPIRED_ACCESS_TOKEN);
         }
 
         @GetMapping("/v1/business-5xx")
@@ -254,9 +285,32 @@ class GlobalExceptionHandlerTest {
             return appender.list.getFirst();
         }
 
+        private void assertNoEvents() {
+            assertThat(appender.list).isEmpty();
+        }
+
         private void stop() {
             logger.detachAppender(appender);
             appender.stop();
         }
+    }
+
+    private static void assertLogFields(ILoggingEvent event, String errorCode, int httpStatus) {
+        assertThat(logFields(event))
+                .containsEntry("event", "http_request_exception")
+                .containsEntry("errorCode", errorCode)
+                .containsEntry("httpStatus", String.valueOf(httpStatus));
+    }
+
+    private static Map<String, String> logFields(ILoggingEvent event) {
+        if (event.getKeyValuePairs() == null) {
+            return Map.of();
+        }
+        return event.getKeyValuePairs()
+                .stream()
+                .collect(toMap(
+                        keyValuePair -> keyValuePair.key,
+                        keyValuePair -> String.valueOf(keyValuePair.value)
+                ));
     }
 }
