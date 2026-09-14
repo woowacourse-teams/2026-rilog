@@ -69,12 +69,6 @@ export default function PostDetailHeader({
 				</BlogProfileEntryLink>
 				<span aria-hidden="true">·</span>
 				<span>{categoryLabel}</span>
-				{chapter && !publisher ? (
-					<>
-						<span aria-hidden="true">·</span>
-						<span>{chapter.name}</span>
-					</>
-				) : null}
 				<span aria-hidden="true">·</span>
 				<time dateTime={toApiUtcISOString(publishedAt)}>{formatPublishedDate(publishedAt)}</time>
 
