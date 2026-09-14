@@ -1,5 +1,7 @@
 import type {
+	AboutPageAcquisitionSource,
 	AboutPageEntrySource,
+	AboutPageLinkTarget,
 	AnalyticsErrorProperties,
 	BlogProfileEntrySource,
 	BlockCountBucket,
@@ -33,8 +35,12 @@ export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introd
 export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
 export const analytics = {
+	aboutPageViewed: ({ acquisitionSource }: { acquisitionSource: AboutPageAcquisitionSource }) =>
+		captureAnalyticsEvent('about page viewed', { acquisition_source: acquisitionSource }),
 	aboutPageEntryClicked: ({ entrySource }: { entrySource: AboutPageEntrySource }) =>
 		captureAnalyticsEvent('about page entry clicked', { entry_source: entrySource }),
+	aboutPageLinkClicked: ({ linkTarget }: { linkTarget: AboutPageLinkTarget }) =>
+		captureAnalyticsEvent('about page link clicked', { link_target: linkTarget }),
 	releaseNoteViewed: ({ releaseNoteId }: { releaseNoteId: string }) =>
 		captureAnalyticsEvent('release note viewed', { release_note_id: releaseNoteId }),
 	releaseNoteClosed: ({ releaseNoteId, closeMethod }: { releaseNoteId: string; closeMethod: ReleaseNoteCloseMethod }) =>

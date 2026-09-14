@@ -11,11 +11,19 @@ describe('analytics events', () => {
 		captureMock.mockReset();
 	});
 
-	it('About 페이지 진입 링크의 위치를 canonical payload로 전송한다', () => {
+	it('About 페이지 조회와 링크 행동을 canonical payload로 전송한다', () => {
+		analytics.aboutPageViewed({ acquisitionSource: 'pre_registration_email' });
 		analytics.aboutPageEntryClicked({ entrySource: 'release_note' });
+		analytics.aboutPageLinkClicked({ linkTarget: 'feeds' });
 
-		expect(captureMock).toHaveBeenCalledExactlyOnceWith('about page entry clicked', {
+		expect(captureMock).toHaveBeenNthCalledWith(1, 'about page viewed', {
+			acquisition_source: 'pre_registration_email',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'about page entry clicked', {
 			entry_source: 'release_note',
+		});
+		expect(captureMock).toHaveBeenNthCalledWith(3, 'about page link clicked', {
+			link_target: 'feeds',
 		});
 	});
 
