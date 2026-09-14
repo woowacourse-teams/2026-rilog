@@ -83,6 +83,21 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Access Token 만료 예외는 401 응답으로 처리하고 로그를 남기지 않는다.")
+    void expiredAccessTokenRespondsUnauthorizedWithoutLog() throws Exception {
+        // given
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        // when - then
+        mockMvc.perform(get("/v1/expired-access-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("EXPIRED_ACCESS_TOKEN"));
+
+        logCapture.assertNoEvents();
+    }
+
+    @Test
     @DisplayName("요청 파라미터 검증 예외는 400 응답과 INFO 로그로 처리한다.")
     void requestParameterValidationExceptionRespondsBadRequestAndLogsInfo() throws Exception {
         // given
@@ -227,6 +242,11 @@ class GlobalExceptionHandlerTest {
             throw new AuthException(AuthErrorInformation.OAUTH_CALLBACK_PARAMETER_MISSING);
         }
 
+        @GetMapping("/v1/expired-access-token")
+        String expiredAccessToken() {
+            throw new AuthException(AuthErrorInformation.EXPIRED_ACCESS_TOKEN);
+        }
+
         @GetMapping("/v1/business-5xx")
         String business5xx() {
             throw new AuthException(AuthErrorInformation.ACCESS_TOKEN_CONFIGURATION_INVALID);
@@ -263,6 +283,10 @@ class GlobalExceptionHandlerTest {
         private ILoggingEvent onlyEvent() {
             assertThat(appender.list).hasSize(1);
             return appender.list.getFirst();
+        }
+
+        private void assertNoEvents() {
+            assertThat(appender.list).isEmpty();
         }
 
         private void stop() {
