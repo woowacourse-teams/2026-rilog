@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-import type { OrderedChapter } from '@/domains/chapter/model/chapter';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_CATEGORY_OPTIONS, type PostCategory, type PostViewerPermissions } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
@@ -19,7 +18,6 @@ interface PostDetailHeaderProps {
 	// description: string;
 	publishedAt: string;
 	category: PostCategory;
-	chapter: OrderedChapter | null;
 	author: User;
 	viewerPermissions: PostViewerPermissions;
 }
@@ -32,7 +30,6 @@ export default function PostDetailHeader({
 	// description,
 	publishedAt,
 	category,
-	chapter,
 	author,
 	viewerPermissions,
 }: PostDetailHeaderProps) {
@@ -69,12 +66,6 @@ export default function PostDetailHeader({
 				</BlogProfileEntryLink>
 				<span aria-hidden="true">·</span>
 				<span>{categoryLabel}</span>
-				{chapter && !publisher ? (
-					<>
-						<span aria-hidden="true">·</span>
-						<span>{chapter.name}</span>
-					</>
-				) : null}
 				<span aria-hidden="true">·</span>
 				<time dateTime={toApiUtcISOString(publishedAt)}>{formatPublishedDate(publishedAt)}</time>
 

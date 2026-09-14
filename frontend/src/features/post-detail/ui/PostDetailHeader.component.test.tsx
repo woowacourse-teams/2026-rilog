@@ -25,7 +25,6 @@ describe('PostDetailHeader', () => {
 				title="컴포넌트 시스템, 이렇게 도입했어요"
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="TECH"
-				chapter={{ id: 3, name: '프론트엔드', order: 1 }}
 				author={AUTHOR}
 				viewerPermissions={{ canEdit: true, canDelete: true }}
 			/>,
@@ -36,7 +35,6 @@ describe('PostDetailHeader', () => {
 		// expect(screen.getByText('프로젝트의 컴포넌트 시스템을 개선한 과정을 소개합니다.')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: /리로거/ })).toHaveAttribute('href', '/@riloger');
 		expect(screen.getByText('기술')).toBeInTheDocument();
-		expect(screen.getByText('프론트엔드')).toBeInTheDocument();
 		expect(screen.getByText('2026년 9월 8일')).toBeInTheDocument();
 	});
 
@@ -48,7 +46,6 @@ describe('PostDetailHeader', () => {
 				title="짧은 글"
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="DAILY"
-				chapter={null}
 				author={AUTHOR}
 				viewerPermissions={{ canEdit: false, canDelete: false }}
 			/>,
@@ -66,7 +63,6 @@ describe('PostDetailHeader', () => {
 				title="스프린트 회고"
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="RETROSPECT"
-				chapter={null}
 				author={AUTHOR}
 				viewerPermissions={{ canEdit: false, canDelete: false }}
 			/>,
@@ -84,7 +80,6 @@ describe('PostDetailHeader', () => {
 				title="팀이 함께 작성한 글"
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="TECH"
-				chapter={null}
 				author={AUTHOR}
 				viewerPermissions={{ canEdit: false, canDelete: false }}
 			/>,

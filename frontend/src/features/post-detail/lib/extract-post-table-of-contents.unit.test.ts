@@ -10,10 +10,18 @@ const DEFAULT_TEXT_PROPS = {
 	textColor: 'default',
 } as const;
 
-const heading = (id: string, value: string, level: 1 | 2 | 3, children: Block[] = []): Block => ({
+const heading = (id: string, value: string, level: 1 | 2 | 3, children: Block[] = [], isToggleable = false): Block => ({
 	id,
 	type: 'heading',
-	props: { ...DEFAULT_TEXT_PROPS, level, isToggleable: false },
+	props: { ...DEFAULT_TEXT_PROPS, level, isToggleable },
+	content: [{ type: 'text', text: value, styles: {} }],
+	children,
+});
+
+const toggle = (id: string, value: string, children: Block[]): Block => ({
+	id,
+	type: 'toggleListItem',
+	props: DEFAULT_TEXT_PROPS,
 	content: [{ type: 'text', text: value, styles: {} }],
 	children,
 });
@@ -35,5 +43,18 @@ describe('extractPostTableOfContents', () => {
 		expect(items[3]).toEqual({ id: '문제-상황-2', text: '문제 상황 2', level: 1 });
 		expect(items.every(({ id }) => !id.includes('--'))).toBe(true);
 		expect(extractPostTableOfContents(blocks)).toEqual(items);
+	});
+
+	it('토글 내부 헤딩은 목차에서 제외한다', () => {
+		const blocks = [
+			heading('visible-heading', '보이는 제목', 1),
+			toggle('toggle-list', '토글 목록', [heading('toggle-list-child', '토글 목록 속 제목', 2)]),
+			heading('toggle-heading', '접을 수 있는 제목', 2, [heading('toggle-heading-child', '숨겨진 제목', 3)], true),
+		];
+
+		expect(extractPostTableOfContents(blocks)).toEqual([
+			{ id: '보이는-제목', text: '보이는 제목', level: 1 },
+			{ id: '접을-수-있는-제목', text: '접을 수 있는 제목', level: 2 },
+		]);
 	});
 });
