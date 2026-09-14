@@ -73,7 +73,7 @@ export default function BlogPostList({ posts, slug, blogType }: BlogPostListProp
 											className={`flex min-w-0 items-center text-text-secondary ${blogType === 'COLOG' ? 'ml-1.5' : ''} ${post.chapterName ? 'max-w-1/2' : ''}`}
 										>
 											<span className="truncate">{metadataName}</span>
-											<span aria-hidden="true" className="shrink-0">
+											<span aria-hidden="true" className="shrink-0 text-navy-400">
 												.
 											</span>
 										</span>

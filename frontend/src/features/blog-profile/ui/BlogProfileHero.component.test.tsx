@@ -26,7 +26,7 @@ describe('BlogProfileHero', () => {
 		render(<BlogProfileHero profile={COLOG_PROFILE_FIXTURE} action={<button type="button">팀 설정</button>} />);
 
 		expect(screen.getByRole('heading', { level: 1, name: '프론트엔드 연구소' })).toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' })).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' })).not.toHaveClass('border');
 		expect(screen.getByText('사용자 경험을 함께 연구합니다.')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'frontend-lab.example.com' })).toHaveAttribute(
 			'href',
@@ -137,6 +137,7 @@ describe('BlogProfileHero', () => {
 		);
 
 		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).toHaveClass('rounded-full!');
+		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).not.toHaveClass('border');
 		const heading = screen.getByRole('heading', { name: '파라디' });
 		expect(heading).not.toHaveClass('pr-7', 'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]');
 		expect(heading.parentElement?.parentElement?.parentElement).toHaveClass(
