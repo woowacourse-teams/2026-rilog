@@ -99,7 +99,7 @@ public class PostService {
         TagAssets previous = post.getTagAssets();
         post.update(command.toDetail(), targetBlog, chapter);
         TagAssets current = post.getTagAssets();
-        tagAssetsPublisher.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(requesterId, previous, current);
         System.out.println("이벤트 발송");
         return PostUpdateResult.of(post, targetBlog);
     }
@@ -109,7 +109,7 @@ public class PostService {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
         post.delete();
-        tagAssetsPublisher.detach(post.getTagAssets());
+        tagAssetsPublisher.detach(requesterId, post.getTagAssets());
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {

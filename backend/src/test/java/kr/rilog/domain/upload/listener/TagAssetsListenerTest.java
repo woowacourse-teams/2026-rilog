@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verify;
 
 class TagAssetsListenerTest {
 
+    private static final Long REQUESTER_ID = 7L;
+
     private S3TagAssetsLifecycle lifecycle;
     private TagAssetsListener listener;
 
@@ -42,9 +44,9 @@ class TagAssetsListenerTest {
         TagAssets previous = TagAssets.of("https://s3.example.com/previous.png");
         TagAssets current = TagAssets.of("https://s3.example.com/current.png");
 
-        listener.handle(new TagAssetsEvent.Synchronize(previous, current));
+        listener.handle(new TagAssetsEvent.Synchronize(REQUESTER_ID, previous, current));
 
-        verify(lifecycle).synchronize(previous, current);
+        verify(lifecycle).synchronize(REQUESTER_ID, previous, current);
     }
 
     @Test
@@ -52,9 +54,9 @@ class TagAssetsListenerTest {
     void detachAssets() {
         TagAssets assets = TagAssets.of("https://s3.example.com/removed.png");
 
-        listener.handle(new TagAssetsEvent.Detach(assets));
+        listener.handle(new TagAssetsEvent.Detach(REQUESTER_ID, assets));
 
-        verify(lifecycle).detach(assets);
+        verify(lifecycle).detach(REQUESTER_ID, assets);
     }
 
     @Test
@@ -65,7 +67,7 @@ class TagAssetsListenerTest {
         LogCapture logCapture = LogCapture.start();
 
         try {
-            listener.handle(new TagAssetsEvent.Synchronize(previous, current));
+            listener.handle(new TagAssetsEvent.Synchronize(REQUESTER_ID, previous, current));
 
             assertThat(logCapture.events()).isEmpty();
         } finally {

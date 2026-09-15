@@ -33,7 +33,6 @@ public class UploadService {
     private static final long MB = 1024 * 1024;
     private static final long IMAGE_MAX_SIZE = 10 * MB;
     private static final long FILE_MAX_SIZE = 20 * MB;
-    private static final String ORIGINALS_DIRECTORY = "originals";
 
     private static final Set<String> IMAGE_CONTENT_TYPES = Set.of(
             "image/jpeg",
@@ -51,13 +50,15 @@ public class UploadService {
     private final S3Presigner s3Presigner;
     private final S3Client s3Client;
     private final S3Properties properties;
+    private final S3ImageObjectKeyPolicy imageObjectKeyPolicy;
 
-    public PresignedUrlCreateResult createUploadUrl(PresignedUrlCreateCommand command) {
+    public PresignedUrlCreateResult createUploadUrl(Long userId, PresignedUrlCreateCommand command) {
         validate(command);
 
         UUID uploadId = UUID.randomUUID();
         String extension = resolveExtension(command);
         String objectKey = createObjectKey(
+                userId,
                 uploadId,
                 command.type(),
                 extension
@@ -130,15 +131,9 @@ public class UploadService {
                 .build();
     }
 
-    private String createObjectKey(UUID uploadId, UploadType type, String extension) {
+    private String createObjectKey(Long userId, UUID uploadId, UploadType type, String extension) {
         if (type == UploadType.IMAGE) {
-            return "%s/%s/%s/%s.%s".formatted(
-                    properties.rootDirectory(),
-                    type.getDirectory(),
-                    ORIGINALS_DIRECTORY,
-                    uploadId,
-                    extension
-            );
+            return imageObjectKeyPolicy.create(userId, uploadId, extension);
         }
 
         return "%s/%s/%s.%s".formatted(

@@ -18,11 +18,11 @@ public class TagAssetsLifecycleTestConfiguration {
             }
 
             @Override
-            public void synchronize(TagAssets previous, TagAssets current) {
+            public void synchronize(Long requesterId, TagAssets previous, TagAssets current) {
             }
 
             @Override
-            public void detach(TagAssets assets) {
+            public void detach(Long requesterId, TagAssets assets) {
             }
         };
     }
