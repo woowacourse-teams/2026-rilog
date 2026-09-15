@@ -9,6 +9,7 @@ import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
+import { logNonProductionError } from '@/shared/utils/non-production-console';
 
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
@@ -57,7 +58,7 @@ export default function GitHubCallbackHandler() {
 				const { errorCode } = getAnalyticsErrorProperties(err);
 				analytics.githubLoginFailed({ failureStage, errorCode });
 				clearSignUpFlow();
-				console.error('GitHub login failed:', err);
+				logNonProductionError('GitHub login failed:', err);
 				router.replace('/');
 			}
 		};

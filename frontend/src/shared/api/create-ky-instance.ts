@@ -2,6 +2,8 @@ import ky from 'ky';
 
 import type { Hooks, KyInstance, Options } from 'ky';
 
+import { logNonProductionError, logNonProductionInfo } from '@/shared/utils/non-production-console';
+
 import { API_ERROR_CODES } from './error-codes';
 
 interface TokenManager {
@@ -71,14 +73,14 @@ export const createKyInstance = ({
 			...hooks,
 			beforeError: [
 				({ request, error }) => {
-					console.error(`[ky error] ${request.method} ${request.url} - ${error.message}`);
+					logNonProductionError(`[ky error] ${request.method} ${request.url} - ${error.message}`);
 					return error;
 				},
 				...(hooks?.beforeError ?? []),
 			],
 			beforeRequest: [
 				({ request }) => {
-					console.log(`[ky request] ${request.method} ${request.url}`);
+					logNonProductionInfo(`[ky request] ${request.method} ${request.url}`);
 				},
 				({ request, options: requestOptions }) => {
 					if (!isBrowser()) {
@@ -105,7 +107,7 @@ export const createKyInstance = ({
 			],
 			afterResponse: [
 				({ request, response }) => {
-					console.log(`[ky response] ${request.method} ${request.url} - ${response.status}`);
+					logNonProductionInfo(`[ky response] ${request.method} ${request.url} - ${response.status}`);
 				},
 				...(hooks?.afterResponse ?? []),
 				async ({ request, response, retryCount, options: requestOptions }) => {
