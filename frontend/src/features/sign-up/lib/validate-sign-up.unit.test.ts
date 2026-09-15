@@ -4,7 +4,7 @@ import { normalizeSignUpFields, validateSignUpFields } from './validate-sign-up'
 
 const VALID_FIELDS = {
 	nickname: '리로그',
-	slug: 'Ri_log-01',
+	slug: 'Ri_log01',
 	serviceUrl: '',
 	githubUrl: '',
 };
@@ -16,14 +16,23 @@ describe('validateSignUpFields', () => {
 
 	it('고유 아이디에 허용되지 않은 특수문자가 있으면 오류를 반환한다', () => {
 		expect(validateSignUpFields({ ...VALID_FIELDS, slug: 'ri.log' })).toEqual({
-			slug: '고유 아이디는 4~20자의 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있어요.',
+			slug: '고유 아이디는 4~20자의 영어와 숫자, 언더스코어(_)만 사용할 수 있어요.',
 		});
 	});
 
 	it('앞뒤 공백을 제거한 값이 길이 규칙을 충족하지 못하면 오류를 반환한다', () => {
 		expect(validateSignUpFields({ ...VALID_FIELDS, nickname: ' 리 ', slug: ' abc ' })).toEqual({
 			nickname: '닉네임은 2~20자로 입력해 주세요.',
-			slug: '고유 아이디는 4~20자의 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있어요.',
+			slug: '고유 아이디는 4~20자의 영어와 숫자, 언더스코어(_)만 사용할 수 있어요.',
+		});
+	});
+
+	it('하이픈이 있거나 영문이 없는 고유 아이디를 거부한다', () => {
+		expect(validateSignUpFields({ ...VALID_FIELDS, slug: 'ri-log' })).toEqual({
+			slug: '고유 아이디는 4~20자의 영어와 숫자, 언더스코어(_)만 사용할 수 있어요.',
+		});
+		expect(validateSignUpFields({ ...VALID_FIELDS, slug: '1234_' })).toEqual({
+			slug: '고유 아이디에 영어를 1자 이상 포함해 주세요.',
 		});
 	});
 

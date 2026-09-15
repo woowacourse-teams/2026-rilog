@@ -53,4 +53,15 @@ describe('globalMutationErrorHandler', () => {
 
 		expect(mockConsoleError).toHaveBeenCalledWith('공통 오류 처리기 (Mutation):', error);
 	});
+
+	it('프로덕션에서는 field가 아닌 에러도 console에 출력하지 않는다', () => {
+		vi.stubEnv('NODE_ENV', 'production');
+		const mockConsoleError = vi.fn();
+		const error = { type: 'network' } as unknown as Error;
+
+		globalMutationErrorHandler(error, mockConsoleError);
+
+		expect(mockConsoleError).not.toHaveBeenCalled();
+		vi.unstubAllEnvs();
+	});
 });

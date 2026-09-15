@@ -3,6 +3,7 @@ import type { CologProfileSettingsValue, CologProfileValidationErrors } from '..
 import { BLOG_PROFILE_URL_MAX_LENGTH } from '@/domains/blog/model/blog';
 import {
 	COLOG_DESCRIPTION_MAX_LENGTH,
+	COLOG_SLUG_ALLOWED_PATTERN,
 	COLOG_SLUG_MAX_LENGTH,
 	COLOG_SLUG_MIN_LENGTH,
 	COLOG_SLUG_PATTERN,
@@ -34,9 +35,11 @@ export const validateCologProfileSettings = (value: CologProfileSettingsValue): 
 	if (
 		normalized.slug.length < COLOG_SLUG_MIN_LENGTH ||
 		normalized.slug.length > COLOG_SLUG_MAX_LENGTH ||
-		!COLOG_SLUG_PATTERN.test(normalized.slug)
+		!COLOG_SLUG_ALLOWED_PATTERN.test(normalized.slug)
 	) {
-		errors.slug = `고유 아이디는 ${COLOG_SLUG_MIN_LENGTH}~${COLOG_SLUG_MAX_LENGTH}자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.`;
+		errors.slug = `고유 아이디는 ${COLOG_SLUG_MIN_LENGTH}~${COLOG_SLUG_MAX_LENGTH}자의 영어 소문자와 숫자, 언더스코어(_)만 사용할 수 있어요.`;
+	} else if (!COLOG_SLUG_PATTERN.test(normalized.slug)) {
+		errors.slug = '고유 아이디에 영어를 1자 이상 포함해 주세요.';
 	}
 
 	const description = normalized.description ?? '';

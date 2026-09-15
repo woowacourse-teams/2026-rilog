@@ -76,7 +76,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 							</span>
 						</BlogProfileEntryLink>
 					)}
-					<span aria-hidden="true" className="shrink-0 text-navy-400">
+					<span aria-hidden="true" className="shrink-0 text-text-placeholder">
 						.
 					</span>
 					{post.chapterName && <span className="ml-1 min-w-0 flex-1 truncate text-navy-400">{post.chapterName}</span>}
