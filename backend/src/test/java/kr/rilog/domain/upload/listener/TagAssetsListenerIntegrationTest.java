@@ -10,9 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 class TagAssetsListenerIntegrationTest extends ServiceSupport {
 
+    private static final Long REQUESTER_ID = 7L;
     private static final long BEFORE_COMPLETION_OBSERVATION_MILLIS = 500;
     private static final long AFTER_COMMIT_TIMEOUT_SECONDS = 3;
 
@@ -122,17 +121,17 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
         doAnswer(invocation -> {
             executed.countDown();
             return null;
-        }).when(lifecycle).synchronize(previous, current);
+        }).when(lifecycle).synchronize(REQUESTER_ID, previous, current);
 
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new TagAssetsEvent.Synchronize(previous, current));
+            eventPublisher.publishEvent(new TagAssetsEvent.Synchronize(REQUESTER_ID, previous, current));
 
             assertThat(await(executed, BEFORE_COMPLETION_OBSERVATION_MILLIS, MILLISECONDS)).isFalse();
             verifyNoInteractions(lifecycle);
         });
 
         assertThat(await(executed, AFTER_COMMIT_TIMEOUT_SECONDS, SECONDS)).isTrue();
-        verify(lifecycle).synchronize(previous, current);
+        verify(lifecycle).synchronize(REQUESTER_ID, previous, current);
     }
 
     @Test
@@ -144,10 +143,10 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
         doAnswer(invocation -> {
             executed.countDown();
             return null;
-        }).when(lifecycle).synchronize(previous, current);
+        }).when(lifecycle).synchronize(REQUESTER_ID, previous, current);
 
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new TagAssetsEvent.Synchronize(previous, current));
+            eventPublisher.publishEvent(new TagAssetsEvent.Synchronize(REQUESTER_ID, previous, current));
             status.setRollbackOnly();
         });
 
@@ -163,17 +162,17 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
         doAnswer(invocation -> {
             executed.countDown();
             return null;
-        }).when(lifecycle).detach(assets);
+        }).when(lifecycle).detach(REQUESTER_ID, assets);
 
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new TagAssetsEvent.Detach(assets));
+            eventPublisher.publishEvent(new TagAssetsEvent.Detach(REQUESTER_ID, assets));
 
             assertThat(await(executed, BEFORE_COMPLETION_OBSERVATION_MILLIS, MILLISECONDS)).isFalse();
             verifyNoInteractions(lifecycle);
         });
 
         assertThat(await(executed, AFTER_COMMIT_TIMEOUT_SECONDS, SECONDS)).isTrue();
-        verify(lifecycle).detach(assets);
+        verify(lifecycle).detach(REQUESTER_ID, assets);
     }
 
     @Test
@@ -184,10 +183,10 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
         doAnswer(invocation -> {
             executed.countDown();
             return null;
-        }).when(lifecycle).detach(assets);
+        }).when(lifecycle).detach(REQUESTER_ID, assets);
 
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new TagAssetsEvent.Detach(assets));
+            eventPublisher.publishEvent(new TagAssetsEvent.Detach(REQUESTER_ID, assets));
             status.setRollbackOnly();
         });
 

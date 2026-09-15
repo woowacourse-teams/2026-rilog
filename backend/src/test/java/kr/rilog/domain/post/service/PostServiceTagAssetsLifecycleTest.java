@@ -2,6 +2,7 @@ package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -133,7 +134,7 @@ class PostServiceTagAssetsLifecycleTest {
         postService.update(command, POST_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsPublisher).synchronize(previous, post.getTagAssets());
+        verify(tagAssetsPublisher).synchronize(WRITER_ID, previous, post.getTagAssets());
     }
 
     @Test
@@ -151,7 +152,31 @@ class PostServiceTagAssetsLifecycleTest {
         assertThatThrownBy(() -> postService.update(command, POST_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsPublisher, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("게시글을 삭제하면 요청자 ID와 함께 이미지 분리를 요청한다.")
+    void deleteDetachesTagAssetsWithRequesterId() {
+        // given
+        User writer = createUser(WRITER_ID);
+        Blog rilog = createRilog(writer);
+        Post post = publicPublishedRilogPost(rilog, writer);
+        BlogMember membership = BlogMember.createOwner(rilog, writer, NOW);
+        TagAssets assets = post.getTagAssets();
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
+                .thenReturn(Optional.of(post));
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                post.getOwnBlogId(),
+                WRITER_ID,
+                BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.of(membership));
+
+        // when
+        postService.deletePublishedPost(POST_ID, WRITER_ID);
+
+        // then
+        verify(tagAssetsPublisher).detach(WRITER_ID, assets);
     }
 
     @Test
@@ -167,7 +192,7 @@ class PostServiceTagAssetsLifecycleTest {
         assertThatThrownBy(() -> postService.deletePublishedPost(POST_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
-        verify(tagAssetsPublisher, never()).detach(any());
+        verify(tagAssetsPublisher, never()).detach(any(), any());
     }
 
 }

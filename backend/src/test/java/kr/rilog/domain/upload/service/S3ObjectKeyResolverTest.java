@@ -46,6 +46,19 @@ class S3ObjectKeyResolverTest {
         assertThat(resolvedObjectKey).contains(objectKey);
     }
 
+    @Test
+    @DisplayName("사용자 ID가 포함된 이미지 객체 키를 추출한다.")
+    void resolveOwnedImageObjectKey() {
+        String objectUrl = "https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/"
+                + "images/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png";
+
+        Optional<String> objectKey = resolver.resolve(objectUrl);
+
+        assertThat(objectKey).contains(
+                "images/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png"
+        );
+    }
+
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", " "})

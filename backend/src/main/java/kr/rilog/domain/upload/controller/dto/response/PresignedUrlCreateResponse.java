@@ -18,7 +18,7 @@ public record PresignedUrlCreateResponse(
 
         @Schema(
                 description = "S3에 저장될 객체의 Key. 게시글 저장 시 업로드 객체 식별 및 상태 변경에 사용됩니다.",
-                example = "rilog/uploads/images/b38e9b2c-4c13-4f52-9c31-0e52d768d517.png"
+                example = "rilog/uploads/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png"
         )
         String objectKey,
 

@@ -394,6 +394,7 @@ class BlogServiceTest {
 
         // then
         verify(tagAssetsPublisher).synchronize(
+                REQUESTER_ID,
                 previous,
                 new TagAssets(Set.of(command.profileImageUrl(), command.coverImageUrl()))
         );
@@ -414,7 +415,7 @@ class BlogServiceTest {
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
         verify(blogRepository, never()).existsByProfileNameExceptId(command.name(), RILOG_ID);
-        verify(tagAssetsPublisher, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
         assertThat(rilog.getName()).isEqualTo("러로");
     }
 

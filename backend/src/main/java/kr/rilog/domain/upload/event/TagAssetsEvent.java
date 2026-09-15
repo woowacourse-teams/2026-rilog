@@ -14,18 +14,20 @@ public sealed interface TagAssetsEvent {
 
     }
 
-    record Synchronize(TagAssets previous, TagAssets current) implements TagAssetsEvent {
+    record Synchronize(Long requesterId, TagAssets previous, TagAssets current) implements TagAssetsEvent {
 
         public Synchronize {
+            Objects.requireNonNull(requesterId);
             Objects.requireNonNull(previous);
             Objects.requireNonNull(current);
         }
 
     }
 
-    record Detach(TagAssets assets) implements TagAssetsEvent {
+    record Detach(Long requesterId, TagAssets assets) implements TagAssetsEvent {
 
         public Detach {
+            Objects.requireNonNull(requesterId);
             Objects.requireNonNull(assets);
         }
 

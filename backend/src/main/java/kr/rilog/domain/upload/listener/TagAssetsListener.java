@@ -25,13 +25,13 @@ public class TagAssetsListener {
     @Async(S3_TAGGING_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(TagAssetsEvent.Synchronize event) {
-        lifecycle.synchronize(event.previous(), event.current());
+        lifecycle.synchronize(event.requesterId(), event.previous(), event.current());
     }
 
     @Async(S3_TAGGING_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(TagAssetsEvent.Detach event) {
-        lifecycle.detach(event.assets());
+        lifecycle.detach(event.requesterId(), event.assets());
     }
 
 }

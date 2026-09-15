@@ -87,7 +87,7 @@ public class DraftService {
         Chapter chapter = getChapterIfPresent(command.chapterId(), targetMemberShip.getBlog());
         publisher.publishDraft(draft, command.toDetail(), chapter);
         TagAssets current = draft.getTagAssets();
-        tagAssetsPublisher.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(requesterId, previous, current);
 
         return PostPublishResult.of(draft);
     }
@@ -100,7 +100,7 @@ public class DraftService {
         TagAssets previous = draft.getTagAssets();
         draft.overwriteDraft(command);
         TagAssets current = draft.getTagAssets();
-        tagAssetsPublisher.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(requesterId, previous, current);
         return DraftIdResult.from(draft.getId());
     }
 
@@ -110,7 +110,7 @@ public class DraftService {
         draft.validateWrittenBy(requesterId);
 
         draft.delete();
-        tagAssetsPublisher.detach(draft.getTagAssets());
+        tagAssetsPublisher.detach(requesterId, draft.getTagAssets());
     }
 
     private User getUser(Long requesterId) {

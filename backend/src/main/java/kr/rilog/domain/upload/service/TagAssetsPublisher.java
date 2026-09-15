@@ -16,12 +16,12 @@ public class TagAssetsPublisher {
         eventPublisher.publishEvent(new TagAssetsEvent.Attach(assets));
     }
 
-    public void synchronize(TagAssets previous, TagAssets current) {
-        eventPublisher.publishEvent(new TagAssetsEvent.Synchronize(previous, current));
+    public void synchronize(Long requesterId, TagAssets previous, TagAssets current) {
+        eventPublisher.publishEvent(new TagAssetsEvent.Synchronize(requesterId, previous, current));
     }
 
-    public void detach(TagAssets assets) {
-        eventPublisher.publishEvent(new TagAssetsEvent.Detach(assets));
+    public void detach(Long requesterId, TagAssets assets) {
+        eventPublisher.publishEvent(new TagAssetsEvent.Detach(requesterId, assets));
     }
 
 }
