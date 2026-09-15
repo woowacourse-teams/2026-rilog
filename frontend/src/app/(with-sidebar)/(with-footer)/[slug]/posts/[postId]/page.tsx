@@ -3,7 +3,8 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
-import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
+import { buildPostDetailPath, hasBlogSlugPrefix } from '@/shared/routes/app-routes';
+import { redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import PostDetail from '@/widgets/post-detail/PostDetail';
 
@@ -12,6 +13,7 @@ import './post-detail.css';
 
 interface PostDetailPageProps {
 	params: Promise<{ slug: string; postId: string }>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 const parsePostId = (postId: string) => {
@@ -29,11 +31,17 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 	return createPostMetadata(post);
 }
 
-export default async function PostDetailPage({ params }: PostDetailPageProps) {
-	const { slug, postId } = await params;
+export default async function PostDetailPage({ params, searchParams }: PostDetailPageProps) {
+	const [{ slug, postId }, resolvedSearchParams] = await Promise.all([params, searchParams]);
 	if (!hasBlogSlugPrefix(slug)) {
 		notFound();
 	}
+
+	redirectLegacySlug({
+		slug,
+		searchParams: resolvedSearchParams,
+		buildPath: (normalizedSlug) => buildPostDetailPath(normalizedSlug, postId),
+	});
 
 	const post = await getPublicPostDetail(parsePostId(postId));
 	if (post === null) notFound();

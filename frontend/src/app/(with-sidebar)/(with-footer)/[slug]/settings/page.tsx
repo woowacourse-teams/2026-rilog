@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation';
 
 import type { Metadata } from 'next';
 
-import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
+import { buildBlogHomePath, hasBlogSlugPrefix } from '@/shared/routes/app-routes';
+import { redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
 import SettingsWorkspaceRouter from '@/widgets/settings/ui/SettingsWorkspaceRouter';
 
 interface CologSettingsPageProps {
@@ -17,10 +18,17 @@ export const metadata: Metadata = {
 
 export default async function CologSettingsPage({ params, searchParams }: CologSettingsPageProps) {
 	const { slug } = await params;
-	const { tab, invite } = await searchParams;
+	const resolvedSearchParams = await searchParams;
+	const { tab, invite } = resolvedSearchParams;
 	if (!hasBlogSlugPrefix(slug)) {
 		notFound();
 	}
+
+	redirectLegacySlug({
+		slug,
+		searchParams: resolvedSearchParams,
+		buildPath: (normalizedSlug) => `${buildBlogHomePath(normalizedSlug)}/settings`,
+	});
 
 	return <SettingsWorkspaceRouter slug={slug} tab={tab} invite={invite} />;
 }

@@ -8,13 +8,16 @@ import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-publi
 
 import BlogHomePage, { generateMetadata } from './page';
 
-const { notFoundMock } = vi.hoisted(() => ({
+const { notFoundMock, permanentRedirectMock } = vi.hoisted(() => ({
 	notFoundMock: vi.fn((): never => {
 		throw new Error('NEXT_NOT_FOUND');
 	}),
+	permanentRedirectMock: vi.fn((): never => {
+		throw new Error('NEXT_REDIRECT');
+	}),
 }));
 
-vi.mock('next/navigation', () => ({ notFound: notFoundMock }));
+vi.mock('next/navigation', () => ({ notFound: notFoundMock, permanentRedirect: permanentRedirectMock }));
 vi.mock('@/features/blog-home-index/server/prefetch-blog-home-initial-state');
 vi.mock('@/features/blog-profile/lib/get-blog-public-profile');
 
@@ -67,6 +70,7 @@ const renderPage = async (slug = '@jetproc', searchParams: Record<string, string
 describe('BlogHomePage', () => {
 	beforeEach(() => {
 		notFoundMock.mockClear();
+		permanentRedirectMock.mockClear();
 		vi.mocked(prefetchBlogHomeInitialState).mockReset();
 		vi.mocked(prefetchBlogHomeInitialState).mockResolvedValue(READY_STATE);
 		vi.mocked(getBlogPublicProfile).mockReset();
@@ -130,5 +134,29 @@ describe('BlogHomePage', () => {
 		await renderPage('@rilog_user');
 
 		expect(getBlogPublicProfile).toHaveBeenCalledWith('rilog_user');
+	});
+
+	it('하이픈이 포함된 기존 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
+		await expect(
+			BlogHomePage({
+				params: Promise.resolve({ slug: '@rilog-fe' }),
+				searchParams: Promise.resolve({ notice: ['one', 'two'] }),
+			}),
+		).rejects.toThrow('NEXT_REDIRECT');
+
+		expect(permanentRedirectMock).toHaveBeenCalledWith('/@rilog_fe?notice=one&notice=two');
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
+	});
+
+	it('하이픈이 포함된 기존 경로의 metadata 요청도 canonical 경로로 redirect한다', async () => {
+		await expect(
+			generateMetadata({
+				params: Promise.resolve({ slug: '@rilog-fe' }),
+				searchParams: Promise.resolve({ from: 'feed' }),
+			}),
+		).rejects.toThrow('NEXT_REDIRECT');
+
+		expect(permanentRedirectMock).toHaveBeenCalledWith('/@rilog_fe?from=feed');
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
 	});
 });
