@@ -103,7 +103,7 @@ class PostServiceTagAssetsLifecycleTest {
     @DisplayName("발행할 블로그가 없으면 게시글 이미지의 연결을 요청하지 않는다.")
     void publishDoesNotAttachTagAssetsWhenBlogDoesNotExist() {
         // given
-        PostSaveCommand command = publicPostPublishCommand("missing-blog");
+        PostSaveCommand command = publicPostPublishCommand("missing_blog");
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(command.slug())))
                 .thenReturn(Optional.empty());
 

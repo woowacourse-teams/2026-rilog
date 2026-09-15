@@ -58,8 +58,8 @@ class UserServiceTest {
         OnboardingCompleteCommand command = command();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(blogRepository.existsByProfileName("러로")).thenReturn(false);
-        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
-        when(blogRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
+        when(userRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(false);
+        when(blogRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.empty());
         when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -82,7 +82,7 @@ class UserServiceTest {
                 )
                 .containsExactly(
                         "러로",
-                        "ri_log-01",
+                        "ri_log_01",
                         "기록하는 개발자입니다.",
                         "https://example.com/profile.png",
                         "https://github.com/jinriro",
@@ -103,8 +103,8 @@ class UserServiceTest {
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(blogRepository.existsByProfileName("러로")).thenReturn(false);
-        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
-        when(blogRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
+        when(userRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(false);
+        when(blogRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(false);
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(blogRepository.findRilogByOwnerId(1L)).thenReturn(Optional.empty());
         when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -130,7 +130,7 @@ class UserServiceTest {
                 .containsExactly(
                         completedUser,
                         "러로",
-                        "ri_log-01",
+                        "ri_log_01",
                         "기록하는 개발자입니다.",
                         "https://example.com/profile.png",
                         "https://rilog.example.com",
@@ -231,7 +231,7 @@ class UserServiceTest {
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(blogRepository.existsByProfileName("러로")).thenReturn(false);
-        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(true);
+        when(userRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(true);
 
         // when - then
         assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
@@ -252,8 +252,8 @@ class UserServiceTest {
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(blogRepository.existsByProfileName("러로")).thenReturn(false);
-        when(userRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(false);
-        when(blogRepository.existsBySlug(Slug.from("ri_log-01"))).thenReturn(true);
+        when(userRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(false);
+        when(blogRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(true);
 
         // when - then
         assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
@@ -266,7 +266,7 @@ class UserServiceTest {
     private OnboardingCompleteCommand command() {
         return new OnboardingCompleteCommand(
                 "러로",
-                "ri_log-01",
+                "ri_log_01",
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/jinriro",

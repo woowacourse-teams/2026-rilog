@@ -44,7 +44,7 @@ public interface CologApiSpec {
     )
     ApiResponse<CologMemberInviteResponse> inviteMember(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
-            @Parameter(description = "멤버를 초대할 팀 블로그 slug", example = "rilog-team")
+            @Parameter(description = "멤버를 초대할 팀 블로그 slug", example = "rilog_team")
             @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
     );
@@ -58,7 +58,7 @@ public interface CologApiSpec {
             description = "팀 멤버 목록 조회 성공"
     )
     ApiResponse<List<BlogMemberResponse>> getCologMembers(
-            @Parameter(description = "멤버를 조회할 팀 블로그 slug", example = "rilog-team")
+            @Parameter(description = "멤버를 조회할 팀 블로그 slug", example = "rilog_team")
             @PathVariable("slug") String slug
     );
 
@@ -72,7 +72,7 @@ public interface CologApiSpec {
     )
     ApiResponse<Void> deleteColog(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
-            @Parameter(description = "삭제할 팀 블로그 slug", example = "rilog-team")
+            @Parameter(description = "삭제할 팀 블로그 slug", example = "rilog_team")
             @PathVariable("slug") String slug
     );
 
@@ -86,7 +86,7 @@ public interface CologApiSpec {
     )
     ApiResponse<Void> leaveColog(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
-            @Parameter(description = "탈퇴할 팀 블로그 slug", example = "rilog-team")
+            @Parameter(description = "탈퇴할 팀 블로그 slug", example = "rilog_team")
             @PathVariable("slug") String slug
     );
 
@@ -100,7 +100,7 @@ public interface CologApiSpec {
     )
     ApiResponse<Void> removeMember(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
-            @Parameter(description = "멤버를 내보낼 팀 블로그 slug", example = "rilog-team")
+            @Parameter(description = "멤버를 내보낼 팀 블로그 slug", example = "rilog_team")
             @PathVariable("slug") String slug,
             @Parameter(description = "내보낼 팀 멤버 ID", example = "3")
             @PathVariable("memberId") Long memberId
@@ -116,7 +116,7 @@ public interface CologApiSpec {
     )
     ApiResponse<Void> updateMember(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
-            @Parameter(description = "멤버를 수정할 팀 블로그 slug", example = "rilog-team")
+            @Parameter(description = "멤버를 수정할 팀 블로그 slug", example = "rilog_team")
             @PathVariable("slug") String slug,
             @Parameter(description = "수정할 팀 멤버 ID", example = "3")
             @PathVariable("memberId") Long memberId,

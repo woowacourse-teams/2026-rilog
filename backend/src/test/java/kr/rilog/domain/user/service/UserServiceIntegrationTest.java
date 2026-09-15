@@ -43,7 +43,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     void getUserInformationReturnsRegisteredUser() {
         // given
         User savedUser = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("러로", "ri_log-01")
+                UserFixture.completedWithNicknameAndSlug("러로", "ri_log_01")
         );
         UserInfoResult expected = UserInfoResult.from(savedUser);
 
@@ -68,12 +68,12 @@ class UserServiceIntegrationTest extends ServiceSupport {
     void getUserInfoReturnsCompletedUserBySlug() {
         // given
         User savedUser = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("러로", "ri_log-01")
+                UserFixture.completedWithNicknameAndSlug("러로", "ri_log_01")
         );
         UserInfoResult expected = UserInfoResult.from(savedUser);
 
         // when
-        UserInfoResult result = userService.getUserInfo("ri_log-01");
+        UserInfoResult result = userService.getUserInfo("ri_log_01");
 
         // then
         assertThat(result).isEqualTo(expected);
@@ -86,7 +86,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         userRepository.saveAndFlush(UserFixture.pending());
 
         // when & then
-        assertThatThrownBy(() -> userService.getUserInfo("pending-user"))
+        assertThatThrownBy(() -> userService.getUserInfo("pending_user"))
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
     }
@@ -161,7 +161,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     void completeOnboardingThrowsWhenUserAlreadyCompletedOnboarding() {
         // given
         User completedUser = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("기존사용자", "existing-user")
+                UserFixture.completedWithNicknameAndSlug("기존사용자", "existing_user")
         );
 
         // when & then
@@ -171,7 +171,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
 
         User savedUser = userRepository.findById(completedUser.getId()).orElseThrow();
         assertThat(savedUser.getNickname()).isEqualTo("기존사용자");
-        assertThat(savedUser.getSlug()).isEqualTo("existing-user");
+        assertThat(savedUser.getSlug()).isEqualTo("existing_user");
         assertThat(blogRepository.findAll()).isEmpty();
     }
 
@@ -180,7 +180,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     void completeOnboardingThrowsAndPreservesPendingUserWhenProfileNameIsDuplicated() {
         // given
         User existingUser = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("러로", "existing-user")
+                UserFixture.completedWithNicknameAndSlug("러로", "existing_user")
         );
         blogRepository.saveAndFlush(Blog.createRilog(existingUser));
         User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
@@ -201,7 +201,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     void completeOnboardingThrowsAndPreservesPendingUserWhenSlugIsDuplicated() {
         // given
         userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("기존사용자", "ri_log-01")
+                UserFixture.completedWithNicknameAndSlug("기존사용자", "ri_log_01")
         );
         User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
 
@@ -218,7 +218,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     @DisplayName("등록된 유저 슬러그를 검사하면 중복 예외가 발생한다.")
     void validateDuplicatedSlugThrowsWhenSlugExists() {
         // given
-        String duplicatedSlug = "duplicated-slug";
+        String duplicatedSlug = "duplicated_slug";
         userRepository.saveAndFlush(
                 UserFixture.completedWithNicknameAndSlug("기존사용자", duplicatedSlug)
         );
@@ -232,7 +232,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
     private OnboardingCompleteCommand onboardingCommand() {
         return new OnboardingCompleteCommand(
                 "러로",
-                "ri_log-01",
+                "ri_log_01",
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/rilog",

@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ChapterServiceIntegrationTest extends ServiceSupport {
 
     private static final int MAX_CHAPTER_COUNT = 30;
-    private static final String BLOG_SLUG = "rilog-team";
+    private static final String BLOG_SLUG = "rilog_team";
     private static final LocalDateTime JOINED_AT = LocalDateTime.of(2026, 8, 30, 12, 0);
 
     @Autowired
@@ -147,9 +147,9 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     void createCountsOnlyChaptersOfTargetBlog() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        User otherOwner = saveUser(300L, "other-owner");
+        User otherOwner = saveUser(300L, "other_owner");
         Blog otherBlog = blogRepository.saveAndFlush(
-                Blog.createColog(otherOwner, "other-team", BlogFixture.cologProfile())
+                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
         );
         saveChapters(otherBlog, MAX_CHAPTER_COUNT);
         ChapterCreateCommand command = new ChapterCreateCommand("대상 블로그 챕터");
@@ -252,9 +252,9 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         Chapter targetChapter = chapterRepository.saveAndFlush(
                 Chapter.create(scenario.blog(), "대상 챕터", 0)
         );
-        User otherOwner = saveUser(300L, "other-owner");
+        User otherOwner = saveUser(300L, "other_owner");
         Blog otherBlog = blogRepository.saveAndFlush(
-                Blog.createColog(otherOwner, "other-team", BlogFixture.cologProfile())
+                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
         );
         chapterRepository.saveAndFlush(Chapter.create(otherBlog, "다른 블로그 챕터", 0));
 
@@ -303,7 +303,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 블로그의 챕터 목록을 조회하면 예외가 발생한다.")
     void readAllRejectsMissingBlog() {
         // when & then
-        assertThatThrownBy(() -> chapterService.readAll("missing-blog"))
+        assertThatThrownBy(() -> chapterService.readAll("missing_blog"))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
     }
@@ -432,9 +432,9 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     void renameRejectsChapterOfOtherBlog() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        User otherOwner = saveUser(300L, "other-owner");
+        User otherOwner = saveUser(300L, "other_owner");
         Blog otherBlog = blogRepository.saveAndFlush(
-                Blog.createColog(otherOwner, "other-team", BlogFixture.cologProfile())
+                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
         );
         Chapter otherChapter = chapterRepository.saveAndFlush(
                 Chapter.create(otherBlog, "다른 블로그 챕터", 0)
@@ -522,7 +522,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
 
     private ChapterCreationScenario createRilogOwnerScenario() {
         User owner = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("러로", "owner-rilog")
+                UserFixture.completedWithNicknameAndSlug("러로", "owner_rilog")
         );
         Blog blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
         blogMemberRepository.saveAndFlush(BlogMember.createOwner(blog, owner, JOINED_AT));

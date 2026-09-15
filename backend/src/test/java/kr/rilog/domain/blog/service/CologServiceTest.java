@@ -63,7 +63,7 @@ class CologServiceTest {
     private static final Long INVITEE_ID = 3L;
     private static final Long REQUESTER_MEMBER_ID = 4L;
     private static final Long TARGET_MEMBER_ID = 5L;
-    private static final String COLOG_SLUG = "rilog-team";
+    private static final String COLOG_SLUG = "rilog_team";
     private static final Instant NOW = Instant.parse("2026-08-13T12:00:00Z");
 
     @Mock

@@ -101,7 +101,7 @@ class ChapterTest {
     void belongsToSameBlogInstance() {
         // given
         User owner = createUser(OWNER_ID);
-        Blog blog = createPersistableColog(owner, "team-rilog");
+        Blog blog = createPersistableColog(owner, "team_rilog");
         Chapter chapter = Chapter.create(blog, "개발 이야기", 0);
 
         // when & then

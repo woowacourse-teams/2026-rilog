@@ -21,7 +21,7 @@ public class Slug {
 
     private static final int MIN_LENGTH = 4;
     private static final int MAX_LENGTH = 20;
-    private static final String REGEX = "^[A-Za-z0-9_-]+$";
+    public static final String REGEX = "^(?=.*[A-Za-z])[A-Za-z0-9_]+$";
 
     private static final Pattern SLUG_PATTERN = Pattern.compile(REGEX);
 
