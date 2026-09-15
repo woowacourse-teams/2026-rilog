@@ -134,7 +134,7 @@ class DraftServiceTest {
         draftService.overwriteDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsPublisher).synchronize(previous, TagAssets.of(IMAGE_URL_B));
+        verify(tagAssetsPublisher).synchronize(WRITER_ID, previous, TagAssets.of(IMAGE_URL_B));
     }
 
     @Test
@@ -152,7 +152,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.overwriteDraft(command, DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsPublisher, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
     }
 
     @Test
@@ -183,6 +183,7 @@ class DraftServiceTest {
 
         // then
         verify(tagAssetsPublisher).synchronize(
+                WRITER_ID,
                 previous,
                 new TagAssets(Set.of(IMAGE_URL_B, THUMBNAIL_URL))
         );
@@ -208,7 +209,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.publishDraft(command, DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsPublisher, never()).synchronize(any(), any());
+        verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
     }
 
     @Test
@@ -223,7 +224,7 @@ class DraftServiceTest {
         draftService.deleteDraft(DRAFT_ID, WRITER_ID);
 
         // then
-        verify(tagAssetsPublisher).detach(assets);
+        verify(tagAssetsPublisher).detach(WRITER_ID, assets);
     }
 
     @Test
@@ -237,7 +238,7 @@ class DraftServiceTest {
         assertThatThrownBy(() -> draftService.deleteDraft(DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
-        verify(tagAssetsPublisher, never()).detach(any());
+        verify(tagAssetsPublisher, never()).detach(any(), any());
     }
 
     private Post draftWithImage(String imageUrl) {

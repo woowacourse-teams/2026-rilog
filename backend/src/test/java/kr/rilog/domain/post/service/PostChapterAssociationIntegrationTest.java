@@ -57,7 +57,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 발행할 때 대상 블로그의 챕터를 지정하면 챕터 연결이 저장된다.")
     void publishPersistsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(1L, "publish-chapter");
+        PublishingScenario scenario = createRilogScenario(1L, "publish_chapter");
         Chapter chapter = saveChapter(scenario.blog(), "발행 챕터", 0);
 
         // when
@@ -75,7 +75,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 발행할 때 챕터를 생략하면 미분류 게시글로 저장된다.")
     void publishWithoutChapterPersistsUnclassifiedPost() {
         // given
-        PublishingScenario scenario = createRilogScenario(2L, "publish-unclassified");
+        PublishingScenario scenario = createRilogScenario(2L, "publish_unclassified");
 
         // when
         Long postId = postService.publish(
@@ -92,8 +92,8 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("다른 블로그의 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
     void publishRejectsChapterOfOtherBlogAndPreservesPosts() {
         // given
-        PublishingScenario scenario = createRilogScenario(3L, "publish-target");
-        PublishingScenario other = createRilogScenario(4L, "publish-other");
+        PublishingScenario scenario = createRilogScenario(3L, "publish_target");
+        PublishingScenario other = createRilogScenario(4L, "publish_other");
         Chapter otherChapter = saveChapter(other.blog(), "다른 블로그 챕터", 0);
 
         // when & then
@@ -111,7 +111,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("삭제된 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
     void publishRejectsDeletedChapterAndPreservesPosts() {
         // given
-        PublishingScenario scenario = createRilogScenario(5L, "publish-deleted");
+        PublishingScenario scenario = createRilogScenario(5L, "publish_deleted");
         Chapter deletedChapter = saveChapter(scenario.blog(), "삭제된 챕터", 0);
         deletedChapter.delete();
         chapterRepository.saveAndFlush(deletedChapter);
@@ -131,7 +131,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
     void publishRejectsMissingChapterAndPreservesPosts() {
         // given
-        PublishingScenario scenario = createRilogScenario(6L, "publish-missing");
+        PublishingScenario scenario = createRilogScenario(6L, "publish_missing");
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
@@ -148,7 +148,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("초안을 발행할 때 대상 블로그의 챕터를 지정하면 챕터 연결이 저장된다.")
     void publishDraftPersistsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(7L, "draft-chapter");
+        PublishingScenario scenario = createRilogScenario(7L, "draft_chapter");
         Chapter chapter = saveChapter(scenario.blog(), "초안 발행 챕터", 0);
         Post draft = saveDraft(scenario);
 
@@ -168,7 +168,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("초안을 발행할 때 챕터를 생략하면 미분류 게시글로 저장된다.")
     void publishDraftWithoutChapterPersistsUnclassifiedPost() {
         // given
-        PublishingScenario scenario = createRilogScenario(8L, "draft-unclassified");
+        PublishingScenario scenario = createRilogScenario(8L, "draft_unclassified");
         Post draft = saveDraft(scenario);
 
         // when
@@ -187,7 +187,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 챕터로 초안을 발행하면 예외가 발생하고 초안 상태가 유지된다.")
     void publishDraftRejectsMissingChapterAndPreservesDraft() {
         // given
-        PublishingScenario scenario = createRilogScenario(16L, "draft-missing");
+        PublishingScenario scenario = createRilogScenario(16L, "draft_missing");
         Post draft = saveDraft(scenario);
 
         // when & then
@@ -207,7 +207,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 수정할 때 챕터를 지정하면 챕터 연결이 저장된다.")
     void updateAssignsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(9L, "chg-auth-assign");
+        PublishingScenario scenario = createRilogScenario(9L, "chg_auth_assign");
         Chapter chapter = saveChapter(scenario.blog(), "지정할 챕터", 0);
         Post post = savePublishedPost(scenario);
 
@@ -227,7 +227,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 수정할 때 다른 챕터를 지정하면 챕터 연결이 변경된다.")
     void updateChangesChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(10L, "chg-auth-change");
+        PublishingScenario scenario = createRilogScenario(10L, "chg_auth_change");
         Chapter previousChapter = saveChapter(scenario.blog(), "기존 챕터", 0);
         Chapter targetChapter = saveChapter(scenario.blog(), "변경 챕터", 1);
         Post post = savePublishedPost(scenario, previousChapter);
@@ -248,7 +248,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 수정할 때 챕터를 생략하면 기존 챕터 연결이 해제된다.")
     void updateClearsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(11L, "chg-auth-clear");
+        PublishingScenario scenario = createRilogScenario(11L, "chg_auth_clear");
         Chapter chapter = saveChapter(scenario.blog(), "해제할 챕터", 0);
         Post post = savePublishedPost(scenario, chapter);
 
@@ -268,8 +268,8 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 다른 블로그로 옮길 때 대상 블로그의 챕터를 지정하면 새 소속과 챕터가 함께 저장된다.")
     void updateToOtherBlogAssignsOnlyTargetBlogChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(12L, "move-writer");
-        Blog targetColog = saveColog(scenario.writer(), "move-target");
+        PublishingScenario scenario = createRilogScenario(12L, "move_writer");
+        Blog targetColog = saveColog(scenario.writer(), "move_target");
         Chapter targetChapter = saveChapter(targetColog, "대상 챕터", 0);
         Post post = savePublishedPost(scenario);
 
@@ -289,8 +289,8 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("게시글을 다른 블로그로 옮길 때 원래 블로그의 챕터를 지정하면 예외가 발생하고 기존 연결이 유지된다.")
     void updateToOtherBlogRejectsSourceBlogChapterAndPreservesChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(13L, "move-invalid-writer");
-        Blog targetColog = saveColog(scenario.writer(), "move-invalid-target");
+        PublishingScenario scenario = createRilogScenario(13L, "move_invalid_writer");
+        Blog targetColog = saveColog(scenario.writer(), "move_invalid_target");
         Chapter sourceChapter = saveChapter(scenario.blog(), "원래 챕터", 0);
         Post post = savePublishedPost(scenario, sourceChapter);
 
@@ -311,7 +311,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("챕터에 속한 게시글을 상세 조회하면 챕터 전체 정보를 반환한다.")
     void readPostReturnsChapter() {
         // given
-        PublishingScenario scenario = createRilogScenario(14L, "read-chapter");
+        PublishingScenario scenario = createRilogScenario(14L, "read_chapter");
         Chapter chapter = saveChapter(scenario.blog(), "조회 챕터", 2);
         Post post = savePublishedPost(scenario, chapter);
 
@@ -330,7 +330,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     @DisplayName("미분류 게시글을 상세 조회하면 챕터를 null로 반환한다.")
     void readPostReturnsNullChapterForUnclassifiedPost() {
         // given
-        PublishingScenario scenario = createRilogScenario(15L, "read-unclassified");
+        PublishingScenario scenario = createRilogScenario(15L, "read_unclassified");
         Post post = savePublishedPost(scenario);
 
         // when
@@ -341,7 +341,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     }
 
     private PublishingScenario createRilogScenario(long githubId, String slug) {
-        User writer = UserFixture.user(githubId, "github-" + githubId);
+        User writer = UserFixture.user(githubId, "github_" + githubId);
         writer.completeOnboarding(
                 "작성자" + githubId,
                 slug,

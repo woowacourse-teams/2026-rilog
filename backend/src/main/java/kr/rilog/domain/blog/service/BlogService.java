@@ -51,7 +51,7 @@ public class BlogService {
         blog.changeProfile(command.toProfile());
         synchronizeOwnerProfileIfRilog(blog, command);
         TagAssets current = blog.getTagAssets();
-        tagAssetsPublisher.synchronize(previous, current);
+        tagAssetsPublisher.synchronize(requesterId, previous, current);
     }
 
     public BlogIndexResult readBlogIndex(String slug) {

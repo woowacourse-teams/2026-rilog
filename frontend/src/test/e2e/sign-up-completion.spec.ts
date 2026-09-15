@@ -45,7 +45,7 @@ test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피
 		respond(route, {
 			status: 200,
 			message: '내 정보 조회 성공',
-			data: { id: 1, slug: 'rilog-test', nickname: '리로그', profileImageUrl: null },
+			data: { id: 1, slug: 'rilogtest', nickname: '리로그', profileImageUrl: null },
 		}),
 	);
 	await page.route('**/v1/availability/nickname?*', (route) =>
@@ -89,7 +89,7 @@ test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피
 	});
 
 	await page.getByRole('textbox', { name: '닉네임' }).fill('리로그');
-	await page.getByRole('textbox', { name: '고유 아이디' }).fill('rilog-test');
+	await page.getByRole('textbox', { name: '고유 아이디' }).fill('rilogtest');
 	await page.getByRole('button', { name: '닉네임 중복 확인' }).click();
 	await page.getByRole('button', { name: '고유 아이디 중복 확인' }).click();
 	await page.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }).check();

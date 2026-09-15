@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
@@ -150,6 +151,7 @@ public class CologService {
 
         return blogMemberRepository.findAllWithUserByBlogIdAndStatus(colog.getId(), BlogMemberStatus.ACTIVE).stream()
                 .map(BlogMemberResult::from)
+                .sorted(Comparator.comparing(BlogMemberResult::nickname))
                 .toList();
     }
 

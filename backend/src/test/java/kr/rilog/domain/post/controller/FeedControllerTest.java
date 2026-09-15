@@ -83,7 +83,7 @@ class FeedControllerTest {
                                         new FullFeedPostResponse.OwnerResponse(
                                                 BlogType.COLOG,
                                                 3L,
-                                                "rilog-team",
+                                                "rilog_team",
                                                 "리로그 팀",
                                                 "https://example.com/team-logo.png"
                                         )
@@ -117,7 +117,7 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.posts[1].author.nickname").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[1].owner.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[1].owner.name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data.posts[1].owner.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.posts[1].owner.slug").value("rilog_team"))
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.size").value(2))
                 .andExpect(jsonPath("$.data.numberOfElements").value(2))
@@ -132,7 +132,7 @@ class FeedControllerTest {
         // given
         FeedService feedService = mock(FeedService.class);
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, null, null, 1, 2);
-        when(feedService.readBlogPosts("rilog-team", null, command))
+        when(feedService.readBlogPosts("rilog_team", null, command))
                 .thenReturn(new BlogFeedPostResponse(
                         "COLOG",
                         List.of(new BlogFeedPostResponse.PostItemResponse(
@@ -152,7 +152,7 @@ class FeedControllerTest {
                                 new BlogFeedPostResponse.OwnerResponse(
                                         BlogType.COLOG,
                                         2L,
-                                        "rilog-team",
+                                        "rilog_team",
                                         "리로그 팀",
                                         "https://example.com/logo.png"
                                 )
@@ -165,7 +165,7 @@ class FeedControllerTest {
         MockMvc mockMvc = mockMvc(feedService);
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}/posts", "rilog-team")
+        mockMvc.perform(get("/v1/blogs/{slug}/posts", "rilog_team")
                         .param("page", "1")
                         .param("size", "2"))
                 .andExpect(status().isOk())
@@ -178,12 +178,12 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.posts[0].author.slug").value("writer"))
                 .andExpect(jsonPath("$.data.posts[0].owner.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[0].owner.name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data.posts[0].owner.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.posts[0].owner.slug").value("rilog_team"))
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.size").value(2))
                 .andExpect(jsonPath("$.data.hasNext").value(false));
 
-        verify(feedService).readBlogPosts("rilog-team", null, command);
+        verify(feedService).readBlogPosts("rilog_team", null, command);
     }
 
     @Test
@@ -213,7 +213,7 @@ class FeedControllerTest {
     void getBlogPostsPassesTargetCologFilter() throws Exception {
         // given
         FeedService feedService = mock(FeedService.class);
-        BlogFeedSearchCommand command = new BlogFeedSearchCommand(Category.TECH, null, "rilog-team", 0, 12);
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(Category.TECH, null, "rilog_team", 0, 12);
         when(feedService.readBlogPosts("writer", null, command))
                 .thenReturn(emptyBlogFeedResponse("RILOG"));
         MockMvc mockMvc = mockMvc(feedService);
@@ -221,7 +221,7 @@ class FeedControllerTest {
         // when - then
         mockMvc.perform(get("/v1/blogs/{slug}/posts", "writer")
                         .param("category", "TECH")
-                        .param("targetCologSlug", "rilog-team")
+                        .param("targetCologSlug", "rilog_team")
                         .param("page", "0")
                         .param("size", "12"))
                 .andExpect(status().isOk());
@@ -258,7 +258,7 @@ class FeedControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/cologs/{cologSlug}/posts", "rilog-team")
+        mockMvc.perform(get("/v1/cologs/{cologSlug}/posts", "rilog_team")
                         .param("page", "1")
                         .param("size", "2"))
                 .andExpect(status().isNotFound());

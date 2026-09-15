@@ -47,8 +47,8 @@ class CommentServiceIntegrationTest extends ServiceSupport {
     @DisplayName("댓글 목록을 조회하면 루트 댓글 아래에 답글을 묶어서 반환한다.")
     void readCommentsGroupsRepliesUnderRootComment() {
         // given
-        User writer = saveCompletedUser(100L, "작성자", "comment-writer");
-        User replier = saveCompletedUser(101L, "답글작성자", "comment-replier");
+        User writer = saveCompletedUser(100L, "작성자", "comment_writer");
+        User replier = saveCompletedUser(101L, "답글작성자", "comment_replier");
         Blog rilog = saveRilog(writer);
         Post post = savePost(rilog, writer);
         Comment rootComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "루트 댓글입니다."));
@@ -81,8 +81,8 @@ class CommentServiceIntegrationTest extends ServiceSupport {
     @DisplayName("루트 댓글을 삭제하면 해당 댓글의 답글도 함께 삭제되어 목록에서 제외된다.")
     void deleteRootCommentDeletesReplies() {
         // given
-        User writer = saveCompletedUser(200L, "삭제작성자", "del-writer");
-        User replier = saveCompletedUser(201L, "남은답글작성자", "reply-writer");
+        User writer = saveCompletedUser(200L, "삭제작성자", "del_writer");
+        User replier = saveCompletedUser(201L, "남은답글작성자", "reply_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(rilog, writer);
         Comment rootComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "삭제될 댓글입니다."));
@@ -107,7 +107,7 @@ class CommentServiceIntegrationTest extends ServiceSupport {
     @DisplayName("댓글 목록 조회용 쿼리는 삭제된 댓글을 제외한다.")
     void findAllByPostIdExcludesDeletedComments() {
         // given
-        User writer = saveCompletedUser(300L, "조회작성자", "find-writer");
+        User writer = saveCompletedUser(300L, "조회작성자", "find_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(rilog, writer);
         Comment deletedComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "삭제된 댓글입니다."));

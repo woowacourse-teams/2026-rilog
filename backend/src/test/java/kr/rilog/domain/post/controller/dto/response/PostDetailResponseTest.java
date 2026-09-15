@@ -77,7 +77,7 @@ class PostDetailResponseTest {
         Blog rilog = Blog.builder()
                 .id(10L)
                 .owner(writer)
-                .slug(Slug.from("writer-rilog"))
+                .slug(Slug.from("writer_rilog"))
                 .profile(createRilogProfile())
                 .blogType(BlogType.RILOG)
                 .build();
@@ -85,7 +85,7 @@ class PostDetailResponseTest {
         Blog colog = Blog.builder()
                 .id(20L)
                 .owner(writer)
-                .slug(Slug.from("team-colog"))
+                .slug(Slug.from("team_colog"))
                 .profile(createCologProfile())
                 .blogType(BlogType.COLOG)
                 .build();

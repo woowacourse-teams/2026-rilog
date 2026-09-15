@@ -2,6 +2,7 @@ package kr.rilog.domain.upload.controller;
 
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.AuthGuard;
+import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.application.token.TokenType;
 import kr.rilog.domain.upload.controller.dto.request.PreSignedUrlCreateRequest;
 import kr.rilog.domain.upload.controller.dto.response.PresignedUrlCreateResponse;
@@ -23,6 +24,7 @@ public class UploadController {
     @AuthGuard(value = {TokenType.ACCESS, TokenType.ONBOARDING})
     @PostMapping("/uploads/presigned-url")
     public ApiResponse<PresignedUrlCreateResponse> createPresignedUrl(
+            @LoginUserId Long userId,
             @Valid @RequestBody PreSignedUrlCreateRequest request
     ) {
         PresignedUrlCreateCommand command = new PresignedUrlCreateCommand(
@@ -32,7 +34,7 @@ public class UploadController {
                 request.type()
         );
 
-        PresignedUrlCreateResult result = uploadService.createUploadUrl(command);
+        PresignedUrlCreateResult result = uploadService.createUploadUrl(userId, command);
 
         return ApiResponse.response(
                 HttpStatus.OK,

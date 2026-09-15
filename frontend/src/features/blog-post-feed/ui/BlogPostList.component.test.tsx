@@ -86,7 +86,7 @@ describe('공통 블로그 홈 게시글 행', () => {
 		]) {
 			expect(info.closest('a')).toBe(cardLink);
 		}
-		expect(screen.getByText('.')).toHaveClass('text-navy-400');
+		expect(screen.getByText('.')).toHaveClass('text-text-placeholder');
 		expect(screen.getByRole('heading', { level: 3, name: '접근 가능한 인터페이스 만들기' })).toBeInTheDocument();
 		await user.click(screen.getByText('기술'));
 		expect(JSON.parse(window.sessionStorage.getItem('rilog.post-detail-entry-context')!)).toEqual({

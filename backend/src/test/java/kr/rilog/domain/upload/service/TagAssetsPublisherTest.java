@@ -12,6 +12,8 @@ import static org.mockito.Mockito.verify;
 
 class TagAssetsPublisherTest {
 
+    private static final Long REQUESTER_ID = 7L;
+
     private ApplicationEventPublisher eventPublisher;
     private TagAssetsPublisher lifecycle;
 
@@ -37,9 +39,9 @@ class TagAssetsPublisherTest {
         TagAssets previous = TagAssets.of("https://s3.example.com/previous.png");
         TagAssets current = TagAssets.of("https://s3.example.com/current.png");
 
-        lifecycle.synchronize(previous, current);
+        lifecycle.synchronize(REQUESTER_ID, previous, current);
 
-        verify(eventPublisher).publishEvent(new TagAssetsEvent.Synchronize(previous, current));
+        verify(eventPublisher).publishEvent(new TagAssetsEvent.Synchronize(REQUESTER_ID, previous, current));
     }
 
     @Test
@@ -47,8 +49,8 @@ class TagAssetsPublisherTest {
     void publishDetachEvent() {
         TagAssets assets = TagAssets.of("https://s3.example.com/removed.png");
 
-        lifecycle.detach(assets);
+        lifecycle.detach(REQUESTER_ID, assets);
 
-        verify(eventPublisher).publishEvent(new TagAssetsEvent.Detach(assets));
+        verify(eventPublisher).publishEvent(new TagAssetsEvent.Detach(REQUESTER_ID, assets));
     }
 }

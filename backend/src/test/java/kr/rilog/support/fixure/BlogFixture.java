@@ -39,7 +39,7 @@ public class BlogFixture {
         return Blog.builder()
                 .id(2L)
                 .owner(otherUser)
-                .slug(Slug.from("other-rilog"))
+                .slug(Slug.from("other_rilog"))
                 .profile(rilogProfile())
                 .blogType(BlogType.RILOG)
                 .build();
@@ -70,7 +70,7 @@ public class BlogFixture {
         return Blog.builder()
                 .id(2L)
                 .owner(owner)
-                .slug(Slug.from("target-colog"))
+                .slug(Slug.from("target_colog"))
                 .profile(cologProfile())
                 .blogType(BlogType.COLOG)
                 .build();

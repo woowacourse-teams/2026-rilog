@@ -165,7 +165,7 @@ class CommentTest {
         Blog rilog = Blog.builder()
                 .id(id)
                 .owner(author)
-                .slug(Slug.from("author-rilog-" + id))
+                .slug(Slug.from("author_rilog_" + id))
                 .profile(Profile.createRilog(
                         "작성자",
                         "소개",

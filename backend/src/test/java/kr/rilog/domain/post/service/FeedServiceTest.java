@@ -41,7 +41,7 @@ class FeedServiceTest {
     private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long COLOG_ID = 1L;
     private static final Long RILOG_ID = 2L;
-    private static final String COLOG_SLUG = "team-colog";
+    private static final String COLOG_SLUG = "team_colog";
     private static final String RILOG_SLUG = "writer";
     private static final int PAGE = 1;
     private static final int SIZE = 2;
@@ -304,7 +304,7 @@ class FeedServiceTest {
         return new PostFullFeedRow(
                 postId,
                 "팀 게시글 제목",
-                "https://example.com/team-thumbnail.png",
+                "https://example.com/team_thumbnail.png",
                 Category.TECH,
                 PostVisibility.PUBLIC,
                 LocalDateTime.of(2026, 8, 13, 12, 0),
@@ -319,7 +319,7 @@ class FeedServiceTest {
                 COLOG_ID,
                 COLOG_SLUG,
                 "팀 블로그",
-                "https://example.com/colog-logo.png"
+                "https://example.com/colog_logo.png"
         );
     }
 

@@ -1,5 +1,7 @@
 import ky from 'ky';
 
+import { logNonProductionError } from '@/shared/utils/non-production-console';
+
 type AuthListener = () => void | Promise<void>;
 
 class TokenManager {
@@ -54,7 +56,7 @@ class TokenManager {
 				}
 			}
 		} catch (error) {
-			console.error('[TokenManager] Failed to refresh token:', error);
+			logNonProductionError('[TokenManager] Failed to refresh token:', error);
 		}
 
 		// 재발급 실패 시 토큰을 비우고 로그아웃 이벤트를 발행하여 앱 전체를 로그아웃 상태로 전환
@@ -93,7 +95,7 @@ class TokenManager {
 
 		results.forEach((result) => {
 			if (result.status === 'rejected') {
-				console.error('[TokenManager] Auth listener failed:', result.reason);
+				logNonProductionError('[TokenManager] Auth listener failed:', result.reason);
 			}
 		});
 	}

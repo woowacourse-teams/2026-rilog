@@ -112,11 +112,11 @@ class BlogTest {
         Profile newProfile = Profile.createColog(
                 "새 팀 이름",
                 "새 팀 소개",
-                "https://example.com/new-profile.png",
-                "https://example.com/new-cover.png",
-                "https://new-rilog.example.com",
-                "https://github.com/new-rilog",
-                "new-rilog@example.com"
+                "https://example.com/new_profile.png",
+                "https://example.com/new_cover.png",
+                "https://new_rilog.example.com",
+                "https://github.com/new_rilog",
+                "new_rilog@example.com"
         );
 
         // when

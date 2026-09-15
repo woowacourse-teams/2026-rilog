@@ -7,9 +7,9 @@ public interface TagAssetsLifecycle {
     /** TEMPORARY -> CONFIRMED*/
     void attach(TagAssets assets);
 
-    void synchronize(TagAssets previous, TagAssets current);
+    void synchronize(Long requesterId, TagAssets previous, TagAssets current);
 
     /** CONFIRMED -> TEMPORARY */
-    void detach(TagAssets assets);
+    void detach(Long requesterId, TagAssets assets);
 
 }

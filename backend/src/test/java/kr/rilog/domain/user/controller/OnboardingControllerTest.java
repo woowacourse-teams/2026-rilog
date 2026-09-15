@@ -45,7 +45,7 @@ class OnboardingControllerTest {
     private static final String REQUEST_BODY = """
             {
               "nickname": "러로",
-              "slug": "ri_log-01",
+              "slug": "ri_log_01",
               "introduction": "기록하는 개발자입니다.",
               "profileImageUrl": "https://example.com/profile.png",
               "githubUrl": "https://github.com/jinriro",
@@ -172,7 +172,7 @@ class OnboardingControllerTest {
     private OnboardingCompleteCommand command() {
         return new OnboardingCompleteCommand(
                 "러로",
-                "ri_log-01",
+                "ri_log_01",
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/jinriro",

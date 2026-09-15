@@ -47,7 +47,7 @@ class CologControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/@{slug}", "rilog-team"))
+        mockMvc.perform(get("/v1/blogs/@{slug}", "rilog_team"))
                 .andExpect(status().isNotFound());
     }
 
@@ -60,7 +60,7 @@ class CologControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/@{slug}", "rilog-team"))
+        mockMvc.perform(get("/v1/@{slug}", "rilog_team"))
                 .andExpect(status().isNotFound());
     }
 
@@ -73,7 +73,7 @@ class CologControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/cologs/{slug}", "rilog-team"))
+        mockMvc.perform(get("/v1/cologs/{slug}", "rilog_team"))
                 .andExpect(status().isMethodNotAllowed());
     }
 
@@ -86,7 +86,7 @@ class CologControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/cologs/{slug}/profile", "rilog-team"))
+        mockMvc.perform(get("/v1/cologs/{slug}/profile", "rilog_team"))
                 .andExpect(status().isNotFound());
     }
 
@@ -97,7 +97,7 @@ class CologControllerTest {
         CologService cologService = mock(CologService.class);
         CologCreateCommand command = new CologCreateCommand(
                 "리로그 팀",
-                "rilog-team",
+                "rilog_team",
                 "함께 쓰는 기술 블로그",
                 "https://example.com/logo.png",
                 "https://example.com/cover.png",
@@ -106,7 +106,7 @@ class CologControllerTest {
                 "test@test.com"
         );
         when(cologService.create(1L, command))
-                .thenReturn(new CologCreateResult(2L, "리로그 팀", "rilog-team"));
+                .thenReturn(new CologCreateResult(2L, "리로그 팀", "rilog_team"));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(1L))
                 .build();
@@ -117,7 +117,7 @@ class CologControllerTest {
                         .content("""
                                 {
                                   "name": "리로그 팀",
-                                  "slug": "rilog-team",
+                                  "slug": "rilog_team",
                                   "introduction": "함께 쓰는 기술 블로그",
                                   "profileImageUrl": "https://example.com/logo.png",
                                   "coverImageUrl": "https://example.com/cover.png",
@@ -129,7 +129,7 @@ class CologControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.id").value(2L))
                 .andExpect(jsonPath("$.data.name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data.slug").value("rilog-team"));
+                .andExpect(jsonPath("$.data.slug").value("rilog_team"));
 
         verify(cologService).create(1L, command);
     }
@@ -142,7 +142,7 @@ class CologControllerTest {
         when(cologService.getMyCologsOverview(7L))
                 .thenReturn(List.of(new MyCologResponse(
                         1L,
-                        "rilog-team",
+                        "rilog_team",
                         "리로그 팀",
                         "https://example.com/logo.png",
                         List.of(new ChapterResponse(10L, "Spring", 0))
@@ -154,7 +154,7 @@ class CologControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].cologId").value(1L))
-                .andExpect(jsonPath("$.data[0].slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data[0].slug").value("rilog_team"))
                 .andExpect(jsonPath("$.data[0].name").value("리로그 팀"))
                 .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://example.com/logo.png"))
                 .andExpect(jsonPath("$.data[0].chapters[0].chapterId").value(10L))
@@ -169,7 +169,7 @@ class CologControllerTest {
     void getCologMembersReturnsMembers() throws Exception {
         // given
         CologService cologService = mock(CologService.class);
-        when(cologService.getCologMembers("rilog-team"))
+        when(cologService.getCologMembers("rilog_team"))
                 .thenReturn(List.of(
                         new BlogMemberResult(
                                 1L,
@@ -186,7 +186,7 @@ class CologControllerTest {
                 .build();
 
         // when - then
-        mockMvc.perform(get("/v1/cologs/{slug}/members", "rilog-team"))
+        mockMvc.perform(get("/v1/cologs/{slug}/members", "rilog_team"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(1L))
                 .andExpect(jsonPath("$.data[0].userId").value(10L))
@@ -197,7 +197,7 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data[0].blogRole").value("Backend"))
                 .andExpect(jsonPath("$.data[0].joinedAt").value("2026-08-13T12:00:00"));
 
-        verify(cologService).getCologMembers("rilog-team");
+        verify(cologService).getCologMembers("rilog_team");
     }
 
     @Test
@@ -206,14 +206,14 @@ class CologControllerTest {
         // given
         CologService cologService = mock(CologService.class);
         CologMemberInviteCommand command = new CologMemberInviteCommand(10L, "Backend");
-        when(cologService.inviteMember(1L, "rilog-team", command))
+        when(cologService.inviteMember(1L, "rilog_team", command))
                 .thenReturn(new CologMemberInviteResult(3L, 10L, BlogPermission.MEMBER, "Backend"));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(1L))
                 .build();
 
         // when - then
-        mockMvc.perform(post("/v1/cologs/{slug}/members", "rilog-team")
+        mockMvc.perform(post("/v1/cologs/{slug}/members", "rilog_team")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -227,7 +227,7 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.permission").value("MEMBER"))
                 .andExpect(jsonPath("$.data.blogRole").value("Backend"));
 
-        verify(cologService).inviteMember(1L, "rilog-team", command);
+        verify(cologService).inviteMember(1L, "rilog_team", command);
     }
 
     @Test
@@ -238,13 +238,13 @@ class CologControllerTest {
         MockMvc mockMvc = mockMvc(cologService);
 
         // when - then
-        mockMvc.perform(delete("/v1/cologs/{slug}/members/me", "rilog-team")
+        mockMvc.perform(delete("/v1/cologs/{slug}/members/me", "rilog_team")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(204))
                 .andExpect(jsonPath("$.message").value("팀 블로그에서 탈퇴했습니다."));
 
-        verify(cologService).leaveColog(7L, "rilog-team");
+        verify(cologService).leaveColog(7L, "rilog_team");
     }
 
     @Test
@@ -255,13 +255,13 @@ class CologControllerTest {
         MockMvc mockMvc = mockMvc(cologService);
 
         // when - then
-        mockMvc.perform(delete("/v1/cologs/{slug}/members/{memberId}", "rilog-team", 3L)
+        mockMvc.perform(delete("/v1/cologs/{slug}/members/{memberId}", "rilog_team", 3L)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(204))
                 .andExpect(jsonPath("$.message").value("팀 멤버를 내보냈습니다."));
 
-        verify(cologService).removeMember(7L, "rilog-team", 3L);
+        verify(cologService).removeMember(7L, "rilog_team", 3L);
     }
 
     @Test
@@ -272,7 +272,7 @@ class CologControllerTest {
         MockMvc mockMvc = mockMvc(cologService);
 
         // when - then
-        mockMvc.perform(patch("/v1/cologs/{slug}/members/{memberId}", "rilog-team", 3L)
+        mockMvc.perform(patch("/v1/cologs/{slug}/members/{memberId}", "rilog_team", 3L)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -287,7 +287,7 @@ class CologControllerTest {
 
         verify(cologService).updateMember(
                 7L,
-                "rilog-team",
+                "rilog_team",
                 3L,
                 new CologMemberUpdateCommand(BlogPermission.ADMIN, "Frontend")
         );
@@ -301,13 +301,13 @@ class CologControllerTest {
         MockMvc mockMvc = mockMvc(cologService);
 
         // when - then
-        mockMvc.perform(delete("/v1/cologs/{slug}", "rilog-team")
+        mockMvc.perform(delete("/v1/cologs/{slug}", "rilog_team")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(204))
                 .andExpect(jsonPath("$.message").value("팀 블로그를 삭제했습니다."));
 
-        verify(cologService).deleteColog(7L, "rilog-team");
+        verify(cologService).deleteColog(7L, "rilog_team");
     }
 
     private MockMvc mockMvc(CologService cologService) {

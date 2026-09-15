@@ -15,7 +15,7 @@ public record BlogPublicProfileResponse(
         @Schema(description = "블로그 이름", example = "리로그 팀")
         String name,
 
-        @Schema(description = "블로그 slug", example = "rilog-team")
+        @Schema(description = "블로그 slug", example = "rilog_team")
         String slug,
 
         @Schema(description = "블로그 소개", example = "함께 쓰는 기술 블로그")

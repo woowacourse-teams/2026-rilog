@@ -68,6 +68,7 @@ describe('PostDetailPage', () => {
 	it('인코딩된 @ 접두사의 canonical 상세 경로는 다시 redirect하지 않는다', async () => {
 		const page = await PostDetailPage({
 			params: Promise.resolve({ slug: '%40jetproc', postId: '72' }),
+			searchParams: Promise.resolve({}),
 		});
 
 		render(page);
@@ -77,10 +78,25 @@ describe('PostDetailPage', () => {
 	});
 
 	it('게시글 소유자와 다른 slug는 canonical 상세 경로로 redirect한다', async () => {
-		await expect(PostDetailPage({ params: Promise.resolve({ slug: '@wrong-slug', postId: '72' }) })).rejects.toThrow(
-			'NEXT_REDIRECT',
-		);
+		await expect(
+			PostDetailPage({
+				params: Promise.resolve({ slug: '@wrong_slug', postId: '72' }),
+				searchParams: Promise.resolve({}),
+			}),
+		).rejects.toThrow('NEXT_REDIRECT');
 
 		expect(permanentRedirectMock).toHaveBeenCalledWith('/@jetproc/posts/72');
+	});
+
+	it('하이픈이 포함된 기존 상세 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
+		await expect(
+			PostDetailPage({
+				params: Promise.resolve({ slug: '@rilog-fe', postId: '72' }),
+				searchParams: Promise.resolve({ from: 'feed' }),
+			}),
+		).rejects.toThrow('NEXT_REDIRECT');
+
+		expect(permanentRedirectMock).toHaveBeenCalledWith('/@rilog_fe/posts/72?from=feed');
+		expect(getPublicPostDetail).not.toHaveBeenCalled();
 	});
 });

@@ -107,9 +107,9 @@ describe('SignUpForm', () => {
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		const slugInput = screen.getByRole('textbox', { name: '고유 아이디' });
 		expect(slugInput).toBeInTheDocument();
-		expect(slugInput).toHaveAttribute('pattern', '[A-Za-z0-9_\\-]+');
+		expect(slugInput).toHaveAttribute('pattern', '(?=.*[A-Za-z])[A-Za-z0-9_]+');
 		expect(slugInput).toHaveAccessibleDescription(
-			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
+			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 언더스코어(_)만 사용할 수 있어요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
 		);
 		expect(screen.getByRole('button', { name: '닉네임 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '고유 아이디 중복 확인' })).toBeInTheDocument();
@@ -256,9 +256,16 @@ describe('SignUpForm', () => {
 		expect(checkSlugAvailability).not.toHaveBeenCalled();
 		expect(slug).toBeInvalid();
 		expect(slug).toHaveAccessibleDescription(
-			/고유 아이디는 4~20자의 영문, 숫자, 하이픈\(-\), 언더스코어\(_\)만 사용할 수 있어요\./,
+			/고유 아이디는 4~20자의 영어와 숫자, 언더스코어\(_\)만 사용할 수 있어요\./,
 		);
 		expect(slug).toHaveFocus();
+
+		await user.clear(slug);
+		await user.type(slug, '1234_');
+		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
+
+		expect(checkSlugAvailability).not.toHaveBeenCalled();
+		expect(slug).toHaveAccessibleDescription(/고유 아이디에 영어를 1자 이상 포함해 주세요\./);
 	});
 
 	it('중복된 고유 아이디 오류를 입력 상태와 메시지로 표시한다', async () => {
@@ -384,7 +391,7 @@ describe('SignUpForm', () => {
 		renderSignUpForm({ completeSignUp, navigate });
 
 		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
-		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log-01');
+		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log01');
 		await user.type(screen.getByRole('textbox', { name: '한 줄 소개' }), ' 함께 기록해요 ');
 		await user.type(screen.getByRole('textbox', { name: '서비스 링크' }), ' https://rilog.kr ');
 		await user.type(screen.getByRole('textbox', { name: 'GitHub 링크' }), ' https://github.com/rilog ');
@@ -396,7 +403,7 @@ describe('SignUpForm', () => {
 		await waitFor(() => {
 			expect(completeSignUp).toHaveBeenCalledWith({
 				nickname: '리로그',
-				slug: 'Ri_log-01',
+				slug: 'Ri_log01',
 				description: '함께 기록해요',
 				serviceUrl: 'https://rilog.kr',
 				githubUrl: 'https://github.com/rilog',
@@ -487,8 +494,10 @@ describe('SignUpForm', () => {
 		await submitValidSignUp();
 		await waitFor(() => expect(completeSignUp).toHaveBeenCalledOnce());
 
-		await act(async () => tokenManager.publishLogout());
-		await act(async () => resolveSignUp({ slug: 'rilog' }));
+		await act(async () => {
+			await tokenManager.publishLogout();
+		});
+		act(() => resolveSignUp({ slug: 'rilog' }));
 
 		expect(hasActiveSignUpFlow()).toBe(false);
 		expect(screen.getByRole('alertdialog', { name: '회원가입을 진행할 수 없습니다.' })).toBeInTheDocument();

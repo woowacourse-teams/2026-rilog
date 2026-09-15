@@ -12,7 +12,7 @@ public record CologCreateResponse(
         @Schema(description = "팀 블로그 이름", example = "리로그 팀")
         String name,
 
-        @Schema(description = "팀 블로그 slug", example = "rilog-team")
+        @Schema(description = "팀 블로그 slug", example = "rilog_team")
         String slug
 ) {
 

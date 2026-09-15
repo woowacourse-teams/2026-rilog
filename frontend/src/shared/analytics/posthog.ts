@@ -2,6 +2,8 @@ import posthog from 'posthog-js';
 
 import type { CapturedNetworkRequest, CaptureResult } from 'posthog-js';
 
+import { logNonProductionWarning } from '@/shared/utils/non-production-console';
+
 type PostHogOperation = 'init' | 'capture' | 'identify' | 'reset';
 
 const MASKED_VALUE = '[Masked]';
@@ -151,7 +153,7 @@ const isAnalyticsConfigured = () =>
 
 const warnPostHogFailure = (operation: PostHogOperation) => {
 	if (process.env.NODE_ENV === 'development') {
-		console.warn(`[PostHog] ${operation} 실패`);
+		logNonProductionWarning(`[PostHog] ${operation} 실패`);
 	}
 };
 
@@ -177,7 +179,7 @@ export const initializeAnalytics = () => {
 
 	if (!isAnalyticsConfigured() || !projectToken || !host) {
 		if (process.env.NODE_ENV === 'development') {
-			console.warn('[PostHog] 프로젝트 token 또는 host가 없어 분석 이벤트를 전송하지 않습니다.');
+			logNonProductionWarning('[PostHog] 프로젝트 token 또는 host가 없어 분석 이벤트를 전송하지 않습니다.');
 		}
 
 		return;

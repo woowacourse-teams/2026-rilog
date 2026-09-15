@@ -52,7 +52,7 @@ class OnboardingCompletionServiceTest {
         return User.builder()
                 .id(1L)
                 .githubId(10L)
-                .slug(Slug.from("ri_log-01"))
+                .slug(Slug.from("ri_log_01"))
                 .globalRole(GlobalRole.USER)
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
@@ -61,7 +61,7 @@ class OnboardingCompletionServiceTest {
     private OnboardingCompleteCommand command() {
         return new OnboardingCompleteCommand(
                 "러로",
-                "ri_log-01",
+                "ri_log_01",
                 "기록하는 개발자입니다.",
                 "https://example.com/profile.png",
                 "https://github.com/jinriro",

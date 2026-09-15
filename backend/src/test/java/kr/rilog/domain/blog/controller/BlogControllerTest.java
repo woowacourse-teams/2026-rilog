@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BlogControllerTest {
 
     @ParameterizedTest
-    @ValueSource(strings = {"Ab1_", "12345678901234567890", "ri-log_01"})
+    @ValueSource(strings = {"Ab1_", "a2345678901234567890", "ri__log_01"})
     @DisplayName("GET /v1/availability/slug는 블로그 슬러그 사용 가능 여부를 확인한다")
     void validateSlugAcceptsValidSlug(String slug) throws Exception {
         // given
@@ -73,11 +73,27 @@ class BlogControllerTest {
         verify(blogService, never()).validateDuplicatedSlug(slug);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ri-log", "____99"})
+    @DisplayName("GET /v1/availability/slug는 정책에 맞지 않은 슬러그를 거절한다")
+    void validateSlugRejectsInvalidPolicy(String slug) throws Exception {
+        // given
+        BlogService blogService = mock(BlogService.class);
+        MockMvc mockMvc = mockMvc(blogService);
+
+        // when - then
+        mockMvc.perform(get("/v1/availability/slug")
+                        .param("slug", slug))
+                .andExpect(status().isBadRequest());
+
+        verify(blogService, never()).validateDuplicatedSlug(slug);
+    }
+
     @Test
     @DisplayName("GET /v1/availability/slug는 중복된 블로그 슬러그이면 중복 오류를 반환한다")
     void validateSlugRejectsDuplicatedSlug() throws Exception {
         // given
-        String slug = "ri_log-01";
+        String slug = "ri_log_01";
         BlogService blogService = mock(BlogService.class);
         doThrow(new BlogException(BLOG_SLUG_ALREADY_EXISTS))
                 .when(blogService).validateDuplicatedSlug(slug);
@@ -160,12 +176,12 @@ class BlogControllerTest {
     void getPublicProfileReturnsBlogProfile() throws Exception {
         // given
         BlogService blogService = mock(BlogService.class);
-        when(blogService.getPublicProfile("rilog-team"))
+        when(blogService.getPublicProfile("rilog_team"))
                 .thenReturn(new BlogPublicProfileResult(
                         BlogType.COLOG,
                         2L,
                         "리로그 팀",
-                        "rilog-team",
+                        "rilog_team",
                         "함께 쓰는 기술 블로그",
                         "https://example.com/logo.png",
                         "https://example.com/cover.png",
@@ -177,12 +193,12 @@ class BlogControllerTest {
         MockMvc mockMvc = mockMvc(blogService);
 
         // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}", "rilog-team"))
+        mockMvc.perform(get("/v1/blogs/{slug}", "rilog_team"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.id").value(2L))
                 .andExpect(jsonPath("$.data.name").value("리로그 팀"))
-                .andExpect(jsonPath("$.data.slug").value("rilog-team"))
+                .andExpect(jsonPath("$.data.slug").value("rilog_team"))
                 .andExpect(jsonPath("$.data.introduction").value("함께 쓰는 기술 블로그"))
                 .andExpect(jsonPath("$.data.profileImageUrl").value("https://example.com/logo.png"))
                 .andExpect(jsonPath("$.data.coverImageUrl").value("https://example.com/cover.png"))
@@ -192,7 +208,7 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.data.postCount").value(24L))
                 .andExpect(jsonPath("$.data.user").doesNotExist());
 
-        verify(blogService).getPublicProfile("rilog-team");
+        verify(blogService).getPublicProfile("rilog_team");
     }
 
     @Test
@@ -251,7 +267,7 @@ class BlogControllerTest {
         );
 
         // when - then
-        mockMvc.perform(patch("/v1/blogs/{slug}/profiles", "rilog-team")
+        mockMvc.perform(patch("/v1/blogs/{slug}/profiles", "rilog_team")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -269,7 +285,7 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("프로필을 수정했습니다."));
 
-        verify(blogService).changeBlogProfile(7L, "rilog-team", command);
+        verify(blogService).changeBlogProfile(7L, "rilog_team", command);
     }
 
     private MockMvc mockMvc(BlogService blogService) {

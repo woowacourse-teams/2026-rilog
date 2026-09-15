@@ -62,7 +62,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         User member = userRepository.save(createCompletedUser(200L, "멤버", "member"));
         Blog ownerRilog = blogRepository.save(Blog.createRilog(owner));
         Blog memberRilog = blogRepository.save(Blog.createRilog(member));
-        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-a", "팀 A"));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team_a", "팀 A"));
 
         postRepository.save(PostFixture.publicPublishedColog(ownerRilog, colog, owner)); // PUBLIC
         postRepository.save(PostFixture.publicPublishedColog(memberRilog, colog, member)); // PUBLIC
@@ -71,7 +71,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(ownerRilog, colog, owner));
 
         // when
-        BlogIndexResult result = blogService.readBlogIndex("team-a");
+        BlogIndexResult result = blogService.readBlogIndex("team_a");
 
         // then
         assertThat(result.blogType()).isEqualTo(BlogType.COLOG);
@@ -83,9 +83,9 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     @DisplayName("COLOG 인덱스는 모든 챕터와 챕터별 공개 발행 게시글 수를 챕터 순서대로 반환한다.")
     void readBlogIndexReturnsOrderedCologChapterIndexes() {
         // given
-        User owner = userRepository.save(createCompletedUser(300L, "소유자", "colog-owner"));
+        User owner = userRepository.save(createCompletedUser(300L, "소유자", "colog_owner"));
         Blog rilog = blogRepository.save(Blog.createRilog(owner));
-        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-b", "팀 B"));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team_b", "팀 B"));
         Chapter firstChapter = chapterRepository.save(Chapter.create(colog, "첫 번째 챕터", 0));
         Chapter secondChapter = chapterRepository.save(Chapter.create(colog, "두 번째 챕터", 1));
         Chapter emptyChapter = chapterRepository.saveAndFlush(Chapter.create(colog, "빈 챕터", 2));
@@ -98,7 +98,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner, firstChapter));
 
         // when
-        BlogIndexResult result = blogService.readBlogIndex("team-b");
+        BlogIndexResult result = blogService.readBlogIndex("team_b");
 
         // then
         assertThat(result.chapters()).containsExactly(
@@ -112,7 +112,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     @DisplayName("RILOG 인덱스는 모든 챕터와 챕터별 공개 발행 게시글 수를 챕터 순서대로 반환한다.")
     void readBlogIndexReturnsOrderedRilogChapterIndexes() {
         // given
-        User owner = userRepository.save(createCompletedUser(400L, "러로", "riro-index"));
+        User owner = userRepository.save(createCompletedUser(400L, "러로", "riro_index"));
         Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner));
         Chapter firstChapter = chapterRepository.save(Chapter.create(rilog, "Java", 0));
         Chapter secondChapter = chapterRepository.saveAndFlush(Chapter.create(rilog, "회고", 1));
@@ -124,7 +124,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(PostFixture.deletedPublicPublishedRilogPost(rilog, owner, firstChapter)); // DELETED
 
         // when
-        BlogIndexResult result = blogService.readBlogIndex("riro-index");
+        BlogIndexResult result = blogService.readBlogIndex("riro_index");
 
         // then
         assertThat(result.chapters()).containsExactly(
@@ -137,14 +137,14 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     @DisplayName("RILOG 인덱스는 사용자가 속한 모든 활성 COLOG와 사용자의 공개 발행 게시글 수를 반환한다.")
     void readBlogIndexReturnsActiveCologIndexesWithAuthoredPostCount() {
         // given
-        User owner = userRepository.save(createCompletedUser(500L, "러로", "riro-teams"));
-        User otherUser = userRepository.save(createCompletedUser(600L, "다른 사용자", "other-user"));
+        User owner = userRepository.save(createCompletedUser(500L, "러로", "riro_teams"));
+        User otherUser = userRepository.save(createCompletedUser(600L, "다른 사용자", "other_user"));
         Blog rilog = blogRepository.save(Blog.createRilog(owner));
         Blog otherRilog = blogRepository.save(Blog.createRilog(otherUser));
-        Blog firstColog = blogRepository.save(createColog(otherUser, "first-team", "첫 번째 팀"));
-        Blog secondColog = blogRepository.save(createColog(otherUser, "second-team", "두 번째 팀"));
-        Blog emptyColog = blogRepository.save(createColog(otherUser, "empty-team", "빈 팀"));
-        Blog leftColog = blogRepository.saveAndFlush(createColog(otherUser, "left-team", "탈퇴한 팀"));
+        Blog firstColog = blogRepository.save(createColog(otherUser, "first_team", "첫 번째 팀"));
+        Blog secondColog = blogRepository.save(createColog(otherUser, "second_team", "두 번째 팀"));
+        Blog emptyColog = blogRepository.save(createColog(otherUser, "empty_team", "빈 팀"));
+        Blog leftColog = blogRepository.saveAndFlush(createColog(otherUser, "left_team", "탈퇴한 팀"));
 
         blogMemberRepository.save(BlogMember.invite(
                 firstColog, owner, "Backend", BlogPermission.MEMBER, LocalDateTime.of(2026, 8, 1, 12, 0)
@@ -166,13 +166,13 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(rilog, firstColog, owner));
 
         // when
-        BlogIndexResult result = blogService.readBlogIndex("riro-teams");
+        BlogIndexResult result = blogService.readBlogIndex("riro_teams");
 
         // then
         assertThat(result.cologs()).containsExactlyInAnyOrder(
-                new BlogIndexResult.CologIndexResult(emptyColog.getId(), "빈 팀", "empty-team","https://example.com/profile.png",0L),
-                new BlogIndexResult.CologIndexResult(secondColog.getId(), "두 번째 팀", "second-team","https://example.com/profile.png",1L),
-                new BlogIndexResult.CologIndexResult(firstColog.getId(), "첫 번째 팀", "first-team","https://example.com/profile.png",2L)
+                new BlogIndexResult.CologIndexResult(emptyColog.getId(), "빈 팀", "empty_team","https://example.com/profile.png",0L),
+                new BlogIndexResult.CologIndexResult(secondColog.getId(), "두 번째 팀", "second_team","https://example.com/profile.png",1L),
+                new BlogIndexResult.CologIndexResult(firstColog.getId(), "첫 번째 팀", "first_team","https://example.com/profile.png",2L)
         );
     }
 
@@ -180,9 +180,9 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     @DisplayName("RILOG 인덱스는 개인 블로그와 COLOG에 작성한 공개 발행 게시글의 전체 개수를 반환한다.")
     void readBlogIndexReturnsTotalPublicPublishedPostCountAuthoredByRilogUser() {
         // given
-        User owner = userRepository.save(createCompletedUser(700L, "러로", "riro-total"));
+        User owner = userRepository.save(createCompletedUser(700L, "러로", "riro_total"));
         Blog rilog = blogRepository.save(Blog.createRilog(owner));
-        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-total", "집계 팀"));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team_total", "집계 팀"));
         blogMemberRepository.saveAndFlush(BlogMember.createOwner(
                 colog, owner, LocalDateTime.of(2026, 8, 1, 12, 0)
         ));
@@ -194,7 +194,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner)); // DELETED
 
         // when
-        BlogIndexResult result = blogService.readBlogIndex("riro-total");
+        BlogIndexResult result = blogService.readBlogIndex("riro_total");
 
         // then
         assertThat(result.blogType()).isEqualTo(BlogType.RILOG);
@@ -206,10 +206,10 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     void validateDuplicatedSlugThrowsWhenActiveBlogHasSlug() {
         // given
         User owner = userRepository.save(User.createPendingGithubUser(100L, "owner", "https://example.com/owner.png"));
-        blogRepository.saveAndFlush(createColog(owner, "team-a", "리로그 팀"));
+        blogRepository.saveAndFlush(createColog(owner, "team_a", "리로그 팀"));
 
         // when - then
-        assertThatThrownBy(() -> blogService.validateDuplicatedSlug("team-a"))
+        assertThatThrownBy(() -> blogService.validateDuplicatedSlug("team_a"))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_SLUG_ALREADY_EXISTS.getMessage());
     }
@@ -219,7 +219,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     void validateDuplicatedProfileNameThrowsWhenActiveBlogHasProfileName() {
         // given
         User owner = userRepository.save(User.createPendingGithubUser(100L, "owner", "https://example.com/owner.png"));
-        blogRepository.saveAndFlush(createColog(owner, "team-a", "리로그 팀"));
+        blogRepository.saveAndFlush(createColog(owner, "team_a", "리로그 팀"));
 
         // when - then
         assertThatThrownBy(() -> blogService.validateDuplicatedProfileName("리로그 팀"))
@@ -232,7 +232,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
     void validateDuplicatedProfileNameIgnoresDeletedBlogProfileName() {
         // given
         User owner = userRepository.save(User.createPendingGithubUser(100L, "owner", "https://example.com/owner.png"));
-        Blog deletedColog = blogRepository.saveAndFlush(createColog(owner, "team-a", "리로그 팀"));
+        Blog deletedColog = blogRepository.saveAndFlush(createColog(owner, "team_a", "리로그 팀"));
         deletedColog.delete();
         blogRepository.saveAndFlush(deletedColog);
 
@@ -247,7 +247,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         // given
         User owner = userRepository.save(User.createPendingGithubUser(100L, "owner", "https://example.com/owner.png"));
         User admin = userRepository.save(User.createPendingGithubUser(200L, "admin", "https://example.com/admin.png"));
-        Blog colog = blogRepository.save(createColog(owner, "team-a", "리로그 팀"));
+        Blog colog = blogRepository.save(createColog(owner, "team_a", "리로그 팀"));
         blogMemberRepository.saveAndFlush(
                 BlogMember.invite(
                         colog,
@@ -258,18 +258,18 @@ class BlogServiceIntegrationTest extends ServiceSupport {
                 )
         );
         BlogProfileUpdateCommand command = new BlogProfileUpdateCommand(
-                "https://example.com/new-profile.png",
-                "https://example.com/new-cover.png",
+                "https://example.com/new_profile.png",
+                "https://example.com/new_cover.png",
                 "새 리로그 팀",
                 "새 팀 소개",
-                "https://new-rilog.example.com",
-                "https://github.com/new-rilog",
-                "new-rilog@example.com"
+                "https://new_rilog.example.com",
+                "https://github.com/new_rilog",
+                "new_rilog@example.com"
         );
         Profile expectedProfile = command.toProfile();
 
         // when
-        blogService.changeBlogProfile(admin.getId(), "team-a", command);
+        blogService.changeBlogProfile(admin.getId(), "team_a", command);
 
         // then
         Blog savedColog = blogRepository.findById(colog.getId()).orElseThrow();
@@ -284,7 +284,7 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         // given
         User owner = userRepository.save(createCompletedUser(300L, "러로", "riro"));
         Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner, "https://rilog.example.com"));
-        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team-a", "리로그 팀"));
+        Blog colog = blogRepository.saveAndFlush(createColog(owner, "team_a", "리로그 팀"));
         postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, owner));
         postRepository.saveAndFlush(PostFixture.privatePublishedRilogPost(rilog, owner));
         postRepository.saveAndFlush(PostFixture.publicPublishedColog(rilog, colog, owner));
@@ -317,13 +317,13 @@ class BlogServiceIntegrationTest extends ServiceSupport {
         User owner = userRepository.save(createCompletedUser(400L, "러로", "riro"));
         Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(owner, "https://rilog.example.com"));
         BlogProfileUpdateCommand command = new BlogProfileUpdateCommand(
-                "https://example.com/new-profile.png",
+                "https://example.com/new_profile.png",
                 null,
                 "새 개인 블로그",
                 "새 소개",
-                "https://new-rilog.example.com",
-                "https://github.com/new-rilog",
-                "new-rilog@example.com"
+                "https://new_rilog.example.com",
+                "https://github.com/new_rilog",
+                "new_rilog@example.com"
         );
 
         // when
@@ -345,10 +345,10 @@ class BlogServiceIntegrationTest extends ServiceSupport {
                 .containsExactly(
                         "새 개인 블로그",
                         "새 소개",
-                        "https://example.com/new-profile.png",
-                        "https://new-rilog.example.com",
-                        "https://github.com/new-rilog",
-                        "new-rilog@example.com"
+                        "https://example.com/new_profile.png",
+                        "https://new_rilog.example.com",
+                        "https://github.com/new_rilog",
+                        "new_rilog@example.com"
                 );
         assertThat(savedOwner)
                 .extracting(
@@ -361,9 +361,9 @@ class BlogServiceIntegrationTest extends ServiceSupport {
                 .containsExactly(
                         "새 개인 블로그",
                         "새 소개",
-                        "https://example.com/new-profile.png",
-                        "https://github.com/new-rilog",
-                        "new-rilog@example.com"
+                        "https://example.com/new_profile.png",
+                        "https://github.com/new_rilog",
+                        "new_rilog@example.com"
                 );
     }
 
