@@ -40,6 +40,10 @@ describe('validateRilogProfileSettings', () => {
 		});
 	});
 
+	it('언더스코어가 포함된 기존 고유 아이디로 프로필을 저장할 수 있다', () => {
+		expect(validateRilogProfileSettings({ ...VALID_VALUE, slug: 'rilog_user' })).toEqual({});
+	});
+
 	it('소셜 링크 길이 제한을 적용한다', () => {
 		expect(
 			validateRilogProfileSettings({

@@ -6,15 +6,18 @@ import type { BlogHomeInitialState } from '@/features/blog-home-index/server/pre
 import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-public-profile';
 
-import BlogHomePage from './page';
+import BlogHomePage, { generateMetadata } from './page';
 
-const { notFoundMock } = vi.hoisted(() => ({
+const { notFoundMock, permanentRedirectMock } = vi.hoisted(() => ({
 	notFoundMock: vi.fn((): never => {
 		throw new Error('NEXT_NOT_FOUND');
 	}),
+	permanentRedirectMock: vi.fn((): never => {
+		throw new Error('NEXT_REDIRECT');
+	}),
 }));
 
-vi.mock('next/navigation', () => ({ notFound: notFoundMock }));
+vi.mock('next/navigation', () => ({ notFound: notFoundMock, permanentRedirect: permanentRedirectMock }));
 vi.mock('@/features/blog-home-index/server/prefetch-blog-home-initial-state');
 vi.mock('@/features/blog-profile/lib/get-blog-public-profile');
 
@@ -67,6 +70,7 @@ const renderPage = async (slug = '@jetproc', searchParams: Record<string, string
 describe('BlogHomePage', () => {
 	beforeEach(() => {
 		notFoundMock.mockClear();
+		permanentRedirectMock.mockClear();
 		vi.mocked(prefetchBlogHomeInitialState).mockReset();
 		vi.mocked(prefetchBlogHomeInitialState).mockResolvedValue(READY_STATE);
 		vi.mocked(getBlogPublicProfile).mockReset();
@@ -102,5 +106,57 @@ describe('BlogHomePage', () => {
 		expect(prefetchBlogHomeInitialState).not.toHaveBeenCalled();
 		expect(getBlogPublicProfile).not.toHaveBeenCalled();
 		expect(notFoundMock).toHaveBeenCalledOnce();
+	});
+
+	it.each(['@abc', '@invalid.slug', `@${'a'.repeat(21)}`])(
+		'유효하지 않은 slug 경로 %s는 프로필을 조회하지 않고 not-found 처리한다',
+		async (slug) => {
+			await expect(
+				BlogHomePage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve({}) }),
+			).rejects.toThrow('NEXT_NOT_FOUND');
+
+			expect(getBlogPublicProfile).not.toHaveBeenCalled();
+			expect(prefetchBlogHomeInitialState).not.toHaveBeenCalled();
+			expect(notFoundMock).toHaveBeenCalledOnce();
+		},
+	);
+
+	it('메타데이터 생성도 유효하지 않은 slug를 조회하지 않고 not-found 처리한다', async () => {
+		await expect(
+			generateMetadata({ params: Promise.resolve({ slug: '@invalid.slug' }), searchParams: Promise.resolve({}) }),
+		).rejects.toThrow('NEXT_NOT_FOUND');
+
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
+		expect(notFoundMock).toHaveBeenCalledOnce();
+	});
+
+	it('언더스코어가 포함된 slug는 유효한 블로그 경로로 조회한다', async () => {
+		await renderPage('@rilog_user');
+
+		expect(getBlogPublicProfile).toHaveBeenCalledWith('rilog_user');
+	});
+
+	it('하이픈이 포함된 기존 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
+		await expect(
+			BlogHomePage({
+				params: Promise.resolve({ slug: '@rilog-fe' }),
+				searchParams: Promise.resolve({ notice: ['one', 'two'] }),
+			}),
+		).rejects.toThrow('NEXT_REDIRECT');
+
+		expect(permanentRedirectMock).toHaveBeenCalledWith('/@rilog_fe?notice=one&notice=two');
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
+	});
+
+	it('하이픈이 포함된 기존 경로의 metadata 요청도 canonical 경로로 redirect한다', async () => {
+		await expect(
+			generateMetadata({
+				params: Promise.resolve({ slug: '@rilog-fe' }),
+				searchParams: Promise.resolve({ from: 'feed' }),
+			}),
+		).rejects.toThrow('NEXT_REDIRECT');
+
+		expect(permanentRedirectMock).toHaveBeenCalledWith('/@rilog_fe?from=feed');
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
 	});
 });

@@ -78,7 +78,12 @@ export default function PostDetail({ post }: PostDetailProps) {
 					label={`${post.blog.name} 팀 로고`}
 					size="sm"
 				/>
-				<span className="hover:underline hover:underline-offset-2">{post.blog.name}.</span>
+				<span className="hover:underline hover:underline-offset-2">
+					{post.blog.name}
+					<span aria-hidden="true" className="text-text-placeholder">
+						.
+					</span>
+				</span>
 			</BlogProfileEntryLink>
 			<span className="text-text-placeholder">{post.chapter?.name}</span>
 		</div>

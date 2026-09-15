@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
+import { logNonProductionError } from '@/shared/utils/non-production-console';
 
 interface ErrorProps {
 	error: Error & { digest?: string };
@@ -12,7 +13,7 @@ interface ErrorProps {
 
 export default function ErrorPage({ error, reset }: ErrorProps) {
 	useEffect(() => {
-		console.error('Unhandled error:', error);
+		logNonProductionError('Unhandled error:', error);
 	}, [error]);
 
 	return (

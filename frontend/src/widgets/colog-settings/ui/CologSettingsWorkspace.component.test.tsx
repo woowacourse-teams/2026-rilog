@@ -64,7 +64,7 @@ vi.mock('@/features/analytics/model/events', () => ({
 
 const PROFILE_SETTINGS: CologProfileSettingsValue = {
 	name: 'API 리로그',
-	slug: 'team-rilog',
+	slug: 'team_rilog',
 	description: 'API에서 조회한 팀 소개',
 	profileImageUrl: 'https://example.com/profile.png',
 	coverImageUrl: 'https://example.com/cover.png',
@@ -78,7 +78,7 @@ const PROFILE_RESPONSE: BlogPublicProfileResponse = {
 	type: 'COLOG',
 	id: 41,
 	name: 'API 리로그',
-	slug: 'team-rilog',
+	slug: 'team_rilog',
 	introduction: 'API에서 조회한 팀 소개',
 	profileImageUrl: 'https://example.com/profile.png',
 	coverImageUrl: 'https://example.com/cover.png',
@@ -178,7 +178,7 @@ describe('CologSettingsWorkspace', () => {
 		}
 		expect(within(screen.getByText('팀 로고').closest('label')!).queryByText('*')).not.toBeInTheDocument();
 		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		expect(slugInput).toHaveValue('team-rilog');
+		expect(slugInput).toHaveValue('team_rilog');
 		expect(slugInput).toBeDisabled();
 		expect(slugInput).toHaveAccessibleDescription('팀 고유 아이디는 변경할 수 없습니다.');
 		expect(screen.getByText('rilog.kr/@')).toBeInTheDocument();
