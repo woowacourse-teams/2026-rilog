@@ -61,8 +61,8 @@ class PostServiceTest {
     private static final Long REQUESTER_ID = 9L;
     private static final Long RILOG_ID = 3L;
     private static final Long COLOG_ID = 4L;
-    private static final String RILOG_SLUG = "writer-rilog";
-    private static final String COLOG_SLUG = "team-colog";
+    private static final String RILOG_SLUG = "writer_rilog";
+    private static final String COLOG_SLUG = "team_colog";
 
     @Mock
     private PostRepository postRepository;

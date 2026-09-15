@@ -10,10 +10,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.*;
 class SlugTest {
 
     @Test
-    @DisplayName("4-20자 사이이고 허용 문자로 구성된 슬러그는 사용가능하다.")
+    @DisplayName("4-20자 사이이고 영문을 1자 이상 포함한 슬러그는 사용가능하다.")
     void slugSuccessTest() {
         // given
-        String slugText = "rilog";
+        String slugText = "ri__99";
 
         // when & then
         assertThatCode(() -> Slug.from(slugText))
@@ -37,13 +37,13 @@ class SlugTest {
     @DisplayName("앞뒤 공백이 포함된 슬러그는 앞뒤 공백을 제거한다.")
     void surroundedBlankSlugIsSavedAsStrippedValue() {
         // given
-        String slug = " rilog-01 ";
+        String slug = " rilog_01 ";
 
         // when
         Slug savedSlug = Slug.from(slug);
 
         // then
-        assertThat(savedSlug.getValue()).isEqualTo("rilog-01");
+        assertThat(savedSlug.getValue()).isEqualTo("rilog_01");
     }
 
     @Test
@@ -71,10 +71,34 @@ class SlugTest {
     }
 
     @Test
+    @DisplayName("하이픈이 포함된 슬러그는 예외가 발생한다.")
+    void throwExceptionWhenSlugContainsHyphen() {
+        // given
+        String invalidSlug = "ri-log";
+
+        // when & then
+        assertThatThrownBy(() -> Slug.from(invalidSlug))
+                .isInstanceOf(UserException.class)
+                .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
+    }
+
+    @Test
+    @DisplayName("영문이 포함되지 않은 슬러그는 예외가 발생한다.")
+    void throwExceptionWhenSlugDoesNotContainAlphabet() {
+        // given
+        String invalidSlug = "____99";
+
+        // when & then
+        assertThatThrownBy(() -> Slug.from(invalidSlug))
+                .isInstanceOf(UserException.class)
+                .hasMessage(UserErrorInformation.INVALID_SLUG.getMessage());
+    }
+
+    @Test
     @DisplayName("허용되지 않은 문자가 포함된 슬러그는 예외가 발생한다.")
     void throwExceptionWhenSlugContainsInvalidCharacter() {
         // given
-        String invalidSlug = "ri.log-";
+        String invalidSlug = "ri.log";
 
         // when & then
         assertThatThrownBy(() -> Slug.from(invalidSlug))
@@ -110,8 +134,8 @@ class SlugTest {
     @DisplayName("서로 다른 슬러그에 different()를 사용하면 True를 반환한다.")
     void isDifferent() {
         // given
-        Slug slug1 = Slug.from("rilog-01");
-        Slug slug2 = Slug.from("rilog-02");
+        Slug slug1 = Slug.from("rilog_01");
+        Slug slug2 = Slug.from("rilog_02");
 
         // when
         boolean result = slug1.isDifferent(slug2);

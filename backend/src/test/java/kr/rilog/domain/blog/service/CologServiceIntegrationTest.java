@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CologServiceIntegrationTest extends ServiceSupport {
 
-    private static final String COLOG_SLUG = "rilog-team";
+    private static final String COLOG_SLUG = "rilog_team";
     private static final int MAX_COLOG_MEMBER_COUNT = 20;
     private static final int MAX_COLOG_COUNT_PER_USER = 10;
 
@@ -129,9 +129,9 @@ class CologServiceIntegrationTest extends ServiceSupport {
     @DisplayName("활성 Colog에 9개 속한 사용자가 새 Colog를 만들면 활성 Colog가 10개가 된다.")
     void createAllowsCreationUntilOwnerReachesMaximumCologs() {
         // given
-        User owner = userRepository.saveAndFlush(createUser(300L, "colog-owner"));
+        User owner = userRepository.saveAndFlush(createUser(300L, "colog_owner"));
         saveActiveCologMemberships(owner, MAX_COLOG_COUNT_PER_USER - 1);
-        CologCreateCommand command = createCommand("new-team", "새로운 팀");
+        CologCreateCommand command = createCommand("new_team", "새로운 팀");
 
         // when
         CologCreateResult result = cologService.create(owner.getId(), command);
@@ -146,9 +146,9 @@ class CologServiceIntegrationTest extends ServiceSupport {
     @DisplayName("활성 Colog에 10개 속한 사용자는 새 Colog를 만들 수 없다.")
     void createRejectsCreationWhenOwnerHasMaximumCologs() {
         // given
-        User owner = userRepository.saveAndFlush(createUser(300L, "colog-owner"));
+        User owner = userRepository.saveAndFlush(createUser(300L, "colog_owner"));
         saveActiveCologMemberships(owner, MAX_COLOG_COUNT_PER_USER);
-        CologCreateCommand command = createCommand("new-team", "새로운 팀");
+        CologCreateCommand command = createCommand("new_team", "새로운 팀");
 
         // when & then
         assertThatThrownBy(() -> cologService.create(owner.getId(), command))
@@ -343,7 +343,7 @@ class CologServiceIntegrationTest extends ServiceSupport {
     private Blog saveRilog(User owner) {
         return blogRepository.saveAndFlush(Blog.builder()
                 .owner(owner)
-                .slug(Slug.from("owner-rilog"))
+                .slug(Slug.from("owner_rilog"))
                 .profile(Profile.createRilog(
                         "러로",
                         "기록하는 개발자입니다.",
@@ -357,7 +357,7 @@ class CologServiceIntegrationTest extends ServiceSupport {
 
     private void saveAdditionalMembers(Blog colog, int count) {
         IntStream.range(0, count)
-                .mapToObj(index -> userRepository.save(createUser(1_000L + index, "member-" + index)))
+                .mapToObj(index -> userRepository.save(createUser(1_000L + index, "member_" + index)))
                 .map(user -> BlogMember.invite(
                         colog,
                         user,
@@ -373,7 +373,7 @@ class CologServiceIntegrationTest extends ServiceSupport {
         IntStream.range(0, count).forEach(index -> {
             Blog colog = blogRepository.save(createColog(
                     user,
-                    "joined-team-" + index,
+                    "joined_team_" + index,
                     "가입한 팀 " + index
             ));
             blogMemberRepository.save(BlogMember.createOwner(colog, user, LocalDateTime.now()));

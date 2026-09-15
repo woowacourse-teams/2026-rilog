@@ -25,7 +25,7 @@ public final class UserFixture {
     public static User pending() {
         return User.createPendingGithubUser(
                 PENDING_USER_GITHUB_ID,
-                "pending-user",
+                "pending_user",
                 PROFILE_IMAGE_URL
         );
     }
@@ -33,7 +33,7 @@ public final class UserFixture {
     public static User completedWithNicknameAndSlug(String nickname, String slug) {
         User user = User.createPendingGithubUser(
                 COMPLETED_USER_GITHUB_ID,
-                "completed-user",
+                "completed_user",
                 PROFILE_IMAGE_URL
         );
         user.completeOnboarding(

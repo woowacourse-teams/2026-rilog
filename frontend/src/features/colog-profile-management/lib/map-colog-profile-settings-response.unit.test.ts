@@ -10,7 +10,7 @@ describe('mapCologProfileSettingsResponse', () => {
 			type: 'COLOG',
 			id: 1,
 			name: '리로그 팀',
-			slug: 'rilog-team',
+			slug: 'rilog_team',
 			introduction: '함께 기록하는 팀',
 			profileImageUrl: 'https://example.com/profile.png',
 			coverImageUrl: 'https://example.com/cover.png',
@@ -22,7 +22,7 @@ describe('mapCologProfileSettingsResponse', () => {
 
 		expect(mapCologProfileSettingsResponse(response)).toEqual({
 			name: '리로그 팀',
-			slug: 'rilog-team',
+			slug: 'rilog_team',
 			description: '함께 기록하는 팀',
 			profileImageUrl: 'https://example.com/profile.png',
 			coverImageUrl: 'https://example.com/cover.png',

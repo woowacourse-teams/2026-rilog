@@ -2,7 +2,7 @@ export const USER_NICKNAME_MIN_LENGTH = 2;
 export const USER_NICKNAME_MAX_LENGTH = 20;
 export const USER_SLUG_MIN_LENGTH = 4;
 export const USER_SLUG_MAX_LENGTH = 20;
-export const USER_SLUG_PATTERN = '[A-Za-z0-9_\\-]+';
+export const USER_SLUG_PATTERN = '(?=.*[A-Za-z])[A-Za-z0-9_]+';
 
 const SLUG_PATTERN = new RegExp(`^(?:${USER_SLUG_PATTERN})$`);
 
@@ -28,7 +28,7 @@ export const validateUserSlug = (slug: string): string | undefined => {
 		normalizedSlug.length > USER_SLUG_MAX_LENGTH ||
 		!SLUG_PATTERN.test(normalizedSlug)
 	) {
-		return '고유 아이디는 4~20자의 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있어요.';
+		return '고유 아이디는 4~20자의 영문, 숫자, 언더스코어(_)만 사용할 수 있고 영문을 1자 이상 포함해야 해요.';
 	}
 
 	return undefined;

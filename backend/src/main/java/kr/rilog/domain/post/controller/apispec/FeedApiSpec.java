@@ -33,14 +33,14 @@ public interface FeedApiSpec {
             summary = "블로그 게시글 목록 조회 API"
     )
     ApiResponse<BlogFeedPostResponse> getBlogPosts(
-            @Parameter(description = "블로그 slug", example = "rilog-team")
+            @Parameter(description = "블로그 slug", example = "rilog_team")
             @PathVariable String slug,
             @Parameter(hidden = true) @NullableLoginUserId Long requesterId,
             @Parameter(description = "게시글 카테고리", example = "TECH")
             @RequestParam(required = false) Category category,
             @Parameter(description = "챕터 ID", example = "1")
             @RequestParam(required = false) Long chapterId,
-            @Parameter(description = "Rilog 소유자가 글을 작성한 대상 Colog slug", example = "rilog-team")
+            @Parameter(description = "Rilog 소유자가 글을 작성한 대상 Colog slug", example = "rilog_team")
             @RequestParam(required = false) String targetCologSlug,
             @RequestParam int page,
             @RequestParam int size

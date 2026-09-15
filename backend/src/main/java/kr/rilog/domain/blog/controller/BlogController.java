@@ -9,6 +9,7 @@ import kr.rilog.domain.blog.controller.apispec.BlogApiSpec;
 import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.BlogIndexResponse;
 import kr.rilog.domain.blog.controller.dto.response.BlogPublicProfileResponse;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.service.BlogService;
 import kr.rilog.domain.blog.service.dto.result.BlogIndexResult;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
@@ -29,8 +30,8 @@ public class BlogController implements BlogApiSpec {
             @RequestParam("slug")
             @Size(min = 4, max = 20, message = "슬러그는 4자 이상 20자 이하이어야 합니다.")
             @Pattern(
-                    regexp = "^[A-Za-z0-9_-]+$",
-                    message = "슬러그는 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있습니다."
+                    regexp = Slug.REGEX,
+                    message = "슬러그는 영문을 1자 이상 포함하고 영문, 숫자, 언더스코어(_)만 사용할 수 있습니다."
             ) String slug
     ) {
         blogService.validateDuplicatedSlug(slug);

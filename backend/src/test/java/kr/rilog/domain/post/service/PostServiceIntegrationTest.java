@@ -72,7 +72,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그에 게시글을 발행하면 명령의 내용과 개인 블로그 소속이 저장된다.")
     void publishToRilogPersistsPostDetailAndRilogAffiliation() {
         // given
-        User writer = saveCompletedUser(1L, "개인작성자", "rilog-writer");
+        User writer = saveCompletedUser(1L, "개인작성자", "rilog_writer");
         Blog rilog = saveRilog(writer);
         PostSaveCommand command = PostFixture.publicPostPublishCommand(rilog.getSlug());
 
@@ -102,9 +102,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그의 활성 멤버가 게시글을 발행하면 팀 블로그와 작성자의 개인 블로그 소속이 함께 저장된다.")
     void publishToCologPersistsCologAndWriterRilogAffiliations() {
         // given
-        User writer = saveCompletedUser(2L, "팀작성자", "colog-writer");
+        User writer = saveCompletedUser(2L, "팀작성자", "colog_writer");
         Blog rilog = saveRilog(writer);
-        Blog colog = saveColog(writer, "team-colog");
+        Blog colog = saveColog(writer, "team_colog");
         PostSaveCommand command = PostFixture.publicPostPublishCommand(colog.getSlug());
 
         // when
@@ -126,9 +126,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그의 활성 멤버가 아니면 게시글이 저장되지 않는다.")
     void publishToCologThrowsAndDoesNotPersistPostWhenWriterIsNotActiveMember() {
         // given
-        User owner = saveCompletedUser(3L, "팀소유자", "team-owner");
-        Blog colog = saveColog(owner, "owner-colog");
-        User writer = saveCompletedUser(4L, "비멤버", "non-member");
+        User owner = saveCompletedUser(3L, "팀소유자", "team_owner");
+        Blog colog = saveColog(owner, "owner_colog");
+        User writer = saveCompletedUser(4L, "비멤버", "non_member");
         saveRilog(writer);
 
         // when & then
@@ -146,9 +146,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("다른 사용자의 개인 블로그에 게시글을 발행하면 게시글이 저장되지 않는다.")
     void publishToRilogThrowsAndDoesNotPersistPostWhenWriterIsNotOwner() {
         // given
-        User owner = saveCompletedUser(5L, "블로그소유자", "blog-owner");
+        User owner = saveCompletedUser(5L, "블로그소유자", "blog_owner");
         Blog ownerRilog = saveRilog(owner);
-        User writer = saveCompletedUser(6L, "다른작성자", "other-writer");
+        User writer = saveCompletedUser(6L, "다른작성자", "other_writer");
 
         // when & then
         assertThatThrownBy(() -> postService.publish(
@@ -165,9 +165,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그 활성 멤버에게 개인 블로그가 없으면 게시글이 저장되지 않는다.")
     void publishToCologThrowsAndDoesNotPersistPostWhenWriterRilogDoesNotExist() {
         // given
-        User owner = saveCompletedUser(7L, "팀블로그주인", "colog-owner");
-        Blog colog = saveColog(owner, "missing-rilog-colog");
-        User writer = saveCompletedUser(8L, "개인블로그없음", "writer-without-rilog");
+        User owner = saveCompletedUser(7L, "팀블로그주인", "colog_owner");
+        Blog colog = saveColog(owner, "missing_rilog_colog");
+        User writer = saveCompletedUser(8L, "개인블로그없음", "writer_without_rilog");
         saveActiveMember(colog, writer);
 
         // when & then
@@ -186,7 +186,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     void publishThrowsAndDoesNotPersistPostWhenBlogDoesNotExist() {
         // when & then
         assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand("missing-blog"),
+                PostFixture.publicPostPublishCommand("missing_blog"),
                 999L
         ))
                 .isInstanceOf(BlogException.class)
@@ -199,7 +199,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("삭제된 블로그에 게시글을 발행하면 게시글이 저장되지 않는다.")
     void publishThrowsAndDoesNotPersistPostWhenBlogIsDeleted() {
         // given
-        User owner = saveCompletedUser(9L, "삭제블로그주인", "deleted-blog-owner");
+        User owner = saveCompletedUser(9L, "삭제블로그주인", "deleted_blog_owner");
         Blog deletedRilog = saveRilog(owner);
         deletedRilog.delete();
         blogRepository.saveAndFlush(deletedRilog);
@@ -219,7 +219,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 사용자가 게시글을 발행하면 게시글이 저장되지 않는다.")
     void publishThrowsAndDoesNotPersistPostWhenWriterDoesNotExist() {
         // given
-        User owner = saveCompletedUser(10L, "사용자없음주인", "missing-user-owner");
+        User owner = saveCompletedUser(10L, "사용자없음주인", "missing_user_owner");
         Blog rilog = saveRilog(owner);
 
         // when & then
@@ -237,7 +237,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("같은 개인 블로그에서 게시글을 수정하면 상세 정보가 저장되고 현재 소속을 반환한다.")
     void updateInSameRilogPersistsDetailAndReturnsCurrentAffiliation() {
         // given
-        User writer = saveCompletedUser(23L, "수정작성자", "chg-auth-writer");
+        User writer = saveCompletedUser(23L, "수정작성자", "chg_auth_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
@@ -256,9 +256,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그 게시글을 팀 블로그로 수정하면 대상 팀 블로그에 소속되고 대상 소속을 반환한다.")
     void updateFromRilogToCologPersistsAndReturnsTargetAffiliation() {
         // given
-        User writer = saveCompletedUser(24L, "팀이동작성자", "move-to-colog-writer");
+        User writer = saveCompletedUser(24L, "팀이동작성자", "move_to_colog_writer");
         Blog rilog = saveRilog(writer);
-        Blog targetColog = saveColog(writer, "chg-auth-target");
+        Blog targetColog = saveColog(writer, "chg_auth_target");
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
         PostUpdateCommand command = PostFixture.updateCommandTo(targetColog.getSlug());
 
@@ -276,9 +276,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그 게시글을 개인 블로그로 수정하면 팀 블로그 소속이 해제되고 개인 소속을 반환한다.")
     void updateFromCologToRilogRemovesAndReturnsRilogAffiliation() {
         // given
-        User writer = saveCompletedUser(25L, "개인이동작성자", "move-to-rilog-writer");
+        User writer = saveCompletedUser(25L, "개인이동작성자", "move_to_rilog_writer");
         Blog rilog = saveRilog(writer);
-        Blog colog = saveColog(writer, "chg-auth-source");
+        Blog colog = saveColog(writer, "chg_auth_source");
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
@@ -296,7 +296,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("초안 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
     void updateDraftPostThrowsAndPreservesDetail() {
         // given
-        User writer = saveCompletedUser(26L, "초안작성자", "draft-chg-auth");
+        User writer = saveCompletedUser(26L, "초안작성자", "draft_chg_auth");
         Blog rilog = saveRilog(writer);
         Post draftPost = savePost(PostFixture.publicDraftRilogPost(rilog, writer));
         PostDetail originalDetail = detailOf(draftPost);
@@ -315,10 +315,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("작성자가 아닌 사용자가 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
     void updateByNonWriterThrowsAndPreservesDetail() {
         // given
-        User writer = saveCompletedUser(27L, "원본작성자", "original-writer");
+        User writer = saveCompletedUser(27L, "원본작성자", "original_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
-        User requester = saveCompletedUser(28L, "다른수정자", "other-chg-auth");
+        User requester = saveCompletedUser(28L, "다른수정자", "other_chg_auth");
         PostDetail originalDetail = detailOf(post);
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
@@ -335,9 +335,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("현재 블로그에서 탈퇴한 작성자가 게시글을 수정하면 예외가 발생하고 상세 정보가 유지된다.")
     void updateByLeftCurrentBlogMemberThrowsAndPreservesDetail() {
         // given
-        User cologOwner = saveCompletedUser(29L, "현재팀소유자", "current-colog-owner");
-        Blog currentColog = saveColog(cologOwner, "left-current-colog");
-        User writer = saveCompletedUser(30L, "현재탈퇴작성자", "left-current-writer");
+        User cologOwner = saveCompletedUser(29L, "현재팀소유자", "current_colog_owner");
+        Blog currentColog = saveColog(cologOwner, "left_current_colog");
+        User writer = saveCompletedUser(30L, "현재탈퇴작성자", "left_current_writer");
         Blog rilog = saveRilog(writer);
         saveLeftMember(currentColog, writer);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, currentColog, writer));
@@ -357,9 +357,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("대상 블로그에서 탈퇴한 작성자가 게시글을 수정하면 예외가 발생하고 게시글 상태가 유지된다.")
     void updateToBlogWhereWriterLeftThrowsAndPreservesPost() {
         // given
-        User cologOwner = saveCompletedUser(31L, "대상팀소유자", "target-colog-owner");
-        Blog targetColog = saveColog(cologOwner, "left-target-colog");
-        User writer = saveCompletedUser(32L, "대상탈퇴작성자", "left-target-writer");
+        User cologOwner = saveCompletedUser(31L, "대상팀소유자", "target_colog_owner");
+        Blog targetColog = saveColog(cologOwner, "left_target_colog");
+        User writer = saveCompletedUser(32L, "대상탈퇴작성자", "left_target_writer");
         Blog rilog = saveRilog(writer);
         saveLeftMember(targetColog, writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
@@ -380,7 +380,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그의 공개 게시글을 조회하면 게시글과 작성자 및 개인 블로그 정보를 반환한다.")
     void readPublicRilogPostReturnsPostAuthorAndRilog() {
         // given
-        User writer = saveCompletedUser(11L, "공개글작성자", "public-post-writer");
+        User writer = saveCompletedUser(11L, "공개글작성자", "public_post_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
         PostDetailResponse expected = PostFixture.postDetailResponse(post, writer, rilog);
@@ -399,7 +399,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그의 비공개 게시글은 작성자가 조회할 수 있다.")
     void readPrivateRilogPostReturnsPostWhenRequesterIsWriter() {
         // given
-        User writer = saveCompletedUser(12L, "비공개작성자", "private-post-writer");
+        User writer = saveCompletedUser(12L, "비공개작성자", "private_post_writer");
         Blog rilog = saveRilog(writer);
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
@@ -414,7 +414,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그의 비공개 게시글을 비로그인 사용자가 조회하면 예외가 발생한다.")
     void readPrivateRilogPostThrowsWhenRequesterIsAnonymous() {
         // given
-        User writer = saveCompletedUser(13L, "익명차단작성자", "anon-block-writer");
+        User writer = saveCompletedUser(13L, "익명차단작성자", "anon_block_writer");
         Blog rilog = saveRilog(writer);
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
@@ -428,10 +428,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그의 비공개 게시글을 다른 사용자가 조회하면 예외가 발생한다.")
     void readPrivateRilogPostThrowsWhenRequesterIsNotWriter() {
         // given
-        User writer = saveCompletedUser(14L, "비공개글주인", "private-owner");
+        User writer = saveCompletedUser(14L, "비공개글주인", "private_owner");
         Blog rilog = saveRilog(writer);
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
-        User otherUser = saveCompletedUser(15L, "비공개타인", "private-outsider");
+        User otherUser = saveCompletedUser(15L, "비공개타인", "private_outsider");
 
         // when & then
         assertThatThrownBy(() -> postService.readPostOfBlogs(privatePost.getId(), otherUser.getId()))
@@ -443,7 +443,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 게시글 ID로 조회하면 예외가 발생한다.")
     void readPostThrowsWhenPostDoesNotExist() {
         // given
-        User writer = saveCompletedUser(16L, "슬러그작성자", "post-slug-writer");
+        User writer = saveCompletedUser(16L, "슬러그작성자", "post_slug_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
@@ -457,7 +457,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("삭제된 게시글을 조회하면 예외가 발생한다.")
     void readPostThrowsWhenPostIsDeleted() {
         // given
-        User writer = saveCompletedUser(17L, "삭제글작성자", "deleted-post-writer");
+        User writer = saveCompletedUser(17L, "삭제글작성자", "deleted_post_writer");
         Blog rilog = saveRilog(writer);
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
 
@@ -471,11 +471,11 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그 게시글을 조회하면 삭제되지 않은 멤버만 집계한다.")
     void readCologPostCountsOnlyNonDeletedMembers() {
         // given
-        User owner = saveCompletedUser(18L, "집계팀주인", "count-colog-owner");
+        User owner = saveCompletedUser(18L, "집계팀주인", "count_colog_owner");
         Blog rilog = saveRilog(owner);
-        Blog colog = saveColog(owner, "count-colog");
-        User member = saveCompletedUser(19L, "집계팀멤버", "count-colog-member");
-        User deletedMember = saveCompletedUser(20L, "삭제팀멤버", "deleted-colog-member");
+        Blog colog = saveColog(owner, "count_colog");
+        User member = saveCompletedUser(19L, "집계팀멤버", "count_colog_member");
+        User deletedMember = saveCompletedUser(20L, "삭제팀멤버", "deleted_colog_member");
 
         // 집계 대상
         saveActiveMember(colog, member);
@@ -498,9 +498,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그 게시글을 조회하면 공개 발행 게시글만 집계한다.")
     void readCologPostCountsOnlyPublicPublishedPosts() {
         // given
-        User owner = saveCompletedUser(21L, "게시글집계팀주인", "post-count-owner");
+        User owner = saveCompletedUser(21L, "게시글집계팀주인", "post_count_owner");
         Blog rilog = saveRilog(owner);
-        Blog colog = saveColog(owner, "post-count-colog");
+        Blog colog = saveColog(owner, "post_count_colog");
 
         // 집계 대상
         Post readTarget = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
@@ -525,7 +525,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("전체 게시글 수를 조회하면 공개 발행 게시글만 집계한다.")
     void readPostsCountCountsOnlyPublicPublishedPosts() {
         // given
-        User writer = saveCompletedUser(22L, "전체집계작성자", "total-count-writer");
+        User writer = saveCompletedUser(22L, "전체집계작성자", "total_count_writer");
         Blog rilog = saveRilog(writer);
 
         // 집계 대상
@@ -547,7 +547,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("게시글 작성자는 개인 블로그의 발행된 게시글을 삭제할 수 있다.")
     void writerDeletesPublishedRilogPost() {
         // given
-        User writer = saveCompletedUser(101L, "삭제작성자", "delete-rilog-writer");
+        User writer = saveCompletedUser(101L, "삭제작성자", "delete_rilog_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
@@ -563,9 +563,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그에서 탈퇴한 작성자는 자신의 발행된 게시글을 삭제할 수 없다.")
     void leftWriterCannotDeleteOwnPublishedCologPost() {
         // given
-        User owner = saveCompletedUser(102L, "삭제팀주인", "delete-colog-owner");
-        Blog colog = saveColog(owner, "delete-writer-colog");
-        User writer = saveCompletedUser(103L, "탈퇴작성자", "left-delete-writer");
+        User owner = saveCompletedUser(102L, "삭제팀주인", "delete_colog_owner");
+        Blog colog = saveColog(owner, "delete_writer_colog");
+        User writer = saveCompletedUser(103L, "탈퇴작성자", "left_delete_writer");
         Blog rilog = saveRilog(writer);
         saveLeftMember(colog, writer);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
@@ -582,9 +582,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그의 활성 멤버는 자신이 작성한 게시글을 삭제할 수 있다.")
     void activeCologMemberDeletesOwnPost() {
         // given
-        User owner = saveCompletedUser(122L, "자기글팀주인", "own-post-owner");
-        Blog colog = saveColog(owner, "own-post-colog");
-        User writer = saveCompletedUser(123L, "자기글작성자", "own-post-writer");
+        User owner = saveCompletedUser(122L, "자기글팀주인", "own_post_owner");
+        Blog colog = saveColog(owner, "own_post_colog");
+        User writer = saveCompletedUser(123L, "자기글작성자", "own_post_writer");
         Blog rilog = saveRilog(writer);
         saveActiveMember(colog, writer);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
@@ -601,9 +601,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그의 OWNER는 다른 작성자의 발행된 게시글을 삭제할 수 있다.")
     void cologOwnerDeletesAnotherWritersPublishedPost() {
         // given
-        User owner = saveCompletedUser(104L, "권한팀주인", "auth-owner");
-        Blog colog = saveColog(owner, "owner-delete-colog");
-        User writer = saveCompletedUser(105L, "팀글작성자", "owner-delete-writer");
+        User owner = saveCompletedUser(104L, "권한팀주인", "auth_owner");
+        Blog colog = saveColog(owner, "owner_delete_colog");
+        User writer = saveCompletedUser(105L, "팀글작성자", "owner_delete_writer");
         Blog rilog = saveRilog(writer);
         saveActiveMember(colog, writer);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
@@ -620,12 +620,12 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그의 ADMIN은 다른 작성자의 발행된 게시글을 삭제할 수 있다.")
     void cologAdminDeletesAnotherWritersPublishedPost() {
         // given
-        User owner = saveCompletedUser(106L, "관리팀주인", "admin-colog-owner");
-        Blog colog = saveColog(owner, "admin-delete-colog");
-        User writer = saveCompletedUser(107L, "관리팀작성자", "admin-delete-writer");
+        User owner = saveCompletedUser(106L, "관리팀주인", "admin_colog_owner");
+        Blog colog = saveColog(owner, "admin_delete_colog");
+        User writer = saveCompletedUser(107L, "관리팀작성자", "admin_delete_writer");
         Blog rilog = saveRilog(writer);
         saveActiveMember(colog, writer);
-        User admin = saveCompletedUser(108L, "관리자", "post-delete-admin");
+        User admin = saveCompletedUser(108L, "관리자", "post_delete_admin");
         saveActiveMember(colog, admin, ADMIN);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
@@ -641,12 +641,12 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그의 일반 멤버는 다른 작성자의 게시글을 삭제할 수 없다.")
     void cologMemberCannotDeleteAnotherWritersPost() {
         // given
-        User owner = saveCompletedUser(109L, "일반팀주인", "member-colog-owner");
-        Blog colog = saveColog(owner, "member-delete-colog");
-        User writer = saveCompletedUser(110L, "일반팀작성자", "member-delete-writer");
+        User owner = saveCompletedUser(109L, "일반팀주인", "member_colog_owner");
+        Blog colog = saveColog(owner, "member_delete_colog");
+        User writer = saveCompletedUser(110L, "일반팀작성자", "member_delete_writer");
         Blog rilog = saveRilog(writer);
         saveActiveMember(colog, writer);
-        User member = saveCompletedUser(111L, "일반멤버", "post-delete-member");
+        User member = saveCompletedUser(111L, "일반멤버", "post_delete_member");
         saveActiveMember(colog, member);
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
@@ -662,12 +662,12 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그에서 탈퇴한 ADMIN은 다른 작성자의 게시글을 삭제할 수 없다.")
     void leftCologAdminCannotDeleteAnotherWritersPost() {
         // given
-        User owner = saveCompletedUser(112L, "탈퇴팀주인", "left-owner");
-        Blog colog = saveColog(owner, "left-colog");
-        User writer = saveCompletedUser(113L, "탈퇴팀작성자", "left-writer");
+        User owner = saveCompletedUser(112L, "탈퇴팀주인", "left_owner");
+        Blog colog = saveColog(owner, "left_colog");
+        User writer = saveCompletedUser(113L, "탈퇴팀작성자", "left_writer");
         Blog rilog = saveRilog(writer);
         saveActiveMember(colog, writer);
-        User admin = saveCompletedUser(114L, "탈퇴관리자", "left-admin");
+        User admin = saveCompletedUser(114L, "탈퇴관리자", "left_admin");
         blogMemberRepository.saveAndFlush(BlogMemberFixture.leftAdmin(colog, admin));
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
@@ -683,12 +683,12 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("팀 블로그에 소속되지 않은 사용자는 다른 작성자의 게시글을 삭제할 수 없다.")
     void nonCologMemberCannotDeleteAnotherWritersPost() {
         // given
-        User owner = saveCompletedUser(115L, "비소속팀주인", "none-owner");
-        Blog colog = saveColog(owner, "none-colog");
-        User writer = saveCompletedUser(116L, "비소속팀작성자", "none-writer");
+        User owner = saveCompletedUser(115L, "비소속팀주인", "none_owner");
+        Blog colog = saveColog(owner, "none_colog");
+        User writer = saveCompletedUser(116L, "비소속팀작성자", "none_writer");
         Blog rilog = saveRilog(writer);
         saveActiveMember(colog, writer);
-        User requester = saveCompletedUser(117L, "비소속요청자", "none-requester");
+        User requester = saveCompletedUser(117L, "비소속요청자", "none_requester");
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when & then
@@ -703,9 +703,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("개인 블로그의 작성자가 아닌 사용자는 게시글을 삭제할 수 없다.")
     void nonWriterCannotDeleteRilogPost() {
         // given
-        User writer = saveCompletedUser(118L, "개인글작성자", "forbid-writer");
+        User writer = saveCompletedUser(118L, "개인글작성자", "forbid_writer");
         Blog rilog = saveRilog(writer);
-        User requester = saveCompletedUser(119L, "개인글요청자", "forbid-requester");
+        User requester = saveCompletedUser(119L, "개인글요청자", "forbid_requester");
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
@@ -720,7 +720,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("초안 게시글을 삭제하면 게시글을 찾을 수 없다는 예외가 발생한다.")
     void deleteDraftPostThrowsPostNotFound() {
         // given
-        User writer = saveCompletedUser(120L, "초안작성자", "draft-delete-writer");
+        User writer = saveCompletedUser(120L, "초안작성자", "draft_delete_writer");
         Blog rilog = saveRilog(writer);
         Post draft = savePost(PostFixture.publicDraftRilogPost(rilog, writer));
 
@@ -734,7 +734,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("이미 삭제된 게시글을 삭제하면 게시글을 찾을 수 없다는 예외가 발생한다.")
     void deleteDeletedPostThrowsPostNotFound() {
         // given
-        User writer = saveCompletedUser(121L, "기삭제작성자", "deleted-writer");
+        User writer = saveCompletedUser(121L, "기삭제작성자", "deleted_writer");
         Blog rilog = saveRilog(writer);
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
 
@@ -754,13 +754,13 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     private User saveCompletedUser(long githubId, String nickname, String slug) {
-        User user = UserFixture.user(githubId, "github-user-" + githubId);
+        User user = UserFixture.user(githubId, "github_user_" + githubId);
         user.completeOnboarding(
                 nickname,
                 slug,
                 "기록하는 개발자입니다.",
                 "https://example.com/users/" + githubId + ".png",
-                "https://github.com/github-user-" + githubId,
+                "https://github.com/github_user_" + githubId,
                 "user" + githubId + "@example.com"
         );
         return userRepository.saveAndFlush(user);

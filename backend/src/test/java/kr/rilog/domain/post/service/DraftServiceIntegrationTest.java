@@ -139,9 +139,9 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("임시저장 목록은 요청자가 작성한 미삭제 초안만 반환한다.")
     void readMyDraftListReturnsOnlyActiveDraftsWrittenByRequester() {
         // given
-        User requester = saveCompletedUser(201L, "초안작성자", "draft-writer");
+        User requester = saveCompletedUser(201L, "초안작성자", "draft_writer");
         Blog requesterRilog = saveRilog(requester);
-        User otherWriter = saveCompletedUser(202L, "다른작성자", "other-writer");
+        User otherWriter = saveCompletedUser(202L, "다른작성자", "other_writer");
         Blog otherRilog = saveRilog(otherWriter);
 
         Post expectedDraft = savePost(PostFixture.draftRilogPostAt(requesterRilog, requester, "조회할 초안", BASE_PUBLISHED_AT));
@@ -259,8 +259,8 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("다른 작성자의 초안을 상세 조회하면 작성 권한 예외가 발생한다.")
     void getMyDraftThrowsWhenRequesterIsNotWriter() {
         // given
-        User requester = saveCompletedUser(201L, "조회요청자", "draft-requester");
-        User writer = saveCompletedUser(202L, "초안작성자", "draft-writer");
+        User requester = saveCompletedUser(201L, "조회요청자", "draft_requester");
+        User writer = saveCompletedUser(202L, "초안작성자", "draft_writer");
         Blog writerRilog = saveRilog(writer);
         Post draft = savePost(PostFixture.draftRilogPostAt(
                 writerRilog,
@@ -348,9 +348,9 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("다른 작성자의 초안을 덮어쓰면 작성 권한 예외가 발생하고 기존 내용이 유지된다.")
     void overwriteDraftThrowsAndPreservesContentWhenRequesterIsNotWriter() {
         // given
-        User writer = saveCompletedUser(201L, "초안작성자", "overwrite-writer");
+        User writer = saveCompletedUser(201L, "초안작성자", "overwrite_writer");
         Blog rilog = saveRilog(writer);
-        User requester = saveCompletedUser(202L, "덮어쓰기요청자", "overwrite-requester");
+        User requester = saveCompletedUser(202L, "덮어쓰기요청자", "overwrite_requester");
         Post draft = savePost(PostFixture.draftRilogPostAt(
                 rilog,
                 writer,
@@ -439,7 +439,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("작성자가 초안을 개인 블로그에 발행하면 입력한 게시글 정보와 발행 상태가 저장되고 게시글 위치를 반환한다.")
     void publishDraftToRilogPersistsDetailAndPublishedState() {
         // given
-        User writer = saveCompletedUser(201L, "발행작성자", "publish-writer");
+        User writer = saveCompletedUser(201L, "발행작성자", "publish_writer");
         Blog rilog = saveRilog(writer);
         saveOwnerMembership(rilog, writer);
         Post draft = savePost(PostFixture.draftRilogPostAt(
@@ -475,10 +475,10 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("작성자가 초안을 팀 블로그에 발행하면 개인 블로그와 대상 팀 블로그 소속이 저장된다.")
     void publishDraftToCologPersistsRilogAndCologAffiliation() {
         // given
-        User writer = saveCompletedUser(201L, "팀글작성자", "colog-writer");
+        User writer = saveCompletedUser(201L, "팀글작성자", "colog_writer");
         Blog rilog = saveRilog(writer);
         Blog colog = blogRepository.saveAndFlush(
-                Blog.createColog(writer, "team-blog", BlogFixture.cologProfile())
+                Blog.createColog(writer, "team_blog", BlogFixture.cologProfile())
         );
         saveOwnerMembership(rilog, writer);
         saveOwnerMembership(colog, writer);
@@ -509,10 +509,10 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("다른 작성자의 초안을 발행하면 작성 권한 예외가 발생하고 초안 상태가 유지된다.")
     void publishDraftThrowsAndPreservesDraftWhenRequesterIsNotWriter() {
         // given
-        User writer = saveCompletedUser(201L, "초안작성자", "publish-owner");
+        User writer = saveCompletedUser(201L, "초안작성자", "publish_owner");
         Blog rilog = saveRilog(writer);
         saveOwnerMembership(rilog, writer);
-        User requester = saveCompletedUser(202L, "발행요청자", "publish-requester");
+        User requester = saveCompletedUser(202L, "발행요청자", "publish_requester");
         Post draft = savePost(PostFixture.draftRilogPostAt(
                 rilog,
                 writer,
@@ -540,12 +540,12 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("활성 팀 멤버가 아닌 작성자가 초안을 발행하면 예외가 발생하고 초안 상태가 유지된다.")
     void publishDraftThrowsAndPreservesDraftWhenTargetMembershipIsInactive() {
         // given
-        User writer = saveCompletedUser(201L, "탈퇴멤버", "left-member");
+        User writer = saveCompletedUser(201L, "탈퇴멤버", "left_member");
         Blog rilog = saveRilog(writer);
         saveOwnerMembership(rilog, writer);
-        User cologOwner = saveCompletedUser(202L, "팀소유자", "team-owner");
+        User cologOwner = saveCompletedUser(202L, "팀소유자", "team_owner");
         Blog colog = blogRepository.saveAndFlush(
-                Blog.createColog(cologOwner, "inactive-team", BlogFixture.cologProfile())
+                Blog.createColog(cologOwner, "inactive_team", BlogFixture.cologProfile())
         );
         blogMemberRepository.saveAndFlush(BlogMemberFixture.leftMember(colog, writer));
         Post draft = savePost(PostFixture.draftRilogPostAt(
@@ -592,9 +592,9 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     @DisplayName("다른 작성자의 초안을 삭제하면 작성 권한 예외가 발생하고 삭제되지 않는다.")
     void deleteDraftThrowsAndPreservesDraftWhenRequesterIsNotWriter() {
         // given
-        User writer = saveCompletedUser(201L, "초안작성자", "delete-writer");
+        User writer = saveCompletedUser(201L, "초안작성자", "delete_writer");
         Blog rilog = saveRilog(writer);
-        User requester = saveCompletedUser(202L, "삭제요청자", "delete-requester");
+        User requester = saveCompletedUser(202L, "삭제요청자", "delete_requester");
         Post draft = savePost(PostFixture.draftRilogPostAt(
                 rilog,
                 writer,
@@ -656,18 +656,18 @@ class DraftServiceIntegrationTest extends ServiceSupport {
 
     private User saveCompletedUser() {
         return userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("초안작성자", "draft-writer")
+                UserFixture.completedWithNicknameAndSlug("초안작성자", "draft_writer")
         );
     }
 
     private User saveCompletedUser(long githubId, String nickname, String slug) {
-        User user = UserFixture.user(githubId, "github-user-" + githubId);
+        User user = UserFixture.user(githubId, "github_user_" + githubId);
         user.completeOnboarding(
                 nickname,
                 slug,
                 "기록하는 개발자입니다.",
                 "https://example.com/users/" + githubId + ".png",
-                "https://github.com/github-user-" + githubId,
+                "https://github.com/github_user_" + githubId,
                 "user" + githubId + "@example.com"
         );
         return userRepository.saveAndFlush(user);

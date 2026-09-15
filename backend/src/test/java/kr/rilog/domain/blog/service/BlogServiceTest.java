@@ -76,7 +76,7 @@ class BlogServiceTest {
     @DisplayName("중복되지 않은 블로그 슬러그는 검증을 통과한다")
     void validateDuplicatedSlugPassesWhenBlogSlugDoesNotExist() {
         // given
-        Slug slug = Slug.from("ri_log-01");
+        Slug slug = Slug.from("ri_log_01");
         when(blogRepository.existsBySlug(slug)).thenReturn(false);
 
         // when - then
@@ -89,7 +89,7 @@ class BlogServiceTest {
     @DisplayName("중복된 블로그 슬러그이면 예외가 발생한다")
     void validateDuplicatedSlugThrowsWhenBlogSlugExists() {
         // given
-        Slug slug = Slug.from("ri_log-01");
+        Slug slug = Slug.from("ri_log_01");
         when(blogRepository.existsBySlug(slug)).thenReturn(true);
 
         // when - then
@@ -104,11 +104,11 @@ class BlogServiceTest {
     @DisplayName("블로그 슬러그 중복 검사는 대소문자를 소문자로 정규화해 확인한다")
     void validateDuplicatedSlugChecksNormalizedSlug() {
         // given
-        Slug normalizedSlug = Slug.from("ri_log-01");
+        Slug normalizedSlug = Slug.from("ri_log_01");
         when(blogRepository.existsBySlug(normalizedSlug)).thenReturn(true);
 
         // when - then
-        assertThatThrownBy(() -> blogService.validateDuplicatedSlug("Ri_Log-01"))
+        assertThatThrownBy(() -> blogService.validateDuplicatedSlug("Ri_Log_01"))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_SLUG_ALREADY_EXISTS);
@@ -288,10 +288,10 @@ class BlogServiceTest {
     @DisplayName("slug에 해당하는 블로그가 없으면 공개 프로필 조회를 거부한다")
     void getPublicProfileRejectsMissingColog() {
         // given
-        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("unknown-team"))).thenReturn(Optional.empty());
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from("unknown_team"))).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> blogService.getPublicProfile("unknown-team"))
+        assertThatThrownBy(() -> blogService.getPublicProfile("unknown_team"))
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);

@@ -15,10 +15,10 @@ public record CologCreateRequest(
         @Size(max = 20, message = "팀 이름은 20자 이하여야 합니다.")
         String name,
 
-        @Schema(description = "팀 블로그 slug (4~20자, 영문, 숫자, 하이픈(-), 언더스코어(_) 허용, 소문자로 저장)", example = "ri_log-team")
+        @Schema(description = "팀 블로그 slug (4~20자, 영문 1자 이상 포함, 영문, 숫자, 언더스코어(_) 허용, 소문자로 저장)", example = "ri_log_01")
         @NotBlank(message = "팀 slug는 필수입니다.")
         @Size(min = 4, max = 20, message = "팀 slug는 4자 이상 20자 이하이어야 합니다.")
-        @Pattern(regexp = "^[A-Za-z0-9_-]+$", message = "팀 slug는 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있습니다.")
+        @Pattern(regexp = Slug.REGEX, message = "팀 slug는 영문을 1자 이상 포함하고 영문, 숫자, 언더스코어(_)만 사용할 수 있습니다.")
         String slug,
 
         @Schema(description = "팀 소개", example = "함께 쓰는 기술 블로그")

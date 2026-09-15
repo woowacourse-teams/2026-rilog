@@ -12,7 +12,7 @@ describe('mapBlogIndexResponse', () => {
 				cologIndexes: [
 					{
 						cologId: 7,
-						slug: '@rilog-team',
+						slug: '@rilog_team',
 						name: '리로그 팀',
 						profileImageUrl: '   ',
 						authoredPostCount: 3,
@@ -22,7 +22,7 @@ describe('mapBlogIndexResponse', () => {
 		).toEqual({
 			totalCount: 8,
 			chapterIndexes: [{ id: 3, name: '회고', postCount: 5 }],
-			cologIndexes: [{ id: 7, slug: 'rilog-team', name: '리로그 팀', profileImageUrl: null, postCount: 3 }],
+			cologIndexes: [{ id: 7, slug: 'rilog_team', name: '리로그 팀', profileImageUrl: null, postCount: 3 }],
 		});
 	});
 

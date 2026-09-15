@@ -326,7 +326,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 				description={
 					<ul className="list-disc pl-5">
 						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
-						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
+						<li>영어와 숫자, 언더스코어(_)만 사용할 수 있고 영어를 1자 이상 포함해야 해요.</li>
 						<li>아이디는 한 번 설정하면 변경할 수 없습니다.</li>
 					</ul>
 				}

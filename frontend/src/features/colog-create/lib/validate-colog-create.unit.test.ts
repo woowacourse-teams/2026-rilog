@@ -13,7 +13,7 @@ import {
 
 const VALID_VALUE: CologCreateValue = {
 	name: '리로그',
-	slug: 'rilog-team',
+	slug: 'rilog_team',
 	description: '함께 기록하는 팀입니다.',
 	profileImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '',
@@ -29,7 +29,7 @@ describe('validateCologCreateValue', () => {
 			validateCologCreateValue({
 				...VALID_VALUE,
 				name: 'R',
-				slug: 'Rilog_team',
+				slug: 'Rilog-Team',
 				profileImageUrl: '',
 				serviceUrl: '',
 				githubUrl: '',
@@ -37,7 +37,7 @@ describe('validateCologCreateValue', () => {
 		).toEqual({
 			logoFile: '팀 로고를 등록해 주세요.',
 			name: '팀 이름은 2~20자로 입력해 주세요.',
-			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.',
+			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자, 언더스코어(_)만 사용할 수 있고 영문 소문자를 1자 이상 포함해야 해요.',
 		});
 	});
 
@@ -71,14 +71,14 @@ describe('normalizeCologCreateValue', () => {
 			normalizeCologCreateValue({
 				...VALID_VALUE,
 				name: '  리로그  ',
-				slug: '  rilog-team  ',
+				slug: '  rilog_team  ',
 				profileImageUrl: '  https://cdn.rilog.kr/logo.png  ',
 				serviceUrl: '  https://rilog.kr  ',
 				githubUrl: '  https://github.com/woowacourse-teams  ',
 			}),
 		).toMatchObject({
 			name: '리로그',
-			slug: 'rilog-team',
+			slug: 'rilog_team',
 			profileImageUrl: 'https://cdn.rilog.kr/logo.png',
 			serviceUrl: 'https://rilog.kr',
 			githubUrl: 'https://github.com/woowacourse-teams',
@@ -91,11 +91,14 @@ describe('validateCologSlug', () => {
 		expect(() => new RegExp(COLOG_SLUG_PATTERN.source, 'v')).not.toThrow();
 	});
 
-	it('앞뒤 공백과 대문자를 정규화하고 허용되지 않은 문자를 거부한다', () => {
-		expect(normalizeCologSlug('  Rilog-Team  ')).toBe('rilog-team');
-		expect(validateCologSlug('  Rilog-Team  ')).toBeUndefined();
-		expect(validateCologSlug('rilog_team')).toBe(
-			'고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.',
+	it('앞뒤 공백과 대문자를 정규화하고 slug 정책에 맞지 않은 값을 거부한다', () => {
+		expect(normalizeCologSlug('  Rilog__99  ')).toBe('rilog__99');
+		expect(validateCologSlug('  Rilog__99  ')).toBeUndefined();
+		expect(validateCologSlug('rilog-team')).toBe(
+			'고유 아이디는 4~20자의 영문 소문자, 숫자, 언더스코어(_)만 사용할 수 있고 영문 소문자를 1자 이상 포함해야 해요.',
+		);
+		expect(validateCologSlug('____99')).toBe(
+			'고유 아이디는 4~20자의 영문 소문자, 숫자, 언더스코어(_)만 사용할 수 있고 영문 소문자를 1자 이상 포함해야 해요.',
 		);
 	});
 });
