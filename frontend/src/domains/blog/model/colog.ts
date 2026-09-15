@@ -5,7 +5,7 @@ export const COLOG_NAME_MAX_LENGTH = 20;
 export const COLOG_SLUG_MIN_LENGTH = 4;
 export const COLOG_SLUG_MAX_LENGTH = 20;
 export const COLOG_DESCRIPTION_MAX_LENGTH = 80;
-export const COLOG_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const COLOG_SLUG_PATTERN = /^[a-z0-9_]+(?:-[a-z0-9_]+)*$/;
 
 export const normalizeCologName = (name: string): string => name.trim();
 

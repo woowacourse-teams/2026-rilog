@@ -26,12 +26,12 @@ describe('validateCologProfileSettings', () => {
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
 				name: 'R',
-				slug: 'Rilog_team',
+				slug: 'Rilog.team',
 				description: '가'.repeat(81),
 			}),
 		).toEqual({
 			name: '팀 이름은 2~20자로 입력해 주세요.',
-			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.',
+			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있어요.',
 			description: '팀 소개는 80자 이내로 입력해 주세요.',
 		});
 	});
@@ -44,6 +44,10 @@ describe('validateCologProfileSettings', () => {
 				coverImageUrl: '',
 			}),
 		).toEqual({});
+	});
+
+	it('언더스코어가 포함된 기존 팀 고유 아이디로 프로필을 저장할 수 있다', () => {
+		expect(validateCologProfileSettings({ ...VALID_SETTINGS, slug: 'rilog_team' })).toEqual({});
 	});
 
 	it('로고 URL과 새 파일이 모두 없으면 기본 이미지 사용으로 판단한다', () => {

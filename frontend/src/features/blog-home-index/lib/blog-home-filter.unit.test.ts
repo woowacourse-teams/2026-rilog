@@ -15,6 +15,7 @@ describe('parseBlogHomeFilter', () => {
 		[{ series: '3' }, 'RILOG', { type: 'chapterId', chapterId: 3 }],
 		[{ chapter: '3' }, 'COLOG', { type: 'chapterId', chapterId: 3 }],
 		[{ colog: 'rilog-team' }, 'RILOG', { type: 'targetCologSlug', targetCologSlug: 'rilog-team' }],
+		[{ colog: 'rilog_team' }, 'RILOG', { type: 'targetCologSlug', targetCologSlug: 'rilog_team' }],
 		[{}, 'RILOG', { type: 'all' }],
 		[{ notice: 'keep' }, 'RILOG', { type: 'all' }],
 	] as const)('%s query %o에서 상호배타 필터를 파싱한다', (searchParams, blogType, expected) => {

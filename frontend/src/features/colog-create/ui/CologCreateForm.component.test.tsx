@@ -271,7 +271,7 @@ describe('CologCreateForm', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('유효하지 않은 팀 고유 아이디는 중복 확인 API를 호출하지 않고 오류를 안내한다', async () => {
+	it('언더스코어가 포함된 팀 고유 아이디도 중복 확인할 수 있다', async () => {
 		const user = userEvent.setup();
 		renderWithClient(<CologCreateForm />);
 
@@ -279,12 +279,9 @@ describe('CologCreateForm', () => {
 		await user.type(slug, 'rilog_team');
 		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
 
-		expect(checkSlugAvailability).not.toHaveBeenCalled();
-		expect(slug).toBeInvalid();
-		expect(slug).toHaveAccessibleDescription(
-			/고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈\(-\)만 사용할 수 있어요\./,
-		);
-		expect(slug).toHaveFocus();
+		await waitFor(() => expect(checkSlugAvailability).toHaveBeenCalledWith({ slug: 'rilog_team' }));
+		expect(slug).toBeValid();
+		expect(slug).toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
 	});
 
 	it('중복된 팀 고유 아이디 오류를 입력 상태와 메시지로 표시한다', async () => {
@@ -359,7 +356,7 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('minlength', '2');
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('maxlength', '20');
 		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		expect(slugInput).toHaveAttribute('pattern', '^[a-z0-9]+(?:-[a-z0-9]+)*$');
+		expect(slugInput).toHaveAttribute('pattern', '^[a-z0-9_]+(?:-[a-z0-9_]+)*$');
 		expect(slugInput).toHaveAccessibleDescription(
 			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
 		);
