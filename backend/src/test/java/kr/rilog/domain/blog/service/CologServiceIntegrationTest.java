@@ -12,11 +12,13 @@ import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.PostFixture;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_MEMBER_COUNT_EXCEEDED;
@@ -258,6 +261,52 @@ class CologServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("Colog 멤버 목록은 영문과 한글 nickname을 오름차순으로 반환한다.")
+    void getCologMembersReturnsMembersSortedByKoreanAndEnglishNickname() {
+        // given
+        User owner = userRepository.save(createCompletedUser(100L, "라마바", "owner-rilog"));
+        User alphaMember = userRepository.save(createCompletedUser(200L, "alpha", "alpha-rilog"));
+        User bravoMember = userRepository.save(createCompletedUser(300L, "bravo", "bravo-rilog"));
+        User koreanMember = userRepository.save(createCompletedUser(400L, "가나다", "korean-rilog"));
+        Blog colog = blogRepository.save(createColog(owner));
+
+        blogMemberRepository.save(BlogMember.createOwner(
+                colog,
+                owner,
+                LocalDateTime.of(2026, 9, 15, 12, 0)
+        ));
+        blogMemberRepository.save(BlogMember.invite(
+                colog,
+                alphaMember,
+                "Frontend",
+                BlogPermission.MEMBER,
+                LocalDateTime.of(2026, 9, 15, 13, 0)
+        ));
+        blogMemberRepository.saveAndFlush(BlogMember.invite(
+                colog,
+                bravoMember,
+                "Backend",
+                BlogPermission.MEMBER,
+                LocalDateTime.of(2026, 9, 15, 14, 0)
+        ));
+        blogMemberRepository.saveAndFlush(BlogMember.invite(
+                colog,
+                koreanMember,
+                "Design",
+                BlogPermission.MEMBER,
+                LocalDateTime.of(2026, 9, 15, 15, 0)
+        ));
+
+        // when
+        List<BlogMemberResult> results = cologService.getCologMembers(COLOG_SLUG);
+
+        // then
+        assertThat(results)
+                .extracting(BlogMemberResult::nickname)
+                .containsExactly("alpha", "bravo", "가나다", "라마바");
+    }
+
+    @Test
     @DisplayName("OWNER가 팀 블로그를 삭제하면 팀과 팀 게시글, 팀 멤버가 삭제 처리된다.")
     void deleteCologPersistsCologPostAndMemberDeletion() {
         // given
@@ -320,6 +369,14 @@ class CologServiceIntegrationTest extends ServiceSupport {
     private User createUser(Long githubId, String slug) {
         return User.builder()
                 .githubId(githubId)
+                .slug(Slug.from(slug))
+                .build();
+    }
+
+    private User createCompletedUser(Long githubId, String nickname, String slug) {
+        return User.builder()
+                .githubId(githubId)
+                .nickname(Nickname.from(nickname))
                 .slug(Slug.from(slug))
                 .build();
     }
