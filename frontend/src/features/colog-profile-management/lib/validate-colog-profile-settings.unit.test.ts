@@ -10,7 +10,7 @@ import {
 
 const VALID_SETTINGS: CologProfileSettingsValue = {
 	name: '리로그',
-	slug: 'rilog-team',
+	slug: 'rilog_team',
 	description: '함께 기록하는 팀입니다.',
 	profileImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '',
@@ -31,7 +31,7 @@ describe('validateCologProfileSettings', () => {
 			}),
 		).toEqual({
 			name: '팀 이름은 2~20자로 입력해 주세요.',
-			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있어요.',
+			slug: '고유 아이디는 4~20자의 영어 소문자와 숫자, 언더스코어(_)만 사용할 수 있어요.',
 			description: '팀 소개는 80자 이내로 입력해 주세요.',
 		});
 	});
@@ -48,6 +48,17 @@ describe('validateCologProfileSettings', () => {
 
 	it('언더스코어가 포함된 기존 팀 고유 아이디로 프로필을 저장할 수 있다', () => {
 		expect(validateCologProfileSettings({ ...VALID_SETTINGS, slug: 'rilog_team' })).toEqual({});
+	});
+
+	it('하이픈이 있거나 영문이 없는 팀 고유 아이디를 거부한다', () => {
+		expect(validateCologProfileSettings({ ...VALID_SETTINGS, slug: 'rilog-team' })).toHaveProperty(
+			'slug',
+			'고유 아이디는 4~20자의 영어 소문자와 숫자, 언더스코어(_)만 사용할 수 있어요.',
+		);
+		expect(validateCologProfileSettings({ ...VALID_SETTINGS, slug: '1234_' })).toHaveProperty(
+			'slug',
+			'고유 아이디에 영어를 1자 이상 포함해 주세요.',
+		);
 	});
 
 	it('로고 URL과 새 파일이 모두 없으면 기본 이미지 사용으로 판단한다', () => {
@@ -90,7 +101,7 @@ describe('validateCologProfileSettings', () => {
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
 				name: '  리로그  ',
-				slug: '  rilog-team  ',
+				slug: '  rilog_team  ',
 				serviceUrl: '  https://rilog.kr  ',
 				githubUrl: '  https://github.com/woowacourse-teams  ',
 			}),
