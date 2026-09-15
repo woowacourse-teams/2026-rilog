@@ -264,10 +264,10 @@ class CologServiceIntegrationTest extends ServiceSupport {
     @DisplayName("Colog 멤버 목록은 영문과 한글 nickname을 오름차순으로 반환한다.")
     void getCologMembersReturnsMembersSortedByKoreanAndEnglishNickname() {
         // given
-        User owner = userRepository.save(createCompletedUser(100L, "라마바", "owner-rilog"));
-        User alphaMember = userRepository.save(createCompletedUser(200L, "alpha", "alpha-rilog"));
-        User bravoMember = userRepository.save(createCompletedUser(300L, "bravo", "bravo-rilog"));
-        User koreanMember = userRepository.save(createCompletedUser(400L, "가나다", "korean-rilog"));
+        User owner = userRepository.save(createCompletedUser(100L, "라마바", "owner_rilog"));
+        User alphaMember = userRepository.save(createCompletedUser(200L, "alpha", "alpha_rilog"));
+        User bravoMember = userRepository.save(createCompletedUser(300L, "bravo", "bravo_rilog"));
+        User koreanMember = userRepository.save(createCompletedUser(400L, "가나다", "korean_rilog"));
         Blog colog = blogRepository.save(createColog(owner));
 
         blogMemberRepository.save(BlogMember.createOwner(
