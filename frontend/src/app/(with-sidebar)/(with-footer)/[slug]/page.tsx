@@ -5,8 +5,7 @@ import type { Metadata } from 'next';
 
 import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-public-profile';
-import { hasBlogSlugPrefix } from '@/shared/routes/app-routes';
-import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
+import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route-slug';
 import BlogHome from '@/widgets/blog-home/ui/BlogHome';
 
 import { createBlogMetadata } from './metadata';
@@ -17,27 +16,28 @@ interface BlogHomePageProps {
 }
 
 export async function generateMetadata({ params }: BlogHomePageProps): Promise<Metadata> {
-	const { slug } = await params;
-	if (!hasBlogSlugPrefix(slug)) notFound();
-	const profileData = await getBlogPublicProfile(stripAtPrefix(slug));
+	const { slug: routeSlug } = await params;
+	const slug = parseBlogRouteSlug(routeSlug);
+	if (slug === null) notFound();
+	const profileData = await getBlogPublicProfile(slug);
 	if (profileData === null) notFound();
 
 	return createBlogMetadata(profileData.profile);
 }
 
 export default async function BlogHomePage({ params, searchParams }: BlogHomePageProps) {
-	const [{ slug }, resolvedSearchParams] = await Promise.all([params, searchParams]);
-	if (!hasBlogSlugPrefix(slug)) {
+	const [{ slug: routeSlug }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+	const slug = parseBlogRouteSlug(routeSlug);
+	if (slug === null) {
 		notFound();
 	}
 
-	const normalizedSlug = stripAtPrefix(slug);
-	const profileData = await getBlogPublicProfile(normalizedSlug);
+	const profileData = await getBlogPublicProfile(slug);
 	if (profileData === null) notFound();
 
 	const queryClient = new QueryClient();
 	const initialState = await prefetchBlogHomeInitialState(queryClient, {
-		slug: normalizedSlug,
+		slug,
 		searchParams: resolvedSearchParams,
 		profileResponse: profileData.response,
 	});

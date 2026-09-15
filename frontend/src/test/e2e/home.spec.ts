@@ -249,6 +249,15 @@ test('@가 없는 코로그 경로는 찾을 수 없다', async ({ request }) =>
 	expect(settingsResponse.status()).toBe(404);
 });
 
+test('유효하지 않은 블로그 slug 경로는 찾을 수 없다', async ({ request }) => {
+	const headers = { Cookie: `${PROXY_SESSION_COOKIE_NAME}=${PROXY_SESSION_COOKIE_VALUE}` };
+
+	for (const path of ['/@abc', '/@invalid.slug', `/@${'a'.repeat(21)}`]) {
+		const response = await request.get(path, { headers });
+		expect(response.status()).toBe(404);
+	}
+});
+
 test('새 피드 진입은 최상단에서 시작한다', async ({ page }) => {
 	await page.goto('/feeds');
 	await expect(postFeedHeader(page)).toBeVisible();

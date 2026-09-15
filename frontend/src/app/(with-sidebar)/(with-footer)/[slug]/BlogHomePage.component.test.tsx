@@ -6,7 +6,7 @@ import type { BlogHomeInitialState } from '@/features/blog-home-index/server/pre
 import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-public-profile';
 
-import BlogHomePage from './page';
+import BlogHomePage, { generateMetadata } from './page';
 
 const { notFoundMock } = vi.hoisted(() => ({
 	notFoundMock: vi.fn((): never => {
@@ -102,5 +102,33 @@ describe('BlogHomePage', () => {
 		expect(prefetchBlogHomeInitialState).not.toHaveBeenCalled();
 		expect(getBlogPublicProfile).not.toHaveBeenCalled();
 		expect(notFoundMock).toHaveBeenCalledOnce();
+	});
+
+	it.each(['@abc', '@invalid.slug', `@${'a'.repeat(21)}`])(
+		'유효하지 않은 slug 경로 %s는 프로필을 조회하지 않고 not-found 처리한다',
+		async (slug) => {
+			await expect(
+				BlogHomePage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve({}) }),
+			).rejects.toThrow('NEXT_NOT_FOUND');
+
+			expect(getBlogPublicProfile).not.toHaveBeenCalled();
+			expect(prefetchBlogHomeInitialState).not.toHaveBeenCalled();
+			expect(notFoundMock).toHaveBeenCalledOnce();
+		},
+	);
+
+	it('메타데이터 생성도 유효하지 않은 slug를 조회하지 않고 not-found 처리한다', async () => {
+		await expect(
+			generateMetadata({ params: Promise.resolve({ slug: '@invalid.slug' }), searchParams: Promise.resolve({}) }),
+		).rejects.toThrow('NEXT_NOT_FOUND');
+
+		expect(getBlogPublicProfile).not.toHaveBeenCalled();
+		expect(notFoundMock).toHaveBeenCalledOnce();
+	});
+
+	it('언더스코어가 포함된 slug는 유효한 블로그 경로로 조회한다', async () => {
+		await renderPage('@rilog_user');
+
+		expect(getBlogPublicProfile).toHaveBeenCalledWith('rilog_user');
 	});
 });
