@@ -10,7 +10,7 @@ import {
 
 const VALID_SETTINGS: CologProfileSettingsValue = {
 	name: '리로그',
-	slug: 'rilog_team',
+	slug: 'rilog-team',
 	description: '함께 기록하는 팀입니다.',
 	profileImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '',
@@ -26,24 +26,13 @@ describe('validateCologProfileSettings', () => {
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
 				name: 'R',
-				slug: 'Rilog-Team',
+				slug: 'Rilog_team',
 				description: '가'.repeat(81),
 			}),
 		).toEqual({
 			name: '팀 이름은 2~20자로 입력해 주세요.',
-			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자, 언더스코어(_)만 사용할 수 있고 영문 소문자를 1자 이상 포함해야 해요.',
+			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈(-)만 사용할 수 있어요.',
 			description: '팀 소개는 80자 이내로 입력해 주세요.',
-		});
-	});
-
-	it('고유 아이디는 영문 소문자를 1자 이상 포함해야 한다', () => {
-		expect(
-			validateCologProfileSettings({
-				...VALID_SETTINGS,
-				slug: '____99',
-			}),
-		).toEqual({
-			slug: '고유 아이디는 4~20자의 영문 소문자, 숫자, 언더스코어(_)만 사용할 수 있고 영문 소문자를 1자 이상 포함해야 해요.',
 		});
 	});
 
@@ -97,7 +86,7 @@ describe('validateCologProfileSettings', () => {
 			validateCologProfileSettings({
 				...VALID_SETTINGS,
 				name: '  리로그  ',
-				slug: '  rilog_team  ',
+				slug: '  rilog-team  ',
 				serviceUrl: '  https://rilog.kr  ',
 				githubUrl: '  https://github.com/woowacourse-teams  ',
 			}),

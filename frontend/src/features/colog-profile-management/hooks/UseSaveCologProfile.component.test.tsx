@@ -53,7 +53,7 @@ describe('useSaveCologProfile', () => {
 		const coverImageFile = new File(['cover'], 'cover.png', { type: 'image/png' });
 		const value: CologProfileSettingsValue = {
 			name: '리로그 팀',
-			slug: 'rilog_team',
+			slug: 'rilog-team',
 			description: '함께 기록하는 팀',
 			profileImageUrl: 'old-logo.png',
 			coverImageUrl: 'old-cover.png',
@@ -64,12 +64,12 @@ describe('useSaveCologProfile', () => {
 		};
 
 		const { result } = renderHook(() => useSaveCologProfile(), { wrapper: createWrapper() });
-		const savedValue = await result.current.mutateAsync({ slug: '@rilog_team', value });
+		const savedValue = await result.current.mutateAsync({ slug: '@rilog-team', value });
 
 		expect(uploadFile).toHaveBeenCalledWith({ file: logoFile, type: 'IMAGE' });
 		expect(uploadFile).toHaveBeenCalledWith({ file: coverImageFile, type: 'IMAGE' });
 		expect(updateBlogProfileMock).toHaveBeenCalledWith({
-			slug: '@rilog_team',
+			slug: '@rilog-team',
 			request: {
 				name: '리로그 팀',
 				profileImageUrl: 'rilog/uploads/images/logo.png',

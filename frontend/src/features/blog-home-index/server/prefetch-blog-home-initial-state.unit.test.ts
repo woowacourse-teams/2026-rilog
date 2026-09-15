@@ -36,7 +36,7 @@ const INDEX_RESPONSE = {
 	cologIndexes: [
 		{
 			cologId: 7,
-			slug: 'rilog_team',
+			slug: 'rilog-team',
 			name: '리로그 팀',
 			profileImageUrl: null,
 			authoredPostCount: 3,
@@ -68,7 +68,7 @@ describe('prefetchBlogHomeInitialState', () => {
 	it('프로필·인덱스·필터 게시글을 같은 query cache에 준비한다', async () => {
 		const result = await prefetchBlogHomeInitialState(createQueryClient(), {
 			slug: 'jetproc',
-			searchParams: { colog: 'rilog_team' },
+			searchParams: { colog: 'rilog-team' },
 		});
 
 		expect(readBlogPublicProfileMock).toHaveBeenCalledWith({ slug: 'jetproc' });
@@ -77,12 +77,12 @@ describe('prefetchBlogHomeInitialState', () => {
 			slug: 'jetproc',
 			page: 0,
 			size: 12,
-			filter: { type: 'targetCologSlug', targetCologSlug: 'rilog_team' },
+			filter: { type: 'targetCologSlug', targetCologSlug: 'rilog-team' },
 		});
 		expect(result).toMatchObject({
 			status: 'ready',
 			profile: { type: 'RILOG', slug: 'jetproc' },
-			filter: { type: 'targetCologSlug', targetCologSlug: 'rilog_team' },
+			filter: { type: 'targetCologSlug', targetCologSlug: 'rilog-team' },
 			isInitialIndexRequestFailed: false,
 			isInitialPostsRequestFailed: false,
 		});
@@ -130,7 +130,7 @@ describe('prefetchBlogHomeInitialState', () => {
 		},
 	);
 
-	it.each([{ chapterId: '3' }, { targetCologSlug: 'rilog_team' }, { series: ['3', '4'] }, { series: '0' }])(
+	it.each([{ chapterId: '3' }, { targetCologSlug: 'rilog-team' }, { series: ['3', '4'] }, { series: '0' }])(
 		'잘못된 필터 query %o는 not-found로 결정한다',
 		async (searchParams) => {
 			const result = await prefetchBlogHomeInitialState(createQueryClient(), {

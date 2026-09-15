@@ -54,7 +54,7 @@ const fillRequiredFields = async (
 
 	await user.upload(screen.getByLabelText('팀 로고 변경'), logoFile);
 	await user.type(screen.getByRole('textbox', { name: '팀 이름' }), '  리로그  ');
-	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog_team  ');
+	await user.type(screen.getByRole('textbox', { name: '팀 고유 아이디' }), '  rilog-team  ');
 	await user.type(screen.getByRole('textbox', { name: '팀 소개' }), '함께 성장하는 개발 팀입니다');
 	if (shouldCheckAvailability) {
 		await user.click(screen.getByRole('button', { name: '팀 이름 중복 확인' }));
@@ -175,11 +175,11 @@ describe('CologCreateForm', () => {
 		renderWithClient(<CologCreateForm />);
 
 		const slug = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		await user.type(slug, '  Rilog_Team  ');
+		await user.type(slug, '  Rilog-Team  ');
 		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
 
-		await waitFor(() => expect(checkSlugAvailability).toHaveBeenCalledWith({ slug: 'rilog_team' }));
-		expect(slug).toHaveValue('rilog_team');
+		await waitFor(() => expect(checkSlugAvailability).toHaveBeenCalledWith({ slug: 'rilog-team' }));
+		expect(slug).toHaveValue('rilog-team');
 		expect(slug).toHaveAccessibleDescription(/사용가능한 슬러그입니다\./);
 
 		await user.type(slug, '2');
@@ -276,13 +276,13 @@ describe('CologCreateForm', () => {
 		renderWithClient(<CologCreateForm />);
 
 		const slug = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		await user.type(slug, 'rilog-team');
+		await user.type(slug, 'rilog_team');
 		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
 
 		expect(checkSlugAvailability).not.toHaveBeenCalled();
 		expect(slug).toBeInvalid();
 		expect(slug).toHaveAccessibleDescription(
-			/고유 아이디는 4~20자의 영문 소문자, 숫자, 언더스코어\(_\)만 사용할 수 있고 영문 소문자를 1자 이상 포함해야 해요\./,
+			/고유 아이디는 4~20자의 영문 소문자, 숫자와 하이픈\(-\)만 사용할 수 있어요\./,
 		);
 		expect(slug).toHaveFocus();
 	});
@@ -304,7 +304,7 @@ describe('CologCreateForm', () => {
 		renderWithClient(<CologCreateForm />);
 
 		const slug = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		await user.type(slug, 'rilog_team');
+		await user.type(slug, 'rilog-team');
 		await user.click(screen.getByRole('button', { name: '팀 고유 아이디 중복 확인' }));
 
 		await waitFor(() => expect(slug).toBeInvalid());
@@ -359,9 +359,9 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('minlength', '2');
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toHaveAttribute('maxlength', '20');
 		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
-		expect(slugInput).toHaveAttribute('pattern', '^(?=.*[a-z])[a-z0-9_]+$');
+		expect(slugInput).toHaveAttribute('pattern', '^[a-z0-9]+(?:-[a-z0-9]+)*$');
 		expect(slugInput).toHaveAccessibleDescription(
-			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 언더스코어(_)만 사용할 수 있고 영어를 1자 이상 포함해야 해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
+			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
 		);
 	});
 
@@ -387,7 +387,7 @@ describe('CologCreateForm', () => {
 		vi.mocked(createColog).mockResolvedValue({
 			status: 201,
 			message: '',
-			data: { id: 1, name: '리로그', slug: 'rilog_team' },
+			data: { id: 1, name: '리로그', slug: 'rilog-team' },
 		});
 		vi.mocked(uploadFileWithPresignedUrl).mockResolvedValue({
 			uploadId: 'upload-1',
@@ -401,11 +401,11 @@ describe('CologCreateForm', () => {
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog_team'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team'));
 		expect(createColog).toHaveBeenCalledWith(
 			expect.objectContaining({
 				name: '리로그',
-				slug: 'rilog_team',
+				slug: 'rilog-team',
 				introduction: '함께 성장하는 개발 팀입니다',
 				serviceUrl: undefined,
 				githubUrl: undefined,
@@ -438,7 +438,7 @@ describe('CologCreateForm', () => {
 		});
 		vi.mocked(createColog)
 			.mockReturnValueOnce(firstAttempt)
-			.mockResolvedValueOnce({ status: 201, message: '', data: { id: 1, name: '리로그', slug: 'rilog_team' } });
+			.mockResolvedValueOnce({ status: 201, message: '', data: { id: 1, name: '리로그', slug: 'rilog-team' } });
 		const { unmount } = renderWithClient(<CologCreateForm navigate={navigate} />);
 		await fillRequiredFields(user);
 
@@ -459,7 +459,7 @@ describe('CologCreateForm', () => {
 
 		await user.click(screen.getByRole('button', { name: '팀 만들기' }));
 
-		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog_team'));
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/@rilog-team'));
 		expect(createColog).toHaveBeenCalledTimes(2);
 		expect(cologCreationStartedMock).toHaveBeenCalledTimes(2);
 

@@ -107,9 +107,9 @@ describe('SignUpForm', () => {
 		expect(screen.getByRole('textbox', { name: '닉네임' })).toBeInTheDocument();
 		const slugInput = screen.getByRole('textbox', { name: '고유 아이디' });
 		expect(slugInput).toBeInTheDocument();
-		expect(slugInput).toHaveAttribute('pattern', '(?=.*[A-Za-z])[A-Za-z0-9_]+');
+		expect(slugInput).toHaveAttribute('pattern', '[A-Za-z0-9_\\-]+');
 		expect(slugInput).toHaveAccessibleDescription(
-			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 언더스코어(_)만 사용할 수 있고 영어를 1자 이상 포함해야 해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
+			'아이디는 4~20자 사이로 입력 가능해요. 영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요. 아이디는 한 번 설정하면 변경할 수 없습니다.',
 		);
 		expect(screen.getByRole('button', { name: '닉네임 중복 확인' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '고유 아이디 중복 확인' })).toBeInTheDocument();
@@ -250,13 +250,13 @@ describe('SignUpForm', () => {
 		expect(nickname).toHaveAccessibleDescription(/닉네임은 2~20자로 입력해 주세요\./);
 		expect(nickname).toHaveFocus();
 
-		await user.type(slug, 'ri-log');
+		await user.type(slug, 'ri.log');
 		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
 
 		expect(checkSlugAvailability).not.toHaveBeenCalled();
 		expect(slug).toBeInvalid();
 		expect(slug).toHaveAccessibleDescription(
-			/고유 아이디는 4~20자의 영문, 숫자, 언더스코어\(_\)만 사용할 수 있고 영문을 1자 이상 포함해야 해요\./,
+			/고유 아이디는 4~20자의 영문, 숫자, 하이픈\(-\), 언더스코어\(_\)만 사용할 수 있어요\./,
 		);
 		expect(slug).toHaveFocus();
 	});
@@ -378,13 +378,13 @@ describe('SignUpForm', () => {
 
 	it('유효한 온보딩 정보를 제출하고 replace 옵션으로 이동한다', async () => {
 		const user = userEvent.setup();
-		const completeSignUp = vi.fn().mockResolvedValue({ slug: 'ri_log_01' });
+		const completeSignUp = vi.fn().mockResolvedValue({ slug: 'ri_log-01' });
 		const navigate = vi.fn();
 		startSignUpFlow();
 		renderSignUpForm({ completeSignUp, navigate });
 
 		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
-		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log_01');
+		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log-01');
 		await user.type(screen.getByRole('textbox', { name: '한 줄 소개' }), ' 함께 기록해요 ');
 		await user.type(screen.getByRole('textbox', { name: '서비스 링크' }), ' https://rilog.kr ');
 		await user.type(screen.getByRole('textbox', { name: 'GitHub 링크' }), ' https://github.com/rilog ');
@@ -396,7 +396,7 @@ describe('SignUpForm', () => {
 		await waitFor(() => {
 			expect(completeSignUp).toHaveBeenCalledWith({
 				nickname: '리로그',
-				slug: 'Ri_log_01',
+				slug: 'Ri_log-01',
 				description: '함께 기록해요',
 				serviceUrl: 'https://rilog.kr',
 				githubUrl: 'https://github.com/rilog',

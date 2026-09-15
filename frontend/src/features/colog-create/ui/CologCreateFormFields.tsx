@@ -242,7 +242,7 @@ export default function CologCreateFormFields({
 				description={
 					<ul className="list-disc pl-5">
 						<li>아이디는 4~20자 사이로 입력 가능해요.</li>
-						<li>영어와 숫자, 언더스코어(_)만 사용할 수 있고 영어를 1자 이상 포함해야 해요.</li>
+						<li>영어와 숫자, 허용된 특수기호(-/_)만 사용 가능해요.</li>
 						<li>아이디는 한 번 설정하면 변경할 수 없습니다.</li>
 					</ul>
 				}
@@ -260,7 +260,7 @@ export default function CologCreateFormFields({
 							minLength={COLOG_SLUG_MIN_LENGTH}
 							maxLength={COLOG_SLUG_MAX_LENGTH}
 							pattern={COLOG_SLUG_PATTERN.source}
-							placeholder="예: rilog_fe"
+							placeholder="예: rilog-fe"
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
 									rilog.kr/@

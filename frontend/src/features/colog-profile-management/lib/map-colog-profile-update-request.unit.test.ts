@@ -6,7 +6,7 @@ import { mapCologProfileUpdateRequest } from './map-colog-profile-update-request
 
 const PROFILE_VALUE: CologProfileSettingsValue = {
 	name: '리로그 팀',
-	slug: 'rilog_team',
+	slug: 'rilog-team',
 	description: '함께 기록하는 팀',
 	profileImageUrl: 'existing-logo.png',
 	coverImageUrl: 'existing-cover.png',

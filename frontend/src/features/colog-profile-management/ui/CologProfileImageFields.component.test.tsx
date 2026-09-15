@@ -10,7 +10,7 @@ import CologProfileImageFields from './CologProfileImageFields';
 
 const DEFAULT_VALUE: CologProfileSettingsValue = {
 	name: '리로그',
-	slug: 'rilog_team',
+	slug: 'rilog-team',
 	description: '',
 	profileImageUrl: '',
 	coverImageUrl: '',
