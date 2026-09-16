@@ -1,10 +1,11 @@
 import ky from 'ky';
 
-import type { AuthTokenType } from './types';
+import type { AuthLogoutReason, AuthTokenType } from './types';
 
 import { logNonProductionError } from '@/shared/utils/non-production-console';
 
 type AuthListener = () => void | Promise<void>;
+type LogoutListener = (reason: AuthLogoutReason) => void | Promise<void>;
 
 class TokenManager {
 	private accessToken: string | null = null;
@@ -12,7 +13,7 @@ class TokenManager {
 	private refreshPromise: Promise<string | null> | null = null;
 	private loginListeners = new Set<AuthListener>();
 	private onboardingListeners = new Set<AuthListener>();
-	private logoutListeners = new Set<AuthListener>();
+	private logoutListeners = new Set<LogoutListener>();
 
 	constructor() {
 		if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_DEV_MASTER_TOKEN) {
@@ -69,7 +70,7 @@ class TokenManager {
 		}
 
 		// 재발급 실패 시 토큰을 비우고 로그아웃 이벤트를 발행하여 앱 전체를 로그아웃 상태로 전환
-		await this.publishLogout();
+		await this.publishLogout('refresh-failed');
 		return null;
 	}
 
@@ -97,19 +98,19 @@ class TokenManager {
 		await this.notifyListeners(this.onboardingListeners);
 	}
 
-	subscribeLogout(listener: AuthListener) {
+	subscribeLogout(listener: LogoutListener) {
 		this.logoutListeners.add(listener);
 		return () => {
 			this.logoutListeners.delete(listener);
 		};
 	}
 
-	async publishLogout(): Promise<void> {
+	async publishLogout(reason: AuthLogoutReason = 'explicit'): Promise<void> {
 		this.accessToken = null;
-		await this.notifyListeners(this.logoutListeners);
+		await this.notifyListeners(Array.from(this.logoutListeners, (listener) => () => listener(reason)));
 	}
 
-	private async notifyListeners(listeners: Set<AuthListener>): Promise<void> {
+	private async notifyListeners(listeners: Iterable<AuthListener>): Promise<void> {
 		const results = await Promise.allSettled(
 			Array.from(listeners, (listener) => Promise.resolve().then(() => listener())),
 		);

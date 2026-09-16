@@ -32,8 +32,8 @@ export default function AnalyticsIdentitySubscriber() {
 
 	useEffect(
 		() =>
-			tokenManager.subscribeLogout(() => {
-				resetAnalyticsIdentity();
+			tokenManager.subscribeLogout((reason) => {
+				resetAnalyticsIdentity({ onlyIfIdentified: reason === 'refresh-failed' });
 				identifiedUserIdRef.current = undefined;
 			}),
 		[],

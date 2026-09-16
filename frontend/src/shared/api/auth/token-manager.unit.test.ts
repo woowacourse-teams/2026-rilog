@@ -1,10 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import ky from 'ky';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { tokenManager } from './token-manager';
 
 describe('tokenManager', () => {
+	afterEach(() => vi.restoreAllMocks());
 	beforeEach(async () => {
 		await tokenManager.publishLogout();
+	});
+
+	it('초기 복구 실패와 명시적 로그아웃을 구분하면서 두 경우 모두 세션을 정리한다', async () => {
+		vi.spyOn(ky, 'post').mockResolvedValue(new Response(null, { status: 401 }));
+		const listener = vi.fn();
+		const unsubscribe = tokenManager.subscribeLogout(listener);
+		try {
+			await expect(tokenManager.refresh()).resolves.toBeNull();
+			expect(listener).toHaveBeenLastCalledWith('refresh-failed');
+			await tokenManager.publishLogin('access-token');
+			await tokenManager.publishLogout();
+			expect(listener).toHaveBeenLastCalledWith('explicit');
+			expect(tokenManager.getToken()).toBeNull();
+		} finally {
+			unsubscribe();
+		}
 	});
 
 	it('setToken은 token만 교체하고 login 이벤트를 발행하지 않는다', () => {

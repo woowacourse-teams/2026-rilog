@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { captureMock, identifyMock, initMock, resetMock } = vi.hoisted(() => ({
+const { captureMock, identifyMock, initMock, resetMock, getPropertyMock } = vi.hoisted(() => ({
+	getPropertyMock: vi.fn(),
 	captureMock: vi.fn(),
 	identifyMock: vi.fn(),
 	initMock: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock('posthog-js', () => ({
 		identify: identifyMock,
 		init: initMock,
 		reset: resetMock,
+		get_property: getPropertyMock,
 	},
 }));
 
@@ -21,7 +23,18 @@ describe('PostHog analytics', () => {
 		vi.restoreAllMocks();
 		vi.resetModules();
 		vi.clearAllMocks();
+		getPropertyMock.mockReset();
 		vi.unstubAllEnvs();
+	});
+
+	it.each([undefined, '42'])('세션 복구 실패 시 저장된 사용자 ID(%s)가 있을 때만 초기화한다', async (userId) => {
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'test-token');
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
+		getPropertyMock.mockReturnValue(userId);
+		const { resetAnalyticsIdentity } = await import('./posthog');
+		resetAnalyticsIdentity({ onlyIfIdentified: true });
+		expect(resetMock).toHaveBeenCalledTimes(userId === undefined ? 0 : 1);
+		expect(getPropertyMock).toHaveBeenCalledWith('$user_id');
 	});
 
 	it('설정이 없으면 초기화와 이벤트 전송을 건너뛴다', async () => {

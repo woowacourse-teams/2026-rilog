@@ -241,10 +241,16 @@ export const identifyAnalyticsUser = (userId: string, properties: { slug: string
 /**
  * 로그아웃 또는 계정 전환 시 이전 Person과의 연결을 해제
  */
-export const resetAnalyticsIdentity = () => {
+export const resetAnalyticsIdentity = ({ onlyIfIdentified = false }: { onlyIfIdentified?: boolean } = {}) => {
 	if (!isAnalyticsConfigured()) {
 		return;
 	}
 
-	runPostHogOperation('reset', () => posthog.reset());
+	runPostHogOperation('reset', () => {
+		// SDK에 보존된 사용자 ID를 확인해 OAuth 복귀·새로고침 뒤에도 익명 방문을 유지한다.
+		if (onlyIfIdentified && !posthog.get_property('$user_id')) {
+			return;
+		}
+		posthog.reset();
+	});
 };
