@@ -12,24 +12,26 @@ interface AuthProviderProps {
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+	const [sessionStatus, setSessionStatus] = useState<'anonymous' | 'onboarding' | 'authenticated'>('anonymous');
 	const [isInitialized, setIsInitialized] = useState(false);
 
 	useEffect(() => {
 		let isActive = true;
-		const unsubscribeLogin = tokenManager.subscribeLogin(async () => {
+		const registerSession = async (status: 'onboarding' | 'authenticated') => {
 			try {
 				await registerProxySession();
 			} finally {
 				if (isActive) {
-					setIsAuthenticated(true);
+					setSessionStatus(status);
 				}
 			}
-		});
+		};
+		const unsubscribeLogin = tokenManager.subscribeLogin(() => registerSession('authenticated'));
+		const unsubscribeOnboarding = tokenManager.subscribeOnboarding(() => registerSession('onboarding'));
 
 		const unsubscribeLogout = tokenManager.subscribeLogout(async () => {
 			if (isActive) {
-				setIsAuthenticated(false);
+				setSessionStatus('anonymous');
 			}
 
 			await clearProxySession();
@@ -44,7 +46,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 			}
 
 			if (token) {
-				await tokenManager.publishLogin(token);
+				if (tokenManager.getTokenType() === 'onboarding') {
+					await tokenManager.publishOnboarding(token);
+				} else {
+					await tokenManager.publishLogin(token);
+				}
 			}
 
 			if (isActive) {
@@ -57,12 +63,19 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 		return () => {
 			isActive = false;
 			unsubscribeLogin();
+			unsubscribeOnboarding();
 			unsubscribeLogout();
 		};
 	}, []);
 
 	return (
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized }}>
+		<AUTH_CONTEXT.Provider
+			value={{
+				isAuthenticated: sessionStatus === 'authenticated',
+				isOnboarding: sessionStatus === 'onboarding',
+				isInitialized,
+			}}
+		>
 			{/* 초기화 완료 전에 UI를 가리거나 그대로 둘 수 있습니다. 여기서는 기존처럼 그대로 렌더링합니다. */}
 			{children}
 		</AUTH_CONTEXT.Provider>

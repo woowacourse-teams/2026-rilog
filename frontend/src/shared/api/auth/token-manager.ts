@@ -1,13 +1,17 @@
 import ky from 'ky';
 
+import type { AuthTokenType } from './types';
+
 import { logNonProductionError } from '@/shared/utils/non-production-console';
 
 type AuthListener = () => void | Promise<void>;
 
 class TokenManager {
 	private accessToken: string | null = null;
+	private tokenType: AuthTokenType = 'access';
 	private refreshPromise: Promise<string | null> | null = null;
 	private loginListeners = new Set<AuthListener>();
+	private onboardingListeners = new Set<AuthListener>();
 	private logoutListeners = new Set<AuthListener>();
 
 	constructor() {
@@ -20,8 +24,13 @@ class TokenManager {
 		return this.accessToken;
 	}
 
-	setToken(token: string) {
+	getTokenType(): AuthTokenType | null {
+		return this.accessToken === null ? null : this.tokenType;
+	}
+
+	setToken(token: string, tokenType: AuthTokenType = 'access') {
 		this.accessToken = token;
+		this.tokenType = tokenType;
 	}
 
 	async refresh(): Promise<string | null> {
@@ -74,6 +83,18 @@ class TokenManager {
 	async publishLogin(token: string): Promise<void> {
 		this.setToken(token);
 		await this.notifyListeners(this.loginListeners);
+	}
+
+	subscribeOnboarding(listener: AuthListener) {
+		this.onboardingListeners.add(listener);
+		return () => {
+			this.onboardingListeners.delete(listener);
+		};
+	}
+
+	async publishOnboarding(token: string): Promise<void> {
+		this.setToken(token, 'onboarding');
+		await this.notifyListeners(this.onboardingListeners);
 	}
 
 	subscribeLogout(listener: AuthListener) {

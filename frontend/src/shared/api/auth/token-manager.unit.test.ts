@@ -31,6 +31,33 @@ describe('tokenManager', () => {
 		unsubscribe();
 	});
 
+	it('온보딩은 토큰 종류를 보존하고 정식 로그인 이벤트를 발행하지 않는다', async () => {
+		const loginListener = vi.fn();
+		const onboardingListener = vi.fn(async () => {
+			await Promise.resolve();
+			expect(tokenManager.getToken()).toBe('onboarding-token');
+			expect(tokenManager.getTokenType()).toBe('onboarding');
+		});
+		const unsubscribeLogin = tokenManager.subscribeLogin(loginListener);
+		const unsubscribeOnboarding = tokenManager.subscribeOnboarding(onboardingListener);
+
+		try {
+			await tokenManager.publishOnboarding('onboarding-token');
+			expect(onboardingListener).toHaveBeenCalledOnce();
+			expect(loginListener).not.toHaveBeenCalled();
+
+			await tokenManager.publishLogin('access-token');
+			expect(tokenManager.getTokenType()).toBe('access');
+			expect(loginListener).toHaveBeenCalledOnce();
+
+			await tokenManager.publishLogout();
+			expect(tokenManager.getTokenType()).toBeNull();
+		} finally {
+			unsubscribeLogin();
+			unsubscribeOnboarding();
+		}
+	});
+
 	it('publishLogout은 token을 먼저 제거하고 비동기 logout listener 완료를 기다린다', async () => {
 		tokenManager.setToken('access-token');
 		const listener = vi.fn(async () => {

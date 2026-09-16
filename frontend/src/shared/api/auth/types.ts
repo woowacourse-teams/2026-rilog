@@ -1,3 +1,5 @@
+export type AuthTokenType = 'access' | 'onboarding';
+
 export interface GitHubCallbackParams {
 	code?: string;
 	state?: string;
