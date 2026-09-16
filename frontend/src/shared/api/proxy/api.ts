@@ -9,6 +9,15 @@ const requestProxySessionUpdate = async (method: 'POST' | 'DELETE') => {
 	}
 };
 
-export const registerProxySession = () => requestProxySessionUpdate('POST');
+let pendingSessionUpdate: Promise<void> = Promise.resolve();
 
-export const clearProxySession = () => requestProxySessionUpdate('DELETE');
+// 쿠키는 응답 시 브라우저에 반영되므로 요청 자체를 직렬화한다.
+const enqueueProxySessionUpdate = (method: 'POST' | 'DELETE') => {
+	const update = pendingSessionUpdate.then(() => requestProxySessionUpdate(method));
+	pendingSessionUpdate = update.catch(() => undefined);
+	return update;
+};
+
+export const registerProxySession = () => enqueueProxySessionUpdate('POST');
+
+export const clearProxySession = () => enqueueProxySessionUpdate('DELETE');

@@ -37,6 +37,7 @@ vi.mock('@/shared/api/auth/token-manager', () => ({
 	tokenManager: {
 		getToken: getTokenMock,
 		getTokenType: () => 'access',
+		getSessionVersion: () => 0,
 		publishLogin: publishLoginMock,
 		refresh: refreshMock,
 		subscribeLogin: subscribeLoginMock,

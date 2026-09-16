@@ -18,11 +18,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 	useEffect(() => {
 		let isActive = true;
 		const registerSession = async (status: 'onboarding' | 'authenticated') => {
+			const sessionVersion = tokenManager.getSessionVersion();
 			try {
 				await registerProxySession();
 			} finally {
-				if (isActive) {
+				if (isActive && sessionVersion === tokenManager.getSessionVersion()) {
 					setSessionStatus(status);
+					setIsInitialized(true);
 				}
 			}
 		};
@@ -32,12 +34,14 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 		const unsubscribeLogout = tokenManager.subscribeLogout(async () => {
 			if (isActive) {
 				setSessionStatus('anonymous');
+				setIsInitialized(true);
 			}
 
 			await clearProxySession();
 		});
 
 		const initializeAuth = async () => {
+			const sessionVersion = tokenManager.getSessionVersion();
 			let token = tokenManager.getToken();
 
 			// 메모리에 토큰이 없다면 (ex: 새로고침 직후) 재발급 시도
@@ -45,7 +49,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 				token = await tokenManager.refresh();
 			}
 
-			if (token) {
+			if (token && isActive && sessionVersion === tokenManager.getSessionVersion()) {
 				if (tokenManager.getTokenType() === 'onboarding') {
 					await tokenManager.publishOnboarding(token);
 				} else {

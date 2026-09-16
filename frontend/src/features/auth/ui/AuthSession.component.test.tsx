@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
+import ky from 'ky';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuth } from '@/features/auth/model/use-auth';
@@ -55,6 +56,52 @@ describe('인증 세션과 내 정보 조회', () => {
 	});
 
 	afterEach(() => vi.restoreAllMocks());
+
+	it.each(['login', 'onboarding'] as const)(
+		'초기 refresh보다 %s 완료가 빠르면 새 세션으로 초기화한다',
+		async (transition) => {
+			const response = Promise.withResolvers<Response>();
+			vi.spyOn(ky, 'post').mockReturnValue(response.promise as ReturnType<typeof ky.post>);
+			renderSession();
+			await act(async () => {
+				if (transition === 'login') await tokenManager.publishLogin('access-token');
+				else await tokenManager.publishOnboarding('onboarding-token');
+			});
+			const expectedStatus = transition === 'login' ? 'true:true:false' : 'true:false:true';
+			try {
+				expect(screen.getByText(expectedStatus)).toBeInTheDocument();
+			} finally {
+				await act(async () => {
+					response.resolve(new Response(null, { status: 401 }));
+					await response.promise;
+				});
+			}
+			expect(screen.getByText(expectedStatus)).toBeInTheDocument();
+			expect(registerProxySessionMock).toHaveBeenCalledOnce();
+		},
+	);
+
+	it('로그아웃 이후 이전 proxy 등록이 완료되어도 인증 상태를 되돌리지 않는다', async () => {
+		vi.spyOn(tokenManager, 'refresh').mockResolvedValue(null);
+		renderSession();
+		await screen.findByText('true:false:false');
+		const registration = Promise.withResolvers<void>();
+		registerProxySessionMock.mockReturnValueOnce(registration.promise);
+		let login: Promise<void>;
+		act(() => {
+			login = tokenManager.publishLogin('access-token');
+		});
+		await waitFor(() => expect(registerProxySessionMock).toHaveBeenCalledOnce());
+		await act(async () => {
+			await tokenManager.publishLogout();
+		});
+		await act(async () => {
+			registration.resolve();
+			await login;
+		});
+		expect(screen.getByText('true:false:false')).toBeInTheDocument();
+		expect(readMyInfoMock).not.toHaveBeenCalled();
+	});
 
 	it('온보딩 토큰으로 재마운트해도 가입 접근을 유지하고 정식 로그인 전에는 내 정보를 조회하지 않는다', async () => {
 		await tokenManager.publishOnboarding('onboarding-token');

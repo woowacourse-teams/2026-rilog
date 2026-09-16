@@ -56,6 +56,9 @@ describe('인증 복구와 분석 identity 연결', () => {
 		});
 		expect(identity.distinctId).toBe('anonymous-before-oauth');
 		expect(sdk.reset).not.toHaveBeenCalled();
+		await act(async () => {
+			await tokenManager.publishLogin('access-token');
+		});
 		useMyInfoQueryMock.mockReturnValue({ data: { data: { id: 42, slug: 'rilog', nickname: '리로그' } } });
 		callbackVisit.rerender(<AnalyticsIdentitySubscriber />);
 		expect(sdk.identify).toHaveBeenCalledWith('42', { slug: 'rilog', nickname: '리로그' });

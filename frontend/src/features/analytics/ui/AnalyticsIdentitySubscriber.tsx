@@ -12,7 +12,7 @@ export default function AnalyticsIdentitySubscriber() {
 
 	useEffect(() => {
 		const user = response?.data;
-		if (user === undefined) {
+		if (user === undefined || tokenManager.getTokenType() !== 'access') {
 			return;
 		}
 

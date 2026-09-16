@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AnalyticsIdentitySubscriber from './AnalyticsIdentitySubscriber';
 
-const { identifyMock, resetMock, useMyInfoQueryMock } = vi.hoisted(() => ({
+const { identifyMock, resetMock, useMyInfoQueryMock, getTokenTypeMock } = vi.hoisted(() => ({
+	getTokenTypeMock: vi.fn(),
 	identifyMock: vi.fn(),
 	resetMock: vi.fn(),
 	useMyInfoQueryMock: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock('@/shared/analytics/posthog', () => ({
 
 vi.mock('@/shared/api/auth/token-manager', () => ({
 	tokenManager: {
+		getTokenType: getTokenTypeMock,
 		subscribeLogout: (listener: () => void) => {
 			logoutListener = listener;
 			return vi.fn();
@@ -33,6 +35,7 @@ describe('AnalyticsIdentitySubscriber', () => {
 	beforeEach(() => {
 		logoutListener = undefined;
 		vi.clearAllMocks();
+		getTokenTypeMock.mockReturnValue('access');
 		useMyInfoQueryMock.mockReturnValue({
 			data: { status: 200, message: 'OK', data: { id: 1, slug: 'rilog', nickname: '리로그' } },
 		});
@@ -65,5 +68,15 @@ describe('AnalyticsIdentitySubscriber', () => {
 
 		expect(() => render(<AnalyticsIdentitySubscriber />)).not.toThrow();
 		expect(identifyMock).not.toHaveBeenCalled();
+	});
+
+	it('로그아웃 후 이전 내 정보가 렌더되어도 다시 식별하지 않는다', () => {
+		const { rerender } = render(<AnalyticsIdentitySubscriber />);
+		getTokenTypeMock.mockReturnValue(null);
+		logoutListener?.();
+		useMyInfoQueryMock.mockReturnValue({ data: { data: { id: 1, slug: 'rilog', nickname: '리로그' } } });
+		rerender(<AnalyticsIdentitySubscriber />);
+		expect(identifyMock).toHaveBeenCalledOnce();
+		expect(resetMock).toHaveBeenCalledOnce();
 	});
 });
