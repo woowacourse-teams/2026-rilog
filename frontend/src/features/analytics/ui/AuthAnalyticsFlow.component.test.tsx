@@ -7,10 +7,12 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type { CaptureResult } from 'posthog-js';
 
 import { analytics } from '@/features/analytics/model/events';
+import AuthenticatedQueryCacheSubscriber from '@/features/auth/ui/AuthenticatedQueryCacheSubscriber';
 import AuthProvider from '@/features/auth/ui/AuthProvider';
 import GitHubCallbackHandler from '@/features/login/ui/GitHubCallbackHandler';
 import SignUpForm from '@/features/sign-up/ui/SignUpForm';
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import AnalyticsIdentitySubscriber from './AnalyticsIdentitySubscriber';
@@ -79,6 +81,82 @@ describe('실제 PostHog SDK를 통한 로그인 전후 identity 연결', () => 
 	afterEach(() => {
 		vi.restoreAllMocks();
 		vi.unstubAllEnvs();
+	});
+
+	it.each(['42', 'other-user'])(
+		'SDK에 남은 계정(%s)으로 재방문하면 실제 로그인 계정을 기준으로 식별한다',
+		async (previousUserId) => {
+			posthog.identify(previousUserId);
+			const reset = vi.spyOn(posthog, 'reset');
+			await tokenManager.publishLogin('access-token');
+			renderWithQuery(
+				<AuthProvider>
+					<AuthenticatedQueryCacheSubscriber />
+					<AnalyticsIdentitySubscriber />
+				</AuthProvider>,
+			);
+			await waitFor(() => expect(posthog.get_distinct_id()).toBe('42'));
+			await waitFor(() => expect(readMyInfoMock).toHaveBeenCalledOnce());
+			expect(reset).toHaveBeenCalledTimes(previousUserId === '42' ? 0 : 1);
+		},
+	);
+
+	it('로그아웃 없이 새 로그인해도 이전 캐시 대신 새 사용자를 조회하고 식별한다', async () => {
+		await tokenManager.publishLogin('access-token');
+		const view = renderWithQuery(
+			<AuthProvider>
+				<AuthenticatedQueryCacheSubscriber />
+				<AnalyticsIdentitySubscriber />
+			</AuthProvider>,
+		);
+		await waitFor(() => expect(posthog.get_distinct_id()).toBe('42'));
+		const nextUser = Promise.withResolvers<unknown>();
+		readMyInfoMock.mockImplementationOnce((signal: AbortSignal) => {
+			expect(signal.aborted).toBe(false);
+			return nextUser.promise;
+		});
+		await act(async () => {
+			await tokenManager.publishLogin('next-access-token');
+		});
+		expect(view.queryClient.getQueryData(usersQueryKeys.myInfo())).toBeUndefined();
+		act(() => {
+			nextUser.resolve({ status: 200, data: { id: 43, slug: 'next', nickname: '다음 사용자' } });
+		});
+		await waitFor(() => expect(posthog.get_distinct_id()).toBe('43'));
+		expect(readMyInfoMock).toHaveBeenCalledTimes(2);
+		await act(async () => {
+			await tokenManager.publishLogout();
+		});
+		const anonymousId = posthog.get_distinct_id();
+		expect(anonymousId).not.toBe('43');
+		expect(view.queryClient.getQueryData(usersQueryKeys.myInfo())).toBeUndefined();
+		await act(async () => {
+			await tokenManager.publishLogin('access-token');
+		});
+		await waitFor(() => expect(posthog.get_distinct_id()).toBe('42'));
+		expect(events.filter((event) => event.event === '$identify').at(-1)?.properties.$anon_distinct_id).toBe(
+			anonymousId,
+		);
+	});
+
+	it('내 정보 조회 실패가 로그인을 취소하지 않고 재조회 성공 후 익명 행동을 연결한다', async () => {
+		await tokenManager.publishLogin('access-token');
+		const anonymousId = posthog.get_distinct_id();
+		readMyInfoMock.mockRejectedValueOnce(new Error('temporary failure'));
+		const view = renderWithQuery(
+			<AuthProvider>
+				<AuthenticatedQueryCacheSubscriber />
+				<AnalyticsIdentitySubscriber />
+			</AuthProvider>,
+		);
+		await waitFor(() => expect(view.queryClient.getQueryState(usersQueryKeys.myInfo())?.status).toBe('error'));
+		expect(tokenManager.getToken()).toBe('access-token');
+		expect(posthog.get_distinct_id()).toBe(anonymousId);
+		await act(async () => {
+			await view.queryClient.refetchQueries({ queryKey: usersQueryKeys.myInfo() });
+		});
+		await waitFor(() => expect(posthog.get_distinct_id()).toBe('42'));
+		expect(events.find((event) => event.event === '$identify')?.properties.$anon_distinct_id).toBe(anonymousId);
 	});
 
 	it.each(['PENDING', 'COMPLETED'] as const)(

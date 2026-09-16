@@ -20,6 +20,26 @@ afterEach(() => {
 });
 
 describe('AuthenticatedQueryCacheSubscriber', () => {
+	it('새 로그인에서 이전 인증 캐시만 초기화하고 공개 캐시는 유지한다', async () => {
+		const queryClient = new QueryClient();
+		const key = myInfoQueryOptions().queryKey;
+		queryClient.setQueryData(key, {
+			status: 200,
+			message: 'OK',
+			data: { id: 1, slug: 'old-user', nickname: '이전 사용자', profileImageUrl: null },
+		});
+		queryClient.setQueryData(['posts'], ['public-post']);
+		render(
+			<QueryClientProvider client={queryClient}>
+				<AuthenticatedQueryCacheSubscriber />
+			</QueryClientProvider>,
+		);
+		await act(async () => {
+			await tokenManager.publishLogin('new-access-token');
+		});
+		expect(queryClient.getQueryData(key)).toBeUndefined();
+		expect(queryClient.getQueryData(['posts'])).toEqual(['public-post']);
+	});
 	it('로그아웃은 진행 중인 내 정보 HTTP 요청을 취소하고 늦은 응답도 캐시에 남기지 않는다', async () => {
 		await tokenManager.publishLogin('access-token');
 		const response = Promise.withResolvers<Response>();
