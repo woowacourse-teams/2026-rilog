@@ -159,19 +159,17 @@ const warnPostHogFailure = (operation: PostHogOperation) => {
 
 const runPostHogOperation = (operation: PostHogOperation, callback: () => void, disableOnFailure = false) => {
 	if (isAnalyticsDisabled) {
-		return false;
+		return;
 	}
 
 	try {
 		callback();
-		return true;
 	} catch {
 		if (disableOnFailure) {
 			isAnalyticsDisabled = true;
 		}
 
 		warnPostHogFailure(operation);
-		return false;
 	}
 };
 
@@ -231,34 +229,22 @@ export const captureAnalyticsEvent = (eventName: string, properties?: Record<str
 /**
  * 이후 이벤트를 특정 사용자 Person에 연결
  * distinctId와 Person 속성 결정은 호출자가 맡음
- * 반환값은 SDK 호출 성공 여부이며 서버 수집 성공을 의미하지 않음
  */
 export const identifyAnalyticsUser = (userId: string, properties: { slug: string; nickname: string }) => {
 	if (!isAnalyticsConfigured()) {
-		return false;
+		return;
 	}
 
-	return runPostHogOperation('identify', () => {
-		// React 재마운트와 무관하게 SDK에 보존된 계정을 기준으로 분리한다.
-		const previousUserId: unknown = posthog.get_property('$user_id');
-		if (previousUserId && previousUserId !== userId) posthog.reset();
-		posthog.identify(userId, properties);
-	});
+	runPostHogOperation('identify', () => posthog.identify(userId, properties));
 };
 
 /**
  * 로그아웃 또는 계정 전환 시 이전 Person과의 연결을 해제
  */
-export const resetAnalyticsIdentity = ({ onlyIfIdentified = false }: { onlyIfIdentified?: boolean } = {}) => {
+export const resetAnalyticsIdentity = () => {
 	if (!isAnalyticsConfigured()) {
 		return;
 	}
 
-	runPostHogOperation('reset', () => {
-		// SDK에 보존된 사용자 ID를 확인해 OAuth 복귀·새로고침 뒤에도 익명 방문을 유지한다.
-		if (onlyIfIdentified && !posthog.get_property('$user_id')) {
-			return;
-		}
-		posthog.reset();
-	});
+	runPostHogOperation('reset', () => posthog.reset());
 };

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { captureMock, identifyMock, initMock, resetMock, getPropertyMock } = vi.hoisted(() => ({
-	getPropertyMock: vi.fn(),
+const { captureMock, identifyMock, initMock, resetMock } = vi.hoisted(() => ({
 	captureMock: vi.fn(),
 	identifyMock: vi.fn(),
 	initMock: vi.fn(),
@@ -14,54 +13,15 @@ vi.mock('posthog-js', () => ({
 		identify: identifyMock,
 		init: initMock,
 		reset: resetMock,
-		get_property: getPropertyMock,
 	},
 }));
 
 describe('PostHog analytics', () => {
-	it.each([undefined, '42', 'previous-user'])(
-		'저장된 계정(%s)과 새 계정이 다를 때만 식별 전에 초기화한다',
-		async (previousUserId) => {
-			vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'test-token');
-			vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
-			getPropertyMock.mockReturnValue(previousUserId);
-			const { identifyAnalyticsUser } = await import('./posthog');
-			expect(identifyAnalyticsUser('42', { slug: 'rilog', nickname: '리로그' })).toBe(true);
-			expect(resetMock).toHaveBeenCalledTimes(previousUserId === 'previous-user' ? 1 : 0);
-			if (previousUserId === 'previous-user') {
-				expect(resetMock.mock.invocationCallOrder[0]).toBeLessThan(identifyMock.mock.invocationCallOrder[0]);
-			}
-		},
-	);
-
-	it('계정 분리 실패 시 새 계정을 식별하지 않고 다음 시도에서 복구한다', async () => {
-		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'test-token');
-		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
-		getPropertyMock.mockReturnValue('old-user');
-		resetMock.mockImplementationOnce(() => {
-			throw new Error('reset failed');
-		});
-		const { identifyAnalyticsUser } = await import('./posthog');
-		expect(identifyAnalyticsUser('42', { slug: 'rilog', nickname: '리로그' })).toBe(false);
-		expect(identifyMock).not.toHaveBeenCalled();
-		expect(identifyAnalyticsUser('42', { slug: 'rilog', nickname: '리로그' })).toBe(true);
-	});
 	beforeEach(() => {
 		vi.restoreAllMocks();
 		vi.resetModules();
 		vi.clearAllMocks();
-		getPropertyMock.mockReset();
 		vi.unstubAllEnvs();
-	});
-
-	it.each([undefined, '42'])('세션 복구 실패 시 저장된 사용자 ID(%s)가 있을 때만 초기화한다', async (userId) => {
-		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'test-token');
-		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
-		getPropertyMock.mockReturnValue(userId);
-		const { resetAnalyticsIdentity } = await import('./posthog');
-		resetAnalyticsIdentity({ onlyIfIdentified: true });
-		expect(resetMock).toHaveBeenCalledTimes(userId === undefined ? 0 : 1);
-		expect(getPropertyMock).toHaveBeenCalledWith('$user_id');
 	});
 
 	it('설정이 없으면 초기화와 이벤트 전송을 건너뛴다', async () => {

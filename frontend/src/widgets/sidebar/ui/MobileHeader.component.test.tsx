@@ -32,7 +32,7 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 
 function renderHeader(isAuthenticated = false) {
 	return render(
-		<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated, isInitialized: true }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized: true }}>
 			<LoginModalProvider>
 				<MobileHeader />
 			</LoginModalProvider>

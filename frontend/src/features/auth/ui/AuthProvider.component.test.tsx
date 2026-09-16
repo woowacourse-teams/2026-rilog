@@ -36,12 +36,9 @@ vi.mock('@/shared/api/proxy/api', () => ({
 vi.mock('@/shared/api/auth/token-manager', () => ({
 	tokenManager: {
 		getToken: getTokenMock,
-		getTokenType: () => 'access',
-		getSessionVersion: () => 0,
 		publishLogin: publishLoginMock,
 		refresh: refreshMock,
 		subscribeLogin: subscribeLoginMock,
-		subscribeOnboarding: () => vi.fn(),
 		subscribeLogout: subscribeLogoutMock,
 	},
 }));

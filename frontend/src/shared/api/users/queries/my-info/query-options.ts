@@ -6,6 +6,6 @@ import { usersQueryKeys } from '../keys';
 export const myInfoQueryOptions = () =>
 	queryOptions({
 		queryKey: usersQueryKeys.myInfo(),
-		queryFn: ({ signal }) => readMyInfo(signal),
+		queryFn: readMyInfo,
 		staleTime: Infinity,
 	});

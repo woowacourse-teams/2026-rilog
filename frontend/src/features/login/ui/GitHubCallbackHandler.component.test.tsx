@@ -9,7 +9,6 @@ const {
 	clearSignUpFlowMock,
 	handleGitHubCallbackMock,
 	publishLoginMock,
-	publishOnboardingMock,
 	replaceMock,
 	startSignUpFlowMock,
 } = vi.hoisted(() => ({
@@ -18,7 +17,6 @@ const {
 	clearSignUpFlowMock: vi.fn(),
 	handleGitHubCallbackMock: vi.fn(),
 	publishLoginMock: vi.fn(),
-	publishOnboardingMock: vi.fn(),
 	replaceMock: vi.fn(),
 	startSignUpFlowMock: vi.fn(),
 }));
@@ -45,7 +43,7 @@ vi.mock('@/shared/api/auth/api', () => ({
 }));
 
 vi.mock('@/shared/api/auth/token-manager', () => ({
-	tokenManager: { publishLogin: publishLoginMock, publishOnboarding: publishOnboardingMock },
+	tokenManager: { publishLogin: publishLoginMock },
 }));
 
 describe('GitHubCallbackHandler', () => {
@@ -55,40 +53,28 @@ describe('GitHubCallbackHandler', () => {
 		githubLoginFailedMock.mockReset();
 		handleGitHubCallbackMock.mockReset();
 		publishLoginMock.mockReset().mockResolvedValue(undefined);
-		publishOnboardingMock.mockReset().mockResolvedValue(undefined);
 		replaceMock.mockReset();
 		startSignUpFlowMock.mockReset();
 		localStorage.clear();
 	});
 
-	it('온보딩 세션 등록을 기다린 뒤 회원가입 흐름을 시작하고 이동한다', async () => {
-		let finishOnboarding: (() => void) | undefined;
-		publishOnboardingMock.mockImplementation(
-			() =>
-				new Promise<void>((resolve) => {
-					finishOnboarding = resolve;
-				}),
-		);
+	it('로그인 처리를 마친 뒤 회원가입 흐름을 시작하고 온보딩 페이지로 이동한다', async () => {
 		handleGitHubCallbackMock.mockResolvedValue({
 			data: {
 				status: 200,
 				message: 'success',
 				data: { onboardingStatus: 'PENDING', redirectUrl: '/sign-up' },
 			},
-			accessToken: 'onboarding-token',
+			accessToken: 'access-token',
 		});
 
 		render(<GitHubCallbackHandler />);
 
-		await waitFor(() => expect(publishOnboardingMock).toHaveBeenCalledWith('onboarding-token'));
-		expect(replaceMock).not.toHaveBeenCalled();
-		expect(startSignUpFlowMock).not.toHaveBeenCalled();
-		finishOnboarding?.();
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/sign-up'));
-		expect(publishLoginMock).not.toHaveBeenCalled();
+		expect(publishLoginMock).toHaveBeenCalledWith('access-token');
 		expect(startSignUpFlowMock).toHaveBeenCalledOnce();
 		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'new' });
-		expect(publishOnboardingMock.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(publishLoginMock.mock.invocationCallOrder[0]).toBeLessThan(
 			startSignUpFlowMock.mock.invocationCallOrder[0] ?? 0,
 		);
 	});
@@ -106,8 +92,6 @@ describe('GitHubCallbackHandler', () => {
 		render(<GitHubCallbackHandler />);
 
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/'));
-		expect(publishLoginMock).toHaveBeenCalledWith('access-token');
-		expect(publishOnboardingMock).not.toHaveBeenCalled();
 		expect(clearSignUpFlowMock).toHaveBeenCalledOnce();
 		expect(startSignUpFlowMock).not.toHaveBeenCalled();
 		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'returning' });

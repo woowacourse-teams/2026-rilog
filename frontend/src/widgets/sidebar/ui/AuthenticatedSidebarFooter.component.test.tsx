@@ -55,7 +55,7 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 
 function renderFooter() {
 	return renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: true, isInitialized: true }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true }}>
 			<AuthenticatedSidebarFooter />
 		</AUTH_CONTEXT.Provider>,
 	);

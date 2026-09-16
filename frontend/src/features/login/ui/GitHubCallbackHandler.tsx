@@ -39,11 +39,7 @@ export default function GitHubCallbackHandler() {
 
 				if (accessToken) {
 					failureStage = 'session_publish';
-					if (data.onboardingStatus === 'PENDING') {
-						await tokenManager.publishOnboarding(accessToken);
-					} else {
-						await tokenManager.publishLogin(accessToken);
-					}
+					await tokenManager.publishLogin(accessToken);
 				}
 				analytics.githubLoginCompleted({
 					userType: data.onboardingStatus === 'PENDING' ? 'new' : 'returning',

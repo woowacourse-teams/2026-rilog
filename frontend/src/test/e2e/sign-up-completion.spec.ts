@@ -4,8 +4,6 @@ import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/
 
 test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피드로 이동하고 재진입은 제한한다', async ({ page }) => {
 	const pageErrors: string[] = [];
-	const myInfoTokens: (string | undefined)[] = [];
-	let hasCompletedSignUp = false;
 	page.on('pageerror', (error) => pageErrors.push(error.message));
 	const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 	const origin = new URL(baseURL).origin;
@@ -14,7 +12,6 @@ test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피
 		'Access-Control-Allow-Credentials': 'true',
 		'Access-Control-Allow-Headers': 'authorization,content-type',
 		'Access-Control-Allow-Methods': 'GET,POST,PATCH,OPTIONS',
-		'Access-Control-Expose-Headers': 'Authorization',
 	};
 	const respond = async (route: Parameters<Parameters<typeof page.route>[1]>[0], body: unknown) => {
 		if (route.request().method() === 'OPTIONS') {
@@ -35,57 +32,31 @@ test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피
 	});
 	await page.route('**/v1/auth/token/refresh', (route) =>
 		route.fulfill({
-			status: hasCompletedSignUp ? 200 : 401,
+			status: 200,
 			headers: {
 				...corsHeaders,
-				...(hasCompletedSignUp ? { Authorization: 'Bearer e2e-access-token' } : {}),
+				Authorization: 'Bearer e2e-access-token',
+				'Access-Control-Expose-Headers': 'Authorization',
 			},
 			body: '{}',
 		}),
 	);
-	// 초기 인증 복구와 콜백의 경합은 별도 검증하고, 여기서는 정상 순서를 재현한다.
-	const initialSessionCleared = page.waitForResponse(
-		(response) => response.url().endsWith('/api/auth/proxy-session') && response.request().method() === 'DELETE',
-	);
-	await page.route('**/v1/auth/github/callback', async (route) => {
-		if (route.request().method() === 'OPTIONS') {
-			await route.fulfill({ status: 204, headers: corsHeaders });
-			return;
-		}
-		await initialSessionCleared;
-		await route.fulfill({
-			headers: { ...corsHeaders, Authorization: 'Bearer e2e-onboarding-token' },
-			json: { status: 200, message: '로그인 성공', data: { onboardingStatus: 'PENDING', redirectUrl: '/sign-up' } },
-		});
-	});
-	await page.route('**/v1/users/me', (route) => {
-		if (route.request().method() !== 'OPTIONS') {
-			myInfoTokens.push(route.request().headers().authorization);
-		}
-		return respond(route, {
+	await page.route('**/v1/users/me', (route) =>
+		respond(route, {
 			status: 200,
 			message: '내 정보 조회 성공',
 			data: { id: 1, slug: 'rilogtest', nickname: '리로그', profileImageUrl: null },
-		});
-	});
+		}),
+	);
 	await page.route('**/v1/availability/nickname?*', (route) =>
 		respond(route, { status: 200, message: '사용가능한 닉네임입니다.', data: null }),
 	);
 	await page.route('**/v1/availability/slug?*', (route) =>
 		respond(route, { status: 200, message: '사용가능한 고유 아이디입니다.', data: null }),
 	);
-	await page.route('**/v1/users/me/onboarding', async (route) => {
-		if (route.request().method() === 'OPTIONS') {
-			await route.fulfill({ status: 204, headers: corsHeaders });
-			return;
-		}
-		expect(route.request().headers().authorization).toBe('Bearer e2e-onboarding-token');
-		hasCompletedSignUp = true;
-		await route.fulfill({
-			headers: { ...corsHeaders, Authorization: 'Bearer e2e-access-token' },
-			json: { status: 200, message: '회원가입 성공', data: null },
-		});
-	});
+	await page.route('**/v1/users/me/onboarding', (route) =>
+		respond(route, { status: 200, message: '회원가입 성공', data: null }),
+	);
 	await page.route(
 		(url) => url.origin === origin && url.pathname === '/',
 		async (route) => {
@@ -94,15 +65,13 @@ test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피
 		},
 	);
 
-	await page.goto('/auth/github/callback?code=e2e-code&state=e2e-state');
-	await expect(page).toHaveURL(/\/sign-up$/);
+	await page
+		.context()
+		.addCookies([{ name: PROXY_SESSION_COOKIE_NAME, value: PROXY_SESSION_COOKIE_VALUE, url: origin }]);
+	await page.goto('/about');
+	await page.evaluate(() => sessionStorage.setItem('rilog:sign-up-flow', 'pending'));
+	await page.goto('/sign-up');
 	await expect(page.getByRole('textbox', { name: '닉네임' })).toBeVisible();
-	expect(myInfoTokens).toEqual([]);
-	expect(await page.context().cookies()).toEqual(
-		expect.arrayContaining([
-			expect.objectContaining({ name: PROXY_SESSION_COOKIE_NAME, value: PROXY_SESSION_COOKIE_VALUE }),
-		]),
-	);
 
 	let restrictionModalCount = 0;
 	await page.exposeFunction('recordRestrictionModal', () => {
@@ -133,7 +102,6 @@ test('회원가입 완료 후 이동이 지연되어도 제한 모달 없이 피
 	]);
 
 	await expect(page).toHaveURL(/\/feeds$/);
-	await expect.poll(() => myInfoTokens).toEqual(['Bearer e2e-access-token']);
 	await page.screenshot({ path: test.info().outputPath('sign-up-feeds.png') });
 	expect(restrictionModalCount).toBe(0);
 	expect(await page.evaluate(() => sessionStorage.getItem('rilog:sign-up-flow'))).toBeNull();
