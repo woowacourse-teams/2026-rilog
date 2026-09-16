@@ -21,7 +21,7 @@ describe('SidebarLayout', () => {
 
 		render(
 			<QueryClientProvider client={queryClient}>
-				<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+				<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
 					<LoginModalProvider>
 						<SidebarLayout>
 							<main>페이지 콘텐츠</main>

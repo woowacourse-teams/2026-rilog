@@ -2,7 +2,10 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import AnalyticsIdentitySubscriber from '@/features/analytics/ui/AnalyticsIdentitySubscriber';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { useAuth } from '@/features/auth/model/use-auth';
+import AuthProvider from '@/features/auth/ui/AuthProvider';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/availability/api';
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
@@ -13,8 +16,20 @@ import { hasActiveSignUpFlow, startSignUpFlow } from '../lib/sign-up-flow-sessio
 import SignUpAccessGuard from './SignUpAccessGuard';
 import SignUpForm from './SignUpForm';
 
-const { onboardMock, signUpCompletedMock, signUpFailedMock, signUpStartedMock, uploadFileMock } = vi.hoisted(() => ({
+const {
+	onboardMock,
+	identifyMock,
+	readMyInfoMock,
+	registerProxySessionMock,
+	signUpCompletedMock,
+	signUpFailedMock,
+	signUpStartedMock,
+	uploadFileMock,
+} = vi.hoisted(() => ({
 	onboardMock: vi.fn(),
+	identifyMock: vi.fn(),
+	readMyInfoMock: vi.fn(),
+	registerProxySessionMock: vi.fn(),
 	signUpCompletedMock: vi.fn(),
 	signUpFailedMock: vi.fn(),
 	signUpStartedMock: vi.fn(),
@@ -34,8 +49,19 @@ vi.mock('@/shared/api/uploads/mutations/use-upload-file-mutation', () => ({
 	useUploadFileMutation: () => ({ mutateAsync: uploadFileMock }),
 }));
 
-vi.mock('@/shared/api/users/mutations/use-onboarding-mutation', () => ({
-	useOnboardingMutation: () => ({ mutateAsync: onboardMock }),
+vi.mock('@/shared/api/users/api', () => ({
+	completeOnboarding: onboardMock,
+	readMyInfo: readMyInfoMock,
+}));
+
+vi.mock('@/shared/api/proxy/api', () => ({
+	registerProxySession: registerProxySessionMock,
+	clearProxySession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/shared/analytics/posthog', () => ({
+	identifyAnalyticsUser: identifyMock,
+	resetAnalyticsIdentity: vi.fn(),
 }));
 
 vi.mock('@/features/analytics/model/events', () => ({
@@ -46,10 +72,18 @@ vi.mock('@/features/analytics/model/events', () => ({
 	},
 }));
 
+function AuthState() {
+	const { isAuthenticated, isOnboarding } = useAuth();
+	return <p>{isAuthenticated ? '정식 로그인' : isOnboarding ? '온보딩 진행' : '익명'}</p>;
+}
+
 describe('SignUpForm', () => {
-	beforeEach(() => {
+	beforeEach(async () => {
+		await tokenManager.publishLogout();
 		sessionStorage.clear();
 		vi.clearAllMocks();
+		registerProxySessionMock.mockReset().mockResolvedValue(undefined);
+		readMyInfoMock.mockReset();
 		uploadFileMock.mockReset();
 		uploadFileMock.mockResolvedValue({ objectKey: 'profiles/profile.png' });
 		onboardMock.mockReset();
@@ -73,7 +107,7 @@ describe('SignUpForm', () => {
 
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
 		return render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
 				<SignUpForm {...props} />
 			</AUTH_CONTEXT.Provider>,
 		);
@@ -92,6 +126,77 @@ describe('SignUpForm', () => {
 		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
 		await user.click(screen.getByRole('button', { name: '시작하기' }));
 	};
+
+	it.each([false, true])(
+		'가입 후 정식 로그인으로 전환하고 내 정보 조회 실패(%s)와 무관하게 이동한다',
+		async (hasMyInfoError) => {
+			await tokenManager.publishOnboarding('onboarding-token');
+			startSignUpFlow();
+			onboardMock.mockImplementation(() => {
+				expect(tokenManager.getToken()).toBe('onboarding-token');
+				return Promise.resolve({ data: { status: 200, data: null }, accessToken: 'access-token' });
+			});
+			readMyInfoMock.mockImplementation(() => {
+				expect(tokenManager.getToken()).toBe('access-token');
+				return hasMyInfoError
+					? Promise.reject(new Error('내 정보 조회 실패'))
+					: Promise.resolve({
+							status: 200,
+							data: { id: 42, slug: 'rilog', nickname: '리로그', profileImageUrl: null },
+						});
+			});
+			const navigate = vi.fn();
+			render(
+				<AuthProvider>
+					<AnalyticsIdentitySubscriber />
+					<AuthState />
+					<SignUpForm navigate={navigate} />
+				</AuthProvider>,
+			);
+			await screen.findByText('온보딩 진행');
+			expect(readMyInfoMock).not.toHaveBeenCalled();
+
+			await submitValidSignUp();
+			await screen.findByText('정식 로그인');
+			await waitFor(() => expect(navigate).toHaveBeenCalledWith('/', { replace: true }));
+			await waitFor(() => expect(readMyInfoMock).toHaveBeenCalledOnce());
+			expect(signUpCompletedMock).toHaveBeenCalledOnce();
+			expect(signUpFailedMock).not.toHaveBeenCalled();
+			expect(hasActiveSignUpFlow()).toBe(false);
+			if (hasMyInfoError) {
+				expect(identifyMock).not.toHaveBeenCalled();
+			} else {
+				await waitFor(() => expect(identifyMock).toHaveBeenCalledWith('42', { slug: 'rilog', nickname: '리로그' }));
+			}
+		},
+	);
+
+	it('로그인 구독자 완료 전에는 가입 완료 이벤트와 페이지 이동을 실행하지 않는다', async () => {
+		startSignUpFlow();
+		onboardMock.mockResolvedValue({ data: { status: 200, data: null }, accessToken: 'access-token' });
+		let finishLogin: (() => void) | undefined;
+		const unsubscribe = tokenManager.subscribeLogin(
+			() =>
+				new Promise<void>((resolve) => {
+					finishLogin = resolve;
+				}),
+		);
+		const navigate = vi.fn();
+		try {
+			renderSignUpForm({ navigate });
+			await submitValidSignUp();
+			await waitFor(() => expect(finishLogin).toBeDefined());
+			expect(signUpCompletedMock).not.toHaveBeenCalled();
+			expect(navigate).not.toHaveBeenCalled();
+			await act(async () => {
+				finishLogin?.();
+				await Promise.resolve();
+			});
+			await waitFor(() => expect(navigate).toHaveBeenCalledWith('/', { replace: true }));
+		} finally {
+			unsubscribe();
+		}
+	});
 
 	it('프로필 설정에 필요한 입력과 action을 제공한다', () => {
 		renderSignUpForm();
@@ -424,7 +529,7 @@ describe('SignUpForm', () => {
 		const navigate = vi.fn();
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
 				<SignUpAccessGuard>
 					<SignUpForm completeSignUp={vi.fn().mockResolvedValue({ slug: 'rilog' })} navigate={navigate} />
 				</SignUpAccessGuard>
@@ -450,7 +555,7 @@ describe('SignUpForm', () => {
 			.mockResolvedValue({ slug: 'rilog' });
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
 				<SignUpAccessGuard>
 					<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />
 				</SignUpAccessGuard>
@@ -484,7 +589,7 @@ describe('SignUpForm', () => {
 		const navigate = vi.fn();
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
 				<SignUpAccessGuard>
 					<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />
 				</SignUpAccessGuard>

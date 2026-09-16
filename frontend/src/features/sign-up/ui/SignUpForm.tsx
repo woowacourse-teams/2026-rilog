@@ -96,7 +96,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 
 		if (response.accessToken) {
 			try {
-				tokenManager.setToken(response.accessToken);
+				await tokenManager.publishLogin(response.accessToken);
 			} catch (error) {
 				// eslint-disable-next-line @typescript-eslint/only-throw-error -- 제출 실패 단계와 원본 오류를 구조적으로 전달한다.
 				throw createSignUpFailure('session_store', error);
