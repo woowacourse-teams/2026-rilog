@@ -7,12 +7,12 @@ import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 
 export default function AnalyticsIdentitySubscriber() {
-	const { data: response } = useMyInfoQuery();
+	const { data: response, dataUpdatedAt } = useMyInfoQuery();
 	const identifiedUserIdRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
 		const user = response?.data;
-		if (user === undefined) {
+		if (user === undefined || tokenManager.getTokenType() !== 'access') {
 			return;
 		}
 
@@ -21,19 +21,18 @@ export default function AnalyticsIdentitySubscriber() {
 			return;
 		}
 
-		// 다른 계정으로 바뀌면 이전 Person과 이벤트가 연결되지 않게 초기화한다.
-		if (identifiedUserIdRef.current !== undefined) {
-			resetAnalyticsIdentity();
+		if (identifyAnalyticsUser(userId, { slug: user.slug, nickname: user.nickname })) {
+			identifiedUserIdRef.current = userId;
+		} else {
+			identifiedUserIdRef.current = undefined;
 		}
-
-		identifyAnalyticsUser(userId, { slug: user.slug, nickname: user.nickname });
-		identifiedUserIdRef.current = userId;
-	}, [response]);
+		// 실패를 성공으로 기억하지 않아 동일한 내 정보 재조회 후에도 다시 시도할 수 있다.
+	}, [response, dataUpdatedAt]);
 
 	useEffect(
 		() =>
-			tokenManager.subscribeLogout(() => {
-				resetAnalyticsIdentity();
+			tokenManager.subscribeLogout((reason) => {
+				resetAnalyticsIdentity({ onlyIfIdentified: reason === 'refresh-failed' });
 				identifiedUserIdRef.current = undefined;
 			}),
 		[],

@@ -19,7 +19,8 @@ export const readUserBySlug = ({ slug }: ReadUserBySlugRequest) => {
 export const readMyCologsOverview = () =>
 	apiClient.get<ApiResponse<MyCologOverviewResponse[]>>('v1/users/me/cologs/overview');
 
-export const readMyInfo = () => apiClient.get<ApiResponse<MyInfoResponse>>('v1/users/me');
+export const readMyInfo = (signal?: AbortSignal) =>
+	apiClient.get<ApiResponse<MyInfoResponse>>('v1/users/me', { signal });
 
 export const completeOnboarding = async (data: OnboardingRequest) => {
 	const response = await apiRequest(() =>

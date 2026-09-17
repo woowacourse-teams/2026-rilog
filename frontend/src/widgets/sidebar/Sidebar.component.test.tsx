@@ -25,7 +25,7 @@ vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
 
 function renderSidebar(isAuthenticated = false) {
 	return renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized: true }}>
+		<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated, isInitialized: true }}>
 			<LoginModalProvider>
 				<Sidebar />
 			</LoginModalProvider>
