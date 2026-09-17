@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import type { PostDetail } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
+import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '@/features/post-detail/model/inline-comment.fixture';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
@@ -30,6 +31,7 @@ export default async function BasePostDetail({
 }: BasePostDetailProps) {
 	const tableOfContents = extractPostTableOfContents(post.content);
 	const contentHtml = await renderPostDetailContent(post.content);
+	const isInlineCommentDevelopmentFixtureEnabled = process.env.NODE_ENV === 'development' && post.id === 81;
 	// const description = extractPostDescription(post.content, 150);
 
 	return (
@@ -54,6 +56,10 @@ export default async function BasePostDetail({
 								postId={post.id}
 								ownerType={post.blog.type}
 								category={post.category}
+								inlineCommentBlocks={
+									isInlineCommentDevelopmentFixtureEnabled ? POST_81_INLINE_COMMENT_BLOCKS_FIXTURE : undefined
+								}
+								enableInlineCommentSelectionDebug={isInlineCommentDevelopmentFixtureEnabled}
 							/>
 
 							<Divider className="mt-30 mb-20 sm:mt-40 sm:mb-30" />

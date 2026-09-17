@@ -4,6 +4,27 @@
 	scroll-margin-top: 2.5rem;
 }
 
+.post-detail-body [data-inline-comment-highlight-host] {
+	position: relative;
+	isolation: isolate;
+}
+
+.post-detail-body [data-inline-comment-highlight-layer] {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.post-detail-body [data-inline-comment-highlight] {
+	position: absolute;
+	z-index: calc(1 + var(--inline-comment-anchor-order));
+	display: block;
+	height: 0.25rem;
+	border-radius: 9999px;
+	background: var(--focus-ring);
+	opacity: 0.72;
+}
+
 .post-detail-body .bn-block-content:not([data-content-type='codeBlock']) .bn-inline-content {
 	overflow-wrap: anywhere;
 }

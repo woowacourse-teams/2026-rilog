@@ -26,6 +26,45 @@ export interface PostsCountResponse {
 	totalPostsCount: number;
 }
 
+export type InlineCommentAnchorState = 'ACTIVE' | 'OUTDATED';
+
+export interface InlineCommentRangeResponse {
+	startOffset: number;
+	endOffset: number;
+}
+
+export interface InlineCommentAuthorResponse {
+	userId: number;
+	nickname: string;
+	slug: string;
+	profileImageUrl: string | null;
+	isAuthor: boolean;
+	isBlogMember: boolean;
+}
+
+export interface InlineCommentResponse {
+	commentId: number;
+	content: string;
+	author: InlineCommentAuthorResponse;
+	canEdit: boolean;
+	canDelete: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface InlineCommentAnchorResponse {
+	anchorId: number;
+	range: InlineCommentRangeResponse;
+	selectedText: string;
+	state: InlineCommentAnchorState;
+	comments: InlineCommentResponse[];
+}
+
+export interface InlineCommentBlockResponse {
+	blockId: string;
+	anchors: InlineCommentAnchorResponse[];
+}
+
 export interface PostDetailRequest {
 	slug: string;
 	postId: number;
