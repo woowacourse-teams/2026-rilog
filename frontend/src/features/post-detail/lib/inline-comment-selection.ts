@@ -16,7 +16,11 @@ const findBoundaryRoot = (node: Node, article: HTMLElement): HTMLElement | null 
 	return root !== null && article.contains(root) ? root : null;
 };
 
-const getTextOffset = (root: HTMLElement, container: Node, offset: number): number | null => {
+export const getInlineCommentTextOffset = (root: HTMLElement, container: Node, offset: number): number | null => {
+	if (!root.contains(container) && root !== container) {
+		return null;
+	}
+
 	try {
 		const range = root.ownerDocument.createRange();
 		range.selectNodeContents(root);
@@ -64,8 +68,8 @@ export const createInlineCommentSelectionDraft = (
 		return null;
 	}
 
-	const startOffset = getTextOffset(startRoot, sourceRange.startContainer, sourceRange.startOffset);
-	const endOffset = getTextOffset(startRoot, sourceRange.endContainer, sourceRange.endOffset);
+	const startOffset = getInlineCommentTextOffset(startRoot, sourceRange.startContainer, sourceRange.startOffset);
+	const endOffset = getInlineCommentTextOffset(startRoot, sourceRange.endContainer, sourceRange.endOffset);
 	if (startOffset === null || endOffset === null || startOffset >= endOffset) {
 		return null;
 	}

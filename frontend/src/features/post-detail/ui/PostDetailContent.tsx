@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import type { InlineCommentOpenRequest } from '../model/inline-comment-interaction';
 import type { MouseEvent } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
@@ -24,6 +25,7 @@ interface PostDetailContentProps {
 	category: PostCategory;
 	inlineCommentBlocks?: readonly InlineCommentBlockResponse[];
 	enableInlineCommentSelectionDebug?: boolean;
+	onInlineCommentOpen?: (request: InlineCommentOpenRequest) => void;
 }
 
 const EMPTY_INLINE_COMMENT_BLOCKS: readonly InlineCommentBlockResponse[] = [];
@@ -99,6 +101,7 @@ export default function PostDetailContent({
 	category,
 	inlineCommentBlocks = EMPTY_INLINE_COMMENT_BLOCKS,
 	enableInlineCommentSelectionDebug = false,
+	onInlineCommentOpen,
 }: PostDetailContentProps) {
 	const contentRef = useRef<HTMLElement>(null);
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
@@ -109,6 +112,15 @@ export default function PostDetailContent({
 		contentRef.current = element;
 		setContentElement(element);
 	}, []);
+	const handleInlineCommentOpen = useCallback(
+		(request: InlineCommentOpenRequest) => {
+			if (enableInlineCommentSelectionDebug) {
+				logNonProductionInfo('[inline-comment] open request', request);
+			}
+			onInlineCommentOpen?.(request);
+		},
+		[enableInlineCommentSelectionDebug, onInlineCommentOpen],
+	);
 
 	useLayoutEffect(() => {
 		const articleElement = contentRef.current;
@@ -251,7 +263,12 @@ export default function PostDetailContent({
 		>
 			<div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: html }} />
 			{contentElement === null ? null : (
-				<InlineCommentHighlights article={contentElement} blocks={inlineCommentBlocks} contentKey={html} />
+				<InlineCommentHighlights
+					article={contentElement}
+					blocks={inlineCommentBlocks}
+					contentKey={html}
+					onOpenComments={handleInlineCommentOpen}
+				/>
 			)}
 			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
 		</article>
