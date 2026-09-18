@@ -6,14 +6,12 @@ import type { PostDetail } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
 import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '@/features/post-detail/model/inline-comment.fixture';
-import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
-import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
-import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
+import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 
 interface BasePostDetailProps {
 	post: PostDetail;
@@ -34,10 +32,6 @@ export default async function BasePostDetail({
 	const contentHtml = await renderPostDetailContent(post.content);
 	const isInlineCommentDevelopmentFixtureEnabled = process.env.NODE_ENV === 'development' && post.id === 81;
 	const inlineCommentBlocks = isInlineCommentDevelopmentFixtureEnabled ? POST_81_INLINE_COMMENT_BLOCKS_FIXTURE : [];
-	const inlineCommentCount = inlineCommentBlocks.reduce(
-		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.comments.length, 0),
-		0,
-	);
 	// const description = extractPostDescription(post.content, 150);
 
 	return (
@@ -64,29 +58,16 @@ export default async function BasePostDetail({
 							</aside>
 						)}
 
-						<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
-							<PostDetailContent
-								html={contentHtml}
-								postId={post.id}
-								ownerType={post.blog.type}
-								category={post.category}
-								inlineCommentBlocks={inlineCommentBlocks}
-								enableInlineCommentSelectionDebug={isInlineCommentDevelopmentFixtureEnabled}
-							/>
-
-							<Divider className="mt-30 sm:mt-40" />
-							<div className={styles.compactCommentsEntry}>
-								<PostAllCommentsButton commentCount={inlineCommentCount} />
-							</div>
-							<div className={`${styles.profileSection} mx-auto max-w-lg`}>{profileSection}</div>
-							{afterProfile}
-						</div>
-
-						<aside className={styles.commentsColumn}>
-							<div className={styles.commentsSticky}>
-								<PostAllCommentsButton commentCount={inlineCommentCount} />
-							</div>
-						</aside>
+						<PostDetailCommentsWorkspace
+							html={contentHtml}
+							postId={post.id}
+							ownerType={post.blog.type}
+							category={post.category}
+							inlineCommentBlocks={inlineCommentBlocks}
+							enableInlineCommentSelectionDebug={isInlineCommentDevelopmentFixtureEnabled}
+							profileSection={profileSection}
+							afterProfile={afterProfile}
+						/>
 					</div>
 				</div>
 			</main>

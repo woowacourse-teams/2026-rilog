@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 
 import PostAllCommentsButton from './PostAllCommentsButton';
 
@@ -8,8 +9,17 @@ describe('PostAllCommentsButton', () => {
 		render(<PostAllCommentsButton commentCount={8} />);
 
 		expect(screen.getByRole('button', { name: '전체 댓글 8개 보기' })).toBeInTheDocument();
-		expect(screen.getByText('전체 댓글')).toBeInTheDocument();
+		expect(screen.getByText('전체 인라인 댓글')).toBeInTheDocument();
 		expect(screen.getByText('8')).toHaveAttribute('aria-hidden', 'true');
 		expect(document.querySelector('svg')).not.toBeInTheDocument();
+	});
+
+	it('클릭하면 전체 댓글 열기를 요청한다', async () => {
+		const user = userEvent.setup();
+		const onClick = vi.fn();
+		render(<PostAllCommentsButton commentCount={8} onClick={onClick} />);
+
+		await user.click(screen.getByRole('button', { name: '전체 댓글 8개 보기' }));
+		expect(onClick).toHaveBeenCalledOnce();
 	});
 });
