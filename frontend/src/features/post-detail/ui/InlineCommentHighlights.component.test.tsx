@@ -94,13 +94,13 @@ describe('InlineCommentHighlights', () => {
 		expect(container.querySelector('[data-inline-comment-anchor-id="4"]')).toBeNull();
 		expect(anchorOneLines[0]).toHaveAttribute('data-inline-comment-anchor-order', '0');
 		expect(anchorThreeLines[0]).toHaveAttribute('data-inline-comment-anchor-order', '2');
-		expect(anchorOneLines[0]).toHaveStyle({ left: '10px', top: '17px', width: '80px' });
-		expect(document.head.querySelector('[data-inline-comment-highlight-style]')).toHaveTextContent(
-			'color: var(--link-text-interactive)',
-		);
-		expect(document.head.querySelector('[data-inline-comment-highlight-style]')).not.toHaveTextContent(
-			'background-color',
-		);
+		expect(anchorOneLines[0]).toHaveStyle({
+			left: '10px',
+			top: '17px',
+			width: '80px',
+			'--inline-comment-highlight-expanded-height': '23px',
+		});
+		expect(document.head.querySelector('[data-inline-comment-highlight-style]')).toBeNull();
 	});
 
 	it('데이터가 제거되면 기존 overlay를 정리한다', async () => {
@@ -150,6 +150,9 @@ describe('InlineCommentHighlights', () => {
 				'data-inline-comment-active',
 			);
 		});
+		expect(container.querySelector('[data-inline-comment-anchor-id="1"]')).not.toHaveAttribute(
+			'data-inline-comment-active',
+		);
 		expect(root).toHaveAttribute('data-inline-comment-pointer');
 
 		fireEvent.click(root as HTMLElement, { clientX: 20, clientY: 30 });

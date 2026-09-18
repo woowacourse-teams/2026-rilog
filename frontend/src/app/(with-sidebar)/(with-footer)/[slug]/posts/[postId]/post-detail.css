@@ -87,13 +87,16 @@
 	z-index: calc(1 + var(--inline-comment-anchor-order));
 	display: block;
 	height: 0.25rem;
-	background: var(--focus-ring);
-	opacity: 0.72;
-	transition: opacity 120ms ease;
+	background: var(--blue-600);
+	opacity: 0.25;
+	transition:
+		height 120ms ease,
+		background-color 120ms ease;
 }
 
 .post-detail-body [data-inline-comment-highlight][data-inline-comment-active] {
-	opacity: 1;
+	height: var(--inline-comment-highlight-expanded-height);
+	opacity: 0.12;
 }
 
 @media (max-width: 1023px) {

@@ -6,6 +6,7 @@ import type { InlineCommentOpenRequest } from '../model/inline-comment-interacti
 
 import type { InlineCommentAnchorResponse, InlineCommentBlockResponse } from '@/shared/api/posts/types';
 
+import { normalizeInlineCommentHighlightRects } from '../lib/inline-comment-highlight-rects';
 import {
 	findLastActiveInlineCommentAnchorAtOffset,
 	getInlineCommentOffsetAtPoint,
@@ -33,8 +34,6 @@ interface RenderedBlock {
 }
 
 const HIGHLIGHT_LAYER_SELECTOR = '[data-inline-comment-highlight-layer]';
-const ACTIVE_TEXT_HIGHLIGHT_NAME = 'inline-comment-active';
-const ACTIVE_TEXT_HIGHLIGHT_STYLE_SELECTOR = '[data-inline-comment-highlight-style]';
 const HIGHLIGHT_VERTICAL_OFFSET_PX = 3;
 
 const removeHighlightLayers = (article: HTMLElement) => {
@@ -45,20 +44,6 @@ const removeHighlightLayers = (article: HTMLElement) => {
 			delete host.dataset.inlineCommentHighlightHost;
 		}
 	});
-};
-
-const setTextHighlight = (article: HTMLElement, range: Range | null) => {
-	const highlightRegistry = article.ownerDocument.defaultView?.CSS?.highlights;
-	if (highlightRegistry === undefined || typeof Highlight === 'undefined') {
-		return;
-	}
-
-	if (range === null) {
-		highlightRegistry.delete(ACTIVE_TEXT_HIGHLIGHT_NAME);
-		return;
-	}
-
-	highlightRegistry.set(ACTIVE_TEXT_HIGHLIGHT_NAME, new Highlight(range));
 };
 
 const createCommentIcon = (document: Document) => {
@@ -80,21 +65,6 @@ const createCommentIcon = (document: Document) => {
 	return icon;
 };
 
-const ensureTextHighlightStyle = (document: Document) => {
-	const existingStyle = document.head.querySelector<HTMLStyleElement>(ACTIVE_TEXT_HIGHLIGHT_STYLE_SELECTOR);
-	if (existingStyle !== null) {
-		return { element: existingStyle, shouldRemove: false };
-	}
-
-	const style = document.createElement('style');
-	style.dataset.inlineCommentHighlightStyle = '';
-	style.textContent = `::highlight(${ACTIVE_TEXT_HIGHLIGHT_NAME}) {
-		color: var(--link-text-interactive);
-	}`;
-	document.head.append(style);
-	return { element: style, shouldRemove: true };
-};
-
 export default function InlineCommentHighlights({
 	article,
 	blocks,
@@ -103,7 +73,6 @@ export default function InlineCommentHighlights({
 }: InlineCommentHighlightsProps) {
 	useLayoutEffect(() => {
 		let isMounted = true;
-		const textHighlightStyle = ensureTextHighlightStyle(article.ownerDocument);
 		let activeAnchor: RenderedAnchor | null = null;
 		let renderedBlocksByRoot = new Map<HTMLElement, RenderedBlock>();
 
@@ -113,7 +82,6 @@ export default function InlineCommentHighlights({
 				delete activeAnchor.root.dataset.inlineCommentPointer;
 			}
 			activeAnchor = null;
-			setTextHighlight(article, null);
 		};
 
 		const setActiveAnchor = (nextAnchor: RenderedAnchor | null) => {
@@ -127,7 +95,6 @@ export default function InlineCommentHighlights({
 			if (nextAnchor !== null) {
 				nextAnchor.root.dataset.inlineCommentPointer = '';
 			}
-			setTextHighlight(article, nextAnchor?.range ?? null);
 		};
 
 		const drawHighlights = () => {
@@ -159,6 +126,9 @@ export default function InlineCommentHighlights({
 				const renderedBlock: RenderedBlock = { block, anchorsById: new Map() };
 				renderedBlocksByRoot.set(root, renderedBlock);
 				const hostRect = host.getBoundingClientRect();
+				const rootRange = host.ownerDocument.createRange();
+				rootRange.selectNodeContents(root);
+				const rootRects = Array.from(rootRange.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
 
 				block.anchors.forEach((anchor, anchorIndex) => {
 					if (anchor.state !== 'ACTIVE') {
@@ -170,7 +140,10 @@ export default function InlineCommentHighlights({
 						return;
 					}
 
-					const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
+					const rects = normalizeInlineCommentHighlightRects(
+						Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0),
+						rootRects,
+					);
 					if (rects.length === 0) {
 						return;
 					}
@@ -193,6 +166,10 @@ export default function InlineCommentHighlights({
 						line.style.left = `${rect.left - hostRect.left + host.scrollLeft}px`;
 						line.style.top = `${rect.top - hostRect.top + host.scrollTop - HIGHLIGHT_VERTICAL_OFFSET_PX}px`;
 						line.style.width = `${rect.width}px`;
+						line.style.setProperty(
+							'--inline-comment-highlight-expanded-height',
+							`${rect.height + HIGHLIGHT_VERTICAL_OFFSET_PX}px`,
+						);
 						line.style.setProperty('--inline-comment-anchor-order', String(anchorIndex));
 						layer.append(line);
 						renderedAnchor.lines.push(line);
@@ -307,9 +284,6 @@ export default function InlineCommentHighlights({
 			resizeObserver?.disconnect();
 			clearActiveAnchor();
 			removeHighlightLayers(article);
-			if (textHighlightStyle.shouldRemove) {
-				textHighlightStyle.element.remove();
-			}
 		};
 	}, [article, blocks, contentKey, onOpenComments]);
 
