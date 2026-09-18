@@ -11,11 +11,13 @@
 - [x] F1 drag selection → `blockId`, UTF-16 offset, `selectedText` 추출 순수 로직
 - [x] F2 server range → DOM Range 복원 순수 로직
 - [x] F3 ACTIVE 4px 상단선 하이라이트와 fixture 주입 경계
-- [ ] F4 클릭/hover/focus 및 중첩 우선순위
+- [x] F4 클릭/hover/focus 및 중첩 우선순위
 - [ ] F5 실제 조회 API 연결
 - [ ] F6 이후 sidebar, mutation, 모바일 UI
 
 F0~F3 구현은 실제 API를 호출하지 않는다. `PostDetailContent`의 선택적 `inlineCommentBlocks` prop으로 서버 응답 형태의 데이터를 주입할 수 있으며, 데이터가 없으면 기존 게시글 상세 UI를 유지한다.
+
+F4 구현은 복원 가능한 ACTIVE 앵커에 pointer hover/click과 키보드 focus proxy를 제공한다. 중첩 위치에서는 서버 배열상 마지막으로 렌더된 앵커를 선택하고, 블록 버튼은 복원 실패 앵커를 포함한 해당 블록의 모든 ACTIVE 앵커 ID를 상위 controller에 전달한다.
 
 ## 1. 이번 작업의 목표
 
