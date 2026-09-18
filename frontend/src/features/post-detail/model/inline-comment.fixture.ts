@@ -79,4 +79,23 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockResponse[]
 			},
 		],
 	},
+	{
+		blockId: '5b9e1661-9fbc-48dc-aa80-5c52fed49bdc',
+		anchors: [
+			{
+				anchorId: 5706,
+				range: { startOffset: 19, endOffset: 37 },
+				selectedText: 'LoginModalProvider',
+				state: 'ACTIVE',
+				comments: [createComment(57007, '인라인 코드 전체를 선택한 mock 댓글입니다.')],
+			},
+			{
+				anchorId: 5707,
+				range: { startOffset: 10, endOffset: 41 },
+				selectedText: '루트 레이아웃에 LoginModalProvider를 배치',
+				state: 'ACTIVE',
+				comments: [createComment(57008, '일반 텍스트와 인라인 코드를 함께 선택한 mock 댓글입니다.')],
+			},
+		],
+	},
 ];
