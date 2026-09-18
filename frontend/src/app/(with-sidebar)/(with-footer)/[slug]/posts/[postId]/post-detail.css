@@ -70,6 +70,11 @@
 	color: var(--focus-ring);
 }
 
+.post-detail-body [data-inline-comment-block-button]:active {
+	background: var(--surface-active);
+	color: var(--focus-ring);
+}
+
 .post-detail-body [data-inline-comment-block-button]:focus-visible {
 	outline: 2px solid var(--focus-ring);
 	outline-offset: 2px;
@@ -93,12 +98,19 @@
 	opacity: 0.25;
 	transition:
 		height 120ms ease,
-		background-color 120ms ease;
+		background-color 120ms ease,
+		opacity 120ms ease;
 }
 
 .post-detail-body [data-inline-comment-highlight][data-inline-comment-active] {
 	height: var(--inline-comment-highlight-expanded-height);
 	opacity: 0.12;
+}
+
+.post-detail-body
+	[data-inline-comment-highlight-host]:has([data-inline-comment-root][data-inline-comment-pointer]:active)
+	[data-inline-comment-highlight][data-inline-comment-active] {
+	opacity: 0.2;
 }
 
 @media (max-width: 56.25rem) {
