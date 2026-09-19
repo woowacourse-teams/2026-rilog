@@ -3,6 +3,7 @@ package kr.rilog.domain.post.entity.vo;
 import kr.rilog.domain.post.exception.PostException;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_TEXT_RANGE;
 
 public record TextBlock(
         String blockId,
@@ -27,12 +28,12 @@ public record TextBlock(
         return text.length();
     }
 
-    public String slice(int startOffset, int endOffset) {
-        if (startOffset < 0 || endOffset < startOffset || endOffset > text.length()) {
-            throw new PostException(INVALID_POST_CONTENT);
+    public String slice(TextRange range) {
+        if (range.getEndOffset() > text.length()) {
+            throw new PostException(INVALID_TEXT_RANGE);
         }
 
-        return text.substring(startOffset, endOffset);
+        return text.substring(range.getStartOffset(), range.getEndOffset());
     }
 
 }

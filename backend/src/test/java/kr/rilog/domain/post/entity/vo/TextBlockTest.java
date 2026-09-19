@@ -4,13 +4,13 @@ import kr.rilog.domain.post.exception.PostException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_TEXT_RANGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -129,59 +129,44 @@ class TextBlockTest {
     }
 
     @Test
-    @DisplayName("UTF-16 offset의 시작을 포함하고 끝을 제외하여 텍스트를 자른다.")
-    void sliceByHalfOpenUtf16Offsets() {
+    @DisplayName("처음부터 UTF-16 길이까지의 TextRange로 자르면 전체 텍스트를 반환한다.")
+    void sliceEntireTextAtBoundaryRange() {
         // given
         TextBlock textBlock = new TextBlock(BLOCK_ID, TYPE, "가😀나");
+        TextRange entireRange = TextRange.of(0, textBlock.utf16Length());
 
         // when
-        String sliced = textBlock.slice(1, 3);
-
-        // then
-        assertThat(sliced).isEqualTo("😀");
-    }
-
-    @Test
-    @DisplayName("처음부터 UTF-16 길이까지 자르면 전체 텍스트를 반환한다.")
-    void sliceEntireTextAtBoundaryOffsets() {
-        // given
-        TextBlock textBlock = new TextBlock(BLOCK_ID, TYPE, "가😀나");
-
-        // when
-        String sliced = textBlock.slice(0, textBlock.utf16Length());
+        String sliced = textBlock.slice(entireRange);
 
         // then
         assertThat(sliced).isEqualTo(textBlock.text());
     }
 
     @Test
-    @DisplayName("텍스트 끝에서 시작과 끝 offset이 같으면 빈 문자열을 반환한다.")
-    void returnEmptyTextWhenOffsetsAreEqualAtTextEnd() {
+    @DisplayName("TextRange의 시작을 포함하고 끝을 제외하여 UTF-16 텍스트를 자른다.")
+    void sliceByTextRange() {
         // given
-        TextBlock textBlock = new TextBlock(BLOCK_ID, TYPE, "본문");
+        TextBlock textBlock = new TextBlock(BLOCK_ID, TYPE, "가😀나");
+        TextRange range = TextRange.of(1, 3);
 
         // when
-        String sliced = textBlock.slice(textBlock.utf16Length(), textBlock.utf16Length());
+        String sliced = textBlock.slice(range);
 
         // then
-        assertThat(sliced).isEmpty();
+        assertThat(sliced).isEqualTo("😀");
     }
 
-    @ParameterizedTest
-    @CsvSource({
-            "-1, 0",
-            "1, 0",
-            "0, 3"
-    })
-    @DisplayName("offset 범위가 유효하지 않으면 게시글 예외가 발생한다.")
-    void throwPostExceptionWhenOffsetRangeIsInvalid(int startOffset, int endOffset) {
+    @Test
+    @DisplayName("TextRange의 끝이 텍스트 길이를 넘으면 텍스트 범위 예외가 발생한다.")
+    void throwPostExceptionWhenTextRangeEndsBeyondText() {
         // given
         TextBlock textBlock = new TextBlock(BLOCK_ID, TYPE, "본문");
+        TextRange rangeBeyondText = TextRange.of(0, textBlock.utf16Length() + 1);
 
-        // when & then
-        assertThatThrownBy(() -> textBlock.slice(startOffset, endOffset))
+        // when - then
+        assertThatThrownBy(() -> textBlock.slice(rangeBeyondText))
                 .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_POST_CONTENT.getMessage());
+                .hasMessage(INVALID_TEXT_RANGE.getMessage());
     }
 
 }
