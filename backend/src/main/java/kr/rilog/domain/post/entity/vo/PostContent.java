@@ -90,6 +90,16 @@ public class PostContent {
         return value;
     }
 
+    public String extractStringField(JsonNode node, String fieldName) {
+        JsonNode field = node.get(fieldName);
+
+        if (field == null || !field.isString()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        return field.asString();
+    }
+
     private String readBlockId(JsonNode block) {
         JsonNode id = block.get(ID);
 
@@ -99,6 +109,5 @@ public class PostContent {
 
         return id.asString();
     }
-
 
 }
