@@ -106,6 +106,10 @@ public class PostContent {
         }
 
         JsonNode inlineContents = block.get(CONTENT);
+        if (inlineContents != null && inlineContents.isNull()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
         if (inlineContents != null && inlineContents.isArray()) {
             String blockId = readBlockId(block);
             String blockType = extractStringField(block, TYPE);

@@ -202,8 +202,27 @@ class PostContentTextSerializationTest {
     }
 
     @Test
-    @DisplayName("인라인 콘텐츠가 null이면 예외가 발생한다.")
-    void throwWhenInlineContentIsNull() {
+    @DisplayName("블록의 content가 null이면 예외가 발생한다.")
+    void throwWhenBlockContentIsNull() {
+        // given
+        PostContent content = content("""
+                {
+                  "id": "block-1",
+                  "type": "paragraph",
+                  "content": null,
+                  "children": []
+                }
+                """);
+
+        // when & then
+        assertThatThrownBy(content::extractTextBlocks)
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
+    }
+
+    @Test
+    @DisplayName("content 배열의 요소가 null이면 예외가 발생한다.")
+    void throwWhenInlineContentElementIsNull() {
         // given
         PostContent content = contentWithInlineContent("null");
 
