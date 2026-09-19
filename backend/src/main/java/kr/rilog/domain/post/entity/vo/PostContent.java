@@ -90,6 +90,57 @@ public class PostContent {
         return value;
     }
 
+    public List<TextBlock> extractTextBlocks() {
+        List<TextBlock> result = new ArrayList<>();
+
+        for (JsonNode block : value) {
+            collectTextBlocks(block, result);
+        }
+
+        return List.copyOf(result);
+    }
+
+    private void collectTextBlocks(JsonNode block, List<TextBlock> result) {
+        if (!block.isObject()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        JsonNode inlineContents = block.get(CONTENT);
+        if (inlineContents != null && inlineContents.isArray()) {
+            String blockId = readBlockId(block);
+            String serializedText = serializeInlineContents(inlineContents);
+
+            result.add(new TextBlock(blockId, serializedText));
+        }
+
+        collectChildBlocks(block, result);
+    }
+
+    private void collectChildBlocks(JsonNode block, List<TextBlock> result) {
+        JsonNode children = block.get(CHILDREN);
+
+        if (children == null) {
+            return;
+        }
+
+        if (!children.isArray()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        for (JsonNode child : children) {
+            collectTextBlocks(child, result);
+        }
+    }
+
+    private String serializeInlineContents(JsonNode inlineContents) {
+        StringBuilder result = new StringBuilder();
+        for (JsonNode inlineContent : inlineContents) {
+            appendInlineContent(inlineContent, result);
+        }
+
+        return result.toString();
+    }
+
     private void appendInlineContent(
             JsonNode inlineContent,
             StringBuilder result
@@ -130,7 +181,7 @@ public class PostContent {
         result.append(extractStringField(textContent, TEXT));
     }
 
-    public String extractStringField(JsonNode node, String fieldName) {
+    private String extractStringField(JsonNode node, String fieldName) {
         JsonNode field = node.get(fieldName);
         if (field == null || !field.isString()) {
             throw new PostException(INVALID_POST_CONTENT);
