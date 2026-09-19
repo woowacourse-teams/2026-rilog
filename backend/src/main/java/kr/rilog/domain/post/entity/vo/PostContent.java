@@ -90,9 +90,48 @@ public class PostContent {
         return value;
     }
 
+    private void appendInlineContent(
+            JsonNode inlineContent,
+            StringBuilder result
+    ) {
+        if (!inlineContent.isObject()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        String type = extractStringField(inlineContent, TYPE);
+        switch (type) {
+            case TEXT_INLINE_TYPE -> appendText(inlineContent, result);
+            case LINK_INLINE_TYPE -> appendLinkText(inlineContent, result);
+            default -> throw new PostException(INVALID_POST_CONTENT);
+        }
+    }
+
+    private void appendLinkText(JsonNode linkContent, StringBuilder result) {
+        JsonNode contents = linkContent.get(CONTENT);
+        if (contents == null || !contents.isArray()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        for (JsonNode content : contents) {
+            if (!content.isObject()) {
+                throw new PostException(INVALID_POST_CONTENT);
+            }
+
+            String type = extractStringField(content, TYPE);
+            if (!TEXT_INLINE_TYPE.equals(type)) {
+                throw new PostException(INVALID_POST_CONTENT);
+            }
+
+            appendText(content, result);
+        }
+    }
+
+    private void appendText(JsonNode textContent, StringBuilder result) {
+        result.append(extractStringField(textContent, TEXT));
+    }
+
     public String extractStringField(JsonNode node, String fieldName) {
         JsonNode field = node.get(fieldName);
-
         if (field == null || !field.isString()) {
             throw new PostException(INVALID_POST_CONTENT);
         }
@@ -102,7 +141,6 @@ public class PostContent {
 
     private String readBlockId(JsonNode block) {
         JsonNode id = block.get(ID);
-
         if (id == null || !id.isString() || id.asString().isBlank()) {
             throw new PostException(INVALID_POST_CONTENT);
         }
