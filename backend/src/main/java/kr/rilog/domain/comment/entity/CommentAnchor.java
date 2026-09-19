@@ -2,6 +2,7 @@ package kr.rilog.domain.comment.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.comment.entity.enums.AnchorStatus;
+import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.post.entity.vo.TextRange;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.post.entity.Post;
@@ -13,7 +14,9 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_ACTIVE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
@@ -27,6 +30,7 @@ import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_
 public class CommentAnchor extends BaseEntity {
 
     private static final int MAX_CONTENT_LENGTH = 1_000;
+    private static final Set<String> COMMENTABLE_BLOCK_TYPES = Set.of("paragraph", "heading", "quote");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -81,6 +85,19 @@ public class CommentAnchor extends BaseEntity {
                 .build();
     }
 
+    public static CommentAnchor create(
+            Post post,
+            User writer,
+            TextBlock block,
+            TextRange range,
+            String selectedText,
+            String content
+    ) {
+        validateCommentable(block);
+        validateSelectionOf(block, range, selectedText);
+        return create(post, writer, block.blockId(), range, selectedText, content);
+    }
+
     public void updateContent(Long requesterId, String content) {
         validateWriter(requesterId);
         validateContent(content);
@@ -126,6 +143,18 @@ public class CommentAnchor extends BaseEntity {
     private void validateWriter(Long requesterId) {
         if (!isWrittenBy(requesterId)) {
             throw new CommentException(COMMENT_AUTHOR_FORBIDDEN);
+        }
+    }
+
+    private static void validateCommentable(TextBlock block) {
+        if (!COMMENTABLE_BLOCK_TYPES.contains(block.type())) {
+            throw new CommentException(COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE);
+        }
+    }
+
+    private static void validateSelectionOf(TextBlock block, TextRange range, String selectedText) {
+        if (range == null || !block.slice(range).equals(selectedText)) {
+            throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
     }
 

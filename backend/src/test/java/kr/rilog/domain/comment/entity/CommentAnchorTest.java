@@ -3,7 +3,9 @@ package kr.rilog.domain.comment.entity;
 import kr.rilog.domain.comment.entity.enums.AnchorStatus;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.post.entity.vo.TextRange;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.support.fixure.BlogFixture;
 import kr.rilog.support.fixure.CommentAnchorFixture;
@@ -14,10 +16,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_ACTIVE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_TEXT_RANGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,6 +35,7 @@ class CommentAnchorTest {
     private static final TextRange SELECTED_RANGE = TextRange.of(2, 4);
     private static final String CONTENT = "좋은 설명이에요.";
     private static final int MAX_CONTENT_LENGTH = 1_000;
+    private static final String BLOCK_TEXT = "가나나다다라마";
 
     private final Post post = PostFixture.publicPublishedRilogPost();
     private final User writer = BlogFixture.createUser(WRITER_ID);
@@ -112,15 +117,29 @@ class CommentAnchorTest {
                 .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
     }
 
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {" ", "\n"})
-    @DisplayName("본문이 비어 있으면 인라인 댓글을 작성할 수 없다.")
-    void createRejectsBlankContent(String content) {
+    @Test
+    @DisplayName("본문이 없으면 인라인 댓글을 작성할 수 없다.")
+    void createRejectsNullContent() {
+        // given
+        String nullContent = null;
+
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, content))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, nullContent))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
+    }
+
+    @Test
+    @DisplayName("공백만 있는 본문으로도 인라인 댓글을 작성할 수 있다.")
+    void createAllowsBlankContent() {
+        // given
+        String blankContent = " ";
+
+        // when
+        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, blankContent);
+
+        // then
+        assertThat(anchor.getContent()).isEqualTo(blankContent);
     }
 
     @Test
@@ -144,6 +163,81 @@ class CommentAnchorTest {
         // when - then
         assertThatCode(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, maxLengthContent))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("텍스트 블록의 선택 범위에 작성하면 그 블록의 id를 보존한다.")
+    void createFromBlockKeepsBlockId() {
+        // given
+        TextBlock block = new TextBlock(BLOCK_ID, "paragraph", BLOCK_TEXT);
+
+        // when
+        CommentAnchor anchor = CommentAnchor.create(post, writer, block, SELECTED_RANGE, SELECTED_TEXT, CONTENT);
+
+        // then
+        assertThat(anchor.getBlockId()).isEqualTo(BLOCK_ID);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"paragraph", "heading", "quote"})
+    @DisplayName("문단과 제목과 인용 블록에는 인라인 댓글을 작성할 수 있다.")
+    void createFromBlockAllowsCommentableBlockTypes(String blockType) {
+        // given
+        TextBlock block = new TextBlock(BLOCK_ID, blockType, BLOCK_TEXT);
+
+        // when - then
+        assertThatCode(() -> CommentAnchor.create(post, writer, block, SELECTED_RANGE, SELECTED_TEXT, CONTENT))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("댓글을 작성할 수 없는 타입의 블록에는 인라인 댓글을 작성할 수 없다.")
+    void createFromBlockRejectsNotCommentableBlockType() {
+        // given
+        TextBlock codeBlock = new TextBlock(BLOCK_ID, "codeBlock", BLOCK_TEXT);
+
+        // when - then
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, codeBlock, SELECTED_RANGE, SELECTED_TEXT, CONTENT))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE.getMessage());
+    }
+
+    @Test
+    @DisplayName("선택 문자열이 블록 텍스트의 해당 범위와 다르면 인라인 댓글을 작성할 수 없다.")
+    void createFromBlockRejectsSelectedTextDifferentFromBlockText() {
+        // given
+        TextBlock block = new TextBlock(BLOCK_ID, "paragraph", BLOCK_TEXT);
+        String differentSelectedText = "가나";
+
+        // when - then
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, block, SELECTED_RANGE, differentSelectedText, CONTENT))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
+    }
+
+    @Test
+    @DisplayName("선택 범위가 블록 텍스트의 길이를 넘으면 인라인 댓글을 작성할 수 없다.")
+    void createFromBlockRejectsRangeBeyondBlockText() {
+        // given
+        TextBlock block = new TextBlock(BLOCK_ID, "paragraph", BLOCK_TEXT);
+        TextRange rangeBeyondText = TextRange.of(BLOCK_TEXT.length(), BLOCK_TEXT.length() + 2);
+
+        // when - then
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, block, rangeBeyondText, SELECTED_TEXT, CONTENT))
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_TEXT_RANGE.getMessage());
+    }
+
+    @Test
+    @DisplayName("선택 범위가 없으면 텍스트 블록에 인라인 댓글을 작성할 수 없다.")
+    void createFromBlockRejectsMissingRange() {
+        // given
+        TextBlock block = new TextBlock(BLOCK_ID, "paragraph", BLOCK_TEXT);
+
+        // when - then
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, block, null, SELECTED_TEXT, CONTENT))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
     }
 
     @Test
