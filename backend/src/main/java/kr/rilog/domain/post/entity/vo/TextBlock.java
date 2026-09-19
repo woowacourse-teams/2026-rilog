@@ -1,6 +1,8 @@
 package kr.rilog.domain.post.entity.vo;
 
-import java.util.Objects;
+import kr.rilog.domain.post.exception.PostException;
+
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
 
 public record TextBlock(
         String blockId,
@@ -8,11 +10,8 @@ public record TextBlock(
 ) {
 
     public TextBlock {
-        Objects.requireNonNull(blockId, "blockId는 null일 수 없습니다.");
-        Objects.requireNonNull(text, "text는 null일 수 없습니다.");
-
-        if (blockId.isBlank()) {
-            throw new IllegalArgumentException("blockId는 비어 있을 수 없습니다."); // TODO use RilogException
+        if (blockId == null || blockId.isBlank() || text == null) {
+            throw new PostException(INVALID_POST_CONTENT);
         }
     }
 
@@ -27,9 +26,7 @@ public record TextBlock(
 
     public String slice(int startOffset, int endOffset) {
         if (startOffset < 0 || endOffset < startOffset || endOffset > text.length()) {
-            throw new IllegalArgumentException(
-                    "유효하지 않은 offset 범위입니다: [%d, %d), length=%d"
-                            .formatted(startOffset, endOffset, text.length())); // TODO use RilogException
+            throw new PostException(INVALID_POST_CONTENT);
         }
 
         return text.substring(startOffset, endOffset);

@@ -1,15 +1,40 @@
 package kr.rilog.domain.post.entity.vo;
 
+import kr.rilog.domain.post.exception.PostException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TextBlockTest {
 
     private static final String BLOCK_ID = "block-id";
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", " "})
+    @DisplayName("블록 ID가 유효한 문자열이 아니면 게시글 예외가 발생한다.")
+    void throwPostExceptionWhenBlockIdIsInvalid(String blockId) {
+        assertThatThrownBy(() -> new TextBlock(blockId, "본문"))
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
+    }
+
+    @Test
+    @DisplayName("텍스트가 null이면 게시글 예외가 발생한다.")
+    void throwPostExceptionWhenTextIsNull() {
+        assertThatThrownBy(() -> new TextBlock(BLOCK_ID, null))
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
+    }
 
     @Test
     @DisplayName("생성한 텍스트 블록은 블록 ID를 보존한다.")
@@ -119,6 +144,23 @@ class TextBlockTest {
 
         // then
         assertThat(sliced).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-1, 0",
+            "1, 0",
+            "0, 3"
+    })
+    @DisplayName("offset 범위가 유효하지 않으면 게시글 예외가 발생한다.")
+    void throwPostExceptionWhenOffsetRangeIsInvalid(int startOffset, int endOffset) {
+        // given
+        TextBlock textBlock = new TextBlock(BLOCK_ID, "본문");
+
+        // when & then
+        assertThatThrownBy(() -> textBlock.slice(startOffset, endOffset))
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
     }
 
 }
