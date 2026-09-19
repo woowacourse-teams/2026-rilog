@@ -15,6 +15,7 @@ public enum PostErrorInformation implements ErrorInformation {
     POST_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "게시글 삭제 권한이 없습니다."),
     INVALID_POST_CONTENT(HttpStatus.BAD_REQUEST, "게시글 본문 내용이 올바르지 않습니다."),
     INVALID_TEXT_RANGE(HttpStatus.BAD_REQUEST, "본문 텍스트 범위가 올바르지 않습니다."),
+    TEXT_BLOCK_NOT_FOUND(HttpStatus.BAD_REQUEST, "본문에서 해당 텍스트 블록을 찾을 수 없습니다."),
     INVALID_BLOG_FEED_FILTER(HttpStatus.BAD_REQUEST, "사용할 수 없는 피드 필터 조합입니다."),
     DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 임시저장 글을 찾을 수 없습니다."),
     ;

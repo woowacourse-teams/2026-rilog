@@ -14,6 +14,7 @@ import tools.jackson.databind.JsonNode;
 import java.util.*;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.TEXT_BLOCK_NOT_FOUND;
 
 @Embeddable
 @EqualsAndHashCode
@@ -98,6 +99,13 @@ public class PostContent {
         }
 
         return List.copyOf(result);
+    }
+
+    public TextBlock findTextBlock(String blockId) {
+        return extractTextBlocks().stream()
+                .filter(textBlock -> textBlock.blockId().equals(blockId))
+                .findFirst()
+                .orElseThrow(() -> new PostException(TEXT_BLOCK_NOT_FOUND));
     }
 
     private void collectTextBlocks(JsonNode block, List<TextBlock> result) {
