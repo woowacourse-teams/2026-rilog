@@ -37,7 +37,7 @@ class PostContentTextSerializationTest {
 
         // then
         assertThat(textBlocks).containsExactly(
-                new TextBlock("block-1", " 처음에는 Discount | undefined였던 타입입니다.\n")
+                new TextBlock("block-1", "paragraph", " 처음에는 Discount | undefined였던 타입입니다.\n")
         );
     }
 
@@ -70,7 +70,7 @@ class PostContentTextSerializationTest {
 
         // then
         assertThat(textBlocks).containsExactly(
-                new TextBlock("block-1", "자세한 내용은 공식 문서를 참고하세요.")
+                new TextBlock("block-1", "paragraph", "자세한 내용은 공식 문서를 참고하세요.")
         );
     }
 
@@ -101,8 +101,8 @@ class PostContentTextSerializationTest {
 
         // then
         assertThat(textBlocks).containsExactly(
-                new TextBlock("empty-block", ""),
-                new TextBlock("line-break-block", "\n")
+                new TextBlock("empty-block", "paragraph", ""),
+                new TextBlock("line-break-block", "paragraph", "\n")
         );
     }
 
@@ -135,13 +135,13 @@ class PostContentTextSerializationTest {
 
         // then
         assertThat(textBlocks).containsExactly(
-                new TextBlock("parent-block", "부모"),
-                new TextBlock("child-block", "자식")
+                new TextBlock("parent-block", "toggleListItem", "부모"),
+                new TextBlock("child-block", "paragraph", "자식")
         );
     }
 
     @Test
-    @DisplayName("코드 블록의 공백과 개행을 원문 그대로 직렬화한다.")
+    @DisplayName("코드 블록의 공백과 개행을 원문 그대로 직렬화하고 블록 타입을 함께 추출한다.")
     void serializeCodeBlockWithoutModification() {
         // given
         PostContent content = content("""
@@ -161,8 +161,26 @@ class PostContentTextSerializationTest {
 
         // then
         assertThat(textBlocks).containsExactly(
-                new TextBlock("code-block", "if (valid) {\n\treturn value;\n}\n")
+                new TextBlock("code-block", "codeBlock", "if (valid) {\n\treturn value;\n}\n")
         );
+    }
+
+    @Test
+    @DisplayName("content 배열이 있는 블록의 type이 없으면 예외가 발생한다.")
+    void throwWhenBlockTypeIsMissing() {
+        // given
+        PostContent content = content("""
+                {
+                  "id": "block-1",
+                  "content": [],
+                  "children": []
+                }
+                """);
+
+        // when & then
+        assertThatThrownBy(content::extractTextBlocks)
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
     }
 
     @Test

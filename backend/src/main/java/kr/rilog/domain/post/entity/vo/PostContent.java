@@ -108,9 +108,10 @@ public class PostContent {
         JsonNode inlineContents = block.get(CONTENT);
         if (inlineContents != null && inlineContents.isArray()) {
             String blockId = readBlockId(block);
+            String blockType = extractStringField(block, TYPE);
             String serializedText = serializeInlineContents(inlineContents);
 
-            result.add(new TextBlock(blockId, serializedText));
+            result.add(new TextBlock(blockId, blockType, serializedText));
         }
 
         collectChildBlocks(block, result);

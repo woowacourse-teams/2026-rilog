@@ -6,11 +6,14 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_C
 
 public record TextBlock(
         String blockId,
+        String type,
         String text
 ) {
 
     public TextBlock {
-        if (blockId == null || blockId.isBlank() || text == null) {
+        if (blockId == null || blockId.isBlank()
+                || type == null || type.isBlank()
+                || text == null) {
             throw new PostException(INVALID_POST_CONTENT);
         }
     }
