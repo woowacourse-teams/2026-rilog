@@ -9,8 +9,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
 import static kr.rilog.support.fixure.PostContentFixture.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.test.util.ReflectionTestUtils.invokeMethod;
 
 class PostContentTest {
 
@@ -86,6 +88,42 @@ class PostContentTest {
         // when & then
         assertThat(before.fileUrlsNotIn(after))
                 .containsExactly(IMAGE_URL_B);
+    }
+
+    @Test
+    @DisplayName("블록의 문자열 ID를 읽는다.")
+    void readBlockId() {
+        // given
+        PostContent content = content();
+        JsonNode block = json("{\"id\": \"block-1\"}");
+
+        // when
+        String blockId = invokeMethod(content, "readBlockId", block);
+
+        // then
+        assertThat(blockId).isEqualTo("block-1");
+    }
+
+    @ParameterizedTest(name = "[{index}] {0}")
+    @DisplayName("블록 ID가 유효한 문자열이 아니면 예외가 발생한다.")
+    @ValueSource(strings = {
+            "{}",
+            "{\"id\": null}",
+            "{\"id\": 1}",
+            "{\"id\": true}",
+            "{\"id\": {}}",
+            "{\"id\": \"\"}",
+            "{\"id\": \" \"}"
+    })
+    void throwWhenBlockIdIsInvalid(String rawBlock) {
+        // given
+        PostContent content = content();
+        JsonNode block = json(rawBlock);
+
+        // when & then
+        assertThatThrownBy(() -> invokeMethod(content, "readBlockId", block))
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
     }
 
     private static JsonNode json(String raw) {

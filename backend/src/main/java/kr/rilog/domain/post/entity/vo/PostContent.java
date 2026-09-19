@@ -20,6 +20,12 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_C
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostContent {
 
+    private static final String ID = "id";
+    private static final String CONTENT = "content";
+    private static final String CHILDREN = "children";
+    private static final String TEXT = "text";
+    private static final String TEXT_INLINE_TYPE = "text";
+    private static final String LINK_INLINE_TYPE = "link";
     private static final String TYPE = "type";
     private static final String PROPS = "props";
     private static final String URL = "url";
@@ -83,5 +89,16 @@ public class PostContent {
     public JsonNode getContent() {
         return value;
     }
+
+    private String readBlockId(JsonNode block) {
+        JsonNode id = block.get(ID);
+
+        if (id == null || !id.isString() || id.asString().isBlank()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        return id.asString();
+    }
+
 
 }
