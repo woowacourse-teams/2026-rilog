@@ -63,7 +63,7 @@ public class CommentAnchor extends BaseEntity {
 
     private LocalDateTime orphanedAt;
 
-    public static CommentAnchor create(
+    private static CommentAnchor create(
             Post post,
             User writer,
             String blockId,

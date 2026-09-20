@@ -31,11 +31,12 @@ class CommentAnchorTest {
     private static final Long WRITER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
     private static final String BLOCK_ID = "block-a";
+    private static final String BLOCK_TEXT = "가나나다다라마";
+    private static final TextBlock BLOCK = new TextBlock(BLOCK_ID, "paragraph", BLOCK_TEXT);
     private static final String SELECTED_TEXT = "나다";
     private static final TextRange SELECTED_RANGE = TextRange.of(2, 4);
     private static final String CONTENT = "좋은 설명이에요.";
     private static final int MAX_CONTENT_LENGTH = 1_000;
-    private static final String BLOCK_TEXT = "가나나다다라마";
 
     private final Post post = PostFixture.publicPublishedRilogPost();
     private final User writer = BlogFixture.createUser(WRITER_ID);
@@ -44,7 +45,7 @@ class CommentAnchorTest {
     @DisplayName("인라인 댓글을 작성하면 ACTIVE 상태이고 고아상태가 아니다.")
     void createStartsActive() {
         // when
-        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, CONTENT);
+        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, CONTENT);
 
         // then
         assertThat(anchor.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
@@ -55,7 +56,7 @@ class CommentAnchorTest {
     @DisplayName("인라인 댓글을 작성하면 블록과 선택 범위와 선택 문자열을 그대로 보존한다.")
     void createKeepsAnchorPosition() {
         // when
-        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, CONTENT);
+        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, CONTENT);
 
         // then
         assertThat(anchor.getBlockId()).isEqualTo(BLOCK_ID);
@@ -70,7 +71,7 @@ class CommentAnchorTest {
         TextRange shortRange = TextRange.of(0, 1);
 
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, shortRange, SELECTED_TEXT, CONTENT))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, shortRange, SELECTED_TEXT, CONTENT))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
     }
@@ -82,7 +83,7 @@ class CommentAnchorTest {
         TextRange longRange = TextRange.of(0, 3);
 
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, longRange, SELECTED_TEXT, CONTENT))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, longRange, SELECTED_TEXT, CONTENT))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
     }
@@ -92,7 +93,7 @@ class CommentAnchorTest {
     @DisplayName("선택 문자열이 없으면 인라인 댓글을 작성할 수 없다.")
     void createRejectsMissingSelectedText(String selectedText) {
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, selectedText, CONTENT))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, selectedText, CONTENT))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
     }
@@ -101,18 +102,7 @@ class CommentAnchorTest {
     @DisplayName("선택 범위가 없으면 인라인 댓글을 작성할 수 없다.")
     void createRejectsMissingRange() {
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, null, SELECTED_TEXT, CONTENT))
-                .isInstanceOf(CommentException.class)
-                .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
-    }
-
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {" ", "\t"})
-    @DisplayName("블록 id가 비어 있으면 인라인 댓글을 작성할 수 없다.")
-    void createRejectsBlankBlockId(String blockId) {
-        // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, blockId, SELECTED_RANGE, SELECTED_TEXT, CONTENT))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, null, SELECTED_TEXT, CONTENT))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
     }
@@ -124,7 +114,7 @@ class CommentAnchorTest {
         String nullContent = null;
 
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, nullContent))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, nullContent))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
     }
@@ -136,7 +126,7 @@ class CommentAnchorTest {
         String blankContent = " ";
 
         // when
-        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, blankContent);
+        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, blankContent);
 
         // then
         assertThat(anchor.getContent()).isEqualTo(blankContent);
@@ -149,7 +139,7 @@ class CommentAnchorTest {
         String tooLongContent = "가".repeat(MAX_CONTENT_LENGTH + 1);
 
         // when - then
-        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, tooLongContent))
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, tooLongContent))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
     }
@@ -161,7 +151,7 @@ class CommentAnchorTest {
         String maxLengthContent = "가".repeat(MAX_CONTENT_LENGTH);
 
         // when - then
-        assertThatCode(() -> CommentAnchor.create(post, writer, BLOCK_ID, SELECTED_RANGE, SELECTED_TEXT, maxLengthContent))
+        assertThatCode(() -> CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, maxLengthContent))
                 .doesNotThrowAnyException();
     }
 
