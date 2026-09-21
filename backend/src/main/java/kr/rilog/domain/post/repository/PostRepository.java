@@ -1,11 +1,10 @@
 package kr.rilog.domain.post.repository;
 
-
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
