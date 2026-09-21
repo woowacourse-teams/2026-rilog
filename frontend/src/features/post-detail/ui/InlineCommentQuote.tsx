@@ -20,15 +20,27 @@ export default function InlineCommentQuote({ anchor, onNavigate }: InlineComment
 	}
 
 	return (
-		<button
-			type="button"
+		<div
+			role="button"
+			tabIndex={0}
 			aria-label={`인용문으로 이동: ${anchor.selectedText}`}
 			className="group w-full border-l-4 border-border-default px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-			onClick={onNavigate}
+			onClick={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				onNavigate();
+			}}
+			onKeyDown={(event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					event.stopPropagation();
+					onNavigate();
+				}
+			}}
 		>
-			<span className="bg-focus-ring/10 box-decoration-clone px-1 py-0.5 text-body-1 leading-5 text-text-secondary transition-colors group-hover:bg-focus-ring/15">
+			<span className="bg-focus-ring/10 box-decoration-clone px-1 py-0.5 text-body-1 leading-5 text-text-secondary transition-colors hover:bg-focus-ring/15">
 				{anchor.selectedText}
 			</span>
-		</button>
+		</div>
 	);
 }

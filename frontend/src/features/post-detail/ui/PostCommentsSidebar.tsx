@@ -41,15 +41,15 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 					</Button>
 				</header>
 
-				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6">
+				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 					{threads.length === 0 ? (
-						<p className="text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
+						<p className="px-5 py-6 text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
 					) : (
 						<div>
 							{threads.map((thread, index) => (
 								<div key={thread.anchor.anchorId}>
 									<InlineCommentThread thread={thread} onNavigate={onNavigate} />
-									{index < threads.length - 1 && <Divider className="my-6" />}
+									<Divider className="mx-5" />
 								</div>
 							))}
 						</div>

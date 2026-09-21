@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId } from 'react';
 
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
@@ -15,34 +15,27 @@ interface InlineCommentThreadProps {
 }
 
 export default function InlineCommentThread({ thread, onNavigate }: InlineCommentThreadProps) {
-	const [isOpen, setIsOpen] = useState(false);
 	const commentsId = useId();
 
 	return (
-		<section aria-label={`“${thread.anchor.selectedText}” 댓글`}>
-			<InlineCommentQuote anchor={thread.anchor} onNavigate={() => onNavigate(thread)} />
+		<details aria-label={`“${thread.anchor.selectedText}” 댓글`}>
 			{thread.anchor.comments.length === 0 ? (
-				<p className="mt-8 pl-3 text-label-2 text-text-placeholder">아직 댓글이 없습니다.</p>
+				<InlineCommentQuote anchor={thread.anchor} onNavigate={() => onNavigate(thread)} />
 			) : (
 				<>
-					<button
-						type="button"
-						aria-expanded={isOpen}
-						aria-controls={commentsId}
-						className="flex items-center gap-1 px-3 py-1 text-label-2 text-text-secondary"
-						onClick={() => setIsOpen((prev) => !prev)}
-					>
-						{isOpen ? '댓글 접기' : '댓글 보기'}
-						<ChevronIcon className={isOpen ? 'rotate-180 transition-[rotate]' : 'transition-[rotate]'} />
-					</button>
-					<ul
-						id={commentsId}
-						aria-hidden={!isOpen}
-						inert={!isOpen}
-						className={`grid overflow-hidden pl-3 transition-[grid-template-rows,opacity] duration-200 ease-in-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-					>
+					<summary className="flex cursor-pointer list-none items-start gap-3 rounded-md px-5 py-5 transition-colors hover:bg-surface-hover active:bg-surface-hover [&::-webkit-details-marker]:hidden">
+						<span className="min-w-0 flex-1">
+							<InlineCommentQuote anchor={thread.anchor} onNavigate={() => onNavigate(thread)} />
+						</span>
+						<ChevronIcon
+							aria-hidden="true"
+							focusable="false"
+							className="mt-1 size-6 shrink-0 p-1 text-text-secondary transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+						/>
+					</summary>
+					<ul id={commentsId} className="grid grid-rows-[1fr] overflow-hidden pr-8 pl-5">
 						<li className="min-h-0 overflow-hidden">
-							<div className="space-y-6 pt-8">
+							<div className="space-y-5 py-5">
 								{thread.anchor.comments.map((comment) => (
 									<div key={comment.commentId}>
 										<InlineCommentItem comment={comment} />
@@ -53,6 +46,9 @@ export default function InlineCommentThread({ thread, onNavigate }: InlineCommen
 					</ul>
 				</>
 			)}
-		</section>
+			{thread.anchor.comments.length === 0 && (
+				<p className="mt-6 pl-4 text-label-2 text-text-placeholder">아직 댓글이 없습니다.</p>
+			)}
+		</details>
 	);
 }
