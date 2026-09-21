@@ -5,8 +5,10 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import kr.rilog.domain.comment.entity.enums.AnchorStatus;
+import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.post.entity.Post;
@@ -21,7 +23,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.TEXT_BLOCK_NOT_FOUND;
@@ -30,8 +35,6 @@ import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/*
- * TODO: CommentAnchorSelection 엔티티 기반 생성 API 구현 시 통합 테스트를 함께 복구한다.
 class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
     private static final String PARAGRAPH_TEXT = "가나나다다라마";
@@ -55,6 +58,9 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     @Autowired
     private CommentAnchorRepository commentAnchorRepository;
 
+    @Autowired
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
     @Test
     @DisplayName("공개 게시글에 작성자가 아닌 로그인 사용자가 인라인 댓글을 작성하면 선택 위치와 본문을 저장한다.")
     void createCommentAnchorPersistsSelectionAndContent() {
@@ -69,13 +75,16 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
 
         // then
-        CommentAnchorSelection expectedSelection = CommentAnchorSelection.of(
+        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(
+                saved.getCommentAnchorSelection().getId()
+        ).orElseThrow();
+        Selection expectedSelection = Selection.of(
                 PARAGRAPH_BLOCK_ID,
                 SELECTED_START,
                 SELECTED_END,
                 SELECTED_TEXT
         );
-        assertThat(saved.getSelection()).isEqualTo(expectedSelection);
+        assertThat(savedSelection.getSelection()).isEqualTo(expectedSelection);
         assertThat(saved.getContent()).isEqualTo(CONTENT);
     }
 
@@ -93,7 +102,10 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
 
         // then
-        assertThat(saved.getPost().getId()).isEqualTo(post.getId());
+        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(
+                saved.getCommentAnchorSelection().getId()
+        ).orElseThrow();
+        assertThat(savedSelection.getPost().getId()).isEqualTo(post.getId());
         assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
     }
 
@@ -109,9 +121,93 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
                 post.getId(), commenter.getId(), selectedCommand());
         CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(
+                saved.getCommentAnchorSelection().getId()
+        ).orElseThrow();
 
         // then
-        assertThat(saved.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
+        assertThat(savedSelection.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("같은 selection에 인라인 댓글을 연속으로 작성하면 ACTIVE selection을 재사용한다.")
+    void createCommentAnchorReusesActiveSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User firstCommenter = saveCompletedUser(101L, "첫댓글작성자", "first_commenter");
+        User secondCommenter = saveCompletedUser(102L, "둘댓글작성자", "second_commenter");
+        Post post = savePublicPost(postWriter);
+
+        // when
+        CommentAnchorCreateResult firstResult = commentAnchorService.createCommentAnchor(
+                post.getId(), firstCommenter.getId(), selectedCommand());
+        CommentAnchorCreateResult secondResult = commentAnchorService.createCommentAnchor(
+                post.getId(), secondCommenter.getId(), selectedCommand());
+
+        // then
+        Long firstSelectionId = getSelectionId(firstResult);
+        Long secondSelectionId = getSelectionId(secondResult);
+        assertThat(secondSelectionId).isEqualTo(firstSelectionId);
+        assertThat(commentAnchorSelectionRepository.count()).isOne();
+    }
+
+    @Test
+    @DisplayName("댓글이 없는 ACTIVE selection도 같은 selection의 인라인 댓글 작성 시 재사용한다.")
+    void createCommentAnchorReusesActiveSelectionWithoutComments() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection existingSelection = saveActiveSelection(post);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
+                post.getId(), commenter.getId(), selectedCommand());
+
+        // then
+        assertThat(getSelectionId(result)).isEqualTo(existingSelection.getId());
+        assertThat(commentAnchorSelectionRepository.count()).isOne();
+    }
+
+    @Test
+    @DisplayName("같은 ACTIVE selection이 중복되어 있으면 가장 먼저 생성된 selection을 재사용한다.")
+    void createCommentAnchorUsesFirstDuplicatedActiveSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection firstSelection = saveActiveSelection(post);
+        saveActiveSelection(post);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
+                post.getId(), commenter.getId(), selectedCommand());
+
+        // then
+        assertThat(getSelectionId(result)).isEqualTo(firstSelection.getId());
+    }
+
+    @Test
+    @DisplayName("같은 selection이 ORPHANED 상태이면 새로운 ACTIVE selection을 저장한다.")
+    void createCommentAnchorDoesNotReuseOrphanedSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection orphanedSelection = CommentAnchorSelection.create(post, selection());
+        orphanedSelection.orphan(LocalDateTime.of(2026, 9, 21, 12, 0));
+        commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
+                post.getId(), commenter.getId(), selectedCommand());
+
+        // then
+        CommentAnchorSelection activeSelection = commentAnchorSelectionRepository.findById(
+                getSelectionId(result)
+        ).orElseThrow();
+        assertThat(activeSelection.getId()).isNotEqualTo(orphanedSelection.getId());
+        assertThat(activeSelection.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
     }
 
     @Test
@@ -223,10 +319,46 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
         assertThat(commentAnchorRepository.count()).isZero();
+        assertThat(commentAnchorSelectionRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("댓글 본문이 올바르지 않으면 새 selection도 저장하지 않는다.")
+    void createCommentAnchorRollsBackSelectionWhenContentIsInvalid() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorCreateCommand command = new CommentAnchorCreateCommand(
+                PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT, " "
+        );
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(
+                post.getId(), postWriter.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
+        assertThat(commentAnchorRepository.count()).isZero();
+        assertThat(commentAnchorSelectionRepository.count()).isZero();
     }
 
     private CommentAnchorCreateCommand selectedCommand() {
         return new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT, CONTENT);
+    }
+
+    private Selection selection() {
+        return Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT);
+    }
+
+    private CommentAnchorSelection saveActiveSelection(Post post) {
+        return commentAnchorSelectionRepository.saveAndFlush(CommentAnchorSelection.create(post, selection()));
+    }
+
+    private Long getSelectionId(CommentAnchorCreateResult result) {
+        return commentAnchorRepository.findById(result.commentAnchorId())
+                .orElseThrow()
+                .getCommentAnchorSelection()
+                .getId();
     }
 
     private User saveCompletedUser(Long githubId, String nickname, String slug) {
@@ -259,4 +391,3 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
 }
-*/

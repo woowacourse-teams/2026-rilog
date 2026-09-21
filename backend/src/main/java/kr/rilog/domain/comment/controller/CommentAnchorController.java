@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CommentAnchorController implements CommentAnchorApiSpec {
 
-    /*
-     * TODO: CommentAnchorSelection 엔티티 기반 생성 유스케이스가 확정되면 다시 노출한다.
     private final CommentAnchorService commentAnchorService;
 
     @AuthGuard
@@ -43,6 +41,5 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
         CommentAnchorCreateResponse data = CommentAnchorCreateResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "인라인 댓글을 작성했습니다.", data);
     }
-    */
 
 }
