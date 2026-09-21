@@ -163,7 +163,7 @@ public class CommentAnchor extends BaseEntity {
     }
 
     private static void validateContent(String content) {
-        if (content == null || content.length() > MAX_CONTENT_LENGTH) {
+        if (content == null || content.isBlank() || content.length() > MAX_CONTENT_LENGTH) {
             throw new CommentException(INVALID_COMMENT_CONTENT);
         }
     }

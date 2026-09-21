@@ -120,16 +120,15 @@ class CommentAnchorTest {
     }
 
     @Test
-    @DisplayName("공백만 있는 본문으로도 인라인 댓글을 작성할 수 있다.")
-    void createAllowsBlankContent() {
+    @DisplayName("본문이 비어있으면 인라인 댓글을 작성할 수 없다.")
+    void createRejectsBlankContent() {
         // given
-        String blankContent = " ";
+        String blank = "    ";
 
-        // when
-        CommentAnchor anchor = CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, blankContent);
-
-        // then
-        assertThat(anchor.getContent()).isEqualTo(blankContent);
+        // when - then
+        assertThatThrownBy(() -> CommentAnchor.create(post, writer, BLOCK, SELECTED_RANGE, SELECTED_TEXT, blank))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
     }
 
     @Test
