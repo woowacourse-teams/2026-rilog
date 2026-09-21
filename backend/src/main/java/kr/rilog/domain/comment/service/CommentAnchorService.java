@@ -1,13 +1,13 @@
 package kr.rilog.domain.comment.service;
 
 import kr.rilog.domain.comment.entity.CommentAnchor;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.vo.TextBlock;
-import kr.rilog.domain.post.entity.vo.TextRange;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
@@ -36,14 +36,17 @@ public class CommentAnchorService {
         User writer = getUser(requesterId);
 
         TextBlock block = post.findTextBlock(command.blockId());
-        TextRange range = TextRange.of(command.startOffset(), command.endOffset());
+        CommentAnchorSelection selection = CommentAnchorSelection.select(
+                block,
+                command.startOffset(),
+                command.endOffset(),
+                command.selectedText()
+        );
 
         CommentAnchor commentAnchor = CommentAnchor.create(
                 post,
                 writer,
-                block,
-                range,
-                command.selectedText(),
+                selection,
                 command.content()
         );
         CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);

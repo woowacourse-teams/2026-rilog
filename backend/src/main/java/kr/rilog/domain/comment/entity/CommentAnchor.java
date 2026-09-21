@@ -2,7 +2,6 @@ package kr.rilog.domain.comment.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.comment.entity.enums.AnchorStatus;
-import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.post.entity.vo.TextRange;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.post.entity.Post;
@@ -14,9 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
-import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_ACTIVE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
@@ -30,7 +27,6 @@ import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_
 public class CommentAnchor extends BaseEntity {
 
     private static final int MAX_CONTENT_LENGTH = 1_000;
-    private static final Set<String> COMMENTABLE_BLOCK_TYPES = Set.of("paragraph", "heading", "quote");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,14 +41,8 @@ public class CommentAnchor extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User writer;
 
-    @Column(name = "block_id", nullable = false)
-    private String blockId;
-
     @Embedded
-    private TextRange range;
-
-    @Column(name = "selected_text", nullable = false, columnDefinition = "text")
-    private String selectedText;
+    private CommentAnchorSelection selection;
 
     @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
@@ -66,22 +56,15 @@ public class CommentAnchor extends BaseEntity {
     public static CommentAnchor create(
             Post post,
             User writer,
-            TextBlock block,
-            TextRange range,
-            String selectedText,
+            CommentAnchorSelection selection,
             String content
     ) {
-        validateCommentable(block);
-        validateSelectionOf(block, range, selectedText);
-        validateBlockId(block.blockId());
-        validateSelectedText(range, selectedText);
+        validateSelection(selection);
         validateContent(content);
         return CommentAnchor.builder()
                 .post(post)
                 .writer(writer)
-                .blockId(block.blockId())
-                .range(range)
-                .selectedText(selectedText)
+                .selection(selection)
                 .content(content)
                 .status(AnchorStatus.ACTIVE)
                 .build();
@@ -95,8 +78,7 @@ public class CommentAnchor extends BaseEntity {
 
     public void relocate(TextRange newRange) {
         validateActive();
-        validateSelectedText(newRange, selectedText);
-        this.range = newRange;
+        this.selection = selection.relocate(newRange);
     }
 
     public void orphan() {
@@ -135,29 +117,8 @@ public class CommentAnchor extends BaseEntity {
         }
     }
 
-    private static void validateCommentable(TextBlock block) {
-        if (!COMMENTABLE_BLOCK_TYPES.contains(block.type())) {
-            throw new CommentException(COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE);
-        }
-    }
-
-    private static void validateSelectionOf(TextBlock block, TextRange range, String selectedText) {
-        if (range == null || !block.slice(range).equals(selectedText)) {
-            throw new CommentException(INVALID_COMMENT_ANCHOR);
-        }
-    }
-
-    private static void validateBlockId(String blockId) {
-        if (blockId == null || blockId.isBlank()) {
-            throw new CommentException(INVALID_COMMENT_ANCHOR);
-        }
-    }
-
-    private static void validateSelectedText(TextRange range, String selectedText) {
-        if (range == null || selectedText == null || selectedText.isEmpty()) {
-            throw new CommentException(INVALID_COMMENT_ANCHOR);
-        }
-        if (selectedText.length() != range.length()) {
+    private static void validateSelection(CommentAnchorSelection selection) {
+        if (selection == null) {
             throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
     }

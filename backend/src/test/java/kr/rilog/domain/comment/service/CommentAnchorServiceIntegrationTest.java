@@ -3,13 +3,13 @@ package kr.rilog.domain.comment.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import kr.rilog.domain.comment.entity.enums.AnchorStatus;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.post.entity.Post;
-import kr.rilog.domain.post.entity.vo.TextRange;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
@@ -67,9 +67,13 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
 
         // then
-        assertThat(saved.getBlockId()).isEqualTo(PARAGRAPH_BLOCK_ID);
-        assertThat(saved.getRange()).isEqualTo(TextRange.of(SELECTED_START, SELECTED_END));
-        assertThat(saved.getSelectedText()).isEqualTo(SELECTED_TEXT);
+        CommentAnchorSelection expectedSelection = CommentAnchorSelection.of(
+                PARAGRAPH_BLOCK_ID,
+                SELECTED_START,
+                SELECTED_END,
+                SELECTED_TEXT
+        );
+        assertThat(saved.getSelection()).isEqualTo(expectedSelection);
         assertThat(saved.getContent()).isEqualTo(CONTENT);
     }
 
