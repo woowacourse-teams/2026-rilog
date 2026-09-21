@@ -42,7 +42,7 @@ public interface PostApiSpec {
     @OptionalAuthGuard
     @Operation(
             summary = "게시글 상세 조회 API",
-            description = "블로그 slug와 게시글 ID로 공개 상세 정보를 조회합니다. URL slug가 게시글 소속 블로그와 다르면 찾을 수 없습니다."
+            description = "블로그 slug와 게시글 ID로 canonical 경로의 게시글 상세 정보를 조회합니다. URL slug가 게시글 소속 블로그와 다르면 찾을 수 없습니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
@@ -66,7 +66,7 @@ public interface PostApiSpec {
                     }
             )
     )
-    ApiResponse<PostDetailResponse> getPublicPostDetails(
+    ApiResponse<PostDetailResponse> getPostDetailsByCanonicalPath(
             @Parameter(description = "블로그 slug", example = "rilog")
             @PathVariable String slug,
             @Parameter(description = "게시글 ID", example = "1")

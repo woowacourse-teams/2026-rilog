@@ -66,7 +66,7 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    public PostDetailResponse readPublicPostDetail(String slug, Long postId, Long requesterId) {
+    public PostDetailResponse readPostDetailByCanonicalPath(String slug, Long postId, Long requesterId) {
         Post post = getPost(slug, postId);
         post.validateReadableBy(requesterId);
         ViewerPermissionsResponse viewerPermissions = viewerPermissionsFor(post, requesterId);
@@ -176,7 +176,7 @@ public class PostService {
     }
 
     private Post getPost(String slug, Long postId) {
-        return postRepository.findDetailBySlugAndId(Slug.from(slug), postId)
+        return postRepository.findDetailByCanonicalPath(Slug.from(slug), postId)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 

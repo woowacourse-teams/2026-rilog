@@ -316,7 +316,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, chapter);
 
         // when
-        PostDetailResponse response = postService.readPublicPostDetail(
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(
                 scenario.blog().getSlug(),
                 post.getId(),
                 scenario.writer().getId()
@@ -338,7 +338,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario);
 
         // when
-        PostDetailResponse response = postService.readPublicPostDetail(scenario.blog().getSlug(), post.getId(), null);
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), post.getId(), null);
 
         // then
         assertThat(response.chapter()).isNull();

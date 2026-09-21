@@ -264,11 +264,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailBySlugAndId(Slug.from(RILOG_SLUG), POST_ID))
+        when(postRepository.findDetailByCanonicalPath(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(publicPost));
 
         // when
-        PostDetailResponse response = postService.readPublicPostDetail(RILOG_SLUG, POST_ID, null);
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -278,15 +278,15 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("공개 상세 조회는 postId가 존재해도 URL slug가 게시글 소속 블로그와 다르면 찾을 수 없다")
+    @DisplayName("Canonical URL 상세 조회는 postId가 존재해도 URL slug가 게시글 소속 블로그와 다르면 찾을 수 없다")
     void readPublicPostRejectsMismatchedSlug() {
         // given
         String wrongSlug = "wrong_slug";
-        when(postRepository.findDetailBySlugAndId(Slug.from(wrongSlug), POST_ID))
+        when(postRepository.findDetailByCanonicalPath(Slug.from(wrongSlug), POST_ID))
                 .thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.readPublicPostDetail(wrongSlug, POST_ID, null))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(wrongSlug, POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(POST_NOT_FOUND);
@@ -343,7 +343,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailBySlugAndId(Slug.from(COLOG_SLUG), POST_ID))
+        when(postRepository.findDetailByCanonicalPath(Slug.from(COLOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -354,7 +354,7 @@ class PostServiceTest {
         )).thenReturn(5L);
 
         // when
-        PostDetailResponse response = postService.readPublicPostDetail(COLOG_SLUG, POST_ID, null);
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.owner())
@@ -434,7 +434,7 @@ class PostServiceTest {
         User requester = createRequester();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
         BlogMember requesterMember = createMember(cologPost.getColog(), requester, BlogPermission.ADMIN);
-        when(postRepository.findDetailBySlugAndId(Slug.from(COLOG_SLUG), POST_ID))
+        when(postRepository.findDetailByCanonicalPath(Slug.from(COLOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -450,7 +450,7 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        PostDetailResponse response = postService.readPublicPostDetail(COLOG_SLUG, POST_ID, REQUESTER_ID);
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, REQUESTER_ID);
 
         // then
         assertThat(response.viewerPermissions().canEdit()).isFalse();
@@ -463,11 +463,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailBySlugAndId(Slug.from(RILOG_SLUG), POST_ID))
+        when(postRepository.findDetailByCanonicalPath(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPublicPostDetail(RILOG_SLUG, POST_ID, null))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
@@ -495,11 +495,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailBySlugAndId(Slug.from(RILOG_SLUG), POST_ID))
+        when(postRepository.findDetailByCanonicalPath(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPublicPostDetail(RILOG_SLUG, POST_ID, 999L))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, 999L))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);

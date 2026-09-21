@@ -107,7 +107,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                     (p.colog IS NULL AND r.slug = :slug)
               )
             """)
-    Optional<Post> findDetailBySlugAndId(
+    Optional<Post> findDetailByCanonicalPath(
             @Param("slug") Slug slug,
             @Param("postId") Long postId
     );
