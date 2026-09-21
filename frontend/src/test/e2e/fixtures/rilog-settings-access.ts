@@ -42,7 +42,7 @@ export const mockRilogSettingsAccess = async (page: Page, currentUserSlug = 'ril
 					introduction: '기록하고 성장하는 개발자입니다.',
 					profileImageUrl: null,
 					coverImageUrl: null,
-					serviceUrl: 'https://rilog.kr',
+					serviceUrl: 'https://www.rilog.kr',
 					githubUrl: 'https://github.com/rilog',
 					memberCount: 1,
 					postCount: 0,

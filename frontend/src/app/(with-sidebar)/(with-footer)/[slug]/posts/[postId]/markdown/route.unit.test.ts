@@ -26,13 +26,13 @@ describe('게시글 Markdown 표현', () => {
 			),
 		);
 
-		const response = await GET(new Request('https://rilog.kr/@actual/posts/1/markdown'), {
+		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
 			params: Promise.resolve({ slug: '@actual', postId: '1' }),
 		});
 		const markdown = await response.text();
 
 		expect(response.status).toBe(200);
-		expect(response.headers.get('Link')).toBe('<https://rilog.kr/@actual/posts/1>; rel="canonical"');
+		expect(response.headers.get('Link')).toBe('<https://www.rilog.kr/@actual/posts/1>; rel="canonical"');
 		expect(markdown).toContain('title: "줄바꿈\\n제목 \\" 인용"');
 	});
 
@@ -43,7 +43,7 @@ describe('게시글 Markdown 표현', () => {
 			vi.fn().mockResolvedValue(Response.json({ data: { content: [], owner: { slug: 'actual' } } })),
 		);
 
-		const response = await GET(new Request('https://rilog.kr/@wrong/posts/1/markdown'), {
+		const response = await GET(new Request('https://www.rilog.kr/@wrong/posts/1/markdown'), {
 			params: Promise.resolve({ slug: '@wrong', postId: '1' }),
 		});
 

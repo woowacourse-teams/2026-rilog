@@ -498,7 +498,7 @@ describe('SignUpForm', () => {
 		await user.type(screen.getByRole('textbox', { name: '닉네임' }), '리로그');
 		await user.type(screen.getByRole('textbox', { name: '고유 아이디' }), 'Ri_log01');
 		await user.type(screen.getByRole('textbox', { name: '한 줄 소개' }), ' 함께 기록해요 ');
-		await user.type(screen.getByRole('textbox', { name: '서비스 링크' }), ' https://rilog.kr ');
+		await user.type(screen.getByRole('textbox', { name: '서비스 링크' }), ' https://www.rilog.kr ');
 		await user.type(screen.getByRole('textbox', { name: 'GitHub 링크' }), ' https://github.com/rilog ');
 		await user.click(screen.getByRole('button', { name: '닉네임 중복 확인' }));
 		await user.click(screen.getByRole('button', { name: '고유 아이디 중복 확인' }));
@@ -510,7 +510,7 @@ describe('SignUpForm', () => {
 				nickname: '리로그',
 				slug: 'Ri_log01',
 				description: '함께 기록해요',
-				serviceUrl: 'https://rilog.kr',
+				serviceUrl: 'https://www.rilog.kr',
 				githubUrl: 'https://github.com/rilog',
 				profileImageFile: null,
 			});

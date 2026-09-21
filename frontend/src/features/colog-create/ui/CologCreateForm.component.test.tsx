@@ -114,7 +114,7 @@ describe('CologCreateForm', () => {
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();
 		expect(screen.getByRole('group', { name: '소셜' })).toHaveAccessibleDescription('링크를 통해 팀을 표현해 보세요.');
 		expect(screen.queryByText('(선택)')).not.toBeInTheDocument();
-		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' }).parentElement).toHaveTextContent('rilog.kr/@');
+		expect(screen.getByRole('textbox', { name: '팀 고유 아이디' }).parentElement).toHaveTextContent('www.rilog.kr/@');
 		expect(screen.getByRole('textbox', { name: '서비스 링크' }).parentElement?.querySelector('img')).toHaveAttribute(
 			'src',
 			'/icons/form/link.svg',

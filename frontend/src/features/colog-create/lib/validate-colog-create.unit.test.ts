@@ -17,7 +17,7 @@ const VALID_VALUE: CologCreateValue = {
 	description: '함께 기록하는 팀입니다.',
 	profileImageUrl: '/images/profile-placeholder.svg',
 	coverImageUrl: '',
-	serviceUrl: 'https://rilog.kr',
+	serviceUrl: 'https://www.rilog.kr',
 	githubUrl: 'https://github.com/woowacourse-teams',
 	logoFile: null,
 	coverImageFile: null,
@@ -73,14 +73,14 @@ describe('normalizeCologCreateValue', () => {
 				name: '  리로그  ',
 				slug: '  rilog_team  ',
 				profileImageUrl: '  https://cdn.rilog.kr/logo.png  ',
-				serviceUrl: '  https://rilog.kr  ',
+				serviceUrl: '  https://www.rilog.kr  ',
 				githubUrl: '  https://github.com/woowacourse-teams  ',
 			}),
 		).toMatchObject({
 			name: '리로그',
 			slug: 'rilog_team',
 			profileImageUrl: 'https://cdn.rilog.kr/logo.png',
-			serviceUrl: 'https://rilog.kr',
+			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/woowacourse-teams',
 		});
 	});
