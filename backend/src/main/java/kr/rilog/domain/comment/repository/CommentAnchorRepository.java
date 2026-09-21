@@ -15,12 +15,14 @@ public interface CommentAnchorRepository extends JpaRepository<CommentAnchor, Lo
     @Query("""
             SELECT anchor
             FROM CommentAnchor anchor
+            JOIN FETCH anchor.selection anchorSelection
             JOIN FETCH anchor.writer writer
-            WHERE anchor.post.id = :postId
-              AND anchor.selection.blockId = :blockId
-              AND anchor.selection.range.startOffset = :startOffset
-              AND anchor.selection.range.endOffset = :endOffset
-              AND anchor.status = :status
+            WHERE anchorSelection.post.id = :postId
+              AND anchorSelection.selection.blockId = :blockId
+              AND anchorSelection.selection.range.startOffset = :startOffset
+              AND anchorSelection.selection.range.endOffset = :endOffset
+              AND anchorSelection.status = :status
+              AND anchorSelection.deletedAt IS NULL
               AND anchor.deletedAt IS NULL
             ORDER BY anchor.createdAt ASC, anchor.id ASC
             """)

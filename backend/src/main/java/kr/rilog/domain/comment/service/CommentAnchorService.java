@@ -25,6 +25,9 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 @Transactional(readOnly = true)
 public class CommentAnchorService {
 
+    /*
+     * TODO: CommentAnchorSelection 재사용 정책과 함께 인라인 댓글 생성 API를 다시 구현한다.
+     * 현재는 CommentAnchorSelection 엔티티 마이그레이션만 적용하므로 생성 유스케이스를 비활성화한다.
     private final CommentAnchorRepository commentAnchorRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
@@ -62,5 +65,6 @@ public class CommentAnchorService {
         return userRepository.findById(requesterId)
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
     }
+    */
 
 }

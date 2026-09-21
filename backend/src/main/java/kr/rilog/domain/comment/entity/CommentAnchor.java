@@ -1,10 +1,15 @@
 package kr.rilog.domain.comment.entity;
 
-import jakarta.persistence.*;
-import kr.rilog.domain.comment.entity.enums.AnchorStatus;
-import kr.rilog.domain.post.entity.vo.TextRange;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import kr.rilog.domain.comment.exception.CommentException;
-import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -12,9 +17,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
-
-import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_ACTIVE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
@@ -33,40 +35,24 @@ public class CommentAnchor extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "comment_anchor_selection_id", nullable = false)
+    private CommentAnchorSelection selection;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User writer;
-
-    @Embedded
-    private CommentAnchorSelection selection;
 
     @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private AnchorStatus status;
-
-    private LocalDateTime orphanedAt;
-
-    public static CommentAnchor create(
-            Post post,
-            User writer,
-            CommentAnchorSelection selection,
-            String content
-    ) {
+    public static CommentAnchor create(CommentAnchorSelection selection, User writer, String content) {
         validateSelection(selection);
         validateContent(content);
         return CommentAnchor.builder()
-                .post(post)
-                .writer(writer)
                 .selection(selection)
+                .writer(writer)
                 .content(content)
-                .status(AnchorStatus.ACTIVE)
                 .build();
     }
 
@@ -74,25 +60,6 @@ public class CommentAnchor extends BaseEntity {
         validateWriter(requesterId);
         validateContent(content);
         this.content = content;
-    }
-
-    public void relocate(TextRange newRange) {
-        validateActive();
-        this.selection = selection.relocate(newRange);
-    }
-
-    public void orphan() {
-        validateActive();
-        this.status = AnchorStatus.ORPHANED;
-        this.orphanedAt = LocalDateTime.now();
-    }
-
-    public boolean isActive() {
-        return status == AnchorStatus.ACTIVE;
-    }
-
-    public boolean isOrphaned() {
-        return status == AnchorStatus.ORPHANED;
     }
 
     public boolean isDeleted() {
@@ -103,12 +70,6 @@ public class CommentAnchor extends BaseEntity {
         return writer != null
                 && writer.getId() != null
                 && writer.getId().equals(userId);
-    }
-
-    private void validateActive() {
-        if (!isActive()) {
-            throw new CommentException(COMMENT_ANCHOR_NOT_ACTIVE);
-        }
     }
 
     private void validateWriter(Long requesterId) {

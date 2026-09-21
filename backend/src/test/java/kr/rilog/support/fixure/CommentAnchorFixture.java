@@ -2,9 +2,12 @@ package kr.rilog.support.fixure;
 
 import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.user.entity.User;
+
+import java.time.LocalDateTime;
 
 public final class CommentAnchorFixture {
 
@@ -13,7 +16,7 @@ public final class CommentAnchorFixture {
     private static final int START_OFFSET = 2;
     private static final int END_OFFSET = 4;
     private static final String SELECTED_TEXT = "나다";
-    private static final CommentAnchorSelection SELECTION = CommentAnchorSelection.select(
+    private static final Selection SELECTION = Selection.select(
             BLOCK,
             START_OFFSET,
             END_OFFSET,
@@ -25,13 +28,14 @@ public final class CommentAnchorFixture {
     }
 
     public static CommentAnchor activeAnchor(Post post, User writer) {
-        return CommentAnchor.create(post, writer, SELECTION, CONTENT);
+        CommentAnchorSelection anchorSelection = CommentAnchorSelection.create(post, SELECTION);
+        return CommentAnchor.create(anchorSelection, writer, CONTENT);
     }
 
     public static CommentAnchor orphanedAnchor(Post post, User writer) {
-        CommentAnchor anchor = activeAnchor(post, writer);
-        anchor.orphan();
-        return anchor;
+        CommentAnchorSelection anchorSelection = CommentAnchorSelection.create(post, SELECTION);
+        anchorSelection.orphan(LocalDateTime.of(2026, 9, 20, 12, 0));
+        return CommentAnchor.create(anchorSelection, writer, CONTENT);
     }
 
 }

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 @Tag(name = "인라인 댓글 API")
 public interface CommentAnchorApiSpec {
 
+    /*
+     * TODO: CommentAnchorSelection 엔티티 기반 생성 API 구현 시 명세를 다시 활성화한다.
     @Operation(
             summary = "인라인 댓글 작성 API",
             description = """
@@ -30,5 +32,6 @@ public interface CommentAnchorApiSpec {
             @Parameter(hidden = true) @LoginUserId Long requesterId,
             @Valid @RequestBody CommentAnchorCreateRequest request
     );
+    */
 
 }
