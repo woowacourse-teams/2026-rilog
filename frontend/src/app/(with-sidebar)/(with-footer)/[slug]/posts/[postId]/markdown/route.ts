@@ -1,6 +1,8 @@
 import type { Block } from '@blocknote/core';
 
 import { blocksToMarkdown } from '@/domains/post/lib/blocks-to-markdown';
+import type { PostDetailResponse } from '@/shared/api/posts/types';
+import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
 
 export const revalidate = 600;
@@ -27,44 +29,27 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ slu
 			return new Response('Not Found', { status: 404 });
 		}
 
-		const body = (await res.json()) as {
-			data?: {
-				title?: string;
-				content?: Block[];
-				author?: { nickname?: string; slug?: string };
-				blog?: { slug?: string };
-				category?: string | null;
-				publishedAt?: string;
-				updatedAt?: string;
-			};
-		};
+		const body = (await res.json()) as { data?: PostDetailResponse };
 
 		const data = body.data;
-		if (!data || !Array.isArray(data.content)) {
+		if (!data || !Array.isArray(data.content) || data.owner?.slug !== slug.replace(/^@/, '')) {
 			return new Response('Not Found', { status: 404 });
 		}
 
-		const canonical = toAbsoluteSiteUrl(
-			`/@${encodeURIComponent(data.blog?.slug ?? slug.replace(/^@/, ''))}/posts/${numericId}`,
-		);
-		const title = data.title ?? '';
-		const author = data.author?.nickname ?? '';
-		const publishedAt = data.publishedAt ?? '';
-		const updatedAt = data.updatedAt ?? publishedAt;
+		const canonical = toAbsoluteSiteUrl(buildPostDetailPath(data.owner.slug, String(numericId)));
 
 		const frontmatter = [
 			'---',
-			`title: "${title.replaceAll('"', '\\"')}"`,
-			`author: "${author.replaceAll('"', '\\"')}"`,
-			`canonical: "${canonical}"`,
-			`publishedAt: "${publishedAt}"`,
-			`updatedAt: "${updatedAt}"`,
-			`category: "${data.category ?? ''}"`,
+			`title: ${JSON.stringify(data.title)}`,
+			`author: ${JSON.stringify(data.author.nickname ?? '')}`,
+			`canonical: ${JSON.stringify(canonical)}`,
+			`publishedAt: ${JSON.stringify(data.publishedAt)}`,
+			`category: ${JSON.stringify(data.category ?? '')}`,
 			'---',
 			'',
 		].join('\n');
 
-		const markdown = blocksToMarkdown(data.content);
+		const markdown = await blocksToMarkdown(data.content as Block[]);
 		const text = `${frontmatter}${markdown}\n`;
 
 		return new Response(text, {
