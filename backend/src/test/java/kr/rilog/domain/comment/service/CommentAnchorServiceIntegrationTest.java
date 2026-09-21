@@ -390,18 +390,8 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
         Post post = savePublicPost(postWriter);
-        blogMemberRepository.saveAndFlush(BlogMember.createOwner(
-                post.getRilog(),
-                postWriter,
-                LocalDateTime.of(2026, 9, 17, 10, 0)
-        ));
-        blogMemberRepository.saveAndFlush(BlogMember.invite(
-                post.getRilog(),
-                commenter,
-                "개발자",
-                BlogPermission.MEMBER,
-                LocalDateTime.of(2026, 9, 17, 10, 10)
-        ));
+        saveBlogOwner(post, postWriter);
+        saveActiveBlogMember(post, commenter, BlogPermission.MEMBER);
         CommentAnchorSelection anchorSelection = saveActiveSelection(post);
         saveAnchor(anchorSelection, commenter, CONTENT);
 
@@ -409,9 +399,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), commenter.getId());
 
         // then
-        CommentAnchorListResult.CommentAnchorResult commentAnchor = result.blocks().getFirst()
-                .anchorGroups().getFirst()
-                .commentAnchors().getFirst();
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
         assertThat(commentAnchor.author().postAuthor()).isFalse();
         assertThat(commentAnchor.author().blogMember()).isTrue();
         assertThat(commentAnchor.canEdit()).isTrue();
@@ -432,9 +420,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), postWriter.getId());
 
         // then
-        CommentAnchorListResult.CommentAnchorResult commentAnchor = result.blocks().getFirst()
-                .anchorGroups().getFirst()
-                .commentAnchors().getFirst();
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
         assertThat(commentAnchor.canEdit()).isFalse();
         assertThat(commentAnchor.canDelete()).isTrue();
     }
@@ -447,13 +433,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
         User admin = saveCompletedUser(102L, "관리자", "admin");
         Post post = savePublicPost(postWriter);
-        blogMemberRepository.saveAndFlush(BlogMember.invite(
-                post.getRilog(),
-                admin,
-                "관리자",
-                BlogPermission.ADMIN,
-                LocalDateTime.of(2026, 9, 17, 10, 10)
-        ));
+        saveActiveBlogMember(post, admin, BlogPermission.ADMIN);
         CommentAnchorSelection anchorSelection = saveActiveSelection(post);
         saveAnchor(anchorSelection, commenter, CONTENT);
 
@@ -461,9 +441,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), admin.getId());
 
         // then
-        CommentAnchorListResult.CommentAnchorResult commentAnchor = result.blocks().getFirst()
-                .anchorGroups().getFirst()
-                .commentAnchors().getFirst();
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
         assertThat(commentAnchor.canEdit()).isFalse();
         assertThat(commentAnchor.canDelete()).isTrue();
     }
@@ -476,13 +454,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
         User member = saveCompletedUser(102L, "구성원", "member");
         Post post = savePublicPost(postWriter);
-        blogMemberRepository.saveAndFlush(BlogMember.invite(
-                post.getRilog(),
-                member,
-                "구성원",
-                BlogPermission.MEMBER,
-                LocalDateTime.of(2026, 9, 17, 10, 10)
-        ));
+        saveActiveBlogMember(post, member, BlogPermission.MEMBER);
         CommentAnchorSelection anchorSelection = saveActiveSelection(post);
         saveAnchor(anchorSelection, commenter, CONTENT);
 
@@ -490,9 +462,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), member.getId());
 
         // then
-        CommentAnchorListResult.CommentAnchorResult commentAnchor = result.blocks().getFirst()
-                .anchorGroups().getFirst()
-                .commentAnchors().getFirst();
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
         assertThat(commentAnchor.canEdit()).isFalse();
         assertThat(commentAnchor.canDelete()).isFalse();
     }
@@ -553,6 +523,30 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
     private CommentAnchor saveAnchor(CommentAnchorSelection selection, User writer, String content) {
         return commentAnchorRepository.saveAndFlush(CommentAnchor.create(selection, writer, content));
+    }
+
+    private BlogMember saveActiveBlogMember(Post post, User user, BlogPermission permission) {
+        return blogMemberRepository.saveAndFlush(BlogMember.invite(
+                post.getRilog(),
+                user,
+                "테스트 역할",
+                permission,
+                LocalDateTime.of(2026, 9, 17, 10, 10)
+        ));
+    }
+
+    private BlogMember saveBlogOwner(Post post, User owner) {
+        return blogMemberRepository.saveAndFlush(BlogMember.createOwner(
+                post.getRilog(),
+                owner,
+                LocalDateTime.of(2026, 9, 17, 10, 0)
+        ));
+    }
+
+    private CommentAnchorListResult.CommentAnchorResult firstCommentAnchorOf(CommentAnchorListResult result) {
+        return result.blocks().getFirst()
+                .anchorGroups().getFirst()
+                .commentAnchors().getFirst();
     }
 
     private Long getSelectionId(CommentAnchorCreateResult result) {
