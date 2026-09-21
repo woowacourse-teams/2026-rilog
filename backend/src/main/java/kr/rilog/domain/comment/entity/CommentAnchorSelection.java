@@ -1,90 +1,108 @@
 package kr.rilog.domain.comment.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.persistence.Embedded;
+import kr.rilog.domain.comment.entity.enums.AnchorStatus;
+import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.exception.CommentException;
-import kr.rilog.domain.post.entity.vo.TextBlock;
+import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.vo.TextRange;
+import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-import java.util.Set;
+import java.time.LocalDateTime;
 
-import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_ACTIVE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 
 @Getter
-@Embeddable
-@EqualsAndHashCode
+@Entity
+@Table(name = "comment_anchor_selection")
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CommentAnchorSelection {
+public class CommentAnchorSelection extends BaseEntity {
 
-    private static final Set<String> COMMENTABLE_BLOCK_TYPES = Set.of("paragraph", "heading", "quote");
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
-    @Column(name = "block_id", nullable = false)
-    private String blockId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
 
     @Embedded
-    private TextRange range;
+    private Selection selection;
 
-    @Column(
-            name = "selected_text",
-            nullable = false,
-            columnDefinition = "text"
-    )
-    private String selectedText;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AnchorStatus status;
 
-    private CommentAnchorSelection(String blockId, TextRange range, String selectedText) {
-        validateValues(blockId, range, selectedText);
-        this.blockId = blockId;
-        this.range = range;
-        this.selectedText = selectedText;
+    private LocalDateTime orphanedAt;
+
+    public static CommentAnchorSelection create(Post post, Selection selection) {
+        validatePost(post);
+        validateSelection(selection);
+        return CommentAnchorSelection.builder()
+                .post(post)
+                .selection(selection)
+                .status(AnchorStatus.ACTIVE)
+                .build();
     }
 
-    public static CommentAnchorSelection select(
-            TextBlock block,
-            int startOffset,
-            int endOffset,
-            String selectedText
-    ) {
-        if (block == null) {
+    public void relocate(TextRange newRange) {
+        validateActive();
+        this.selection = selection.relocate(newRange);
+    }
+
+    public void orphan(LocalDateTime orphanedAt) {
+        validateActive();
+        validateOrphanedAt(orphanedAt);
+        this.status = AnchorStatus.ORPHANED;
+        this.orphanedAt = orphanedAt;
+    }
+
+    public boolean isActive() {
+        return status == AnchorStatus.ACTIVE;
+    }
+
+    public boolean isOrphaned() {
+        return status == AnchorStatus.ORPHANED;
+    }
+
+    private void validateActive() {
+        if (!isActive()) {
+            throw new CommentException(COMMENT_ANCHOR_NOT_ACTIVE);
+        }
+    }
+
+    private static void validatePost(Post post) {
+        if (post == null) {
             throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
+    }
 
-        if (!COMMENTABLE_BLOCK_TYPES.contains(block.type())) {
-            throw new CommentException(COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE);
-        }
-
-        TextRange range = TextRange.of(startOffset, endOffset);
-        if (!block.slice(range).equals(selectedText)) {
+    private static void validateSelection(Selection selection) {
+        if (selection == null) {
             throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
-
-        return new CommentAnchorSelection(block.blockId(), range, selectedText);
     }
 
-    public static CommentAnchorSelection of(
-            String blockId,
-            int startOffset,
-            int endOffset,
-            String selectedText
-    ) {
-        return new CommentAnchorSelection(blockId, TextRange.of(startOffset, endOffset), selectedText);
-    }
-
-    public CommentAnchorSelection relocate(TextRange newRange) {
-        return new CommentAnchorSelection(blockId, newRange, selectedText);
-    }
-
-    private static void validateValues(String blockId, TextRange range, String selectedText) {
-        if (blockId == null || blockId.isBlank()
-                || range == null
-                || selectedText == null
-                || selectedText.isEmpty()
-                || selectedText.length() != range.length()) {
+    private static void validateOrphanedAt(LocalDateTime orphanedAt) {
+        if (orphanedAt == null) {
             throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
     }
