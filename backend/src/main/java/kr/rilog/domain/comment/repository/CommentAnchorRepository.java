@@ -18,20 +18,14 @@ public interface CommentAnchorRepository extends JpaRepository<CommentAnchor, Lo
             JOIN FETCH anchor.commentAnchorSelection anchorSelection
             JOIN FETCH anchor.writer writer
             WHERE anchorSelection.post.id = :postId
-              AND anchorSelection.selection.blockId = :blockId
-              AND anchorSelection.selection.range.startOffset = :startOffset
-              AND anchorSelection.selection.range.endOffset = :endOffset
-              AND anchorSelection.status = :status
               AND anchorSelection.deletedAt IS NULL
               AND anchor.deletedAt IS NULL
-            ORDER BY anchor.createdAt ASC, anchor.id ASC
+              AND writer.deletedAt IS NULL
+            ORDER BY anchorSelection.createdAt ASC,
+                     anchorSelection.id ASC,
+                     anchor.createdAt ASC,
+                     anchor.id ASC
             """)
-    List<CommentAnchor> findAllBySelection(
-            @Param("postId") Long postId,
-            @Param("blockId") String blockId,
-            @Param("startOffset") int startOffset,
-            @Param("endOffset") int endOffset,
-            @Param("status") AnchorStatus status
-    );
+    List<CommentAnchor> findAllByPostId(@Param("postId") Long postId);
 
 }
