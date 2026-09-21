@@ -5,6 +5,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -87,6 +88,27 @@ public interface PostRepository extends JpaRepository<Post, Long> {
               AND p.deletedAt IS NULL
             """)
     Optional<Post> findDetailById(
+            @Param("postId") Long postId
+    );
+
+    @Query("""
+            SELECT p
+            FROM Post p
+            JOIN FETCH p.user u
+            JOIN FETCH p.rilog r
+            LEFT JOIN FETCH p.colog c
+            LEFT JOIN FETCH p.chapter ch
+            WHERE p.id = :postId
+              AND p.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
+              AND p.deletedAt IS NULL
+              AND (
+                    (p.colog IS NOT NULL AND c.slug = :slug)
+                    OR
+                    (p.colog IS NULL AND r.slug = :slug)
+              )
+            """)
+    Optional<Post> findDetailBySlugAndId(
+            @Param("slug") Slug slug,
             @Param("postId") Long postId
     );
 

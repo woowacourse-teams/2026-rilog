@@ -43,6 +43,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -263,11 +264,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailBySlugAndId(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(publicPost));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, null);
+        PostDetailResponse response = postService.readPublicPostDetail(RILOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -277,13 +278,28 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("공개 상세 조회는 postId가 존재해도 URL slug가 게시글 소속 블로그와 다르면 찾을 수 없다")
+    void readPublicPostRejectsMismatchedSlug() {
+        // given
+        String wrongSlug = "wrong_slug";
+        when(postRepository.findDetailBySlugAndId(Slug.from(wrongSlug), POST_ID))
+                .thenReturn(Optional.empty());
+
+        // when - then
+        assertThatThrownBy(() -> postService.readPublicPostDetail(wrongSlug, POST_ID, null))
+                .isInstanceOf(PostException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(POST_NOT_FOUND);
+    }
+
+    @Test
     @DisplayName("개인 블로그 게시글 작성자는 수정과 삭제를 할 수 있다")
     void readRilogPostAllowsWriterToEditAndDelete() {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
         BlogMember requesterMember = createMember(publicPost.getRilog(), writer, BlogPermission.OWNER);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(publicPost));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
                 RILOG_ID,
@@ -292,7 +308,7 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions().canEdit()).isTrue();
@@ -305,7 +321,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post publicPost = createPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(publicPost));
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
                 RILOG_ID,
@@ -314,7 +330,7 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions().canEdit()).isFalse();
@@ -327,7 +343,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailBySlugAndId(Slug.from(COLOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -338,7 +354,7 @@ class PostServiceTest {
         )).thenReturn(5L);
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, null);
+        PostDetailResponse response = postService.readPublicPostDetail(COLOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.owner())
@@ -358,7 +374,7 @@ class PostServiceTest {
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
         BlogMember requesterMember = createMember(cologPost.getColog(), writer, BlogPermission.MEMBER);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -374,7 +390,7 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions().canEdit()).isTrue();
@@ -387,7 +403,7 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -403,7 +419,7 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions().canEdit()).isFalse();
@@ -418,7 +434,7 @@ class PostServiceTest {
         User requester = createRequester();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
         BlogMember requesterMember = createMember(cologPost.getColog(), requester, BlogPermission.ADMIN);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailBySlugAndId(Slug.from(COLOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(cologPost));
         when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
                 .thenReturn(3L);
@@ -434,7 +450,7 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, REQUESTER_ID);
+        PostDetailResponse response = postService.readPublicPostDetail(COLOG_SLUG, POST_ID, REQUESTER_ID);
 
         // then
         assertThat(response.viewerPermissions().canEdit()).isFalse();
@@ -447,11 +463,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailBySlugAndId(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(POST_ID, null))
+        assertThatThrownBy(() -> postService.readPublicPostDetail(RILOG_SLUG, POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
@@ -463,11 +479,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(privatePost));
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(POST_ID, WRITER_ID);
+        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -479,11 +495,11 @@ class PostServiceTest {
         // given
         User writer = createWriter();
         Post privatePost = createPost(writer, PostVisibility.PRIVATE);
-        when(postRepository.findDetailById(POST_ID))
+        when(postRepository.findDetailBySlugAndId(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(POST_ID, 999L))
+        assertThatThrownBy(() -> postService.readPublicPostDetail(RILOG_SLUG, POST_ID, 999L))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);

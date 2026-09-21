@@ -79,15 +79,15 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("블로그의 공개 게시글 상세 조회는 로그인하지 않아도 가능하다")
-    void getPostDetailsAllowsAnonymousUser() throws Exception {
+    @DisplayName("블로그의 공개 게시글 상세 조회는 slug와 postId로 로그인하지 않아도 가능하다")
+    void getPublicPostDetailsAllowsAnonymousUser() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPostOfBlogs(POST_ID, null)).thenReturn(response());
+        when(postService.readPublicPostDetail(BLOG_SLUG, POST_ID, null)).thenReturn(response());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.chapter.chapterId").value(12L))
@@ -97,29 +97,62 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.data.viewerPermissions.canEdit").value(false))
                 .andExpect(jsonPath("$.data.viewerPermissions.canDelete").value(false));
 
-        verify(postService).readPostOfBlogs(POST_ID, null);
+        verify(postService).readPublicPostDetail(BLOG_SLUG, POST_ID, null);
     }
 
     @Test
     @DisplayName("미분류 게시글 상세 조회 응답은 chapter를 null로 반환한다.")
-    void getPostDetailsReturnsNullChapterForUnclassifiedPost() throws Exception {
+    void getPublicPostDetailsReturnsNullChapterForUnclassifiedPost() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPostOfBlogs(POST_ID, null)).thenReturn(responseWithoutChapter());
+        when(postService.readPublicPostDetail(BLOG_SLUG, POST_ID, null)).thenReturn(responseWithoutChapter());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
-        mockMvc.perform(get("/v1/posts/{postId}", POST_ID))
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.chapter").value(nullValue()));
     }
 
     @Test
     @DisplayName("블로그 게시글 상세 조회에 Access Token이 있으면 로그인 사용자 ID를 전달한다")
-    void getPostDetailsPassesRequesterIdWhenAccessTokenExists() throws Exception {
+    void getPublicPostDetailsPassesRequesterIdWhenAccessTokenExists() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPostOfBlogs(POST_ID, 7L)).thenReturn(response());
+        when(postService.readPublicPostDetail(BLOG_SLUG, POST_ID, 7L)).thenReturn(response());
+        MockMvc mockMvc = mockMvc(postService);
+
+        // when - then
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200));
+
+        verify(postService).readPublicPostDetail(BLOG_SLUG, POST_ID, 7L);
+    }
+
+    @Test
+    @DisplayName("블로그 게시글 상세 조회에 잘못된 Authorization 헤더가 있으면 요청을 거부한다")
+    void getPublicPostDetailsRejectsInvalidAuthorizationHeader() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        MockMvc mockMvc = mockMvc(postService);
+
+        // when - then
+        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
+                        .header(HttpHeaders.AUTHORIZATION, "Basic access-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 초기 데이터 조회는 로그인 사용자 ID로 조회한다")
+    void getEditablePostDetailsPassesRequesterId() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        when(postService.readEditablePostDetail(POST_ID, 7L)).thenReturn(response());
         MockMvc mockMvc = mockMvc(postService);
 
         // when - then
@@ -128,23 +161,7 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200));
 
-        verify(postService).readPostOfBlogs(POST_ID, 7L);
-    }
-
-    @Test
-    @DisplayName("블로그 게시글 상세 조회에 잘못된 Authorization 헤더가 있으면 요청을 거부한다")
-    void getPostDetailsRejectsInvalidAuthorizationHeader() throws Exception {
-        // given
-        PostService postService = mock(PostService.class);
-        MockMvc mockMvc = mockMvc(postService);
-
-        // when - then
-        mockMvc.perform(get("/v1/posts/{postId}", POST_ID)
-                        .header(HttpHeaders.AUTHORIZATION, "Basic access-token"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
-
-        verifyNoInteractions(postService);
+        verify(postService).readEditablePostDetail(POST_ID, 7L);
     }
 
     private MockMvc mockMvc(PostService postService) {

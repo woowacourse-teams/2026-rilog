@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
@@ -37,11 +38,11 @@ public interface PostApiSpec {
             @Valid @RequestBody PostPublishRequest request
     );
 
-    @GetMapping("/posts/{postId}")
+    @GetMapping("/blogs/{slug}/posts/{postId}")
     @OptionalAuthGuard
     @Operation(
             summary = "게시글 상세 조회 API",
-            description = "게시글 ID로 게시글 상세 정보를 조회합니다. 소속 블로그 유형에 따라 owner 응답이 달라집니다."
+            description = "블로그 slug와 게시글 ID로 공개 상세 정보를 조회합니다. URL slug가 게시글 소속 블로그와 다르면 찾을 수 없습니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
@@ -65,10 +66,24 @@ public interface PostApiSpec {
                     }
             )
     )
-    ApiResponse<PostDetailResponse> getPostDetails(
+    ApiResponse<PostDetailResponse> getPublicPostDetails(
+            @Parameter(description = "블로그 slug", example = "rilog")
+            @PathVariable String slug,
             @Parameter(description = "게시글 ID", example = "1")
             @PathVariable Long postId,
             @Parameter(hidden = true) @NullableLoginUserId Long requesterId
+    );
+
+    @GetMapping("/posts/{postId}")
+    @AuthGuard
+    @Operation(
+            summary = "게시글 수정 초기 데이터 조회 API",
+            description = "작성자 본인이 발행된 게시글을 수정하기 위한 초기 데이터를 조회합니다."
+    )
+    ApiResponse<PostDetailResponse> getEditablePostDetails(
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @LoginUserId Long requesterId
     );
 
     @Operation(
