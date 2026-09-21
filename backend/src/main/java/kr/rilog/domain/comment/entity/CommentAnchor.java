@@ -37,7 +37,7 @@ public class CommentAnchor extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "comment_anchor_selection_id", nullable = false)
-    private CommentAnchorSelection selection;
+    private CommentAnchorSelection commentAnchorSelection;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -46,11 +46,11 @@ public class CommentAnchor extends BaseEntity {
     @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
 
-    public static CommentAnchor create(CommentAnchorSelection selection, User writer, String content) {
-        validateSelection(selection);
+    public static CommentAnchor create(CommentAnchorSelection commentAnchorSelection, User writer, String content) {
+        validateSelection(commentAnchorSelection);
         validateContent(content);
         return CommentAnchor.builder()
-                .selection(selection)
+                .commentAnchorSelection(commentAnchorSelection)
                 .writer(writer)
                 .content(content)
                 .build();
@@ -78,8 +78,8 @@ public class CommentAnchor extends BaseEntity {
         }
     }
 
-    private static void validateSelection(CommentAnchorSelection selection) {
-        if (selection == null) {
+    private static void validateSelection(CommentAnchorSelection commentAnchorSelection) {
+        if (commentAnchorSelection == null) {
             throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
     }

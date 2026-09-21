@@ -37,7 +37,7 @@ class CommentAnchorTest {
 
         CommentAnchor anchor = CommentAnchor.create(anchorSelection, writer, CONTENT);
 
-        assertThat(anchor.getSelection()).isSameAs(anchorSelection);
+        assertThat(anchor.getCommentAnchorSelection()).isSameAs(anchorSelection);
     }
 
     @Test

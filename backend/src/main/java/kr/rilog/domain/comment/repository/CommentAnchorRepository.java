@@ -15,7 +15,7 @@ public interface CommentAnchorRepository extends JpaRepository<CommentAnchor, Lo
     @Query("""
             SELECT anchor
             FROM CommentAnchor anchor
-            JOIN FETCH anchor.selection anchorSelection
+            JOIN FETCH anchor.commentAnchorSelection anchorSelection
             JOIN FETCH anchor.writer writer
             WHERE anchorSelection.post.id = :postId
               AND anchorSelection.selection.blockId = :blockId
