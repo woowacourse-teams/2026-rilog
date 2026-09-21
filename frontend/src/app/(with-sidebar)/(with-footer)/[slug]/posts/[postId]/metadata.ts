@@ -15,7 +15,7 @@ export const createPostMetadata = (post: PostDetail): Metadata => {
 	const image = getImageUrl(post.thumbnailUrl) || DEFAULT_OG_IMAGE;
 
 	return {
-		alternates: { canonical },
+		alternates: { canonical, types: { 'text/markdown': `${canonical}/markdown` } },
 		description,
 		title: post.title,
 		...createSocialMetadata({
