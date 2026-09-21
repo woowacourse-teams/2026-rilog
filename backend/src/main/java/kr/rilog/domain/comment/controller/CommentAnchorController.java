@@ -26,7 +26,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
     private final CommentAnchorService commentAnchorService;
 
     @AuthGuard
-    @PostMapping("/posts/{postId}/inline-comments")
+    @PostMapping("/posts/{postId}/comment-anchors")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CommentAnchorCreateResponse> createCommentAnchor(
             @PathVariable Long postId,
