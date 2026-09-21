@@ -31,6 +31,12 @@ export const metadata: Metadata = {
 	title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
 	description: SITE_DESCRIPTION,
 	applicationName: SITE_NAME,
+	alternates: {
+		types: {
+			'application/rss+xml': '/rss.xml',
+			'application/feed+json': '/feed.json',
+		},
+	},
 	...createSocialMetadata({
 		description: SITE_DESCRIPTION,
 		image: DEFAULT_OG_IMAGE,

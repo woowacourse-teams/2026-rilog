@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
 			},
 		];
 	},
+	rewrites() {
+		return Promise.resolve([{ source: '/.well-known/llms.txt', destination: '/llms.txt' }]);
+	},
 	images: {
 		remotePatterns: [
 			{

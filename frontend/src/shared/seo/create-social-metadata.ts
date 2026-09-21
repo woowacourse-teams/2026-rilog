@@ -1,5 +1,5 @@
 export const DEFAULT_OG_IMAGE = '/images/default-og-image.png';
-export const SITE_DESCRIPTION = '기록을 작성하고 함께 나누는 공간';
+export const SITE_DESCRIPTION = 'Rilog는 깊이 있는 기록과 지식 공유를 위한 블로그 플랫폼입니다.';
 export const SITE_NAME = 'Rilog';
 
 interface SocialMetadataOptions {
