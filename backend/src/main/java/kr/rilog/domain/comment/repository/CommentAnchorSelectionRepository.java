@@ -1,7 +1,6 @@
 package kr.rilog.domain.comment.repository;
 
-import kr.rilog.domain.comment.entity.CommentAnchor;
-import kr.rilog.domain.comment.entity.enums.AnchorStatus;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,28 +9,26 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CommentAnchorRepository extends JpaRepository<CommentAnchor, Long> {
+public interface CommentAnchorSelectionRepository extends JpaRepository<CommentAnchorSelection, Long> {
 
     @Query("""
-            SELECT anchor
-            FROM CommentAnchor anchor
-            JOIN FETCH anchor.commentAnchorSelection anchorSelection
-            JOIN FETCH anchor.writer writer
+            SELECT anchorSelection
+            FROM CommentAnchorSelection anchorSelection
             WHERE anchorSelection.post.id = :postId
               AND anchorSelection.selection.blockId = :blockId
               AND anchorSelection.selection.range.startOffset = :startOffset
               AND anchorSelection.selection.range.endOffset = :endOffset
-              AND anchorSelection.status = :status
+              AND anchorSelection.selection.selectedText = :selectedText
+              AND anchorSelection.status = kr.rilog.domain.comment.entity.enums.AnchorStatus.ACTIVE
               AND anchorSelection.deletedAt IS NULL
-              AND anchor.deletedAt IS NULL
-            ORDER BY anchor.createdAt ASC, anchor.id ASC
+            ORDER BY anchorSelection.createdAt ASC, anchorSelection.id ASC
             """)
-    List<CommentAnchor> findAllBySelection(
+    List<CommentAnchorSelection> findAllActiveBySelection(
             @Param("postId") Long postId,
             @Param("blockId") String blockId,
             @Param("startOffset") int startOffset,
             @Param("endOffset") int endOffset,
-            @Param("status") AnchorStatus status
+            @Param("selectedText") String selectedText
     );
 
 }
