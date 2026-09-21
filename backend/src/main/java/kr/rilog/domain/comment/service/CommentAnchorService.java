@@ -47,7 +47,6 @@ public class CommentAnchorService {
                 command.content()
         );
         CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
-
         return CommentAnchorCreateResult.from(savedCommentAnchor);
     }
 
