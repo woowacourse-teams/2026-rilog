@@ -63,28 +63,6 @@ public class CommentAnchor extends BaseEntity {
 
     private LocalDateTime orphanedAt;
 
-    private static CommentAnchor create(
-            Post post,
-            User writer,
-            String blockId,
-            TextRange range,
-            String selectedText,
-            String content
-    ) {
-        validateBlockId(blockId);
-        validateSelectedText(range, selectedText);
-        validateContent(content);
-        return CommentAnchor.builder()
-                .post(post)
-                .writer(writer)
-                .blockId(blockId)
-                .range(range)
-                .selectedText(selectedText)
-                .content(content)
-                .status(AnchorStatus.ACTIVE)
-                .build();
-    }
-
     public static CommentAnchor create(
             Post post,
             User writer,
@@ -95,7 +73,18 @@ public class CommentAnchor extends BaseEntity {
     ) {
         validateCommentable(block);
         validateSelectionOf(block, range, selectedText);
-        return create(post, writer, block.blockId(), range, selectedText, content);
+        validateBlockId(block.blockId());
+        validateSelectedText(range, selectedText);
+        validateContent(content);
+        return CommentAnchor.builder()
+                .post(post)
+                .writer(writer)
+                .blockId(block.blockId())
+                .range(range)
+                .selectedText(selectedText)
+                .content(content)
+                .status(AnchorStatus.ACTIVE)
+                .build();
     }
 
     public void updateContent(Long requesterId, String content) {
