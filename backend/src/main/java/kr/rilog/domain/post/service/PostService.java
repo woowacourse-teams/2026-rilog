@@ -66,11 +66,23 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    public PostDetailResponse readPostOfBlogs(Long postId, Long requesterId) {
-        Post post = getPost(postId);
+    public PostDetailResponse readPostDetailByCanonicalPath(String slug, Long postId, Long requesterId) {
+        Post post = getPost(slug, postId);
         post.validateReadableBy(requesterId);
         ViewerPermissionsResponse viewerPermissions = viewerPermissionsFor(post, requesterId);
 
+        return toPostDetailResponse(post, viewerPermissions);
+    }
+
+    public PostDetailResponse readEditablePostDetail(Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateWrittenBy(requesterId);
+        ViewerPermissionsResponse viewerPermissions = viewerPermissionsFor(post, requesterId);
+
+        return toPostDetailResponse(post, viewerPermissions);
+    }
+
+    private PostDetailResponse toPostDetailResponse(Post post, ViewerPermissionsResponse viewerPermissions) {
         if (!post.isCologAffiliated()) {
             return PostDetailResponse.fromRilog(post, viewerPermissions);
         }
@@ -163,8 +175,8 @@ public class PostService {
                 .orElseThrow(() -> new ChapterException(CHAPTER_NOT_FOUND));
     }
 
-    private Post getPost(Long postId) {
-        return postRepository.findDetailById(postId)
+    private Post getPost(String slug, Long postId) {
+        return postRepository.findDetailByCanonicalPath(Slug.from(slug), postId)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
 
