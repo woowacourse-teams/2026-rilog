@@ -6,10 +6,14 @@ create table comment_anchor_selection
     deleted_at    datetime(6)                         null,
     updated_at    datetime(6)                         null,
     post_id       bigint                              not null,
-    block_id      varchar(255)                        not null,
+    block_id      varchar(255)
+        character set utf8mb4
+        collate utf8mb4_0900_bin                      not null,
     start_offset  int                                 not null,
     end_offset    int                                 not null,
-    selected_text text                                not null,
+    selected_text text
+        character set utf8mb4
+        collate utf8mb4_0900_bin                      not null,
     status        enum ('ACTIVE', 'ORPHANED')         not null,
     orphaned_at   datetime(6)                         null,
     constraint fk_comment_anchor_selection_post
