@@ -6,6 +6,7 @@ import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
+import Divider from '@/shared/ui/divider/Divider';
 import BaseModal from '@/shared/ui/modal/BaseModal';
 
 import InlineCommentThread from './InlineCommentThread';
@@ -40,17 +41,15 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 					</Button>
 				</header>
 
-				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6">
 					{threads.length === 0 ? (
-						<p className="px-5 py-6 text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
+						<p className="text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
 					) : (
 						<div>
 							{threads.map((thread, index) => (
-								<div
-									key={thread.anchor.anchorId}
-									className={`border-b border-border-default px-5 pt-6 pb-10 ${index % 2 === 0 ? 'bg-surface' : 'bg-background'}`}
-								>
+								<div key={thread.anchor.anchorId}>
 									<InlineCommentThread thread={thread} onNavigate={onNavigate} />
+									{index < threads.length - 1 && <Divider className="my-6" />}
 								</div>
 							))}
 						</div>
