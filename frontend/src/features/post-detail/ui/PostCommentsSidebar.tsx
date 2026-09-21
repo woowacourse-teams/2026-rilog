@@ -23,6 +23,8 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 	const titleRef = useRef<HTMLHeadingElement>(null);
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.comments.length, 0);
 
+	// TODO: 전체 댓글로 진입 시 헤더 "전체 인라인 댓글"
+
 	return (
 		<BaseModal
 			open={open}
@@ -34,7 +36,7 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 			<div className="flex h-full min-h-0 flex-col">
 				<header className="flex h-15 shrink-0 items-center justify-between border-b border-border-default px-5">
 					<h2 ref={titleRef} id={titleId} tabIndex={-1} className="text-title-1 font-semibold text-text-primary">
-						댓글 <span className="ml-1 text-body-1 font-medium text-text-placeholder">{commentCount}</span>
+						인라인 댓글 <span className="ml-1 text-body-1 font-medium text-text-placeholder">{commentCount}</span>
 					</h2>
 					<Button variant="ghost" size="icon" aria-label="댓글 사이드바 닫기" onClick={onClose}>
 						<XIcon aria-hidden="true" className="size-5" />

@@ -2,45 +2,27 @@ import type { InlineCommentAnchorResponse } from '@/shared/api/posts/types';
 
 interface InlineCommentQuoteProps {
 	anchor: InlineCommentAnchorResponse;
-	onNavigate: () => void;
 }
 
-export default function InlineCommentQuote({ anchor, onNavigate }: InlineCommentQuoteProps) {
-	if (anchor.state === 'OUTDATED') {
-		return (
-			<div className="space-y-1.5 border-l-4 border-border-default px-2 py-1.5" aria-label="오래된 인용">
-				<span className="block w-fit rounded-full border border-border-strong px-2 py-0.5 text-label-1 font-medium text-text-placeholder">
+export default function InlineCommentQuote({ anchor }: InlineCommentQuoteProps) {
+	const isOutdated = anchor.state === 'OUTDATED';
+
+	return (
+		<div className="flex min-w-0 flex-1 flex-col justify-center gap-2 py-1">
+			{isOutdated && (
+				<span className="w-fit shrink-0 rounded-full border border-border-strong px-2 py-0.5 text-label-1 font-medium text-text-placeholder">
 					OUTDATED
 				</span>
-				<span className="mt-1 bg-surface-hover box-decoration-clone px-1 py-0.5 text-body-1 leading-5 text-text-placeholder">
+			)}
+			<div className="text-body-1 leading-6">
+				<span
+					className={`box-decoration-clone px-1 py-0.5 transition-colors duration-200 motion-reduce:transition-none ${
+						isOutdated ? 'bg-surface-hover text-text-placeholder' : 'bg-focus-ring/10 text-text-secondary'
+					}`}
+				>
 					{anchor.selectedText}
 				</span>
 			</div>
-		);
-	}
-
-	return (
-		<div
-			role="button"
-			tabIndex={0}
-			aria-label={`인용문으로 이동: ${anchor.selectedText}`}
-			className="group w-full border-l-4 border-border-default px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-			onClick={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				onNavigate();
-			}}
-			onKeyDown={(event) => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
-					event.stopPropagation();
-					onNavigate();
-				}
-			}}
-		>
-			<span className="bg-focus-ring/10 box-decoration-clone px-1 py-0.5 text-body-1 leading-5 text-text-secondary transition-colors hover:bg-focus-ring/15">
-				{anchor.selectedText}
-			</span>
 		</div>
 	);
 }
