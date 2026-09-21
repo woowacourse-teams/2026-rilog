@@ -1,5 +1,5 @@
 import { SITE_DESCRIPTION, SITE_NAME } from '@/shared/seo/create-social-metadata';
-import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
+import { siteUrl, toAbsoluteSiteUrl } from '@/shared/seo/site-url';
 
 export const revalidate = 3600;
 
@@ -32,7 +32,7 @@ export const GET = () => {
 		`- [소개](${toAbsoluteSiteUrl('/about')}): 서비스 소개`,
 		`- [Sitemap](${toAbsoluteSiteUrl('/sitemap.xml')}): 전체 URL 목록`,
 		`- [RSS](${toAbsoluteSiteUrl('/rss.xml')}): 최신 공개 글 50개 RSS 2.0`,
-		`- [JSON Feed](${toAbsoluteSiteUrl('/feed.json')}): JSON Feed 1.0`,
+		`- [JSON Feed](${toAbsoluteSiteUrl('/feed.json')}): JSON Feed 1.1`,
 		'',
 		'## 인용 기준',
 		'- 공개 게시글을 인용할 때는 원문 canonical URL을 출처로 사용해주세요.',
@@ -41,7 +41,7 @@ export const GET = () => {
 		'',
 		'## 피드 형식',
 		'- RSS: /rss.xml (RSS 2.0, 최신 공개 글 50개)',
-		'- JSON Feed: /feed.json (JSON Feed 1.0)',
+		'- JSON Feed: /feed.json (JSON Feed 1.1)',
 		'- Markdown 대체 뷰: /@<slug>/posts/<id>/markdown (게시글의 Markdown 표현, X-Robots-Tag: noindex)',
 		'',
 		'## 연락',
@@ -49,7 +49,7 @@ export const GET = () => {
 		`- Instagram: https://www.instagram.com/rilog_official/`,
 		'',
 		'## 참고',
-		`- canonical 호스트: https://www.rilog.kr`,
+		`- canonical 호스트: ${siteUrl.origin}`,
 		`- 언어: ko-KR`,
 	];
 

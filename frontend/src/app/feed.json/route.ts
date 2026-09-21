@@ -1,11 +1,18 @@
 import { SITE_DESCRIPTION, SITE_NAME } from '@/shared/seo/create-social-metadata';
 import { fetchPublicFeedPosts } from '@/shared/seo/fetch-public-feed';
 import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
+import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 export const revalidate = 600;
+export const dynamic = 'force-dynamic';
 
 export const GET = async () => {
-	const posts = await fetchPublicFeedPosts(50, 600);
+	let posts;
+	try {
+		posts = await fetchPublicFeedPosts(50, 600);
+	} catch {
+		return new Response('Feed unavailable', { status: 503 });
+	}
 
 	const feed = {
 		version: 'https://jsonfeed.org/version/1.1',
@@ -18,7 +25,8 @@ export const GET = async () => {
 			id: toAbsoluteSiteUrl(`/@${encodeURIComponent(post.owner.slug)}/posts/${post.postId}`),
 			url: toAbsoluteSiteUrl(`/@${encodeURIComponent(post.owner.slug)}/posts/${post.postId}`),
 			title: post.title,
-			date_published: new Date(post.publishedAt).toISOString(),
+			content_text: post.title,
+			date_published: toApiUtcISOString(post.publishedAt),
 			authors: [{ name: post.author.nickname, url: toAbsoluteSiteUrl(`/@${encodeURIComponent(post.author.slug)}`) }],
 			tags: post.category ? [post.category] : [],
 		})),
