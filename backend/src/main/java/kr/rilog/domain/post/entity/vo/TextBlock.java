@@ -14,7 +14,7 @@ public record TextBlock(
         if (blockId == null || blockId.isBlank()
                 || type == null || type.isBlank()
                 || text == null) {
-            throw new PostException(INVALID_TEXT_BLOCK); // TODO change INVALID_TEXT_BLOCK
+            throw new PostException(INVALID_TEXT_BLOCK);
         }
     }
 
@@ -33,6 +33,36 @@ public record TextBlock(
         }
 
         return text.substring(range.getStartOffset(), range.getEndOffset());
+    }
+
+    public TextBlockDiff calculateDifference(TextBlock updated) {
+        if (updated == null) {
+            throw new IllegalArgumentException("수정된 텍스트 블록(비교대상)이 존재하지 않습니다.");
+        }
+
+        if (!blockId.equals(updated.blockId())) {
+            throw new IllegalArgumentException("서로 다른 blockId는 비교할 수 없습니다.");
+        }
+
+        int prefixLength = commonPrefixLength(text, updated.text());
+
+        return new TextBlockDiff(
+                blockId,
+                DiffSpan.slice(text, 0, prefixLength),
+                DiffSpan.slice(text, prefixLength, text.length()),
+                DiffSpan.slice(updated.text(), prefixLength, updated.text().length())
+        );
+    }
+
+    private static int commonPrefixLength(String previous, String updated) {
+        int limit = Math.min(previous.length(), updated.length());
+        int index = 0;
+
+        while (index < limit && previous.charAt(index) == updated.charAt(index)) {
+            index++;
+        }
+
+        return index;
     }
 
 }
