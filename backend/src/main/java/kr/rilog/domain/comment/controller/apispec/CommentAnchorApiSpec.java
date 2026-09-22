@@ -5,14 +5,26 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "인라인 댓글 API")
 public interface CommentAnchorApiSpec {
+
+    @Operation(
+            summary = "인라인 댓글 목록 조회 API",
+            description = "게시글의 인라인 댓글을 본문 블록과 선택 영역별로 그룹화해 조회합니다."
+    )
+    ApiResponse<CommentAnchorListResponse> readCommentAnchors(
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @NullableLoginUserId Long requesterId
+    );
 
     @Operation(
             summary = "인라인 댓글 작성 API",

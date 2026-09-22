@@ -1,6 +1,9 @@
 package kr.rilog.domain.comment.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogPermission;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
@@ -11,6 +14,7 @@ import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -24,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
@@ -51,6 +56,9 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogRepository blogRepository;
+
+    @Autowired
+    private BlogMemberRepository blogMemberRepository;
 
     @Autowired
     private PostRepository postRepository;
@@ -342,6 +350,161 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         assertThat(commentAnchorSelectionRepository.count()).isZero();
     }
 
+    @Test
+    @DisplayName("게시글의 인라인 댓글을 블록과 선택 영역별로 그룹화해 조회한다.")
+    void readCommentAnchorsGroupsByBlockAndSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection activeSelection = saveSelection(
+                post,
+                Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "가나")
+        );
+        saveAnchor(activeSelection, commenter, "첫 번째 댓글");
+        saveAnchor(activeSelection, postWriter, "두 번째 댓글");
+        CommentAnchorSelection orphanedSelection = saveSelection(
+                post,
+                Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT)
+        );
+        orphanedSelection.orphan(LocalDateTime.of(2026, 9, 21, 12, 0));
+        commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
+        saveAnchor(orphanedSelection, commenter, "고아 댓글");
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), commenter.getId());
+
+        // then
+        assertThat(result.blocks()).hasSize(1);
+        CommentAnchorListResult.BlockResult block = result.blocks().getFirst();
+        assertThat(block.blockId()).isEqualTo(PARAGRAPH_BLOCK_ID);
+        assertThat(block.anchorGroups()).hasSize(2);
+        assertThat(block.anchorGroups().getFirst().commentAnchors()).hasSize(2);
+        assertThat(block.anchorGroups().get(1).state()).isEqualTo(AnchorStatus.ORPHANED);
+    }
+
+    @Test
+    @DisplayName("인라인 댓글 목록은 작성자와 블로그 멤버 여부 및 요청자의 수정 삭제 권한을 제공한다.")
+    void readCommentAnchorsIncludesAuthorBadgesAndPermissions() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        saveBlogOwner(post, postWriter);
+        saveActiveBlogMember(post, commenter, BlogPermission.MEMBER);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        saveAnchor(anchorSelection, commenter, CONTENT);
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), commenter.getId());
+
+        // then
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
+        assertThat(commentAnchor.author().postAuthor()).isFalse();
+        assertThat(commentAnchor.author().blogMember()).isTrue();
+        assertThat(commentAnchor.canEdit()).isTrue();
+        assertThat(commentAnchor.canDelete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("게시글 작성자는 다른 사용자의 인라인 댓글을 삭제할 수 있다.")
+    void readCommentAnchorsAllowsPostWriterToDelete() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        saveAnchor(anchorSelection, commenter, CONTENT);
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), postWriter.getId());
+
+        // then
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
+        assertThat(commentAnchor.canEdit()).isFalse();
+        assertThat(commentAnchor.canDelete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("블로그 ADMIN은 다른 사용자의 인라인 댓글을 삭제할 수 있다.")
+    void readCommentAnchorsAllowsBlogAdminToDelete() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        User admin = saveCompletedUser(102L, "관리자", "admin");
+        Post post = savePublicPost(postWriter);
+        saveActiveBlogMember(post, admin, BlogPermission.ADMIN);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        saveAnchor(anchorSelection, commenter, CONTENT);
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), admin.getId());
+
+        // then
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
+        assertThat(commentAnchor.canEdit()).isFalse();
+        assertThat(commentAnchor.canDelete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("일반 블로그 MEMBER는 다른 사용자의 인라인 댓글을 삭제할 수 없다.")
+    void readCommentAnchorsRejectsBlogMemberDeletePermission() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        User member = saveCompletedUser(102L, "구성원", "member");
+        Post post = savePublicPost(postWriter);
+        saveActiveBlogMember(post, member, BlogPermission.MEMBER);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        saveAnchor(anchorSelection, commenter, CONTENT);
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), member.getId());
+
+        // then
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = firstCommentAnchorOf(result);
+        assertThat(commentAnchor.canEdit()).isFalse();
+        assertThat(commentAnchor.canDelete()).isFalse();
+    }
+
+    @Test
+    @DisplayName("삭제된 인라인 댓글은 게시글의 인라인 댓글 목록에서 제외한다.")
+    void readCommentAnchorsExcludesDeletedAnchors() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        CommentAnchor visible = saveAnchor(anchorSelection, commenter, "보이는 댓글");
+        CommentAnchor deleted = saveAnchor(anchorSelection, commenter, "삭제된 댓글");
+        deleted.delete();
+        commentAnchorRepository.saveAndFlush(deleted);
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), null);
+
+        // then
+        List<CommentAnchorListResult.CommentAnchorResult> commentAnchors = result.blocks().getFirst()
+                .anchorGroups().getFirst()
+                .commentAnchors();
+        assertThat(commentAnchors).hasSize(1);
+        assertThat(commentAnchors.getFirst().commentAnchorId()).isEqualTo(visible.getId());
+    }
+
+    @Test
+    @DisplayName("비공개 게시글의 인라인 댓글은 작성자가 아니면 조회할 수 없다.")
+    void readCommentAnchorsRejectsOtherUserOnPrivatePost() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User requester = saveCompletedUser(101L, "조회자", "requester");
+        Post post = savePrivatePost(postWriter);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.readCommentAnchors(post.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
+    }
+
     private CommentAnchorCreateCommand selectedCommand() {
         return new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT, CONTENT);
     }
@@ -352,6 +515,38 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
     private CommentAnchorSelection saveActiveSelection(Post post) {
         return commentAnchorSelectionRepository.saveAndFlush(CommentAnchorSelection.create(post, selection()));
+    }
+
+    private CommentAnchorSelection saveSelection(Post post, Selection selection) {
+        return commentAnchorSelectionRepository.saveAndFlush(CommentAnchorSelection.create(post, selection));
+    }
+
+    private CommentAnchor saveAnchor(CommentAnchorSelection selection, User writer, String content) {
+        return commentAnchorRepository.saveAndFlush(CommentAnchor.create(selection, writer, content));
+    }
+
+    private BlogMember saveActiveBlogMember(Post post, User user, BlogPermission permission) {
+        return blogMemberRepository.saveAndFlush(BlogMember.invite(
+                post.getRilog(),
+                user,
+                "테스트 역할",
+                permission,
+                LocalDateTime.of(2026, 9, 17, 10, 10)
+        ));
+    }
+
+    private BlogMember saveBlogOwner(Post post, User owner) {
+        return blogMemberRepository.saveAndFlush(BlogMember.createOwner(
+                post.getRilog(),
+                owner,
+                LocalDateTime.of(2026, 9, 17, 10, 0)
+        ));
+    }
+
+    private CommentAnchorListResult.CommentAnchorResult firstCommentAnchorOf(CommentAnchorListResult result) {
+        return result.blocks().getFirst()
+                .anchorGroups().getFirst()
+                .commentAnchors().getFirst();
     }
 
     private Long getSelectionId(CommentAnchorCreateResult result) {

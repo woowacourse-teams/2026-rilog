@@ -1,12 +1,16 @@
 package kr.rilog.domain.comment.service;
 
+import kr.rilog.domain.blog.entity.BlogMembers;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.entity.vo.CommentAnchorGroups;
 import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.vo.TextBlock;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
@@ -33,6 +38,7 @@ public class CommentAnchorService {
     private final CommentAnchorSelectionRepository commentAnchorSelectionRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final BlogMemberRepository blogMemberRepository;
 
     @Transactional
     public CommentAnchorCreateResult createCommentAnchor(
@@ -49,6 +55,19 @@ public class CommentAnchorService {
         CommentAnchor commentAnchor = CommentAnchor.create(anchorSelection, writer, command.content());
         CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
         return CommentAnchorCreateResult.from(savedCommentAnchor);
+    }
+
+    public CommentAnchorListResult readCommentAnchors(Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateReadableBy(requesterId);
+
+        CommentAnchorGroups groups = CommentAnchorGroups.from(
+                commentAnchorRepository.findAllByPostId(postId)
+        );
+        BlogMembers blogMembers = BlogMembers.from(
+                blogMemberRepository.findAllWithUserByBlogIdAndStatus(post.getOwnBlogId(), ACTIVE)
+        );
+        return CommentAnchorListResult.from(post, groups, blogMembers, requesterId);
     }
 
     private CommentAnchorSelection getOrCreateActiveSelection(Post post, Selection selection) {
