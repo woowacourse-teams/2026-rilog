@@ -1,18 +1,27 @@
 package kr.rilog.domain.blog.entity;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public record BlogMembers(
-        List<BlogMember> values
+        Map<Long, BlogMember> values
 ) {
 
     public BlogMembers {
-        values = List.copyOf(values);
+        values = Map.copyOf(values);
     }
 
     public static BlogMembers from(List<BlogMember> blogMembers) {
-        return new BlogMembers(blogMembers);
+        Map<Long, BlogMember> valuesByUserId = new HashMap<>();
+        for (BlogMember blogMember : blogMembers) {
+            Long userId = blogMember.getUser().getId();
+            if (valuesByUserId.putIfAbsent(userId, blogMember) != null) {
+                throw new IllegalArgumentException("Duplicate blog member user id: " + userId);
+            }
+        }
+        return new BlogMembers(valuesByUserId);
     }
 
     public boolean isActiveMember(Long userId) {
@@ -31,9 +40,7 @@ public record BlogMembers(
         if (userId == null) {
             return Optional.empty();
         }
-        return values.stream()
-                .filter(blogMember -> blogMember.isUser(userId))
-                .findFirst();
+        return Optional.ofNullable(values.get(userId));
     }
 
 }

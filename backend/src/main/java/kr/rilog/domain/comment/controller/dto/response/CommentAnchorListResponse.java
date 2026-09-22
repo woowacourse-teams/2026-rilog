@@ -37,19 +37,23 @@ public record CommentAnchorListResponse(
             RangeResponse range,
             String selectedText,
             AnchorStatus state,
+            int anchorCount,
             List<CommentAnchorResponse> commentAnchors
     ) {
 
         private static AnchorGroupResponse from(CommentAnchorListResult.AnchorGroupResult result) {
+            List<CommentAnchorResponse> data = result.commentAnchors().stream()
+                    .map(CommentAnchorResponse::from)
+                    .toList();
             return new AnchorGroupResponse(
                     RangeResponse.from(result.range()),
                     result.selectedText(),
                     result.state(),
-                    result.commentAnchors().stream()
-                            .map(CommentAnchorResponse::from)
-                            .toList()
+                    data.size(),
+                    data
             );
         }
+
     }
 
     public record RangeResponse(

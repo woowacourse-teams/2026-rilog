@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BlogMembersTest {
 
@@ -38,6 +39,18 @@ class BlogMembersTest {
         assertThat(blogMembers.hasDeletePermission(1L)).isTrue();
         assertThat(blogMembers.hasDeletePermission(2L)).isTrue();
         assertThat(blogMembers.hasDeletePermission(3L)).isFalse();
+    }
+
+    @Test
+    @DisplayName("동일한 사용자의 블로그 구성원이 중복되면 생성을 거부한다.")
+    void rejectDuplicateMemberUser() {
+        // given
+        BlogMember first = createMember(1L, BlogPermission.MEMBER, BlogMemberStatus.ACTIVE);
+        BlogMember duplicate = createMember(1L, BlogPermission.ADMIN, BlogMemberStatus.ACTIVE);
+
+        // when - then
+        assertThatThrownBy(() -> BlogMembers.from(List.of(first, duplicate)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private BlogMember createMember(
