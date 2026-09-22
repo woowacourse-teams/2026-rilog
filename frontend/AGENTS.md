@@ -101,6 +101,8 @@
 ## 필수 검증
 
 - 스캐폴드 전에는 실행 가능한 frontend 검증 명령이 없다.
+- `frontend/`에서 검증·빌드 명령을 실행하기 전에 `.nvmrc`의 Node 버전을 적용하고 `node -v`가 `24.19.0`인지 확인한다. `nvm`을 사용하는 터미널에서는 `nvm use`를 실행한다. 비대화형 셸에서 `nvm` 명령을 찾지 못하면 `nvm.sh`를 로드한 뒤 실행한다.
+- `Unsupported engine` 경고가 출력된 검증은 지정된 Node 버전으로 다시 실행한다. pnpm도 `11.21.0`인지 확인한다.
 - PR 전 `pnpm check`를 실행한다.
 - 핵심 사용자 흐름을 변경하면 관련 `pnpm test:e2e` smoke를 실행한다.
 - UI 변경은 loading, empty, error, 권한 없는 상태와 키보드/focus를 확인한다.

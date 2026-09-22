@@ -1,6 +1,6 @@
-# 품질 게이트 도입 예정안
+# 프론트엔드 품질 게이트
 
-현재 저장소에는 CI가 구성되어 있지 않다. 이 문서는 frontend 스캐폴드와 CI 도입 시 검토할 기본안이며, 실제 required check는 팀 합의 후 workflow와 함께 확정한다.
+현재 프론트엔드의 로컬·CI 검증 범위를 기록한다. 계층별 테스트 선택과 작성 규칙은 [프론트엔드 테스트 기준](../testing/README.md)을 따른다.
 
 ## 원칙
 
@@ -10,19 +10,19 @@
 - bug fix에는 가능한 가장 낮은 계층의 재현 테스트를 남긴다.
 - local command와 CI command는 같은 script를 사용한다.
 
-## Frontend 예정안
+## 현재 로컬 검증
 
-| 순서 | 게이트 | 책임 |
-| ---: | --- | --- |
-| 1 | format | 기계적 포맷 |
-| 2 | lint | 코드 품질, import와 React 규칙 |
-| 3 | typecheck | TypeScript 계약 |
-| 4 | Vitest unit | policy, mapper, serializer와 순수 함수 |
-| 5 | RTL component | 입력, 상태 전이, 오류와 접근성 |
-| 6 | Next.js build | Server/Client 경계와 production build |
-| 7 | Playwright smoke | 핵심 사용자 수직 흐름 |
+| 순서 | 게이트                      | 책임                                   |
+| ---: | --------------------------- | -------------------------------------- |
+|    1 | format                      | 기계적 포맷                            |
+|    2 | lint                        | 코드 품질, import와 React 규칙         |
+|    3 | typecheck                   | TypeScript 계약                        |
+|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수 |
+|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성         |
+|    6 | Next.js build               | Server/Client 경계와 production build  |
+|    7 | `pnpm test:e2e` (별도 실행) | 핵심 사용자 수직 흐름                  |
 
-Frontend 스캐폴드 시 다음 script 이름을 기본안으로 사용한다.
+현재 `frontend/package.json`에는 다음 script가 있다.
 
 ```text
 format:check
@@ -35,11 +35,15 @@ build
 check
 ```
 
-`check`는 format, lint, typecheck, unit, component와 build를 실행한다.
+`check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
+
+## 현재 CI
+
+`.github/workflows/rilog-fe-prod.yml`은 `production` 대상 PR에서 frontend build job을 실행하고, `production` push에서 배포한다. `develop` PR의 Vitest·Playwright 검증과 전체 E2E 정기 실행은 아직 없다.
 
 ## Backend
 
-백엔드 품질 게이트, 검증 명령과 CI 연결은 백엔드 팀이 결정한다. 확정 전에는 현재 backend build 설정에 실제로 존재하는 검증만 실행하며, 이 문서에서 별도 스택이나 도구를 지정하지 않는다.
+백엔드는 별도 workflow와 팀 검증 기준을 따른다.
 
 ## 파트 간 변경
 
