@@ -77,9 +77,9 @@
 - Vitest는 순수 로직, RTL은 사용자 관점 UI, Playwright는 핵심 수직 흐름을 검증한다.
 - 별도 전역 상태 라이브러리, Storybook과 전역 coverage hard gate는 초기 도입하지 않는다.
 
-## CI 도입 예정안
+## CI 현황과 품질 게이트
 
-현재 저장소에는 CI가 구성되어 있지 않다. 구체적인 workflow와 필수 검사는 팀 합의 후 도입한다.
+현재 frontend의 `production` 대상 PR에서는 build workflow가 실행되고, backend에도 별도 workflow가 있다. 프론트엔드 테스트 검증과 필수 검사 도입 기준은 [품질 게이트](quality-gates.md)를 따른다.
 
 - 로컬과 CI는 같은 검증 명령을 사용한다.
 - 반복 실행에서 안정적인 검사부터 필수 검사로 지정한다.

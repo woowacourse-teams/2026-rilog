@@ -27,9 +27,9 @@
 
 - raw API 경계만 대체한다. RTL 테스트는 컴포넌트와 관련 hook, `QueryClient`를 실제로 연결한다.
 - [`render-with-query.ts`](../../frontend/src/test/render-with-query.ts)의 `createTestQueryClient`와 `renderWithQuery`를 우선 사용한다. 테스트마다 새 QueryClient를 만들고 cache를 공유하지 않는다.
-- 공통 응답은 [`api-response.ts`](../../frontend/src/test/fixtures/api-response.ts)의 helper를 우선 사용한다. 새 fixture는 최소 유효 기본값과 명시적 override를 제공한다.
+- 인증 실패·빈 HTTP 응답은 [`api-response.ts`](../../frontend/src/test/fixtures/api-response.ts)의 helper를 우선 사용한다. 새 fixture는 최소 유효 기본값과 명시적 override를 제공한다.
 - 각 테스트가 만든 mock, storage, URL query와 브라우저 상태를 초기화한다. 다른 테스트 실행 순서에 성공을 의존하지 않는다.
-- Playwright는 외부 서비스 대신 결정적인 로컬 API와 fixture를 사용한다. 등록되지 않은 요청은 실패로 드러나야 한다.
+- 브라우저 검증 환경을 구성할 때는 SSR과 브라우저가 같은 결정적인 테스트 API·fixture를 사용한다. 등록되지 않은 요청은 실패로 드러나야 한다.
 
 ## 주요 기능과 보호 범위
 
