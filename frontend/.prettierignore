@@ -4,5 +4,8 @@ coverage
 playwright-report
 test-results
 .omx
+.docs/
+.agents/skills/archify/
+.archify/
 pnpm-lock.yaml
 AGENTS.md

@@ -154,6 +154,10 @@ const eslintConfig = defineConfig([
 		'out/**',
 		'build/**',
 		'next-env.d.ts',
+		// Local tooling and private notes are outside the frontend source tree.
+		'.agents/skills/archify/**',
+		'.archify/**',
+		'.docs/**',
 	]),
 	prettierConfig,
 ]);
