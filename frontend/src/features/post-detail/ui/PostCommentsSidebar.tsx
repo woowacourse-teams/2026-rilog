@@ -51,7 +51,9 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 							{threads.map((thread, index) => (
 								<div key={thread.anchor.anchorId}>
 									<InlineCommentThread thread={thread} onNavigate={onNavigate} />
-									<Divider className="mx-5" />
+									<div className="px-5">
+										<Divider />
+									</div>
 								</div>
 							))}
 						</div>
