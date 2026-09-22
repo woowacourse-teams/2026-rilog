@@ -16,6 +16,7 @@ public enum CommentErrorInformation implements ErrorInformation {
     INVALID_COMMENT_ANCHOR(HttpStatus.BAD_REQUEST, "인라인 댓글의 위치 정보가 올바르지 않습니다."),
     COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE(HttpStatus.BAD_REQUEST, "인라인 댓글을 작성할 수 없는 블록입니다."),
     COMMENT_ANCHOR_NOT_ACTIVE(HttpStatus.CONFLICT, "위치를 잃은 인라인 댓글의 위치는 변경할 수 없습니다."),
+    COMMENT_ANCHOR_SELECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "활성화된 해당 선택범위가 존재하지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;
