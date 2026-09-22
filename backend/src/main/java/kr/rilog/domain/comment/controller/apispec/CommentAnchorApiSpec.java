@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
+import kr.rilog.domain.comment.controller.dto.request.CommentAnchorAddRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
@@ -41,6 +42,23 @@ public interface CommentAnchorApiSpec {
             @PathVariable Long postId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
             @Valid @RequestBody CommentAnchorCreateRequest request
+    );
+
+    @Operation(
+            summary = "기존 선택 영역에 인라인 댓글 추가 API",
+            description = """
+                    게시글 본문에 존재하는 선택 영역에 인라인 댓글을 추가합니다.
+                    - 공개 게시글에는 로그인한 사용자 누구나, 비공개 게시글에는 작성자 본인만 작성할 수 있습니다.
+                    - selection은 요청한 게시글에 속해야 하며, ACTIVE와 ORPHANED 상태 모두 댓글을 추가할 수 있습니다.
+                    """
+    )
+    ApiResponse<CommentAnchorCreateResponse> addCommentAnchor(
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(description = "Selection(선택범위) ID", example = "1")
+            @PathVariable Long selectionId,
+            @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @Valid @RequestBody CommentAnchorAddRequest dto
     );
 
 }

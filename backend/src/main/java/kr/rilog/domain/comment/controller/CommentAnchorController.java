@@ -6,6 +6,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.comment.controller.apispec.CommentAnchorApiSpec;
+import kr.rilog.domain.comment.controller.dto.request.CommentAnchorAddRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
@@ -47,12 +48,31 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
     public ApiResponse<CommentAnchorCreateResponse> createCommentAnchor(
             @PathVariable Long postId,
             @LoginUserId Long requesterId,
-            @Valid @RequestBody CommentAnchorCreateRequest request
+            @Valid @RequestBody CommentAnchorCreateRequest dto
     ) {
         CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
                 postId,
                 requesterId,
-                request.toCommand()
+                dto.toCommand()
+        );
+        CommentAnchorCreateResponse data = CommentAnchorCreateResponse.from(result);
+        return ApiResponse.response(HttpStatus.CREATED, "인라인 댓글을 작성했습니다.", data);
+    }
+
+    @AuthGuard
+    @PostMapping("/posts/{postId}/selections/{selectionId}/comment-anchors")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<CommentAnchorCreateResponse> addCommentAnchor(
+            @PathVariable Long postId,
+            @PathVariable Long selectionId,
+            @LoginUserId Long requesterId,
+            @Valid @RequestBody CommentAnchorAddRequest dto
+    ) {
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+                postId,
+                requesterId,
+                selectionId,
+                dto.toCommand()
         );
         CommentAnchorCreateResponse data = CommentAnchorCreateResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "인라인 댓글을 작성했습니다.", data);

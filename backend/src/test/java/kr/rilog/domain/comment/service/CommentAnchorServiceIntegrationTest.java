@@ -12,6 +12,7 @@ import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
+import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_SELECTION_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
@@ -348,6 +350,148 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
         assertThat(commentAnchorRepository.count()).isZero();
         assertThat(commentAnchorSelectionRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("기존 ACTIVE selection에 인라인 댓글을 추가하면 해당 selection과 댓글 내용을 저장한다.")
+    void addCommentAnchorPersistsOnExistingActiveSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection selection = saveActiveSelection(post);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), selection.getId(), command
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+
+        // then
+        assertThat(saved.getCommentAnchorSelection().getId()).isEqualTo(selection.getId());
+        assertThat(saved.getContent()).isEqualTo(CONTENT);
+    }
+
+    @Test
+    @DisplayName("기존 ACTIVE selection에 인라인 댓글을 추가하면 요청자를 작성자로 저장한다.")
+    void addCommentAnchorAssociatesRequesterAsWriter() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection selection = saveActiveSelection(post);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), selection.getId(), command
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+
+        // then
+        assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
+    }
+
+    @Test
+    @DisplayName("비공개 게시글의 기존 selection에는 작성자가 아닌 사용자가 인라인 댓글을 추가할 수 없다.")
+    void addCommentAnchorRejectsOtherUserOnPrivatePost() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePrivatePost(postWriter);
+        CommentAnchorSelection selection = saveActiveSelection(post);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), selection.getId(), command
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
+        assertThat(commentAnchorRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("요청한 게시글에 속하지 않은 selection에는 인라인 댓글을 추가할 수 없다.")
+    void addCommentAnchorRejectsSelectionFromAnotherPost() {
+        // given
+        User firstWriter = saveCompletedUser(100L, "첫글작성자", "first_writer");
+        User secondWriter = saveCompletedUser(101L, "둘글작성자", "second_writer");
+        User commenter = saveCompletedUser(102L, "댓글작성자", "commenter");
+        Post requestedPost = savePublicPost(firstWriter);
+        Post otherPost = savePublicPost(secondWriter);
+        CommentAnchorSelection otherSelection = saveActiveSelection(otherPost);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
+                requestedPost.getId(), commenter.getId(), otherSelection.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
+        assertThat(commentAnchorRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("ORPHANED selection에도 인라인 댓글을 추가할 수 있다.")
+    void addCommentAnchorAllowsOrphanedSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection orphanedSelection = saveActiveSelection(post);
+        orphanedSelection.orphan(LocalDateTime.of(2026, 9, 22, 12, 0));
+        commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), orphanedSelection.getId(), command
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+
+        // then
+        assertThat(saved.getCommentAnchorSelection().getId()).isEqualTo(orphanedSelection.getId());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 selection에는 인라인 댓글을 추가할 수 없다.")
+    void addCommentAnchorRejectsUnknownSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), Long.MAX_VALUE, command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
+        assertThat(commentAnchorRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("삭제된 selection에는 인라인 댓글을 추가할 수 없다.")
+    void addCommentAnchorRejectsDeletedSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection deletedSelection = saveActiveSelection(post);
+        deletedSelection.delete();
+        commentAnchorSelectionRepository.saveAndFlush(deletedSelection);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), deletedSelection.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
+        assertThat(commentAnchorRepository.count()).isZero();
     }
 
     @Test

@@ -6,8 +6,10 @@ import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import kr.rilog.domain.comment.entity.vo.CommentAnchorGroups;
 import kr.rilog.domain.comment.entity.vo.Selection;
+import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
+import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_SELECTION_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
@@ -52,6 +55,23 @@ public class CommentAnchorService {
 
         Selection selection = createSelection(post, command);
         CommentAnchorSelection anchorSelection = getOrCreateActiveSelection(post, selection);
+        CommentAnchor commentAnchor = CommentAnchor.create(anchorSelection, writer, command.content());
+        CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
+        return CommentAnchorCreateResult.from(savedCommentAnchor);
+    }
+
+    @Transactional
+    public CommentAnchorCreateResult addCommentAnchor(
+            Long postId,
+            Long requesterId,
+            Long selectionId,
+            CommentAnchorAddCommand command
+    ) {
+        Post post = getPublishedPost(postId);
+        post.validateReadableBy(requesterId);
+        User writer = getUser(requesterId);
+
+        CommentAnchorSelection anchorSelection = getSelection(postId, selectionId);
         CommentAnchor commentAnchor = CommentAnchor.create(anchorSelection, writer, command.content());
         CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
         return CommentAnchorCreateResult.from(savedCommentAnchor);
@@ -84,6 +104,11 @@ public class CommentAnchorService {
         }
 
         return commentAnchorSelectionRepository.save(CommentAnchorSelection.create(post, selection));
+    }
+
+    private CommentAnchorSelection getSelection(Long postId, Long selectionId) {
+        return commentAnchorSelectionRepository.findByIdAndPostIdAndDeletedAtIsNull(selectionId, postId)
+                .orElseThrow(() -> new CommentException(COMMENT_ANCHOR_SELECTION_NOT_FOUND));
     }
 
     private Post getPublishedPost(Long postId) {
