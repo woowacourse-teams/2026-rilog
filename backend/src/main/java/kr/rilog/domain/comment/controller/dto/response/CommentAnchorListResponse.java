@@ -70,7 +70,7 @@ public record CommentAnchorListResponse(
     public record CommentAnchorResponse(
             Long commentAnchorId,
             String content,
-            AuthorResponse author,
+            AuthorResponseWithAffiliation author,
             boolean canEdit,
             boolean canDelete,
             LocalDateTime createdAt,
@@ -81,7 +81,7 @@ public record CommentAnchorListResponse(
             return new CommentAnchorResponse(
                     result.commentAnchorId(),
                     result.content(),
-                    AuthorResponse.from(result.author()),
+                    AuthorResponseWithAffiliation.from(result.author()),
                     result.canEdit(),
                     result.canDelete(),
                     result.createdAt(),
@@ -90,7 +90,7 @@ public record CommentAnchorListResponse(
         }
     }
 
-    public record AuthorResponse(
+    public record AuthorResponseWithAffiliation(
             Long userId,
             String nickname,
             String slug,
@@ -103,8 +103,8 @@ public record CommentAnchorListResponse(
             boolean isBlogMember
     ) {
 
-        private static AuthorResponse from(CommentAnchorListResult.AuthorResult result) {
-            return new AuthorResponse(
+        private static AuthorResponseWithAffiliation from(CommentAnchorListResult.AuthorResult result) {
+            return new AuthorResponseWithAffiliation(
                     result.userId(),
                     result.nickname(),
                     result.slug(),
