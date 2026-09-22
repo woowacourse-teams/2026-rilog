@@ -2,8 +2,7 @@ package kr.rilog.domain.post.entity.vo;
 
 import kr.rilog.domain.post.exception.PostException;
 
-import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
-import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_TEXT_RANGE;
+import static kr.rilog.domain.post.exception.PostErrorInformation.*;
 
 public record TextBlock(
         String blockId,
@@ -15,7 +14,7 @@ public record TextBlock(
         if (blockId == null || blockId.isBlank()
                 || type == null || type.isBlank()
                 || text == null) {
-            throw new PostException(INVALID_POST_CONTENT);
+            throw new PostException(INVALID_TEXT_BLOCK); // TODO change INVALID_TEXT_BLOCK
         }
     }
 

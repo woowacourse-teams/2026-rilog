@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_BLOG_FEED_FILTER;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_FEED_FILTER;
 
 @Service
 @Transactional(readOnly = true)
@@ -124,7 +124,7 @@ public class FeedService {
         }
 
         if (blog.isColog() || command.hasChapterFilter()) {
-            throw new PostException(INVALID_BLOG_FEED_FILTER);
+            throw new PostException(INVALID_FEED_FILTER);
         }
     }
 
