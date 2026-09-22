@@ -11,7 +11,7 @@ export default function InlineCommentQuote({ anchor }: InlineCommentQuoteProps) 
 		<div className="flex min-w-0 flex-1 flex-col justify-center gap-2 py-1">
 			{isOutdated && (
 				<span className="w-fit shrink-0 rounded-full border border-border-strong px-2 py-0.5 text-label-1 font-medium text-text-placeholder">
-					OUTDATED
+					Outdated
 				</span>
 			)}
 			<div className="text-body-1 leading-6">
