@@ -1,5 +1,6 @@
 package kr.rilog.domain.comment.controller.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import kr.rilog.domain.comment.entity.enums.AnchorStatus;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 
@@ -94,7 +95,11 @@ public record CommentAnchorListResponse(
             String nickname,
             String slug,
             String profileImageUrl,
+
+            @Schema(name = "isPostAuthor", description = "게시글 작성자 여부")
             boolean isPostAuthor,
+
+            @Schema(name = "isBlogMember", description = "활성 블로그 멤버 여부")
             boolean isBlogMember
     ) {
 
