@@ -56,6 +56,7 @@ public record CommentAnchorListResult(
     }
 
     public record AnchorGroupResult(
+            Long selectionId,
             RangeResult range,
             String selectedText,
             AnchorStatus state,
@@ -81,6 +82,7 @@ public record CommentAnchorListResult(
                     ))
                     .toList();
             return new AnchorGroupResult(
+                    anchorSelection.getId(),
                     new RangeResult(
                             selection.getRange().getStartOffset(),
                             selection.getRange().getEndOffset()

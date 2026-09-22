@@ -35,6 +35,7 @@ public record CommentAnchorListResponse(
     }
 
     public record AnchorGroupResponse(
+            Long selectionId,
             RangeResponse range,
             String selectedText,
             AnchorStatus state,
@@ -47,6 +48,7 @@ public record CommentAnchorListResponse(
                     .map(CommentAnchorResponse::from)
                     .toList();
             return new AnchorGroupResponse(
+                    result.selectionId(),
                     RangeResponse.from(result.range()),
                     result.selectedText(),
                     result.state(),
