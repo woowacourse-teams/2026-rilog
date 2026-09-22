@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CommentAnchorSelectionRepository extends JpaRepository<CommentAnchorSelection, Long> {
@@ -29,6 +30,19 @@ public interface CommentAnchorSelectionRepository extends JpaRepository<CommentA
             @Param("startOffset") int startOffset,
             @Param("endOffset") int endOffset,
             @Param("selectedText") String selectedText
+    );
+
+    @Query("""
+            SELECT anchorSelection
+            FROM CommentAnchorSelection anchorSelection
+            WHERE anchorSelection.id = :selectionId
+              AND anchorSelection.post.id = :postId
+              AND anchorSelection.status = kr.rilog.domain.comment.entity.enums.AnchorStatus.ACTIVE
+              AND anchorSelection.deletedAt IS NULL
+            """)
+    Optional<CommentAnchorSelection> findActiveByIdAndPostId(
+            @Param("selectionId") Long selectionId,
+            @Param("postId") Long postId
     );
 
 }
