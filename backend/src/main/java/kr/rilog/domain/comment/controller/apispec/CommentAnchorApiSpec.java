@@ -47,9 +47,9 @@ public interface CommentAnchorApiSpec {
     @Operation(
             summary = "기존 선택 영역에 인라인 댓글 추가 API",
             description = """
-                    게시글 본문에 존재하는 활성 선택 영역에 인라인 댓글을 추가합니다.
+                    게시글 본문에 존재하는 선택 영역에 인라인 댓글을 추가합니다.
                     - 공개 게시글에는 로그인한 사용자 누구나, 비공개 게시글에는 작성자 본인만 작성할 수 있습니다.
-                    - selection은 요청한 게시글에 속한 ACTIVE 상태여야 합니다.
+                    - selection은 요청한 게시글에 속해야 하며, ACTIVE와 ORPHANED 상태 모두 댓글을 추가할 수 있습니다.
                     """
     )
     ApiResponse<CommentAnchorCreateResponse> addCommentAnchor(

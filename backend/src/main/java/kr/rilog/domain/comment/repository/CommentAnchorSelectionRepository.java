@@ -37,10 +37,9 @@ public interface CommentAnchorSelectionRepository extends JpaRepository<CommentA
             FROM CommentAnchorSelection anchorSelection
             WHERE anchorSelection.id = :selectionId
               AND anchorSelection.post.id = :postId
-              AND anchorSelection.status = kr.rilog.domain.comment.entity.enums.AnchorStatus.ACTIVE
               AND anchorSelection.deletedAt IS NULL
             """)
-    Optional<CommentAnchorSelection> findActiveByIdAndPostId(
+    Optional<CommentAnchorSelection> findByIdAndPostIdAndDeletedAtIsNull(
             @Param("selectionId") Long selectionId,
             @Param("postId") Long postId
     );

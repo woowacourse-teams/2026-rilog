@@ -434,8 +434,8 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("ORPHANED selection에는 인라인 댓글을 추가할 수 없다.")
-    void addCommentAnchorRejectsOrphanedSelection() {
+    @DisplayName("ORPHANED selection에도 인라인 댓글을 추가할 수 있다.")
+    void addCommentAnchorAllowsOrphanedSelection() {
         // given
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
@@ -445,13 +445,14 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
         var command = new CommentAnchorAddCommand(CONTENT);
 
-        // when - then
-        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
                 post.getId(), commenter.getId(), orphanedSelection.getId(), command
-        ))
-                .isInstanceOf(CommentException.class)
-                .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
-        assertThat(commentAnchorRepository.count()).isZero();
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+
+        // then
+        assertThat(saved.getCommentAnchorSelection().getId()).isEqualTo(orphanedSelection.getId());
     }
 
     @Test

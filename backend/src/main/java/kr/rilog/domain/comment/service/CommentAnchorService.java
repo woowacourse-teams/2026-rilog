@@ -71,7 +71,7 @@ public class CommentAnchorService {
         post.validateReadableBy(requesterId);
         User writer = getUser(requesterId);
 
-        CommentAnchorSelection anchorSelection = getActiveSelection(postId, selectionId);
+        CommentAnchorSelection anchorSelection = getSelection(postId, selectionId);
         CommentAnchor commentAnchor = CommentAnchor.create(anchorSelection, writer, command.content());
         CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
         return CommentAnchorCreateResult.from(savedCommentAnchor);
@@ -106,8 +106,8 @@ public class CommentAnchorService {
         return commentAnchorSelectionRepository.save(CommentAnchorSelection.create(post, selection));
     }
 
-    private CommentAnchorSelection getActiveSelection(Long postId, Long selectionId) {
-        return commentAnchorSelectionRepository.findActiveByIdAndPostId(selectionId, postId)
+    private CommentAnchorSelection getSelection(Long postId, Long selectionId) {
+        return commentAnchorSelectionRepository.findByIdAndPostIdAndDeletedAtIsNull(selectionId, postId)
                 .orElseThrow(() -> new CommentException(COMMENT_ANCHOR_SELECTION_NOT_FOUND));
     }
 
