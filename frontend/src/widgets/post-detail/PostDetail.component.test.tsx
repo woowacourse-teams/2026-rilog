@@ -121,7 +121,7 @@ describe('PostDetail', () => {
 		expect(screen.getByText('작성자 프로필')).toBeInTheDocument();
 		expect(screen.getByText('챕터 글')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: /리로그 팀/ })).toHaveAttribute('href', '/@rilog-team');
-		expect(screen.getByText('.')).toHaveClass('text-text-placeholder');
+		expect(screen.getByText('.')).toBeInTheDocument();
 		expect(screen.queryByText('시리즈 글')).not.toBeInTheDocument();
 	});
 

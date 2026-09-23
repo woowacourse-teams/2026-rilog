@@ -174,7 +174,7 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('button', { name: '팀 이름 중복 확인' })).toBeInTheDocument();
 		for (const label of ['팀 이름', '팀 고유 아이디']) {
 			const fieldLabel = screen.getByText(label).closest('label')!;
-			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
+			expect(within(fieldLabel).getByText('*')).toBeInTheDocument();
 		}
 		expect(within(screen.getByText('팀 로고').closest('label')!).queryByText('*')).not.toBeInTheDocument();
 		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });

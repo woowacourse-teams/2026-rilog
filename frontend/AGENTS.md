@@ -94,9 +94,13 @@
 
 - Vitest: policy, mapper, serializer, query key와 순수 함수
 - React Testing Library: 입력, 상태 전이, 오류, focus와 accessible name
-- Playwright: 로그인, 글 저장·발행, Co-log 생성·초대와 공개 탐색 같은 수직 흐름
+- Playwright: history, beforeunload, 파일 입력과 모바일 글쓰기 정책처럼 실제 브라우저가 필요한 글쓰기 흐름
 - RTL에서는 accessible role/name과 label을 우선하고 `data-testid`는 마지막 수단으로 사용한다.
-- className, 내부 state, private method와 대형 DOM snapshot을 테스트하지 않는다.
+- 기능 통합 RTL은 검증 대상 query·mutation hook을 실제로 연결하고 raw API 경계만 대체한다. 별도 테스트가 있는 server-state hook을 상위 조립 UI에서 실행 환경 경계로 대체하는 것은 허용한다.
+- 테스트 QueryClient는 `createTestQueryClient`·`renderWithQuery`를 우선 사용하고 테스트 간 cache를 공유하지 않는다.
+- 시각 구현 className, 내부 state, private method와 대형 DOM snapshot을 테스트하지 않는다. `ph-mask`·`ph-no-capture` 같은 분석 privacy class는 수집 경계 계약으로 검증할 수 있다.
+- raw API·query key·query options는 같은 책임의 파일마다 테스트한다. 검증된 options를 전달하는 use-query·prefetch wrapper와 부수효과 없는 mutation wrapper는 별도 테스트를 만들지 않는다.
+- 독립 상태·분기·이벤트가 있는 UI는 직접 테스트하고, 부모 통합 테스트가 같은 계약을 모두 실행하는 조립 전용 자식은 중복 테스트를 만들지 않는다.
 
 ## 필수 검증
 

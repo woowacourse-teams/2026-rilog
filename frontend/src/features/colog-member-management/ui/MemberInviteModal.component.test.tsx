@@ -1,10 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { QueryClient } from '@tanstack/react-query';
+
 import { readCologMembers } from '@/shared/api/cologs/api';
 import { readUserBySlug } from '@/shared/api/users/api';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import MemberInviteModal from './MemberInviteModal';
 
@@ -18,13 +21,7 @@ describe('MemberInviteModal', () => {
 	let queryClient: QueryClient;
 
 	beforeEach(() => {
-		queryClient = new QueryClient({
-			defaultOptions: {
-				queries: {
-					retry: false,
-				},
-			},
-		});
+		queryClient = createTestQueryClient();
 		vi.mocked(readCologMembers).mockResolvedValue({
 			status: 200,
 			message: '팀 멤버 목록 조회에 성공했습니다.',

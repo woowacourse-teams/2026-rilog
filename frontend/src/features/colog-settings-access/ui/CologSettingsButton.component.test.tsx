@@ -111,14 +111,4 @@ describe('CologSettingsButton', () => {
 
 		expect(screen.queryByRole('button', { name: '팀 블로그 메뉴' })).not.toBeInTheDocument();
 	});
-
-	it('커버 이미지 위에서는 밝은 아이콘 색상을 사용한다', () => {
-		useCurrentCologPermissionMock.mockReturnValue('OWNER');
-
-		render(<CologSettingsButton slug="rilog" isOnCover />);
-
-		expect(screen.getByRole('button', { name: '팀 블로그 메뉴' })).toHaveStyle({
-			color: 'var(--text-on-dark)',
-		});
-	});
 });

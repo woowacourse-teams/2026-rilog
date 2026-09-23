@@ -18,7 +18,7 @@
 
 1. 테스트 이름은 **조건에서 행동하면 관찰 가능한 결과가 발생한다** 형식으로 쓴다. 준비 → 실행 → 검증 순서를 따르며 테스트 하나는 하나의 동작 계약을 다룬다.
 2. RTL은 role, accessible name, label을 우선해 요소를 찾는다. `data-testid`는 접근 가능한 선택지가 없을 때만 사용한다.
-3. URL, query parameter, 요청 payload, 화면 결과, 이동 경로처럼 외부에서 관찰할 수 있는 계약을 검증한다. 내부 state, private 함수, className, 대형 DOM snapshot, 사용자 결과와 무관한 호출 횟수는 성공 기준으로 사용하지 않는다.
+3. URL, query parameter, 요청 payload, 화면 결과, 이동 경로처럼 외부에서 관찰할 수 있는 계약을 검증한다. 내부 state, private 함수, 시각 구현 className, 대형 DOM snapshot, 사용자 결과와 무관한 호출 횟수는 성공 기준으로 사용하지 않는다. 분석 privacy masking class는 수집 경계 계약으로 검증할 수 있다.
 4. 임의의 시간 대기 대신 응답, 화면 상태, URL처럼 완료를 확인할 수 있는 조건을 기다린다. retry, skip, snapshot 갱신으로 실패를 숨기지 않는다. 조건부 skip은 이유와 제거 조건을 이슈에 기록한다.
 5. 정상 흐름 외에 해당 기능의 빈 상태, 실패·재시도, 권한 거부, 중복 제출을 검토한다. 모든 상태를 모든 계층에 중복 작성하지 않는다.
 
@@ -26,9 +26,18 @@
 
 - raw API 경계만 대체한다. RTL 테스트는 컴포넌트와 관련 hook, `QueryClient`를 실제로 연결한다.
 - [`render-with-query.ts`](../../frontend/src/test/render-with-query.ts)의 `createTestQueryClient`와 `renderWithQuery`를 우선 사용한다. 테스트마다 새 QueryClient를 만들고 cache를 공유하지 않는다.
+- 직접 검증하는 query·mutation hook을 mock하지 않는다. 상위 조립 UI가 별도로 검증된 server-state hook의 결과만 소비할 때는 해당 hook을 실행 환경 경계로 대체할 수 있다.
 - 인증 실패·빈 HTTP 응답은 [`api-response.ts`](../../frontend/src/test/fixtures/api-response.ts)의 helper를 우선 사용한다. 새 fixture는 최소 유효 기본값과 명시적 override를 제공한다.
 - 각 테스트가 만든 mock, storage, URL query와 브라우저 상태를 초기화한다. 다른 테스트 실행 순서에 성공을 의존하지 않는다.
 - E2E는 필요한 브라우저 요청만 `page.route`로 대체하고 그 외 API 요청을 실패시킨다. 범용 mock 서버나 제품 API 전체 fixture를 만들지 않는다.
+
+## 테스트 존재 기준
+
+- raw API 함수, query key factory와 query options factory는 같은 책임의 파일마다 직접 테스트를 둔다.
+- `use-query`와 `prefetch-query`처럼 검증된 options를 그대로 전달하는 wrapper는 직접 테스트하지 않는다.
+- query cache·session·payload 변환 같은 부수효과가 있는 mutation hook은 직접 테스트한다. raw API를 그대로 호출하는 mutation wrapper는 소비 기능의 통합 테스트로 보호한다.
+- 독립적인 상태·분기·사용자 이벤트가 있는 UI는 직접 테스트한다. 부모 통합 테스트가 같은 계약을 모두 실행하는 조립 전용 자식은 별도 테스트를 만들지 않는다.
+- 타입 선언, 상수 모음, 스타일 정의와 정적 조립 파일은 독립적인 런타임 계약이 생기기 전까지 테스트를 만들지 않는다.
 
 ## 주요 기능과 보호 범위
 
