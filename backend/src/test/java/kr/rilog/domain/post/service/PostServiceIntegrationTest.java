@@ -6,6 +6,9 @@ import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.entity.vo.Selection;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
@@ -45,6 +48,9 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FO
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
+import static kr.rilog.support.fixure.PostContentFixture.content;
+import static kr.rilog.support.fixure.PostContentFixture.paragraph;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -67,6 +73,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
     @Test
     @DisplayName("개인 블로그에 게시글을 발행하면 명령의 내용과 개인 블로그 소속이 저장된다.")
@@ -250,6 +259,40 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         assertThat(result).isEqualTo(new PostUpdateResult(post.getId(), rilog.getSlug()));
         assertThat(detailOf(savedPost)).isEqualTo(command.toDetail());
+    }
+
+    @Test
+    @DisplayName("게시글 본문을 수정하면 활성 인라인 선택 범위의 변경 위치가 저장된다.")
+    void updatePersistsRelocatedCommentAnchorSelection() {
+        // given
+        User writer = saveCompletedUser(33L, "인라인수정작성자", "inline_update_writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPostWithParagraph(rilog, writer, "가나다라"));
+        CommentAnchorSelection anchorSelection = commentAnchorSelectionRepository.saveAndFlush(
+                CommentAnchorSelection.create(
+                        post,
+                        Selection.select(post.findTextBlock(PARAGRAPH_BLOCK_ID), 2, 4, "다라")
+                )
+        );
+        PostUpdateCommand command = new PostUpdateCommand(
+                rilog.getSlug(),
+                post.getTitle(),
+                content(paragraph("가나나다라")).getContent(),
+                post.getCategory(),
+                post.getVisibility(),
+                post.getThumbnailImageUrl(),
+                null
+        );
+
+        // when
+        postService.update(command, post.getId(), writer.getId());
+
+        // then
+        CommentAnchorSelection savedAnchorSelection = commentAnchorSelectionRepository
+                .findById(anchorSelection.getId())
+                .orElseThrow();
+        assertThat(savedAnchorSelection.getSelection())
+                .isEqualTo(Selection.of(PARAGRAPH_BLOCK_ID, 3, 5, "다라"));
     }
 
     @Test

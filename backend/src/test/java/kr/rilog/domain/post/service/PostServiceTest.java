@@ -10,6 +10,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
@@ -83,6 +84,9 @@ class PostServiceTest {
     @Mock
     private TagAssetsPublisher tagAssetsPublisher;
 
+    @Mock
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
@@ -95,7 +99,8 @@ class PostServiceTest {
                 blogMemberRepository,
                 userRepository,
                 chapterRepository,
-                tagAssetsPublisher
+                tagAssetsPublisher,
+                commentAnchorSelectionRepository
         );
     }
 
