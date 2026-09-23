@@ -9,7 +9,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.List;
+import java.util.Set;
+
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.TEXT_BLOCK_NOT_FOUND;
 import static kr.rilog.support.fixure.PostContentFixture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.util.ReflectionTestUtils.invokeMethod;
@@ -124,6 +128,50 @@ class PostContentTest {
         assertThatThrownBy(() -> invokeMethod(content, "readBlockId", block))
                 .isInstanceOf(PostException.class)
                 .hasMessage(INVALID_POST_CONTENT.getMessage());
+    }
+
+    @Test
+    @DisplayName("블록 ID 목록으로 조회하면 일치하는 텍스트 블록만 반환한다.")
+    void findTextBlocksReturnsOnlyMatchingTextBlocks() {
+        // given
+        PostContent content = content(
+                paragraph("가나다라"),
+                toggle()
+        );
+
+        // when
+        TextBlocks actual = content.findTextBlocks(Set.of(PARAGRAPH_BLOCK_ID));
+
+        // then
+        TextBlocks expected = TextBlocks.from(List.of(
+                new TextBlock(PARAGRAPH_BLOCK_ID, "paragraph", "가나다라")
+        ));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("블록 ID로 조회하면 일치하는 텍스트 블록을 반환한다.")
+    void findTextBlockReturnsMatchingTextBlock() {
+        // given
+        PostContent content = content(paragraph("가나다라"));
+
+        // when
+        TextBlock actual = content.findTextBlock(PARAGRAPH_BLOCK_ID);
+
+        // then
+        assertThat(actual).isEqualTo(new TextBlock(PARAGRAPH_BLOCK_ID, "paragraph", "가나다라"));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 블록 ID로 조회하면 예외가 발생한다.")
+    void findTextBlockThrowsWhenBlockDoesNotExist() {
+        // given
+        PostContent content = content(paragraph("가나다라"));
+
+        // when & then
+        assertThatThrownBy(() -> content.findTextBlock("missing-block"))
+                .isInstanceOf(PostException.class)
+                .hasMessage(TEXT_BLOCK_NOT_FOUND.getMessage());
     }
 
     private static JsonNode json(String raw) {
