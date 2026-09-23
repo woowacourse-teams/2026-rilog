@@ -22,6 +22,7 @@
 		"@blocknote/react": "0.53.0",
 		"@blocknote/server-util": "0.53.0",
 		"@blocknote/shadcn": "0.53.0",
+		"@sentry/nextjs": "^10.75.1",
 		"@tanstack/react-query": "5.101.4",
 		"ky": "2.0.2",
 		"mermaid": "11.17.2",
