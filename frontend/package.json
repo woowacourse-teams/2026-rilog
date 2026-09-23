@@ -14,6 +14,7 @@
 		"test:unit": "vitest run --config vitest-unit.config.ts",
 		"test:component": "vitest run --config vitest-component.config.ts",
 		"test:e2e": "playwright test --config playwright.config.ts",
+		"test:e2e:prod": "playwright test --config playwright.prod.config.ts",
 		"check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:component && pnpm build"
 	},
 	"dependencies": {
