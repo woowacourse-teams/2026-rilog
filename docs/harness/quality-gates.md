@@ -20,7 +20,7 @@
 |    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수 |
 |    5 | RTL component               | 입력, 상태 전이, 오류와 접근성         |
 |    6 | Next.js build               | Server/Client 경계와 production build  |
-|    7 | `pnpm test:e2e` (별도 실행) | 핵심 사용자 수직 흐름                  |
+|    7 | `pnpm test:e2e` (별도 실행) | 글쓰기 브라우저 흐름 4건               |
 
 현재 `frontend/package.json`에는 다음 script가 있다.
 
@@ -36,6 +36,8 @@ check
 ```
 
 `check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
+
+현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책을 검증한다. CI 필수 검사는 아니며 screenshot 기준 이미지 비교는 운영하지 않는다.
 
 ## 현재 CI
 

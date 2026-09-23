@@ -10,8 +10,7 @@
 | ------------------------------------------------ | ---------------------------- | -------------------------------------------- | ---------------------------------------- |
 | 정책, 유효성 검증, mapper, serializer, query key | `*.unit.test.ts` · Vitest    | 대상 함수와 순수 의존 함수                   | 시간·난수처럼 비결정적인 입력            |
 | 입력, 상태 전이, API 소비, 오류·권한 UI          | `*.component.test.tsx` · RTL | 컴포넌트, 관련 hook, 테스트 전용 QueryClient | raw API 함수와 jsdom 미지원 브라우저 API |
-| 페이지 전환, SSR, 쿠키·저장소, 핵심 수직 흐름    | `*.spec.ts` · Playwright     | Next.js 앱과 HTTP client                     | 외부 OAuth·업로드, 로컬 테스트 API 경계  |
-| 공통 UI와 CSS 배치                               | 제한된 Playwright screenshot | 실제 렌더링과 스타일                         | 가변 데이터·시간·이미지·애니메이션       |
+| History·beforeunload·파일 입력·기기 정책         | `*.spec.ts` · Playwright     | 실제 브라우저와 최소 앱 연결                 | 테스트별 브라우저 요청 mock              |
 
 단위 테스트는 입력 조합과 경계값을 충분히 다룬다. 상위 계층에서는 같은 규칙을 반복하지 않고 모듈이 연결된 대표 흐름을 검증한다.
 
@@ -29,29 +28,29 @@
 - [`render-with-query.ts`](../../frontend/src/test/render-with-query.ts)의 `createTestQueryClient`와 `renderWithQuery`를 우선 사용한다. 테스트마다 새 QueryClient를 만들고 cache를 공유하지 않는다.
 - 인증 실패·빈 HTTP 응답은 [`api-response.ts`](../../frontend/src/test/fixtures/api-response.ts)의 helper를 우선 사용한다. 새 fixture는 최소 유효 기본값과 명시적 override를 제공한다.
 - 각 테스트가 만든 mock, storage, URL query와 브라우저 상태를 초기화한다. 다른 테스트 실행 순서에 성공을 의존하지 않는다.
-- 브라우저 검증 환경을 구성할 때는 SSR과 브라우저가 같은 결정적인 테스트 API·fixture를 사용한다. 등록되지 않은 요청은 실패로 드러나야 한다.
+- E2E는 필요한 브라우저 요청만 `page.route`로 대체하고 그 외 API 요청을 실패시킨다. 범용 mock 서버나 제품 API 전체 fixture를 만들지 않는다.
 
 ## 주요 기능과 보호 범위
 
-| 기능           | 보호할 동작·계약                                                                                              | 현재 대표 테스트                                                                                                                                                                                                                                                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 피드·공개 탐색 | 유형 × 카테고리, URL·요청·목록 일치, 캐시 분리, 페이지 연결·중복 제거, 빈 결과·실패·재시도, 상세 방문 후 복귀 | [`feed-filter.unit.test.ts`](../../frontend/src/features/post-feed/lib/feed-filter.unit.test.ts), [`PostFeedGrid.component.test.tsx`](../../frontend/src/features/post-feed/ui/PostFeedGrid.component.test.tsx), [`home.spec.ts`](../../frontend/src/test/e2e/home.spec.ts)                                                             |
-| 인증·회원가입  | 로그인 후 원래 화면 복귀, 가입 완료 상태, 보호 페이지 접근, 세션 만료 안내                                    | [`SignUpForm.component.test.tsx`](../../frontend/src/features/sign-up/ui/SignUpForm.component.test.tsx), [`login-completion.spec.ts`](../../frontend/src/test/e2e/login-completion.spec.ts), [`sign-up-completion.spec.ts`](../../frontend/src/test/e2e/sign-up-completion.spec.ts)                                                     |
-| 글 작성        | 초안 저장·재개·수정·발행, 요청 payload, 실패 시 입력 보존, 중복 제출·이탈                                     | [`UsePostDrafts.component.test.tsx`](../../frontend/src/features/post-write/hooks/UsePostDrafts.component.test.tsx), [`UsePostPublication.component.test.tsx`](../../frontend/src/features/post-write/hooks/UsePostPublication.component.test.tsx), [`write.spec.ts`](../../frontend/src/test/e2e/write.spec.ts)                        |
-| 코로그         | 생성, 멤버 초대 성공·부분 실패, OWNER/MEMBER 권한, 저장 결과 반영                                             | [`CologMemberManagementSection.component.test.tsx`](../../frontend/src/features/colog-member-management/ui/CologMemberManagementSection.component.test.tsx), [`colog-create.spec.ts`](../../frontend/src/test/e2e/colog-create.spec.ts), [`colog-profile-settings.spec.ts`](../../frontend/src/test/e2e/colog-profile-settings.spec.ts) |
-| 공통 UI        | 모달 포커스 복귀, 버튼 상태, 입력 오류 연결, 대표 화면의 반응형 배치                                          | [`Modal.component.test.tsx`](../../frontend/src/shared/ui/modal/Modal.component.test.tsx), [`Button.component.test.tsx`](../../frontend/src/shared/ui/button/Button.component.test.tsx), [`sidebar.spec.ts`](../../frontend/src/test/e2e/sidebar.spec.ts)                                                                               |
+| 기능           | 보호할 동작·계약                                           | 현재 대표 테스트                                                                                                                                                                                                                                                                                                 |
+| -------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 피드·공개 탐색 | 필터 요청·목록 연결·중복 제거·빈 결과·실패·재시도          | [`feed-filter.unit.test.ts`](../../frontend/src/features/post-feed/lib/feed-filter.unit.test.ts), [`PostFeedGrid.component.test.tsx`](../../frontend/src/features/post-feed/ui/PostFeedGrid.component.test.tsx)                                                                                                  |
+| 인증·회원가입  | callback 처리, 가입 상태, 보호 페이지 접근, 세션 만료 안내 | [`AuthSession.component.test.tsx`](../../frontend/src/features/auth/ui/AuthSession.component.test.tsx), [`SignUpForm.component.test.tsx`](../../frontend/src/features/sign-up/ui/SignUpForm.component.test.tsx)                                                                                                  |
+| 글 작성        | 초안·발행 상태, 업로드, 이탈 방지와 모바일 접근 정책       | [`UsePostDrafts.component.test.tsx`](../../frontend/src/features/post-write/hooks/UsePostDrafts.component.test.tsx), [`UsePostPublication.component.test.tsx`](../../frontend/src/features/post-write/hooks/UsePostPublication.component.test.tsx), [`write.spec.ts`](../../frontend/src/test/e2e/write.spec.ts) |
+| 코로그         | 생성 입력, 멤버 초대·권한·저장 결과                        | [`CologCreateForm.component.test.tsx`](../../frontend/src/features/colog-create/ui/CologCreateForm.component.test.tsx), [`CologMemberManagementSection.component.test.tsx`](../../frontend/src/features/colog-member-management/ui/CologMemberManagementSection.component.test.tsx)                              |
+| 공통 UI        | 모달 focus·닫기 정책, 버튼 상태와 접근 가능한 이름         | [`Modal.component.test.tsx`](../../frontend/src/shared/ui/modal/Modal.component.test.tsx), [`Button.component.test.tsx`](../../frontend/src/shared/ui/button/Button.component.test.tsx)                                                                                                                          |
 
 위 표의 “대표 테스트”는 해당 영역의 검증 위치다. 표의 모든 동작이 이미 완전히 보호된다는 뜻은 아니다. 변경 시 보호할 동작과 실제 테스트를 연결해 누락을 보강한다.
 
 ## 변경별 완료 조건
 
-| 변경                                   | 필요한 검증                                                    |
-| -------------------------------------- | -------------------------------------------------------------- |
-| 순수 규칙·mapper·serializer            | 관련 단위 테스트                                               |
-| 입력·상태 전이·API 소비                | 관련 RTL 통합 테스트                                           |
-| 페이지 연결·인증 경계·핵심 사용자 흐름 | 관련 브라우저 smoke                                            |
-| 공통 컴포넌트·스타일                   | 동작 테스트와 대표 소비 화면의 시각적 검증                     |
-| 버그 수정                              | 수정 전 실패하고 수정 후 통과하는 가장 낮은 계층의 회귀 테스트 |
+| 변경                                     | 필요한 검증                                                    |
+| ---------------------------------------- | -------------------------------------------------------------- |
+| 순수 규칙·mapper·serializer              | 관련 단위 테스트                                               |
+| 입력·상태 전이·API 소비                  | 관련 RTL 통합 테스트                                           |
+| History·beforeunload·파일 입력·기기 정책 | 관련 글쓰기 E2E                                                |
+| 공통 컴포넌트·스타일                     | 관련 RTL과 필요 viewport의 수동 확인                           |
+| 버그 수정                                | 수정 전 실패하고 수정 후 통과하는 가장 낮은 계층의 회귀 테스트 |
 
 PR에는 변경 전 문제, 보호한 동작, 실행 명령과 결과, 실행하지 못한 검증과 이유를 남긴다. 해당하지 않는 검증을 생략할 때에도 이유를 기록한다.
 
@@ -71,6 +70,21 @@ pnpm test:e2e
 `node -v`는 `v24.19.0`, `pnpm -v`는 `11.21.0`을 출력해야 한다. 비대화형 셸에서 `nvm` 명령을 찾지 못하면 먼저 `~/.nvm/nvm.sh`를 로드한다. `Unsupported engine` 경고가 나오면 지정된 Node 버전으로 다시 실행한다.
 
 `pnpm check`는 포맷, 린트, 타입, 단위 테스트, 컴포넌트 테스트, production build를 실행하며 E2E는 포함하지 않는다. 좁은 변경은 `pnpm exec vitest run --config vitest-unit.config.ts <파일>` 또는 component config로 검증한다.
+
+### 브라우저 검증의 실행 전제
+
+`test:e2e`는 Playwright와 `pnpm dev`를 사용해 글쓰기 브라우저 흐름 4건을 실행한다. API 주소는 폐쇄된 loopback으로 고정하고 필요한 인증·목록·업로드 요청만 해당 spec에서 대체한다.
+
+```sh
+pnpm test:e2e
+pnpm test:e2e --list
+pnpm test:e2e src/test/e2e/write.spec.ts
+```
+
+- 자동 E2E는 작성 중 뒤로가기, 새로고침 경고, 파일 선택 업로드, 모바일 접근 정책만 보호한다.
+- 피드·인증·코로그·설정의 실제 브라우저 통합과 순수 시각 회귀는 자동 검증 범위가 아니다. 관련 기능 변경 시 하위 테스트와 필요한 수동 검증을 PR에 기록한다.
+- screenshot 기준 이미지 비교와 범용 테스트 API는 운영하지 않는다.
+- 새 E2E에는 사용자 피해, 브라우저가 필요한 이유, 기존 4건에 통합할 수 없는 이유를 기록한다.
 
 실패가 나면 Node/pnpm 버전, 실행 명령, 실패 파일·시나리오, 응답·trace, 같은 커밋에서의 재현 여부를 남긴다. 환경 문제와 제품 회귀를 구분하며 필수 검사를 삭제하거나 약화하지 않는다.
 
