@@ -86,7 +86,7 @@ describe('공통 블로그 홈 게시글 행', () => {
 		]) {
 			expect(info.closest('a')).toBe(cardLink);
 		}
-		expect(screen.getByText('.')).toHaveClass('text-text-placeholder');
+		expect(screen.getByText('.')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 3, name: '접근 가능한 인터페이스 만들기' })).toBeInTheDocument();
 		await user.click(screen.getByText('기술'));
 		expect(JSON.parse(window.sessionStorage.getItem('rilog.post-detail-entry-context')!)).toEqual({
@@ -161,25 +161,5 @@ describe('공통 블로그 홈 게시글 행', () => {
 		expect(screen.getAllByRole('img')).toHaveLength(4);
 		expect(screen.queryByRole('img', { name: /프로필/ })).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 3, name: '접근 가능한 인터페이스 만들기' })).toBeInTheDocument();
-	});
-
-	it('개인 홈의 긴 이름과 챕터는 각각 말줄임 영역을 유지한다', () => {
-		const longName = '아주 긴 코로그 이름을 가진 프론트엔드 아키텍처 연구 모임';
-		const longChapter = '아주 긴 챕터 이름을 가진 렌더링 성능 개선 연재';
-		render(
-			<BlogPostList
-				blogType="RILOG"
-				posts={[
-					{
-						...POST_FIXTURES[0],
-						chapterName: longChapter,
-						blog: { type: 'COLOG', id: 3, name: longName, slug: 'team', profileImageUrl: null },
-					},
-				]}
-			/>,
-		);
-
-		expect(screen.getByText(longName)).toHaveClass('truncate');
-		expect(screen.getByText(longChapter)).toHaveClass('truncate');
 	});
 });

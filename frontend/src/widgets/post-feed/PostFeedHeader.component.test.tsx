@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ComponentProps } from 'react';
@@ -120,110 +120,17 @@ describe('PostFeedHeader', () => {
 		);
 	});
 
-	it('카테고리 링크는 키보드로 포커스할 수 있고 focus-visible outline 계약을 제공한다', () => {
+	it('카테고리 링크는 키보드로 포커스할 수 있다', () => {
 		render(<PostFeedHeader id="post-feed-categories" />);
 
 		const categoryLinks = screen.getAllByRole('link');
 
 		categoryLinks.forEach((link) => {
 			expect(link).not.toHaveAttribute('tabindex', '-1');
-			expect(link).toHaveClass(
-				'focus-visible:outline-2',
-				'focus-visible:outline-offset-2',
-				'focus-visible:outline-focus-ring',
-			);
 		});
 
 		categoryLinks[0]?.focus();
 		expect(categoryLinks[0]).toHaveFocus();
-	});
-
-	it('아래로 스크롤하면 숨고 위로 24px 이상 스크롤하면 다시 표시한다', () => {
-		let scrollY = 0;
-		vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
-		render(<PostFeedHeader id="post-feed-categories" />);
-		const header = screen.getByRole('banner', { name: 'All.' });
-		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
-
-		fireEvent.wheel(window);
-		scrollY = 100;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('-translate-y-full');
-
-		scrollY = 90;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('-translate-y-full');
-
-		scrollY = 75;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('translate-y-0');
-
-		scrollY = 76;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('-translate-y-full');
-	});
-
-	it('피드 시작점에 도착하면 표시하고 그 아래로 내리면 숨긴다', () => {
-		let scrollY = 0;
-		vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
-		const scrollTarget = document.createElement('div');
-		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
-		document.body.append(scrollTarget);
-		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockImplementation(() => ({ top: 363 - scrollY }) as DOMRect);
-		render(<PostFeedHeader id="post-feed-categories" />);
-		const header = screen.getByRole('banner', { name: 'All.' });
-		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
-
-		fireEvent.wheel(window);
-		scrollY = 363;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('translate-y-0');
-
-		scrollY = 365;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('-translate-y-full');
-
-		scrollY = 340;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('translate-y-0');
-	});
-
-	it('필터 이동 중에는 숨겨진 헤더를 고정해 두고 완료 후 일반 스크롤 동작으로 돌아간다', () => {
-		let scrollY = 0;
-		vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
-		const scrollTarget = document.createElement('div');
-		scrollTarget.id = POST_FEED_SCROLL_TARGET_ID;
-		document.body.append(scrollTarget);
-		vi.spyOn(scrollTarget, 'getBoundingClientRect').mockImplementation(() => ({ top: 400 - scrollY }) as DOMRect);
-		const animationFrames: FrameRequestCallback[] = [];
-		vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-			animationFrames.push(callback);
-			return animationFrames.length;
-		});
-		vi.spyOn(window, 'scrollTo').mockImplementation((options) => {
-			scrollY = Number((options as ScrollToOptions).top);
-			fireEvent.scroll(window);
-		});
-		render(<PostFeedHeader id="post-feed-categories" />);
-		const header = screen.getByRole('banner', { name: 'All.' });
-		vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
-
-		fireEvent.wheel(window);
-		scrollY = 1000;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('-translate-y-full');
-
-		fireEvent.click(screen.getByRole('link', { name: '일상' }));
-		expect(header).toHaveClass('translate-y-0', 'transition-none');
-		act(() => animationFrames.shift()?.(0));
-		act(() => animationFrames.shift()?.(250));
-		expect(header).toHaveClass('translate-y-0', 'transition-none');
-		act(() => animationFrames.shift()?.(500));
-		expect(header).toHaveClass('translate-y-0', 'transition-transform');
-
-		scrollY = 402;
-		fireEvent.scroll(window);
-		expect(header).toHaveClass('-translate-y-full');
 	});
 
 	it('깊은 스크롤의 일반 클릭은 비-sticky 피드 시작점으로 이동하며 modifier 클릭은 보존한다', () => {

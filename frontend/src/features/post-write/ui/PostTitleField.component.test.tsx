@@ -49,7 +49,7 @@ describe('PostTitleField', () => {
 		Object.defineProperty(titleField, 'scrollHeight', { configurable: true, value: 96 });
 		await user.type(titleField, '긴 제목');
 
-		expect(titleField).toHaveStyle({ height: '96px' });
+		expect(titleField.style.height).toBe(`${titleField.scrollHeight}px`);
 	});
 
 	it('오류 메시지를 제목 입력란에 연결한다', () => {

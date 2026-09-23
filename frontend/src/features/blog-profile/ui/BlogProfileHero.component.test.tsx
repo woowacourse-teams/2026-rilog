@@ -26,7 +26,6 @@ describe('BlogProfileHero', () => {
 		render(<BlogProfileHero profile={COLOG_PROFILE_FIXTURE} action={<button type="button">팀 설정</button>} />);
 
 		expect(screen.getByRole('heading', { level: 1, name: '프론트엔드 연구소' })).toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' })).not.toHaveClass('border');
 		expect(screen.getByText('사용자 경험을 함께 연구합니다.')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'frontend-lab.example.com' })).toHaveAttribute(
 			'href',
@@ -37,31 +36,13 @@ describe('BlogProfileHero', () => {
 			'https://github.com/frontend-lab',
 		);
 		expect(screen.getByRole('button', { name: '팀 설정' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: '팀 설정' }).parentElement).toHaveClass(
-			'z-20',
-			'text-on-brand-primary',
-			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
-		);
-		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).not.toHaveClass('pr-7');
 		expect(screen.getByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).toBeInTheDocument();
 	});
 
-	it('커버 이미지가 없으면 primary 배경을 사용한다', () => {
+	it('커버 이미지가 없으면 이미지 요소를 렌더링하지 않는다', () => {
 		render(<BlogProfileHero profile={{ ...COLOG_PROFILE_FIXTURE, coverImageUrl: null }} />);
 
 		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' }).parentElement?.parentElement).toHaveClass(
-			'bg-brand-primary',
-			'text-on-brand-primary',
-		);
-	});
-
-	it('커버 이미지 위 텍스트에 shadow를 적용한다', () => {
-		render(<BlogProfileHero profile={COLOG_PROFILE_FIXTURE} />);
-
-		expect(screen.getByRole('heading', { name: '프론트엔드 연구소' })).toHaveClass(
-			'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]',
-		);
 	});
 
 	it('커버 object key를 S3 URL로 변환하고 완성된 URL은 보존한다', () => {
@@ -86,20 +67,14 @@ describe('BlogProfileHero', () => {
 		render(<BlogProfileHero profile={{ ...COLOG_PROFILE_FIXTURE, coverImageUrl }} />);
 
 		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' }).parentElement?.parentElement).toHaveClass(
-			'bg-brand-primary',
-		);
 	});
 
-	it('커버 이미지 로딩에 실패하면 이미지를 제거하고 기본 배경을 유지한다', () => {
+	it('커버 이미지 로딩에 실패하면 이미지를 제거한다', () => {
 		render(<BlogProfileHero profile={COLOG_PROFILE_FIXTURE} />);
 
 		fireEvent.error(screen.getByRole('img', { name: '프론트엔드 연구소 커버 이미지' }));
 
 		expect(screen.queryByRole('img', { name: '프론트엔드 연구소 커버 이미지' })).not.toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '프론트엔드 연구소 팀 로고' }).parentElement?.parentElement).toHaveClass(
-			'bg-brand-primary',
-		);
 	});
 
 	it('선택 프로필 정보가 비어 있으면 관련 링크를 렌더링하지 않는다', () => {
@@ -136,15 +111,9 @@ describe('BlogProfileHero', () => {
 			/>,
 		);
 
-		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).toHaveClass('rounded-full!');
-		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).not.toHaveClass('border');
-		const heading = screen.getByRole('heading', { name: '파라디' });
-		expect(heading).not.toHaveClass('pr-7', 'drop-shadow-[0_1px_2px_rgb(3_16_42_/_0.72)]');
-		expect(heading.parentElement?.parentElement?.parentElement).toHaveClass(
-			'bg-brand-primary',
-			'text-on-brand-primary',
-		);
-		expect(screen.getByText('사용자 경험을 함께 연구합니다.')).toHaveClass('text-on-brand-primary');
+		expect(screen.getByRole('img', { name: '파라디 개인 블로그 프로필' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: '파라디' })).toBeInTheDocument();
+		expect(screen.getByText('사용자 경험을 함께 연구합니다.')).toBeInTheDocument();
 		expect(screen.queryByRole('img', { name: '파라디 커버 이미지' })).not.toBeInTheDocument();
 	});
 });

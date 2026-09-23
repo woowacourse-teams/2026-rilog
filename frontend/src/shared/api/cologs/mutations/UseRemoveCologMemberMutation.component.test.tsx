@@ -1,16 +1,17 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as cologsApi from '@/shared/api/cologs/api';
 import { cologsQueryKeys } from '@/shared/api/cologs/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { useRemoveCologMemberMutation } from './use-remove-colog-member-mutation';
 
 describe('useRemoveCologMemberMutation', () => {
 	it('멤버 내보내기 성공 후 정규화한 팀의 멤버 목록 cache를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		const removeCologMember = vi
 			.spyOn(cologsApi, 'removeCologMember')

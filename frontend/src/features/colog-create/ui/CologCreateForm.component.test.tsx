@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,7 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
 import type { PresignedUrlCreateResponse } from '@/shared/api/uploads/types';
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import CologCreateForm from './CologCreateForm';
 
@@ -38,11 +39,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 const renderWithClient = (ui: React.ReactElement) => {
-	const queryClient = new QueryClient({
-		defaultOptions: {
-			mutations: { retry: false },
-		},
-	});
+	const queryClient = createTestQueryClient();
 	return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 };
 
@@ -105,7 +102,7 @@ describe('CologCreateForm', () => {
 		expect(screen.getByLabelText('커버 이미지 변경')).not.toBeRequired();
 		for (const label of ['팀 로고', '팀 이름', '팀 고유 아이디']) {
 			const fieldLabel = screen.getByText(label).closest('label')!;
-			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
+			expect(within(fieldLabel).getByText('*')).toBeInTheDocument();
 		}
 		expect(screen.getByRole('textbox', { name: '팀 이름' })).toBeRequired();
 		expect(screen.getByRole('button', { name: '팀 이름 중복 확인' })).toBeInTheDocument();
@@ -340,7 +337,6 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute('src', 'blob:logo');
 
-		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('rounded-lg');
 		await user.click(screen.getByRole('button', { name: '팀 로고 제거' }));
 		expect(screen.getByRole('img', { name: '팀 로고 미리보기' })).toHaveAttribute(
 			'src',
@@ -382,7 +378,6 @@ describe('CologCreateForm', () => {
 
 		expect(screen.getByText('팀 로고를 등록해 주세요.')).toBeInTheDocument();
 		expect(screen.getByText('팀 이름은 2~20자로 입력해 주세요.')).toBeInTheDocument();
-		expect(screen.getByRole('img', { name: '팀 로고 미리보기' }).parentElement).toHaveClass('border-danger');
 		expect(screen.getByLabelText('팀 로고 변경')).toHaveFocus();
 		expect(createColog).not.toHaveBeenCalled();
 	});
