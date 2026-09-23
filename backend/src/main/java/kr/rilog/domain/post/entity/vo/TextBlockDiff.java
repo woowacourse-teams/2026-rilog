@@ -8,4 +8,13 @@ public record TextBlockDiff(
         DiffSpan inserted
 
 ) {
+
+    public int commonPrefixEndOffset() {
+        return equal.endOffset();
+    }
+
+    public String updatedText() {
+        return equal.text() + inserted.text();
+    }
+
 }
