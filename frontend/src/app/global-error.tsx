@@ -1,8 +1,9 @@
 'use client';
 
 import * as Sentry from '@sentry/nextjs';
-import ButtonLink from '@/shared/ui/button/ButtonLink';
 import { useEffect } from 'react';
+
+import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
 	useEffect(() => {
