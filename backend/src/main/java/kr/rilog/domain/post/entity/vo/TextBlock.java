@@ -2,6 +2,8 @@ package kr.rilog.domain.post.entity.vo;
 
 import kr.rilog.domain.post.exception.PostException;
 
+import java.util.Set;
+
 import static kr.rilog.domain.post.exception.PostErrorInformation.*;
 
 public record TextBlock(
@@ -9,6 +11,9 @@ public record TextBlock(
         String type,
         String text
 ) {
+
+    private static final Set<String> COMMENTABLE_BLOCK_TYPES =
+            Set.of("paragraph", "heading", "quote", "bulletListItem", "numberedListItem", "checkListItem", "toggleListItem");
 
     public TextBlock {
         if (blockId == null || blockId.isBlank()
@@ -63,6 +68,10 @@ public record TextBlock(
         }
 
         return index;
+    }
+
+    public boolean isCommentableBlock() {
+        return COMMENTABLE_BLOCK_TYPES.contains(type);
     }
 
 }
