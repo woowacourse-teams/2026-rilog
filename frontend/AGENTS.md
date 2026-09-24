@@ -92,6 +92,7 @@
 
 ## 테스트
 
+- 테스트를 추가·수정·삭제하기 전에 `docs/testing/README.md`를 읽고, 필요한 작성 예시와 결정 기록은 그 문서에서 연결한다.
 - Vitest: policy, mapper, serializer, query key와 순수 함수
 - React Testing Library: 입력, 상태 전이, 오류, focus와 accessible name
 - Playwright: history, beforeunload, 파일 입력과 모바일 글쓰기 정책처럼 실제 브라우저가 필요한 글쓰기 흐름
@@ -109,6 +110,7 @@
 - `Unsupported engine` 경고가 출력된 검증은 지정된 Node 버전으로 다시 실행한다. pnpm도 `11.21.0`인지 확인한다.
 - PR 전 `pnpm check`를 실행한다.
 - 핵심 사용자 흐름을 변경하면 관련 `pnpm test:e2e` smoke를 실행한다.
+- CI와 같은 production 브라우저 검증이 필요하면 동일한 테스트 환경으로 build한 뒤 `pnpm test:e2e:prod`를 실행한다.
 - UI 변경은 loading, empty, error, 권한 없는 상태와 키보드/focus를 확인한다.
 - 실제 `package.json`의 script 이름이 다르면 문서와 CI를 함께 일치시킨다.
 
