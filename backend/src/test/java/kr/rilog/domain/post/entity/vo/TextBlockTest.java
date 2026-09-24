@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
-import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_TEXT_BLOCK;
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_TEXT_RANGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,7 +26,7 @@ class TextBlockTest {
     void throwPostExceptionWhenBlockIdIsInvalid(String blockId) {
         assertThatThrownBy(() -> new TextBlock(blockId, TYPE, "본문"))
                 .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_POST_CONTENT.getMessage());
+                .hasMessage(INVALID_TEXT_BLOCK.getMessage());
     }
 
     @ParameterizedTest
@@ -36,7 +36,7 @@ class TextBlockTest {
     void throwPostExceptionWhenTypeIsInvalid(String type) {
         assertThatThrownBy(() -> new TextBlock(BLOCK_ID, type, "본문"))
                 .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_POST_CONTENT.getMessage());
+                .hasMessage(INVALID_TEXT_BLOCK.getMessage());
     }
 
     @Test
@@ -44,7 +44,7 @@ class TextBlockTest {
     void throwPostExceptionWhenTextIsNull() {
         assertThatThrownBy(() -> new TextBlock(BLOCK_ID, TYPE, null))
                 .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_POST_CONTENT.getMessage());
+                .hasMessage(INVALID_TEXT_BLOCK.getMessage());
     }
 
     @Test
@@ -68,6 +68,34 @@ class TextBlockTest {
 
         // then
         assertThat(textBlock.type()).isEqualTo("codeBlock");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"paragraph", "heading", "quote", "bulletListItem", "numberedListItem", "checkListItem", "toggleListItem"})
+    @DisplayName("댓글을 달 수 있는 블록 타입을 식별한다.")
+    void identifyCommentableBlockType(String type) {
+        // given
+        TextBlock textBlock = new TextBlock(BLOCK_ID, type, "본문");
+
+        // when
+        boolean commentable = textBlock.isCommentableBlock();
+
+        // then
+        assertThat(commentable).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"codeBlock", "image"})
+    @DisplayName("댓글을 달 수 없는 블록 타입을 식별한다.")
+    void identifyNonCommentableBlockType(String type) {
+        // given
+        TextBlock textBlock = new TextBlock(BLOCK_ID, type, "본문");
+
+        // when
+        boolean commentable = textBlock.isCommentableBlock();
+
+        // then
+        assertThat(commentable).isFalse();
     }
 
     @Test

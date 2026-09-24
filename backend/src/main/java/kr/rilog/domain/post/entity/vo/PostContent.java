@@ -91,6 +91,16 @@ public class PostContent {
         return value;
     }
 
+    public TextBlocks findTextBlocks(Set<String> blockIds) {
+        return TextBlocks.from(extractTextBlocks())
+                .matching(blockIds);
+    }
+
+    public TextBlock findTextBlock(String blockId) {
+        return findTextBlocks(Set.of(blockId))
+                .get(blockId);
+    }
+
     public List<TextBlock> extractTextBlocks() {
         List<TextBlock> result = new ArrayList<>();
 
@@ -99,13 +109,6 @@ public class PostContent {
         }
 
         return List.copyOf(result);
-    }
-
-    public TextBlock findTextBlock(String blockId) {
-        return extractTextBlocks().stream()
-                .filter(textBlock -> textBlock.blockId().equals(blockId))
-                .findFirst()
-                .orElseThrow(() -> new PostException(TEXT_BLOCK_NOT_FOUND));
     }
 
     private void collectTextBlocks(JsonNode block, List<TextBlock> result) {

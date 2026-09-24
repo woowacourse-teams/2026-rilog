@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 import static kr.rilog.domain.blog.entity.enums.BlogType.COLOG;
 import static kr.rilog.domain.blog.entity.enums.BlogType.RILOG;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_BLOG_FEED_FILTER;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_FEED_FILTER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -586,7 +586,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // when & then
         assertThatThrownBy(() -> feedService.readBlogPosts(rilog.getSlug(), null, command))
                 .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_BLOG_FEED_FILTER.getMessage());
+                .hasMessage(INVALID_FEED_FILTER.getMessage());
     }
 
     @Test
@@ -600,7 +600,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // when & then
         assertThatThrownBy(() -> feedService.readBlogPosts(colog.getSlug(), null, command))
                 .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_BLOG_FEED_FILTER.getMessage());
+                .hasMessage(INVALID_FEED_FILTER.getMessage());
     }
 
     @Test
