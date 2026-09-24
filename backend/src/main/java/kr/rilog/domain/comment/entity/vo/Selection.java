@@ -22,6 +22,7 @@ import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Selection {
 
+    // NOTE TextBlock.class와 동기화
     private static final Set<String> COMMENTABLE_BLOCK_TYPES =
             Set.of("paragraph", "heading", "quote", "bulletListItem", "numberedListItem", "checkListItem", "toggleListItem");
 

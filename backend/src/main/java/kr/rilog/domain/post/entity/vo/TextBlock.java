@@ -12,6 +12,7 @@ public record TextBlock(
         String text
 ) {
 
+    // NOTE Selection.class와 동기화
     private static final Set<String> COMMENTABLE_BLOCK_TYPES =
             Set.of("paragraph", "heading", "quote", "bulletListItem", "numberedListItem", "checkListItem", "toggleListItem");
 
