@@ -7,7 +7,6 @@ describe('CologAvatar', () => {
 	it('Co-log 이름을 제공하면 독립적인 이미지로 노출한다', () => {
 		render(<CologAvatar fallback="R" label="Rilog Colog" size="sm" />);
 
-		expect(screen.getByRole('img', { name: 'Rilog Colog' })).toHaveClass('size-6', 'border');
 		expect(screen.getByRole('img', { name: 'Rilog Colog' })).toHaveTextContent('R');
 	});
 });

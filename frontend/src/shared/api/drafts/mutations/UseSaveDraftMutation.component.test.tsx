@@ -1,16 +1,17 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as draftsApi from '@/shared/api/drafts/api';
 import { draftsQueryKeys } from '@/shared/api/drafts/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { useSaveDraftMutation } from './use-save-draft-mutation';
 
 describe('useSaveDraftMutation', () => {
 	it('최초 임시저장 성공 후 drafts cache를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(draftsApi, 'saveDraft').mockResolvedValue({
 			status: 201,

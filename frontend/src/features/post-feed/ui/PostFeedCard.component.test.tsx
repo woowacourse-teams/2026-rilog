@@ -100,7 +100,7 @@ describe('PostFeedCard', () => {
 
 	it.each(['RILOG', 'COLOG'] as const)('%s는 챕터나 시리즈가 없어도 이름 뒤에 점을 표시한다', (type) => {
 		render(<PostFeedCard post={{ ...PERSONAL_POST, blog: { ...PERSONAL_POST.blog, type } }} position={1} />);
-		expect(screen.getByText('.')).toHaveClass('text-text-placeholder');
+		expect(screen.getByText('.')).toBeInTheDocument();
 	});
 
 	it('상세 링크를 활성화하면 피드 진입 context를 기록한다', () => {

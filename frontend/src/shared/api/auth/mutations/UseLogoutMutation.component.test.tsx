@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,13 +6,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import * as authApi from '../api';
 
 import { useLogoutMutation } from './use-logout-mutation';
 
 const createWrapper = () => {
-	const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+	const queryClient = createTestQueryClient();
 
 	function TestQueryProviderWrapper({ children }: { children: ReactNode }) {
 		return createElement(QueryClientProvider, { client: queryClient }, children);

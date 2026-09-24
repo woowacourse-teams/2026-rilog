@@ -1,10 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PropsWithChildren } from 'react';
 
 import * as blogsApi from '@/shared/api/blogs/api';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { useChapterManagement } from './use-chapter-management';
 
@@ -13,12 +14,7 @@ afterEach(() => {
 });
 
 const createWrapper = () => {
-	const queryClient = new QueryClient({
-		defaultOptions: {
-			queries: { retry: false },
-			mutations: { retry: false },
-		},
-	});
+	const queryClient = createTestQueryClient();
 
 	return function Wrapper({ children }: PropsWithChildren) {
 		return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
