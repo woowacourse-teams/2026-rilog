@@ -4,6 +4,7 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
+import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
@@ -23,14 +24,17 @@ import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
+import static kr.rilog.domain.post.exception.PostErrorInformation.TEXT_BLOCK_NOT_FOUND;
 import static kr.rilog.support.fixure.BlogFixture.createRilog;
 import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static kr.rilog.support.fixure.BlogFixture.otherUserRilog;
 import static kr.rilog.support.fixure.BlogFixture.targetColog;
 import static kr.rilog.support.fixure.PostFixture.*;
 import static kr.rilog.support.fixure.PostContentFixture.IMAGE_URL_A;
+import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
 import static kr.rilog.support.fixure.PostContentFixture.content;
 import static kr.rilog.support.fixure.PostContentFixture.imageBlock;
+import static kr.rilog.support.fixure.PostContentFixture.paragraph;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -436,6 +440,35 @@ class PostTest {
         TagAssets assets = draft.getTagAssets();
 
         assertThat(assets).isEqualTo(new TagAssets(Set.of(IMAGE_URL_A)));
+    }
+
+    @Test
+    @DisplayName("게시글은 블록 id로 본문의 텍스트 블록을 찾는다.")
+    void postFindsTextBlockByBlockId() {
+        // given
+        Post post = Post.builder()
+                .content(content(paragraph("본문입니다.")))
+                .build();
+
+        // when
+        TextBlock textBlock = post.findTextBlock(PARAGRAPH_BLOCK_ID);
+
+        // then
+        assertThat(textBlock).isEqualTo(new TextBlock(PARAGRAPH_BLOCK_ID, "paragraph", "본문입니다."));
+    }
+
+    @Test
+    @DisplayName("본문에 없는 블록 id이면 텍스트 블록을 찾을 수 없다는 예외가 발생한다.")
+    void postRejectsUnknownBlockId() {
+        // given
+        Post post = Post.builder()
+                .content(content(paragraph("본문입니다.")))
+                .build();
+
+        // when - then
+        assertThatThrownBy(() -> post.findTextBlock("not-exists"))
+                .isInstanceOf(PostException.class)
+                .hasMessage(TEXT_BLOCK_NOT_FOUND.getMessage());
     }
 
 }

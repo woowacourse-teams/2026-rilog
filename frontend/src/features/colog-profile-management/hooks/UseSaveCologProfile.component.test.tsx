@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,7 @@ import type { CologProfileSettingsValue } from '../model/colog-profile-settings'
 import type { ReactNode } from 'react';
 
 import * as uploadApi from '@/shared/api/uploads/api';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { useSaveCologProfile } from './use-save-colog-profile';
 
@@ -17,7 +18,7 @@ vi.mock('@/shared/api/blogs/mutations/use-update-blog-profile-mutation', () => (
 }));
 
 const createWrapper = () => {
-	const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+	const queryClient = createTestQueryClient();
 
 	function QueryProviderWrapper({ children }: { children: ReactNode }) {
 		return createElement(QueryClientProvider, { client: queryClient }, children);

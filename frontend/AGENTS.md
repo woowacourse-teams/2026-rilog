@@ -92,17 +92,25 @@
 
 ## 테스트
 
+- 테스트를 추가·수정·삭제하기 전에 `docs/testing/README.md`를 읽고, 필요한 작성 예시와 결정 기록은 그 문서에서 연결한다.
 - Vitest: policy, mapper, serializer, query key와 순수 함수
 - React Testing Library: 입력, 상태 전이, 오류, focus와 accessible name
-- Playwright: 로그인, 글 저장·발행, Co-log 생성·초대와 공개 탐색 같은 수직 흐름
+- Playwright: history, beforeunload, 파일 입력과 모바일 글쓰기 정책처럼 실제 브라우저가 필요한 글쓰기 흐름
 - RTL에서는 accessible role/name과 label을 우선하고 `data-testid`는 마지막 수단으로 사용한다.
-- className, 내부 state, private method와 대형 DOM snapshot을 테스트하지 않는다.
+- 기능 통합 RTL은 검증 대상 query·mutation hook을 실제로 연결하고 raw API 경계만 대체한다. 별도 테스트가 있는 server-state hook을 상위 조립 UI에서 실행 환경 경계로 대체하는 것은 허용한다.
+- 테스트 QueryClient는 `createTestQueryClient`·`renderWithQuery`를 우선 사용하고 테스트 간 cache를 공유하지 않는다.
+- 시각 구현 className, 내부 state, private method와 대형 DOM snapshot을 테스트하지 않는다. `ph-mask`·`ph-no-capture` 같은 분석 privacy class는 수집 경계 계약으로 검증할 수 있다.
+- raw API·query key·query options는 같은 책임의 파일마다 테스트한다. 검증된 options를 전달하는 use-query·prefetch wrapper와 부수효과 없는 mutation wrapper는 별도 테스트를 만들지 않는다.
+- 독립 상태·분기·이벤트가 있는 UI는 직접 테스트하고, 부모 통합 테스트가 같은 계약을 모두 실행하는 조립 전용 자식은 중복 테스트를 만들지 않는다.
 
 ## 필수 검증
 
 - 스캐폴드 전에는 실행 가능한 frontend 검증 명령이 없다.
+- `frontend/`에서 검증·빌드 명령을 실행하기 전에 `.nvmrc`의 Node 버전을 적용하고 `node -v`가 `24.19.0`인지 확인한다. `nvm`을 사용하는 터미널에서는 `nvm use`를 실행한다. 비대화형 셸에서 `nvm` 명령을 찾지 못하면 `nvm.sh`를 로드한 뒤 실행한다.
+- `Unsupported engine` 경고가 출력된 검증은 지정된 Node 버전으로 다시 실행한다. pnpm도 `11.21.0`인지 확인한다.
 - PR 전 `pnpm check`를 실행한다.
 - 핵심 사용자 흐름을 변경하면 관련 `pnpm test:e2e` smoke를 실행한다.
+- CI와 같은 production 브라우저 검증이 필요하면 동일한 테스트 환경으로 build한 뒤 `pnpm test:e2e:prod`를 실행한다.
 - UI 변경은 loading, empty, error, 권한 없는 상태와 키보드/focus를 확인한다.
 - 실제 `package.json`의 script 이름이 다르면 문서와 CI를 함께 일치시킨다.
 

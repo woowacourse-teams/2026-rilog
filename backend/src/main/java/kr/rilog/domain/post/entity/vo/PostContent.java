@@ -14,12 +14,19 @@ import tools.jackson.databind.JsonNode;
 import java.util.*;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
+import static kr.rilog.domain.post.exception.PostErrorInformation.TEXT_BLOCK_NOT_FOUND;
 
 @Embeddable
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostContent {
 
+    private static final String ID = "id";
+    private static final String CONTENT = "content";
+    private static final String CHILDREN = "children";
+    private static final String TEXT = "text";
+    private static final String TEXT_INLINE_TYPE = "text";
+    private static final String LINK_INLINE_TYPE = "link";
     private static final String TYPE = "type";
     private static final String PROPS = "props";
     private static final String URL = "url";
@@ -82,6 +89,130 @@ public class PostContent {
 
     public JsonNode getContent() {
         return value;
+    }
+
+    public TextBlocks findTextBlocks(Set<String> blockIds) {
+        return TextBlocks.from(extractTextBlocks())
+                .matching(blockIds);
+    }
+
+    public TextBlock findTextBlock(String blockId) {
+        return findTextBlocks(Set.of(blockId))
+                .get(blockId);
+    }
+
+    public List<TextBlock> extractTextBlocks() {
+        List<TextBlock> result = new ArrayList<>();
+
+        for (JsonNode block : value) {
+            collectTextBlocks(block, result);
+        }
+
+        return List.copyOf(result);
+    }
+
+    private void collectTextBlocks(JsonNode block, List<TextBlock> result) {
+        if (!block.isObject()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        JsonNode inlineContents = block.get(CONTENT);
+        if (inlineContents != null && inlineContents.isNull()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        if (inlineContents != null && inlineContents.isArray()) {
+            String blockId = readBlockId(block);
+            String blockType = extractStringField(block, TYPE);
+            String serializedText = serializeInlineContents(inlineContents);
+
+            result.add(new TextBlock(blockId, blockType, serializedText));
+        }
+
+        collectChildBlocks(block, result);
+    }
+
+    private void collectChildBlocks(JsonNode block, List<TextBlock> result) {
+        JsonNode children = block.get(CHILDREN);
+
+        if (children == null) {
+            return;
+        }
+
+        if (!children.isArray()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        for (JsonNode child : children) {
+            collectTextBlocks(child, result);
+        }
+    }
+
+    private String serializeInlineContents(JsonNode inlineContents) {
+        StringBuilder result = new StringBuilder();
+        for (JsonNode inlineContent : inlineContents) {
+            appendInlineContent(inlineContent, result);
+        }
+
+        return result.toString();
+    }
+
+    private void appendInlineContent(
+            JsonNode inlineContent,
+            StringBuilder result
+    ) {
+        if (!inlineContent.isObject()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        String type = extractStringField(inlineContent, TYPE);
+        switch (type) {
+            case TEXT_INLINE_TYPE -> appendText(inlineContent, result);
+            case LINK_INLINE_TYPE -> appendLinkText(inlineContent, result);
+            default -> throw new PostException(INVALID_POST_CONTENT);
+        }
+    }
+
+    private void appendLinkText(JsonNode linkContent, StringBuilder result) {
+        JsonNode contents = linkContent.get(CONTENT);
+        if (contents == null || !contents.isArray()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        for (JsonNode content : contents) {
+            if (!content.isObject()) {
+                throw new PostException(INVALID_POST_CONTENT);
+            }
+
+            String type = extractStringField(content, TYPE);
+            if (!TEXT_INLINE_TYPE.equals(type)) {
+                throw new PostException(INVALID_POST_CONTENT);
+            }
+
+            appendText(content, result);
+        }
+    }
+
+    private void appendText(JsonNode textContent, StringBuilder result) {
+        result.append(extractStringField(textContent, TEXT));
+    }
+
+    private String extractStringField(JsonNode node, String fieldName) {
+        JsonNode field = node.get(fieldName);
+        if (field == null || !field.isString()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        return field.asString();
+    }
+
+    private String readBlockId(JsonNode block) {
+        JsonNode id = block.get(ID);
+        if (id == null || !id.isString() || id.asString().isBlank()) {
+            throw new PostException(INVALID_POST_CONTENT);
+        }
+
+        return id.asString();
     }
 
 }

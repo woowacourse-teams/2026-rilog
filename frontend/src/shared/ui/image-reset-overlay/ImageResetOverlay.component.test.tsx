@@ -11,7 +11,6 @@ describe('ImageResetOverlay', () => {
 		render(<ImageResetOverlay imageLabel="팀 로고" onReset={onReset} />);
 
 		const resetButton = screen.getByRole('button', { name: '팀 로고 기본 이미지로 되돌리기' });
-		expect(resetButton).toHaveClass('top-1/2', 'left-1/2', 'sm:group-hover:opacity-100');
 		await user.click(resetButton);
 
 		expect(onReset).toHaveBeenCalledOnce();

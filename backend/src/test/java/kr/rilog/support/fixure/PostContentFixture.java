@@ -37,6 +37,8 @@ public class PostContentFixture {
                 """.formatted(url);
     }
 
+    public static final String PARAGRAPH_BLOCK_ID = "p-1";
+
     public static String paragraph(String text) {
         return """
                 {

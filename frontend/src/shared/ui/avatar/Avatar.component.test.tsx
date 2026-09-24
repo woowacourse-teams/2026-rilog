@@ -16,7 +16,6 @@ describe('Avatar', () => {
 
 		const avatar = screen.getByRole('img', { name: 'Rilog 프로필' });
 		expect(avatar).toHaveTextContent('R');
-		expect(avatar).toHaveClass('border', 'border-border-default');
 	});
 
 	it('이미지 주소가 있으면 fallback 대신 프로필 이미지를 표시한다', () => {

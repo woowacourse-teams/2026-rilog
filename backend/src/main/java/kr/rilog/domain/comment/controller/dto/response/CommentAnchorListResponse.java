@@ -1,0 +1,120 @@
+package kr.rilog.domain.comment.controller.dto.response;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import kr.rilog.domain.comment.entity.enums.AnchorStatus;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record CommentAnchorListResponse(
+        List<BlockResponse> blocks
+) {
+
+    public static CommentAnchorListResponse from(CommentAnchorListResult result) {
+        return new CommentAnchorListResponse(
+                result.blocks().stream()
+                        .map(BlockResponse::from)
+                        .toList()
+        );
+    }
+
+    public record BlockResponse(
+            String blockId,
+            List<AnchorGroupResponse> anchorGroups
+    ) {
+
+        private static BlockResponse from(CommentAnchorListResult.BlockResult result) {
+            return new BlockResponse(
+                    result.blockId(),
+                    result.anchorGroups().stream()
+                            .map(AnchorGroupResponse::from)
+                            .toList()
+            );
+        }
+    }
+
+    public record AnchorGroupResponse(
+            Long selectionId,
+            RangeResponse range,
+            String selectedText,
+            AnchorStatus state,
+            int anchorCount,
+            List<CommentAnchorResponse> commentAnchors
+    ) {
+
+        private static AnchorGroupResponse from(CommentAnchorListResult.AnchorGroupResult result) {
+            List<CommentAnchorResponse> data = result.commentAnchors().stream()
+                    .map(CommentAnchorResponse::from)
+                    .toList();
+            return new AnchorGroupResponse(
+                    result.selectionId(),
+                    RangeResponse.from(result.range()),
+                    result.selectedText(),
+                    result.state(),
+                    data.size(),
+                    data
+            );
+        }
+
+    }
+
+    public record RangeResponse(
+            int startOffset,
+            int endOffset
+    ) {
+
+        private static RangeResponse from(CommentAnchorListResult.RangeResult result) {
+            return new RangeResponse(result.startOffset(), result.endOffset());
+        }
+    }
+
+    public record CommentAnchorResponse(
+            Long commentAnchorId,
+            String content,
+            AuthorResponseWithAffiliation author,
+            boolean canEdit,
+            boolean canDelete,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
+
+        private static CommentAnchorResponse from(CommentAnchorListResult.CommentAnchorResult result) {
+            return new CommentAnchorResponse(
+                    result.commentAnchorId(),
+                    result.content(),
+                    AuthorResponseWithAffiliation.from(result.author()),
+                    result.canEdit(),
+                    result.canDelete(),
+                    result.createdAt(),
+                    result.updatedAt()
+            );
+        }
+    }
+
+    public record AuthorResponseWithAffiliation(
+            Long userId,
+            String nickname,
+            String slug,
+            String profileImageUrl,
+
+            @Schema(name = "isPostAuthor", description = "게시글 작성자 여부")
+            boolean isPostAuthor,
+
+            @Schema(name = "isBlogMember", description = "활성 블로그 멤버 여부")
+            boolean isBlogMember
+    ) {
+
+        private static AuthorResponseWithAffiliation from(CommentAnchorListResult.AuthorResult result) {
+            return new AuthorResponseWithAffiliation(
+                    result.userId(),
+                    result.nickname(),
+                    result.slug(),
+                    result.profileImageUrl(),
+                    result.postAuthor(),
+                    result.blogMember()
+            );
+        }
+    }
+
+}
