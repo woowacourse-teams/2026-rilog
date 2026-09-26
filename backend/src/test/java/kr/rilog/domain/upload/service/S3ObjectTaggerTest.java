@@ -11,12 +11,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.List;
 import java.util.Map;
@@ -28,11 +32,62 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class S3ObjectTaggerTest {
 
     private static final String BUCKET = "rilog-bucket";
     private static final String OBJECT_KEY = "images/2026/image.png";
+
+    @ParameterizedTest
+    @EnumSource(TagStatus.class)
+    @DisplayName("태깅 성공은 DEBUG 레벨에서도 로그를 남기지 않는다.")
+    void successfulTaggingDoesNotLog(TagStatus tagStatus) {
+        S3Client s3Client = mock(S3Client.class);
+        S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
+        LogCapture capture = LogCapture.start();
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class)))
+                .thenReturn(PutObjectTaggingResponse.builder().build());
+
+        try {
+            tagger.tag(List.of(new S3TagTarget(OBJECT_KEY, tagStatus)));
+
+            verify(s3Client).putObjectTagging(any(PutObjectTaggingRequest.class));
+            assertThat(capture.appender().list).isEmpty();
+        } finally {
+            capture.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    @DisplayName("S3 서비스 오류는 실제로 취득한 외부 상태와 AWS 오류 정보만 기록한다.")
+    void logAvailableAwsFailureDetails(boolean hasDetails) {
+        S3Client s3Client = mock(S3Client.class);
+        var builder = S3Exception.builder().message("tagging failed");
+        if (hasDetails) {
+            builder.statusCode(403).requestId("aws-failure-123")
+                    .awsErrorDetails(AwsErrorDetails.builder().errorCode("AccessDenied").build());
+        }
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class))).thenThrow(builder.build());
+        LogCapture capture = LogCapture.start();
+
+        try {
+            new S3ObjectTagger(s3Client, s3Properties()).tag(List.of(new S3TagTarget(OBJECT_KEY, TagStatus.CONFIRMED)));
+
+            ILoggingEvent event = capture.onlyEvent();
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertDuration(event);
+            if (hasDetails) {
+                assertThat(logFields(event)).containsEntry("externalStatus", "403")
+                        .containsEntry("awsErrorCode", "AccessDenied").containsEntry("awsRequestId", "aws-failure-123");
+            } else {
+                assertThat(logFields(event)).doesNotContainKeys("externalStatus", "awsErrorCode", "awsRequestId");
+            }
+        } finally {
+            capture.stop();
+        }
+    }
 
     @ParameterizedTest
     @EnumSource(TagStatus.class)
@@ -43,6 +98,8 @@ class S3ObjectTaggerTest {
         S3TagTarget target = new S3TagTarget(OBJECT_KEY, tagStatus);
         ArgumentCaptor<PutObjectTaggingRequest> requestCaptor =
                 ArgumentCaptor.forClass(PutObjectTaggingRequest.class);
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class)))
+                .thenReturn(PutObjectTaggingResponse.builder().build());
 
         tagger.tag(List.of(target));
 
@@ -64,6 +121,8 @@ class S3ObjectTaggerTest {
                 new S3TagTarget("images/2026/image.png", TagStatus.CONFIRMED),
                 new S3TagTarget("images/2026/document.pdf", TagStatus.TEMPORARY)
         );
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class)))
+                .thenReturn(PutObjectTaggingResponse.builder().build());
 
         tagger.tag(targets);
 
@@ -77,9 +136,15 @@ class S3ObjectTaggerTest {
         S3Client s3Client = mock(S3Client.class);
         S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
 
-        tagger.tag(List.of());
+        LogCapture capture = LogCapture.start();
+        try {
+            tagger.tag(List.of());
 
-        verifyNoInteractions(s3Client);
+            verifyNoInteractions(s3Client);
+            assertThat(capture.appender().list).isEmpty();
+        } finally {
+            capture.stop();
+        }
     }
 
     @Test
@@ -96,7 +161,9 @@ class S3ObjectTaggerTest {
         LogCapture logCapture = LogCapture.start();
 
         try {
+            MDC.put("requestId", "http-request-123");
             tagger.tag(targets);
+            MDC.remove("requestId");
 
             ArgumentCaptor<PutObjectTaggingRequest> requestCaptor =
                     ArgumentCaptor.forClass(PutObjectTaggingRequest.class);
@@ -107,11 +174,15 @@ class S3ObjectTaggerTest {
 
             ILoggingEvent event = logCapture.onlyEvent();
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(event.getMDCPropertyMap()).containsEntry("requestId", "http-request-123");
             assertThat(logFields(event))
                     .containsEntry("event", "s3_object_tagging_failed")
+                    .containsEntry("operation", "put_object_tagging")
                     .containsEntry("bucket", "rilog-bucket")
                     .containsEntry("key", "images/2026/failed.png")
-                    .containsEntry("tagStatus", "CONFIRMED");
+                    .containsEntry("tagStatus", "CONFIRMED")
+                    .doesNotContainKeys("externalStatus", "awsErrorCode", "awsRequestId");
+            assertDuration(event);
             assertThat(event.getFormattedMessage())
                     .contains("event=s3_object_tagging_failed")
                     .contains("bucket=rilog-bucket")
@@ -121,6 +192,7 @@ class S3ObjectTaggerTest {
             assertThat(event.getThrowableProxy().getClassName())
                     .isEqualTo(SdkClientException.class.getName());
         } finally {
+            MDC.remove("requestId");
             logCapture.stop();
         }
     }
@@ -140,14 +212,22 @@ class S3ObjectTaggerTest {
         );
     }
 
-    private record LogCapture(Logger logger, ListAppender<ILoggingEvent> appender) {
+    private record LogCapture(Logger logger, ListAppender<ILoggingEvent> appender, Level originalLevel) {
 
         private static LogCapture start() {
             Logger logger = (Logger) LoggerFactory.getLogger(S3ObjectTagger.class);
-            ListAppender<ILoggingEvent> appender = new ListAppender<>();
+            Level originalLevel = logger.getLevel();
+            logger.setLevel(Level.DEBUG);
+            ListAppender<ILoggingEvent> appender = new ListAppender<>() {
+                @Override
+                protected void append(ILoggingEvent event) {
+                    event.prepareForDeferredProcessing();
+                    super.append(event);
+                }
+            };
             appender.start();
             logger.addAppender(appender);
-            return new LogCapture(logger, appender);
+            return new LogCapture(logger, appender, originalLevel);
         }
 
         private ILoggingEvent onlyEvent() {
@@ -158,6 +238,7 @@ class S3ObjectTaggerTest {
         private void stop() {
             logger.detachAppender(appender);
             appender.stop();
+            logger.setLevel(originalLevel);
         }
     }
 
@@ -171,5 +252,13 @@ class S3ObjectTaggerTest {
                         keyValuePair -> keyValuePair.key,
                         keyValuePair -> String.valueOf(keyValuePair.value)
                 ));
+    }
+
+    private static void assertDuration(ILoggingEvent event) {
+        assertThat(event.getKeyValuePairs()).anySatisfy(pair -> {
+            assertThat(pair.key).isEqualTo("durationMs");
+            assertThat(pair.value).isInstanceOf(Long.class);
+            assertThat((Long) pair.value).isGreaterThanOrEqualTo(0L);
+        });
     }
 }

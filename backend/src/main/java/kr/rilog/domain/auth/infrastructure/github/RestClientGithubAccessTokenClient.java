@@ -7,12 +7,19 @@ import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED;
 
@@ -37,23 +44,46 @@ public class RestClientGithubAccessTokenClient implements OAuthAccessTokenClient
 
     @Override
     public OAuthAccessToken exchange(String code) {
+        long startedAt = System.nanoTime();
         try {
-            GithubAccessTokenResponse response = restClient.post()
+            ResponseEntity<GithubAccessTokenResponse> responseEntity = restClient.post()
                     .uri(properties.tokenUri())
                     .accept(MediaType.APPLICATION_JSON)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(tokenRequestForm(code))
                     .retrieve()
-                    .body(GithubAccessTokenResponse.class);
+                    .toEntity(GithubAccessTokenResponse.class);
+            GithubAccessTokenResponse response = responseEntity.getBody();
 
             if (response == null || !StringUtils.hasText(response.accessToken())) {
-                throw new RilogInfrastructureException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED);
+                throw exchangeFailure(startedAt, "INVALID_RESPONSE", responseEntity.getStatusCode().value(), null);
             }
 
             return new OAuthAccessToken(response.accessToken());
+        } catch (RestClientResponseException exception) {
+            throw exchangeFailure(startedAt, "HTTP_ERROR", exception.getStatusCode().value(), exception);
+        } catch (ResourceAccessException exception) {
+            throw exchangeFailure(startedAt, "IO_ERROR", null, exception);
         } catch (RestClientException exception) {
-            throw new RilogInfrastructureException(GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED, exception);
+            throw exchangeFailure(startedAt, "CLIENT_ERROR", null, exception);
         }
+    }
+
+    private RilogInfrastructureException exchangeFailure(
+            long startedAt, String failureType, Integer externalStatus, Throwable cause
+    ) {
+        Map<String, Object> context = new HashMap<>(Map.of(
+                "provider", provider().name(),
+                "operation", "exchange_access_token",
+                "durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
+                "failureType", failureType
+        ));
+        if (externalStatus != null) {
+            context.put("externalStatus", externalStatus);
+        }
+        return new RilogInfrastructureException(
+                GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED, GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED.getMessage(), cause, context
+        );
     }
 
     private MultiValueMap<String, String> tokenRequestForm(String code) {

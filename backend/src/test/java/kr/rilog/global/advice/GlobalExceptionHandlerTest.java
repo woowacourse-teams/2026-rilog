@@ -7,28 +7,55 @@ import ch.qos.logback.core.read.ListAppender;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.domain.upload.domain.enums.UploadType;
+import kr.rilog.domain.upload.service.S3ImageObjectKeyPolicy;
+import kr.rilog.domain.upload.service.UploadService;
+import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
+import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
+import kr.rilog.global.s3.properties.S3Properties;
 import kr.rilog.global.exception.GlobalExceptionInformation;
 import kr.rilog.global.exception.RilogInfrastructureException;
+import kr.rilog.global.logging.RequestIdFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpMethod;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -97,6 +124,62 @@ class GlobalExceptionHandlerTest {
         logCapture.assertNoEvents();
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "GET, /v1/unexpected, 500",
+            "GET, /v1/business-4xx, 400",
+            "GET, /v1/business-5xx, 500",
+            "GET, /v1/infrastructure-failure, 500",
+            "GET, /v1/request-param-validation, 400",
+            "POST, /v1/unexpected, 405"
+    })
+    @DisplayName("HTTP 예외 로그는 쿼리를 제외한 요청 메서드와 경로를 남긴다.")
+    void exceptionLogsIncludeRequestWithoutQuery(String method, String path, int httpStatus) throws Exception {
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        mockMvc.perform(request(HttpMethod.valueOf(method), path)
+                        .queryParam("code", "TEST_CODE")
+                        .queryParam("state", "TEST_STATE")
+                        .param("name", "a"))
+                .andExpect(status().is(httpStatus));
+
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(logFields(event)).containsEntry("method", method).containsEntry("path", path);
+        assertThat(event.getFormattedMessage() + logFields(event))
+                .doesNotContain("TEST_CODE", "TEST_STATE");
+    }
+
+    @Test
+    @DisplayName("실제 정적 리소스 404 로그는 요청 경로와 응답의 요청 ID를 남긴다.")
+    void missingStaticResourceLogsPathAndRequestId() throws Exception {
+        try (AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext()) {
+            context.setServletContext(new MockServletContext());
+            context.register(ResourceConfig.class);
+            context.refresh();
+            MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                    .addFilters(new RequestIdFilter())
+                    .build();
+            logCapture = LogCapture.start();
+
+            var result = mockMvc.perform(get("/missing.js")
+                            .queryParam("code", "TEST_CODE")
+                            .queryParam("state", "TEST_STATE"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.errorCode").value("STATIC_RESOURCE_NOT_FOUND"))
+                    .andReturn();
+
+            ILoggingEvent event = logCapture.onlyEvent();
+            assertThat(logFields(event)).containsEntry("method", "GET").containsEntry("path", "/missing.js");
+            assertThat(event.getMDCPropertyMap()).containsEntry(
+                    "requestId", result.getResponse().getHeader(RequestIdFilter.REQUEST_ID_HEADER)
+            );
+            assertThat(event.getFormattedMessage() + logFields(event))
+                    .doesNotContain("TEST_CODE", "TEST_STATE");
+            assertThat(event.getThrowableProxy()).isNull();
+        }
+    }
+
     @Test
     @DisplayName("요청 파라미터 검증 예외는 400 응답과 INFO 로그로 처리한다.")
     void requestParameterValidationExceptionRespondsBadRequestAndLogsInfo() throws Exception {
@@ -160,6 +243,74 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("인프라 로그는 허용된 작업 문맥만 기록하고 응답과 공통 필드를 보호한다.")
+    void infrastructureLogIncludesOnlyAllowedContext() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        mockMvc.perform(get("/v1/external-failure"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value(GlobalExceptionInformation.INTERNAL_SERVER_ERROR.getMessage()))
+                .andExpect(jsonPath("$.provider").doesNotExist())
+                .andExpect(jsonPath("$.logContext").doesNotExist());
+
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(logFields(event))
+                .containsEntry("event", "http_request_exception")
+                .containsEntry("path", "/v1/external-failure")
+                .containsEntry("provider", "GITHUB")
+                .containsEntry("operation", "fetch_user")
+                .doesNotContainKeys("requestId", "token");
+        assertThat(event.getKeyValuePairs()).anySatisfy(pair -> {
+            assertThat(pair.key).isEqualTo("durationMs");
+            assertThat(pair.value).isEqualTo(12L);
+        });
+        assertThat(event.getFormattedMessage() + logFields(event)).doesNotContain("TEST_SECRET", "overridden");
+    }
+
+    @Test
+    @DisplayName("Presign SDK 실패는 기존 500 응답과 최소 진단 필드만 담은 ERROR 한 건으로 처리한다.")
+    void presignFailureLogsOnceWithMinimalContext() throws Exception {
+        S3Presigner presigner = mock(S3Presigner.class);
+        when(presigner.presignPutObject(any(PutObjectPresignRequest.class)))
+                .thenThrow(SdkClientException.create("credentials unavailable"));
+        var service = new UploadService(presigner, mock(S3Client.class),
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10),
+                mock(S3ImageObjectKeyPolicy.class));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new PresignController(service))
+                .setControllerAdvice(new GlobalExceptionHandler()).build();
+        logCapture = LogCapture.start();
+        Logger serviceLogger = (Logger) LoggerFactory.getLogger(UploadService.class);
+        serviceLogger.addAppender(logCapture.appender());
+
+        try {
+            mockMvc.perform(post("/v1/uploads/presigned-url"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.errorCode").value("INTERNAL_SERVER_ERROR"))
+                    .andExpect(jsonPath("$.message").value(GlobalExceptionInformation.INTERNAL_SERVER_ERROR.getMessage()))
+                    .andExpect(jsonPath("$.logContext").doesNotExist());
+
+            ILoggingEvent event = logCapture.onlyEvent();
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(logFields(event)).containsEntry("event", "http_request_exception")
+                    .containsEntry("provider", "S3").containsEntry("operation", "presign_put_object")
+                    .containsEntry("method", "POST").containsEntry("path", "/v1/uploads/presigned-url")
+                    .containsEntry("failureType", "SDK_ERROR")
+                    .containsOnlyKeys("event", "errorCode", "httpStatus", "method", "path",
+                            "provider", "operation", "failureType", "durationMs");
+            assertThat(event.getKeyValuePairs()).anySatisfy(pair -> {
+                assertThat(pair.key).isEqualTo("durationMs");
+                assertThat(pair.value).isInstanceOf(Long.class);
+                assertThat((Long) pair.value).isGreaterThanOrEqualTo(0L);
+            });
+            assertThat(event.getFormattedMessage() + logFields(event)).doesNotContain("TEST_PRIVATE_FILENAME");
+        } finally {
+            serviceLogger.detachAppender(logCapture.appender());
+        }
+    }
+
+    @Test
     @DisplayName("정적 리소스 404는 ERROR 로그와 내부 예외 메시지를 남기지 않는다.")
     void staticResourceNotFoundLogsInfoWithoutInternalMessage() {
         // given
@@ -169,7 +320,7 @@ class GlobalExceptionHandlerTest {
         logCapture = LogCapture.start();
 
         // when
-        var response = handler.handleNoResourceFoundException(exception);
+        var response = handler.handleNoResourceFoundException(exception, new MockHttpServletRequest("GET", "/missing.js"));
 
         // then
         assertThat(response.getStatusCode().value()).isEqualTo(404);
@@ -189,7 +340,7 @@ class GlobalExceptionHandlerTest {
         logCapture = LogCapture.start();
 
         // when
-        var response = handler.handleDuplicateKeyException(exception);
+        var response = handler.handleDuplicateKeyException(exception, new MockHttpServletRequest("POST", "/v1/posts"));
 
         // then
         assertThat(response.getStatusCode().value()).isEqualTo(409);
@@ -211,7 +362,7 @@ class GlobalExceptionHandlerTest {
         logCapture = LogCapture.start();
 
         // when
-        var response = handler.handleDataIntegrityViolationException(exception);
+        var response = handler.handleDataIntegrityViolationException(exception, new MockHttpServletRequest("POST", "/v1/posts"));
 
         // then
         assertThat(response.getStatusCode().value()).isEqualTo(500);
@@ -227,6 +378,30 @@ class GlobalExceptionHandlerTest {
         return MockMvcBuilders.standaloneSetup(new TestController())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    @Configuration
+    @EnableWebMvc
+    static class ResourceConfig implements WebMvcConfigurer {
+
+        @Bean
+        GlobalExceptionHandler exceptionHandler() {
+            return new GlobalExceptionHandler();
+        }
+
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
+        }
+    }
+
+    @RestController
+    private record PresignController(UploadService service) {
+        @PostMapping("/v1/uploads/presigned-url")
+        PresignedUrlCreateResult create() {
+            return service.createUploadUrl(7L,
+                    new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.pdf", "application/pdf", 1024, UploadType.FILE));
+        }
     }
 
     @RestController
@@ -261,6 +436,17 @@ class GlobalExceptionHandlerTest {
             );
         }
 
+        @GetMapping("/v1/external-failure")
+        String externalFailure() {
+            throw new RilogInfrastructureException(
+                    GlobalExceptionInformation.INTERNAL_SERVER_ERROR,
+                    "External operation failed",
+                    new IllegalStateException("connection failed"),
+                    Map.of("provider", "GITHUB", "operation", "fetch_user", "durationMs", 12L,
+                            "event", "overridden", "path", "overridden", "requestId", "overridden", "token", "TEST_SECRET")
+            );
+        }
+
         @GetMapping("/v1/request-param-validation")
         String requestParamValidation(
                 @RequestParam("name")
@@ -274,7 +460,13 @@ class GlobalExceptionHandlerTest {
 
         private static LogCapture start() {
             Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
-            ListAppender<ILoggingEvent> appender = new ListAppender<>();
+            ListAppender<ILoggingEvent> appender = new ListAppender<>() {
+                @Override
+                protected void append(ILoggingEvent event) {
+                    event.prepareForDeferredProcessing();
+                    super.append(event);
+                }
+            };
             appender.start();
             logger.addAppender(appender);
             return new LogCapture(logger, appender);
