@@ -8,6 +8,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import { logNonProductionError } from '@/shared/utils/non-production-console';
 
@@ -59,6 +60,10 @@ export default function GitHubCallbackHandler() {
 					router.replace(redirectUrl);
 				}
 			} catch (err) {
+				apiErrorReporter.report(err, {
+					operation: 'oauth.callback',
+					oauthCancelled: error === 'access_denied',
+				});
 				const { errorCode } = getAnalyticsErrorProperties(err);
 				analytics.githubLoginFailed({ failureStage, errorCode });
 				clearSignUpFlow();

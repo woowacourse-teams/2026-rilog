@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import type { ContentLoadPhase, ContentLoadSurface } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
+import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 
 interface ContentLoadFailureTrackerProps {
 	surface: ContentLoadSurface;
@@ -20,6 +21,7 @@ export default function ContentLoadFailureTracker({ surface, loadPhase, error }:
 			return;
 		}
 
+		apiErrorReporter.report(error, { operation: 'content.load' });
 		const { errorCode, errorKind } = getAnalyticsErrorProperties(error);
 		analytics.contentLoadFailed({ surface, loadPhase, errorCode, errorKind });
 		hasTrackedRef.current = true;

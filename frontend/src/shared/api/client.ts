@@ -1,4 +1,5 @@
 import { tokenManager } from '@/shared/api/auth/token-manager';
+import { recordRateLimitResponse } from '@/shared/error-tracking/record-rate-limit-response';
 
 import { normalizeApiError } from './api-error';
 import { createKyInstance } from './create-ky-instance';
@@ -7,6 +8,13 @@ export const kyInstance = createKyInstance({
 	baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
 	credentials: 'include',
 	tokenManager,
+	hooks: {
+		afterResponse: [
+			({ request, response, retryCount }) => {
+				if (response.status === 429) recordRateLimitResponse(request.method, retryCount);
+			},
+		],
+	},
 });
 
 /**
