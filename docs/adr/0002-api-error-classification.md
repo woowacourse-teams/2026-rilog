@@ -50,3 +50,5 @@ BE에 정의된 오류 중 FE 코드표에 없는 항목을 모두 미정의 오
 정상 제외 후보와 조건은 `shared/api/api-error-contracts.ts`에서 operation별로 관리하고 수집 정책이 직접 참조한다. 공통 정상 권한·부재·중복 제외는 유지한다. Co-log 참여 제한처럼 특정 작업의 정상 업무 오류가 다른 핵심 작업에서 반환되면 보고한다. 공개 코드·BE 근거·갱신 절차는 [operation별 계약](../observability/api-error-operation-contracts.md)에 기록한다.
 
 제목에는 고정 feature·operation·errorCode·httpStatus·error_type을 사용한다. request_id는 요청별 값이므로 제목 대신 태그로만 보존한다. 기존 error_code·status 태그는 검색 호환성을 위해 유지하고, 응답 없는 오류에 HTTP 상태나 request_id를 만들어 넣지 않는다.
+
+자동 수집 경계에서 정규화되지 않은 ky 오류에도 동일 정책과 안전한 변환을 적용하고 원본 AbortError를 제외한다. NetworkError는 network로 정규화하며 원본 cause와 멱등성을 유지한다. 일반 TypeError는 API 경계 밖에서 통신 오류로 단정하지 않는다.

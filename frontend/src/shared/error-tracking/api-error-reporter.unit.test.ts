@@ -1,4 +1,4 @@
-import ky from 'ky';
+import ky, { NetworkError, TimeoutError } from 'ky';
 import { describe, expect, it, vi } from 'vitest';
 
 import { normalizeApiError } from '@/shared/api/api-error';
@@ -16,6 +16,31 @@ const failure = async (status = 429) =>
 	);
 
 describe('최종 API 실패 보고', () => {
+	it('자동 수집의 원본 HTTP 오류에도 404 제외와 5xx 수집을 적용한다', async () => {
+		const reporter = new ApiErrorReporter({ captureException: vi.fn(), captureMessage: vi.fn() });
+		expect(reporter.getCaptureDecision((await failure(404)).cause)).toEqual({ capture: false });
+		expect(reporter.getCaptureDecision((await failure(503)).cause)).toEqual({ capture: true, level: 'error' });
+		expect(reporter.getCaptureDecision(new NetworkError(new Request('https://api.test')))).toEqual({
+			capture: true,
+			level: 'error',
+		});
+	});
+	it('자동 수집의 원본 취소·오프라인 ky 오류도 제외하고 일반 프로그래밍 오류는 유지한다', () => {
+		const reporter = new ApiErrorReporter({ captureException: vi.fn(), captureMessage: vi.fn() });
+		vi.stubGlobal('navigator', { onLine: false });
+		try {
+			expect(reporter.getCaptureDecision(new DOMException('cancel', 'AbortError'))).toEqual({ capture: false });
+			expect(reporter.getCaptureDecision(new NetworkError(new Request('https://api.test')))).toEqual({
+				capture: false,
+			});
+			expect(reporter.getCaptureDecision(new TimeoutError(new Request('https://api.test')))).toEqual({
+				capture: false,
+			});
+			expect(reporter.getCaptureDecision(new TypeError('programming bug'))).toEqual({ capture: true });
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
 	it('같은 429 작업은 60초에 한 건만 보내고 다른 작업과 다음 시간창은 별도 보고한다', async () => {
 		const captureException = vi.fn();
 		let now = 0;

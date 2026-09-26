@@ -1,4 +1,4 @@
-import ky, { TimeoutError } from 'ky';
+import ky, { NetworkError, TimeoutError } from 'ky';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { NormalizedApiError } from './api-error';
@@ -8,6 +8,12 @@ import { API_ERROR_CODES } from '@/shared/api/error-codes';
 import { getApiErrorMessage, getFieldErrors, normalizeApiError } from './api-error';
 
 describe('normalizeApiError', () => {
+	it('ky NetworkError도 network로 분류하고 원본과 재정규화 동일성을 보존한다', () => {
+		const original = new NetworkError(new Request('https://api.test/private'));
+		const normalized = normalizeApiError(original);
+		expect(normalized).toMatchObject({ type: 'network', cause: original });
+		expect(normalizeApiError(normalized)).toBe(normalized);
+	});
 	it('서버 오류 본문을 코드와 처리 범주를 포함한 API 오류로 정규화한다', async () => {
 		const client = ky.create({
 			fetch: vi.fn().mockResolvedValue(

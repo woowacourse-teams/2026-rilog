@@ -47,7 +47,7 @@ OAuth 파라미터 누락, GitHub 토큰 교환·사용자 조회 실패, 확인
 | `error_code`, `status` | 기존 검색 호환용 별칭. 각각 API 코드/HTTP 응답이 있을 때 유지 |
 | `error_type`, `error_kind` | 정규화 분류. kind는 API 오류에서만 기록 |
 
-request_id는 [RequestIdFilter](../../backend/src/main/java/kr/rilog/global/logging/RequestIdFilter.java)가 생성하고 [CorsConfig](../../backend/src/main/java/kr/rilog/global/config/CorsConfig.java)가 브라우저에 노출한다. 제목에는 넣지 않아 요청마다 같은 장애의 제목이 달라지는 것을 피한다. 자동 수집과 명시 보고 모두 같은 변환·최종 필터를 사용한다.
+request_id는 [RequestIdFilter](../../backend/src/main/java/kr/rilog/global/logging/RequestIdFilter.java)가 생성하고 [CorsConfig](../../backend/src/main/java/kr/rilog/global/config/CorsConfig.java)가 브라우저에 노출한다. 제목에는 넣지 않아 요청마다 같은 장애의 제목이 달라지는 것을 피한다. 자동 수집과 명시 보고 모두 같은 변환·최종 필터를 사용한다. 정규화되지 않은 ky HTTPError/NetworkError/TimeoutError도 API 오류로 인식하며, 원본 AbortError도 자동 수집에서 제외한다. API 경계 밖의 일반 TypeError는 프로그래밍 오류일 수 있으므로 오프라인이라는 이유만으로 제외하지 않는다.
 
 ## 계약 변경 절차와 검증
 

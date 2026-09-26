@@ -1,3 +1,4 @@
+import { NetworkError } from 'ky';
 import { describe, expect, it } from 'vitest';
 
 import type { ErrorEvent } from '@sentry/nextjs';
@@ -9,6 +10,27 @@ import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error'
 import { SentryErrorTracker } from './sentry-error-tracker';
 
 describe('Sentry API 오류 전송 경계', () => {
+	it('자동 수집된 원본 ky 네트워크 오류에서도 URL과 cause를 제거하고 분류를 보존한다', () => {
+		const original = new NetworkError(new Request('https://api.test?token=private-token'), {
+			cause: new TypeError('private-message'),
+		});
+		const sent = new SentryErrorTracker().beforeSend(
+			{
+				type: undefined,
+				request: { url: original.request.url },
+				extra: { original },
+				exception: { values: [{ value: original.message }] },
+			},
+			{ originalException: original },
+		);
+		expect(sent.tags).toMatchObject({
+			feature: 'api',
+			operation: 'unhandled',
+			error_type: 'network',
+			httpStatus: 'NO_RESPONSE',
+		});
+		expect(JSON.stringify(sent)).not.toContain('private-');
+	});
 	it('SDK가 추가한 민감정보와 연결된 예외를 제거하면서 발생 위치를 보존한다', () => {
 		const report = createApiErrorReport(normalizeApiError(new TypeError('private-message')), 'post.publish');
 		const event: ErrorEvent = {

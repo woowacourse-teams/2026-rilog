@@ -1,7 +1,7 @@
 import type { ApiErrorContext } from './api-error-policy';
 import type { ErrorTracker, ErrorTrackerContext } from './error-tracker';
 
-import { isNormalizedApiError, normalizeApiError } from '@/shared/api/api-error';
+import { isApiRequestError, isNormalizedApiError, normalizeApiError } from '@/shared/api/api-error';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 import { shouldReportApiError } from './api-error-policy';
@@ -83,10 +83,12 @@ export class ApiErrorReporter {
 	getCaptureDecision(error: unknown, explicitCapture = false): ApiErrorCaptureDecision {
 		const handled = this.getHandled(error);
 		if (handled) return explicitCapture ? handled : { capture: false };
-		if (explicitCapture || !isNormalizedApiError(error)) return { capture: true };
-		const decision = this.decide(error, { operation: 'unhandled' });
+		if (error instanceof Error && error.name === 'AbortError') return { capture: false };
+		if (explicitCapture || !isApiRequestError(error)) return { capture: true };
+		const normalized = normalizeApiError(error);
+		const decision = this.decide(normalized, { operation: 'unhandled' });
 		this.markHandled(error, decision);
-		this.markHandled(error.cause, decision);
+		this.markHandled(normalized.cause, decision);
 		return decision;
 	}
 }

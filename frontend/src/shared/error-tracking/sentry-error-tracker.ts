@@ -4,7 +4,7 @@ import type { ErrorTracker, ErrorTrackerContext } from './error-tracker';
 import type { ApiErrorReport } from './sentry-api-error';
 import type { ErrorEvent, EventHint } from '@sentry/nextjs';
 
-import { isNormalizedApiError } from '@/shared/api/api-error';
+import { isApiRequestError, normalizeApiError } from '@/shared/api/api-error';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
@@ -28,13 +28,22 @@ export class SentryErrorTracker implements ErrorTracker {
 
 	captureException(error: unknown, context?: ErrorTrackerContext): void {
 		try {
-			if (isNormalizedApiError(error)) {
-				if (this.reports.has(error) || (error.cause instanceof Error && this.reports.has(error.cause))) return;
-				const report = createApiErrorReport(error, context?.tags?.operation);
+			if (isApiRequestError(error)) {
+				const normalized = normalizeApiError(error);
+
+				if (this.reports.has(error) || (normalized.cause instanceof Error && this.reports.has(normalized.cause))) {
+					return;
+				}
+
+				const report = createApiErrorReport(normalized, context?.tags?.operation);
 				this.reports.set(report.error, report);
 				this.reports.set(error, report);
-				if (error.cause instanceof Error) this.reports.set(error.cause, report);
-				this.captureSources.set(report.error, error);
+
+				if (normalized.cause instanceof Error) {
+					this.reports.set(normalized.cause, report);
+				}
+				this.captureSources.set(report.error, normalized);
+
 				Sentry.captureException(report.error, {
 					tags: report.tags,
 					...(context?.level ? { level: context.level } : {}),
@@ -57,11 +66,12 @@ export class SentryErrorTracker implements ErrorTracker {
 
 	beforeSend = (event: ErrorEvent, hint: EventHint): ErrorEvent => {
 		const original = hint.originalException;
-		const report = isNormalizedApiError(original)
-			? createApiErrorReport(original, 'unhandled')
+		const report = isApiRequestError(original)
+			? createApiErrorReport(normalizeApiError(original), 'unhandled')
 			: original instanceof Error
 				? this.reports.get(original)
 				: undefined;
+
 		return report ? sanitizeApiErrorEvent(event, report) : event;
 	};
 }
