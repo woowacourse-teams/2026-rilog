@@ -250,7 +250,9 @@ describe('PostWriteLoader', () => {
 	});
 
 	it('게시글 수정 중 새 글 URL로 이동하면 새 작성 controller로 전환한다', () => {
-		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		searchParamsGetMock.mockImplementation((name) =>
+			name === 'postId' ? '31' : name === 'slug' ? 'rilog-team' : null,
+		);
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: false, data: initialData });
 		const { rerender } = render(<PostWriteLoader />);
 
@@ -264,12 +266,16 @@ describe('PostWriteLoader', () => {
 	});
 
 	it('게시글 수정 중 다른 postId URL로 이동하면 기존 controller를 remount한다', () => {
-		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		searchParamsGetMock.mockImplementation((name) =>
+			name === 'postId' ? '31' : name === 'slug' ? 'rilog-team' : null,
+		);
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: false, data: initialData });
 		const { rerender } = render(<PostWriteLoader />);
 
 		expect(screen.getByText('수정 게시글 31')).toBeInTheDocument();
-		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '32' : null));
+		searchParamsGetMock.mockImplementation((name) =>
+			name === 'postId' ? '32' : name === 'slug' ? 'rilog-team' : null,
+		);
 		rerender(<PostWriteLoader />);
 
 		expect(screen.getByText('수정 게시글 32')).toBeInTheDocument();
@@ -291,7 +297,9 @@ describe('PostWriteLoader', () => {
 	});
 
 	it('게시글 상세조회 중에는 pending 상태를 보여 준다', () => {
-		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		searchParamsGetMock.mockImplementation((name) =>
+			name === 'postId' ? '31' : name === 'slug' ? 'rilog-team' : null,
+		);
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
 
 		render(<PostWriteLoader />);
@@ -301,7 +309,9 @@ describe('PostWriteLoader', () => {
 	});
 
 	it('게시글 상세조회에 실패하면 오류를 안내한다', () => {
-		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		searchParamsGetMock.mockImplementation((name) =>
+			name === 'postId' ? '31' : name === 'slug' ? 'rilog-team' : null,
+		);
 		usePostWriteInitialDataMock.mockReturnValue({ isPending: false, isError: true, data: undefined });
 
 		render(<PostWriteLoader />);
@@ -312,7 +322,9 @@ describe('PostWriteLoader', () => {
 	});
 
 	it('게시글 상세조회 결과의 문서와 게시 설정을 workspace에 전달한다', () => {
-		searchParamsGetMock.mockImplementation((name) => (name === 'postId' ? '31' : null));
+		searchParamsGetMock.mockImplementation((name) =>
+			name === 'postId' ? '31' : name === 'slug' ? 'rilog-team' : null,
+		);
 		usePostWriteInitialDataMock.mockReturnValue({
 			isPending: false,
 			isError: false,
