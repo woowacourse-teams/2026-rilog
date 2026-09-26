@@ -32,6 +32,11 @@ afterEach(() => {
 });
 
 describe.each(configurations)('$name Sentry 초기화', ({ load }) => {
+	it('API 오류의 최종 전송 필터를 등록한다', async () => {
+		await load();
+		const [options] = initMock.mock.calls[0] as [{ beforeSend?: unknown }];
+		expect(options.beforeSend).toBeTypeOf('function');
+	});
 	it.each(['development', 'production'])('%s에서 SDK 초기화 실패가 전파되지 않는다', async (environment) => {
 		vi.stubEnv('NODE_ENV', environment);
 		initMock.mockImplementation(() => {

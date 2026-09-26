@@ -1,0 +1,87 @@
+import type { ErrorEvent, EventHint } from '@sentry/nextjs';
+
+import type { NormalizedApiError } from '@/shared/api/api-error';
+import { isNormalizedApiError } from '@/shared/api/api-error';
+
+interface ApiErrorReport {
+	error: Error;
+	tags: Record<string, string>;
+}
+
+// 전송용 Error에는 원본 cause를 연결하지 않는다. SDK의 cause 탐색으로 요청 본문이 유출될 수 있다.
+const reports = new WeakMap<Error, ApiErrorReport>();
+
+function stripUrlParameters(value: string): string {
+	return value.replace(/[?#][^\s)]*/g, (parameters) => parameters.match(/:\d+(?::\d+)?$/)?.[0] ?? '');
+}
+
+export function createApiErrorReport(normalized: NormalizedApiError, operation?: string): ApiErrorReport {
+	const tags: Record<string, string> = { error_type: normalized.type };
+	if (operation && /^[a-z][a-z0-9_.-]{0,63}$/.test(operation)) tags.operation = operation;
+	if ('response' in normalized) tags.status = String(normalized.response.status);
+	if (normalized.type === 'api') {
+		tags.error_kind = normalized.kind ?? 'unknown';
+		// 미정의 코드도 진단하되 응답의 임의 문자열을 그대로 보내지 않는다.
+		tags.error_code = /^[A-Z][A-Z0-9_]{0,99}$/.test(normalized.detail.errorCode)
+			? normalized.detail.errorCode
+			: 'UNKNOWN_ERROR_CODE';
+	}
+
+	const error = new Error(`API request failed: ${tags.error_code ?? normalized.type}`);
+	error.name = 'NormalizedApiError';
+	const frames =
+		normalized.cause instanceof Error
+			? normalized.cause.stack?.split('\n').filter((line) => /^\s*at\s|^[^@\s]*@/.test(line))
+			: undefined;
+	// 원본이 없으면 보고 위치를 발생 위치인 것처럼 제시하지 않는다.
+	error.stack = [`${error.name}: ${error.message}`, ...(frames ?? []).map(stripUrlParameters)].join('\n');
+	const report = { error, tags };
+	reports.set(error, report);
+	return report;
+}
+
+/** SDK가 추가한 request/breadcrumb/extra도 최종 전송 경계에서 제거한다. 일반 오류에는 적용하지 않는다. */
+export function sanitizeApiErrorEvent(event: ErrorEvent, hint: EventHint): ErrorEvent {
+	const original = hint.originalException;
+	const report = isNormalizedApiError(original)
+		? createApiErrorReport(original)
+		: original instanceof Error
+			? reports.get(original)
+			: undefined;
+	if (!report) return event;
+
+	const exception = event.exception?.values?.at(-1);
+	const frames = exception?.stacktrace?.frames?.map((frame) => ({
+		filename: frame.filename ? stripUrlParameters(frame.filename) : undefined,
+		function: frame.function,
+		lineno: frame.lineno,
+		colno: frame.colno,
+		in_app: frame.in_app,
+	}));
+	return {
+		...event,
+		message: undefined,
+		logentry: undefined,
+		user: undefined,
+		request: undefined,
+		breadcrumbs: undefined,
+		extra: undefined,
+		contexts: undefined,
+		tags: report.tags,
+		exception: {
+			values: [
+				{
+					type: report.error.name,
+					value: report.error.message,
+					stacktrace: frames ? { frames } : undefined,
+					mechanism: exception?.mechanism
+						? {
+								type: exception.mechanism.type,
+								handled: exception.mechanism.handled,
+							}
+						: undefined,
+				},
+			],
+		},
+	};
+}

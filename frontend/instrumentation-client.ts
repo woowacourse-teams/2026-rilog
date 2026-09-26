@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { sanitizeApiErrorEvent } from '@/shared/error-tracking/sentry-api-error';
 import { initializeAnalytics } from '@/shared/analytics/posthog';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
@@ -10,6 +11,7 @@ try {
 		enabled: isProduction || process.env.NEXT_PUBLIC_SENTRY_ENABLED === 'true',
 		environment: isProduction ? 'prod' : 'local',
 		sendDefaultPii: false,
+		beforeSend: sanitizeApiErrorEvent,
 	});
 } catch {
 	logNonProductionWarning('Sentry initialization failed.');
