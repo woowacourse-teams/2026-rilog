@@ -8,13 +8,13 @@ import { postDetailQueryOptions } from './query-options';
 afterEach(() => vi.restoreAllMocks());
 
 describe('postDetailQueryOptions', () => {
-	it('postId를 detail key와 API 요청에 전달한다', async () => {
+	it('slug와 postId를 detail key와 API 요청에 전달한다', async () => {
 		const readDetail = vi.spyOn(postsApi, 'readPostDetail').mockResolvedValue({ status: 200, message: 'OK' });
-		const options = postDetailQueryOptions(42);
+		const options = postDetailQueryOptions('rilog-team', 42);
 
-		expect(options.queryKey).toEqual(postsQueryKeys.detail(42));
+		expect(options.queryKey).toEqual(postsQueryKeys.detail('rilog-team', 42));
 		if (typeof options.queryFn !== 'function') throw new Error('queryFn이 설정되어야 합니다.');
 		await options.queryFn({} as never);
-		expect(readDetail).toHaveBeenCalledWith({ postId: 42 });
+		expect(readDetail).toHaveBeenCalledWith({ slug: 'rilog-team', postId: 42 });
 	});
 });

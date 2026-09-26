@@ -18,9 +18,9 @@ export const useUpdatePostMutation = () => {
 
 	return useMutation({
 		mutationFn: ({ postId, request }: UpdatePostVariables) => updatePost(postId, request),
-		onSuccess: (_, { postId }) =>
+		onSuccess: () =>
 			Promise.all([
-				queryClient.invalidateQueries({ queryKey: postsQueryKeys.detail(postId) }),
+				queryClient.invalidateQueries({ queryKey: postsQueryKeys.details() }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 			]),

@@ -9,11 +9,12 @@ import EditPostController from './EditPostController';
 const loaderClassName = 'flex min-h-dvh items-center justify-center bg-background px-6 text-center';
 
 interface EditPostLoaderProps {
+	slug: string;
 	postId: number;
 }
 
-export default function EditPostLoader({ postId }: EditPostLoaderProps) {
-	const initialDataQuery = usePostWriteInitialData({ postId, isEnabled: true });
+export default function EditPostLoader({ slug, postId }: EditPostLoaderProps) {
+	const initialDataQuery = usePostWriteInitialData({ slug, postId, isEnabled: true });
 
 	if (initialDataQuery.isPending) {
 		return (
