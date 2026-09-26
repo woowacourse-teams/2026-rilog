@@ -109,6 +109,13 @@ Sentry 릴리즈는 처음 발생한 이벤트와 해당 릴리즈·커밋을 �
 
 ## 4. 무엇을 수집할 것인가
 
+2026-09-26 보완: [API 오류 분류 결정](../adr/0002-api-error-classification.md)과
+[코드별 추가 수집 검토](api-error-collection-review.md)를 함께 따른다.
+BE 오류 코드의 FE 분류 보완, 실제 계약 밖 코드 수집, 비동기 이미지 태깅의 Sentry 연동 제외는 확정했다.
+사용자가 입력을 고쳐 해결하는 정상 검증은 제외하고 앱이 잘못 만든 요청은 수집한다.
+OAuth와 429 수집 기준도 확정하고 핵심 플로우에 보고를 연결했다. 429는 reporter 인스턴스/operation당 60초에 1건이며 state 오류 증가의 자동 탐지는 후속 범위다.
+일반 QueryCache/MutationCache는 최종 5xx·통신·계약 밖 코드·429를 다룬다. 추가적인 400 예외는 각 작업 경계에서 판단한다.
+
 ### 자동 수집할 것
 
 - React 렌더링 오류와 Error Boundary 오류
@@ -117,16 +124,19 @@ Sentry 릴리즈는 처음 발생한 이벤트와 해당 릴리즈·커밋을 �
 - Next.js route/page 오류
 - Sentry SDK가 잡는 브라우저 런타임 오류
 - Server component, route handler, middleware에서 발생한 서버사이드 오류
-- API 호출 중 발생한 네트워크 오류와 예상하지 못한 5xx
+- API 호출 중 발생한 네트워크 오류와 예상하지 못한 5xx 중 자동 경계에 도달한 오류
+
+catch된 HTTP 오류까지 SDK 초기화만으로 자동 보고된다고 가정하지 않는다. 처리된 오류는 해당 작업 경계에서
+명시적으로 보고하고 자동 수집과 중복되지 않도록 수집 소유 경계를 정한다.
 
 ### 명시적으로 보고할 것
 
 사용자에게 실패 화면이나 실패 메시지를 보여주는 핵심 행동은 `captureException` 또는 `captureMessage`로 별도 보고한다.
 
-- 로그인·OAuth callback 실패
+- 로그인·OAuth callback의 예상 밖 처리 실패 (정상 취소·거부와 구분 필요)
 - 글 임시저장 실패
 - 글 발행 실패
-- 이미지 presigned URL 발급·업로드·후처리 실패
+- 이미지 presigned URL 발급·업로드 실패와 FE에서 관측 가능한 잘못된 asset 참조 오류
 - Co-log 생성·초대 실패
 - 복구 UI가 표시된 데이터 조회 실패
 
@@ -142,19 +152,25 @@ Sentry 릴리즈는 처음 발생한 이벤트와 해당 릴리즈·커밋을 �
 | --- | --- |
 | 5xx 전체 | 서버 장애. 프론트에서 대응할 수 없으므로 즉시 인지 필요 |
 | 네트워크 오류 (timeout, DNS, connection refused) | 인프라 문제 가능성 |
-| API 스펙에 정의되지 않은 errorCode | 프론트-백 계약 위반. 양쪽 코드 불일치 |
+| 실제 API 계약에 정의되지 않은 errorCode | FE 코드표를 BE 정의와 동기화한 뒤에도 계약에 없는 코드. HTTP 403/404/409여도 수집 |
+
+BE에는 정의됐지만 FE에만 누락된 코드는 우선 FE `kind`를 보완하고 의미별로 판단한다.
+`request`도 정상 업무 제약일 수 있으며, `field`와 오류 이름만으로 모든 거부의 성격을 확정하지 않는다.
+추가 42개 코드와 기존 코드 정정은 [코드별 판정표](api-error-collection-review.md#추가-코드별-의미와-수집-판정)를 참고한다.
 
 #### 핵심 mutation 실패 중 보고하는 4xx
 
-핵심 mutation에서 4xx가 발생해도 다음 조건에 해당하면 보고한다.
+핵심 mutation에서 예상 밖 4xx가 발생하면 다음과 같이 판단한다.
+사용자 수정 가능한 정상 검증은 제외한다. 앱의 요청 생성 오류는 field 응답이어도 수집하며,
+핵심 operation이라는 이유만으로 해당 endpoint의 모든 400을 수집하지 않는다.
 
 | 시나리오 | 왜 보고해야 하는가 |
 | --- | --- |
-| 글 임시저장 400 | 사용자가 작성한 글이 유실될 수 있음. 프론트 validation을 통과한 요청이 서버에서 거부되면 프론트-백 계약 불일치(버그) |
-| 글 발행 400 | 임시저장과 동일. 발행 시 임시저장본이 삭제되는 흐름이면 원본도 잃을 위험 |
-| 이미지 업로드 후처리 400 | presigned URL로 S3에는 올라갔는데 후처리(태깅 등)에서 실패하면 orphan 파일 발생 |
-| Co-log 초대 400 | "이미 초대됨" 같은 명확한 코드가 아닌 원인 불명의 400이면 초대 누락 |
-| OAuth callback 400 | 로그인 흐름 자체가 깨지므로 서비스 접근 불가 |
+| 글 임시저장의 예상 밖 400 | 앱이 생성한 본문 구조·요청 계약 오류 등은 저장 실패를 유발한다. FE validation 통과 사실만으로 모든 서버 거부를 버그로 단정하지 않는다 |
+| 글 발행의 예상 밖 400 | 핵심 발행 실패. 실제 draft 발행은 기존 Post를 PUBLISHED로 변경하며 삭제 후 생성하지 않는다 |
+| FE에서 관측 가능한 asset 참조 오류 | 앱의 URL·객체 참조 계약 오류인지 판정. BE 비동기 태깅 실패를 동기 400으로 가정하지 않는다 |
+| Co-log 초대의 예상 밖 400 | 기존 멤버는 409 `BLOG_MEMBER_ALREADY_EXISTS`, 멤버/Co-log 수 제한 400도 정상 업무 거부다. 그 외 오류를 문맥으로 판단한다 |
+| OAuth callback의 예상 밖 400 | `OAUTH_CALLBACK_PARAMETER_MISSING`은 수집. `OAUTH_REQUEST_FAILED`는 확인된 동의 취소만 제외하고 나머지는 수집. `INVALID_OAUTH_STATE`는 기본 집계하며 비정상 증가 시 재평가 |
 
 #### 보고하지 않는 에러 (정상 흐름)
 
@@ -164,47 +180,44 @@ Sentry 릴리즈는 처음 발생한 이벤트와 해당 릴리즈·커밋을 �
 | 403 Forbidden (권한 없음) | 정상적인 접근 제어. UI에서 안내 |
 | 404 Not Found (삭제된 글, 잘못된 URL) | 정상적인 리소스 부재 |
 | 409 Conflict (중복 요청 등) | 비즈니스 규칙 위반이지 시스템 에러가 아님 |
-| 400/422 + `kind: 'field'` (유효성 검증 실패) | 사용자 입력 오류. 프론트에서 필드별 안내로 복구 가능 |
+| 400/422 중 사용자가 입력을 고쳐 해결하는 정상 검증 | `kind: field`만으로 제외하지 않는다. 앱이 생성해야 하는 내부 필드 누락·구조 오류는 수집 |
 | `AbortError` (사용자 취소) | 의도적 행동 |
 | offline 전환 | 네트워크 상태 변경, 시스템 에러가 아님 |
 
-#### 판단 흐름
+#### 판단 흐름과 미확정 경계
 
-```
-1. 사용자가 이 에러를 보고 즉시 재시도할 수 있는가?
-   → Yes → 보고하지 않음 (유효성 검증, 중복 등)
-   → No  → 2로
+실제 계약 위반·5xx·온라인 통신 장애는 재시도 가능 여부와 별개로 수집한다.
+BE/FE 코드표를 동기화하고 오류의 의미와 operation으로 정상 거부인지 판단한다.
 
-2. 프론트 validation을 통과한 요청이 서버에서 거부된 상황인가?
-   → Yes → 보고 (프론트-백 계약 불일치 = 버그)
-   → No  → 3으로
-
-3. 이 실패로 사용자가 작성·수정한 데이터가 유실될 수 있는가?
-   → Yes → 보고
-   → No  → 보고하지 않음
-```
+정상 입력 검증은 핵심 mutation 여부와 무관하게 제외하고 앱의 요청 생성 오류는 수집한다.
+예를 들어 삭제된 글의 404에 홈 이동 UI가 있어도 정상 부재로 보고 제외한다.
+사용자가 제목 길이를 수정할 수 있는 field 오류와 앱이 잘못 생성한 본문 JSON 오류는 구분한다.
+특히 `REQUEST_VALIDATION_FAILED`는 앱의 필수 내부 필드 누락까지 포괄하므로 일괄 제외하지 않는다.
+operation별 실제 요청값이 입력 제약을 위반했는지 확인한다. 서버 검증 문구는 문자열로 비교하지 않는다. 혼합 오류나 원인 불명 오류를 정상 검증으로 자동 제외하지 않는다.
 
 #### mutation 수준의 보고 구현
 
 보고 판단은 공통 API 계층이 아니라 각 mutation hook의 `onError`에서 operation별로 수행한다. 공통 ky 계층은 오류를 정규화하고 `X-Request-ID`를 추출하는 역할까지만 담당한다.
 
-```typescript
-// mutation hook의 onError 예시
-onError: (error) => {
-  const normalized = normalizeApiError(error);
+각 mutation hook이 자신의 operation에서 **예상된 에러코드 목록**을 알고 있도록 API 계약과 함께 관리한다.
+apiErrorReporter.report가 순수 정책을 평가하고 인스턴스 소유 상태로 중복 전송을 억제한다. beforeSend 연결부도 같은 reporter를 사용한다. ErrorTracker는 주입받으며, SentryErrorTracker는 안전한 Error 변환과 SDK 호출을 담당한다. initialize-sentry.ts가 공통 SDK 초기화와 beforeSend 연결을 담당하며 client/server/edge 진입점은 환경별 설정만 전달한다. reporter 인스턴스 파일은 생성만 담당한다. 이미 정규화한 오류는 다시 감싸지 않는다.
+실제 계약 밖 코드는 수집하며, 알려진 코드는 [코드별 판정](api-error-collection-review.md)에 따라 분류한다.
+모든 field 오류를 무조건 제외하거나 모든 발행 실패를 무조건 수집하는 예시를 구현 기준으로 사용하지 않는다.
+원본 오류의 stack을 보존하되 정규화 객체·ky HTTPError 원문을 그대로 Sentry에 보내지 않는다. 공통 정규화의 cause 보존·재정규화 방지와 Sentry 어댑터 변환·client/server/edge의 beforeSend 필터는 구현했다. 핵심 mutation·OAuth·업로드·QueryCache와 조회 복구 UI에 report 호출을 연결했다.
+보고 경계에서 고정 메시지·안전한 stack·허용 태그를 구성하고 body와 원본 URL을 제거한다.
 
-  // 이 operation에서 예상된 에러코드는 보고하지 않음
-  if (normalized.type === 'api' && normalized.kind === 'field') return;
-  if (normalized.type === 'api' && normalized.detail.errorCode === 'DUPLICATE_ENTRY') return;
+#### 이미지 비동기 태깅과 429
 
-  // 그 외 모든 발행 실패는 데이터 손실 위험 → 보고
-  Sentry.captureException(error, {
-    tags: { feature: 'post', operation: 'publish' },
-  });
-}
-```
+이미지 태깅은 BE의 커밋 후 비동기 작업이며 Sentry에 연동하지 않는다.
+`s3_object_tagging_failed` ERROR 로그와 CloudWatch 조회 문서가 이미 있다.
+운영 로그 수집·알림·재처리·임시 객체 정리 영향·requestId 연결 여부는 검토 기록으로 남긴다. 별도 BE 문의는 보내지 않는다.
 
-각 mutation hook이 자신의 operation에서 **예상된 에러코드 목록**을 알고 있고, 목록에 없는 에러는 전부 보고한다. 예상 에러코드 목록은 API 스펙과 함께 관리한다.
+저장소에서 자사 API의 429 응답 정의나 rate limit 설정은 확인되지 않았다.
+ky의 기본 429 재시도와 실제 서비스 429 발생은 별개다. 미정의 errorCode와 문서화되지 않은 HTTP status도 별개다.
+현재 자사 API의 재시도 후 최종 429는 예상 밖 제한으로 대표 이벤트를 수집한다. 일반 조회는 warning, 핵심 작업 최종 차단은 error로 분류한다.
+정상 복구된 중간 429는 안전한 breadcrumb로만 남기고, 반복되는 최종 실패는 reporter 인스턴스의 같은 operation에서 60초당 1건으로 전송을 제한한다.
+외부 API와 Sentry 수집 endpoint의 429를 자사 계약 위반으로 보고하지 않는다.
+[OAuth·정규화·429 상세 검토](api-error-collection-review.md)를 참고한다.
 
 ### 수집하지 않을 것
 
