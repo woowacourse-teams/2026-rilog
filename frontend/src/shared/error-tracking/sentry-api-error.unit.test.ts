@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ErrorEvent } from '@sentry/nextjs';
 
 import { normalizeApiError } from '@/shared/api/api-error';
+import { createApiFailure } from '@/test/fixtures/api-error';
 
 import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
 import { SentryErrorTracker } from './sentry-error-tracker';
@@ -68,7 +69,9 @@ describe('Sentry API 오류 전송 경계', () => {
 		};
 		const sanitized = new SentryErrorTracker().beforeSend(event, { originalException: normalized });
 		if (!sanitized) throw new Error('Expected event');
-		expect(sanitized.exception?.values?.[0]?.value).toBe('API request failed: network');
+		expect(sanitized.exception?.values?.[0]?.value).toBe(
+			'[api] unhandled failed: NO_ERROR_CODE (NO_RESPONSE; network)',
+		);
 		expect(JSON.stringify(sanitized)).not.toContain('private-message');
 	});
 
@@ -88,5 +91,52 @@ describe('Sentry API 오류 전송 경계', () => {
 	it('일반 애플리케이션 오류의 기존 보고는 변경하지 않는다', () => {
 		const event: ErrorEvent = { type: undefined, exception: { values: [{ value: 'render failed' }] } };
 		expect(new SentryErrorTracker().beforeSend(event, { originalException: new Error('render failed') })).toBe(event);
+	});
+
+	it('제목과 태그에 고정 작업 분류를 넣고 request_id는 태그로만 보존한다', async () => {
+		const error = await createApiFailure('INVALID_POST_CONTENT', 400);
+		if (!('response' in error)) throw new Error('Expected HTTP response');
+		const requestId = '12345678-1234-4567-8123-123456789abc';
+		error.response.headers.set('X-Request-ID', requestId);
+		const report = createApiErrorReport(error, 'draft.publish');
+		expect(report.error.message).toBe('[writing] draft.publish failed: INVALID_POST_CONTENT (400; api)');
+		expect(report.tags).toMatchObject({
+			feature: 'writing',
+			operation: 'draft.publish',
+			errorCode: 'INVALID_POST_CONTENT',
+			httpStatus: '400',
+			request_id: requestId,
+		});
+		const sent = sanitizeApiErrorEvent({ type: undefined, tags: { feature: 'private-input' } }, report);
+		expect(sent.tags).toEqual(report.tags);
+		expect(sent.exception?.values?.[0]?.value).toBe(report.error.message);
+		error.response.headers.set('X-Request-ID', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+		expect(createApiErrorReport(error, 'draft.publish').error.message).toBe(report.error.message);
+	});
+
+	it.each(['private-request-id', '-'.repeat(36)])(
+		'계약에 맞지 않는 request_id %s는 전송하지 않는다',
+		async (requestId) => {
+			const error = await createApiFailure('NEW_PUBLIC_CODE', 503);
+			if (!('response' in error)) throw new Error('Expected HTTP response');
+			error.response.headers.set('X-Request-ID', requestId);
+			const report = createApiErrorReport(error, 'oauth.callback');
+			expect(report.tags).toMatchObject({ feature: 'auth', errorCode: 'NEW_PUBLIC_CODE', httpStatus: '503' });
+			expect(report.tags).not.toHaveProperty('request_id');
+		},
+	);
+
+	it('임의 operation과 서버 문구를 제목·태그에 넣지 않고 안전한 기본값을 쓴다', async () => {
+		const report = createApiErrorReport(await createApiFailure('private token value', 400), 'private.operation');
+		expect(report.tags).toMatchObject({ feature: 'api', operation: 'unhandled', errorCode: 'UNKNOWN_ERROR_CODE' });
+		expect(JSON.stringify(report.tags) + report.error.message).not.toContain('private');
+		const network = createApiErrorReport(normalizeApiError(new TypeError('private')), 'upload.put');
+		expect(network.tags).toMatchObject({
+			feature: 'upload',
+			operation: 'upload.put',
+			errorCode: 'NO_ERROR_CODE',
+			httpStatus: 'NO_RESPONSE',
+		});
+		expect(network.tags).not.toHaveProperty('request_id');
 	});
 });

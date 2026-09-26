@@ -44,3 +44,9 @@ BE에 정의된 오류 중 FE 코드표에 없는 항목을 모두 미정의 오
 - migration: BE 배포 없이 FE가 기존 코드를 인식한다. rollback: FE 코드표·분류만 원복 가능하며 BE 계약은 그대로다.
 - 핵심 mutation/OAuth/업로드·최종 조회 실패의 보고 호출과 입력 제약 확인을 구현했다. 429는 reporter 인스턴스/operation당 60초에 1건으로 제한한다. 정규화 객체의 cause 보존, 중복 억제, 안전한 전송도 구현했다. state 오류의 비정상 증가 자동 탐지와 분산 rate-limit 정책은 후속 범위다.
 - 이미지 태깅 관련 BE 문의는 보내지 않는다. 상세 코드별 판정과 검토 기록은 [추가 수집 검토](../observability/api-error-collection-review.md)를 따른다.
+
+## operation별 계약과 이벤트 식별 보완
+
+정상 제외 후보와 조건은 `shared/api/api-error-contracts.ts`에서 operation별로 관리하고 수집 정책이 직접 참조한다. 공통 정상 권한·부재·중복 제외는 유지한다. Co-log 참여 제한처럼 특정 작업의 정상 업무 오류가 다른 핵심 작업에서 반환되면 보고한다. 공개 코드·BE 근거·갱신 절차는 [operation별 계약](../observability/api-error-operation-contracts.md)에 기록한다.
+
+제목에는 고정 feature·operation·errorCode·httpStatus·error_type을 사용한다. request_id는 요청별 값이므로 제목 대신 태그로만 보존한다. 기존 error_code·status 태그는 검색 호환성을 위해 유지하고, 응답 없는 오류에 HTTP 상태나 request_id를 만들어 넣지 않는다.

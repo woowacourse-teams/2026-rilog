@@ -1,21 +1,7 @@
 import type { NormalizedApiError } from '@/shared/api/api-error';
+import type { ApiOperation } from '@/shared/api/api-error-contracts';
+import { API_ERROR_OPERATION_CONTRACTS, EXPECTED_AUTH_ERROR_CODES } from '@/shared/api/api-error-contracts';
 import { isApiErrorCode } from '@/shared/api/error-codes';
-
-export type ApiOperation =
-	| 'draft.save'
-	| 'draft.overwrite'
-	| 'draft.publish'
-	| 'post.publish'
-	| 'post.update'
-	| 'colog.create'
-	| 'colog.invite'
-	| 'oauth.callback'
-	| 'upload.presign'
-	| 'upload.put'
-	| 'query'
-	| 'mutation'
-	| 'content.load'
-	| 'unhandled';
 
 export interface ApiErrorContext {
 	operation: ApiOperation;
@@ -31,26 +17,10 @@ const LEGACY_CODES = new Set([
 	'BLOG_MEMBER_PERMISSION_INVALID',
 	'RENAME_PLZ',
 ]);
-const NORMAL_LIMITS = new Set([
-	'USER_COLOG_COUNT_EXCEEDED',
-	'COLOG_MEMBER_COUNT_EXCEEDED',
-	'CHAPTER_COUNT_EXCEEDED',
-	'COMMENT_REPLY_DEPTH_EXCEEDED',
-]);
 function isUserValidation(error: Extract<NormalizedApiError, { type: 'api' }>, context: ApiErrorContext): boolean {
 	const { operation, invalidUserInputFields = [] } = context;
 	const code = error.detail.errorCode;
-	if (
-		operation === 'colog.create' &&
-		((code === 'INVALID_SLUG' && invalidUserInputFields.includes('slug')) ||
-			(code === 'INVALID_EMAIL' && invalidUserInputFields.includes('email')))
-	)
-		return true;
-	if (
-		operation === 'upload.presign' &&
-		['UNSUPPORTED_IMAGE_FORMAT', 'IMAGE_SIZE_EXCEEDED', 'UNSUPPORTED_FILE_FORMAT', 'FILE_SIZE_EXCEEDED'].includes(code)
-	)
-		return true;
+	if (operation === 'colog.create' && code === 'INVALID_SLUG') return invalidUserInputFields.includes('slug');
 	if (code !== 'REQUEST_VALIDATION_FAILED' || !error.detail.invalidParams?.length) return false;
 	return error.detail.invalidParams.every(
 		(param) => typeof param?.name === 'string' && invalidUserInputFields.includes(param.name),
@@ -72,24 +42,12 @@ export function shouldReportApiError(error: NormalizedApiError, context: ApiErro
 	if (error.type === 'api') {
 		const code = error.detail.errorCode;
 		if (!isApiErrorCode(code) || LEGACY_CODES.has(code)) return true;
-		if (context.operation === 'oauth.callback') {
-			if (code === 'INVALID_OAUTH_STATE') return false;
-			if (code === 'OAUTH_REQUEST_FAILED' && context.oauthCancelled) return false;
-		}
 		if (['authorization', 'not-found', 'conflict'].includes(error.kind ?? '')) return false;
-		if (
-			[
-				'EXPIRED_ACCESS_TOKEN',
-				'INVALID_ACCESS_TOKEN',
-				'EXPIRED_ONBOARDING_TOKEN',
-				'INVALID_ONBOARDING_TOKEN',
-				'REFRESH_TOKEN_MISSING',
-				'EXPIRED_REFRESH_TOKEN',
-				'INVALID_REFRESH_TOKEN',
-			].includes(code)
-		)
-			return false;
-		if (NORMAL_LIMITS.has(code) || isUserValidation(error, context)) return false;
+		if (EXPECTED_AUTH_ERROR_CODES.includes(code)) return false;
+		const rule = API_ERROR_OPERATION_CONTRACTS[context.operation].expectedErrors[code];
+		if (rule === 'exclude') return false;
+		if (rule === 'oauth-cancelled' && context.oauthCancelled) return false;
+		if (rule === 'user-input' && isUserValidation(error, context)) return false;
 		// 일반 query/mutation의 추가 400 수집은 핵심 플로우/복구 UI에 위임한다.
 		return context.operation !== 'query' && context.operation !== 'mutation';
 	}

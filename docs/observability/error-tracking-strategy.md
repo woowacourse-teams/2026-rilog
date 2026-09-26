@@ -197,9 +197,9 @@ operation별 실제 요청값이 입력 제약을 위반했는지 확인한다. 
 
 #### mutation 수준의 보고 구현
 
-보고 판단은 공통 API 계층이 아니라 각 mutation hook의 `onError`에서 operation별로 수행한다. 공통 ky 계층은 오류를 정규화하고 `X-Request-ID`를 추출하는 역할까지만 담당한다.
+보고 판단은 공통 API 계층이 아니라 각 mutation hook의 `onError`에서 operation별로 수행한다. 공통 ky 계층은 오류 정규화와 안전한 429 breadcrumb를 담당한다. `X-Request-ID` 추출과 검증은 Sentry 전송 변환에서 수행한다.
 
-각 mutation hook이 자신의 operation에서 **예상된 에러코드 목록**을 알고 있도록 API 계약과 함께 관리한다.
+각 mutation hook은 operation을 전달하고, [operation별 계약](api-error-operation-contracts.md)의 **예상된 에러코드 목록**을 수집 정책이 직접 사용한다. 실행 기준은 `shared/api/api-error-contracts.ts`다. 제목·태그에도 이 계약의 고정 feature와 operation을 사용한다.
 apiErrorReporter.report가 순수 정책을 평가하고 인스턴스 소유 상태로 중복 전송을 억제한다. beforeSend 연결부도 같은 reporter를 사용한다. ErrorTracker는 주입받으며, SentryErrorTracker는 안전한 Error 변환과 SDK 호출을 담당한다. initialize-sentry.ts가 공통 SDK 초기화와 beforeSend 연결을 담당하며 client/server/edge 진입점은 환경별 설정만 전달한다. reporter 인스턴스 파일은 생성만 담당한다. 이미 정규화한 오류는 다시 감싸지 않는다.
 실제 계약 밖 코드는 수집하며, 알려진 코드는 [코드별 판정](api-error-collection-review.md)에 따라 분류한다.
 모든 field 오류를 무조건 제외하거나 모든 발행 실패를 무조건 수집하는 예시를 구현 기준으로 사용하지 않는다.

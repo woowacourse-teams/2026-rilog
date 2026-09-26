@@ -207,12 +207,12 @@ Sentry는 객체 리터럴도 처리하지만, 정규화 객체를 그대로 보
 2. 이미 정규화된 입력은 다시 감싸지 않도록 정규화를 멱등적으로 만든다. 분석 이벤트의 UNKNOWN_ERROR 문제도 이 경계에서 해결한다.
 3. 수집 여부를 판단한 뒤 Sentry adapter에서 고정 제목의 안전한 Error와 허용된 metadata만 만든다. 원본 stack frame은 보존하되 URL query/fragment와 메시지에 민감값이 남지 않도록 정리한다.
 4. 정규화 객체·Response·원본 HTTPError·raw cause를 그대로 capture 인수나 extra로 전달하지 않는다. Sentry의 LinkedErrors는 cause를 따라갈 수 있으므로 wrapper에 원본 cause를 달아 보내는 것만으로 안전해지지 않는다.
-5. `beforeSend` 등 최종 전송 경계에서도 exception·cause chain·request URL·breadcrumbs·extra의 수집 계약을 검증한다. 본문/서버 메시지 전체 대신 operation·공개 errorCode·httpStatus·requestId만 허용한다.
+5. `beforeSend` 등 최종 전송 경계에서도 exception·cause chain·request URL·breadcrumbs·extra의 수집 계약을 검증한다. 본문/서버 메시지 전체 대신 feature·operation·공개 errorCode·httpStatus·request_id를 허용한다.
 
 Error subclass로 정규화하는 대안도 가능하지만 Error 상속만으로 body·URL 문제가 해결되지는 않는다.
 현재 구현은 `api-error.ts`의 api 분기에 cause를 추가하고 이미 정규화된 입력을 그대로 반환한다.
 `sentry-error-tracker.ts`는 정규화 오류를 `sentry-api-error.ts`에서 별도 Error로 변환한다. 원본의 스택 위치를 보존하고 메시지는 고정 형식으로 생성하며 cause·Response·서버 메시지는 연결하지 않는다.
-client/server/edge의 beforeSend는 이 경로의 이벤트에서 request·user·임의 breadcrumbs·extra·contexts를 제거하고 스택 URL의 query/fragment와 연결된 예외를 정리한다. 태그는 error_type·error_kind·error_code·status·정적 operation과 UUID 형태로 검증한 X-Request-ID만 허용한다. 429 breadcrumb는 method·retry_count만 재구성해 보존한다.
+client/server/edge의 beforeSend는 이 경로의 이벤트에서 request·user·임의 breadcrumbs·extra·contexts를 제거하고 스택 URL의 query/fragment와 연결된 예외를 정리한다. 태그는 고정 feature·operation, errorCode·httpStatus·request_id, 분류용 error_type·error_kind와 기존 호환 별칭 error_code·status를 허용한다. 제목에는 feature·operation·errorCode·httpStatus·error_type을 넣고 요청별 request_id는 태그로만 보존한다. 계약과 누락 처리 기준은 [operation별 계약](api-error-operation-contracts.md)을 따른다. 429 breadcrumb는 method·retry_count만 재구성해 보존한다.
 일반 Error/captureMessage의 기존 동작은 유지한다. report로 이미 처리한 오류는 상위 capture 및 SDK 자동 수집에서 중복 전송하지 않는다.
 
 ### 실제 연결과 상태 소유권

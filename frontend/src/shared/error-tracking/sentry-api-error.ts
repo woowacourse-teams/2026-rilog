@@ -1,6 +1,7 @@
 import type { ErrorEvent } from '@sentry/nextjs';
 
 import type { NormalizedApiError } from '@/shared/api/api-error';
+import { API_ERROR_OPERATION_CONTRACTS, resolveApiOperation } from '@/shared/api/api-error-contracts';
 
 export interface ApiErrorReport {
 	error: Error;
@@ -14,30 +15,47 @@ function stripUrlParameters(value: string): string {
 }
 
 export function createApiErrorReport(normalized: NormalizedApiError, operation?: string): ApiErrorReport {
-	const tags: Record<string, string> = { error_type: normalized.type };
-	if (operation && /^[a-z][a-z0-9_.-]{0,63}$/.test(operation)) tags.operation = operation;
+	const resolvedOperation = resolveApiOperation(operation);
+	const tags: Record<string, string> = {
+		error_type: normalized.type,
+		feature: API_ERROR_OPERATION_CONTRACTS[resolvedOperation].feature,
+		operation: resolvedOperation,
+		errorCode: 'NO_ERROR_CODE',
+		httpStatus: 'NO_RESPONSE',
+	};
+
 	if ('response' in normalized) {
 		tags.status = String(normalized.response.status);
+		tags.httpStatus = tags.status;
 		const requestId = normalized.response.headers.get('X-Request-ID');
-		if (requestId && /^[a-f0-9-]{36}$/i.test(requestId)) tags.request_id = requestId;
+		if (requestId && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requestId))
+			tags.request_id = requestId;
 	}
+
 	if (normalized.type === 'api') {
 		tags.error_kind = normalized.kind ?? 'unknown';
 		// 미정의 코드도 진단하되 응답의 임의 문자열을 그대로 보내지 않는다.
 		tags.error_code = /^[A-Z][A-Z0-9_]{0,99}$/.test(normalized.detail.errorCode)
 			? normalized.detail.errorCode
 			: 'UNKNOWN_ERROR_CODE';
+		tags.errorCode = tags.error_code;
 	}
 
-	const error = new Error(`API request failed: ${tags.error_code ?? normalized.type}`);
+	// 요청별 request_id는 태그로만 보존해 같은 장애의 제목이 요청마다 달라지지 않게 한다.
+	const error = new Error(
+		`[${tags.feature}] ${tags.operation} failed: ${tags.errorCode} (${tags.httpStatus}; ${normalized.type})`,
+	);
 	error.name = 'NormalizedApiError';
+
 	const frames =
 		normalized.cause instanceof Error
 			? normalized.cause.stack?.split('\n').filter((line) => /^\s*at\s|^[^@\s]*@/.test(line))
 			: undefined;
+
 	// 원본이 없으면 보고 위치를 발생 위치인 것처럼 제시하지 않는다.
 	error.stack = [`${error.name}: ${error.message}`, ...(frames ?? []).map(stripUrlParameters)].join('\n');
 	const report = { error, tags };
+
 	return report;
 }
 
@@ -51,6 +69,7 @@ export function sanitizeApiErrorEvent(event: ErrorEvent, report: ApiErrorReport)
 		colno: frame.colno,
 		in_app: frame.in_app,
 	}));
+
 	return {
 		...event,
 		message: undefined,

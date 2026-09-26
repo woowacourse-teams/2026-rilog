@@ -2,6 +2,8 @@ import ky from 'ky';
 import { describe, expect, it } from 'vitest';
 
 import { normalizeApiError } from '@/shared/api/api-error';
+import { API_ERROR_OPERATION_CONTRACTS, EXPECTED_AUTH_ERROR_CODES } from '@/shared/api/api-error-contracts';
+import type { ApiOperation } from '@/shared/api/api-error-contracts';
 
 import { shouldReportApiError } from './api-error-policy';
 
@@ -22,6 +24,34 @@ const apiError = async (code: string, status = 400, invalidParams: unknown = nul
 };
 
 describe('API 오류 수집 우선순위', () => {
+	it.each(Object.keys(API_ERROR_OPERATION_CONTRACTS) as ApiOperation[])(
+		'%s에서도 5xx·온라인 통신·미정의 코드는 수집한다',
+		async (operation) => {
+			expect(shouldReportApiError(await apiError('POST_NOT_FOUND', 503), { operation })).toBe(true);
+			expect(shouldReportApiError(await apiError('NEW_PUBLIC_CODE', 404), { operation })).toBe(true);
+			expect(shouldReportApiError(normalizeApiError(new TypeError('network')), { operation })).toBe(true);
+			expect(shouldReportApiError(normalizeApiError(new DOMException('cancel', 'AbortError')), { operation })).toBe(
+				false,
+			);
+			expect(shouldReportApiError(normalizeApiError(new TypeError('network')), { operation }, false)).toBe(false);
+		},
+	);
+	it.each(EXPECTED_AUTH_ERROR_CODES)('인증 복구 오류 %s는 핵심 mutation에서도 제외한다', async (code) => {
+		expect(shouldReportApiError(await apiError(code, 401), { operation: 'draft.publish' })).toBe(false);
+	});
+	it.each([400, 422])('HTTP %s에서 정상 입력 검증만 제외하고 앱 요청 오류는 수집한다', async (status) => {
+		const error = await apiError('REQUEST_VALIDATION_FAILED', status, [{ name: 'title', reason: 'private' }]);
+		expect(shouldReportApiError(error, { operation: 'post.publish', invalidUserInputFields: ['title'] })).toBe(false);
+		expect(shouldReportApiError(error, { operation: 'post.publish' })).toBe(true);
+	});
+	it.each(['colog.create', 'colog.invite'] as const)(
+		'%s의 계약상 참여 제한은 제외하고 다른 핵심 작업에서는 수집한다',
+		async (operation) => {
+			const error = await apiError('USER_COLOG_COUNT_EXCEEDED', 400);
+			expect(shouldReportApiError(error, { operation })).toBe(false);
+			expect(shouldReportApiError(error, { operation: 'draft.save' })).toBe(true);
+		},
+	);
 	it.each(['POST_NOT_FOUND', 'AUTHORIZATION_FAILED', 'DUPLICATED_PUBLISH'])(
 		'핵심 발행에서도 정상 거부 %s는 제외한다',
 		async (code) => {
