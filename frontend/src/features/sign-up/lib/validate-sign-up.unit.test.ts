@@ -47,7 +47,7 @@ describe('validateSignUpFields', () => {
 		expect(
 			validateSignUpFields({
 				...VALID_FIELDS,
-				serviceUrl: 'https://rilog.kr',
+				serviceUrl: 'https://www.rilog.kr',
 				githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
 			}),
 		).toEqual({});
@@ -60,13 +60,13 @@ describe('normalizeSignUpFields', () => {
 			normalizeSignUpFields({
 				nickname: '  리로그  ',
 				slug: '  rilog  ',
-				serviceUrl: '  https://rilog.kr  ',
+				serviceUrl: '  https://www.rilog.kr  ',
 				githubUrl: '  https://github.com/rilog  ',
 			}),
 		).toEqual({
 			nickname: '리로그',
 			slug: 'rilog',
-			serviceUrl: 'https://rilog.kr',
+			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/rilog',
 		});
 	});

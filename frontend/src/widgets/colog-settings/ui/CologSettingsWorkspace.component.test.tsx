@@ -181,7 +181,7 @@ describe('CologSettingsWorkspace', () => {
 		expect(slugInput).toHaveValue('team_rilog');
 		expect(slugInput).toBeDisabled();
 		expect(slugInput).toHaveAccessibleDescription('팀 고유 아이디는 변경할 수 없습니다.');
-		expect(screen.getByText('rilog.kr/@')).toBeInTheDocument();
+		expect(screen.getByText('www.rilog.kr/@')).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).toHaveValue('API에서 조회한 팀 소개');
 		expect(screen.getByLabelText('팀 로고 변경')).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();

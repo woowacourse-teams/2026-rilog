@@ -53,7 +53,7 @@ describe('completeOnboarding', () => {
 		const requestBody = {
 			nickname: '리로그',
 			slug: 'rilog',
-			serviceUrl: 'https://rilog.kr',
+			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/rilog',
 		};
 

@@ -13,7 +13,7 @@ const initialProfile = {
 	slug: 'rilogger',
 	description: '기록하고 성장하는 개발자입니다.',
 	profileImageUrl: '',
-	serviceUrl: 'https://rilog.kr',
+	serviceUrl: 'https://www.rilog.kr',
 	githubUrl: 'https://github.com/rilog',
 	profileImageFile: null,
 };
@@ -50,7 +50,7 @@ describe('RilogProfileSection', () => {
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toHaveValue('rilogger');
 		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toBeDisabled();
 		expect(screen.getByRole('textbox', { name: '한 줄 소개' })).toHaveValue('기록하고 성장하는 개발자입니다.');
-		expect(screen.getByRole('textbox', { name: '서비스 링크' })).toHaveValue('https://rilog.kr');
+		expect(screen.getByRole('textbox', { name: '서비스 링크' })).toHaveValue('https://www.rilog.kr');
 		expect(screen.getByRole('textbox', { name: 'GitHub 링크' })).toHaveValue('https://github.com/rilog');
 		expect(screen.queryByText('커버 이미지')).not.toBeInTheDocument();
 	});
