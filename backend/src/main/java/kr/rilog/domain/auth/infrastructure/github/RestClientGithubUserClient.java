@@ -9,10 +9,17 @@ import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static kr.rilog.domain.auth.exception.AuthErrorInformation.GITHUB_USER_FETCH_FAILED;
 
@@ -39,16 +46,18 @@ public class RestClientGithubUserClient implements OAuthUserClient {
 
     @Override
     public SocialLoginUser getUser(OAuthAccessToken accessToken) {
+        long startedAt = System.nanoTime();
         try {
-            GithubUserResponse response = restClient.get()
+            ResponseEntity<GithubUserResponse> responseEntity = restClient.get()
                     .uri(properties.userUri())
                     .accept(GITHUB_JSON)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.value())
                     .retrieve()
-                    .body(GithubUserResponse.class);
+                    .toEntity(GithubUserResponse.class);
+            GithubUserResponse response = responseEntity.getBody();
 
             if (isInvalid(response)) {
-                throw new RilogInfrastructureException(GITHUB_USER_FETCH_FAILED);
+                throw userFetchFailure(startedAt, "INVALID_RESPONSE", responseEntity.getStatusCode().value(), null);
             }
 
             return new SocialLoginUser(
@@ -57,9 +66,30 @@ public class RestClientGithubUserClient implements OAuthUserClient {
                     response.login(),
                     response.avatarUrl()
             );
+        } catch (RestClientResponseException exception) {
+            throw userFetchFailure(startedAt, "HTTP_ERROR", exception.getStatusCode().value(), exception);
+        } catch (ResourceAccessException exception) {
+            throw userFetchFailure(startedAt, "IO_ERROR", null, exception);
         } catch (RestClientException exception) {
-            throw new RilogInfrastructureException(GITHUB_USER_FETCH_FAILED, exception);
+            throw userFetchFailure(startedAt, "CLIENT_ERROR", null, exception);
         }
+    }
+
+    private RilogInfrastructureException userFetchFailure(
+            long startedAt, String failureType, Integer externalStatus, Throwable cause
+    ) {
+        Map<String, Object> context = new HashMap<>(Map.of(
+                "provider", provider().name(),
+                "operation", "fetch_user",
+                "durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
+                "failureType", failureType
+        ));
+        if (externalStatus != null) {
+            context.put("externalStatus", externalStatus);
+        }
+        return new RilogInfrastructureException(
+                GITHUB_USER_FETCH_FAILED, GITHUB_USER_FETCH_FAILED.getMessage(), cause, context
+        );
     }
 
     private boolean isInvalid(GithubUserResponse response) {
