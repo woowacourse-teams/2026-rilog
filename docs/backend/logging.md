@@ -63,7 +63,7 @@ HTTP 요청 처리 흐름에서 외부 연동 예외를 애플리케이션 예�
 | --- | --- | --- |
 | GitHub 토큰 교환 | `GITHUB` / `exchange_access_token` | `failureType`, `durationMs`, 취득한 경우 `externalStatus` |
 | GitHub 사용자 조회 | `GITHUB` / `fetch_user` | `failureType`, `durationMs`, 취득한 경우 `externalStatus` |
-| 업로드 URL 발급 | `S3` / `presign_put_object` | `failureType`, `durationMs`, `key`, `uploadType`, `contentType`, `size`, `expirationMinutes`, 설정된 경우 `bucket` |
+| 업로드 URL 발급 | `S3` / `presign_put_object` | `failureType`, `durationMs` |
 
 GitHub의 `failureType`은 다음과 같다.
 
@@ -74,13 +74,15 @@ GitHub의 `failureType`은 다음과 같다.
 
 Presign 실패는 `SdkException`의 `SDK_ERROR`와 요청 구성/서명 과정의 `IllegalArgumentException`에 대한 `INVALID_CONFIGURATION`으로 구분한다. 기존 공개 `INTERNAL_SERVER_ERROR`와 HTTP 500을 유지한다. 파일 형식/크기 검증 실패는 기존 업로드 오류이며 외부 장애로 분류하지 않는다. `s3_presigned_url_creation_failed`라는 별도 이벤트 및 발급 성공 로그는 만들지 않는다.
 
+Presign의 추가 진단 필드는 `provider`, `operation`, `failureType`, `durationMs` 네 개로 제한한다. 발급 실패는 기존 객체의 태그를 복구하는 상황이 아니므로 `bucket/key`를 추가하지 않는다. 파일 형식·크기·만료 시간도 기본 실패 문맥에서 제외하고 원인 예외로 진단한다. 실제 S3 태깅 실패의 대상 정보는 별도 이벤트에 그대로 유지한다.
+
 Presigned URL 발급과 브라우저의 실제 S3 PUT은 다른 동작이다. 발급 결과로 사진 업로드 성공이나 S3 서비스 가용성을 판정하지 않는다. OAuth 역시 개별 외부 호출의 성공 로그를 추가하지 않고, 기존 `oauth_login_completed`로 백엔드의 인증/토큰 발급/응답 구성 완료를 기록한다. 브라우저 리다이렉트 완료를 뜻하지 않는다.
 
 ## S3 결과와 숫자 필드
 
 비동기 태깅의 `CONFIRMED`, `TEMPORARY` 모두 성공 로그를 남기지 않는다. local/dev/prod에 동일하게 적용하며 DEBUG 또는 작업 완료 INFO로 대체하지 않는다. SDK 호출이 실패로 끝난 객체만 `s3_object_tagging_failed` ERROR를 한 번 기록하고 다음 객체 처리는 계속한다. 성공 여부나 복구 상태는 로그 부재로 판정하지 않고 현재 DB 참조와 실제 S3 태그를 확인한다.
 
-`durationMs`는 `System.nanoTime()` 차이를 밀리초로 환산한 숫자다. 외부 작업의 응답/실패까지 측정하며 SDK 내부 재시도가 있다면 그 시간도 포함한다. 재시도 횟수를 추정하지 않는다. `size`, `expirationMinutes`, 상태 코드 역시 JSON 숫자로 출력한다.
+`durationMs`는 `System.nanoTime()` 차이를 밀리초로 환산한 숫자다. 외부 작업의 응답/실패까지 측정하며 SDK 내부 재시도가 있다면 그 시간도 포함한다. 재시도 횟수를 추정하지 않는다. 상태 코드 역시 JSON 숫자로 출력한다.
 
 태깅 실패의 `S3Exception`에서 확인한 양수 상태 코드와 실제 AWS 오류 코드/요청 ID만 추가하며, null/빈 문자열/`UNKNOWN`을 진단 값으로 남기지 않는다. 알 수 없는 외부 상태를 0, 200, 500 등으로 채우지 않는다.
 

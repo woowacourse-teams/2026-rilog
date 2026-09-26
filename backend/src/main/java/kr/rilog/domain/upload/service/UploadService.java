@@ -20,7 +20,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -113,29 +112,21 @@ public class UploadService {
                     .build();
             return s3Presigner.presignPutObject(presignRequest);
         } catch (SdkException exception) {
-            throw presignFailure(objectKey, command, startedAt, "SDK_ERROR", exception);
+            throw presignFailure(startedAt, "SDK_ERROR", exception);
         } catch (IllegalArgumentException exception) {
-            throw presignFailure(objectKey, command, startedAt, "INVALID_CONFIGURATION", exception);
+            throw presignFailure(startedAt, "INVALID_CONFIGURATION", exception);
         }
     }
 
     private RilogInfrastructureException presignFailure(
-            String objectKey, PresignedUrlCreateCommand command, long startedAt, String failureType, Throwable cause
+            long startedAt, String failureType, Throwable cause
     ) {
-        Map<String, Object> context = new HashMap<>(Map.of(
+        Map<String, Object> context = Map.of(
                 "provider", "S3",
                 "operation", "presign_put_object",
                 "durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
-                "failureType", failureType,
-                "key", objectKey,
-                "uploadType", command.type(),
-                "contentType", command.contentType(),
-                "size", command.size(),
-                "expirationMinutes", properties.presignedUrlExpirationMinutes()
-        ));
-        if (properties.bucket() != null) {
-            context.put("bucket", properties.bucket());
-        }
+                "failureType", failureType
+        );
         return new RilogInfrastructureException(INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.getMessage(), cause, context);
     }
 

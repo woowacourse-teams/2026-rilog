@@ -51,7 +51,7 @@ dev는 개발 진단에 필요한 상세 로그를 허용하고, prod는 운영�
 
 - `requestId`를 비동기 작업에도 전달해 원래 HTTP 요청과 S3 실패를 연결한다.
 - GitHub는 토큰 교환과 사용자 조회를 구분한다. 외부 응답 상태는 우리 API의 `httpStatus`와 별도로 기록한다.
-- Presign 실패는 `http_request_exception`의 `provider=S3`, `operation=presign_put_object`로 조회한다. 별도 중복 이벤트를 만들지 않는다.
+- Presign 실패는 `provider=S3`, `operation=presign_put_object`, `failureType`, `durationMs`만 추가한다. 기존 객체 복구가 아닌 발급 실패 진단이 목적이므로 버킷·객체 키·파일 조건·만료 시간은 제외한다. 기존 `http_request_exception`을 사용해 중복 이벤트도 만들지 않는다.
 - 취득하지 못한 외부 상태·AWS 정보를 추정해서 채우지 않는다. 소요 시간은 숫자로 기록해 비교할 수 있게 한다.
 
 **민감정보는 진단 정보와 분리한다.** 경로에 query string을 포함하지 않고 토큰·쿠키·인증 코드·서명 URL·본문 원문은 기록 대상에서 제외한다. 외부 실패 문맥은 허용된 필드만 출력한다. dev/prod의 스택 출력기는 HTTP 클라이언트 예외와 하위 원인·suppressed 예외의 메시지를 제외하고 예외 종류·스택·취득한 HTTP 상태를 유지한다. 파싱 오류에도 응답 내용이 섞일 수 있기 때문이다. local 일반 콘솔에는 동일한 구조화 스택 마스킹이 적용되지 않는다.

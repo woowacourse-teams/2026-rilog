@@ -88,7 +88,7 @@ class UploadServiceTest {
 
     @ParameterizedTest
     @MethodSource("presignFailures")
-    @DisplayName("Presign 실패는 안전한 발급 문맥을 보존하고 서비스에서 중복 로그를 남기지 않는다.")
+    @DisplayName("Presign 실패는 네 가지 진단 필드만 보존하고 서비스에서 중복 로그를 남기지 않는다.")
     void presignFailurePreservesContext(String failureType, RuntimeException cause) {
         var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
         var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy);
@@ -102,11 +102,11 @@ class UploadServiceTest {
                 .hasCause(cause)
                 .satisfies(error -> {
                     var failure = (RilogInfrastructureException) error;
-                    assertThat(failure.getLogContext()).containsAllEntriesOf(Map.of(
-                            "provider", "S3", "operation", "presign_put_object", "failureType", failureType,
-                            "bucket", "bucket", "key", OBJECT_KEY, "uploadType", UploadType.IMAGE,
-                            "contentType", "image/png", "size", 1024L, "expirationMinutes", 10L
-                    )).doesNotContainKey("externalStatus");
+                    assertThat(failure.getLogContext()).containsOnlyKeys(
+                            "provider", "operation", "failureType", "durationMs"
+                    ).containsAllEntriesOf(Map.of(
+                            "provider", "S3", "operation", "presign_put_object", "failureType", failureType
+                    ));
                     assertThat((Long) failure.getLogContext().get("durationMs")).isGreaterThanOrEqualTo(0L);
                     assertThat(failure.getLogContext().toString()).doesNotContain("TEST_PRIVATE_FILENAME");
                 });

@@ -144,7 +144,7 @@ fields @timestamp, requestId, method, path, operation, failureType, externalStat
 Presigned URL 발급 실패만 조회한다. 브라우저의 S3 PUT 실패를 조회하는 쿼리가 아니다.
 
 ```sql
-fields @timestamp, requestId, method, path, bucket, key, uploadType, contentType, size, expirationMinutes, failureType, durationMs
+fields @timestamp, requestId, method, path, provider, operation, failureType, durationMs, stack_trace
 | filter event = "http_request_exception"
     and provider = "S3" and operation = "presign_put_object"
 | sort @timestamp desc

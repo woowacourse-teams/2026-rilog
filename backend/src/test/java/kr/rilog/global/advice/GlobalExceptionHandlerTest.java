@@ -270,8 +270,8 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Presign SDK 실패는 기존 500 응답과 요청 및 발급 문맥을 담은 ERROR 한 건으로 처리한다.")
-    void presignFailureLogsOnceWithRequestAndTargetContext() throws Exception {
+    @DisplayName("Presign SDK 실패는 기존 500 응답과 최소 진단 필드만 담은 ERROR 한 건으로 처리한다.")
+    void presignFailureLogsOnceWithMinimalContext() throws Exception {
         S3Presigner presigner = mock(S3Presigner.class);
         when(presigner.presignPutObject(any(PutObjectPresignRequest.class)))
                 .thenThrow(SdkClientException.create("credentials unavailable"));
@@ -296,8 +296,14 @@ class GlobalExceptionHandlerTest {
             assertThat(logFields(event)).containsEntry("event", "http_request_exception")
                     .containsEntry("provider", "S3").containsEntry("operation", "presign_put_object")
                     .containsEntry("method", "POST").containsEntry("path", "/v1/uploads/presigned-url")
-                    .containsEntry("bucket", "bucket").containsEntry("failureType", "SDK_ERROR");
-            assertThat(logFields(event).get("key")).startsWith("rilog/uploads/").endsWith(".pdf");
+                    .containsEntry("failureType", "SDK_ERROR")
+                    .containsOnlyKeys("event", "errorCode", "httpStatus", "method", "path",
+                            "provider", "operation", "failureType", "durationMs");
+            assertThat(event.getKeyValuePairs()).anySatisfy(pair -> {
+                assertThat(pair.key).isEqualTo("durationMs");
+                assertThat(pair.value).isInstanceOf(Long.class);
+                assertThat((Long) pair.value).isGreaterThanOrEqualTo(0L);
+            });
             assertThat(event.getFormattedMessage() + logFields(event)).doesNotContain("TEST_PRIVATE_FILENAME");
         } finally {
             serviceLogger.detachAppender(logCapture.appender());
