@@ -160,11 +160,11 @@ fields @timestamp, requestId, bucket, key, tagStatus, durationMs, externalStatus
 | limit 50
 ```
 
-대상 객체의 성공/실패 이력을 함께 확인한다. 이후 다른 요청에서 태그가 바뀔 수 있으므로 복구 판단 시 `requestId` 하나로만 제한하지 않는다.
+대상 객체의 실패 이력을 확인한다. 성공 로그는 남기지 않으므로 이력만으로 현재 상태를 판정하지 않는다. 이후 다른 요청에서 태그가 바뀔 수 있으므로 복구 판단 시 `requestId` 하나로만 제한하지 않는다.
 
 ```sql
 fields @timestamp, requestId, event, bucket, key, tagStatus, durationMs, externalStatus, awsErrorCode, awsRequestId
-| filter event in ["s3_object_tagging_completed", "s3_object_tagging_failed"]
+| filter event = "s3_object_tagging_failed"
     and bucket = "대상 버킷" and key = "대상 객체 키"
 | sort @timestamp asc
 ```
@@ -183,10 +183,10 @@ fields @timestamp, requestId, provider, userId, onboardingStatus
 이 절차는 운영자가 실패를 확인하고 현재 의도에 맞게 태그를 복구하기 위한 기준이다. 자동 재시도, outbox 또는 복구 도구를 구현한 것은 아니다.
 
 1. `s3_object_tagging_failed`에서 환경, `bucket`, `key`, `requestId`, `tagStatus`, 시각 및 확인 가능한 AWS 진단 정보를 수집한다. 버킷과 환경을 먼저 대조한다.
-2. 현재 DB의 게시글/블로그/프로필 등 해당 객체의 참조와 현재 S3 객체 존재 여부 및 태그를 조회한다. 같은 객체의 이후 성공 로그와 변경 요청도 함께 확인한다.
+2. 현재 DB의 게시글/블로그/프로필 등 해당 객체의 참조와 현재 S3 객체 존재 여부 및 태그를 조회한다. 이후 변경 요청과 운영 처리 기록도 확인하며, 추가 실패 로그가 없다는 이유로 복구됐다고 판단하지 않는다.
 3. **현재 DB 참조와 서비스 정책**으로 필요한 태그를 판단한다. 오래된 실패 로그의 `tagStatus`를 그대로 재적용하지 않는다. 이미 삭제된 객체는 태깅만으로 복구할 수 없고, 이미 올바른 태그라면 중복 변경하지 않는다.
 4. 권한이 있는 운영자가 필요한 경우에만 태그를 변경한다. 전체 tag set을 덮어쓸 수 있으므로 기존의 다른 태그를 보존해야 하는지 확인한다. 조사 중 새 변경이 있었다면 변경 직전에 상태를 다시 확인한다.
-5. 실제 S3 태그와 DB 참조를 재확인하고 담당자, 처리 시각, 환경/대상, 판단 근거, 변경 전후 상태 및 결과를 운영 기록에 남긴다. 수동 변경이 앱의 `s3_object_tagging_completed` 로그를 생성한다고 가정하지 않는다.
+5. 실제 S3 태그와 DB 참조를 재확인하고 담당자, 처리 시각, 환경/대상, 판단 근거, 변경 전후 상태 및 결과를 운영 기록에 남긴다. 성공 로그 대신 재조회한 상태를 복구 확인 근거로 사용한다.
 
 ## 운영 확인과 한계
 

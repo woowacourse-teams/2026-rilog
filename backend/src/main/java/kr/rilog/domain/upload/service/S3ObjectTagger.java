@@ -10,7 +10,6 @@ import org.springframework.util.StringUtils;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.List;
@@ -24,9 +23,6 @@ public class S3ObjectTagger {
     private static final String S3_TAGGING_FAILED_EVENT = "s3_object_tagging_failed";
     private static final String S3_TAGGING_FAILED_LOG_FORMAT =
             "event=s3_object_tagging_failed bucket={} key={} tagStatus={}";
-    private static final String S3_TAGGING_COMPLETED_EVENT = "s3_object_tagging_completed";
-    private static final String S3_TAGGING_COMPLETED_LOG_FORMAT =
-            "event=s3_object_tagging_completed bucket={} key={} tagStatus={}";
 
     private final S3Client s3Client;
     private final S3Properties properties;
@@ -38,21 +34,11 @@ public class S3ObjectTagger {
     private void changeS3ObjectTag(S3TagTarget uploadTarget) {
         long startedAt = System.nanoTime();
         try {
-            PutObjectTaggingResponse response = s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
+            s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
                     .bucket(properties.bucket())
                     .key(uploadTarget.key())
                     .tagging(uploadTarget.tagStatus().toTagging())
                     .build());
-            var event = log.atInfo()
-                    .addKeyValue("event", S3_TAGGING_COMPLETED_EVENT)
-                    .addKeyValue("bucket", properties.bucket())
-                    .addKeyValue("key", uploadTarget.key())
-                    .addKeyValue("tagStatus", uploadTarget.tagStatus())
-                    .addKeyValue("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
-            if (response.responseMetadata() != null) {
-                addAwsField(event, "awsRequestId", response.responseMetadata().requestId());
-            }
-            event.log(S3_TAGGING_COMPLETED_LOG_FORMAT, properties.bucket(), uploadTarget.key(), uploadTarget.tagStatus());
         } catch (SdkException exception) {
             var event = log.atError()
                     .addKeyValue("event", S3_TAGGING_FAILED_EVENT)

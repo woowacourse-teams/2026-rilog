@@ -1,5 +1,7 @@
 # Backend Logging Enhancement Implementation Plan
 
+> **2026-09-26 후속 정책 변경:** 아래는 최초 구현 기록이다. 이후 사용자 합의로 Task 5의 객체별 성공 INFO를 제거했으며 DEBUG/작업 완료 INFO로 대체하지 않는다. 객체별 최종 실패 ERROR는 유지한다. 성공 로그 기반 조회·복구 판단도 현재 DB/S3 상태 확인으로 대체한다. 최신 운영 기준은 `docs/backend/logging.md`와 `docs/backend/cloudwatch-logs.md`를 따른다. 실패 알림의 실제 인프라 연결은 별도 운영 작업이다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 반복적인 인증 로그를 줄이고 HTTP 예외와 외부 연동 실패를 요청 및 작업 단위로 추적하며, S3 태깅 결과를 운영자가 확인할 수 있게 한다.

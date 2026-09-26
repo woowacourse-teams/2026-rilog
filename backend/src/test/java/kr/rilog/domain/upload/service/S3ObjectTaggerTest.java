@@ -15,7 +15,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -42,33 +41,20 @@ class S3ObjectTaggerTest {
 
     @ParameterizedTest
     @EnumSource(TagStatus.class)
-    @DisplayName("태깅 성공은 SDK 응답 이후 대상 상태와 AWS 및 원래 요청 ID를 기록한다.")
-    void logSuccessAfterSdkReturns(TagStatus tagStatus) {
+    @DisplayName("태깅 성공은 DEBUG 레벨에서도 로그를 남기지 않는다.")
+    void successfulTaggingDoesNotLog(TagStatus tagStatus) {
         S3Client s3Client = mock(S3Client.class);
         S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
         LogCapture capture = LogCapture.start();
-        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class))).thenAnswer(invocation -> {
-            assertThat(capture.appender().list).isEmpty();
-            return PutObjectTaggingResponse.builder()
-                    .responseMetadata(DefaultAwsResponseMetadata.create(Map.of("x-amz-request-id", "aws-request-123")))
-                    .build();
-        });
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class)))
+                .thenReturn(PutObjectTaggingResponse.builder().build());
 
         try {
-            MDC.put("requestId", "http-request-123");
             tagger.tag(List.of(new S3TagTarget(OBJECT_KEY, tagStatus)));
-            MDC.remove("requestId");
 
-            ILoggingEvent event = capture.onlyEvent();
-            assertThat(event.getLevel()).isEqualTo(Level.INFO);
-            assertThat(logFields(event)).containsEntry("event", "s3_object_tagging_completed")
-                    .containsEntry("bucket", BUCKET).containsEntry("key", OBJECT_KEY)
-                    .containsEntry("tagStatus", tagStatus.name()).containsEntry("awsRequestId", "aws-request-123");
-            assertDuration(event);
-            assertThat(event.getMDCPropertyMap()).containsEntry("requestId", "http-request-123");
-            assertThat(event.getThrowableProxy()).isNull();
+            verify(s3Client).putObjectTagging(any(PutObjectTaggingRequest.class));
+            assertThat(capture.appender().list).isEmpty();
         } finally {
-            MDC.remove("requestId");
             capture.stop();
         }
     }
@@ -98,28 +84,6 @@ class S3ObjectTaggerTest {
             } else {
                 assertThat(logFields(event)).doesNotContainKeys("externalStatus", "awsErrorCode", "awsRequestId");
             }
-        } finally {
-            capture.stop();
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    @DisplayName("태깅 응답에 요청 ID가 없으면 메타데이터 유무와 관계없이 해당 필드를 생략한다.")
-    void logSuccessWithoutMissingRequestId(boolean hasMetadata) {
-        S3Client s3Client = mock(S3Client.class);
-        var builder = PutObjectTaggingResponse.builder();
-        if (hasMetadata) {
-            builder.responseMetadata(DefaultAwsResponseMetadata.create(Map.of()));
-        }
-        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class))).thenReturn(builder.build());
-        LogCapture capture = LogCapture.start();
-
-        try {
-            new S3ObjectTagger(s3Client, s3Properties()).tag(List.of(new S3TagTarget(OBJECT_KEY, TagStatus.CONFIRMED)));
-
-            assertThat(logFields(capture.onlyEvent())).containsEntry("event", "s3_object_tagging_completed")
-                    .doesNotContainKey("awsRequestId");
         } finally {
             capture.stop();
         }
@@ -197,7 +161,9 @@ class S3ObjectTaggerTest {
         LogCapture logCapture = LogCapture.start();
 
         try {
+            MDC.put("requestId", "http-request-123");
             tagger.tag(targets);
+            MDC.remove("requestId");
 
             ArgumentCaptor<PutObjectTaggingRequest> requestCaptor =
                     ArgumentCaptor.forClass(PutObjectTaggingRequest.class);
@@ -206,9 +172,9 @@ class S3ObjectTaggerTest {
                     .extracting(PutObjectTaggingRequest::key)
                     .containsExactly("images/2026/failed.png", "images/2026/next.png");
 
-            assertThat(logCapture.appender().list).hasSize(2);
-            ILoggingEvent event = logCapture.appender().list.getFirst();
+            ILoggingEvent event = logCapture.onlyEvent();
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(event.getMDCPropertyMap()).containsEntry("requestId", "http-request-123");
             assertThat(logFields(event))
                     .containsEntry("event", "s3_object_tagging_failed")
                     .containsEntry("bucket", "rilog-bucket")
@@ -216,10 +182,6 @@ class S3ObjectTaggerTest {
                     .containsEntry("tagStatus", "CONFIRMED")
                     .doesNotContainKeys("externalStatus", "awsErrorCode", "awsRequestId");
             assertDuration(event);
-            ILoggingEvent success = logCapture.appender().list.getLast();
-            assertThat(success.getLevel()).isEqualTo(Level.INFO);
-            assertThat(logFields(success)).containsEntry("event", "s3_object_tagging_completed")
-                    .containsEntry("key", "images/2026/next.png").doesNotContainKey("awsRequestId");
             assertThat(event.getFormattedMessage())
                     .contains("event=s3_object_tagging_failed")
                     .contains("bucket=rilog-bucket")
@@ -229,6 +191,7 @@ class S3ObjectTaggerTest {
             assertThat(event.getThrowableProxy().getClassName())
                     .isEqualTo(SdkClientException.class.getName());
         } finally {
+            MDC.remove("requestId");
             logCapture.stop();
         }
     }
@@ -248,10 +211,12 @@ class S3ObjectTaggerTest {
         );
     }
 
-    private record LogCapture(Logger logger, ListAppender<ILoggingEvent> appender) {
+    private record LogCapture(Logger logger, ListAppender<ILoggingEvent> appender, Level originalLevel) {
 
         private static LogCapture start() {
             Logger logger = (Logger) LoggerFactory.getLogger(S3ObjectTagger.class);
+            Level originalLevel = logger.getLevel();
+            logger.setLevel(Level.DEBUG);
             ListAppender<ILoggingEvent> appender = new ListAppender<>() {
                 @Override
                 protected void append(ILoggingEvent event) {
@@ -261,7 +226,7 @@ class S3ObjectTaggerTest {
             };
             appender.start();
             logger.addAppender(appender);
-            return new LogCapture(logger, appender);
+            return new LogCapture(logger, appender, originalLevel);
         }
 
         private ILoggingEvent onlyEvent() {
@@ -272,6 +237,7 @@ class S3ObjectTaggerTest {
         private void stop() {
             logger.detachAppender(appender);
             appender.stop();
+            logger.setLevel(originalLevel);
         }
     }
 
