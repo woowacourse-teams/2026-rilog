@@ -2,10 +2,42 @@ package kr.rilog.global.logging;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SensitiveDataMaskerTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"token", "access_token", "refreshToken", "password", "client_secret", "authorization"})
+    @DisplayName("따옴표 없는 민감값은 공백과 구분자를 포함해 해당 줄 끝까지 마스킹한다.")
+    void maskUnquotedSensitiveValuesUntilLineEnd(String key) {
+        String message = key + " = my secret\ttoken, remaining; value&more status=401\r\nnext line";
+
+        assertThat(SensitiveDataMasker.mask(message))
+                .isEqualTo(key + " = <redacted>\r\nnext line");
+    }
+
+    @Test
+    @DisplayName("값이 없는 민감 필드는 다음 줄의 일반 메시지를 가리지 않는다.")
+    void maskDoesNotConsumeNextLine() {
+        assertThat(SensitiveDataMasker.mask("token = \nstatus=401"))
+                .isEqualTo("token = \nstatus=401");
+    }
+
+    @Test
+    @DisplayName("구조화된 민감값은 경계 밖의 진단 필드를 유지한다.")
+    void maskPreservesStructuredValueBoundaries() {
+        assertThat(SensitiveDataMasker.mask("{\"token\":\"my secret token\",\"status\":401}"))
+                .isEqualTo("{\"token\":\"<redacted>\",\"status\":401}");
+        assertThat(SensitiveDataMasker.mask("token = \"my secret token\" status=401"))
+                .isEqualTo("token = \"<redacted>\" status=401");
+        assertThat(SensitiveDataMasker.mask("token = 'my secret token' status=401"))
+                .isEqualTo("token = '<redacted>' status=401");
+        assertThat(SensitiveDataMasker.mask("https://example.com?token=my%20secret&state=TEST_STATE&page=2"))
+                .isEqualTo("https://example.com?token=<redacted>&state=<redacted>&page=2");
+    }
 
     @Test
     @DisplayName("민감정보 마스커는 JSON 형태의 인증값도 원문으로 남기지 않는다.")

@@ -46,7 +46,8 @@ public final class SensitiveDataMasker {
             "(?i)(\\b(?:" + SENSITIVE_KEYS + ")\\b\\s*[:=]\\s*)([\"'])(.*?)(\\2)"
     );
     private static final Pattern TOKEN_KEY_VALUE_PATTERN = Pattern.compile(
-            "(?i)(\\b(?:" + SENSITIVE_KEYS + ")\\b\\s*[:=]\\s*)(?:Bearer\\s+)?[^\\s,;&}\"']+"
+            // Unquoted values have no reliable end boundary; redact the rest of this line.
+            "(?i)(?<![\\w?&-])(\\b(?:" + SENSITIVE_KEYS + ")\\b[ \\t]*[:=][ \\t]*+)(?![\"'])[^\\r\\n]+"
     );
     private static final Pattern QUERY_PARAMETER_PATTERN = Pattern.compile(
             "(?i)([?&](?:" + SENSITIVE_KEYS + ")=)[^&#\\s]+"

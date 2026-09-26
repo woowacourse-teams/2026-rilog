@@ -177,6 +177,7 @@ class S3ObjectTaggerTest {
             assertThat(event.getMDCPropertyMap()).containsEntry("requestId", "http-request-123");
             assertThat(logFields(event))
                     .containsEntry("event", "s3_object_tagging_failed")
+                    .containsEntry("operation", "put_object_tagging")
                     .containsEntry("bucket", "rilog-bucket")
                     .containsEntry("key", "images/2026/failed.png")
                     .containsEntry("tagStatus", "CONFIRMED")

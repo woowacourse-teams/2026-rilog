@@ -42,6 +42,7 @@ public class S3ObjectTagger {
         } catch (SdkException exception) {
             var event = log.atError()
                     .addKeyValue("event", S3_TAGGING_FAILED_EVENT)
+                    .addKeyValue("operation", "put_object_tagging")
                     .addKeyValue("bucket", properties.bucket())
                     .addKeyValue("key", uploadTarget.key())
                     .addKeyValue("tagStatus", uploadTarget.tagStatus())

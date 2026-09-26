@@ -36,7 +36,7 @@
 | --- | --- | --- | --- | --- |
 | `oauth_login_completed` | `INFO` | OAuth 인증, 토큰 발급과 응답 구성이 완료된 후 | `provider`, `userId`, `onboardingStatus` | 토큰, 인증 `code`, OAuth `state`, 쿠키, redirect URL |
 | `http_request_exception` | `INFO` 또는 `ERROR` | HTTP 요청 예외를 최종 핸들러에서 응답으로 변환할 때 | `errorCode`, `httpStatus`, `method`, `path`, 선택적 외부 실패 문맥 | query string, 요청 본문, 외부 응답 본문, 토큰, 쿠키 |
-| `s3_object_tagging_failed` | `ERROR` | 비동기 S3 객체 태깅 중 객체 단위 SDK 실패가 발생할 때 | `bucket`, `key`, `tagStatus`, `durationMs`, 선택적 `externalStatus`, `awsErrorCode`, `awsRequestId` | AWS credential, presigned URL, 외부 응답 본문 |
+| `s3_object_tagging_failed` | `ERROR` | 비동기 S3 객체 태깅 중 객체 단위 SDK 실패가 발생할 때 | `operation=put_object_tagging`, `bucket`, `key`, `tagStatus`, `durationMs`, 선택적 `externalStatus`, `awsErrorCode`, `awsRequestId` | AWS credential, presigned URL, 외부 응답 본문 |
 | `s3_image_ownership_mismatch` | `WARN` | 이미지 소유권이 맞지 않아 태깅 대상에서 제외할 때 | `requesterId`, `key`, `tagStatus` | 원본 파일명, 인증 정보 |
 | `async_uncaught_exception` | `ERROR` | `@Async` 메서드의 미처리 예외가 발생할 때 | `method` | 메서드 인자 원문, 토큰, 쿠키 |
 
@@ -90,7 +90,7 @@ Presigned URL 발급과 브라우저의 실제 S3 PUT은 다른 동작이다. �
 
 로그에는 토큰, 인증 코드, OAuth state, 쿠키, 비밀번호, secret, API key, private key 원문을 남기지 않는다. dev/prod JSON 로그의 `SanitizingStackTracePrinter`는 원인/suppressed 예외와 stack frame을 유지하며 알려진 민감값 패턴을 `<redacted>`로 치환한다. `RestClientException`과 그 아래 원인/suppressed 예외는 파싱 오류를 포함해 메시지 전체를 제외하고 예외 클래스만 출력한다. `RestClientResponseException`은 취득한 HTTP 상태도 유지한다. 외부 오류의 상세 메시지 대신 작업 문맥, 예외 종류와 stack frame으로 진단한다.
 
-마스킹은 키-값, JSON 문자열, 인증 헤더, 서명 URL 등 정의된 패턴에 대한 방어다. 임의 문자열의 모든 비밀을 식별하는 기능은 아니므로 호출부에서부터 본문과 인증 정보를 로그 인자로 넘기지 않는다. local의 일반 콘솔은 구조화 stack printer를 사용하지 않으므로 실제 자격 증명/개인정보가 담긴 응답으로 로그를 재현하지 않는다.
+마스킹은 키-값, JSON 문자열, 인증 헤더, 서명 URL 등 정의된 패턴에 대한 방어다. 따옴표 없는 민감 키의 값은 공백으로 끝을 판단하지 않고 해당 줄 끝까지 가린다. 이 경우 뒤따르는 진단 필드도 함께 가려질 수 있다. JSON 문자열·따옴표·URL 쿼리는 기존 값의 경계를 유지한다. 임의 문자열의 모든 비밀을 식별하는 기능은 아니므로 호출부에서부터 본문과 인증 정보를 로그 인자로 넘기지 않는다. local의 일반 콘솔은 구조화 stack printer를 사용하지 않으므로 실제 자격 증명/개인정보가 담긴 응답으로 로그를 재현하지 않는다.
 
 다음 값은 로그 메시지와 예외 메시지에 포함하지 않는다.
 
