@@ -228,6 +228,33 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("인프라 로그는 허용된 작업 문맥만 기록하고 응답과 공통 필드를 보호한다.")
+    void infrastructureLogIncludesOnlyAllowedContext() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        mockMvc.perform(get("/v1/external-failure"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value(GlobalExceptionInformation.INTERNAL_SERVER_ERROR.getMessage()))
+                .andExpect(jsonPath("$.provider").doesNotExist())
+                .andExpect(jsonPath("$.logContext").doesNotExist());
+
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(logFields(event))
+                .containsEntry("event", "http_request_exception")
+                .containsEntry("path", "/v1/external-failure")
+                .containsEntry("provider", "GITHUB")
+                .containsEntry("operation", "fetch_user")
+                .doesNotContainKeys("requestId", "token");
+        assertThat(event.getKeyValuePairs()).anySatisfy(pair -> {
+            assertThat(pair.key).isEqualTo("durationMs");
+            assertThat(pair.value).isEqualTo(12L);
+        });
+        assertThat(event.getFormattedMessage() + logFields(event)).doesNotContain("TEST_SECRET", "overridden");
+    }
+
+    @Test
     @DisplayName("정적 리소스 404는 ERROR 로그와 내부 예외 메시지를 남기지 않는다.")
     void staticResourceNotFoundLogsInfoWithoutInternalMessage() {
         // given
@@ -341,6 +368,17 @@ class GlobalExceptionHandlerTest {
                     GlobalExceptionInformation.INTERNAL_SERVER_ERROR,
                     "Redis refresh session revoke failed",
                     new RedisConnectionFailureException("redis failed token=hashed-refresh-token")
+            );
+        }
+
+        @GetMapping("/v1/external-failure")
+        String externalFailure() {
+            throw new RilogInfrastructureException(
+                    GlobalExceptionInformation.INTERNAL_SERVER_ERROR,
+                    "External operation failed",
+                    new IllegalStateException("connection failed"),
+                    Map.of("provider", "GITHUB", "operation", "fetch_user", "durationMs", 12L,
+                            "event", "overridden", "path", "overridden", "requestId", "overridden", "token", "TEST_SECRET")
             );
         }
 

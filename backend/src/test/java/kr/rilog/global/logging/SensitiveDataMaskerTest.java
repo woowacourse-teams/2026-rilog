@@ -8,6 +8,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SensitiveDataMaskerTest {
 
     @Test
+    @DisplayName("민감정보 마스커는 JSON 형태의 인증값도 원문으로 남기지 않는다.")
+    void maskRemovesJsonCredentials() {
+        String message = "{\"access_token\":\"TEST_TOKEN\",\"client_secret\":\"TEST SECRET\"}";
+
+        assertThat(SensitiveDataMasker.mask(message)).doesNotContain("TEST_TOKEN", "TEST SECRET")
+                .contains("<redacted>");
+    }
+
+    @Test
     @DisplayName("민감정보 마스커는 로그 메시지의 토큰과 인증 관련 값을 원문으로 남기지 않는다.")
     void maskRemovesSensitiveValuesFromLogMessage() {
         // given

@@ -27,6 +27,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +37,10 @@ public class GlobalExceptionHandler {
     private static final String HTTP_REQUEST_EXCEPTION_EVENT = "http_request_exception";
     private static final String EXCEPTION_LOG_FORMAT = "[{}] {}";
     private static final String UNKNOWN_EXCEPTION_LOG_FORMAT = "[{}] 예상치 못한 예외 발생";
+    private static final Set<String> INFRASTRUCTURE_LOG_KEYS = Set.of(
+            "provider", "operation", "durationMs", "failureType", "externalStatus",
+            "bucket", "key", "uploadType", "contentType", "size", "expirationMinutes"
+    );
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -245,14 +250,20 @@ public class GlobalExceptionHandler {
     private void logErrorException(
             ErrorInformation errorInformation, String context, Exception exception, HttpServletRequest request
     ) {
-        log.atError()
+        var event = log.atError()
                 .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
                 .addKeyValue("errorCode", errorInformation.getErrorCode())
                 .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
                 .addKeyValue("method", request.getMethod())
-                .addKeyValue("path", request.getRequestURI())
-                .setCause(exception)
-                .log(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), context);
+                .addKeyValue("path", request.getRequestURI());
+        if (exception instanceof RilogInfrastructureException infrastructureException) {
+            infrastructureException.getLogContext().forEach((key, value) -> {
+                if (INFRASTRUCTURE_LOG_KEYS.contains(key)) {
+                    event.addKeyValue(key, value);
+                }
+            });
+        }
+        event.setCause(exception).log(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), context);
     }
 
 }
