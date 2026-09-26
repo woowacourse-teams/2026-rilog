@@ -52,3 +52,5 @@ BE에 정의된 오류 중 FE 코드표에 없는 항목을 모두 미정의 오
 제목에는 고정 feature·operation·errorCode·httpStatus·error_type을 사용한다. request_id는 요청별 값이므로 제목 대신 태그로만 보존한다. 기존 error_code·status 태그는 검색 호환성을 위해 유지하고, 응답 없는 오류에 HTTP 상태나 request_id를 만들어 넣지 않는다.
 
 자동 수집 경계에서 정규화되지 않은 ky 오류에도 동일 정책과 안전한 변환을 적용하고 원본 AbortError를 제외한다. NetworkError는 network로 정규화하며 원본 cause와 멱등성을 유지한다. 일반 TypeError는 API 경계 밖에서 통신 오류로 단정하지 않는다.
+
+공통 API 클라이언트를 우회하는 토큰 갱신의 최종 실패도 `auth.refresh`로 보고한다. 정상 토큰 만료는 제외하고 5xx·통신·미정의 코드는 수집하며, 이전 세션 응답 무시와 기존 로그아웃 동작은 유지한다.

@@ -26,6 +26,7 @@
 | `colog.create` / colog | POST `/v1/cologs` | REQUEST_VALIDATION_FAILED, INVALID_SLUG, USER_NOT_FOUND, BLOG_SLUG_ALREADY_EXISTS, BLOG_PROFILE_NAME_ALREADY_EXISTS, USER_COLOG_COUNT_EXCEEDED | [CologService](../../backend/src/main/java/kr/rilog/domain/blog/service/CologService.java), [DTO](../../backend/src/main/java/kr/rilog/domain/blog/controller/dto/request/CologCreateRequest.java) |
 | `colog.invite` / colog | POST `/v1/cologs/{slug}/members` | REQUEST_VALIDATION_FAILED, BLOG_NOT_FOUND, USER_NOT_FOUND, BLOG_MEMBER_INVITE_FORBIDDEN, ADMIN_PERMISSION_REQUIRED, BLOG_MEMBER_ALREADY_EXISTS, COLOG_MEMBER_COUNT_EXCEEDED, USER_COLOG_COUNT_EXCEEDED | [CologService](../../backend/src/main/java/kr/rilog/domain/blog/service/CologService.java), [BlogMember](../../backend/src/main/java/kr/rilog/domain/blog/entity/BlogMember.java) |
 | `oauth.callback` / auth | POST `/v1/auth/github/callback` | INVALID_OAUTH_STATE, 확인된 취소의 OAUTH_REQUEST_FAILED | [GithubOAuthController](../../backend/src/main/java/kr/rilog/domain/auth/presentation/GithubOAuthController.java), [AuthErrorInformation](../../backend/src/main/java/kr/rilog/domain/auth/exception/AuthErrorInformation.java) |
+| `auth.refresh` / auth | POST `/v1/auth/token/refresh` | 공통 토큰 복구 오류만 제외. 5xx·온라인 통신·미정의 코드는 수집 | [TokenManager](../../frontend/src/shared/api/auth/token-manager.ts), [AuthErrorInformation](../../backend/src/main/java/kr/rilog/domain/auth/exception/AuthErrorInformation.java) |
 | `upload.presign` / upload | POST `/v1/uploads/presigned-url` | REQUEST_VALIDATION_FAILED, UNSUPPORTED_IMAGE_FORMAT, IMAGE_SIZE_EXCEEDED, UNSUPPORTED_FILE_FORMAT, FILE_SIZE_EXCEEDED | [UploadService](../../backend/src/main/java/kr/rilog/domain/upload/service/UploadService.java) |
 | `upload.put` / upload | PUT S3 서명 URL | 없음. 사용자 취소·오프라인은 공통 제외 | [FE 업로드 조합 함수](../../frontend/src/shared/api/uploads/api.ts) |
 
@@ -52,5 +53,7 @@ request_id는 [RequestIdFilter](../../backend/src/main/java/kr/rilog/global/logg
 ## 계약 변경 절차와 검증
 
 BE 오류 추가 시 공개 코드·HTTP 상태·의미와 실제 발생 operation을 확인한다. FE 코드표, `expectedErrors`의 조건, 위 표와 관련 정책 테스트를 함께 갱신한다. 알려진 코드라는 이유만으로 새 정상 제외 항목을 추가하지 않는다. 앱이 만든 요청 문제와 5xx는 목록에 넣어 숨기지 않는다. 이 변경은 FE 수집 기준만 바꾸며 BE 응답 계약에는 영향이 없다.
+
+토큰 갱신은 별도 ky 경로이므로 최종 실패를 `auth.refresh`로 보고한다. 이전 세션의 늦은 실패는 무시하고 정상적인 401 만료는 제외한다. 기존 갱신 요청 병합·토큰 교체·로그아웃 결과는 유지한다.
 
 정책 단위 테스트는 모든 operation의 5xx/통신/미정의 코드 수집, 취소·오프라인 제외, 400/422 입력 검증, 작업별 정상 제한을 검증한다. 전송 테스트는 제목·태그, 잘못된 ID/코드 정리와 원본 스택·민감정보 처리를 검증한다. 기존 mutation/OAuth/업로드 통합 테스트는 실제 보고 경계 연결과 중복 억제를 검증한다.

@@ -9,6 +9,7 @@ export type ApiOperation =
 	| 'colog.create'
 	| 'colog.invite'
 	| 'oauth.callback'
+	| 'auth.refresh'
 	| 'upload.presign'
 	| 'upload.put'
 	| 'query'
@@ -122,6 +123,7 @@ export const API_ERROR_OPERATION_CONTRACTS: Record<ApiOperation, ApiOperationCon
 		feature: 'auth',
 		expectedErrors: { INVALID_OAUTH_STATE: 'exclude', OAUTH_REQUEST_FAILED: 'oauth-cancelled' },
 	},
+	'auth.refresh': { feature: 'auth', expectedErrors: {} },
 	'upload.presign': {
 		feature: 'upload',
 		expectedErrors: {
