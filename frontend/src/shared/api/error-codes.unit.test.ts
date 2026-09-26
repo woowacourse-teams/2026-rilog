@@ -17,4 +17,27 @@ describe('API_ERROR_CODES', () => {
 		expect(isApiErrorCode('FUTURE_SERVER_ERROR')).toBe(false);
 		expect(getApiErrorKind('FUTURE_SERVER_ERROR')).toBeUndefined();
 	});
+
+	it.each([
+		['INVALID_CHAPTER_NAME', 'field'],
+		['INVALID_COMMENT_CONTENT', 'field'],
+		['BLOG_MEMBER_DOESNT_NOT_BELONG', 'authorization'],
+		['COLOG_SELF_REMOVE_FORBIDDEN', 'authorization'],
+		['DRAFT_NOT_FOUND', 'not-found'],
+		['DUPLICATED_PUBLISH', 'conflict'],
+		['DUPLICATE_KEY_CONFLICT', 'conflict'],
+		['COLOG_MEMBER_COUNT_EXCEEDED', 'request'],
+		['INVALID_POST_CONTENT', 'request'],
+		['INVALID_COMMENT_ANCHOR', 'request'],
+		['INVALID_S3_URL_SCHEME', 'request'],
+		['DATA_INTEGRITY_VIOLATION', 'server'],
+	])('백엔드 오류 %s를 HTTP 숫자가 아닌 의미에 맞는 %s로 분류한다', (code, kind) => {
+		expect(isApiErrorCode(code)).toBe(true);
+		expect(getApiErrorKind(code)).toBe(kind);
+	});
+
+	it.each(['toString', 'constructor', '__proto__'])('계약에 없는 %s를 알려진 오류로 취급하지 않는다', (code) => {
+		expect(isApiErrorCode(code)).toBe(false);
+		expect(getApiErrorKind(code)).toBeUndefined();
+	});
 });
