@@ -1,0 +1,18 @@
+{
+  "description": "Run MySQL tests before a backend turn ends when Java files under backend/src have changed.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command '& (Join-Path (git rev-parse --show-toplevel) \"backend/.codex/hooks/mysql-test-on-java-change.ps1\")'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path (git rev-parse --show-toplevel) 'backend/.codex/hooks/mysql-test-on-java-change.ps1')\"",
+            "timeout": 1800,
+            "statusMessage": "Running MySQL tests for backend Java changes"
+          }
+        ]
+      }
+    ]
+  }
+}
