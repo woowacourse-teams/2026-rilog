@@ -5,6 +5,7 @@ import type { ErrorEvent } from '@sentry/nextjs';
 import { normalizeApiError } from '@/shared/api/api-error';
 
 import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
+import { SentryErrorTracker } from './sentry-error-tracker';
 
 describe('Sentry API 오류 전송 경계', () => {
 	it('SDK가 추가한 민감정보와 연결된 예외를 제거하면서 발생 위치를 보존한다', () => {
@@ -43,7 +44,8 @@ describe('Sentry API 오류 전송 경계', () => {
 				],
 			},
 		};
-		const sanitized = sanitizeApiErrorEvent(event, { originalException: report.error });
+		const sanitized = sanitizeApiErrorEvent(event, report);
+		if (!sanitized) throw new Error('Expected event');
 
 		expect(JSON.stringify(sanitized)).not.toContain('private-');
 		expect(sanitized).toMatchObject({
@@ -64,7 +66,8 @@ describe('Sentry API 오류 전송 경계', () => {
 			extra: { __serialized__: normalized },
 			exception: { values: [{ value: 'private-message' }] },
 		};
-		const sanitized = sanitizeApiErrorEvent(event, { originalException: normalized });
+		const sanitized = new SentryErrorTracker().beforeSend(event, { originalException: normalized });
+		if (!sanitized) throw new Error('Expected event');
 		expect(sanitized.exception?.values?.[0]?.value).toBe('API request failed: network');
 		expect(JSON.stringify(sanitized)).not.toContain('private-message');
 	});
@@ -84,6 +87,6 @@ describe('Sentry API 오류 전송 경계', () => {
 
 	it('일반 애플리케이션 오류의 기존 보고는 변경하지 않는다', () => {
 		const event: ErrorEvent = { type: undefined, exception: { values: [{ value: 'render failed' }] } };
-		expect(sanitizeApiErrorEvent(event, { originalException: new Error('render failed') })).toBe(event);
+		expect(new SentryErrorTracker().beforeSend(event, { originalException: new Error('render failed') })).toBe(event);
 	});
 });
