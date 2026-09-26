@@ -55,7 +55,9 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("com.h2database:h2")
+	testImplementation("org.testcontainers:testcontainers-mysql")
 	testCompileOnly("org.projectlombok:lombok")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testAnnotationProcessor("org.projectlombok:lombok")
@@ -64,3 +66,38 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+tasks.named<Test>("test") {
+	systemProperty("spring.profiles.active", "test")
+}
+
+val testSourceSet = sourceSets["test"]
+
+tasks.register<Test>("testH2") {
+	group = "verification"
+	description = "Runs tests with the H2 test database."
+
+	testClassesDirs = testSourceSet.output.classesDirs
+	classpath = testSourceSet.runtimeClasspath
+
+	useJUnitPlatform {
+		excludeTags("mysql")
+	}
+
+	systemProperty("spring.profiles.active", "test")
+}
+
+tasks.register<Test>("testMySql") {
+	group = "verification"
+	description = "Runs tests with a Testcontainers MySQL database."
+
+	testClassesDirs = testSourceSet.output.classesDirs
+	classpath = testSourceSet.runtimeClasspath
+
+	useJUnitPlatform {
+		excludeTags("h2")
+	}
+
+	systemProperty("spring.profiles.active", "mysql-test")
+}
+
