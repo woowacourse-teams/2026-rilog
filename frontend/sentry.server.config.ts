@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs';
-import { initializeAnalytics } from '@/shared/analytics/posthog';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -10,11 +9,8 @@ try {
 		enabled: isProduction || process.env.NEXT_PUBLIC_SENTRY_ENABLED === 'true',
 		environment: isProduction ? 'prod' : 'local',
 		sendDefaultPii: false,
+		tracesSampleRate: 1,
 	});
 } catch {
 	logNonProductionWarning('Sentry initialization failed.');
 }
-
-initializeAnalytics();
-
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
