@@ -1,4 +1,5 @@
 export interface ErrorTrackerContext {
+	level?: 'error' | 'warning';
 	tags?: Record<string, string>;
 	extra?: Record<string, unknown>;
 }

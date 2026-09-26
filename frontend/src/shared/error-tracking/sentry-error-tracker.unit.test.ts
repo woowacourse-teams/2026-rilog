@@ -1,5 +1,11 @@
+import ky from 'ky';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ErrorTrackerContext } from './error-tracker';
+
+import { normalizeApiError } from '@/shared/api/api-error';
+
+import { ApiErrorReporter } from './api-error-reporter';
 import { createSentryErrorTracker } from './sentry-error-tracker';
 
 const { captureExceptionMock, captureMessageMock } = vi.hoisted(() => ({
@@ -20,6 +26,51 @@ beforeEach(() => {
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllEnvs();
+});
+
+it('report로 처리한 오류를 상위 경계가 다시 capture해도 중복 전송하지 않는다', () => {
+	const tracker = createSentryErrorTracker();
+	const error = normalizeApiError(new Error('failure'));
+	new ApiErrorReporter(tracker).report(error, { operation: 'post.publish' });
+	tracker.captureException(error);
+	expect(captureExceptionMock).toHaveBeenCalledTimes(1);
+	const [sent] = captureExceptionMock.mock.calls[0] as [unknown];
+	expect(tracker.beforeSend({ type: undefined }, { originalException: sent })).not.toBeNull();
+});
+
+it('정규화된 API 오류는 원본 발생 위치와 분류만 보내고 응답·토큰·원본 cause를 보내지 않는다', async () => {
+	const original = await ky
+		.get('https://api.rilog.test/callback?code=secret-token', {
+			retry: 0,
+			fetch: () =>
+				Promise.resolve(
+					new Response(
+						JSON.stringify({
+							status: 400,
+							error: 'BAD_REQUEST',
+							errorCode: 'INVALID_POST_CONTENT',
+							message: 'private-content',
+							invalidParams: [{ name: 'content', reason: 'private-content' }],
+						}),
+						{ status: 400, headers: { 'Content-Type': 'application/json' } },
+					),
+				),
+		})
+		.catch((error: unknown) => error);
+	if (!(original instanceof Error)) throw new Error('Expected HTTPError');
+	original.stack = `${original.name}: ${original.message}\n    at publish (https://rilog.test/app.js?code=secret-token:12:34)`;
+	createSentryErrorTracker().captureException(normalizeApiError(original), {
+		tags: { operation: 'post.publish' },
+		extra: { original, content: 'private-content' },
+	});
+	const [reported, context] = captureExceptionMock.mock.calls[0] as [unknown, ErrorTrackerContext];
+	expect(reported).toBeInstanceOf(Error);
+	if (!(reported instanceof Error)) throw new Error('Expected a reportable Error');
+	expect(reported).not.toBe(original);
+	expect(reported.stack).toContain('at publish (https://rilog.test/app.js:12:34)');
+	expect(reported.cause).toBeUndefined();
+	expect(context.tags).toMatchObject({ operation: 'post.publish', error_code: 'INVALID_POST_CONTENT', status: '400' });
+	expect(`${reported.stack} ${JSON.stringify([reported, context])}`).not.toMatch(/secret-token|private-content/);
 });
 
 describe.each([

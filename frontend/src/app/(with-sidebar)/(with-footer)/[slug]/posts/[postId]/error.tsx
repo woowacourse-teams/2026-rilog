@@ -1,9 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
-import { errorTracker } from '@/shared/error-tracking/error-tracker-instance';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
@@ -14,10 +11,6 @@ interface PostDetailErrorProps {
 }
 
 export default function PostDetailError({ error, reset }: PostDetailErrorProps) {
-	useEffect(() => {
-		errorTracker.captureException(error);
-	}, [error]);
-
 	return (
 		<main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6 text-center">
 			<ContentLoadFailureTracker surface="post_detail" loadPhase="detail" error={error} />
