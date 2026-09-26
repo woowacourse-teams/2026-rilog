@@ -1,13 +1,13 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 
+import { errorTracker } from '@/shared/error-tracking/error-tracker-instance';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
 	useEffect(() => {
-		Sentry.captureException(error);
+		errorTracker.captureException(error);
 	}, [error]);
 
 	return (
