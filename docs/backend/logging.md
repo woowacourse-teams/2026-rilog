@@ -87,7 +87,7 @@ S3 응답 메타데이터가 없으면 `awsRequestId`를 생략한다. `S3Except
 
 ## 민감정보 제외 규칙
 
-로그에는 토큰, 인증 코드, OAuth state, 쿠키, 비밀번호, secret, API key, private key 원문을 남기지 않는다. dev/prod JSON 로그의 `SanitizingStackTracePrinter`는 원인/suppressed 예외와 stack frame을 유지하며 알려진 민감값 패턴을 `<redacted>`로 치환한다. `RestClientResponseException`의 메시지는 외부 응답 본문을 포함할 수 있어 원문 대신 예외 클래스와 HTTP 상태만 출력한다.
+로그에는 토큰, 인증 코드, OAuth state, 쿠키, 비밀번호, secret, API key, private key 원문을 남기지 않는다. dev/prod JSON 로그의 `SanitizingStackTracePrinter`는 원인/suppressed 예외와 stack frame을 유지하며 알려진 민감값 패턴을 `<redacted>`로 치환한다. `RestClientException`과 그 아래 원인/suppressed 예외는 파싱 오류를 포함해 메시지 전체를 제외하고 예외 클래스만 출력한다. `RestClientResponseException`은 취득한 HTTP 상태도 유지한다. 외부 오류의 상세 메시지 대신 작업 문맥, 예외 종류와 stack frame으로 진단한다.
 
 마스킹은 키-값, JSON 문자열, 인증 헤더, 서명 URL 등 정의된 패턴에 대한 방어다. 임의 문자열의 모든 비밀을 식별하는 기능은 아니므로 호출부에서부터 본문과 인증 정보를 로그 인자로 넘기지 않는다. local의 일반 콘솔은 구조화 stack printer를 사용하지 않으므로 실제 자격 증명/개인정보가 담긴 응답으로 로그를 재현하지 않는다.
 

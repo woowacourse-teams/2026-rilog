@@ -6,6 +6,7 @@ import kr.rilog.domain.auth.application.oauth.model.SocialLoginUser;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.global.exception.RilogInfrastructureException;
+import kr.rilog.global.logging.SanitizingStackTracePrinter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,6 +34,26 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withUnauthorizedRequest;
 
 class RestClientGithubUserClientTest {
+
+    @Test
+    @DisplayName("GitHub 사용자 응답의 타입 변환 실패 로그에는 원문 필드 값이 남지 않는다.")
+    void invalidUserFieldDoesNotLeakBodyInStack() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var client = new RestClientGithubUserClient(builder.build(), properties());
+        server.expect(requestTo(properties().userUri()))
+                .andRespond(withSuccess("""
+                        {"id":"TEST_PRIVATE_BODY","login":"test-user"}
+                        """, MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> client.getUser(new OAuthAccessToken("TEST_TOKEN")))
+                .isInstanceOf(RilogInfrastructureException.class)
+                .hasMessage(AuthErrorInformation.GITHUB_USER_FETCH_FAILED.getMessage())
+                .satisfies(error -> assertThat(new SanitizingStackTracePrinter().printStackTraceToString(error))
+                        .contains("RestClientException", "InvalidFormatException", "Caused by:")
+                        .doesNotContain("TEST_PRIVATE_BODY", "TEST_TOKEN"));
+        server.verify();
+    }
 
     @ParameterizedTest
     @MethodSource("failedResponses")

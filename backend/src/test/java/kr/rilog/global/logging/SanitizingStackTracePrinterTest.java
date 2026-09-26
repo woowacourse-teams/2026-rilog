@@ -3,6 +3,7 @@ package kr.rilog.global.logging;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 
@@ -11,6 +12,20 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SanitizingStackTracePrinterTest {
+
+    @Test
+    @DisplayName("외부 HTTP 클라이언트의 중첩 예외는 종류를 유지하고 응답 유래 메시지를 제외한다.")
+    void externalClientCauseAndSuppressedMessagesAreExcluded() {
+        var failure = new RestClientException("TEST_WRAPPER_BODY", new IllegalArgumentException("TEST_CAUSE_BODY"));
+        failure.addSuppressed(new RuntimeException("TEST_SUPPRESSED_BODY"));
+        var root = new IllegalStateException("external call failed", failure);
+
+        String stack = new SanitizingStackTracePrinter().printStackTraceToString(root);
+
+        assertThat(stack).contains("external call failed", "RestClientException", "IllegalArgumentException")
+                .contains("RuntimeException", "Caused by:", "Suppressed:")
+                .doesNotContain("TEST_WRAPPER_BODY", "TEST_CAUSE_BODY", "TEST_SUPPRESSED_BODY");
+    }
 
     @Test
     @DisplayName("외부 HTTP 오류의 원문 본문은 root와 cause 및 suppressed 스택에서 제외한다.")
@@ -75,6 +90,7 @@ class SanitizingStackTracePrinterTest {
                 .contains("Caused by: java.lang.IllegalArgumentException")
                 .contains("Suppressed: java.lang.RuntimeException")
                 .contains("kr.rilog.TestTarget.run(TestTarget.java:12)")
+                .contains("request failed", "github failed", "redis failed")
                 .doesNotContain("SECRET_ROOT_TOKEN", "SECRET_CAUSE_TOKEN", "SECRET_SUPPRESSED_PASSWORD")
                 .contains("<redacted>");
     }

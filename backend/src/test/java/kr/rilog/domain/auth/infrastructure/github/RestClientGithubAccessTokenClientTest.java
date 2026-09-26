@@ -5,6 +5,7 @@ import kr.rilog.domain.auth.application.oauth.model.SocialLoginProvider;
 import kr.rilog.domain.auth.config.GithubOAuthProperties;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.global.exception.RilogInfrastructureException;
+import kr.rilog.global.logging.SanitizingStackTracePrinter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,6 +36,24 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class RestClientGithubAccessTokenClientTest {
+
+    @Test
+    @DisplayName("GitHub 토큰 응답 파싱 실패 로그에는 원문 응답 조각이 남지 않는다.")
+    void malformedTokenResponseDoesNotLeakBodyInStack() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var client = new RestClientGithubAccessTokenClient(builder.build(), properties());
+        server.expect(requestTo(properties().tokenUri()))
+                .andRespond(withSuccess("TEST_PRIVATE_BODY", MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> client.exchange("TEST_CODE"))
+                .isInstanceOf(RilogInfrastructureException.class)
+                .hasMessage(AuthErrorInformation.GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED.getMessage())
+                .satisfies(error -> assertThat(new SanitizingStackTracePrinter().printStackTraceToString(error))
+                        .contains("RestClientException", "tools.jackson", "Caused by:")
+                        .doesNotContain("TEST_PRIVATE_BODY", "TEST_CODE"));
+        server.verify();
+    }
 
     @ParameterizedTest
     @MethodSource("failedResponses")
