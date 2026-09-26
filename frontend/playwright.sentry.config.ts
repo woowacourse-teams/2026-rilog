@@ -5,6 +5,7 @@ import { createPlaywrightConfig } from './playwright.config';
 export default defineConfig({
 	...createPlaywrightConfig({ reuseExistingServer: false, serverCommand: 'pnpm start' }),
 	testDir: './src/test/sentry-e2e',
+	testMatch: 'sentry-network-failure.spec.ts',
 	use: {
 		baseURL: 'http://localhost:3107',
 		screenshot: 'only-on-failure',

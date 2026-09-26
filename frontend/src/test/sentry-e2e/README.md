@@ -23,6 +23,26 @@ pnpm exec playwright test --config playwright.sentry.config.ts
 - 게시글 상세 오류 경계에서 실제 전송 실패 후 재시도 조작과 피드 이동을 확인한다.
   상세 API는 계속 실패하므로 이 시나리오는 게시글 조회 성공까지 검증하지 않는다.
 - 별도 Promise rejection의 전송 실패 후, 피드의 키보드 재시도가 성공 응답으로 복구되는지 확인한다.
-- 실제 Sentry 수신 여부, 서버 SDK의 전송 장애, 저장·발행 등 모든 핵심 흐름을 검증하는 테스트는 아니다.
+- 이 브라우저 설정은 실제 Sentry 수신 여부, 서버 SDK의 전송 장애, 저장·발행 등 모든 핵심 흐름을 검증하지 않는다.
 - 이 명령은 `.next`를 테스트 환경으로 다시 빌드한다. 배포용 빌드는 실제 환경변수로 다시 실행한다.
 - 기존 `pnpm test:e2e`, `pnpm test:e2e:prod`의 필수 글쓰기 4개 흐름과는 별도로 실행한다.
+
+## 서버 전송 연결 실패
+
+```sh
+pnpm exec playwright test --config playwright.sentry-server.config.ts
+```
+
+- 실제 Next.js Node SDK의 전송 실패로 서버가 중단되거나 응답이 막히는 회귀를 검증한다.
+  SDK 함수 mock으로는 확인할 수 없는 HTTP 전송과 SSR 오류 수집 연결을 실행하며,
+  브라우저에서는 실제 오류 화면과 이동을 확인한다. 기존 글쓰기 흐름과 필요한 환경이 달라 별도로 실행한다.
+- 3108 포트의 테스트 전용 HTTP 수신기는 Sentry envelope를 받은 뒤 HTTP 응답 없이 소켓을 끊는다.
+  Node runtime의 exception 이벤트 URL만 기록하여 실제 서버 오류 전송이 있었음을 확인한다.
+  테스트 관찰용 `/health`, `/state`는 이 수신기에만 존재하고 제품 앱에는 추가하지 않는다.
+- Next.js를 loopback DSN으로 빌드하여 3107 포트에서 실행한다. 실제 Sentry 서비스로 전송하지 않는다.
+  브라우저에서 수신기로 향하는 요청은 차단하여 서버 전송과 혼동하지 않는다.
+- 서로 다른 게시글 요청 2회에서 서버 오류 전송을 확인하고, 각 연결 실패 후 오류 화면의 피드 이동과
+  `/about`의 HTTP 200 응답 및 화면 표시를 검증한다.
+- 검증 범위는 Node 서버의 연결 단절이다. Edge runtime, DNS 실패, 장시간 timeout은 별도 범위다.
+- 두 Sentry 설정은 같은 `.next`와 3107 포트를 사용하므로 순서대로 실행한다.
+  테스트 종료 후 일반 환경 빌드가 필요하면 `pnpm build`를 다시 실행한다.
