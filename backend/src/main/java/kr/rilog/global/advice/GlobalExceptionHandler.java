@@ -3,6 +3,7 @@ package kr.rilog.global.advice;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import jakarta.servlet.http.HttpServletRequest;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.global.exception.ErrorInformation;
 import kr.rilog.global.exception.GlobalExceptionInformation;
@@ -39,7 +40,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorDetail> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException e
+            MethodArgumentNotValidException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.REQUEST_VALIDATION_FAILED;
 
@@ -52,7 +53,7 @@ public class GlobalExceptionHandler {
                 ))
                 .toList();
 
-        logInfoException(errorInformation, invalidParams);
+        logInfoException(errorInformation, invalidParams, request);
 
         ErrorDetail errorDetail = ErrorDetail.of(
                 errorInformation,
@@ -65,26 +66,30 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RilogBusinessException.class)
-    public ResponseEntity<ErrorDetail> handleRilogBusinessException(RilogBusinessException e) {
+    public ResponseEntity<ErrorDetail> handleRilogBusinessException(
+            RilogBusinessException e, HttpServletRequest request
+    ) {
         ErrorInformation errorInformation = e.getErrorInformation();
         if (shouldLog(errorInformation)) {
-            logExceptionByStatus(errorInformation, e);
+            logExceptionByStatus(errorInformation, e, request);
         }
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
 
     @ExceptionHandler(RilogInfrastructureException.class)
-    public ResponseEntity<ErrorDetail> handleRilogInfrastructureException(RilogInfrastructureException e) {
+    public ResponseEntity<ErrorDetail> handleRilogInfrastructureException(
+            RilogInfrastructureException e, HttpServletRequest request
+    ) {
         ErrorInformation errorInformation = e.getErrorInformation();
-        logErrorException(errorInformation, e.getMessage(), e);
+        logErrorException(errorInformation, e.getMessage(), e, request);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ErrorDetail> handleHandlerMethodValidationException(
-            HandlerMethodValidationException e
+            HandlerMethodValidationException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.REQUEST_VALIDATION_FAILED;
         List<InvalidParam> invalidParams = e.getParameterValidationResults()
@@ -97,7 +102,7 @@ public class GlobalExceptionHandler {
                         )))
                 .toList();
 
-        logInfoException(errorInformation, invalidParams);
+        logInfoException(errorInformation, invalidParams, request);
 
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, invalidParams));
@@ -105,13 +110,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorDetail> handleHttpMessageNotReadableException(
-            HttpMessageNotReadableException e
+            HttpMessageNotReadableException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation =
                 GlobalExceptionInformation.INVALID_REQUEST_BODY;
 
         InvalidParam invalidParam = extractInvalidParam(e);
-        logInfoException(errorInformation, invalidParam);
+        logInfoException(errorInformation, invalidParam, request);
 
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, List.of(invalidParam)));
@@ -119,62 +124,66 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorDetail> handleHttpRequestMethodNotSupportedException(
-            HttpRequestMethodNotSupportedException e
+            HttpRequestMethodNotSupportedException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.METHOD_NOT_SUPPORTED;
-        logInfoException(errorInformation, errorInformation.getMessage());
+        logInfoException(errorInformation, errorInformation.getMessage(), request);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
 
     @ExceptionHandler(DuplicateKeyException.class)
     public ResponseEntity<ErrorDetail> handleDuplicateKeyException(
-            DataIntegrityViolationException e
+            DataIntegrityViolationException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.DUPLICATE_KEY_CONFLICT;
-        logExceptionByStatus(errorInformation, e);
+        logExceptionByStatus(errorInformation, e, request);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorDetail> handleDataIntegrityViolationException(
-            DataIntegrityViolationException e
+            DataIntegrityViolationException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.DATA_INTEGRITY_VIOLATION;
-        logExceptionByStatus(errorInformation, e);
+        logExceptionByStatus(errorInformation, e, request);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorDetail> handleNoResourceFoundException(NoResourceFoundException e) {
+    public ResponseEntity<ErrorDetail> handleNoResourceFoundException(
+            NoResourceFoundException e, HttpServletRequest request
+    ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.STATIC_RESOURCE_NOT_FOUND;
-        logInfoException(errorInformation, errorInformation.getMessage());
+        logInfoException(errorInformation, errorInformation.getMessage(), request);
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorDetail> handleMissingServletRequestParameterException(
-            MissingServletRequestParameterException e
+            MissingServletRequestParameterException e, HttpServletRequest request
     ) {
         ErrorInformation errorInformation = GlobalExceptionInformation.MISSING_REQUEST_PARAMETER;
         List<InvalidParam> invalidParams = List.of(InvalidParam.missingRequestParameters(e.getParameterName()));
 
-        logInfoException(errorInformation, invalidParams);
+        logInfoException(errorInformation, invalidParams, request);
         return ResponseEntity
                 .status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, invalidParams));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorDetail> handleUnknownException(Exception e) {
+    public ResponseEntity<ErrorDetail> handleUnknownException(Exception e, HttpServletRequest request) {
         ErrorInformation errorInformation = GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
         log.atError()
                 .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
                 .addKeyValue("errorCode", errorInformation.getErrorCode())
                 .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI())
                 .setCause(e)
                 .log(UNKNOWN_EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode());
         return ResponseEntity.status(errorInformation.getHttpStatus())
@@ -207,32 +216,41 @@ public class GlobalExceptionHandler {
         return validationResult.getMethodParameter().getParameterName();
     }
 
-    private void logExceptionByStatus(ErrorInformation errorInformation, Exception exception) {
+    private void logExceptionByStatus(
+            ErrorInformation errorInformation, Exception exception, HttpServletRequest request
+    ) {
         if (errorInformation.getHttpStatus().is5xxServerError()) {
-            logErrorException(errorInformation, errorInformation.getMessage(), exception);
+            logErrorException(errorInformation, errorInformation.getMessage(), exception, request);
             return;
         }
 
-        logInfoException(errorInformation, errorInformation.getMessage());
+        logInfoException(errorInformation, errorInformation.getMessage(), request);
     }
 
     private boolean shouldLog(ErrorInformation errorInformation) {
-        return errorInformation != AuthErrorInformation.EXPIRED_ACCESS_TOKEN;
+        return errorInformation != AuthErrorInformation.EXPIRED_ACCESS_TOKEN
+                && errorInformation != AuthErrorInformation.REFRESH_TOKEN_MISSING;
     }
 
-    private void logInfoException(ErrorInformation errorInformation, Object context) {
+    private void logInfoException(ErrorInformation errorInformation, Object context, HttpServletRequest request) {
         log.atInfo()
                 .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
                 .addKeyValue("errorCode", errorInformation.getErrorCode())
                 .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI())
                 .log(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), context);
     }
 
-    private void logErrorException(ErrorInformation errorInformation, String context, Exception exception) {
+    private void logErrorException(
+            ErrorInformation errorInformation, String context, Exception exception, HttpServletRequest request
+    ) {
         log.atError()
                 .addKeyValue("event", HTTP_REQUEST_EXCEPTION_EVENT)
                 .addKeyValue("errorCode", errorInformation.getErrorCode())
                 .addKeyValue("httpStatus", errorInformation.getHttpStatus().value())
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI())
                 .setCause(exception)
                 .log(EXCEPTION_LOG_FORMAT, errorInformation.getErrorCode(), context);
     }

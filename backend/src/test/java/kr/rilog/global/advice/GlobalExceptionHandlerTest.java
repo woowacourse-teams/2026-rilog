@@ -9,19 +9,30 @@ import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
 import kr.rilog.global.exception.GlobalExceptionInformation;
 import kr.rilog.global.exception.RilogInfrastructureException;
+import kr.rilog.global.logging.RequestIdFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpMethod;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
@@ -29,6 +40,7 @@ import java.util.Map;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -95,6 +107,62 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.errorCode").value("EXPIRED_ACCESS_TOKEN"));
 
         logCapture.assertNoEvents();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "GET, /v1/unexpected, 500",
+            "GET, /v1/business-4xx, 400",
+            "GET, /v1/business-5xx, 500",
+            "GET, /v1/infrastructure-failure, 500",
+            "GET, /v1/request-param-validation, 400",
+            "POST, /v1/unexpected, 405"
+    })
+    @DisplayName("HTTP 예외 로그는 쿼리를 제외한 요청 메서드와 경로를 남긴다.")
+    void exceptionLogsIncludeRequestWithoutQuery(String method, String path, int httpStatus) throws Exception {
+        MockMvc mockMvc = mockMvc();
+        logCapture = LogCapture.start();
+
+        mockMvc.perform(request(HttpMethod.valueOf(method), path)
+                        .queryParam("code", "TEST_CODE")
+                        .queryParam("state", "TEST_STATE")
+                        .param("name", "a"))
+                .andExpect(status().is(httpStatus));
+
+        ILoggingEvent event = logCapture.onlyEvent();
+        assertThat(logFields(event)).containsEntry("method", method).containsEntry("path", path);
+        assertThat(event.getFormattedMessage() + logFields(event))
+                .doesNotContain("TEST_CODE", "TEST_STATE");
+    }
+
+    @Test
+    @DisplayName("실제 정적 리소스 404 로그는 요청 경로와 응답의 요청 ID를 남긴다.")
+    void missingStaticResourceLogsPathAndRequestId() throws Exception {
+        try (AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext()) {
+            context.setServletContext(new MockServletContext());
+            context.register(ResourceConfig.class);
+            context.refresh();
+            MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                    .addFilters(new RequestIdFilter())
+                    .build();
+            logCapture = LogCapture.start();
+
+            var result = mockMvc.perform(get("/missing.js")
+                            .queryParam("code", "TEST_CODE")
+                            .queryParam("state", "TEST_STATE"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.errorCode").value("STATIC_RESOURCE_NOT_FOUND"))
+                    .andReturn();
+
+            ILoggingEvent event = logCapture.onlyEvent();
+            assertThat(logFields(event)).containsEntry("method", "GET").containsEntry("path", "/missing.js");
+            assertThat(event.getMDCPropertyMap()).containsEntry(
+                    "requestId", result.getResponse().getHeader(RequestIdFilter.REQUEST_ID_HEADER)
+            );
+            assertThat(event.getFormattedMessage() + logFields(event))
+                    .doesNotContain("TEST_CODE", "TEST_STATE");
+            assertThat(event.getThrowableProxy()).isNull();
+        }
     }
 
     @Test
@@ -169,7 +237,7 @@ class GlobalExceptionHandlerTest {
         logCapture = LogCapture.start();
 
         // when
-        var response = handler.handleNoResourceFoundException(exception);
+        var response = handler.handleNoResourceFoundException(exception, new MockHttpServletRequest("GET", "/missing.js"));
 
         // then
         assertThat(response.getStatusCode().value()).isEqualTo(404);
@@ -189,7 +257,7 @@ class GlobalExceptionHandlerTest {
         logCapture = LogCapture.start();
 
         // when
-        var response = handler.handleDuplicateKeyException(exception);
+        var response = handler.handleDuplicateKeyException(exception, new MockHttpServletRequest("POST", "/v1/posts"));
 
         // then
         assertThat(response.getStatusCode().value()).isEqualTo(409);
@@ -211,7 +279,7 @@ class GlobalExceptionHandlerTest {
         logCapture = LogCapture.start();
 
         // when
-        var response = handler.handleDataIntegrityViolationException(exception);
+        var response = handler.handleDataIntegrityViolationException(exception, new MockHttpServletRequest("POST", "/v1/posts"));
 
         // then
         assertThat(response.getStatusCode().value()).isEqualTo(500);
@@ -227,6 +295,21 @@ class GlobalExceptionHandlerTest {
         return MockMvcBuilders.standaloneSetup(new TestController())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    @Configuration
+    @EnableWebMvc
+    static class ResourceConfig implements WebMvcConfigurer {
+
+        @Bean
+        GlobalExceptionHandler exceptionHandler() {
+            return new GlobalExceptionHandler();
+        }
+
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
+        }
     }
 
     @RestController
@@ -274,7 +357,13 @@ class GlobalExceptionHandlerTest {
 
         private static LogCapture start() {
             Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
-            ListAppender<ILoggingEvent> appender = new ListAppender<>();
+            ListAppender<ILoggingEvent> appender = new ListAppender<>() {
+                @Override
+                protected void append(ILoggingEvent event) {
+                    event.prepareForDeferredProcessing();
+                    super.append(event);
+                }
+            };
             appender.start();
             logger.addAppender(appender);
             return new LogCapture(logger, appender);
