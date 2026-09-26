@@ -7,6 +7,12 @@ import ch.qos.logback.core.read.ListAppender;
 import jakarta.validation.constraints.Size;
 import kr.rilog.domain.auth.exception.AuthErrorInformation;
 import kr.rilog.domain.auth.exception.AuthException;
+import kr.rilog.domain.upload.domain.enums.UploadType;
+import kr.rilog.domain.upload.service.S3ImageObjectKeyPolicy;
+import kr.rilog.domain.upload.service.UploadService;
+import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
+import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
+import kr.rilog.global.s3.properties.S3Properties;
 import kr.rilog.global.exception.GlobalExceptionInformation;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.global.logging.RequestIdFilter;
@@ -27,6 +33,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -34,12 +41,20 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -255,6 +270,41 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Presign SDK 실패는 기존 500 응답과 요청 및 발급 문맥을 담은 ERROR 한 건으로 처리한다.")
+    void presignFailureLogsOnceWithRequestAndTargetContext() throws Exception {
+        S3Presigner presigner = mock(S3Presigner.class);
+        when(presigner.presignPutObject(any(PutObjectPresignRequest.class)))
+                .thenThrow(SdkClientException.create("credentials unavailable"));
+        var service = new UploadService(presigner, mock(S3Client.class),
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10),
+                mock(S3ImageObjectKeyPolicy.class));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new PresignController(service))
+                .setControllerAdvice(new GlobalExceptionHandler()).build();
+        logCapture = LogCapture.start();
+        Logger serviceLogger = (Logger) LoggerFactory.getLogger(UploadService.class);
+        serviceLogger.addAppender(logCapture.appender());
+
+        try {
+            mockMvc.perform(post("/v1/uploads/presigned-url"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.errorCode").value("INTERNAL_SERVER_ERROR"))
+                    .andExpect(jsonPath("$.message").value(GlobalExceptionInformation.INTERNAL_SERVER_ERROR.getMessage()))
+                    .andExpect(jsonPath("$.logContext").doesNotExist());
+
+            ILoggingEvent event = logCapture.onlyEvent();
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(logFields(event)).containsEntry("event", "http_request_exception")
+                    .containsEntry("provider", "S3").containsEntry("operation", "presign_put_object")
+                    .containsEntry("method", "POST").containsEntry("path", "/v1/uploads/presigned-url")
+                    .containsEntry("bucket", "bucket").containsEntry("failureType", "SDK_ERROR");
+            assertThat(logFields(event).get("key")).startsWith("rilog/uploads/").endsWith(".pdf");
+            assertThat(event.getFormattedMessage() + logFields(event)).doesNotContain("TEST_PRIVATE_FILENAME");
+        } finally {
+            serviceLogger.detachAppender(logCapture.appender());
+        }
+    }
+
+    @Test
     @DisplayName("정적 리소스 404는 ERROR 로그와 내부 예외 메시지를 남기지 않는다.")
     void staticResourceNotFoundLogsInfoWithoutInternalMessage() {
         // given
@@ -336,6 +386,15 @@ class GlobalExceptionHandlerTest {
         @Override
         public void addResourceHandlers(ResourceHandlerRegistry registry) {
             registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
+        }
+    }
+
+    @RestController
+    private record PresignController(UploadService service) {
+        @PostMapping("/v1/uploads/presigned-url")
+        PresignedUrlCreateResult create() {
+            return service.createUploadUrl(7L,
+                    new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.pdf", "application/pdf", 1024, UploadType.FILE));
         }
     }
 

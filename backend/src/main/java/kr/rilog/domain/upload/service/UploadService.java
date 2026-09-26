@@ -5,9 +5,11 @@ import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.exception.UploadException;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
@@ -18,13 +20,16 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static kr.rilog.domain.upload.domain.enums.TagStatus.CONFIRMED;
 import static kr.rilog.domain.upload.domain.enums.TagStatus.TEMPORARY;
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.*;
+import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -64,23 +69,7 @@ public class UploadService {
                 extension
         );
 
-        Duration expiration = Duration.ofMinutes(
-                properties.presignedUrlExpirationMinutes()
-        );
-
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(properties.bucket())
-                .key(objectKey)
-                .contentType(command.contentType())
-                .tagging(createTaggingQuery(TEMPORARY))
-                .build();
-
-        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                .signatureDuration(expiration)
-                .putObjectRequest(putObjectRequest)
-                .build();
-
-        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
+        PresignedPutObjectRequest presignedRequest = presignUpload(objectKey, command);
 
         return new PresignedUrlCreateResult(
                 uploadId,
@@ -107,6 +96,47 @@ public class UploadService {
 
     public void markTemporaryAll(Set<String> objectKeys) {
         objectKeys.forEach(this::markTemporary);
+    }
+
+    private PresignedPutObjectRequest presignUpload(String objectKey, PresignedUrlCreateCommand command) {
+        long startedAt = System.nanoTime();
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(properties.bucket())
+                    .key(objectKey)
+                    .contentType(command.contentType())
+                    .tagging(createTaggingQuery(TEMPORARY))
+                    .build();
+            PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(properties.presignedUrlExpirationMinutes()))
+                    .putObjectRequest(putObjectRequest)
+                    .build();
+            return s3Presigner.presignPutObject(presignRequest);
+        } catch (SdkException exception) {
+            throw presignFailure(objectKey, command, startedAt, "SDK_ERROR", exception);
+        } catch (IllegalArgumentException exception) {
+            throw presignFailure(objectKey, command, startedAt, "INVALID_CONFIGURATION", exception);
+        }
+    }
+
+    private RilogInfrastructureException presignFailure(
+            String objectKey, PresignedUrlCreateCommand command, long startedAt, String failureType, Throwable cause
+    ) {
+        Map<String, Object> context = new HashMap<>(Map.of(
+                "provider", "S3",
+                "operation", "presign_put_object",
+                "durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
+                "failureType", failureType,
+                "key", objectKey,
+                "uploadType", command.type(),
+                "contentType", command.contentType(),
+                "size", command.size(),
+                "expirationMinutes", properties.presignedUrlExpirationMinutes()
+        ));
+        if (properties.bucket() != null) {
+            context.put("bucket", properties.bucket());
+        }
+        return new RilogInfrastructureException(INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.getMessage(), cause, context);
     }
 
     private void updateStatus(String objectKey, TagStatus value) {
