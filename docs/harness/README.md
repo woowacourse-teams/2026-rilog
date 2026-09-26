@@ -1,25 +1,27 @@
 # Rilog 팀 하네스
 
-## 문서 지도
+이 폴더는 팀이 함께 따르는 운영 기본값을 둔다. 기능별 구현 규칙은 각 파트의 `AGENTS.md`와 해당 문서에서 관리한다.
 
-- `team-defaults.md`: 별도 합의가 없을 때 적용할 Git, PR과 frontend 기본값
-- `quality-gates.md`: 현재 로컬 검증 원칙과 CI 도입 예정안
-- `lore-commit.md`: commit과 squash message에 결정 맥락을 남기는 형식
-- `../../.github/`: PR 및 이슈 템플릿
-- `../../AGENTS.md`: 저장소 공통 에이전트 규칙
-- `../../frontend/AGENTS.md`: 프론트엔드 전용 규칙
-- `../../backend/AGENTS.md`: 백엔드 전용 경계 규칙
-- `../adr/`: 공통 계약이나 운영 규칙을 변경한 이유
+## 시작 문서
 
-## 변경 원칙
+- `team-defaults.md`: Git, 브랜치, PR, 완료 조건
+- `quality-gates.md`: 프론트엔드 로컬·CI 검증
+- `lore-commit.md`: commit과 squash message 형식
+- `../testing/README.md`: 프론트엔드 테스트 기준
+- `../../AGENTS.md`: 저장소 공통 작업 규칙
+- `../../frontend/AGENTS.md`, `../../backend/AGENTS.md`: 파트별 규칙
+- `../../.github/`: PR·이슈 템플릿
+- `../adr/`: 공통 계약과 운영 결정
 
-- 규칙을 바꾸는 PR 작성자가 이 문서와 관련 ADR을 함께 갱신한다.
+## 갱신 원칙
+
+- 규칙을 바꾸면 관련 하네스 문서를 갱신하고, 파트 간 계약이나 운영 정책을 바꾸는 경우 ADR을 작성한다.
 - 개인 선호는 팀 gate를 약화할 수 없다.
-- CI를 도입하거나 변경하면 실제 workflow와 이 문서를 함께 갱신한다.
+- CI를 도입하거나 변경하면 workflow와 `quality-gates.md`를 함께 갱신한다.
 - 실제로 반복되는 문제를 해결하지 않는 새 도구나 절차는 추가하지 않는다.
 
-## 계층
+## 적용 범위
 
-- 개인 하네스: 개인의 전역 지침과 작업 습관
-- 파트 하네스: `frontend/AGENTS.md`, `backend/AGENTS.md`와 파트 검증 명령
-- 팀 하네스: 루트 `AGENTS.md`, PR 및 이슈 템플릿, ADR와 공통 작업 방식
+- 루트 `AGENTS.md`는 팀 공통 규칙을 정의한다.
+- `frontend/AGENTS.md`와 `backend/AGENTS.md`는 파트별 규칙을 추가한다.
+- 개인 작업 습관은 팀·파트 규칙과 충돌할 수 없다.

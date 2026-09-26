@@ -9,12 +9,15 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.comment.entity.vo.CommentAnchorSelections;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse.ViewerPermissionsResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
@@ -50,6 +53,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final CommentAnchorSelectionRepository selectionRepository;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -108,10 +112,17 @@ public class PostService {
         Blog targetBlog = ownBlogMember.transfer(targetMember);
         Chapter chapter = getChapterIfPresent(command.chapterId(), targetBlog);
 
-        TagAssets previous = post.getTagAssets();
+        TagAssets previousTagAssets = post.getTagAssets();
+        PostContent previousContent = post.getContent();
+
         post.update(command.toDetail(), targetBlog, chapter);
-        TagAssets current = post.getTagAssets();
-        tagAssetsPublisher.synchronize(requesterId, previous, current);
+
+        TagAssets updatedTagAssets = post.getTagAssets();
+        tagAssetsPublisher.synchronize(requesterId, previousTagAssets, updatedTagAssets);
+
+        CommentAnchorSelections selections = findActiveCommentAnchorSelections(postId);
+        selections.recalculate(previousContent, post.getContent());
+
         System.out.println("이벤트 발송");
         return PostUpdateResult.of(post, targetBlog);
     }
@@ -233,6 +244,10 @@ public class PostService {
                 requesterId,
                 BlogMemberStatus.ACTIVE
         );
+    }
+
+    private CommentAnchorSelections findActiveCommentAnchorSelections(Long postId) {
+        return CommentAnchorSelections.from(selectionRepository.findAllActiveByPostId(postId));
     }
 
 }

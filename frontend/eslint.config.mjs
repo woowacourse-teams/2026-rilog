@@ -159,6 +159,8 @@ const eslintConfig = defineConfig([
 		'.agents/skills/archify/**',
 		'.archify/**',
 		'.docs/**',
+		'playwright-report/**',
+		'test-results/**',
 	]),
 	prettierConfig,
 ]);

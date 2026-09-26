@@ -8,6 +8,7 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.exception.PostException;
@@ -26,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
@@ -67,6 +69,9 @@ class PostServiceTagAssetsLifecycleTest {
     @Mock
     private TagAssetsPublisher tagAssetsPublisher;
 
+    @Mock
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
     private PostService postService;
 
     @BeforeEach
@@ -77,7 +82,8 @@ class PostServiceTagAssetsLifecycleTest {
                 blogMemberRepository,
                 userRepository,
                 chapterRepository,
-                tagAssetsPublisher
+                tagAssetsPublisher,
+                commentAnchorSelectionRepository
         );
     }
 
@@ -129,6 +135,8 @@ class PostServiceTagAssetsLifecycleTest {
                 .thenReturn(Optional.of(post));
         when(blogMemberRepository.findWithBlogBySlugAndUserId(Slug.from(rilog.getSlug()), WRITER_ID))
                 .thenReturn(Optional.of(membership));
+        when(commentAnchorSelectionRepository.findAllActiveByPostId(any()))
+                .thenReturn(List.of());
 
         // when
         postService.update(command, POST_ID, WRITER_ID);

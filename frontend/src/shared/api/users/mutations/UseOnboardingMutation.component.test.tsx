@@ -1,10 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import * as usersApi from '../api';
 
@@ -16,7 +17,7 @@ describe('useOnboardingMutation', () => {
 	it.each(['success', 'error'] as const)(
 		'가입 성공 시 이전 내 정보 %s 캐시를 초기화하고 재조회는 로그인 전환에 맡긴다',
 		async (status) => {
-			const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			const queryClient = createTestQueryClient();
 			const queryKey = usersQueryKeys.myInfo();
 			if (status === 'success') {
 				queryClient.setQueryData(queryKey, { data: { id: 1, nickname: '이전 정보' } });

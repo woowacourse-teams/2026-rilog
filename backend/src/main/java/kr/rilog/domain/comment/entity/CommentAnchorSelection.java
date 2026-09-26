@@ -16,6 +16,8 @@ import kr.rilog.domain.comment.entity.enums.AnchorStatus;
 import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.vo.DiffSpan;
+import kr.rilog.domain.post.entity.vo.TextBlockDiff;
 import kr.rilog.domain.post.entity.vo.TextRange;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -103,6 +105,39 @@ public class CommentAnchorSelection extends BaseEntity {
 
     private static void validateOrphanedAt(LocalDateTime orphanedAt) {
         if (orphanedAt == null) {
+            throw new CommentException(INVALID_COMMENT_ANCHOR);
+        }
+    }
+
+    public void recalculate(TextBlockDiff textBlockDiff) {
+        validateActive();
+        validateDifference(textBlockDiff);
+
+        TextRange currentRange = selection.getRange();
+        if (currentRange.getEndOffset() <= textBlockDiff.commonPrefixEndOffset()) {
+            return;
+        }
+
+        String updatedFullText = textBlockDiff.updatedText();
+        String previousSelectedText = selection.getSelectedText();
+        // NOTE 동일 문자열이 여러 번 존재하면 첫 번째 위치를 선택
+        int newStartOffset = updatedFullText.indexOf(previousSelectedText);
+
+        if (newStartOffset < 0) {
+            orphan(LocalDateTime.now());
+            return;
+        }
+
+        TextRange newRange = TextRange.of(newStartOffset, newStartOffset + previousSelectedText.length());
+        if (currentRange.equals(newRange)) {
+            return;
+        }
+
+        relocate(newRange);
+    }
+
+    private void validateDifference(TextBlockDiff textBlockDiff) {
+        if (textBlockDiff == null || !selection.getBlockId().equals(textBlockDiff.blockId())) {
             throw new CommentException(INVALID_COMMENT_ANCHOR);
         }
     }
