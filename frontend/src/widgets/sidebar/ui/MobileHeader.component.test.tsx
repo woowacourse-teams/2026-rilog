@@ -54,7 +54,7 @@ describe('MobileHeader', () => {
 		renderHeader();
 
 		const navigation = screen.getByRole('navigation', { name: '모바일 주요 메뉴' });
-		const feedLink = screen.getByRole('link', { name: 'Rilog.' });
+		const feedLink = screen.getByRole('link', { name: 'Rilog' });
 
 		expect(navigation).toHaveAttribute('data-mobile-header');
 		expect(feedLink).toHaveAttribute('href', '/feeds');
@@ -86,7 +86,7 @@ describe('MobileHeader', () => {
 		});
 		renderHeader(true);
 
-		const feedLink = screen.getByRole('link', { name: 'Rilog.' });
+		const feedLink = screen.getByRole('link', { name: 'Rilog' });
 
 		expect(feedLink).toHaveAttribute('href', '/feeds');
 		expect(feedLink).toHaveAttribute('aria-current', 'page');

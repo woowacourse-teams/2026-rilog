@@ -16,7 +16,7 @@ export const GET = () => {
 		'- 비공개 경로는 /robots.txt에서 Disallow: /api/, /auth/, /write, /sign-up, /colog/create, /*/settings',
 		'',
 		'## 콘텐츠 범위',
-		'- 개인 블로그 RILOG와 팀 블로그 Colog의 공개 게시글을 제공합니다.',
+		'- 개인 블로그 Rilog와 팀 블로그 Colog의 공개 게시글을 제공합니다.',
 		'- Rilog: 개인이 자신의 생각과 경험을 기록하는 개인 블로그',
 		'- Colog: 프로젝트·스터디·팀이 함께 기록하고 지식을 축적하는 팀 블로그',
 		'- 공개 게시글만 검색·인용 대상이며 비공개 글과 임시저장 글은 대상이 아닙니다.',

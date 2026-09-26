@@ -24,6 +24,6 @@ describe('SidebarBrand', () => {
 	it('브랜드 헤더에는 메인 이동 링크만 제공한다', () => {
 		render(<SidebarHeader />);
 
-		expect(screen.queryByRole('link', { name: 'Rilog. 이야기 ↗' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: 'Rilog 이야기 ↗' })).not.toBeInTheDocument();
 	});
 });

@@ -11,7 +11,7 @@ import AboutViewportReveal from './AboutViewportReveal';
 import HeroMeaningTransition from './HeroMeaningTransition';
 
 const ABOUT_DESCRIPTION =
-	'생각과 경험을 깊이 기록하고, 서로의 이야기를 발견하며 함께 성장하는 블로그 Rilog.을 소개합니다.';
+	'생각과 경험을 깊이 기록하고, 서로의 이야기를 발견하며 함께 성장하는 블로그 Rilog을 소개합니다.';
 
 export const metadata: Metadata = {
 	alternates: { canonical: APP_ROUTES.about },
@@ -51,12 +51,12 @@ export default function AboutPage() {
 
 			<section className={styles.manifestoMeaningSection} aria-label="Rilog의 의미">
 				<header className={styles.manifestoMeaningHeader} data-about-reveal="copy">
-					<h2>Rilog.는 사람들의 이야기와 생각이 쌓이는 공간입니다.</h2>
+					<h2>Rilog는 사람들의 이야기와 생각이 쌓이는 공간입니다.</h2>
 				</header>
 				<Divider className={styles.manifestoMeaningDivider} />
 				<div className={styles.manifestoMeaningBody} data-about-reveal="copy" data-about-reveal-delay="staggered">
 					<p>
-						인터넷에는 수많은 정보와 이야기가 빠르게 흘러갑니다. 그 안에서 Rilog.는 조금 더 천천히 읽고, 깊이 생각하고,
+						인터넷에는 수많은 정보와 이야기가 빠르게 흘러갑니다. 그 안에서 Rilog는 조금 더 천천히 읽고, 깊이 생각하고,
 						오래 남길 수 있는 공간을 만들고자 합니다. 단순하고 편안한 글쓰기 경험을 제공하면서도, 각자의 이야기가 그것을
 						필요로 하는 사람에게 닿을 수 있도록 돕습니다. 한 사람으로서 또는 내가 속한 팀의 구성원으로서 뭐든
 						상관없습니다.
@@ -101,7 +101,7 @@ export default function AboutPage() {
 						<span className={styles.linkContent}>
 							<span className={styles.linkLabel}>
 								<span>Continue to</span>
-								<span className={styles.linkLogo} role="img" aria-label="Rilog." />
+								<span className={styles.linkLogo} role="img" aria-label="Rilog" />
 							</span>
 							<span aria-hidden="true">↗</span>
 						</span>

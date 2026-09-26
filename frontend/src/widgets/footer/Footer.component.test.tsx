@@ -28,7 +28,7 @@ describe('Footer', () => {
 			'Rilog 오픈채팅방',
 			'Rilog Instagram',
 			'Rilog Threads',
-			'Rilog. 이야기',
+			'Rilog 이야기',
 			'개인정보처리방침',
 			'이용약관',
 			'Rilog 홈',
@@ -40,7 +40,7 @@ describe('Footer', () => {
 		expect(within(footer).queryByText('기록을 작성하고 함께 나누는 공간')).not.toBeInTheDocument();
 		expect(within(footer).queryByRole('heading', { name: 'contact' })).not.toBeInTheDocument();
 		expect(within(footer).getByRole('navigation', { name: '정책' })).toBeInTheDocument();
-		expect(within(footer).getByRole('link', { name: 'Rilog. 이야기' })).toHaveAttribute('href', '/about');
+		expect(within(footer).getByRole('link', { name: 'Rilog 이야기' })).toHaveAttribute('href', '/about');
 
 		const privacyPolicyLink = within(footer).getByRole('link', { name: '개인정보처리방침' });
 		expect(privacyPolicyLink).toHaveAttribute(

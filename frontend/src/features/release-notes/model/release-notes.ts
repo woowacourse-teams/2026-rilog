@@ -22,7 +22,7 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
 	{
 		id: '2026-09-feed-update',
-		title: 'Rilog. 패치노트 v2',
+		title: 'Rilog 패치노트 v2',
 		publishedAt: '2026-09-05',
 		items: [
 			{
@@ -53,7 +53,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
 	},
 	{
 		id: '2026-09-14-update',
-		title: 'Rilog. 패치노트 v3',
+		title: 'Rilog 패치노트 v3',
 		publishedAt: '2026-09-14',
 		items: [
 			{

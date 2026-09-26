@@ -59,7 +59,7 @@ export default function Footer() {
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
 						entrySource="footer"
 					>
-						Rilog. 이야기
+						Rilog 이야기
 					</AboutPageEntryLink>
 					<span aria-hidden="true">·</span>
 					<a
@@ -82,7 +82,7 @@ export default function Footer() {
 				</nav>
 
 				<FooterHomeLink className={`${LINK_CLASS_NAME} mt-5 inline-flex hover:opacity-75 sm:mt-6`}>
-					<Image className="h-auto w-[184px]" src="/brand/logo.svg" alt="Rilog." width={1186} height={472} priority />
+					<Image className="h-auto w-[184px]" src="/brand/logo.svg" alt="Rilog" width={1186} height={472} priority />
 				</FooterHomeLink>
 			</div>
 		</footer>

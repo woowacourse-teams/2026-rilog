@@ -104,7 +104,7 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 							onClick={() => trackLinkClick('about')}
 							className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 						>
-							Rilog. 이야기 ↗
+							Rilog 이야기 ↗
 						</AboutPageEntryLink>
 					</li>
 				</ul>
