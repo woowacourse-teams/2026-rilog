@@ -1,4 +1,4 @@
-import ky from 'ky';
+import ky, { TimeoutError } from 'ky';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { NormalizedApiError } from './api-error';
@@ -33,6 +33,41 @@ describe('normalizeApiError', () => {
 		});
 	});
 
+	it('API 오류를 정규화해도 원본의 발생 위치를 보존하고 재정규화 시 같은 오류를 반환한다', async () => {
+		const original = await ky
+			.get('https://api.rilog.test/posts', {
+				retry: 0,
+				fetch: () =>
+					Promise.resolve(
+						new Response(
+							JSON.stringify({
+								status: 400,
+								error: 'BAD_REQUEST',
+								errorCode: 'INVALID_POST_CONTENT',
+								message: 'invalid content',
+								invalidParams: null,
+							}),
+							{ status: 400, headers: { 'Content-Type': 'application/json' } },
+						),
+					),
+			})
+			.catch((error: unknown) => error);
+		const normalized = normalizeApiError(original);
+
+		expect(normalized).toMatchObject({ type: 'api', cause: original });
+		expect(normalizeApiError(normalized)).toBe(normalized);
+	});
+
+	it.each([
+		new TypeError('Failed to fetch'),
+		new TimeoutError(new Request('https://api.rilog.test')),
+		new Error('unexpected'),
+		undefined,
+	])('이미 정규화한 오류는 원본과 분류가 변하지 않는다 (%s)', (original) => {
+		const normalized = normalizeApiError(original);
+		expect(normalizeApiError(normalized)).toBe(normalized);
+	});
+
 	it('응답이 없는 오류는 network 오류로 정규화한다', () => {
 		expect(normalizeApiError(new TypeError('Failed to fetch'))).toMatchObject({ type: 'network' });
 	});
@@ -52,6 +87,7 @@ describe('normalizeApiError', () => {
 		expect(error).toMatchObject({
 			type: 'http',
 		});
+		expect(normalizeApiError(error)).toBe(error);
 		if (error && typeof error === 'object' && 'response' in error) {
 			expect(error.response.status).toBe(502);
 		}

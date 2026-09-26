@@ -10,6 +10,7 @@ export type NormalizedApiError =
 			detail: ErrorDetail;
 			kind: ReturnType<typeof getApiErrorKind>;
 			response: Response;
+			cause: HTTPError;
 	  }
 	| { type: 'http'; response: Response; cause: HTTPError }
 	| { type: 'timeout'; cause: TimeoutError }
@@ -32,7 +33,40 @@ export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 	);
 };
 
+export const isNormalizedApiError = (value: unknown): value is NormalizedApiError => {
+	if (typeof value !== 'object' || value === null || !('type' in value) || !('cause' in value)) {
+		return false;
+	}
+
+	switch (value.type) {
+		case 'api':
+			return (
+				'detail' in value &&
+				isErrorDetail(value.detail) &&
+				'kind' in value &&
+				value.kind === getApiErrorKind(value.detail.errorCode) &&
+				'response' in value &&
+				value.response instanceof Response &&
+				value.cause instanceof HTTPError
+			);
+		case 'http':
+			return 'response' in value && value.response instanceof Response && value.cause instanceof HTTPError;
+		case 'timeout':
+			return value.cause instanceof TimeoutError;
+		case 'network':
+			return value.cause instanceof TypeError;
+		case 'unknown':
+			return true;
+		default:
+			return false;
+	}
+};
+
 export const normalizeApiError = (error: unknown): NormalizedApiError => {
+	if (isNormalizedApiError(error)) {
+		return error;
+	}
+
 	if (error instanceof HTTPError) {
 		if (isErrorDetail(error.data)) {
 			return {
@@ -40,6 +74,7 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 				detail: error.data,
 				kind: getApiErrorKind(error.data.errorCode),
 				response: error.response,
+				cause: error,
 			};
 		}
 
