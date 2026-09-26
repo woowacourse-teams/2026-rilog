@@ -43,7 +43,7 @@ describe('Sidebar', () => {
 		const [aboutLink, emailLink] = within(infoNavigation).getAllByRole('link');
 		const loginButton = within(sidebar).getByRole('button', { name: '로그인' });
 
-		expect([aboutLink.textContent, emailLink.textContent]).toEqual(['Rilog 이야기 ↗', 'rilog.admin@gmail.com']);
+		expect([aboutLink.textContent, emailLink.textContent]).toEqual(['Rilog. 이야기 ↗', 'rilog.admin@gmail.com']);
 		expect(aboutLink).toHaveAttribute('href', '/about');
 		expect(aboutLink).toHaveAttribute('target', '_blank');
 		expect(emailLink).toHaveAttribute('href', 'mailto:rilog.admin@gmail.com');

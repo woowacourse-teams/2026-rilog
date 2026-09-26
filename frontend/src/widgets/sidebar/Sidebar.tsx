@@ -42,7 +42,7 @@ export default function Sidebar() {
 						target="_blank"
 						className={`rounded-lg px-2.5 py-1 text-caption-1 font-medium whitespace-nowrap text-text-secondary hover:text-focus-ring active:text-focus-ring ${FOCUS_CLASS_NAME}`}
 					>
-						<span className={EXPANDED_TEXT_CLASS_NAME}>Rilog 이야기 ↗</span>
+						<span className={EXPANDED_TEXT_CLASS_NAME}>Rilog. 이야기 ↗</span>
 					</AboutPageEntryLink>
 					<a
 						href="mailto:rilog.admin@gmail.com"

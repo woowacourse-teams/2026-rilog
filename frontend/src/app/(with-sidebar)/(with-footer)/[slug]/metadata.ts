@@ -6,7 +6,7 @@ import { getImageUrl } from '@/shared/utils/get-image-url';
 
 export const createBlogMetadata = (profile: BlogPublicProfile): Metadata => {
 	const canonical = `/@${encodeURIComponent(profile.slug)}`;
-	const description = profile.description?.trim() || `${profile.name}의 Rilog 블로그입니다.`;
+	const description = profile.description?.trim() || `${profile.name}의 Rilog. 블로그입니다.`;
 	const image = getImageUrl(profile.type === 'COLOG' ? profile.coverImageUrl : null) || DEFAULT_OG_IMAGE;
 
 	return {

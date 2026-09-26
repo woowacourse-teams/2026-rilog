@@ -67,14 +67,14 @@ describe('업데이트 안내', () => {
 	it('패치노트 링크가 없어도 About 링크를 항상 표시한다', () => {
 		notes[0] = { ...note, links: undefined };
 		render(<ReleaseNoteModal />);
-		const aboutLink = screen.getByRole('link', { name: 'Rilog 이야기 ↗' });
+		const aboutLink = screen.getByRole('link', { name: 'Rilog. 이야기 ↗' });
 		expect(aboutLink).toHaveAttribute('href', '/about');
 		expect(aboutLink).toHaveAttribute('target', '_blank');
 		expect(aboutLink).toHaveAttribute('rel', 'noopener noreferrer');
 	});
 	it.each([
 		['업데이트 자세히 보기', 'release_note'],
-		['Rilog 이야기 ↗', 'about'],
+		['Rilog. 이야기 ↗', 'about'],
 	] as const)('%s 링크 클릭을 대상과 함께 기록한다', async (name, linkTarget) => {
 		render(<ReleaseNoteModal />);
 		await userEvent.click(screen.getByRole('link', { name }));

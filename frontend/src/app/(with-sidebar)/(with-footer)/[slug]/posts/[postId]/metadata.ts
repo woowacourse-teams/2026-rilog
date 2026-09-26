@@ -11,7 +11,7 @@ export const getPostCanonicalPath = (post: PostDetail) => buildPostDetailPath(po
 
 export const createPostMetadata = (post: PostDetail): Metadata => {
 	const canonical = getPostCanonicalPath(post);
-	const description = extractPostDescription(post.content) || `${post.author.nickname}의 Rilog 게시글입니다.`;
+	const description = extractPostDescription(post.content) || `${post.author.nickname}의 Rilog. 게시글입니다.`;
 	const image = getImageUrl(post.thumbnailUrl) || DEFAULT_OG_IMAGE;
 
 	return {

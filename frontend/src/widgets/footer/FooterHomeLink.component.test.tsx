@@ -55,7 +55,7 @@ describe('FooterHomeLink', () => {
 	});
 
 	it('다른 페이지에서는 떠나는 페이지를 스크롤하지 않고 기본 링크 이동에 맡긴다', () => {
-		render(<FooterHomeLink className="test">Rilog</FooterHomeLink>);
+		render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
 		fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }));
 
@@ -65,7 +65,7 @@ describe('FooterHomeLink', () => {
 
 	it('이미 피드에 있으면 같은 경로에서 최상단으로만 이동한다', () => {
 		navigation.pathname = '/feeds';
-		render(<FooterHomeLink className="test">Rilog</FooterHomeLink>);
+		render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
 		fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }));
 
@@ -76,7 +76,7 @@ describe('FooterHomeLink', () => {
 	it.each(['ctrlKey', 'metaKey', 'shiftKey', 'altKey'])(
 		'%s 클릭은 현재 페이지를 이동하거나 스크롤하지 않는다',
 		(modifier) => {
-			render(<FooterHomeLink className="test">Rilog</FooterHomeLink>);
+			render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
 			fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }), { [modifier]: true });
 
@@ -91,7 +91,7 @@ describe('FooterHomeLink', () => {
 			'matchMedia',
 			vi.fn(() => ({ matches: true })),
 		);
-		render(<FooterHomeLink className="test">Rilog</FooterHomeLink>);
+		render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
 		fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }));
 

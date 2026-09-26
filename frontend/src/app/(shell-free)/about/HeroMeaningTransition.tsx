@@ -103,7 +103,7 @@ export default function HeroMeaningTransition() {
 		<div ref={sequenceRef} className={styles.heroMeaningSequence}>
 			<section id="about" className={styles.hero}>
 				<h1 ref={lockupRef} className={styles.heroIconHeading}>
-					<Image src="/brand/logo.svg" alt="Rilog" width={1186} height={472} priority />
+					<Image src="/brand/logo.svg" alt="Rilog." width={1186} height={472} priority />
 					<span ref={continuationRef} className={styles.continuationClip} aria-hidden="true">
 						<span ref={continuationTextRef} className={styles.continuationText}>
 							continue<span className={styles.continuationParenthesis}>(</span>

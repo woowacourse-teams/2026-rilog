@@ -19,11 +19,11 @@ describe('AboutPageEntryLink', () => {
 			const user = userEvent.setup();
 			render(
 				<AboutPageEntryLink entrySource={entrySource} onClick={(event) => event.preventDefault()}>
-					Rilog 이야기
+					Rilog. 이야기
 				</AboutPageEntryLink>,
 			);
 
-			const link = screen.getByRole('link', { name: 'Rilog 이야기' });
+			const link = screen.getByRole('link', { name: 'Rilog. 이야기' });
 			expect(link).toHaveAttribute('href', '/about');
 			await user.click(link);
 
@@ -35,11 +35,11 @@ describe('AboutPageEntryLink', () => {
 		const user = userEvent.setup();
 		render(
 			<AboutPageEntryLink entrySource="footer" onClick={(event) => event.preventDefault()}>
-				Rilog 이야기
+				Rilog. 이야기
 			</AboutPageEntryLink>,
 		);
 
-		await user.click(screen.getByRole('link', { name: 'Rilog 이야기' }));
+		await user.click(screen.getByRole('link', { name: 'Rilog. 이야기' }));
 
 		expect(analyticsMock.aboutPageEntryClicked).toHaveBeenCalledExactlyOnceWith({ entrySource: 'footer' });
 	});
