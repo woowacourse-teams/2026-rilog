@@ -10,15 +10,18 @@ import kr.rilog.domain.comment.controller.dto.request.CommentAnchorAddRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorUpdateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorDeleteResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
 import kr.rilog.domain.comment.service.CommentAnchorService;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -98,6 +101,22 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
         );
         CommentAnchorUpdateResponse data = CommentAnchorUpdateResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "인라인 댓글을 수정했습니다.", data);
+    }
+
+    @AuthGuard
+    @DeleteMapping("/posts/{postId}/comment-anchors/{commentAnchorId}")
+    public ApiResponse<CommentAnchorDeleteResponse> deleteCommentAnchor(
+            @PathVariable Long postId,
+            @PathVariable Long commentAnchorId,
+            @LoginUserId Long requesterId
+    ) {
+        CommentAnchorDeleteResult result = commentAnchorService.deleteCommentAnchor(
+                postId,
+                commentAnchorId,
+                requesterId
+        );
+        CommentAnchorDeleteResponse data = CommentAnchorDeleteResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "인라인 댓글을 삭제했습니다.", data);
     }
 
 }

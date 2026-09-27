@@ -13,6 +13,7 @@ import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.post.entity.Post;
@@ -96,6 +97,18 @@ public class CommentAnchorService {
         return CommentAnchorUpdateResult.from(commentAnchor);
     }
 
+    @Transactional
+    public CommentAnchorDeleteResult deleteCommentAnchor(Long postId, Long commentAnchorId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateReadableBy(requesterId);
+
+        CommentAnchor commentAnchor = getCommentAnchor(postId, commentAnchorId);
+        BlogMembers blogMembers = getActiveBlogMembers(post);
+
+        commentAnchor.deleteBy(requesterId, post, blogMembers);
+        return CommentAnchorDeleteResult.from(commentAnchor);
+    }
+
     public CommentAnchorListResult readCommentAnchors(Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         post.validateReadableBy(requesterId);
@@ -103,10 +116,7 @@ public class CommentAnchorService {
         CommentAnchorGroups groups = CommentAnchorGroups.from(
                 commentAnchorRepository.findAllByPostId(postId)
         );
-        BlogMembers blogMembers = BlogMembers.from(
-                blogMemberRepository.findAllWithUserByBlogIdAndStatus(post.getOwnBlogId(), ACTIVE)
-        );
-        return CommentAnchorListResult.from(post, groups, blogMembers, requesterId);
+        return CommentAnchorListResult.from(post, groups, getActiveBlogMembers(post), requesterId);
     }
 
     private CommentAnchorSelection getOrCreateActiveSelection(Post post, Selection selection) {
@@ -143,6 +153,12 @@ public class CommentAnchorService {
     private User getUser(Long requesterId) {
         return userRepository.findById(requesterId)
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
+    }
+
+    private BlogMembers getActiveBlogMembers(Post post) {
+        return BlogMembers.from(
+                blogMemberRepository.findAllWithUserByBlogIdAndStatus(post.getOwnBlogId(), ACTIVE)
+        );
     }
 
     private Selection createSelection(Post post, CommentAnchorCreateCommand command) {

@@ -18,6 +18,7 @@ public enum CommentErrorInformation implements ErrorInformation {
     COMMENT_ANCHOR_NOT_ACTIVE(HttpStatus.CONFLICT, "위치를 잃은 인라인 댓글의 위치는 변경할 수 없습니다."),
     COMMENT_ANCHOR_SELECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 선택범위가 존재하지 않습니다."),
     COMMENT_ANCHOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 인라인 댓글을 찾을 수 없습니다."),
+    COMMENT_ANCHOR_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "인라인 댓글을 삭제할 권한이 없습니다."),
     ;
 
     private final HttpStatus httpStatus;

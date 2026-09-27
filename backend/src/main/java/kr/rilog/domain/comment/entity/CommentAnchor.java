@@ -9,7 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import kr.rilog.domain.blog.entity.BlogMembers;
 import kr.rilog.domain.comment.exception.CommentException;
+import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -17,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_DELETE_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
@@ -60,6 +63,19 @@ public class CommentAnchor extends BaseEntity {
         validateWriter(requesterId);
         validateContent(content);
         this.content = content;
+    }
+
+    public void deleteBy(Long requesterId, Post post, BlogMembers blogMembers) {
+        if (!canBeDeletedBy(requesterId, post, blogMembers)) {
+            throw new CommentException(COMMENT_ANCHOR_DELETE_FORBIDDEN);
+        }
+        delete();
+    }
+
+    public boolean canBeDeletedBy(Long requesterId, Post post, BlogMembers blogMembers) {
+        return isWrittenBy(requesterId)
+                || post.isWrittenBy(requesterId)
+                || blogMembers.hasDeletePermission(requesterId);
     }
 
     public boolean isDeleted() {
