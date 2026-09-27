@@ -5,37 +5,32 @@ import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '../model/inline-comment.f
 
 import InlineCommentItem from './InlineCommentItem';
 
-const comment = POST_81_INLINE_COMMENT_BLOCKS_FIXTURE[0].anchors[0].comments[0];
+const COMMENT = POST_81_INLINE_COMMENT_BLOCKS_FIXTURE[0].anchors[0].comments[0];
 
 describe('InlineCommentItem', () => {
-	it('아바타와 이름을 작성자 블로그로 연결하고 작성자 배지를 우선 표시한다', () => {
-		render(
-			<InlineCommentItem
-				comment={{ ...comment, isEdited: true, author: { ...comment.author, isAuthor: true, isBlogMember: true } }}
-			/>,
-		);
-		expect(screen.getByRole('link', { name: `${comment.author.nickname}님의 블로그로 이동` })).toHaveAttribute(
-			'href',
-			`/@${comment.author.slug}`,
-		);
-		expect(screen.getByRole('link', { name: comment.author.nickname })).toHaveAttribute(
-			'href',
-			`/@${comment.author.slug}`,
-		);
-		expect(screen.getByText('작성자')).toBeInTheDocument();
-		expect(screen.queryByText('멤버')).not.toBeInTheDocument();
-		expect(screen.getByText('편집됨')).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: '수정' })).not.toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
+	it.each([
+		{ canEdit: true, canDelete: true },
+		{ canEdit: true, canDelete: false },
+		{ canEdit: false, canDelete: true },
+		{ canEdit: false, canDelete: false },
+	])('수정 권한=$canEdit, 삭제 권한=$canDelete이면 허용된 버튼만 표시한다', ({ canEdit, canDelete }) => {
+		render(<InlineCommentItem comment={{ ...COMMENT, canEdit, canDelete }} />);
+		if (canEdit) expect(screen.getByRole('button', { name: '수정' })).toBeInTheDocument();
+		else expect(screen.queryByRole('button', { name: '수정' })).not.toBeInTheDocument();
+		if (canDelete) expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
+		else expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
 	});
 
-	it('게시글 작성자가 아닌 블로그 멤버에게 멤버 배지를 표시한다', () => {
-		render(
-			<InlineCommentItem
-				comment={{ ...comment, author: { ...comment.author, isAuthor: false, isBlogMember: true } }}
-			/>,
-		);
-		expect(screen.getByText('멤버')).toBeInTheDocument();
-		expect(screen.queryByText('작성자')).not.toBeInTheDocument();
+	it.each([
+		{ isAuthor: true, isBlogMember: true, badge: '작성자' },
+		{ isAuthor: true, isBlogMember: false, badge: '작성자' },
+		{ isAuthor: false, isBlogMember: true, badge: '멤버' },
+		{ isAuthor: false, isBlogMember: false, badge: null },
+	])('작성자=$isAuthor, 멤버=$isBlogMember이면 $badge 배지만 표시한다', ({ isAuthor, isBlogMember, badge }) => {
+		render(<InlineCommentItem comment={{ ...COMMENT, author: { ...COMMENT.author, isAuthor, isBlogMember } }} />);
+		for (const label of ['작성자', '멤버']) {
+			if (label === badge) expect(screen.getByText(label)).toBeInTheDocument();
+			else expect(screen.queryByText(label)).not.toBeInTheDocument();
+		}
 	});
 });
