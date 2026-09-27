@@ -78,6 +78,8 @@ BE enum의 96개 코드를 모두 분류한다. 기존 FE 58개에 누락 42개�
 | `INVALID_COMMENT_ANCHOR` | 400 | request | 조건부: 앱이 생성한 위치·선택영역 구조 오류면 수집, 동시 편집으로 무효화된 위치는 별도 판정 |
 | `COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE` | 400 | request | 조건부: 지원하지 않는 블록에 대한 정상 거부는 제외, UI가 지원 대상으로 잘못 제공하면 수집 |
 | `COMMENT_ANCHOR_NOT_ACTIVE` | 409 | conflict | 제외 제안: 위치를 잃은 댓글의 위치 수정 제한 |
+| `COMMENT_ANCHOR_NOT_FOUND` | 404 | not-found | 정상 부재 제외. 5xx는 수집 |
+| `COMMENT_ANCHOR_DELETE_FORBIDDEN` | 403 | authorization | 정상 권한 거부 제외. 5xx는 수집 |
 | `COMMENT_ANCHOR_SELECTION_NOT_FOUND` | 404 | not-found | 제외 제안: 선택범위 부재 |
 | `NOT_POST_AUTHOR` | 403 | authorization | 제외 제안: 글 작성자 아님 |
 | `POST_DELETE_FORBIDDEN` | 403 | authorization | 제외 제안: 글 삭제 권한 없음 |

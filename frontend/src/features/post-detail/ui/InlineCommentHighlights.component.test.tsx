@@ -81,7 +81,7 @@ describe('InlineCommentHighlights', () => {
 		vi.restoreAllMocks();
 	});
 
-	it('ACTIVE anchor만 rect별 4px line을 만들고 원래 배열 index를 순서로 유지한다', async () => {
+	it('ACTIVE anchor만 선택 범위별 하이라이트를 만들고 중첩 순서를 유지한다', async () => {
 		const { container } = render(
 			<PostDetailContent html={HTML} postId={1} ownerType="RILOG" category="TECH" inlineCommentBlocks={BLOCKS} />,
 		);
@@ -98,12 +98,7 @@ describe('InlineCommentHighlights', () => {
 		expect(container.querySelector('[data-inline-comment-anchor-id="4"]')).toBeNull();
 		expect(anchorOneLines[0]).toHaveAttribute('data-inline-comment-anchor-order', '0');
 		expect(anchorThreeLines[0]).toHaveAttribute('data-inline-comment-anchor-order', '2');
-		expect(anchorOneLines[0]).toHaveStyle({
-			left: '10px',
-			top: '17px',
-			width: '80px',
-			'--inline-comment-highlight-expanded-height': '23px',
-		});
+
 		expect(document.head.querySelector('[data-inline-comment-highlight-style]')).toBeNull();
 	});
 

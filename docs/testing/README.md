@@ -99,7 +99,7 @@ pnpm test:e2e
 
 ### 브라우저 검증의 실행 전제
 
-`test:e2e`는 Playwright와 `pnpm dev`를 사용해 글쓰기 브라우저 흐름 4건을 실행한다. API 주소는 CSP의 HTTPS 정책에 맞는 테스트 전용 도메인(`https://api.rilog.test`)으로 고정하고 필요한 인증·목록·업로드 요청만 해당 spec에서 대체한다.
+`test:e2e`는 Playwright와 `pnpm dev`를 사용해 글쓰기 필수 흐름 4건과 인라인 댓글 브라우저 검증을 실행한다. API 주소는 CSP의 HTTPS 정책에 맞는 테스트 전용 도메인(`https://api.rilog.test`)으로 고정하고 필요한 인증·목록·업로드 요청만 해당 spec에서 대체한다.
 
 ```sh
 pnpm test:e2e
@@ -108,7 +108,7 @@ pnpm test:e2e src/test/e2e/write.spec.ts
 pnpm test:e2e:prod
 ```
 
-- 자동 E2E는 작성 중 뒤로가기, 새로고침 경고, 파일 선택 업로드, 모바일 접근 정책만 보호한다.
+- 자동 E2E는 글쓰기의 뒤로가기·새로고침·파일 업로드·모바일 정책과 아래 인라인 댓글 검증 경계를 보호한다.
 - `test:e2e:prod`는 사전에 같은 환경변수로 완료한 production build를 `pnpm start`로 검증하며 기존 서버를 재사용하지 않는다. 이 명령은 필수 4개 흐름 전체를 검사하므로 일부 파일·grep 선택은 누락 실패로 처리한다.
 - 피드·인증·코로그·설정의 실제 브라우저 통합과 순수 시각 회귀는 자동 검증 범위가 아니다. 관련 기능 변경 시 하위 테스트와 필요한 수동 검증을 PR에 기록한다.
 - screenshot 기준 이미지 비교와 범용 테스트 API는 운영하지 않는다.
@@ -138,3 +138,12 @@ pnpm test:e2e:prod
 - 추가한 공통 helper가 현재 반복되는 준비를 실제로 줄이고 책임을 흐리지 않는가?
 - skip·retry·timeout 증가·광범위한 snapshot 갱신으로 실패를 숨기지 않았는가?
 - E2E 추가라면 사용자 피해, 브라우저가 필요한 이유, 기존 필수 흐름에 통합할 수 없는 이유가 있는가?
+
+## 인라인 댓글의 검증 경계
+
+- 순수 선택·UTF-16 범위·mapper·오류 분류는 unit, 조회·mutation·캐시 연결과 오류 후 입력 보존은 RTL에서 확인한다. 직접 검증하는 hook을 대체하지 않고 raw API·Sentry 전송 경계만 대체한다.
+- PostDetailCommentsWorkspace.component.test.tsx가 조회 로딩·실패·재시도·전체/단일 탐색을 소유한다. PostDetailCommentsWorkspaceCreate.component.test.tsx에서는 중복 4건을 제거하고 신규·추가 작성, 초안·충돌·중복 제출을 유지한다.
+- ApiFailureFlows.component.test.tsx는 실제 QueryProvider와 댓글 mutation을 연결해 알려진 400 누락, 5xx 중복 보고와 정상 거부 제외를 검증한다. 정책 경계값은 unit, 개인정보 최종 차단은 SDK transport 테스트가 소유한다.
+- 브라우저에서는 실제 Selection/Range·캐럿 좌표, 선택 툴바, 모바일 입력 정책과 native dialog의 Escape·focus를 검증한다. jsdom이 실제 좌표·top layer·focus 복귀를 재현하지 못하므로 글쓰기 필수 흐름과 별도로 유지한다. CRUD는 선택에서 시작하는 기존 흐름 안에 연결한다.
+- 하이라이트 장식 높이·padding·grid 번호·사이드바 고정 너비를 assertion으로 고정하지 않는다. 레이아웃 fixture는 비겹침·진입점 노출만 확인하며 실제 앱 전체 레이아웃을 증명하지 않는다. 모바일 모달 검증은 소스 class를 추출한 가짜 dialog 대신 실제 workspace를 사용한다.
+- 운영 API와 실제 서버 렌더링 본문을 함께 검증하는 E2E는 포함하지 않는다. 게시글 본문·분석 환경은 고정 fixture이므로 배포 API 호환성과 BlockNote 전체 렌더링은 별도 통합 확인이 필요하다.

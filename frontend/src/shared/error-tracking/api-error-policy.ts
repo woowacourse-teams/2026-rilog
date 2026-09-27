@@ -21,6 +21,8 @@ function isUserValidation(error: Extract<NormalizedApiError, { type: 'api' }>, c
 	const { operation, invalidUserInputFields = [] } = context;
 	const code = error.detail.errorCode;
 	if (operation === 'colog.create' && code === 'INVALID_SLUG') return invalidUserInputFields.includes('slug');
+	if (operation.startsWith('inline-comment.') && code === 'INVALID_COMMENT_CONTENT')
+		return invalidUserInputFields.includes('content');
 	if (code !== 'REQUEST_VALIDATION_FAILED' || !error.detail.invalidParams?.length) return false;
 	return error.detail.invalidParams.every(
 		(param) => typeof param?.name === 'string' && invalidUserInputFields.includes(param.name),

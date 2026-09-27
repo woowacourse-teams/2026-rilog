@@ -1,6 +1,10 @@
 import type { ApiErrorCode } from './error-codes';
 
 export type ApiOperation =
+	| 'inline-comment.create'
+	| 'inline-comment.add'
+	| 'inline-comment.update'
+	| 'inline-comment.delete'
 	| 'draft.save'
 	| 'draft.overwrite'
 	| 'draft.publish'
@@ -20,7 +24,7 @@ export type ApiOperation =
 export type ExpectedApiErrorRule = 'exclude' | 'user-input' | 'oauth-cancelled';
 
 interface ApiOperationContract {
-	feature: 'writing' | 'colog' | 'auth' | 'upload' | 'content' | 'api';
+	feature: 'comment' | 'writing' | 'colog' | 'auth' | 'upload' | 'content' | 'api';
 	expectedErrors: Partial<Record<ApiErrorCode, ExpectedApiErrorRule>>;
 }
 
@@ -50,6 +54,19 @@ const genericExpectedErrors = {
  * 계약 변경 시 오류 코드표·이 목록·수집 정책 테스트를 함께 갱신한다.
  */
 export const API_ERROR_OPERATION_CONTRACTS: Record<ApiOperation, ApiOperationContract> = {
+	'inline-comment.create': {
+		feature: 'comment',
+		expectedErrors: { ...userValidation, INVALID_COMMENT_CONTENT: 'user-input' },
+	},
+	'inline-comment.add': {
+		feature: 'comment',
+		expectedErrors: { ...userValidation, INVALID_COMMENT_CONTENT: 'user-input' },
+	},
+	'inline-comment.update': {
+		feature: 'comment',
+		expectedErrors: { ...userValidation, INVALID_COMMENT_CONTENT: 'user-input' },
+	},
+	'inline-comment.delete': { feature: 'comment', expectedErrors: {} },
 	'draft.save': {
 		feature: 'writing',
 		expectedErrors: { ...userValidation, USER_NOT_FOUND: 'exclude', RILOG_NOT_FOUND: 'exclude' },
