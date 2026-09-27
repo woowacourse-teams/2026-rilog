@@ -7,15 +7,22 @@ test('서버 Sentry 전송 연결이 끊겨도 오류 화면과 다음 요청을
 
 	for (const postId of [1, 2]) {
 		const postPath = `/@sentry-server-e2e/posts/${postId}`;
+		const previous = await request.get('http://127.0.0.1:3108/state');
+		const previousState = (await previous.json()) as { failedNodeExceptions: unknown[] };
 		await page.goto(postPath);
 		await expect(page.getByRole('heading', { name: '게시글을 불러오지 못했어요.' })).toBeVisible();
 		await expect
 			.poll(async () => {
 				const state = await request.get('http://127.0.0.1:3108/state');
 				expect(state.ok()).toBe(true);
-				return state.text();
+				const received = (await state.json()) as { failedNodeExceptions: { tags?: { route?: string } }[] };
+				expect(JSON.stringify(received)).not.toContain('@sentry-server-e2e');
+				expect(received.failedNodeExceptions.some((event) => event.tags?.route === '/[slug]/posts/[postId]')).toBe(
+					true,
+				);
+				return received.failedNodeExceptions.length;
 			})
-			.toContain(postPath);
+			.toBeGreaterThan(previousState.failedNodeExceptions.length);
 
 		await page.getByRole('link', { name: '피드로 돌아가기' }).click();
 		await expect(page).toHaveURL('/feeds');

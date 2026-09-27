@@ -17,7 +17,7 @@ export default defineConfig({
 		reuseExistingServer: false,
 		timeout: 120_000,
 		env: {
-			NEXT_PUBLIC_API_BASE_URL: 'http://127.0.0.1:9',
+			NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 			NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
 			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
 			NEXT_PUBLIC_SENTRY_DSN: 'https://00000000000000000000000000000000@o0.ingest.sentry.io/0',
