@@ -20,8 +20,8 @@
 |    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수 |
 |    5 | RTL component               | 입력, 상태 전이, 오류와 접근성         |
 |    6 | Next.js build               | Server/Client 경계와 production build  |
-|    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 브라우저 흐름 4건 |
-|    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 4건     |
+|    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 필수 4건과 인라인 댓글 검증 |
+|    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 브라우저 검증     |
 
 현재 `frontend/package.json`에는 다음 script가 있다.
 

@@ -85,10 +85,20 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 	const apiError = await createApiFailure('INTERNAL_SERVER_ERROR', 500);
 	apiErrorReporter.report(apiError, { operation: 'draft.save' });
 	Sentry.captureException(apiError);
+	const commentError = await createApiFailure('INVALID_COMMENT_ANCHOR');
+	Sentry.withScope((scope) => {
+		scope.setExtra('content', secret);
+		scope.setExtra('selectedText', secret);
+		scope.setTag('postId', secret);
+		apiErrorReporter.report(commentError, { operation: 'inline-comment.create' });
+	});
+	Sentry.captureException(commentError);
 	await Sentry.flush(1000);
 
 	const serialized = JSON.stringify(envelopes);
 	expect(serialized).not.toContain(secret);
+	expect(serialized).toContain('[comment] inline-comment.create failed: INVALID_COMMENT_ANCHOR (400)');
+	expect(serialized).toContain('"operation":"inline-comment.create"');
 	expect(serialized).not.toContain('"type":"attachment"');
 	expect(serialized).toContain('"api_error_code":"INTERNAL_SERVER_ERROR"');
 	expect(serialized).toContain('"route":"/[slug]/posts/[postId]"');
@@ -96,6 +106,6 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 	expect(serialized).toContain('"lineno":12');
 	const items = (envelopes as [unknown, [{ type: string }, unknown][]][]).flatMap((envelope) => envelope[1]);
 	// SDK 누락 통계(client_report)는 오류·성능 이벤트와 별도로 센다.
-	expect(items.filter(([header]) => header.type === 'event')).toHaveLength(3);
+	expect(items.filter(([header]) => header.type === 'event')).toHaveLength(4);
 	expect(items.filter(([header]) => header.type === 'transaction')).toHaveLength(1);
 });

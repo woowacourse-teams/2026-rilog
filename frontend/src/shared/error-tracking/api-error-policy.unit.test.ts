@@ -121,3 +121,32 @@ describe('API 오류 수집 우선순위', () => {
 		expect(shouldReportApiError(await apiError('AUTHORIZATION_FAILED', 403), { operation: 'upload.put' })).toBe(true);
 	});
 });
+
+it.each(['inline-comment.create', 'inline-comment.add', 'inline-comment.update'] as const)(
+	'%s은 확인된 댓글 입력 제약만 제외하고 위치·혼합·정상 입력 거부는 보고한다',
+	async (operation) => {
+		const context = { operation, invalidUserInputFields: ['content'] };
+		const content = await apiError('INVALID_COMMENT_CONTENT');
+		expect(shouldReportApiError(content, context)).toBe(false);
+		expect(shouldReportApiError(content, { operation })).toBe(true);
+		expect(shouldReportApiError(await apiError('REQUEST_VALIDATION_FAILED', 400, [{ name: 'content' }]), context)).toBe(
+			false,
+		);
+		expect(
+			shouldReportApiError(
+				await apiError('REQUEST_VALIDATION_FAILED', 400, [{ name: 'content' }, { name: 'blockId' }]),
+				context,
+			),
+		).toBe(true);
+		for (const code of ['INVALID_COMMENT_ANCHOR', 'COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE', 'INVALID_TEXT_RANGE']) {
+			expect(shouldReportApiError(await apiError(code), context)).toBe(true);
+		}
+	},
+);
+it.each(['COMMENT_ANCHOR_NOT_FOUND', 'COMMENT_ANCHOR_DELETE_FORBIDDEN', 'COMMENT_ANCHOR_NOT_ACTIVE'])(
+	'댓글 정상 거부 %s는 제외하되 동일 코드의 5xx는 보고한다',
+	async (code) => {
+		expect(shouldReportApiError(await apiError(code), { operation: 'inline-comment.delete' })).toBe(false);
+		expect(shouldReportApiError(await apiError(code, 503), { operation: 'inline-comment.delete' })).toBe(true);
+	},
+);

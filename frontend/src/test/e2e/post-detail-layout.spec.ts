@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
-import { BASE_MODAL_CLASS_NAME } from '@/shared/ui/modal/modal.styles';
+import { renderInlineCommentWorkspace } from './fixtures/inline-comment-browser';
 
 const POST_DETAIL_LAYOUT_STYLES = new URL('../../widgets/post-detail/PostDetail.module.css', import.meta.url);
 
@@ -27,62 +27,55 @@ const renderLayoutFixture = async (page: Page) => {
 };
 
 test.describe('게시글 상세 사이드 레이아웃', () => {
-	test('넓은 화면에서는 목차를 좌측, 전체 댓글을 우측 sticky 영역에 배치한다', async ({ page }) => {
+	test('넓은 화면에서는 목차·본문·댓글 영역이 겹치지 않고 순서대로 보인다', async ({ page }) => {
 		await page.setViewportSize({ width: 1400, height: 900 });
 		await renderLayoutFixture(page);
 
-		await expect(page.locator('.tableOfContentsColumn')).toHaveCSS('display', 'block');
-		await expect(page.locator('.tableOfContentsColumn')).toHaveCSS('grid-column-start', '1');
-		await expect(page.locator('.articleColumn')).toHaveCSS('grid-column-start', '2');
-		await expect(page.locator('.commentsColumn')).toHaveCSS('display', 'block');
-		await expect(page.locator('.commentsColumn')).toHaveCSS('grid-column-start', '3');
-		await expect(page.locator('.commentsColumn')).toHaveCSS('padding-top', '40px');
-		await expect(page.locator('.commentsSticky')).toHaveCSS('position', 'sticky');
-		await expect(page.locator('.commentsSticky')).toHaveCSS('justify-content', 'flex-end');
-		await expect(page.locator('.commentsSticky')).toHaveCSS('top', '40px');
+		const toc = page.locator('.tableOfContentsColumn');
+		const article = page.locator('.articleColumn');
+		const comments = page.locator('.commentsColumn');
+		await expect(toc).toBeVisible();
+		await expect(comments).toBeVisible();
+		const tocBox = (await toc.boundingBox())!;
+		const articleBox = (await article.boundingBox())!;
+		const commentsBox = (await comments.boundingBox())!;
+		expect(tocBox.x + tocBox.width).toBeLessThanOrEqual(articleBox.x);
+		expect(articleBox.x + articleBox.width).toBeLessThanOrEqual(commentsBox.x);
 		await expect(page.locator('.compactCommentsEntry')).toBeHidden();
 	});
 
-	test('사이드 영역이 사라지면 구분선 아래 우측에 전체 댓글 버튼을 표시한다', async ({ page }) => {
+	test('좁은 화면에서 사이드 영역이 사라져도 전체 댓글 버튼에 접근할 수 있다', async ({ page }) => {
 		await page.setViewportSize({ width: 900, height: 800 });
 		await renderLayoutFixture(page);
 
 		await expect(page.locator('.tableOfContentsColumn')).toBeHidden();
 		await expect(page.locator('.commentsColumn')).toBeHidden();
-		await expect(page.locator('.compactCommentsEntry')).toHaveCSS('display', 'flex');
-		await expect(page.locator('.compactCommentsEntry')).toHaveCSS('justify-content', 'flex-end');
 		await expect(page.getByRole('button', { name: '전체 댓글 8' })).toBeVisible();
 	});
 });
 
-// RTL covers the real sidebar interactions; this checks its compiled responsive CSS in Chromium.
-test('댓글 사이드바는 모바일 화면을 채우고 데스크톱에서는 우측에 배치된다', async ({ page }) => {
-	await page.route('**/v1/**', (route) => route.abort());
-	await page.goto('/about');
-	const styles = await page
-		.locator('link[rel="stylesheet"]')
-		.evaluateAll((links) =>
-			links.map((link) => `<link rel="stylesheet" href="${(link as HTMLLinkElement).href}">`).join(''),
-		);
-	const source = await readFile(
-		new URL('../../features/post-detail/ui/PostCommentsSidebar.tsx', import.meta.url),
-		'utf8',
-	);
-	const sidebarClass = source.match(/className="(fixed inset-y-0[^\"]+)"/)?.[1];
-	expect(sidebarClass).toBeTruthy();
-	await page.setContent(
-		`<html><head>${styles}</head><body><dialog class="${BASE_MODAL_CLASS_NAME} ${sidebarClass}" data-state="open" aria-label="댓글 사이드바"><h2>전체 인라인 댓글</h2><button>댓글 사이드바 닫기</button></dialog></body></html>`,
-	);
-	await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.showModal());
+// 실제 dialog의 모바일 접근·Escape·focus 복원은 jsdom으로 검증할 수 없다.
+test('모바일에서 전체 댓글을 열고 Escape로 닫으면 진입점으로 focus가 돌아온다', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	const dialog = page.getByRole('dialog', { name: '댓글 사이드바' });
-	// 모달이 확보하는 스크롤바 여백을 제외한 문서 영역을 채워야 한다.
-	const documentWidth = await page.locator('html').evaluate((element) => element.getBoundingClientRect().width);
-	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(documentWidth);
-	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(0);
-	await expect.poll(async () => (await dialog.boundingBox())?.height).toBe(844);
-	await page.setViewportSize({ width: 1440, height: 900 });
-	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(448);
-	const desktopDocumentWidth = await page.locator('html').evaluate((element) => element.getBoundingClientRect().width);
-	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(desktopDocumentWidth - 448);
+	await page.route('**/v1/**', (route) => route.abort());
+	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
+		route.fulfill({
+			json: {
+				status: 200,
+				message: 'OK',
+				data: route.request().url().endsWith('/sidebar') ? { anchorGroups: [] } : { blocks: [] },
+			},
+		}),
+	);
+	await renderInlineCommentWorkspace(page);
+	const entry = page.getByRole('button', { name: '전체 댓글 0개 보기' }).filter({ visible: true }).first();
+	await entry.click();
+	const dialog = page.getByRole('dialog', { name: '전체 인라인 댓글 0' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog.getByText('표시할 댓글이 없습니다.')).toBeVisible();
+	const close = dialog.getByRole('button', { name: '댓글 사이드바 닫기' });
+	await expect(close).toBeInViewport();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(entry).toBeFocused();
 });
