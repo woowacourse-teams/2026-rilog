@@ -12,6 +12,7 @@ import kr.rilog.domain.comment.controller.dto.request.CommentAnchorUpdateRequest
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorDeleteResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorSidebarResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,22 @@ public interface CommentAnchorApiSpec {
             description = "게시글의 인라인 댓글을 본문 블록과 선택 영역별로 그룹화해 조회합니다."
     )
     ApiResponse<CommentAnchorListResponse> readCommentAnchors(
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @NullableLoginUserId Long requesterId
+    );
+
+    @Operation(
+            summary = "사이드바 인라인 댓글 목록 조회 API",
+            description = """
+                    사이드바에 표시할 게시글의 인라인 댓글을 선택 영역별로 그룹화해 조회합니다.
+                    - 본문 블록으로 묶지 않고 선택 영역 그룹 목록을 그대로 반환하며, 각 그룹은 blockId를 포함합니다.
+                    - 선택 영역은 먼저 생성된 순서로, 선택 영역 안의 인라인 댓글은 먼저 작성된 순서로 정렬합니다.
+                    - ACTIVE와 ORPHANED 상태의 선택 영역을 모두 포함하며, 삭제된 인라인 댓글은 제외합니다.
+                    - 비공개 게시글은 작성자 본인만 조회할 수 있습니다.
+                    """
+    )
+    ApiResponse<CommentAnchorSidebarResponse> readSidebarCommentAnchors(
             @Parameter(description = "게시글 ID", example = "1")
             @PathVariable Long postId,
             @Parameter(hidden = true) @NullableLoginUserId Long requesterId

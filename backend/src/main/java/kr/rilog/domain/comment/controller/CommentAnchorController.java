@@ -12,11 +12,13 @@ import kr.rilog.domain.comment.controller.dto.request.CommentAnchorUpdateRequest
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorDeleteResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorSidebarResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
 import kr.rilog.domain.comment.service.CommentAnchorService;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,17 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
         CommentAnchorListResult result = commentAnchorService.readCommentAnchors(postId, requesterId);
         CommentAnchorListResponse data = CommentAnchorListResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "인라인 댓글 목록 조회에 성공했습니다.", data);
+    }
+
+    @OptionalAuthGuard
+    @GetMapping("/posts/{postId}/comment-anchors/sidebar")
+    public ApiResponse<CommentAnchorSidebarResponse> readSidebarCommentAnchors(
+            @PathVariable Long postId,
+            @NullableLoginUserId Long requesterId
+    ) {
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(postId, requesterId);
+        CommentAnchorSidebarResponse data = CommentAnchorSidebarResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "사이드바 인라인 댓글 목록 조회에 성공했습니다.", data);
     }
 
     @AuthGuard

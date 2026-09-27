@@ -15,6 +15,7 @@ import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
@@ -117,6 +118,16 @@ public class CommentAnchorService {
                 commentAnchorRepository.findAllByPostId(postId)
         );
         return CommentAnchorListResult.from(post, groups, getActiveBlogMembers(post), requesterId);
+    }
+
+    public CommentAnchorSidebarResult readSidebarCommentAnchors(Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateReadableBy(requesterId);
+
+        CommentAnchorGroups groups = CommentAnchorGroups.from(
+                commentAnchorRepository.findAllByPostId(postId)
+        );
+        return CommentAnchorSidebarResult.from(post, groups, getActiveBlogMembers(post), requesterId);
     }
 
     private CommentAnchorSelection getOrCreateActiveSelection(Post post, Selection selection) {
