@@ -51,6 +51,7 @@ public record BlogFeedPostResponse(
             String category,
             String visibility,
             LocalDateTime publishedAt,
+            long totalCommentsCount,
             ChapterResponse chapter,
             AuthorResponse author,
             OwnerResponse owner
@@ -64,6 +65,7 @@ public record BlogFeedPostResponse(
                     row.category().getName(),
                     row.visibility().name(),
                     row.publishedAt(),
+                    row.inlineCommentCount(),
                     ChapterResponse.from(row.chapterId(), row.chapterName(), row.chapterOrder()),
                     new AuthorResponse(
                             row.authorId(),

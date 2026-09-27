@@ -161,7 +161,15 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END
+                CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END,
+
+                (
+                    SELECT COUNT(anchor.id)
+                    FROM CommentAnchor anchor
+                    JOIN anchor.commentAnchorSelection anchorSelection
+                    WHERE anchorSelection.post = post
+                      AND anchor.deletedAt IS NULL
+                )
             )
             FROM Post post
             JOIN post.user author
@@ -210,7 +218,15 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 colog.id,
                 colog.slug.value,
                 colog.profile.name,
-                colog.profile.profileImageUrl
+                colog.profile.profileImageUrl,
+
+                (
+                    SELECT COUNT(anchor.id)
+                    FROM CommentAnchor anchor
+                    JOIN anchor.commentAnchorSelection anchorSelection
+                    WHERE anchorSelection.post = post
+                      AND anchor.deletedAt IS NULL
+                )
             )
             FROM Post post
             JOIN post.user author
