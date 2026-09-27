@@ -36,16 +36,17 @@ OAuth 파라미터 누락, GitHub 토큰 교환·사용자 조회 실패, 확인
 
 ## 전송 메타데이터
 
-제목은 `[feature] operation failed: errorCode (httpStatus; error_type)` 형식이다. 예: `[writing] draft.publish failed: INVALID_POST_CONTENT (400; api)`. 입력 내용·URL·서버 메시지와 요청마다 달라지는 ID를 넣지 않는다.
+#613의 [공통 개인정보 경계](../adr/0003-sentry-event-privacy.md)를 최종 전송에 적용한다. 공통 environment/release/route/browser/device 태그와 일반 오류·성능 이벤트도 같은 경계에서 처리한다. 제목에서만 코드·응답 부재를 `NO_ERROR_CODE`·`NO_RESPONSE`로 표시한다.
+
+제목은 `[feature] operation failed: api_error_code (httpStatus)` 형식이다. 예: `[writing] draft.publish failed: INVALID_POST_CONTENT (400)`. 입력 내용·URL·서버 메시지와 요청마다 달라지는 ID를 넣지 않는다.
 
 | 태그 | 값과 누락 처리 |
 | --- | --- |
 | `feature` | operation 계약의 고정 feature. 임의 문자열을 허용하지 않음 |
 | `operation` | 계약 목록의 고정 이름. 없거나 알 수 없으면 `unhandled` |
-| `errorCode` | 공개 코드 형식의 문자열. 형식이 부적절하면 `UNKNOWN_ERROR_CODE`, 코드 없는 오류는 `NO_ERROR_CODE` |
-| `httpStatus` | 실제 Response의 상태. 응답 없는 통신 오류는 `NO_RESPONSE` |
+| `api_error_code` | 코드표의 공개 코드. 미정의 응답 코드는 `UNKNOWN_ERROR_CODE`, 코드가 없으면 태그 생략 |
+| `httpStatus` | 실제 Response의 상태. 응답 없는 통신 오류는 태그 생략 |
 | `request_id` | UUID 형식의 `X-Request-ID`. 없거나 부적절하면 생략. FE가 임의로 생성하지 않음 |
-| `error_code`, `status` | 기존 검색 호환용 별칭. 각각 API 코드/HTTP 응답이 있을 때 유지 |
 | `error_type`, `error_kind` | 정규화 분류. kind는 API 오류에서만 기록 |
 
 request_id는 [RequestIdFilter](../../backend/src/main/java/kr/rilog/global/logging/RequestIdFilter.java)가 생성하고 [CorsConfig](../../backend/src/main/java/kr/rilog/global/config/CorsConfig.java)가 브라우저에 노출한다. 제목에는 넣지 않아 요청마다 같은 장애의 제목이 달라지는 것을 피한다. 자동 수집과 명시 보고 모두 같은 변환·최종 필터를 사용한다. 정규화되지 않은 ky HTTPError/NetworkError/TimeoutError도 API 오류로 인식하며, 원본 AbortError도 자동 수집에서 제외한다. API 경계 밖의 일반 TypeError는 프로그래밍 오류일 수 있으므로 오프라인이라는 이유만으로 제외하지 않는다.

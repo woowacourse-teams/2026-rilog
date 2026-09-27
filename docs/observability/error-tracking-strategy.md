@@ -242,17 +242,20 @@ Sentry의 기본 그룹화는 stack trace, 예외 타입, 메시지를 기반으
 
 ### 태그
 
+#613 구현과 허용 필드·일반 오류 메시지 처리·성능 이벤트 필터의 상세 결정은 [ADR 0003](../adr/0003-sentry-event-privacy.md)을 따른다.
+
 모든 이벤트에 다음 태그를 공통으로 붙인다.
 
 ```text
 environment: prod | local (dev는 스테이징 서버 도입 시 추가)
-release: <git-sha>
-feature: auth | post_write | upload | colog | feed | settings
-operation: login | draft_save | publish | upload | invite | query
-route: route template 또는 민감값을 제거한 pathname
+release: SDK 빌드 릴리즈 값 (미주입 실행은 unversioned)
+feature: auth | writing | upload | colog | content | api | app
+operation: API operation 계약의 이름, 일반 오류는 unhandled
+route: 알려진 route template, 알 수 없으면 unknown
 browser: 브라우저 종류와 major version
-device: desktop | mobile | tablet
-api_error_code: API 응답의 공개 errorCode가 있을 때만
+device: desktop | mobile | tablet | unknown
+api_error_code: 공개 코드가 있을 때만, 미정의 코드는 UNKNOWN_ERROR_CODE
+httpStatus: 실제 HTTP 응답이 있을 때만
 request_id: API 응답의 X-Request-ID가 있을 때만
 ```
 
