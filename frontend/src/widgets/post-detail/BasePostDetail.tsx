@@ -5,13 +5,12 @@ import type { ReactNode } from 'react';
 import type { PostDetail } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
-import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
-import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
+import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 
 interface BasePostDetailProps {
 	post: PostDetail;
@@ -48,19 +47,6 @@ export default async function BasePostDetail({
 					{beforeContent}
 
 					<div className={`${styles.contentLayout} px-5 sm:px-10`}>
-						<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
-							<PostDetailContent
-								html={contentHtml}
-								postId={post.id}
-								ownerType={post.blog.type}
-								category={post.category}
-							/>
-
-							<Divider className="mt-30 mb-20 sm:mt-40 sm:mb-30" />
-							<div className="mx-auto max-w-lg">{profileSection}</div>
-							{afterProfile}
-						</div>
-
 						{tableOfContents.length === 0 ? null : (
 							<aside className={styles.tableOfContentsColumn}>
 								<div className={styles.tableOfContentsSticky}>
@@ -68,6 +54,16 @@ export default async function BasePostDetail({
 								</div>
 							</aside>
 						)}
+
+						<PostDetailCommentsWorkspace
+							html={contentHtml}
+							postId={post.id}
+							ownerType={post.blog.type}
+							category={post.category}
+							enableInlineCommentSelectionDebug={false}
+							profileSection={profileSection}
+							afterProfile={afterProfile}
+						/>
 					</div>
 				</div>
 			</main>

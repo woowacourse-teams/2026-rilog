@@ -15,8 +15,25 @@
 	min-width: 0;
 }
 
-.tableOfContentsColumn {
+.tableOfContentsColumn,
+.commentsColumn {
 	display: none;
+}
+
+.compactCommentsEntry {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 1rem;
+}
+
+.profileSection {
+	margin-top: 1.5rem;
+}
+
+@media (min-width: 40rem) {
+	.profileSection {
+		margin-top: 4rem;
+	}
 }
 
 @container post-detail-card (min-width: 75rem) {
@@ -29,20 +46,45 @@
 		grid-column: 2;
 	}
 
-	.tableOfContentsColumn {
+	.tableOfContentsColumn,
+	.commentsColumn {
 		display: block;
-		grid-column: 3;
 		align-self: stretch;
-		justify-self: end;
 		width: 12rem;
 		padding-block: 5rem;
 	}
 
-	.tableOfContentsSticky {
+	.tableOfContentsColumn {
+		grid-column: 1;
+		justify-self: start;
+	}
+
+	.commentsColumn {
+		grid-column: 3;
+		justify-self: end;
+		padding-top: 2.5rem;
+	}
+
+	.tableOfContentsSticky,
+	.commentsSticky {
 		--post-toc-max-height: calc(100dvh - 5rem);
 
 		position: sticky;
 		top: 5rem;
 		overflow-wrap: anywhere;
+	}
+
+	.commentsSticky {
+		display: flex;
+		justify-content: flex-end;
+		top: 2.5rem;
+	}
+
+	.compactCommentsEntry {
+		display: none;
+	}
+
+	.profileSection {
+		margin-top: 7.5rem;
 	}
 }

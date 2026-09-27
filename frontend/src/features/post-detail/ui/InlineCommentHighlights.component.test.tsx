@@ -29,7 +29,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 			},
 			{
 				anchorId: 2,
-				commentCount: 0,
+				commentCount: 2,
 				range: { startOffset: 3, endOffset: 8 },
 				selectedText: '하이라이트',
 				state: 'OUTDATED',

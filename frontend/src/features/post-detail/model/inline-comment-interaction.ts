@@ -5,3 +5,5 @@ export interface InlineCommentOpenRequest {
 	anchorIds: readonly number[];
 	source: InlineCommentOpenSource;
 }
+
+export type InlineCommentSidebarMode = 'all' | 'block' | 'single';
