@@ -2,6 +2,7 @@ import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostFeedItem } from '@/domains/post/model/post';
+import PostCommentCount from '@/domains/post/ui/PostCommentCount';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
@@ -92,9 +93,10 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 						</span>
 					</h3>
 				</CustomLink>
-				<time dateTime={toApiUtcISOString(post.publishedAt)} className="mt-3 text-left text-caption-2 text-navy-600">
-					{formatPublishedDate(post.publishedAt)}
-				</time>
+				<div className="mt-3 flex items-center justify-between gap-2 text-caption-2 text-navy-600">
+					<time dateTime={toApiUtcISOString(post.publishedAt)}>{formatPublishedDate(post.publishedAt)}</time>
+					<PostCommentCount count={post.totalCommentsCount} />
+				</div>
 			</article>
 		</li>
 	);

@@ -16,6 +16,7 @@ const createPostResponse = (postId: number): PostItemResponse => ({
 	chapter: { chapterId: 7, name: '프론트엔드', order: 1 },
 	visibility: 'PUBLIC',
 	publishedAt: '2026-09-01T00:00:00+09:00',
+	totalCommentsCount: 0,
 	author: { userId: postId, nickname: `작성자 ${postId}`, slug: `author-${postId}`, profileImageUrl: null },
 	owner: {
 		type: 'COLOG',

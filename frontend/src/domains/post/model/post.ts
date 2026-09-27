@@ -42,6 +42,7 @@ export interface PostDetail extends PostSummary {
 }
 
 export interface PostFeedItem extends PostSummary {
+	totalCommentsCount: number;
 	chapterName: string | null;
 	categoryLabel?: string | null;
 	blog: BaseBlog;

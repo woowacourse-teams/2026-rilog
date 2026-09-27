@@ -19,6 +19,7 @@ const RESPONSE: ApiResponse<PublicBlogFeedPostResponse> = {
 				chapter: { chapterId: 7, name: '프론트엔드', order: 1 },
 				visibility: 'PUBLIC',
 				publishedAt: '2026-09-01T00:00:00+09:00',
+				totalCommentsCount: 0,
 				author: { userId: 1, nickname: '리로거', slug: 'rilogger', profileImageUrl: null },
 				owner: {
 					type: 'COLOG',

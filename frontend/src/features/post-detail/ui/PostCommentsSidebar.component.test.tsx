@@ -82,6 +82,28 @@ const THREADS: InlineCommentThreadModel[] = [
 ];
 
 describe('PostCommentsSidebar', () => {
+	it.each(['block', 'all'] as const)('%s 목록은 인용이 하나여도 댓글을 펼치고 접을 수 있다', async (mode) => {
+		const user = userEvent.setup();
+		render(
+			<PostCommentsSidebar
+				mode={mode}
+				postId={81}
+				open
+				threads={[THREADS[0]]}
+				onClose={vi.fn()}
+				onNavigate={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByRole('dialog', { name: `${mode === 'all' ? '전체 인라인 댓글' : '인라인 댓글'} 1` }),
+		).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '댓글 펼치기' }));
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '댓글 접기' }));
+		expect(screen.queryByRole('article', { name: '작성자님의 댓글' })).not.toBeInTheDocument();
+	});
+
 	it('인용과 댓글 입력을 표시하고 펼친 댓글 목록을 제공한다', async () => {
 		const user = userEvent.setup();
 		render(
