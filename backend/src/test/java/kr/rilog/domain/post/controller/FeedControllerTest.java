@@ -146,6 +146,7 @@ class FeedControllerTest {
                                 "기술",
                                 "PUBLIC",
                                 LocalDateTime.of(2026, 8, 13, 12, 0),
+                                5L,
                                 new ChapterResponse(21L, "회고", 1),
                                 new BlogFeedPostResponse.AuthorResponse(
                                         1L,
@@ -175,6 +176,7 @@ class FeedControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.type").value("COLOG"))
                 .andExpect(jsonPath("$.data.posts[0].postId").value(10L))
+                .andExpect(jsonPath("$.data.posts[0].totalCommentsCount").value(5L))
                 .andExpect(jsonPath("$.data.posts[0].chapter.chapterId").value(21L))
                 .andExpect(jsonPath("$.data.posts[0].chapter.name").value("회고"))
                 .andExpect(jsonPath("$.data.posts[0].chapter.order").value(1))

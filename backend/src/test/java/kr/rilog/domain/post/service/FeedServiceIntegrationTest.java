@@ -39,6 +39,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_FEED_FILTER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class FeedServiceIntegrationTest extends ServiceSupport {
@@ -625,6 +626,32 @@ class FeedServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("Rilog 피드는 게시글마다 삭제되지 않은 인라인 댓글 수를 반환한다.")
+    void readRilogFeedReturnsInlineCommentCounts() {
+        // given
+        User owner = saveCompletedUser(32L, "개인댓글집계작성자", "rilog_count_owner");
+        Blog rilog = saveRilog(owner);
+        Blog colog = saveColog(owner, "rilog_count_team");
+        Post rilogPost = savePost(PostFixture.publicPublishedRilogPostAt(
+                rilog,
+                owner,
+                BASE_PUBLISHED_AT.plusMinutes(1)
+        ));
+        Post cologPost = savePost(PostFixture.publicPublishedColog(rilog, colog, owner, BASE_PUBLISHED_AT));
+        saveAnchor(CommentAnchorFixture.activeAnchor(rilogPost, owner));
+        saveAnchor(CommentAnchorFixture.orphanedAnchor(rilogPost, owner));
+        saveDeletedAnchor(rilogPost, owner);
+
+        // when
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, DEFAULT_SEARCH);
+
+        // then
+        assertThat(blogFeedCommentCounts(result))
+                .containsEntry(rilogPost.getId(), 2L)
+                .containsEntry(cologPost.getId(), 0L);
+    }
+
+    @Test
     @DisplayName("대상 Colog 필터와 챕터 필터를 함께 사용하면 예외가 발생한다.")
     void readRilogFeedRejectsTargetCologWithChapter() {
         // given
@@ -723,6 +750,20 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         CommentAnchorSelection selection = anchor.getCommentAnchorSelection();
         commentAnchorSelectionRepository.saveAndFlush(selection);
         commentAnchorRepository.saveAndFlush(anchor);
+    }
+
+    private void saveDeletedAnchor(Post post, User author) {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, author);
+        anchor.delete();
+        saveAnchor(anchor);
+    }
+
+    private Map<Long, Long> blogFeedCommentCounts(BlogFeedPostResponse response) {
+        return response.posts().stream()
+                .collect(Collectors.toMap(
+                        BlogFeedPostResponse.PostItemResponse::postId,
+                        BlogFeedPostResponse.PostItemResponse::totalCommentsCount
+                ));
     }
 
     private FullFeedPostResponse.PostItemResponse expectedFullFeedItem(Post post, User author, Blog owner) {
