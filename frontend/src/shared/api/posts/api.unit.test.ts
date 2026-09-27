@@ -9,6 +9,7 @@ import {
 	readPostCommentAnchorsSidebar,
 	readPostDetail,
 	updatePost,
+	updatePostCommentAnchor,
 } from './api';
 
 vi.hoisted(() => {
@@ -214,5 +215,32 @@ describe('addPostCommentAnchor', () => {
 		expect(request.method).toBe('POST');
 		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/selections/91/comment-anchors');
 		expect(body).toEqual({ content: '추가 댓글\n둘째 줄' });
+	});
+});
+
+describe('updatePostCommentAnchor', () => {
+	it('댓글 id를 경로에 넣고 content만 PATCH하며 수정 응답을 반환한다', async () => {
+		const response = {
+			status: 0,
+			message: 'OK',
+			data: {
+				commentAnchorId: 901,
+				content: '수정\n내용',
+				isEdited: true,
+				createdAt: '2026-09-27T10:49:45.375Z',
+				updatedAt: '2026-09-27T10:50:45.375Z',
+			},
+		};
+		let body: unknown;
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) body = await input.clone().json();
+			return Response.json(response);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(updatePostCommentAnchor(81, 901, { content: '수정\n내용' })).resolves.toEqual(response);
+		const request = fetchMock.mock.calls[0][0] as Request;
+		expect(request.method).toBe('PATCH');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors/901');
+		expect(body).toEqual({ content: '수정\n내용' });
 	});
 });

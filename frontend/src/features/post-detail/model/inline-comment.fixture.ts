@@ -19,6 +19,7 @@ const createComment = (
 	canEdit: true,
 	canDelete: true,
 	createdAt: '2026-09-17T10:20:00',
+	isEdited: false,
 	updatedAt: '2026-09-17T10:20:00',
 	...overrides,
 });

@@ -2,17 +2,43 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
 import Button from '@/shared/ui/button/Button';
+import AlertModal from '@/shared/ui/modal/AlertModal';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
 interface InlineCommentEditFormProps {
+	postId: number;
+	commentAnchorId: number;
+	onSaved: () => void;
 	content: string;
 	onCancel: () => void;
 }
 
-export default function InlineCommentEditForm({ content, onCancel }: InlineCommentEditFormProps) {
+export default function InlineCommentEditForm({
+	content,
+	onCancel,
+	postId,
+	commentAnchorId,
+	onSaved,
+}: InlineCommentEditFormProps) {
+	const mutation = useUpdatePostCommentAnchorMutation(postId, commentAnchorId);
+	const [isErrorOpen, setIsErrorOpen] = useState(false);
 	const [value, setValue] = useState(content);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const isSubmitting = useRef(false);
+	const handleSubmit = async () => {
+		if (!value.trim() || isSubmitting.current) return;
+		isSubmitting.current = true;
+		try {
+			await mutation.mutateAsync({ content: value });
+			onSaved();
+		} catch {
+			setIsErrorOpen(true);
+		} finally {
+			isSubmitting.current = false;
+		}
+	};
 
 	useEffect(() => {
 		const input = inputRef.current;
@@ -26,6 +52,7 @@ export default function InlineCommentEditForm({ content, onCancel }: InlineComme
 				ref={inputRef}
 				aria-label="댓글 수정"
 				rows={1}
+				readOnly={mutation.isPending}
 				value={value}
 				onChange={(event) => setValue(event.target.value)}
 				style={{
@@ -38,14 +65,21 @@ export default function InlineCommentEditForm({ content, onCancel }: InlineComme
 				}}
 			/>
 			<div className="mt-2 flex justify-end gap-2">
-				<Button variant="ghost" size="sm" onClick={onCancel}>
+				<Button variant="ghost" size="sm" disabled={mutation.isPending} onClick={onCancel}>
 					취소
 				</Button>
-				{/* 수정 API 연결 전에는 저장 완료로 표시하지 않는다. */}
-				<Button size="sm" disabled>
-					저장
+
+				<Button size="sm" isPending={mutation.isPending} disabled={!value.trim()} onClick={() => void handleSubmit()}>
+					{mutation.isPending ? '저장 중…' : '저장'}
 				</Button>
 			</div>
+			<AlertModal
+				open={isErrorOpen}
+				title="댓글을 수정하지 못했습니다."
+				description="잠시 후 다시 시도해 주세요."
+				onAction={() => setIsErrorOpen(false)}
+				onClose={() => setIsErrorOpen(false)}
+			/>
 		</>
 	);
 }

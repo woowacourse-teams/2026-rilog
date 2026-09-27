@@ -1,6 +1,8 @@
 import { apiClient } from '@/shared/api/client';
 import type {
 	PostCommentAnchorsResponse,
+	PostCommentAnchorUpdateRequest,
+	PostCommentAnchorUpdateResponse,
 	PostCommentAnchorCreateRequest,
 	PostCommentAnchorAddRequest,
 	PostCommentAnchorCreateResponse,
@@ -59,5 +61,15 @@ export const createPostCommentAnchor = (postId: number, request: PostCommentAnch
 export const addPostCommentAnchor = (postId: number, selectionId: number, request: PostCommentAnchorAddRequest) =>
 	apiClient.post<ApiResponse<PostCommentAnchorCreateResponse>>(
 		`v1/posts/${postId}/selections/${selectionId}/comment-anchors`,
+		{ json: request },
+	);
+
+export const updatePostCommentAnchor = (
+	postId: number,
+	commentAnchorId: number,
+	request: PostCommentAnchorUpdateRequest,
+) =>
+	apiClient.patch<ApiResponse<PostCommentAnchorUpdateResponse>>(
+		`v1/posts/${postId}/comment-anchors/${commentAnchorId}`,
 		{ json: request },
 	);

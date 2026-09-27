@@ -132,3 +132,15 @@ export interface PostCommentAnchorCreateResponse {
 export interface PostCommentAnchorAddRequest {
 	content: string;
 }
+
+export interface PostCommentAnchorUpdateRequest {
+	content: string;
+}
+
+export interface PostCommentAnchorUpdateResponse {
+	commentAnchorId: number;
+	content: string;
+	isEdited: boolean;
+	createdAt: string;
+	updatedAt: string;
+}

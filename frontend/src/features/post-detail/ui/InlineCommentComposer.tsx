@@ -55,6 +55,7 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 
 	return (
 		<InlineCommentThreadContent
+			postId={postId}
 			anchor={{ selectedText: selection.selectedText, state: 'ACTIVE', comments: [] }}
 			isCollapsible={false}
 			renderInput={(isOpen) => (

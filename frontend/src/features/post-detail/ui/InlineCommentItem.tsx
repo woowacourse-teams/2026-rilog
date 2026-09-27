@@ -9,6 +9,7 @@ import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import InlineCommentEditForm from './InlineCommentEditForm';
 
 interface InlineCommentItemProps {
+	postId: number;
 	comment: InlineCommentModel;
 }
 
@@ -32,7 +33,7 @@ const formatCommentDate = (createdAt: string) => {
 	return `${dateParts.year}.${dateParts.month}.${dateParts.day} ${dateParts.hour}:${dateParts.minute}`;
 };
 
-export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
+export default function InlineCommentItem({ comment, postId }: InlineCommentItemProps) {
 	const { author } = comment;
 	const [isEditing, setIsEditing] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -67,10 +68,12 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 					<span>
 						<time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
 					</span>
-					<span className="flex items-center gap-1">
-						<span aria-hidden="true">·</span>
-						<span>편집됨</span>
-					</span>
+					{comment.isEdited && (
+						<span className="flex items-center gap-1">
+							<span aria-hidden="true">·</span>
+							<span>편집됨</span>
+						</span>
+					)}
 					{comment.canEdit && (
 						<span className="flex items-center gap-1">
 							<span aria-hidden="true">·</span>
@@ -100,6 +103,12 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 			{isEditing && comment.canEdit ? (
 				<div className="col-start-2 row-start-2 min-w-0">
 					<InlineCommentEditForm
+						postId={postId}
+						commentAnchorId={comment.commentId}
+						onSaved={() => {
+							setIsEditing(false);
+							editButtonRef.current?.focus();
+						}}
 						content={comment.content}
 						onCancel={() => {
 							setIsEditing(false);
