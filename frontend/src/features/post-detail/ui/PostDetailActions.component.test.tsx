@@ -63,7 +63,7 @@ describe('PostDetailActions', () => {
 
 		await user.click(screen.getByRole('button', { name: '수정' }));
 
-		expect(routerPushMock).toHaveBeenCalledWith('/write?postId=31');
+		expect(routerPushMock).toHaveBeenCalledWith('/write?postId=31&slug=rilog-team');
 		expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
 	});
 

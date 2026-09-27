@@ -263,7 +263,7 @@ export default function CologCreateFormFields({
 							placeholder="예: rilog_fe"
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
-									rilog.kr/@
+									www.rilog.kr/@
 								</span>
 							}
 							status={hasSlugError ? 'error' : slugAvailabilityStatus === 'success' ? 'success' : 'default'}

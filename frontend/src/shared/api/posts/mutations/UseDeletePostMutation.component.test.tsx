@@ -12,9 +12,12 @@ import { createTestQueryClient } from '@/test/render-with-query';
 import { useDeletePostMutation } from './use-delete-post-mutation';
 
 describe('useDeletePostMutation', () => {
-	it('삭제 성공 후 상세 캐시를 제거하고 피드, 블로그와 게시글 수 캐시를 무효화한다', async () => {
+	it('삭제 성공 후 전체 상세, 피드, 블로그와 게시글 수 캐시를 무효화한다', async () => {
 		const queryClient = createTestQueryClient();
-		const removeQueries = vi.spyOn(queryClient, 'removeQueries');
+		const deletedKey = postsQueryKeys.detail('personal-blog', 31);
+		const deletedAliasKey = postsQueryKeys.detail('@personal-blog', 31);
+		const otherKey = postsQueryKeys.detail('personal-blog', 32);
+		for (const key of [deletedKey, deletedAliasKey, otherKey]) queryClient.setQueryData(key, { title: '글' });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		const deletePost = vi.spyOn(postsApi, 'deletePost').mockResolvedValue(new Response(null, { status: 204 }));
 		const { result } = renderHook(() => useDeletePostMutation(), {
@@ -24,10 +27,13 @@ describe('useDeletePostMutation', () => {
 		await result.current.mutateAsync(31);
 
 		expect(deletePost).toHaveBeenCalledWith(31);
-		expect(removeQueries).toHaveBeenCalledWith({ queryKey: postsQueryKeys.detail(31), exact: true });
+		expect(queryClient.getQueryState(deletedKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryState(deletedAliasKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryState(otherKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryData(otherKey)).toEqual({ title: '글' });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: postsQueryKeys.count() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(3);
+		expect(invalidateQueries).toHaveBeenCalledTimes(4);
 	});
 });

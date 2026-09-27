@@ -3,7 +3,6 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettierConfig from 'eslint-config-prettier/flat';
 import checkFile from 'eslint-plugin-check-file';
-import importPlugin from 'eslint-plugin-import';
 import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
@@ -23,10 +22,9 @@ const eslintConfig = defineConfig([
 	...nextVitals,
 	...nextTs,
 	{
+		files: ['src/**/*.{js,jsx,ts,tsx}'],
 		plugins: {
 			'check-file': checkFile,
-			import: importPlugin,
-			'unused-imports': unusedImports,
 		},
 		rules: {
 			'check-file/filename-naming-convention': [
@@ -64,6 +62,9 @@ const eslintConfig = defineConfig([
 	{
 		files: ['**/*.{ts,tsx}'],
 		extends: [...tseslint.configs.recommendedTypeChecked],
+		plugins: {
+			'unused-imports': unusedImports,
+		},
 		languageOptions: {
 			parserOptions: {
 				projectService: true,

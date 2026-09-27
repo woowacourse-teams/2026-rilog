@@ -4,6 +4,7 @@ packages:
 saveExact: true
 
 allowBuilds:
+  '@sentry/cli': true
   core-js: false
   sharp: false
   unrs-resolver: false

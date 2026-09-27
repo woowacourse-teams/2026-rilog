@@ -358,7 +358,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 							}
 							left={
 								<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
-									rilog.kr/@
+									www.rilog.kr/@
 								</span>
 							}
 						/>

@@ -32,7 +32,7 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 			url: 'http://localhost:3000',
 			reuseExistingServer,
 			env: {
-				NEXT_PUBLIC_API_BASE_URL: 'http://127.0.0.1:9',
+				NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 				NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
 				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
 			},

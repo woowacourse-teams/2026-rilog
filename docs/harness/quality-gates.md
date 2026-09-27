@@ -49,12 +49,12 @@ pnpm test:e2e:prod
 CI와 동일한 production E2E를 재현할 때는 build 전부터 아래 환경을 적용한다.
 
 ```sh
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:9 \
+NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test \
 NEXT_PUBLIC_DEV_MASTER_TOKEN='' \
 NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN='' \
 pnpm check
 
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:9 \
+NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test \
 NEXT_PUBLIC_DEV_MASTER_TOKEN='' \
 NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN='' \
 pnpm test:e2e:prod

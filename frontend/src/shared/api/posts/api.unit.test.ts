@@ -50,7 +50,7 @@ describe('publishPost', () => {
 });
 
 describe('readPostDetail', () => {
-	it('게시글 id를 posts resource 경로로 전달한다', async () => {
+	it('slug와 게시글 id를 blogs resource 경로로 전달한다', async () => {
 		const responseBody = {
 			status: 200,
 			message: 'OK',
@@ -83,11 +83,11 @@ describe('readPostDetail', () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(readPostDetail({ postId: 42 })).resolves.toEqual(responseBody);
+		await expect(readPostDetail({ slug: '@rilog-team', postId: 42 })).resolves.toEqual(responseBody);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
-		expect(request.url).toBe('https://api.rilog.test/v1/posts/42');
+		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts/42');
 	});
 });
 

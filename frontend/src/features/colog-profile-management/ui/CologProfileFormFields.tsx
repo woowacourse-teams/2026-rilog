@@ -97,7 +97,7 @@ export default function CologProfileFormFields({
 						disabled
 						left={
 							<span aria-hidden="true" className="whitespace-nowrap text-text-secondary">
-								rilog.kr/@
+								www.rilog.kr/@
 							</span>
 						}
 					/>

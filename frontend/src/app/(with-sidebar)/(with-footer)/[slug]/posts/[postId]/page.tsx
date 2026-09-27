@@ -24,8 +24,8 @@ const parsePostId = (postId: string) => {
 };
 
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
-	const { postId } = await params;
-	const post = await getPublicPostDetail(parsePostId(postId));
+	const { slug, postId } = await params;
+	const post = await getPublicPostDetail(stripAtPrefix(slug), parsePostId(postId));
 	if (post === null) notFound();
 
 	return createPostMetadata(post);
@@ -43,7 +43,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 		buildPath: (normalizedSlug) => buildPostDetailPath(normalizedSlug, postId),
 	});
 
-	const post = await getPublicPostDetail(parsePostId(postId));
+	const post = await getPublicPostDetail(stripAtPrefix(slug), parsePostId(postId));
 	if (post === null) notFound();
 
 	const canonical = getPostCanonicalPath(post);

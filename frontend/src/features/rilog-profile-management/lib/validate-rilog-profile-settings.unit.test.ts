@@ -13,7 +13,7 @@ const VALID_VALUE: RilogProfileSettingsValue = {
 	slug: 'rilogger',
 	description: '기록하고 성장하는 개발자입니다.',
 	profileImageUrl: '',
-	serviceUrl: 'https://rilog.kr',
+	serviceUrl: 'https://www.rilog.kr',
 	githubUrl: 'https://github.com/rilog',
 	profileImageFile: null,
 };
@@ -65,9 +65,9 @@ describe('normalizeRilogProfileSettings', () => {
 				...VALID_VALUE,
 				nickname: '  리로거  ',
 				description: '  소개  ',
-				serviceUrl: '  https://rilog.kr  ',
+				serviceUrl: '  https://www.rilog.kr  ',
 			}),
-		).toMatchObject({ nickname: '리로거', description: '소개', serviceUrl: 'https://rilog.kr' });
+		).toMatchObject({ nickname: '리로거', description: '소개', serviceUrl: 'https://www.rilog.kr' });
 	});
 });
 

@@ -5,6 +5,7 @@ import type {
 	PresignedUrlCreateResponse,
 	UploadFileOptions,
 } from '@/shared/api/uploads/types';
+import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 
 export const createPresignedUrl = (request: PresignedUrlCreateRequest) =>
 	apiClient.post<ApiResponse<PresignedUrlCreateResponse>>('v1/uploads/presigned-url', {
@@ -45,14 +46,24 @@ export const uploadFileWithPresignedUrl = async ({
 		contentType,
 		size: file.size,
 		type,
+	}).catch((error: unknown) => {
+		apiErrorReporter.report(error, { operation: 'upload.presign' });
+
+		throw error;
 	});
 
 	const data = response.data;
 	if (!data) {
-		throw new Error('Presigned URL 발급 응답 데이터가 존재하지 않습니다.');
+		const error = new Error('Presigned URL 발급 응답 데이터가 존재하지 않습니다.');
+		apiErrorReporter.report(error, { operation: 'upload.presign' });
+		throw error;
 	}
 
-	await uploadFileToPresignedUrl(data.uploadUrl, file, data.headers);
+	await uploadFileToPresignedUrl(data.uploadUrl, file, data.headers).catch((error: unknown) => {
+		apiErrorReporter.report(error, { operation: 'upload.put' });
+
+		throw error;
+	});
 
 	return data;
 };

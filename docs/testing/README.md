@@ -99,7 +99,7 @@ pnpm test:e2e
 
 ### 브라우저 검증의 실행 전제
 
-`test:e2e`는 Playwright와 `pnpm dev`를 사용해 글쓰기 브라우저 흐름 4건을 실행한다. API 주소는 폐쇄된 loopback으로 고정하고 필요한 인증·목록·업로드 요청만 해당 spec에서 대체한다.
+`test:e2e`는 Playwright와 `pnpm dev`를 사용해 글쓰기 브라우저 흐름 4건을 실행한다. API 주소는 CSP의 HTTPS 정책에 맞는 테스트 전용 도메인(`https://api.rilog.test`)으로 고정하고 필요한 인증·목록·업로드 요청만 해당 spec에서 대체한다.
 
 ```sh
 pnpm test:e2e

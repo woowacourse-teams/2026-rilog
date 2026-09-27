@@ -1,9 +1,11 @@
 'use client';
 
-import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import type { ReactNode } from 'react';
+
+import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 
 import { globalMutationErrorHandler, isRetryableError } from './query-client-config';
 
@@ -27,8 +29,15 @@ export default function QueryProvider({ children }: QueryProviderProps) {
 						retry: false, // mutation 자동 재시도는 하지 않습니다.
 					},
 				},
+				queryCache: new QueryCache({
+					onError: (error) => apiErrorReporter.report(error, { operation: 'query' }),
+				}),
 				mutationCache: new MutationCache({
-					onError: (error) => globalMutationErrorHandler(error),
+					onError: (error, _variables, _context, mutation) => {
+						if (mutation.options.meta?.errorTracking !== 'local')
+							apiErrorReporter.report(error, { operation: 'mutation' });
+						globalMutationErrorHandler(error);
+					},
 				}),
 			}),
 	);

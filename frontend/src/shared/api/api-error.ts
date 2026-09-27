@@ -1,4 +1,4 @@
-import { HTTPError, TimeoutError } from 'ky';
+import { HTTPError, NetworkError, TimeoutError } from 'ky';
 
 import type { ErrorDetail } from './shared.types';
 
@@ -10,10 +10,11 @@ export type NormalizedApiError =
 			detail: ErrorDetail;
 			kind: ReturnType<typeof getApiErrorKind>;
 			response: Response;
+			cause: HTTPError;
 	  }
 	| { type: 'http'; response: Response; cause: HTTPError }
 	| { type: 'timeout'; cause: TimeoutError }
-	| { type: 'network'; cause: TypeError }
+	| { type: 'network'; cause: TypeError | NetworkError }
 	| { type: 'unknown'; cause: unknown };
 
 export const isErrorDetail = (value: unknown): value is ErrorDetail => {
@@ -32,7 +33,49 @@ export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 	);
 };
 
+export const isNormalizedApiError = (value: unknown): value is NormalizedApiError => {
+	if (typeof value !== 'object' || value === null || !('type' in value) || !('cause' in value)) {
+		return false;
+	}
+
+	switch (value.type) {
+		case 'api':
+			return (
+				'detail' in value &&
+				isErrorDetail(value.detail) &&
+				'kind' in value &&
+				value.kind === getApiErrorKind(value.detail.errorCode) &&
+				'response' in value &&
+				value.response instanceof Response &&
+				value.cause instanceof HTTPError
+			);
+		case 'http':
+			return 'response' in value && value.response instanceof Response && value.cause instanceof HTTPError;
+		case 'timeout':
+			return value.cause instanceof TimeoutError;
+		case 'network':
+			return value.cause instanceof TypeError || value.cause instanceof NetworkError;
+		case 'unknown':
+			return true;
+		default:
+			return false;
+	}
+};
+
+/** 일반 TypeError는 API 경계 밖에서 프로그래밍 오류와 구분할 수 없으므로 포함하지 않는다. */
+export const isApiRequestError = (
+	error: unknown,
+): error is NormalizedApiError | HTTPError | NetworkError | TimeoutError =>
+	isNormalizedApiError(error) ||
+	error instanceof HTTPError ||
+	error instanceof NetworkError ||
+	error instanceof TimeoutError;
+
 export const normalizeApiError = (error: unknown): NormalizedApiError => {
+	if (isNormalizedApiError(error)) {
+		return error;
+	}
+
 	if (error instanceof HTTPError) {
 		if (isErrorDetail(error.data)) {
 			return {
@@ -40,6 +83,7 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 				detail: error.data,
 				kind: getApiErrorKind(error.data.errorCode),
 				response: error.response,
+				cause: error,
 			};
 		}
 
@@ -50,7 +94,7 @@ export const normalizeApiError = (error: unknown): NormalizedApiError => {
 		return { type: 'timeout', cause: error };
 	}
 
-	if (error instanceof TypeError) {
+	if (error instanceof TypeError || error instanceof NetworkError) {
 		return { type: 'network', cause: error };
 	}
 

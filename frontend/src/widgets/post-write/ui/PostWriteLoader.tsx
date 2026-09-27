@@ -12,7 +12,7 @@ const loaderClassName = 'flex min-h-dvh items-center justify-center bg-backgroun
 type PostWriteEntry =
 	| { type: 'new' }
 	| { type: 'draft'; draftId: number }
-	| { type: 'edit'; postId: number }
+	| { type: 'edit'; slug: string; postId: number }
 	| { type: 'invalid-draft' }
 	| { type: 'invalid-post' }
 	| { type: 'ambiguous' };
@@ -24,7 +24,11 @@ interface PostWriteSession {
 	urlEntryKey: string;
 }
 
-const parsePostWriteEntry = (rawPostId: string | null, rawDraftId: string | null): PostWriteEntry => {
+const parsePostWriteEntry = (
+	rawPostId: string | null,
+	rawSlug: string | null,
+	rawDraftId: string | null,
+): PostWriteEntry => {
 	if (rawPostId !== null && rawDraftId !== null) {
 		return { type: 'ambiguous' };
 	}
@@ -38,23 +42,28 @@ const parsePostWriteEntry = (rawPostId: string | null, rawDraftId: string | null
 
 	if (rawPostId !== null) {
 		const postId = Number(rawPostId);
-		return rawPostId.trim().length > 0 && Number.isSafeInteger(postId) && postId > 0
-			? { type: 'edit', postId }
+		return rawPostId.trim().length > 0 &&
+			rawSlug !== null &&
+			rawSlug.trim().length > 0 &&
+			Number.isSafeInteger(postId) &&
+			postId > 0
+			? { type: 'edit', slug: rawSlug, postId }
 			: { type: 'invalid-post' };
 	}
 
 	return { type: 'new' };
 };
 
-const createUrlEntryKey = (rawPostId: string | null, rawDraftId: string | null) =>
-	JSON.stringify([rawPostId, rawDraftId]);
+const createUrlEntryKey = (rawPostId: string | null, rawSlug: string | null, rawDraftId: string | null) =>
+	JSON.stringify([rawPostId, rawSlug, rawDraftId]);
 
 export default function PostWriteLoader() {
 	const searchParams = useSearchParams();
 	const rawPostId = searchParams.get('postId');
+	const rawSlug = searchParams.get('slug');
 	const rawDraftId = searchParams.get('draftId');
-	const urlEntry = parsePostWriteEntry(rawPostId, rawDraftId);
-	const urlEntryKey = createUrlEntryKey(rawPostId, rawDraftId);
+	const urlEntry = parsePostWriteEntry(rawPostId, rawSlug, rawDraftId);
+	const urlEntryKey = createUrlEntryKey(rawPostId, rawSlug, rawDraftId);
 	const [session, setSession] = useState<PostWriteSession>(() => ({
 		entry: urlEntry,
 		key: 0,
@@ -116,7 +125,7 @@ export default function PostWriteLoader() {
 	}
 
 	if (entry.type === 'edit') {
-		return <EditPostLoader key={key} postId={entry.postId} />;
+		return <EditPostLoader key={key} slug={entry.slug} postId={entry.postId} />;
 	}
 
 	return <NewPostController key={key} onDraftPromoted={handleDraftPromoted} />;

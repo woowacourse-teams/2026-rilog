@@ -3,7 +3,45 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { tokenManager } from './token-manager';
 
+const { captureExceptionMock } = vi.hoisted(() => ({ captureExceptionMock: vi.fn() }));
+vi.mock('@/shared/error-tracking/error-tracker-instance', () => ({
+	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn() },
+}));
+
 describe('tokenManager', () => {
+	it.each([
+		{ status: 401, code: 'EXPIRED_REFRESH_TOKEN', reports: 0 },
+		{ status: 503, code: 'INTERNAL_SERVER_ERROR', reports: 1 },
+		{ status: 400, code: 'NEW_AUTH_ERROR', reports: 1 },
+	])(
+		'실제 refresh HTTP $status/$code에서도 정상 인증 복구와 장애 보고를 구분한다',
+		async ({ status, code, reports }) => {
+			vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.test');
+			vi.stubGlobal(
+				'fetch',
+				vi
+					.fn()
+					.mockResolvedValue(
+						new Response(
+							JSON.stringify({ status, error: 'error', errorCode: code, message: 'private', invalidParams: null }),
+							{ status, headers: { 'Content-Type': 'application/json' } },
+						),
+					),
+			);
+			await tokenManager.publishLogin('old-token');
+			await expect(tokenManager.refresh()).resolves.toBeNull();
+			expect(tokenManager.getToken()).toBeNull();
+			expect(captureExceptionMock).toHaveBeenCalledTimes(reports);
+			if (reports)
+				expect(captureExceptionMock.mock.calls[0]?.[1]).toMatchObject({ tags: { operation: 'auth.refresh' } });
+		},
+	);
+	it('refresh 통신 장애도 보고하면서 기존 로그아웃 결과를 유지한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.test');
+		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+		await expect(tokenManager.refresh()).resolves.toBeNull();
+		expect(captureExceptionMock).toHaveBeenCalledOnce();
+	});
 	it('연속 전이도 각 이벤트의 토큰 상태에서 구독자를 시작한다', async () => {
 		const tokens: (string | null)[] = [];
 		const unsubscribeLogin = tokenManager.subscribeLogin(() => {
@@ -73,7 +111,12 @@ describe('tokenManager', () => {
 			await Promise.allSettled([oldRefresh, newRefresh]);
 		}
 	});
-	afterEach(() => vi.restoreAllMocks());
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+		captureExceptionMock.mockClear();
+	});
 	beforeEach(async () => {
 		await tokenManager.publishLogout();
 	});

@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import PostDetailError from './error';
 
-const { trackerMock } = vi.hoisted(() => ({ trackerMock: vi.fn() }));
+const { trackerMock } = vi.hoisted(() => ({
+	trackerMock: vi.fn(),
+}));
 
 vi.mock('@/features/analytics/ui/ContentLoadFailureTracker', () => ({
 	default: (props: unknown) => {
@@ -22,6 +24,7 @@ describe('PostDetailError', () => {
 
 		expect(screen.getByRole('heading', { name: '게시글을 불러오지 못했어요.' })).toBeInTheDocument();
 		expect(trackerMock).toHaveBeenCalledWith({ surface: 'post_detail', loadPhase: 'detail', error });
+		expect(screen.getByRole('link', { name: '피드로 돌아가기' })).toHaveAttribute('href', '/feeds');
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 		expect(reset).toHaveBeenCalledOnce();
 	});

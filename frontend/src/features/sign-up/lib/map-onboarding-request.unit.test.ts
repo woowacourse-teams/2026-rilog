@@ -8,7 +8,7 @@ const SIGN_UP_VALUE: SignUpValue = {
 	nickname: ' 리로그 ',
 	slug: ' rilog ',
 	description: ' 함께 기록해요 ',
-	serviceUrl: ' https://rilog.kr ',
+	serviceUrl: ' https://www.rilog.kr ',
 	githubUrl: ' https://github.com/rilog ',
 	profileImageFile: null,
 };
@@ -20,7 +20,7 @@ describe('mapOnboardingRequest', () => {
 			slug: 'rilog',
 			introduction: '함께 기록해요',
 			profileImageUrl: 'profiles/rilog.png',
-			serviceUrl: 'https://rilog.kr',
+			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/rilog',
 		});
 	});

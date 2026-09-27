@@ -27,6 +27,7 @@ export interface PostsCountResponse {
 }
 
 export interface PostDetailRequest {
+	slug: string;
 	postId: number;
 }
 
