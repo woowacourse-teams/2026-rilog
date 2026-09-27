@@ -191,3 +191,30 @@ it('아바타와 이름은 작성자 블로그로 연결하고 수정 여부를 
 	);
 	expect(screen.getByText('편집됨')).toBeInTheDocument();
 });
+
+it.each(['comment-author', '@comment-author'])(
+	'작성자 slug가 %s이면 프로필과 닉네임이 작성자 블로그로 연결되고 키보드로 접근할 수 있다',
+	async (slug) => {
+		const user = userEvent.setup();
+		render(
+			<InlineCommentItem
+				postId={81}
+				comment={{
+					...COMMENT,
+					canEdit: false,
+					canDelete: false,
+					author: { ...COMMENT.author, slug, nickname: '댓글 작성자', profileImageUrl: null },
+				}}
+			/>,
+		);
+		const profileLink = screen.getByRole('link', { name: '댓글 작성자님의 블로그로 이동' });
+		const nicknameLink = screen.getByRole('link', { name: '댓글 작성자' });
+		expect(profileLink).toHaveAttribute('href', '/@comment-author');
+		expect(nicknameLink).toHaveAttribute('href', '/@comment-author');
+		expect(profileLink).toContainElement(screen.getByRole('img', { name: '댓글 작성자님의 프로필' }));
+		await user.tab();
+		expect(profileLink).toHaveFocus();
+		await user.tab();
+		expect(nicknameLink).toHaveFocus();
+	},
+);
