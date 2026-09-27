@@ -18,6 +18,7 @@ import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
@@ -48,6 +49,7 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
@@ -57,6 +59,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     private static final String SELECTED_TEXT = "나다";
     private static final String CONTENT = "좋은 설명이에요.";
     private static final String UPDATED_CONTENT = "수정한 설명이에요.";
+    private static final String OTHER_BLOCK_ID = "p-2";
 
     @Autowired
     private CommentAnchorService commentAnchorService;
@@ -653,6 +656,131 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
         // when - then
         assertThatThrownBy(() -> commentAnchorService.readCommentAnchors(post.getId(), requester.getId()))
+                .isInstanceOf(PostException.class)
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
+    }
+
+    @Test
+    @DisplayName("사이드바 인라인 댓글 목록은 블록으로 묶지 않고 먼저 생성된 selection 순서로 조회한다.")
+    void readSidebarCommentAnchorsOrdersBySelectionCreation() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection firstSelection = saveSelection(
+                post,
+                Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "가나")
+        );
+        CommentAnchorSelection secondSelection = saveSelection(
+                post,
+                Selection.of(OTHER_BLOCK_ID, 0, 2, "마바")
+        );
+        CommentAnchorSelection thirdSelection = saveSelection(
+                post,
+                Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT)
+        );
+        saveAnchor(thirdSelection, commenter, "세 번째 selection 댓글");
+        saveAnchor(secondSelection, commenter, "두 번째 selection 댓글");
+        saveAnchor(firstSelection, commenter, "첫 번째 selection 댓글");
+
+        // when
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(
+                post.getId(), commenter.getId());
+
+        // then
+        assertThat(result.anchorGroups())
+                .extracting(
+                        CommentAnchorSidebarResult.SidebarAnchorGroupResult::selectionId,
+                        CommentAnchorSidebarResult.SidebarAnchorGroupResult::blockId
+                )
+                .containsExactly(
+                        tuple(firstSelection.getId(), PARAGRAPH_BLOCK_ID),
+                        tuple(secondSelection.getId(), OTHER_BLOCK_ID),
+                        tuple(thirdSelection.getId(), PARAGRAPH_BLOCK_ID)
+                );
+    }
+
+    @Test
+    @DisplayName("사이드바 인라인 댓글 목록은 selection 안에서 먼저 작성된 인라인 댓글 순서로 조회한다.")
+    void readSidebarCommentAnchorsOrdersAnchorsByCreation() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        CommentAnchor first = saveAnchor(anchorSelection, commenter, "첫 번째 댓글");
+        CommentAnchor second = saveAnchor(anchorSelection, postWriter, "두 번째 댓글");
+        CommentAnchor third = saveAnchor(anchorSelection, commenter, "세 번째 댓글");
+
+        // when
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(
+                post.getId(), commenter.getId());
+
+        // then
+        assertThat(result.anchorGroups()).hasSize(1);
+        assertThat(result.anchorGroups().getFirst().commentAnchors())
+                .extracting(CommentAnchorListResult.CommentAnchorResult::commentAnchorId)
+                .containsExactly(first.getId(), second.getId(), third.getId());
+    }
+
+    @Test
+    @DisplayName("사이드바 인라인 댓글 목록은 ORPHANED selection을 포함하고 삭제된 인라인 댓글은 제외한다.")
+    void readSidebarCommentAnchorsIncludesOrphanedSelectionAndExcludesDeletedAnchors() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection orphanedSelection = saveActiveSelection(post);
+        orphanedSelection.orphan(LocalDateTime.of(2026, 9, 21, 12, 0));
+        commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
+        CommentAnchor visible = saveAnchor(orphanedSelection, commenter, "보이는 댓글");
+        CommentAnchor deleted = saveAnchor(orphanedSelection, commenter, "삭제된 댓글");
+        deleted.delete();
+        commentAnchorRepository.saveAndFlush(deleted);
+
+        // when
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(post.getId(), null);
+
+        // then
+        CommentAnchorSidebarResult.SidebarAnchorGroupResult group = result.anchorGroups().getFirst();
+        assertThat(group.state()).isEqualTo(AnchorStatus.ORPHANED);
+        assertThat(group.commentAnchors())
+                .extracting(CommentAnchorListResult.CommentAnchorResult::commentAnchorId)
+                .containsExactly(visible.getId());
+    }
+
+    @Test
+    @DisplayName("사이드바 인라인 댓글 목록은 요청자의 수정 삭제 권한을 제공한다.")
+    void readSidebarCommentAnchorsIncludesPermissions() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        saveAnchor(anchorSelection, commenter, CONTENT);
+
+        // when
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(
+                post.getId(), postWriter.getId());
+
+        // then
+        CommentAnchorListResult.CommentAnchorResult commentAnchor = result.anchorGroups().getFirst()
+                .commentAnchors().getFirst();
+        assertThat(commentAnchor.author().postAuthor()).isFalse();
+        assertThat(commentAnchor.canEdit()).isFalse();
+        assertThat(commentAnchor.canDelete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("비공개 게시글의 사이드바 인라인 댓글은 작성자가 아니면 조회할 수 없다.")
+    void readSidebarCommentAnchorsRejectsOtherUserOnPrivatePost() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User requester = saveCompletedUser(101L, "조회자", "requester");
+        Post post = savePrivatePost(postWriter);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.readSidebarCommentAnchors(post.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }

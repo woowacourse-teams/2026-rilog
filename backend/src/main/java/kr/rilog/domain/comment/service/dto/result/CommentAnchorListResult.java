@@ -106,7 +106,7 @@ public record CommentAnchorListResult(
             LocalDateTime updatedAt
     ) {
 
-        private static CommentAnchorResult from(
+        static CommentAnchorResult from(
                 Post post,
                 CommentAnchor commentAnchor,
                 BlogMembers blogMembers,

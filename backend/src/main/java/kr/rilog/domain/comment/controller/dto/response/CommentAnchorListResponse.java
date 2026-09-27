@@ -64,7 +64,7 @@ public record CommentAnchorListResponse(
             int endOffset
     ) {
 
-        private static RangeResponse from(CommentAnchorListResult.RangeResult result) {
+        static RangeResponse from(CommentAnchorListResult.RangeResult result) {
             return new RangeResponse(result.startOffset(), result.endOffset());
         }
     }
@@ -83,7 +83,7 @@ public record CommentAnchorListResponse(
             LocalDateTime updatedAt
     ) {
 
-        private static CommentAnchorResponse from(CommentAnchorListResult.CommentAnchorResult result) {
+        static CommentAnchorResponse from(CommentAnchorListResult.CommentAnchorResult result) {
             return new CommentAnchorResponse(
                     result.commentAnchorId(),
                     result.content(),
