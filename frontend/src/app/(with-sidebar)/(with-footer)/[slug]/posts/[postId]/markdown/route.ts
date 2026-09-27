@@ -4,35 +4,55 @@ import { blocksToMarkdown } from '@/domains/post/lib/blocks-to-markdown';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
+import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 
 export const revalidate = 600;
 
 export const GET = async (_request: Request, { params }: { params: Promise<{ slug: string; postId: string }> }) => {
 	const { slug, postId } = await params;
+	const normalizedSlug = stripAtPrefix(slug);
 	const numericId = Number(postId);
 
-	if (!Number.isSafeInteger(numericId) || numericId < 1) {
+	if (!Number.isSafeInteger(numericId) || numericId < 1 || normalizedSlug.length === 0) {
 		return new Response('Not Found', { status: 404 });
 	}
 
 	const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
 	if (apiBase === undefined || apiBase === '') {
-		return new Response('Not Found', { status: 404 });
+		return new Response('Markdown unavailable', { status: 503 });
 	}
 
 	try {
-		const res = await fetch(`${apiBase}/v1/posts/${numericId}`, {
+		const apiUrl = `${apiBase.replace(/\/+$/, '')}/v1/blogs/${encodeURIComponent(normalizedSlug)}/posts/${numericId}`;
+		const res = await fetch(apiUrl, {
 			next: { revalidate: 600 },
+			signal: AbortSignal.timeout(10_000),
 		});
 
-		if (!res.ok) {
+		if (res.status === 403 || res.status === 404) {
 			return new Response('Not Found', { status: 404 });
+		}
+		if (!res.ok) {
+			return new Response('Markdown unavailable', { status: 503 });
 		}
 
 		const body = (await res.json()) as { data?: PostDetailResponse };
 
 		const data = body.data;
-		if (!data || !Array.isArray(data.content) || data.owner?.slug !== slug.replace(/^@/, '')) {
+		if (
+			!data ||
+			typeof data.title !== 'string' ||
+			!Array.isArray(data.content) ||
+			typeof data.publishedAt !== 'string' ||
+			typeof data.owner?.slug !== 'string' ||
+			typeof data.author !== 'object' ||
+			data.author === null ||
+			Array.isArray(data.author)
+		) {
+			return new Response('Markdown unavailable', { status: 503 });
+		}
+
+		if (data.owner.slug !== normalizedSlug) {
 			return new Response('Not Found', { status: 404 });
 		}
 
@@ -61,6 +81,6 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ slu
 			},
 		});
 	} catch {
-		return new Response('Not Found', { status: 404 });
+		return new Response('Markdown unavailable', { status: 503 });
 	}
 };
