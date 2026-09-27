@@ -28,6 +28,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 		anchors: [
 			{
 				anchorId: 5701,
+				commentCount: 1,
 				range: { startOffset: 7, endOffset: 20 },
 				selectedText: 'Rilog.의 프론트엔드',
 				state: 'ACTIVE',
@@ -40,6 +41,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 		anchors: [
 			{
 				anchorId: 5702,
+				commentCount: 2,
 				range: { startOffset: 18, endOffset: 31 },
 				selectedText: '로그인 모달을 여는 코드',
 				state: 'ACTIVE',
@@ -53,6 +55,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 			},
 			{
 				anchorId: 5703,
+				commentCount: 1,
 				range: { startOffset: 22, endOffset: 38 },
 				selectedText: '모달을 여는 코드도 자연스럽게',
 				state: 'ACTIVE',
@@ -60,6 +63,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 			},
 			{
 				anchorId: 5704,
+				commentCount: 1,
 				range: { startOffset: 0, endOffset: 7 },
 				selectedText: '과거의 인용문',
 				state: 'OUTDATED',
@@ -72,6 +76,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 		anchors: [
 			{
 				anchorId: 5705,
+				commentCount: 1,
 				range: { startOffset: 0, endOffset: 13 },
 				selectedText: '가장 단순한 로그인 모달',
 				state: 'ACTIVE',
@@ -84,6 +89,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 		anchors: [
 			{
 				anchorId: 5706,
+				commentCount: 1,
 				range: { startOffset: 19, endOffset: 37 },
 				selectedText: 'LoginModalProvider',
 				state: 'ACTIVE',
@@ -91,6 +97,7 @@ export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = 
 			},
 			{
 				anchorId: 5707,
+				commentCount: 1,
 				range: { startOffset: 10, endOffset: 41 },
 				selectedText: '루트 레이아웃에 LoginModalProvider를 배치',
 				state: 'ACTIVE',

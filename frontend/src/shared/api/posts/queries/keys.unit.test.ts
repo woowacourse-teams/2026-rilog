@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { postsQueryKeys } from './keys';
 
 describe('postsQueryKeys', () => {
+	it('인라인 댓글을 게시글과 로그인 여부로 구분하고 인증 캐시 정리에 포함한다', () => {
+		expect(postsQueryKeys.commentAnchors(81)).toEqual(['authenticated', 'posts', 'comment-anchors', 81, false]);
+		expect(postsQueryKeys.commentAnchors(81)).not.toEqual(postsQueryKeys.commentAnchors(82));
+		expect(postsQueryKeys.commentAnchors(81, false)).not.toEqual(postsQueryKeys.commentAnchors(81, true));
+	});
+
 	it('모든 게시글 상세 쿼리를 무효화할 수 있는 상위 key를 제공한다', () => {
 		expect(postsQueryKeys.details()).toEqual(['posts', 'detail']);
 	});

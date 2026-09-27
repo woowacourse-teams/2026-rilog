@@ -21,6 +21,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 		anchors: [
 			{
 				anchorId: 1,
+				commentCount: 0,
 				range: { startOffset: 0, endOffset: 2 },
 				selectedText: '댓글',
 				state: 'ACTIVE',
@@ -28,6 +29,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 			},
 			{
 				anchorId: 2,
+				commentCount: 0,
 				range: { startOffset: 3, endOffset: 8 },
 				selectedText: '하이라이트',
 				state: 'OUTDATED',
@@ -35,6 +37,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 			},
 			{
 				anchorId: 3,
+				commentCount: 0,
 				range: { startOffset: 1, endOffset: 8 },
 				selectedText: '글 하이라이',
 				state: 'ACTIVE',
@@ -42,6 +45,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 			},
 			{
 				anchorId: 4,
+				commentCount: 0,
 				range: { startOffset: 0, endOffset: 100 },
 				selectedText: '잘못된 범위',
 				state: 'ACTIVE',

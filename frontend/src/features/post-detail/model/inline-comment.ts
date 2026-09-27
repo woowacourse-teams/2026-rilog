@@ -26,6 +26,7 @@ export interface InlineCommentModel {
 
 export interface InlineCommentAnchorModel {
 	anchorId: number;
+	commentCount: number;
 	range: InlineCommentRangeModel;
 	selectedText: string;
 	state: InlineCommentAnchorState;

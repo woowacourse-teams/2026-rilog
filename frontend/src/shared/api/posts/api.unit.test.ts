@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { deletePost, publishPost, readPostDetail, updatePost } from './api';
+import { deletePost, publishPost, readPostCommentAnchors, readPostDetail, updatePost } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -140,5 +140,17 @@ describe('deletePost', () => {
 		expect(request.method).toBe('DELETE');
 		expect(request.url).toBe('https://api.rilog.test/v1/posts/42');
 		expect(response.status).toBe(204);
+	});
+});
+
+describe('readPostCommentAnchors', () => {
+	it('게시글 인라인 댓글 목록 endpoint로 GET하고 응답 envelope를 유지한다', async () => {
+		const response = { status: 0, message: 'OK', data: { blocks: [] } };
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(response));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(readPostCommentAnchors(81)).resolves.toEqual(response);
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors');
 	});
 });

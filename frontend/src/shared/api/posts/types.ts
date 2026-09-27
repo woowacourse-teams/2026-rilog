@@ -77,3 +77,33 @@ export interface PostDetailResponse {
 	owner: PostDetailOwnerResponse;
 	viewerPermissions: PostViewerPermissionsResponse;
 }
+
+export interface PostCommentAnchorResponse {
+	commentAnchorId: number;
+	content: string;
+	author: {
+		userId: number;
+		nickname: string;
+		slug: string;
+		profileImageUrl: string | null;
+		isPostAuthor: boolean;
+		isBlogMember: boolean;
+	};
+	canEdit: boolean;
+	canDelete: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface PostCommentAnchorGroupResponse {
+	selectionId: number;
+	range: { startOffset: number; endOffset: number };
+	selectedText: string;
+	state: 'ACTIVE' | 'OUTDATED';
+	anchorCount: number;
+	commentAnchors: PostCommentAnchorResponse[];
+}
+
+export interface PostCommentAnchorsResponse {
+	blocks: { blockId: string; anchorGroups: PostCommentAnchorGroupResponse[] }[];
+}
