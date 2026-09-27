@@ -106,6 +106,7 @@ public record CommentAnchorListResult(
             AuthorResult author,
             boolean canEdit,
             boolean canDelete,
+            boolean edited,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
@@ -125,6 +126,7 @@ public record CommentAnchorListResult(
                     AuthorResult.from(post, commentAnchor.getWriter(), blogMembers),
                     isWriter,
                     canDelete,
+                    commentAnchor.isEdited(),
                     commentAnchor.getCreatedAt(),
                     commentAnchor.getUpdatedAt()
             );
