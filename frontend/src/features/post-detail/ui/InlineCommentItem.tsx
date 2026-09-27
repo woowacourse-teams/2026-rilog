@@ -1,8 +1,8 @@
-import type { InlineCommentResponse } from '@/shared/api/posts/types';
-import Avatar from '@/shared/ui/avatar/Avatar';
+import UserAvatar from '@/domains/user/ui/UserAvatar';
+import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
 
 interface InlineCommentItemProps {
-	comment: InlineCommentResponse;
+	comment: InlineCommentModel;
 }
 
 const COMMENT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
@@ -33,10 +33,12 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 			aria-label={`${author.nickname}님의 댓글`}
 			className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5"
 		>
-			<Avatar
+			<UserAvatar
 				fallback={author.nickname.slice(0, 1)}
-				src={author.profileImageUrl ?? undefined}
-				className="col-start-1 row-start-1 size-8 rounded-full bg-surface-active text-label-1 font-semibold text-text-secondary"
+				src={author.profileImageUrl}
+				label={`${author.nickname}님의 프로필`}
+				size="md"
+				className="col-start-1 row-start-1"
 			/>
 			<div className="col-start-2 row-start-1 flex min-w-0 flex-col gap-0.5">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
