@@ -6,6 +6,10 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.comment.entity.CommentAnchor;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.repository.CommentAnchorRepository;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.Post;
@@ -18,6 +22,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
+import kr.rilog.support.fixure.CommentAnchorFixture;
 import kr.rilog.support.fixure.PostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static kr.rilog.domain.blog.entity.enums.BlogType.COLOG;
 import static kr.rilog.domain.blog.entity.enums.BlogType.RILOG;
@@ -65,6 +72,48 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private ChapterRepository chapterRepository;
+
+    @Autowired
+    private CommentAnchorRepository commentAnchorRepository;
+
+    @Autowired
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
+    @Test
+    @DisplayName("전체 피드는 삭제되지 않은 인라인 댓글 수를 반환한다.")
+    void readFullFeedReturnsInlineCommentCounts() {
+        // given
+        User author = saveCompletedUser(31L, "댓글집계작성자", "comment_count_author");
+        Blog rilog = saveRilog(author);
+        Post postWithComments = savePost(PostFixture.publicPublishedRilogPostAt(
+                rilog,
+                author,
+                BASE_PUBLISHED_AT.plusMinutes(1)
+        ));
+        Post postWithoutComments = savePost(PostFixture.publicPublishedRilogPostAt(
+                rilog,
+                author,
+                BASE_PUBLISHED_AT
+        ));
+        saveAnchor(CommentAnchorFixture.activeAnchor(postWithComments, author));
+        saveAnchor(CommentAnchorFixture.orphanedAnchor(postWithComments, author));
+        CommentAnchor deletedAnchor = CommentAnchorFixture.activeAnchor(postWithComments, author);
+        deletedAnchor.delete();
+        saveAnchor(deletedAnchor);
+
+        // when
+        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
+
+        // then
+        Map<Long, Long> inlineCommentCounts = result.posts().stream()
+                .collect(Collectors.toMap(
+                        FullFeedPostResponse.PostItemResponse::postId,
+                        FullFeedPostResponse.PostItemResponse::totalCommentsCount
+                ));
+        assertThat(inlineCommentCounts)
+                .containsEntry(postWithComments.getId(), 2L)
+                .containsEntry(postWithoutComments.getId(), 0L);
+    }
 
     @Test
     @DisplayName("전체 피드는 공개 발행 상태이면서 삭제되지 않은 게시글만 반환한다.")
@@ -670,6 +719,12 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         return chapterRepository.saveAndFlush(Chapter.create(blog, name, order));
     }
 
+    private void saveAnchor(CommentAnchor anchor) {
+        CommentAnchorSelection selection = anchor.getCommentAnchorSelection();
+        commentAnchorSelectionRepository.saveAndFlush(selection);
+        commentAnchorRepository.saveAndFlush(anchor);
+    }
+
     private FullFeedPostResponse.PostItemResponse expectedFullFeedItem(Post post, User author, Blog owner) {
         return new FullFeedPostResponse.PostItemResponse(
                 post.getId(),
@@ -678,6 +733,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
                 post.getCategory().getName(),
                 post.getVisibility().name(),
                 post.getPublishedAt(),
+                0L,
                 ChapterResponse.from(post.getChapter()),
                 new FullFeedPostResponse.AuthorResponse(
                         author.getId(),

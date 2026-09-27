@@ -51,6 +51,7 @@ class FeedControllerTest {
                                         "기술",
                                         "PUBLIC",
                                         LocalDateTime.of(2026, 8, 13, 12, 0),
+                                        7L,
                                         new ChapterResponse(20L, "Spring", 0),
                                         new FullFeedPostResponse.AuthorResponse(
                                                 1L,
@@ -73,6 +74,7 @@ class FeedControllerTest {
                                         "기술",
                                         "PUBLIC",
                                         LocalDateTime.of(2026, 8, 13, 13, 0),
+                                        3L,
                                         null,
                                         new FullFeedPostResponse.AuthorResponse(
                                                 1L,
@@ -105,6 +107,7 @@ class FeedControllerTest {
                         .param("size", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.posts[0].postId").value(10L))
+                .andExpect(jsonPath("$.data.posts[0].inlineCommentCount").value(7L))
                 .andExpect(jsonPath("$.data.posts[0].chapter.chapterId").value(20L))
                 .andExpect(jsonPath("$.data.posts[0].chapter.name").value("Spring"))
                 .andExpect(jsonPath("$.data.posts[0].chapter.order").value(0))
@@ -113,6 +116,7 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.data.posts[0].owner.type").value("RILOG"))
                 .andExpect(jsonPath("$.data.posts[0].owner.name").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[1].postId").value(11L))
+                .andExpect(jsonPath("$.data.posts[1].inlineCommentCount").value(3L))
                 .andExpect(jsonPath("$.data.posts[1].chapter").doesNotExist())
                 .andExpect(jsonPath("$.data.posts[1].author.nickname").value("작성자"))
                 .andExpect(jsonPath("$.data.posts[1].owner.type").value("COLOG"))

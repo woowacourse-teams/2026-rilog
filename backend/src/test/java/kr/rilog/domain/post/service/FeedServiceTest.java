@@ -78,7 +78,7 @@ class FeedServiceTest {
         // given
         FullFeedSearchCommand command = new FullFeedSearchCommand(Category.DAILY, BlogType.COLOG, PAGE, SIZE);
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
-        when(postFeedQueryRepository.findFullFeed(
+        when(postFeedQueryRepository.findFullFeedWithInlineCommentCount(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 Category.DAILY,
@@ -90,7 +90,7 @@ class FeedServiceTest {
         feedService.readFullFeedPostList(command);
 
         // then
-        verify(postFeedQueryRepository).findFullFeed(
+        verify(postFeedQueryRepository).findFullFeedWithInlineCommentCount(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 Category.DAILY,
@@ -108,7 +108,7 @@ class FeedServiceTest {
                 createFeedRow(2L),
                 createFeedRow(1L)
         );
-        when(postFeedQueryRepository.findFullFeed(
+        when(postFeedQueryRepository.findFullFeedWithInlineCommentCount(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 null,
