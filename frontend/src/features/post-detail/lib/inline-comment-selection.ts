@@ -62,6 +62,9 @@ export const createInlineCommentSelectionDraft = (
 	if (startRoot === null || startRoot !== endRoot) {
 		return null;
 	}
+	if (startRoot.closest('[data-content-type="codeBlock"]') !== null) {
+		return null;
+	}
 
 	const blockId = startRoot.dataset.inlineCommentBlockId;
 	if (blockId === undefined || blockId.length === 0) {

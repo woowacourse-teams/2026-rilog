@@ -33,6 +33,27 @@ afterEach(() => {
 });
 
 describe('createInlineCommentSelectionDraft', () => {
+	it('코드 블록의 강조된 텍스트를 선택하면 댓글 선택을 생성하지 않는다', () => {
+		const article = renderArticle(`
+			<div data-content-type="codeBlock"><pre><code data-inline-comment-root data-inline-comment-block-id="code-block"><span>const</span> value = 1;</code></pre></div>
+		`);
+		const textNode = article.querySelector('span')!.firstChild!;
+
+		expect(createInlineCommentSelectionDraft(selectRange(textNode, 0, textNode, 5), article)).toBeNull();
+	});
+
+	it('본문의 인라인 코드를 선택하면 댓글 선택을 생성한다', () => {
+		const article = renderArticle(`
+			<p data-inline-comment-root data-inline-comment-block-id="paragraph">본문 <code>value</code></p>
+		`);
+		const textNode = article.querySelector('code')!.firstChild!;
+
+		expect(createInlineCommentSelectionDraft(selectRange(textNode, 0, textNode, 5), article)).toMatchObject({
+			blockId: 'paragraph',
+			selectedText: 'value',
+		});
+	});
+
 	it('inline markup을 가로지른 선택을 blockId와 UTF-16 offset으로 변환한다', () => {
 		const article = renderArticle(`
 			<div data-inline-comment-root data-inline-comment-block-id="block-1">앞 <strong>강조</strong><a href="#link"> 링크</a></div>
