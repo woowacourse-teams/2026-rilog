@@ -40,7 +40,7 @@ public class FeedService {
     public FullFeedPostResponse readFullFeedPostList(FullFeedSearchCommand command) {
         PageRequest pageable = PageRequest.of(command.page(), command.size());
 
-        Slice<PostFullFeedRow> feed = postFeedQueryRepository.findFullFeed(
+        Slice<PostFullFeedRow> feed = postFeedQueryRepository.findFullFeedWithInlineCommentCount(
                 PostStatus.PUBLISHED,
                 PostVisibility.PUBLIC,
                 command.category(),
