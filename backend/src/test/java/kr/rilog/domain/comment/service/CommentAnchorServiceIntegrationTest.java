@@ -14,8 +14,10 @@ import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
+import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -31,7 +33,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_SELECTION_NOT_FOUND;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
@@ -49,6 +53,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     private static final int SELECTED_END = 4;
     private static final String SELECTED_TEXT = "나다";
     private static final String CONTENT = "좋은 설명이에요.";
+    private static final String UPDATED_CONTENT = "수정한 설명이에요.";
 
     @Autowired
     private CommentAnchorService commentAnchorService;
@@ -649,6 +654,230 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
 
+    @Test
+    @DisplayName("작성자가 인라인 댓글을 수정하면 변경한 본문을 저장한다.")
+    void updateCommentAnchorPersistsContent() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+
+        // when
+        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
+
+        // then
+        assertThat(result.content()).isEqualTo(UPDATED_CONTENT);
+        assertThat(saved.getContent()).isEqualTo(UPDATED_CONTENT);
+    }
+
+    @Test
+    @DisplayName("작성자가 인라인 댓글 본문을 변경하면 수정된 댓글이 된다.")
+    void updateCommentAnchorMarksEdited() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+
+        // when
+        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
+
+        // then
+        assertThat(result.edited()).isTrue();
+        assertThat(saved.isEdited()).isTrue();
+    }
+
+    @Test
+    @DisplayName("기존과 같은 본문으로 수정하면 수정된 댓글이 되지 않는다.")
+    void updateCommentAnchorWithSameContentDoesNotMarkEdited() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+
+        // when
+        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(CONTENT)
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
+
+        // then
+        assertThat(result.edited()).isFalse();
+        assertThat(saved.isEdited()).isFalse();
+    }
+
+    @Test
+    @DisplayName("ORPHANED selection의 인라인 댓글도 작성자는 본문을 수정할 수 있다.")
+    void updateCommentAnchorAllowsOrphanedSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection orphanedSelection = saveActiveSelection(post);
+        orphanedSelection.orphan(LocalDateTime.of(2026, 9, 22, 12, 0));
+        commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
+        CommentAnchor anchor = saveAnchor(orphanedSelection, commenter, CONTENT);
+
+        // when
+        commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
+        );
+        CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
+
+        // then
+        assertThat(saved.getContent()).isEqualTo(UPDATED_CONTENT);
+    }
+
+    @Test
+    @DisplayName("게시글 작성자라도 다른 사용자의 인라인 댓글은 수정할 수 없다.")
+    void updateCommentAnchorRejectsPostWriterForOthersAnchor() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+        var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), postWriter.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_AUTHOR_FORBIDDEN.getMessage());
+        assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().getContent()).isEqualTo(CONTENT);
+    }
+
+    @Test
+    @DisplayName("비공개 게시글에서는 게시글 작성자가 아닌 사용자가 자신의 인라인 댓글을 수정할 수 없다.")
+    void updateCommentAnchorRejectsOtherUserOnPrivatePost() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePrivatePost(postWriter);
+        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+        var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), commenter.getId(), command
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
+        assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().getContent()).isEqualTo(CONTENT);
+    }
+
+    @Test
+    @DisplayName("요청한 게시글에 속하지 않은 인라인 댓글은 수정할 수 없다.")
+    void updateCommentAnchorRejectsAnchorFromAnotherPost() {
+        // given
+        User firstWriter = saveCompletedUser(100L, "첫글작성자", "first_writer");
+        User secondWriter = saveCompletedUser(101L, "둘글작성자", "second_writer");
+        User commenter = saveCompletedUser(102L, "댓글작성자", "commenter");
+        Post requestedPost = savePublicPost(firstWriter);
+        Post otherPost = savePublicPost(secondWriter);
+        CommentAnchor otherAnchor = saveAnchor(saveActiveSelection(otherPost), commenter, CONTENT);
+        var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
+                requestedPost.getId(), otherAnchor.getId(), commenter.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("삭제된 인라인 댓글은 수정할 수 없다.")
+    void updateCommentAnchorRejectsDeletedAnchor() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchor deletedAnchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+        deletedAnchor.delete();
+        commentAnchorRepository.saveAndFlush(deletedAnchor);
+        var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
+                post.getId(), deletedAnchor.getId(), commenter.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("삭제된 selection의 인라인 댓글은 수정할 수 없다.")
+    void updateCommentAnchorRejectsAnchorOfDeletedSelection() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection deletedSelection = saveActiveSelection(post);
+        CommentAnchor anchor = saveAnchor(deletedSelection, commenter, CONTENT);
+        deletedSelection.delete();
+        commentAnchorSelectionRepository.saveAndFlush(deletedSelection);
+        var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
+                post.getId(), anchor.getId(), commenter.getId(), command
+        ))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("삭제된 게시글의 인라인 댓글은 수정할 수 없다.")
+    void updateCommentAnchorRejectsDeletedPost() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        Blog rilog = saveRilog(postWriter);
+        Post deleted = postRepository.saveAndFlush(PostFixture.deletedPublicPublishedRilogPost(rilog, postWriter));
+        CommentAnchor anchor = saveAnchor(saveActiveSelection(deleted), postWriter, CONTENT);
+        var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
+
+        // when - then
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
+                deleted.getId(), anchor.getId(), postWriter.getId(), command
+        ))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("인라인 댓글 목록은 본문이 수정된 댓글만 수정된 댓글로 표시한다.")
+    void readCommentAnchorsMarksOnlyEditedAnchors() {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        CommentAnchor edited = saveAnchor(anchorSelection, commenter, "수정할 댓글");
+        CommentAnchor unedited = saveAnchor(anchorSelection, commenter, "그대로인 댓글");
+        commentAnchorService.updateCommentAnchor(
+                post.getId(), edited.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
+        );
+
+        // when
+        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), null);
+
+        // then
+        List<CommentAnchorListResult.CommentAnchorResult> commentAnchors = result.blocks().getFirst()
+                .anchorGroups().getFirst()
+                .commentAnchors();
+        assertThat(findCommentAnchor(commentAnchors, edited).edited()).isTrue();
+        assertThat(findCommentAnchor(commentAnchors, unedited).edited()).isFalse();
+    }
+
     private CommentAnchorCreateCommand selectedCommand() {
         return new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT, CONTENT);
     }
@@ -691,6 +920,16 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         return result.blocks().getFirst()
                 .anchorGroups().getFirst()
                 .commentAnchors().getFirst();
+    }
+
+    private CommentAnchorListResult.CommentAnchorResult findCommentAnchor(
+            List<CommentAnchorListResult.CommentAnchorResult> commentAnchors,
+            CommentAnchor target
+    ) {
+        return commentAnchors.stream()
+                .filter(commentAnchor -> commentAnchor.commentAnchorId().equals(target.getId()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private Long getSelectionId(CommentAnchorCreateResult result) {
