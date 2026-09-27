@@ -1,6 +1,5 @@
 package kr.rilog.domain.comment.service;
 
-import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.BlogMembers;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
@@ -104,9 +103,7 @@ public class CommentAnchorService {
         post.validateReadableBy(requesterId);
 
         CommentAnchor commentAnchor = getCommentAnchor(postId, commentAnchorId);
-        boolean requesterCanDeleteOthers = post.isWrittenBy(requesterId)
-                || hasBlogDeletePermission(post.getOwnBlogId(), requesterId);
-        commentAnchor.deleteBy(requesterId, requesterCanDeleteOthers);
+        commentAnchor.deleteBy(requesterId, post, getActiveBlogMembers(post));
         return CommentAnchorDeleteResult.from(commentAnchor);
     }
 
@@ -117,10 +114,7 @@ public class CommentAnchorService {
         CommentAnchorGroups groups = CommentAnchorGroups.from(
                 commentAnchorRepository.findAllByPostId(postId)
         );
-        BlogMembers blogMembers = BlogMembers.from(
-                blogMemberRepository.findAllWithUserByBlogIdAndStatus(post.getOwnBlogId(), ACTIVE)
-        );
-        return CommentAnchorListResult.from(post, groups, blogMembers, requesterId);
+        return CommentAnchorListResult.from(post, groups, getActiveBlogMembers(post), requesterId);
     }
 
     private CommentAnchorSelection getOrCreateActiveSelection(Post post, Selection selection) {
@@ -137,12 +131,6 @@ public class CommentAnchorService {
         }
 
         return commentAnchorSelectionRepository.save(CommentAnchorSelection.create(post, selection));
-    }
-
-    private boolean hasBlogDeletePermission(Long blogId, Long requesterId) {
-        return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(blogId, requesterId, ACTIVE)
-                .map(BlogMember::hasDeletePermission)
-                .orElse(false);
     }
 
     private CommentAnchor getCommentAnchor(Long postId, Long commentAnchorId) {
@@ -163,6 +151,12 @@ public class CommentAnchorService {
     private User getUser(Long requesterId) {
         return userRepository.findById(requesterId)
                 .orElseThrow(() -> new UserException(USER_NOT_FOUND));
+    }
+
+    private BlogMembers getActiveBlogMembers(Post post) {
+        return BlogMembers.from(
+                blogMemberRepository.findAllWithUserByBlogIdAndStatus(post.getOwnBlogId(), ACTIVE)
+        );
     }
 
     private Selection createSelection(Post post, CommentAnchorCreateCommand command) {

@@ -9,7 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import kr.rilog.domain.blog.entity.BlogMembers;
 import kr.rilog.domain.comment.exception.CommentException;
+import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
@@ -63,9 +65,17 @@ public class CommentAnchor extends BaseEntity {
         this.content = content;
     }
 
-    public void deleteBy(Long requesterId, boolean requesterCanDeleteOthers) {
-        validateDeletableBy(requesterId, requesterCanDeleteOthers);
+    public void deleteBy(Long requesterId, Post post, BlogMembers blogMembers) {
+        if (!canBeDeletedBy(requesterId, post, blogMembers)) {
+            throw new CommentException(COMMENT_ANCHOR_DELETE_FORBIDDEN);
+        }
         delete();
+    }
+
+    public boolean canBeDeletedBy(Long requesterId, Post post, BlogMembers blogMembers) {
+        return isWrittenBy(requesterId)
+                || post.isWrittenBy(requesterId)
+                || blogMembers.hasDeletePermission(requesterId);
     }
 
     public boolean isDeleted() {
@@ -87,12 +97,6 @@ public class CommentAnchor extends BaseEntity {
     private void validateWriter(Long requesterId) {
         if (!isWrittenBy(requesterId)) {
             throw new CommentException(COMMENT_AUTHOR_FORBIDDEN);
-        }
-    }
-
-    private void validateDeletableBy(Long requesterId, boolean requesterCanDeleteOthers) {
-        if (!isWrittenBy(requesterId) && !requesterCanDeleteOthers) {
-            throw new CommentException(COMMENT_ANCHOR_DELETE_FORBIDDEN);
         }
     }
 

@@ -1,5 +1,8 @@
 package kr.rilog.domain.comment.entity;
 
+import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.BlogMembers;
 import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.post.entity.Post;
@@ -11,7 +14,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.ADMIN;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_DELETE_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
@@ -24,12 +30,24 @@ class CommentAnchorTest {
 
     private static final Long WRITER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
+    private static final Long POST_WRITER_ID = 3L;
+    private static final Long BLOG_OWNER_ID = 4L;
+    private static final Long BLOG_ADMIN_ID = 5L;
+    private static final Long BLOG_MEMBER_ID = 6L;
     private static final String CONTENT = "좋은 설명이에요.";
     private static final int MAX_CONTENT_LENGTH = 1_000;
     private static final Selection SELECTION = Selection.of("block-a", 2, 4, "나다");
+    private static final LocalDateTime JOINED_AT = LocalDateTime.of(2026, 9, 17, 10, 0);
 
     private final Post post = PostFixture.publicPublishedRilogPost();
     private final User writer = BlogFixture.createUser(WRITER_ID);
+    private final User postWriter = BlogFixture.createUser(POST_WRITER_ID);
+    private final Blog colog = BlogFixture.createColog(BlogFixture.createUser(BLOG_OWNER_ID));
+    private final Post cologPost = PostFixture.publicPublishedColog(
+            BlogFixture.createRilog(postWriter),
+            colog,
+            postWriter
+    );
 
     @Test
     @DisplayName("인라인 댓글은 저장된 선택 범위를 참조한다.")
@@ -183,31 +201,69 @@ class CommentAnchorTest {
     }
 
     @Test
-    @DisplayName("작성자는 인라인 댓글을 삭제할 수 있다.")
-    void deleteByAllowsWriter() {
-        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+    @DisplayName("댓글 작성자는 인라인 댓글을 삭제할 수 있다.")
+    void canBeDeletedByWriter() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
 
-        anchor.deleteBy(WRITER_ID, false);
+        assertThat(anchor.canBeDeletedBy(WRITER_ID, cologPost, cologMembers())).isTrue();
+    }
+
+    @Test
+    @DisplayName("블로그 MEMBER 권한이어도 게시글 작성자는 다른 사용자의 인라인 댓글을 삭제할 수 있다.")
+    void canBeDeletedByPostWriter() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
+
+        assertThat(anchor.canBeDeletedBy(POST_WRITER_ID, cologPost, cologMembers())).isTrue();
+    }
+
+    @Test
+    @DisplayName("블로그 OWNER는 다른 사용자의 인라인 댓글을 삭제할 수 있다.")
+    void canBeDeletedByBlogOwner() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
+
+        assertThat(anchor.canBeDeletedBy(BLOG_OWNER_ID, cologPost, cologMembers())).isTrue();
+    }
+
+    @Test
+    @DisplayName("블로그 ADMIN은 다른 사용자의 인라인 댓글을 삭제할 수 있다.")
+    void canBeDeletedByBlogAdmin() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
+
+        assertThat(anchor.canBeDeletedBy(BLOG_ADMIN_ID, cologPost, cologMembers())).isTrue();
+    }
+
+    @Test
+    @DisplayName("게시글 작성자가 아닌 블로그 MEMBER는 다른 사용자의 인라인 댓글을 삭제할 수 없다.")
+    void canNotBeDeletedByBlogMember() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
+
+        assertThat(anchor.canBeDeletedBy(BLOG_MEMBER_ID, cologPost, cologMembers())).isFalse();
+    }
+
+    @Test
+    @DisplayName("댓글 작성자도 게시글 작성자도 블로그 관리자도 아닌 사용자는 인라인 댓글을 삭제할 수 없다.")
+    void canNotBeDeletedByUnrelatedUser() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
+
+        assertThat(anchor.canBeDeletedBy(OTHER_USER_ID, cologPost, cologMembers())).isFalse();
+    }
+
+    @Test
+    @DisplayName("삭제 권한이 있는 사용자가 삭제하면 삭제된 인라인 댓글이 된다.")
+    void deleteByMarksDeletedWhenPermitted() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
+
+        anchor.deleteBy(BLOG_ADMIN_ID, cologPost, cologMembers());
 
         assertThat(anchor.isDeleted()).isTrue();
     }
 
     @Test
-    @DisplayName("다른 사용자의 댓글을 삭제할 권한이 있으면 작성자가 아니어도 인라인 댓글을 삭제할 수 있다.")
-    void deleteByAllowsRequesterWhoCanDeleteOthers() {
-        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
-
-        anchor.deleteBy(OTHER_USER_ID, true);
-
-        assertThat(anchor.isDeleted()).isTrue();
-    }
-
-    @Test
-    @DisplayName("작성자가 아니고 다른 사용자의 댓글을 삭제할 권한도 없으면 인라인 댓글을 삭제할 수 없다.")
+    @DisplayName("삭제 권한이 없는 사용자는 인라인 댓글을 삭제할 수 없다.")
     void deleteByRejectsRequesterWithoutPermission() {
-        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
 
-        assertThatThrownBy(() -> anchor.deleteBy(OTHER_USER_ID, false))
+        assertThatThrownBy(() -> anchor.deleteBy(BLOG_MEMBER_ID, cologPost, cologMembers()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_DELETE_FORBIDDEN.getMessage());
     }
@@ -215,9 +271,9 @@ class CommentAnchorTest {
     @Test
     @DisplayName("삭제에 실패하면 인라인 댓글은 삭제되지 않은 상태를 유지한다.")
     void deleteByKeepsNotDeletedWhenRejected() {
-        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(cologPost, writer);
 
-        assertThatThrownBy(() -> anchor.deleteBy(OTHER_USER_ID, false))
+        assertThatThrownBy(() -> anchor.deleteBy(BLOG_MEMBER_ID, cologPost, cologMembers()))
                 .isInstanceOf(CommentException.class);
 
         assertThat(anchor.isDeleted()).isFalse();
@@ -237,6 +293,15 @@ class CommentAnchorTest {
         CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
 
         assertThat(anchor.isWrittenBy(OTHER_USER_ID)).isFalse();
+    }
+
+    private BlogMembers cologMembers() {
+        return BlogMembers.from(List.of(
+                BlogMember.createOwner(colog, BlogFixture.createUser(BLOG_OWNER_ID), JOINED_AT),
+                BlogMember.invite(colog, BlogFixture.createUser(BLOG_ADMIN_ID), "관리자", ADMIN, JOINED_AT),
+                BlogMember.invite(colog, BlogFixture.createUser(BLOG_MEMBER_ID), "구성원", MEMBER, JOINED_AT),
+                BlogMember.invite(colog, postWriter, "작성자", MEMBER, JOINED_AT)
+        ));
     }
 
     private CommentAnchorSelection activeSelection() {
