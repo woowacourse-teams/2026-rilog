@@ -16,7 +16,10 @@ export const getInlineCommentThreadsByRequest = (
 		.filter((block) => block.blockId === request.blockId)
 		.flatMap((block) =>
 			block.anchors
-				.filter((anchor) => requestedAnchorIds.has(anchor.anchorId))
+				.filter(
+					(anchor) =>
+						requestedAnchorIds.has(anchor.anchorId) && (request.source !== 'block' || anchor.state === 'ACTIVE'),
+				)
 				.map((anchor) => ({ blockId: block.blockId, anchor })),
 		);
 };

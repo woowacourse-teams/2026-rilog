@@ -197,16 +197,16 @@ describe('PostDetailCommentsWorkspace', () => {
 		expect(screen.queryByRole('region', { name: '"오래된 인용" 댓글' })).not.toBeInTheDocument();
 	});
 
-	it('블록 댓글 클릭 시 해당 블록의 인용 댓글 세트를 모두 연다', async () => {
+	it('블록 댓글 클릭 시 해당 블록의 ACTIVE 인용 댓글만 연다', async () => {
 		const user = userEvent.setup();
 		renderWorkspace();
 
 		await user.click(screen.getByRole('button', { name: '블록 댓글 열기' }));
-		expect(screen.getByRole('dialog', { name: '인라인 댓글 2' })).toBeInTheDocument();
-		expect(screen.getAllByRole('button', { name: '댓글 펼치기' })).toHaveLength(2);
+		expect(screen.getByRole('dialog', { name: '인라인 댓글 1' })).toBeInTheDocument();
+		expect(screen.getAllByRole('button', { name: '댓글 펼치기' })).toHaveLength(1);
 
 		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '"오래된 인용" 댓글' })).toBeInTheDocument();
+		expect(screen.queryByRole('region', { name: '"오래된 인용" 댓글' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('region', { name: '"다른 블록 인용" 댓글' })).not.toBeInTheDocument();
 	});
 

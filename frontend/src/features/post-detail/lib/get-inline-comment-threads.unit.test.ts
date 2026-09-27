@@ -35,12 +35,18 @@ describe('getInlineCommentThreads', () => {
 		).toEqual([1]);
 	});
 
-	it('블록 요청에 포함된 ACTIVE와 OUTDATED 앵커를 순서대로 반환한다', () => {
+	it('블록 요청에서 OUTDATED 앵커를 제외하고 ACTIVE 앵커만 반환한다', () => {
 		expect(
 			getInlineCommentThreadsByRequest(BLOCKS, { blockId: 'block-1', anchorIds: [1, 2], source: 'block' }).map(
 				(thread) => thread.anchor.anchorId,
 			),
-		).toEqual([1, 2]);
+		).toEqual([1]);
+	});
+
+	it('OUTDATED 앵커만 포함된 블록 요청은 빈 목록을 반환한다', () => {
+		expect(getInlineCommentThreadsByRequest(BLOCKS, { blockId: 'block-1', anchorIds: [2], source: 'block' })).toEqual(
+			[],
+		);
 	});
 
 	it('전체 댓글 요청은 모든 블록의 앵커를 순서대로 반환한다', () => {

@@ -4,7 +4,7 @@ import { useLayoutEffect } from 'react';
 
 import type { InlineCommentOpenRequest } from '../model/inline-comment-interaction';
 
-import type { InlineCommentAnchorResponse, InlineCommentBlockResponse } from '@/shared/api/posts/types';
+import type { InlineCommentAnchorModel, InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 
 import { normalizeInlineCommentHighlightRects } from '../lib/inline-comment-highlight-rects';
 import {
@@ -15,21 +15,21 @@ import { findInlineCommentRoot, restoreInlineCommentRange } from '../lib/inline-
 
 interface InlineCommentHighlightsProps {
 	article: HTMLElement;
-	blocks: readonly InlineCommentBlockResponse[];
+	blocks: readonly InlineCommentBlockModel[];
 	contentKey: string;
 	onOpenComments?: (request: InlineCommentOpenRequest) => void;
 }
 
 interface RenderedAnchor {
 	blockId: string;
-	anchor: InlineCommentAnchorResponse;
+	anchor: InlineCommentAnchorModel;
 	root: HTMLElement;
 	range: Range;
 	lines: HTMLElement[];
 }
 
 interface RenderedBlock {
-	block: InlineCommentBlockResponse;
+	block: InlineCommentBlockModel;
 	anchorsById: Map<number, RenderedAnchor>;
 }
 
@@ -178,10 +178,7 @@ export default function InlineCommentHighlights({
 					const focusProxy = host.ownerDocument.createElement('button');
 					focusProxy.type = 'button';
 					focusProxy.dataset.inlineCommentAnchorProxy = '';
-					focusProxy.setAttribute(
-						'aria-label',
-						`인용 “${anchor.selectedText}”의 댓글 ${anchor.comments.length}개 보기`,
-					);
+					focusProxy.setAttribute('aria-label', `인용 “${anchor.selectedText}”의 댓글 ${anchor.commentCount}개 보기`);
 					focusProxy.addEventListener('focus', () => setActiveAnchor(renderedAnchor));
 					focusProxy.addEventListener('blur', () => setActiveAnchor(null));
 					focusProxy.addEventListener('click', () => {
@@ -190,7 +187,7 @@ export default function InlineCommentHighlights({
 					layer.append(focusProxy);
 				});
 
-				const commentCount = block.anchors.reduce((count, anchor) => count + anchor.comments.length, 0);
+				const commentCount = activeAnchors.reduce((count, anchor) => count + anchor.commentCount, 0);
 				const blockButton = host.ownerDocument.createElement('button');
 				blockButton.type = 'button';
 				blockButton.dataset.inlineCommentBlockButton = '';
@@ -202,7 +199,7 @@ export default function InlineCommentHighlights({
 				blockButton.addEventListener('click', () => {
 					onOpenComments?.({
 						blockId: block.blockId,
-						anchorIds: block.anchors.map((anchor) => anchor.anchorId),
+						anchorIds: activeAnchors.map((anchor) => anchor.anchorId),
 						source: 'block',
 					});
 				});

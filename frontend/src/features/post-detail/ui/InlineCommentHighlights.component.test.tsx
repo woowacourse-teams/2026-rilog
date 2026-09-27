@@ -29,7 +29,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 			},
 			{
 				anchorId: 2,
-				commentCount: 0,
+				commentCount: 2,
 				range: { startOffset: 3, endOffset: 8 },
 				selectedText: '하이라이트',
 				state: 'OUTDATED',
@@ -199,6 +199,6 @@ describe('InlineCommentHighlights', () => {
 		expect(handleOpen).toHaveBeenLastCalledWith({ blockId: 'block-1', anchorIds: [1], source: 'highlight' });
 
 		fireEvent.click(getByRole('button', { name: '이 블록의 댓글 0개 보기' }));
-		expect(handleOpen).toHaveBeenLastCalledWith({ blockId: 'block-1', anchorIds: [1, 2, 3, 4], source: 'block' });
+		expect(handleOpen).toHaveBeenLastCalledWith({ blockId: 'block-1', anchorIds: [1, 3, 4], source: 'block' });
 	});
 });
