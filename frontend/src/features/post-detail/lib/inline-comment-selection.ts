@@ -1,8 +1,6 @@
-export interface InlineCommentSelectionDraft {
-	readonly blockId: string;
-	readonly startOffset: number;
-	readonly endOffset: number;
-	readonly selectedText: string;
+import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
+
+export interface InlineCommentSelectionDraft extends InlineCommentSelectionTarget {
 	readonly range: Range;
 }
 

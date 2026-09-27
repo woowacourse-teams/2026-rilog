@@ -6,17 +6,20 @@ import type { ReactNode } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
-import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
-import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
-import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
+import {
+	getAllInlineCommentThreads,
+	getInlineCommentThreadsByRequest,
+	getInlineCommentThreadForSelection,
+} from '@/features/post-detail/lib/get-inline-comment-threads';
 import type {
 	InlineCommentOpenRequest,
-	InlineCommentSidebarMode,
+	InlineCommentSelectionTarget,
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
+import type { InlineCommentBlockResponse } from '@/shared/api/posts/types';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
@@ -26,12 +29,11 @@ interface PostDetailCommentsWorkspaceProps {
 	postId: number;
 	ownerType: BlogType;
 	category: PostCategory;
+	inlineCommentBlocks: readonly InlineCommentBlockResponse[];
 	enableInlineCommentSelectionDebug: boolean;
 	profileSection: ReactNode;
 	afterProfile?: ReactNode;
 }
-
-const EMPTY_INLINE_COMMENT_BLOCKS: InlineCommentBlockModel[] = [];
 
 const findAnchorElement = (anchorId: number) =>
 	Array.from(document.querySelectorAll<HTMLElement>('[data-inline-comment-anchor-id]')).find(
@@ -43,46 +45,47 @@ export default function PostDetailCommentsWorkspace({
 	postId,
 	ownerType,
 	category,
+	inlineCommentBlocks,
 	enableInlineCommentSelectionDebug,
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(false);
-	const commentsQuery = usePostInlineComments(postId);
-	const sidebarQuery = usePostInlineCommentsSidebar(postId);
-	const sidebarThreads = sidebarQuery.data ?? [];
-	const inlineCommentBlocks = commentsQuery.data ?? EMPTY_INLINE_COMMENT_BLOCKS;
-	const [openRequest, setOpenRequest] = useState<InlineCommentOpenRequest | null>(null);
-	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
-	const visibleThreads = openRequest
-		? sidebarThreads.filter(
-				({ blockId, anchor }) =>
-					blockId === openRequest.blockId &&
-					openRequest.anchorIds.includes(anchor.anchorId) &&
-					(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
-			)
-		: sidebarThreads;
+	const [visibleThreads, setVisibleThreads] = useState<InlineCommentThreadModel[]>([]);
+	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
+	const [initiallyOpenAnchorId, setInitiallyOpenAnchorId] = useState<number | null>(null);
+	const [createRequestId, setCreateRequestId] = useState(0);
 	const inlineCommentCount = inlineCommentBlocks.reduce(
-		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
+		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.comments.length, 0),
 		0,
 	);
 
-	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
-		setSidebarMode(mode);
-		setOpenRequest(request);
+	const openComments = useCallback((threads: InlineCommentThreadModel[]) => {
+		setSelection(null);
+		setInitiallyOpenAnchorId(null);
+		setVisibleThreads(threads);
 		setIsCommentsSidebarOpen(true);
 	}, []);
 
+	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
+		const existingThread = getInlineCommentThreadForSelection(inlineCommentBlocks, target);
+		setSelection(existingThread ? null : target);
+		setInitiallyOpenAnchorId(existingThread?.anchor.anchorId ?? null);
+		setVisibleThreads(existingThread ? [existingThread] : []);
+		setCreateRequestId((previous) => previous + 1);
+		setIsCommentsSidebarOpen(true);
+	};
+
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
-			openComments(request, request.source === 'highlight' ? 'single' : 'block');
+			openComments(getInlineCommentThreadsByRequest(inlineCommentBlocks, request));
 		},
-		[openComments],
+		[inlineCommentBlocks, openComments],
 	);
 
 	const handleAllCommentsOpen = useCallback(() => {
-		openComments(null, 'all');
-	}, [openComments]);
+		openComments(getAllInlineCommentThreads(inlineCommentBlocks));
+	}, [inlineCommentBlocks, openComments]);
 
 	const handleAnchorNavigate = useCallback((thread: InlineCommentThreadModel) => {
 		if (thread.anchor.state === 'OUTDATED') {
@@ -109,6 +112,7 @@ export default function PostDetailCommentsWorkspace({
 					inlineCommentBlocks={inlineCommentBlocks}
 					enableInlineCommentSelectionDebug={enableInlineCommentSelectionDebug}
 					onInlineCommentOpen={handleInlineCommentOpen}
+					onInlineCommentCreate={handleInlineCommentCreate}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />
@@ -126,12 +130,12 @@ export default function PostDetailCommentsWorkspace({
 			</aside>
 
 			<PostCommentsSidebar
-				mode={sidebarMode}
+				key={createRequestId}
+				postId={postId}
+				selection={selection}
+				initiallyOpenAnchorId={initiallyOpenAnchorId}
 				open={isCommentsSidebarOpen}
 				threads={visibleThreads}
-				isLoading={sidebarQuery.isPending}
-				isError={sidebarQuery.isError}
-				onRetry={() => void sidebarQuery.refetch()}
 				onClose={() => setIsCommentsSidebarOpen(false)}
 				onNavigate={handleAnchorNavigate}
 			/>

@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
+import type { RefObject } from 'react';
 
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 
@@ -15,11 +16,18 @@ import InlineCommentQuote from './InlineCommentQuote';
 interface InlineCommentThreadProps {
 	thread: InlineCommentThreadModel;
 	onNavigate: (thread: InlineCommentThreadModel) => void;
+	initiallyOpen?: boolean;
+	inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
-export default function InlineCommentThread({ thread, onNavigate }: InlineCommentThreadProps) {
+export default function InlineCommentThread({
+	thread,
+	onNavigate,
+	initiallyOpen = false,
+	inputRef,
+}: InlineCommentThreadProps) {
 	const { commentText, onCommentChange } = useInlineCommentDraft(thread.anchor.anchorId);
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(initiallyOpen);
 	const panelId = useId();
 
 	return (
@@ -91,7 +99,7 @@ export default function InlineCommentThread({ thread, onNavigate }: InlineCommen
 								</li>
 							</ul>
 						)}
-						<InlineCommentInput isOpen={isOpen} value={commentText} onChange={onCommentChange} />
+						<InlineCommentInput isOpen={isOpen} value={commentText} onChange={onCommentChange} inputRef={inputRef} />
 					</div>
 				</div>
 			</div>

@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from 'react';
 
 interface InlineCommentDraft {
-	anchorId: number;
+	anchorId: number | string;
 	text: string;
 }
 
@@ -11,7 +11,7 @@ interface InlineCommentDraft {
 const subscribe = () => () => {};
 const getServerSnapshot = () => '';
 
-export const useInlineCommentDraft = (anchorId: number) => {
+export const useInlineCommentDraft = (anchorId: number | string) => {
 	const storageKey = `rilog:inline-comment-draft:${anchorId}`;
 	const [editedDraft, setEditedDraft] = useState<InlineCommentDraft | null>(null);
 	const savedText = useSyncExternalStore(

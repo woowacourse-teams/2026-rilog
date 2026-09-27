@@ -5,13 +5,36 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentBlockResponse } from '@/shared/api/posts/types';
 
 import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 
 vi.mock('@/features/post-detail/ui/PostDetailContent', () => ({
-	default: ({ onInlineCommentOpen }: { onInlineCommentOpen: (request: unknown) => void }) => (
+	default: ({
+		onInlineCommentOpen,
+		onInlineCommentCreate,
+	}: {
+		onInlineCommentOpen: (request: unknown) => void;
+		onInlineCommentCreate: (selection: InlineCommentSelectionTarget) => void;
+	}) => (
 		<div>
+			<button
+				type="button"
+				onClick={() =>
+					onInlineCommentCreate({ blockId: 'block-1', startOffset: 4, endOffset: 8, selectedText: '새 인용' })
+				}
+			>
+				새 인용 댓글 입력
+			</button>
+			<button
+				type="button"
+				onClick={() =>
+					onInlineCommentCreate({ blockId: 'block-1', startOffset: 0, endOffset: 1, selectedText: '첫 번째 인용' })
+				}
+			>
+				기존 인용 댓글 입력
+			</button>
 			<button
 				type="button"
 				onClick={() => onInlineCommentOpen({ blockId: 'block-1', anchorIds: [1], source: 'highlight' })}
@@ -101,6 +124,31 @@ const renderWorkspace = () =>
 
 describe('PostDetailCommentsWorkspace', () => {
 	beforeEach(() => sessionStorage.clear());
+	it('새 선택은 인용과 입력창을 바로 열고 초안을 다시 복원한다', async () => {
+		const user = userEvent.setup();
+		renderWorkspace();
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		expect(screen.getByRole('region', { name: '"새 인용" 새 댓글' })).toBeVisible();
+		const input = screen.getByRole('textbox', { name: '댓글 입력' });
+		expect(input).toHaveFocus();
+		await user.type(input, '작성 중인 초안');
+		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
+		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('작성 중인 초안');
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveFocus();
+	});
+
+	it('같은 범위의 기존 앵커가 있으면 해당 스레드를 펼치고 입력창에 포커스한다', async () => {
+		const user = userEvent.setup();
+		renderWorkspace();
+		await user.click(screen.getByRole('button', { name: '기존 인용 댓글 입력' }));
+		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeVisible();
+		expect(screen.getByRole('article', { name: '댓글러 1님의 댓글' })).toHaveTextContent('첫 댓글');
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveFocus();
+		expect(screen.queryByRole('region', { name: '"첫 번째 인용" 새 댓글' })).not.toBeInTheDocument();
+	});
+
 	it('백드롭으로 닫거나 다른 앵커 목록으로 전환해도 초안을 앵커별로 복원한다', async () => {
 		const user = userEvent.setup();
 		renderWorkspace();

@@ -76,7 +76,7 @@ const THREADS: InlineCommentThreadModel[] = [
 describe('PostCommentsSidebar', () => {
 	it('인용과 댓글 입력을 표시하고 펼친 댓글 목록을 제공한다', async () => {
 		const user = userEvent.setup();
-		render(<PostCommentsSidebar open threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />);
+		render(<PostCommentsSidebar postId={81} open threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />);
 
 		expect(screen.getByRole('dialog', { name: '인라인 댓글 2' })).toBeInTheDocument();
 		expect(screen.getByRole('region', { name: '"활성 인용문" 댓글' })).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('PostCommentsSidebar', () => {
 		const user = userEvent.setup();
 		const onClose = vi.fn();
 		const onNavigate = vi.fn();
-		render(<PostCommentsSidebar open threads={THREADS} onClose={onClose} onNavigate={onNavigate} />);
+		render(<PostCommentsSidebar postId={81} open threads={THREADS} onClose={onClose} onNavigate={onNavigate} />);
 
 		expect(screen.queryByRole('button', { name: '인용문으로 이동: 활성 인용문' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '인용문으로 이동: 오래된 인용문' })).not.toBeInTheDocument();

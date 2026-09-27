@@ -1,0 +1,96 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
+
+describe('InlineCommentSelectionToolbar', () => {
+	let article: HTMLElement;
+	let isMobile = false;
+
+	beforeEach(() => {
+		isMobile = false;
+		vi.stubGlobal(
+			'matchMedia',
+			vi.fn((query: string) => ({
+				matches: query.includes('min-width') ? !isMobile : isMobile,
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+			})),
+		);
+		Object.defineProperty(Range.prototype, 'getClientRects', {
+			configurable: true,
+			value: () => [new DOMRect(100, 100, 160, 24)],
+		});
+		article = document.createElement('article');
+		article.innerHTML =
+			'<p data-inline-comment-root data-inline-comment-block-id="block-1">첫 번째 인용문</p><p data-inline-comment-root data-inline-comment-block-id="block-2">다른 블록</p>';
+		document.body.append(article);
+	});
+
+	afterEach(() => {
+		article.remove();
+		window.getSelection()?.removeAllRanges();
+		Reflect.deleteProperty(Range.prototype, 'getClientRects');
+		vi.unstubAllGlobals();
+	});
+
+	const select = (acrossBlocks = false) => {
+		const range = document.createRange();
+		range.setStart(article.children[0].firstChild!, 0);
+		range.setEnd(article.children[acrossBlocks ? 1 : 0].firstChild!, 3);
+		act(() => {
+			window.getSelection()?.removeAllRanges();
+			window.getSelection()?.addRange(range);
+			fireEvent(document, new Event('selectionchange'));
+		});
+	};
+
+	it('선택 위치의 버튼을 누르면 DOM Range 없이 선택 정보를 전달한다', async () => {
+		const onCreateComment = vi.fn();
+		render(<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />);
+		select();
+		await userEvent.click(screen.getByRole('button', { name: '댓글 추가' }));
+		expect(onCreateComment).toHaveBeenCalledWith({
+			blockId: 'block-1',
+			startOffset: 0,
+			endOffset: 3,
+			selectedText: '첫 번',
+		});
+		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+	});
+
+	it('블록을 가로지르거나 선택을 해제하면 버튼을 숨긴다', () => {
+		render(<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />);
+		select(true);
+		expect(screen.queryByRole('button', { name: '댓글 추가' })).not.toBeInTheDocument();
+		select();
+		expect(screen.getByRole('button', { name: '댓글 추가' })).toBeVisible();
+		act(() => {
+			window.getSelection()?.removeAllRanges();
+			fireEvent(document, new Event('selectionchange'));
+		});
+		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+	});
+
+	it('모바일에서는 선택 버튼을 표시하지 않는다', () => {
+		isMobile = true;
+		render(<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />);
+		select();
+		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+	});
+
+	it('키보드로 활성화하고 Escape로 닫을 수 있다', async () => {
+		const user = userEvent.setup();
+		const onCreateComment = vi.fn();
+		render(<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />);
+		select();
+		await user.tab();
+		expect(screen.getByRole('button', { name: '댓글 추가' })).toHaveFocus();
+		await user.keyboard('{Enter}');
+		expect(onCreateComment).toHaveBeenCalledTimes(1);
+		select();
+		await user.keyboard('{Escape}');
+		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+	});
+});

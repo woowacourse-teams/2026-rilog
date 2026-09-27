@@ -143,7 +143,7 @@ describe('PostDetailContent', () => {
 		expect(getToggleWrapper(nextPostOuterToggle)).toHaveAttribute('data-show-children', 'false');
 	});
 
-	it('개발용 selection debug가 활성화되면 드래그 payload를 콘솔에 기록한다', () => {
+	it('개발용 debug가 활성화되어도 드래그 payload를 콘솔에 기록하지 않는다', () => {
 		const consoleMock = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 		const html = `
 			<div class="bn-block-outer" data-id="debug-block">
@@ -166,12 +166,7 @@ describe('PostDetailContent', () => {
 		window.getSelection()?.addRange(range);
 		root.dispatchEvent(new Event('pointerup', { bubbles: true }));
 
-		expect(consoleMock).toHaveBeenCalledWith('[inline-comment] create request selection', {
-			blockId: 'debug-block',
-			startOffset: 2,
-			endOffset: 6,
-			selectedText: '😀댓글',
-		});
+		expect(consoleMock).not.toHaveBeenCalled();
 	});
 
 	it('상세 페이지 최초 진입 시 entry context를 소비해 조회 이벤트를 한 번 전송한다', () => {

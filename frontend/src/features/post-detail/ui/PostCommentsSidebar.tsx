@@ -2,25 +2,42 @@
 
 import { useId, useRef } from 'react';
 
+import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
+import { useAuth } from '@/features/auth/model/use-auth';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
 import BaseModal from '@/shared/ui/modal/BaseModal';
 
+import InlineCommentComposer from './InlineCommentComposer';
 import InlineCommentThread from './InlineCommentThread';
 
 interface PostCommentsSidebarProps {
 	open: boolean;
+	postId: number;
+	selection?: InlineCommentSelectionTarget | null;
+	initiallyOpenAnchorId?: number | null;
 	threads: readonly InlineCommentThreadModel[];
 	onClose: () => void;
 	onNavigate: (thread: InlineCommentThreadModel) => void;
 }
 
-export default function PostCommentsSidebar({ open, threads, onClose, onNavigate }: PostCommentsSidebarProps) {
+export default function PostCommentsSidebar({
+	open,
+	postId,
+	threads,
+	selection,
+	initiallyOpenAnchorId,
+	onClose,
+	onNavigate,
+}: PostCommentsSidebarProps) {
 	const titleId = useId();
 	const titleRef = useRef<HTMLHeadingElement>(null);
+	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const { isAuthenticated, isInitialized } = useAuth();
+	const shouldFocusInput = isAuthenticated && isInitialized && (selection != null || initiallyOpenAnchorId != null);
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.comments.length, 0);
 
 	// TODO: 전체 댓글로 진입 시 헤더 "전체 인라인 댓글"
@@ -30,7 +47,7 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 			open={open}
 			onDismiss={onClose}
 			accessibility={{ labelledBy: titleId }}
-			initialFocusRef={titleRef}
+			initialFocusRef={shouldFocusInput ? inputRef : titleRef}
 			className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-[min(28rem,calc(100vw-1rem))] translate-x-full overflow-hidden border-l border-border-default shadow-modal transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none"
 		>
 			<div className="flex h-full min-h-0 flex-col">
@@ -44,14 +61,23 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 				</header>
 
 				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-					{threads.length === 0 ? (
+					{selection != null ? (
+						<InlineCommentComposer postId={postId} selection={selection} inputRef={inputRef} />
+					) : threads.length === 0 ? (
 						<p className="px-5 py-6 text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
 					) : (
 						<div>
 							{threads.map((thread) => (
 								<div key={thread.anchor.anchorId}>
-									<InlineCommentThread thread={thread} onNavigate={onNavigate} />
-									<Divider className="mx-5" />
+									<InlineCommentThread
+										thread={thread}
+										onNavigate={onNavigate}
+										initiallyOpen={thread.anchor.anchorId === initiallyOpenAnchorId}
+										inputRef={thread.anchor.anchorId === initiallyOpenAnchorId ? inputRef : undefined}
+									/>
+									<div className="px-5">
+										<Divider />
+									</div>
 								</div>
 							))}
 						</div>

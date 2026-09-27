@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useRef } from 'react';
 
+import type { RefObject } from 'react';
+
 import { useAuth } from '@/features/auth/model/use-auth';
 import Button from '@/shared/ui/button/Button';
 import Textarea from '@/shared/ui/textarea/Textarea';
@@ -10,6 +12,7 @@ interface InlineCommentInputProps {
 	isOpen: boolean;
 	value: string;
 	onChange: (value: string) => void;
+	inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 const resizeTextarea = (element: HTMLTextAreaElement) => {
@@ -21,16 +24,17 @@ const resizeTextarea = (element: HTMLTextAreaElement) => {
 	}
 };
 
-export default function InlineCommentInput({ isOpen, value, onChange }: InlineCommentInputProps) {
+export default function InlineCommentInput({ isOpen, value, onChange, inputRef }: InlineCommentInputProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const isDisabled = !isInitialized || !isAuthenticated;
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const localRef = useRef<HTMLTextAreaElement>(null);
+	const textareaRef = inputRef ?? localRef;
 
 	useLayoutEffect(() => {
 		if (isOpen && textareaRef.current !== null) {
 			resizeTextarea(textareaRef.current);
 		}
-	}, [isOpen, value]);
+	}, [isOpen, value, textareaRef]);
 
 	return (
 		<>
