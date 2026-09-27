@@ -2,22 +2,28 @@
 
 import { useId, useRef } from 'react';
 
-import type { InlineCommentSidebarMode } from '../model/inline-comment-interaction';
+import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
+import { useAuth } from '@/features/auth/model/use-auth';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
 import BaseModal from '@/shared/ui/modal/BaseModal';
 
+import InlineCommentComposer from './InlineCommentComposer';
 import InlineCommentThread from './InlineCommentThread';
 
 interface PostCommentsSidebarProps {
 	open: boolean;
+	onCreated?: (commentAnchorId: number) => void;
 	isLoading?: boolean;
 	isError?: boolean;
 	onRetry?: () => void;
+	postId: number;
 	mode: InlineCommentSidebarMode;
+	selection?: InlineCommentSelectionTarget | null;
+	composerAnchorId?: number | null;
 	threads: readonly InlineCommentThreadModel[];
 	onClose: () => void;
 	onNavigate: (thread: InlineCommentThreadModel) => void;
@@ -25,16 +31,23 @@ interface PostCommentsSidebarProps {
 
 export default function PostCommentsSidebar({
 	open,
+	onCreated,
 	isLoading = false,
 	isError = false,
 	onRetry,
+	postId,
 	mode,
 	threads,
+	selection,
+	composerAnchorId,
 	onClose,
 	onNavigate,
 }: PostCommentsSidebarProps) {
 	const titleId = useId();
 	const titleRef = useRef<HTMLHeadingElement>(null);
+	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const { isAuthenticated, isInitialized } = useAuth();
+	const shouldFocusInput = isAuthenticated && isInitialized && (selection != null || composerAnchorId != null);
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
 	return (
@@ -42,7 +55,7 @@ export default function PostCommentsSidebar({
 			open={open}
 			onDismiss={onClose}
 			accessibility={{ labelledBy: titleId }}
-			initialFocusRef={titleRef}
+			initialFocusRef={shouldFocusInput ? inputRef : titleRef}
 			className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-none translate-x-full overflow-hidden border-l border-border-default shadow-modal transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none sm:w-112"
 		>
 			<div className="flex h-full min-h-0 flex-col">
@@ -57,7 +70,9 @@ export default function PostCommentsSidebar({
 				</header>
 
 				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-					{isLoading ? (
+					{selection != null ? (
+						<InlineCommentComposer postId={postId} selection={selection} inputRef={inputRef} onCreated={onCreated} />
+					) : isLoading ? (
 						<p role="status" className="px-5 py-6 text-body-1 text-text-placeholder">
 							인라인 댓글을 불러오는 중입니다.
 						</p>
@@ -76,7 +91,13 @@ export default function PostCommentsSidebar({
 						<div>
 							{threads.map((thread) => (
 								<div key={thread.anchor.anchorId}>
-									<InlineCommentThread thread={thread} onNavigate={onNavigate} isCollapsible={mode !== 'single'} />
+									<InlineCommentThread
+										postId={postId}
+										thread={thread}
+										onNavigate={onNavigate}
+										isCollapsible={mode !== 'single'}
+										inputRef={thread.anchor.anchorId === composerAnchorId ? inputRef : undefined}
+									/>
 									{mode !== 'single' && (
 										<div className="px-5">
 											<Divider />

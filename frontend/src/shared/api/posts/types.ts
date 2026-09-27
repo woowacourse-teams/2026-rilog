@@ -116,3 +116,19 @@ export interface PostCommentAnchorSidebarGroupResponse extends PostCommentAnchor
 export interface PostCommentAnchorsSidebarResponse {
 	anchorGroups: PostCommentAnchorSidebarGroupResponse[];
 }
+
+export interface PostCommentAnchorCreateRequest {
+	blockId: string;
+	startOffset: number;
+	endOffset: number;
+	selectedText: string;
+	content: string;
+}
+
+export interface PostCommentAnchorCreateResponse {
+	commentAnchorId: number;
+}
+
+export interface PostCommentAnchorAddRequest {
+	content: string;
+}

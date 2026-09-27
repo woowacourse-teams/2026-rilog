@@ -199,7 +199,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		expect(screen.getByRole('dialog', { name: '인라인 댓글 1' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /댓글 (펼치기|접기)/ })).not.toBeInTheDocument();
 		expect(screen.getByRole('article', { name: '댓글러 1님의 댓글' })).toBeVisible();
-		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toBeEnabled();
 		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeInTheDocument();
 		expect(screen.queryByRole('region', { name: '"오래된 인용" 댓글' })).not.toBeInTheDocument();
 	});

@@ -11,6 +11,7 @@ import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-p
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type {
 	InlineCommentOpenRequest,
+	InlineCommentSelectionTarget,
 	InlineCommentSidebarMode,
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
@@ -53,15 +54,23 @@ export default function PostDetailCommentsWorkspace({
 	const sidebarThreads = sidebarQuery.data ?? [];
 	const inlineCommentBlocks = commentsQuery.data ?? EMPTY_INLINE_COMMENT_BLOCKS;
 	const [openRequest, setOpenRequest] = useState<InlineCommentOpenRequest | null>(null);
+	const [createdCommentId, setCreatedCommentId] = useState<number | null>(null);
+	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
+	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
 	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
-	const visibleThreads = openRequest
-		? sidebarThreads.filter(
-				({ blockId, anchor }) =>
-					blockId === openRequest.blockId &&
-					openRequest.anchorIds.includes(anchor.anchorId) &&
-					(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
-			)
-		: sidebarThreads;
+	const [createRequestId, setCreateRequestId] = useState(0);
+	const visibleThreads = selection
+		? []
+		: createdCommentId !== null
+			? sidebarThreads.filter(({ anchor }) => anchor.comments.some((comment) => comment.commentId === createdCommentId))
+			: openRequest
+				? sidebarThreads.filter(
+						({ blockId, anchor }) =>
+							blockId === openRequest.blockId &&
+							openRequest.anchorIds.includes(anchor.anchorId) &&
+							(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
+					)
+				: sidebarThreads;
 	const inlineCommentCount = inlineCommentBlocks.reduce(
 		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
 		0,
@@ -69,9 +78,36 @@ export default function PostDetailCommentsWorkspace({
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
 		setSidebarMode(mode);
+		setSelection(null);
+		setCreatedCommentId(null);
+		setComposerAnchorId(null);
 		setOpenRequest(request);
 		setIsCommentsSidebarOpen(true);
 	}, []);
+
+	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
+		setCreatedCommentId(null);
+		const existingThread = inlineCommentBlocks
+			.flatMap(({ blockId, anchors }) => anchors.map((anchor) => ({ blockId, anchor })))
+			.find(
+				({ blockId, anchor }) =>
+					blockId === target.blockId &&
+					anchor.state === 'ACTIVE' &&
+					anchor.range.startOffset === target.startOffset &&
+					anchor.range.endOffset === target.endOffset &&
+					anchor.selectedText === target.selectedText,
+			);
+		setSelection(existingThread ? null : target);
+		setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
+		setSidebarMode('single');
+		setOpenRequest(
+			existingThread
+				? { blockId: existingThread.blockId, anchorIds: [existingThread.anchor.anchorId], source: 'highlight' }
+				: null,
+		);
+		setCreateRequestId((previous) => previous + 1);
+		setIsCommentsSidebarOpen(true);
+	};
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
@@ -109,6 +145,7 @@ export default function PostDetailCommentsWorkspace({
 					inlineCommentBlocks={inlineCommentBlocks}
 					enableInlineCommentSelectionDebug={enableInlineCommentSelectionDebug}
 					onInlineCommentOpen={handleInlineCommentOpen}
+					onInlineCommentCreate={commentsQuery.isSuccess ? handleInlineCommentCreate : undefined}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />
@@ -126,12 +163,21 @@ export default function PostDetailCommentsWorkspace({
 			</aside>
 
 			<PostCommentsSidebar
+				key={createRequestId}
+				postId={postId}
+				selection={selection}
+				composerAnchorId={composerAnchorId}
 				mode={sidebarMode}
 				open={isCommentsSidebarOpen}
 				threads={visibleThreads}
 				isLoading={sidebarQuery.isPending}
 				isError={sidebarQuery.isError}
 				onRetry={() => void sidebarQuery.refetch()}
+				onCreated={(commentAnchorId) => {
+					setSelection(null);
+					setCreatedCommentId(commentAnchorId);
+					setComposerAnchorId(null);
+				}}
 				onClose={() => setIsCommentsSidebarOpen(false)}
 				onNavigate={handleAnchorNavigate}
 			/>

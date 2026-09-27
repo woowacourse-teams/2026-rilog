@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import type { InlineCommentOpenRequest } from '../model/inline-comment-interaction';
+import type { InlineCommentOpenRequest, InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 import type { MouseEvent } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
@@ -14,9 +14,8 @@ import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 import { logNonProductionInfo } from '@/shared/utils/non-production-console';
 
-import { createInlineCommentSelectionDraft } from '../lib/inline-comment-selection';
-
 import InlineCommentHighlights from './InlineCommentHighlights';
+import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
 
 interface PostDetailContentProps {
 	html: string;
@@ -26,6 +25,7 @@ interface PostDetailContentProps {
 	inlineCommentBlocks?: readonly InlineCommentBlockModel[];
 	enableInlineCommentSelectionDebug?: boolean;
 	onInlineCommentOpen?: (request: InlineCommentOpenRequest) => void;
+	onInlineCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
 }
 
 const EMPTY_INLINE_COMMENT_BLOCKS: readonly InlineCommentBlockModel[] = [];
@@ -102,6 +102,7 @@ export default function PostDetailContent({
 	inlineCommentBlocks = EMPTY_INLINE_COMMENT_BLOCKS,
 	enableInlineCommentSelectionDebug = false,
 	onInlineCommentOpen,
+	onInlineCommentCreate,
 }: PostDetailContentProps) {
 	const contentRef = useRef<HTMLElement>(null);
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
@@ -142,39 +143,6 @@ export default function PostDetailContent({
 				}
 			});
 	});
-
-	useEffect(() => {
-		if (!enableInlineCommentSelectionDebug || contentElement === null) {
-			return;
-		}
-
-		const logSelectionPayload = () => {
-			const selection = window.getSelection();
-			if (selection === null) {
-				return;
-			}
-
-			const draft = createInlineCommentSelectionDraft(selection, contentElement);
-			if (draft === null) {
-				return;
-			}
-
-			logNonProductionInfo('[inline-comment] create request selection', {
-				blockId: draft.blockId,
-				startOffset: draft.startOffset,
-				endOffset: draft.endOffset,
-				selectedText: draft.selectedText,
-			});
-		};
-
-		contentElement.addEventListener('pointerup', logSelectionPayload);
-		contentElement.addEventListener('keyup', logSelectionPayload);
-
-		return () => {
-			contentElement.removeEventListener('pointerup', logSelectionPayload);
-			contentElement.removeEventListener('keyup', logSelectionPayload);
-		};
-	}, [contentElement, enableInlineCommentSelectionDebug]);
 
 	useEffect(() => {
 		const trackerKey = getTrackerKey(postId);
@@ -271,6 +239,9 @@ export default function PostDetailContent({
 				/>
 			)}
 			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
+			{contentElement !== null && onInlineCommentCreate !== undefined && (
+				<InlineCommentSelectionToolbar key={postId} article={contentElement} onCreateComment={onInlineCommentCreate} />
+			)}
 		</article>
 	);
 }
