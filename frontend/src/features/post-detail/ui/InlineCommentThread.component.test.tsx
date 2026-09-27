@@ -1,17 +1,18 @@
-import { render as renderUI, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '../model/inline-comment.fixture';
 
 import InlineCommentThread from './InlineCommentThread';
 
 const render = (ui: ReactNode) =>
-	renderUI(
+	renderWithQuery(
 		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
 			{ui}
 		</AUTH_CONTEXT.Provider>,
@@ -26,7 +27,7 @@ describe('InlineCommentThread', () => {
 	beforeEach(() => sessionStorage.clear());
 	it('댓글을 펼치면 바로 입력할 수 있고 다시 펼쳐도 작성 내용을 유지한다', async () => {
 		const user = userEvent.setup();
-		render(<InlineCommentThread thread={THREAD} onNavigate={vi.fn()} />);
+		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} />);
 
 		await user.tab();
 		await user.keyboard('{Enter}');
@@ -56,7 +57,11 @@ describe('InlineCommentThread', () => {
 	it('아직 댓글이 없는 스레드에도 입력창을 표시한다', async () => {
 		const user = userEvent.setup();
 		render(
-			<InlineCommentThread thread={{ ...THREAD, anchor: { ...THREAD.anchor, comments: [] } }} onNavigate={vi.fn()} />,
+			<InlineCommentThread
+				postId={81}
+				thread={{ ...THREAD, anchor: { ...THREAD.anchor, comments: [] } }}
+				onNavigate={vi.fn()}
+			/>,
 		);
 
 		await user.click(screen.getByRole('button', { name: '댓글 펼치기' }));
@@ -66,7 +71,7 @@ describe('InlineCommentThread', () => {
 
 	it('접힌 댓글은 스크린리더와 키보드 탐색에서 숨기고 열면 노출한다', async () => {
 		const user = userEvent.setup();
-		render(<InlineCommentThread thread={THREAD} onNavigate={vi.fn()} />);
+		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} />);
 
 		const toggle = screen.getByRole('button', { name: '댓글 펼치기' });
 		const comments = screen.getByRole('list', { hidden: true });

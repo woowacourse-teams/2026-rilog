@@ -7,13 +7,17 @@ import type { ReactNode } from 'react';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
-import { createPostCommentAnchor, readPostCommentAnchors } from '@/shared/api/posts/api';
+import { addPostCommentAnchor, createPostCommentAnchor, readPostCommentAnchors } from '@/shared/api/posts/api';
 import { createApiFailure } from '@/test/fixtures/api-error';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 
-vi.mock('@/shared/api/posts/api', () => ({ readPostCommentAnchors: vi.fn(), createPostCommentAnchor: vi.fn() }));
+vi.mock('@/shared/api/posts/api', () => ({
+	readPostCommentAnchors: vi.fn(),
+	createPostCommentAnchor: vi.fn(),
+	addPostCommentAnchor: vi.fn(),
+}));
 
 vi.mock('@/features/post-detail/ui/PostDetailContent', () => ({
 	default: ({
@@ -157,6 +161,68 @@ const renderWorkspace = async () => {
 };
 
 describe('PostDetailCommentsWorkspace', () => {
+	it('기존 스레드의 selectionId로 한 번만 추가하고 목록 갱신 후 초안을 지운다', async () => {
+		const user = userEvent.setup();
+		await renderWorkspace();
+		let resolve!: (value: { status: number; message: string; data: { commentAnchorId: number } }) => void;
+		vi.mocked(addPostCommentAnchor).mockImplementation(
+			() =>
+				new Promise((done) => {
+					resolve = done;
+				}),
+		);
+		await user.click(screen.getByRole('button', { name: '기존 인용 댓글 입력' }));
+		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '추가 댓글');
+		await user.dblClick(screen.getByRole('button', { name: '작성' }));
+		expect(addPostCommentAnchor).toHaveBeenCalledExactlyOnceWith(81, 1, { content: '추가 댓글' });
+		expect(createPostCommentAnchor).not.toHaveBeenCalled();
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toBeDisabled();
+		const group = RESPONSE.data.blocks[0].anchorGroups[0];
+		vi.mocked(readPostCommentAnchors).mockResolvedValue({
+			...RESPONSE,
+			data: {
+				blocks: [
+					{
+						blockId: 'block-1',
+						anchorGroups: [
+							{
+								...group,
+								anchorCount: 2,
+								commentAnchors: [
+									...group.commentAnchors,
+									{ ...group.commentAnchors[0], commentAnchorId: 901, content: '추가 댓글' },
+								],
+							},
+						],
+					},
+				],
+			},
+		});
+		resolve({ status: 0, message: 'OK', data: { commentAnchorId: 901 } });
+		expect(await screen.findByText('추가 댓글', { selector: 'p' })).toBeVisible();
+		expect(screen.getByRole('dialog', { name: '인라인 댓글 2' })).toBeVisible();
+		await waitFor(() => expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue(''));
+		expect(sessionStorage.getItem('rilog:inline-comment-draft:1')).toBeNull();
+		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '다음 댓글');
+		expect(screen.getByRole('button', { name: '작성' })).toBeEnabled();
+	});
+
+	it('기존 스레드 작성 실패 후에도 초안을 유지하고 재시도한다', async () => {
+		const user = userEvent.setup();
+		await renderWorkspace();
+		vi.mocked(addPostCommentAnchor).mockRejectedValueOnce(new Error('실패'));
+		await user.click(screen.getByRole('button', { name: '기존 인용 댓글 입력' }));
+		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '남길 댓글');
+		await user.click(screen.getByRole('button', { name: '작성' }));
+		expect(await screen.findByRole('alert')).toHaveTextContent('댓글을 등록하지 못했습니다');
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('남길 댓글');
+		expect(sessionStorage.getItem('rilog:inline-comment-draft:1')).toBe('남길 댓글');
+		await user.click(screen.getByRole('button', { name: '작성' }));
+		await waitFor(() => expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue(''));
+		expect(addPostCommentAnchor).toHaveBeenCalledTimes(2);
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+	});
+
 	it('선택 범위가 만료되면 다시 선택하도록 안내하고 초안을 보존한다', async () => {
 		const user = userEvent.setup();
 		await renderWorkspace();
@@ -267,6 +333,9 @@ describe('PostDetailCommentsWorkspace', () => {
 	beforeEach(() => {
 		sessionStorage.clear();
 		vi.mocked(createPostCommentAnchor).mockReset();
+		vi.mocked(addPostCommentAnchor)
+			.mockReset()
+			.mockResolvedValue({ status: 0, message: 'OK', data: { commentAnchorId: 901 } });
 		vi.mocked(readPostCommentAnchors).mockReset().mockResolvedValue(RESPONSE);
 	});
 	it('새 선택은 인용과 입력창을 바로 열고 초안을 다시 복원한다', async () => {

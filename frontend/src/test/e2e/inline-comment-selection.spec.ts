@@ -47,6 +47,13 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 	await mockAuthenticatedAccess(page);
 
 	let submitted: PostCommentAnchorCreateRequest | null = null;
+	let addedContent: string | null = null;
+	await page.route('**/v1/posts/106/selections/91/comment-anchors', async (route) => {
+		const body = route.request().postDataJSON() as { content: string };
+		expect(Object.keys(body)).toEqual(['content']);
+		addedContent = body.content;
+		await route.fulfill({ json: { status: 0, message: 'OK', data: { commentAnchorId: 901 } } });
+	});
 	await page.route('**/v1/posts/106/comment-anchors', async (route) => {
 		if (route.request().method() === 'POST') {
 			submitted = route.request().postDataJSON() as PostCommentAnchorCreateRequest;
@@ -68,11 +75,11 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 											range: { startOffset: submitted.startOffset, endOffset: submitted.endOffset },
 											selectedText: submitted.selectedText,
 											state: 'ACTIVE',
-											anchorCount: 1,
-											commentAnchors: [
-												{
-													commentAnchorId: 900,
-													content: submitted.content,
+											anchorCount: addedContent ? 2 : 1,
+											commentAnchors: [submitted.content, ...(addedContent ? [addedContent] : [])].map(
+												(content, index) => ({
+													commentAnchorId: 900 + index,
+													content,
 													author: {
 														userId: 1,
 														nickname: '테스트 작성자',
@@ -85,8 +92,8 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 													canDelete: true,
 													createdAt: '2026-09-27T07:47:07.958Z',
 													updatedAt: '2026-09-27T07:47:07.958Z',
-												},
-											],
+												}),
+											),
 										},
 									],
 								},
@@ -132,6 +139,12 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 		'브라우저에서 작성 중인 초안',
 	);
 	expect(submitted).toMatchObject({ selectedText, content: '브라우저에서 작성 중인 초안' });
+	await expect(input).toHaveValue('');
+	await input.fill('같은 스레드에 추가한 댓글');
+	await page.getByRole('button', { name: '작성', exact: true }).click();
+	await expect(page.getByRole('article', { name: '테스트 작성자님의 댓글' })).toHaveCount(2);
+	await expect(page.getByText('같은 스레드에 추가한 댓글', { exact: true })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: '인라인 댓글 2' })).toBeVisible();
 	await expect(input).toHaveValue('');
 });
 

@@ -119,3 +119,7 @@ export interface PostCommentAnchorCreateRequest {
 export interface PostCommentAnchorCreateResponse {
 	commentAnchorId: number;
 }
+
+export interface PostCommentAnchorAddRequest {
+	content: string;
+}

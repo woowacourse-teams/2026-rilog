@@ -1,4 +1,4 @@
-import { fireEvent, render as renderUI, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -6,11 +6,12 @@ import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { renderWithQuery } from '@/test/render-with-query';
 
 import PostCommentsSidebar from './PostCommentsSidebar';
 
 const render = (ui: ReactNode) =>
-	renderUI(
+	renderWithQuery(
 		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
 			{ui}
 		</AUTH_CONTEXT.Provider>,

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+	addPostCommentAnchor,
 	createPostCommentAnchor,
 	deletePost,
 	publishPost,
@@ -183,5 +184,22 @@ describe('createPostCommentAnchor', () => {
 		expect(request.method).toBe('POST');
 		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors');
 		expect(body).toEqual(payload);
+	});
+});
+
+describe('addPostCommentAnchor', () => {
+	it('selectionId를 경로에 넣고 content만 POST한다', async () => {
+		const response = { status: 0, message: 'OK', data: { commentAnchorId: 901 } };
+		let body: unknown;
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) body = await input.clone().json();
+			return Response.json(response);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(addPostCommentAnchor(81, 91, { content: '추가 댓글\n둘째 줄' })).resolves.toEqual(response);
+		const request = fetchMock.mock.calls[0][0] as Request;
+		expect(request.method).toBe('POST');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/selections/91/comment-anchors');
+		expect(body).toEqual({ content: '추가 댓글\n둘째 줄' });
 	});
 });

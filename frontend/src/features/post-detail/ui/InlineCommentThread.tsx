@@ -1,108 +1,74 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useRef } from 'react';
 
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
 
-import ChevronIcon from '@/shared/assets/icons/chevron.svg';
+import { useAuth } from '@/features/auth/model/use-auth';
+import { useAddPostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-add-comment-anchor-mutation';
 
 import { useInlineCommentDraft } from '../hooks/use-inline-comment-draft';
 
 import InlineCommentInput from './InlineCommentInput';
-import InlineCommentItem from './InlineCommentItem';
-import InlineCommentQuote from './InlineCommentQuote';
+import InlineCommentThreadContent from './InlineCommentThreadContent';
 
 interface InlineCommentThreadProps {
 	thread: InlineCommentThreadModel;
+	postId: number;
 	onNavigate: (thread: InlineCommentThreadModel) => void;
-	initiallyOpen?: boolean;
+	isCollapsible?: boolean;
 	inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 export default function InlineCommentThread({
 	thread,
+	postId,
 	onNavigate,
-	initiallyOpen = false,
+	isCollapsible = true,
 	inputRef,
 }: InlineCommentThreadProps) {
 	const { commentText, onCommentChange } = useInlineCommentDraft(thread.anchor.anchorId);
-	const [isOpen, setIsOpen] = useState(initiallyOpen);
-	const panelId = useId();
+
+	const { isInitialized, isAuthenticated } = useAuth();
+	// UI의 anchorId는 조회 응답 anchorGroups의 selectionId다.
+	const mutation = useAddPostCommentAnchorMutation(postId, thread.anchor.anchorId);
+	const isSubmitting = useRef(false);
+	const handleSubmit = async () => {
+		if (!isInitialized || !isAuthenticated || !commentText.trim() || isSubmitting.current) return;
+		isSubmitting.current = true;
+		try {
+			await mutation.mutateAsync({ content: commentText });
+			onCommentChange('');
+		} catch {
+			// 작성 실패 시 초안을 유지한다.
+		} finally {
+			isSubmitting.current = false;
+		}
+	};
 
 	return (
-		<section aria-label={`"${thread.anchor.selectedText}" 댓글`}>
-			<div
-				className="flex cursor-pointer items-start justify-between gap-3 rounded px-5 py-6 text-left transition-colors duration-200 hover:bg-surface-hover motion-reduce:transition-none"
-				onClick={() => setIsOpen((prev) => !prev)}
-			>
-				<div className="min-w-0 flex-1 border-l-4 border-border-default pl-2">
-					<button
-						type="button"
-						aria-expanded={isOpen}
-						aria-controls={panelId}
-						aria-label={isOpen ? '댓글 접기' : '댓글 펼치기'}
-						className="w-full text-left"
-					>
-						<InlineCommentQuote anchor={thread.anchor} />
-					</button>
-					{thread.anchor.state === 'ACTIVE' && (
-						<div
-							className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
-						>
-							<div className="min-h-0 overflow-hidden">
-								<button
-									type="button"
-									tabIndex={isOpen ? 0 : -1}
-									className="mt-1 rounded py-1 text-label-1 text-text-secondary transition-colors hover:text-text-placeholder focus-visible:outline-2 focus-visible:outline-focus-ring"
-									onClick={(event) => {
-										event.stopPropagation();
-										onNavigate(thread);
-									}}
-								>
-									본문으로 이동
-								</button>
-							</div>
-						</div>
+		<InlineCommentThreadContent
+			anchor={thread.anchor}
+			isCollapsible={isCollapsible}
+			onNavigate={() => onNavigate(thread)}
+			renderInput={(isOpen) => (
+				<>
+					<InlineCommentInput
+						isOpen={isOpen}
+						value={commentText}
+						onChange={onCommentChange}
+						inputRef={inputRef}
+						isPending={mutation.isPending}
+						onSubmit={() => void handleSubmit()}
+					/>
+					{mutation.isError && (
+						<p role="alert" className="mt-2 text-label-2 text-danger-text">
+							댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.
+						</p>
 					)}
-				</div>
-				<ChevronIcon
-					aria-hidden="true"
-					focusable="false"
-					className={`size-6 shrink-0 rounded p-1 text-text-secondary transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
-				/>
-			</div>
-			<div
-				className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
-			>
-				<div className="min-h-0 overflow-hidden" {...(!isOpen && { inert: true })}>
-					<div className="px-8 pb-8">
-						{thread.anchor.comments.length === 0 ? (
-							<p
-								id={panelId}
-								aria-hidden={!isOpen}
-								{...(!isOpen && { inert: true })}
-								className="pt-5 pb-6 text-label-2 text-text-placeholder"
-							>
-								아직 댓글이 없습니다.
-							</p>
-						) : (
-							<ul id={panelId} aria-hidden={!isOpen} {...(!isOpen && { inert: true })}>
-								<li className="py-5">
-									<div className="space-y-8">
-										{thread.anchor.comments.map((comment) => (
-											<div key={comment.commentId}>
-												<InlineCommentItem comment={comment} />
-											</div>
-										))}
-									</div>
-								</li>
-							</ul>
-						)}
-						<InlineCommentInput isOpen={isOpen} value={commentText} onChange={onCommentChange} inputRef={inputRef} />
-					</div>
-				</div>
-			</div>
-		</section>
+				</>
+			)}
+		/>
 	);
 }

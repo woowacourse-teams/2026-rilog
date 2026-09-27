@@ -92,6 +92,7 @@ export default function PostCommentsSidebar({
 							{threads.map((thread) => (
 								<div key={thread.anchor.anchorId}>
 									<InlineCommentThread
+										postId={postId}
 										thread={thread}
 										onNavigate={onNavigate}
 										isCollapsible={mode !== 'single'}
