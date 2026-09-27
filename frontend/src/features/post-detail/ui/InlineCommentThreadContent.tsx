@@ -2,26 +2,22 @@
 
 import { useId, useState } from 'react';
 
-import type { ReactNode } from 'react';
-
-import type { InlineCommentAnchorResponse } from '@/shared/api/posts/types';
+import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 
 import InlineCommentItem from './InlineCommentItem';
 import InlineCommentQuote from './InlineCommentQuote';
 
 interface InlineCommentThreadContentProps {
-	anchor: Pick<InlineCommentAnchorResponse, 'selectedText' | 'state' | 'comments'>;
+	anchor: Pick<InlineCommentAnchorModel, 'selectedText' | 'state' | 'comments'>;
 	isCollapsible: boolean;
 	onNavigate?: () => void;
-	renderInput: (isOpen: boolean) => ReactNode;
 }
 
 export default function InlineCommentThreadContent({
 	anchor,
 	isCollapsible,
 	onNavigate,
-	renderInput,
 }: InlineCommentThreadContentProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const isOpen = !isCollapsible || isExpanded;
@@ -102,7 +98,6 @@ export default function InlineCommentThreadContent({
 								</li>
 							</ul>
 						)}
-						{renderInput(isOpen)}
 					</div>
 				</div>
 			</div>

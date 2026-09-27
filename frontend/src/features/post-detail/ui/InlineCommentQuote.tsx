@@ -1,7 +1,7 @@
-import type { InlineCommentAnchorResponse } from '@/shared/api/posts/types';
+import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
 
 interface InlineCommentQuoteProps {
-	anchor: Pick<InlineCommentAnchorResponse, 'selectedText' | 'state'>;
+	anchor: Pick<InlineCommentAnchorModel, 'selectedText' | 'state'>;
 }
 
 export default function InlineCommentQuote({ anchor }: InlineCommentQuoteProps) {

@@ -1,10 +1,11 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 import type { InlineCommentOpenRequest } from '../model/inline-comment-interaction';
 
 import type { InlineCommentAnchorModel, InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
+import CommentIcon from '@/shared/assets/icons/comment.svg';
 
 import { normalizeInlineCommentHighlightRects } from '../lib/inline-comment-highlight-rects';
 import {
@@ -46,31 +47,13 @@ const removeHighlightLayers = (article: HTMLElement) => {
 	});
 };
 
-const createCommentIcon = (document: Document) => {
-	const svgNamespace = 'http://www.w3.org/2000/svg';
-	const icon = document.createElementNS(svgNamespace, 'svg');
-	icon.setAttribute('viewBox', '0 0 24 24');
-	icon.setAttribute('aria-hidden', 'true');
-	icon.setAttribute('focusable', 'false');
-
-	const path = document.createElementNS(svgNamespace, 'path');
-	path.setAttribute('d', 'M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z');
-	path.setAttribute('fill', 'none');
-	path.setAttribute('stroke', 'currentColor');
-	path.setAttribute('stroke-width', '1.8');
-	path.setAttribute('stroke-linecap', 'round');
-	path.setAttribute('stroke-linejoin', 'round');
-	icon.append(path);
-
-	return icon;
-};
-
 export default function InlineCommentHighlights({
 	article,
 	blocks,
 	contentKey,
 	onOpenComments,
 }: InlineCommentHighlightsProps) {
+	const iconTemplateRef = useRef<HTMLSpanElement>(null);
 	useLayoutEffect(() => {
 		let isMounted = true;
 		let activeAnchor: RenderedAnchor | null = null;
@@ -192,7 +175,9 @@ export default function InlineCommentHighlights({
 				blockButton.type = 'button';
 				blockButton.dataset.inlineCommentBlockButton = '';
 				blockButton.setAttribute('aria-label', `이 블록의 댓글 ${commentCount}개 보기`);
-				blockButton.append(createCommentIcon(host.ownerDocument));
+				// React가 렌더한 공통 SVG를 기존 DOM 하이라이트 레이어에 복제한다.
+				const icon = iconTemplateRef.current?.firstElementChild;
+				if (icon) blockButton.append(icon.cloneNode(true));
 				const count = host.ownerDocument.createElement('span');
 				count.textContent = String(commentCount);
 				blockButton.append(count);
@@ -284,5 +269,9 @@ export default function InlineCommentHighlights({
 		};
 	}, [article, blocks, contentKey, onOpenComments]);
 
-	return null;
+	return (
+		<span ref={iconTemplateRef} hidden aria-hidden="true">
+			<CommentIcon aria-hidden="true" focusable="false" />
+		</span>
+	);
 }

@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import type { PostDetail } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
-import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '@/features/post-detail/model/inline-comment.fixture';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
@@ -30,8 +29,6 @@ export default async function BasePostDetail({
 }: BasePostDetailProps) {
 	const tableOfContents = extractPostTableOfContents(post.content);
 	const contentHtml = await renderPostDetailContent(post.content);
-	const isInlineCommentDevelopmentFixtureEnabled = process.env.NODE_ENV === 'development' && post.id === 81;
-	const inlineCommentBlocks = isInlineCommentDevelopmentFixtureEnabled ? POST_81_INLINE_COMMENT_BLOCKS_FIXTURE : [];
 	// const description = extractPostDescription(post.content, 150);
 
 	return (
@@ -63,8 +60,7 @@ export default async function BasePostDetail({
 							postId={post.id}
 							ownerType={post.blog.type}
 							category={post.category}
-							inlineCommentBlocks={inlineCommentBlocks}
-							enableInlineCommentSelectionDebug={isInlineCommentDevelopmentFixtureEnabled}
+							enableInlineCommentSelectionDebug={false}
 							profileSection={profileSection}
 							afterProfile={afterProfile}
 						/>

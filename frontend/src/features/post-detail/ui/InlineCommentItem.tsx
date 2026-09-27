@@ -1,19 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
-
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
-import { useDeletePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-delete-comment-anchor-mutation';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
-import AlertModal from '@/shared/ui/modal/AlertModal';
-import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
-
-import InlineCommentEditForm from './InlineCommentEditForm';
 
 interface InlineCommentItemProps {
-	postId: number;
 	comment: InlineCommentModel;
 }
 
@@ -37,28 +29,9 @@ const formatCommentDate = (createdAt: string) => {
 	return `${dateParts.year}.${dateParts.month}.${dateParts.day} ${dateParts.hour}:${dateParts.minute}`;
 };
 
-export default function InlineCommentItem({ comment, postId }: InlineCommentItemProps) {
+export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 	const { author } = comment;
 	const authorBlogPath = buildBlogHomePath(author.slug);
-	const [isEditing, setIsEditing] = useState(false);
-	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-	const deleteMutation = useDeletePostCommentAnchorMutation(postId, comment.commentId);
-	const [isDeleteErrorOpen, setIsDeleteErrorOpen] = useState(false);
-	const isDeleting = useRef(false);
-	const handleDelete = async () => {
-		if (!comment.canDelete || isDeleting.current) return;
-		isDeleting.current = true;
-		try {
-			await deleteMutation.mutateAsync();
-			setIsDeleteModalOpen(false);
-		} catch {
-			setIsDeleteModalOpen(false);
-			setIsDeleteErrorOpen(true);
-		} finally {
-			isDeleting.current = false;
-		}
-	};
-	const editButtonRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<article
@@ -105,72 +78,11 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 							<span>편집됨</span>
 						</span>
 					)}
-					{comment.canEdit && (
-						<span className="flex items-center gap-1">
-							<span aria-hidden="true">·</span>
-							<button
-								ref={editButtonRef}
-								onClick={() => setIsEditing(true)}
-								type="button"
-								className="rounded-sm transition-colors hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
-							>
-								수정
-							</button>
-						</span>
-					)}
-					{comment.canDelete && !isEditing && (
-						<span className="flex items-center gap-1">
-							<button
-								type="button"
-								onClick={() => setIsDeleteModalOpen(true)}
-								className="rounded-sm transition-colors hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-							>
-								삭제
-							</button>
-						</span>
-					)}
 				</div>
 			</div>
-			{isEditing && comment.canEdit ? (
-				<div className="col-start-2 row-start-2 min-w-0">
-					<InlineCommentEditForm
-						postId={postId}
-						commentAnchorId={comment.commentId}
-						onSaved={() => {
-							setIsEditing(false);
-							editButtonRef.current?.focus();
-						}}
-						content={comment.content}
-						onCancel={() => {
-							setIsEditing(false);
-							editButtonRef.current?.focus();
-						}}
-					/>
-				</div>
-			) : (
-				<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">
-					{comment.content}
-				</p>
-			)}
-			{comment.canDelete && (
-				<ConfirmModal
-					open={isDeleteModalOpen}
-					title="댓글을 삭제할까요?"
-					description="삭제한 댓글은 복구할 수 없습니다."
-					confirmLabel={deleteMutation.isPending ? '삭제 중…' : '삭제'}
-					variant="danger"
-					isPending={deleteMutation.isPending}
-					onConfirm={() => void handleDelete()}
-					onCancel={() => setIsDeleteModalOpen(false)}
-				/>
-			)}
-			<AlertModal
-				open={isDeleteErrorOpen}
-				title="댓글을 삭제하지 못했습니다."
-				description="잠시 후 다시 시도해 주세요."
-				onAction={() => setIsDeleteErrorOpen(false)}
-				onClose={() => setIsDeleteErrorOpen(false)}
-			/>
+			<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">
+				{comment.content}
+			</p>
 		</article>
 	);
 }

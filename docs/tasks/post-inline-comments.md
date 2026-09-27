@@ -31,7 +31,7 @@
 
 ## API와 화면 모델 경계 — #640 이후
 
-아래 endpoint는 #570 작업 브랜치의 API 구현 기준이다. #640은 두 GET API와 consumer hook까지 제공하며 실제 페이지 조립은 #641에서 연결한다. 작성·수정·삭제 API는 해당 후속 이슈에서 추가한다.
+아래 endpoint는 #570 작업 브랜치의 API 구현 기준이다. #640은 두 GET API와 consumer hook을 제공하고, #641이 실제 상세 페이지의 본문·사이드바에 연결한다. 작성·수정·삭제 API는 해당 후속 이슈에서 추가한다.
 
 | 기능 | method / path | 통합 이슈 |
 | --- | --- | --- |
@@ -47,7 +47,7 @@
 - 본문 조회는 blocks 안의 anchorGroups, 사이드바 조회는 blockId가 포함된 anchorGroups를 소비한다.
 - raw API, query key/options, mutation과 공통 캐시 처리는 shared/api/posts에 둔다. 화면 모델과 mapper는 features/post-detail에 둔다.
 - InlineComment*Model은 화면 내부 계약이다. anchorCount는 commentCount, isEdited는 같은 이름으로 보존한다. 서버의 댓글 수를 댓글 배열 길이로 다시 계산하지 않는다.
-- 본문과 사이드바의 query key는 게시글 ID와 로그인 여부를 포함하며 authenticated 캐시 정리 범위에 속한다. 인증 초기화 전에는 요청하지 않는다. 게시글 수정 시 해당 게시글의 네 조회 캐시(본문/사이드바 × 로그인/비회원)를 무효화하며 다른 게시글 댓글 캐시는 유지한다.
+- 본문과 사이드바의 query key는 게시글 ID와 로그인 여부를 포함하며 authenticated 캐시 정리 범위에 속한다. 인증 초기화 전에는 요청하지 않는다. 게시글 수정 시 해당 게시글의 로그인 여부별 본문·사이드바 조회 캐시를 무효화하며 다른 게시글 댓글 캐시는 유지한다.
 - 게시글 수정과 댓글 mutation 후 본문·사이드바가 오래된 정보를 유지하지 않도록 관련 조회를 무효화한다.
 - 백엔드는 앵커 정합성과 권한 판정의 책임을 가진다. 이 프론트 분할 PR들은 백엔드 구현을 변경하지 않는다.
 

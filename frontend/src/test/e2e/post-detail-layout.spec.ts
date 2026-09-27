@@ -4,6 +4,8 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
+import { BASE_MODAL_CLASS_NAME } from '@/shared/ui/modal/modal.styles';
+
 const POST_DETAIL_LAYOUT_STYLES = new URL('../../widgets/post-detail/PostDetail.module.css', import.meta.url);
 
 const renderLayoutFixture = async (page: Page) => {
@@ -51,4 +53,33 @@ test.describe('게시글 상세 사이드 레이아웃', () => {
 		await expect(page.locator('.compactCommentsEntry')).toHaveCSS('justify-content', 'flex-end');
 		await expect(page.getByRole('button', { name: '전체 댓글 8' })).toBeVisible();
 	});
+});
+
+// RTL covers the real sidebar interactions; this checks its compiled responsive CSS in Chromium.
+test('댓글 사이드바는 모바일 화면을 채우고 데스크톱에서는 우측에 배치된다', async ({ page }) => {
+	await page.route('**/v1/**', (route) => route.abort());
+	await page.goto('/about');
+	const styles = await page
+		.locator('link[rel="stylesheet"]')
+		.evaluateAll((links) =>
+			links.map((link) => `<link rel="stylesheet" href="${(link as HTMLLinkElement).href}">`).join(''),
+		);
+	const source = await readFile(
+		new URL('../../features/post-detail/ui/PostCommentsSidebar.tsx', import.meta.url),
+		'utf8',
+	);
+	const sidebarClass = source.match(/className="(fixed inset-y-0[^\"]+)"/)?.[1];
+	expect(sidebarClass).toBeTruthy();
+	await page.setContent(
+		`<html><head>${styles}</head><body><dialog class="${BASE_MODAL_CLASS_NAME} ${sidebarClass}" data-state="open" aria-label="댓글 사이드바"><h2>전체 인라인 댓글</h2><button>댓글 사이드바 닫기</button></dialog></body></html>`,
+	);
+	await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.showModal());
+	await page.setViewportSize({ width: 390, height: 844 });
+	const dialog = page.getByRole('dialog', { name: '댓글 사이드바' });
+	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(390);
+	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(0);
+	await expect.poll(async () => (await dialog.boundingBox())?.height).toBe(844);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(448);
+	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(992);
 });
