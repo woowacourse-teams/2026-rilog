@@ -99,7 +99,7 @@ export interface PostCommentAnchorGroupResponse {
 	selectionId: number;
 	range: { startOffset: number; endOffset: number };
 	selectedText: string;
-	state: 'ACTIVE' | 'OUTDATED';
+	state: 'ACTIVE' | 'ORPHANED';
 	anchorCount: number;
 	commentAnchors: PostCommentAnchorResponse[];
 }

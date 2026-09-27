@@ -14,7 +14,7 @@ export const mapPostCommentAnchorsResponse = (
 			commentCount: group.anchorCount,
 			range: group.range,
 			selectedText: group.selectedText,
-			state: group.state,
+			state: group.state === 'ORPHANED' ? 'OUTDATED' : group.state,
 			comments: group.commentAnchors.map(({ commentAnchorId, author, ...comment }) => ({
 				...comment,
 				commentId: commentAnchorId,

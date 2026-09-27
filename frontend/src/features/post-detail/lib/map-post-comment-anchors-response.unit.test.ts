@@ -20,12 +20,12 @@ const comment = {
 };
 
 describe('mapPostCommentAnchorsResponse', () => {
-	it('선택 id와 댓글 id를 구분하고 순서, 상태, 범위 및 권한을 보존한다', () => {
+	it('선택 id와 댓글 id를 구분하고 ORPHANED를 OUTDATED로 변환하며 순서, 범위 및 권한을 보존한다', () => {
 		const group = {
 			selectionId: 25,
 			range: { startOffset: 1, endOffset: 5 },
 			selectedText: '인용',
-			state: 'OUTDATED' as const,
+			state: 'ORPHANED' as const,
 			anchorCount: 1,
 			commentAnchors: [comment],
 		};
@@ -41,6 +41,7 @@ describe('mapPostCommentAnchorsResponse', () => {
 		});
 		expect(result.map((block) => block.blockId)).toEqual(['second', 'first']);
 		expect(result[0].anchors.map((anchor) => anchor.anchorId)).toEqual([25, 2]);
+		expect(result[0].anchors[1].state).toBe('ACTIVE');
 		expect(result[0].anchors[0]).toEqual({
 			anchorId: 25,
 			commentCount: 1,
