@@ -1,5 +1,6 @@
 package kr.rilog.domain.comment.service;
 
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.BlogMembers;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
@@ -13,6 +14,7 @@ import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.post.entity.Post;
@@ -96,6 +98,18 @@ public class CommentAnchorService {
         return CommentAnchorUpdateResult.from(commentAnchor);
     }
 
+    @Transactional
+    public CommentAnchorDeleteResult deleteCommentAnchor(Long postId, Long commentAnchorId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateReadableBy(requesterId);
+
+        CommentAnchor commentAnchor = getCommentAnchor(postId, commentAnchorId);
+        boolean requesterCanDeleteOthers = post.isWrittenBy(requesterId)
+                || hasBlogDeletePermission(post.getOwnBlogId(), requesterId);
+        commentAnchor.deleteBy(requesterId, requesterCanDeleteOthers);
+        return CommentAnchorDeleteResult.from(commentAnchor);
+    }
+
     public CommentAnchorListResult readCommentAnchors(Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         post.validateReadableBy(requesterId);
@@ -123,6 +137,12 @@ public class CommentAnchorService {
         }
 
         return commentAnchorSelectionRepository.save(CommentAnchorSelection.create(post, selection));
+    }
+
+    private boolean hasBlogDeletePermission(Long blogId, Long requesterId) {
+        return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(blogId, requesterId, ACTIVE)
+                .map(BlogMember::hasDeletePermission)
+                .orElse(false);
     }
 
     private CommentAnchor getCommentAnchor(Long postId, Long commentAnchorId) {
