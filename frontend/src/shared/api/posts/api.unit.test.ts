@@ -6,6 +6,7 @@ import {
 	deletePost,
 	publishPost,
 	readPostCommentAnchors,
+	readPostCommentAnchorsSidebar,
 	readPostDetail,
 	updatePost,
 } from './api';
@@ -160,6 +161,18 @@ describe('readPostCommentAnchors', () => {
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors');
+	});
+});
+
+describe('readPostCommentAnchorsSidebar', () => {
+	it('사이드바 전용 endpoint로 GET하고 평면 응답을 유지한다', async () => {
+		const response = { status: 0, message: 'OK', data: { anchorGroups: [] } };
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(response));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(readPostCommentAnchorsSidebar(81)).resolves.toEqual(response);
+		const request = fetchMock.mock.calls[0][0] as Request;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors/sidebar');
 	});
 });
 

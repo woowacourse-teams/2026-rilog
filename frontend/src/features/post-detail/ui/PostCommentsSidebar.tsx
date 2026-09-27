@@ -56,7 +56,7 @@ export default function PostCommentsSidebar({
 			onDismiss={onClose}
 			accessibility={{ labelledBy: titleId }}
 			initialFocusRef={shouldFocusInput ? inputRef : titleRef}
-			className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-[min(28rem,calc(100vw-1rem))] translate-x-full overflow-hidden border-l border-border-default shadow-modal transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none"
+			className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-none translate-x-full overflow-hidden border-l border-border-default shadow-modal transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none sm:w-112"
 		>
 			<div className="flex h-full min-h-0 flex-col">
 				<header className="flex h-15 shrink-0 items-center justify-between border-b border-border-default px-5">

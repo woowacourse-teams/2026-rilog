@@ -7,11 +7,7 @@ import type { ReactNode } from 'react';
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
-import {
-	getAllInlineCommentThreads,
-	getInlineCommentThreadsByRequest,
-	getInlineCommentThreadForSelection,
-} from '@/features/post-detail/lib/get-inline-comment-threads';
+import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type {
 	InlineCommentOpenRequest,
@@ -54,6 +50,8 @@ export default function PostDetailCommentsWorkspace({
 }: PostDetailCommentsWorkspaceProps) {
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(false);
 	const commentsQuery = usePostInlineComments(postId);
+	const sidebarQuery = usePostInlineCommentsSidebar(postId);
+	const sidebarThreads = sidebarQuery.data ?? [];
 	const inlineCommentBlocks = commentsQuery.data ?? EMPTY_INLINE_COMMENT_BLOCKS;
 	const [openRequest, setOpenRequest] = useState<InlineCommentOpenRequest | null>(null);
 	const [createdCommentId, setCreatedCommentId] = useState<number | null>(null);
@@ -64,12 +62,15 @@ export default function PostDetailCommentsWorkspace({
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
-			? getAllInlineCommentThreads(inlineCommentBlocks).filter(({ anchor }) =>
-					anchor.comments.some((comment) => comment.commentId === createdCommentId),
-				)
+			? sidebarThreads.filter(({ anchor }) => anchor.comments.some((comment) => comment.commentId === createdCommentId))
 			: openRequest
-				? getInlineCommentThreadsByRequest(inlineCommentBlocks, openRequest)
-				: getAllInlineCommentThreads(inlineCommentBlocks);
+				? sidebarThreads.filter(
+						({ blockId, anchor }) =>
+							blockId === openRequest.blockId &&
+							openRequest.anchorIds.includes(anchor.anchorId) &&
+							(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
+					)
+				: sidebarThreads;
 	const inlineCommentCount = inlineCommentBlocks.reduce(
 		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
 		0,
@@ -86,7 +87,16 @@ export default function PostDetailCommentsWorkspace({
 
 	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
 		setCreatedCommentId(null);
-		const existingThread = getInlineCommentThreadForSelection(inlineCommentBlocks, target);
+		const existingThread = inlineCommentBlocks
+			.flatMap(({ blockId, anchors }) => anchors.map((anchor) => ({ blockId, anchor })))
+			.find(
+				({ blockId, anchor }) =>
+					blockId === target.blockId &&
+					anchor.state === 'ACTIVE' &&
+					anchor.range.startOffset === target.startOffset &&
+					anchor.range.endOffset === target.endOffset &&
+					anchor.selectedText === target.selectedText,
+			);
 		setSelection(existingThread ? null : target);
 		setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 		setSidebarMode('single');
@@ -160,9 +170,9 @@ export default function PostDetailCommentsWorkspace({
 				mode={sidebarMode}
 				open={isCommentsSidebarOpen}
 				threads={visibleThreads}
-				isLoading={commentsQuery.isPending}
-				isError={commentsQuery.isError}
-				onRetry={() => void commentsQuery.refetch()}
+				isLoading={sidebarQuery.isPending}
+				isError={sidebarQuery.isError}
+				onRetry={() => void sidebarQuery.refetch()}
 				onCreated={(commentAnchorId) => {
 					setSelection(null);
 					setCreatedCommentId(commentAnchorId);

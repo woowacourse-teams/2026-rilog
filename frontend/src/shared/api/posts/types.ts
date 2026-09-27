@@ -79,6 +79,7 @@ export interface PostDetailResponse {
 }
 
 export interface PostCommentAnchorResponse {
+	isEdited: boolean;
 	commentAnchorId: number;
 	content: string;
 	author: {
@@ -99,13 +100,21 @@ export interface PostCommentAnchorGroupResponse {
 	selectionId: number;
 	range: { startOffset: number; endOffset: number };
 	selectedText: string;
-	state: 'ACTIVE' | 'OUTDATED';
+	state: 'ACTIVE' | 'ORPHANED';
 	anchorCount: number;
 	commentAnchors: PostCommentAnchorResponse[];
 }
 
 export interface PostCommentAnchorsResponse {
 	blocks: { blockId: string; anchorGroups: PostCommentAnchorGroupResponse[] }[];
+}
+
+export interface PostCommentAnchorSidebarGroupResponse extends PostCommentAnchorGroupResponse {
+	blockId: string;
+}
+
+export interface PostCommentAnchorsSidebarResponse {
+	anchorGroups: PostCommentAnchorSidebarGroupResponse[];
 }
 
 export interface PostCommentAnchorCreateRequest {

@@ -7,8 +7,13 @@ import { getLatestReleaseNote, RELEASE_NOTES } from '@/features/release-notes/mo
 import type { PostCommentAnchorCreateRequest } from '@/shared/api/posts/types';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
+import { renderInlineCommentWorkspace } from './fixtures/inline-comment-browser';
 
 const dragText = async (page: Page) => {
+	await expect(page.getByRole('article', { name: '게시글 본문' })).toHaveAttribute(
+		'data-comment-selection-ready',
+		'true',
+	);
 	const root = page
 		.locator('p[data-inline-comment-root]:not(:has(a))')
 		.filter({ visible: true, hasText: /\S{3}/ })
@@ -45,6 +50,7 @@ test.beforeEach(async ({ page }) => {
 test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을 복원한다', async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await mockAuthenticatedAccess(page);
+	await page.route('**/v1/**', (route) => route.abort());
 
 	let submitted: PostCommentAnchorCreateRequest | null = null;
 	let addedContent: string | null = null;
@@ -54,56 +60,67 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 		addedContent = body.content;
 		await route.fulfill({ json: { status: 0, message: 'OK', data: { commentAnchorId: 901 } } });
 	});
-	await page.route('**/v1/posts/106/comment-anchors', async (route) => {
+	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', async (route) => {
 		if (route.request().method() === 'POST') {
 			submitted = route.request().postDataJSON() as PostCommentAnchorCreateRequest;
 			await route.fulfill({ json: { status: 0, message: 'OK', data: { commentAnchorId: 900 } } });
 			return;
 		}
-		await route.fulfill({
-			json: {
-				status: 0,
-				message: 'OK',
-				data: {
-					blocks: submitted
-						? [
-								{
-									blockId: submitted.blockId,
-									anchorGroups: [
-										{
-											selectionId: 91,
-											range: { startOffset: submitted.startOffset, endOffset: submitted.endOffset },
-											selectedText: submitted.selectedText,
-											state: 'ACTIVE',
-											anchorCount: addedContent ? 2 : 1,
-											commentAnchors: [submitted.content, ...(addedContent ? [addedContent] : [])].map(
-												(content, index) => ({
-													commentAnchorId: 900 + index,
-													content,
-													author: {
-														userId: 1,
-														nickname: '테스트 작성자',
-														slug: 'author',
-														profileImageUrl: null,
-														isPostAuthor: false,
-														isBlogMember: false,
-													},
-													canEdit: true,
-													canDelete: true,
-													createdAt: '2026-09-27T07:47:07.958Z',
-													updatedAt: '2026-09-27T07:47:07.958Z',
-												}),
-											),
-										},
-									],
-								},
-							]
-						: [],
-				},
+		const response = {
+			status: 0,
+			message: 'OK',
+			data: {
+				blocks: submitted
+					? [
+							{
+								blockId: submitted.blockId,
+								anchorGroups: [
+									{
+										selectionId: 91,
+										range: { startOffset: submitted.startOffset, endOffset: submitted.endOffset },
+										selectedText: submitted.selectedText,
+										state: 'ACTIVE',
+										anchorCount: addedContent ? 2 : 1,
+										commentAnchors: [submitted.content, ...(addedContent ? [addedContent] : [])].map(
+											(content, index) => ({
+												commentAnchorId: 900 + index,
+												content,
+												author: {
+													userId: 1,
+													nickname: '테스트 작성자',
+													slug: 'author',
+													profileImageUrl: null,
+													isPostAuthor: false,
+													isBlogMember: false,
+												},
+												isEdited: false,
+												canEdit: true,
+												canDelete: true,
+												createdAt: '2026-09-27T07:47:07.958Z',
+												updatedAt: '2026-09-27T07:47:07.958Z',
+											}),
+										),
+									},
+								],
+							},
+						]
+					: [],
 			},
+		};
+		await route.fulfill({
+			json: route.request().url().endsWith('/sidebar')
+				? {
+						...response,
+						data: {
+							anchorGroups: response.data.blocks.flatMap(({ blockId, anchorGroups }) =>
+								anchorGroups.map((group) => ({ ...group, blockId })),
+							),
+						},
+					}
+				: response,
 		});
 	});
-	await page.goto('/@gustn99/posts/106');
+	await renderInlineCommentWorkspace(page);
 	await expect(page.getByRole('article', { name: '게시글 본문' })).toBeVisible();
 	const { text: selectedText } = await dragText(page);
 	expect(selectedText.trim()).not.toBe('');
@@ -125,7 +142,7 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 	await expect.poll(async () => (await toolbarButton.boundingBox())?.width).toBe(88);
 	await expect(toolbarButton.getByText('댓글 추가')).toHaveCSS('opacity', '1');
 	await toolbarButton.click();
-	await expect(page.getByRole('region', { name: `"${selectedText}" 새 댓글` })).toBeVisible();
+	await expect(page.getByRole('region', { name: `"${selectedText}" 댓글` })).toBeVisible();
 	const input = page.getByRole('textbox', { name: '댓글 입력' });
 	await expect(input).toBeFocused();
 	await input.fill('브라우저에서 작성 중인 초안');
@@ -150,7 +167,17 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 
 test('모바일에서 본문을 선택해도 댓글 입력 툴바를 표시하지 않는다', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/@gustn99/posts/106');
+	await page.route('**/v1/**', (route) => route.abort());
+	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
+		route.fulfill({
+			json: {
+				status: 0,
+				message: 'OK',
+				data: route.request().url().endsWith('/sidebar') ? { anchorGroups: [] } : { blocks: [] },
+			},
+		}),
+	);
+	await renderInlineCommentWorkspace(page);
 	await expect(page.getByRole('article', { name: '게시글 본문' })).toBeVisible();
 	const { text } = await dragText(page);
 	expect(text.trim()).not.toBe('');
