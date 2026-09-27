@@ -1,5 +1,11 @@
+'use client';
+
+import { useRef, useState } from 'react';
+
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
+
+import InlineCommentEditForm from './InlineCommentEditForm';
 
 interface InlineCommentItemProps {
 	comment: InlineCommentModel;
@@ -27,6 +33,8 @@ const formatCommentDate = (createdAt: string) => {
 
 export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 	const { author } = comment;
+	const [isEditing, setIsEditing] = useState(false);
+	const editButtonRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<article
@@ -65,6 +73,8 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 						<span className="flex items-center gap-1">
 							<span aria-hidden="true">·</span>
 							<button
+								ref={editButtonRef}
+								onClick={() => setIsEditing(true)}
 								type="button"
 								className="rounded-sm transition-colors hover:text-focus-ring focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:text-focus-ring"
 							>
@@ -72,7 +82,7 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 							</button>
 						</span>
 					)}
-					{comment.canDelete && (
+					{comment.canDelete && !isEditing && (
 						<span className="flex items-center gap-1">
 							<button
 								type="button"
@@ -84,9 +94,21 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 					)}
 				</div>
 			</div>
-			<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">
-				{comment.content}
-			</p>
+			{isEditing && comment.canEdit ? (
+				<div className="col-start-2 row-start-2 min-w-0">
+					<InlineCommentEditForm
+						content={comment.content}
+						onCancel={() => {
+							setIsEditing(false);
+							editButtonRef.current?.focus();
+						}}
+					/>
+				</div>
+			) : (
+				<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">
+					{comment.content}
+				</p>
+			)}
 		</article>
 	);
 }

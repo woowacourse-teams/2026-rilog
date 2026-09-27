@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '../model/inline-comment.fixture';
@@ -8,6 +9,26 @@ import InlineCommentItem from './InlineCommentItem';
 const COMMENT = POST_81_INLINE_COMMENT_BLOCKS_FIXTURE[0].anchors[0].comments[0];
 
 describe('InlineCommentItem', () => {
+	it('수정을 누르면 원문을 편집하고 취소하면 원문과 수정 버튼 포커스를 복원한다', async () => {
+		const user = userEvent.setup();
+		render(<InlineCommentItem comment={{ ...COMMENT, canEdit: true, canDelete: true }} />);
+		await user.click(screen.getByRole('button', { name: '수정' }));
+		const input = screen.getByRole('textbox', { name: '댓글 수정' });
+		expect(input).toHaveValue(COMMENT.content);
+		expect(input).toHaveFocus();
+		expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
+		await user.clear(input);
+		await user.type(input, '수정 내용{Enter}두 번째 줄');
+		expect(input).toHaveValue('수정 내용\n두 번째 줄');
+		expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+		await user.click(screen.getByRole('button', { name: '취소' }));
+		expect(screen.queryByRole('textbox', { name: '댓글 수정' })).not.toBeInTheDocument();
+		expect(screen.getByText(COMMENT.content)).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '수정' })).toHaveFocus();
+		await user.keyboard('{Enter}');
+		expect(screen.getByRole('textbox', { name: '댓글 수정' })).toHaveValue(COMMENT.content);
+	});
+
 	it.each([
 		{ canEdit: true, canDelete: true },
 		{ canEdit: true, canDelete: false },
