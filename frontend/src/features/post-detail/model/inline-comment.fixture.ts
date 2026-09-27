@@ -1,10 +1,10 @@
-import type { InlineCommentBlockResponse, InlineCommentResponse } from '@/shared/api/posts/types';
+import type { InlineCommentBlockModel, InlineCommentModel } from '@/features/post-detail/model/inline-comment';
 
 const createComment = (
 	commentId: number,
 	content: string,
-	overrides: Partial<InlineCommentResponse> = {},
-): InlineCommentResponse => ({
+	overrides: Partial<InlineCommentModel> = {},
+): InlineCommentModel => ({
 	commentId,
 	content,
 	author: {
@@ -22,7 +22,7 @@ const createComment = (
 	...overrides,
 });
 
-export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockResponse[] = [
+export const POST_81_INLINE_COMMENT_BLOCKS_FIXTURE: InlineCommentBlockModel[] = [
 	{
 		blockId: 'f3be6e57-521a-4c8e-8b8a-c8da6b105207',
 		anchors: [

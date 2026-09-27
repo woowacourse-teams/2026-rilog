@@ -1,4 +1,4 @@
-import type { InlineCommentAnchorResponse } from '@/shared/api/posts/types';
+import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
 
 import { getInlineCommentTextOffset } from './inline-comment-selection';
 
@@ -35,10 +35,10 @@ export const getInlineCommentOffsetAtPoint = (root: HTMLElement, x: number, y: n
 };
 
 export const findLastActiveInlineCommentAnchorAtOffset = (
-	anchors: readonly InlineCommentAnchorResponse[],
+	anchors: readonly InlineCommentAnchorModel[],
 	offset: number,
-): InlineCommentAnchorResponse | null => {
-	let matchedAnchor: InlineCommentAnchorResponse | null = null;
+): InlineCommentAnchorModel | null => {
+	let matchedAnchor: InlineCommentAnchorModel | null = null;
 
 	anchors.forEach((anchor) => {
 		if (anchor.state === 'ACTIVE' && anchor.range.startOffset <= offset && offset < anchor.range.endOffset) {

@@ -1,4 +1,4 @@
-import type { InlineCommentRangeResponse } from '@/shared/api/posts/types';
+import type { InlineCommentRangeModel } from '@/features/post-detail/model/inline-comment';
 
 interface TextBoundary {
 	node: Text;
@@ -31,7 +31,7 @@ export const findInlineCommentRoot = (article: HTMLElement, blockId: string): HT
 	return Array.from(roots).find((root) => root.dataset.inlineCommentBlockId === blockId) ?? null;
 };
 
-export const restoreInlineCommentRange = (root: HTMLElement, range: InlineCommentRangeResponse): Range | null => {
+export const restoreInlineCommentRange = (root: HTMLElement, range: InlineCommentRangeModel): Range | null => {
 	const { startOffset, endOffset } = range;
 	if (!Number.isInteger(startOffset) || !Number.isInteger(endOffset) || startOffset < 0 || endOffset <= startOffset) {
 		return null;

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { InlineCommentBlockResponse } from '@/shared/api/posts/types';
+import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 
 import { getInlineCommentOffsetAtPoint } from '../lib/inline-comment-interaction';
 
@@ -15,7 +15,7 @@ const HTML = `
 	</div>
 `;
 
-const BLOCKS: InlineCommentBlockResponse[] = [
+const BLOCKS: InlineCommentBlockModel[] = [
 	{
 		blockId: 'block-1',
 		anchors: [

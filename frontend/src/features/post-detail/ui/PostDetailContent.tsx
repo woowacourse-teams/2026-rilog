@@ -9,7 +9,7 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { consumePostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { analytics } from '@/features/analytics/model/events';
-import type { InlineCommentBlockResponse } from '@/shared/api/posts/types';
+import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 import { logNonProductionInfo } from '@/shared/utils/non-production-console';
@@ -23,12 +23,12 @@ interface PostDetailContentProps {
 	postId: number;
 	ownerType: BlogType;
 	category: PostCategory;
-	inlineCommentBlocks?: readonly InlineCommentBlockResponse[];
+	inlineCommentBlocks?: readonly InlineCommentBlockModel[];
 	enableInlineCommentSelectionDebug?: boolean;
 	onInlineCommentOpen?: (request: InlineCommentOpenRequest) => void;
 }
 
-const EMPTY_INLINE_COMMENT_BLOCKS: readonly InlineCommentBlockResponse[] = [];
+const EMPTY_INLINE_COMMENT_BLOCKS: readonly InlineCommentBlockModel[] = [];
 
 const trackerMountCounts = new Map<string, number>();
 const trackerCleanupTimers = new Map<string, number>();

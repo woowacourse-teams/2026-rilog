@@ -4,7 +4,7 @@ import { useLayoutEffect } from 'react';
 
 import type { InlineCommentOpenRequest } from '../model/inline-comment-interaction';
 
-import type { InlineCommentAnchorResponse, InlineCommentBlockResponse } from '@/shared/api/posts/types';
+import type { InlineCommentAnchorModel, InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 
 import { normalizeInlineCommentHighlightRects } from '../lib/inline-comment-highlight-rects';
 import {
@@ -15,21 +15,21 @@ import { findInlineCommentRoot, restoreInlineCommentRange } from '../lib/inline-
 
 interface InlineCommentHighlightsProps {
 	article: HTMLElement;
-	blocks: readonly InlineCommentBlockResponse[];
+	blocks: readonly InlineCommentBlockModel[];
 	contentKey: string;
 	onOpenComments?: (request: InlineCommentOpenRequest) => void;
 }
 
 interface RenderedAnchor {
 	blockId: string;
-	anchor: InlineCommentAnchorResponse;
+	anchor: InlineCommentAnchorModel;
 	root: HTMLElement;
 	range: Range;
 	lines: HTMLElement[];
 }
 
 interface RenderedBlock {
-	block: InlineCommentBlockResponse;
+	block: InlineCommentBlockModel;
 	anchorsById: Map<number, RenderedAnchor>;
 }
 
