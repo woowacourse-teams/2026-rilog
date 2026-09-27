@@ -10,6 +10,7 @@ import kr.rilog.domain.comment.controller.dto.request.CommentAnchorAddRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorUpdateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorDeleteResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
 import kr.rilog.global.response.ApiResponse;
@@ -80,6 +81,25 @@ public interface CommentAnchorApiSpec {
             @PathVariable Long commentAnchorId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
             @Valid @RequestBody CommentAnchorUpdateRequest dto
+    );
+
+    @Operation(
+            summary = "인라인 댓글 삭제 API",
+            description = """
+                    인라인 댓글을 삭제(소프트 삭제)합니다.
+                    - 댓글 작성자, 게시글 작성자, 게시글이 속한 블로그의 OWNER/ADMIN만 삭제할 수 있습니다.
+                    - 게시글을 조회할 수 없는 사용자는 삭제할 수 없습니다. 비공개 게시글에서는 게시글 작성자만 삭제할 수 있습니다.
+                    - ACTIVE와 ORPHANED 상태의 댓글 모두 삭제할 수 있습니다.
+                    - 선택 범위의 마지막 댓글을 삭제해도 선택 범위(Selection)는 유지됩니다.
+                    - 이미 삭제된 댓글이나 요청한 게시글에 속하지 않은 댓글은 404를 반환합니다.
+                    """
+    )
+    ApiResponse<CommentAnchorDeleteResponse> deleteCommentAnchor(
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(description = "인라인 댓글 ID", example = "1")
+            @PathVariable Long commentAnchorId,
+            @Parameter(hidden = true) @LoginUserId Long requesterId
     );
 
 }
