@@ -107,3 +107,11 @@ export interface PostCommentAnchorGroupResponse {
 export interface PostCommentAnchorsResponse {
 	blocks: { blockId: string; anchorGroups: PostCommentAnchorGroupResponse[] }[];
 }
+
+export interface PostCommentAnchorSidebarGroupResponse extends PostCommentAnchorGroupResponse {
+	blockId: string;
+}
+
+export interface PostCommentAnchorsSidebarResponse {
+	anchorGroups: PostCommentAnchorSidebarGroupResponse[];
+}

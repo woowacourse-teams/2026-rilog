@@ -1,6 +1,7 @@
 import { apiClient } from '@/shared/api/client';
 import type {
 	PostCommentAnchorsResponse,
+	PostCommentAnchorsSidebarResponse,
 	PostDetailRequest,
 	PostDetailResponse,
 	PostsCountResponse,
@@ -45,3 +46,6 @@ export const deletePost = (postId: number) => apiClient.delete(`v1/posts/${postI
 
 export const readPostCommentAnchors = (postId: number) =>
 	apiClient.get<ApiResponse<PostCommentAnchorsResponse>>(`v1/posts/${postId}/comment-anchors`);
+
+export const readPostCommentAnchorsSidebar = (postId: number) =>
+	apiClient.get<ApiResponse<PostCommentAnchorsSidebarResponse>>(`v1/posts/${postId}/comment-anchors/sidebar`);
