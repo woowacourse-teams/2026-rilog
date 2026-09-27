@@ -11,6 +11,7 @@ import InlineCommentItem from './InlineCommentItem';
 import InlineCommentQuote from './InlineCommentQuote';
 
 interface InlineCommentThreadContentProps {
+	postId: number;
 	anchor: Pick<InlineCommentAnchorModel, 'selectedText' | 'state' | 'comments'>;
 	isCollapsible: boolean;
 	onNavigate?: () => void;
@@ -18,6 +19,7 @@ interface InlineCommentThreadContentProps {
 }
 
 export default function InlineCommentThreadContent({
+	postId,
 	anchor,
 	isCollapsible,
 	onNavigate,
@@ -95,7 +97,7 @@ export default function InlineCommentThreadContent({
 									<div className="space-y-8">
 										{anchor.comments.map((comment) => (
 											<div key={comment.commentId}>
-												<InlineCommentItem comment={comment} />
+												<InlineCommentItem postId={postId} comment={comment} />
 											</div>
 										))}
 									</div>

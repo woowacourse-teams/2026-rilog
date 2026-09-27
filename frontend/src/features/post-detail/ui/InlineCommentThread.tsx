@@ -49,6 +49,7 @@ export default function InlineCommentThread({
 
 	return (
 		<InlineCommentThreadContent
+			postId={postId}
 			anchor={thread.anchor}
 			isCollapsible={isCollapsible}
 			onNavigate={() => onNavigate(thread)}

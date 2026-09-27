@@ -34,6 +34,8 @@ describe('InlineCommentThread', () => {
 		await user.tab(); // 본문 이동
 		await user.tab(); // 프로필 이미지 링크
 		await user.tab(); // 작성자 링크
+		await user.tab(); // 수정
+		await user.tab(); // 삭제
 		await user.tab(); // 댓글 입력
 
 		const textarea = screen.getByRole('textbox', { name: '댓글 입력' });

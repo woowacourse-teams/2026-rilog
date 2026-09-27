@@ -1,6 +1,9 @@
-import { apiClient } from '@/shared/api/client';
+import { apiClient, apiRequest, kyInstance } from '@/shared/api/client';
 import type {
 	PostCommentAnchorsResponse,
+	PostCommentAnchorDeleteResponse,
+	PostCommentAnchorUpdateRequest,
+	PostCommentAnchorUpdateResponse,
 	PostCommentAnchorCreateRequest,
 	PostCommentAnchorAddRequest,
 	PostCommentAnchorCreateResponse,
@@ -60,4 +63,21 @@ export const addPostCommentAnchor = (postId: number, selectionId: number, reques
 	apiClient.post<ApiResponse<PostCommentAnchorCreateResponse>>(
 		`v1/posts/${postId}/selections/${selectionId}/comment-anchors`,
 		{ json: request },
+	);
+
+export const updatePostCommentAnchor = (
+	postId: number,
+	commentAnchorId: number,
+	request: PostCommentAnchorUpdateRequest,
+) =>
+	apiClient.patch<ApiResponse<PostCommentAnchorUpdateResponse>>(
+		`v1/posts/${postId}/comment-anchors/${commentAnchorId}`,
+		{ json: request },
+	);
+
+export const deletePostCommentAnchor = (postId: number, commentAnchorId: number) =>
+	apiRequest(() =>
+		kyInstance
+			.delete(`v1/posts/${postId}/comment-anchors/${commentAnchorId}`)
+			.json<ApiResponse<PostCommentAnchorDeleteResponse>>(),
 	);
