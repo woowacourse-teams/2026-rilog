@@ -1,6 +1,6 @@
 import { render as renderUI, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
@@ -23,6 +23,7 @@ const THREAD = {
 };
 
 describe('InlineCommentThread', () => {
+	beforeEach(() => sessionStorage.clear());
 	it('댓글을 펼치면 바로 입력할 수 있고 다시 펼쳐도 작성 내용을 유지한다', async () => {
 		const user = userEvent.setup();
 		render(<InlineCommentThread thread={THREAD} onNavigate={vi.fn()} />);

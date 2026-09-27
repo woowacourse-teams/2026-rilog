@@ -48,7 +48,7 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 						<p className="px-5 py-6 text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
 					) : (
 						<div>
-							{threads.map((thread, index) => (
+							{threads.map((thread) => (
 								<div key={thread.anchor.anchorId}>
 									<InlineCommentThread thread={thread} onNavigate={onNavigate} />
 									<Divider className="mx-5" />

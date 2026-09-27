@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
@@ -7,9 +8,14 @@ import type { AuthContextValue } from '@/features/auth/model/auth-context';
 
 import InlineCommentInput from './InlineCommentInput';
 
+function ControlledInput() {
+	const [value, setValue] = useState('');
+	return <InlineCommentInput isOpen value={value} onChange={setValue} />;
+}
+
 const renderInput = (auth: AuthContextValue) => (
 	<AUTH_CONTEXT.Provider value={auth}>
-		<InlineCommentInput isOpen />
+		<ControlledInput />
 	</AUTH_CONTEXT.Provider>
 );
 

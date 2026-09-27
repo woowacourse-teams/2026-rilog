@@ -79,7 +79,7 @@ describe('PostCommentsSidebar', () => {
 		render(<PostCommentsSidebar open threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />);
 
 		expect(screen.getByRole('dialog', { name: '인라인 댓글 2' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '“활성 인용문” 댓글' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"활성 인용문" 댓글' })).toBeInTheDocument();
 		expect(screen.queryByRole('article', { name: '작성자님의 댓글' })).not.toBeInTheDocument();
 		const expandButtons = screen.getAllByRole('button', { name: '댓글 펼치기' });
 		await user.click(expandButtons[0]);
@@ -88,9 +88,12 @@ describe('PostCommentsSidebar', () => {
 		expect(screen.getByText('작성자', { selector: 'span' })).toBeInTheDocument();
 		expect(screen.queryByText('멤버')).not.toBeInTheDocument();
 		expect(screen.getAllByText('2026.09.17 10:20')).not.toHaveLength(0);
-		expect(screen.getByText('OUTDATED')).toBeInTheDocument();
-		expect(screen.getAllByRole('separator')).toHaveLength(1);
-		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveAttribute('placeholder', '댓글을 입력하세요.');
+		expect(screen.getByText('Outdated')).toBeInTheDocument();
+		expect(screen.getAllByRole('separator')).toHaveLength(2);
+		expect(screen.getAllByRole('textbox', { name: '댓글 입력' })).toHaveLength(2);
+		for (const input of screen.getAllByRole('textbox', { name: '댓글 입력' })) {
+			expect(input).toHaveAttribute('placeholder', '댓글을 입력하세요.');
+		}
 	});
 
 	it('인용은 버튼이 아니며 본문 이동과 닫기 동작을 전달한다', async () => {

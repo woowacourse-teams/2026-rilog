@@ -1,6 +1,6 @@
-import { render as renderUI, screen } from '@testing-library/react';
+import { render as renderUI, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
@@ -100,15 +100,48 @@ const renderWorkspace = () =>
 	);
 
 describe('PostDetailCommentsWorkspace', () => {
+	beforeEach(() => sessionStorage.clear());
+	it('백드롭으로 닫거나 다른 앵커 목록으로 전환해도 초안을 앵커별로 복원한다', async () => {
+		const user = userEvent.setup();
+		renderWorkspace();
+		const openAll = () => user.click(screen.getAllByRole('button', { name: '전체 댓글 3개 보기' })[0]);
+		const firstRegion = () => within(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' }));
+		const thirdRegion = () => within(screen.getByRole('region', { name: '"다른 블록 인용" 댓글' }));
+
+		await openAll();
+		await user.click(firstRegion().getByRole('button', { name: '댓글 펼치기' }));
+		await user.type(firstRegion().getByRole('textbox', { name: '댓글 입력' }), '첫 초안{Enter}둘째 줄');
+		await user.click(thirdRegion().getByRole('button', { name: '댓글 펼치기' }));
+		await user.type(thirdRegion().getByRole('textbox', { name: '댓글 입력' }), '다른 앵커 초안');
+		await user.click(screen.getByRole('dialog'));
+		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+		await user.click(screen.getByRole('button', { name: '하이라이트 댓글 열기' }));
+		expect(firstRegion().getByRole('textbox', { name: '댓글 입력' })).toHaveValue('첫 초안\n둘째 줄');
+		expect(screen.queryByRole('region', { name: '"다른 블록 인용" 댓글' })).not.toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
+		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+		await openAll();
+		await user.click(thirdRegion().getByRole('button', { name: '댓글 펼치기' }));
+		expect(thirdRegion().getByRole('textbox', { name: '댓글 입력' })).toHaveValue('다른 앵커 초안');
+		await user.clear(firstRegion().getByRole('textbox', { name: '댓글 입력' }));
+		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
+		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+		await openAll();
+		expect(firstRegion().getByRole('textbox', { name: '댓글 입력' })).toHaveValue('');
+		expect(thirdRegion().getByRole('textbox', { name: '댓글 입력' })).toHaveValue('다른 앵커 초안');
+	});
+
 	it('하이라이트 클릭 시 해당 인용 댓글 세트만 연다', async () => {
 		const user = userEvent.setup();
 		renderWorkspace();
 
 		await user.click(screen.getByRole('button', { name: '하이라이트 댓글 열기' }));
 
-		expect(screen.getByRole('dialog', { name: '댓글 1' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '“첫 번째 인용” 댓글' })).toBeInTheDocument();
-		expect(screen.queryByRole('region', { name: '“오래된 인용” 댓글' })).not.toBeInTheDocument();
+		expect(screen.getByRole('dialog', { name: '인라인 댓글 1' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeInTheDocument();
+		expect(screen.queryByRole('region', { name: '"오래된 인용" 댓글' })).not.toBeInTheDocument();
 	});
 
 	it('블록 댓글 클릭 시 해당 블록의 인용 댓글 세트를 모두 연다', async () => {
@@ -117,9 +150,9 @@ describe('PostDetailCommentsWorkspace', () => {
 
 		await user.click(screen.getByRole('button', { name: '블록 댓글 열기' }));
 
-		expect(screen.getByRole('region', { name: '“첫 번째 인용” 댓글' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '“오래된 인용” 댓글' })).toBeInTheDocument();
-		expect(screen.queryByRole('region', { name: '“다른 블록 인용” 댓글' })).not.toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"오래된 인용" 댓글' })).toBeInTheDocument();
+		expect(screen.queryByRole('region', { name: '"다른 블록 인용" 댓글' })).not.toBeInTheDocument();
 	});
 
 	it('전체 댓글 클릭 시 모든 블록의 인용 댓글 세트를 연다', async () => {
@@ -128,9 +161,9 @@ describe('PostDetailCommentsWorkspace', () => {
 
 		await user.click(screen.getAllByRole('button', { name: '전체 댓글 3개 보기' })[0]);
 
-		expect(screen.getByRole('dialog', { name: '댓글 3' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '“첫 번째 인용” 댓글' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '“오래된 인용” 댓글' })).toBeInTheDocument();
-		expect(screen.getByRole('region', { name: '“다른 블록 인용” 댓글' })).toBeInTheDocument();
+		expect(screen.getByRole('dialog', { name: '인라인 댓글 3' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"오래된 인용" 댓글' })).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '"다른 블록 인용" 댓글' })).toBeInTheDocument();
 	});
 });

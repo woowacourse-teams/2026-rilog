@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 import { useAuth } from '@/features/auth/model/use-auth';
 import Button from '@/shared/ui/button/Button';
@@ -8,6 +8,8 @@ import Textarea from '@/shared/ui/textarea/Textarea';
 
 interface InlineCommentInputProps {
 	isOpen: boolean;
+	value: string;
+	onChange: (value: string) => void;
 }
 
 const resizeTextarea = (element: HTMLTextAreaElement) => {
@@ -19,24 +21,23 @@ const resizeTextarea = (element: HTMLTextAreaElement) => {
 	}
 };
 
-export default function InlineCommentInput({ isOpen }: InlineCommentInputProps) {
+export default function InlineCommentInput({ isOpen, value, onChange }: InlineCommentInputProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const isDisabled = !isInitialized || !isAuthenticated;
-	const [commentText, setCommentText] = useState('');
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	useLayoutEffect(() => {
 		if (isOpen && textareaRef.current !== null) {
 			resizeTextarea(textareaRef.current);
 		}
-	}, [isOpen, commentText]);
+	}, [isOpen, value]);
 
 	return (
 		<>
 			<Textarea
 				ref={textareaRef}
 				rows={1}
-				value={commentText}
+				value={value}
 				disabled={isDisabled}
 				aria-label="댓글 입력"
 				placeholder={isDisabled ? '로그인하고 댓글을 남겨보세요.' : '댓글을 입력하세요.'}
@@ -47,10 +48,10 @@ export default function InlineCommentInput({ isOpen }: InlineCommentInputProps) 
 					resize: 'none',
 					overflowY: 'auto',
 				}}
-				onChange={(event) => setCommentText(event.target.value)}
+				onChange={(event) => onChange(event.target.value)}
 			/>
 			<div className="mt-2 flex justify-end">
-				<Button size="sm" disabled={isDisabled || commentText.trim().length === 0}>
+				<Button size="sm" disabled={isDisabled || value.trim().length === 0}>
 					작성
 				</Button>
 			</div>
