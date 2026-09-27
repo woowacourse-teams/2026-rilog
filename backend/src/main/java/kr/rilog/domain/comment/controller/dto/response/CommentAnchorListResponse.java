@@ -75,6 +75,10 @@ public record CommentAnchorListResponse(
             AuthorResponseWithAffiliation author,
             boolean canEdit,
             boolean canDelete,
+
+            @Schema(name = "isEdited", description = "작성 후 본문 수정 여부")
+            boolean isEdited,
+
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
@@ -86,6 +90,7 @@ public record CommentAnchorListResponse(
                     AuthorResponseWithAffiliation.from(result.author()),
                     result.canEdit(),
                     result.canDelete(),
+                    result.edited(),
                     result.createdAt(),
                     result.updatedAt()
             );

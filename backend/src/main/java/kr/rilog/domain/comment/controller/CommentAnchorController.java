@@ -8,15 +8,19 @@ import kr.rilog.domain.auth.annotation.OptionalAuthGuard;
 import kr.rilog.domain.comment.controller.apispec.CommentAnchorApiSpec;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorAddRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
+import kr.rilog.domain.comment.controller.dto.request.CommentAnchorUpdateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
 import kr.rilog.domain.comment.service.CommentAnchorService;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -76,6 +80,24 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
         );
         CommentAnchorCreateResponse data = CommentAnchorCreateResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "인라인 댓글을 작성했습니다.", data);
+    }
+
+    @AuthGuard
+    @PatchMapping("/posts/{postId}/comment-anchors/{commentAnchorId}")
+    public ApiResponse<CommentAnchorUpdateResponse> updateCommentAnchor(
+            @PathVariable Long postId,
+            @PathVariable Long commentAnchorId,
+            @LoginUserId Long requesterId,
+            @Valid @RequestBody CommentAnchorUpdateRequest dto
+    ) {
+        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
+                postId,
+                commentAnchorId,
+                requesterId,
+                dto.toCommand()
+        );
+        CommentAnchorUpdateResponse data = CommentAnchorUpdateResponse.from(result);
+        return ApiResponse.response(HttpStatus.OK, "인라인 댓글을 수정했습니다.", data);
     }
 
 }

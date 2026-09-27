@@ -11,8 +11,10 @@ import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
+import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
+import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.vo.TextBlock;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_SELECTION_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
@@ -77,6 +80,22 @@ public class CommentAnchorService {
         return CommentAnchorCreateResult.from(savedCommentAnchor);
     }
 
+    @Transactional
+    public CommentAnchorUpdateResult updateCommentAnchor(
+            Long postId,
+            Long commentAnchorId,
+            Long requesterId,
+            CommentAnchorUpdateCommand command
+    ) {
+        Post post = getPublishedPost(postId);
+        post.validateReadableBy(requesterId);
+
+        CommentAnchor commentAnchor = getCommentAnchor(postId, commentAnchorId);
+        commentAnchor.updateContent(requesterId, command.content());
+        commentAnchorRepository.flush(); // NOTE 변경 감지로 갱신되는 updatedAt을 응답에 반영하기 위해 flush
+        return CommentAnchorUpdateResult.from(commentAnchor);
+    }
+
     public CommentAnchorListResult readCommentAnchors(Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         post.validateReadableBy(requesterId);
@@ -104,6 +123,11 @@ public class CommentAnchorService {
         }
 
         return commentAnchorSelectionRepository.save(CommentAnchorSelection.create(post, selection));
+    }
+
+    private CommentAnchor getCommentAnchor(Long postId, Long commentAnchorId) {
+        return commentAnchorRepository.findByIdAndPostId(commentAnchorId, postId)
+                .orElseThrow(() -> new CommentException(COMMENT_ANCHOR_NOT_FOUND));
     }
 
     private CommentAnchorSelection getSelection(Long postId, Long selectionId) {
