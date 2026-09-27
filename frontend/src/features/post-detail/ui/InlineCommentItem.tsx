@@ -5,6 +5,8 @@ import { useRef, useState } from 'react';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
 import { useDeletePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-delete-comment-anchor-mutation';
+import { buildBlogHomePath } from '@/shared/routes/app-routes';
+import CustomLink from '@/shared/ui/link/CustomLink';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
@@ -37,6 +39,7 @@ const formatCommentDate = (createdAt: string) => {
 
 export default function InlineCommentItem({ comment, postId }: InlineCommentItemProps) {
 	const { author } = comment;
+	const authorBlogPath = buildBlogHomePath(author.slug);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const deleteMutation = useDeletePostCommentAnchorMutation(postId, comment.commentId);
@@ -62,16 +65,26 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 			aria-label={`${author.nickname}님의 댓글`}
 			className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5"
 		>
-			<UserAvatar
-				fallback={author.nickname.slice(0, 1)}
-				src={author.profileImageUrl}
-				label={`${author.nickname}님의 프로필`}
-				size="md"
-				className="col-start-1 row-start-1"
-			/>
+			<CustomLink
+				href={authorBlogPath}
+				aria-label={`${author.nickname}님의 블로그로 이동`}
+				className="col-start-1 row-start-1 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+			>
+				<UserAvatar
+					fallback={author.nickname.slice(0, 1)}
+					src={author.profileImageUrl}
+					label={`${author.nickname}님의 프로필`}
+					size="md"
+				/>
+			</CustomLink>
 			<div className="col-start-2 row-start-1 flex min-w-0 flex-col gap-0.5">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-					<strong className="text-label-2 font-semibold! text-text-primary">{author.nickname}</strong>
+					<CustomLink
+						href={authorBlogPath}
+						className="rounded-sm text-label-2 text-text-primary transition-colors hover:text-focus-ring hover:underline focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+					>
+						<strong className="font-semibold">{author.nickname}</strong>
+					</CustomLink>
 					{author.isAuthor ? (
 						<span className="rounded-sm bg-focus-ring/15 px-1.5 text-caption-1 font-medium text-text-secondary">
 							작성자

@@ -17,7 +17,6 @@ interface ConfirmModalProps {
 	cancelLabel?: string;
 	variant?: 'default' | 'danger';
 	isPending?: boolean;
-	isConfirmDisabled?: boolean;
 	onConfirm: () => void;
 	onCancel: () => void;
 }
@@ -30,7 +29,6 @@ export default function ConfirmModal({
 	cancelLabel = '취소',
 	variant = 'default',
 	isPending = false,
-	isConfirmDisabled = false,
 	onConfirm,
 	onCancel,
 }: ConfirmModalProps) {
@@ -82,7 +80,6 @@ export default function ConfirmModal({
 						size="md"
 						className="min-w-modal-action"
 						isPending={isPending}
-						disabled={isConfirmDisabled}
 						onClick={onConfirm}
 					>
 						{confirmLabel}

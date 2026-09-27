@@ -11,12 +11,15 @@ import { postsQueryKeys } from '../queries/keys';
 import { useDeletePostCommentAnchorMutation } from './use-delete-comment-anchor-mutation';
 
 describe('useDeletePostCommentAnchorMutation', () => {
-	it('삭제 성공 후 해당 게시글의 로그인·비회원 목록만 무효화한다', async () => {
+	it('삭제 성공 후 해당 게시글의 본문·사이드바의 로그인·비회원 목록만 무효화한다', async () => {
 		const client = createTestQueryClient();
 		const keys = [
 			postsQueryKeys.commentAnchors(81, true),
 			postsQueryKeys.commentAnchors(81, false),
+			postsQueryKeys.commentAnchorsSidebar(81, true),
+			postsQueryKeys.commentAnchorsSidebar(81, false),
 			postsQueryKeys.commentAnchors(82, true),
+			postsQueryKeys.commentAnchorsSidebar(82, false),
 		];
 		keys.forEach((key) => client.setQueryData(key, { data: { blocks: [] } }));
 		vi.spyOn(postsApi, 'deletePostCommentAnchor').mockResolvedValue({
@@ -34,7 +37,10 @@ describe('useDeletePostCommentAnchorMutation', () => {
 		expect(postsApi.deletePostCommentAnchor).toHaveBeenCalledWith(81, 91);
 		expect(client.getQueryState(keys[0])?.isInvalidated).toBe(true);
 		expect(client.getQueryState(keys[1])?.isInvalidated).toBe(true);
-		expect(client.getQueryState(keys[2])?.isInvalidated).toBe(false);
+		expect(client.getQueryState(keys[2])?.isInvalidated).toBe(true);
+		expect(client.getQueryState(keys[3])?.isInvalidated).toBe(true);
+		expect(client.getQueryState(keys[4])?.isInvalidated).toBe(false);
+		expect(client.getQueryState(keys[5])?.isInvalidated).toBe(false);
 		vi.restoreAllMocks();
 	});
 });

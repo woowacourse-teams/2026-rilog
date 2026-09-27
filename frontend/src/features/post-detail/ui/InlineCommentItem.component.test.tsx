@@ -178,3 +178,16 @@ it('삭제에 실패하면 댓글을 보존하고 alert를 닫은 뒤 재시도�
 	await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
 	expect(remove).toHaveBeenCalledTimes(2);
 });
+
+it('아바타와 이름은 작성자 블로그로 연결하고 수정 여부를 유지한다', () => {
+	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, isEdited: true }} />);
+	expect(screen.getByRole('link', { name: `${COMMENT.author.nickname}님의 블로그로 이동` })).toHaveAttribute(
+		'href',
+		`/@${COMMENT.author.slug}`,
+	);
+	expect(screen.getByRole('link', { name: COMMENT.author.nickname })).toHaveAttribute(
+		'href',
+		`/@${COMMENT.author.slug}`,
+	);
+	expect(screen.getByText('편집됨')).toBeInTheDocument();
+});
