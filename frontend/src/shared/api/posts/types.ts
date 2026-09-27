@@ -144,3 +144,8 @@ export interface PostCommentAnchorUpdateResponse {
 	createdAt: string;
 	updatedAt: string;
 }
+
+export interface PostCommentAnchorDeleteResponse {
+	commentAnchorId: number;
+	selectionId: number;
+}

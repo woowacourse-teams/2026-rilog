@@ -54,6 +54,12 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 
 	let submitted: PostCommentAnchorCreateRequest | null = null;
 	let addedContent: string | null = null;
+	await page.route('**/v1/posts/106/comment-anchors/901', async (route) => {
+		expect(route.request().method()).toBe('DELETE');
+		expect(route.request().postData()).toBeNull();
+		addedContent = null;
+		await route.fulfill({ json: { status: 0, message: 'OK', data: { commentAnchorId: 901, selectionId: 91 } } });
+	});
 	await page.route('**/v1/posts/106/selections/91/comment-anchors', async (route) => {
 		const body = route.request().postDataJSON() as { content: string };
 		expect(Object.keys(body)).toEqual(['content']);
@@ -163,6 +169,16 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 	await expect(page.getByText('같은 스레드에 추가한 댓글', { exact: true })).toBeVisible();
 	await expect(page.getByRole('dialog', { name: '인라인 댓글 2' })).toBeVisible();
 	await expect(input).toHaveValue('');
+	await page
+		.getByRole('article', { name: '테스트 작성자님의 댓글' })
+		.last()
+		.getByRole('button', { name: '삭제' })
+		.click();
+	await page.getByRole('dialog', { name: '댓글을 삭제할까요?' }).getByRole('button', { name: '삭제' }).click();
+	await expect(page.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toBeHidden();
+	await expect(page.getByText('같은 스레드에 추가한 댓글', { exact: true })).toBeHidden();
+	await expect(page.getByRole('article', { name: '테스트 작성자님의 댓글' })).toHaveCount(1);
+	await expect(page.getByRole('dialog', { name: '인라인 댓글 1' })).toBeVisible();
 });
 
 test('모바일에서 본문을 선택해도 댓글 입력 툴바를 표시하지 않는다', async ({ page }) => {

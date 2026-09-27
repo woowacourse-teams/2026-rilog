@@ -22,7 +22,7 @@ describe('InlineCommentItem', () => {
 		const dialog = screen.getByRole('dialog', { name: '댓글을 삭제할까요?' });
 		expect(dialog).toHaveAccessibleDescription('삭제한 댓글은 복구할 수 없습니다.');
 		expect(within(dialog).getByRole('button', { name: '취소' })).toHaveFocus();
-		expect(within(dialog).getByRole('button', { name: '삭제' })).toBeDisabled();
+		expect(within(dialog).getByRole('button', { name: '삭제' })).toBeEnabled();
 		await user.click(within(dialog).getByRole('button', { name: '취소' }));
 		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 		expect(screen.getByText(COMMENT.content)).toBeInTheDocument();
@@ -138,4 +138,43 @@ it.each([true, false])('isEdited가 %s이면 서버의 편집 여부에 따라 �
 	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, isEdited }} />);
 	if (isEdited) expect(screen.getByText('편집됨')).toBeInTheDocument();
 	else expect(screen.queryByText('편집됨')).not.toBeInTheDocument();
+});
+
+it('삭제 요청 중 중복 제출과 모달 닫기를 막고 성공하면 확인 모달을 닫는다', async () => {
+	const user = userEvent.setup();
+	const pending = Promise.withResolvers<Awaited<ReturnType<typeof postsApi.deletePostCommentAnchor>>>();
+	const remove = vi.spyOn(postsApi, 'deletePostCommentAnchor').mockReturnValue(pending.promise);
+	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, canDelete: true }} />);
+	await user.click(screen.getByRole('button', { name: '삭제' }));
+	const dialog = screen.getByRole('dialog', { name: '댓글을 삭제할까요?' });
+	await user.click(within(dialog).getByRole('button', { name: '삭제' }));
+	const deleting = within(dialog).getByRole('button', { name: '삭제 중…' });
+	expect(deleting).toBeDisabled();
+	expect(deleting).toHaveAttribute('aria-busy', 'true');
+	expect(within(dialog).getByRole('button', { name: '취소' })).toBeDisabled();
+	await user.click(deleting);
+	await user.keyboard('{Escape}');
+	expect(dialog).toBeInTheDocument();
+	expect(remove).toHaveBeenCalledTimes(1);
+	expect(remove).toHaveBeenCalledWith(81, COMMENT.commentId);
+	await act(async () => {
+		pending.resolve({ status: 0, message: 'OK', data: { commentAnchorId: COMMENT.commentId, selectionId: 91 } });
+		await pending.promise;
+	});
+	await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+});
+
+it('삭제에 실패하면 댓글을 보존하고 alert를 닫은 뒤 재시도할 수 있다', async () => {
+	const user = userEvent.setup();
+	const remove = vi.spyOn(postsApi, 'deletePostCommentAnchor').mockRejectedValue(new Error('Forbidden'));
+	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, canDelete: true }} />);
+	await user.click(screen.getByRole('button', { name: '삭제' }));
+	await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
+	const alert = await screen.findByRole('alertdialog', { name: '댓글을 삭제하지 못했습니다.' });
+	await user.click(within(alert).getByRole('button', { name: '확인' }));
+	await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+	expect(screen.getByText(COMMENT.content)).toBeInTheDocument();
+	await user.click(screen.getByRole('button', { name: '삭제' }));
+	await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
+	expect(remove).toHaveBeenCalledTimes(2);
 });

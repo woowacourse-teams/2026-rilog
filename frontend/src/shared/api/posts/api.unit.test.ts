@@ -4,6 +4,7 @@ import {
 	addPostCommentAnchor,
 	createPostCommentAnchor,
 	deletePost,
+	deletePostCommentAnchor,
 	publishPost,
 	readPostCommentAnchors,
 	readPostCommentAnchorsSidebar,
@@ -242,5 +243,22 @@ describe('updatePostCommentAnchor', () => {
 		expect(request.method).toBe('PATCH');
 		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors/901');
 		expect(body).toEqual({ content: '수정\n내용' });
+	});
+});
+
+describe('deletePostCommentAnchor', () => {
+	it('댓글 id 경로에 본문 없이 DELETE하고 두 id가 포함된 JSON 응답을 반환한다', async () => {
+		const response = { status: 0, message: 'OK', data: { commentAnchorId: 901, selectionId: 91 } };
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(response));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(deletePostCommentAnchor(81, 901)).resolves.toEqual(response);
+		const request = fetchMock.mock.calls[0][0] as Request;
+		expect(request.method).toBe('DELETE');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors/901');
+		expect(await request.text()).toBe('');
+	});
+	it('삭제가 거절되면 정규화된 오류를 전달한다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
+		await expect(deletePostCommentAnchor(81, 901)).rejects.toMatchObject({ type: 'http', response: { status: 403 } });
 	});
 });

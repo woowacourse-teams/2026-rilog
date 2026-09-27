@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
+import { useDeletePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-delete-comment-anchor-mutation';
+import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import InlineCommentEditForm from './InlineCommentEditForm';
@@ -37,6 +39,22 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 	const { author } = comment;
 	const [isEditing, setIsEditing] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const deleteMutation = useDeletePostCommentAnchorMutation(postId, comment.commentId);
+	const [isDeleteErrorOpen, setIsDeleteErrorOpen] = useState(false);
+	const isDeleting = useRef(false);
+	const handleDelete = async () => {
+		if (!comment.canDelete || isDeleting.current) return;
+		isDeleting.current = true;
+		try {
+			await deleteMutation.mutateAsync();
+			setIsDeleteModalOpen(false);
+		} catch {
+			setIsDeleteModalOpen(false);
+			setIsDeleteErrorOpen(true);
+		} finally {
+			isDeleting.current = false;
+		}
+	};
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 
 	return (
@@ -126,15 +144,20 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 					open={isDeleteModalOpen}
 					title="댓글을 삭제할까요?"
 					description="삭제한 댓글은 복구할 수 없습니다."
-					confirmLabel="삭제"
+					confirmLabel={deleteMutation.isPending ? '삭제 중…' : '삭제'}
 					variant="danger"
-					isConfirmDisabled
-					onConfirm={() => {
-						/* 삭제 API 연결 예정 */
-					}}
+					isPending={deleteMutation.isPending}
+					onConfirm={() => void handleDelete()}
 					onCancel={() => setIsDeleteModalOpen(false)}
 				/>
 			)}
+			<AlertModal
+				open={isDeleteErrorOpen}
+				title="댓글을 삭제하지 못했습니다."
+				description="잠시 후 다시 시도해 주세요."
+				onAction={() => setIsDeleteErrorOpen(false)}
+				onClose={() => setIsDeleteErrorOpen(false)}
+			/>
 		</article>
 	);
 }
