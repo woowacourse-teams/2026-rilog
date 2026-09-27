@@ -178,10 +178,7 @@ export default function InlineCommentHighlights({
 					const focusProxy = host.ownerDocument.createElement('button');
 					focusProxy.type = 'button';
 					focusProxy.dataset.inlineCommentAnchorProxy = '';
-					focusProxy.setAttribute(
-						'aria-label',
-						`인용 “${anchor.selectedText}”의 댓글 ${anchor.commentCount}개 보기`,
-					);
+					focusProxy.setAttribute('aria-label', `인용 “${anchor.selectedText}”의 댓글 ${anchor.commentCount}개 보기`);
 					focusProxy.addEventListener('focus', () => setActiveAnchor(renderedAnchor));
 					focusProxy.addEventListener('blur', () => setActiveAnchor(null));
 					focusProxy.addEventListener('click', () => {

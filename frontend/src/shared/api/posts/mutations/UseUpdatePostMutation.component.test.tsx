@@ -21,8 +21,12 @@ describe('useUpdatePostMutation', () => {
 		const commentKeys = [
 			postsQueryKeys.commentAnchors(31, true),
 			postsQueryKeys.commentAnchors(31, false),
+			postsQueryKeys.commentAnchorsSidebar(31, true),
+			postsQueryKeys.commentAnchorsSidebar(31, false),
 			postsQueryKeys.commentAnchors(32, true),
 			postsQueryKeys.commentAnchors(32, false),
+			postsQueryKeys.commentAnchorsSidebar(32, true),
+			postsQueryKeys.commentAnchorsSidebar(32, false),
 		];
 		for (const key of commentKeys) queryClient.setQueryData(key, { data: { blocks: [] } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
@@ -50,10 +54,12 @@ describe('useUpdatePostMutation', () => {
 		expect(queryClient.getQueryState(updatedKey)?.isInvalidated).toBe(true);
 		expect(queryClient.getQueryState(updatedAliasKey)?.isInvalidated).toBe(true);
 		expect(queryClient.getQueryState(otherKey)?.isInvalidated).toBe(true);
-		expect(queryClient.getQueryState(commentKeys[0])?.isInvalidated).toBe(true);
-		expect(queryClient.getQueryState(commentKeys[1])?.isInvalidated).toBe(true);
-		expect(queryClient.getQueryState(commentKeys[2])?.isInvalidated).toBe(false);
-		expect(queryClient.getQueryState(commentKeys[3])?.isInvalidated).toBe(false);
+		for (const key of commentKeys.slice(0, 4)) {
+			expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
+		}
+		for (const key of commentKeys.slice(4)) {
+			expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
+		}
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledTimes(4);

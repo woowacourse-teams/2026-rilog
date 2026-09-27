@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { deletePost, publishPost, readPostCommentAnchors, readPostCommentAnchorsSidebar, readPostDetail, updatePost } from './api';
+import {
+	deletePost,
+	publishPost,
+	readPostCommentAnchors,
+	readPostCommentAnchorsSidebar,
+	readPostDetail,
+	updatePost,
+} from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';

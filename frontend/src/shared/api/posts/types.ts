@@ -79,6 +79,7 @@ export interface PostDetailResponse {
 }
 
 export interface PostCommentAnchorResponse {
+	isEdited: boolean;
 	commentAnchorId: number;
 	content: string;
 	author: {

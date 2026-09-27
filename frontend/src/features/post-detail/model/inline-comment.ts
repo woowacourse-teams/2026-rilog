@@ -15,6 +15,7 @@ export interface InlineCommentAuthorModel {
 }
 
 export interface InlineCommentModel {
+	isEdited: boolean;
 	commentId: number;
 	content: string;
 	author: InlineCommentAuthorModel;

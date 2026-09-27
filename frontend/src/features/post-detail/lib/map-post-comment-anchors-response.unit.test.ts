@@ -4,6 +4,7 @@ import { mapPostCommentAnchorsResponse } from './map-post-comment-anchors-respon
 
 const comment = {
 	commentAnchorId: 91,
+	isEdited: true,
 	content: '댓글',
 	author: {
 		userId: 7,
@@ -26,7 +27,7 @@ describe('mapPostCommentAnchorsResponse', () => {
 			range: { startOffset: 1, endOffset: 5 },
 			selectedText: '인용',
 			state: 'ORPHANED' as const,
-			anchorCount: 1,
+			anchorCount: 3,
 			commentAnchors: [comment],
 		};
 		const result = mapPostCommentAnchorsResponse({
@@ -44,13 +45,14 @@ describe('mapPostCommentAnchorsResponse', () => {
 		expect(result[0].anchors[1].state).toBe('ACTIVE');
 		expect(result[0].anchors[0]).toEqual({
 			anchorId: 25,
-			commentCount: 1,
+			commentCount: 3,
 			range: group.range,
 			selectedText: '인용',
 			state: 'OUTDATED',
 			comments: [
 				{
 					commentId: 91,
+					isEdited: true,
 					content: '댓글',
 					author: {
 						userId: 7,

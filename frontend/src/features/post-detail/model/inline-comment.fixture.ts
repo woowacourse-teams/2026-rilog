@@ -6,6 +6,7 @@ const createComment = (
 	overrides: Partial<InlineCommentModel> = {},
 ): InlineCommentModel => ({
 	commentId,
+	isEdited: false,
 	content,
 	author: {
 		userId: 570,
