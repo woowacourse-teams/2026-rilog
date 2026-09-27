@@ -23,6 +23,7 @@ describe('mapFullFeedPostResponse', () => {
 						category: '기술',
 						visibility: 'PUBLIC',
 						publishedAt: '2026-08-17T00:00:00',
+						totalCommentsCount: 12,
 						author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: '' },
 						owner: { type: 'RILOG' as const, blogId: 10, name: '리로', slug: 'riro', profileImageUrl: '' },
 						chapter: { chapterId: 1, name: 'Education', order: 1 },
@@ -34,6 +35,7 @@ describe('mapFullFeedPostResponse', () => {
 						category: '기술',
 						visibility: 'PUBLIC',
 						publishedAt: '2026-08-17T00:00:00',
+						totalCommentsCount: 0,
 						author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: '' },
 						owner: {
 							type: 'COLOG' as const,
@@ -51,11 +53,13 @@ describe('mapFullFeedPostResponse', () => {
 
 		expect(page.items[0]).toMatchObject({
 			chapterName: 'Education',
+			totalCommentsCount: 12,
 			author: { id: 10, nickname: '리로', slug: 'riro' },
 			blog: { id: 10, name: '리로', slug: 'riro', type: 'RILOG' },
 		});
 		expect(page.items[1]).toMatchObject({
 			chapterName: null,
+			totalCommentsCount: 0,
 			author: { id: 10, nickname: '리로', slug: 'riro' },
 			blog: {
 				id: 20,

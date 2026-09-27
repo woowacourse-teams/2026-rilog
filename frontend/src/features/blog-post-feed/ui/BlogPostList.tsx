@@ -2,6 +2,7 @@ import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
 import type { PostFeedItem } from '@/domains/post/model/post';
+import PostCommentCount from '@/domains/post/ui/PostCommentCount';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import PostFeedImage from '@/features/post-feed/ui/PostFeedImage';
@@ -81,19 +82,22 @@ export default function BlogPostList({ posts, blogType }: BlogPostListProps) {
 										) : null}
 									</div>
 								</div>
-								<div className="flex items-center gap-1 text-label-1 text-navy-600">
-									{post.categoryLabel ? (
-										<>
-											<span>{post.categoryLabel}</span>
-											<span aria-hidden="true">·</span>
-										</>
-									) : null}
-									<time dateTime={toApiUtcISOString(post.publishedAt)} className="hidden sm:inline">
-										{formatPublishedDate(post.publishedAt)}
-									</time>
-									<time dateTime={toApiUtcISOString(post.publishedAt)} aria-hidden={true} className="sm:hidden">
-										{formatPublishedDate(post.publishedAt, true)}
-									</time>
+								<div className="flex items-center justify-between gap-2 text-label-1 text-navy-600">
+									<div className="flex flex-wrap items-center gap-1">
+										{post.categoryLabel ? (
+											<>
+												<span>{post.categoryLabel}</span>
+												<span aria-hidden="true">·</span>
+											</>
+										) : null}
+										<time dateTime={toApiUtcISOString(post.publishedAt)} className="hidden sm:inline">
+											{formatPublishedDate(post.publishedAt)}
+										</time>
+										<time dateTime={toApiUtcISOString(post.publishedAt)} aria-hidden={true} className="sm:hidden">
+											{formatPublishedDate(post.publishedAt, true)}
+										</time>
+									</div>
+									<PostCommentCount count={post.totalCommentsCount} />
 								</div>
 							</article>
 						</CustomLink>

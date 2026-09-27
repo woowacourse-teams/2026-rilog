@@ -34,6 +34,7 @@ const createPost = (id: number): PostFeedItem => ({
 	title: `게시글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-14T09:00:00',
+	totalCommentsCount: 0,
 	author: { id: 1, nickname: '작성자', slug: 'author', profileImageUrl: null },
 	blog: { id, name: '작성자', slug: 'author', type: 'RILOG', profileImageUrl: null },
 });
@@ -50,6 +51,7 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	category: '기술',
 	visibility: 'PUBLIC',
 	publishedAt: post.publishedAt,
+	totalCommentsCount: post.totalCommentsCount,
 	author: {
 		userId: post.author.id,
 		nickname: post.author.nickname,

@@ -13,6 +13,7 @@ const POST_FIXTURES: PostFeedItem[] = [
 		title: '접근 가능한 인터페이스 만들기',
 		thumbnailUrl: 'https://images.rilog.test/post.png',
 		publishedAt: '2026-08-16',
+		totalCommentsCount: 0,
 		author: { id: 1, nickname: '새봄', slug: 'saebom', profileImageUrl: '/images/saebom.png' },
 		blog: { id: 1, name: '새봄', slug: 'saebom', type: 'RILOG', profileImageUrl: null },
 	},
@@ -22,6 +23,7 @@ const POST_FIXTURES: PostFeedItem[] = [
 		title: '디자인 토큰 운영 기록',
 		thumbnailUrl: null,
 		publishedAt: '2026-08-15',
+		totalCommentsCount: 0,
 		author: { id: 2, nickname: '여름', slug: 'summer', profileImageUrl: null },
 		blog: { id: 2, name: '여름', slug: 'summer', type: 'RILOG', profileImageUrl: null },
 	},
@@ -162,4 +164,10 @@ describe('공통 블로그 홈 게시글 행', () => {
 		expect(screen.queryByRole('img', { name: /프로필/ })).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 3, name: '접근 가능한 인터페이스 만들기' })).toBeInTheDocument();
 	});
+});
+
+it.each([0, 12, 12345])('댓글이 %s개이면 목록에 댓글 수를 표시한다', (totalCommentsCount) => {
+	render(<BlogPostList blogType="RILOG" posts={[{ ...POST_FIXTURES[0], totalCommentsCount }]} />);
+	expect(screen.getByText(`댓글 ${totalCommentsCount}개`)).toBeInTheDocument();
+	expect(screen.getByText(String(totalCommentsCount))).toBeVisible();
 });

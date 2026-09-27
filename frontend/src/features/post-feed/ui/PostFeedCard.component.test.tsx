@@ -11,6 +11,7 @@ const PERSONAL_POST: PostFeedItem = {
 	title: '함께 기록하는 방법',
 	thumbnailUrl: 'https://images.rilog.test/post.png',
 	publishedAt: '2026-08-04T23:59:59',
+	totalCommentsCount: 0,
 	author: {
 		id: 1,
 		nickname: '리로거',
@@ -112,4 +113,10 @@ describe('PostFeedCard', () => {
 			feedPosition: 3,
 		});
 	});
+});
+
+it.each([0, 12, 12345])('댓글이 %s개이면 목록에 댓글 수를 표시한다', (totalCommentsCount) => {
+	render(<PostFeedCard post={{ ...PERSONAL_POST, totalCommentsCount }} position={1} />);
+	expect(screen.getByText(`댓글 ${totalCommentsCount}개`)).toBeInTheDocument();
+	expect(screen.getByText(String(totalCommentsCount))).toBeVisible();
 });
