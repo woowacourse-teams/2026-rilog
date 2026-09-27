@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -9,6 +9,21 @@ import InlineCommentItem from './InlineCommentItem';
 const COMMENT = POST_81_INLINE_COMMENT_BLOCKS_FIXTURE[0].anchors[0].comments[0];
 
 describe('InlineCommentItem', () => {
+	it('삭제를 누르면 확인 모달을 열고 취소하면 댓글과 삭제 버튼 포커스를 유지한다', async () => {
+		const user = userEvent.setup();
+		render(<InlineCommentItem comment={{ ...COMMENT, canDelete: true }} />);
+		const deleteButton = screen.getByRole('button', { name: '삭제' });
+		await user.click(deleteButton);
+		const dialog = screen.getByRole('dialog', { name: '댓글을 삭제할까요?' });
+		expect(dialog).toHaveAccessibleDescription('삭제한 댓글은 복구할 수 없습니다.');
+		expect(within(dialog).getByRole('button', { name: '취소' })).toHaveFocus();
+		expect(within(dialog).getByRole('button', { name: '삭제' })).toBeDisabled();
+		await user.click(within(dialog).getByRole('button', { name: '취소' }));
+		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+		expect(screen.getByText(COMMENT.content)).toBeInTheDocument();
+		expect(deleteButton).toHaveFocus();
+	});
+
 	it('수정을 누르면 원문을 편집하고 취소하면 원문과 수정 버튼 포커스를 복원한다', async () => {
 		const user = userEvent.setup();
 		render(<InlineCommentItem comment={{ ...COMMENT, canEdit: true, canDelete: true }} />);

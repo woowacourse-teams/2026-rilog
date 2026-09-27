@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
+import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 
 import InlineCommentEditForm from './InlineCommentEditForm';
 
@@ -34,6 +35,7 @@ const formatCommentDate = (createdAt: string) => {
 export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 	const { author } = comment;
 	const [isEditing, setIsEditing] = useState(false);
+	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 
 	return (
@@ -86,6 +88,7 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 						<span className="flex items-center gap-1">
 							<button
 								type="button"
+								onClick={() => setIsDeleteModalOpen(true)}
 								className="rounded-sm transition-colors hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 							>
 								삭제
@@ -108,6 +111,20 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 				<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">
 					{comment.content}
 				</p>
+			)}
+			{comment.canDelete && (
+				<ConfirmModal
+					open={isDeleteModalOpen}
+					title="댓글을 삭제할까요?"
+					description="삭제한 댓글은 복구할 수 없습니다."
+					confirmLabel="삭제"
+					variant="danger"
+					isConfirmDisabled
+					onConfirm={() => {
+						/* 삭제 API 연결 예정 */
+					}}
+					onCancel={() => setIsDeleteModalOpen(false)}
+				/>
 			)}
 		</article>
 	);
