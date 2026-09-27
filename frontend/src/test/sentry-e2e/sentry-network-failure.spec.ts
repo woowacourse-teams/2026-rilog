@@ -37,7 +37,7 @@ test('처리되지 않은 Promise 오류 전송이 차단돼도 피드를 다시
 	const failedEvent = page.waitForEvent('requestfailed', {
 		predicate: (request) =>
 			new URL(request.url()).pathname === '/monitoring' &&
-			Boolean(request.postData()?.includes('sentry-network-failure-test')),
+			Boolean(request.postData()?.includes('Error: application error')),
 	});
 
 	await page.evaluate(() => {
@@ -45,7 +45,9 @@ test('처리되지 않은 Promise 오류 전송이 차단돼도 피드를 다시
 			void Promise.reject(new Error('sentry-network-failure-test'));
 		}, 0);
 	});
-	expect((await failedEvent).failure()?.errorText).toContain('ERR_FAILED');
+	const failedRequest = await failedEvent;
+	expect(failedRequest.failure()?.errorText).toContain('ERR_FAILED');
+	expect(failedRequest.postData()).not.toContain('sentry-network-failure-test');
 
 	await page.route('**/v1/feeds/posts?*', (route) =>
 		route.fulfill({

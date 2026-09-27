@@ -11,6 +11,7 @@ const { initMock, initializeAnalyticsMock } = vi.hoisted(() => ({
 
 vi.mock('@sentry/nextjs', () => ({
 	init: initMock,
+	getClient: () => ({ getOptions: () => ({ release: 'test-release' }) }),
 	captureRouterTransitionStart: vi.fn(),
 }));
 
@@ -65,7 +66,33 @@ describe.each(configurations)('$name Sentry 초기화', ({ name, load }) => {
 		];
 		const event = { message: 'failure' };
 		expect(options.beforeSend(event, { originalException: await createApiFailure('POST_NOT_FOUND', 404) })).toBeNull();
-		expect(options.beforeSend(event, { originalException: new Error('unexpected') })).toEqual(event);
+		expect(options.beforeSend(event, { originalException: new Error('unexpected') })).toMatchObject({
+			message: 'Application message',
+			tags: { release: 'test-release', route: 'unknown', operation: 'unhandled' },
+		});
+	});
+	it('필터에서 예외가 발생하면 원문 전송과 앱 오류 전파를 막는다', async () => {
+		await load();
+		const beforeSend = initMock.mock.calls[0]?.[0].beforeSend;
+		const event: Sentry.ErrorEvent = {
+			type: undefined,
+			get request(): Sentry.ErrorEvent['request'] {
+				throw new Error('private');
+			},
+		};
+		expect(beforeSend?.(event, {})).toBeNull();
+	});
+	it('트랜잭션도 경로를 익명화하고 첨부파일을 제거한다', async () => {
+		await load();
+		const beforeSend = initMock.mock.calls[0]?.[0].beforeSendTransaction;
+		const hint = { attachments: [{ filename: 'private.txt', data: 'private' }] };
+		const sent = await beforeSend?.(
+			{ type: 'transaction', transaction: '/private/posts/42?token=private', extra: { body: 'private' } },
+			hint,
+		);
+		expect(sent?.transaction).toBe('/[slug]/posts/[postId]');
+		expect(JSON.stringify(sent)).not.toContain('private');
+		expect(hint.attachments).toEqual([]);
 	});
 	it.each(['development', 'production'])('%s에서 SDK 초기화 실패가 전파되지 않는다', async (environment) => {
 		vi.stubEnv('NODE_ENV', environment);

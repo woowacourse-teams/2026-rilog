@@ -3,11 +3,10 @@ import { gunzipSync } from 'node:zlib';
 
 interface EnvelopeEvent {
 	exception?: unknown;
-	contexts?: { runtime?: { name?: string } };
-	request?: { url?: string };
+	tags?: { route?: string };
 }
 
-const failedNodeExceptionUrls: string[] = [];
+const failedNodeExceptions: EnvelopeEvent[] = [];
 
 createServer((request, response) => {
 	if (request.method === 'GET' && request.url === '/health') {
@@ -16,7 +15,7 @@ createServer((request, response) => {
 	}
 	if (request.method === 'GET' && request.url === '/state') {
 		response.writeHead(200, { 'Content-Type': 'application/json' });
-		response.end(JSON.stringify({ failedNodeExceptionUrls }));
+		response.end(JSON.stringify({ failedNodeExceptions }));
 		return;
 	}
 	if (request.method !== 'POST' || !request.url?.startsWith('/api/1/envelope/')) {
@@ -32,8 +31,8 @@ createServer((request, response) => {
 		for (const line of body.toString().split('\n')) {
 			if (!line) continue;
 			const event = JSON.parse(line) as EnvelopeEvent;
-			if (event.exception && event.contexts?.runtime?.name === 'node' && event.request?.url) {
-				failedNodeExceptionUrls.push(event.request.url);
+			if (event.exception) {
+				failedNodeExceptions.push(event);
 			}
 		}
 		// HTTP 응답을 보내지 않고 연결을 끊어 SDK의 실제 전송 실패를 유발한다.
