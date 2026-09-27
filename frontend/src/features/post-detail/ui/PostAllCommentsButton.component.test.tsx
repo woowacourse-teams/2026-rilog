@@ -11,7 +11,10 @@ describe('PostAllCommentsButton', () => {
 		expect(screen.getByRole('button', { name: '전체 댓글 8개 보기' })).toBeInTheDocument();
 		expect(screen.getByText('전체 인라인 댓글')).toBeInTheDocument();
 		expect(screen.getByText('8')).toHaveAttribute('aria-hidden', 'true');
-		expect(document.querySelector('svg')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '전체 댓글 8개 보기' }).querySelector('svg')).toHaveAttribute(
+			'aria-hidden',
+			'true',
+		);
 	});
 
 	it('클릭하면 전체 댓글 열기를 요청한다', async () => {
