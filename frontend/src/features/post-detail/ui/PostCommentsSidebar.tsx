@@ -57,15 +57,6 @@ export default function PostCommentsSidebar({ open, threads, onClose, onNavigate
 						</div>
 					)}
 				</div>
-
-				{/*<footer className="shrink-0 border-t border-border-default bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">*/}
-				{/*	<input*/}
-				{/*		type="text"*/}
-				{/*		aria-label="댓글 입력"*/}
-				{/*		placeholder="댓글을 입력하세요."*/}
-				{/*		className="h-11 w-full rounded-lg border border-border-default bg-background px-3 text-body-1 text-text-primary outline-none placeholder:text-text-placeholder focus:border-focus-ring focus:ring-1 focus:ring-focus-ring"*/}
-				{/*	/>*/}
-				{/*</footer>*/}
 			</div>
 		</BaseModal>
 	);
