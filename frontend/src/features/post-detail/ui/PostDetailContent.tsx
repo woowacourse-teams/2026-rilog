@@ -2,21 +2,33 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import type { InlineCommentOpenRequest } from '../model/inline-comment-interaction';
 import type { MouseEvent } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { consumePostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { analytics } from '@/features/analytics/model/events';
+import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
+import { logNonProductionInfo } from '@/shared/utils/non-production-console';
+
+import { createInlineCommentSelectionDraft } from '../lib/inline-comment-selection';
+
+import InlineCommentHighlights from './InlineCommentHighlights';
 
 interface PostDetailContentProps {
 	html: string;
 	postId: number;
 	ownerType: BlogType;
 	category: PostCategory;
+	inlineCommentBlocks?: readonly InlineCommentBlockModel[];
+	enableInlineCommentSelectionDebug?: boolean;
+	onInlineCommentOpen?: (request: InlineCommentOpenRequest) => void;
 }
+
+const EMPTY_INLINE_COMMENT_BLOCKS: readonly InlineCommentBlockModel[] = [];
 
 const trackerMountCounts = new Map<string, number>();
 const trackerCleanupTimers = new Map<string, number>();
@@ -82,7 +94,15 @@ const setToggleExpanded = (toggleButton: HTMLButtonElement, isExpanded: boolean)
 	toggleButton.setAttribute('aria-label', isExpanded ? '하위 내용 접기' : '하위 내용 펼치기');
 };
 
-export default function PostDetailContent({ html, postId, ownerType, category }: PostDetailContentProps) {
+export default function PostDetailContent({
+	html,
+	postId,
+	ownerType,
+	category,
+	inlineCommentBlocks = EMPTY_INLINE_COMMENT_BLOCKS,
+	enableInlineCommentSelectionDebug = false,
+	onInlineCommentOpen,
+}: PostDetailContentProps) {
 	const contentRef = useRef<HTMLElement>(null);
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
 	const currentPostIdRef = useRef(postId);
@@ -92,6 +112,15 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 		contentRef.current = element;
 		setContentElement(element);
 	}, []);
+	const handleInlineCommentOpen = useCallback(
+		(request: InlineCommentOpenRequest) => {
+			if (enableInlineCommentSelectionDebug) {
+				logNonProductionInfo('[inline-comment] open request', request);
+			}
+			onInlineCommentOpen?.(request);
+		},
+		[enableInlineCommentSelectionDebug, onInlineCommentOpen],
+	);
 
 	useLayoutEffect(() => {
 		const articleElement = contentRef.current;
@@ -113,6 +142,39 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 				}
 			});
 	});
+
+	useEffect(() => {
+		if (!enableInlineCommentSelectionDebug || contentElement === null) {
+			return;
+		}
+
+		const logSelectionPayload = () => {
+			const selection = window.getSelection();
+			if (selection === null) {
+				return;
+			}
+
+			const draft = createInlineCommentSelectionDraft(selection, contentElement);
+			if (draft === null) {
+				return;
+			}
+
+			logNonProductionInfo('[inline-comment] create request selection', {
+				blockId: draft.blockId,
+				startOffset: draft.startOffset,
+				endOffset: draft.endOffset,
+				selectedText: draft.selectedText,
+			});
+		};
+
+		contentElement.addEventListener('pointerup', logSelectionPayload);
+		contentElement.addEventListener('keyup', logSelectionPayload);
+
+		return () => {
+			contentElement.removeEventListener('pointerup', logSelectionPayload);
+			contentElement.removeEventListener('keyup', logSelectionPayload);
+		};
+	}, [contentElement, enableInlineCommentSelectionDebug]);
 
 	useEffect(() => {
 		const trackerKey = getTrackerKey(postId);
@@ -200,6 +262,14 @@ export default function PostDetailContent({ html, postId, ownerType, category }:
 			onClick={handleToggleClick}
 		>
 			<div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: html }} />
+			{contentElement === null ? null : (
+				<InlineCommentHighlights
+					article={contentElement}
+					blocks={inlineCommentBlocks}
+					contentKey={html}
+					onOpenComments={handleInlineCommentOpen}
+				/>
+			)}
 			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
 		</article>
 	);

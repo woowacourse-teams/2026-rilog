@@ -19,6 +19,43 @@ const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
 const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
 const POST_DETAIL_CODE_CONTENT_SELECTOR =
 	'.bn-block-content[data-content-type="codeBlock"][data-language] > pre > code.bn-inline-content';
+const INLINE_COMMENT_SUPPORTED_BLOCK_TYPES = new Set([
+	'paragraph',
+	'heading',
+	'bulletListItem',
+	'numberedListItem',
+	'checkListItem',
+	'quote',
+	'toggleListItem',
+	'codeBlock',
+]);
+
+const markInlineCommentRoots = (container: HTMLElement) => {
+	container.querySelectorAll<HTMLElement>('.bn-block-content[data-content-type]').forEach((blockContent) => {
+		const contentType = blockContent.dataset.contentType;
+		if (contentType === undefined || !INLINE_COMMENT_SUPPORTED_BLOCK_TYPES.has(contentType)) {
+			return;
+		}
+		if (contentType === 'codeBlock' && blockContent.dataset.language === 'mermaid') {
+			return;
+		}
+
+		const block = blockContent.closest<HTMLElement>('.bn-block-outer[data-id]');
+		const blockId = block?.dataset.id;
+		if (blockId === undefined || blockId.length === 0) {
+			return;
+		}
+
+		const inlineContents = blockContent.querySelectorAll<HTMLElement>('.bn-inline-content');
+		if (inlineContents.length !== 1) {
+			return;
+		}
+
+		const [inlineContent] = inlineContents;
+		inlineContent.dataset.inlineCommentRoot = '';
+		inlineContent.dataset.inlineCommentBlockId = blockId;
+	});
+};
 
 const enhancePostDetailHtml = async (
 	html: string,
@@ -88,6 +125,8 @@ const enhancePostDetailHtml = async (
 		childBlockGroup.id = childBlockGroupId;
 		toggleButton.setAttribute('aria-controls', childBlockGroupId);
 	});
+
+	markInlineCommentRoots(container);
 
 	return container.innerHTML;
 };

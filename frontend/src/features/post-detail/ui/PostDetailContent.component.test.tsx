@@ -143,6 +143,37 @@ describe('PostDetailContent', () => {
 		expect(getToggleWrapper(nextPostOuterToggle)).toHaveAttribute('data-show-children', 'false');
 	});
 
+	it('개발용 selection debug가 활성화되면 드래그 payload를 콘솔에 기록한다', () => {
+		const consoleMock = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+		const html = `
+			<div class="bn-block-outer" data-id="debug-block">
+				<div data-inline-comment-root data-inline-comment-block-id="debug-block">앞 😀댓글 뒤</div>
+			</div>
+		`;
+		const { container } = render(
+			<PostDetailContent html={html} postId={81} ownerType="COLOG" category="TECH" enableInlineCommentSelectionDebug />,
+		);
+		const root = container.querySelector<HTMLElement>('[data-inline-comment-root]');
+		const textNode = root?.firstChild;
+		if (root === null || textNode === null || textNode === undefined) {
+			throw new Error('selection debug fixture를 찾을 수 없습니다.');
+		}
+
+		const range = document.createRange();
+		range.setStart(textNode, 2);
+		range.setEnd(textNode, 6);
+		window.getSelection()?.removeAllRanges();
+		window.getSelection()?.addRange(range);
+		root.dispatchEvent(new Event('pointerup', { bubbles: true }));
+
+		expect(consoleMock).toHaveBeenCalledWith('[inline-comment] create request selection', {
+			blockId: 'debug-block',
+			startOffset: 2,
+			endOffset: 6,
+			selectedText: '😀댓글',
+		});
+	});
+
 	it('상세 페이지 최초 진입 시 entry context를 소비해 조회 이벤트를 한 번 전송한다', () => {
 		window.sessionStorage.setItem(
 			'rilog.post-detail-entry-context',
