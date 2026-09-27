@@ -35,7 +35,7 @@ public record FullFeedPostResponse(
             String category,
             String visibility,
             LocalDateTime publishedAt,
-            long inlineCommentCount,
+            long totalCommentsCount,
             ChapterResponse chapter,
             AuthorResponse author,
             OwnerResponse owner

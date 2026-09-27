@@ -108,7 +108,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Map<Long, Long> inlineCommentCounts = result.posts().stream()
                 .collect(Collectors.toMap(
                         FullFeedPostResponse.PostItemResponse::postId,
-                        FullFeedPostResponse.PostItemResponse::inlineCommentCount
+                        FullFeedPostResponse.PostItemResponse::totalCommentsCount
                 ));
         assertThat(inlineCommentCounts)
                 .containsEntry(postWithComments.getId(), 2L)
