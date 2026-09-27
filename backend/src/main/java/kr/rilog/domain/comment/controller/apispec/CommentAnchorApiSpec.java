@@ -8,8 +8,10 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.auth.annotation.NullableLoginUserId;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorAddRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentAnchorCreateRequest;
+import kr.rilog.domain.comment.controller.dto.request.CommentAnchorUpdateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
+import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,6 +61,25 @@ public interface CommentAnchorApiSpec {
             @PathVariable Long selectionId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
             @Valid @RequestBody CommentAnchorAddRequest dto
+    );
+
+    @Operation(
+            summary = "인라인 댓글 수정 API",
+            description = """
+                    인라인 댓글의 본문(content)을 수정합니다. 선택 범위(Selection)는 변경할 수 없습니다.
+                    - 댓글 작성자 본인만 수정할 수 있습니다.
+                    - 게시글을 조회할 수 없는 사용자는 수정할 수 없습니다. 비공개 게시글에서는 게시글 작성자 본인의 댓글만 수정할 수 있습니다.
+                    - ACTIVE와 ORPHANED 상태의 댓글 모두 수정할 수 있습니다.
+                    - 기존과 같은 본문으로 요청하면 변경 없이 성공하며 isEdited와 updatedAt은 바뀌지 않습니다.
+                    """
+    )
+    ApiResponse<CommentAnchorUpdateResponse> updateCommentAnchor(
+            @Parameter(description = "게시글 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(description = "인라인 댓글 ID", example = "1")
+            @PathVariable Long commentAnchorId,
+            @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @Valid @RequestBody CommentAnchorUpdateRequest dto
     );
 
 }
