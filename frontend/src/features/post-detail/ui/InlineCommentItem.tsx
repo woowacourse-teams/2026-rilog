@@ -42,13 +42,19 @@ export default function InlineCommentItem({ comment }: InlineCommentItemProps) {
 			/>
 			<div className="col-start-2 row-start-1 flex min-w-0 flex-col gap-0.5">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-					<strong className="text-label-2 font-semibold text-text-primary">{author.nickname}</strong>
+					<strong className="text-label-2 font-semibold! text-text-primary">{author.nickname}</strong>
 					{author.isAuthor ? (
-						<span className="rounded-sm bg-surface-active px-1.5 text-label-1 text-text-secondary">작성자</span>
+						<span className="rounded-sm bg-focus-ring/15 px-1.5 text-caption-1 font-medium text-text-secondary">
+							작성자
+						</span>
+					) : author.isBlogMember ? (
+						<span className="rounded-sm bg-surface-active px-1.5 text-caption-1 font-medium text-text-secondary">
+							멤버
+						</span>
 					) : null}
 				</div>
 				<time dateTime={comment.createdAt} className="text-label-1 text-text-placeholder">
-					{formatCommentDate(comment.createdAt)}
+					{formatCommentDate(comment.createdAt)} · 편집됨
 				</time>
 			</div>
 			<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">

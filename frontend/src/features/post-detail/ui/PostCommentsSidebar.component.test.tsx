@@ -129,7 +129,7 @@ describe('PostCommentsSidebar', () => {
 		await user.click(expandButtons[1]);
 		expect(screen.getByRole('article', { name: '작성자님의 댓글' })).toHaveTextContent('첫 번째 댓글');
 		expect(screen.getByText('작성자', { selector: 'span' })).toBeInTheDocument();
-		expect(screen.queryByText('멤버')).not.toBeInTheDocument();
+		expect(screen.getAllByText('멤버')).toHaveLength(1);
 		expect(screen.getAllByText('2026.09.17 10:20')).not.toHaveLength(0);
 		expect(screen.getByText('Outdated')).toBeInTheDocument();
 		expect(screen.getAllByRole('separator')).toHaveLength(2);
