@@ -2,13 +2,13 @@
 
 - 상태: 제안
 - 관련 이슈: #570, #639, #640
-- `ACTIVE` / `OUTDATED`는 프론트 화면 모델의 상태다. 실제 서버의 `ORPHANED` 변환과 API 식별자 계약은 #640에서 연결한다.
+- `ACTIVE` / `OUTDATED`는 프론트 화면 모델의 상태다. 서버의 `ORPHANED`는 #640의 mapper에서 `OUTDATED`로 변환한다. 서버 `selectionId`는 화면 `anchorId`, `commentAnchorId`는 화면 `commentId`에 대응한다.
 - 작성일: 2026-09-17
 - 관련 상세 설계: `docs/tasks/post-inline-comments.md`
 
 ## 배경
 
-게시글 본문의 특정 텍스트 범위에 댓글을 남기려면 게시글 수정 뒤 범위 이동(drift), JavaScript와 Java 사이의 문자열 offset 차이, 중첩 범위의 우선순위, 댓글 삭제 권한을 프론트엔드와 백엔드가 일관되게 다뤄야 한다. 현재 저장소에는 게시글 단위 루트 댓글과 답글을 위한 백엔드 골격이 있으나 프론트엔드 댓글 구현은 없다.
+게시글 본문의 특정 텍스트 범위에 댓글을 남기려면 게시글 수정 뒤 범위 이동(drift), JavaScript와 Java 사이의 문자열 offset 차이, 중첩 범위의 우선순위, 댓글 삭제 권한을 프론트엔드와 백엔드가 일관되게 다뤄야 한다. 초기에는 게시글 단위 루트 댓글·답글 골격을 검토했으나 현재 백엔드는 선택 영역별 인라인 댓글과 본문·사이드바 조회 API를 제공한다. 프론트엔드는 #639의 본문 기반 위에 #640 조회 계층을 추가하고 #641에서 화면에 연결한다.
 
 같은 판정을 양쪽에서 각각 구현하면 동일 앵커가 화면마다 다른 위치를 가리키거나 권한 버튼과 서버의 실제 허용 범위가 달라질 수 있다. 특히 JavaScript의 문자열 offset과 Java `String` index는 모두 UTF-16 code unit 기준이므로 이 기준을 계약으로 고정할 필요가 있다.
 
@@ -17,9 +17,10 @@
 1. 백엔드는 게시글의 현재 BlockNote JSON을 기준으로 블록 텍스트를 직렬화하고 다음 책임을 단독으로 가진다.
    - `selectedText` 일치 확인과 drift 재탐색
    - offset 갱신
-   - `ACTIVE` / `OUTDATED` 판정
+   - `ACTIVE` / `ORPHANED` 판정
    - 동일 범위 앵커의 생성 및 재사용
-   - `blockId -> anchors[] -> comments[]` 응답 조립
+   - 본문 `blocks[] -> anchorGroups[] -> commentAnchors[]`와 사이드바 `anchorGroups[]` 응답 조립
+   - `anchorCount`, `isEdited`, 작성자 및 멤버 정보 제공
    - `canEdit` / `canDelete` 계산과 mutation 권한 강제
 2. 프론트엔드는 API의 `state`와 `range`를 신뢰한다. `selectedText`를 재검색하거나 offset을 보정하거나 `OUTDATED`를 재판정하지 않는다.
 3. 문자열 offset은 양쪽 모두 UTF-16 code unit, 시작 포함·끝 제외인 `[startOffset, endOffset)`을 사용한다.
@@ -33,7 +34,8 @@
 
 - 게시글 수정과 drift 처리 때문에 댓글 조회가 앵커 offset/state를 갱신하는 쓰기 트랜잭션을 포함할 수 있다.
 - 프론트엔드는 범위 복원 실패를 개별 하이라이트의 표시 실패로만 다루며 서버 상태를 바꾸지 않는다.
-- 기존 게시글 댓글 골격의 루트/답글 모델과 응답 DTO는 인라인 앵커 모델로 교체한다. 현재 프론트 소비자가 없으므로 새 계약을 기준으로 전환하되, 배포된 외부 소비자가 있다면 endpoint 버전 분리는 구현 전에 별도 확인한다.
+- #640은 기존 인라인 댓글 GET 계약을 소비한다. 백엔드 endpoint·권한·응답 계약을 변경하지 않는다. 화면 모델은 feature에, 실제 DTO와 조회 캐시는 shared/api/posts에 둔다.
+- 로그인 여부로 조회 캐시를 분리하고 게시글 수정 후에는 해당 글의 본문·사이드바 조회를 함께 무효화한다.
 - 댓글 선택 가능 블록의 직렬화 계약은 프론트 렌더러와 백엔드 JSON serializer의 계약 테스트로 고정한다.
 
 ## 대안과 기각 이유

@@ -15,6 +15,7 @@ export interface InlineCommentAuthorModel {
 }
 
 export interface InlineCommentModel {
+	isEdited: boolean;
 	commentId: number;
 	content: string;
 	author: InlineCommentAuthorModel;
@@ -26,6 +27,7 @@ export interface InlineCommentModel {
 
 export interface InlineCommentAnchorModel {
 	anchorId: number;
+	commentCount: number;
 	range: InlineCommentRangeModel;
 	selectedText: string;
 	state: InlineCommentAnchorState;
