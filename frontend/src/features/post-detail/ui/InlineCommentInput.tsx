@@ -10,6 +10,8 @@ import Textarea from '@/shared/ui/textarea/Textarea';
 
 interface InlineCommentInputProps {
 	isOpen: boolean;
+	isPending?: boolean;
+	onSubmit?: () => void;
 	value: string;
 	onChange: (value: string) => void;
 	inputRef?: RefObject<HTMLTextAreaElement | null>;
@@ -24,7 +26,14 @@ const resizeTextarea = (element: HTMLTextAreaElement) => {
 	}
 };
 
-export default function InlineCommentInput({ isOpen, value, onChange, inputRef }: InlineCommentInputProps) {
+export default function InlineCommentInput({
+	isOpen,
+	value,
+	onChange,
+	inputRef,
+	isPending = false,
+	onSubmit,
+}: InlineCommentInputProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const isDisabled = !isInitialized || !isAuthenticated;
 	const localRef = useRef<HTMLTextAreaElement>(null);
@@ -42,7 +51,7 @@ export default function InlineCommentInput({ isOpen, value, onChange, inputRef }
 				ref={textareaRef}
 				rows={1}
 				value={value}
-				disabled={isDisabled}
+				disabled={isDisabled || isPending}
 				aria-label="댓글 입력"
 				placeholder={isDisabled ? '로그인하고 댓글을 남겨보세요.' : '댓글을 입력하세요.'}
 				style={{
@@ -55,8 +64,13 @@ export default function InlineCommentInput({ isOpen, value, onChange, inputRef }
 				onChange={(event) => onChange(event.target.value)}
 			/>
 			<div className="mt-2 flex justify-end">
-				<Button size="sm" disabled={isDisabled || value.trim().length === 0}>
-					작성
+				<Button
+					isPending={isPending}
+					size="sm"
+					disabled={isDisabled || isPending || value.trim().length === 0}
+					onClick={onSubmit}
+				>
+					{isPending ? '작성 중…' : '작성'}
 				</Button>
 			</div>
 		</>

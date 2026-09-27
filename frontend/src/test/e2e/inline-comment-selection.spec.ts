@@ -4,6 +4,7 @@ import type { Page } from '@playwright/test';
 
 import { RELEASE_NOTE_STORAGE_KEY } from '@/features/release-notes/model/release-note-storage';
 import { getLatestReleaseNote, RELEASE_NOTES } from '@/features/release-notes/model/release-notes';
+import type { PostCommentAnchorCreateRequest } from '@/shared/api/posts/types';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
 
@@ -44,6 +45,57 @@ test.beforeEach(async ({ page }) => {
 test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을 복원한다', async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await mockAuthenticatedAccess(page);
+
+	let submitted: PostCommentAnchorCreateRequest | null = null;
+	await page.route('**/v1/posts/106/comment-anchors', async (route) => {
+		if (route.request().method() === 'POST') {
+			submitted = route.request().postDataJSON() as PostCommentAnchorCreateRequest;
+			await route.fulfill({ json: { status: 0, message: 'OK', data: { commentAnchorId: 900 } } });
+			return;
+		}
+		await route.fulfill({
+			json: {
+				status: 0,
+				message: 'OK',
+				data: {
+					blocks: submitted
+						? [
+								{
+									blockId: submitted.blockId,
+									anchorGroups: [
+										{
+											selectionId: 91,
+											range: { startOffset: submitted.startOffset, endOffset: submitted.endOffset },
+											selectedText: submitted.selectedText,
+											state: 'ACTIVE',
+											anchorCount: 1,
+											commentAnchors: [
+												{
+													commentAnchorId: 900,
+													content: submitted.content,
+													author: {
+														userId: 1,
+														nickname: '테스트 작성자',
+														slug: 'author',
+														profileImageUrl: null,
+														isPostAuthor: false,
+														isBlogMember: false,
+													},
+													canEdit: true,
+													canDelete: true,
+													createdAt: '2026-09-27T07:47:07.958Z',
+													updatedAt: '2026-09-27T07:47:07.958Z',
+												},
+											],
+										},
+									],
+								},
+							]
+						: [],
+				},
+			},
+		});
+	});
 	await page.goto('/@gustn99/posts/106');
 	await expect(page.getByRole('article', { name: '게시글 본문' })).toBeVisible();
 	const { text: selectedText } = await dragText(page);
@@ -75,6 +127,12 @@ test('본문 드래그로 댓글 입력을 열고 백드롭 닫기 후 초안을
 	await dragText(page);
 	await page.getByRole('button', { name: '댓글 추가', exact: true }).click();
 	await expect(input).toHaveValue('브라우저에서 작성 중인 초안');
+	await page.getByRole('button', { name: '작성', exact: true }).click();
+	await expect(page.getByRole('article', { name: '테스트 작성자님의 댓글' })).toContainText(
+		'브라우저에서 작성 중인 초안',
+	);
+	expect(submitted).toMatchObject({ selectedText, content: '브라우저에서 작성 중인 초안' });
+	await expect(input).toHaveValue('');
 });
 
 test('모바일에서 본문을 선택해도 댓글 입력 툴바를 표시하지 않는다', async ({ page }) => {

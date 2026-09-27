@@ -4,6 +4,7 @@ import { postsQueryKeys } from './keys';
 
 describe('postsQueryKeys', () => {
 	it('인라인 댓글을 게시글과 로그인 여부로 구분하고 인증 캐시 정리에 포함한다', () => {
+		expect(postsQueryKeys.commentAnchorLists(81)).toEqual(['authenticated', 'posts', 'comment-anchors', 81]);
 		expect(postsQueryKeys.commentAnchors(81)).toEqual(['authenticated', 'posts', 'comment-anchors', 81, false]);
 		expect(postsQueryKeys.commentAnchors(81)).not.toEqual(postsQueryKeys.commentAnchors(82));
 		expect(postsQueryKeys.commentAnchors(81, false)).not.toEqual(postsQueryKeys.commentAnchors(81, true));

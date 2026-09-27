@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+	createPostCommentAnchor,
 	deletePost,
 	publishPost,
 	readPostCommentAnchors,
-	readPostCommentAnchorsSidebar,
 	readPostDetail,
 	updatePost,
 } from './api';
@@ -162,14 +162,26 @@ describe('readPostCommentAnchors', () => {
 	});
 });
 
-describe('readPostCommentAnchorsSidebar', () => {
-	it('사이드바 전용 endpoint로 GET하고 평면 응답을 유지한다', async () => {
-		const response = { status: 0, message: 'OK', data: { anchorGroups: [] } };
-		const fetchMock = vi.fn().mockResolvedValue(Response.json(response));
+describe('createPostCommentAnchor', () => {
+	it('선택 범위와 댓글을 그대로 POST하고 생성된 댓글 id를 반환한다', async () => {
+		const response = { status: 0, message: 'OK', data: { commentAnchorId: 900 } };
+		let body: unknown;
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) body = await input.clone().json();
+			return Response.json(response);
+		});
 		vi.stubGlobal('fetch', fetchMock);
-		await expect(readPostCommentAnchorsSidebar(81)).resolves.toEqual(response);
+		const payload = {
+			blockId: 'block-1',
+			startOffset: 2,
+			endOffset: 6,
+			selectedText: ' 선택 ',
+			content: '댓글\n둘째 줄',
+		};
+		await expect(createPostCommentAnchor(81, payload)).resolves.toEqual(response);
 		const request = fetchMock.mock.calls[0][0] as Request;
-		expect(request.method).toBe('GET');
-		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors/sidebar');
+		expect(request.method).toBe('POST');
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/81/comment-anchors');
+		expect(body).toEqual(payload);
 	});
 });
