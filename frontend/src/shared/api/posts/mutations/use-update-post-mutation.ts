@@ -26,9 +26,10 @@ export const useUpdatePostMutation = () => {
 				operation: 'post.update',
 				invalidUserInputFields: getInvalidPostInputFields(variables.request.title),
 			}),
-		onSuccess: () =>
+		onSuccess: (_data, { postId }) =>
 			Promise.all([
 				queryClient.invalidateQueries({ queryKey: postsQueryKeys.details() }),
+				queryClient.invalidateQueries({ queryKey: postsQueryKeys.commentAnchorLists(postId) }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 			]),
