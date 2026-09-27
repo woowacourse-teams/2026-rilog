@@ -26,8 +26,6 @@ public record CommentAnchorListResult(
             BlogMembers blogMembers,
             Long requesterId
     ) {
-        boolean requesterCanDeleteOthers = post.isWrittenBy(requesterId)
-                || blogMembers.hasDeletePermission(requesterId);
         Map<String, List<AnchorGroupResult>> anchorGroupsByBlock = new LinkedHashMap<>();
         for (CommentAnchorGroup group : groups.values()) {
             CommentAnchorSelection anchorSelection = group.anchorSelection();
@@ -37,8 +35,7 @@ public record CommentAnchorListResult(
                             post,
                             group,
                             blogMembers,
-                            requesterId,
-                            requesterCanDeleteOthers
+                            requesterId
                     ));
         }
 
@@ -67,8 +64,7 @@ public record CommentAnchorListResult(
                 Post post,
                 CommentAnchorGroup group,
                 BlogMembers blogMembers,
-                Long requesterId,
-                boolean requesterCanDeleteOthers
+                Long requesterId
         ) {
             CommentAnchorSelection anchorSelection = group.anchorSelection();
             Selection selection = anchorSelection.getSelection();
@@ -77,8 +73,7 @@ public record CommentAnchorListResult(
                             post,
                             commentAnchor,
                             blogMembers,
-                            requesterId,
-                            requesterCanDeleteOthers
+                            requesterId
                     ))
                     .toList();
             return new AnchorGroupResult(
@@ -115,17 +110,14 @@ public record CommentAnchorListResult(
                 Post post,
                 CommentAnchor commentAnchor,
                 BlogMembers blogMembers,
-                Long requesterId,
-                boolean requesterCanDeleteOthers
+                Long requesterId
         ) {
-            boolean isWriter = commentAnchor.isWrittenBy(requesterId);
-            boolean canDelete = isWriter || requesterCanDeleteOthers;
             return new CommentAnchorResult(
                     commentAnchor.getId(),
                     commentAnchor.getContent(),
                     AuthorResult.from(post, commentAnchor.getWriter(), blogMembers),
-                    isWriter,
-                    canDelete,
+                    commentAnchor.isWrittenBy(requesterId),
+                    commentAnchor.canBeDeletedBy(requesterId, post, blogMembers),
                     commentAnchor.isEdited(),
                     commentAnchor.getCreatedAt(),
                     commentAnchor.getUpdatedAt()

@@ -103,7 +103,9 @@ public class CommentAnchorService {
         post.validateReadableBy(requesterId);
 
         CommentAnchor commentAnchor = getCommentAnchor(postId, commentAnchorId);
-        commentAnchor.deleteBy(requesterId, post, getActiveBlogMembers(post));
+        BlogMembers blogMembers = getActiveBlogMembers(post);
+
+        commentAnchor.deleteBy(requesterId, post, blogMembers);
         return CommentAnchorDeleteResult.from(commentAnchor);
     }
 
