@@ -76,10 +76,13 @@ test('댓글 사이드바는 모바일 화면을 채우고 데스크톱에서는
 	await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.showModal());
 	await page.setViewportSize({ width: 390, height: 844 });
 	const dialog = page.getByRole('dialog', { name: '댓글 사이드바' });
-	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(390);
+	// 모달이 확보하는 스크롤바 여백을 제외한 문서 영역을 채워야 한다.
+	const documentWidth = await page.locator('html').evaluate((element) => element.getBoundingClientRect().width);
+	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(documentWidth);
 	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(0);
 	await expect.poll(async () => (await dialog.boundingBox())?.height).toBe(844);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await expect.poll(async () => (await dialog.boundingBox())?.width).toBe(448);
-	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(992);
+	const desktopDocumentWidth = await page.locator('html').evaluate((element) => element.getBoundingClientRect().width);
+	await expect.poll(async () => (await dialog.boundingBox())?.x).toBe(desktopDocumentWidth - 448);
 });
