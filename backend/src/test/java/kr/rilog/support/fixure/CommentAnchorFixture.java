@@ -23,6 +23,7 @@ public final class CommentAnchorFixture {
             SELECTED_TEXT
     );
     private static final String CONTENT = "좋은 설명이에요.";
+    private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 9, 20, 12, 0);
 
     private CommentAnchorFixture() {
     }
@@ -36,6 +37,24 @@ public final class CommentAnchorFixture {
         CommentAnchorSelection anchorSelection = CommentAnchorSelection.create(post, SELECTION);
         anchorSelection.orphan(LocalDateTime.of(2026, 9, 20, 12, 0));
         return CommentAnchor.create(anchorSelection, writer, CONTENT);
+    }
+
+    public static CommentAnchor uneditedAnchor(Post post, User writer) {
+        return savedAnchor(post, writer, CREATED_AT);
+    }
+
+    public static CommentAnchor editedAnchor(Post post, User writer) {
+        return savedAnchor(post, writer, CREATED_AT.plusMinutes(10));
+    }
+
+    private static CommentAnchor savedAnchor(Post post, User writer, LocalDateTime updatedAt) {
+        return CommentAnchor.builder()
+                .commentAnchorSelection(CommentAnchorSelection.create(post, SELECTION))
+                .writer(writer)
+                .content(CONTENT)
+                .createdAt(CREATED_AT)
+                .updatedAt(updatedAt)
+                .build();
     }
 
 }

@@ -116,6 +116,62 @@ class CommentAnchorTest {
     }
 
     @Test
+    @DisplayName("수정할 본문이 비어 있으면 인라인 댓글 본문을 수정할 수 없다.")
+    void updateContentRejectsBlankContent() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        assertThatThrownBy(() -> anchor.updateContent(WRITER_ID, "    "))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
+    }
+
+    @Test
+    @DisplayName("수정할 본문이 최대 길이를 넘으면 인라인 댓글 본문을 수정할 수 없다.")
+    void updateContentRejectsTooLongContent() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+        String tooLongContent = "가".repeat(MAX_CONTENT_LENGTH + 1);
+
+        assertThatThrownBy(() -> anchor.updateContent(WRITER_ID, tooLongContent))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
+    }
+
+    @Test
+    @DisplayName("본문 수정에 실패하면 기존 본문을 유지한다.")
+    void updateContentKeepsContentWhenRejected() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        assertThatThrownBy(() -> anchor.updateContent(OTHER_USER_ID, "수정한 댓글입니다."))
+                .isInstanceOf(CommentException.class);
+
+        assertThat(anchor.getContent()).isEqualTo(CONTENT);
+    }
+
+    @Test
+    @DisplayName("작성 이후 변경된 인라인 댓글은 수정된 댓글이다.")
+    void isEditedWhenUpdatedAfterCreation() {
+        CommentAnchor anchor = CommentAnchorFixture.editedAnchor(post, writer);
+
+        assertThat(anchor.isEdited()).isTrue();
+    }
+
+    @Test
+    @DisplayName("작성 이후 변경되지 않은 인라인 댓글은 수정된 댓글이 아니다.")
+    void isNotEditedWhenNotUpdatedAfterCreation() {
+        CommentAnchor anchor = CommentAnchorFixture.uneditedAnchor(post, writer);
+
+        assertThat(anchor.isEdited()).isFalse();
+    }
+
+    @Test
+    @DisplayName("저장되기 전의 인라인 댓글은 수정된 댓글이 아니다.")
+    void isNotEditedBeforeSaved() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        assertThat(anchor.isEdited()).isFalse();
+    }
+
+    @Test
     @DisplayName("삭제하면 삭제된 인라인 댓글이 된다.")
     void deleteMarksDeleted() {
         CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);

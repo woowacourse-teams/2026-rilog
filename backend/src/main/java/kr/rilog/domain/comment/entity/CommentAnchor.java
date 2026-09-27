@@ -66,6 +66,12 @@ public class CommentAnchor extends BaseEntity {
         return getDeletedAt() != null;
     }
 
+    public boolean isEdited() {
+        return getCreatedAt() != null
+                && getUpdatedAt() != null
+                && getUpdatedAt().isAfter(getCreatedAt());
+    }
+
     public boolean isWrittenBy(Long userId) {
         return writer != null
                 && writer.getId() != null
