@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_DELETE_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
@@ -179,6 +180,47 @@ class CommentAnchorTest {
         anchor.delete();
 
         assertThat(anchor.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("작성자는 인라인 댓글을 삭제할 수 있다.")
+    void deleteByAllowsWriter() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        anchor.deleteBy(WRITER_ID, false);
+
+        assertThat(anchor.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 댓글을 삭제할 권한이 있으면 작성자가 아니어도 인라인 댓글을 삭제할 수 있다.")
+    void deleteByAllowsRequesterWhoCanDeleteOthers() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        anchor.deleteBy(OTHER_USER_ID, true);
+
+        assertThat(anchor.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("작성자가 아니고 다른 사용자의 댓글을 삭제할 권한도 없으면 인라인 댓글을 삭제할 수 없다.")
+    void deleteByRejectsRequesterWithoutPermission() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        assertThatThrownBy(() -> anchor.deleteBy(OTHER_USER_ID, false))
+                .isInstanceOf(CommentException.class)
+                .hasMessage(COMMENT_ANCHOR_DELETE_FORBIDDEN.getMessage());
+    }
+
+    @Test
+    @DisplayName("삭제에 실패하면 인라인 댓글은 삭제되지 않은 상태를 유지한다.")
+    void deleteByKeepsNotDeletedWhenRejected() {
+        CommentAnchor anchor = CommentAnchorFixture.activeAnchor(post, writer);
+
+        assertThatThrownBy(() -> anchor.deleteBy(OTHER_USER_ID, false))
+                .isInstanceOf(CommentException.class);
+
+        assertThat(anchor.isDeleted()).isFalse();
     }
 
     @Test

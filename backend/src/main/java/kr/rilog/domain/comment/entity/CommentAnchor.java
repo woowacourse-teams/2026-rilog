@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_DELETE_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
@@ -62,6 +63,11 @@ public class CommentAnchor extends BaseEntity {
         this.content = content;
     }
 
+    public void deleteBy(Long requesterId, boolean requesterCanDeleteOthers) {
+        validateDeletableBy(requesterId, requesterCanDeleteOthers);
+        delete();
+    }
+
     public boolean isDeleted() {
         return getDeletedAt() != null;
     }
@@ -81,6 +87,12 @@ public class CommentAnchor extends BaseEntity {
     private void validateWriter(Long requesterId) {
         if (!isWrittenBy(requesterId)) {
             throw new CommentException(COMMENT_AUTHOR_FORBIDDEN);
+        }
+    }
+
+    private void validateDeletableBy(Long requesterId, boolean requesterCanDeleteOthers) {
+        if (!isWrittenBy(requesterId) && !requesterCanDeleteOthers) {
+            throw new CommentException(COMMENT_ANCHOR_DELETE_FORBIDDEN);
         }
     }
 
