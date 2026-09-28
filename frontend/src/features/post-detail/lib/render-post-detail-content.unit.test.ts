@@ -124,6 +124,9 @@ describe('renderPostDetailContent', () => {
 		]);
 
 		expect(html.match(/data-post-code-highlighted=""/g)).toHaveLength(1);
+		expect(html.match(/<select[^>]*disabled[^>]*>/g)).toHaveLength(3);
+		expect(html).toContain('<option value="typescript">TypeScript</option>');
+		expect(html).toContain('<option value="text">Plain Text</option>');
 		expect(html).toContain('<span class="line">');
 		expect(html).not.toContain('<script>unsafe</script>');
 		expect(html.match(/&lt;script&gt;unsafe&lt;\/script&gt;/g)).toHaveLength(3);
