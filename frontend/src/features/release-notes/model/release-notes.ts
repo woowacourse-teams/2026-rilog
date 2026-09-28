@@ -14,6 +14,7 @@ export interface ReleaseNote {
 	title: string;
 	/** 공개 날짜, YYYY-MM-DD 형식. 같은 날짜는 목록 앞 항목을 우선한다. */
 	publishedAt: string;
+	intro?: string;
 	items: readonly ReleaseNoteItem[];
 	links?: readonly ReleaseNoteLink[];
 }
@@ -81,6 +82,30 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
 			{
 				label: '업데이트 자세히 보기 ↗',
 				href: 'https://www.rilog.kr/@rilog/posts/83',
+			},
+		],
+	},
+	{
+		id: '2026-09-28-inline-comments-seo',
+		title: 'Rilog. 패치노트 v4',
+		publishedAt: '2026-09-28',
+		intro: 'Rilog.가 4살이 되었습니다. 이제 글을 읽다 궁금해진 문장에서 바로 이야기를 시작할 수 있어요.',
+		items: [
+			{
+				title: '💬 궁금한 문장에 바로 댓글을 남겨보세요',
+				description:
+					'글을 읽다가 이야기하고 싶은 부분을 드래그해 그 자리에 바로 댓글을 남길 수 있어요. 글이 수정되더라도 당시 선택한 문장과 대화는 전체 목록에 안전하게 남아요.',
+			},
+			{
+				title: '🔍 검색 서비스와 AI 도구의 접근성을 개선했어요',
+				description:
+					'검색 서비스와 AI 검색 도구가 공개 블로그와 게시글의 위치, 원문 주소를 더 잘 파악할 수 있도록 사이트 안내와 주소 정보를 깔끔하게 정리했어요.',
+			},
+		],
+		links: [
+			{
+				label: '업데이트 자세히 보기 ↗',
+				href: 'https://www.rilog.kr/@official/posts/127',
 			},
 		],
 	},
