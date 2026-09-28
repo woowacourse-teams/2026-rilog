@@ -6,9 +6,11 @@ interface PostAllCommentsButtonProps {
 	onClick?: () => void;
 }
 
+const normalizeInlineCommentsCount = (count: number) => (count > 99 ? '99+' : count);
+
 export default function PostAllCommentsButton({ commentCount, className, onClick }: PostAllCommentsButtonProps) {
 	return (
-		<div className="flex w-35 justify-end border-b-2 border-border-strong bg-transparent transition-colors">
+		<div className="flex justify-end border-b-2 border-border-strong bg-transparent pl-4 transition-colors">
 			<button
 				type="button"
 				aria-label={`전체 댓글 ${commentCount}개 보기`}
@@ -16,9 +18,9 @@ export default function PostAllCommentsButton({ commentCount, className, onClick
 				onClick={onClick}
 			>
 				<CommentIcon aria-hidden="true" focusable="false" className="size-4 shrink-0" />
-				<span>전체 인라인 댓글</span>
+				<span>전체 보기</span>
 				<span aria-hidden="true" className="text-text-tertiary transition-colors group-hover:text-focus-ring">
-					{commentCount}
+					{normalizeInlineCommentsCount(commentCount)}
 				</span>
 			</button>
 		</div>
