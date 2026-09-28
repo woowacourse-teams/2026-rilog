@@ -42,6 +42,17 @@ describe('tokenManager', () => {
 		await expect(tokenManager.refresh()).resolves.toBeNull();
 		expect(captureExceptionMock).toHaveBeenCalledOnce();
 	});
+	it('refresh 응답의 Authorization 헤더가 잘못되면 세션을 로그아웃 상태로 전환한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.test');
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(new Response(null, { status: 200, headers: { Authorization: 'Basic new-token' } })),
+		);
+		await tokenManager.publishLogin('old-token');
+
+		await expect(tokenManager.refresh()).resolves.toBeNull();
+		expect(tokenManager.getToken()).toBeNull();
+	});
 	it('연속 전이도 각 이벤트의 토큰 상태에서 구독자를 시작한다', async () => {
 		const tokens: (string | null)[] = [];
 		const unsubscribeLogin = tokenManager.subscribeLogin(() => {

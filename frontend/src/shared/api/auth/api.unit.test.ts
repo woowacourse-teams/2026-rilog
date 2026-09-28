@@ -12,6 +12,18 @@ afterEach(() => {
 });
 
 describe('auth API', () => {
+	it('callback 성공 응답이 잘못된 JSON이면 로그인 완료로 처리하지 않는다', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(new Response('{broken', { status: 200, headers: { Authorization: 'Bearer access-token' } })),
+		);
+		await expect(handleGitHubCallback({ code: 'code', state: 'state' })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
 	it('GitHub callback 결과와 Authorization access token을 함께 반환한다', async () => {
 		const responseBody = {
 			status: 200,
@@ -36,6 +48,51 @@ describe('auth API', () => {
 		expect(request.url).toBe('https://api.rilog.test/v1/auth/github/callback');
 		expect(capturedBody).toEqual({ code: 'code', state: 'state' });
 	});
+
+	it.each([
+		{ data: { onboardingStatus: 'UNKNOWN', redirectUrl: '/feeds' }, description: 'unknown onboarding status' },
+		{ data: { onboardingStatus: 'COMPLETED' }, description: 'missing redirect URL' },
+		{ data: null, description: 'missing callback data' },
+	])('$description 응답은 로그인 성공 데이터로 반환하지 않는다', async ({ data }) => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(
+					Response.json(
+						{ status: 200, message: 'success', data },
+						{ headers: { Authorization: 'Bearer access-token' } },
+					),
+				),
+		);
+
+		await expect(handleGitHubCallback({ code: 'code', state: 'state' })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
+
+	it.each(['Bearer ', 'Basic access-token', 'Bearer token other', 'Bearer token, Bearer other'])(
+		'잘못된 Authorization 헤더 %s는 access token으로 사용하지 않는다',
+		async (header) => {
+			vi.stubGlobal(
+				'fetch',
+				vi
+					.fn()
+					.mockResolvedValue(
+						Response.json(
+							{ status: 200, message: 'success', data: { onboardingStatus: 'COMPLETED', redirectUrl: '/' } },
+							{ headers: { Authorization: header } },
+						),
+					),
+			);
+
+			await expect(handleGitHubCallback({ code: 'code', state: 'state' })).rejects.toMatchObject({
+				type: 'unknown',
+				cause: { name: 'InvalidApiResponseError' },
+			});
+		},
+	);
 
 	it('로그아웃을 credential과 함께 요청한다', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
