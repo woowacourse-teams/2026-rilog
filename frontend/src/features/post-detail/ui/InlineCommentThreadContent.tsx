@@ -81,7 +81,7 @@ export default function InlineCommentThreadContent({
 				className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 			>
 				<div className="min-h-0 overflow-hidden" {...(!isOpen && { inert: true })}>
-					<div className="px-8 pb-8">
+					<div className="px-8 pb-4">
 						{anchor.comments.length === 0 ? (
 							<p
 								id={panelId}

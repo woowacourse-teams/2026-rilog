@@ -6,6 +6,7 @@ import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
 import { useAuth } from '@/features/auth/model/use-auth';
+import { useLoginModal } from '@/features/login/model/use-login-modal';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
@@ -47,6 +48,7 @@ export default function PostCommentsSidebar({
 	const titleRef = useRef<HTMLHeadingElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const { isAuthenticated, isInitialized } = useAuth();
+	const login = useLoginModal();
 	const shouldFocusInput = isAuthenticated && isInitialized && (selection != null || composerAnchorId != null);
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
@@ -108,6 +110,19 @@ export default function PostCommentsSidebar({
 						</div>
 					)}
 				</div>
+				{isInitialized && !isAuthenticated && (
+					<footer className="shrink-0 bg-surface-hover px-5 pt-5 pb-7 shadow-[0_0_12px_rgba(0,0,0,0.10)]">
+						<p className="text-center text-body-1 text-text-secondary">
+							<button
+								onClick={() => login({ entrySurface: 'sidebar' })}
+								className="mr-0.5 font-medium text-focus-ring transition-colors hover:text-focus-ring/80"
+							>
+								로그인
+							</button>
+							하고 인라인 댓글에 참여해 보세요.
+						</p>
+					</footer>
+				)}
 			</div>
 		</BaseModal>
 	);
