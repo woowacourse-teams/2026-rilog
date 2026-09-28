@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import * as postsApi from '@/shared/api/posts/api';
+import { InvalidApiResponseError } from '@/shared/api/response-validation';
 import { renderWithQuery as render } from '@/test/render-with-query';
 
 import { POST_81_INLINE_COMMENT_BLOCKS_FIXTURE } from '../model/inline-comment.fixture';
@@ -134,6 +135,20 @@ it('저장이 거절되면 입력과 수정 모드를 보존하고 alert 모달�
 	expect(update).toHaveBeenCalledTimes(2);
 });
 
+it('수정 결과를 확인할 수 없으면 편집 내용을 보존하고 목록 확인을 안내한다', async () => {
+	const user = userEvent.setup();
+	vi.spyOn(postsApi, 'updatePostCommentAnchor').mockRejectedValue(new InvalidApiResponseError('update comment'));
+	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, canEdit: true }} />);
+	await user.click(screen.getByRole('button', { name: '수정' }));
+	const input = screen.getByRole('textbox', { name: '댓글 수정' });
+	await user.clear(input);
+	await user.type(input, '보존할 수정 내용');
+	await user.click(screen.getByRole('button', { name: '저장' }));
+	const dialog = await screen.findByRole('alertdialog', { name: '수정 결과를 확인하지 못했습니다.' });
+	expect(dialog).toHaveAccessibleDescription('댓글 목록에서 수정 여부를 확인해 주세요.');
+	expect(input).toHaveValue('보존할 수정 내용');
+});
+
 it.each([true, false])('isEdited가 %s이면 서버의 편집 여부에 따라 편집됨을 표시한다', (isEdited) => {
 	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, isEdited }} />);
 	if (isEdited) expect(screen.getByText('편집됨')).toBeInTheDocument();
@@ -177,6 +192,16 @@ it('삭제에 실패하면 댓글을 보존하고 alert를 닫은 뒤 재시도�
 	await user.click(screen.getByRole('button', { name: '삭제' }));
 	await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
 	expect(remove).toHaveBeenCalledTimes(2);
+});
+
+it('삭제 결과를 확인할 수 없으면 목록 확인을 안내한다', async () => {
+	const user = userEvent.setup();
+	vi.spyOn(postsApi, 'deletePostCommentAnchor').mockRejectedValue(new InvalidApiResponseError('delete comment'));
+	render(<InlineCommentItem postId={81} comment={{ ...COMMENT, canDelete: true }} />);
+	await user.click(screen.getByRole('button', { name: '삭제' }));
+	await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
+	const dialog = await screen.findByRole('alertdialog', { name: '삭제 결과를 확인하지 못했습니다.' });
+	expect(dialog).toHaveAccessibleDescription('댓글 목록에서 삭제 여부를 확인해 주세요.');
 });
 
 it('아바타와 이름은 작성자 블로그로 연결하고 수정 여부를 유지한다', () => {

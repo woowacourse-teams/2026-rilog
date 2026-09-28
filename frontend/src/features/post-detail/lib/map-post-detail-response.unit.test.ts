@@ -8,7 +8,15 @@ describe('mapPostDetailResponse', () => {
 	it('개인 블로그(RILOG) 상세 응답을 PostDetail 도메인 모델로 올바르게 매핑한다', () => {
 		const response: PostDetailResponse = {
 			title: 'Spring 트랜잭션 정리',
-			content: [{ id: '1', type: 'paragraph', props: {}, content: [], children: [] }],
+			content: [
+				{
+					id: '1',
+					type: 'paragraph',
+					props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
+					content: [],
+					children: [],
+				},
+			],
 			publishedAt: '2026-08-17T04:30:00',
 			thumbnailImageUrl: null,
 			category: '기술',
