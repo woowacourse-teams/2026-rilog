@@ -10,6 +10,7 @@ import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+import { parseApiUtcDate, toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 import InlineCommentEditForm from './InlineCommentEditForm';
 
@@ -25,11 +26,12 @@ const COMMENT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
 	hour: '2-digit',
 	minute: '2-digit',
 	hourCycle: 'h23',
+	timeZone: 'Asia/Seoul',
 });
 
 const formatCommentDate = (createdAt: string) => {
-	const date = new Date(createdAt);
-	if (Number.isNaN(date.getTime())) return createdAt;
+	const date = parseApiUtcDate(createdAt);
+	if (date === null) return createdAt;
 
 	const dateParts = Object.fromEntries(
 		COMMENT_DATE_FORMATTER.formatToParts(date).map(({ type, value }) => [type, value]),
@@ -99,7 +101,7 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 				</div>
 				<div className="flex flex-wrap items-center gap-1 text-label-1 text-text-placeholder">
 					<span>
-						<time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+						<time dateTime={toApiUtcISOString(comment.createdAt)}>{formatCommentDate(comment.createdAt)}</time>
 					</span>
 					{comment.isEdited && (
 						<span className="flex items-center gap-1">

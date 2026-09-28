@@ -15,6 +15,13 @@ const COMMENT = POST_81_INLINE_COMMENT_BLOCKS_FIXTURE[0].anchors[0].comments[0];
 afterEach(() => vi.restoreAllMocks());
 
 describe('InlineCommentItem', () => {
+	it('UTC 댓글 작성 시각을 한국 시간으로 표시한다', () => {
+		const comment = { ...COMMENT, createdAt: '2026-09-27T07:47:07.958Z' };
+		render(<InlineCommentItem postId={81} comment={comment} />);
+
+		expect(screen.getByText('2026.09.27 16:47')).toHaveAttribute('dateTime', '2026-09-27T07:47:07.958Z');
+	});
+
 	it('삭제를 누르면 확인 모달을 열고 취소하면 댓글과 삭제 버튼 포커스를 유지한다', async () => {
 		const user = userEvent.setup();
 		render(<InlineCommentItem postId={81} comment={{ ...COMMENT, canDelete: true }} />);

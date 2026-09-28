@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
 import {
@@ -125,7 +126,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 const render = (ui: ReactNode) =>
 	renderWithQuery(
 		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
-			{ui}
+			<LOGIN_MODAL_CONTEXT.Provider value={vi.fn()}>{ui}</LOGIN_MODAL_CONTEXT.Provider>
 		</AUTH_CONTEXT.Provider>,
 	);
 
