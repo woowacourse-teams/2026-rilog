@@ -44,7 +44,9 @@ export const getInlineCommentRootText = (root: HTMLElement): string => {
 
 const getInlineCommentText = (root: Node): string => {
 	let text = '';
-	const walker = root.ownerDocument!.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+	const ownerDocument = root.ownerDocument;
+	if (ownerDocument === null) return text;
+	const walker = ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
 	let currentNode = walker.nextNode();
 	while (currentNode !== null) {
 		if (currentNode.nodeType === Node.TEXT_NODE) text += currentNode.nodeValue ?? '';

@@ -5,14 +5,18 @@ import { createPortal } from 'react-dom';
 
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 
+import { saveRecentCodeLanguage } from '../lib/recent-code-language';
+
 interface CodeLanguageDropdownControllerProps {
 	editor: {
 		domElement?: HTMLElement;
+		focus: () => void;
 	};
 }
 
 interface CodeLanguageDropdownProps {
 	languageSelect: HTMLSelectElement;
+	focusEditor: () => void;
 }
 
 interface LanguageOption {
@@ -25,7 +29,7 @@ const CODE_LANGUAGE_SELECT_SELECTOR = '.bn-block-content[data-content-type="code
 const getLanguageOptions = (languageSelect: HTMLSelectElement): LanguageOption[] =>
 	Array.from(languageSelect.options, ({ text, value }) => ({ label: text, value }));
 
-function CodeLanguageDropdown({ languageSelect }: CodeLanguageDropdownProps) {
+function CodeLanguageDropdown({ languageSelect, focusEditor }: CodeLanguageDropdownProps) {
 	const listboxId = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -39,7 +43,10 @@ function CodeLanguageDropdown({ languageSelect }: CodeLanguageDropdownProps) {
 	const selectedLabel = languageOptions[selectedIndex]?.label ?? selectedValue;
 
 	useEffect(() => {
-		const handleNativeChange = () => setSelectedValue(languageSelect.value);
+		const handleNativeChange = () => {
+			setSelectedValue(languageSelect.value);
+			saveRecentCodeLanguage(languageSelect.value);
+		};
 		languageSelect.addEventListener('change', handleNativeChange);
 
 		return () => languageSelect.removeEventListener('change', handleNativeChange);
@@ -70,9 +77,7 @@ function CodeLanguageDropdown({ languageSelect }: CodeLanguageDropdownProps) {
 		languageSelect.dispatchEvent(new Event('change', { bubbles: true }));
 		setSelectedValue(value);
 		setIsOpen(false);
-		requestAnimationFrame(() =>
-			rootRef.current?.querySelector<HTMLButtonElement>('.post-write-code-language-trigger')?.focus(),
-		);
+		requestAnimationFrame(focusEditor);
 	};
 
 	const moveOptionFocus = (currentIndex: number, direction: -1 | 1) => {
@@ -195,7 +200,7 @@ export default function CodeLanguageDropdownController({ editor }: CodeLanguageD
 
 				const blockId = languageSelect.closest<HTMLElement>('.bn-block-outer[data-id]')?.dataset.id;
 				return createPortal(
-					<CodeLanguageDropdown languageSelect={languageSelect} />,
+					<CodeLanguageDropdown languageSelect={languageSelect} focusEditor={() => editor.focus()} />,
 					portalTarget,
 					blockId ?? `code-language-${index}`,
 				);

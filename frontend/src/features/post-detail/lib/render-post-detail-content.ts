@@ -1,3 +1,5 @@
+import { codeBlockOptions } from '@blocknote/code-block';
+import { BlockNoteSchema, createCodeBlockSpec } from '@blocknote/core';
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
 
 import type { Block } from '@blocknote/core';
@@ -19,6 +21,11 @@ const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
 const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
 const POST_DETAIL_CODE_CONTENT_SELECTOR =
 	'.bn-block-content[data-content-type="codeBlock"][data-language] > pre > code.bn-inline-content';
+const POST_DETAIL_SCHEMA = BlockNoteSchema.create().extend({
+	blockSpecs: {
+		codeBlock: createCodeBlockSpec({ supportedLanguages: codeBlockOptions.supportedLanguages }),
+	},
+});
 const INLINE_COMMENT_SUPPORTED_BLOCK_TYPES = new Set([
 	'paragraph',
 	'heading',
@@ -133,7 +140,8 @@ const enhancePostDetailHtml = async (
 
 export const renderPostDetailContent = async (blocks: Block[]): Promise<string> => {
 	const headingIdByBlockId = new Map(extractPostHeadingAnchors(blocks).map(({ blockId, id }) => [blockId, id]));
-	const editor = ServerBlockNoteEditor.create();
+	const editor = ServerBlockNoteEditor.create({ schema: POST_DETAIL_SCHEMA });
+	editor.editor.isEditable = false;
 
 	// BlockNote 0.53은 URL 없는 JSDOM을 사용해 이미지 등 일부 블록 렌더링 중 localStorage 접근이 실패한다.
 	// 서버 전용 가상 DOM에 origin만 부여하고 외부 네트워크 요청이나 브라우저 저장소는 사용하지 않는다.
