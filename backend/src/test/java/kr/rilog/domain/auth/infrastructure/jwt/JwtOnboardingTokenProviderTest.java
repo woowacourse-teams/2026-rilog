@@ -31,6 +31,20 @@ class JwtOnboardingTokenProviderTest {
     private static final Duration EXPIRATION = Duration.ofMinutes(10);
 
     @Test
+    @DisplayName("기본 설정으로 발급한 Onboarding Token은 24시간 뒤 만료된다")
+    void defaultOnboardingTokenExpiresAfterOneDay() {
+        JwtOnboardingTokenProvider provider = new JwtOnboardingTokenProvider(
+                OnboardingTokenProperties.of(SECRET, null),
+                Clock.fixed(NOW, ZoneOffset.UTC)
+        );
+
+        OnboardingToken token = provider.issue(1L);
+
+        assertThat(JWT.decode(token.value()).getExpiresAt().toInstant())
+                .isEqualTo(NOW.plus(Duration.ofDays(1)));
+    }
+
+    @Test
     @DisplayName("Onboarding Token은 userId, tokenType, iat, exp Claim을 포함하고 다시 파싱된다")
     void issueCreatesTokenWithRequiredClaimsAndParseReadsThem() {
         // given
