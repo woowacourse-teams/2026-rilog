@@ -12,7 +12,19 @@ import type { PublishPostDraft } from '@/features/post-write/model/post-write-fl
 import { usePublishDraftMutation } from '@/shared/api/drafts/mutations/use-publish-draft-mutation';
 import { usePublishPostMutation } from '@/shared/api/posts/mutations/use-publish-post-mutation';
 import { useUpdatePostMutation } from '@/shared/api/posts/mutations/use-update-post-mutation';
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import { useUploadFileMutation } from '@/shared/api/uploads/mutations/use-upload-file-mutation';
+
+const toPublicationError = (error: unknown): Error => {
+	if (isInvalidApiResponseError(error)) {
+		return withAnalyticsFailureStage(
+			new Error('요청 결과를 확인하지 못했습니다. 이미 저장됐을 수 있으니 목록에서 결과를 확인해 주세요.'),
+			'publish_response',
+		);
+	}
+	if (error instanceof Error && 'analyticsFailureStage' in error) return error;
+	return withAnalyticsFailureStage(error, 'publish_request');
+};
 
 export function usePublishNewPost(): PublishPost {
 	const { mutateAsync: uploadFile } = useUploadFileMutation();
@@ -28,8 +40,7 @@ export function usePublishNewPost(): PublishPost {
 			try {
 				return mapPostWriteResponse(await requestPublication(request));
 			} catch (error) {
-				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
-				throw withAnalyticsFailureStage(error, 'publish_request');
+				throw toPublicationError(error);
 			}
 		},
 		[requestPublication, uploadFile],
@@ -50,8 +61,7 @@ export function usePublishPostDraft(): PublishPostDraft {
 			try {
 				return mapDraftPublishResponse(await requestPublication({ draftId, request }));
 			} catch (error) {
-				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
-				throw withAnalyticsFailureStage(error, 'publish_request');
+				throw toPublicationError(error);
 			}
 		},
 		[requestPublication, uploadFile],
@@ -72,8 +82,7 @@ export function useUpdatePublishedPost(postId: number): PublishPost {
 			try {
 				return mapPostWriteResponse(await requestUpdate({ postId, request }));
 			} catch (error) {
-				if (error instanceof Error && 'analyticsFailureStage' in error) throw error;
-				throw withAnalyticsFailureStage(error, 'publish_request');
+				throw toPublicationError(error);
 			}
 		},
 		[postId, requestUpdate, uploadFile],

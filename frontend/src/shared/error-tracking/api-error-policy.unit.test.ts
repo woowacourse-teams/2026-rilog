@@ -129,12 +129,18 @@ it.each(['inline-comment.create', 'inline-comment.add', 'inline-comment.update']
 		const content = await apiError('INVALID_COMMENT_CONTENT');
 		expect(shouldReportApiError(content, context)).toBe(false);
 		expect(shouldReportApiError(content, { operation })).toBe(true);
-		expect(shouldReportApiError(await apiError('REQUEST_VALIDATION_FAILED', 400, [{ name: 'content' }]), context)).toBe(
-			false,
-		);
 		expect(
 			shouldReportApiError(
-				await apiError('REQUEST_VALIDATION_FAILED', 400, [{ name: 'content' }, { name: 'blockId' }]),
+				await apiError('REQUEST_VALIDATION_FAILED', 400, [{ name: 'content', reason: 'invalid' }]),
+				context,
+			),
+		).toBe(false);
+		expect(
+			shouldReportApiError(
+				await apiError('REQUEST_VALIDATION_FAILED', 400, [
+					{ name: 'content', reason: 'invalid' },
+					{ name: 'blockId', reason: 'invalid' },
+				]),
 				context,
 			),
 		).toBe(true);

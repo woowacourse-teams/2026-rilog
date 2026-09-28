@@ -29,7 +29,17 @@ export const isErrorDetail = (value: unknown): value is ErrorDetail => {
 		typeof detail.error === 'string' &&
 		typeof detail.errorCode === 'string' &&
 		typeof detail.message === 'string' &&
-		(detail.invalidParams === null || Array.isArray(detail.invalidParams))
+		(detail.invalidParams === null ||
+			(Array.isArray(detail.invalidParams) &&
+				detail.invalidParams.every(
+					(param: unknown) =>
+						typeof param === 'object' &&
+						param !== null &&
+						'name' in param &&
+						(param.name === null || typeof param.name === 'string') &&
+						'reason' in param &&
+						typeof param.reason === 'string',
+				)))
 	);
 };
 

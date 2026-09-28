@@ -3,8 +3,10 @@ import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { normalizeApiError } from '@/shared/api/api-error';
 import * as draftsApi from '@/shared/api/drafts/api';
 import { draftsQueryKeys } from '@/shared/api/drafts/queries/keys';
+import { InvalidApiResponseError } from '@/shared/api/response-validation';
 import { createApiFailure } from '@/test/fixtures/api-error';
 import { createTestQueryClient } from '@/test/render-with-query';
 
@@ -33,6 +35,19 @@ describe('useSaveDraftMutation', () => {
 
 		await result.current.mutateAsync({ title: '작성 중인 글', content: [] });
 
+		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: draftsQueryKeys.all });
+	});
+
+	it('응답 확인에 실패하면 저장 여부 확인을 위해 목록을 다시 조회한다', async () => {
+		const queryClient = createTestQueryClient();
+		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+		const error = normalizeApiError(new InvalidApiResponseError('save draft'));
+		vi.spyOn(draftsApi, 'saveDraft').mockRejectedValue(error);
+		const { result } = renderHook(() => useSaveDraftMutation(), {
+			wrapper: ({ children }) => createElement(QueryClientProvider, { client: queryClient }, children),
+		});
+
+		await expect(result.current.mutateAsync({ title: '작성 중인 글', content: [] })).rejects.toBe(error);
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: draftsQueryKeys.all });
 	});
 	it.each([

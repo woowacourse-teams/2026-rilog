@@ -98,6 +98,27 @@ describe('normalizeApiError', () => {
 			expect(error.response.status).toBe(502);
 		}
 	});
+
+	it('invalidParams의 중첩 필드가 손상되면 필드 오류로 분류하지 않는다', async () => {
+		const client = ky.create({
+			fetch: vi.fn().mockResolvedValue(
+				Response.json(
+					{
+						status: 400,
+						error: 'BAD_REQUEST',
+						errorCode: API_ERROR_CODES.REQUEST_VALIDATION_FAILED,
+						message: '요청 값 검증에 실패했습니다.',
+						invalidParams: [{ name: 'slug' }],
+					},
+					{ status: 400 },
+				),
+			),
+		});
+
+		const error = await client.get('https://api.rilog.test/posts').catch(normalizeApiError);
+
+		expect(error).toMatchObject({ type: 'http' });
+	});
 });
 
 describe('getFieldErrors', () => {

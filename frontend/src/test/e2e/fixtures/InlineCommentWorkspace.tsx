@@ -4,7 +4,10 @@ import { createRoot } from 'react-dom/client';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import PostDetailCommentsWorkspace from '@/widgets/post-detail/PostDetailCommentsWorkspace';
 
-createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root');
+if (root === null) throw new Error('인라인 댓글 브라우저 fixture 루트가 없습니다.');
+
+createRoot(root).render(
 	<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
 		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
 			<PostDetailCommentsWorkspace

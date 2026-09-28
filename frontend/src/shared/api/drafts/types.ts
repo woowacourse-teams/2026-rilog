@@ -39,7 +39,7 @@ export type DraftStatusResponse = 'PUBLISHED' | 'DRAFT';
 export interface DraftDetailResponse {
 	draftId: number;
 	title: string;
-	content: unknown;
+	content: Block[];
 	status: DraftStatusResponse;
 	publishedAt: string;
 }

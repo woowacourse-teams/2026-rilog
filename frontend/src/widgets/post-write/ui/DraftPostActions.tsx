@@ -61,6 +61,11 @@ export default function DraftPostActions({
 				}
 				onPublish={onPublish}
 			/>
+			{drafts.saveError && (
+				<p className="mt-2 text-danger-text" role="alert">
+					{drafts.saveError}
+				</p>
+			)}
 
 			<DraftListModal
 				open={drafts.isListModalOpen}
