@@ -44,7 +44,7 @@ class RefreshTokenRotationServiceTest {
             Instant.parse("2026-08-13T00:00:00Z"),
             ZoneOffset.UTC
     );
-    private static final Duration EXPIRATION = Duration.ofDays(14);
+    private static final Duration EXPIRATION = Duration.ofSeconds(30);
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 8, 13, 0, 0);
 
     @Test
@@ -104,23 +104,34 @@ class RefreshTokenRotationServiceTest {
     }
 
     @Test
-    @DisplayName("만료된 Refresh Session은 거부한다")
-    void rotateRejectsExpiredSession() {
+    @DisplayName("발급한 Refresh Token은 설정한 시간이 지나면 거부한다")
+    void issuedTokenExpiresAfterConfiguredDuration() {
         // given
-        RefreshSession expiredSession = RefreshSession.create(1L, "old-hash", NOW.minusSeconds(1));
         RefreshSessionStore refreshSessionStore = mock(RefreshSessionStore.class);
+        RefreshTokenHasher refreshTokenHasher = new MappingRefreshTokenHasher();
+        RefreshTokenProvider refreshTokenProvider = new RefreshTokenProvider(
+                new FixedRefreshTokenGenerator("old-refresh-token"),
+                refreshTokenHasher,
+                refreshSessionStore,
+                RefreshTokenProperties.of(EXPIRATION, "refresh_token", "/v1/auth", false, "Lax"),
+                CLOCK
+        );
+        RefreshToken token = refreshTokenProvider.issue(completedUser());
+        ArgumentCaptor<RefreshSession> sessionCaptor = ArgumentCaptor.forClass(RefreshSession.class);
+        verify(refreshSessionStore).save(sessionCaptor.capture(), eq(EXPIRATION));
         when(refreshSessionStore.consume("old-hash"))
-                .thenReturn(Optional.of(expiredSession));
+                .thenReturn(Optional.of(sessionCaptor.getValue()));
         UserRepository userRepository = mock(UserRepository.class);
         RefreshTokenRotationService rotationService = rotationService(
                 refreshSessionStore,
                 userRepository,
-                new MappingRefreshTokenHasher(),
-                new FixedRefreshTokenGenerator("new-refresh-token")
+                refreshTokenHasher,
+                new FixedRefreshTokenGenerator("new-refresh-token"),
+                Clock.offset(CLOCK, EXPIRATION.plusSeconds(1))
         );
 
         // when - then
-        assertThatThrownBy(() -> rotationService.rotate(RefreshToken.of("old-refresh-token")))
+        assertThatThrownBy(() -> rotationService.rotate(token))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.EXPIRED_REFRESH_TOKEN);
@@ -202,12 +213,22 @@ class RefreshTokenRotationServiceTest {
             RefreshTokenHasher refreshTokenHasher,
             RefreshTokenGenerator refreshTokenGenerator
     ) {
+        return rotationService(refreshSessionStore, userRepository, refreshTokenHasher, refreshTokenGenerator, CLOCK);
+    }
+
+    private RefreshTokenRotationService rotationService(
+            RefreshSessionStore refreshSessionStore,
+            UserRepository userRepository,
+            RefreshTokenHasher refreshTokenHasher,
+            RefreshTokenGenerator refreshTokenGenerator,
+            Clock clock
+    ) {
         RefreshTokenProvider refreshTokenProvider = new RefreshTokenProvider(
                 refreshTokenGenerator,
                 refreshTokenHasher,
                 refreshSessionStore,
                 RefreshTokenProperties.of(EXPIRATION, "refresh_token", "/v1/auth", false, "Lax"),
-                CLOCK
+                clock
         );
         AuthTokenPairIssuer authTokenPairIssuer = new AuthTokenPairIssuer(
                 new FixedAccessTokenProvider(),
@@ -218,7 +239,7 @@ class RefreshTokenRotationServiceTest {
                 refreshSessionStore,
                 userRepository,
                 authTokenPairIssuer,
-                CLOCK
+                clock
         );
     }
 

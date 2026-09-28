@@ -43,7 +43,7 @@ auth:
     expiration: ${ACCESS_TOKEN_EXPIRATION:15m}
   onboarding-token:
     secret: ${ONBOARDING_TOKEN_SECRET:local-development-onboarding-token-secret-change-me}
-    expiration: ${ONBOARDING_TOKEN_EXPIRATION:10m}
+    expiration: ${ONBOARDING_TOKEN_EXPIRATION:24h}
   refresh-token:
     expiration: ${REFRESH_TOKEN_EXPIRATION:14d}
     cookie-name: refresh_token

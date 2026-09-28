@@ -29,7 +29,7 @@ class JwtAccessTokenProviderTest {
 
     private static final Instant NOW = Instant.parse("2026-08-13T00:00:00Z");
     private static final String SECRET = "test-access-token-secret-over-32-bytes";
-    private static final Duration EXPIRATION = Duration.ofMinutes(15);
+    private static final Duration EXPIRATION = Duration.ofSeconds(30);
 
     @Test
     @DisplayName("Access Token은 userId, role, slug, tokenType, iat, exp Claim을 포함하고 다시 파싱된다")
@@ -82,21 +82,15 @@ class JwtAccessTokenProviderTest {
     }
 
     @Test
-    @DisplayName("만료된 Access Token은 거부한다")
-    void parseRejectsExpiredToken() {
+    @DisplayName("발급한 Access Token은 설정한 시간이 지나면 거부한다")
+    void issuedTokenExpiresAfterConfiguredDuration() {
         // given
-        String expiredToken = createToken(
-                SECRET,
-                1L,
-                GlobalRole.USER.name(),
-                "jinriro",
-                NOW.minus(EXPIRATION).minusSeconds(1),
-                NOW.minusSeconds(1),
-                "ACCESS"
-        );
+        AccessToken token = provider(SECRET, NOW).issue(1L, GlobalRole.USER, "jinriro");
 
         // when - then
-        assertThatThrownBy(() -> provider(SECRET, NOW).parse(expiredToken))
+        assertThat(provider(SECRET, NOW.plus(EXPIRATION).minusSeconds(1)).parse(token.value()).userId())
+                .isEqualTo(1L);
+        assertThatThrownBy(() -> provider(SECRET, NOW.plus(EXPIRATION).plusSeconds(1)).parse(token.value()))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.EXPIRED_ACCESS_TOKEN);

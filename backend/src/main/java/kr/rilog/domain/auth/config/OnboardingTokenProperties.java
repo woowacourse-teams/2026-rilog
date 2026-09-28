@@ -12,7 +12,7 @@ public record OnboardingTokenProperties(
 
     public static OnboardingTokenProperties of(String secret, Duration expiration) {
         if (expiration == null) {
-            return new OnboardingTokenProperties(secret, Duration.ofMinutes(10));
+            return new OnboardingTokenProperties(secret, Duration.ofDays(1));
         }
         return new OnboardingTokenProperties(secret, expiration);
     }

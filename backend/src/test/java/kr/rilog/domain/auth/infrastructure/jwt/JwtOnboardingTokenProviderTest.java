@@ -28,7 +28,7 @@ class JwtOnboardingTokenProviderTest {
 
     private static final Instant NOW = Instant.parse("2026-08-13T00:00:00Z");
     private static final String SECRET = "test-onboarding-token-secret-over-32-bytes";
-    private static final Duration EXPIRATION = Duration.ofMinutes(10);
+    private static final Duration EXPIRATION = Duration.ofSeconds(30);
 
     @Test
     @DisplayName("Onboarding Token은 userId, tokenType, iat, exp Claim을 포함하고 다시 파싱된다")
@@ -76,19 +76,15 @@ class JwtOnboardingTokenProviderTest {
     }
 
     @Test
-    @DisplayName("만료된 Onboarding Token은 거부한다")
-    void parseRejectsExpiredToken() {
+    @DisplayName("발급한 Onboarding Token은 설정한 시간이 지나면 거부한다")
+    void issuedTokenExpiresAfterConfiguredDuration() {
         // given
-        String expiredToken = createToken(
-                SECRET,
-                1L,
-                "ONBOARDING",
-                NOW.minus(EXPIRATION).minusSeconds(1),
-                NOW.minusSeconds(1)
-        );
+        OnboardingToken token = provider(SECRET, NOW).issue(1L);
 
         // when - then
-        assertThatThrownBy(() -> provider(SECRET, NOW).parse(expiredToken))
+        assertThat(provider(SECRET, NOW.plus(EXPIRATION).minusSeconds(1)).parse(token.value()).userId())
+                .isEqualTo(1L);
+        assertThatThrownBy(() -> provider(SECRET, NOW.plus(EXPIRATION).plusSeconds(1)).parse(token.value()))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorInformation")
                 .isEqualTo(AuthErrorInformation.EXPIRED_ONBOARDING_TOKEN);
