@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { restoreInlineCommentRange } from './inline-comment-range';
 import { createInlineCommentSelectionDraft } from './inline-comment-selection';
 
 const renderArticle = (html: string): HTMLElement => {
@@ -93,6 +94,24 @@ describe('createInlineCommentSelectionDraft', () => {
 			endOffset: 5,
 			selectedText: '😀댓글',
 		});
+	});
+
+	it('Shift+Enter로 생긴 br을 줄바꿈 문자로 포함해 선택과 복원을 계산한다', () => {
+		const article = renderArticle(
+			'<p data-inline-comment-root data-inline-comment-block-id="paragraph">첫 줄<br>둘째 줄</p>',
+		);
+		const root = article.querySelector<HTMLElement>('[data-inline-comment-root]')!;
+		const firstLine = root.firstChild!;
+		const secondLine = root.lastChild!;
+		const draft = createInlineCommentSelectionDraft(selectRange(firstLine, 2, secondLine, 3), article);
+
+		expect(draft).toMatchObject({ startOffset: 2, endOffset: 7, selectedText: '줄\n둘째 ' });
+		const restored = restoreInlineCommentRange(root, { startOffset: 2, endOffset: 7 });
+		expect(restored).not.toBeNull();
+		expect(restored?.startContainer).toBe(firstLine);
+		expect(restored?.startOffset).toBe(2);
+		expect(restored?.endContainer).toBe(secondLine);
+		expect(restored?.endOffset).toBe(3);
 	});
 
 	it('서로 다른 block root를 가로지른 선택은 거부한다', () => {

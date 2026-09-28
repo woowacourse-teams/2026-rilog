@@ -23,22 +23,25 @@ export const getInlineCommentTextOffset = (root: HTMLElement, container: Node, o
 		const range = root.ownerDocument.createRange();
 		range.selectNodeContents(root);
 		range.setEnd(container, offset);
-		return range.toString().length;
+		return getInlineCommentText(range.cloneContents()).length;
 	} catch {
 		return null;
 	}
 };
 
 export const getInlineCommentRootText = (root: HTMLElement): string => {
-	const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-	let text = '';
-	let currentNode = walker.nextNode();
+	return getInlineCommentText(root);
+};
 
+const getInlineCommentText = (root: Node): string => {
+	let text = '';
+	const walker = root.ownerDocument!.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+	let currentNode = walker.nextNode();
 	while (currentNode !== null) {
-		text += currentNode.nodeValue ?? '';
+		if (currentNode.nodeType === Node.TEXT_NODE) text += currentNode.nodeValue ?? '';
+		else if ((currentNode as Element).tagName === 'BR') text += '\n';
 		currentNode = walker.nextNode();
 	}
-
 	return text;
 };
 

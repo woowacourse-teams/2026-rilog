@@ -36,6 +36,9 @@ const renderFixture = async (page: Page) => {
 			<div class="bn-block-outer" data-id="paragraph">
 				<p data-inline-comment-root data-inline-comment-block-id="paragraph">앞 😀 <code>inlineCode</code> 뒤쪽 텍스트</p>
 			</div>
+			<div class="bn-block-outer" data-id="soft-break">
+				<p data-inline-comment-root data-inline-comment-block-id="soft-break">첫 줄<br>둘째 줄</p>
+			</div>
 			<div class="bn-block-outer" data-id="code" data-content-type="codeBlock">
 				<code data-inline-comment-root data-inline-comment-block-id="code">const value = 1;</code>
 			</div>
@@ -97,6 +100,33 @@ test('인라인 코드를 가로질러 드래그하면 UTF-16 선택과 복원 �
 	expect(result.restoredText).toBe(result.text);
 	expect(result.length).toBe(result.text.length);
 	expect(result.rects).toBeGreaterThan(0);
+});
+
+test('Shift+Enter 줄바꿈을 포함한 선택은 같은 인용문과 범위로 복원된다', async ({ page }) => {
+	const result = await page.evaluate(() => {
+		const article = document.querySelector('article')!;
+		const root = document.querySelector<HTMLElement>('[data-inline-comment-block-id="soft-break"]')!;
+		const firstLine = root.firstChild!;
+		const secondLine = root.lastChild!;
+		const range = document.createRange();
+		range.setStart(firstLine, 2);
+		range.setEnd(secondLine, 3);
+		const selection = window.getSelection()!;
+		selection.removeAllRanges();
+		selection.addRange(range);
+		const draft = window.inlineCommentFoundation.createInlineCommentSelectionDraft(selection, article)!;
+		const restored = window.inlineCommentFoundation.restoreInlineCommentRange(root, draft)!;
+		return {
+			selectedText: draft.selectedText,
+			offsets: [draft.startOffset, draft.endOffset],
+			restoredStart: [restored.startContainer.textContent, restored.startOffset],
+			restoredEnd: [restored.endContainer.textContent, restored.endOffset],
+		};
+	});
+	expect(result.selectedText).toBe('줄\n둘째 ');
+	expect(result.offsets).toEqual([2, 7]);
+	expect(result.restoredStart).toEqual(['첫 줄', 2]);
+	expect(result.restoredEnd).toEqual(['둘째 줄', 3]);
 });
 
 test('실제 캐럿 좌표는 인라인 코드의 offset으로 변환되고 코드 블록 선택은 차단된다', async ({ page }) => {
