@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { DraftPostItem } from '../model/post-draft';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { InvalidApiResponseError } from '@/shared/api/response-validation';
+
 import { usePostDrafts } from './use-post-drafts';
 
 const INITIAL_POSTS: readonly DraftPostItem[] = [
@@ -54,6 +57,18 @@ describe('usePostDrafts', () => {
 			await Promise.resolve();
 		});
 		expect(result.current.isSaving).toBe(false);
+	});
+
+	it('저장 응답 확인에 실패하면 목록 확인을 안내하고 입력 문서를 유지한다', async () => {
+		const document = { title: '제목', blocks: [] };
+		const onSave = vi.fn().mockRejectedValue(normalizeApiError(new InvalidApiResponseError('save draft')));
+		const { result } = renderHook(() => usePostDrafts({ prepareDocument: () => document, onSave, onDelete: vi.fn() }));
+
+		await act(() => result.current.save());
+
+		expect(result.current.saveError).toContain('이미 저장됐을 수 있으니 임시 저장 목록을 확인');
+		expect(result.current.isSaving).toBe(false);
+		expect(onSave).toHaveBeenCalledExactlyOnceWith(document);
 	});
 
 	it('목록 모달을 열고 닫는다', () => {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import Button from '@/shared/ui/button/Button';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import Textarea from '@/shared/ui/textarea/Textarea';
@@ -23,6 +24,7 @@ export default function InlineCommentEditForm({
 	onSaved,
 }: InlineCommentEditFormProps) {
 	const mutation = useUpdatePostCommentAnchorMutation(postId, commentAnchorId);
+	const isResponseUnconfirmed = isInvalidApiResponseError(mutation.error);
 	const [isErrorOpen, setIsErrorOpen] = useState(false);
 	const [value, setValue] = useState(content);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -75,8 +77,8 @@ export default function InlineCommentEditForm({
 			</div>
 			<AlertModal
 				open={isErrorOpen}
-				title="댓글을 수정하지 못했습니다."
-				description="잠시 후 다시 시도해 주세요."
+				title={isResponseUnconfirmed ? '수정 결과를 확인하지 못했습니다.' : '댓글을 수정하지 못했습니다.'}
+				description={isResponseUnconfirmed ? '댓글 목록에서 수정 여부를 확인해 주세요.' : '잠시 후 다시 시도해 주세요.'}
 				onAction={() => setIsErrorOpen(false)}
 				onClose={() => setIsErrorOpen(false)}
 			/>

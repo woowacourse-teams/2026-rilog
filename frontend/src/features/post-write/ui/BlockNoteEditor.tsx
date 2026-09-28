@@ -1,16 +1,12 @@
 'use client';
 
-import { codeBlockOptions } from '@blocknote/code-block';
-import { BlockNoteSchema, createCodeBlockSpec, createHeadingBlockSpec } from '@blocknote/core';
 import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
 import { getDefaultReactSlashMenuItems, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
-import { createHighlighter } from 'shiki';
 
 import type { PostEditorProps } from '../model/post-editor';
-import type { CodeBlockOptions } from '@blocknote/core';
 import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
@@ -23,25 +19,13 @@ import {
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
+import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import '../styles/blocknote-theme.css';
 
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
 
-const LIGHT_CODE_BLOCK_OPTIONS = {
-	...codeBlockOptions,
-	defaultLanguage: 'text',
-	createHighlighter: () => createHighlighter({ langs: [], themes: ['github-light'] }),
-} satisfies CodeBlockOptions;
-
 const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-
-const POST_WRITE_SCHEMA = BlockNoteSchema.create().extend({
-	blockSpecs: {
-		codeBlock: createCodeBlockSpec(LIGHT_CODE_BLOCK_OPTIONS),
-		heading: createHeadingBlockSpec({ levels: [1, 2, 3, 4] }),
-	},
-});
 
 const isExplicitMarkdownLanguage = (block: { content: unknown } | undefined): boolean => {
 	if (block === undefined || !Array.isArray(block.content)) {
@@ -53,7 +37,6 @@ const isExplicitMarkdownLanguage = (block: { content: unknown } | undefined): bo
 		.join('');
 	return /^```\S+/.test(source);
 };
-
 const isClippingElement = (element: Element): boolean => {
 	const ownerWindow = element.ownerDocument.defaultView ?? window;
 	const { overflow, overflowX, overflowY } = ownerWindow.getComputedStyle(element);

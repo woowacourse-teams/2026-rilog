@@ -9,7 +9,11 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('myInfoQueryOptions', () => {
 	it('내 정보 key와 요청 취소 signal을 API에 전달한다', async () => {
-		const readMyInfo = vi.spyOn(usersApi, 'readMyInfo').mockResolvedValue({ status: 200, message: 'OK' });
+		const readMyInfo = vi.spyOn(usersApi, 'readMyInfo').mockResolvedValue({
+			status: 200,
+			message: 'OK',
+			data: { id: 1, slug: 'rilog', nickname: '리로그', profileImageUrl: null },
+		});
 		const signal = new AbortController().signal;
 		const options = myInfoQueryOptions();
 

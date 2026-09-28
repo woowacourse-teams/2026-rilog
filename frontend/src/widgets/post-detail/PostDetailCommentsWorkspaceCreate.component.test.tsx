@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
 import {
@@ -13,6 +14,7 @@ import {
 	readPostCommentAnchors,
 	readPostCommentAnchorsSidebar,
 } from '@/shared/api/posts/api';
+import { InvalidApiResponseError } from '@/shared/api/response-validation';
 import { createApiFailure } from '@/test/fixtures/api-error';
 import { renderWithQuery } from '@/test/render-with-query';
 
@@ -124,7 +126,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 const render = (ui: ReactNode) =>
 	renderWithQuery(
 		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
-			{ui}
+			<LOGIN_MODAL_CONTEXT.Provider value={vi.fn()}>{ui}</LOGIN_MODAL_CONTEXT.Provider>
 		</AUTH_CONTEXT.Provider>,
 	);
 
@@ -242,6 +244,18 @@ describe('PostDetailCommentsWorkspace', () => {
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 
+	it('기존 스레드 작성 결과를 확인할 수 없으면 초안을 보존하고 목록 확인을 안내한다', async () => {
+		const user = userEvent.setup();
+		await renderWorkspace();
+		vi.mocked(addPostCommentAnchor).mockRejectedValue(new InvalidApiResponseError('add comment'));
+		await user.click(screen.getByRole('button', { name: '기존 인용 댓글 입력' }));
+		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '확인할 댓글');
+		await user.click(screen.getByRole('button', { name: '작성' }));
+		expect(await screen.findByRole('alert')).toHaveTextContent('댓글 목록에서 등록 여부를 확인');
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('확인할 댓글');
+		expect(addPostCommentAnchor).toHaveBeenCalledTimes(1);
+	});
+
 	it('선택 범위가 만료되면 다시 선택하도록 안내하고 초안을 보존한다', async () => {
 		const user = userEvent.setup();
 		await renderWorkspace();
@@ -309,6 +323,18 @@ describe('PostDetailCommentsWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('보존할 댓글');
 		await user.click(screen.getByRole('button', { name: '작성' }));
 		await waitFor(() => expect(createPostCommentAnchor).toHaveBeenCalledTimes(2));
+	});
+
+	it('새 인용 작성 결과를 확인할 수 없으면 초안을 보존하고 목록 확인을 안내한다', async () => {
+		const user = userEvent.setup();
+		await renderWorkspace();
+		vi.mocked(createPostCommentAnchor).mockRejectedValue(new InvalidApiResponseError('create comment'));
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '확인할 댓글');
+		await user.click(screen.getByRole('button', { name: '작성' }));
+		expect(await screen.findByRole('alert')).toHaveTextContent('댓글 목록에서 등록 여부를 확인');
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('확인할 댓글');
+		expect(createPostCommentAnchor).toHaveBeenCalledTimes(1);
 	});
 
 	it('기존 스레드의 작성 버튼은 새 스레드 API를 호출하지 않는다', async () => {

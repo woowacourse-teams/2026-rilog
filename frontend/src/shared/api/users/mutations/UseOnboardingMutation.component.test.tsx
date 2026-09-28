@@ -28,7 +28,7 @@ describe('useOnboardingMutation', () => {
 			}
 			const readMyInfo = vi.spyOn(usersApi, 'readMyInfo');
 			vi.spyOn(usersApi, 'completeOnboarding').mockResolvedValue({
-				data: { status: 200, message: '가입 완료' },
+				data: { status: 200, message: '가입 완료', data: null },
 				accessToken: 'access-token',
 			});
 			function Wrapper({ children }: { children: ReactNode }) {

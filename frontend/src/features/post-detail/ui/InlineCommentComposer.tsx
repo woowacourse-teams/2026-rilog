@@ -8,6 +8,7 @@ import type { RefObject } from 'react';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { isNormalizedApiError } from '@/shared/api/api-error';
 import { useCreatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-create-comment-anchor-mutation';
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 
 import { useInlineCommentDraft } from '../hooks/use-inline-comment-draft';
 
@@ -31,6 +32,7 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 		isNormalizedApiError(mutation.error) &&
 		(mutation.error.type === 'api' || mutation.error.type === 'http') &&
 		mutation.error.response.status === 409;
+	const isResponseUnconfirmed = isInvalidApiResponseError(mutation.error);
 	const isMounted = useRef(true);
 	const isSubmitting = useRef(false);
 	useEffect(() => {
@@ -72,9 +74,11 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 					)}
 					{mutation.isError && (
 						<p role="alert" className="mt-2 text-label-2 text-danger-text">
-							{isStaleSelection
-								? '본문이 변경되어 댓글을 등록하지 못했습니다. 본문을 새로 확인하고 인용할 부분을 다시 선택해 주세요.'
-								: '댓글을 등록하지 못했습니다. 입력한 내용을 확인하고 다시 시도해 주세요.'}
+							{isResponseUnconfirmed
+								? '요청 결과를 확인하지 못했습니다. 댓글 목록에서 등록 여부를 확인해 주세요.'
+								: isStaleSelection
+									? '본문이 변경되어 댓글을 등록하지 못했습니다. 본문을 새로 확인하고 인용할 부분을 다시 선택해 주세요.'
+									: '댓글을 등록하지 못했습니다. 입력한 내용을 확인하고 다시 시도해 주세요.'}
 						</p>
 					)}
 					{mutation.isSuccess && (

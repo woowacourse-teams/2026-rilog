@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 
 import { deletePostCommentAnchor } from '../api';
@@ -13,10 +14,14 @@ export const useDeletePostCommentAnchorMutation = (postId: number, commentAnchor
 		mutationFn: () => deletePostCommentAnchor(postId, commentAnchorId),
 		retry: false,
 		meta: { errorTracking: 'local' },
-		onError: (error) =>
+		onError: async (error) => {
 			apiErrorReporter.report(error, {
 				operation: 'inline-comment.delete',
-			}),
+			});
+			if (isInvalidApiResponseError(error)) {
+				await queryClient.invalidateQueries({ queryKey: postsQueryKeys.commentAnchorLists(postId) });
+			}
+		},
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: postsQueryKeys.commentAnchorLists(postId) }),
 	});
 };

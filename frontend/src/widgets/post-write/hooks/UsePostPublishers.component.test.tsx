@@ -8,8 +8,10 @@ import type { PropsWithChildren } from 'react';
 
 import { getAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
+import { normalizeApiError } from '@/shared/api/api-error';
 import * as draftsApi from '@/shared/api/drafts/api';
 import * as postsApi from '@/shared/api/posts/api';
+import { InvalidApiResponseError } from '@/shared/api/response-validation';
 import { createTestQueryClient } from '@/test/render-with-query';
 
 import { usePublishNewPost, usePublishPostDraft, useUpdatePublishedPost } from './use-post-publishers';
@@ -86,5 +88,16 @@ describe('post publishers', () => {
 		const error = await result.current(command).catch((cause: unknown) => cause);
 
 		expect(getAnalyticsFailureStage(error)).toBe('publish_response');
+	});
+
+	it('쓰기 응답 확인 실패는 저장 여부가 불확실하다고 안내한다', async () => {
+		vi.spyOn(postsApi, 'publishPost').mockRejectedValue(normalizeApiError(new InvalidApiResponseError('publish post')));
+		const { result } = renderHook(() => usePublishNewPost(), { wrapper: createWrapper() });
+
+		const error: unknown = await result.current(command).catch((failure: unknown) => failure);
+
+		expect(error).toBeInstanceOf(Error);
+		expect(getAnalyticsFailureStage(error)).toBe('publish_response');
+		expect((error as Error).message).toContain('이미 저장됐을 수 있으니 목록에서 결과를 확인');
 	});
 });

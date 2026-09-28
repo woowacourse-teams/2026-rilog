@@ -128,6 +128,25 @@ describe('GitHubCallbackHandler', () => {
 		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'returning' });
 	});
 
+	it.each([
+		['/feeds?tab=latest', '/feeds?tab=latest'],
+		['https://example.com', '/'],
+		['//example.com', '/'],
+		['javascript:alert(1)', '/'],
+		['/\\example.com', '/'],
+	])('저장된 이동 경로 %s는 안전한 앱 내부 경로 %s로 이동한다', async (stored, expected) => {
+		localStorage.setItem('postLoginRedirect', stored);
+		handleGitHubCallbackMock.mockResolvedValue({
+			data: { status: 200, message: 'success', data: { onboardingStatus: 'COMPLETED', redirectUrl: '/' } },
+			accessToken: 'access-token',
+		});
+
+		render(<GitHubCallbackHandler />);
+
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith(expected));
+		expect(localStorage.getItem('postLoginRedirect')).toBeNull();
+	});
+
 	it.each(['OAUTH_CALLBACK_PARAMETER_MISSING', 'GITHUB_ACCESS_TOKEN_EXCHANGE_FAILED', 'GITHUB_USER_FETCH_FAILED'])(
 		'%s는 수집하고 홈으로 복구한다',
 		async (code) => {

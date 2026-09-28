@@ -89,6 +89,11 @@
 	cursor: pointer;
 }
 
+.post-detail-body [data-inline-comment-root]::selection {
+	background-color: color-mix(in oklab, var(--focus-ring) 12%, transparent);
+	color: inherit;
+}
+
 .post-detail-body [data-inline-comment-highlight] {
 	position: absolute;
 	z-index: calc(1 + var(--inline-comment-anchor-order));

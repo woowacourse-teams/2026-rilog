@@ -25,25 +25,17 @@ describe('InlineCommentInput', () => {
 		{ isAuthenticated: false, isInitialized: false, isOnboarding: false },
 		{ isAuthenticated: true, isInitialized: false, isOnboarding: false },
 		{ isAuthenticated: false, isInitialized: true, isOnboarding: true },
-	])('회원 인증이 완료되지 않으면 입력과 작성을 막는다: %j', async (auth) => {
-		const user = userEvent.setup();
+	])('회원 인증이 완료되지 않으면 댓글 입력을 렌더링하지 않는다: %j', (auth) => {
 		render(renderInput(auth));
-		const textarea = screen.getByRole('textbox', { name: '댓글 입력' });
-
-		expect(textarea).toBeDisabled();
-		expect(textarea).toHaveAttribute('placeholder', '로그인하고 댓글을 남겨보세요.');
-		expect(screen.getByRole('button', { name: '작성' })).toBeDisabled();
-		await user.type(textarea, '댓글');
-		expect(textarea).toHaveValue('');
-		await user.tab();
-		expect(textarea).not.toHaveFocus();
-		expect(screen.getByRole('button', { name: '작성' })).not.toHaveFocus();
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '작성' })).not.toBeInTheDocument();
 	});
 
 	it('로그인하면 입력을 허용하고 작성 중 로그아웃하면 입력과 작성을 막는다', async () => {
 		const user = userEvent.setup();
 		const guest = { isAuthenticated: false, isInitialized: true, isOnboarding: false };
 		const { rerender } = render(renderInput(guest));
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 
 		rerender(renderInput({ ...guest, isAuthenticated: true }));
 		const textarea = screen.getByRole('textbox', { name: '댓글 입력' });
@@ -56,7 +48,7 @@ describe('InlineCommentInput', () => {
 		expect(button).toBeEnabled();
 
 		rerender(renderInput(guest));
-		expect(textarea).toBeDisabled();
-		expect(button).toBeDisabled();
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: '작성' })).not.toBeInTheDocument();
 	});
 });

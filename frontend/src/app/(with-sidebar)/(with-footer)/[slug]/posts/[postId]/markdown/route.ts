@@ -1,7 +1,6 @@
-import type { Block } from '@blocknote/core';
-
 import { blocksToMarkdown } from '@/domains/post/lib/blocks-to-markdown';
-import type { PostDetailResponse } from '@/shared/api/posts/types';
+import { isBlockNoteDocument } from '@/domains/post/lib/validate-blocknote-document';
+import { isRecord } from '@/shared/api/response-validation';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
 import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
@@ -36,18 +35,22 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ slu
 			return new Response('Markdown unavailable', { status: 503 });
 		}
 
-		const body = (await res.json()) as { data?: PostDetailResponse };
-
+		const body: unknown = await res.json();
+		if (!isRecord(body) || !isRecord(body.data)) {
+			return new Response('Markdown unavailable', { status: 503 });
+		}
 		const data = body.data;
 		if (
-			!data ||
 			typeof data.title !== 'string' ||
-			!Array.isArray(data.content) ||
+			!isBlockNoteDocument(data.content) ||
 			typeof data.publishedAt !== 'string' ||
-			typeof data.owner?.slug !== 'string' ||
-			typeof data.author !== 'object' ||
-			data.author === null ||
-			Array.isArray(data.author)
+			!isRecord(data.owner) ||
+			typeof data.owner.slug !== 'string' ||
+			!isRecord(data.author) ||
+			(data.author.nickname !== undefined &&
+				data.author.nickname !== null &&
+				typeof data.author.nickname !== 'string') ||
+			(data.category !== undefined && data.category !== null && typeof data.category !== 'string')
 		) {
 			return new Response('Markdown unavailable', { status: 503 });
 		}
@@ -69,7 +72,7 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ slu
 			'',
 		].join('\n');
 
-		const markdown = await blocksToMarkdown(data.content as Block[]);
+		const markdown = await blocksToMarkdown(data.content);
 		const text = `${frontmatter}${markdown}\n`;
 
 		return new Response(text, {

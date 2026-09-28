@@ -68,7 +68,7 @@ interface PostViewerPermissionsResponse {
 
 export interface PostDetailResponse {
 	title: string;
-	content: unknown;
+	content: Block[];
 	publishedAt: string;
 	thumbnailImageUrl: string | null;
 	category: PostCategoryResponse;

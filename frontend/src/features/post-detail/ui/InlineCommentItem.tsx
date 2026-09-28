@@ -5,10 +5,12 @@ import { useRef, useState } from 'react';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
 import { useDeletePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-delete-comment-anchor-mutation';
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+import { parseApiUtcDate, toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
 import InlineCommentEditForm from './InlineCommentEditForm';
 
@@ -24,11 +26,12 @@ const COMMENT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
 	hour: '2-digit',
 	minute: '2-digit',
 	hourCycle: 'h23',
+	timeZone: 'Asia/Seoul',
 });
 
 const formatCommentDate = (createdAt: string) => {
-	const date = new Date(createdAt);
-	if (Number.isNaN(date.getTime())) return createdAt;
+	const date = parseApiUtcDate(createdAt);
+	if (date === null) return createdAt;
 
 	const dateParts = Object.fromEntries(
 		COMMENT_DATE_FORMATTER.formatToParts(date).map(({ type, value }) => [type, value]),
@@ -43,6 +46,7 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 	const [isEditing, setIsEditing] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const deleteMutation = useDeletePostCommentAnchorMutation(postId, comment.commentId);
+	const isDeleteResponseUnconfirmed = isInvalidApiResponseError(deleteMutation.error);
 	const [isDeleteErrorOpen, setIsDeleteErrorOpen] = useState(false);
 	const isDeleting = useRef(false);
 	const handleDelete = async () => {
@@ -97,7 +101,7 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 				</div>
 				<div className="flex flex-wrap items-center gap-1 text-label-1 text-text-placeholder">
 					<span>
-						<time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+						<time dateTime={toApiUtcISOString(comment.createdAt)}>{formatCommentDate(comment.createdAt)}</time>
 					</span>
 					{comment.isEdited && (
 						<span className="flex items-center gap-1">
@@ -166,8 +170,10 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 			)}
 			<AlertModal
 				open={isDeleteErrorOpen}
-				title="댓글을 삭제하지 못했습니다."
-				description="잠시 후 다시 시도해 주세요."
+				title={isDeleteResponseUnconfirmed ? '삭제 결과를 확인하지 못했습니다.' : '댓글을 삭제하지 못했습니다.'}
+				description={
+					isDeleteResponseUnconfirmed ? '댓글 목록에서 삭제 여부를 확인해 주세요.' : '잠시 후 다시 시도해 주세요.'
+				}
 				onAction={() => setIsDeleteErrorOpen(false)}
 				onClose={() => setIsDeleteErrorOpen(false)}
 			/>

@@ -6,7 +6,15 @@ const createPostDetailResponse = (ownerSlug = 'actual', title = '게시글 제�
 	Response.json({
 		data: {
 			title,
-			content: [{ type: 'paragraph', content: [{ type: 'text', text: '본문' }] }],
+			content: [
+				{
+					id: 'paragraph-1',
+					type: 'paragraph',
+					props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
+					content: [{ type: 'text', text: '본문', styles: {} }],
+					children: [],
+				},
+			],
 			author: { nickname: '작성자' },
 			owner: { slug: ownerSlug },
 			category: '기술',
@@ -122,6 +130,30 @@ describe('게시글 Markdown 표현', () => {
 	it('잘못된 성공 응답은 503을 반환한다', async () => {
 		vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.rilog.test');
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ data: { content: '잘못된 본문' } })));
+
+		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
+			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+		});
+
+		expect(response.status).toBe(503);
+	});
+
+	it('배열 안에 손상된 본문이 있으면 Markdown을 생성하지 않는다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.rilog.test');
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					data: {
+						title: '게시글 제목',
+						content: [{ type: 'paragraph', content: [{ text: 3 }] }],
+						publishedAt: '2026-09-01T00:00:00',
+						owner: { slug: 'actual' },
+						author: { nickname: '작성자' },
+					},
+				}),
+			),
+		);
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
 			params: Promise.resolve({ slug: '@actual', postId: '1' }),
