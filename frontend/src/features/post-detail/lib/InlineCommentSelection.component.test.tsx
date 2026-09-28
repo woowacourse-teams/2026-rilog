@@ -129,6 +129,44 @@ describe('createInlineCommentSelectionDraft', () => {
 		expect(createInlineCommentSelectionDraft(selectRange(startNode, 0, endNode, 2), article)).toBeNull();
 	});
 
+	it('세 번 클릭처럼 root 전체를 선택하면 블록 내부 텍스트로 범위를 자른다', () => {
+		const article = renderArticle(
+			'<p data-inline-comment-root data-inline-comment-block-id="block-1">문단 전체 선택</p>',
+		);
+		const root = article.querySelector<HTMLElement>('[data-inline-comment-root]')!;
+		const range = document.createRange();
+		range.selectNode(root);
+		const selection = window.getSelection()!;
+		selection.removeAllRanges();
+		selection.addRange(range);
+
+		expect(createInlineCommentSelectionDraft(selection, article)).toMatchObject({
+			blockId: 'block-1',
+			startOffset: 0,
+			endOffset: '문단 전체 선택'.length,
+			selectedText: '문단 전체 선택',
+		});
+	});
+
+	it('본문 밖에서 시작하고 끝난 드래그는 교차한 한 root 안으로 자른다', () => {
+		const article = renderArticle(
+			'<span>바깥 시작</span><p data-inline-comment-root data-inline-comment-block-id="block-1">선택할 본문</p><span>바깥 끝</span>',
+		);
+		const before = article.firstChild?.firstChild;
+		const after = article.lastChild?.firstChild;
+		if (before === null || before === undefined || after === null || after === undefined) {
+			throw new Error('본문 밖 텍스트 fixture를 찾을 수 없습니다.');
+		}
+
+		const draft = createInlineCommentSelectionDraft(selectRange(before, 0, after, 3), article);
+		expect(draft).toMatchObject({
+			blockId: 'block-1',
+			startOffset: 0,
+			endOffset: '선택할 본문'.length,
+			selectedText: '선택할 본문',
+		});
+	});
+
 	it('접힌 선택과 공백만 있는 선택을 거부한다', () => {
 		const article = renderArticle('<div data-inline-comment-root data-inline-comment-block-id="block-1">   본문</div>');
 		const textNode = article.querySelector('[data-inline-comment-root]')?.firstChild;

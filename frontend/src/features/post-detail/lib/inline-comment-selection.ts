@@ -6,12 +6,21 @@ export interface InlineCommentSelectionDraft extends InlineCommentSelectionTarge
 
 const INLINE_COMMENT_ROOT_SELECTOR = '[data-inline-comment-root][data-inline-comment-block-id]';
 
-const getBoundaryElement = (node: Node): Element | null =>
-	node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
-
-const findBoundaryRoot = (node: Node, article: HTMLElement): HTMLElement | null => {
-	const root = getBoundaryElement(node)?.closest<HTMLElement>(INLINE_COMMENT_ROOT_SELECTOR) ?? null;
-	return root !== null && article.contains(root) ? root : null;
+const clipRangeToRoot = (sourceRange: Range, root: HTMLElement): Range | null => {
+	try {
+		const rootRange = root.ownerDocument.createRange();
+		rootRange.selectNodeContents(root);
+		const clippedRange = sourceRange.cloneRange();
+		if (sourceRange.compareBoundaryPoints(Range.START_TO_START, rootRange) < 0) {
+			clippedRange.setStart(rootRange.startContainer, rootRange.startOffset);
+		}
+		if (sourceRange.compareBoundaryPoints(Range.END_TO_END, rootRange) > 0) {
+			clippedRange.setEnd(rootRange.endContainer, rootRange.endOffset);
+		}
+		return clippedRange.collapsed ? null : clippedRange;
+	} catch {
+		return null;
+	}
 };
 
 export const getInlineCommentTextOffset = (root: HTMLElement, container: Node, offset: number): number | null => {
@@ -54,40 +63,37 @@ export const createInlineCommentSelectionDraft = (
 	}
 
 	const sourceRange = selection.getRangeAt(0);
-	if (!article.contains(sourceRange.startContainer) || !article.contains(sourceRange.endContainer)) {
-		return null;
-	}
-
-	const startRoot = findBoundaryRoot(sourceRange.startContainer, article);
-	const endRoot = findBoundaryRoot(sourceRange.endContainer, article);
-	if (startRoot === null || startRoot !== endRoot) {
-		return null;
-	}
-	if (startRoot.closest('[data-content-type="codeBlock"]') !== null) {
-		return null;
-	}
-
-	const blockId = startRoot.dataset.inlineCommentBlockId;
-	if (blockId === undefined || blockId.length === 0) {
-		return null;
-	}
-
-	const startOffset = getInlineCommentTextOffset(startRoot, sourceRange.startContainer, sourceRange.startOffset);
-	const endOffset = getInlineCommentTextOffset(startRoot, sourceRange.endContainer, sourceRange.endOffset);
-	if (startOffset === null || endOffset === null || startOffset >= endOffset) {
-		return null;
-	}
-
-	const selectedText = getInlineCommentRootText(startRoot).slice(startOffset, endOffset);
-	if (selectedText.trim().length === 0) {
-		return null;
-	}
+	const roots = Array.from(article.querySelectorAll<HTMLElement>(INLINE_COMMENT_ROOT_SELECTOR));
+	const candidates = roots.flatMap((root) => {
+		if (!sourceRange.intersectsNode(root)) return [];
+		const range = clipRangeToRoot(sourceRange, root);
+		if (range === null) return [];
+		const blockId = root.dataset.inlineCommentBlockId;
+		if (blockId === undefined || blockId.length === 0) return [];
+		const startOffset = getInlineCommentTextOffset(root, range.startContainer, range.startOffset);
+		const endOffset = getInlineCommentTextOffset(root, range.endContainer, range.endOffset);
+		if (startOffset === null || endOffset === null || startOffset >= endOffset) return [];
+		const selectedText = getInlineCommentRootText(root).slice(startOffset, endOffset);
+		if (selectedText.trim().length === 0) return [];
+		return [
+			{
+				blockId,
+				startOffset,
+				endOffset,
+				selectedText,
+				range,
+				isCodeBlock: root.closest('[data-content-type="codeBlock"]') !== null,
+			},
+		];
+	});
+	if (candidates.length !== 1 || candidates[0].isCodeBlock) return null;
+	const draft = candidates[0];
 
 	return {
-		blockId,
-		startOffset,
-		endOffset,
-		selectedText,
-		range: sourceRange.cloneRange(),
+		blockId: draft.blockId,
+		startOffset: draft.startOffset,
+		endOffset: draft.endOffset,
+		selectedText: draft.selectedText,
+		range: draft.range,
 	};
 };

@@ -129,6 +129,41 @@ test('Shift+Enter 줄바꿈을 포함한 선택은 같은 인용문과 범위로
 	expect(result.restoredEnd).toEqual(['둘째 줄', 3]);
 });
 
+test('블록 경계 선택과 본문 밖에서 시작한 드래그는 본문 root 안으로 제한된다', async ({ page }) => {
+	const result = await page.evaluate(() => {
+		const article = document.querySelector<HTMLElement>('article')!;
+		const root = document.querySelector<HTMLElement>('[data-inline-comment-block-id="paragraph"]')!;
+		const tripleClickRange = document.createRange();
+		tripleClickRange.selectNode(root);
+		const selection = window.getSelection()!;
+		selection.removeAllRanges();
+		selection.addRange(tripleClickRange);
+		const tripleClickDraft = window.inlineCommentFoundation.createInlineCommentSelectionDraft(selection, article);
+
+		const outside = document.createElement('span');
+		outside.textContent = 'outside';
+		document.body.prepend(outside);
+		const outsideDragRange = document.createRange();
+		outsideDragRange.setStart(outside.firstChild!, 0);
+		outsideDragRange.setEnd(root.firstChild!, 4);
+		selection.removeAllRanges();
+		selection.addRange(outsideDragRange);
+		const outsideDragDraft = window.inlineCommentFoundation.createInlineCommentSelectionDraft(selection, article);
+		outside.remove();
+		return {
+			tripleClickText: tripleClickDraft?.selectedText,
+			outsideDrag: outsideDragDraft && {
+				blockId: outsideDragDraft.blockId,
+				selectedText: outsideDragDraft.selectedText,
+				startOffset: outsideDragDraft.startOffset,
+				endOffset: outsideDragDraft.endOffset,
+			},
+		};
+	});
+	expect(result.tripleClickText).toContain('inlineCode');
+	expect(result.outsideDrag).toEqual({ blockId: 'paragraph', selectedText: '앞 😀', startOffset: 0, endOffset: 4 });
+});
+
 test('본문 드래그 선택 색상은 focus-ring 12%로 고정된다', async ({ page }) => {
 	const colors = await page.evaluate(() => {
 		const root = document.querySelector<HTMLElement>('[data-inline-comment-block-id="paragraph"]')!;

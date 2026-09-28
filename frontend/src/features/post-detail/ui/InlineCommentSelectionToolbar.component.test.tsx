@@ -73,6 +73,26 @@ describe('InlineCommentSelectionToolbar', () => {
 		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
 	});
 
+	it('본문 밖에서 시작한 드래그가 본문 텍스트를 포함하면 버튼을 표시한다', () => {
+		const outside = document.createElement('span');
+		outside.textContent = '바깥 영역';
+		article.before(outside);
+		const rootText = article.querySelector('[data-inline-comment-root]')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(outside.firstChild!, 0);
+		range.setEnd(rootText, 3);
+		render(<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />);
+
+		act(() => {
+			window.getSelection()?.removeAllRanges();
+			window.getSelection()?.addRange(range);
+			fireEvent(document, new Event('selectionchange'));
+		});
+
+		expect(screen.getByRole('button', { name: '댓글 추가' })).toBeVisible();
+		outside.remove();
+	});
+
 	it('모바일에서는 선택 버튼을 표시하지 않는다', () => {
 		isMobile = true;
 		render(<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />);
