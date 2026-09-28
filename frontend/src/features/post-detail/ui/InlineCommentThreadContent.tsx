@@ -43,8 +43,8 @@ export default function InlineCommentThreadContent({
 				className={`flex items-start justify-between gap-3 rounded px-5 py-6 text-left ${isCollapsible ? 'cursor-pointer transition-colors duration-200 hover:bg-surface-hover motion-reduce:transition-none' : ''}`}
 				onClick={isCollapsible ? toggleThread : undefined}
 			>
-				<div className="min-w-0 border-l-4 border-border-default pl-2">
-					<div className="flex min-w-0 items-center gap-3">
+				<div className="w-full min-w-0 border-l-4 border-border-default pl-2">
+					<div className="flex w-full min-w-0 items-center justify-between gap-3">
 						{isCollapsible ? (
 							<button
 								type="button"

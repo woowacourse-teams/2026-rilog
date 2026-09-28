@@ -7,6 +7,7 @@ import type { InlineCommentOpenRequest } from '../model/inline-comment-interacti
 import type { InlineCommentAnchorModel, InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import CommentIcon from '@/shared/assets/icons/comment.svg';
 
+import { formatCommentCount } from '../lib/format-comment-count';
 import { normalizeInlineCommentHighlightRects } from '../lib/inline-comment-highlight-rects';
 import {
 	findLastActiveInlineCommentAnchorAtOffset,
@@ -179,7 +180,7 @@ export default function InlineCommentHighlights({
 				const icon = iconTemplateRef.current?.firstElementChild;
 				if (icon) blockButton.append(icon.cloneNode(true));
 				const count = host.ownerDocument.createElement('span');
-				count.textContent = String(commentCount);
+				count.textContent = String(formatCommentCount(commentCount));
 				blockButton.append(count);
 				blockButton.addEventListener('click', () => {
 					onOpenComments?.({
