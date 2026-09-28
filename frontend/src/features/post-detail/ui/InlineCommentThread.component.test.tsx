@@ -27,7 +27,7 @@ describe('InlineCommentThread', () => {
 	beforeEach(() => sessionStorage.clear());
 	it('댓글을 펼치면 바로 입력할 수 있고 다시 펼쳐도 작성 내용을 유지한다', async () => {
 		const user = userEvent.setup();
-		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} />);
+		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} entrySource="all" />);
 
 		await user.tab();
 		await user.keyboard('{Enter}');
@@ -69,6 +69,7 @@ describe('InlineCommentThread', () => {
 				postId={81}
 				thread={{ ...THREAD, anchor: { ...THREAD.anchor, comments: [] } }}
 				onNavigate={vi.fn()}
+				entrySource="all"
 			/>,
 		);
 
@@ -79,7 +80,7 @@ describe('InlineCommentThread', () => {
 
 	it('접힌 댓글은 스크린리더와 키보드 탐색에서 숨기고 열면 노출한다', async () => {
 		const user = userEvent.setup();
-		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} />);
+		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} entrySource="all" />);
 
 		const toggle = screen.getByRole('button', { name: '댓글 펼치기' });
 		const comments = screen.getByRole('list', { hidden: true });

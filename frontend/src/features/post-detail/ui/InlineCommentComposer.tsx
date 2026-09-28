@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 import type { RefObject } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { isNormalizedApiError } from '@/shared/api/api-error';
 import { useCreatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-create-comment-anchor-mutation';
@@ -46,6 +47,7 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 		isSubmitting.current = true;
 		try {
 			const response = await mutation.mutateAsync({ ...selection, content: commentText });
+			analytics.inlineCommentCreated({ postId, entrySource: 'selection_toolbar', commentType: 'new_anchor' });
 			onCommentChange('');
 			if (isMounted.current && response.data) onCreated?.(response.data.commentAnchorId);
 		} catch {

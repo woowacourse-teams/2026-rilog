@@ -5,6 +5,8 @@ import { useRef } from 'react';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
 
+import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
+import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAddPostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-add-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
@@ -20,6 +22,7 @@ interface InlineCommentThreadProps {
 	onNavigate: (thread: InlineCommentThreadModel) => void;
 	isCollapsible?: boolean;
 	inputRef?: RefObject<HTMLTextAreaElement | null>;
+	entrySource: InlineCommentCreateEntrySource;
 }
 
 export default function InlineCommentThread({
@@ -28,6 +31,7 @@ export default function InlineCommentThread({
 	onNavigate,
 	isCollapsible = true,
 	inputRef,
+	entrySource,
 }: InlineCommentThreadProps) {
 	const { commentText, onCommentChange } = useInlineCommentDraft(thread.anchor.anchorId);
 
@@ -41,6 +45,7 @@ export default function InlineCommentThread({
 		isSubmitting.current = true;
 		try {
 			await mutation.mutateAsync({ content: commentText });
+			analytics.inlineCommentCreated({ postId, entrySource, commentType: 'reply' });
 			onCommentChange('');
 		} catch {
 			// 작성 실패 시 초안을 유지한다.

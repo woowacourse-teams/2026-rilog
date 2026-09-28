@@ -50,7 +50,7 @@ describe('InlineCommentSelectionToolbar', () => {
 	const renderToolbar = (isAuthenticated = true, isInitialized = true) =>
 		render(
 			<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized, isOnboarding: false }}>
-				<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />
+				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={vi.fn()} />
 			</AUTH_CONTEXT.Provider>,
 		);
 
@@ -58,7 +58,7 @@ describe('InlineCommentSelectionToolbar', () => {
 		const onCreateComment = vi.fn();
 		render(
 			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
-				<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />
+				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onCreateComment} />
 			</AUTH_CONTEXT.Provider>,
 		);
 		select();
@@ -126,7 +126,7 @@ describe('InlineCommentSelectionToolbar', () => {
 		const onCreateComment = vi.fn();
 		render(
 			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
-				<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />
+				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onCreateComment} />
 			</AUTH_CONTEXT.Provider>,
 		);
 		select();

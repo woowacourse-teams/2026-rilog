@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import type { InlineCommentSelectionDraft } from '../lib/inline-comment-selection';
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 
+import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useMobileDevice } from '@/shared/hooks/use-mobile-device';
 import Button from '@/shared/ui/button/Button';
@@ -14,6 +15,7 @@ import { createInlineCommentSelectionDraft } from '../lib/inline-comment-selecti
 
 interface InlineCommentSelectionToolbarProps {
 	article: HTMLElement;
+	postId: number;
 	onCreateComment: (selection: InlineCommentSelectionTarget) => void;
 }
 
@@ -38,6 +40,7 @@ const getServerDesktopViewport = () => false;
 
 export default function InlineCommentSelectionToolbar({
 	article,
+	postId,
 	onCreateComment,
 }: InlineCommentSelectionToolbarProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
@@ -134,6 +137,7 @@ export default function InlineCommentSelectionToolbar({
 				className="group relative h-7! w-7! justify-start! overflow-hidden rounded-full! bg-brand-primary! pl-1.75! text-white! shadow-modal transition-[width]! duration-200 ease-out hover:w-22! focus-visible:w-22! focus-visible:outline-offset-2 motion-reduce:transition-none!"
 				onPointerDown={(event) => event.preventDefault()}
 				onClick={() => {
+					analytics.inlineCommentSelectionReplyClicked({ postId });
 					const { blockId, startOffset, endOffset, selectedText } = toolbar.draft;
 					onCreateComment({ blockId, startOffset, endOffset, selectedText });
 					setToolbar(null);

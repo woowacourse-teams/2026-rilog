@@ -25,7 +25,7 @@ export default function InlineCommentContent({
 				</div>
 			</article>
 			{article && onInlineCommentCreate && (
-				<InlineCommentSelectionToolbar article={article} onCreateComment={onInlineCommentCreate} />
+				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onInlineCommentCreate} />
 			)}
 		</>
 	);

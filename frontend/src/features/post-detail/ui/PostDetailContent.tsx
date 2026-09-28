@@ -240,7 +240,12 @@ export default function PostDetailContent({
 			)}
 			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
 			{contentElement !== null && onInlineCommentCreate !== undefined && (
-				<InlineCommentSelectionToolbar key={postId} article={contentElement} onCreateComment={onInlineCommentCreate} />
+				<InlineCommentSelectionToolbar
+					key={postId}
+					article={contentElement}
+					postId={postId}
+					onCreateComment={onInlineCommentCreate}
+				/>
 			)}
 		</article>
 	);

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
+import { analytics } from '@/features/analytics/model/events';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
@@ -58,6 +59,9 @@ export default function PostDetailCommentsWorkspace({
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
 	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
+	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>(
+		'all',
+	);
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const visibleThreads = selection
 		? []
@@ -77,9 +81,11 @@ export default function PostDetailCommentsWorkspace({
 	);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+		setCommentEntrySource(request === null ? 'all' : request.source);
 		setSidebarMode(mode);
 		setSelection(null);
 		setCreatedCommentId(null);
+		setCommentEntrySource('selection_toolbar');
 		setComposerAnchorId(null);
 		setOpenRequest(request);
 		setIsCommentsSidebarOpen(true);
@@ -111,28 +117,34 @@ export default function PostDetailCommentsWorkspace({
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
+			analytics.inlineCommentEntryClicked({ postId, entrySource: request.source });
 			openComments(request, request.source === 'highlight' ? 'single' : 'block');
 		},
-		[openComments],
+		[openComments, postId],
 	);
 
 	const handleAllCommentsOpen = useCallback(() => {
+		analytics.inlineCommentEntryClicked({ postId, entrySource: 'all' });
 		openComments(null, 'all');
-	}, [openComments]);
+	}, [openComments, postId]);
 
-	const handleAnchorNavigate = useCallback((thread: InlineCommentThreadModel) => {
-		if (thread.anchor.state === 'OUTDATED') {
-			return;
-		}
+	const handleAnchorNavigate = useCallback(
+		(thread: InlineCommentThreadModel) => {
+			if (thread.anchor.state === 'OUTDATED') {
+				return;
+			}
+			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-		setIsCommentsSidebarOpen(false);
-		window.setTimeout(() => {
-			const target =
-				findAnchorElement(thread.anchor.anchorId) ??
-				document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
-			target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		}, 140);
-	}, []);
+			setIsCommentsSidebarOpen(false);
+			window.setTimeout(() => {
+				const target =
+					findAnchorElement(thread.anchor.anchorId) ??
+					document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+				target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}, 140);
+		},
+		[postId],
+	);
 
 	return (
 		<>
@@ -168,6 +180,7 @@ export default function PostDetailCommentsWorkspace({
 				selection={selection}
 				composerAnchorId={composerAnchorId}
 				mode={sidebarMode}
+				entrySource={commentEntrySource}
 				open={isCommentsSidebarOpen}
 				threads={visibleThreads}
 				isLoading={sidebarQuery.isPending}

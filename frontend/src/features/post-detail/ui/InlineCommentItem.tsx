@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
+import { analytics } from '@/features/analytics/model/events';
 import type { InlineCommentModel } from '@/features/post-detail/model/inline-comment';
 import { useDeletePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-delete-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
@@ -54,6 +55,7 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 		isDeleting.current = true;
 		try {
 			await deleteMutation.mutateAsync();
+			analytics.inlineCommentDeleted({ postId });
 			setIsDeleteModalOpen(false);
 		} catch {
 			setIsDeleteModalOpen(false);
