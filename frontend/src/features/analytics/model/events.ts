@@ -161,6 +161,20 @@ export const analytics = {
 			post_id: postId,
 			anchor_state: anchorState,
 		}),
+	inlineCommentThreadToggled: ({
+		postId,
+		anchorState,
+		isOpen,
+	}: {
+		postId: number;
+		anchorState: 'ACTIVE' | 'OUTDATED';
+		isOpen: boolean;
+	}) =>
+		captureAnalyticsEvent('inline comment thread toggled', {
+			post_id: postId,
+			anchor_state: anchorState,
+			is_open: isOpen,
+		}),
 	postNavigationAvailable: ({
 		navigationVisitId,
 		postId,

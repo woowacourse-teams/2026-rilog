@@ -5,6 +5,7 @@ import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
+import { analytics } from '@/features/analytics/model/events';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 
 import InlineCommentItem from './InlineCommentItem';
@@ -28,12 +29,19 @@ export default function InlineCommentThreadContent({
 	const [isExpanded, setIsExpanded] = useState(false);
 	const isOpen = !isCollapsible || isExpanded;
 	const panelId = useId();
+	const toggleThread = () => {
+		setIsExpanded((previous) => {
+			const next = !previous;
+			analytics.inlineCommentThreadToggled({ postId, anchorState: anchor.state, isOpen: next });
+			return next;
+		});
+	};
 
 	return (
 		<section aria-label={`"${anchor.selectedText}" 댓글`}>
 			<div
 				className={`flex items-start justify-between gap-3 rounded px-5 py-6 text-left ${isCollapsible ? 'cursor-pointer transition-colors duration-200 hover:bg-surface-hover motion-reduce:transition-none' : ''}`}
-				onClick={isCollapsible ? () => setIsExpanded((prev) => !prev) : undefined}
+				onClick={isCollapsible ? toggleThread : undefined}
 			>
 				<div className="min-w-0 flex-1 border-l-4 border-border-default pl-2">
 					{isCollapsible ? (
