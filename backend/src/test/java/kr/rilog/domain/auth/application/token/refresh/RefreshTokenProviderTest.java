@@ -28,7 +28,7 @@ class RefreshTokenProviderTest {
             Instant.parse("2026-08-13T00:00:00Z"),
             ZoneOffset.UTC
     );
-    private static final Duration EXPIRATION = Duration.ofDays(14);
+    private static final Duration EXPIRATION = Duration.ofSeconds(30);
 
     @Test
     @DisplayName("Refresh Token을 발급하고 원문이 아닌 해시값을 세션에 저장한다")
@@ -75,7 +75,7 @@ class RefreshTokenProviderTest {
         assertThat(session.getUserId()).isEqualTo(1L);
         assertThat(session.getTokenHash()).isEqualTo("hashed-refresh-token");
         assertThat(session.getTokenHash()).isNotEqualTo("raw-refresh-token");
-        assertThat(session.getExpiresAt()).isEqualTo(LocalDateTime.of(2026, 8, 27, 0, 0));
+        assertThat(session.getExpiresAt()).isEqualTo(LocalDateTime.now(CLOCK).plus(EXPIRATION));
     }
 
     private User loginUser() {
