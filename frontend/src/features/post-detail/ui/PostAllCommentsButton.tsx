@@ -1,12 +1,12 @@
 import CommentIcon from '@/shared/assets/icons/comment.svg';
 
+import { formatCommentCount } from '../lib/format-comment-count';
+
 interface PostAllCommentsButtonProps {
 	commentCount: number;
 	className?: string;
 	onClick?: () => void;
 }
-
-const normalizeInlineCommentsCount = (count: number) => (count > 99 ? '99+' : count);
 
 export default function PostAllCommentsButton({ commentCount, className, onClick }: PostAllCommentsButtonProps) {
 	return (
@@ -20,7 +20,7 @@ export default function PostAllCommentsButton({ commentCount, className, onClick
 				<CommentIcon aria-hidden="true" focusable="false" className="size-4 shrink-0" />
 				<span>전체 보기</span>
 				<span aria-hidden="true" className="text-text-tertiary transition-colors group-hover:text-focus-ring">
-					{normalizeInlineCommentsCount(commentCount)}
+					{formatCommentCount(commentCount)}
 				</span>
 			</button>
 		</div>

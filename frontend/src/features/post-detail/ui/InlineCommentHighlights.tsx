@@ -13,6 +13,7 @@ import {
 	getInlineCommentOffsetAtPoint,
 } from '../lib/inline-comment-interaction';
 import { findInlineCommentRoot, restoreInlineCommentRange } from '../lib/inline-comment-range';
+import { formatCommentCount } from '../lib/format-comment-count';
 
 interface InlineCommentHighlightsProps {
 	article: HTMLElement;
@@ -179,7 +180,7 @@ export default function InlineCommentHighlights({
 				const icon = iconTemplateRef.current?.firstElementChild;
 				if (icon) blockButton.append(icon.cloneNode(true));
 				const count = host.ownerDocument.createElement('span');
-				count.textContent = String(commentCount);
+				count.textContent = String(formatCommentCount(commentCount));
 				blockButton.append(count);
 				blockButton.addEventListener('click', () => {
 					onOpenComments?.({
