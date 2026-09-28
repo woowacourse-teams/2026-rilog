@@ -7,13 +7,13 @@ import type { InlineCommentOpenRequest } from '../model/inline-comment-interacti
 import type { InlineCommentAnchorModel, InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import CommentIcon from '@/shared/assets/icons/comment.svg';
 
+import { formatCommentCount } from '../lib/format-comment-count';
 import { normalizeInlineCommentHighlightRects } from '../lib/inline-comment-highlight-rects';
 import {
 	findLastActiveInlineCommentAnchorAtOffset,
 	getInlineCommentOffsetAtPoint,
 } from '../lib/inline-comment-interaction';
 import { findInlineCommentRoot, restoreInlineCommentRange } from '../lib/inline-comment-range';
-import { formatCommentCount } from '../lib/format-comment-count';
 
 interface InlineCommentHighlightsProps {
 	article: HTMLElement;
