@@ -146,6 +146,8 @@ export const analytics = {
 			entry_source: entrySource,
 			comment_type: commentType,
 		}),
+	inlineCommentUpdated: ({ postId }: { postId: number }) =>
+		captureAnalyticsEvent('inline comment updated', { post_id: postId }),
 	postNavigationAvailable: ({
 		navigationVisitId,
 		postId,

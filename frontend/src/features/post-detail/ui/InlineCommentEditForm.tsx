@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
+import { analytics } from '@/features/analytics/model/events';
 import Button from '@/shared/ui/button/Button';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import Textarea from '@/shared/ui/textarea/Textarea';
@@ -32,6 +33,7 @@ export default function InlineCommentEditForm({
 		isSubmitting.current = true;
 		try {
 			await mutation.mutateAsync({ content: value });
+			analytics.inlineCommentUpdated({ postId });
 			onSaved();
 		} catch {
 			setIsErrorOpen(true);
