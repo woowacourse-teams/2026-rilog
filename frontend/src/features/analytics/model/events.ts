@@ -14,6 +14,7 @@ import type {
 	FeedCategory,
 	FeedScope,
 	ImageSource,
+	InlineCommentEntrySource,
 	LoginEntrySurface,
 	PostNavigationClickPart,
 	PostNavigationSurface,
@@ -127,6 +128,8 @@ export const analytics = {
 			engagement_seconds: engagementSeconds,
 			scroll_depth_bucket: scrollDepthBucket,
 		}),
+	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
+		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
 	postNavigationAvailable: ({
 		navigationVisitId,
 		postId,

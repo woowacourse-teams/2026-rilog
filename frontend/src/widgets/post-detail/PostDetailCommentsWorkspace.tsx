@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
+import { analytics } from '@/features/analytics/model/events';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
@@ -111,14 +112,16 @@ export default function PostDetailCommentsWorkspace({
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
+			analytics.inlineCommentEntryClicked({ postId, entrySource: request.source });
 			openComments(request, request.source === 'highlight' ? 'single' : 'block');
 		},
-		[openComments],
+		[openComments, postId],
 	);
 
 	const handleAllCommentsOpen = useCallback(() => {
+		analytics.inlineCommentEntryClicked({ postId, entrySource: 'all' });
 		openComments(null, 'all');
-	}, [openComments]);
+	}, [openComments, postId]);
 
 	const handleAnchorNavigate = useCallback((thread: InlineCommentThreadModel) => {
 		if (thread.anchor.state === 'OUTDATED') {
