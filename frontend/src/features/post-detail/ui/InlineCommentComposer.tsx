@@ -5,8 +5,8 @@ import { useEffect, useRef } from 'react';
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 import type { RefObject } from 'react';
 
-import { useAuth } from '@/features/auth/model/use-auth';
 import { analytics } from '@/features/analytics/model/events';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { isNormalizedApiError } from '@/shared/api/api-error';
 import { useCreatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-create-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';

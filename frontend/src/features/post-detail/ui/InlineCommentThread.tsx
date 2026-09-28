@@ -5,9 +5,9 @@ import { useRef } from 'react';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
 
-import { useAuth } from '@/features/auth/model/use-auth';
-import { analytics } from '@/features/analytics/model/events';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
+import { analytics } from '@/features/analytics/model/events';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { useAddPostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-add-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 

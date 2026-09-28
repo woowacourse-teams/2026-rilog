@@ -5,8 +5,8 @@ import { useId, useRef } from 'react';
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
-import { useAuth } from '@/features/auth/model/use-auth';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';

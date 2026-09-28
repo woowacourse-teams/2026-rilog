@@ -4,8 +4,8 @@ import { useId, useState } from 'react';
 
 import type { ReactNode } from 'react';
 
-import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
 import { analytics } from '@/features/analytics/model/events';
+import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 
 import InlineCommentItem from './InlineCommentItem';

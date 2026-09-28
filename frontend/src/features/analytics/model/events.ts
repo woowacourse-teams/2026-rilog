@@ -132,6 +132,8 @@ export const analytics = {
 		}),
 	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
 		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
+	inlineCommentSelectionReplyClicked: ({ postId }: { postId: number }) =>
+		captureAnalyticsEvent('inline comment selection reply clicked', { post_id: postId }),
 	inlineCommentCreated: ({
 		postId,
 		entrySource,

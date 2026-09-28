@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
 import { analytics } from '@/features/analytics/model/events';
+import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import Button from '@/shared/ui/button/Button';
 import AlertModal from '@/shared/ui/modal/AlertModal';

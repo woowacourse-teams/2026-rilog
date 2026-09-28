@@ -59,7 +59,9 @@ export default function PostDetailCommentsWorkspace({
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
 	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
-	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>('all');
+	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>(
+		'all',
+	);
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const visibleThreads = selection
 		? []
@@ -126,20 +128,23 @@ export default function PostDetailCommentsWorkspace({
 		openComments(null, 'all');
 	}, [openComments, postId]);
 
-	const handleAnchorNavigate = useCallback((thread: InlineCommentThreadModel) => {
-		if (thread.anchor.state === 'OUTDATED') {
-			return;
-		}
-		analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
+	const handleAnchorNavigate = useCallback(
+		(thread: InlineCommentThreadModel) => {
+			if (thread.anchor.state === 'OUTDATED') {
+				return;
+			}
+			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-		setIsCommentsSidebarOpen(false);
-		window.setTimeout(() => {
-			const target =
-				findAnchorElement(thread.anchor.anchorId) ??
-				document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
-			target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		}, 140);
-	}, [postId]);
+			setIsCommentsSidebarOpen(false);
+			window.setTimeout(() => {
+				const target =
+					findAnchorElement(thread.anchor.anchorId) ??
+					document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+				target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}, 140);
+		},
+		[postId],
+	);
 
 	return (
 		<>
