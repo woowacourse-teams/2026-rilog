@@ -148,6 +148,8 @@ export const analytics = {
 		}),
 	inlineCommentUpdated: ({ postId }: { postId: number }) =>
 		captureAnalyticsEvent('inline comment updated', { post_id: postId }),
+	inlineCommentDeleted: ({ postId }: { postId: number }) =>
+		captureAnalyticsEvent('inline comment deleted', { post_id: postId }),
 	postNavigationAvailable: ({
 		navigationVisitId,
 		postId,
