@@ -8,6 +8,7 @@
 - `quality-gates.md`: 프론트엔드 로컬·CI 검증
 - `lore-commit.md`: commit과 squash message 형식
 - `../testing/README.md`: 프론트엔드 테스트 기준
+- `../qa/README.md`: 배포된 서비스의 수동 QA 절차
 - `../../AGENTS.md`: 저장소 공통 작업 규칙
 - `../../frontend/AGENTS.md`, `../../backend/AGENTS.md`: 파트별 규칙
 - `../../.github/`: PR·이슈 템플릿

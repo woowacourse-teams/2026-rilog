@@ -10,7 +10,8 @@
 - [테스트 작성 패턴](./testing-patterns.md): 현재 코드에서 재사용할 예시와 실패 조사 절차
 - [테스트 결정 기록](./testing-decisions.md): #603~#605에서 선택·기각한 방식과 재검토 조건
 - [프론트엔드 품질 게이트](../harness/quality-gates.md): 로컬·CI 실행 명령, trigger와 artifact
-- [SEO 운영 점검](./seo-operations.md): 공개 응답과 Search Console의 배포 전후 수동 확인·기록 양식
+
+이 문서는 코드 변경을 검증하는 자동화 테스트 기준을 다룬다. 배포된 서비스의 수동 운영 점검은 [QA 문서](../qa/README.md)에서 관리한다.
 
 테스트를 추가·수정·삭제하기 전에 아래 순서로 판단한다.
 
