@@ -1,6 +1,6 @@
 # 프론트엔드 품질 게이트
 
-현재 프론트엔드의 로컬·CI 검증 범위를 기록한다. 계층별 테스트 선택과 작성 규칙은 [프론트엔드 테스트 기준](../testing/README.md)을 따른다.
+현재 프론트엔드의 로컬·CI 검증 범위를 기록한다. 계층별 테스트 선택과 작성 규칙은 [프론트엔드 테스트 기준](../testing/README.md), TypeScript 기준과 외부 값의 검증 경계는 [프론트엔드 TypeScript 기준](frontend-typescript.md)을 따른다.
 
 ## 원칙
 
@@ -37,7 +37,7 @@ build
 check
 ```
 
-`check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
+`check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. `typecheck`는 `next typegen && tsc --noEmit`으로 build 전에 실행된다. 컴파일 타임의 타입 검사는 외부 JSON 값을 검사하지 않으므로 선택한 입력 경계에는 런타임 가드와 실패 흐름 테스트를 둔다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
 
 현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책을 검증한다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
 
@@ -68,6 +68,8 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 
 - `develop`·`production` 대상 PR에서 frontend 또는 품질 workflow가 바뀔 때
 - GitHub Actions의 수동 실행
+
+현재 path filter에는 `docs/**`가 없으므로 문서만 수정한 PR에서는 이 workflow가 자동 실행되지 않는다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다. workflow의 실행 성공과 GitHub required check에 의한 병합 차단은 별개다.
 
 수동 실행은 workflow가 기본 브랜치에 등록된 뒤 GitHub Actions에서 선택한 ref를 검증한다.
 

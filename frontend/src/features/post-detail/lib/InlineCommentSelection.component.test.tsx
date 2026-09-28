@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { restoreInlineCommentRange } from './inline-comment-range';
 import { createInlineCommentSelectionDraft } from './inline-comment-selection';
 
 const renderArticle = (html: string): HTMLElement => {
@@ -95,6 +96,24 @@ describe('createInlineCommentSelectionDraft', () => {
 		});
 	});
 
+	it('Shift+Enter로 생긴 br을 줄바꿈 문자로 포함해 선택과 복원을 계산한다', () => {
+		const article = renderArticle(
+			'<p data-inline-comment-root data-inline-comment-block-id="paragraph">첫 줄<br>둘째 줄</p>',
+		);
+		const root = article.querySelector<HTMLElement>('[data-inline-comment-root]')!;
+		const firstLine = root.firstChild!;
+		const secondLine = root.lastChild!;
+		const draft = createInlineCommentSelectionDraft(selectRange(firstLine, 2, secondLine, 3), article);
+
+		expect(draft).toMatchObject({ startOffset: 2, endOffset: 7, selectedText: '줄\n둘째 ' });
+		const restored = restoreInlineCommentRange(root, { startOffset: 2, endOffset: 7 });
+		expect(restored).not.toBeNull();
+		expect(restored?.startContainer).toBe(firstLine);
+		expect(restored?.startOffset).toBe(2);
+		expect(restored?.endContainer).toBe(secondLine);
+		expect(restored?.endOffset).toBe(3);
+	});
+
 	it('서로 다른 block root를 가로지른 선택은 거부한다', () => {
 		const article = renderArticle(`
 			<div data-inline-comment-root data-inline-comment-block-id="block-1">첫 블록</div>
@@ -108,6 +127,44 @@ describe('createInlineCommentSelectionDraft', () => {
 		}
 
 		expect(createInlineCommentSelectionDraft(selectRange(startNode, 0, endNode, 2), article)).toBeNull();
+	});
+
+	it('세 번 클릭처럼 root 전체를 선택하면 블록 내부 텍스트로 범위를 자른다', () => {
+		const article = renderArticle(
+			'<p data-inline-comment-root data-inline-comment-block-id="block-1">문단 전체 선택</p>',
+		);
+		const root = article.querySelector<HTMLElement>('[data-inline-comment-root]')!;
+		const range = document.createRange();
+		range.selectNode(root);
+		const selection = window.getSelection()!;
+		selection.removeAllRanges();
+		selection.addRange(range);
+
+		expect(createInlineCommentSelectionDraft(selection, article)).toMatchObject({
+			blockId: 'block-1',
+			startOffset: 0,
+			endOffset: '문단 전체 선택'.length,
+			selectedText: '문단 전체 선택',
+		});
+	});
+
+	it('본문 밖에서 시작하고 끝난 드래그는 교차한 한 root 안으로 자른다', () => {
+		const article = renderArticle(
+			'<span>바깥 시작</span><p data-inline-comment-root data-inline-comment-block-id="block-1">선택할 본문</p><span>바깥 끝</span>',
+		);
+		const before = article.firstChild?.firstChild;
+		const after = article.lastChild?.firstChild;
+		if (before === null || before === undefined || after === null || after === undefined) {
+			throw new Error('본문 밖 텍스트 fixture를 찾을 수 없습니다.');
+		}
+
+		const draft = createInlineCommentSelectionDraft(selectRange(before, 0, after, 3), article);
+		expect(draft).toMatchObject({
+			blockId: 'block-1',
+			startOffset: 0,
+			endOffset: '선택할 본문'.length,
+			selectedText: '선택할 본문',
+		});
 	});
 
 	it('접힌 선택과 공백만 있는 선택을 거부한다', () => {

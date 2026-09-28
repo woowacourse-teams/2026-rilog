@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 
 interface UsePostDraftsOptions {
 	prepareDocument: () => EditorDocument | null;
@@ -15,6 +16,7 @@ interface UsePostDraftsOptions {
 export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }: UsePostDraftsOptions) {
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
 	const [postIdPendingDeletion, setPostIdPendingDeletion] = useState<number | null>(null);
 	const isSavingRef = useRef(false);
 	const isDeletingRef = useRef(false);
@@ -31,10 +33,15 @@ export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }:
 
 		isSavingRef.current = true;
 		setIsSaving(true);
+		setSaveError(null);
 		try {
 			await onSave(document);
-		} catch {
-			// mutation error 상태는 호출자가 사용자 피드백으로 표시한다.
+		} catch (error) {
+			setSaveError(
+				isInvalidApiResponseError(error)
+					? '저장 결과를 확인하지 못했습니다. 이미 저장됐을 수 있으니 임시 저장 목록을 확인해 주세요.'
+					: '임시 저장하지 못했습니다. 입력한 내용은 유지됩니다.',
+			);
 		} finally {
 			isSavingRef.current = false;
 			setIsSaving(false);
@@ -76,6 +83,7 @@ export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }:
 	return {
 		posts,
 		isSaving,
+		saveError,
 		isListModalOpen,
 		isDeletionModalOpen: postIdPendingDeletion !== null,
 		save,

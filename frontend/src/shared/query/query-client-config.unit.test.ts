@@ -1,41 +1,46 @@
+import { HTTPError, TimeoutError } from 'ky';
 import { describe, expect, it, vi } from 'vitest';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { InvalidApiResponseError } from '@/shared/api/response-validation';
+
 import { globalMutationErrorHandler, isRetryableError } from './query-client-config';
+
+const createHttpError = (status: number) =>
+	new HTTPError(
+		new Response(null, { status }),
+		new Request('https://api.rilog.test/v1/posts'),
+		{} as ConstructorParameters<typeof HTTPError>[2],
+	);
 
 describe('isRetryableError', () => {
 	it('네트워크나 타임아웃 에러는 재시도 가능하다고 판단한다', () => {
 		expect(isRetryableError({ type: 'network', cause: new TypeError() })).toBe(true);
-		expect(isRetryableError({ type: 'timeout', cause: new Error() })).toBe(true);
+		expect(isRetryableError(normalizeApiError(new TimeoutError(new Request('https://api.rilog.test'))))).toBe(true);
 	});
 
 	it('5xx HTTP 에러는 재시도 가능하다고 판단한다', () => {
-		expect(
-			isRetryableError({
-				type: 'http',
-				response: { status: 502 },
-				cause: new Error(),
-			}),
-		).toBe(true);
+		expect(isRetryableError(normalizeApiError(createHttpError(502)))).toBe(true);
 	});
 
-	it('5xx가 아닌 API 에러는 재시도하지 않는다', () => {
-		expect(
-			isRetryableError({
-				type: 'api',
-				response: { status: 400 },
-				kind: 'field',
-			}),
-		).toBe(false);
+	it('검증 오류와 5xx가 아닌 API 에러는 재시도하지 않는다', () => {
+		expect(isRetryableError(normalizeApiError(new InvalidApiResponseError('posts.detail')))).toBe(false);
+		expect(isRetryableError(normalizeApiError(createHttpError(400)))).toBe(false);
 	});
 });
 
 describe('globalMutationErrorHandler', () => {
 	it('category가 field인 API 에러는 전역 처리기를 우회한다', () => {
 		const mockConsoleError = vi.fn();
-		const error = {
-			type: 'api',
-			kind: 'field',
-		} as unknown as Error;
+		const httpError = createHttpError(400);
+		httpError.data = {
+			status: 400,
+			error: 'Bad Request',
+			errorCode: 'REQUEST_VALIDATION_FAILED',
+			message: '잘못된 입력',
+			invalidParams: [{ name: 'title', reason: '필수' }],
+		};
+		const error = normalizeApiError(httpError) as unknown as Error;
 
 		globalMutationErrorHandler(error, mockConsoleError);
 

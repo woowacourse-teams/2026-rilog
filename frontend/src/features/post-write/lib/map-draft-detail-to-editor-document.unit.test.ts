@@ -25,12 +25,12 @@ describe('mapDraftDetailToEditorDocument', () => {
 		).toEqual({ title: '불러온 임시저장 제목', blocks: [block] });
 	});
 
-	it('content가 배열이 아니면 빈 본문으로 변환한다', () => {
+	it('정상적인 빈 본문을 그대로 보존한다', () => {
 		expect(
 			mapDraftDetailToEditorDocument({
 				draftId: 42,
 				title: '본문이 없는 임시저장',
-				content: null,
+				content: [],
 				status: 'DRAFT',
 				publishedAt: '2026-08-27T10:42:11.852Z',
 			}),

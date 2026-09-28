@@ -9,6 +9,7 @@ import { useAuth } from '@/features/auth/model/use-auth';
 import { analytics } from '@/features/analytics/model/events';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { useAddPostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-add-comment-anchor-mutation';
+import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 
 import { useInlineCommentDraft } from '../hooks/use-inline-comment-draft';
 
@@ -37,6 +38,7 @@ export default function InlineCommentThread({
 	const { isInitialized, isAuthenticated } = useAuth();
 	// UI의 anchorId는 조회 응답 anchorGroups의 selectionId다.
 	const mutation = useAddPostCommentAnchorMutation(postId, thread.anchor.anchorId);
+	const isResponseUnconfirmed = isInvalidApiResponseError(mutation.error);
 	const isSubmitting = useRef(false);
 	const handleSubmit = async () => {
 		if (!isInitialized || !isAuthenticated || !commentText.trim() || isSubmitting.current) return;
@@ -70,7 +72,9 @@ export default function InlineCommentThread({
 					/>
 					{mutation.isError && (
 						<p role="alert" className="mt-2 text-label-2 text-danger-text">
-							댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.
+							{isResponseUnconfirmed
+								? '요청 결과를 확인하지 못했습니다. 댓글 목록에서 등록 여부를 확인해 주세요.'
+								: '댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'}
 						</p>
 					)}
 				</>

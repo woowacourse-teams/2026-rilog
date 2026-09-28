@@ -43,20 +43,29 @@ export default function InlineCommentThreadContent({
 				className={`flex items-start justify-between gap-3 rounded px-5 py-6 text-left ${isCollapsible ? 'cursor-pointer transition-colors duration-200 hover:bg-surface-hover motion-reduce:transition-none' : ''}`}
 				onClick={isCollapsible ? toggleThread : undefined}
 			>
-				<div className="min-w-0 flex-1 border-l-4 border-border-default pl-2">
-					{isCollapsible ? (
-						<button
-							type="button"
-							aria-expanded={isOpen}
-							aria-controls={panelId}
-							aria-label={isOpen ? '댓글 접기' : '댓글 펼치기'}
-							className="w-full text-left"
-						>
+				<div className="min-w-0 border-l-4 border-border-default pl-2">
+					<div className="flex min-w-0 items-center gap-3">
+						{isCollapsible ? (
+							<button
+								type="button"
+								aria-expanded={isOpen}
+								aria-controls={panelId}
+								aria-label={isOpen ? '댓글 접기' : '댓글 펼치기'}
+								className="min-w-0 flex-1 text-left"
+							>
+								<InlineCommentQuote anchor={anchor} />
+							</button>
+						) : (
 							<InlineCommentQuote anchor={anchor} />
-						</button>
-					) : (
-						<InlineCommentQuote anchor={anchor} />
-					)}
+						)}
+						{isCollapsible && (
+							<ChevronIcon
+								aria-hidden="true"
+								focusable="false"
+								className={`size-6 shrink-0 rounded p-1 text-text-secondary transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
+							/>
+						)}
+					</div>
 					{anchor.state === 'ACTIVE' && onNavigate !== undefined && (
 						<div
 							className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
@@ -77,19 +86,12 @@ export default function InlineCommentThreadContent({
 						</div>
 					)}
 				</div>
-				{isCollapsible && (
-					<ChevronIcon
-						aria-hidden="true"
-						focusable="false"
-						className={`size-6 shrink-0 rounded p-1 text-text-secondary transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
-					/>
-				)}
 			</div>
 			<div
 				className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 			>
 				<div className="min-h-0 overflow-hidden" {...(!isOpen && { inert: true })}>
-					<div className="px-8 pb-8">
+					<div className="px-8 pb-4">
 						{anchor.comments.length === 0 ? (
 							<p
 								id={panelId}

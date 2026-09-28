@@ -6,18 +6,28 @@ import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import type { AuthContextValue } from '@/features/auth/model/auth-context';
+import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import PostCommentsSidebar from './PostCommentsSidebar';
 
-const withAuth = (ui: ReactNode) => (
-	<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
-		{ui}
+const withAuth = (
+	ui: ReactNode,
+	auth: AuthContextValue = { isAuthenticated: true, isInitialized: true, isOnboarding: false },
+	login: (options?: { entrySurface?: 'sidebar' | 'mobile_header' }) => void = vi.fn(),
+) => (
+	<AUTH_CONTEXT.Provider value={auth}>
+		<LOGIN_MODAL_CONTEXT.Provider value={login}>{ui}</LOGIN_MODAL_CONTEXT.Provider>
 	</AUTH_CONTEXT.Provider>
 );
-const render = (ui: ReactNode) => {
-	const result = renderWithQuery(withAuth(ui));
-	return { ...result, rerender: (next: ReactNode) => result.rerender(withAuth(next)) };
+const render = (
+	ui: ReactNode,
+	auth: AuthContextValue = { isAuthenticated: true, isInitialized: true, isOnboarding: false },
+	login?: (options?: { entrySurface?: 'sidebar' | 'mobile_header' }) => void,
+) => {
+	const result = renderWithQuery(withAuth(ui, auth, login));
+	return { ...result, rerender: (next: ReactNode) => result.rerender(withAuth(next, auth, login)) };
 };
 
 const THREADS: InlineCommentThreadModel[] = [
@@ -82,6 +92,21 @@ const THREADS: InlineCommentThreadModel[] = [
 ];
 
 describe('PostCommentsSidebar', () => {
+	it('비로그인 사용자는 반복 입력 대신 하단 로그인 안내를 보고 로그인 모달을 연다', async () => {
+		const user = userEvent.setup();
+		const login = vi.fn();
+		render(
+			<PostCommentsSidebar mode="all" postId={81} open threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />,
+			{ isAuthenticated: false, isInitialized: true, isOnboarding: false },
+			login,
+		);
+
+		expect(screen.getByText('하고 인라인 댓글에 참여해 보세요.')).toBeInTheDocument();
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '로그인' }));
+		expect(login).toHaveBeenCalledWith({ entrySurface: 'sidebar' });
+	});
+
 	it.each(['block', 'all'] as const)('%s 목록은 인용이 하나여도 댓글을 펼치고 접을 수 있다', async (mode) => {
 		const user = userEvent.setup();
 		render(
@@ -119,7 +144,7 @@ describe('PostCommentsSidebar', () => {
 		expect(screen.getByRole('article', { name: '작성자님의 댓글' })).toHaveTextContent('첫 번째 댓글');
 		expect(screen.getByText('작성자', { selector: 'span' })).toBeInTheDocument();
 		expect(screen.getByText('멤버')).toBeInTheDocument();
-		expect(screen.getAllByText('2026.09.17 10:20')).not.toHaveLength(0);
+		expect(screen.getAllByText('2026.09.17 19:20')).not.toHaveLength(0);
 		expect(screen.getByText('Outdated')).toBeInTheDocument();
 		expect(screen.getAllByRole('separator')).toHaveLength(2);
 		expect(screen.getAllByRole('textbox', { name: '댓글 입력' })).toHaveLength(2);

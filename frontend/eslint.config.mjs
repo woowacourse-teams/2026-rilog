@@ -73,6 +73,8 @@ const eslintConfig = defineConfig([
 		},
 		rules: {
 			'@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+			'@typescript-eslint/no-non-null-assertion': 'error',
+			'@typescript-eslint/switch-exhaustiveness-check': 'error',
 			'@typescript-eslint/consistent-type-imports': [
 				'error',
 				{
@@ -117,6 +119,13 @@ const eslintConfig = defineConfig([
 			],
 			'@typescript-eslint/no-shadow': 'error',
 			'id-denylist': ['error', 'foo', 'bar', 'baz', 'temp'],
+		},
+	},
+	{
+		files: ['**/*.{unit,component}.test.{ts,tsx}', '**/*.spec.ts'],
+		rules: {
+			// Tests use assertions for known fixture and DOM setup; production data paths must narrow null explicitly.
+			'@typescript-eslint/no-non-null-assertion': 'off',
 		},
 	},
 	{

@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+
 import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
 
 describe('InlineCommentSelectionToolbar', () => {
@@ -45,10 +47,20 @@ describe('InlineCommentSelectionToolbar', () => {
 			fireEvent(document, new Event('selectionchange'));
 		});
 	};
+	const renderToolbar = (isAuthenticated = true, isInitialized = true) =>
+		render(
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized, isOnboarding: false }}>
+				<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />
+			</AUTH_CONTEXT.Provider>,
+		);
 
 	it('선택 위치의 버튼을 누르면 DOM Range 없이 선택 정보를 전달한다', async () => {
 		const onCreateComment = vi.fn();
-		render(<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />);
+		render(
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+				<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />
+			</AUTH_CONTEXT.Provider>,
+		);
 		select();
 		await userEvent.click(screen.getByRole('button', { name: '댓글 추가' }));
 		expect(onCreateComment).toHaveBeenCalledWith({
@@ -61,7 +73,7 @@ describe('InlineCommentSelectionToolbar', () => {
 	});
 
 	it('블록을 가로지르거나 선택을 해제하면 버튼을 숨긴다', () => {
-		render(<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />);
+		renderToolbar();
 		select(true);
 		expect(screen.queryByRole('button', { name: '댓글 추가' })).not.toBeInTheDocument();
 		select();
@@ -73,9 +85,38 @@ describe('InlineCommentSelectionToolbar', () => {
 		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
 	});
 
+	it('본문 밖에서 시작한 드래그가 본문 텍스트를 포함하면 버튼을 표시한다', () => {
+		const outside = document.createElement('span');
+		outside.textContent = '바깥 영역';
+		article.before(outside);
+		const rootText = article.querySelector('[data-inline-comment-root]')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(outside.firstChild!, 0);
+		range.setEnd(rootText, 3);
+		renderToolbar();
+
+		act(() => {
+			window.getSelection()?.removeAllRanges();
+			window.getSelection()?.addRange(range);
+			fireEvent(document, new Event('selectionchange'));
+		});
+
+		expect(screen.getByRole('button', { name: '댓글 추가' })).toBeVisible();
+		outside.remove();
+	});
+
+	it.each([
+		{ isAuthenticated: false, isInitialized: true },
+		{ isAuthenticated: false, isInitialized: false },
+	])('로그인하지 않은 사용자의 선택에는 댓글 추가 버튼을 표시하지 않는다: %j', (auth) => {
+		renderToolbar(auth.isAuthenticated, auth.isInitialized);
+		select();
+		expect(screen.queryByRole('button', { name: '댓글 추가' })).not.toBeInTheDocument();
+	});
+
 	it('모바일에서는 선택 버튼을 표시하지 않는다', () => {
 		isMobile = true;
-		render(<InlineCommentSelectionToolbar article={article} onCreateComment={vi.fn()} />);
+		renderToolbar();
 		select();
 		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
 	});
@@ -83,7 +124,11 @@ describe('InlineCommentSelectionToolbar', () => {
 	it('키보드로 활성화하고 Escape로 닫을 수 있다', async () => {
 		const user = userEvent.setup();
 		const onCreateComment = vi.fn();
-		render(<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />);
+		render(
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+				<InlineCommentSelectionToolbar article={article} onCreateComment={onCreateComment} />
+			</AUTH_CONTEXT.Provider>,
+		);
 		select();
 		await user.tab();
 		expect(screen.getByRole('button', { name: '댓글 추가' })).toHaveFocus();

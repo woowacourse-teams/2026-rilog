@@ -12,6 +12,23 @@ import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-ins
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import { logNonProductionError } from '@/shared/utils/non-production-console';
 
+const getPostLoginRedirect = (storedValue: string | null): string => {
+	if (
+		storedValue === null ||
+		!storedValue.startsWith('/') ||
+		storedValue.startsWith('//') ||
+		/[\\\u0000-\u001f\u007f]/.test(storedValue)
+	) {
+		return '/';
+	}
+
+	try {
+		return new URL(storedValue, window.location.origin).origin === window.location.origin ? storedValue : '/';
+	} catch {
+		return '/';
+	}
+};
+
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
@@ -55,7 +72,7 @@ export default function GitHubCallbackHandler() {
 					router.replace(APP_ROUTES.signUp);
 				} else {
 					clearSignUpFlow();
-					const redirectUrl = localStorage.getItem('postLoginRedirect') || '/';
+					const redirectUrl = getPostLoginRedirect(localStorage.getItem('postLoginRedirect'));
 					localStorage.removeItem('postLoginRedirect');
 					router.replace(redirectUrl);
 				}

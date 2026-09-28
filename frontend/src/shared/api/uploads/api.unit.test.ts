@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PresignedUrlCreateRequest, PresignedUrlCreateResponse } from './types';
 
+import { InvalidApiResponseError, isRecord } from '@/shared/api/response-validation';
+
 import { createPresignedUrl, uploadFileToPresignedUrl, uploadFileWithPresignedUrl } from './api';
 
 vi.hoisted(() => {
@@ -29,6 +31,15 @@ const MOCK_PRESIGNED_RESPONSE: { status: number; message: string; data: Presigne
 };
 
 describe('createPresignedUrl', () => {
+	it('presign 성공 응답이 잘못된 JSON이면 업로드 URL로 사용하지 않는다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken', { status: 200 })));
+		await expect(
+			createPresignedUrl({ fileName: 'a.png', contentType: 'image/png', size: 1, type: 'IMAGE' }),
+		).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
 	it('파일 정보를 JSON 본문에 담아 POST v1/uploads/presigned-url로 요청한다', async () => {
 		let capturedRequest: Request | undefined;
 		let capturedBody: unknown;
@@ -191,13 +202,20 @@ describe('uploadFileWithPresignedUrl', () => {
 		expect(storageRequest.headers.get('content-type')).toBe('application/pdf');
 	});
 
-	it('Presigned URL 발급 시 data가 없으면 에러를 던진다', async () => {
-		const fetchMock = vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data: null }));
+	it.each([
+		{ status: 200, message: 'OK', data: null },
+		{ ...MOCK_PRESIGNED_RESPONSE, status: '200' },
+		{ ...MOCK_PRESIGNED_RESPONSE, data: { ...MOCK_PRESIGNED_RESPONSE.data, uploadUrl: 'javascript:alert(1)' } },
+		{ ...MOCK_PRESIGNED_RESPONSE, data: { ...MOCK_PRESIGNED_RESPONSE.data, headers: { 'x-amz-tagging': [null] } } },
+	])('발급 응답이 손상되면 저장소에 파일을 보내지 않는다', async (responseBody) => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
 		const file = new File(['bytes'], 'test.png', { type: 'image/png' });
-		await expect(uploadFileWithPresignedUrl({ file, type: 'IMAGE' })).rejects.toThrow(
-			'Presigned URL 발급 응답 데이터가 존재하지 않습니다.',
+		const error: unknown = await uploadFileWithPresignedUrl({ file, type: 'IMAGE' }).catch(
+			(failure: unknown) => failure,
 		);
+		expect(isRecord(error) && error.type === 'unknown' && error.cause instanceof InvalidApiResponseError).toBe(true);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 });

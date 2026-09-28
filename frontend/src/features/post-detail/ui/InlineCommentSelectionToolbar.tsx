@@ -7,6 +7,7 @@ import type { InlineCommentSelectionDraft } from '../lib/inline-comment-selectio
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 
 import { analytics } from '@/features/analytics/model/events';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { useMobileDevice } from '@/shared/hooks/use-mobile-device';
 import Button from '@/shared/ui/button/Button';
 
@@ -42,6 +43,7 @@ export default function InlineCommentSelectionToolbar({
 	postId,
 	onCreateComment,
 }: InlineCommentSelectionToolbarProps) {
+	const { isAuthenticated, isInitialized } = useAuth();
 	const { isMobileDevice, isResolved } = useMobileDevice();
 	const isDesktopViewport = useSyncExternalStore(
 		subscribeDesktopViewport,
@@ -50,7 +52,7 @@ export default function InlineCommentSelectionToolbar({
 	);
 	const [toolbar, setToolbar] = useState<SelectionToolbarState | null>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
-	const isEnabled = isResolved && !isMobileDevice && isDesktopViewport;
+	const isEnabled = isInitialized && isAuthenticated && isResolved && !isMobileDevice && isDesktopViewport;
 
 	useEffect(() => {
 		if (!isEnabled) return;
