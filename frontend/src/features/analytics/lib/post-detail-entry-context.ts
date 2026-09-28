@@ -21,8 +21,13 @@ export const consumePostDetailEntryContext = (postId: number): Omit<PostDetailEn
 	}
 
 	try {
-		const context = JSON.parse(rawContext) as Partial<PostDetailEntryContext>;
+		const context: unknown = JSON.parse(rawContext);
 		if (
+			typeof context !== 'object' ||
+			context === null ||
+			!('postId' in context) ||
+			!('entrySource' in context) ||
+			!('feedPosition' in context) ||
 			context.postId !== postId ||
 			(context.entrySource !== 'feed' &&
 				context.entrySource !== 'blog_profile' &&
