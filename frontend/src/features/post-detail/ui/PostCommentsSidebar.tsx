@@ -6,6 +6,7 @@ import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 
 import { useAuth } from '@/features/auth/model/use-auth';
+import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
@@ -22,6 +23,7 @@ interface PostCommentsSidebarProps {
 	onRetry?: () => void;
 	postId: number;
 	mode: InlineCommentSidebarMode;
+	entrySource?: InlineCommentCreateEntrySource;
 	selection?: InlineCommentSelectionTarget | null;
 	composerAnchorId?: number | null;
 	threads: readonly InlineCommentThreadModel[];
@@ -37,6 +39,7 @@ export default function PostCommentsSidebar({
 	onRetry,
 	postId,
 	mode,
+	entrySource = 'all',
 	threads,
 	selection,
 	composerAnchorId,
@@ -96,6 +99,7 @@ export default function PostCommentsSidebar({
 										thread={thread}
 										onNavigate={onNavigate}
 										isCollapsible={mode !== 'single'}
+										entrySource={entrySource}
 										inputRef={thread.anchor.anchorId === composerAnchorId ? inputRef : undefined}
 									/>
 									{mode !== 'single' && (

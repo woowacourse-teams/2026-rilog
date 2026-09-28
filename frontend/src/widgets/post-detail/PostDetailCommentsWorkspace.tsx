@@ -59,6 +59,7 @@ export default function PostDetailCommentsWorkspace({
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
 	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
+	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>('all');
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const visibleThreads = selection
 		? []
@@ -78,9 +79,11 @@ export default function PostDetailCommentsWorkspace({
 	);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+		setCommentEntrySource(request === null ? 'all' : request.source);
 		setSidebarMode(mode);
 		setSelection(null);
 		setCreatedCommentId(null);
+		setCommentEntrySource('selection_toolbar');
 		setComposerAnchorId(null);
 		setOpenRequest(request);
 		setIsCommentsSidebarOpen(true);
@@ -171,6 +174,7 @@ export default function PostDetailCommentsWorkspace({
 				selection={selection}
 				composerAnchorId={composerAnchorId}
 				mode={sidebarMode}
+				entrySource={commentEntrySource}
 				open={isCommentsSidebarOpen}
 				threads={visibleThreads}
 				isLoading={sidebarQuery.isPending}

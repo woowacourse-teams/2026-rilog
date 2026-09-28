@@ -15,6 +15,8 @@ import type {
 	FeedScope,
 	ImageSource,
 	InlineCommentEntrySource,
+	InlineCommentCreateEntrySource,
+	InlineCommentType,
 	LoginEntrySurface,
 	PostNavigationClickPart,
 	PostNavigationSurface,
@@ -130,6 +132,20 @@ export const analytics = {
 		}),
 	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
 		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
+	inlineCommentCreated: ({
+		postId,
+		entrySource,
+		commentType,
+	}: {
+		postId: number;
+		entrySource: InlineCommentCreateEntrySource;
+		commentType: InlineCommentType;
+	}) =>
+		captureAnalyticsEvent('inline comment created', {
+			post_id: postId,
+			entry_source: entrySource,
+			comment_type: commentType,
+		}),
 	postNavigationAvailable: ({
 		navigationVisitId,
 		postId,
