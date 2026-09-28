@@ -150,6 +150,17 @@ export const analytics = {
 		captureAnalyticsEvent('inline comment updated', { post_id: postId }),
 	inlineCommentDeleted: ({ postId }: { postId: number }) =>
 		captureAnalyticsEvent('inline comment deleted', { post_id: postId }),
+	inlineCommentAnchorNavigationClicked: ({
+		postId,
+		anchorState,
+	}: {
+		postId: number;
+		anchorState: 'ACTIVE' | 'OUTDATED';
+	}) =>
+		captureAnalyticsEvent('inline comment anchor navigation clicked', {
+			post_id: postId,
+			anchor_state: anchorState,
+		}),
 	postNavigationAvailable: ({
 		navigationVisitId,
 		postId,

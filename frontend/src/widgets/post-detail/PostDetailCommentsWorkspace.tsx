@@ -130,6 +130,7 @@ export default function PostDetailCommentsWorkspace({
 		if (thread.anchor.state === 'OUTDATED') {
 			return;
 		}
+		analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
 		setIsCommentsSidebarOpen(false);
 		window.setTimeout(() => {
@@ -138,7 +139,7 @@ export default function PostDetailCommentsWorkspace({
 				document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
 			target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 		}, 140);
-	}, []);
+	}, [postId]);
 
 	return (
 		<>
