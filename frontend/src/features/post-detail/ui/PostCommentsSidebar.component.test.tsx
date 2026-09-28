@@ -101,7 +101,7 @@ describe('PostCommentsSidebar', () => {
 			login,
 		);
 
-		expect(screen.getByText('로그인하고 인라인 댓글에 참여해 보세요.')).toBeInTheDocument();
+		expect(screen.getByText('하고 인라인 댓글에 참여해 보세요.')).toBeInTheDocument();
 		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 		await user.click(screen.getByRole('button', { name: '로그인' }));
 		expect(login).toHaveBeenCalledWith({ entrySurface: 'sidebar' });
