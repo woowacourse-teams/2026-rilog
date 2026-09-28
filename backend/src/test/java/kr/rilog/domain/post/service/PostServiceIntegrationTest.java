@@ -6,6 +6,9 @@ import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.entity.vo.Selection;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
@@ -45,6 +48,9 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FO
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
+import static kr.rilog.support.fixure.PostContentFixture.content;
+import static kr.rilog.support.fixure.PostContentFixture.paragraph;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -67,6 +73,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
     @Test
     @DisplayName("개인 블로그에 게시글을 발행하면 명령의 내용과 개인 블로그 소속이 저장된다.")
@@ -253,6 +262,40 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("게시글 본문을 수정하면 활성 인라인 선택 범위의 변경 위치가 저장된다.")
+    void updatePersistsRelocatedCommentAnchorSelection() {
+        // given
+        User writer = saveCompletedUser(33L, "인라인수정작성자", "inline_update_writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPostWithParagraph(rilog, writer, "가나다라"));
+        CommentAnchorSelection anchorSelection = commentAnchorSelectionRepository.saveAndFlush(
+                CommentAnchorSelection.create(
+                        post,
+                        Selection.select(post.findTextBlock(PARAGRAPH_BLOCK_ID), 2, 4, "다라")
+                )
+        );
+        PostUpdateCommand command = new PostUpdateCommand(
+                rilog.getSlug(),
+                post.getTitle(),
+                content(paragraph("가나나다라")).getContent(),
+                post.getCategory(),
+                post.getVisibility(),
+                post.getThumbnailImageUrl(),
+                null
+        );
+
+        // when
+        postService.update(command, post.getId(), writer.getId());
+
+        // then
+        CommentAnchorSelection savedAnchorSelection = commentAnchorSelectionRepository
+                .findById(anchorSelection.getId())
+                .orElseThrow();
+        assertThat(savedAnchorSelection.getSelection())
+                .isEqualTo(Selection.of(PARAGRAPH_BLOCK_ID, 3, 5, "다라"));
+    }
+
+    @Test
     @DisplayName("개인 블로그 게시글을 팀 블로그로 수정하면 대상 팀 블로그에 소속되고 대상 소속을 반환한다.")
     void updateFromRilogToCologPersistsAndReturnsTargetAffiliation() {
         // given
@@ -386,13 +429,29 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostDetailResponse expected = PostFixture.postDetailResponse(post, writer, rilog);
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(post.getId(), null);
+        PostDetailResponse result = postService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId(), null);
 
         // then
         assertThat(result)
                 .usingRecursiveComparison()
                 .ignoringFields("publishedAt")
                 .isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("Canonical URL 상세 조회는 같은 postId라도 URL slug가 소속 블로그와 다르면 찾을 수 없다.")
+    void readPublicPostThrowsWhenSlugDoesNotMatchPostOwnerBlog() {
+        // given
+        User writer = saveCompletedUser(33L, "슬러그검증작성자", "slug_match_writer");
+        Blog rilog = saveRilog(writer);
+        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+        User otherOwner = saveCompletedUser(34L, "다른블로그주인", "other_slug_owner");
+        Blog otherRilog = saveRilog(otherOwner);
+
+        // when & then
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(otherRilog.getSlug(), post.getId(), null))
+                .isInstanceOf(PostException.class)
+                .hasMessage(POST_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -404,7 +463,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(privatePost.getId(), writer.getId());
+        PostDetailResponse result = postService.readEditablePostDetail(privatePost.getId(), writer.getId());
 
         // then
         assertThat(result.title()).isEqualTo(privatePost.getTitle());
@@ -419,7 +478,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(privatePost.getId(), null))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), privatePost.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -434,7 +493,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User otherUser = saveCompletedUser(15L, "비공개타인", "private_outsider");
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(privatePost.getId(), otherUser.getId()))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), privatePost.getId(), otherUser.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -448,7 +507,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(post.getId() + 1, null))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId() + 1, null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -462,7 +521,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostOfBlogs(deletedPost.getId(), null))
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), deletedPost.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -485,7 +544,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post readTarget = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(readTarget.getId(), null);
+        PostDetailResponse result = postService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
 
         // then
         assertThat(result.owner()).isInstanceOfSatisfying(
@@ -512,7 +571,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner));
 
         // when
-        PostDetailResponse result = postService.readPostOfBlogs(readTarget.getId(), null);
+        PostDetailResponse result = postService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
 
         // then
         assertThat(result.owner()).isInstanceOfSatisfying(

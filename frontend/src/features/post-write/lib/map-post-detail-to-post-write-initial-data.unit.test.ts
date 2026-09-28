@@ -7,7 +7,15 @@ import { mapPostDetailToPostWriteInitialData } from './map-post-detail-to-post-w
 
 const createResponse = (overrides: Partial<PostDetailResponse> = {}): PostDetailResponse => ({
 	title: '수정할 제목',
-	content: [{ id: 'paragraph', type: 'paragraph', content: [] }],
+	content: [
+		{
+			id: 'paragraph',
+			type: 'paragraph',
+			props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
+			content: [],
+			children: [],
+		},
+	],
 	publishedAt: '2026-08-24T00:00:00Z',
 	thumbnailImageUrl: 'posts/existing-thumbnail.png',
 	category: '일상',
@@ -46,8 +54,8 @@ describe('mapPostDetailToPostWriteInitialData', () => {
 		expect(mapPostDetailToPostWriteInitialData(createResponse({ category })).settings.category).toBe(expectedCategory);
 	});
 
-	it('본문이 배열이 아니면 안전하게 빈 본문을 사용한다', () => {
-		expect(mapPostDetailToPostWriteInitialData(createResponse({ content: null })).document.blocks).toEqual([]);
+	it('정상적인 빈 본문을 그대로 보존한다', () => {
+		expect(mapPostDetailToPostWriteInitialData(createResponse({ content: [] })).document.blocks).toEqual([]);
 	});
 
 	it('기본 썸네일 경로를 명시적으로 선택한 상태로 보존한다', () => {

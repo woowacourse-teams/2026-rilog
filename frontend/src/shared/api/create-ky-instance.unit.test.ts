@@ -18,6 +18,7 @@ describe('createKyInstance', () => {
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);
 		const client = createKyInstance({
+			baseUrl: 'https://api.rilog.test',
 			tokenManager: {
 				getToken: () => 'access-token',
 				refresh: vi.fn(),
@@ -62,6 +63,7 @@ describe('createKyInstance', () => {
 		vi.stubGlobal('fetch', fetchMock);
 		const refresh = vi.fn().mockResolvedValue('refreshed-token');
 		const client = createKyInstance({
+			baseUrl: 'https://api.rilog.test',
 			retry: 0,
 			tokenManager: {
 				getToken: () => 'expired-token',
@@ -86,6 +88,7 @@ describe('createKyInstance', () => {
 		vi.stubGlobal('fetch', fetchMock);
 		const refresh = vi.fn().mockResolvedValue('refreshed-token');
 		const client = createKyInstance({
+			baseUrl: 'https://api.rilog.test',
 			tokenManager: {
 				getToken: () => 'invalid-token',
 				refresh,

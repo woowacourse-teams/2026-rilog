@@ -2,7 +2,10 @@ import ky from 'ky';
 
 import type { AuthLogoutReason, AuthTokenType } from './types';
 
+import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 import { logNonProductionError } from '@/shared/utils/non-production-console';
+
+import { parseBearerToken } from './authorization-header';
 
 type AuthListener = () => void | Promise<void>;
 type LogoutListener = (reason: AuthLogoutReason) => void | Promise<void>;
@@ -62,15 +65,13 @@ class TokenManager {
 			// 순환 참조(Circular Dependency) 방지를 위해 범용 API 클라이언트(kyInstance) 대신 순수 ky 사용
 			const response = await ky.post(`${baseUrl}/v1/auth/token/refresh`, {
 				credentials: 'include',
-				throwHttpErrors: false,
 			});
 
 			// 이전 세션의 요청을 새 계정의 토큰으로 재시도하지 않는다.
 			if (sessionVersion !== this.sessionVersion) return null;
 
 			if (response.ok) {
-				const authHeader = response.headers.get('Authorization');
-				const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+				const token = parseBearerToken(response.headers.get('Authorization'));
 
 				if (token) {
 					this.setToken(token);
@@ -78,6 +79,8 @@ class TokenManager {
 				}
 			}
 		} catch (error) {
+			if (sessionVersion !== this.sessionVersion) return null;
+			apiErrorReporter.report(error, { operation: 'auth.refresh' });
 			logNonProductionError('[TokenManager] Failed to refresh token:', error);
 		}
 

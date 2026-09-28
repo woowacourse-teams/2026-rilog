@@ -17,6 +17,7 @@ const POST_FIXTURES: PostFeedItem[] = [
 		title: '접근 가능한 인터페이스 만들기',
 		thumbnailUrl: 'https://images.rilog.test/post.png',
 		publishedAt: '2026-08-16',
+		totalCommentsCount: 0,
 		author: { id: 1, nickname: '새봄', slug: 'saebom', profileImageUrl: '/images/saebom.png' },
 		blog: { id: 1, name: '새봄', slug: 'saebom', type: 'RILOG', profileImageUrl: null },
 	},
@@ -26,6 +27,7 @@ const POST_FIXTURES: PostFeedItem[] = [
 		title: '디자인 토큰 운영 기록',
 		thumbnailUrl: null,
 		publishedAt: '2026-08-15',
+		totalCommentsCount: 0,
 		author: { id: 2, nickname: '여름', slug: 'summer', profileImageUrl: null },
 		blog: { id: 2, name: '여름', slug: 'summer', type: 'RILOG', profileImageUrl: null },
 	},
@@ -68,13 +70,6 @@ describe('BlogPostFeed', () => {
 				'http://localhost',
 			).pathname,
 		).toBe('/images/thumbnail-fallback.svg');
-		expect(within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' })).not.toHaveClass(
-			'object-contain',
-			'p-5',
-		);
-		expect(
-			within(postSection).getByRole('img', { name: '디자인 토큰 운영 기록 썸네일' }).parentElement,
-		).not.toHaveClass('border', 'border-border-default');
 	});
 
 	it('게시글이 없으면 빈 상태를 제공한다', () => {

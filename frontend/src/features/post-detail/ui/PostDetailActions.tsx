@@ -21,6 +21,7 @@ export default function PostDetailActions({ slug, postId, viewerPermissions }: P
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const deletePostMutation = useDeletePostMutation();
 	const { canEdit, canDelete } = usePostViewerPermissions({
+		slug,
 		postId,
 		initialPermissions: viewerPermissions,
 	});
@@ -31,7 +32,7 @@ export default function PostDetailActions({ slug, postId, viewerPermissions }: P
 
 	const handleEdit = () => {
 		recordEditorEntryContext('post_detail_edit');
-		router.push(`/write?postId=${postId}`);
+		router.push(`/write?postId=${postId}&slug=${encodeURIComponent(slug)}`);
 	};
 	const handleDeleteRequest = () => {
 		deletePostMutation.reset();

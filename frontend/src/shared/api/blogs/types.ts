@@ -79,6 +79,7 @@ export interface ChapterRenameRequest {
 }
 
 export interface PostItemResponse {
+	totalCommentsCount: number;
 	postId: number;
 	title: string;
 	thumbnailImageUrl: string | null;

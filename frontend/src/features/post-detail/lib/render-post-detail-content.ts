@@ -1,3 +1,5 @@
+import { codeBlockOptions } from '@blocknote/code-block';
+import { BlockNoteSchema, createCodeBlockSpec } from '@blocknote/core';
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
 
 import type { Block } from '@blocknote/core';
@@ -19,6 +21,48 @@ const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
 const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
 const POST_DETAIL_CODE_CONTENT_SELECTOR =
 	'.bn-block-content[data-content-type="codeBlock"][data-language] > pre > code.bn-inline-content';
+const POST_DETAIL_SCHEMA = BlockNoteSchema.create().extend({
+	blockSpecs: {
+		codeBlock: createCodeBlockSpec({ supportedLanguages: codeBlockOptions.supportedLanguages }),
+	},
+});
+const INLINE_COMMENT_SUPPORTED_BLOCK_TYPES = new Set([
+	'paragraph',
+	'heading',
+	'bulletListItem',
+	'numberedListItem',
+	'checkListItem',
+	'quote',
+	'toggleListItem',
+	'codeBlock',
+]);
+
+const markInlineCommentRoots = (container: HTMLElement) => {
+	container.querySelectorAll<HTMLElement>('.bn-block-content[data-content-type]').forEach((blockContent) => {
+		const contentType = blockContent.dataset.contentType;
+		if (contentType === undefined || !INLINE_COMMENT_SUPPORTED_BLOCK_TYPES.has(contentType)) {
+			return;
+		}
+		if (contentType === 'codeBlock' && blockContent.dataset.language === 'mermaid') {
+			return;
+		}
+
+		const block = blockContent.closest<HTMLElement>('.bn-block-outer[data-id]');
+		const blockId = block?.dataset.id;
+		if (blockId === undefined || blockId.length === 0) {
+			return;
+		}
+
+		const inlineContents = blockContent.querySelectorAll<HTMLElement>('.bn-inline-content');
+		if (inlineContents.length !== 1) {
+			return;
+		}
+
+		const [inlineContent] = inlineContents;
+		inlineContent.dataset.inlineCommentRoot = '';
+		inlineContent.dataset.inlineCommentBlockId = blockId;
+	});
+};
 
 const enhancePostDetailHtml = async (
 	html: string,
@@ -89,12 +133,15 @@ const enhancePostDetailHtml = async (
 		toggleButton.setAttribute('aria-controls', childBlockGroupId);
 	});
 
+	markInlineCommentRoots(container);
+
 	return container.innerHTML;
 };
 
 export const renderPostDetailContent = async (blocks: Block[]): Promise<string> => {
 	const headingIdByBlockId = new Map(extractPostHeadingAnchors(blocks).map(({ blockId, id }) => [blockId, id]));
-	const editor = ServerBlockNoteEditor.create();
+	const editor = ServerBlockNoteEditor.create({ schema: POST_DETAIL_SCHEMA });
+	editor.editor.isEditable = false;
 
 	// BlockNote 0.53은 URL 없는 JSDOM을 사용해 이미지 등 일부 블록 렌더링 중 localStorage 접근이 실패한다.
 	// 서버 전용 가상 DOM에 origin만 부여하고 외부 네트워크 요청이나 브라우저 저장소는 사용하지 않는다.

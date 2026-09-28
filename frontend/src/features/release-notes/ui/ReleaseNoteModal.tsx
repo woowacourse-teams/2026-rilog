@@ -73,6 +73,7 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 				</div>
 			}
 		>
+			{note.intro && <p className="mb-6 text-body-1 whitespace-pre-wrap text-text-secondary">{note.intro}</p>}
 			<ul className="space-y-6">
 				{note.items.map((item, index) => (
 					<li key={index} className="wrap-break-word break-keep">

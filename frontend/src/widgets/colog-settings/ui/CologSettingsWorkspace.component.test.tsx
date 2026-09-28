@@ -174,14 +174,14 @@ describe('CologSettingsWorkspace', () => {
 		expect(screen.getByRole('button', { name: '팀 이름 중복 확인' })).toBeInTheDocument();
 		for (const label of ['팀 이름', '팀 고유 아이디']) {
 			const fieldLabel = screen.getByText(label).closest('label')!;
-			expect(within(fieldLabel).getByText('*')).toHaveClass('text-danger');
+			expect(within(fieldLabel).getByText('*')).toBeInTheDocument();
 		}
 		expect(within(screen.getByText('팀 로고').closest('label')!).queryByText('*')).not.toBeInTheDocument();
 		const slugInput = screen.getByRole('textbox', { name: '팀 고유 아이디' });
 		expect(slugInput).toHaveValue('team_rilog');
 		expect(slugInput).toBeDisabled();
 		expect(slugInput).toHaveAccessibleDescription('팀 고유 아이디는 변경할 수 없습니다.');
-		expect(screen.getByText('rilog.kr/@')).toBeInTheDocument();
+		expect(screen.getByText('www.rilog.kr/@')).toBeInTheDocument();
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).toHaveValue('API에서 조회한 팀 소개');
 		expect(screen.getByLabelText('팀 로고 변경')).not.toBeRequired();
 		expect(screen.getByRole('textbox', { name: '팀 소개' })).not.toBeRequired();

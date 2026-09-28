@@ -43,6 +43,9 @@ export type FeedCategory = 'ALL' | 'TECH' | 'DAILY' | 'RETROSPECT';
 export type ImageSource = 'uploaded' | 'existing' | 'body' | 'default';
 // 게시글을 온전히 소비했는지 지표
 export type ScrollDepthBucket = '50_percent';
+export type InlineCommentEntrySource = 'highlight' | 'block' | 'all';
+export type InlineCommentCreateEntrySource = InlineCommentEntrySource | 'selection_toolbar';
+export type InlineCommentType = 'new_anchor' | 'reply';
 // 작성한 글의 블록 수를 범주화한 값, 정확한 수 대신 구간으로 기록하면 이벤트 차원을 과도하게 늘리지 않고, 사용자가 주로 짧은 글·중간 길이 글·긴 글 중 무엇을 작성하는지 분석할 수 있음
 export type BlockCountBucket = '1-5' | '6-10' | '11-20' | '21+';
 

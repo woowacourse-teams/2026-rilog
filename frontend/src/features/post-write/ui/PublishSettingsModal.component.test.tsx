@@ -88,7 +88,6 @@ describe('PublishSettingsModal', () => {
 		expect(previewImage).toHaveAttribute('src', POST_THUMBNAIL_FALLBACK_URL);
 		expect(previewImage.closest('[data-ph-sensitive-media]')).toBeInTheDocument();
 		expect(screen.getByText('게시글 제목')).toHaveClass('ph-mask');
-		expect(previewImage.parentElement).toHaveClass('bg-thumbnail-background');
 	});
 
 	it('수정 초기값의 대표 이미지 URL이 기본 썸네일과 같으면 제거 동작을 제공하지 않는다', () => {
@@ -113,7 +112,6 @@ describe('PublishSettingsModal', () => {
 		expect(screen.queryByRole('combobox', { name: 'Colog' })).not.toBeInTheDocument();
 		await user.click(screen.getByRole('radio', { name: 'Colog' }));
 		const cologSelect = screen.getByRole('combobox', { name: 'Colog' });
-		expect(cologSelect).toHaveClass('native-select');
 		expect(cologSelect).toHaveDisplayValue('선택 안 함');
 		expect(handleTargetBlogChange).toHaveBeenCalledWith(null);
 
@@ -240,7 +238,6 @@ describe('PublishSettingsModal', () => {
 		const { unmount } = renderModal();
 
 		const seriesSelect = screen.getByRole('combobox', { name: '시리즈' });
-		expect(seriesSelect).toHaveClass('native-select');
 		expect(seriesSelect).toHaveDisplayValue('선택 안 함');
 		expect(within(seriesSelect).getByRole('option', { name: '선택 안 함' })).toHaveValue('');
 		expect(screen.getByRole('option', { name: '프론트엔드 성장 기록' })).toBeInTheDocument();

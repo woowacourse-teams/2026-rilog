@@ -37,7 +37,7 @@ describe('usePostViewerPermissions', () => {
 		usePostDetailQueryMock.mockReturnValue({ data: { canEdit: true, canDelete: true } });
 
 		const { result } = renderHook(() =>
-			usePostViewerPermissions({ postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
+			usePostViewerPermissions({ slug: 'rilog-team', postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
 		);
 
 		expect(usePostDetailQueryMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 31, isEnabled: false }));
@@ -45,7 +45,9 @@ describe('usePostViewerPermissions', () => {
 	});
 
 	it('인증 초기화가 완료된 로그인 사용자는 클라이언트 상세 조회를 활성화한다', () => {
-		renderHook(() => usePostViewerPermissions({ postId: 31, initialPermissions: INITIAL_PERMISSIONS }));
+		renderHook(() =>
+			usePostViewerPermissions({ slug: 'rilog-team', postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
+		);
 
 		expect(usePostDetailQueryMock).toHaveBeenCalledWith(expect.objectContaining({ postId: 31, isEnabled: true }));
 	});
@@ -61,7 +63,7 @@ describe('usePostViewerPermissions', () => {
 		}));
 
 		const { result } = renderHook(() =>
-			usePostViewerPermissions({ postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
+			usePostViewerPermissions({ slug: 'rilog-team', postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
 		);
 
 		expect(result.current).toEqual(clientPermissions);
@@ -69,7 +71,7 @@ describe('usePostViewerPermissions', () => {
 
 	it('클라이언트 응답이 아직 없으면 SSR 권한을 유지한다', () => {
 		const { result } = renderHook(() =>
-			usePostViewerPermissions({ postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
+			usePostViewerPermissions({ slug: 'rilog-team', postId: 31, initialPermissions: INITIAL_PERMISSIONS }),
 		);
 
 		expect(result.current).toEqual(INITIAL_PERMISSIONS);

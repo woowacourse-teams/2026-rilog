@@ -138,6 +138,16 @@ public class BlogMember extends BaseEntity {
         return isAdminPermission() && getDeletedAt() == null;
     }
 
+    public boolean isActive() {
+        return status == ACTIVE && getDeletedAt() == null;
+    }
+
+    public boolean isUser(Long userId) {
+        return user != null
+                && user.getId() != null
+                && user.getId().equals(userId);
+    }
+
     public void leaveBySelf() {
         validateCanLeave();
         markAsLeft();

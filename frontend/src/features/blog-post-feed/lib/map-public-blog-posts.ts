@@ -29,6 +29,7 @@ const mapPostItem = (post: PostItemResponse): PostFeedItem | null => {
 
 	return {
 		id: postId,
+		totalCommentsCount: post.totalCommentsCount ?? 0,
 		chapterName: chapter?.name ?? null,
 		title,
 		thumbnailUrl: thumbnailImageUrl || null,

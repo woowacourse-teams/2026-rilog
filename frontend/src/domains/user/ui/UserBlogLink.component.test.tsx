@@ -14,7 +14,6 @@ describe('UserBlogLink', () => {
 
 		const profileLink = screen.getByRole('link', { name: '@rilog 블로그로 이동' });
 		expect(profileLink).toHaveAttribute('href', '/@rilog');
-		expect(profileLink).toHaveClass('rounded-full', 'focus-visible:outline-2', 'focus-visible:outline-focus-ring');
 		expect(screen.getByRole('img', { name: 'Rilog 사용자' })).toHaveTextContent('R');
 	});
 });

@@ -27,6 +27,7 @@ export interface PostsCountResponse {
 }
 
 export interface PostDetailRequest {
+	slug: string;
 	postId: number;
 }
 
@@ -67,7 +68,7 @@ interface PostViewerPermissionsResponse {
 
 export interface PostDetailResponse {
 	title: string;
-	content: unknown;
+	content: Block[];
 	publishedAt: string;
 	thumbnailImageUrl: string | null;
 	category: PostCategoryResponse;
@@ -75,4 +76,76 @@ export interface PostDetailResponse {
 	author: PostDetailAuthorResponse;
 	owner: PostDetailOwnerResponse;
 	viewerPermissions: PostViewerPermissionsResponse;
+}
+
+export interface PostCommentAnchorResponse {
+	isEdited: boolean;
+	commentAnchorId: number;
+	content: string;
+	author: {
+		userId: number;
+		nickname: string;
+		slug: string;
+		profileImageUrl: string | null;
+		isPostAuthor: boolean;
+		isBlogMember: boolean;
+	};
+	canEdit: boolean;
+	canDelete: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface PostCommentAnchorGroupResponse {
+	selectionId: number;
+	range: { startOffset: number; endOffset: number };
+	selectedText: string;
+	state: 'ACTIVE' | 'ORPHANED';
+	anchorCount: number;
+	commentAnchors: PostCommentAnchorResponse[];
+}
+
+export interface PostCommentAnchorsResponse {
+	blocks: { blockId: string; anchorGroups: PostCommentAnchorGroupResponse[] }[];
+}
+
+export interface PostCommentAnchorSidebarGroupResponse extends PostCommentAnchorGroupResponse {
+	blockId: string;
+}
+
+export interface PostCommentAnchorsSidebarResponse {
+	anchorGroups: PostCommentAnchorSidebarGroupResponse[];
+}
+
+export interface PostCommentAnchorCreateRequest {
+	blockId: string;
+	startOffset: number;
+	endOffset: number;
+	selectedText: string;
+	content: string;
+}
+
+export interface PostCommentAnchorCreateResponse {
+	commentAnchorId: number;
+}
+
+export interface PostCommentAnchorAddRequest {
+	content: string;
+}
+
+export interface PostCommentAnchorUpdateRequest {
+	content: string;
+}
+
+export interface PostCommentAnchorUpdateResponse {
+	commentAnchorId: number;
+	content: string;
+	isEdited: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface PostCommentAnchorDeleteResponse {
+	commentAnchorId: number;
+	selectionId: number;
 }

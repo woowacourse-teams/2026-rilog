@@ -5,14 +5,16 @@ import { useAuth } from '@/features/auth/model/use-auth';
 import { usePostDetailQuery } from '@/shared/api/posts/queries/post-detail/use-query';
 
 interface UsePostViewerPermissionsOptions {
+	slug: string;
 	postId: number;
 	initialPermissions: PostViewerPermissions;
 }
 
-export const usePostViewerPermissions = ({ postId, initialPermissions }: UsePostViewerPermissionsOptions) => {
+export const usePostViewerPermissions = ({ slug, postId, initialPermissions }: UsePostViewerPermissionsOptions) => {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const isAuthenticatedUserReady = isInitialized && isAuthenticated;
 	const postDetailQuery = usePostDetailQuery({
+		slug,
 		postId,
 		isEnabled: isAuthenticatedUserReady,
 		select: (response) => response.data?.viewerPermissions,

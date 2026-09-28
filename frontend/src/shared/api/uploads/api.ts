@@ -1,14 +1,40 @@
-import { apiClient, apiRequest, kyInstance } from '@/shared/api/client';
-import type { ApiResponse } from '@/shared/api/shared.types';
+import { apiRequest, kyInstance } from '@/shared/api/client';
+import { isRecord, parseApiJsonResponse } from '@/shared/api/response-validation';
 import type {
 	PresignedUrlCreateRequest,
 	PresignedUrlCreateResponse,
 	UploadFileOptions,
 } from '@/shared/api/uploads/types';
+import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
+
+const isPresignedUrlResponse = (value: unknown): value is PresignedUrlCreateResponse => {
+	if (!isRecord(value) || !isRecord(value.headers) || typeof value.uploadUrl !== 'string') return false;
+	let uploadUrl: URL;
+	try {
+		uploadUrl = new URL(value.uploadUrl);
+	} catch {
+		return false;
+	}
+	return (
+		(uploadUrl.protocol === 'https:' || uploadUrl.protocol === 'http:') &&
+		!uploadUrl.username &&
+		!uploadUrl.password &&
+		typeof value.uploadId === 'string' &&
+		value.uploadId.length > 0 &&
+		typeof value.objectKey === 'string' &&
+		value.objectKey.length > 0 &&
+		typeof value.expiresAt === 'string' &&
+		!Number.isNaN(Date.parse(value.expiresAt)) &&
+		Object.entries(value.headers).every(
+			([name, values]) => name.length > 0 && Array.isArray(values) && values.every((item) => typeof item === 'string'),
+		)
+	);
+};
 
 export const createPresignedUrl = (request: PresignedUrlCreateRequest) =>
-	apiClient.post<ApiResponse<PresignedUrlCreateResponse>>('v1/uploads/presigned-url', {
-		json: request,
+	apiRequest(async () => {
+		const response = await kyInstance.post('v1/uploads/presigned-url', { json: request });
+		return parseApiJsonResponse(response, 'uploads.presign', isPresignedUrlResponse);
 	});
 
 export const uploadFileToPresignedUrl = async (
@@ -45,14 +71,19 @@ export const uploadFileWithPresignedUrl = async ({
 		contentType,
 		size: file.size,
 		type,
+	}).catch((error: unknown) => {
+		apiErrorReporter.report(error, { operation: 'upload.presign' });
+
+		throw error;
 	});
 
 	const data = response.data;
-	if (!data) {
-		throw new Error('Presigned URL 발급 응답 데이터가 존재하지 않습니다.');
-	}
 
-	await uploadFileToPresignedUrl(data.uploadUrl, file, data.headers);
+	await uploadFileToPresignedUrl(data.uploadUrl, file, data.headers).catch((error: unknown) => {
+		apiErrorReporter.report(error, { operation: 'upload.put' });
+
+		throw error;
+	});
 
 	return data;
 };

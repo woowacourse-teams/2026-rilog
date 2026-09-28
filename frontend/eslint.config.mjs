@@ -3,7 +3,6 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettierConfig from 'eslint-config-prettier/flat';
 import checkFile from 'eslint-plugin-check-file';
-import importPlugin from 'eslint-plugin-import';
 import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
@@ -23,10 +22,9 @@ const eslintConfig = defineConfig([
 	...nextVitals,
 	...nextTs,
 	{
+		files: ['src/**/*.{js,jsx,ts,tsx}'],
 		plugins: {
 			'check-file': checkFile,
-			import: importPlugin,
-			'unused-imports': unusedImports,
 		},
 		rules: {
 			'check-file/filename-naming-convention': [
@@ -64,6 +62,9 @@ const eslintConfig = defineConfig([
 	{
 		files: ['**/*.{ts,tsx}'],
 		extends: [...tseslint.configs.recommendedTypeChecked],
+		plugins: {
+			'unused-imports': unusedImports,
+		},
 		languageOptions: {
 			parserOptions: {
 				projectService: true,
@@ -72,6 +73,8 @@ const eslintConfig = defineConfig([
 		},
 		rules: {
 			'@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+			'@typescript-eslint/no-non-null-assertion': 'error',
+			'@typescript-eslint/switch-exhaustiveness-check': 'error',
 			'@typescript-eslint/consistent-type-imports': [
 				'error',
 				{
@@ -119,6 +122,13 @@ const eslintConfig = defineConfig([
 		},
 	},
 	{
+		files: ['**/*.{unit,component}.test.{ts,tsx}', '**/*.spec.ts'],
+		rules: {
+			// Tests use assertions for known fixture and DOM setup; production data paths must narrow null explicitly.
+			'@typescript-eslint/no-non-null-assertion': 'off',
+		},
+	},
+	{
 		files: nextComponentFiles,
 		rules: {
 			...componentDefinitionRules,
@@ -154,6 +164,12 @@ const eslintConfig = defineConfig([
 		'out/**',
 		'build/**',
 		'next-env.d.ts',
+		// Local tooling and private notes are outside the frontend source tree.
+		'.agents/skills/archify/**',
+		'.archify/**',
+		'.docs/**',
+		'playwright-report/**',
+		'test-results/**',
 	]),
 	prettierConfig,
 ]);

@@ -1,0 +1,72 @@
+# API 오류 보고의 operation별 계약
+
+실행 기준은 [api-error-contracts.ts](../../frontend/src/shared/api/api-error-contracts.ts), 공개 코드와 의미 분류는 [error-codes.ts](../../frontend/src/shared/api/error-codes.ts)다. 목록은 서버에서 발생 가능한 모든 오류가 아니라 **정상 제외 후보**다. 목록에 없는 핵심 작업 실패는 보고하고, 목록에 있어도 5xx이면 보고한다. 아래 근거는 현재 BE 구현을 함께 확인한 것이다. 응답 스펙을 변경하지 않는다.
+
+## 공통 우선순위
+
+1. 사용자 취소 `AbortError`와 오프라인 통신 실패는 제외한다. 오프라인 상태라는 이유로 프로그래밍 오류까지 제외하지 않는다.
+2. 최종 5xx, 온라인 통신 실패, BE 계약에 없는 errorCode는 수집한다. FE 호환용 기존 코드 4개도 정상 제외로 취급하지 않는다. 최종 429는 기존 전송 제한을 적용한다.
+3. 자사 API의 정상 권한·부재·중복(`authorization`, `not-found`, `conflict`)과 `EXPECTED_AUTH_ERROR_CODES`의 토큰 복구 오류를 제외한다. 코드 없는 HTTP 401/403/404/409도 제외한다. S3 PUT의 403/404는 이 규칙의 대상이 아니다.
+4. operation별 `expectedErrors`를 적용한다. `exclude`는 정상 거부, `user-input`은 실제 요청에서 확인한 사용자 입력 제약 위반일 때만 제외, `oauth-cancelled`는 확인된 동의 취소일 때만 제외한다.
+5. 나머지 핵심 작업·복구 UI 실패를 수집한다. 일반 query/mutation은 추가 4xx를 핵심 작업/복구 UI 경계에 위임한다.
+
+`REQUEST_VALIDATION_FAILED`는 400/422라는 이유만으로 제외하지 않는다. 서버가 지목한 모든 필드가 실제 사용자 입력 제약 위반으로 확인되어야 한다. 제목 누락, 내부 본문 구조 오류, 정상 입력을 서버가 거부한 경우는 수집한다. BE reason/UI 메시지 원문으로 판단하지 않는다.
+
+## 핵심 operation
+
+아래 목록에 공통 토큰 복구·권한·부재·중복 규칙이 함께 적용된다. `REQUEST_VALIDATION_FAILED`와 생성 시 `INVALID_SLUG`는 조건부 제외다.
+
+| operation / feature | API | 정상 제외 후보 | BE 근거 |
+| --- | --- | --- | --- |
+| `draft.save` / writing | POST `/v1/drafts` | REQUEST_VALIDATION_FAILED, USER_NOT_FOUND, RILOG_NOT_FOUND | [DraftService](../../backend/src/main/java/kr/rilog/domain/post/service/DraftService.java), [DTO](../../backend/src/main/java/kr/rilog/domain/post/controller/dto/request/DraftSaveRequest.java) |
+| `draft.overwrite` / writing | PUT `/v1/drafts/{id}` | REQUEST_VALIDATION_FAILED, DRAFT_NOT_FOUND, NOT_POST_AUTHOR | [DraftService](../../backend/src/main/java/kr/rilog/domain/post/service/DraftService.java), [Post](../../backend/src/main/java/kr/rilog/domain/post/entity/Post.java) |
+| `draft.publish` / writing | PUT `/v1/drafts/{id}/publish` | REQUEST_VALIDATION_FAILED, DRAFT_NOT_FOUND, NOT_POST_AUTHOR, USER_NOT_FOUND, BLOG_MEMBER_DOESNT_NOT_BELONG, ALREADY_BLOG_MEMBER_LEFT, CHAPTER_NOT_FOUND, DUPLICATED_PUBLISH, RILOG_POST_PUBLISH_FORBIDDEN | [DraftService](../../backend/src/main/java/kr/rilog/domain/post/service/DraftService.java), [Publisher](../../backend/src/main/java/kr/rilog/domain/blog/model/Publisher.java), [Post](../../backend/src/main/java/kr/rilog/domain/post/entity/Post.java) |
+| `post.publish` / writing | POST `/v1/posts` | REQUEST_VALIDATION_FAILED, BLOG_NOT_FOUND, USER_NOT_FOUND, RILOG_NOT_FOUND, CHAPTER_NOT_FOUND, RILOG_POST_PUBLISH_FORBIDDEN, COLOG_POST_PUBLISH_FORBIDDEN | [PostService](../../backend/src/main/java/kr/rilog/domain/post/service/PostService.java) |
+| `post.update` / writing | PUT `/v1/posts/{id}` | REQUEST_VALIDATION_FAILED, POST_NOT_FOUND, NOT_POST_AUTHOR, CHAPTER_NOT_FOUND, BLOG_MEMBER_DOESNT_NOT_BELONG, ALREADY_BLOG_MEMBER_LEFT | [PostService](../../backend/src/main/java/kr/rilog/domain/post/service/PostService.java), [BlogMember](../../backend/src/main/java/kr/rilog/domain/blog/entity/BlogMember.java) |
+| `inline-comment.create` / comment | POST `/v1/posts/{id}/comment-anchors` | REQUEST_VALIDATION_FAILED·INVALID_COMMENT_CONTENT는 실제 content 제약 위반만 제외 | [CommentAnchor](../../backend/src/main/java/kr/rilog/domain/comment/entity/CommentAnchor.java), [요청 DTO](../../backend/src/main/java/kr/rilog/domain/comment/controller/dto/request) |
+| `inline-comment.add` / comment | POST `/v1/posts/{id}/selections/{selectionId}/comment-anchors` | REQUEST_VALIDATION_FAILED·INVALID_COMMENT_CONTENT는 실제 content 제약 위반만 제외 | [CommentAnchor](../../backend/src/main/java/kr/rilog/domain/comment/entity/CommentAnchor.java), [요청 DTO](../../backend/src/main/java/kr/rilog/domain/comment/controller/dto/request) |
+| `inline-comment.update` / comment | PATCH `/v1/posts/{id}/comment-anchors/{commentAnchorId}` | REQUEST_VALIDATION_FAILED·INVALID_COMMENT_CONTENT는 실제 content 제약 위반만 제외 | [CommentAnchor](../../backend/src/main/java/kr/rilog/domain/comment/entity/CommentAnchor.java), [요청 DTO](../../backend/src/main/java/kr/rilog/domain/comment/controller/dto/request) |
+| `inline-comment.delete` / comment | DELETE `/v1/posts/{id}/comment-anchors/{commentAnchorId}` | 공통 권한·부재·충돌만 제외 | [CommentAnchor](../../backend/src/main/java/kr/rilog/domain/comment/entity/CommentAnchor.java), [요청 DTO](../../backend/src/main/java/kr/rilog/domain/comment/controller/dto/request) |
+| `colog.create` / colog | POST `/v1/cologs` | REQUEST_VALIDATION_FAILED, INVALID_SLUG, USER_NOT_FOUND, BLOG_SLUG_ALREADY_EXISTS, BLOG_PROFILE_NAME_ALREADY_EXISTS, USER_COLOG_COUNT_EXCEEDED | [CologService](../../backend/src/main/java/kr/rilog/domain/blog/service/CologService.java), [DTO](../../backend/src/main/java/kr/rilog/domain/blog/controller/dto/request/CologCreateRequest.java) |
+| `colog.invite` / colog | POST `/v1/cologs/{slug}/members` | REQUEST_VALIDATION_FAILED, BLOG_NOT_FOUND, USER_NOT_FOUND, BLOG_MEMBER_INVITE_FORBIDDEN, ADMIN_PERMISSION_REQUIRED, BLOG_MEMBER_ALREADY_EXISTS, COLOG_MEMBER_COUNT_EXCEEDED, USER_COLOG_COUNT_EXCEEDED | [CologService](../../backend/src/main/java/kr/rilog/domain/blog/service/CologService.java), [BlogMember](../../backend/src/main/java/kr/rilog/domain/blog/entity/BlogMember.java) |
+| `oauth.callback` / auth | POST `/v1/auth/github/callback` | INVALID_OAUTH_STATE, 확인된 취소의 OAUTH_REQUEST_FAILED | [GithubOAuthController](../../backend/src/main/java/kr/rilog/domain/auth/presentation/GithubOAuthController.java), [AuthErrorInformation](../../backend/src/main/java/kr/rilog/domain/auth/exception/AuthErrorInformation.java) |
+| `auth.refresh` / auth | POST `/v1/auth/token/refresh` | 공통 토큰 복구 오류만 제외. 5xx·온라인 통신·미정의 코드는 수집 | [TokenManager](../../frontend/src/shared/api/auth/token-manager.ts), [AuthErrorInformation](../../backend/src/main/java/kr/rilog/domain/auth/exception/AuthErrorInformation.java) |
+| `upload.presign` / upload | POST `/v1/uploads/presigned-url` | REQUEST_VALIDATION_FAILED, UNSUPPORTED_IMAGE_FORMAT, IMAGE_SIZE_EXCEEDED, UNSUPPORTED_FILE_FORMAT, FILE_SIZE_EXCEEDED | [UploadService](../../backend/src/main/java/kr/rilog/domain/upload/service/UploadService.java) |
+| `upload.put` / upload | PUT S3 서명 URL | 없음. 사용자 취소·오프라인은 공통 제외 | [FE 업로드 조합 함수](../../frontend/src/shared/api/uploads/api.ts) |
+
+`query`/`mutation`은 여러 API를 관측하는 공통 경계이므로 feature는 `api`, `content.load`는 `content`, 작업을 모르는 자동 수집은 `unhandled`/`api`다. 공통 경계에서는 USER_COLOG_COUNT_EXCEEDED, COLOG_MEMBER_COUNT_EXCEEDED, CHAPTER_COUNT_EXCEEDED, COMMENT_REPLY_DEPTH_EXCEEDED를 정상 업무 제한으로 취급한다. 핵심 작업에서는 해당 operation에 등재된 제한만 제외한다.
+
+OAuth 파라미터 누락, GitHub 토큰 교환·사용자 조회 실패, 확인되지 않은 OAUTH_REQUEST_FAILED는 보고한다. 업로드 후 FE가 관측하는 발행·저장 실패는 해당 operation으로 보고하지만, 커밋 후 BE 비동기 이미지 태깅은 FE에서 관측할 수 없고 이전 결정대로 Sentry 연동 대상이 아니다.
+
+## 전송 메타데이터
+
+#613의 [공통 개인정보 경계](../adr/0003-sentry-event-privacy.md)를 최종 전송에 적용한다. 공통 environment/release/route/browser/device 태그와 일반 오류·성능 이벤트도 같은 경계에서 처리한다. 제목에서만 코드·응답 부재를 `NO_ERROR_CODE`·`NO_RESPONSE`로 표시한다.
+
+제목은 `[feature] operation failed: api_error_code (httpStatus)` 형식이다. 예: `[writing] draft.publish failed: INVALID_POST_CONTENT (400)`. 입력 내용·URL·서버 메시지와 요청마다 달라지는 ID를 넣지 않는다.
+
+| 태그 | 값과 누락 처리 |
+| --- | --- |
+| `feature` | operation 계약의 고정 feature. 임의 문자열을 허용하지 않음 |
+| `operation` | 계약 목록의 고정 이름. 없거나 알 수 없으면 `unhandled` |
+| `api_error_code` | 코드표의 공개 코드. 미정의 응답 코드는 `UNKNOWN_ERROR_CODE`, 코드가 없으면 태그 생략 |
+| `httpStatus` | 실제 Response의 상태. 응답 없는 통신 오류는 태그 생략 |
+| `request_id` | UUID 형식의 `X-Request-ID`. 없거나 부적절하면 생략. FE가 임의로 생성하지 않음 |
+| `error_type`, `error_kind` | 정규화 분류. kind는 API 오류에서만 기록 |
+
+request_id는 [RequestIdFilter](../../backend/src/main/java/kr/rilog/global/logging/RequestIdFilter.java)가 생성하고 [CorsConfig](../../backend/src/main/java/kr/rilog/global/config/CorsConfig.java)가 브라우저에 노출한다. 제목에는 넣지 않아 요청마다 같은 장애의 제목이 달라지는 것을 피한다. 자동 수집과 명시 보고 모두 같은 변환·최종 필터를 사용한다. 정규화되지 않은 ky HTTPError/NetworkError/TimeoutError도 API 오류로 인식하며, 원본 AbortError도 자동 수집에서 제외한다. API 경계 밖의 일반 TypeError는 프로그래밍 오류일 수 있으므로 오프라인이라는 이유만으로 제외하지 않는다.
+
+## 계약 변경 절차와 검증
+
+BE 오류 추가 시 공개 코드·HTTP 상태·의미와 실제 발생 operation을 확인한다. FE 코드표, `expectedErrors`의 조건, 위 표와 관련 정책 테스트를 함께 갱신한다. 알려진 코드라는 이유만으로 새 정상 제외 항목을 추가하지 않는다. 앱이 만든 요청 문제와 5xx는 목록에 넣어 숨기지 않는다. 이 변경은 FE 수집 기준만 바꾸며 BE 응답 계약에는 영향이 없다.
+
+토큰 갱신은 별도 ky 경로이므로 최종 실패를 `auth.refresh`로 보고한다. 이전 세션의 늦은 실패는 무시하고 정상적인 401 만료는 제외한다. 기존 갱신 요청 병합·토큰 교체·로그아웃 결과는 유지한다.
+
+정책 단위 테스트는 모든 operation의 5xx/통신/미정의 코드 수집, 취소·오프라인 제외, 400/422 입력 검증, 작업별 정상 제한을 검증한다. 전송 테스트는 제목·태그, 잘못된 ID/코드 정리와 원본 스택·민감정보 처리를 검증한다. 기존 mutation/OAuth/업로드 통합 테스트는 실제 보고 경계 연결과 중복 억제를 검증한다.
+
+## 인라인 댓글 오류 보고
+
+신규·추가 작성, 수정·삭제는 mutation의 onError에서 보고하고 errorTracking: local로 전역 fallback의 선행 수집을 막는다. UI는 기존 오류 안내·입력 보존·재시도를 계속 담당한다. 본문·사이드바 조회의 최종 실패는 기존 QueryCache 경계를 유지한다.
+
+서버의 content 제약(빈 문자열·공백, UTF-16 1000자 초과)을 실제 요청에서 확인한 경우에만 입력 거부를 제외한다. 정상 내용의 거부와 content 이외 필드가 섞인 검증 오류는 보고한다. 위치는 앱에서 만들므로 INVALID_COMMENT_ANCHOR·INVALID_TEXT_RANGE·COMMENT_ANCHOR_BLOCK_NOT_COMMENTABLE를 정상 입력 오류로 숨기지 않는다. COMMENT_ANCHOR_NOT_ACTIVE(409), COMMENT_ANCHOR_NOT_FOUND(404), COMMENT_ANCHOR_DELETE_FORBIDDEN(403)은 기존 공통 정책으로 제외하되 5xx이면 보고한다.
+
+보고 context에는 고정 operation과 위반 필드명만 넘긴다. 댓글·인용·초안 원문, 게시글·선택·댓글 ID를 추가하지 않는다. 실제 SDK 전송 테스트에서 원문과 ID 차단, operation 제목과 중복 억제를 확인한다. 저장소 차단·용량 제한 및 복원 불가능한 선택 범위는 기존 복구 가능한 로컬 상태로 처리하며 입력 유지 테스트로 보호한다.

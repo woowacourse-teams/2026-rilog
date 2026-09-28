@@ -70,7 +70,7 @@ const sanitizeAnalyticsUrl = (value: string): string => {
 			return MASKED_VALUE;
 		}
 
-		const url = new URL(value, 'https://rilog.kr');
+		const url = new URL(value, 'https://www.rilog.kr');
 		url.pathname = maskDraftApiPathId(url.pathname);
 		url.pathname = maskUserLookupApiPathSlug(url.pathname);
 		maskUrlQuery(url);

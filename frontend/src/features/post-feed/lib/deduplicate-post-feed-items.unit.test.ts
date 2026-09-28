@@ -10,6 +10,7 @@ const createPostItem = (id: number): PostFeedItem => ({
 	title: `게시글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-16',
+	totalCommentsCount: 0,
 	author: { id: 1, nickname: '리로', slug: 'riro', profileImageUrl: null },
 	blog: { id: 1, name: '리로', slug: 'riro', type: 'RILOG', profileImageUrl: null },
 });

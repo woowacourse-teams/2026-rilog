@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { completeOnboarding, readMyCologsOverview, readUserBySlug } from './api';
+import { completeOnboarding, readMyCologsOverview, readMyInfo, readUserBySlug } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -9,6 +9,14 @@ vi.hoisted(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
+});
+
+it.each([
+	{ operation: '내 정보 조회', request: () => readMyInfo() },
+	{ operation: '온보딩 완료', request: () => completeOnboarding({ nickname: '리로그', slug: 'rilog' }) },
+])('$operation 성공 응답이 잘못된 JSON이면 검증 오류를 반환한다', async ({ request }) => {
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken', { status: 200 })));
+	await expect(request()).rejects.toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
 });
 
 describe('readMyCologsOverview', () => {
@@ -53,7 +61,7 @@ describe('completeOnboarding', () => {
 		const requestBody = {
 			nickname: '리로그',
 			slug: 'rilog',
-			serviceUrl: 'https://rilog.kr',
+			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/rilog',
 		};
 
@@ -63,6 +71,51 @@ describe('completeOnboarding', () => {
 		expect(request.method).toBe('PATCH');
 		expect(request.url).toBe('https://api.rilog.test/v1/users/me/onboarding');
 		expect(capturedBody).toEqual(requestBody);
+	});
+
+	it('응답 본문이 null 계약을 어기거나 토큰이 빠지면 완료 결과를 반환하지 않는다', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				Response.json(
+					{ status: 200, message: 'success', data: { unexpected: true } },
+					{ headers: { Authorization: 'Bearer access-token' } },
+				),
+			)
+			.mockResolvedValueOnce(Response.json({ status: 200, message: 'success', data: null }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(completeOnboarding({ nickname: '리로그', slug: 'rilog' })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+		await expect(completeOnboarding({ nickname: '리로그', slug: 'rilog' })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
+});
+
+describe('readMyInfo', () => {
+	it('내 정보의 필수 필드가 온전할 때만 응답을 반환한다', async () => {
+		const valid = {
+			status: 200,
+			message: 'success',
+			data: { id: 1, slug: 'rilog', nickname: '리로그', profileImageUrl: null },
+		};
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(Response.json(valid))
+			.mockResolvedValueOnce(Response.json({ ...valid, data: { ...valid.data, profileImageUrl: 7 } }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(readMyInfo()).resolves.toEqual(valid);
+		await expect(readMyInfo()).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.url).toBe('https://api.rilog.test/v1/users/me');
 	});
 });
 

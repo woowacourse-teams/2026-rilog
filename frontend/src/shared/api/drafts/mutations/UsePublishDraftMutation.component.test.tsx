@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
@@ -10,6 +11,7 @@ import * as draftsApi from '@/shared/api/drafts/api';
 import { draftsQueryKeys } from '@/shared/api/drafts/queries/keys';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import { postsQueryKeys } from '@/shared/api/posts/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { usePublishDraftMutation } from './use-publish-draft-mutation';
 
@@ -23,7 +25,7 @@ const createWrapper = (queryClient: QueryClient) => {
 
 describe('usePublishDraftMutation', () => {
 	it('발행 성공 후 임시저장 상세를 제거하고 관련 목록과 게시글 캐시를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const removeQueries = vi.spyOn(queryClient, 'removeQueries');
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(draftsApi, 'publishDraft').mockResolvedValue({

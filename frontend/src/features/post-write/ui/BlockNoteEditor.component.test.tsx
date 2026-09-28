@@ -7,16 +7,21 @@ import type { PostEditorHandle } from '../model/post-editor';
 import type { Block } from '@blocknote/core';
 import type { ReactNode } from 'react';
 
+import { RECENT_CODE_LANGUAGE_KEY } from '../lib/recent-code-language';
+
 import BlockNoteEditor from './BlockNoteEditor';
 
 interface MockEditor {
 	document: Block[];
 	domElement: HTMLDivElement;
 	focus: () => void;
+	onChange: (callback: unknown) => () => void;
+	updateBlock: (block: unknown, update: unknown) => void;
 }
 
 interface SuggestionMenuControllerProps {
 	triggerCharacter: string;
+	onItemClick?: (item: { key: string; onItemClick: () => void }) => void;
 	shouldOpen?: (state: {
 		selection: { $from: { parent: { type: { isInGroup: (name: string) => boolean } } } };
 	}) => boolean;
@@ -74,15 +79,24 @@ describe('BlockNoteEditor', () => {
 	];
 	let editorElement: HTMLDivElement;
 	let focusEditor: () => void;
+	let editorChangeCallback: unknown;
+	let updateBlock: (block: unknown, update: unknown) => void;
 
 	beforeEach(() => {
+		window.localStorage.clear();
 		editorElement = document.createElement('div');
 		focusEditor = vi.fn();
+		updateBlock = vi.fn();
 		suggestionMenuControllerProps.mockClear();
 		useCreateBlockNote.mockReturnValue({
 			document: blocks,
 			domElement: editorElement,
 			focus: focusEditor,
+			onChange: (callback) => {
+				editorChangeCallback = callback;
+				return () => undefined;
+			},
+			updateBlock,
 		});
 	});
 
@@ -149,7 +163,67 @@ describe('BlockNoteEditor', () => {
 		expect(languageSelect).toHaveValue('typescript');
 		expect(handleLanguageChange).toHaveBeenCalledOnce();
 		expect(languageTrigger).toHaveAccessibleName('코드 언어: TypeScript');
+		expect(window.localStorage.getItem(RECENT_CODE_LANGUAGE_KEY)).toBe('typescript');
+		await waitFor(() => expect(focusEditor).toHaveBeenCalledOnce());
 		editorElement.remove();
+	});
+
+	it('새 코드블록을 만들 때마다 최신 저장 언어를 읽고 기존 블록과 붙여넣기는 보존한다', () => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const newBlock = {
+			id: 'new-code',
+			type: 'codeBlock',
+			props: { language: 'text' },
+			content: [],
+		};
+		const oldParagraph = { type: 'paragraph', content: [] };
+
+		window.localStorage.setItem(RECENT_CODE_LANGUAGE_KEY, 'typescript');
+		callback(editor, {
+			getChanges: () => [{ type: 'update', source: { type: 'local' }, block: newBlock, prevBlock: oldParagraph }],
+		});
+		expect(updateBlock).toHaveBeenCalledWith(newBlock, { props: { language: 'typescript' } });
+
+		vi.mocked(updateBlock).mockClear();
+		window.localStorage.setItem(RECENT_CODE_LANGUAGE_KEY, 'python');
+		suggestionMenuControllerProps.mock.calls.at(-1)?.[0].onItemClick?.({
+			key: 'code_block',
+			onItemClick: () =>
+				callback(editor, {
+					getChanges: () => [{ type: 'insert', source: { type: 'local' }, block: newBlock, prevBlock: undefined }],
+				}),
+		});
+		expect(updateBlock).toHaveBeenCalledWith(newBlock, { props: { language: 'python' } });
+
+		vi.mocked(updateBlock).mockClear();
+		callback(editor, {
+			getChanges: () => [
+				{ type: 'insert', source: { type: 'local' }, block: newBlock, prevBlock: undefined },
+				{ type: 'insert', source: { type: 'paste' }, block: newBlock, prevBlock: undefined },
+				{ type: 'update', source: { type: 'local' }, block: newBlock, prevBlock: { type: 'codeBlock' } },
+				{
+					type: 'update',
+					source: { type: 'local' },
+					block: newBlock,
+					prevBlock: { type: 'paragraph', content: [{ type: 'text', text: '```text', styles: {} }] },
+				},
+			],
+		});
+		expect(updateBlock).not.toHaveBeenCalled();
+	});
+
+	it('붙여넣기 등으로 들어온 H5와 H6을 H4로 제한한다', () => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const heading = { id: 'pasted-h5', type: 'heading', props: { level: 5 }, content: [] };
+
+		callback(editor, {
+			getChanges: () => [{ type: 'insert', source: { type: 'paste' }, block: heading, prevBlock: undefined }],
+		});
+		expect(updateBlock).toHaveBeenCalledWith(heading, { props: { level: 4 } });
 	});
 
 	it('초기 문서와 변경된 문서를 외부 계약으로 전달한다', async () => {

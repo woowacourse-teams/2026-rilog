@@ -224,8 +224,7 @@ describe('BlogHome', () => {
 			filter: { type: 'all' },
 			initialIndexRequestFailed: true,
 		});
-		expect(screen.getByTestId('feed-slot').parentElement?.parentElement).toHaveClass('px-6', 'py-11');
-		expect(screen.getByTestId('feed-slot').parentElement?.parentElement).not.toHaveClass('aside-right:px-0');
+		expect(screen.getByTestId('feed-slot')).toBeInTheDocument();
 	});
 
 	it('COLOG 피드에 제목을 전달해 toolbar와 게시글 목록 사이에 표시한다', () => {

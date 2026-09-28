@@ -12,14 +12,12 @@ export const useDeletePostMutation = () => {
 
 	return useMutation({
 		mutationFn: (postId: number) => deletePost(postId),
-		onSuccess: (_, postId) => {
-			queryClient.removeQueries({ queryKey: postsQueryKeys.detail(postId), exact: true });
-
-			return Promise.all([
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: postsQueryKeys.details() }),
 				queryClient.invalidateQueries({ queryKey: feedsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: blogsQueryKeys.all }),
 				queryClient.invalidateQueries({ queryKey: postsQueryKeys.count() }),
-			]);
-		},
+			]),
 	});
 };

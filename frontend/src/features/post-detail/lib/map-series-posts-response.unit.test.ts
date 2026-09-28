@@ -19,6 +19,7 @@ const RESPONSE: ApiResponse<PublicBlogFeedPostResponse> = {
 				chapter: { chapterId: 3, name: 'Next.js로 블로그 만들기', order: 1 },
 				visibility: 'PUBLIC',
 				publishedAt: '2026-09-01T00:00:00+09:00',
+				totalCommentsCount: 0,
 				author: { userId: 1, nickname: '리로거', slug: 'rilogger', profileImageUrl: null },
 				owner: {
 					type: 'RILOG',

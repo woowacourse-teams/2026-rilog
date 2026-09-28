@@ -13,6 +13,28 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
+it.each([
+	{ operation: '초안 저장', request: () => saveDraft({ title: '제목', content: [] }) },
+	{ operation: '초안 상세 조회', request: () => readDraftDetail({ draftId: 42 }) },
+	{ operation: '초안 덮어쓰기', request: () => overwriteDraft(42, { title: '제목', content: [] }) },
+	{
+		operation: '초안 발행',
+		request: () =>
+			publishDraft(42, {
+				slug: 'rilog-team',
+				title: '제목',
+				content: [],
+				category: 'TECH',
+				visibility: 'PUBLIC',
+				thumbnailImageUrl: null,
+				chapterId: null,
+			}),
+	},
+])('$operation 성공 응답이 잘못된 JSON이면 응답 확인 실패로 처리한다', async ({ request }) => {
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken', { status: 200 })));
+	await expect(request()).rejects.toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
+});
+
 describe('saveDraft', () => {
 	it('게시글 제목과 본문을 JSON 본문에 담아 POST v1/drafts로 요청한다', async () => {
 		const responseBody = {
@@ -40,6 +62,14 @@ describe('saveDraft', () => {
 		expect(request.method).toBe('POST');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts');
 		expect(capturedBody).toEqual(requestBody);
+	});
+
+	it('저장 응답의 draftId가 없으면 성공으로 반환하지 않는다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 201, message: 'OK', data: {} })));
+		await expect(saveDraft({ title: '제목', content: [] })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
 	});
 });
 
@@ -95,6 +125,29 @@ describe('readDraftDetail', () => {
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
 	});
+
+	it('손상된 임시저장 본문을 성공 데이터로 반환하지 않는다', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					status: 200,
+					message: 'OK',
+					data: {
+						draftId: 42,
+						title: '제목',
+						content: null,
+						status: 'DRAFT',
+						publishedAt: '2026-08-27T10:42:11.852Z',
+					},
+				}),
+			),
+		);
+		await expect(readDraftDetail({ draftId: 42 })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
 });
 
 describe('overwriteDraft', () => {
@@ -124,6 +177,14 @@ describe('overwriteDraft', () => {
 		expect(request.method).toBe('PUT');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/42');
 		expect(capturedBody).toEqual(requestBody);
+	});
+
+	it('덮어쓰기 응답에 draftId가 없으면 성공으로 반환하지 않는다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data: null })));
+		await expect(overwriteDraft(42, { title: '제목', content: [] })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
 	});
 });
 
@@ -173,5 +234,23 @@ describe('publishDraft', () => {
 		expect(request.method).toBe('PUT');
 		expect(request.url).toBe('https://api.rilog.test/v1/drafts/7/publish');
 		expect(capturedBody).toEqual({ ...requestBody, slug: 'rilog-team' });
+	});
+
+	it('임시저장 발행 응답의 slug가 없으면 성공으로 반환하지 않는다', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data: { postId: 42 } })),
+		);
+		await expect(
+			publishDraft(42, {
+				slug: 'rilog-team',
+				title: '제목',
+				content: [],
+				category: 'TECH',
+				visibility: 'PUBLIC',
+				thumbnailImageUrl: null,
+				chapterId: null,
+			}),
+		).rejects.toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
 	});
 });

@@ -47,11 +47,14 @@ pnpm exec playwright install chromium
 | `pnpm typecheck`      | Next.js route type 생성과 TypeScript 검사 |
 | `pnpm test:unit`      | 순수 로직 단위 테스트                     |
 | `pnpm test:component` | jsdom 기반 컴포넌트 테스트                |
-| `pnpm test:e2e`       | Chromium 기반 E2E 테스트                  |
+| `pnpm test:e2e`       | 개발 서버 기반 Chromium E2E               |
+| `pnpm test:e2e:prod`  | 기존 production build 기반 Chromium E2E   |
 | `pnpm check`          | PR 전 기본 품질 검사 전체 실행            |
 
 `pnpm check`는 포맷, lint, typecheck, unit/component test와 프로덕션 빌드를 순서대로 실행한다. E2E는 브라우저가
 필요하므로 핵심 사용자 흐름을 변경했을 때 별도로 실행한다.
+
+테스트를 추가·수정·삭제할 때는 [프론트엔드 테스트 기준](../docs/testing/README.md)을 먼저 확인한다. CI와 같은 production E2E 실행 환경은 [품질 게이트](../docs/harness/quality-gates.md)를 따른다.
 
 ## 코드 품질 설정
 

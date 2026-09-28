@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,12 +7,28 @@ import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import * as postsApi from '@/shared/api/posts/api';
 import { postsQueryKeys } from '@/shared/api/posts/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { useUpdatePostMutation } from './use-update-post-mutation';
 
 describe('useUpdatePostMutation', () => {
-	it('수정 성공 후 게시글 상세, 피드와 블로그 글 목록 캐시를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+	it('수정 성공 후 상세·목록과 해당 글의 로그인·비회원 인라인 댓글 캐시를 무효화한다', async () => {
+		const queryClient = createTestQueryClient();
+		const updatedKey = postsQueryKeys.detail('personal-blog', 31);
+		const updatedAliasKey = postsQueryKeys.detail('@personal-blog', 31);
+		const otherKey = postsQueryKeys.detail('personal-blog', 32);
+		for (const key of [updatedKey, updatedAliasKey, otherKey]) queryClient.setQueryData(key, { title: '글' });
+		const commentKeys = [
+			postsQueryKeys.commentAnchors(31, true),
+			postsQueryKeys.commentAnchors(31, false),
+			postsQueryKeys.commentAnchorsSidebar(31, true),
+			postsQueryKeys.commentAnchorsSidebar(31, false),
+			postsQueryKeys.commentAnchors(32, true),
+			postsQueryKeys.commentAnchors(32, false),
+			postsQueryKeys.commentAnchorsSidebar(32, true),
+			postsQueryKeys.commentAnchorsSidebar(32, false),
+		];
+		for (const key of commentKeys) queryClient.setQueryData(key, { data: { blocks: [] } });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		const updatePost = vi.spyOn(postsApi, 'updatePost').mockResolvedValue({
 			status: 200,
@@ -35,9 +51,17 @@ describe('useUpdatePostMutation', () => {
 		await result.current.mutateAsync({ postId: 31, request });
 
 		expect(updatePost).toHaveBeenCalledWith(31, request);
-		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: postsQueryKeys.detail(31) });
+		expect(queryClient.getQueryState(updatedKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryState(updatedAliasKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryState(otherKey)?.isInvalidated).toBe(true);
+		for (const key of commentKeys.slice(0, 4)) {
+			expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
+		}
+		for (const key of commentKeys.slice(4)) {
+			expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
+		}
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
-		expect(invalidateQueries).toHaveBeenCalledTimes(3);
+		expect(invalidateQueries).toHaveBeenCalledTimes(4);
 	});
 });

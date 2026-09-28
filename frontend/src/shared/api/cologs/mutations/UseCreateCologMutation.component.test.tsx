@@ -1,12 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import * as cologsApi from '../api';
 
@@ -22,7 +24,7 @@ const createWrapper = (queryClient: QueryClient) => {
 
 describe('useCreateCologMutation', () => {
 	it('Co-log 생성 성공 후 내 Co-log 목록과 블로그 인덱스 캐시를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(cologsApi, 'createColog').mockResolvedValue({
 			status: 201,

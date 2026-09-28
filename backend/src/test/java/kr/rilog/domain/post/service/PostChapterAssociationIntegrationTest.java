@@ -316,7 +316,11 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, chapter);
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(post.getId(), scenario.writer().getId());
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(
+                scenario.blog().getSlug(),
+                post.getId(),
+                scenario.writer().getId()
+        );
 
         // then
         assertThat(response.chapter()).isEqualTo(new kr.rilog.domain.chapter.controller.dto.response.ChapterResponse(
@@ -334,7 +338,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario);
 
         // when
-        PostDetailResponse response = postService.readPostOfBlogs(post.getId(), null);
+        PostDetailResponse response = postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), post.getId(), null);
 
         // then
         assertThat(response.chapter()).isNull();

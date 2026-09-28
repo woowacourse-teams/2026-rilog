@@ -37,13 +37,24 @@ public class PostController implements PostApiSpec {
     }
 
     @OptionalAuthGuard
-    @GetMapping("/posts/{postId}")
-    public ApiResponse<PostDetailResponse> getPostDetails(
+    @GetMapping("/blogs/{slug}/posts/{postId}")
+    public ApiResponse<PostDetailResponse> getPostDetailsByCanonicalPath(
+            @PathVariable String slug,
             @PathVariable Long postId,
             @NullableLoginUserId Long requesterId
     ) {
-        PostDetailResponse data = postService.readPostOfBlogs(postId, requesterId);
+        PostDetailResponse data = postService.readPostDetailByCanonicalPath(slug, postId, requesterId);
         return ApiResponse.response(HttpStatus.OK, "게시글 상세 조회에 성공했습니다.", data);
+    }
+
+    @AuthGuard
+    @GetMapping("/posts/{postId}")
+    public ApiResponse<PostDetailResponse> getEditablePostDetails(
+            @PathVariable Long postId,
+            @LoginUserId Long requesterId
+    ) {
+        PostDetailResponse data = postService.readEditablePostDetail(postId, requesterId);
+        return ApiResponse.response(HttpStatus.OK, "게시글 수정 정보를 조회했습니다.", data);
     }
 
     @GetMapping("/posts/count")

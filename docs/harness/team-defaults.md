@@ -5,18 +5,12 @@
 ## 공통 개발 방식
 
 - 전략: Git Flow
-- production 브랜치: `main` — 운영 배포 기준
+- production 브랜치: `production` — 운영 배포 기준
 - 개발 브랜치: `develop` — 기능 통합과 다음 배포 준비
 - 파트별 이슈 브랜치: `<be|fe>/<type>/#<이슈번호>-<이슈-설명>` — Backend 또는 Frontend 상세 작업
 - 공통 이슈 브랜치: `common/<type>/#<이슈번호>-<이슈-설명>` — 문서, 저장소 설정과 자동화 등 공통 작업
-- `main`과 `develop` direct push: 금지
+- `production`과 `develop` direct push: 금지
 - merge: squash merge
-
-## 최초 설정
-
-1. 최초 한 번 `main`의 최신 커밋에서 `develop`을 생성한다.
-2. 팀 저장소에 `develop`을 올린 뒤 일반 작업의 기준 브랜치로 사용한다.
-3. `develop` 최초 생성은 direct push 금지 규칙의 bootstrap 예외다.
 
 ## 브랜치 흐름
 
@@ -44,17 +38,17 @@
 - `common/docs/#5-협업-규칙-정리`
 - `common/chore/#3-PR-템플릿-설정`
 
-### Production
+### 운영 배포
 
 1. 배포할 변경을 `develop`에서 검증한다.
-2. 배포 준비가 끝난 변경을 `main`에 merge한다.
-3. `main`을 기준으로 운영에 배포한다.
+2. 배포 준비가 끝난 변경을 `production`에 merge한다.
+3. `production`을 기준으로 운영에 배포한다.
 
 ### Hotfix
 
-1. 운영 장애가 발생한 `main`에서 `<be|fe>/hotfix/#<이슈번호>-<이슈-설명>` 브랜치를 만든다.
+1. 운영 장애가 발생한 `production`에서 `<be|fe>/hotfix/#<이슈번호>-<이슈-설명>` 브랜치를 만든다.
 2. 긴급 수정과 회귀 검증을 완료한다.
-3. 수정 내용을 `main`에 merge하여 배포한다.
+3. 수정 내용을 `production`에 merge하여 배포한다.
 4. 동일한 수정 내용을 `develop`에도 merge하여 다음 배포에서 회귀하지 않게 한다.
 
 ## PR과 이슈
@@ -77,9 +71,9 @@
 - Vitest는 순수 로직, RTL은 사용자 관점 UI, Playwright는 핵심 수직 흐름을 검증한다.
 - 별도 전역 상태 라이브러리, Storybook과 전역 coverage hard gate는 초기 도입하지 않는다.
 
-## CI 도입 예정안
+## CI 현황과 품질 게이트
 
-현재 저장소에는 CI가 구성되어 있지 않다. 구체적인 workflow와 필수 검사는 팀 합의 후 도입한다.
+frontend는 `develop`·`production` 대상 PR과 수동 실행에서 품질 workflow를 실행하고, 기존 `production` build·배포 workflow를 별도로 유지한다. 아직 required check로 등록하지 않는다. 구체적인 명령과 artifact는 [품질 게이트](quality-gates.md)를 따른다. backend에는 별도 workflow가 있다.
 
 - 로컬과 CI는 같은 검증 명령을 사용한다.
 - 반복 실행에서 안정적인 검사부터 필수 검사로 지정한다.

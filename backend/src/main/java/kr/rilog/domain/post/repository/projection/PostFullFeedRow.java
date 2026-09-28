@@ -27,6 +27,50 @@ public record PostFullFeedRow(
         Long ownerId,
         String ownerSlug,
         String ownerName,
-        String ownerProfileImageUrl
+        String ownerProfileImageUrl,
+        Long inlineCommentCount
 ) {
+
+    public PostFullFeedRow(
+            Long postId,
+            String title,
+            String thumbnailImageUrl,
+            Category category,
+            PostVisibility visibility,
+            LocalDateTime publishedAt,
+            Long chapterId,
+            String chapterName,
+            Integer chapterOrder,
+            Long authorId,
+            String authorNickname,
+            String authorSlug,
+            String authorProfileImageUrl,
+            BlogType ownerType,
+            Long ownerId,
+            String ownerSlug,
+            String ownerName,
+            String ownerProfileImageUrl
+    ) {
+        this(
+                postId,
+                title,
+                thumbnailImageUrl,
+                category,
+                visibility,
+                publishedAt,
+                chapterId,
+                chapterName,
+                chapterOrder,
+                authorId,
+                authorNickname,
+                authorSlug,
+                authorProfileImageUrl,
+                ownerType,
+                ownerId,
+                ownerSlug,
+                ownerName,
+                ownerProfileImageUrl,
+                0L
+        );
+    }
 }

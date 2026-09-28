@@ -13,6 +13,7 @@ const POST: PostItemResponse = {
 	chapter: null,
 	visibility: 'PUBLIC',
 	publishedAt: '2026-09-08T00:00:00',
+	totalCommentsCount: 0,
 	author: { userId: 10, nickname: '리로', slug: 'riro', profileImageUrl: null },
 	owner: {
 		type: 'COLOG',
@@ -25,15 +26,15 @@ const POST: PostItemResponse = {
 
 describe('mapPublicBlogPosts', () => {
 	it.each([
-		{ chapter: { chapterId: 3, name: '개발 기록', order: 1 }, expectedName: '개발 기록' },
-		{ chapter: null, expectedName: null },
-	])('챕터 $expectedName 및 카테고리를 블로그 목록에 전달한다', ({ chapter, expectedName }) => {
+		{ chapter: { chapterId: 3, name: '개발 기록', order: 1 }, expectedName: '개발 기록', totalCommentsCount: 12 },
+		{ chapter: null, expectedName: null, totalCommentsCount: 0 },
+	])('챕터 $expectedName 및 카테고리를 블로그 목록에 전달한다', ({ chapter, expectedName, totalCommentsCount }) => {
 		const response: ApiResponse<PublicBlogFeedPostResponse> = {
 			status: 200,
 			message: 'OK',
 			data: {
 				type: 'COLOG',
-				posts: [{ ...POST, chapter }],
+				posts: [{ ...POST, chapter, totalCommentsCount }],
 				page: 0,
 				size: 12,
 				numberOfElements: 1,
@@ -42,7 +43,7 @@ describe('mapPublicBlogPosts', () => {
 		};
 
 		expect(mapPublicBlogPosts(response, 0).items).toEqual([
-			expect.objectContaining({ chapterName: expectedName, categoryLabel: '기술' }),
+			expect.objectContaining({ chapterName: expectedName, categoryLabel: '기술', totalCommentsCount }),
 		]);
 	});
 

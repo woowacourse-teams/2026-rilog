@@ -25,7 +25,7 @@ const initialProfile = {
 	slug: 'rilogger',
 	description: '조회된 소개',
 	profileImageUrl: '',
-	serviceUrl: 'https://rilog.kr',
+	serviceUrl: 'https://www.rilog.kr',
 	githubUrl: 'https://github.com/rilog',
 	profileImageFile: null,
 };
@@ -157,7 +157,7 @@ describe('RilogSettingsWorkspace', () => {
 			profileImageUrl: null,
 			coverImageUrl: null,
 			introduction: '조회된 소개',
-			serviceUrl: 'https://rilog.kr',
+			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/rilog',
 		});
 

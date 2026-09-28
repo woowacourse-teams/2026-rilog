@@ -28,6 +28,7 @@ export const getBlogChapterCreateErrorMessage = (error: unknown, displayName: Bl
 			return `${displayName} 이름을 확인해 주세요.`;
 		case 'CHAPTER_MANAGE_FORBIDDEN':
 			return `${displayName}를 추가할 권한이 없습니다.`;
+		case undefined:
 		default:
 			return `${displayName}를 추가하지 못했어요. 다시 시도해 주세요.`;
 	}

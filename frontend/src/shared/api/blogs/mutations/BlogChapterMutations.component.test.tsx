@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as blogsApi from '@/shared/api/blogs/api';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import { useCreateBlogChapterMutation } from './use-create-blog-chapter-mutation';
 import { useDeleteBlogChapterMutation } from './use-delete-blog-chapter-mutation';
@@ -17,7 +18,7 @@ afterEach(() => {
 
 describe('blog chapter mutations', () => {
 	it('챕터 생성 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'createBlogChapter').mockResolvedValue({
 			status: 201,
@@ -40,7 +41,7 @@ describe('blog chapter mutations', () => {
 	});
 
 	it('챕터 이름 변경 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'renameBlogChapter').mockResolvedValue({
 			status: 200,
@@ -63,7 +64,7 @@ describe('blog chapter mutations', () => {
 	});
 
 	it('챕터 삭제 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
-		const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		vi.spyOn(blogsApi, 'deleteBlogChapter').mockResolvedValue(new Response(null, { status: 204 }));
 		const { result } = renderHook(() => useDeleteBlogChapterMutation(), {

@@ -35,6 +35,7 @@ public record FullFeedPostResponse(
             String category,
             String visibility,
             LocalDateTime publishedAt,
+            long totalCommentsCount,
             ChapterResponse chapter,
             AuthorResponse author,
             OwnerResponse owner
@@ -48,6 +49,7 @@ public record FullFeedPostResponse(
                     row.category().getName(),
                     row.visibility().name(),
                     row.publishedAt(),
+                    row.inlineCommentCount(),
                     ChapterResponse.from(row.chapterId(), row.chapterName(), row.chapterOrder()),
                     new AuthorResponse(
                             row.authorId(),

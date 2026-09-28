@@ -124,6 +124,9 @@ describe('renderPostDetailContent', () => {
 		]);
 
 		expect(html.match(/data-post-code-highlighted=""/g)).toHaveLength(1);
+		expect(html.match(/<select[^>]*disabled[^>]*>/g)).toHaveLength(3);
+		expect(html).toContain('<option value="typescript">TypeScript</option>');
+		expect(html).toContain('<option value="text">Plain Text</option>');
 		expect(html).toContain('<span class="line">');
 		expect(html).not.toContain('<script>unsafe</script>');
 		expect(html.match(/&lt;script&gt;unsafe&lt;\/script&gt;/g)).toHaveLength(3);
@@ -159,5 +162,27 @@ describe('renderPostDetailContent', () => {
 		expect(html).toContain('aria-controls="post-detail-toggle-content-0"');
 		expect(html).toContain('aria-controls="post-detail-toggle-content-1"');
 		expect(blocks).toEqual(TOGGLE_BLOCKS);
+	});
+
+	it('지원하는 텍스트 블록에만 blockId가 연결된 인라인 댓글 root를 표시한다', async () => {
+		const html = await renderPostDetailContent(POST_DETAIL_READABILITY_CONTENT);
+		const rootCount = html.match(/data-inline-comment-root=""/g)?.length ?? 0;
+		const blockIds = Array.from(html.matchAll(/data-inline-comment-block-id="([^"]+)"/g), (match) => match[1]);
+
+		expect(rootCount).toBeGreaterThan(0);
+		expect(blockIds).toHaveLength(rootCount);
+		expect(blockIds).toContain('introduction');
+		expect(blockIds).toContain('goal-reference');
+		expect(blockIds).toContain('component-example');
+		expect(blockIds).toContain('readability-toggle');
+		expect(blockIds).toContain('readability-toggle-content');
+		expect(blockIds).not.toContain('comparison-table');
+	});
+
+	it('이미지와 Mermaid 파생 UI에는 인라인 댓글 root를 표시하지 않는다', async () => {
+		const html = await renderPostDetailContent([IMAGE_BLOCK, code('mermaid-code', 'flowchart LR', 'mermaid')]);
+
+		expect(html).not.toContain('data-inline-comment-block-id="image-block"');
+		expect(html).not.toContain('data-inline-comment-block-id="mermaid-code"');
 	});
 });

@@ -1,5 +1,3 @@
-import type { Block } from '@blocknote/core';
-
 import type { Blog } from '@/domains/blog/model/blog';
 import type { PostDetail, PostDetailAuthor } from '@/domains/post/model/post';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
@@ -41,7 +39,7 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 	return {
 		id: postId ?? response.owner.blogId,
 		title: response.title,
-		content: (Array.isArray(response.content) ? response.content : []) as Block[],
+		content: response.content,
 		publishedAt: response.publishedAt,
 		thumbnailUrl: response.thumbnailImageUrl ?? null,
 		author,

@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +8,7 @@ import { readFullFeedPosts } from '@/shared/api/feeds/api';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import type { FullFeedPostResponse, FullFeedPostsFilters, PostItemResponse } from '@/shared/api/feeds/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import PostFeedGrid from './PostFeedGrid';
 
@@ -33,6 +34,7 @@ const createPost = (id: number): PostFeedItem => ({
 	title: `게시글 ${id}`,
 	thumbnailUrl: null,
 	publishedAt: '2026-08-14T09:00:00',
+	totalCommentsCount: 0,
 	author: { id: 1, nickname: '작성자', slug: 'author', profileImageUrl: null },
 	blog: { id, name: '작성자', slug: 'author', type: 'RILOG', profileImageUrl: null },
 });
@@ -49,6 +51,7 @@ const toApiPost = (post: PostFeedItem): PostItemResponse => ({
 	category: '기술',
 	visibility: 'PUBLIC',
 	publishedAt: post.publishedAt,
+	totalCommentsCount: post.totalCommentsCount,
 	author: {
 		userId: post.author.id,
 		nickname: post.author.nickname,
@@ -91,7 +94,7 @@ interface RenderGridProps extends Omit<React.ComponentProps<typeof PostFeedGrid>
 }
 
 const renderGrid = ({ initialPage, initialFilters = {}, ...props }: RenderGridProps = {}) => {
-	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const queryClient = createTestQueryClient();
 
 	if (initialPage !== undefined) {
 		queryClient.setQueryData(feedsQueryKeys.fullFeedPosts({ size: 12, ...initialFilters }), {

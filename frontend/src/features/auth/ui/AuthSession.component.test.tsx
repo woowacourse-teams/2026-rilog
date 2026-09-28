@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import ky from 'ky';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import AuthProvider from './AuthProvider';
 
@@ -33,7 +34,7 @@ function SessionState() {
 
 const renderSession = () =>
 	render(
-		<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+		<QueryClientProvider client={createTestQueryClient()}>
 			<AuthProvider>
 				<SessionState />
 			</AuthProvider>

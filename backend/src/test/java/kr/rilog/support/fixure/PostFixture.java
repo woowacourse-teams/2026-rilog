@@ -127,6 +127,19 @@ public final class PostFixture {
                 .build();
     }
 
+    public static Post publicPublishedRilogPostWithParagraph(Blog rilog, User writer, String paragraphText) {
+        return builderForRilog(rilog, writer)
+                .content(PostContentFixture.content(PostContentFixture.paragraph(paragraphText)).getContent())
+                .build();
+    }
+
+    public static Post privatePublishedRilogPostWithParagraph(Blog rilog, User writer, String paragraphText) {
+        return builderForRilog(rilog, writer)
+                .visibility(PostVisibility.PRIVATE)
+                .content(PostContentFixture.content(PostContentFixture.paragraph(paragraphText)).getContent())
+                .build();
+    }
+
     public static Post privatePublishedRilogPost(Blog rilog, User writer) {
         return builderForRilog(rilog, writer)
                 .visibility(PostVisibility.PRIVATE)
@@ -337,6 +350,11 @@ public final class PostFixture {
 
         private Builder colog(Blog colog) {
             this.colog = colog;
+            return this;
+        }
+
+        private Builder content(JsonNode content) {
+            this.content = content;
             return this;
         }
 

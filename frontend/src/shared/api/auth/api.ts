@@ -1,23 +1,25 @@
 import type { AuthResponse, GitHubCallbackParams } from './types';
 
 import { apiRequest, kyInstance } from '@/shared/api/client';
-import type { ApiResponse } from '@/shared/api/shared.types';
+import { isRecord, parseApiJsonResponse } from '@/shared/api/response-validation';
+
+import { requireBearerToken } from './authorization-header';
+
+const isAuthResponse = (value: unknown): value is AuthResponse =>
+	isRecord(value) &&
+	(value.onboardingStatus === 'PENDING' || value.onboardingStatus === 'COMPLETED') &&
+	typeof value.redirectUrl === 'string';
 
 export const handleGitHubCallback = async (params: GitHubCallbackParams) => {
-	const response = await apiRequest(() =>
-		kyInstance.post('v1/auth/github/callback', {
+	return apiRequest(async () => {
+		const response = await kyInstance.post('v1/auth/github/callback', {
 			json: params,
-		}),
-	);
+		});
+		const data = await parseApiJsonResponse(response, 'auth.github.callback', isAuthResponse);
+		const accessToken = requireBearerToken(response.headers.get('Authorization'), 'auth.github.callback');
 
-	const data = await response.json<ApiResponse<AuthResponse>>();
-	const authorizationHeader = response.headers.get('Authorization');
-	const accessToken = authorizationHeader ? authorizationHeader.replace('Bearer ', '') : null;
-
-	return {
-		data,
-		accessToken,
-	};
+		return { data, accessToken };
+	});
 };
 
 export const logoutAuth = async () => {

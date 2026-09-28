@@ -1,6 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import CologCreatePage from './page';
 
@@ -14,7 +16,7 @@ vi.mock('@/shared/api/users/queries/my-cologs-overview/use-query', () => ({
 
 describe('CologCreatePage', () => {
 	it('팀 생성 페이지의 목적을 안내한다', () => {
-		const queryClient = new QueryClient();
+		const queryClient = createTestQueryClient();
 		render(
 			<QueryClientProvider client={queryClient}>
 				<CologCreatePage />

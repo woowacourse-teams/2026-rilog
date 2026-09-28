@@ -1,13 +1,13 @@
 import { devices, expect, test } from '@playwright/test';
 
-import type { Page } from '@playwright/test';
-
-import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
+import type { Page, Route } from '@playwright/test';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
+import { REQUIRED_E2E_FLOW_TAGS } from './required-flows';
 
-const TEST_IMAGE_BYTES = Array.from(
-	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+const TEST_IMAGE_BYTES = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+	'base64',
 );
 const IPHONE_13 = {
 	deviceScaleFactor: devices['iPhone 13'].deviceScaleFactor,
@@ -17,510 +17,355 @@ const IPHONE_13 = {
 	viewport: devices['iPhone 13'].viewport,
 };
 
-const MY_COLOGS_OVERVIEW_ROUTE = '**/v1/users/me/cologs/overview';
-const PRESIGNED_URL_ROUTE = '**/v1/uploads/presigned-url';
-const MOCK_UPLOAD_ROUTE = '**/e2e-upload';
-const PUBLISH_POST_ROUTE = '**/v1/posts';
-
-const fillPost = async (page: Page) => {
-	await page.getByRole('textbox', { name: '게시글 제목' }).fill('BlockNote 도입 회고');
-	const editor = page.getByRole('textbox', { name: '게시글 내용' });
-	await editor.click();
-	await page.keyboard.type('오늘 배운 내용을 기록합니다.');
-};
-
-const expectBodyImage = async (page: Page) => {
-	await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
-};
+const respond = (route: Route, data: unknown) =>
+	route.fulfill({
+		contentType: 'application/json',
+		body: JSON.stringify({ status: 200, message: 'E2E fixture', data }),
+	});
 
 const enableWriteAccess = async (page: Page) => {
+	await page.route('**/v1/**', (route) => route.abort('failed'));
 	await mockAuthenticatedAccess(page);
-	await page.route(MY_COLOGS_OVERVIEW_ROUTE, (route) =>
-		route.fulfill({
-			contentType: 'application/json',
-			body: JSON.stringify({
-				status: 200,
-				message: '나의 팀 목록 요약 조회에 성공했습니다.',
-				data: [
-					{
-						cologId: 7,
-						slug: 'rilog',
-						name: 'Rilog',
-						profileImageUrl: 'cologs/rilog.png',
-						chapters: [],
-					},
-				],
-			}),
+	await page.route('**/v1/posts/count', (route) => respond(route, { totalPostsCount: 0 }));
+	await page.route('**/v1/drafts/me?*', (route) =>
+		respond(route, { drafts: [], page: 0, size: 10, numberOfElements: 0, hasNext: false }),
+	);
+	await page.route('**/v1/users/me/cologs/overview', (route) => respond(route, []));
+	await page.route('**/v1/uploads/presigned-url', (route) =>
+		respond(route, {
+			uploadId: 'e2e-upload-id',
+			objectKey: 'rilog/images/originals/e2e-upload.png',
+			uploadUrl: 'http://localhost:3000/e2e-upload',
+			headers: {},
+			expiresAt: '2026-08-28T00:00:00Z',
 		}),
 	);
-	await page.route(PRESIGNED_URL_ROUTE, (route) =>
-		route.fulfill({
-			contentType: 'application/json',
-			body: JSON.stringify({
-				status: 200,
-				message: 'Presigned URL 발급에 성공했습니다.',
-				data: {
-					uploadId: 'e2e-upload-id',
-					objectKey: 'rilog/images/originals/e2e-upload.png',
-					uploadUrl: 'http://localhost:3000/e2e-upload',
-					headers: {},
-					expiresAt: '2026-08-28T00:00:00Z',
-				},
-			}),
-		}),
-	);
-	await page.route(MOCK_UPLOAD_ROUTE, (route) => route.fulfill({ status: 200 }));
-	await page.route(PUBLISH_POST_ROUTE, (route) => {
-		if (route.request().method() !== 'POST') return route.fallback();
-
-		return route.fulfill({
-			contentType: 'application/json',
-			body: JSON.stringify({
-				status: 201,
-				message: '게시글 발행에 성공했습니다.',
-				data: { postId: 31, slug: 'rilog' },
-			}),
-		});
-	});
+	await page.route('**/e2e-upload', (route) => route.fulfill({ status: 200 }));
 };
 
-const getSlashMenuPosition = async (page: Page) => {
-	await expect(page.locator('#bn-suggestion-menu')).toBeVisible();
-
-	return page.evaluate(() => {
-		const selection = window.getSelection();
-		const range = selection?.rangeCount === 0 ? undefined : selection?.getRangeAt(0);
-		const caretRect = range?.getBoundingClientRect();
-		const menuRect = document.querySelector<HTMLElement>('#bn-suggestion-menu')?.getBoundingClientRect();
-
-		if (caretRect === undefined || menuRect === undefined) {
-			throw new Error('슬래시 메뉴 또는 커서 위치를 찾을 수 없습니다.');
-		}
-
-		return {
-			caretBottom: caretRect.bottom,
-			caretTop: caretRect.top,
-			menuBottom: menuRect.bottom,
-			menuTop: menuRect.top,
-			menuLeft: menuRect.left,
-			menuRight: menuRect.right,
-			viewportBottom: (window.visualViewport?.offsetTop ?? 0) + (window.visualViewport?.height ?? window.innerHeight),
-			viewportTop: window.visualViewport?.offsetTop ?? 0,
-			viewportWidth: window.innerWidth,
-		};
-	});
-};
-
-const insertQuoteAfterParagraph = async (page: Page) => {
-	const editor = page.getByRole('textbox', { name: '게시글 내용' });
-	await editor.click();
-	await page.keyboard.type('일반 문단');
-	await page.keyboard.press('Enter');
-	await page.keyboard.type('/인용');
-	await page.keyboard.press('Enter');
-	await expect(page.locator('[data-content-type="quote"]')).toBeVisible();
-};
-
-const getBlockOuterPaddingTop = async (page: Page, contentType: string) => {
-	return page.locator(`[data-content-type="${contentType}"]`).evaluate((content) => {
-		const outer = content.closest<HTMLElement>('.bn-block-outer');
-		if (outer === null) {
-			throw new Error('BlockNote 블록 외곽 요소를 찾을 수 없습니다.');
-		}
-
-		return getComputedStyle(outer).paddingTop;
-	});
-};
-
-test.describe('글 작성', () => {
+test.describe('글 작성 브라우저 흐름', () => {
 	test.beforeEach(async ({ page }) => {
 		await enableWriteAccess(page);
 	});
 
-	test('코드 블록에서 언어를 선택하고 구문을 강조한다', async ({ page }) => {
-		await page.goto('/write');
-		const editor = page.getByRole('textbox', { name: '게시글 내용' });
-		await editor.click();
-		await page.keyboard.type('/코드 블록');
-		await page.keyboard.press('Enter');
+	test(
+		'뒤로가기를 취소하면 작성 내용을 유지하고 확인하면 이전 페이지로 이동한다',
+		{
+			tag: REQUIRED_E2E_FLOW_TAGS.writeHistory,
+		},
+		async ({ page }) => {
+			await page.goto('/about');
+			await page.goto('/write');
+			const title = page.getByRole('textbox', { name: '게시글 제목' });
+			await title.fill('뒤로 가기 보호');
 
-		const codeBlock = page.locator('[data-content-type="codeBlock"]');
-		const languageTrigger = page.getByRole('button', { name: '코드 언어: JavaScript' });
-		await expect(codeBlock).toBeVisible();
-		await expect(codeBlock).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-		await expect(codeBlock).toHaveCSS('color', 'rgb(31, 35, 40)');
-		await expect(languageTrigger).toHaveAttribute('aria-expanded', 'false');
-		await page.keyboard.type('const message = "highlighted";');
+			await page.goBack();
+			const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
+			await expect(confirmDialog).toBeVisible();
+			await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
+			await expect(page).toHaveURL('/write');
+			await expect(title).toHaveValue('뒤로 가기 보호');
 
-		await expect.poll(() => codeBlock.locator('span.shiki').count()).toBeGreaterThan(0);
-		expect(
-			await codeBlock
-				.locator('span.shiki')
-				.evaluateAll((elements) => new Set(elements.map((element) => getComputedStyle(element).color)).size),
-		).toBeGreaterThan(1);
+			await page.goBack();
+			await confirmDialog.getByRole('button', { name: '나가기' }).click();
+			await expect(page).toHaveURL('/about');
+		},
+	);
 
-		await languageTrigger.click();
-		const languageListbox = page.getByRole('listbox', { name: '코드 언어' });
-		const triggerBox = await languageTrigger.boundingBox();
-		const codeBox = await codeBlock.locator('pre').boundingBox();
-		expect(triggerBox).not.toBeNull();
-		expect(codeBox).not.toBeNull();
-		expect(triggerBox!.y + triggerBox!.height).toBeLessThanOrEqual(codeBox!.y);
-		await expect(languageListbox).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-		await expect(languageListbox).toHaveCSS('max-height', '288px');
-		await expect(languageListbox).toHaveCSS('overflow-y', 'auto');
-		expect(await languageListbox.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
-		await page.getByRole('option', { name: 'TypeScript' }).click();
-		const typescriptTrigger = page.getByRole('button', { name: '코드 언어: TypeScript' });
-		await expect(typescriptTrigger).toBeVisible();
-		await expect(codeBlock).toHaveAttribute('data-language', 'typescript');
-
-		await typescriptTrigger.click();
-		await page.getByRole('option', { name: 'Plain Text' }).click();
-		await expect(codeBlock).toHaveAttribute('data-language', 'text');
-		await expect(codeBlock.locator('span.shiki')).toHaveCount(0);
-		await expect(codeBlock.locator('pre > code')).toHaveCSS('color', 'rgb(31, 35, 40)');
-	});
-
-	test('Mermaid 코드블록을 다이어그램으로 미리보기한다', async ({ page }) => {
-		await page.goto('/write');
-		const editor = page.getByRole('textbox', { name: '게시글 내용' });
-		await editor.click();
-		await page.keyboard.type('/코드 블록');
-		await page.keyboard.press('Enter');
-
-		const codeBlock = page.locator('[data-content-type="codeBlock"]');
-		await page.getByRole('button', { name: '코드 언어: JavaScript' }).click();
-		await page.getByRole('option', { name: 'Mermaid' }).click();
-		await expect(codeBlock).toHaveAttribute('data-language', 'mermaid');
-
-		await codeBlock.locator('pre').click();
-		await page.keyboard.type('graph TD');
-		await page.keyboard.press('Enter');
-		await page.keyboard.type('A[Start] --> B[End]');
-
-		const diagram = page.getByRole('img', { name: 'Mermaid 다이어그램 미리보기' });
-		await expect(diagram).toBeVisible({ timeout: 15_000 });
-		await expect(diagram).toHaveCSS('border-top-width', '0px');
-		await expect(diagram.locator('svg')).toBeVisible();
-		await expect(diagram.locator('.nodeLabel').first()).toHaveCSS('font-size', '14px');
-		await expect(diagram).toContainText('Start');
-		await expect(diagram).toContainText('End');
-
-		await page.keyboard.press('Enter');
-		await page.keyboard.type('not a diagram');
-		await expect(codeBlock.getByRole('alert')).toHaveText('Mermaid 문법을 확인해 주세요.');
-		await expect(page.getByText('Syntax error in text', { exact: true })).toHaveCount(0);
-		await expect(page.locator('body > div[id^="dmermaid-"]')).toHaveCount(0);
-	});
-
-	test('postId로 조회한 게시글의 문서와 게시 설정을 편집 초기값으로 보여 준다', async ({ page }) => {
-		await page.route('**/v1/posts/31', (route) =>
-			route.fulfill({
-				contentType: 'application/json',
-				body: JSON.stringify({
-					status: 200,
-					message: '게시글 상세 조회에 성공했습니다.',
-					data: {
-						title: '불러온 게시글 제목',
-						content: [
-							{
-								id: 'edit-paragraph',
-								type: 'paragraph',
-								props: {
-									backgroundColor: 'default',
-									textColor: 'default',
-									textAlignment: 'left',
-								},
-								content: [{ type: 'text', text: '불러온 게시글 본문', styles: {} }],
-								children: [],
-							},
-						],
-						publishedAt: '2026-08-24T00:00:00Z',
-						thumbnailImageUrl: 'posts/edit-thumbnail.png',
-						category: '일상',
-						author: { userId: 1, nickname: 'E2E 사용자', slug: 'e2e-user', profileImageUrl: null },
-						owner: {
-							type: 'RILOG',
-							blogId: 1,
-							slug: 'e2e-user',
-							name: 'E2E 사용자',
-							profileImageUrl: null,
-						},
-					},
-				}),
-			}),
-		);
-
-		await page.goto('/write?postId=31');
-
-		await expect(page.getByRole('textbox', { name: '게시글 제목' })).toHaveValue('불러온 게시글 제목');
-		await expect(page.getByRole('textbox', { name: '게시글 내용' })).toContainText('불러온 게시글 본문');
-		await page.getByRole('textbox', { name: '게시글 제목' }).fill('불러온 게시글 제목 수정');
-		await page.getByRole('button', { name: '수정' }).click();
-		await expect(page.getByRole('combobox', { name: '카테고리' })).toHaveValue('DAILY');
-		await expect(page.getByRole('radio', { name: '개인' })).toBeChecked();
-		await expect(page.getByRole('img', { name: '게시글 대표 이미지 미리보기' })).toHaveAttribute(
-			'src',
-			/posts\/edit-thumbnail\.png$/,
-		);
-	});
-
-	test('512px 미만의 좁은 데스크톱 화면에서 발행 버튼을 하단에 고정한다', async ({ page }) => {
-		await page.setViewportSize({ width: 390, height: 500 });
-		await page.goto('/write');
-		const publishButton = page.getByRole('button', { name: '발행' });
-
-		const expectButtonAtViewportBottom = async () => {
-			const buttonBox = await publishButton.boundingBox();
-			expect(buttonBox).not.toBeNull();
-			expect(500 - (buttonBox!.y + buttonBox!.height)).toBeLessThanOrEqual(16);
-		};
-
-		await expectButtonAtViewportBottom();
-		await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-		await expectButtonAtViewportBottom();
-	});
-
-	test('클립보드 이미지를 본문에 붙여넣는다', async ({ page }) => {
-		await page.goto('/write');
-		const editor = page.getByRole('textbox', { name: '게시글 내용' });
-		await editor.click();
-		await editor.evaluate((element, imageBytes) => {
-			const clipboardData = new DataTransfer();
-			clipboardData.items.add(new File([new Uint8Array(imageBytes)], 'clipboard.png', { type: 'image/png' }));
-			element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }));
-		}, TEST_IMAGE_BYTES);
-
-		await expectBodyImage(page);
-	});
-
-	test('이미지 파일을 본문에 끌어다 놓는다', async ({ page }) => {
-		await page.goto('/write');
-		const editor = page.getByRole('textbox', { name: '게시글 내용' });
-		await editor.evaluate((element, imageBytes) => {
-			const dataTransfer = new DataTransfer();
-			dataTransfer.items.add(new File([new Uint8Array(imageBytes)], 'dropped.png', { type: 'image/png' }));
-			const bounds = element.getBoundingClientRect();
-			element.dispatchEvent(
-				new DragEvent('drop', {
-					dataTransfer,
-					bubbles: true,
-					cancelable: true,
-					clientX: bounds.left + 20,
-					clientY: bounds.top + 20,
-				}),
-			);
-		}, TEST_IMAGE_BYTES);
-
-		await expectBodyImage(page);
-	});
-
-	test('이미지 블록의 파일 선택으로 이미지를 업로드한다', async ({ page }) => {
-		await page.goto('/write');
-		const editor = page.getByRole('textbox', { name: '게시글 내용' });
-		await editor.click();
-		await page.keyboard.type('/이미지');
-		await page.keyboard.press('Enter');
-
-		await page
-			.getByRole('tabpanel', { name: '업로드' })
-			.locator('input[type="file"]')
-			.setInputFiles({
-				name: 'selected.png',
-				mimeType: 'image/png',
-				buffer: Buffer.from(TEST_IMAGE_BYTES),
-			});
-
-		await expectBodyImage(page);
-	});
-
-	test('긴 제목은 내부 스크롤 없이 내용 높이만큼 확장된다', async ({ page }) => {
+	test('새로고침을 취소하면 작성 내용을 유지한다', { tag: REQUIRED_E2E_FLOW_TAGS.writeReload }, async ({ page }) => {
 		await page.goto('/write');
 		const title = page.getByRole('textbox', { name: '게시글 제목' });
-		await title.fill('내용에 맞춰 아래로 계속 확장되는 긴 게시글 제목입니다. '.repeat(6));
-
-		const { height, lineHeight, overflow, scrollHeight } = await title.evaluate((element) => ({
-			height: element.clientHeight,
-			lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
-			overflow: getComputedStyle(element).overflowY,
-			scrollHeight: element.scrollHeight,
-		}));
-
-		expect(height).toBeGreaterThan(lineHeight * 2);
-		expect(height).toBeGreaterThanOrEqual(scrollHeight - 1);
-		expect(overflow).toBe('hidden');
-	});
-
-	test('본문 편집기에 접근 가능한 이름과 오류 설명을 연결한다', async ({ page }) => {
-		await page.goto('/write');
-		const editor = page.getByRole('textbox', { name: '게시글 내용' });
-		await expect(editor).toBeVisible();
-
-		await page.getByRole('button', { name: '발행' }).click();
-		const bodyError = page.getByText('내용을 입력해 주세요.');
-		const bodyErrorId = await bodyError.getAttribute('id');
-
-		expect(bodyErrorId).not.toBeNull();
-		await expect(editor).toHaveAttribute('aria-describedby', bodyErrorId!);
-		await editor.fill('본문');
-		await expect(editor).not.toHaveAttribute('aria-describedby');
-	});
-
-	test('발행 설정을 유지하고 mock 발행 후 게시글 URL로 이동한다', async ({ page }) => {
-		await page.goto('/write');
-		await fillPost(page);
-
-		await page.getByRole('button', { name: '발행' }).click();
-		const publishDialog = page.getByRole('dialog', { name: '게시 설정' });
-		await expect(publishDialog).toBeVisible();
-		await publishDialog.getByText('일상', { exact: true }).click();
-		const cologSelect = publishDialog.getByRole('combobox', { name: 'Colog' });
-		await cologSelect.selectOption({ index: 1 });
-		const selectedCoLogId = await cologSelect.inputValue();
-		await publishDialog.getByRole('button', { name: '취소' }).click();
-		await expect(publishDialog).toBeHidden();
-
-		await page.getByRole('button', { name: '발행' }).click();
-		await expect(publishDialog.getByRole('radio', { name: '일상' })).toBeChecked();
-		await expect(publishDialog.getByRole('combobox', { name: 'Colog' })).toHaveValue(selectedCoLogId);
-		await publishDialog.getByRole('button', { name: '발행' }).click();
-		await expect(publishDialog.getByRole('button', { name: '발행' })).toBeDisabled();
-		await expect(publishDialog.getByRole('button', { name: '취소' })).toBeDisabled();
-
-		await expect(page).toHaveURL('/@rilog/posts/31');
-	});
-
-	test('browser back에서 이탈을 취소하거나 계속한다', async ({ page }) => {
-		await page.goto('/');
-		await page.goto('/write');
-		await page.getByRole('textbox', { name: '게시글 제목' }).fill('뒤로 가기 보호');
-
-		await page.goBack();
-		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
-		await expect(confirmDialog).toBeVisible();
-		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
-		await expect(page).toHaveURL('/write');
-
-		await page.goBack();
-		await confirmDialog.getByRole('button', { name: '나가기' }).click();
-		await expect(page).toHaveURL('/feeds');
-	});
-
-	test('같은 origin 링크 이동을 확인하고 취소 또는 계속한다', async ({ page }) => {
-		await page.goto('/write');
-		await page.getByRole('textbox', { name: '게시글 제목' }).fill('링크 이탈 보호');
-		await page.evaluate(() => {
-			const link = document.createElement('a');
-			link.href = '/';
-			link.textContent = '홈으로 이동';
-			document.body.append(link);
-		});
-
-		const homeLink = page.getByRole('link', { name: '홈으로 이동' });
-		const clickHomeLink = () =>
-			homeLink.evaluate((element) => {
-				if (element instanceof HTMLAnchorElement) {
-					element.click();
-				}
-			});
-
-		await clickHomeLink();
-		const confirmDialog = page.getByRole('dialog', { name: '작성 중인 글을 나갈까요?' });
-		await confirmDialog.getByRole('button', { name: '계속 작성' }).click();
-		await expect(page).toHaveURL('/write');
-
-		await clickHomeLink();
-		await confirmDialog.getByRole('button', { name: '나가기' }).click();
-		await expect(page).toHaveURL('/feeds');
-	});
-
-	test('작성 중 reload는 브라우저 기본 경고로 보호한다', async ({ page }) => {
-		await page.goto('/write');
-		await page.getByRole('textbox', { name: '게시글 제목' }).fill('새로고침 보호');
+		await title.fill('새로고침 보호');
 		const dialogPromise = page.waitForEvent('dialog');
 		void page.reload().catch(() => undefined);
 		const dialog = await dialogPromise;
 
 		expect(dialog.type()).toBe('beforeunload');
 		await dialog.dismiss();
+		await expect(page).toHaveURL('/write');
+		await expect(title).toHaveValue('새로고침 보호');
 	});
 
-	test('좁은 데스크톱 viewport에서 작성 화면과 게시 설정이 가로로 넘치지 않는다', async ({ page }) => {
-		await page.setViewportSize({ width: 390, height: 844 });
-		await page.goto('/write');
-		await fillPost(page);
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-
-		await page.getByRole('button', { name: '발행' }).press('Enter');
-		await expect(page.getByRole('dialog', { name: '게시 설정' })).toBeVisible();
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-	});
-
-	test('커서 아래 공간이 부족하면 슬래시 메뉴를 위에 표시하고 viewport 안에 유지한다', async ({ page }) => {
-		await page.setViewportSize({ width: 390, height: 400 });
+	test('문단 밖으로 수평 드래그해도 위 문단이 선택되지 않는다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
-		await page.evaluate(() => window.scrollTo({ top: 0 }));
-		await page.keyboard.type('/');
+		await page.keyboard.type('첫째 문단');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('둘째 문단 길게 선택');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('셋째 문단');
 
-		const position = await getSlashMenuPosition(page);
-		expect(position.menuBottom).toBeLessThanOrEqual(position.caretTop);
-		expect(position.menuTop).toBeGreaterThanOrEqual(position.viewportTop);
-		expect(position.menuBottom).toBeLessThanOrEqual(position.viewportBottom);
-		expect(position.menuLeft).toBeGreaterThanOrEqual(0);
-		expect(position.menuRight).toBeLessThanOrEqual(position.viewportWidth);
+		const secondParagraph = page.locator('.bn-block-content[data-content-type="paragraph"] .bn-inline-content').nth(1);
+		const bounds = await secondParagraph.evaluate((element) => {
+			const range = document.createRange();
+			range.selectNodeContents(element);
+			const rect = range.getBoundingClientRect();
+			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+		});
+		const editorBounds = await editor.boundingBox();
+		const firstBounds = await page
+			.locator('.bn-block-content[data-content-type="paragraph"] .bn-inline-content')
+			.first()
+			.boundingBox();
+		const thirdBounds = await page
+			.locator('.bn-block-content[data-content-type="paragraph"] .bn-inline-content')
+			.nth(2)
+			.boundingBox();
+		expect(editorBounds).not.toBeNull();
+		expect(firstBounds).not.toBeNull();
+		expect(thirdBounds).not.toBeNull();
+		expect(bounds.x - 80).toBeLessThan(editorBounds?.x ?? 0);
+		const y = bounds.y + bounds.height / 2;
+		await page.mouse.move(bounds.x + bounds.width - 5, y);
+		await page.mouse.down();
+		await page.mouse.move(bounds.x - 80, y, { steps: 8 });
+		for (const outsideY of [
+			(firstBounds?.y ?? 0) + (firstBounds?.height ?? 0) / 2,
+			(thirdBounds?.y ?? 0) + (thirdBounds?.height ?? 0) / 2,
+		]) {
+			await page.mouse.move(bounds.x - 80, outsideY, { steps: 8 });
+			await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+			const outsideSelection = await page.evaluate(() => window.getSelection()?.toString() ?? '');
+			expect(outsideSelection).toContain('둘째 문단');
+			expect(outsideSelection).not.toContain('첫째 문단');
+			expect(outsideSelection).not.toContain('셋째 문단');
+		}
+		await page.mouse.move(bounds.x - 80, y, { steps: 8 });
 
-		await page.keyboard.type('이미지');
-		const filteredPosition = await getSlashMenuPosition(page);
-		expect(filteredPosition.menuBottom).toBeLessThanOrEqual(filteredPosition.caretTop);
-		expect(filteredPosition.menuTop).toBeGreaterThanOrEqual(filteredPosition.viewportTop);
-		expect(filteredPosition.menuBottom).toBeLessThanOrEqual(filteredPosition.viewportBottom);
+		const selection = await page.evaluate(() => window.getSelection()?.toString() ?? '');
+		expect(selection).toContain('둘째 문단');
+		expect(selection).not.toContain('첫째 문단');
+		expect(selection).not.toContain('셋째 문단');
+		await page.mouse.up();
+		await page.evaluate(() => window.getSelection()?.removeAllRanges());
+
+		await page.mouse.move(bounds.x + 5, y);
+		await page.mouse.down();
+		await page.mouse.move((editorBounds?.x ?? 0) + (editorBounds?.width ?? 0) + 40, y, { steps: 8 });
+		const rightSelection = await page.evaluate(() => window.getSelection()?.toString() ?? '');
+		expect(rightSelection).toContain('둘째 문단');
+		expect(rightSelection).not.toContain('셋째 문단');
+		await page.mouse.up();
+		await page.evaluate(() => window.getSelection()?.removeAllRanges());
+
+		if (thirdBounds === null) {
+			throw new Error('셋째 문단의 위치를 찾을 수 없습니다.');
+		}
+		await page.mouse.move(bounds.x + 5, y);
+		await page.mouse.down();
+		await page.mouse.move(thirdBounds.x + 25, thirdBounds.y + thirdBounds.height / 2, { steps: 8 });
+		const verticalSelection = await page.evaluate(() => window.getSelection()?.toString() ?? '');
+		expect(verticalSelection).toContain('둘째 문단');
+		expect(verticalSelection).toContain('셋');
+		await page.mouse.up();
 	});
 
-	test('커서 아래 공간이 충분하면 슬래시 메뉴를 아래에 표시한다', async ({ page }) => {
-		await page.setViewportSize({ width: 1280, height: 900 });
+	test('코드블록은 최근 언어를 새 글에서도 사용하고 Enter로 줄을 바꾼다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
-		await page.keyboard.type('/이미지');
+		await page.keyboard.type('/코드');
+		await page.keyboard.press('Enter');
 
-		const position = await getSlashMenuPosition(page);
-		expect(position.menuTop).toBeGreaterThanOrEqual(position.caretBottom);
-		expect(position.menuTop).toBeGreaterThanOrEqual(position.viewportTop);
-		expect(position.menuBottom).toBeLessThanOrEqual(position.viewportBottom);
+		const firstCodeBlock = page.locator('.post-write-blocknote [data-content-type="codeBlock"]').first();
+		await expect(firstCodeBlock.getByRole('button', { name: '코드 언어: Plain Text' })).toBeVisible();
+		await page.keyboard.type('const answer = 42;');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('answer;');
+		await expect(firstCodeBlock.locator('pre code')).toContainText('const answer = 42;\nanswer;');
+
+		await firstCodeBlock.getByRole('button', { name: '코드 언어: Plain Text' }).click();
+		await page.getByRole('option', { name: 'TypeScript' }).click();
+		await expect(firstCodeBlock).toHaveAttribute('data-language', 'typescript');
+		expect(await page.evaluate(() => localStorage.getItem('rilog:recent-code-language'))).toBe('typescript');
+
+		await page.close();
+		const nextPage = await page.context().newPage();
+		await enableWriteAccess(nextPage);
+		await nextPage.goto('/write');
+		const nextEditor = nextPage.getByRole('textbox', { name: '게시글 내용' });
+		await nextEditor.click();
+		await nextPage.keyboard.type('/코드');
+		await nextPage.keyboard.press('Enter');
+		await expect(nextPage.locator('.post-write-blocknote [data-content-type="codeBlock"]').first()).toHaveAttribute(
+			'data-language',
+			'typescript',
+		);
 	});
 
-	test('특수 블록에 데스크톱과 모바일의 공통 세로 여백을 적용한다', async ({ page }) => {
-		await page.setViewportSize({ width: 1280, height: 900 });
+	test('첫 코드블록을 JavaScript로 만들면 하이라이팅과 Enter가 함께 작동한다', async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem('rilog:recent-code-language', 'javascript'));
 		await page.goto('/write');
-		await insertQuoteAfterParagraph(page);
-		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('16px');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드');
+		await page.keyboard.press('Enter');
 
-		await page.setViewportSize({ width: 390, height: 844 });
-		await page.goto('/write');
-		await insertQuoteAfterParagraph(page);
-		expect(await getBlockOuterPaddingTop(page, 'quote')).toBe('12px');
+		const codeBlock = page.locator('.post-write-blocknote [data-content-type="codeBlock"]').first();
+		await expect(codeBlock).toHaveAttribute('data-language', 'javascript');
+		const code = codeBlock.locator('pre code');
+		await page.keyboard.type('const answer = 42;');
+		await expect(code.locator('.shiki').first()).toBeVisible();
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('answer;');
+		await expect(code).toContainText('const answer = 42;\nanswer;');
+		await page.keyboard.press('ControlOrMeta+z');
+		await expect(code).not.toContainText('answer;');
+		await page.keyboard.press('ControlOrMeta+Shift+z');
+		await expect(code).toContainText('const answer = 42;\nanswer;');
 	});
+
+	test('JavaScript 코드블록에서 한글을 지운 뒤 영어 코드를 입력하면 하이라이팅한다', async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem('rilog:recent-code-language', 'javascript'));
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드');
+		await page.keyboard.press('Enter');
+
+		const block = page.locator('.post-write-blocknote [data-content-type="codeBlock"]').first();
+		await expect(block).toHaveAttribute('data-language', 'javascript');
+		const code = block.locator('pre code');
+		await page.keyboard.insertText('한글');
+		await expect(code).toContainText('한글');
+		await page.keyboard.press('Backspace');
+		await page.keyboard.press('Backspace');
+		await expect(block.locator('pre')).toBeEmpty();
+		await expect(code).toBeAttached();
+		await page.keyboard.type('const answer = 42;');
+		await expect(code).toContainText('const answer = 42;');
+		await expect(code.locator('.shiki').first()).toBeVisible();
+	});
+
+	test('언어 없는 백틱 코드블록은 최신 저장 언어를 읽고 명시한 언어는 보존한다', async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem('rilog:recent-code-language', 'python'));
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('``` ');
+		const codeBlocks = page.locator('.post-write-blocknote [data-content-type="codeBlock"]');
+		await expect(codeBlocks.first()).toHaveAttribute('data-language', 'python');
+
+		await page.keyboard.press('Shift+Enter');
+		await page.keyboard.type('```js ');
+		await expect(codeBlocks.nth(1)).toHaveAttribute('data-language', 'javascript');
+		await page.evaluate(() => localStorage.setItem('rilog:recent-code-language', 'typescript'));
+		await page.keyboard.press('Shift+Enter');
+		await page.keyboard.type('``` ');
+		await expect(codeBlocks.nth(2)).toHaveAttribute('data-language', 'typescript');
+	});
+
+	test('백틱으로 만든 코드블록도 최근 JavaScript 언어로 하이라이팅하고 개행한다', async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem('rilog:recent-code-language', 'javascript'));
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('``` ');
+
+		const codeBlock = page.locator('.post-write-blocknote [data-content-type="codeBlock"]').first();
+		await expect(codeBlock).toHaveAttribute('data-language', 'javascript');
+		const code = codeBlock.locator('pre code');
+		await page.keyboard.type('const answer = 42;');
+		await expect(code.locator('.shiki').first()).toBeVisible();
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('answer;');
+		await expect(code).toContainText('const answer = 42;\nanswer;');
+	});
+
+	test('마우스로 코드블록을 선택해도 즉시 입력·Enter·하이라이팅이 작동한다', async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem('rilog:recent-code-language', 'javascript'));
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드');
+		await page.getByText('코드 블록', { exact: true }).click();
+
+		const codeBlock = page.locator('.post-write-blocknote [data-content-type="codeBlock"]').first();
+		await expect(codeBlock).toHaveAttribute('data-language', 'javascript');
+		const code = codeBlock.locator('pre code');
+		await page.keyboard.type('const answer = 42;');
+		await expect(code.locator('.shiki').first()).toBeVisible();
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('answer;');
+		await expect(code).toContainText('const answer = 42;\nanswer;');
+	});
+
+	test('언어 선택 직후 Enter를 누르면 코드블록 안에서 개행한다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/코드');
+		await page.keyboard.press('Enter');
+		const block = page.locator('.post-write-blocknote [data-content-type="codeBlock"]').first();
+		const code = block.locator('pre code');
+		await page.keyboard.type('const first = 1;');
+		await block.getByRole('button', { name: '코드 언어: Plain Text' }).click();
+		await page.getByRole('option', { name: 'JavaScript' }).click();
+		await expect(block).toHaveAttribute('data-language', 'javascript');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('const second = 2;');
+		await expect(code).toContainText('const first = 1;\nconst second = 2;');
+	});
+
+	test('H4는 맞춤 크기로 표시하고 H5 마크다운 입력은 헤딩으로 바꾸지 않는다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('#### ');
+		await page.keyboard.type('넷째 제목');
+		const heading = page.locator('.post-write-blocknote [data-content-type="heading"][data-level="4"]');
+		await expect(heading).toContainText('넷째 제목');
+		await expect(heading).toHaveCSS('font-size', '20px');
+		await expect(heading.locator('.bn-inline-content')).toHaveCSS('line-height', '30px');
+
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('##### 다섯째 문장');
+		await expect(page.locator('.post-write-blocknote [data-content-type="heading"]')).toHaveCount(1);
+		await expect(page.locator('.post-write-blocknote [data-content-type="paragraph"]').last()).toContainText(
+			'##### 다섯째 문장',
+		);
+	});
+
+	test(
+		'파일 선택으로 업로드한 이미지를 편집기에 표시한다',
+		{
+			tag: REQUIRED_E2E_FLOW_TAGS.writeFileUpload,
+		},
+		async ({ page }) => {
+			await page.goto('/write');
+			const editor = page.getByRole('textbox', { name: '게시글 내용' });
+			await editor.click();
+			await page.keyboard.type('/이미지');
+			await page.keyboard.press('Enter');
+
+			await page.getByRole('tabpanel', { name: '업로드' }).locator('input[type="file"]').setInputFiles({
+				name: 'selected.png',
+				mimeType: 'image/png',
+				buffer: TEST_IMAGE_BYTES,
+			});
+
+			await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
+		},
+	);
 });
 
-test.describe('모바일 글쓰기 차단', () => {
+test.describe('모바일 글쓰기 정책', () => {
 	test.use(IPHONE_13);
 
-	test('모바일 기기에서는 editor를 생성하지 않고 PC 이용을 안내한다', async ({ page }) => {
-		await page.context().addCookies([
-			{
-				name: PROXY_SESSION_COOKIE_NAME,
-				value: PROXY_SESSION_COOKIE_VALUE,
-				url: 'http://localhost:3000',
-			},
-		]);
-		await page.goto('/write');
+	test(
+		'모바일 기기에서는 편집기 대신 PC 이용 안내를 제공한다',
+		{
+			tag: REQUIRED_E2E_FLOW_TAGS.mobileWritePolicy,
+		},
+		async ({ page }) => {
+			await enableWriteAccess(page);
+			await page.goto('/write');
 
-		await expect(page.getByRole('heading', { name: '글 작성은 PC에서 이용해 주세요' })).toBeVisible();
-		await expect(page.getByRole('link', { name: '피드로 돌아가기' })).toHaveAttribute('href', '/feeds');
-		await expect(page.getByRole('textbox', { name: '게시글 내용' })).not.toBeAttached();
-		await expect(page.locator('.bn-editor')).not.toBeAttached();
-	});
+			await expect(page.getByRole('heading', { name: '글 작성은 PC에서 이용해 주세요' })).toBeVisible();
+			await expect(page.getByRole('link', { name: '피드로 돌아가기' })).toHaveAttribute('href', '/feeds');
+			await expect(page.getByRole('textbox', { name: '게시글 내용' })).not.toBeAttached();
+			await expect(page.locator('.bn-editor')).not.toBeAttached();
+		},
+	);
 });

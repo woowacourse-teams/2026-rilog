@@ -21,6 +21,7 @@ export default defineConfig({
 	},
 	test: {
 		environment: 'jsdom',
+		maxWorkers: 2,
 		include: ['src/**/*.component.test.tsx'],
 		setupFiles: ['./src/test/setup.ts'],
 	},

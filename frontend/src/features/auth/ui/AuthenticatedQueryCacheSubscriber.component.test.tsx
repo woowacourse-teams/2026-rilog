@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,7 @@ import { apiClient } from '@/shared/api/client';
 import { myInfoQueryOptions } from '@/shared/api/users/queries/my-info/query-options';
 import { authenticatedQueryKeys } from '@/shared/query/authenticated-query-keys';
 import { createUnauthorizedResponse } from '@/test/fixtures/api-response';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import AuthenticatedQueryCacheSubscriber from './AuthenticatedQueryCacheSubscriber';
 
@@ -21,7 +22,7 @@ afterEach(() => {
 
 describe('AuthenticatedQueryCacheSubscriber', () => {
 	it('새 로그인에서 이전 인증 캐시만 초기화하고 공개 캐시는 유지한다', async () => {
-		const queryClient = new QueryClient();
+		const queryClient = createTestQueryClient();
 		const key = myInfoQueryOptions().queryKey;
 		queryClient.setQueryData(key, {
 			status: 200,
@@ -45,7 +46,7 @@ describe('AuthenticatedQueryCacheSubscriber', () => {
 		const response = Promise.withResolvers<Response>();
 		const fetchMock = vi.fn().mockReturnValue(response.promise);
 		vi.stubGlobal('fetch', fetchMock);
-		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const queryClient = createTestQueryClient();
 		render(
 			<QueryClientProvider client={queryClient}>
 				<AuthenticatedQueryCacheSubscriber />
@@ -71,7 +72,7 @@ describe('AuthenticatedQueryCacheSubscriber', () => {
 			'fetch',
 			vi.fn().mockImplementation(() => Promise.resolve(createUnauthorizedResponse())),
 		);
-		const queryClient = new QueryClient();
+		const queryClient = createTestQueryClient();
 		const currentUserQueryKey = [...authenticatedQueryKeys.all, 'current-user'] as const;
 		const postsQueryKey = ['posts'] as const;
 		queryClient.setQueryData(currentUserQueryKey, { id: 1 });

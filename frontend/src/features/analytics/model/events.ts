@@ -14,6 +14,9 @@ import type {
 	FeedCategory,
 	FeedScope,
 	ImageSource,
+	InlineCommentEntrySource,
+	InlineCommentCreateEntrySource,
+	InlineCommentType,
 	LoginEntrySurface,
 	PostNavigationClickPart,
 	PostNavigationSurface,
@@ -126,6 +129,53 @@ export const analytics = {
 			post_id: postId,
 			engagement_seconds: engagementSeconds,
 			scroll_depth_bucket: scrollDepthBucket,
+		}),
+	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
+		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
+	inlineCommentSelectionReplyClicked: ({ postId }: { postId: number }) =>
+		captureAnalyticsEvent('inline comment selection reply clicked', { post_id: postId }),
+	inlineCommentCreated: ({
+		postId,
+		entrySource,
+		commentType,
+	}: {
+		postId: number;
+		entrySource: InlineCommentCreateEntrySource;
+		commentType: InlineCommentType;
+	}) =>
+		captureAnalyticsEvent('inline comment created', {
+			post_id: postId,
+			entry_source: entrySource,
+			comment_type: commentType,
+		}),
+	inlineCommentUpdated: ({ postId }: { postId: number }) =>
+		captureAnalyticsEvent('inline comment updated', { post_id: postId }),
+	inlineCommentDeleted: ({ postId }: { postId: number }) =>
+		captureAnalyticsEvent('inline comment deleted', { post_id: postId }),
+	inlineCommentAnchorNavigationClicked: ({
+		postId,
+		anchorState,
+	}: {
+		postId: number;
+		anchorState: 'ACTIVE' | 'OUTDATED';
+	}) =>
+		captureAnalyticsEvent('inline comment anchor navigation clicked', {
+			post_id: postId,
+			anchor_state: anchorState,
+		}),
+	inlineCommentThreadToggled: ({
+		postId,
+		anchorState,
+		isOpen,
+	}: {
+		postId: number;
+		anchorState: 'ACTIVE' | 'OUTDATED';
+		isOpen: boolean;
+	}) =>
+		captureAnalyticsEvent('inline comment thread toggled', {
+			post_id: postId,
+			anchor_state: anchorState,
+			is_open: isOpen,
 		}),
 	postNavigationAvailable: ({
 		navigationVisitId,

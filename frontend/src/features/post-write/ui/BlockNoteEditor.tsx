@@ -1,15 +1,12 @@
 'use client';
 
-import { codeBlockOptions } from '@blocknote/code-block';
-import { BlockNoteSchema, createCodeBlockSpec } from '@blocknote/core';
+import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
-import { SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { getDefaultReactSlashMenuItems, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { useEffect, useImperativeHandle } from 'react';
-import { createHighlighter } from 'shiki';
+import { useEffect, useImperativeHandle, useRef } from 'react';
 
 import type { PostEditorProps } from '../model/post-editor';
-import type { CodeBlockOptions } from '@blocknote/core';
 import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
@@ -20,21 +17,26 @@ import {
 	SLASH_MENU_GAP,
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
+import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
+import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
+import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import '../styles/blocknote-theme.css';
 
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
 
-const LIGHT_CODE_BLOCK_OPTIONS = {
-	...codeBlockOptions,
-	createHighlighter: () => createHighlighter({ langs: [], themes: ['github-light'] }),
-} satisfies CodeBlockOptions;
+const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
-const POST_WRITE_SCHEMA = BlockNoteSchema.create().extend({
-	blockSpecs: {
-		codeBlock: createCodeBlockSpec(LIGHT_CODE_BLOCK_OPTIONS),
-	},
-});
+const isExplicitMarkdownLanguage = (block: { content: unknown } | undefined): boolean => {
+	if (block === undefined || !Array.isArray(block.content)) {
+		return false;
+	}
 
+	const source = block.content
+		.map((part: { type?: string; text?: string }) => (part.type === 'text' ? (part.text ?? '') : ''))
+		.join('');
+	return /^```\S+/.test(source);
+};
 const isClippingElement = (element: Element): boolean => {
 	const ownerWindow = element.ownerDocument.defaultView ?? window;
 	const { overflow, overflowX, overflowY } = ownerWindow.getComputedStyle(element);
@@ -156,10 +158,13 @@ export default function BlockNoteEditor({
 	ariaDescribedBy,
 	ref,
 }: PostEditorProps) {
+	const codeBlockSlashItemInProgress = useRef(false);
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
 		{
-			...(initialBlocks === undefined || initialBlocks.length === 0 ? {} : { initialContent: initialBlocks }),
+			...(initialBlocks === undefined || initialBlocks.length === 0
+				? {}
+				: { initialContent: limitEditorHeadingLevels(initialBlocks) }),
 			schema: POST_WRITE_SCHEMA,
 			dictionary: {
 				...ko,
@@ -171,6 +176,38 @@ export default function BlockNoteEditor({
 			uploadFile,
 		},
 		[initialBlocks, uploadFile],
+	);
+
+	useEffect(
+		() =>
+			editor.onChange((currentEditor, context) => {
+				for (const change of context.getChanges()) {
+					if (change.block.type === 'heading' && change.block.props.level > 4) {
+						currentEditor.updateBlock(change.block, { props: { level: 4 } });
+						continue;
+					}
+
+					if (
+						change.source.type !== 'local' ||
+						!(
+							(change.type === 'insert' && codeBlockSlashItemInProgress.current) ||
+							(change.type === 'update' && change.prevBlock.type !== 'codeBlock')
+						) ||
+						change.block.type !== 'codeBlock' ||
+						(change.block.props.language !== 'text' && change.block.props.language !== '') ||
+						isExplicitMarkdownLanguage(change.prevBlock) ||
+						change.block.content.length !== 0
+					) {
+						continue;
+					}
+
+					const language = getRecentCodeLanguage();
+					if (change.block.props.language !== language) {
+						currentEditor.updateBlock(change.block, { props: { language } });
+					}
+				}
+			}),
+		[editor],
 	);
 
 	// 제목에서 Enter를 누르거나 검증에 실패했을 때 실제 에디터로 focus할 수 있도록 useImperativeHandle(리모콘 역할) 사용
@@ -200,11 +237,62 @@ export default function BlockNoteEditor({
 		}
 	}, [ariaDescribedBy, editor]);
 
+	useEffect(() => {
+		const editorElement = editor.domElement;
+		return editorElement === undefined ? undefined : constrainEditorDragSelection(editorElement);
+	}, [editor]);
+
+	useEffect(() => {
+		const editorElement = editor.domElement;
+		if (editorElement === undefined) {
+			return;
+		}
+
+		const handleLastCodeCharacterDeletion = (event: KeyboardEvent) => {
+			if (event.key !== 'Backspace' || event.isComposing || event.target !== editorElement) {
+				return;
+			}
+
+			const { selection } = editor.prosemirrorState;
+			const code = selection.$from.parent;
+			const content = code.textContent;
+			if (
+				!selection.empty ||
+				code.type.name !== 'codeBlock' ||
+				selection.$from.parentOffset !== content.length ||
+				[...CODE_GRAPHEME_SEGMENTER.segment(content)].length !== 1
+			) {
+				return;
+			}
+
+			event.preventDefault();
+			event.stopPropagation();
+			// Native deletion removes BlockNote's empty <code> contentDOM, so delete through ProseMirror instead.
+			editor.transact((transaction) => transaction.delete(selection.from - content.length, selection.from));
+		};
+
+		editorElement.ownerDocument.addEventListener('keydown', handleLastCodeCharacterDeletion, true);
+		return () => editorElement.ownerDocument.removeEventListener('keydown', handleLastCodeCharacterDeletion, true);
+	}, [editor]);
+
 	return (
 		<div className="post-write-blocknote">
 			<BlockNoteView editor={editor} theme="light" slashMenu={false} onChange={() => onChange([...editor.document])}>
 				<SuggestionMenuController
 					triggerCharacter="/"
+					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
+					onItemClick={(item) => {
+						if ('key' in item && item.key === 'code_block') {
+							codeBlockSlashItemInProgress.current = true;
+							try {
+								item.onItemClick();
+							} finally {
+								codeBlockSlashItemInProgress.current = false;
+							}
+						} else {
+							item.onItemClick();
+						}
+					}}
 					shouldOpen={(state) => !state.selection.$from.parent.type.isInGroup('tableContent')}
 					floatingUIOptions={slashMenuFloatingUIOptions}
 				/>

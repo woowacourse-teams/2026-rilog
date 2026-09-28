@@ -42,6 +42,11 @@
 - union, tuple, 함수 타입, primitive alias, mapped/conditional type처럼 `interface`로 표현할 수 없거나
   `type`이 더 명확한 경우에는 `type`을 사용한다.
 - 위 허용 범주에는 별도 근거를 요구하지 않는다. 객체 계약을 예외적으로 type alias로 선언할 때만 이슈 또는 PR에 근거를 기록한다.
+- 타입 전용 참조는 `import type`을 쓴다. JSX 인라인 이벤트는 추론에 맡기고 분리한 핸들러에는 구체적인 React 이벤트 타입을 사용한다.
+- 비동기 이벤트의 실패 처리 책임을 명시한다. `void` 표기만으로 오류를 처리한 것으로 보지 않는다.
+- 운영 코드에서 null 가능성을 `!`로 우회하지 않는다. 테스트 fixture·DOM 단언에는 lint 예외가 있다.
+- 판별 가능한 union의 `switch`는 모든 경우를 처리한다. 타입 단언과 `.json<T>()`는 런타임 검증이 아니다.
+- 선택 이유, 예외, 외부 값의 검증 경계는 [`docs/harness/frontend-typescript.md`](../docs/harness/frontend-typescript.md)를 따른다.
 
 ### 내부 import 경로
 
@@ -89,20 +94,30 @@
 - 기존 저장소의 HTTP client, TypeScript, import, 오류 처리, 테스트 convention이 더 구체적이면 해당 convention을 따른다.
 - 단일 endpoint를 위해 generic API repository, generic query-hook builder 같은 과도한 추상화를 도입하지 않는다. 반복되는 요구가 확인되기 전에는 resource에 한정된 작은 함수와 타입을 우선한다.
 - Swagger와 기존 코드에서 확인되지 않은 parameter, response field, nullability, enum, pagination 또는 인증 동작을 추측하지 않는다.
+- 외부 응답을 새로 사용하거나 DTO를 바꿀 때 TypeScript 기준 문서의 런타임 경계 목록을 확인한다. 선택한 endpoint의 DTO·가드·fixture와 실패 정책을 함께 갱신하고 `as`로 검증을 우회하지 않는다.
+- 편집기 스키마 또는 BlockNote 버전을 바꾸면 저장 본문 decoder와 기존 문서 호환성 fixture를 함께 확인한다.
 
 ## 테스트
 
+- 테스트를 추가·수정·삭제하기 전에 `docs/testing/README.md`를 읽고, 필요한 작성 예시와 결정 기록은 그 문서에서 연결한다.
 - Vitest: policy, mapper, serializer, query key와 순수 함수
 - React Testing Library: 입력, 상태 전이, 오류, focus와 accessible name
-- Playwright: 로그인, 글 저장·발행, Co-log 생성·초대와 공개 탐색 같은 수직 흐름
+- Playwright: history, beforeunload, 파일 입력과 모바일 글쓰기 정책처럼 실제 브라우저가 필요한 글쓰기 흐름
 - RTL에서는 accessible role/name과 label을 우선하고 `data-testid`는 마지막 수단으로 사용한다.
-- className, 내부 state, private method와 대형 DOM snapshot을 테스트하지 않는다.
+- 기능 통합 RTL은 검증 대상 query·mutation hook을 실제로 연결하고 raw API 경계만 대체한다. 별도 테스트가 있는 server-state hook을 상위 조립 UI에서 실행 환경 경계로 대체하는 것은 허용한다.
+- 테스트 QueryClient는 `createTestQueryClient`·`renderWithQuery`를 우선 사용하고 테스트 간 cache를 공유하지 않는다.
+- 시각 구현 className, 내부 state, private method와 대형 DOM snapshot을 테스트하지 않는다. `ph-mask`·`ph-no-capture` 같은 분석 privacy class는 수집 경계 계약으로 검증할 수 있다.
+- raw API·query key·query options는 같은 책임의 파일마다 테스트한다. 검증된 options를 전달하는 use-query·prefetch wrapper와 부수효과 없는 mutation wrapper는 별도 테스트를 만들지 않는다.
+- 독립 상태·분기·이벤트가 있는 UI는 직접 테스트하고, 부모 통합 테스트가 같은 계약을 모두 실행하는 조립 전용 자식은 중복 테스트를 만들지 않는다.
 
 ## 필수 검증
 
 - 스캐폴드 전에는 실행 가능한 frontend 검증 명령이 없다.
+- `frontend/`에서 검증·빌드 명령을 실행하기 전에 `.nvmrc`의 Node 버전을 적용하고 `node -v`가 `24.19.0`인지 확인한다. `nvm`을 사용하는 터미널에서는 `nvm use`를 실행한다. 비대화형 셸에서 `nvm` 명령을 찾지 못하면 `nvm.sh`를 로드한 뒤 실행한다.
+- `Unsupported engine` 경고가 출력된 검증은 지정된 Node 버전으로 다시 실행한다. pnpm도 `11.21.0`인지 확인한다.
 - PR 전 `pnpm check`를 실행한다.
 - 핵심 사용자 흐름을 변경하면 관련 `pnpm test:e2e` smoke를 실행한다.
+- CI와 같은 production 브라우저 검증이 필요하면 동일한 테스트 환경으로 build한 뒤 `pnpm test:e2e:prod`를 실행한다.
 - UI 변경은 loading, empty, error, 권한 없는 상태와 키보드/focus를 확인한다.
 - 실제 `package.json`의 script 이름이 다르면 문서와 CI를 함께 일치시킨다.
 
@@ -114,5 +129,8 @@
 - 사용자 동작 대신 구현 세부만 검증하는 테스트를 지적한다.
 - 임의 색상값, 접근 가능한 이름이 없는 control, keyboard path가 없는 상호작용을 지적한다.
 - 근거 없이 이름을 가진 객체 계약을 type alias로 선언한 변경을 지적한다.
+- 외부 값을 검증 없이 DTO로 단언하거나 검증 실패를 빈 본문·성공 응답으로 처리한 변경을 지적한다.
+- 쓰기 응답 검증 실패 뒤 자동 재전송하거나 작성 내용을 잃는 변경을 지적한다.
+- 새 API 입력 경계의 검증 여부, 실패 정책과 테스트 예외의 근거를 확인한다.
 - 모듈 경계를 넘으면서 상대 경로를 사용한 import를 지적한다.
 - 재수출을 위한 `index.ts` 또는 `export *`를 추가한 변경을 지적한다.

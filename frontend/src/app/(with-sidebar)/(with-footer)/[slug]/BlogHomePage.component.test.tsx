@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { prefetchBlogHomeInitialState } from '@/features/blog-home-index/server/prefetch-blog-home-initial-state';
 import { getBlogPublicProfile } from '@/features/blog-profile/lib/get-blog-public-profile';
+import { createTestQueryClient } from '@/test/render-with-query';
 
 import BlogHomePage, { generateMetadata } from './page';
 
@@ -64,7 +65,7 @@ const PROFILE_RESPONSE = {
 
 const renderPage = async (slug = '@jetproc', searchParams: Record<string, string | string[] | undefined> = {}) => {
 	const page = await BlogHomePage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve(searchParams) });
-	return render(<QueryClientProvider client={new QueryClient()}>{page}</QueryClientProvider>);
+	return render(<QueryClientProvider client={createTestQueryClient()}>{page}</QueryClientProvider>);
 };
 
 describe('BlogHomePage', () => {

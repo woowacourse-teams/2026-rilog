@@ -1,5 +1,9 @@
 package kr.rilog.domain.auth.presentation;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.servlet.http.Cookie;
 import kr.rilog.domain.auth.application.token.AuthTokenPair;
 import kr.rilog.domain.auth.application.token.access.AccessToken;
@@ -10,12 +14,16 @@ import kr.rilog.domain.auth.config.RefreshTokenProperties;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Duration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,6 +76,31 @@ class AuthTokenControllerTest {
         mockMvc.perform(post("/v1/auth/token/refresh"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("REFRESH_TOKEN_MISSING"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"DEBUG", "INFO"})
+    @DisplayName("Refresh Token 누락은 개발과 운영 로그 수준 모두에서 기록하지 않는다.")
+    void missingRefreshTokenDoesNotLog(String logLevel) throws Exception {
+        MockMvc mockMvc = mockMvc(mock(RefreshTokenRotationService.class));
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        Level previousLevel = logger.getLevel();
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setLevel(Level.toLevel(logLevel));
+
+        try {
+            mockMvc.perform(post("/v1/auth/token/refresh"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.errorCode").value("REFRESH_TOKEN_MISSING"));
+
+            assertThat(appender.list).isEmpty();
+        } finally {
+            logger.setLevel(previousLevel);
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
 
     @Test
