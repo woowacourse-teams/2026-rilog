@@ -19,6 +19,7 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -87,6 +88,9 @@ class PostServiceTest {
     @Mock
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
+    @Mock
+    private HardTrendingRepository trendingRepository;
+
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
@@ -100,7 +104,8 @@ class PostServiceTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
-                commentAnchorSelectionRepository
+                commentAnchorSelectionRepository,
+                trendingRepository
         );
     }
 
