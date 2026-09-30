@@ -27,11 +27,11 @@ describe('readFullFeedPosts', () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(readFullFeedPosts({ page: 2, size: 12 })).resolves.toEqual(responseBody);
+		await expect(readFullFeedPosts({ page: 2, size: 12, order: 'trending' })).resolves.toEqual(responseBody);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
-		expect(request.url).toBe('https://api.rilog.test/v1/feeds/posts?page=2&size=12');
+		expect(request.url).toBe('https://api.rilog.test/v1/feeds/trending/posts?page=2&size=12');
 	});
 
 	it('선택한 category와 blogType을 query parameter로 직렬화한다', async () => {
@@ -44,7 +44,7 @@ describe('readFullFeedPosts', () => {
 		);
 		vi.stubGlobal('fetch', fetchMock);
 
-		await readFullFeedPosts({ page: 0, size: 12, category: 'RETROSPECT', blogType: 'COLOG' });
+		await readFullFeedPosts({ page: 0, size: 12, category: 'RETROSPECT', blogType: 'COLOG', order: 'latest' });
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.url).toBe('https://api.rilog.test/v1/feeds/posts?page=0&size=12&category=RETROSPECT&blogType=COLOG');

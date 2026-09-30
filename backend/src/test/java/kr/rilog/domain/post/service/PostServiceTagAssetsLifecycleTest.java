@@ -12,6 +12,7 @@ import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
@@ -72,6 +73,9 @@ class PostServiceTagAssetsLifecycleTest {
     @Mock
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
+    @Mock
+    private HardTrendingRepository trendingRepository;
+
     private PostService postService;
 
     @BeforeEach
@@ -83,7 +87,8 @@ class PostServiceTagAssetsLifecycleTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
-                commentAnchorSelectionRepository
+                commentAnchorSelectionRepository,
+                trendingRepository
         );
     }
 

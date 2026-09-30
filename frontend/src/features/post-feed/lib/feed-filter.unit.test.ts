@@ -23,6 +23,7 @@ describe('parseFeedFilters', () => {
 		expect(parseFeedFilters(searchParams)).toEqual({
 			category: category?.toUpperCase(),
 			blogType: blogType === 'personal' ? 'RILOG' : blogType?.toUpperCase(),
+			order: undefined,
 		});
 	});
 
@@ -30,6 +31,7 @@ describe('parseFeedFilters', () => {
 		expect(parseFeedFilters(new URLSearchParams(`category=TECH&blogType=${blogType}`))).toEqual({
 			category: 'TECH',
 			blogType: 'RILOG',
+			order: undefined,
 		});
 	});
 
@@ -37,7 +39,7 @@ describe('parseFeedFilters', () => {
 		['허용되지 않은 값', new URLSearchParams('category=UNKNOWN&blogType=TEAM')],
 		['중복된 값', new URLSearchParams('category=tech&category=daily&blogType=rilog&blogType=colog')],
 	])('%s은 선택하지 않은 필터로 정규화한다', (_, searchParams) => {
-		expect(parseFeedFilters(searchParams)).toEqual({ category: undefined, blogType: undefined });
+		expect(parseFeedFilters(searchParams)).toEqual({ category: undefined, blogType: undefined, order: undefined });
 	});
 });
 

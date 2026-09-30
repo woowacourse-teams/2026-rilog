@@ -1,10 +1,11 @@
 import type { BlogType } from '@/domains/blog/model/blog';
-import type { PostCategory, PostCategoryLabel } from '@/domains/post/model/post';
+import type { FeedOrder, PostCategory, PostCategoryLabel } from '@/domains/post/model/post';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
 
 export interface FullFeedPostsFilters {
 	category?: PostCategory;
 	blogType?: BlogType;
+	order?: FeedOrder;
 }
 
 export interface FullFeedPostsRequest extends FullFeedPostsFilters {

@@ -1,11 +1,13 @@
 import type { BlogType } from '@/domains/blog/model/blog';
-import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
+import { FEED_ORDER_OPTIONS, POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 
 const BLOG_TYPE_PARAM = 'blogType';
 const CATEGORY_PARAM = 'category';
-const BLOG_TYPE_URL_VALUES: Readonly<Record<string, BlogType>> = {
+const ORDER_PARAM = 'order';
+
+const URL_VALUES_TO_BLOG_TYPE: Readonly<Record<string, BlogType>> = {
 	personal: 'RILOG',
 	rilog: 'RILOG',
 	colog: 'COLOG',
@@ -42,11 +44,17 @@ const readFilterValue = <T extends string>(values: string[], allowedValues: read
 	values.length === 1 ? allowedValues.find((allowedValue) => allowedValue === values[0]?.toUpperCase()) : undefined;
 
 const readBlogTypeFilter = (values: string[]): BlogType | undefined =>
-	values.length === 1 ? BLOG_TYPE_URL_VALUES[values[0]?.toLowerCase() ?? ''] : undefined;
+	values.length === 1 ? URL_VALUES_TO_BLOG_TYPE[values[0]?.toLowerCase() ?? ''] : undefined;
+
+const readOrderFilter = (values: string[]) =>
+	values.length === 1
+		? FEED_ORDER_OPTIONS.find((allowedValue) => allowedValue === values[0]?.toLowerCase())
+		: undefined;
 
 export const parseFeedFilters = (searchParams: FeedSearchParams | SearchParamsReader): FullFeedPostsFilters => ({
 	blogType: readBlogTypeFilter(readAllValues(searchParams, BLOG_TYPE_PARAM)),
 	category: readFilterValue(readAllValues(searchParams, CATEGORY_PARAM), CATEGORIES),
+	order: readOrderFilter(readAllValues(searchParams, ORDER_PARAM)),
 });
 
 const createSearchParams = (searchParams: FeedSearchParams | SearchParamsReader) => {

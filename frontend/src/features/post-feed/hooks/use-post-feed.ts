@@ -20,5 +20,5 @@ const selectPostFeed = (
 	pages: data.pages.map((page) => mapFullFeedPostResponse(page, page.data?.page ?? 0)),
 });
 
-export const usePostFeed = ({ isEnabled, category, blogType }: UsePostFeedOptions) =>
-	useFullFeedPostsQuery({ isEnabled, category, blogType, select: selectPostFeed });
+export const usePostFeed = ({ isEnabled, category, blogType, order }: UsePostFeedOptions) =>
+	useFullFeedPostsQuery({ isEnabled, category, blogType, order, select: selectPostFeed });
