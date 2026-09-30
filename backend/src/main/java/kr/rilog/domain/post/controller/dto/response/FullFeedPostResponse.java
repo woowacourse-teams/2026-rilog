@@ -3,6 +3,7 @@ package kr.rilog.domain.post.controller.dto.response;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
+import kr.rilog.domain.post.service.dto.result.FullFeedPostResult;
 import org.springframework.data.domain.Slice;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,18 @@ public record FullFeedPostResponse(
                 slice.getSize(),
                 slice.getNumberOfElements(),
                 slice.hasNext()
+        );
+    }
+
+    public static FullFeedPostResponse from(FullFeedPostResult result) {
+        return new FullFeedPostResponse(
+                result.posts().stream()
+                        .map(PostItemResponse::from)
+                        .toList(),
+                result.page(),
+                result.size(),
+                result.numberOfElements(),
+                result.hasNext()
         );
     }
 
@@ -63,6 +76,36 @@ public record FullFeedPostResponse(
                             row.ownerSlug(),
                             row.ownerName(),
                             row.ownerProfileImageUrl()
+                    )
+            );
+        }
+
+        private static PostItemResponse from(FullFeedPostResult.PostItemResult result) {
+            return new PostItemResponse(
+                    result.postId(),
+                    result.title(),
+                    result.thumbnailImageUrl(),
+                    result.category().getName(),
+                    result.visibility().name(),
+                    result.publishedAt(),
+                    result.totalCommentsCount(),
+                    ChapterResponse.from(
+                            result.chapterId(),
+                            result.chapterName(),
+                            result.chapterOrder()
+                    ),
+                    new AuthorResponse(
+                            result.authorId(),
+                            result.authorNickname(),
+                            result.authorSlug(),
+                            result.authorProfileImageUrl()
+                    ),
+                    new OwnerResponse(
+                            result.ownerType(),
+                            result.ownerId(),
+                            result.ownerSlug(),
+                            result.ownerName(),
+                            result.ownerProfileImageUrl()
                     )
             );
         }
