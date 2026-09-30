@@ -1,6 +1,6 @@
 create table hard_trending
 (
-    id      bigint not null
+    id      bigint auto_increment
         primary key,
     post_id bigint not null,
     constraint uk_hard_trending_post_id

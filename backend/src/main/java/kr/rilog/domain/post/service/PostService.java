@@ -14,11 +14,13 @@ import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse.ViewerPermissionsResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
+import kr.rilog.domain.post.entity.HardTrending;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
@@ -54,6 +56,7 @@ public class PostService {
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final CommentAnchorSelectionRepository selectionRepository;
+    private final HardTrendingRepository trendingRepository;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -66,6 +69,7 @@ public class PostService {
                 : publishToRilog(command, publishingBlog, writer, chapter);
 
         Post published = postRepository.save(post);
+        trendingRepository.save(HardTrending.from(published));
         tagAssetsPublisher.attach(published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
     }
