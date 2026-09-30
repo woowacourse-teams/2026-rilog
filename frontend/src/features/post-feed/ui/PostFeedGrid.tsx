@@ -25,7 +25,10 @@ const POST_FEED_CONTENT_ID = 'post-feed-content';
 export default function PostFeedGrid({ initialFilters, initialRequestFailed = false }: PostFeedGridProps) {
 	const searchParams = useSearchParams();
 	const filters = parseFeedFilters(searchParams);
-	const isInitialFilter = filters.category === initialFilters.category && filters.blogType === initialFilters.blogType;
+	const isInitialFilter =
+		filters.category === initialFilters.category &&
+		filters.blogType === initialFilters.blogType &&
+		(filters.order ?? 'trending') === (initialFilters.order ?? 'trending');
 	const [isInitialQueryEnabled, setIsInitialQueryEnabled] = useState(!initialRequestFailed);
 	const isQueryEnabled = isInitialQueryEnabled || !isInitialFilter;
 	const sentinelRef = useRef<HTMLDivElement>(null);

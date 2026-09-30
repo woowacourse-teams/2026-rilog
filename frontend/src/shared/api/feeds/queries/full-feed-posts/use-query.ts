@@ -19,11 +19,12 @@ export const useFullFeedPostsQuery = <TData = InfiniteData<ApiResponse<FullFeedP
 	size,
 	category,
 	blogType,
+	order,
 	isEnabled = true,
 	select,
 }: UseFullFeedPostsQueryOptions<TData> = {}) =>
 	useInfiniteQuery({
-		...fullFeedPostsQueryOptions({ size, category, blogType }),
+		...fullFeedPostsQueryOptions({ size, category, blogType, order }),
 		enabled: isEnabled,
 		select,
 	});

@@ -28,6 +28,7 @@ describe('fullFeedPostsQueryOptions', () => {
 			size: 12,
 			category: 'DAILY',
 			blogType: 'COLOG',
+			order: 'trending',
 		});
 		expect(
 			options.getNextPageParam?.(

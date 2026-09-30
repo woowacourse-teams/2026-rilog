@@ -36,7 +36,8 @@ interface RenderedBlock {
 }
 
 const HIGHLIGHT_LAYER_SELECTOR = '[data-inline-comment-highlight-layer]';
-const HIGHLIGHT_VERTICAL_OFFSET_PX = 3;
+const HIGHLIGHT_LINE_HEIGHT_PX = 2;
+const HIGHLIGHT_VERTICAL_OFFSET_PX = 4;
 
 const removeHighlightLayers = (article: HTMLElement) => {
 	article.querySelectorAll<HTMLElement>(HIGHLIGHT_LAYER_SELECTOR).forEach((layer) => {
@@ -148,7 +149,7 @@ export default function InlineCommentHighlights({
 						line.dataset.inlineCommentAnchorOrder = String(anchorIndex);
 						line.setAttribute('aria-hidden', 'true');
 						line.style.left = `${rect.left - hostRect.left + host.scrollLeft}px`;
-						line.style.top = `${rect.top - hostRect.top + host.scrollTop - HIGHLIGHT_VERTICAL_OFFSET_PX}px`;
+						line.style.top = `${rect.bottom - hostRect.top + host.scrollTop - HIGHLIGHT_LINE_HEIGHT_PX}px`;
 						line.style.width = `${rect.width}px`;
 						line.style.setProperty(
 							'--inline-comment-highlight-expanded-height',

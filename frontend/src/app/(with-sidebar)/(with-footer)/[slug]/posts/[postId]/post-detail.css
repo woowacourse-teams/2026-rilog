@@ -103,12 +103,14 @@
 	opacity: 0.25;
 	transition:
 		height 120ms ease,
+		transform 120ms ease,
 		background-color 120ms ease,
 		opacity 120ms ease;
 }
 
 .post-detail-body [data-inline-comment-highlight][data-inline-comment-active] {
 	height: var(--inline-comment-highlight-expanded-height);
+	transform: translateY(calc(0.25rem - var(--inline-comment-highlight-expanded-height)));
 	opacity: 0.12;
 }
 

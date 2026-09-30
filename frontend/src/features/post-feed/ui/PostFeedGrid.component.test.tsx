@@ -166,7 +166,9 @@ describe('PostFeedGrid', () => {
 				<PostFeedGrid initialFilters={{}} />
 			</QueryClientProvider>,
 		);
-		await waitFor(() => expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, category: 'TECH' }));
+		await waitFor(() =>
+			expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, category: 'TECH', order: 'trending' }),
+		);
 		await waitFor(() =>
 			expect(analyticsMock.feedViewed).toHaveBeenLastCalledWith({ feedScope: 'ALL', category: 'TECH' }),
 		);
@@ -211,7 +213,7 @@ describe('PostFeedGrid', () => {
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 
 		expect(await screen.findByRole('link', { name: '게시글 1' })).toBeInTheDocument();
-		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12 });
+		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, order: 'trending' });
 		expect(analyticsMock.feedViewed).toHaveBeenCalledExactlyOnceWith({ feedScope: 'ALL', category: 'ALL' });
 	});
 
@@ -229,7 +231,7 @@ describe('PostFeedGrid', () => {
 		);
 
 		expect(await screen.findByRole('link', { name: '게시글 2' })).toBeInTheDocument();
-		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, category: 'TECH' });
+		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 0, size: 12, category: 'TECH', order: 'trending' });
 	});
 
 	it('캐시된 필터를 다시 방문하면 요청과 스켈레톤 없이 즉시 표시한다', async () => {
@@ -284,8 +286,8 @@ describe('PostFeedGrid', () => {
 		});
 		await waitFor(() => expect(screen.getAllByRole('link', { name: /^게시글 \d+$/ })).toHaveLength(36));
 
-		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(1, { page: 1, size: 12 });
-		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(2, { page: 2, size: 12 });
+		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(1, { page: 1, size: 12, order: 'trending' });
+		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(2, { page: 2, size: 12, order: 'trending' });
 	});
 
 	it('sentinel이 보이면 다음 페이지를 한 번 추가하고 중복 게시글을 제거한다', async () => {
@@ -300,7 +302,7 @@ describe('PostFeedGrid', () => {
 		expect(await screen.findByRole('link', { name: '게시글 2' })).toBeInTheDocument();
 		expect(screen.getAllByRole('link', { name: '게시글 1' })).toHaveLength(1);
 		expect(readFullFeedPostsMock).toHaveBeenCalledTimes(1);
-		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 1, size: 12 });
+		expect(readFullFeedPostsMock).toHaveBeenCalledWith({ page: 1, size: 12, order: 'trending' });
 	});
 
 	it('다음 페이지 요청 실패 시 기존 글을 유지하고 실패한 페이지를 다시 요청한다', async () => {
@@ -320,7 +322,7 @@ describe('PostFeedGrid', () => {
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 
 		expect(await screen.findByRole('link', { name: '게시글 2' })).toBeInTheDocument();
-		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(1, { page: 1, size: 12 });
-		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(2, { page: 1, size: 12 });
+		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(1, { page: 1, size: 12, order: 'trending' });
+		expect(readFullFeedPostsMock).toHaveBeenNthCalledWith(2, { page: 1, size: 12, order: 'trending' });
 	});
 });
