@@ -98,8 +98,8 @@ describe('InlineCommentHighlights', () => {
 		expect(container.querySelector('[data-inline-comment-anchor-id="4"]')).toBeNull();
 		expect(anchorOneLines[0]).toHaveAttribute('data-inline-comment-anchor-order', '0');
 		expect(anchorThreeLines[0]).toHaveAttribute('data-inline-comment-anchor-order', '2');
-		expect(anchorOneLines[0]).toHaveStyle({ top: '36px' });
-		expect(anchorOneLines[1]).toHaveStyle({ top: '56px' });
+		expect(anchorOneLines[0]).toHaveStyle({ top: '38px' });
+		expect(anchorOneLines[1]).toHaveStyle({ top: '58px' });
 
 		expect(document.head.querySelector('[data-inline-comment-highlight-style]')).toBeNull();
 	});
