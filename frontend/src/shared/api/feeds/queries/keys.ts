@@ -6,13 +6,14 @@ interface FullFeedPostsKeyOptions extends FullFeedPostsFilters {
 
 export const feedsQueryKeys = {
 	all: ['feeds'] as const,
-	fullFeedPosts: ({ size, category, blogType }: FullFeedPostsKeyOptions) => {
+	fullFeedPosts: ({ size, category, blogType, order = 'trending' }: FullFeedPostsKeyOptions) => {
 		return [
 			...feedsQueryKeys.all,
 			'posts',
 			'full',
 			{
 				size,
+				order,
 				...(blogType === undefined ? {} : { blogType }),
 				...(category === undefined ? {} : { category }),
 			},

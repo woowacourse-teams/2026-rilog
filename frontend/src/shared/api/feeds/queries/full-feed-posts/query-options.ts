@@ -17,10 +17,11 @@ export const fullFeedPostsQueryOptions = ({
 	size = FULL_FEED_POSTS_PAGE_SIZE,
 	category,
 	blogType,
+	order = 'trending',
 }: FullFeedPostsQueryOptions = {}) =>
 	infiniteQueryOptions<ApiResponse<FullFeedPostResponse>>({
-		queryKey: feedsQueryKeys.fullFeedPosts({ size, category, blogType }),
-		queryFn: ({ pageParam }) => readFullFeedPosts({ page: Number(pageParam), size, category, blogType }),
+		queryKey: feedsQueryKeys.fullFeedPosts({ size, category, blogType, order }),
+		queryFn: ({ pageParam }) => readFullFeedPosts({ page: Number(pageParam), size, category, blogType, order }),
 		initialPageParam: 0,
 		getNextPageParam: (lastPage) => {
 			const page = lastPage?.data?.page;
