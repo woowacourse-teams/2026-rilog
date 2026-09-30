@@ -8,6 +8,7 @@ import { POST_CATEGORY_OPTIONS } from '@/domains/post/model/post';
 import { analytics } from '@/features/analytics/model/events';
 import { buildFeedFilterHref, parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
 import { navigateFeedFilter } from '@/features/post-feed/lib/navigate-feed-filter';
+import OrderSelect from '@/features/post-feed/ui/OrderSelect';
 
 import { usePostFeedHeaderScroll } from './hooks/use-post-feed-header-scroll';
 
@@ -28,6 +29,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 	const filters = parseFeedFilters(searchParams);
 	const { headerRef, isHidden, isFilterScrolling } = usePostFeedHeaderScroll();
 	const title = TITLE_BY_BLOG_TYPE[filters.blogType ?? 'ALL'];
+	const order = filters.order ?? 'trending';
 
 	return (
 		<header
@@ -37,10 +39,13 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 			className={`sticky top-16 z-30 mb-6 w-full bg-background ${isFilterScrolling ? 'transition-none' : 'transition-transform duration-200 ease-out'} motion-reduce:transition-none sm:top-0 ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}
 		>
 			<div className="mx-auto flex w-full max-w-7xl min-w-0 items-center justify-between gap-2 px-6 pt-5 pb-3 sm:pt-6 sm:pb-4 md:px-16">
-				<h2 id={`${id}-title`} className="shrink-0 text-title-1 font-semibold text-logo-primary">
-					<span>{title}</span>
-					<span className="text-logo-secondary">.</span>
-				</h2>
+				<div className="flex items-center gap-1">
+					<h2 id={`${id}-title`} className="shrink-0 text-title-1 font-semibold text-logo-primary">
+						<span>{title}</span>
+						<span className="text-logo-secondary">.</span>
+					</h2>
+					<OrderSelect value={order} />
+				</div>
 
 				<ul
 					aria-label="게시글 카테고리"

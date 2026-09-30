@@ -6,6 +6,9 @@ import type { User } from '@/domains/user/model/user';
 
 export const POST_TITLE_MAX_LENGTH = 512;
 
+export const FEED_ORDER_OPTIONS = ['trending', 'latest'] as const;
+export type FeedOrder = (typeof FEED_ORDER_OPTIONS)[number];
+
 export const POST_CATEGORY_OPTIONS = [
 	{ value: 'TECH', label: '기술' },
 	{ value: 'DAILY', label: '일상' },
