@@ -1,6 +1,6 @@
 'use client';
 
-import { usePostsCountQuery } from '@/shared/api/posts/queries/posts-count/use-query';
+import { useTotalPostsCount } from '@/features/post-count/hooks/use-total-posts-count';
 
 export type SidebarPostsCountState =
 	| { status: 'pending'; totalPostsCount?: never }
@@ -8,9 +8,7 @@ export type SidebarPostsCountState =
 	| { status: 'success'; totalPostsCount: number };
 
 export const useSidebarPostsCount = (): SidebarPostsCountState => {
-	const postsCountQuery = usePostsCountQuery({
-		select: (response) => response.data?.totalPostsCount,
-	});
+	const postsCountQuery = useTotalPostsCount();
 	if (postsCountQuery.data !== undefined) {
 		return { status: 'success', totalPostsCount: postsCountQuery.data };
 	}

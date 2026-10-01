@@ -6,11 +6,11 @@ import type { MemberInviteCandidate, MemberInviteResult } from '../model/member-
 import type { FormEvent, KeyboardEvent } from 'react';
 
 import { useCologMembersQuery } from '@/shared/api/cologs/queries/members/use-query';
-import { useReadUserBySlugMutation } from '@/shared/api/users/mutations/use-read-user-by-slug-mutation';
 import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import Modal from '@/shared/ui/modal/Modal';
 
+import { useMemberInviteData } from '../hooks/use-member-invite-data';
 import { MAX_COLOG_MEMBER_COUNT, willExceedCologMemberLimit } from '../lib/colog-member-limit';
 import { formatMemberInviteFailures } from '../lib/format-member-invite-failures';
 
@@ -33,7 +33,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 	const [errorMessage, setErrorMessage] = useState<string>();
 	const [isInviting, setIsInviting] = useState(false);
 
-	const { mutateAsync: readUserBySlug, isPending: isReadingUser } = useReadUserBySlugMutation();
+	const { readCandidateBySlug, isReadingCandidate } = useMemberInviteData();
 	const { data: cologMembers } = useCologMembersQuery({ slug });
 	const cologMemberSlugs = cologMembers?.data?.map((member) => member.slug) ?? [];
 	const candidateSlugs = candidates.map((candidate) => candidate.slug);
@@ -70,19 +70,10 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 		setErrorMessage(undefined);
 
 		try {
-			const response = await readUserBySlug(normalizedSlug);
-			const user = response.data;
+			const candidate = await readCandidateBySlug(normalizedSlug);
 
-			if (user) {
-				setCandidates((currentCandidates) => [
-					...currentCandidates,
-					{
-						userId: user.id,
-						slug: user.slug,
-						nickname: user.nickname,
-						profileImageUrl: user.profileImageUrl,
-					},
-				]);
+			if (candidate) {
+				setCandidates((currentCandidates) => [...currentCandidates, candidate]);
 				setSlugInput('');
 				inputRef.current?.focus();
 			}
@@ -191,7 +182,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 							size="md"
 							className="shrink-0 px-5"
 							disabled={!slugInput.trim() || isInviting}
-							isPending={isReadingUser}
+							isPending={isReadingCandidate}
 							onClick={() => void handleAddCandidate()}
 						>
 							추가
