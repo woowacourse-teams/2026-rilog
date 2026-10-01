@@ -12,14 +12,14 @@
 
 ## 현재 로컬 검증
 
-| 순서 | 게이트                      | 책임                                   |
-| ---: | --------------------------- | -------------------------------------- |
-|    1 | format                      | 기계적 포맷                            |
-|    2 | lint                        | 코드 품질, import와 React 규칙         |
-|    3 | typecheck                   | TypeScript 계약                        |
-|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수 |
-|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성         |
-|    6 | Next.js build               | Server/Client 경계와 production build  |
+| 순서 | 게이트                      | 책임                                             |
+| ---: | --------------------------- | ------------------------------------------------ |
+|    1 | format                      | 기계적 포맷                                      |
+|    2 | lint                        | 코드 품질, import와 React 규칙                   |
+|    3 | typecheck                   | TypeScript 계약                                  |
+|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수           |
+|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성                   |
+|    6 | Next.js build               | Server/Client 경계와 production build            |
 |    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 필수 4건과 인라인 댓글 검증 |
 |    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 브라우저 검증     |
 
@@ -66,16 +66,18 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 
 `.github/workflows/rilog-fe-quality-gates.yml`은 다음 조건에서 `pnpm check`와 production E2E를 한 job에서 실행한다.
 
-- `develop`·`production` 대상 PR에서 frontend 또는 품질 workflow가 바뀔 때
+- `develop`·`production` 대상 모든 PR
 - GitHub Actions의 수동 실행
 
-현재 path filter에는 `docs/**`가 없으므로 문서만 수정한 PR에서는 이 workflow가 자동 실행되지 않는다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다. workflow의 실행 성공과 GitHub required check에 의한 병합 차단은 별개다.
+문서만 바뀐 PR에도 workflow가 실행된다. PR의 기준 커밋과 검사 대상 merge commit을 비교해 `frontend/` 또는 품질 workflow가 바뀌지 않았으면 setup·설치·검증 단계를 건너뛰고 job을 성공으로 끝낸다. 변경 파일 확인 자체가 실패하면 job도 실패한다. `workflow_dispatch`는 변경 파일 판단 없이 전체 검증을 실행한다. `develop`에 직접 push할 때 실행되는 `push` trigger는 없다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다. workflow의 실행 성공과 GitHub required check에 의한 병합 차단은 별개다.
 
 수동 실행은 workflow가 기본 브랜치에 등록된 뒤 GitHub Actions에서 선택한 ref를 검증한다.
 
 정기 실행은 운영하지 않는다. 현재 검증은 고정된 의존성과 fixture를 사용하고 실제 계정·외부 API에 의존하지 않아 PR 검증과 필요 시 수동 실행으로 관리한다. 외부 서비스·시간 의존 계약이나 별도 브라우저 버전 검증을 도입하면 정기 실행의 필요성을 다시 검토한다.
 
-CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한다. `pnpm check`가 만든 build를 `pnpm start` E2E에서 재사용하며, Chromium만 설치한다. 권한은 `contents: read`, timeout은 20분이고 동일 PR의 이전 실행은 취소한다.
+CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한다. pnpm 저장소는 `setup-node`로 cache한다. Next.js `.next/cache`는 로컬 확인에서 약 475MB로, 압축해도 약 387MB였다. GitHub의 PR cache는 해당 PR 범위에서만 재사용되고 최근 CI에서 build 컴파일은 약 16~20초였으므로, 대용량 cache의 전송 비용이 절감 시간을 넘을 수 있어 추가하지 않았다.
+
+`pnpm check`가 만든 production build를 `pnpm start` E2E에서 재사용한다. E2E는 기본 headless Chromium 프로젝트만 사용하므로 전체 Chromium 대신 headless shell과 시스템 의존성만 설치한다. 브라우저 바이너리 cache는 복원 시간과 다운로드 시간이 비슷하고 Linux 시스템 의존성을 대신할 수 없어 운영하지 않는다. 권한은 `contents: read`, timeout은 20분이고 동일 PR의 이전 실행은 취소한다. 변경 전후 시간은 Actions의 `Detect frontend changes`, `Run frontend checks`, `Install Playwright Chromium headless shell`, `Run production E2E` 단계로 비교한다.
 
 실패하면 다음 파일을 7일간 `frontend-quality-<run id>` artifact로 보관한다.
 
