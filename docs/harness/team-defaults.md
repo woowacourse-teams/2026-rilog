@@ -73,7 +73,7 @@
 
 ## CI 현황과 품질 게이트
 
-frontend는 `develop`·`production` 대상 PR과 수동 실행에서 품질 workflow를 실행하고, 기존 `production` build·배포 workflow를 별도로 유지한다. 아직 required check로 등록하지 않는다. 구체적인 명령과 artifact는 [품질 게이트](quality-gates.md)를 따른다. backend에는 별도 workflow가 있다.
+frontend는 `develop`·`production` 대상 PR과 수동 실행에서 품질 workflow를 실행하고, 기존 `production` build·배포 workflow를 별도로 유지한다. `Frontend Quality`는 두 대상 브랜치의 required check다. 구체적인 명령과 artifact는 [품질 게이트](quality-gates.md)를 따른다. backend에는 별도 workflow가 있다.
 
 - 로컬과 CI는 같은 검증 명령을 사용한다.
 - 반복 실행에서 안정적인 검사부터 필수 검사로 지정한다.
