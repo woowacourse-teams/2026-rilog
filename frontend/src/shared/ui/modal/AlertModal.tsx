@@ -59,7 +59,7 @@ export default function AlertModal({
 						{title}
 					</h2>
 					{hasDescription && (
-						<p id={descriptionId} className="mt-2 text-body-2 text-text-secondary">
+						<p id={descriptionId} className="mt-2 text-body-3 text-text-secondary">
 							{description}
 						</p>
 					)}

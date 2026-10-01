@@ -81,7 +81,7 @@ export default function PostFeedGrid({ initialFilters, initialRequestFailed = fa
 						최신 게시글
 					</h2>
 					<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
-						<p className="text-body-2 text-text-secondary">피드를 불러오지 못했어요.</p>
+						<p className="text-body-3 text-text-secondary">피드를 불러오지 못했어요.</p>
 						<Button
 							variant="secondary"
 							onClick={() => {
@@ -115,7 +115,7 @@ export default function PostFeedGrid({ initialFilters, initialRequestFailed = fa
 						최신 게시글
 					</h2>
 					<p
-						className="flex min-h-64 items-center justify-center text-center text-body-2 text-text-secondary"
+						className="flex min-h-64 items-center justify-center text-center text-body-3 text-text-secondary"
 						role="status"
 					>
 						아직 발행된 게시글이 없어요.
@@ -142,11 +142,11 @@ export default function PostFeedGrid({ initialFilters, initialRequestFailed = fa
 				<div ref={sentinelRef} aria-hidden="true" className="h-px" />
 				{(query.isFetchingNextPage || query.isFetchNextPageError) && (
 					<div className="mt-10 flex min-h-10 items-center justify-center text-center" aria-live="polite">
-						{query.isFetchingNextPage && <p className="text-body-1 text-text-secondary">게시글을 더 불러오는 중...</p>}
+						{query.isFetchingNextPage && <p className="text-body-4 text-text-secondary">게시글을 더 불러오는 중...</p>}
 						{query.isFetchNextPageError && (
 							<div className="flex flex-col items-center gap-3">
 								<ContentLoadFailureTracker surface="feed" loadPhase="pagination" error={query.error} />
-								<p className="text-body-1 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
+								<p className="text-body-4 text-text-secondary">다음 게시글을 불러오지 못했어요.</p>
 								<Button variant="secondary" onClick={() => void query.fetchNextPage()}>
 									다시 시도
 								</Button>

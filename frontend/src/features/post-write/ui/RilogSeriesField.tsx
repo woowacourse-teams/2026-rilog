@@ -184,7 +184,7 @@ export default function RilogSeriesField({
 						))}
 					</select>
 					{statusMessage !== undefined && (
-						<div className="flex items-center justify-between gap-3 text-label-2 text-text-secondary">
+						<div className="flex items-center justify-between gap-3 text-label-1 text-text-secondary">
 							<p role={chaptersQuery.isError ? 'alert' : 'status'}>{statusMessage}</p>
 							{chaptersQuery.isError && (
 								<Button variant="ghost" size="sm" disabled={isPending} onClick={() => void chaptersQuery.refetch()}>

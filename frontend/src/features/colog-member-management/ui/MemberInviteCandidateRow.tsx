@@ -28,8 +28,8 @@ export default function MemberInviteCandidateRow({
 			/>
 
 			<div className="min-w-0 flex-1">
-				<strong className="block truncate text-label-1 font-semibold text-text-primary">{candidate.nickname}</strong>
-				<span className="block truncate text-caption-1 text-text-secondary">@{candidate.slug}</span>
+				<strong className="block truncate text-label-2 font-semibold text-text-primary">{candidate.nickname}</strong>
+				<span className="block truncate text-caption-2 text-text-secondary">@{candidate.slug}</span>
 			</div>
 
 			<Button

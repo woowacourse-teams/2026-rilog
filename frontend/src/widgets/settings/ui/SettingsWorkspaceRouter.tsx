@@ -66,7 +66,7 @@ export default function SettingsWorkspaceRouter({ slug, tab, invite }: SettingsW
 	if (profileQuery.isPending) {
 		return (
 			<PageShell>
-				<p className="flex min-h-64 items-center justify-center text-body-2 text-text-secondary" role="status">
+				<p className="flex min-h-64 items-center justify-center text-body-3 text-text-secondary" role="status">
 					설정 정보를 불러오는 중...
 				</p>
 			</PageShell>
@@ -76,7 +76,7 @@ export default function SettingsWorkspaceRouter({ slug, tab, invite }: SettingsW
 	if (profileQuery.isError || profile === undefined || settingsRoute === null) {
 		return (
 			<PageShell>
-				<p className="flex min-h-64 items-center justify-center text-body-2 text-danger-text" role="alert">
+				<p className="flex min-h-64 items-center justify-center text-body-3 text-danger-text" role="alert">
 					설정 정보를 불러오지 못했습니다.
 				</p>
 			</PageShell>

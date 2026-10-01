@@ -22,21 +22,21 @@ export default function PostDetailCoLogSummary({ colog }: PostDetailCoLogSummary
 						size="lg"
 					/>
 					<span className="min-w-0 text-left">
-						<span className="block text-body-1 font-semibold text-text-primary">{colog.name} &gt;</span>
+						<span className="block text-body-4 font-semibold text-text-primary">{colog.name} &gt;</span>
 						{colog.description ? (
-							<span className="mt-0.5 block truncate text-caption-2 text-text-secondary">{colog.description}</span>
+							<span className="mt-0.5 block truncate text-caption-1 text-text-secondary">{colog.description}</span>
 						) : null}
 					</span>
 				</CustomLink>
 
 				<dl className="hidden shrink-0 grid-cols-2 gap-5 text-left sm:grid">
 					<div>
-						<dt className="text-caption-1 text-text-secondary">Members</dt>
-						<dd className="text-label-1 font-semibold text-brand-primary">{colog.memberCount ?? 0}</dd>
+						<dt className="text-caption-2 text-text-secondary">Members</dt>
+						<dd className="text-label-2 font-semibold text-brand-primary">{colog.memberCount ?? 0}</dd>
 					</div>
 					<div>
-						<dt className="text-caption-1 text-text-secondary">Posts</dt>
-						<dd className="text-label-1 font-semibold text-brand-primary">{colog.postCount ?? 0}</dd>
+						<dt className="text-caption-2 text-text-secondary">Posts</dt>
+						<dd className="text-label-2 font-semibold text-brand-primary">{colog.postCount ?? 0}</dd>
 					</div>
 				</dl>
 			</div>

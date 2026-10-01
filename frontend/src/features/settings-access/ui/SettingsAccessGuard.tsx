@@ -35,7 +35,7 @@ export default function SettingsAccessGuard({ children, type, slug }: SettingsAc
 	if (accessStatus === 'error') {
 		return (
 			<div className="flex min-h-80 flex-col items-center justify-center gap-4 px-6 text-center" role="alert">
-				<p className="text-body-1 text-danger-text">설정 접근 권한을 확인하지 못했습니다.</p>
+				<p className="text-body-4 text-danger-text">설정 접근 권한을 확인하지 못했습니다.</p>
 				<ButtonLink href={homePath} variant="secondary">
 					블로그 홈으로 돌아가기
 				</ButtonLink>
@@ -45,7 +45,7 @@ export default function SettingsAccessGuard({ children, type, slug }: SettingsAc
 
 	return (
 		<div
-			className="flex min-h-80 items-center justify-center px-6 text-body-1 text-text-secondary"
+			className="flex min-h-80 items-center justify-center px-6 text-body-4 text-text-secondary"
 			role="status"
 			aria-label="설정 접근 권한 확인 중"
 		>

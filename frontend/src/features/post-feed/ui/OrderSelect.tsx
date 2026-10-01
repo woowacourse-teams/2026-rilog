@@ -25,7 +25,7 @@ export default function OrderSelect({ value }: OrderSelectProps) {
 		<select
 			value={value}
 			onChange={handleChange}
-			className="native-select !min-h-8 !w-auto !rounded-none !border-0 !bg-transparent !px-1 text-body-3! font-medium transition-colors! hover:!bg-transparent hover:!text-focus-ring"
+			className="native-select !min-h-8 !w-auto !rounded-none !border-0 !bg-transparent !px-1 text-body-2! font-medium transition-colors! hover:!bg-transparent hover:!text-focus-ring"
 		>
 			{FEED_ORDER_OPTIONS.map((option) => (
 				<option key={option}>{option}</option>

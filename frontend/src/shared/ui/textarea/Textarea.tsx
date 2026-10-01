@@ -15,7 +15,7 @@ interface TextareaProps extends ComponentPropsWithRef<'textarea'> {
 }
 
 const BASE_TEXTAREA_CLASS_NAME =
-	'w-full resize-y rounded-md border bg-white px-4 py-2 text-label-2 text-text-primary placeholder:text-text-placeholder focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:-outline-offset-1 disabled:cursor-not-allowed disabled:resize-none disabled:bg-surface disabled:text-text-disabled';
+	'w-full resize-y rounded-md border bg-white px-4 py-2 text-label-1 text-text-primary placeholder:text-text-placeholder focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:-outline-offset-1 disabled:cursor-not-allowed disabled:resize-none disabled:bg-surface disabled:text-text-disabled';
 
 const SIZE_CLASS_NAMES: Record<TextareaSize, string> = {
 	sm: 'h-height-md min-h-height-md max-h-height-2xl',
@@ -65,7 +65,7 @@ export default function Textarea({
 				aria-invalid={status === 'error' ? true : ariaInvalid}
 			/>
 			{hasCharacterCount && (
-				<p id={characterCountId} className={`mt-1 text-right text-label-1 text-text-secondary`}>
+				<p id={characterCountId} className={`mt-1 text-right text-label-2 text-text-secondary`}>
 					{currentLength} / {maxLength}
 				</p>
 			)}

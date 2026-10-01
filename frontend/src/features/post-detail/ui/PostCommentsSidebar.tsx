@@ -65,9 +65,9 @@ export default function PostCommentsSidebar({
 		>
 			<div className="flex h-full min-h-0 flex-col">
 				<header className="flex h-15 shrink-0 items-center justify-between border-b border-border-default px-5">
-					<h2 ref={titleRef} id={titleId} tabIndex={-1} className="text-title-1 font-semibold text-text-primary">
+					<h2 ref={titleRef} id={titleId} tabIndex={-1} className="text-title-3 font-semibold text-text-primary">
 						{mode === 'all' ? '전체 인라인 댓글' : '인라인 댓글'}{' '}
-						<span className="ml-1 text-body-1 font-medium text-text-placeholder">{commentCount}</span>
+						<span className="ml-1 text-body-4 font-medium text-text-placeholder">{commentCount}</span>
 					</h2>
 					<Button variant="ghost" size="icon" aria-label="댓글 사이드바 닫기" onClick={onClose}>
 						<XIcon aria-hidden="true" className="size-5" />
@@ -78,12 +78,12 @@ export default function PostCommentsSidebar({
 					{selection != null ? (
 						<InlineCommentComposer postId={postId} selection={selection} inputRef={inputRef} onCreated={onCreated} />
 					) : isLoading ? (
-						<p role="status" className="px-5 py-6 text-body-1 text-text-placeholder">
+						<p role="status" className="px-5 py-6 text-body-4 text-text-placeholder">
 							인라인 댓글을 불러오는 중입니다.
 						</p>
 					) : isError ? (
 						<div className="px-5 py-6">
-							<p role="alert" className="mb-3 text-body-1 text-text-secondary">
+							<p role="alert" className="mb-3 text-body-4 text-text-secondary">
 								인라인 댓글을 불러오지 못했습니다.
 							</p>
 							<Button variant="ghost" onClick={onRetry}>
@@ -91,7 +91,7 @@ export default function PostCommentsSidebar({
 							</Button>
 						</div>
 					) : threads.length === 0 ? (
-						<p className="px-5 py-6 text-body-1 text-text-placeholder">표시할 댓글이 없습니다.</p>
+						<p className="px-5 py-6 text-body-4 text-text-placeholder">표시할 댓글이 없습니다.</p>
 					) : (
 						<div>
 							{threads.map((thread) => (
@@ -116,7 +116,7 @@ export default function PostCommentsSidebar({
 				</div>
 				{isInitialized && !isAuthenticated && (
 					<footer className="shrink-0 bg-surface-hover px-5 pt-5 pb-7 shadow-[0_0_12px_rgba(0,0,0,0.10)]">
-						<p className="text-center text-body-1 text-text-secondary">
+						<p className="text-center text-body-4 text-text-secondary">
 							<button
 								onClick={() => login({ entrySurface: 'sidebar' })}
 								className="mr-0.5 font-medium text-focus-ring transition-colors hover:text-focus-ring/80"

@@ -114,7 +114,7 @@ export default function RilogProfileFormFields({
 							status={errors.description !== undefined ? 'error' : 'default'}
 							onChange={(event) => onTextFieldChange('description', event.target.value)}
 						/>
-						{errors.description !== undefined && <p className="mt-1 text-label-1 text-danger">{errors.description}</p>}
+						{errors.description !== undefined && <p className="mt-1 text-label-2 text-danger">{errors.description}</p>}
 					</div>
 				)}
 			</Field>

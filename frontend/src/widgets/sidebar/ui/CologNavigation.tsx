@@ -49,7 +49,7 @@ export default function CologNavigation() {
 					</li>
 				) : cologStatus ? (
 					<li
-						className="mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden text-label-2 text-text-secondary"
+						className="mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden text-label-1 text-text-secondary"
 						role={cologStatus.role}
 					>
 						<span className="flex size-8.75 shrink-0 items-center justify-center">
@@ -88,7 +88,7 @@ export default function CologNavigation() {
 			>
 				<span
 					aria-hidden="true"
-					className="flex h-full w-8.75 shrink-0 items-center justify-center text-body-2 leading-none"
+					className="flex h-full w-8.75 shrink-0 items-center justify-center text-body-3 leading-none"
 				>
 					+
 				</span>

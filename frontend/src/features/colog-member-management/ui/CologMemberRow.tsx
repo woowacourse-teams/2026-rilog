@@ -39,7 +39,7 @@ export default function CologMemberRow({
 
 	return (
 		<tr className="ph-mask h-18.5 border-b border-border-default" data-ph-sensitive-media>
-			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
+			<td className="py-3 pl-6 text-body-4 text-text-secondary">{rowNumber}</td>
 			<td className="px-2 py-3">
 				<div className="flex items-center gap-3.5">
 					<UserAvatar
@@ -50,18 +50,18 @@ export default function CologMemberRow({
 						tone="subtle"
 					/>
 					<div className="min-w-0">
-						<strong className="block truncate text-body-1 font-semibold text-text-primary">{member.nickname}</strong>
-						<span className="block truncate text-caption-2 text-text-secondary">@{member.slug}</span>
+						<strong className="block truncate text-body-4 font-semibold text-text-primary">{member.nickname}</strong>
+						<span className="block truncate text-caption-1 text-text-secondary">@{member.slug}</span>
 					</div>
 				</div>
 			</td>
-			<td className="px-2 py-3 text-body-1 font-semibold text-brand-primary">
+			<td className="px-2 py-3 text-body-4 font-semibold text-brand-primary">
 				{isEditing ? (
 					<select
 						aria-label={`${member.nickname} 권한`}
 						value={member.permission}
 						onChange={(event) => onPermissionChange?.(member.id, event.target.value as CologMemberPermission)}
-						className="h-height-md w-full rounded-md border border-border-default bg-white px-3 text-label-2 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-focus-ring"
+						className="h-height-md w-full rounded-md border border-border-default bg-white px-3 text-label-1 text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-focus-ring"
 					>
 						{Object.entries(PERMISSION_LABELS).map(([value, label]) => (
 							<option key={value} value={value}>
@@ -73,7 +73,7 @@ export default function CologMemberRow({
 					PERMISSION_LABELS[member.permission]
 				)}
 			</td>
-			{/* <td className="px-2 py-3 text-body-1 text-text-primary">
+			{/* <td className="px-2 py-3 text-body-4 text-text-primary">
 				{isEditing ? (
 					<Input
 						aria-label={`${member.nickname} 역할`}
@@ -85,7 +85,7 @@ export default function CologMemberRow({
 					member.blogRole
 				)}
 			</td> */}
-			<td className="px-2 py-3 text-label-1 text-text-secondary">{joinedAt}</td>
+			<td className="px-2 py-3 text-label-2 text-text-secondary">{joinedAt}</td>
 			<td className="py-3 pr-8 text-right">
 				{canRemove && !isEditing && (
 					<button
@@ -94,7 +94,7 @@ export default function CologMemberRow({
 						onClick={onRemove}
 						className="inline-flex size-6 items-center justify-center rounded-full bg-surface-active text-danger transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-focus-ring"
 					>
-						<span aria-hidden="true" className="text-body-2 leading-none font-bold">
+						<span aria-hidden="true" className="text-body-3 leading-none font-bold">
 							−
 						</span>
 					</button>

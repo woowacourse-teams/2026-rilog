@@ -19,7 +19,7 @@ export default function BlogPostList({ posts, blogType }: BlogPostListProps) {
 	if (posts.length === 0) {
 		return (
 			<div className="flex min-h-80 items-center justify-center text-center">
-				<p className="text-body-2 text-text-secondary">아직 작성된 게시글이 없습니다.</p>
+				<p className="text-body-3 text-text-secondary">아직 작성된 게시글이 없습니다.</p>
 			</div>
 		);
 	}
@@ -56,10 +56,10 @@ export default function BlogPostList({ posts, blogType }: BlogPostListProps) {
 
 							<article className="flex min-h-28 min-w-0 flex-1 flex-col justify-between gap-2 py-1">
 								<div className="min-w-0">
-									<h3 className="line-clamp-2 text-body-3 font-semibold text-text-primary transition-colors duration-200 group-focus-visible:text-focus-ring hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none">
+									<h3 className="line-clamp-2 text-body-2 font-semibold text-text-primary transition-colors duration-200 group-focus-visible:text-focus-ring hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none">
 										{post.title}
 									</h3>
-									<div className="mt-1 flex min-w-0 items-center text-label-2">
+									<div className="mt-1 flex min-w-0 items-center text-label-1">
 										{blogType === 'COLOG' ? (
 											<UserAvatar
 												src={post.author.profileImageUrl}
@@ -82,7 +82,7 @@ export default function BlogPostList({ posts, blogType }: BlogPostListProps) {
 										) : null}
 									</div>
 								</div>
-								<div className="flex items-center justify-between gap-2 text-label-1 text-navy-600">
+								<div className="flex items-center justify-between gap-2 text-label-2 text-navy-600">
 									<div className="flex flex-wrap items-center gap-1">
 										{post.categoryLabel ? (
 											<>

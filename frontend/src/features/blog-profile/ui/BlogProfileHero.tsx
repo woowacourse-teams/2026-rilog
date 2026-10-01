@@ -43,7 +43,7 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 
 				<div className="relative mt-2.5 inline-block max-w-full">
 					<h1
-						className={`max-w-full min-w-0 text-title-2 font-semibold wrap-break-word sm:text-title-3 ${coverTextShadowClassName}`}
+						className={`max-w-full min-w-0 text-title-2 font-semibold wrap-break-word sm:text-title-1 ${coverTextShadowClassName}`}
 					>
 						{profile.name}
 					</h1>
@@ -57,7 +57,7 @@ export default function BlogProfileHero({ action, profile }: BlogProfileHeroProp
 				</div>
 				{hasDescription || hasServiceUrl ? (
 					<p
-						className={`mt-2 max-w-sm text-label-2 text-on-brand-primary sm:mt-2.5 sm:max-w-lg sm:text-body-1 ${coverTextShadowClassName}`}
+						className={`mt-2 max-w-sm text-label-1 text-on-brand-primary sm:mt-2.5 sm:max-w-lg sm:text-body-4 ${coverTextShadowClassName}`}
 					>
 						{hasDescription ? profile.description : null}
 						{hasDescription && hasServiceUrl ? <br /> : null}

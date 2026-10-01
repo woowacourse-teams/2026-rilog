@@ -16,7 +16,7 @@ export default function PostDetailError({ error, reset }: PostDetailErrorProps) 
 			<ContentLoadFailureTracker surface="post_detail" loadPhase="detail" error={error} />
 			<div>
 				<h1 className="text-heading-3 font-bold text-text-primary">게시글을 불러오지 못했어요.</h1>
-				<p className="mt-3 text-body-2 text-text-secondary">잠시 후 다시 시도해 주세요.</p>
+				<p className="mt-3 text-body-3 text-text-secondary">잠시 후 다시 시도해 주세요.</p>
 			</div>
 			<div className="flex gap-3">
 				<Button variant="secondary" onClick={reset}>

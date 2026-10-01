@@ -46,7 +46,7 @@ export default function CologChapterField({
 						))}
 					</select>
 					{statusMessage !== undefined && (
-						<p className="text-label-2 text-text-secondary" role="status">
+						<p className="text-label-1 text-text-secondary" role="status">
 							{statusMessage}
 						</p>
 					)}

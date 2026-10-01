@@ -106,7 +106,7 @@ export default function CologCreateFormFields({
 										className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
 										onClick={() => handleLogoFileChange(null)}
 									>
-										<span aria-hidden="true" className="text-body-2 leading-none">
+										<span aria-hidden="true" className="text-body-3 leading-none">
 											×
 										</span>
 									</Button>
@@ -133,7 +133,7 @@ export default function CologCreateFormFields({
 							<p
 								id={`${id}-file-error`}
 								role={logoFileSizeError ? 'alert' : undefined}
-								className="text-label-1 text-danger"
+								className="text-label-2 text-danger"
 							>
 								{displayedLogoError}
 							</p>
@@ -174,7 +174,7 @@ export default function CologCreateFormFields({
 										className="absolute right-1 bottom-1 size-7! rounded-full! p-0!"
 										onClick={() => handleCoverImageFileChange(null)}
 									>
-										<span aria-hidden="true" className="text-body-2 leading-none">
+										<span aria-hidden="true" className="text-body-3 leading-none">
 											×
 										</span>
 									</Button>
@@ -198,7 +198,7 @@ export default function CologCreateFormFields({
 							/>
 						</div>
 						{coverImageFileSizeError && (
-							<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+							<p id={`${id}-file-error`} role="alert" className="text-label-2 text-danger">
 								{coverImageFileSizeError}
 							</p>
 						)}
@@ -298,14 +298,14 @@ export default function CologCreateFormFields({
 							status={errors.description !== undefined ? 'error' : 'default'}
 							onChange={(event) => onTextFieldChange('description', event.target.value)}
 						/>
-						{errors.description !== undefined && <p className="mt-1 text-label-1 text-danger">{errors.description}</p>}
+						{errors.description !== undefined && <p className="mt-1 text-label-2 text-danger">{errors.description}</p>}
 					</div>
 				)}
 			</Field>
 
 			<fieldset className="flex flex-col gap-3" aria-describedby="social-fields-desc">
-				<legend className="text-body-2 font-semibold text-text-primary">소셜</legend>
-				<p id="social-fields-desc" className="text-label-2 text-text-secondary">
+				<legend className="text-body-3 font-semibold text-text-primary">소셜</legend>
+				<p id="social-fields-desc" className="text-label-1 text-text-secondary">
 					링크를 통해 팀을 표현해 보세요.
 				</p>
 

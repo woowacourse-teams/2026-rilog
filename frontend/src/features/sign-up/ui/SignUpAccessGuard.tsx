@@ -41,7 +41,7 @@ export default function SignUpAccessGuard({ children }: SignUpAccessGuardProps) 
 	if (signUpFlowStatus === 'checking' || signUpFlowStatus === 'completed') {
 		return (
 			<div className="flex min-h-screen items-center justify-center" role="status">
-				<p className="text-body-1 text-text-secondary">
+				<p className="text-body-4 text-text-secondary">
 					{signUpFlowStatus === 'checking'
 						? '회원가입 접근 권한을 확인하고 있습니다...'
 						: '회원가입을 완료하고 이동하고 있습니다...'}

@@ -23,7 +23,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 	return (
 		<section aria-labelledby="chapter-post-suggestions-title">
 			<PostNavigationAvailableTracker surface="chapter_suggestions" />
-			<h2 id="chapter-post-suggestions-title" className="text-body-2 font-semibold text-text-primary">
+			<h2 id="chapter-post-suggestions-title" className="text-body-3 font-semibold text-text-primary">
 				<PostNavigationLink
 					href={chapterHref}
 					entrySource="post_detail_chapter_title"
@@ -66,7 +66,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 							<div className="flex flex-col gap-2">
 								<PostNavigationLink
 									href={buildPostDetailPath(slug, String(post.id))}
-									className="line-clamp-2 flex-1 rounded-sm text-body-2 font-medium [overflow-wrap:anywhere] break-keep text-text-primary sm:text-body-3"
+									className="line-clamp-2 flex-1 rounded-sm text-body-3 font-medium [overflow-wrap:anywhere] break-keep text-text-primary sm:text-body-2"
 									surface="chapter_suggestions"
 									targetType="post"
 									targetPostId={post.id}
@@ -80,7 +80,7 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 								<BlogProfileEntryLink
 									href={buildBlogHomePath(post.author.slug)}
 									entrySource="post_detail_recommendation_author"
-									className="inline-block w-full truncate rounded-sm text-label-2 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+									className="inline-block w-full truncate rounded-sm text-label-1 text-text-secondary transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 								>
 									{post.author.nickname}
 								</BlogProfileEntryLink>

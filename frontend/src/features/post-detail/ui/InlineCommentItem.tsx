@@ -87,21 +87,21 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 					<CustomLink
 						href={authorBlogPath}
-						className="rounded-sm text-label-2 text-text-primary transition-colors hover:text-focus-ring hover:underline focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+						className="rounded-sm text-label-1 text-text-primary transition-colors hover:text-focus-ring hover:underline focus-visible:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 					>
 						<strong className="font-semibold">{author.nickname}</strong>
 					</CustomLink>
 					{author.isAuthor ? (
-						<span className="rounded-sm bg-focus-ring/15 px-1.5 text-caption-1 font-medium text-text-secondary">
+						<span className="rounded-sm bg-focus-ring/15 px-1.5 text-caption-2 font-medium text-text-secondary">
 							작성자
 						</span>
 					) : author.isBlogMember ? (
-						<span className="rounded-sm bg-surface-active px-1.5 text-caption-1 font-medium text-text-secondary">
+						<span className="rounded-sm bg-surface-active px-1.5 text-caption-2 font-medium text-text-secondary">
 							멤버
 						</span>
 					) : null}
 				</div>
-				<div className="flex flex-wrap items-center gap-1 text-label-1 text-text-placeholder">
+				<div className="flex flex-wrap items-center gap-1 text-label-2 text-text-placeholder">
 					<span>
 						<time dateTime={toApiUtcISOString(comment.createdAt)}>{formatCommentDate(comment.createdAt)}</time>
 					</span>
@@ -154,7 +154,7 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 					/>
 				</div>
 			) : (
-				<p className="col-start-2 row-start-2 text-body-1 leading-6 whitespace-pre-wrap text-text-secondary">
+				<p className="col-start-2 row-start-2 text-body-4 leading-6 whitespace-pre-wrap text-text-secondary">
 					{comment.content}
 				</p>
 			)}

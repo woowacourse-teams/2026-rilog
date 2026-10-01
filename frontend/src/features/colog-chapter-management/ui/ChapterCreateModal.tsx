@@ -79,7 +79,7 @@ export default function ChapterCreateModal({
 					onChange={(event) => setChapterName(event.target.value)}
 				/>
 				{errorMessage !== undefined && (
-					<p className="mt-2 text-label-2 text-danger" role="alert">
+					<p className="mt-2 text-label-1 text-danger" role="alert">
 						{errorMessage}
 					</p>
 				)}

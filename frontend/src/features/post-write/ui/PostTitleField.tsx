@@ -60,7 +60,7 @@ export default function PostTitleField({ value, error, inputRef, onChange, onEnt
 				onKeyDown={handleKeyDown}
 			/>
 			{error !== undefined && (
-				<p id={POST_TITLE_ERROR_ID} className="mt-2 text-body-1 text-danger-text" role="alert">
+				<p id={POST_TITLE_ERROR_ID} className="mt-2 text-body-4 text-danger-text" role="alert">
 					{error}
 				</p>
 			)}

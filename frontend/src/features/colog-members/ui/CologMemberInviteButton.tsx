@@ -15,7 +15,7 @@ export default function CologMemberInviteButton({ slug }: CologMemberInviteButto
 			aria-label="멤버 추가"
 			variant="secondary"
 			size="icon"
-			className="rounded-full! border-dashed bg-white text-title-1"
+			className="rounded-full! border-dashed bg-white text-title-3"
 			onClick={() => analytics.cologMemberInvitationEntryClicked({ entrySource: 'member_aside' })}
 		>
 			<span aria-hidden="true">+</span>

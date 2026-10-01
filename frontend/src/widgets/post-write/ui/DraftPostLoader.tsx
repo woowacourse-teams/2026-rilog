@@ -18,7 +18,7 @@ export default function DraftPostLoader({ draftId }: DraftPostLoaderProps) {
 	if (initialDocumentQuery.isPending) {
 		return (
 			<main className={loaderClassName}>
-				<p className="text-body-2 text-text-secondary" role="status">
+				<p className="text-body-3 text-text-secondary" role="status">
 					임시저장 글을 불러오고 있어요.
 				</p>
 			</main>
@@ -34,7 +34,7 @@ export default function DraftPostLoader({ draftId }: DraftPostLoaderProps) {
 					error={initialDocumentQuery.error}
 				/>
 				<div className="flex flex-col items-center gap-5" role="alert">
-					<p className="text-body-2 text-danger-text">임시저장 글을 불러오지 못했습니다.</p>
+					<p className="text-body-3 text-danger-text">임시저장 글을 불러오지 못했습니다.</p>
 					<Button variant="secondary" onClick={() => void initialDocumentQuery.refetch()}>
 						다시 시도
 					</Button>

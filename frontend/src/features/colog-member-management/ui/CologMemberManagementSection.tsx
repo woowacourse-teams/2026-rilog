@@ -166,7 +166,7 @@ export default function CologMemberManagementSection({
 							<col className="w-1/5" />
 						</colgroup>
 						<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
-							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
+							<tr className="h-13.5 text-body-4 font-semibold text-text-secondary">
 								<th scope="col">
 									<span className="sr-only">번호</span>
 								</th>

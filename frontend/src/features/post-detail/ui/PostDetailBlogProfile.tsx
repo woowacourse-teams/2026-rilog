@@ -36,11 +36,11 @@ export default function PostDetailBlogProfile({ profile }: PostDetailBlogProfile
 				{avatar}
 				<h2
 					id="post-blog-profile-heading"
-					className="mt-4 text-title-1 font-semibold [overflow-wrap:anywhere] text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-title-2"
+					className="mt-4 text-title-3 font-semibold [overflow-wrap:anywhere] text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-title-2"
 				>
 					{profile.name}
 				</h2>
-				{profile.description ? <p className="mt-1 text-body-1 text-text-secondary">{profile.description}</p> : null}
+				{profile.description ? <p className="mt-1 text-body-4 text-text-secondary">{profile.description}</p> : null}
 			</BlogProfileEntryLink>
 		</section>
 	);
