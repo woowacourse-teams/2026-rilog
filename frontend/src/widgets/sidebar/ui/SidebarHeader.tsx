@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
 import { APP_ROUTES } from '@/shared/routes/app-routes';
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { FOCUS_CLASS_NAME } from './sidebar-class-names';
@@ -10,7 +11,7 @@ export default function SidebarHeader() {
 		<header className="relative flex h-16 w-full shrink-0 items-center px-1.75">
 			<CustomLink
 				href={APP_ROUTES.feeds}
-				aria-label="Rilog 메인으로 이동"
+				aria-label={`${SITE_NAME} 메인으로 이동`}
 				className={`flex h-10 w-full shrink-0 items-center rounded-lg px-2.5 ${FOCUS_CLASS_NAME}`}
 			>
 				<span className="relative block h-7 w-25 shrink-0">

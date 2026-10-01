@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
 	alternates: { canonical: '/feeds' },
-	title: { absolute: 'Rilog' },
+	title: { absolute: SITE_NAME },
 	...createSocialMetadata({
 		description: SITE_DESCRIPTION,
 		image: DEFAULT_OG_IMAGE,

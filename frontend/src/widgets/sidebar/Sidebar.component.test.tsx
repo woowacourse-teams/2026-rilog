@@ -6,6 +6,7 @@ import type * as NextNavigation from 'next/navigation';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import LoginModalProvider from '@/features/login/model/LoginModalProvider';
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import Sidebar from './Sidebar';
@@ -39,7 +40,7 @@ describe('Sidebar', () => {
 		renderSidebar(false);
 
 		const sidebar = screen.getByRole('complementary', { name: '사이드바' });
-		const infoNavigation = within(sidebar).getByRole('navigation', { name: 'Rilog 정보' });
+		const infoNavigation = within(sidebar).getByRole('navigation', { name: `${SITE_NAME} 정보` });
 		const [aboutLink, emailLink] = within(infoNavigation).getAllByRole('link');
 		const loginButton = within(sidebar).getByRole('button', { name: '로그인' });
 
@@ -63,7 +64,7 @@ describe('Sidebar', () => {
 		expect(screen.getByRole('separator')).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '글쓰기' })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
-		const infoNavigation = screen.getByRole('navigation', { name: 'Rilog 정보' });
+		const infoNavigation = screen.getByRole('navigation', { name: `${SITE_NAME} 정보` });
 		const writeLink = screen.getByRole('link', { name: '글쓰기' });
 		expect(infoNavigation.compareDocumentPosition(writeLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 	});
