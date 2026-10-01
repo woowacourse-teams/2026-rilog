@@ -42,8 +42,8 @@ vi.mock('@/shared/api/cologs/mutations/use-remove-colog-member-mutation', () => 
 	useRemoveCologMemberMutation: useRemoveCologMemberMutationMock,
 }));
 
-vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
-	useMyInfoQuery: () => ({ data: { slug: 'current-user' } }),
+vi.mock('../hooks/use-current-member-user', () => ({
+	useCurrentMemberUser: () => ({ data: { slug: 'current-user' } }),
 }));
 
 vi.mock('./CologMemberRow', () => ({
