@@ -14,7 +14,7 @@ export default function PostAllCommentsButton({ commentCount, className, onClick
 			<button
 				type="button"
 				aria-label={`전체 댓글 ${commentCount}개 보기`}
-				className={`group inline-flex items-center gap-1 px-1 pt-0.5 pb-1.5 text-label-2 font-semibold text-text-secondary hover:border-focus-ring hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${className ?? ''}`}
+				className={`group inline-flex items-center gap-1 px-1 pt-0.5 pb-1.5 text-label-1 font-semibold text-text-secondary hover:border-focus-ring hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${className ?? ''}`}
 				onClick={onClick}
 			>
 				<CommentIcon aria-hidden="true" focusable="false" className="size-4 shrink-0" />

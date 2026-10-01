@@ -28,13 +28,13 @@ export default function SidebarNavigationLink({
 			{...linkProps}
 			aria-label={accessibilityLabel ?? label}
 			aria-current={isCurrent ? 'page' : undefined}
-			className={`mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden rounded-lg text-label-2 text-text-secondary transition-[color,background-color,border-color,text-decoration-color,fill,stroke,border-radius] duration-200 ease-out hover:bg-navy-50 hover:text-brand-primary active:bg-navy-200 motion-reduce:transition-none ${isCurrent ? 'bg-navy-100 text-brand-primary! hover:bg-navy-100 active:bg-navy-200' : ''} ${FOCUS_CLASS_NAME} ${className ?? ''}`.trim()}
+			className={`mx-1.25 flex h-8.75 w-[calc(100%-10px)] items-center gap-2 overflow-hidden rounded-lg text-label-1 text-text-secondary transition-[color,background-color,border-color,text-decoration-color,fill,stroke,border-radius] duration-200 ease-out hover:bg-navy-50 hover:text-brand-primary active:bg-navy-200 motion-reduce:transition-none ${isCurrent ? 'bg-navy-100 text-brand-primary! hover:bg-navy-100 active:bg-navy-200' : ''} ${FOCUS_CLASS_NAME} ${className ?? ''}`.trim()}
 		>
 			<span className="flex size-8.75 shrink-0 items-center justify-center">{icon}</span>
 			<span className={`truncate font-semibold ${EXPANDED_TEXT_CLASS_NAME}`}>{label}</span>
 			{badge !== undefined && (
 				<span
-					className={`mr-2 ml-auto rounded-full bg-surface px-2 py-0.5 text-caption-1 font-semibold text-text-secondary ${EXPANDED_TEXT_CLASS_NAME}`}
+					className={`mr-2 ml-auto rounded-full bg-surface px-2 py-0.5 text-caption-2 font-semibold text-text-secondary ${EXPANDED_TEXT_CLASS_NAME}`}
 				>
 					{badge}
 				</span>

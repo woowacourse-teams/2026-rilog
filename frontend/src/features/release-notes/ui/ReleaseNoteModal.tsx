@@ -73,12 +73,12 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 				</div>
 			}
 		>
-			{note.intro && <p className="mb-6 text-body-1 whitespace-pre-wrap text-text-secondary">{note.intro}</p>}
+			{note.intro && <p className="mb-6 text-body-4 whitespace-pre-wrap text-text-secondary">{note.intro}</p>}
 			<ul className="space-y-6">
 				{note.items.map((item, index) => (
 					<li key={index} className="wrap-break-word break-keep">
-						<h3 className="text-body-2 font-semibold text-text-primary">{item.title}</h3>
-						<p className="mt-2 text-body-1 whitespace-pre-wrap text-text-secondary">{item.description}</p>
+						<h3 className="text-body-3 font-semibold text-text-primary">{item.title}</h3>
+						<p className="mt-2 text-body-4 whitespace-pre-wrap text-text-secondary">{item.description}</p>
 					</li>
 				))}
 			</ul>
@@ -91,7 +91,7 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 								target="_blank"
 								rel="noopener noreferrer"
 								onClick={() => trackLinkClick('release_note')}
-								className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+								className="rounded-sm text-body-4 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 							>
 								{link.label}
 							</a>
@@ -103,7 +103,7 @@ function CurrentReleaseNoteModal({ note }: { note: ReleaseNote }) {
 							target="_blank"
 							rel="noopener noreferrer"
 							onClick={() => trackLinkClick('about')}
-							className="rounded-sm text-body-1 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+							className="rounded-sm text-body-4 font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 						>
 							Rilog. 이야기 ↗
 						</AboutPageEntryLink>

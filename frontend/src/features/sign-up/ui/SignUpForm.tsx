@@ -223,10 +223,10 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 				aria-describedby={profileImageDescriptionId}
 				className="flex flex-col gap-3"
 			>
-				<p id={profileImageLabelId} className="text-body-2 font-semibold text-text-primary">
+				<p id={profileImageLabelId} className="text-body-3 font-semibold text-text-primary">
 					프로필 이미지 (선택)
 				</p>
-				<ul id={profileImageDescriptionId} className="list-disc pl-5 text-label-2 text-text-secondary">
+				<ul id={profileImageDescriptionId} className="list-disc pl-5 text-label-1 text-text-secondary">
 					<li>프로필 이미지는 360*360px(1:1) 사이즈를 권장해요.</li>
 					<li>10MB 이하의 파일만 업로드 가능해요.</li>
 				</ul>
@@ -271,7 +271,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 						/>
 					</div>
 					{profileImageFileSizeError && (
-						<p id={profileImageErrorId} role="alert" className="text-label-1 text-danger">
+						<p id={profileImageErrorId} role="alert" className="text-label-2 text-danger">
 							{profileImageFileSizeError}
 						</p>
 					)}
@@ -402,7 +402,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 				onChange={handleSocialLinkChange}
 			/>
 
-			<label className="flex items-center gap-2 text-body-2 text-text-primary">
+			<label className="flex items-center gap-2 text-body-3 text-text-primary">
 				<Checkbox
 					id={termsAgreementId}
 					name="termsAgreement"
@@ -440,7 +440,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 			</label>
 
 			{signUpState.status === 'error' && (
-				<p className="rounded-md border border-danger bg-background p-3 text-label-2 text-danger" role="alert">
+				<p className="rounded-md border border-danger bg-background p-3 text-label-1 text-danger" role="alert">
 					{signUpState.message}
 				</p>
 			)}

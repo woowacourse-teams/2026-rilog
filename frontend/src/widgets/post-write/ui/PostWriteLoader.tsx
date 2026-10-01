@@ -92,7 +92,7 @@ export default function PostWriteLoader() {
 	if (entry.type === 'ambiguous') {
 		return (
 			<main key={key} className={loaderClassName}>
-				<p className="text-body-2 text-danger-text" role="alert">
+				<p className="text-body-3 text-danger-text" role="alert">
 					게시글 ID와 임시저장 ID를 함께 사용할 수 없습니다.
 				</p>
 			</main>
@@ -102,7 +102,7 @@ export default function PostWriteLoader() {
 	if (entry.type === 'invalid-draft') {
 		return (
 			<main key={key} className={loaderClassName}>
-				<p className="text-body-2 text-danger-text" role="alert">
+				<p className="text-body-3 text-danger-text" role="alert">
 					올바르지 않은 임시저장 ID입니다.
 				</p>
 			</main>
@@ -116,7 +116,7 @@ export default function PostWriteLoader() {
 	if (entry.type === 'invalid-post') {
 		return (
 			<main key={key} className={loaderClassName}>
-				<p className="text-body-2 text-danger-text" role="alert">
+				<p className="text-body-3 text-danger-text" role="alert">
 					{/* TODO: 추가 피드백 필요(리다이렉트 등) */}
 					올바르지 않은 게시글 ID입니다.
 				</p>

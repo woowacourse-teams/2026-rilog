@@ -74,7 +74,7 @@ export default function InlineCommentThreadContent({
 								<button
 									type="button"
 									tabIndex={isOpen ? 0 : -1}
-									className="mt-1 rounded py-1 text-label-1 text-text-secondary transition-colors hover:text-text-placeholder focus-visible:outline-2 focus-visible:outline-focus-ring"
+									className="mt-1 rounded py-1 text-label-2 text-text-secondary transition-colors hover:text-text-placeholder focus-visible:outline-2 focus-visible:outline-focus-ring"
 									onClick={(event) => {
 										event.stopPropagation();
 										onNavigate?.();
@@ -97,7 +97,7 @@ export default function InlineCommentThreadContent({
 								id={panelId}
 								aria-hidden={!isOpen}
 								{...(!isOpen && { inert: true })}
-								className="pb-6 text-label-2 text-text-placeholder"
+								className="pb-6 text-label-1 text-text-placeholder"
 							>
 								아직 댓글이 없습니다.
 							</p>

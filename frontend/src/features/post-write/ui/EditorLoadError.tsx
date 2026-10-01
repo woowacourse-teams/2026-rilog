@@ -8,8 +8,8 @@ export default function EditorLoadError() {
 			role="alert"
 		>
 			<ContentLoadFailureTracker surface="post_editor" loadPhase="editor_bundle" />
-			<p className="text-title-1 font-semibold text-danger-text">에디터를 불러오지 못했습니다.</p>
-			<p className="mt-2 text-body-1 text-text-secondary">페이지를 새로고침한 뒤 다시 시도해 주세요.</p>
+			<p className="text-title-3 font-semibold text-danger-text">에디터를 불러오지 못했습니다.</p>
+			<p className="mt-2 text-body-4 text-text-secondary">페이지를 새로고침한 뒤 다시 시도해 주세요.</p>
 			<Button className="mt-5" variant="secondary" onClick={() => window.location.reload()}>
 				다시 시도
 			</Button>

@@ -36,7 +36,7 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 
 	if (isLoading) {
 		return (
-			<p className="px-6 py-12 text-center text-body-2 text-text-secondary sm:px-8 lg:px-0" role="status">
+			<p className="px-6 py-12 text-center text-body-3 text-text-secondary sm:px-8 lg:px-0" role="status">
 				시리즈를 불러오는 중...
 			</p>
 		);
@@ -45,7 +45,7 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 	if (isLoadError) {
 		return (
 			<div className="flex flex-col items-center gap-4 px-6 py-12 text-center sm:px-8 lg:px-0" role="alert">
-				<p className="text-body-2 text-text-secondary">시리즈를 불러오지 못했어요.</p>
+				<p className="text-body-3 text-text-secondary">시리즈를 불러오지 못했어요.</p>
 				<Button variant="secondary" onClick={() => void refetch()}>
 					다시 시도
 				</Button>
@@ -69,7 +69,7 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 						<col className="w-1/2" />
 					</colgroup>
 					<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
-						<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
+						<tr className="h-13.5 text-body-4 font-semibold text-text-secondary">
 							<th scope="col">
 								<span className="sr-only">번호</span>
 							</th>
@@ -88,7 +88,7 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 					<tbody>
 						{displayedChapters.length === 0 ? (
 							<tr>
-								<td colSpan={3} className="px-6 py-12 text-center text-body-2 text-text-secondary">
+								<td colSpan={3} className="px-6 py-12 text-center text-body-3 text-text-secondary">
 									아직 등록된 시리즈가 없어요.
 								</td>
 							</tr>
@@ -116,7 +116,7 @@ export default function RilogSeriesManagementSection({ management }: RilogSeries
 				errorMessage={createError === null ? undefined : getBlogChapterCreateErrorMessage(createError, '시리즈')}
 			/>
 			{saveError !== null && (
-				<p className="mt-4 rounded-md border border-danger p-3 text-label-2 text-danger" role="alert">
+				<p className="mt-4 rounded-md border border-danger p-3 text-label-1 text-danger" role="alert">
 					{getApiErrorMessage(saveError, '일부 시리즈 이름을 변경하지 못했어요.')}
 				</p>
 			)}

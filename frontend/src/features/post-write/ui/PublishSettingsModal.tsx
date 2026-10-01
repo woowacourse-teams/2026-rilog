@@ -197,7 +197,7 @@ export default function PublishSettingsModal({
 										)}
 									</div>
 									{imageFileSizeError && (
-										<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+										<p id={`${id}-file-error`} role="alert" className="text-label-2 text-danger">
 											{imageFileSizeError}
 										</p>
 									)}
@@ -218,7 +218,7 @@ export default function PublishSettingsModal({
 								/>
 							</div>
 							<figcaption className="px-4 py-4">
-								<p className="ph-mask line-clamp-2 text-body-3 font-semibold wrap-break-word text-text-primary">
+								<p className="ph-mask line-clamp-2 text-body-2 font-semibold wrap-break-word text-text-primary">
 									{postTitle}
 								</p>
 							</figcaption>
@@ -253,7 +253,7 @@ export default function PublishSettingsModal({
 						</Field>
 
 						<fieldset disabled={isModalPending}>
-							<legend className="text-body-2 font-semibold text-text-primary">
+							<legend className="text-body-3 font-semibold text-text-primary">
 								발행 위치
 								<span aria-hidden="true" className="ml-0.5 text-danger">
 									*
@@ -263,7 +263,7 @@ export default function PublishSettingsModal({
 								{BLOG_OPTIONS.map(({ value, label }) => (
 									<label
 										key={value}
-										className={`flex min-h-10 items-center justify-center px-4 text-label-2 font-semibold transition-colors has-focus-visible:z-10 has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${value === BLOG_OPTIONS[0].value ? 'border-r border-border-default' : ''} ${selectedBlog === value ? 'bg-brand-primary text-on-brand-primary' : 'bg-surface text-text-secondary hover:bg-surface-hover active:bg-surface-active'}`}
+										className={`flex min-h-10 items-center justify-center px-4 text-label-1 font-semibold transition-colors has-focus-visible:z-10 has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-focus-ring ${value === BLOG_OPTIONS[0].value ? 'border-r border-border-default' : ''} ${selectedBlog === value ? 'bg-brand-primary text-on-brand-primary' : 'bg-surface text-text-secondary hover:bg-surface-hover active:bg-surface-active'}`}
 									>
 										<input
 											type="radio"
@@ -320,7 +320,7 @@ export default function PublishSettingsModal({
 												))}
 											</select>
 											{cologOptionsStatusMessage !== undefined && (
-												<div className="flex items-center justify-between gap-3 text-label-2 text-text-secondary">
+												<div className="flex items-center justify-between gap-3 text-label-1 text-text-secondary">
 													<p id={statusId} role={isCologOptionsError ? 'alert' : 'status'}>
 														{cologOptionsStatusMessage}
 													</p>
@@ -338,7 +338,7 @@ export default function PublishSettingsModal({
 												</div>
 											)}
 											{cologError !== undefined && (
-												<p id={errorId} className="mt-2 text-body-1 text-danger-text" role="alert">
+												<p id={errorId} className="mt-2 text-body-4 text-danger-text" role="alert">
 													{cologError}
 												</p>
 											)}
@@ -367,7 +367,7 @@ export default function PublishSettingsModal({
 
 						{publishError !== undefined && (
 							<div
-								className="rounded-lg border border-danger-border bg-danger-soft p-3 text-body-1 text-danger-text"
+								className="rounded-lg border border-danger-border bg-danger-soft p-3 text-body-4 text-danger-text"
 								role="alert"
 							>
 								{publishError}

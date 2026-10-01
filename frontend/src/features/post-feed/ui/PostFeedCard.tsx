@@ -42,7 +42,7 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 						isScaledOnInteraction
 					/>
 				</div>
-				<div className="mt-2 flex min-w-0 items-center text-body-1">
+				<div className="mt-2 flex min-w-0 items-center text-body-4">
 					{post.blog.type === 'RILOG' && (
 						<BlogProfileEntryLink
 							href={buildBlogHomePath(post.author.slug)}
@@ -87,13 +87,13 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 					onClick={handleClick}
 					className="group/title mt-1 flex-1 before:absolute before:inset-0 before:z-0 before:rounded-xl before:content-[''] focus-visible:outline-none focus-visible:before:outline-2 focus-visible:before:outline-offset-4 focus-visible:before:outline-focus-ring"
 				>
-					<h3 className="relative z-10 line-clamp-2 min-h-[2lh] text-body-3 font-semibold wrap-break-word break-keep">
+					<h3 className="relative z-10 line-clamp-2 min-h-[2lh] text-body-2 font-semibold wrap-break-word break-keep">
 						<span className="text-text-primary transition-colors duration-200 hover:text-focus-ring active:text-focus-ring active:transition-none motion-reduce:transition-none">
 							{post.title}
 						</span>
 					</h3>
 				</CustomLink>
-				<div className="mt-3 flex items-center justify-between gap-2 text-caption-2 text-navy-600">
+				<div className="mt-3 flex items-center justify-between gap-2 text-caption-1 text-navy-600">
 					<time dateTime={toApiUtcISOString(post.publishedAt)}>{formatPublishedDate(post.publishedAt)}</time>
 					<PostCommentCount count={post.totalCommentsCount} />
 				</div>

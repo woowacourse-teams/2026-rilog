@@ -34,7 +34,7 @@ export default function Field({
 			{label && (
 				<div className="flex flex-col gap-1">
 					<div className="flex items-center justify-between gap-3">
-						<label htmlFor={controlId} className="text-body-2 font-semibold text-text-primary">
+						<label htmlFor={controlId} className="text-body-3 font-semibold text-text-primary">
 							{label}
 							{required ? (
 								<span aria-hidden="true" className="ml-0.5 text-danger">
@@ -45,7 +45,7 @@ export default function Field({
 						{labelAction}
 					</div>
 					{description && (
-						<div id={descriptionId} className="text-label-2 text-text-secondary">
+						<div id={descriptionId} className="text-label-1 text-text-secondary">
 							{description}
 						</div>
 					)}

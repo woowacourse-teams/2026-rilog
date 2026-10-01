@@ -166,7 +166,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 		>
 			<form id={formId} className="flex min-h-96 flex-col md:h-128" onSubmit={(event) => void handleSubmit(event)}>
 				<div className="shrink-0">
-					<label htmlFor={inputId} className="text-label-2 font-semibold text-text-primary">
+					<label htmlFor={inputId} className="text-label-1 font-semibold text-text-primary">
 						고유 아이디 입력
 					</label>
 					<div className="mt-2 flex items-start gap-2 rounded-md bg-surface-hover p-1.5">
@@ -199,7 +199,7 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 					</div>
 					<p
 						id={helperTextId}
-						className={`mt-1.5 text-label-1 whitespace-pre-line ${errorMessage ? 'ph-mask text-danger' : 'text-text-secondary'}`}
+						className={`mt-1.5 text-label-2 whitespace-pre-line ${errorMessage ? 'ph-mask text-danger' : 'text-text-secondary'}`}
 						aria-live="polite"
 					>
 						{errorMessage ?? 'Enter로 여러 사용자 추가하세요.'}
@@ -207,9 +207,9 @@ export default function MemberInviteModal({ slug, open, onClose, onInvite }: Mem
 				</div>
 
 				<div className="mt-10 flex min-h-0 flex-1 flex-col">
-					<h3 className="shrink-0 text-label-2 font-semibold text-text-primary">추가할 멤버 정보</h3>
+					<h3 className="shrink-0 text-label-1 font-semibold text-text-primary">추가할 멤버 정보</h3>
 					{candidates.length === 0 ? (
-						<p className="flex flex-1 items-center justify-center text-body-1 text-text-secondary">
+						<p className="flex flex-1 items-center justify-center text-body-4 text-text-secondary">
 							추가할 멤버가 없습니다.
 						</p>
 					) : (

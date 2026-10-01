@@ -56,7 +56,7 @@ export default function RilogSettingsWorkspace({ slug, initialTab = 'profile' }:
 	if (profileQuery.isPending) {
 		return (
 			<PageShell>
-				<p className="flex min-h-64 items-center justify-center text-body-2 text-text-secondary" role="status">
+				<p className="flex min-h-64 items-center justify-center text-body-3 text-text-secondary" role="status">
 					개인 프로필을 불러오는 중...
 				</p>
 			</PageShell>
@@ -67,7 +67,7 @@ export default function RilogSettingsWorkspace({ slug, initialTab = 'profile' }:
 		return (
 			<PageShell>
 				<div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center" role="alert">
-					<p className="text-body-2 text-text-secondary">개인 프로필을 불러오지 못했어요.</p>
+					<p className="text-body-3 text-text-secondary">개인 프로필을 불러오지 못했어요.</p>
 					<Button variant="secondary" onClick={() => void profileQuery.refetch()}>
 						다시 시도
 					</Button>
@@ -284,7 +284,7 @@ function RilogSettingsWorkspaceContent({ slug, initialTab, initialProfile }: Ril
 						/>
 						{profileErrorMessage !== null && (
 							<p
-								className="mx-6 mt-4 rounded-md border border-danger bg-background p-3 text-label-2 text-danger sm:mx-8 lg:mx-0"
+								className="mx-6 mt-4 rounded-md border border-danger bg-background p-3 text-label-1 text-danger sm:mx-8 lg:mx-0"
 								role="alert"
 							>
 								{profileErrorMessage}

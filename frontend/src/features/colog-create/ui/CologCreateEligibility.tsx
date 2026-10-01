@@ -19,7 +19,7 @@ export default function CologCreateEligibility() {
 			{hasReachedCologLimit && (
 				<p
 					id={COLOG_CREATE_LIMIT_NOTICE_ID}
-					className="mt-6 rounded-md border border-danger-border bg-danger-soft p-4 text-body-2 break-keep text-danger-text"
+					className="mt-6 rounded-md border border-danger-border bg-danger-soft p-4 text-body-3 break-keep text-danger-text"
 					role="status"
 				>
 					현재 참여할 수 있는 Colog가 최대 개수인 {MAX_COLOG_COUNT_PER_USER}개에 도달했어요. 새 팀을 만들려면 참여 중인

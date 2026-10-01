@@ -14,7 +14,7 @@ export default function GitHubCallbackPage() {
 		<Suspense
 			fallback={
 				<div className="flex min-h-screen items-center justify-center">
-					<p className="text-body-1 text-text-secondary">로그인 처리 중입니다...</p>
+					<p className="text-body-4 text-text-secondary">로그인 처리 중입니다...</p>
 				</div>
 			}
 		>

@@ -71,7 +71,7 @@ export default function InlineCommentThread({
 						onSubmit={() => void handleSubmit()}
 					/>
 					{mutation.isError && (
-						<p role="alert" className="mt-2 text-label-2 text-danger-text">
+						<p role="alert" className="mt-2 text-label-1 text-danger-text">
 							{isResponseUnconfirmed
 								? '요청 결과를 확인하지 못했습니다. 댓글 목록에서 등록 여부를 확인해 주세요.'
 								: '댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'}

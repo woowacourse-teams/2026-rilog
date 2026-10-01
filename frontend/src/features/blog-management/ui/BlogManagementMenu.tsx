@@ -120,7 +120,7 @@ export default function BlogManagementMenu({
 							}}
 							href={settingsHref}
 							role="menuitem"
-							className="block rounded-sm px-4 py-2 text-label-2 text-text-primary transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring active:bg-surface-active"
+							className="block rounded-sm px-4 py-2 text-label-1 text-text-primary transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring active:bg-surface-active"
 							onKeyDown={(event) => handleItemKeyDown(event, 0)}
 						>
 							설정
@@ -133,7 +133,7 @@ export default function BlogManagementMenu({
 							}}
 							type="button"
 							role="menuitem"
-							className="block w-full rounded-sm px-4 py-2 text-left text-label-2 text-danger transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring active:bg-surface-active"
+							className="block w-full rounded-sm px-4 py-2 text-left text-label-1 text-danger transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring active:bg-surface-active"
 							onClick={handleLeave}
 							onKeyDown={(event) => handleItemKeyDown(event, leaveItemIndex)}
 						>

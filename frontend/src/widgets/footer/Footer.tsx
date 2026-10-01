@@ -17,7 +17,7 @@ export default function Footer() {
 	return (
 		<footer className="bg-background text-text-primary">
 			<div className="flex flex-col items-center px-5 py-6 text-center sm:pt-4 sm:pb-11">
-				<p className="text-caption-1 font-medium">© {currentYear} Rilog. All rights reserved.</p>
+				<p className="text-caption-2 font-medium">© {currentYear} Rilog. All rights reserved.</p>
 
 				<section aria-label="연락 및 SNS" className="mt-1 sm:mt-2">
 					<div className="flex items-center">
@@ -54,7 +54,7 @@ export default function Footer() {
 					</div>
 				</section>
 
-				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-1 font-semibold">
+				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-2 font-semibold">
 					<AboutPageEntryLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
 						entrySource="footer"

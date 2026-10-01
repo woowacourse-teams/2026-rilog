@@ -45,8 +45,8 @@ export default function CologDangerZoneSection({ slug }: CologDangerZoneSectionP
 	return (
 		<section className="px-6 sm:px-8 lg:px-0">
 			<div className="mt-2.5 rounded-lg bg-danger-soft px-6 py-10 sm:px-12 md:min-h-75 md:px-16 md:py-18">
-				<h2 className="text-title-1 font-bold text-danger">팀 삭제</h2>
-				<p className="mt-3 text-body-1 text-text-primary">팀과 팀의 게시글이 영구적으로 삭제됩니다.</p>
+				<h2 className="text-title-3 font-bold text-danger">팀 삭제</h2>
+				<p className="mt-3 text-body-4 text-text-primary">팀과 팀의 게시글이 영구적으로 삭제됩니다.</p>
 				<Button type="button" variant="danger" size="md" className="mt-9 w-45" onClick={handleDeleteRequest}>
 					팀 영구 삭제
 				</Button>

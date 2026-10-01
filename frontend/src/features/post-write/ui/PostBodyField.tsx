@@ -28,7 +28,7 @@ export default function PostBodyField(props: PostBodyFieldProps) {
 				ariaDescribedBy={error === undefined ? undefined : POST_BODY_ERROR_ID}
 			/>
 			{error !== undefined && (
-				<p id={POST_BODY_ERROR_ID} className="mt-3 text-body-1 text-danger-text" role="alert">
+				<p id={POST_BODY_ERROR_ID} className="mt-3 text-body-4 text-danger-text" role="alert">
 					{error}
 				</p>
 			)}
