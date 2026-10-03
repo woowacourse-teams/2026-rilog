@@ -2,7 +2,9 @@
 export function sanitizeSentryMessage(value?: string): string {
 	if (!value) return 'Application error';
 	// JS 엔진별 파싱 메시지는 실제 응답/저장 본문 조각을 포함할 수 있다.
-	if (/not valid JSON|JSON\.parse|JSON at position|JSON at line|Unexpected end of JSON/i.test(value)) {
+	if (
+		/not valid JSON|JSON\.parse|JSON Parse error:|JSON at position|JSON at line|Unexpected end of JSON/i.test(value)
+	) {
 		return 'Invalid JSON response';
 	}
 	return value

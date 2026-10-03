@@ -37,6 +37,22 @@ describe('Sentry 오류 설명 보존', () => {
 	it('JSON 파싱 오류의 입력 조각은 생략한다', () => {
 		expect(report('Unexpected token x, "private body" is not valid JSON')).toBe('Invalid JSON response');
 	});
+	it('Safari JSON 파싱 SyntaxError의 본문 조각을 최종 이벤트에서 제거한다', () => {
+		const message = 'JSON Parse error: Unexpected identifier "private body"';
+		const sent = sanitizeSentryError(
+			{ type: undefined, exception: { values: [{ type: 'SyntaxError', value: message }] } },
+			context,
+		);
+		expect(sent.exception?.values?.[0].value).toBe('Invalid JSON response');
+		expect(JSON.stringify(sent)).not.toContain('private body');
+	});
+	it('Safari JSON 파싱 오류를 API 오류로 변환해도 본문 조각을 최종 이벤트에서 제거한다', () => {
+		const message = 'JSON Parse error: Unexpected identifier "private body"';
+		const apiReport = createApiErrorReport(normalizeApiError(new SyntaxError(message)), 'query');
+		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, apiReport), context);
+		expect(sent.exception?.values?.[0].value).toContain('Invalid JSON response');
+		expect(JSON.stringify(sent)).not.toContain('private body');
+	});
 	it('로그 메시지도 같은 치환을 거친다', () => {
 		const sent = sanitizeSentryError({ type: undefined, message: 'Login failed: token=private-token' }, context);
 		expect(sent.message).toBe('Login failed: token=[Filtered]');
