@@ -7,6 +7,63 @@ import { sanitizeSentryError, sanitizeSentrySpan, sanitizeSentryTransaction, toS
 const context = { environment: 'prod', release: 'rilog@123abc' };
 const secret = 'PRIVATE_email_nickname_token_body_filename';
 
+describe('오류 이벤트의 User-Agent 진단 정보', () => {
+	it.each([
+		['Mozilla/5.0 Chrome/154.0 Safari/537.36', 'browser', undefined],
+		['Mozilla/5.0 Chrome/154.0 Googlebot/2.1', 'bot', 'Googlebot'],
+		['bingbot/2.0', 'bot', 'bingbot'],
+		['ExampleCrawler/1.0', 'bot', undefined],
+		['Mozilla/5.0 HeadlessChrome/154.0', 'automation', undefined],
+		['curl/8.0', 'unknown', undefined],
+		['', 'unknown', undefined],
+	])('%s를 보존하고 %s로 추정한다', (userAgent, clientType, botName) => {
+		const sent = sanitizeSentryError({ type: undefined }, { ...context, userAgent });
+		expect(sent.tags).toMatchObject({
+			client_type: clientType,
+			detection_source: userAgent ? 'user_agent' : 'unknown',
+		});
+		expect(sent.tags?.bot_name).toBe(botName);
+		expect(sent.contexts?.client?.user_agent).toBe(userAgent || undefined);
+		expect(sent.tags).not.toHaveProperty('user_agent');
+	});
+
+	it.each(['user-agent', 'User-Agent', 'USER-AGENT'])(
+		'서버의 %s만 보존하고 다른 헤더와 임의 context는 제거한다',
+		(header) => {
+			const sent = sanitizeSentryError(
+				{
+					type: undefined,
+					request: { headers: { [header]: 'Googlebot/2.1', Authorization: secret, Cookie: secret } },
+					contexts: { private: { value: secret } },
+				},
+				context,
+			);
+			expect(sent.contexts).toEqual({ client: { user_agent: 'Googlebot/2.1' } });
+			expect(sent.tags).toMatchObject({ client_type: 'bot', bot_name: 'Googlebot' });
+			expect(sent.request).toBeUndefined();
+			expect(JSON.stringify(sent)).not.toContain(secret);
+		},
+	);
+
+	it('브라우저 UA가 있으면 서버 헤더보다 우선한다', () => {
+		const sent = sanitizeSentryError(
+			{ type: undefined, request: { headers: { 'User-Agent': 'Googlebot/2.1' } } },
+			{ ...context, userAgent: 'Firefox/150.0' },
+		);
+		expect(sent.contexts?.client?.user_agent).toBe('Firefox/150.0');
+		expect(sent.tags?.client_type).toBe('browser');
+	});
+
+	it('UA의 제어 문자를 제거하고 최대 1024자로 제한한다', () => {
+		const sent = sanitizeSentryError(
+			{ type: undefined },
+			{ ...context, userAgent: `Chrome/154\r\n${'x'.repeat(2000)}` },
+		);
+		expect(String(sent.contexts?.client?.user_agent)).toHaveLength(1024);
+		expect(String(sent.contexts?.client?.user_agent)).not.toMatch(/[\r\n]/);
+	});
+});
+
 describe('Sentry 공통 개인정보 경계', () => {
 	it.each([
 		['/feeds?keyword=secret', '/feeds'],
@@ -78,6 +135,8 @@ describe('Sentry 공통 개인정보 경계', () => {
 			route: '/[slug]/posts/[postId]',
 			browser: 'Chrome/123',
 			device: 'desktop',
+			client_type: 'browser',
+			detection_source: 'user_agent',
 		});
 		expect(sent.exception?.values?.[0].stacktrace?.frames).toEqual([
 			{ filename: 'app:///_next/static/chunks/123abc.js', lineno: 12, colno: 34, in_app: undefined },

@@ -47,7 +47,7 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 		Sentry.captureEvent({
 			request: {
 				url: `https://rilog.test/${secret}/posts/42?code=${secret}`,
-				headers: { Authorization: secret, Cookie: secret },
+				headers: { Authorization: secret, Cookie: secret, 'User-Agent': 'Googlebot/2.1' },
 			},
 			exception: {
 				values: [
@@ -97,6 +97,9 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 
 	const serialized = JSON.stringify(envelopes);
 	expect(serialized).not.toContain(secret);
+	expect(serialized).toContain('"user_agent":"Googlebot/2.1"');
+	expect(serialized).toContain('"client_type":"bot"');
+	expect(serialized).toContain('"bot_name":"Googlebot"');
 	expect(serialized).toContain('[comment] inline-comment.create failed: INVALID_COMMENT_ANCHOR (400)');
 	expect(serialized).toContain('"operation":"inline-comment.create"');
 	expect(serialized).not.toContain('"type":"attachment"');

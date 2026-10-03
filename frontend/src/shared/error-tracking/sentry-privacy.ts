@@ -88,6 +88,40 @@ function routeFeature(route: string): string {
 	return 'app';
 }
 
+function eventUserAgent(event: Event, context: SentryPrivacyContext): string {
+	const value =
+		context.userAgent ??
+		Object.entries(event.request?.headers ?? {}).find(([name]) => name.toLowerCase() === 'user-agent')?.[1] ??
+		'';
+	return value
+		.replace(/\p{Cc}/gu, '')
+		.trim()
+		.slice(0, 1024);
+}
+
+/** UA는 위조할 수 있으므로 사용자 인증이나 수집 제외에 사용하지 않는다. */
+function clientDetectionTags(userAgent: string): Record<string, string> {
+	const botName = [
+		['Googlebot', /\bGooglebot\b/i],
+		['bingbot', /\bbingbot\b/i],
+		['DuckDuckBot', /\bDuckDuckBot\b/i],
+	] as const;
+	const matchedBot = botName.find(([, pattern]) => pattern.test(userAgent))?.[0];
+	const clientType =
+		matchedBot || /bot\b|crawler|spider/i.test(userAgent)
+			? 'bot'
+			: /\bHeadlessChrome\//i.test(userAgent)
+				? 'automation'
+				: clientTags(userAgent).browser !== 'unknown'
+					? 'browser'
+					: 'unknown';
+	return {
+		client_type: clientType,
+		detection_source: userAgent ? 'user_agent' : 'unknown',
+		...(matchedBot ? { bot_name: matchedBot } : {}),
+	};
+}
+
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
 function apiTags(event: Event): Record<string, string> {
@@ -151,9 +185,7 @@ function commonEvent(event: Event, context: SentryPrivacyContext): Event {
 				: API_ERROR_OPERATION_CONTRACTS[operation].feature,
 		operation,
 		route,
-		...clientTags(
-			context.userAgent ?? event.request?.headers?.['user-agent'] ?? event.request?.headers?.['User-Agent'] ?? '',
-		),
+		...clientTags(eventUserAgent(event, context)),
 		...apiTags(event),
 	};
 
@@ -182,6 +214,7 @@ function commonEvent(event: Event, context: SentryPrivacyContext): Event {
 /** 허용한 필드만 골라 새 이벤트를 만든다. 원본 객체를 펼치지 않는다. */
 export function sanitizeSentryError(event: ErrorEvent, context: SentryPrivacyContext): ErrorEvent {
 	const safe = commonEvent(event, context);
+	const userAgent = eventUserAgent(event, context);
 	const exception = event.exception?.values?.at(-1);
 	const isApi = exception?.type === 'NormalizedApiError';
 	const originalType = exception?.type ?? 'Error';
@@ -200,6 +233,8 @@ export function sanitizeSentryError(event: ErrorEvent, context: SentryPrivacyCon
 
 	return {
 		...safe,
+		tags: { ...safe.tags, ...clientDetectionTags(userAgent) },
+		contexts: userAgent ? { client: { user_agent: userAgent } } : undefined,
 		type: undefined,
 		...(exception
 			? {
