@@ -58,8 +58,23 @@ export function rememberApiRequest(error: unknown, method: string, url: string, 
 	if (typeof error === 'object' && error !== null) requests.set(error, describeApiRequest(method, url, baseUrl));
 }
 
+/** 공개 API 응답만 추적한다. 외부 저장소 응답과 미등록 경로는 원본 응답을 유지한다. */
+export function rememberApiResponse(response: Response, method: string, url: string, baseUrl?: string): boolean {
+	const diagnostics = describeApiRequest(method, url, baseUrl);
+	if (diagnostics.target !== 'api') return false;
+	requests.set(response, diagnostics);
+	return true;
+}
+
 export function getApiRequestDiagnostics(error: unknown): ApiRequestDiagnostics | undefined {
 	return typeof error === 'object' && error !== null ? requests.get(error) : undefined;
+}
+
+/** ky 응답에서 검증 오류로 공개 요청 정보만 복사한다. */
+export function copyApiRequestDiagnostics(response: Response, error: unknown): void {
+	if (typeof error !== 'object' || error === null) return;
+	const diagnostics = requests.get(response);
+	if (diagnostics) requests.set(error, diagnostics);
 }
 
 const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);

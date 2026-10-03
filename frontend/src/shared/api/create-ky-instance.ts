@@ -5,7 +5,7 @@ import type { Hooks, KyInstance, Options } from 'ky';
 import { logNonProductionError, logNonProductionInfo } from '@/shared/utils/non-production-console';
 
 import { API_ERROR_CODES } from './error-codes';
-import { rememberApiRequest } from './request-diagnostics';
+import { rememberApiRequest, rememberApiResponse } from './request-diagnostics';
 
 interface TokenManager {
 	getToken: () => string | null;
@@ -112,6 +112,17 @@ export const createKyInstance = ({
 					logNonProductionInfo(`[ky response] ${request.method} ${request.url} - ${response.status}`);
 				},
 				...(hooks?.afterResponse ?? []),
+				({ request, response }) => {
+					// ky는 각 afterResponse hook에 복제된 Response를 전달한다.
+					// 성공 API 응답만 반환해 204 응답 동일성과 HTTP 오류 처리를 유지한다.
+					if (
+						response.ok &&
+						response.status !== 204 &&
+						rememberApiResponse(response, request.method, request.url, getApiBase())
+					) {
+						return response;
+					}
+				},
 				async ({ request, response, retryCount, options: requestOptions }) => {
 					if (!isBrowser() || response.status !== 401) {
 						return;
