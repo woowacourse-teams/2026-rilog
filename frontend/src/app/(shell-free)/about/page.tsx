@@ -49,7 +49,7 @@ export default function AboutPage() {
 				</h2>
 			</section>
 
-			<section className={styles.manifestoMeaningSection} aria-label="Rilog의 의미">
+			<section className={styles.manifestoMeaningSection} aria-label={`${SITE_NAME}의 의미`}>
 				<header className={styles.manifestoMeaningHeader} data-about-reveal="copy">
 					<h2>Rilog.는 사람들의 이야기와 생각이 쌓이는 공간입니다.</h2>
 				</header>
@@ -96,7 +96,7 @@ export default function AboutPage() {
 						기록합니다. 그렇게 쌓인 글에는 한 팀의 지식과 문화, 그리고 그 안에서 성장한 사람들의 이야기가 담깁니다.
 					</p>
 				</div>
-				<footer className={styles.linkSection} aria-label="Rilog 둘러보기" data-about-reveal="copy">
+				<footer className={styles.linkSection} aria-label={`${SITE_NAME} 둘러보기`} data-about-reveal="copy">
 					<AboutPageLink href={APP_ROUTES.feeds} linkTarget="feeds">
 						<span className={styles.linkContent}>
 							<span className={styles.linkLabel}>

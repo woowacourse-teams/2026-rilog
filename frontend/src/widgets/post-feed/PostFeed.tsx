@@ -8,6 +8,7 @@ import PostFeedSkeleton from '@/features/post-feed/ui/PostFeedSkeleton';
 import { prefetchFullFeedPostsQuery } from '@/shared/api/feeds/queries/full-feed-posts/prefetch-query';
 import { fullFeedPostsQueryOptions } from '@/shared/api/feeds/queries/full-feed-posts/query-options';
 import type { FullFeedPostsFilters } from '@/shared/api/feeds/types';
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
 
 import PostFeedHeader from './PostFeedHeader';
 
@@ -36,7 +37,7 @@ export default function PostFeed({ filters }: PostFeedProps) {
 	return (
 		<>
 			<header className="flex min-h-72 items-center justify-center px-6 py-16 sm:min-h-96 md:py-24">
-				<h1 className="sr-only">Rilog</h1>
+				<h1 className="sr-only">{SITE_NAME}</h1>
 				<Image
 					src="/brand/logo.svg"
 					alt=""
