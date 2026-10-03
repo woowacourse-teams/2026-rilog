@@ -34,8 +34,18 @@ const trackerMountCounts = new Map<string, number>();
 const trackerCleanupTimers = new Map<string, number>();
 const viewedTrackerKeys = new Set<string>();
 const engagedTrackerKeys = new Set<string>();
+const READING_PROGRESS_INTERVAL_MS = 10_000;
 const READ_ENGAGED_SCROLL_DEPTH_THRESHOLD = 0.5;
 const READ_ENGAGED_SCROLL_DEPTH_BUCKET = '50_percent';
+
+interface ReadingVisit {
+	key: string;
+	postId: number;
+	id: string;
+	hasReached50Percent: boolean;
+	lastSent: { elapsedMs: number; hasReached50Percent: boolean } | null;
+	pendingExitTimer: number | null;
+}
 
 const retainTrackerKey = (trackerKey: string) => {
 	const pendingCleanupTimer = trackerCleanupTimers.get(trackerKey);
@@ -106,9 +116,52 @@ export default function PostDetailContent({
 }: PostDetailContentProps) {
 	const contentRef = useRef<HTMLElement>(null);
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
+	const [visitEpoch, setVisitEpoch] = useState(0);
 	const currentPostIdRef = useRef(postId);
 	const expandedToggleIdsRef = useRef(new Set<string>());
-	const getActiveEngagementTime = useActiveElapsedTime(postId);
+	const readingVisitRef = useRef<ReadingVisit | null>(null);
+	const didPageHideRef = useRef(false);
+	const getReadingVisit = useCallback(() => {
+		const key = `${postId}:${visitEpoch}`;
+		if (readingVisitRef.current?.key !== key) {
+			readingVisitRef.current = {
+				key,
+				postId,
+				id: window.crypto.randomUUID(),
+				hasReached50Percent: false,
+				lastSent: null,
+				pendingExitTimer: null,
+			};
+		}
+		return readingVisitRef.current;
+	}, [postId, visitEpoch]);
+	const sendReadingProgress = useCallback((visit: ReadingVisit, elapsedMs: number, useBeacon = false) => {
+		const hasReached50Percent = visit.hasReached50Percent;
+		if (visit.lastSent?.elapsedMs === elapsedMs && visit.lastSent.hasReached50Percent === hasReached50Percent) {
+			return;
+		}
+
+		visit.lastSent = { elapsedMs, hasReached50Percent };
+		const properties = {
+			postId: visit.postId,
+			readingVisitId: visit.id,
+			engagementSeconds: elapsedMs / 1_000,
+			hasReached50Percent,
+		};
+		if (useBeacon) {
+			analytics.postReadingProgress(properties, true);
+		} else {
+			analytics.postReadingProgress(properties);
+		}
+	}, []);
+	const handleReadingInterval = useCallback(
+		(elapsedMs: number) => sendReadingProgress(getReadingVisit(), elapsedMs),
+		[getReadingVisit, sendReadingProgress],
+	);
+	const getActiveEngagementTime = useActiveElapsedTime(`${postId}:${visitEpoch}`, {
+		intervalMs: READING_PROGRESS_INTERVAL_MS,
+		onInterval: handleReadingInterval,
+	});
 	const setContentRef = useCallback((element: HTMLElement | null) => {
 		contentRef.current = element;
 		setContentElement(element);
@@ -168,38 +221,72 @@ export default function PostDetailContent({
 
 	useEffect(() => {
 		const trackerKey = getTrackerKey(postId);
+		const readingVisit = getReadingVisit();
+		if (readingVisit.pendingExitTimer !== null) {
+			window.clearTimeout(readingVisit.pendingExitTimer);
+			readingVisit.pendingExitTimer = null;
+		}
 
 		const trackReadEngagement = () => {
-			if (engagedTrackerKeys.has(trackerKey)) {
+			if (document.visibilityState !== 'visible') {
 				return;
 			}
 
 			const articleElement = contentRef.current;
-			if (articleElement === null) {
-				return;
+			if (articleElement !== null && getArticleScrollDepth(articleElement) >= READ_ENGAGED_SCROLL_DEPTH_THRESHOLD) {
+				const isFirstDepthReach = !readingVisit.hasReached50Percent;
+				readingVisit.hasReached50Percent = true;
+				if (!engagedTrackerKeys.has(trackerKey)) {
+					engagedTrackerKeys.add(trackerKey);
+					analytics.postReadEngaged({
+						postId,
+						engagementSeconds: Math.floor(getActiveEngagementTime() / 1_000),
+						scrollDepthBucket: READ_ENGAGED_SCROLL_DEPTH_BUCKET,
+					});
+				}
+				if (isFirstDepthReach) {
+					sendReadingProgress(readingVisit, getActiveEngagementTime());
+				}
 			}
-
-			if (getArticleScrollDepth(articleElement) < READ_ENGAGED_SCROLL_DEPTH_THRESHOLD) {
-				return;
+		};
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === 'hidden') {
+				sendReadingProgress(readingVisit, getActiveEngagementTime(), true);
+			} else {
+				trackReadEngagement();
 			}
-
-			engagedTrackerKeys.add(trackerKey);
-			analytics.postReadEngaged({
-				postId,
-				engagementSeconds: Math.floor(getActiveEngagementTime() / 1_000),
-				scrollDepthBucket: READ_ENGAGED_SCROLL_DEPTH_BUCKET,
-			});
+		};
+		const handlePageHide = () => {
+			didPageHideRef.current = true;
+			sendReadingProgress(readingVisit, getActiveEngagementTime(), true);
+		};
+		const handlePageShow = () => {
+			if (didPageHideRef.current) {
+				didPageHideRef.current = false;
+				setVisitEpoch((current) => current + 1);
+			}
 		};
 
 		trackReadEngagement();
 		window.addEventListener('scroll', trackReadEngagement, { passive: true });
 		window.addEventListener('resize', trackReadEngagement);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		window.addEventListener('pagehide', handlePageHide);
+		window.addEventListener('pageshow', handlePageShow);
 
 		return () => {
+			const elapsedMs = getActiveEngagementTime();
 			window.removeEventListener('scroll', trackReadEngagement);
 			window.removeEventListener('resize', trackReadEngagement);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			window.removeEventListener('pagehide', handlePageHide);
+			window.removeEventListener('pageshow', handlePageShow);
+			readingVisit.pendingExitTimer = window.setTimeout(() => {
+				readingVisit.pendingExitTimer = null;
+				sendReadingProgress(readingVisit, elapsedMs);
+			}, 0);
 		};
-	}, [getActiveEngagementTime, postId]);
+	}, [getActiveEngagementTime, getReadingVisit, postId, sendReadingProgress]);
 
 	const handleToggleClick = (event: MouseEvent<HTMLElement>) => {
 		const toggleButton = getToggleButton(event.target);
