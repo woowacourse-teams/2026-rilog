@@ -8,6 +8,7 @@ const ENDPOINTS = [
 	['GET', '/v1/blogs/[slug]/chapters', 'blog.chapters.read'],
 	['POST', '/v1/blogs/[slug]/chapters', 'blog.chapter.create'],
 	['PATCH', '/v1/blogs/[slug]/chapters/[chapterId]', 'blog.chapter.update'],
+	['DELETE', '/v1/blogs/[slug]/chapters/[chapterId]', 'blog.chapter.delete'],
 	['GET', '/v1/blogs/[slug]', 'blog.profile.read'],
 	['PATCH', '/v1/blogs/[slug]/profiles', 'blog.profile.update'],
 	['GET', '/v1/users/me/cologs/overview', 'user.cologs.read'],

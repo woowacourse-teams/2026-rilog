@@ -9,6 +9,8 @@ describe('API 요청 진단 계약', () => {
 		['GET', '/v1/feeds/trending/posts', '/v1/feeds/trending/posts', 'feed.trending.list'],
 		['GET', '/v1/blogs/private/posts/42', '/v1/blogs/[slug]/posts/[postId]', 'post.read'],
 		['GET', '/v1/blogs/private/posts', '/v1/blogs/[slug]/posts', 'blog.posts.read'],
+		['PATCH', '/v1/blogs/private/chapters/2', '/v1/blogs/[slug]/chapters/[chapterId]', 'blog.chapter.update'],
+		['DELETE', '/v1/blogs/private/chapters/2', '/v1/blogs/[slug]/chapters/[chapterId]', 'blog.chapter.delete'],
 		['GET', '/v1/users/me', '/v1/users/me', 'user.me.read'],
 		['GET', '/v1/users/private', '/v1/users/[slug]', 'user.read'],
 		['PUT', '/v1/drafts/42/publish', '/v1/drafts/[draftId]/publish', 'draft.publish'],
@@ -60,6 +62,21 @@ describe('API 요청 진단 계약', () => {
 			http_method: 'GET',
 			api_endpoint: '/v1/users/[slug]',
 			api_operation: 'user.read',
+			api_target: 'api',
+		});
+	});
+	it('챕터 삭제 요청의 고정된 진단 태그를 최종 필터가 보존한다', () => {
+		expect(
+			validatedApiRequestTags({
+				http_method: 'DELETE',
+				api_endpoint: '/v1/blogs/[slug]/chapters/[chapterId]',
+				api_operation: 'blog.chapter.delete',
+				api_target: 'api',
+			}),
+		).toEqual({
+			http_method: 'DELETE',
+			api_endpoint: '/v1/blogs/[slug]/chapters/[chapterId]',
+			api_operation: 'blog.chapter.delete',
 			api_target: 'api',
 		});
 	});
