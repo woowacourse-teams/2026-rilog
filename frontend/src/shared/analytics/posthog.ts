@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-import type { CapturedNetworkRequest, CaptureResult } from 'posthog-js';
+import type { CapturedNetworkRequest, CaptureOptions, CaptureResult } from 'posthog-js';
 
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
@@ -220,12 +220,18 @@ export const initializeAnalytics = () => {
  * 분석 환경이 설정된 경우에만 사용자 행동 이벤트를 전송
  * 이벤트 이름과 payload 구성은 features/analytics에서 관리
  */
-export const captureAnalyticsEvent = (eventName: string, properties?: Record<string, unknown>) => {
+export const captureAnalyticsEvent = (
+	eventName: string,
+	properties?: Record<string, unknown>,
+	options?: CaptureOptions,
+) => {
 	if (!isAnalyticsConfigured()) {
 		return;
 	}
 
-	runPostHogOperation('capture', () => posthog.capture(eventName, properties));
+	runPostHogOperation('capture', () =>
+		options === undefined ? posthog.capture(eventName, properties) : posthog.capture(eventName, properties, options),
+	);
 };
 
 /**

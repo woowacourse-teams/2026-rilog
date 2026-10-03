@@ -2,20 +2,20 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 
-interface ActiveElapsedTimeThreshold {
-	thresholdMs: number;
-	onThresholdReached: (elapsedMs: number) => void;
+interface ActiveElapsedTimeInterval {
+	intervalMs: number;
+	onInterval: (elapsedMs: number) => void;
 }
 
-export function useActiveElapsedTime(resetKey?: unknown, threshold?: ActiveElapsedTimeThreshold) {
+export function useActiveElapsedTime(resetKey?: unknown, interval?: ActiveElapsedTimeInterval) {
 	const startedAtRef = useRef<number | null>(null);
 	const hiddenAtRef = useRef<number | null>(null);
 	const hiddenDurationRef = useRef(0);
 
 	const previousResetKeyRef = useRef(resetKey);
-	const didReachThresholdRef = useRef(false);
-	const onThresholdReached = threshold?.onThresholdReached;
-	const thresholdMs = threshold?.thresholdMs;
+	const lastIntervalIndexRef = useRef(0);
+	const onInterval = interval?.onInterval;
+	const intervalMs = interval?.intervalMs;
 
 	const getActiveElapsedTime = useCallback(() => {
 		const now = Date.now();
@@ -28,72 +28,83 @@ export function useActiveElapsedTime(resetKey?: unknown, threshold?: ActiveElaps
 	useEffect(() => {
 		if (startedAtRef.current === null || !Object.is(previousResetKeyRef.current, resetKey)) {
 			previousResetKeyRef.current = resetKey;
-			didReachThresholdRef.current = false;
+			lastIntervalIndexRef.current = 0;
 			const startedAt = Date.now();
 			startedAtRef.current = startedAt;
 			hiddenDurationRef.current = 0;
 			hiddenAtRef.current = document.visibilityState === 'hidden' ? startedAt : null;
 		}
 
-		let thresholdTimer: number | undefined;
-		const clearThresholdTimer = () => {
-			window.clearTimeout(thresholdTimer);
-			thresholdTimer = undefined;
+		let intervalTimer: number | undefined;
+		const clearIntervalTimer = () => {
+			window.clearTimeout(intervalTimer);
+			intervalTimer = undefined;
 		};
-		const scheduleThreshold = () => {
-			clearThresholdTimer();
-			if (
-				document.visibilityState !== 'visible' ||
-				didReachThresholdRef.current ||
-				thresholdMs === undefined ||
-				onThresholdReached === undefined
-			) {
+		const scheduleInterval = () => {
+			clearIntervalTimer();
+			if (document.visibilityState !== 'visible' || intervalMs === undefined || onInterval === undefined) {
 				return;
 			}
 
-			const remainingMs = thresholdMs - getActiveElapsedTime();
-			thresholdTimer = window.setTimeout(
+			const scheduledElapsedMs = getActiveElapsedTime();
+			const remainingMs = (Math.floor(scheduledElapsedMs / intervalMs) + 1) * intervalMs - scheduledElapsedMs;
+			intervalTimer = window.setTimeout(
 				() => {
-					thresholdTimer = undefined;
+					intervalTimer = undefined;
 					if (document.visibilityState !== 'visible') {
 						return;
 					}
 					const elapsedMs = getActiveElapsedTime();
-					if (elapsedMs < thresholdMs) {
-						scheduleThreshold();
-						return;
+					const intervalIndex = Math.floor(elapsedMs / intervalMs);
+					if (intervalIndex > lastIntervalIndexRef.current) {
+						lastIntervalIndexRef.current = intervalIndex;
+						onInterval(elapsedMs);
 					}
-					didReachThresholdRef.current = true;
-					onThresholdReached(elapsedMs);
+					scheduleInterval();
 				},
 				Math.max(0, remainingMs),
 			);
 		};
 
-		const handleVisibilityChange = () => {
+		const pause = () => {
 			const now = Date.now();
+			clearIntervalTimer();
+			hiddenAtRef.current ??= now;
+		};
 
-			if (document.visibilityState === 'hidden') {
-				clearThresholdTimer();
-				hiddenAtRef.current ??= now;
-				return;
-			}
-
+		const resume = () => {
+			const now = Date.now();
 			if (hiddenAtRef.current !== null) {
 				hiddenDurationRef.current += Math.max(0, now - hiddenAtRef.current);
 				hiddenAtRef.current = null;
 			}
-			scheduleThreshold();
+			scheduleInterval();
+		};
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === 'hidden') {
+				pause();
+			} else {
+				resume();
+			}
+		};
+		const handlePageShow = () => {
+			if (document.visibilityState === 'visible') {
+				resume();
+			}
 		};
 
-		scheduleThreshold();
+		scheduleInterval();
 		document.addEventListener('visibilitychange', handleVisibilityChange);
+		window.addEventListener('pagehide', pause);
+		window.addEventListener('pageshow', handlePageShow);
 
 		return () => {
-			clearThresholdTimer();
+			clearIntervalTimer();
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			window.removeEventListener('pagehide', pause);
+			window.removeEventListener('pageshow', handlePageShow);
 		};
-	}, [getActiveElapsedTime, onThresholdReached, resetKey, thresholdMs]);
+	}, [getActiveElapsedTime, onInterval, resetKey, intervalMs]);
 
 	return getActiveElapsedTime;
 }

@@ -130,13 +130,31 @@ export const analytics = {
 			engagement_seconds: engagementSeconds,
 			scroll_depth_bucket: scrollDepthBucket,
 		}),
-	postReadQualified: ({ postId, engagementSeconds }: { postId: number; engagementSeconds: number }) =>
-		captureAnalyticsEvent('post read qualified', {
+	postReadingProgress: (
+		{
+			postId,
+			readingVisitId,
+			engagementSeconds,
+			hasReached50Percent,
+		}: {
+			postId: number;
+			readingVisitId: string;
+			engagementSeconds: number;
+			hasReached50Percent: boolean;
+		},
+		useBeacon: boolean = false,
+	) => {
+		const properties = {
 			post_id: postId,
+			reading_visit_id: readingVisitId,
 			engagement_seconds: engagementSeconds,
-			scroll_depth_bucket: '50_percent',
+			has_reached_50_percent: hasReached50Percent,
 			read_tracking_version: 2,
-		}),
+		};
+		return useBeacon
+			? captureAnalyticsEvent('post reading progress', properties, { transport: 'sendBeacon' })
+			: captureAnalyticsEvent('post reading progress', properties);
+	},
 	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
 		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
 	inlineCommentSelectionReplyClicked: ({ postId }: { postId: number }) =>

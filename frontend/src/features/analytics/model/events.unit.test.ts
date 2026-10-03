@@ -11,15 +11,39 @@ describe('analytics events', () => {
 		captureMock.mockReset();
 	});
 
-	it('새 읽기 기준은 실제 체류 시간과 계측 버전으로 별도 이벤트를 전송한다', () => {
-		analytics.postReadQualified({ postId: 12, engagementSeconds: 23.5 });
+	it('읽기 진행 상태는 방문 ID, 누적 시간, 깊이 이력과 계측 버전을 전송한다', () => {
+		analytics.postReadingProgress({
+			postId: 12,
+			readingVisitId: 'visit-1',
+			engagementSeconds: 23.5,
+			hasReached50Percent: true,
+		});
 
-		expect(captureMock).toHaveBeenCalledExactlyOnceWith('post read qualified', {
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('post reading progress', {
 			post_id: 12,
+			reading_visit_id: 'visit-1',
 			engagement_seconds: 23.5,
-			scroll_depth_bucket: '50_percent',
+			has_reached_50_percent: true,
 			read_tracking_version: 2,
 		});
+	});
+
+	it('pagehide 읽기 진행 상태에만 beacon 전송 옵션을 전달한다', () => {
+		analytics.postReadingProgress(
+			{ postId: 12, readingVisitId: 'visit-1', engagementSeconds: 3.5, hasReached50Percent: false },
+			true,
+		);
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith(
+			'post reading progress',
+			{
+				post_id: 12,
+				reading_visit_id: 'visit-1',
+				engagement_seconds: 3.5,
+				has_reached_50_percent: false,
+				read_tracking_version: 2,
+			},
+			{ transport: 'sendBeacon' },
+		);
 	});
 
 	it('About 페이지 조회와 링크 행동을 canonical payload로 전송한다', () => {

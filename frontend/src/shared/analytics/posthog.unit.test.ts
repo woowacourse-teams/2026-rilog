@@ -118,6 +118,23 @@ describe('PostHog analytics', () => {
 		expect(captureMock).toHaveBeenCalledWith('test event', { enabled: true });
 	});
 
+	it('pagehide 전송 옵션을 SDK에 넘기고 일반 전송은 기존 두 인자를 유지한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'phc_test');
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
+		const { captureAnalyticsEvent } = await import('./posthog');
+
+		captureAnalyticsEvent('post reading progress', { engagement_seconds: 3.5 }, { transport: 'sendBeacon' });
+		captureAnalyticsEvent('post read engaged', { engagement_seconds: 3 });
+
+		expect(captureMock).toHaveBeenNthCalledWith(
+			1,
+			'post reading progress',
+			{ engagement_seconds: 3.5 },
+			{ transport: 'sendBeacon' },
+		);
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'post read engaged', { engagement_seconds: 3 });
+	});
+
 	it('세션 리플레이 마스킹 콜백은 비입력 민감 속성과 네트워크 값을 fail-closed로 처리한다', async () => {
 		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'phc_test');
 		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
