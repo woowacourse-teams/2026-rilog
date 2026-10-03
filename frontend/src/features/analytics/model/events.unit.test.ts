@@ -11,6 +11,17 @@ describe('analytics events', () => {
 		captureMock.mockReset();
 	});
 
+	it('새 읽기 기준은 실제 체류 시간과 계측 버전으로 별도 이벤트를 전송한다', () => {
+		analytics.postReadQualified({ postId: 12, engagementSeconds: 23.5 });
+
+		expect(captureMock).toHaveBeenCalledExactlyOnceWith('post read qualified', {
+			post_id: 12,
+			engagement_seconds: 23.5,
+			scroll_depth_bucket: '50_percent',
+			read_tracking_version: 2,
+		});
+	});
+
 	it('About 페이지 조회와 링크 행동을 canonical payload로 전송한다', () => {
 		analytics.aboutPageViewed({ acquisitionSource: 'pre_registration_email' });
 		analytics.aboutPageEntryClicked({ entrySource: 'release_note' });

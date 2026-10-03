@@ -130,6 +130,13 @@ export const analytics = {
 			engagement_seconds: engagementSeconds,
 			scroll_depth_bucket: scrollDepthBucket,
 		}),
+	postReadQualified: ({ postId, engagementSeconds }: { postId: number; engagementSeconds: number }) =>
+		captureAnalyticsEvent('post read qualified', {
+			post_id: postId,
+			engagement_seconds: engagementSeconds,
+			scroll_depth_bucket: '50_percent',
+			read_tracking_version: 2,
+		}),
 	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
 		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
 	inlineCommentSelectionReplyClicked: ({ postId }: { postId: number }) =>

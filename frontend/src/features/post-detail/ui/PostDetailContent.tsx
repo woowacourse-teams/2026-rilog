@@ -34,6 +34,7 @@ const trackerMountCounts = new Map<string, number>();
 const trackerCleanupTimers = new Map<string, number>();
 const viewedTrackerKeys = new Set<string>();
 const engagedTrackerKeys = new Set<string>();
+const READ_QUALIFIED_ACTIVE_TIME_THRESHOLD_MS = 20_000;
 const READ_ENGAGED_SCROLL_DEPTH_THRESHOLD = 0.5;
 const READ_ENGAGED_SCROLL_DEPTH_BUCKET = '50_percent';
 
@@ -108,7 +109,34 @@ export default function PostDetailContent({
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
 	const currentPostIdRef = useRef(postId);
 	const expandedToggleIdsRef = useRef(new Set<string>());
-	const getActiveEngagementTime = useActiveElapsedTime(postId);
+	const readingVisitRef = useRef({ postId, hasReachedDepth: false, didQualify: false });
+	const getReadingVisit = useCallback(() => {
+		if (readingVisitRef.current.postId !== postId) {
+			readingVisitRef.current = { postId, hasReachedDepth: false, didQualify: false };
+		}
+		return readingVisitRef.current;
+	}, [postId]);
+	const trackQualifiedRead = useCallback(
+		(elapsedMs: number) => {
+			const readingVisit = getReadingVisit();
+			if (
+				document.visibilityState !== 'visible' ||
+				!readingVisit.hasReachedDepth ||
+				readingVisit.didQualify ||
+				elapsedMs < READ_QUALIFIED_ACTIVE_TIME_THRESHOLD_MS
+			) {
+				return;
+			}
+
+			readingVisit.didQualify = true;
+			analytics.postReadQualified({ postId, engagementSeconds: elapsedMs / 1_000 });
+		},
+		[getReadingVisit, postId],
+	);
+	const getActiveEngagementTime = useActiveElapsedTime(postId, {
+		thresholdMs: READ_QUALIFIED_ACTIVE_TIME_THRESHOLD_MS,
+		onThresholdReached: trackQualifiedRead,
+	});
 	const setContentRef = useCallback((element: HTMLElement | null) => {
 		contentRef.current = element;
 		setContentElement(element);
@@ -170,36 +198,37 @@ export default function PostDetailContent({
 		const trackerKey = getTrackerKey(postId);
 
 		const trackReadEngagement = () => {
-			if (engagedTrackerKeys.has(trackerKey)) {
+			const readingVisit = getReadingVisit();
+			if (document.visibilityState !== 'visible') {
 				return;
 			}
 
 			const articleElement = contentRef.current;
-			if (articleElement === null) {
-				return;
+			if (articleElement !== null && getArticleScrollDepth(articleElement) >= READ_ENGAGED_SCROLL_DEPTH_THRESHOLD) {
+				readingVisit.hasReachedDepth = true;
+				if (!engagedTrackerKeys.has(trackerKey)) {
+					engagedTrackerKeys.add(trackerKey);
+					analytics.postReadEngaged({
+						postId,
+						engagementSeconds: Math.floor(getActiveEngagementTime() / 1_000),
+						scrollDepthBucket: READ_ENGAGED_SCROLL_DEPTH_BUCKET,
+					});
+				}
 			}
-
-			if (getArticleScrollDepth(articleElement) < READ_ENGAGED_SCROLL_DEPTH_THRESHOLD) {
-				return;
-			}
-
-			engagedTrackerKeys.add(trackerKey);
-			analytics.postReadEngaged({
-				postId,
-				engagementSeconds: Math.floor(getActiveEngagementTime() / 1_000),
-				scrollDepthBucket: READ_ENGAGED_SCROLL_DEPTH_BUCKET,
-			});
+			trackQualifiedRead(getActiveEngagementTime());
 		};
 
 		trackReadEngagement();
 		window.addEventListener('scroll', trackReadEngagement, { passive: true });
 		window.addEventListener('resize', trackReadEngagement);
+		document.addEventListener('visibilitychange', trackReadEngagement);
 
 		return () => {
 			window.removeEventListener('scroll', trackReadEngagement);
 			window.removeEventListener('resize', trackReadEngagement);
+			document.removeEventListener('visibilitychange', trackReadEngagement);
 		};
-	}, [getActiveEngagementTime, postId]);
+	}, [getActiveEngagementTime, getReadingVisit, postId, trackQualifiedRead]);
 
 	const handleToggleClick = (event: MouseEvent<HTMLElement>) => {
 		const toggleButton = getToggleButton(event.target);
