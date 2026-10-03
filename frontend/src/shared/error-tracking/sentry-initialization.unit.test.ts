@@ -68,7 +68,7 @@ describe.each(configurations)('$name Sentry 초기화', ({ name, load }) => {
 		const event = { message: 'failure' };
 		expect(options.beforeSend(event, { originalException: await createApiFailure('POST_NOT_FOUND', 404) })).toBeNull();
 		expect(options.beforeSend(event, { originalException: new Error('unexpected') })).toMatchObject({
-			message: 'Application message',
+			message: 'failure',
 			tags: { release: 'test-release', route: 'unknown', operation: 'unhandled' },
 		});
 	});

@@ -53,7 +53,7 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 				values: [
 					{
 						type: 'TypeError',
-						value: secret,
+						value: `Request failed: https://private.test/${secret}`,
 						stacktrace: {
 							frames: [{ filename: `app:///_next/static/chunks/123abc.js?token=${secret}`, lineno: 12, colno: 34 }],
 						},
@@ -62,7 +62,7 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 			},
 		});
 	});
-	Sentry.captureMessage(secret);
+	Sentry.captureMessage(`token=${secret}`);
 	Sentry.captureEvent({
 		type: 'transaction',
 		transaction: `/alice/posts/42?code=${secret}`,
@@ -100,7 +100,7 @@ it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감�
 	expect(serialized).toContain('"user_agent":"Googlebot/2.1"');
 	expect(serialized).toContain('"client_type":"bot"');
 	expect(serialized).toContain('"bot_name":"Googlebot"');
-	expect(serialized).toContain('[comment] inline-comment.create failed: INVALID_COMMENT_ANCHOR (400)');
+	expect(serialized).toContain('[comment] inline-comment.create failed: INVALID_COMMENT_ANCHOR (400; api)');
 	expect(serialized).toContain('"operation":"inline-comment.create"');
 	expect(serialized).not.toContain('"type":"attachment"');
 	expect(serialized).toContain('"api_error_code":"INTERNAL_SERVER_ERROR"');

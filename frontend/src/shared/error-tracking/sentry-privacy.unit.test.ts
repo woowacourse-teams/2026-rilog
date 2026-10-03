@@ -79,7 +79,7 @@ describe('Sentry 공통 개인정보 경계', () => {
 		expect(toSentryRoute(url)).toBe(expected);
 	});
 
-	it('일반 오류의 모든 자유 입력을 제거하고 배포 스택 위치와 공통 태그를 보존한다', () => {
+	it('일반 오류의 민감 URL과 부가 입력을 제거하고 배포 스택 위치와 공통 태그를 보존한다', () => {
 		const event: ErrorEvent = {
 			type: undefined,
 			message: secret,
@@ -107,7 +107,7 @@ describe('Sentry 공통 개인정보 경계', () => {
 				values: [
 					{
 						type: 'TypeError',
-						value: secret,
+						value: `Request failed: https://private.test/${secret}`,
 						stacktrace: {
 							frames: [
 								{
@@ -174,11 +174,11 @@ describe('Sentry 공통 개인정보 경계', () => {
 		expect(JSON.stringify(sent)).not.toContain('private');
 	});
 
-	it('메시지 원문을 보내지 않고 알 수 없는 API 코드도 고정된 이름으로 보고한다', () => {
+	it('메시지의 인증정보와 알 수 없는 API 코드를 고정된 이름으로 보고한다', () => {
 		const sent = sanitizeSentryError(
 			{
 				type: undefined,
-				message: secret,
+				message: `token=${secret}`,
 				tags: { operation: 'post.publish', errorCode: secret, httpStatus: 'NO_RESPONSE', request_id: secret },
 			},
 			context,

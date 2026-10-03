@@ -3,6 +3,8 @@ import type { ErrorEvent } from '@sentry/nextjs';
 import type { NormalizedApiError } from '@/shared/api/api-error';
 import { API_ERROR_OPERATION_CONTRACTS, resolveApiOperation } from '@/shared/api/api-error-contracts';
 
+import { sanitizeSentryMessage } from './sentry-message';
+
 export interface ApiErrorReport {
 	error: Error;
 	tags: Record<string, string>;
@@ -43,7 +45,10 @@ export function createApiErrorReport(normalized: NormalizedApiError, operation?:
 
 	// 요청별 request_id는 태그로만 보존해 같은 장애의 제목이 요청마다 달라지지 않게 한다.
 	const error = new Error(
-		`[${tags.feature}] ${tags.operation} failed: ${tags.errorCode} (${tags.httpStatus}; ${normalized.type})`,
+		`[${tags.feature}] ${tags.operation} failed: ${tags.errorCode} (${tags.httpStatus}; ${normalized.type})` +
+			(normalized.type === 'unknown' && normalized.cause instanceof Error
+				? `: ${sanitizeSentryMessage(normalized.cause.message)}`
+				: ''),
 	);
 	error.name = 'NormalizedApiError';
 
