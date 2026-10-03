@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { ErrorEvent } from '@sentry/nextjs';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { rememberApiRequest } from '@/shared/api/request-diagnostics';
+
+import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
 import { sanitizeSentryError, sanitizeSentrySpan, sanitizeSentryTransaction, toSentryRoute } from './sentry-privacy';
 
 const context = { environment: 'prod', release: 'rilog@123abc' };
@@ -65,6 +69,28 @@ describe('오류 이벤트의 User-Agent 진단 정보', () => {
 });
 
 describe('Sentry 공통 개인정보 경계', () => {
+	it('API 오류의 화면 경로와 요청 템플릿을 구분해 최종 이벤트에 남긴다', () => {
+		const error = normalizeApiError(new TypeError('Failed to fetch'));
+		rememberApiRequest(
+			error.cause,
+			'GET',
+			'https://api.rilog.test/v1/blogs/private/posts/42?token=secret',
+			'https://api.rilog.test',
+		);
+		const report = createApiErrorReport(error, 'query');
+		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, report), {
+			...context,
+			pathname: '/private/posts/42',
+		});
+		expect(sent.tags).toMatchObject({
+			route: '/[slug]/posts/[postId]',
+			api_endpoint: '/v1/blogs/[slug]/posts/[postId]',
+			api_operation: 'post.read',
+			http_method: 'GET',
+		});
+		expect(sent.exception?.values?.[0].value).toContain('post.read failed');
+		expect(JSON.stringify(sent)).not.toMatch(/private|secret/);
+	});
 	it.each([
 		['/feeds?keyword=secret', '/feeds'],
 		['/write?draftId=secret', '/write'],

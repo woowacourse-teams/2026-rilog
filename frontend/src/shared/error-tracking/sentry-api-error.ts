@@ -2,6 +2,7 @@ import type { ErrorEvent } from '@sentry/nextjs';
 
 import type { NormalizedApiError } from '@/shared/api/api-error';
 import { API_ERROR_OPERATION_CONTRACTS, resolveApiOperation } from '@/shared/api/api-error-contracts';
+import { describeStorageUpload, getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
 
 import { sanitizeSentryMessage } from './sentry-message';
 
@@ -41,6 +42,14 @@ export function createApiErrorReport(normalized: NormalizedApiError, operation?:
 			? normalized.detail.errorCode
 			: 'UNKNOWN_ERROR_CODE';
 		tags.errorCode = tags.error_code;
+	}
+	const request =
+		resolvedOperation === 'upload.put' ? describeStorageUpload() : getApiRequestDiagnostics(normalized.cause);
+	if (request && request.endpoint !== 'unknown') {
+		tags.http_method = request.method;
+		tags.api_endpoint = request.endpoint;
+		tags.api_operation = request.operation;
+		tags.api_target = request.target;
 	}
 
 	// 요청별 request_id는 태그로만 보존해 같은 장애의 제목이 요청마다 달라지지 않게 한다.

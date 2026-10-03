@@ -4,12 +4,36 @@ import { describe, expect, it } from 'vitest';
 import type { ErrorEvent } from '@sentry/nextjs';
 
 import { normalizeApiError } from '@/shared/api/api-error';
+import { rememberApiRequest } from '@/shared/api/request-diagnostics';
 import { createApiFailure } from '@/test/fixtures/api-error';
 
 import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
 import { SentryErrorTracker } from './sentry-error-tracker';
 
 describe('Sentry API 오류 전송 경계', () => {
+	it('같은 query라도 실제 API endpoint별로 이슈 제목과 태그를 구분한다', () => {
+		const first = normalizeApiError(new TypeError('Failed to fetch'));
+		const second = normalizeApiError(new TypeError('Failed to fetch'));
+		rememberApiRequest(first.cause, 'GET', 'https://api.rilog.test/v1/feeds/posts?page=1', 'https://api.rilog.test');
+		rememberApiRequest(
+			second.cause,
+			'GET',
+			'https://api.rilog.test/v1/blogs/private/posts/42',
+			'https://api.rilog.test',
+		);
+		const firstReport = createApiErrorReport(first, 'query');
+		const secondReport = createApiErrorReport(second, 'query');
+		expect(firstReport.tags).toMatchObject({
+			api_endpoint: '/v1/feeds/posts',
+			api_operation: 'feed.list',
+			http_method: 'GET',
+		});
+		expect(secondReport.tags).toMatchObject({
+			api_endpoint: '/v1/blogs/[slug]/posts/[postId]',
+			api_operation: 'post.read',
+		});
+		expect(JSON.stringify(secondReport)).not.toContain('private');
+	});
 	it('자동 수집된 원본 ky 네트워크 오류에서도 URL과 cause를 제거하고 분류를 보존한다', () => {
 		const original = new NetworkError(new Request('https://api.test?token=private-token'), {
 			cause: new TypeError('private-message'),

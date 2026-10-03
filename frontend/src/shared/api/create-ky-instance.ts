@@ -5,6 +5,7 @@ import type { Hooks, KyInstance, Options } from 'ky';
 import { logNonProductionError, logNonProductionInfo } from '@/shared/utils/non-production-console';
 
 import { API_ERROR_CODES } from './error-codes';
+import { rememberApiRequest } from './request-diagnostics';
 
 interface TokenManager {
 	getToken: () => string | null;
@@ -73,6 +74,7 @@ export const createKyInstance = ({
 			...hooks,
 			beforeError: [
 				({ request, error }) => {
+					rememberApiRequest(error, request.method, request.url, getApiBase());
 					logNonProductionError(`[ky error] ${request.method} ${request.url} - ${error.message}`);
 					return error;
 				},

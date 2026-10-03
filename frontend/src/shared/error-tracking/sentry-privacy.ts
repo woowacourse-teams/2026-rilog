@@ -6,6 +6,7 @@ type TransactionEvent = Parameters<NonNullable<SentryOptions['beforeSendTransact
 
 import { API_ERROR_OPERATION_CONTRACTS, resolveApiOperation } from '@/shared/api/api-error-contracts';
 import { API_ERROR_CODES, API_ERROR_CODE_KINDS } from '@/shared/api/error-codes';
+import { validatedApiRequestTags } from '@/shared/api/request-diagnostics';
 
 import { sanitizeSentryMessage } from './sentry-message';
 
@@ -151,6 +152,7 @@ function apiTags(event: Event): Record<string, string> {
 	if (typeof requestId === 'string' && UUID.test(requestId)) {
 		tags.request_id = requestId;
 	}
+	Object.assign(tags, validatedApiRequestTags(event.tags));
 
 	return tags;
 }
@@ -238,7 +240,7 @@ export function sanitizeSentryError(event: ErrorEvent, context: SentryPrivacyCon
 		isApi && safe.tags?.error_type === 'unknown'
 			? sanitizeSentryMessage(exception?.value)
 			: isApi
-				? `[${String(safe.tags?.feature)}] ${String(safe.tags?.operation)} failed: ${String(safe.tags?.api_error_code ?? 'NO_ERROR_CODE')} (${String(safe.tags?.httpStatus ?? 'NO_RESPONSE')}${safe.tags?.error_type ? `; ${String(safe.tags.error_type)}` : ''})`
+				? `[${String(safe.tags?.feature)}] ${String(safe.tags?.api_operation ?? safe.tags?.operation)} failed: ${String(safe.tags?.api_error_code ?? 'NO_ERROR_CODE')} (${String(safe.tags?.httpStatus ?? 'NO_RESPONSE')}${safe.tags?.error_type ? `; ${String(safe.tags.error_type)}` : ''})`
 				: exception
 					? sanitizeSentryMessage(exception.value)
 					: sanitizeSentryMessage(event.message ?? event.logentry?.message);

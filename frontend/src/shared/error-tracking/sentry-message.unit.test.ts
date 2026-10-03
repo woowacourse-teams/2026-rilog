@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { sanitizeSentryError } from './sentry-privacy';
-import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
 import { normalizeApiError } from '@/shared/api/api-error';
+
+import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
+import { sanitizeSentryError } from './sentry-privacy';
 
 const context = { environment: 'prod', release: 'test' };
 const report = (value: string) =>
@@ -11,8 +12,11 @@ const report = (value: string) =>
 
 describe('Sentry 오류 설명 보존', () => {
 	it('API 경계에서 정규화된 응답 검증 오류의 설명도 남긴다', () => {
-		const report = createApiErrorReport(normalizeApiError(new Error('Invalid API response: uploads.presign')), 'query');
-		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, report), context);
+		const apiReport = createApiErrorReport(
+			normalizeApiError(new Error('Invalid API response: uploads.presign')),
+			'query',
+		);
+		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, apiReport), context);
 		expect(sent.exception?.values?.[0].value).toContain('Invalid API response: uploads.presign');
 	});
 	it.each([
