@@ -2,12 +2,95 @@ import { describe, expect, it } from 'vitest';
 
 import type { ErrorEvent } from '@sentry/nextjs';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { rememberApiRequest } from '@/shared/api/request-diagnostics';
+
+import { createApiErrorReport, sanitizeApiErrorEvent } from './sentry-api-error';
 import { sanitizeSentryError, sanitizeSentrySpan, sanitizeSentryTransaction, toSentryRoute } from './sentry-privacy';
 
 const context = { environment: 'prod', release: 'rilog@123abc' };
 const secret = 'PRIVATE_email_nickname_token_body_filename';
 
+describe('오류 이벤트의 User-Agent 진단 정보', () => {
+	it.each([
+		['Mozilla/5.0 Chrome/154.0 Safari/537.36', 'browser', undefined],
+		['Mozilla/5.0 Chrome/154.0 Googlebot/2.1', 'bot', 'Googlebot'],
+		['bingbot/2.0', 'bot', 'bingbot'],
+		['ExampleCrawler/1.0', 'bot', undefined],
+		['Mozilla/5.0 HeadlessChrome/154.0', 'automation', undefined],
+		['curl/8.0', 'unknown', undefined],
+		['', 'unknown', undefined],
+	])('%s를 보존하고 %s로 추정한다', (userAgent, clientType, botName) => {
+		const sent = sanitizeSentryError({ type: undefined }, { ...context, userAgent });
+		expect(sent.tags).toMatchObject({
+			client_type: clientType,
+			detection_source: userAgent ? 'user_agent' : 'unknown',
+		});
+		expect(sent.tags?.bot_name).toBe(botName);
+		expect(sent.contexts?.client?.user_agent).toBe(userAgent || undefined);
+		expect(sent.tags).not.toHaveProperty('user_agent');
+	});
+
+	it.each(['user-agent', 'User-Agent', 'USER-AGENT'])(
+		'서버의 %s만 보존하고 다른 헤더와 임의 context는 제거한다',
+		(header) => {
+			const sent = sanitizeSentryError(
+				{
+					type: undefined,
+					request: { headers: { [header]: 'Googlebot/2.1', Authorization: secret, Cookie: secret } },
+					contexts: { private: { value: secret } },
+				},
+				context,
+			);
+			expect(sent.contexts).toEqual({ client: { user_agent: 'Googlebot/2.1' } });
+			expect(sent.tags).toMatchObject({ client_type: 'bot', bot_name: 'Googlebot' });
+			expect(sent.request).toBeUndefined();
+			expect(JSON.stringify(sent)).not.toContain(secret);
+		},
+	);
+
+	it('브라우저 UA가 있으면 서버 헤더보다 우선한다', () => {
+		const sent = sanitizeSentryError(
+			{ type: undefined, request: { headers: { 'User-Agent': 'Googlebot/2.1' } } },
+			{ ...context, userAgent: 'Firefox/150.0' },
+		);
+		expect(sent.contexts?.client?.user_agent).toBe('Firefox/150.0');
+		expect(sent.tags?.client_type).toBe('browser');
+	});
+
+	it('UA의 제어 문자를 제거하고 최대 1024자로 제한한다', () => {
+		const sent = sanitizeSentryError(
+			{ type: undefined },
+			{ ...context, userAgent: `Chrome/154\r\n${'x'.repeat(2000)}` },
+		);
+		expect(String(sent.contexts?.client?.user_agent)).toHaveLength(1024);
+		expect(String(sent.contexts?.client?.user_agent)).not.toMatch(/[\r\n]/);
+	});
+});
+
 describe('Sentry 공통 개인정보 경계', () => {
+	it('API 오류의 화면 경로와 요청 템플릿을 구분해 최종 이벤트에 남긴다', () => {
+		const error = normalizeApiError(new TypeError('Failed to fetch'));
+		rememberApiRequest(
+			error.cause,
+			'GET',
+			'https://api.rilog.test/v1/blogs/private/posts/42?token=secret',
+			'https://api.rilog.test',
+		);
+		const report = createApiErrorReport(error, 'query');
+		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, report), {
+			...context,
+			pathname: '/private/posts/42',
+		});
+		expect(sent.tags).toMatchObject({
+			route: '/[slug]/posts/[postId]',
+			api_endpoint: '/v1/blogs/[slug]/posts/[postId]',
+			api_operation: 'post.read',
+			http_method: 'GET',
+		});
+		expect(sent.exception?.values?.[0].value).toContain('post.read failed');
+		expect(JSON.stringify(sent)).not.toMatch(/private|secret/);
+	});
 	it.each([
 		['/feeds?keyword=secret', '/feeds'],
 		['/write?draftId=secret', '/write'],
@@ -22,7 +105,7 @@ describe('Sentry 공통 개인정보 경계', () => {
 		expect(toSentryRoute(url)).toBe(expected);
 	});
 
-	it('일반 오류의 모든 자유 입력을 제거하고 배포 스택 위치와 공통 태그를 보존한다', () => {
+	it('일반 오류의 민감 URL과 부가 입력을 제거하고 배포 스택 위치와 공통 태그를 보존한다', () => {
 		const event: ErrorEvent = {
 			type: undefined,
 			message: secret,
@@ -50,7 +133,7 @@ describe('Sentry 공통 개인정보 경계', () => {
 				values: [
 					{
 						type: 'TypeError',
-						value: secret,
+						value: `Request failed: https://private.test/${secret}`,
 						stacktrace: {
 							frames: [
 								{
@@ -78,6 +161,8 @@ describe('Sentry 공통 개인정보 경계', () => {
 			route: '/[slug]/posts/[postId]',
 			browser: 'Chrome/123',
 			device: 'desktop',
+			client_type: 'browser',
+			detection_source: 'user_agent',
 		});
 		expect(sent.exception?.values?.[0].stacktrace?.frames).toEqual([
 			{ filename: 'app:///_next/static/chunks/123abc.js', lineno: 12, colno: 34, in_app: undefined },
@@ -115,11 +200,11 @@ describe('Sentry 공통 개인정보 경계', () => {
 		expect(JSON.stringify(sent)).not.toContain('private');
 	});
 
-	it('메시지 원문을 보내지 않고 알 수 없는 API 코드도 고정된 이름으로 보고한다', () => {
+	it('메시지의 인증정보와 알 수 없는 API 코드를 고정된 이름으로 보고한다', () => {
 		const sent = sanitizeSentryError(
 			{
 				type: undefined,
-				message: secret,
+				message: `token=${secret}`,
 				tags: { operation: 'post.publish', errorCode: secret, httpStatus: 'NO_RESPONSE', request_id: secret },
 			},
 			context,

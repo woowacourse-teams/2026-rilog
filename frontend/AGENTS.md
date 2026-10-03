@@ -97,6 +97,15 @@
 - 외부 응답을 새로 사용하거나 DTO를 바꿀 때 TypeScript 기준 문서의 런타임 경계 목록을 확인한다. 선택한 endpoint의 DTO·가드·fixture와 실패 정책을 함께 갱신하고 `as`로 검증을 우회하지 않는다.
 - 편집기 스키마 또는 BlockNote 버전을 바꾸면 저장 본문 decoder와 기존 문서 호환성 fixture를 함께 확인한다.
 
+### 새 API의 Sentry 작업
+
+- 새 endpoint를 구현하거나 기존 endpoint의 method·path·오류 계약을 바꿀 때 API 구현과 같은 작업에서 Sentry 진단 경계를 확인한다. `src/shared/api/request-diagnostics.ts`의 `ENDPOINTS`에 method, **고정 경로 템플릿**, 고정 operation 이름을 등록하거나 갱신한다. 정적 경로와 동적 경로가 겹치면 정적 경로를 먼저 둔다. 실제 URL, query, host, 사용자 ID를 진단값에 넣지 않는다. `request-diagnostics.unit.test.ts`에서 매칭과 최종 태그 허용, 미등록·외부 경로의 차단을 확인한다.
+- raw API는 기존 `apiClient` 또는 `apiRequest`/`kyInstance`를 사용해 실패 원인의 요청 진단 정보가 유지되도록 한다. 별도 전송 경로를 쓰면 동일한 진단 경계가 필요한지 확인한다. 성공 응답 검증 오류도 `copyApiRequestDiagnostics` 연결을 확인한다.
+- 새 오류 코드나 상태가 생기면 백엔드 계약을 확인해 `src/shared/api/error-codes.ts`, `api-error-contracts.ts`, `src/shared/error-tracking/api-error-policy.ts`와 관련 테스트의 변경 필요성을 판단한다. 정상 거부를 추측해서 수집 제외 목록에 넣지 않고, 5xx·계약 밖 오류와 예상 입력 거부의 구분을 검증한다. operation별 정책을 바꾸면 `docs/observability/api-error-operation-contracts.md`도 갱신한다.
+- 조회는 `QueryProvider`의 공통 query 보고를, mutation은 공통 fallback과 해당 작업의 명시 보고 필요성을 검토한다. 핵심 작업·입력 제약·복구 UI처럼 작업별 판단이 필요하면 고정 `ApiOperation`을 정의하고 `apiErrorReporter.report`를 연결하며 `meta: { errorTracking: 'local' }`로 중복 보고를 막는다. 직접 호출·서버 경로는 QueryProvider 밖의 실패 처리와 보고 경계를 따로 확인한다. 모든 API에 기계적으로 새 Sentry 호출을 추가하지 않는다.
+- Sentry에 원본 요청·응답 body, URL/query, 토큰, 사용자 입력, 임의 `extra` 또는 원본 오류 객체를 직접 전달하지 않는다. 고정 operation·경로 템플릿, 허용된 오류 코드·상태, 형식이 검증된 `X-Request-ID`만 기존 전송 경계에서 사용한다. 개인정보 기준은 `docs/adr/0003-sentry-event-privacy.md`를 따른다.
+- 새 API의 실패 테스트에는 해당 method·endpoint·operation 진단, 수집할 오류와 제외할 정상 거부, 중복 보고 여부 및 사용자 복구 동작 중 해당하는 계약을 포함한다. 최종 Sentry 이벤트의 태그와 민감정보 차단 규칙을 바꿨다면 `src/shared/error-tracking`의 전송·privacy 테스트도 갱신한다. 완료 보고와 PR의 검증 항목에 Sentry 적용 또는 적용하지 않은 이유를 기록한다.
+
 ## 테스트
 
 - 테스트를 추가·수정·삭제하기 전에 `docs/testing/README.md`를 읽고, 필요한 작성 예시와 결정 기록은 그 문서에서 연결한다.
@@ -132,5 +141,6 @@
 - 외부 값을 검증 없이 DTO로 단언하거나 검증 실패를 빈 본문·성공 응답으로 처리한 변경을 지적한다.
 - 쓰기 응답 검증 실패 뒤 자동 재전송하거나 작성 내용을 잃는 변경을 지적한다.
 - 새 API 입력 경계의 검증 여부, 실패 정책과 테스트 예외의 근거를 확인한다.
+- 새 API의 Sentry 경로 템플릿·operation·오류 수집 정책·개인정보 차단·중복 보고 검증이 함께 갱신됐는지 확인한다.
 - 모듈 경계를 넘으면서 상대 경로를 사용한 import를 지적한다.
 - 재수출을 위한 `index.ts` 또는 `export *`를 추가한 변경을 지적한다.

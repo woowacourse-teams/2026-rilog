@@ -34,6 +34,7 @@ beforeEach(() => {
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllEnvs();
+	vi.unstubAllGlobals();
 });
 
 describe.each(configurations)('$name Sentry 초기화', ({ name, load }) => {
@@ -67,7 +68,7 @@ describe.each(configurations)('$name Sentry 초기화', ({ name, load }) => {
 		const event = { message: 'failure' };
 		expect(options.beforeSend(event, { originalException: await createApiFailure('POST_NOT_FOUND', 404) })).toBeNull();
 		expect(options.beforeSend(event, { originalException: new Error('unexpected') })).toMatchObject({
-			message: 'Application message',
+			message: 'failure',
 			tags: { release: 'test-release', route: 'unknown', operation: 'unhandled' },
 		});
 	});
@@ -81,6 +82,21 @@ describe.each(configurations)('$name Sentry 초기화', ({ name, load }) => {
 			},
 		};
 		expect(beforeSend?.(event, {})).toBeNull();
+	});
+	it('API 변환 이후에도 런타임에서 얻은 UA만 최종 context에 남긴다', async () => {
+		const userAgent = name === 'client' ? 'Chrome/154.0' : 'Googlebot/2.1';
+		if (name === 'client') {
+			vi.stubGlobal('window', { location: { pathname: '/feeds' }, navigator: { userAgent } });
+		}
+		await load();
+		const sent = await initMock.mock.calls[0]?.[0].beforeSend?.(
+			{ type: undefined, request: { headers: { 'User-Agent': 'Googlebot/2.1', Cookie: 'PRIVATE_COOKIE' } } },
+			{ originalException: await createApiFailure('INTERNAL_SERVER_ERROR', 500) },
+		);
+		expect(sent?.contexts?.client?.user_agent).toBe(userAgent);
+		expect(sent?.tags?.client_type).toBe(name === 'client' ? 'browser' : 'bot');
+		expect(sent?.request).toBeUndefined();
+		expect(JSON.stringify(sent)).not.toContain('PRIVATE_COOKIE');
 	});
 	it('트랜잭션도 경로를 익명화하고 첨부파일을 제거한다', async () => {
 		await load();

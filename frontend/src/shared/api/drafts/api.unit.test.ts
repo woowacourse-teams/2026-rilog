@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { DraftPublishRequest, DraftSaveRequest } from './types';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
+import { createApiErrorReport, sanitizeApiErrorEvent } from '@/shared/error-tracking/sentry-api-error';
+import { sanitizeSentryError } from '@/shared/error-tracking/sentry-privacy';
+
 import { deleteDraft, overwriteDraft, publishDraft, readDraftDetail, readMyDraftList, saveDraft } from './api';
 
 vi.hoisted(() => {
@@ -14,9 +19,27 @@ afterEach(() => {
 });
 
 it.each([
-	{ operation: '초안 저장', request: () => saveDraft({ title: '제목', content: [] }) },
-	{ operation: '초안 상세 조회', request: () => readDraftDetail({ draftId: 42 }) },
-	{ operation: '초안 덮어쓰기', request: () => overwriteDraft(42, { title: '제목', content: [] }) },
+	{
+		operation: '초안 저장',
+		request: () => saveDraft({ title: '제목', content: [] }),
+		method: 'POST',
+		endpoint: '/v1/drafts',
+		apiOperation: 'draft.save',
+	},
+	{
+		operation: '초안 상세 조회',
+		request: () => readDraftDetail({ draftId: 42 }),
+		method: 'GET',
+		endpoint: '/v1/drafts/[draftId]',
+		apiOperation: 'draft.read',
+	},
+	{
+		operation: '초안 덮어쓰기',
+		request: () => overwriteDraft(42, { title: '제목', content: [] }),
+		method: 'PUT',
+		endpoint: '/v1/drafts/[draftId]',
+		apiOperation: 'draft.overwrite',
+	},
 	{
 		operation: '초안 발행',
 		request: () =>
@@ -29,13 +52,56 @@ it.each([
 				thumbnailImageUrl: null,
 				chapterId: null,
 			}),
+		method: 'PUT',
+		endpoint: '/v1/drafts/[draftId]/publish',
+		apiOperation: 'draft.publish',
 	},
-])('$operation 성공 응답이 잘못된 JSON이면 응답 확인 실패로 처리한다', async ({ request }) => {
-	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken', { status: 200 })));
-	await expect(request()).rejects.toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
-});
+])(
+	'$operation 성공 응답이 잘못된 JSON이면 공개 요청 진단을 남긴다',
+	async ({ request, method, endpoint, apiOperation }) => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken', { status: 200 })));
+		let captured: unknown;
+		try {
+			await request();
+		} catch (error) {
+			captured = error;
+		}
+		const normalized = normalizeApiError(captured);
+		expect(normalized).toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
+		expect(getApiRequestDiagnostics(normalized.cause)).toEqual({
+			method,
+			endpoint,
+			operation: apiOperation,
+			target: 'api',
+		});
+		const report = createApiErrorReport(normalized, 'mutation');
+		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, report), {
+			environment: 'prod',
+			release: 'test',
+		});
+		expect(sent.tags).toMatchObject({ http_method: method, api_endpoint: endpoint, api_operation: apiOperation });
+		expect(JSON.stringify(sent)).not.toContain('{broken');
+	},
+);
 
 describe('saveDraft', () => {
+	it('본문이 없는 200 응답도 요청 진단을 가진 검증 오류로 처리한다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+		let captured: unknown;
+		try {
+			await saveDraft({ title: '제목', content: [] });
+		} catch (error) {
+			captured = error;
+		}
+		const normalized = normalizeApiError(captured);
+		expect(normalized).toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
+		expect(getApiRequestDiagnostics(normalized.cause)).toEqual({
+			method: 'POST',
+			endpoint: '/v1/drafts',
+			operation: 'draft.save',
+			target: 'api',
+		});
+	});
 	it('게시글 제목과 본문을 JSON 본문에 담아 POST v1/drafts로 요청한다', async () => {
 		const responseBody = {
 			status: 201,
@@ -66,9 +132,19 @@ describe('saveDraft', () => {
 
 	it('저장 응답의 draftId가 없으면 성공으로 반환하지 않는다', async () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 201, message: 'OK', data: {} })));
-		await expect(saveDraft({ title: '제목', content: [] })).rejects.toMatchObject({
-			type: 'unknown',
-			cause: { name: 'InvalidApiResponseError' },
+		let captured: unknown;
+		try {
+			await saveDraft({ title: '제목', content: [] });
+		} catch (error) {
+			captured = error;
+		}
+		const normalized = normalizeApiError(captured);
+		expect(normalized).toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
+		expect(getApiRequestDiagnostics(normalized.cause)).toEqual({
+			method: 'POST',
+			endpoint: '/v1/drafts',
+			operation: 'draft.save',
+			target: 'api',
 		});
 	});
 });
