@@ -35,6 +35,7 @@ jobs:
       - name: Detect frontend changes
         id: changes
         if: github.event_name == 'pull_request'
+        working-directory: .
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
