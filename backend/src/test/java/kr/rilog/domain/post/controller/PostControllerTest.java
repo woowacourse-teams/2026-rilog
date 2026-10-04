@@ -94,6 +94,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.data.chapter.name").value("Spring"))
                 .andExpect(jsonPath("$.data.chapter.order").value(0))
                 .andExpect(jsonPath("$.data.owner.type").value("RILOG"))
+                .andExpect(jsonPath("$.data.viewCount").value(42))
                 .andExpect(jsonPath("$.data.viewerPermissions.canEdit").value(false))
                 .andExpect(jsonPath("$.data.viewerPermissions.canDelete").value(false));
 
@@ -199,7 +200,8 @@ class PostControllerTest {
                         "작성자 블로그",
                         "https://example.com/profile.png"
                 ),
-                PostDetailResponse.ViewerPermissionsResponse.none()
+                PostDetailResponse.ViewerPermissionsResponse.none(),
+                42L
         );
     }
 
@@ -214,7 +216,8 @@ class PostControllerTest {
                 null,
                 response.author(),
                 response.owner(),
-                response.viewerPermissions()
+                response.viewerPermissions(),
+                response.viewCount()
         );
     }
 

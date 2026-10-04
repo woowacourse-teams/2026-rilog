@@ -19,7 +19,8 @@ public record PostDetailResponse(
         ChapterResponse chapter,
         AuthorResponse author,
         PostOwnerResponse owner,
-        ViewerPermissionsResponse viewerPermissions
+        ViewerPermissionsResponse viewerPermissions,
+        long viewCount
 ) {
 
     public PostDetailResponse(
@@ -30,7 +31,8 @@ public record PostDetailResponse(
             String category,
             AuthorResponse author,
             PostOwnerResponse owner,
-            ViewerPermissionsResponse viewerPermissions
+            ViewerPermissionsResponse viewerPermissions,
+            long viewCount
     ) {
         this(
                 title,
@@ -41,11 +43,12 @@ public record PostDetailResponse(
                 null,
                 author,
                 owner,
-                viewerPermissions
+                viewerPermissions,
+                viewCount
         );
     }
 
-    public static PostDetailResponse fromRilog(Post post, ViewerPermissionsResponse viewerPermissions) {
+    public static PostDetailResponse fromRilog(Post post, ViewerPermissionsResponse viewerPermissions, long viewCount) {
         return new PostDetailResponse(
                 post.getTitle(),
                 post.getContent().getContent(),
@@ -55,7 +58,8 @@ public record PostDetailResponse(
                 ChapterResponse.from(post.getChapter()),
                 AuthorResponse.from(post.getUser()),
                 RilogOwnerResponse.from(post.getRilog()),
-                viewerPermissions
+                viewerPermissions,
+                viewCount
         );
     }
 
@@ -63,7 +67,8 @@ public record PostDetailResponse(
             Post post,
             long memberCount,
             long postCount,
-            ViewerPermissionsResponse viewerPermissions
+            ViewerPermissionsResponse viewerPermissions,
+            long viewCount
     ) {
         return new PostDetailResponse(
                 post.getTitle(),
@@ -74,7 +79,8 @@ public record PostDetailResponse(
                 ChapterResponse.from(post.getChapter()),
                 AuthorResponse.from(post.getUser()),
                 CologOwnerResponse.of(post.getColog(), memberCount, postCount),
-                viewerPermissions
+                viewerPermissions,
+                viewCount
         );
     }
 
