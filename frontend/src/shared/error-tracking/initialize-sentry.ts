@@ -27,7 +27,11 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 				return filterSentryEvent(event);
 			},
 			beforeSendSpan: filterSentrySpan,
-			beforeBreadcrumb: (breadcrumb) => (breadcrumb.category === 'console' ? null : breadcrumb),
+			beforeBreadcrumb: (breadcrumb) =>
+				breadcrumb.category === 'console' &&
+				(breadcrumb.message?.startsWith('[ky request]') || breadcrumb.message?.startsWith('[ky response]'))
+					? null
+					: breadcrumb,
 			enableLogs: false,
 			...options,
 		});
