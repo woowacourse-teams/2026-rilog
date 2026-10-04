@@ -27,6 +27,7 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 				return filterSentryEvent(event);
 			},
 			beforeSendSpan: filterSentrySpan,
+			beforeBreadcrumb: (breadcrumb) => (breadcrumb.category === 'console' ? null : breadcrumb),
 			enableLogs: false,
 			...options,
 		});
