@@ -28,9 +28,7 @@ describe('apiClient', () => {
 		}
 		expect(getApiRequestDiagnostics(normalizeApiError(captured).cause)).toEqual({
 			method: 'GET',
-			endpoint: '/v1/blogs/[slug]/posts/[postId]',
-			operation: 'post.read',
-			target: 'api',
+			url: 'https://api.rilog.test/v1/blogs/private/posts/42',
 		});
 	});
 	it('HTTP 성공 뒤 JSON 파싱이 실패해도 원래 API 요청을 확인할 수 있다', async () => {
@@ -42,8 +40,7 @@ describe('apiClient', () => {
 			captured = error;
 		}
 		expect(getApiRequestDiagnostics(normalizeApiError(captured).cause)).toMatchObject({
-			endpoint: '/v1/blogs/[slug]/posts/[postId]',
-			operation: 'post.read',
+			url: 'https://api.rilog.test/v1/blogs/private/posts/42',
 		});
 	});
 	it('설정된 API base URL을 사용하고 쿠키를 포함하는 전역 client를 제공한다', async () => {

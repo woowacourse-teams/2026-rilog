@@ -4,8 +4,6 @@ import type { BlogProfileUpdateRequest, ChapterCreateRequest, ChapterRenameReque
 
 import { normalizeApiError } from '@/shared/api/api-error';
 import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
-import { createApiErrorReport, sanitizeApiErrorEvent } from '@/shared/error-tracking/sentry-api-error';
-import { sanitizeSentryError } from '@/shared/error-tracking/sentry-privacy';
 
 import {
 	createBlogChapter,
@@ -292,19 +290,6 @@ describe('deleteBlogChapter', () => {
 		}
 		const normalized = normalizeApiError(captured);
 		const diagnostics = getApiRequestDiagnostics(normalized.cause);
-		const report = createApiErrorReport(normalized, 'mutation');
-		const sent = sanitizeSentryError(sanitizeApiErrorEvent({ type: undefined }, report), {
-			environment: 'prod',
-			release: 'test',
-		});
-
-		expect(diagnostics).toMatchObject({ method: 'DELETE', operation: 'blog.chapter.delete' });
-		expect(sent.tags).toMatchObject({
-			operation: 'mutation',
-			http_method: 'DELETE',
-			api_endpoint: '/v1/blogs/[slug]/chapters/[chapterId]',
-			api_operation: 'blog.chapter.delete',
-		});
-		expect(JSON.stringify(sent)).not.toContain('private');
+		expect(diagnostics).toEqual({ method: 'DELETE', url: 'https://api.rilog.test/v1/blogs/private/chapters/2' });
 	});
 });

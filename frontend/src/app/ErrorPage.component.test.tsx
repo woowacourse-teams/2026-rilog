@@ -25,7 +25,7 @@ it('오류 수집이 실패해도 오류 안내와 재시도 및 홈 이동을 �
 
 	render(<ErrorPage error={error} reset={reset} />);
 
-	expect(captureExceptionMock).toHaveBeenCalledWith(error, expect.any(Object));
+	expect(captureExceptionMock).toHaveBeenCalledWith(error);
 	expect(screen.getByRole('heading', { name: '오류가 발생했습니다' })).toBeInTheDocument();
 	expect(screen.getByRole('link', { name: '홈으로 돌아가기' })).toHaveAttribute('href', '/');
 	await user.tab();
