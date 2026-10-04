@@ -164,10 +164,11 @@ class PostViewCounterTest {
         counter.recordView(ViewerIdentity.member(1));
         ticks.set(Duration.ofMinutes(90).toNanos());
         assertThat(counter.removeExpiredViewerRecords(1)).isEqualTo(1);
-        assertThat(registry.viewerRecordCount()).isEqualTo(1);
         assertThat(counter.recordView(ViewerIdentity.member(1)).accepted()).isFalse();
         assertThat(counter.recordView(ViewerIdentity.member(3))).isEqualTo(new ViewResult(true, 4));
-        assertThat(registry.viewerRecordCount()).isEqualTo(2);
+        assertThatThrownBy(() -> counter.recordView(ViewerIdentity.member(4)))
+                .isInstanceOfSatisfying(PostException.class,
+                        failure -> assertThat(failure.getErrorInformation()).isEqualTo(POST_VIEW_CAPACITY_EXCEEDED));
     }
 
     @Test
@@ -189,7 +190,7 @@ class PostViewCounterTest {
     @Test
     @DisplayName("수량 상한 거절은 증가분과 마지막 인정 시각을 변경하지 않는다")
     void safeIntegerOverflowDoesNotChangeState() {
-        var registry = registry(ticks, id -> 9_007_199_254_740_990L, 10, 100);
+        var registry = registry(ticks, id -> id == 1 ? 9_007_199_254_740_990L : 0, 10, 1);
         PostViewCounter counter = registry.getOrLoad(1);
         counter.recordView(ViewerIdentity.member(1));
         ViewFlushBatch batch = counter.prepareFlush().orElseThrow();
@@ -200,9 +201,13 @@ class PostViewCounterTest {
         ticks.set(Duration.ofHours(1).toNanos());
         assertThatThrownBy(() -> counter.recordView(ViewerIdentity.member(1))).isInstanceOf(PostException.class);
         assertThat(counter.removeExpiredViewerRecords(100)).isEqualTo(1);
-        assertThat(registry.viewerRecordCount()).isZero();
         assertThat(counter.prepareFlush()).contains(batch);
         assertThat(counter.currentCount()).isEqualTo(9_007_199_254_740_991L);
+        PostViewCounter other = registry.getOrLoad(2);
+        assertThat(other.recordView(ViewerIdentity.member(2))).isEqualTo(new ViewResult(true, 1));
+        assertThatThrownBy(() -> other.recordView(ViewerIdentity.member(3)))
+                .isInstanceOfSatisfying(PostException.class,
+                        failure -> assertThat(failure.getErrorInformation()).isEqualTo(POST_VIEW_CAPACITY_EXCEEDED));
     }
 
     @Test
@@ -219,7 +224,9 @@ class PostViewCounterTest {
             }
         });
         assertThat(accepted).filteredOn(Boolean::booleanValue).hasSize(1);
-        assertThat(registry.viewerRecordCount()).isEqualTo(1);
         assertThat(counter.currentCount()).isEqualTo(9_007_199_254_740_991L);
+        ticks.set(Duration.ofHours(1).toNanos());
+        assertThat(counter.removeExpiredViewerRecords(100)).isEqualTo(1);
+        assertThat(counter.removeExpiredViewerRecords(100)).isZero();
     }
 }

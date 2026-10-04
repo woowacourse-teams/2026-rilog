@@ -58,7 +58,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         assertThat(registry).isNotNull();
         assertThatThrownBy(() -> registry.currentCount(999_999)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> registry.getOrLoad(999_999)).isInstanceOf(IllegalStateException.class);
-        assertThat(registry.counterCount()).isZero();
+        assertThat(registry.snapshot()).isEmpty();
 
         var writer = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("메모리작성자", "memory_writer"));
         var blog = blogRepository.saveAndFlush(Blog.createRilog(writer));
@@ -67,7 +67,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         jdbc.update("update post_view_count set view_count = 42 where post_id = ?", postId);
 
         assertThat(registry.currentCount(postId)).isEqualTo(42);
-        assertThat(registry.counterCount()).isZero();
+        assertThat(registry.snapshot()).isEmpty();
         var counter = registry.getOrLoad(postId);
         assertThat(counter.recordView(ViewerIdentity.member(1))).isEqualTo(new ViewResult(true, 43));
         assertThat(counter.recordView(ViewerIdentity.member(2))).isEqualTo(new ViewResult(true, 44));
@@ -83,6 +83,5 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         assertThat(jdbc.queryForObject("select view_count from post_view_count where post_id = ?", Long.class, postId))
                 .isEqualTo(42);
         assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isZero();
-        assertThat(registry.viewerRecordCount()).isEqualTo(2);
     }
 }

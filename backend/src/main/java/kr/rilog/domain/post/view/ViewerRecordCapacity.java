@@ -8,11 +8,9 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_CAPA
 
 final class ViewerRecordCapacity {
 
-    private final int maximum;
     private final Semaphore slots;
 
     ViewerRecordCapacity(int maximum) {
-        this.maximum = maximum;
         this.slots = new Semaphore(maximum);
     }
 
@@ -24,9 +22,5 @@ final class ViewerRecordCapacity {
 
     void release(int count) {
         slots.release(count);
-    }
-
-    int used() {
-        return maximum - slots.availablePermits();
     }
 }

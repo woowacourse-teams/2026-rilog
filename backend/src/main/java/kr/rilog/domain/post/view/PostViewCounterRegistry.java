@@ -82,14 +82,6 @@ public final class PostViewCounterRegistry {
                 .toList();
     }
 
-    public int counterCount() {
-        return counters.size();
-    }
-
-    public int viewerRecordCount() {
-        return viewerCapacity.used();
-    }
-
     public int removeExpiredViewerRecords(int limit) {
         if (limit <= 0) {
             throw new IllegalArgumentException("게시글별 만료 정리 한도는 양수여야 합니다.");

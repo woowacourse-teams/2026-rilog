@@ -31,7 +31,6 @@ class PostViewCounterRegistryTest {
         var counters = concurrently(100, i -> registry.getOrLoad(1));
         assertThat(counters).allMatch(counter -> counter == counters.getFirst());
         assertThat(loads.get()).isEqualTo(1);
-        assertThat(registry.counterCount()).isEqualTo(1);
         assertThat(registry.snapshot()).containsExactly(counters.getFirst());
     }
 
@@ -54,7 +53,9 @@ class PostViewCounterRegistryTest {
                 var second = executor.submit(() -> registry.getOrLoad(2));
                 assertThat(second.get(2, TimeUnit.SECONDS).currentCount()).isEqualTo(20);
                 assertThat(registry.snapshot()).containsExactly(second.get());
-                assertThat(registry.counterCount()).isEqualTo(2);
+                assertThatThrownBy(() -> registry.getOrLoad(3))
+                        .isInstanceOfSatisfying(PostException.class,
+                                failure -> assertThat(failure.getErrorInformation()).isEqualTo(POST_VIEW_CAPACITY_EXCEEDED));
                 finish.countDown();
                 assertThat(first.get(2, TimeUnit.SECONDS).currentCount()).isEqualTo(10);
             } finally {
@@ -74,10 +75,8 @@ class PostViewCounterRegistryTest {
             return 17;
         }, 1, 100);
         assertThatThrownBy(() -> registry.getOrLoad(1)).isInstanceOf(IllegalStateException.class);
-        assertThat(registry.counterCount()).isZero();
         assertThat(registry.snapshot()).isEmpty();
         assertThat(registry.getOrLoad(1).currentCount()).isEqualTo(17);
-        assertThat(registry.counterCount()).isEqualTo(1);
         assertThat(attempts.get()).isEqualTo(2);
     }
 
@@ -87,14 +86,11 @@ class PostViewCounterRegistryTest {
         AtomicLong stored = new AtomicLong(10);
         var registry = registry(ticks, id -> stored.get(), 1, 100);
         assertThat(registry.currentCount(1)).isEqualTo(10);
-        assertThat(registry.counterCount()).isZero();
-        PostViewCounter counter = registry.getOrLoad(1);
+        PostViewCounter counter = registry.getOrLoad(2);
         counter.recordView(ViewerIdentity.member(1));
         counter.prepareFlush();
         stored.set(11); // DB 커밋은 되었지만 메모리 완료 처리가 아직 오지 않은 상황
-        assertThat(registry.currentCount(1)).isEqualTo(11);
-        assertThat(registry.viewerRecordCount()).isEqualTo(1);
-        assertThat(registry.counterCount()).isEqualTo(1);
+        assertThat(registry.currentCount(2)).isEqualTo(11);
     }
 
     @Test
@@ -103,7 +99,6 @@ class PostViewCounterRegistryTest {
         AtomicLong stored = new AtomicLong(-1);
         var registry = registry(ticks, id -> stored.get(), 1, 100);
         assertThatThrownBy(() -> registry.getOrLoad(1)).isInstanceOf(IllegalStateException.class);
-        assertThat(registry.counterCount()).isZero();
         stored.set(9_007_199_254_740_992L);
         assertThatThrownBy(() -> registry.currentCount(1)).isInstanceOf(IllegalStateException.class);
         stored.set(42);
@@ -124,7 +119,6 @@ class PostViewCounterRegistryTest {
             }
         });
         assertThat(accepted).filteredOn(Boolean::booleanValue).hasSize(1);
-        assertThat(registry.counterCount()).isEqualTo(1);
         assertThat(registry.snapshot()).hasSize(1);
     }
 
@@ -143,7 +137,6 @@ class PostViewCounterRegistryTest {
             }
         });
         assertThat(accepted).filteredOn(Boolean::booleanValue).hasSize(10);
-        assertThat(registry.viewerRecordCount()).isEqualTo(10);
         assertThat(first.currentCount() + second.currentCount()).isEqualTo(10);
     }
 
@@ -151,18 +144,27 @@ class PostViewCounterRegistryTest {
     @DisplayName("만료 기록 정리는 슬롯을 반환하지만 카운터와 증가분은 보존한다")
     void boundedExpiryReleasesGlobalSlotsWithoutEvictingCounters() {
         var registry = registry(ticks, id -> 0, 2, 4);
+        PostViewCounter first = registry.getOrLoad(1);
+        PostViewCounter second = registry.getOrLoad(2);
         for (int post = 1; post <= 2; post++) {
             registry.getOrLoad(post).recordView(ViewerIdentity.member(1));
             registry.getOrLoad(post).recordView(ViewerIdentity.member(2));
         }
         ticks.set(Duration.ofHours(1).toNanos());
         assertThat(registry.removeExpiredViewerRecords(1)).isEqualTo(2);
-        assertThat(registry.viewerRecordCount()).isEqualTo(2);
+        assertThat(first.recordView(ViewerIdentity.member(3))).isEqualTo(new ViewResult(true, 3));
+        assertThat(second.recordView(ViewerIdentity.member(3))).isEqualTo(new ViewResult(true, 3));
+        assertThatThrownBy(() -> first.recordView(ViewerIdentity.member(4)))
+                .isInstanceOfSatisfying(PostException.class,
+                        failure -> assertThat(failure.getErrorInformation()).isEqualTo(POST_VIEW_CAPACITY_EXCEEDED));
         assertThat(registry.removeExpiredViewerRecords(1)).isEqualTo(2);
-        assertThat(registry.viewerRecordCount()).isZero();
-        assertThat(registry.counterCount()).isEqualTo(2);
-        assertThat(registry.snapshot()).allMatch(counter -> counter.currentCount() == 2);
-        assertThat(registry.getOrLoad(1).recordView(ViewerIdentity.member(1))).isEqualTo(new ViewResult(true, 3));
+        assertThat(registry.getOrLoad(1)).isSameAs(first);
+        assertThat(registry.getOrLoad(2)).isSameAs(second);
+        assertThat(first.recordView(ViewerIdentity.member(4))).isEqualTo(new ViewResult(true, 4));
+        assertThat(second.recordView(ViewerIdentity.member(4))).isEqualTo(new ViewResult(true, 4));
+        assertThatThrownBy(() -> second.recordView(ViewerIdentity.member(5)))
+                .isInstanceOfSatisfying(PostException.class,
+                        failure -> assertThat(failure.getErrorInformation()).isEqualTo(POST_VIEW_CAPACITY_EXCEEDED));
     }
 
     @Test
@@ -173,6 +175,6 @@ class PostViewCounterRegistryTest {
         var registry = registry(ticks, id -> 0, 2, 10);
         assertThatThrownBy(() -> registry.getOrLoad(0)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> registry.currentCount(-1)).isInstanceOf(IllegalArgumentException.class);
-        assertThat(registry.counterCount()).isZero();
+        assertThat(registry.snapshot()).isEmpty();
     }
 }
