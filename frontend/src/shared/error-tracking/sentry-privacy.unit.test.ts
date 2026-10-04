@@ -5,9 +5,27 @@ import { filterSentryEvent } from './sentry-privacy';
 it('SDK 오류 정보와 진단 맥락을 유지하면서 자격 증명과 요청 본문을 제거한다', () => {
 	const event = {
 		type: undefined,
+		release: '572ccedd23c5382add2e8bd658def90b297ddeab',
+		debug_meta: {
+			images: [
+				{
+					type: 'sourcemap',
+					code_file: 'https://www.rilog.kr/_next/static/chunks/app.js',
+					debug_id: '11111111-1111-4111-8111-111111111111',
+				},
+			],
+		},
 		exception: {
 			values: [
-				{ type: 'TypeError', value: 'Fetch failed', stacktrace: { frames: [{ filename: 'app.js', lineno: 3 }] } },
+				{
+					type: 'TypeError',
+					value: 'Fetch failed',
+					stacktrace: {
+						frames: [
+							{ filename: 'app.js', abs_path: 'https://www.rilog.kr/_next/static/chunks/app.js', lineno: 3, colno: 4 },
+						],
+					},
+				},
 			],
 		},
 		request: {
@@ -20,7 +38,14 @@ it('SDK 오류 정보와 진단 맥락을 유지하면서 자격 증명과 요�
 	} as Parameters<typeof filterSentryEvent>[0];
 
 	const sent = filterSentryEvent(event);
-	expect(sent.exception?.values?.[0]?.stacktrace?.frames?.[0]).toMatchObject({ filename: 'app.js', lineno: 3 });
+	expect(sent.exception?.values?.[0]?.stacktrace?.frames?.[0]).toMatchObject({
+		filename: 'app.js',
+		abs_path: 'https://www.rilog.kr/_next/static/chunks/app.js',
+		lineno: 3,
+		colno: 4,
+	});
+	expect(sent.debug_meta?.images?.[0]).toMatchObject({ debug_id: '11111111-1111-4111-8111-111111111111' });
+	expect(sent.release).toBe('572ccedd23c5382add2e8bd658def90b297ddeab');
 	expect(sent.contexts?.api_request).toMatchObject({ method: 'GET', url: 'https://api.rilog.test/v1/posts/42?page=2' });
 	expect(sent.request?.url).toContain('page=2');
 	expect(sent.user).toEqual({ id: '42' });
