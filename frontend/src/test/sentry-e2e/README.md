@@ -25,6 +25,21 @@ API 주소는 테스트용 호스트로 고정한다.
 
 명령을 반복하면 테스트 프로젝트에 새 이벤트가 계속 쌓인다.
 
+## 실제 Sentry에서 게시글 발행 503 확인
+
+```sh
+cd frontend
+nvm use
+SENTRY_SMOKE_DSN='<Sentry에서 복사한 테스트 프로젝트의 실제 DSN>' pnpm test:sentry:post-503
+```
+
+기존 글쓰기 E2E와 같은 가짜 로그인 응답을 사용하며 내부 사용자 ID는 `1`이다. 글쓰기 화면에서 제목과
+본문을 입력한 뒤 발행한다. Playwright는 POST `/v1/posts`만 503으로 응답하고 실제 API 서버에는
+전달하지 않는다. 테스트는 발행 오류 화면과 Sentry 이벤트의 `operation=post.publish`,
+`http_status=503`, `error_code=INTERNAL_SERVER_ERROR`, `request_id=sentry-smoke-post-503`,
+사용자 ID `1`을 확인한다. 발행 POST는 한 번만 발생해야 하며, 이벤트에 글 제목·본문·테스트 토큰이
+없는지도 검사한다.
+
 Sentry 통신 장애가 오류 화면의 복구 동작을 막으면 사용자가 서비스 오류에서 빠져나올 수 없다.
 이 테스트는 실제 Next.js production 번들의 Sentry SDK를 실행하고, Playwright가 `/monitoring` 요청을
 중단하여 실패한 exception 이벤트 전송을 확인한다. SDK 함수 mock 테스트로는 실제 브라우저의

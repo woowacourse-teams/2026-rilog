@@ -24,7 +24,7 @@ if (
 
 export default defineConfig({
 	testDir: './src/test/sentry-e2e',
-	testMatch: /sentry-feed-503\.spec\.ts/,
+	testMatch: /sentry-(feed|post)-503\.spec\.ts/,
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,
