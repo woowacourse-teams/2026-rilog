@@ -25,12 +25,14 @@ class PostDetailResponseTest {
         // when
         PostDetailResponse response = PostDetailResponse.fromRilog(
                 post,
-                PostDetailResponse.ViewerPermissionsResponse.none()
+                PostDetailResponse.ViewerPermissionsResponse.none(),
+                42L
         );
         PostOwnerResponse owner = response.owner();
 
         // then
         Assertions.assertThat(owner.type()).isEqualTo(BlogType.RILOG);
+        Assertions.assertThat(response.viewCount()).isEqualTo(42);
     }
 
     @Test
@@ -44,12 +46,14 @@ class PostDetailResponseTest {
                 post,
                 3L,
                 5L,
-                PostDetailResponse.ViewerPermissionsResponse.none()
+                PostDetailResponse.ViewerPermissionsResponse.none(),
+                42L
         );
         PostOwnerResponse owner = response.owner();
 
         // then
         Assertions.assertThat(owner.type()).isEqualTo(BlogType.COLOG);
+        Assertions.assertThat(response.viewCount()).isEqualTo(42);
     }
 
     @Test
@@ -61,7 +65,8 @@ class PostDetailResponseTest {
         // when
         PostDetailResponse response = PostDetailResponse.fromRilog(
                 post,
-                PostDetailResponse.ViewerPermissionsResponse.none()
+                PostDetailResponse.ViewerPermissionsResponse.none(),
+                42L
         );
 
         // then
