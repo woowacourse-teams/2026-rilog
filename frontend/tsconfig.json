@@ -30,7 +30,9 @@
 		"src/app/.well-known/**/*.ts",
 		".next/types/**/*.ts",
 		".next/dev/types/**/*.ts",
-		"**/*.mts"
+		"**/*.mts",
+		".next-sentry-feed-503/types/**/*.ts",
+		".next-sentry-feed-503/dev/types/**/*.ts"
 	],
 	"exclude": ["node_modules"]
 }

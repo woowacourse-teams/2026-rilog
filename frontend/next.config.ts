@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
 	agentRules: false,
+	distDir: process.env.SENTRY_FEED_503_SMOKE === 'true' ? '.next-sentry-feed-503' : '.next',
 	serverExternalPackages: ['@blocknote/core', '@blocknote/react', '@blocknote/server-util'],
 	redirects() {
 		return [
