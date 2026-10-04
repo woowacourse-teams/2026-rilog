@@ -22,6 +22,7 @@ import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -57,6 +58,7 @@ public class PostService {
     private final TagAssetsPublisher tagAssetsPublisher;
     private final CommentAnchorSelectionRepository selectionRepository;
     private final HardTrendingRepository trendingRepository;
+    private final PostViewCountRepository viewCountRepository;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -69,6 +71,7 @@ public class PostService {
                 : publishToRilog(command, publishingBlog, writer, chapter);
 
         Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
         trendingRepository.save(HardTrending.from(published));
         tagAssetsPublisher.attach(published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
@@ -91,14 +94,16 @@ public class PostService {
     }
 
     private PostDetailResponse toPostDetailResponse(Post post, ViewerPermissionsResponse viewerPermissions) {
+        long viewCount = viewCountRepository.findViewCountByPostId(post.getId())
+                .orElseThrow(() -> new IllegalStateException("발행된 게시글의 조회수 누계가 없습니다: " + post.getId()));
         if (!post.isCologAffiliated()) {
-            return PostDetailResponse.fromRilog(post, viewerPermissions);
+            return PostDetailResponse.fromRilog(post, viewerPermissions, viewCount);
         }
 
         Blog colog = post.getColog();
         long memberCount = getMemberCount(colog);
         long postCount = getPostCount(colog);
-        return PostDetailResponse.fromColog(post, memberCount, postCount, viewerPermissions);
+        return PostDetailResponse.fromColog(post, memberCount, postCount, viewerPermissions, viewCount);
     }
 
     public TotalPostsCountResponse readPostsCount() {

@@ -15,6 +15,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
@@ -52,6 +53,7 @@ public class DraftService {
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final HardTrendingRepository trendingRepository;
+    private final PostViewCountRepository viewCountRepository;
 
     // THINK 멱등성.
     @Transactional
@@ -89,6 +91,7 @@ public class DraftService {
         Publisher publisher = Publisher.of(rilogMemberShip, targetMemberShip);
         Chapter chapter = getChapterIfPresent(command.chapterId(), targetMemberShip.getBlog());
         publisher.publishDraft(draft, command.toDetail(), chapter);
+        viewCountRepository.initialize(draft.getId());
         TagAssets current = draft.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previous, current);
         trendingRepository.save(HardTrending.from(draft));
