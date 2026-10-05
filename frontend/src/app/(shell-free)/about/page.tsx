@@ -10,8 +10,7 @@ import styles from './AboutPage.module.css';
 import AboutViewportReveal from './AboutViewportReveal';
 import HeroMeaningTransition from './HeroMeaningTransition';
 
-const ABOUT_DESCRIPTION =
-	'생각과 경험을 깊이 기록하고, 서로의 이야기를 발견하며 함께 성장하는 블로그 Rilog.을 소개합니다.';
+const ABOUT_DESCRIPTION = `생각과 경험을 깊이 기록하고, 서로의 이야기를 발견하며 함께 성장하는 블로그 ${SITE_NAME}을 소개합니다.`;
 
 export const metadata: Metadata = {
 	alternates: { canonical: APP_ROUTES.about },
