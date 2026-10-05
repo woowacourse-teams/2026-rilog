@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { captureMock, identifyMock, initMock, resetMock, getPropertyMock } = vi.hoisted(() => ({
-	getPropertyMock: vi.fn(),
-	captureMock: vi.fn(),
-	identifyMock: vi.fn(),
-	initMock: vi.fn(),
-	resetMock: vi.fn(),
-}));
+const { captureMock, getReplayUrlMock, identifyMock, initMock, recordingStartedMock, resetMock, getPropertyMock } =
+	vi.hoisted(() => ({
+		getPropertyMock: vi.fn(),
+		getReplayUrlMock: vi.fn(),
+		recordingStartedMock: vi.fn(),
+		captureMock: vi.fn(),
+		identifyMock: vi.fn(),
+		initMock: vi.fn(),
+		resetMock: vi.fn(),
+	}));
 
 vi.mock('posthog-js', () => ({
 	default: {
@@ -15,6 +18,8 @@ vi.mock('posthog-js', () => ({
 		init: initMock,
 		reset: resetMock,
 		get_property: getPropertyMock,
+		get_session_replay_url: getReplayUrlMock,
+		sessionRecordingStarted: recordingStartedMock,
 	},
 }));
 
@@ -51,7 +56,20 @@ describe('PostHog analytics', () => {
 		vi.resetModules();
 		vi.clearAllMocks();
 		getPropertyMock.mockReset();
+		getReplayUrlMock.mockReset();
+		recordingStartedMock.mockReset();
 		vi.unstubAllEnvs();
+	});
+
+	it('녹화 중인 세션의 오류 시점 replay URL을 반환한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'phc_test');
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
+		recordingStartedMock.mockReturnValue(true);
+		getReplayUrlMock.mockReturnValue('https://us.posthog.com/project/phc_test/replay/session-1?t=30');
+		const { getAnalyticsSessionReplayUrl } = await import('./posthog');
+
+		expect(getAnalyticsSessionReplayUrl()).toBe('https://us.posthog.com/project/phc_test/replay/session-1?t=30');
+		expect(getReplayUrlMock).toHaveBeenCalledWith({ withTimestamp: true, timestampLookBack: 30 });
 	});
 
 	it.each([undefined, '42'])('세션 복구 실패 시 저장된 사용자 ID(%s)가 있을 때만 초기화한다', async (userId) => {

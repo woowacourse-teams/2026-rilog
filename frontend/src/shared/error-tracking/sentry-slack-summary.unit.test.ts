@@ -15,7 +15,13 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 		release: '572ccedd',
 		environment: 'prod',
 		exception: { values: [{ type: 'TypeError' }] },
-		tags: { operation: 'post.publish', http_status: '503', request_id: 'do-not-send', secret: 'private' },
+		tags: {
+			operation: 'post.publish',
+			http_status: '503',
+			request_id: 'do-not-send',
+			secret: 'private',
+			'PostHog Recording URL': 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+		},
 		user: { id: 'user-42' },
 		breadcrumbs: [
 			{ category: 'console', message: 'password=private' },
@@ -48,6 +54,7 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 				attributes: { id: 'publish', class: 'primary', type: 'submit', 'aria-label': '발행' },
 			},
 		],
+		sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
 	});
 	expect(JSON.stringify(summary)).not.toContain('token=private');
 	expect(JSON.stringify(summary)).not.toContain('user-42');
@@ -94,4 +101,24 @@ it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한�
 		url: 'https://api.rilog.test/v1/posts/42',
 		statusCode: 503,
 	});
+});
+
+it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나 거절한다', () => {
+	const summarized = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		tags: { 'PostHog Recording URL': 'https://evil.example/project/phc_test/replay/session-1?t=30' },
+	});
+	expect(summarized?.sessionReplayUrl).toBeUndefined();
+	expect(
+		parseSentrySlackSummary({
+			eventId: EVENT_ID,
+			title: 'Error',
+			errorType: 'Error',
+			route: '/write',
+			tags: {},
+			breadcrumbs: [],
+			sessionReplayUrl: 'https://evil.example/project/phc_test/replay/session-1?t=30',
+		}),
+	).toBeNull();
 });

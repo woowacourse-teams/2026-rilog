@@ -43,6 +43,7 @@ function formatMainMessage(summary: SentrySlackSummary) {
 			title,
 			tags ? `\`\`\`${tags}\`\`\`` : '',
 			`Sentry event ID: ${summary.eventId}`,
+			summary.sessionReplayUrl ? `PostHog session replay: ${summary.sessionReplayUrl}` : '',
 		]
 			.filter(Boolean)
 			.join('\n'),
@@ -55,6 +56,14 @@ function formatMainMessage(summary: SentrySlackSummary) {
 			{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${title}\`\`\`` } },
 			...(tags ? [{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${tags}\`\`\`` } }] : []),
 			{ type: 'context', elements: [{ type: 'mrkdwn', text: `Sentry event ID: \`${summary.eventId}\`` }] },
+			...(summary.sessionReplayUrl
+				? [
+						{
+							type: 'section',
+							text: { type: 'mrkdwn', text: `<${summary.sessionReplayUrl}|PostHog session replay 보기>` },
+						},
+					]
+				: []),
 		],
 	};
 }

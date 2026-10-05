@@ -9,11 +9,12 @@ import { summarizeSentryEventForSlack, type SentrySlackSummary } from './sentry-
 interface InitializeSentryOptions {
 	tracesSampleRate?: number;
 	onSlackAlert?: (summary: SentrySlackSummary) => void;
+	getSessionReplayUrl?: () => string | undefined;
 }
 
 export function initializeSentry(options: InitializeSentryOptions = {}): void {
 	const isProduction = process.env.NODE_ENV === 'production';
-	const { onSlackAlert, ...sentryOptions } = options;
+	const { getSessionReplayUrl, onSlackAlert, ...sentryOptions } = options;
 	try {
 		Sentry.init({
 			dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -24,6 +25,18 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 				hint.attachments = [];
 				if (!shouldCaptureAutomaticError(hint.originalException, event.tags?.report_source === 'api')) return null;
 				const filtered = filterSentryEvent(event);
+				try {
+					const sessionReplayUrl = getSessionReplayUrl?.();
+					if (sessionReplayUrl) {
+						filtered.tags = { ...filtered.tags, 'PostHog Recording URL': sessionReplayUrl };
+						filtered.contexts = {
+							...filtered.contexts,
+							posthog_session_replay: { url: sessionReplayUrl },
+						};
+					}
+				} catch {
+					logNonProductionWarning('PostHog session replay URL preparation failed.');
+				}
 				if (
 					isProduction &&
 					filtered.environment === 'prod' &&

@@ -19,6 +19,7 @@ export interface SentrySlackSummary {
 	route: string;
 	tags: Record<string, string>;
 	breadcrumbs: SentrySlackBreadcrumb[];
+	sessionReplayUrl?: string;
 }
 
 const TAG_NAMES = [
@@ -74,6 +75,38 @@ function safeApiUrl(value: string): string | null {
 		if (url.protocol !== 'https:' || !['api.rilog.kr', 'api.rilog.test'].includes(url.hostname)) return null;
 		if (url.username || url.password) return null;
 		return `${url.origin}${url.pathname}`;
+	} catch {
+		return null;
+	}
+}
+
+function safePostHogReplayUrl(value: string): string | null {
+	try {
+		const url = new URL(value);
+		const configuredHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
+			? new URL(process.env.NEXT_PUBLIC_POSTHOG_HOST).hostname
+			: undefined;
+		const configuredUiHost = configuredHost?.replace(/\.i\.posthog\.com$/, '.posthog.com');
+		const isAllowedHost =
+			url.hostname === 'posthog.com' ||
+			url.hostname.endsWith('.posthog.com') ||
+			url.hostname === configuredHost ||
+			url.hostname === configuredUiHost;
+		const parts = url.pathname.split('/').filter(Boolean);
+		if (
+			url.protocol !== 'https:' ||
+			!isAllowedHost ||
+			parts.length !== 4 ||
+			parts[0] !== 'project' ||
+			!parts[1] ||
+			parts[2] !== 'replay' ||
+			!parts[3]
+		)
+			return null;
+		if ([...url.searchParams.keys()].some((key) => key !== 't')) return null;
+		if (url.searchParams.has('t') && !/^\d+$/.test(url.searchParams.get('t') ?? '')) return null;
+		url.hash = '';
+		return url.toString();
 	} catch {
 		return null;
 	}
@@ -231,7 +264,17 @@ export function summarizeSentryEventForSlack(event: ErrorEvent): SentrySlackSumm
 		.map(summarizeBreadcrumb)
 		.filter((item): item is SentrySlackBreadcrumb => item !== null)
 		.slice(-3);
-	return { eventId: event.event_id, title, errorType, route: safeRoute(event), tags, breadcrumbs };
+	const replayTag = event.tags?.['PostHog Recording URL'];
+	const sessionReplayUrl = typeof replayTag === 'string' ? (safePostHogReplayUrl(replayTag) ?? undefined) : undefined;
+	return {
+		eventId: event.event_id,
+		title,
+		errorType,
+		route: safeRoute(event),
+		tags,
+		breadcrumbs,
+		...(sessionReplayUrl ? { sessionReplayUrl } : {}),
+	};
 }
 
 export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | null {
@@ -246,6 +289,13 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 	)
 		return null;
 	if (!data.tags || typeof data.tags !== 'object' || Array.isArray(data.tags)) return null;
+	const sessionReplayUrl =
+		data.sessionReplayUrl === undefined
+			? undefined
+			: typeof data.sessionReplayUrl === 'string'
+				? safePostHogReplayUrl(data.sessionReplayUrl)
+				: null;
+	if (sessionReplayUrl === null) return null;
 	if (!Array.isArray(data.breadcrumbs) || data.breadcrumbs.length > 3) return null;
 	const breadcrumbs = data.breadcrumbs.map(parseBreadcrumb);
 	if (breadcrumbs.some((item) => item === null)) return null;
@@ -263,5 +313,6 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 		route: data.route,
 		tags: Object.fromEntries(Object.entries(data.tags)),
 		breadcrumbs: breadcrumbs.filter((item): item is SentrySlackBreadcrumb => item !== null),
+		...(sessionReplayUrl ? { sessionReplayUrl } : {}),
 	};
 }

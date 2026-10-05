@@ -216,6 +216,16 @@ export const initializeAnalytics = () => {
 	);
 };
 
+export const getAnalyticsSessionReplayUrl = (): string | undefined => {
+	if (!isAnalyticsConfigured()) return undefined;
+	try {
+		if (!posthog.sessionRecordingStarted()) return undefined;
+		return posthog.get_session_replay_url({ withTimestamp: true, timestampLookBack: 30 }) || undefined;
+	} catch {
+		return undefined;
+	}
+};
+
 /**
  * 분석 환경이 설정된 경우에만 사용자 행동 이벤트를 전송
  * 이벤트 이름과 payload 구성은 features/analytics에서 관리

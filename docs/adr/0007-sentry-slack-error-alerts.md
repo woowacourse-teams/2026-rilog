@@ -14,6 +14,8 @@ Sentry Developer 플랜에서는 Slack Integration 알림을 계속 사용할 �
 
 기본 알림은 오류 종류, 경로, 제목, 태그를 한 코드 블록의 줄별 항목으로, event ID를 본문에 표시한다. `chat:write` 권한의 Bot Token과 채널 ID가 있으면 `chat.postMessage`의 응답 `ts`를 사용해 최근 breadcrumbs 세 건을 각각 부모 메시지의 스레드 댓글로 게시한다. 채널당 메시지 제한을 고려해 댓글 전송 간격을 둔다. Bot 설정 전에는 기존 Incoming Webhook으로 기본 알림만 보낸다. 웹훅 응답은 부모 메시지의 `ts`를 제공하지 않아 댓글을 달 수 없다.
 
+PostHog가 현재 브라우저 세션을 녹화 중이면 오류 발생 30초 전으로 이동하는 session replay URL을 Sentry의 `PostHog Recording URL` 태그와 context에 추가하고 Slack 기본 알림에도 링크로 표시한다. PostHog 프로젝트에서 session replay가 비활성화됐거나 샘플링에서 제외된 세션, 브라우저 세션이 없는 Node·Edge 오류에는 링크를 추가하지 않는다. PostHog 오류 추적 이벤트는 별도로 보내지 않아 기존 Sentry 보고와 중복되지 않는다.
+
 브라우저와 Edge는 자체 `/api/observability/sentry-slack` 경로로 요약을 보내고, Node는 같은 전송 함수를 직접 호출한다. Slack 인증값은 서버 전용 환경변수에만 둔다. 공개 수신 경로는 Origin, JSON 형식, 크기, 필드 허용 목록을 검증한다. Origin은 진짜 SDK 요청임을 증명하지 못하므로 프로세스 단위 IP/전체 발송량 제한과 동일 오류 5분 억제도 둔다. 현재 운영 PM2는 단일 프로세스이며, 인스턴스를 늘리면 공유 저장소로 제한·중복 상태를 옮겨야 한다.
 
 Slack 실패는 Sentry 전송을 방해하지 않고, 전송 결과를 다시 Sentry 오류로 보고하지 않는다. 429/5xx는 한 번 재시도한다. 브라우저·Edge의 비동기 요청은 종료 시 유실될 수 있으며, Node 프로세스 재시작 시 중복 상태도 초기화된다. 완전한 1회 전달이 필요해지면 별도 영속 대기열을 도입한다.
