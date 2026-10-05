@@ -1,18 +1,15 @@
 import type { ErrorEvent } from '@sentry/nextjs';
 
-interface JsonObject {
-	[key: string]: JsonValue;
-}
-
-type JsonValue = boolean | JsonObject | JsonValue[] | null | number | string;
-
 export interface SentrySlackBreadcrumb {
-	category?: string;
-	data?: JsonObject;
-	level?: string;
-	message?: string;
-	timestamp?: number;
-	type?: string;
+	category: string;
+	method?: string;
+	url?: string;
+	statusCode?: number;
+	from?: string;
+	to?: string;
+	element?: string;
+	selector?: string;
+	attributes?: Record<string, string>;
 }
 
 export interface SentrySlackSummary {
@@ -37,9 +34,9 @@ const SAFE_TAG = /^[\w.:-]{1,80}$/;
 const EVENT_ID = /^[a-f\d]{32}$/i;
 const ROUTES = new Set(['/', '/write', '/about', '/feed', '/login', '/search', '/settings']);
 const ROUTE_TEMPLATE = /^\/(?:\[slug\](?:\/posts\/\[postId\](?:\/markdown)?)?)$/;
-const BREADCRUMB_KEYS = new Set(['category', 'data', 'level', 'message', 'timestamp', 'type']);
+const BREADCRUMB_CATEGORIES = /^(fetch|xhr|http|navigation|ui\.(click|input|submit))$/;
 const PRIVATE_KEY =
-	/^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-amz-.*|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|body|content)$/i;
+	/^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-amz-.*|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|body|content|value)$/i;
 const PRIVATE_QUERY_KEY =
 	/^(code|state|password|client_secret|api_key|token|access_token|refresh_token|id_token|signature|nickname|email|filename|title|content|x-amz-.*)$/i;
 
@@ -56,18 +53,18 @@ function safeRoute(event: ErrorEvent): string {
 	return 'unknown';
 }
 
-function safeUrl(value: string): string {
+function safeUrl(value: string): string | null {
 	try {
-		const url = new URL(value);
+		const url = new URL(value, 'https://www.rilog.kr');
 		url.username = '';
 		url.password = '';
 		url.hash = '';
 		for (const key of url.searchParams.keys()) {
 			if (PRIVATE_QUERY_KEY.test(key)) url.searchParams.delete(key);
 		}
-		return url.toString();
+		return value.startsWith('/') ? `${url.pathname}${url.search}` : url.toString();
 	} catch {
-		return value;
+		return null;
 	}
 }
 
@@ -87,6 +84,7 @@ function cleanText(value: string, limit: number): string {
 		.replace(/https?:\/\/[^\s<>"']+/gi, (url) => safeApiUrl(url) ?? '[URL]')
 		.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[Email]')
 		.replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [Filtered]')
+		.replace(/\bvalue=(?:"[^"]*"|'[^']*'|[^\]\s]+)/gi, 'value=[Filtered]')
 		.replace(/\b(?:token|password|secret|authorization|cookie|code|state)\s*[:=]\s*[^\s,;]+/gi, '[Filtered]')
 		.replace(/[<>@]/g, '')
 		.replace(/[\r\n\t]/g, ' ')
@@ -94,55 +92,127 @@ function cleanText(value: string, limit: number): string {
 		.trim();
 }
 
-function cleanDiagnosticText(value: string): string {
+function cleanDiagnosticText(value: string, limit = 800): string {
 	return value
-		.replace(/https?:\/\/[^\s<>"']+/gi, safeUrl)
+		.replace(/https?:\/\/[^\s<>"']+/gi, (url) => safeUrl(url) ?? '[URL]')
 		.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[Email]')
 		.replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [Filtered]')
+		.replace(/\bvalue=(?:"[^"]*"|'[^']*'|[^\]\s]+)/gi, 'value=[Filtered]')
 		.replace(/\b(?:token|password|secret|authorization|cookie|code|state)\s*[:=]\s*[^\s,;]+/gi, '[Filtered]')
-		.replace(/\b(value=)[^\]\s]+/gi, '$1[Filtered]')
-		.replace(/```/g, "''' ");
+		.replace(/```/g, "''' ")
+		.replace(/[\r\n\t]/g, ' ')
+		.slice(0, limit)
+		.trim();
 }
 
-function sanitizeJson(value: unknown, depth = 0): JsonValue | undefined {
-	if (typeof value === 'string') return cleanDiagnosticText(value);
-	if (typeof value === 'boolean' || typeof value === 'number' || value === null) return value;
-	if (depth >= 8 || typeof value !== 'object') return undefined;
-	if (Array.isArray(value)) {
-		return value.flatMap((item) => {
-			const sanitized = sanitizeJson(item, depth + 1);
-			return sanitized === undefined ? [] : [sanitized];
-		});
+function uiDetails(message: string): Pick<SentrySlackBreadcrumb, 'attributes' | 'element' | 'selector'> {
+	const selector = cleanDiagnosticText(message);
+	const target = selector.split(/\s*>\s*/).at(-1) ?? selector;
+	const element = target.match(/^([a-z][\w-]*)/i)?.[1]?.toLowerCase();
+	const attributes: Record<string, string> = {};
+	const id = target.match(/#([\w-]+)/)?.[1];
+	const classes = [...target.matchAll(/\.([\w-]+)/g)].map((match) => match[1]);
+	if (id) attributes.id = id;
+	if (classes.length) attributes.class = classes.join(' ');
+	for (const match of target.matchAll(/\[([\w:-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\]]*)))?\]/g)) {
+		const name = match[1].toLowerCase();
+		if (PRIVATE_KEY.test(name) || Object.keys(attributes).length >= 10) continue;
+		attributes[name] = cleanDiagnosticText(match[2] ?? match[3] ?? match[4] ?? 'true', 300);
 	}
-	return Object.fromEntries(
-		Object.entries(value).flatMap(([key, item]) => {
-			if (PRIVATE_KEY.test(key)) return [];
-			const sanitized = sanitizeJson(item, depth + 1);
-			return sanitized === undefined ? [] : [[key, sanitized]];
-		}),
-	);
+	return {
+		...(element ? { element } : {}),
+		selector,
+		...(Object.keys(attributes).length ? { attributes } : {}),
+	};
 }
 
-function sanitizeBreadcrumb(value: unknown): SentrySlackBreadcrumb | null {
+function summarizeBreadcrumb(breadcrumb: NonNullable<ErrorEvent['breadcrumbs']>[number]): SentrySlackBreadcrumb | null {
+	const category = breadcrumb.category;
+	if (!category || !BREADCRUMB_CATEGORIES.test(category)) return null;
+	const data = breadcrumb.data;
+	if (category.startsWith('ui.')) {
+		return { category, ...(breadcrumb.message ? uiDetails(breadcrumb.message) : {}) };
+	}
+	if (category === 'navigation') {
+		const from = typeof data?.from === 'string' ? cleanDiagnosticText(data.from) : undefined;
+		const to = typeof data?.to === 'string' ? cleanDiagnosticText(data.to) : undefined;
+		return { category, ...(from ? { from } : {}), ...(to ? { to } : {}) };
+	}
+	const method = typeof data?.method === 'string' && /^[A-Z]{3,7}$/.test(data.method) ? data.method : undefined;
+	const messageUrl = breadcrumb.message?.match(/https?:\/\/[^\s<>"']+/i)?.[0];
+	const url = safeUrl(typeof data?.url === 'string' ? data.url : (messageUrl ?? '')) ?? undefined;
+	const statusCode =
+		typeof data?.status_code === 'number' && data.status_code >= 100 && data.status_code <= 599
+			? data.status_code
+			: undefined;
+	return { category, ...(method ? { method } : {}), ...(url ? { url } : {}), ...(statusCode ? { statusCode } : {}) };
+}
+
+function parseBreadcrumb(value: unknown): SentrySlackBreadcrumb | null {
 	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-	if (Object.keys(value).some((key) => !BREADCRUMB_KEYS.has(key))) return null;
-	const item = value as Record<string, unknown>;
-	const breadcrumb: SentrySlackBreadcrumb = {};
-	for (const key of ['category', 'level', 'message', 'type'] as const) {
-		if (item[key] === undefined) continue;
-		if (typeof item[key] !== 'string') return null;
-		breadcrumb[key] = cleanDiagnosticText(item[key]);
+	const item = value as Partial<SentrySlackBreadcrumb>;
+	if (typeof item.category !== 'string' || !BREADCRUMB_CATEGORIES.test(item.category)) return null;
+	const allowed = new Set(
+		item.category.startsWith('ui.')
+			? ['category', 'element', 'selector', 'attributes']
+			: item.category === 'navigation'
+				? ['category', 'from', 'to']
+				: ['category', 'method', 'url', 'statusCode'],
+	);
+	if (Object.keys(value).some((key) => !allowed.has(key))) return null;
+	if (item.category.startsWith('ui.')) {
+		if (item.element !== undefined && (typeof item.element !== 'string' || !/^[a-z][\w-]*$/i.test(item.element)))
+			return null;
+		if (item.selector !== undefined && (typeof item.selector !== 'string' || item.selector.length > 800)) return null;
+		if (item.attributes !== undefined) {
+			if (!item.attributes || typeof item.attributes !== 'object' || Array.isArray(item.attributes)) return null;
+			if (
+				Object.entries(item.attributes).length > 10 ||
+				Object.entries(item.attributes).some(
+					([key, attribute]) =>
+						PRIVATE_KEY.test(key) || !/^[\w:-]+$/.test(key) || typeof attribute !== 'string' || attribute.length > 300,
+				)
+			)
+				return null;
+		}
+		return {
+			category: item.category,
+			...(item.element ? { element: item.element } : {}),
+			...(item.selector ? { selector: cleanDiagnosticText(item.selector) } : {}),
+			...(item.attributes
+				? {
+						attributes: Object.fromEntries(
+							Object.entries(item.attributes).map(([key, attribute]) => [key, cleanDiagnosticText(attribute, 300)]),
+						),
+					}
+				: {}),
+		};
 	}
-	if (item.timestamp !== undefined) {
-		if (typeof item.timestamp !== 'number' || !Number.isFinite(item.timestamp)) return null;
-		breadcrumb.timestamp = item.timestamp;
+	if (item.category === 'navigation') {
+		if (
+			(item.from !== undefined && typeof item.from !== 'string') ||
+			(item.to !== undefined && typeof item.to !== 'string')
+		)
+			return null;
+		return {
+			category: item.category,
+			...(item.from ? { from: cleanDiagnosticText(item.from) } : {}),
+			...(item.to ? { to: cleanDiagnosticText(item.to) } : {}),
+		};
 	}
-	if (item.data !== undefined) {
-		const data = sanitizeJson(item.data);
-		if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
-		breadcrumb.data = data;
-	}
-	return Object.keys(breadcrumb).length > 0 && JSON.stringify(breadcrumb).length <= 3000 ? breadcrumb : null;
+	if (item.method !== undefined && (typeof item.method !== 'string' || !/^[A-Z]{3,7}$/.test(item.method))) return null;
+	if (item.url !== undefined && (typeof item.url !== 'string' || !safeUrl(item.url))) return null;
+	if (
+		item.statusCode !== undefined &&
+		(typeof item.statusCode !== 'number' || item.statusCode < 100 || item.statusCode > 599)
+	)
+		return null;
+	return {
+		category: item.category,
+		...(item.method ? { method: item.method } : {}),
+		...(item.url ? { url: safeUrl(item.url) as string } : {}),
+		...(item.statusCode ? { statusCode: item.statusCode } : {}),
+	};
 }
 
 /** Build the only data allowed to leave the Sentry SDK for the Slack notifier. */
@@ -158,7 +228,7 @@ export function summarizeSentryEventForSlack(event: ErrorEvent): SentrySlackSumm
 	if (typeof event.release === 'string' && SAFE_TAG.test(event.release)) tags.release = event.release;
 	if (typeof event.environment === 'string' && SAFE_TAG.test(event.environment)) tags.environment = event.environment;
 	const breadcrumbs = (event.breadcrumbs ?? [])
-		.map(sanitizeBreadcrumb)
+		.map(summarizeBreadcrumb)
 		.filter((item): item is SentrySlackBreadcrumb => item !== null)
 		.slice(-3);
 	return { eventId: event.event_id, title, errorType, route: safeRoute(event), tags, breadcrumbs };
@@ -177,7 +247,7 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 		return null;
 	if (!data.tags || typeof data.tags !== 'object' || Array.isArray(data.tags)) return null;
 	if (!Array.isArray(data.breadcrumbs) || data.breadcrumbs.length > 3) return null;
-	const breadcrumbs = data.breadcrumbs.map(sanitizeBreadcrumb);
+	const breadcrumbs = data.breadcrumbs.map(parseBreadcrumb);
 	if (breadcrumbs.some((item) => item === null)) return null;
 	if (
 		Object.entries(data.tags).some(

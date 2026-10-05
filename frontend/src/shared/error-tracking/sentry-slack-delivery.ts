@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { SentrySlackSummary } from './sentry-slack-summary';
+import type { SentrySlackBreadcrumb, SentrySlackSummary } from './sentry-slack-summary';
 
 const WINDOW_MS = 60_000;
 const DUPLICATE_MS = 5 * 60_000;
@@ -59,6 +59,26 @@ function formatMainMessage(summary: SentrySlackSummary) {
 	};
 }
 
+function formatBreadcrumb(breadcrumb: SentrySlackBreadcrumb): string {
+	const lines = [`category: ${breadcrumb.category}`];
+	for (const [key, value] of [
+		['method', breadcrumb.method],
+		['url', breadcrumb.url],
+		['status_code', breadcrumb.statusCode],
+		['from', breadcrumb.from],
+		['to', breadcrumb.to],
+		['element', breadcrumb.element],
+		['selector', breadcrumb.selector],
+	] as const) {
+		if (value !== undefined) lines.push(`${key}: ${value}`);
+	}
+	if (breadcrumb.attributes) {
+		lines.push('attributes:');
+		for (const [name, value] of Object.entries(breadcrumb.attributes)) lines.push(`  ${name}: ${value}`);
+	}
+	return lines.join('\n');
+}
+
 async function postWithRetry(url: string, body: unknown, token?: string): Promise<Response | null> {
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		const response = await fetch(url, {
@@ -110,7 +130,7 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 						channel,
 						thread_ts: parent.ts,
 						reply_broadcast: false,
-						text: `*직전 흐름 ${index + 1}/${summary.breadcrumbs.length}*\n\`\`\`${JSON.stringify(breadcrumb, null, 2)}\`\`\``,
+						text: `*직전 흐름 ${index + 1}/${summary.breadcrumbs.length}*\n\`\`\`${formatBreadcrumb(breadcrumb)}\`\`\``,
 					},
 					token,
 				);

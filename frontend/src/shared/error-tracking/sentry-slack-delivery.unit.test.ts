@@ -17,7 +17,7 @@ it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 
 		errorType: 'TypeError',
 		route: '/write',
 		tags: { operation: 'post.publish', http_status: '503', environment: 'prod' },
-		breadcrumbs: [{ category: 'fetch', data: { method: 'POST', status_code: 503 } }, { category: 'ui.click' }],
+		breadcrumbs: [{ category: 'fetch', method: 'POST', statusCode: 503 }, { category: 'ui.click' }],
 	};
 	await deliverSentrySlackAlert(summary, 'test-ip');
 	await deliverSentrySlackAlert({ ...summary, eventId: 'fedcba9876543210fedcba9876543210' }, 'test-ip');
@@ -49,12 +49,18 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 			route: '/write',
 			tags: { operation: 'post.publish', http_status: '503' },
 			breadcrumbs: [
-				{ category: 'navigation', data: { from: '/feed', to: '/write' } },
-				{ category: 'ui.click', message: 'button.publish' },
+				{ category: 'navigation', from: '/feed', to: '/write' },
+				{
+					category: 'ui.click',
+					element: 'button',
+					selector: 'button.publish[type="submit"]',
+					attributes: { class: 'publish', type: 'submit' },
+				},
 				{
 					category: 'fetch',
-					message: 'POST https://api.rilog.test/v1/posts',
-					data: { method: 'POST', url: 'https://api.rilog.test/v1/posts', status_code: 503 },
+					method: 'POST',
+					url: 'https://api.rilog.test/v1/posts',
+					statusCode: 503,
 				},
 			],
 		},
@@ -78,11 +84,12 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 		true,
 	);
 	expect(reply.thread_ts).toBe('123.456');
-	expect(reply.text).toContain('"category": "navigation"');
-	expect(reply.text).toContain('"from": "/feed"');
+	expect(reply.text).toContain('category: navigation');
+	expect(reply.text).toContain('from: /feed');
 	const secondReply = JSON.parse((post.mock.calls[2] as [string, RequestInit])[1].body as string) as { text: string };
 	const thirdReply = JSON.parse((post.mock.calls[3] as [string, RequestInit])[1].body as string) as { text: string };
-	expect(secondReply.text).toContain('"category": "ui.click"');
+	expect(secondReply.text).toContain('category: ui.click');
+	expect(secondReply.text).toContain('attributes:\n  class: publish\n  type: submit');
 	expect(thirdReply.text).toContain('https://api.rilog.test/v1/posts');
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
@@ -104,7 +111,7 @@ it('Slack API가 HTTP 200에 ok=false를 반환하면 알림 실패로 처리한
 			errorType: 'HTTPError',
 			route: '/[slug]/posts/[postId]',
 			tags: { operation: 'comment.create' },
-			breadcrumbs: [{ category: 'fetch', data: { method: 'POST', status_code: 503 } }],
+			breadcrumbs: [{ category: 'fetch', method: 'POST', statusCode: 503 }],
 		},
 		'bot-error-test-ip',
 	);

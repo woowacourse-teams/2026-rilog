@@ -10,7 +10,7 @@ Sentry Developer 플랜에서는 Slack Integration 알림을 계속 사용할 �
 
 ## 결정
 
-오류 `beforeSend`에서 기존 수집 판단과 개인정보 필터를 통과한 `prod` 오류만 Slack 알림 후보로 삼는다. 전송 전 이벤트이므로 Sentry 저장이나 최종 이슈 그룹화 성공을 의미하지 않는다. 알림에는 이벤트 전체를 복사하지 않고 오류 종류, 최대 180자의 정제된 제목, 안전한 경로, `operation`·`http_status`·`error_code` 등 허용한 태그, 환경·릴리즈, event ID, 최근 자동 breadcrumb 세 건만 사용한다. 제목의 Rilog API URL은 실제 origin과 path를 유지하고 query·fragment·인증정보는 버린다. 외부 URL은 숨긴다. breadcrumb는 SDK의 category, type, level, message, timestamp와 data를 그대로 구조화해 전달하되 알려진 인증값·민감한 query·이메일·입력값은 제거한다. 이벤트의 request, user와 stack은 Slack으로 전송하지 않는다.
+오류 `beforeSend`에서 기존 수집 판단과 개인정보 필터를 통과한 `prod` 오류만 Slack 알림 후보로 삼는다. 전송 전 이벤트이므로 Sentry 저장이나 최종 이슈 그룹화 성공을 의미하지 않는다. 알림에는 이벤트 전체를 복사하지 않고 오류 종류, 최대 180자의 정제된 제목, 안전한 경로, `operation`·`http_status`·`error_code` 등 허용한 태그, 환경·릴리즈, event ID, 최근 자동 breadcrumb 세 건만 사용한다. 제목의 Rilog API URL은 실제 origin과 path를 유지하고 query·fragment·인증정보는 버린다. 외부 URL은 숨긴다. HTTP breadcrumb는 category·method·URL·status, navigation은 from·to, UI 동작은 category·태그명·selector와 최대 열 개의 태그 속성만 전달한다. 알려진 인증값·민감한 query·이메일·입력값은 제거한다. 이벤트의 request, user와 stack은 Slack으로 전송하지 않는다.
 
 기본 알림은 오류 종류, 경로, 제목, 태그를 한 코드 블록의 줄별 항목으로, event ID를 본문에 표시한다. `chat:write` 권한의 Bot Token과 채널 ID가 있으면 `chat.postMessage`의 응답 `ts`를 사용해 최근 breadcrumbs 세 건을 각각 부모 메시지의 스레드 댓글로 게시한다. 채널당 메시지 제한을 고려해 댓글 전송 간격을 둔다. Bot 설정 전에는 기존 Incoming Webhook으로 기본 알림만 보낸다. 웹훅 응답은 부모 메시지의 `ts`를 제공하지 않아 댓글을 달 수 없다.
 

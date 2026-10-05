@@ -5,7 +5,7 @@ import { parseSentrySlackSummary } from '@/shared/error-tracking/sentry-slack-su
 
 export const runtime = 'nodejs';
 
-const MAX_BODY_LENGTH = 12_288;
+const MAX_BODY_LENGTH = 4096;
 
 export async function POST(request: Request): Promise<NextResponse> {
 	const origin = request.headers.get('origin');

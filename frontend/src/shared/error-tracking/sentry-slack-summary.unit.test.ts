@@ -25,7 +25,10 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 				data: { method: 'GET', status_code: 503 },
 			},
 			{ category: 'navigation', message: 'https://rilog.kr/private-draft' },
-			{ category: 'ui.click', message: 'input[value=private]' },
+			{
+				category: 'ui.click',
+				message: 'button#publish.primary[type="submit"][aria-label="발행"][value="private"]',
+			},
 		],
 	} as ErrorEvent;
 	const summary = summarizeSentryEventForSlack(event);
@@ -36,13 +39,14 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 		route: '/write',
 		tags: { operation: 'post.publish', http_status: '503', release: '572ccedd', environment: 'prod' },
 		breadcrumbs: [
+			{ category: 'fetch', method: 'GET', url: 'https://api.rilog.kr/v1/posts', statusCode: 503 },
+			{ category: 'navigation' },
 			{
-				category: 'fetch',
-				message: 'GET https://api.rilog.kr/v1/posts',
-				data: { method: 'GET', status_code: 503 },
+				category: 'ui.click',
+				element: 'button',
+				selector: 'button#publish.primary[type="submit"][aria-label="발행"][value=[Filtered]]',
+				attributes: { id: 'publish', class: 'primary', type: 'submit', 'aria-label': '발행' },
 			},
-			{ category: 'navigation', message: 'https://rilog.kr/private-draft' },
-			{ category: 'ui.click', message: 'input[value=[Filtered]]' },
 		],
 	});
 	expect(JSON.stringify(summary)).not.toContain('token=private');
@@ -60,6 +64,13 @@ it('외부 요청이 임의의 태그나 긴 breadcrumb를 추가하면 거절�
 	};
 	expect(parseSentrySlackSummary(summary)).toBeNull();
 	expect(parseSentrySlackSummary({ ...summary, tags: {}, breadcrumbs: [{ arbitrary: 'field' }] })).toBeNull();
+	expect(
+		parseSentrySlackSummary({
+			...summary,
+			tags: {},
+			breadcrumbs: [{ category: 'ui.click', attributes: { title: 'user@example.com' } }],
+		})?.breadcrumbs[0].attributes,
+	).toEqual({ title: '[Email]' });
 });
 
 it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한다', () => {
@@ -79,7 +90,8 @@ it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한�
 	expect(summary?.title).toContain('[URL]');
 	expect(JSON.stringify(summary)).not.toContain('secret');
 	expect(summary?.breadcrumbs[0]).toMatchObject({
-		message: 'POST https://api.rilog.test/v1/posts/42',
-		data: { method: 'POST', url: 'https://api.rilog.test/v1/posts/42', status_code: 503 },
+		method: 'POST',
+		url: 'https://api.rilog.test/v1/posts/42',
+		statusCode: 503,
 	});
 });
