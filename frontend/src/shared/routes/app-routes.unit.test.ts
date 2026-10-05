@@ -18,6 +18,7 @@ describe('app routes', () => {
 		expect(APP_ROUTES).toEqual({
 			about: '/about',
 			feeds: '/feeds',
+			theRilog: '/the-rilog',
 			cologCreate: '/colog/create',
 			signUp: '/sign-up',
 			write: '/write',
