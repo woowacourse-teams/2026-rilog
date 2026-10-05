@@ -40,6 +40,20 @@ SENTRY_SMOKE_DSN='<Sentry에서 복사한 테스트 프로젝트의 실제 DSN>'
 사용자 ID `1`을 확인한다. 발행 POST는 한 번만 발생해야 하며, 이벤트에 글 제목·본문·테스트 토큰이
 없는지도 검사한다.
 
+## production 소스맵과 게시글 발행 503 확인
+
+`frontend/.env`에 `SENTRY_AUTH_TOKEN`과 업로드 대상 Sentry 프로젝트의 `NEXT_PUBLIC_SENTRY_DSN`을 설정한 뒤 한 명령으로 실행한다.
+
+```sh
+cd frontend
+nvm use
+pnpm test:sentry:post-503:prod
+```
+
+이 명령은 별도 `.next-sentry-feed-503` 폴더에 production 빌드를 만들고, 고유 release로 소스맵을 업로드한 뒤 Playwright가 `pnpm start`로 서버를 띄워 게시글 발행 POST를 503으로 대체한다. 빌드나 업로드가 실패하면 테스트를 시작하지 않는다. 출력된 event ID를 Sentry에서 찾아 release와 원본 TS/TSX 파일·행이 복원됐는지 확인한다. 이 명령은 실제 Sentry 프로젝트에 테스트 이벤트를 하나 생성하며, 기존 개발 서버 smoke와 달리 `prod` 환경 이벤트로 기록된다. 업로드 대상 프로젝트와 DSN의 프로젝트가 같아야 한다.
+
+## Sentry 전송 장애 확인
+
 Sentry 통신 장애가 오류 화면의 복구 동작을 막으면 사용자가 서비스 오류에서 빠져나올 수 없다.
 이 테스트는 실제 Next.js production 번들의 Sentry SDK를 실행하고, Playwright가 `/monitoring` 요청을
 중단하여 실패한 exception 이벤트 전송을 확인한다. SDK 함수 mock 테스트로는 실제 브라우저의
