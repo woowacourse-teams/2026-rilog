@@ -105,8 +105,19 @@ describe('PageNavigation', () => {
 		expect(screen.getByRole('link', { name: '피드 글 123개' })).toHaveAttribute('href', '/feeds');
 		expect(screen.getByRole('link', { name: 'Personal' })).toHaveAttribute('href', '/feeds?blogType=personal');
 		expect(screen.getByRole('link', { name: 'Colog' })).toHaveAttribute('href', '/feeds?blogType=colog');
-		for (const link of screen.getAllByRole('link')) expect(link).toHaveAttribute('data-next-scroll', 'false');
-		expect(screen.getAllByRole('link')).toHaveLength(3);
+		expect(screen.getByRole('link', { name: 'The Rilog.' })).toHaveAttribute('href', '/the-rilog');
+		for (const name of ['피드 글 123개', 'Personal', 'Colog']) {
+			expect(screen.getByRole('link', { name })).toHaveAttribute('data-next-scroll', 'false');
+		}
+		expect(screen.getAllByRole('link')).toHaveLength(4);
+	});
+
+	it('The Rilog. 경로에서는 매거진 메뉴만 현재 위치로 표시한다', () => {
+		route.pathname = '/the-rilog';
+		render(<PageNavigation />);
+
+		expect(screen.getByRole('link', { name: 'The Rilog.' })).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByRole('link', { name: '피드 글 123개' })).not.toHaveAttribute('aria-current');
 	});
 
 	it.each([
@@ -147,7 +158,9 @@ describe('PageNavigation', () => {
 		expect(screen.getByRole('link', { name: '피드 글 123개' })).toHaveAttribute('href', '/feeds');
 		expect(screen.getByRole('link', { name: 'Personal' })).toHaveAttribute('href', '/feeds?blogType=personal');
 		expect(screen.getByRole('link', { name: 'Colog' })).toHaveAttribute('href', '/feeds?blogType=colog');
-		for (const link of screen.getAllByRole('link')) expect(link).toHaveAttribute('data-next-scroll', 'true');
+		for (const name of ['피드 글 123개', 'Personal', 'Colog']) {
+			expect(screen.getByRole('link', { name })).toHaveAttribute('data-next-scroll', 'true');
+		}
 	});
 
 	it('/feeds 깊은 스크롤의 일반 클릭은 category를 초기화하고 비-sticky 피드 시작점으로 이동한다', () => {

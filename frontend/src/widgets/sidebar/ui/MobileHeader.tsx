@@ -40,6 +40,13 @@ export default function MobileHeader() {
 			<CustomLink href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
 				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={34} priority />
 			</CustomLink>
+			<CustomLink
+				href={APP_ROUTES.theRilog}
+				aria-current={pathname === APP_ROUTES.theRilog ? 'page' : undefined}
+				className="rounded-md px-2 py-2 text-label-2 font-semibold whitespace-nowrap text-text-secondary hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring aria-[current=page]:text-brand-primary"
+			>
+				The Rilog.
+			</CustomLink>
 
 			{isAuthenticated ? (
 				userProfileControl

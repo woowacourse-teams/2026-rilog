@@ -59,10 +59,19 @@ describe('MobileHeader', () => {
 		expect(navigation).toHaveAttribute('data-mobile-header');
 		expect(feedLink).toHaveAttribute('href', '/feeds');
 		expect(feedLink).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByRole('link', { name: 'The Rilog.' })).toHaveAttribute('href', '/the-rilog');
 		expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
 
 		await user.click(screen.getByRole('button', { name: '로그인' }));
 		expect(screen.getByRole('dialog', { name: '로그인' })).toBeInTheDocument();
+	});
+
+	it('The Rilog.에서 매거진 진입점만 현재 위치로 표시한다', () => {
+		navigationMock.pathname = '/the-rilog';
+		renderHeader();
+
+		expect(screen.getByRole('link', { name: 'The Rilog.' })).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByRole('link', { name: 'Rilog.' })).not.toHaveAttribute('aria-current');
 	});
 
 	it('모바일 헤더에서 시작한 GitHub 로그인에 진입면과 검색 조건을 포함한 복귀 경로를 남긴다', async () => {
