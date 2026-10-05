@@ -44,11 +44,11 @@ function formatSlackMessage(summary: SentrySlackSummary): string {
 		.join('\n');
 }
 
-export async function deliverSentrySlackAlert(summary: SentrySlackSummary, source: string): Promise<void> {
+export async function deliverSentrySlackAlert(summary: SentrySlackSummary, source: string): Promise<boolean> {
 	const url = process.env.SENTRY_SLACK_WEBHOOK_URL;
-	if (!url || process.env.NODE_ENV !== 'production') return;
+	if (!url || process.env.NODE_ENV !== 'production') return false;
 	const now = Date.now();
-	if (!admit(source, summary, now)) return;
+	if (!admit(source, summary, now)) return true;
 	try {
 		const payload = JSON.stringify({ text: formatSlackMessage(summary) });
 		for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -58,7 +58,7 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 				body: payload,
 				signal: AbortSignal.timeout(2500),
 			});
-			if (response.ok) return;
+			if (response.ok) return true;
 			if (attempt === 0 && (response.status === 429 || response.status >= 500)) {
 				const retryAfter = Number(response.headers.get('retry-after') ?? 1);
 				await new Promise((resolve) => setTimeout(resolve, Math.min(Math.max(retryAfter, 1), 5) * 1000));
@@ -69,4 +69,5 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 	} catch {
 		console.error('Sentry Slack alert delivery failed.');
 	}
+	return false;
 }

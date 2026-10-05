@@ -16,6 +16,7 @@ const body = JSON.stringify({
 beforeEach(() => {
 	vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.rilog.kr');
 	deliverSentrySlackAlert.mockReset();
+	deliverSentrySlackAlert.mockResolvedValue(true);
 });
 
 it('같은 출처의 유효한 오류 요약이면 Slack 전송 경계에 전달한다', async () => {
@@ -27,6 +28,20 @@ it('같은 출처의 유효한 오류 요약이면 Slack 전송 경계에 전달
 		}),
 	);
 	expect(response.status).toBe(204);
+	expect(deliverSentrySlackAlert).toHaveBeenCalledOnce();
+});
+
+it('production smoke의 로컬 출처를 허용하고 Slack 전송 실패는 오류로 드러낸다', async () => {
+	vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'http://127.0.0.1:3109');
+	deliverSentrySlackAlert.mockResolvedValue(false);
+	const response = await POST(
+		new Request('http://127.0.0.1:3109/api/observability/sentry-slack', {
+			method: 'POST',
+			headers: { origin: 'http://127.0.0.1:3109', 'content-type': 'application/json' },
+			body,
+		}),
+	);
+	expect(response.status).toBe(502);
 	expect(deliverSentrySlackAlert).toHaveBeenCalledOnce();
 });
 

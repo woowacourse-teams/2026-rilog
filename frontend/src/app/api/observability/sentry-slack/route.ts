@@ -23,6 +23,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 	const summary = parseSentrySlackSummary(data);
 	if (!summary) return new NextResponse(null, { status: 400 });
 	const source = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
-	await deliverSentrySlackAlert(summary, source);
-	return new NextResponse(null, { status: 204 });
+	const delivered = await deliverSentrySlackAlert(summary, source);
+	return new NextResponse(null, { status: delivered ? 204 : 502 });
 }
