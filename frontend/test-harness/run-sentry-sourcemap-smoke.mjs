@@ -54,7 +54,7 @@ if (!existsSync('.next-sentry-feed-503/BUILD_ID')) {
 
 run('pnpm', ['test:sentry:post-503']);
 
-const issuesUrl = new URL('https://rilog-an.sentry.io/issues/');
+const issuesUrl = new URL('https://rilog-fontend.sentry.io/issues/');
 issuesUrl.searchParams.set('environment', 'prod');
 issuesUrl.searchParams.set('project', new URL(dsn).pathname.replaceAll('/', ''));
 issuesUrl.searchParams.set('statsPeriod', '24h');
