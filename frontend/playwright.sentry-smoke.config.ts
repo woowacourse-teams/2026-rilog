@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const sentryDsn = process.env.SENTRY_SMOKE_DSN;
 const isProductionSmoke = process.env.SENTRY_SMOKE_PRODUCTION === 'true';
+const isPostHogReplaySmoke = process.env.POSTHOG_REPLAY_SMOKE === 'true';
 
 if (!sentryDsn) {
 	throw new Error('SENTRY_SMOKE_DSN에 테스트용 Sentry DSN을 설정해 주세요.');
@@ -46,7 +47,11 @@ export default defineConfig({
 			SENTRY_FEED_503_SMOKE: 'true',
 			NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 			NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
-			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
+			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: isPostHogReplaySmoke
+				? (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ?? '')
+				: '',
+			NEXT_PUBLIC_POSTHOG_HOST: isPostHogReplaySmoke ? (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? '') : '',
+			NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER: isPostHogReplaySmoke ? 'true' : 'false',
 			NEXT_PUBLIC_SENTRY_DSN: sentryDsn,
 			NEXT_PUBLIC_SENTRY_ENABLED: 'true',
 			SENTRY_AUTH_TOKEN: '',

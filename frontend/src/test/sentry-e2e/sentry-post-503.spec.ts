@@ -10,6 +10,7 @@ const appOrigin = 'http://127.0.0.1:3109';
 const requestId = 'sentry-smoke-post-503';
 const postTitle = 'Sentry 발행 오류 테스트';
 const postBody = '발행 요청 본문은 Sentry에 남지 않아야 합니다.';
+const isPostHogReplaySmoke = process.env.POSTHOG_REPLAY_SMOKE === 'true';
 
 test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ page }) => {
 	await mockSentryTransportIfRequested(page);
@@ -54,10 +55,27 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 		});
 	});
 
+	const postHogSnapshotResponse = isPostHogReplaySmoke
+		? page.waitForResponse(
+				(response) => response.request().method() === 'POST' && /\/s\/?$/.test(new URL(response.url()).pathname),
+				{ timeout: 45_000 },
+			)
+		: null;
 	await page.goto('/write');
 	await page.getByRole('textbox', { name: '게시글 제목' }).fill(postTitle);
 	await page.getByRole('textbox', { name: '게시글 내용' }).click();
 	await page.keyboard.type(postBody);
+	if (postHogSnapshotResponse) {
+		let snapshotResponse: Awaited<typeof postHogSnapshotResponse>;
+		try {
+			snapshotResponse = await postHogSnapshotResponse;
+		} catch {
+			throw new Error(
+				'PostHog replay snapshot was not sent after disabling user-agent filtering for this smoke. Check the recorder network/CSP errors.',
+			);
+		}
+		expect(snapshotResponse.ok(), 'PostHog replay snapshot request must succeed').toBe(true);
+	}
 	await page.getByRole('button', { name: '발행', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: '게시 설정' });
 	await expect(dialog).toBeVisible();
@@ -100,10 +118,11 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 	expect(envelope).not.toContain(postBody);
 	expect(envelope).not.toContain('e2e-access-token');
 	expect((await eventRequest.response())?.ok()).toBe(true);
+	let alertBody: string | undefined;
 	if (slackResponse) {
 		const response = await slackResponse;
 		expect(response.status()).toBe(204);
-		const alertBody = response.request().postData() ?? '';
+		alertBody = response.request().postData() ?? '';
 		expect(alertBody).toContain('post.publish');
 		expect(alertBody).toContain('"http_status":"503"');
 		expect(alertBody).not.toContain(postTitle);
@@ -115,12 +134,25 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 		const { event_id: eventId } = JSON.parse(envelopeHeader) as { event_id?: string };
 		if (eventId) console.info(`Sentry event ID: ${eventId}`);
 	}
+	const event = JSON.parse(envelope?.split('\n')[2] ?? '{}') as {
+		release?: string;
+		debug_meta?: { images?: Array<{ debug_id?: string }> };
+		tags?: Record<string, unknown>;
+		contexts?: { posthog_session_replay?: { url?: unknown } };
+	};
 	if (process.env.SENTRY_SMOKE_PRODUCTION === 'true') {
-		const event = JSON.parse(envelope?.split('\n')[2] ?? '{}') as {
-			release?: string;
-			debug_meta?: { images?: Array<{ debug_id?: string }> };
-		};
 		expect(event.release).toBe(process.env.SENTRY_RELEASE);
 		expect(event.debug_meta?.images?.some((image) => Boolean(image.debug_id))).toBe(true);
+	}
+	if (isPostHogReplaySmoke) {
+		const replayUrl = event.tags?.['PostHog Recording URL'];
+		expect(typeof replayUrl).toBe('string');
+		const parsedReplayUrl = new URL(String(replayUrl));
+		expect(parsedReplayUrl.protocol).toBe('https:');
+		expect(parsedReplayUrl.hostname.endsWith('.posthog.com')).toBe(true);
+		expect(parsedReplayUrl.pathname).toMatch(/^\/project\/[^/]+\/replay\/[^/]+$/);
+		expect(parsedReplayUrl.searchParams.get('t')).toMatch(/^\d+$/);
+		expect(event.contexts?.posthog_session_replay?.url).toBe(replayUrl);
+		expect(alertBody).toContain(String(replayUrl));
 	}
 });

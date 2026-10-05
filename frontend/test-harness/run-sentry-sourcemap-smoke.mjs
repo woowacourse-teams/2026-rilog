@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
 const dsn = process.env.SENTRY_SMOKE_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+const isPostHogReplaySmoke = process.argv.includes('--posthog-replay');
 
 if (!process.env.SENTRY_AUTH_TOKEN || !dsn) {
 	console.error('SENTRY_AUTH_TOKEN and SENTRY_SMOKE_DSN or NEXT_PUBLIC_SENTRY_DSN are required in .env.');
@@ -10,6 +11,20 @@ if (!process.env.SENTRY_AUTH_TOKEN || !dsn) {
 
 if (process.env.SENTRY_SMOKE_DRY_RUN === 'true') {
 	console.error('The production source map smoke test requires real Sentry delivery.');
+	process.exit(1);
+}
+
+if (isPostHogReplaySmoke && (!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST)) {
+	console.error('The replay smoke requires NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN and NEXT_PUBLIC_POSTHOG_HOST in .env.');
+	process.exit(1);
+}
+
+if (
+	isPostHogReplaySmoke &&
+	!process.env.SENTRY_SLACK_WEBHOOK_URL &&
+	!(process.env.SENTRY_SLACK_BOT_TOKEN && process.env.SENTRY_SLACK_CHANNEL_ID)
+) {
+	console.error('The replay smoke requires a Slack webhook or both bot token and channel ID.');
 	process.exit(1);
 }
 
@@ -27,10 +42,13 @@ const env = {
 	SENTRY_FEED_503_SMOKE: 'true',
 	SENTRY_UPLOAD_REQUIRED: 'true',
 	SENTRY_SMOKE_PRODUCTION: 'true',
+	POSTHOG_REPLAY_SMOKE: isPostHogReplaySmoke ? 'true' : 'false',
 	NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 	NEXT_PUBLIC_SITE_URL: 'http://127.0.0.1:3109',
 	NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
-	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
+	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: isPostHogReplaySmoke ? process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN : '',
+	NEXT_PUBLIC_POSTHOG_HOST: isPostHogReplaySmoke ? process.env.NEXT_PUBLIC_POSTHOG_HOST : '',
+	NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER: isPostHogReplaySmoke ? 'true' : 'false',
 	NEXT_PUBLIC_SENTRY_DSN: dsn,
 	NEXT_PUBLIC_SENTRY_ENABLED: 'true',
 };
@@ -44,7 +62,9 @@ function run(command, args) {
 	if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-console.info(`Building and uploading source maps for release ${release}`);
+console.info(
+	`Building and uploading source maps for release ${release}${isPostHogReplaySmoke ? ' with PostHog replay' : ''}`,
+);
 run('pnpm', ['build']);
 
 if (!existsSync('.next-sentry-feed-503/BUILD_ID')) {

@@ -113,6 +113,7 @@ describe('PostHog analytics', () => {
 			enable_recording_console_log: boolean;
 			capture_pageview: boolean;
 			capture_pageleave: boolean;
+			opt_out_useragent_filter: boolean;
 			session_recording: Record<string, unknown>;
 		};
 		expect(initMock).toHaveBeenCalledWith('phc_test', options);
@@ -122,6 +123,7 @@ describe('PostHog analytics', () => {
 			enable_recording_console_log: false,
 			capture_pageview: true,
 			capture_pageleave: true,
+			opt_out_useragent_filter: false,
 		});
 		expect(options.session_recording).toMatchObject({
 			recordHeaders: false,
@@ -134,6 +136,18 @@ describe('PostHog analytics', () => {
 		});
 		expect(options.session_recording).not.toHaveProperty('maskInputFn');
 		expect(captureMock).toHaveBeenCalledWith('test event', { enabled: true });
+	});
+
+	it('리플레이 smoke에서만 자동화 브라우저의 user-agent 필터를 끌 수 있다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN', 'phc_test');
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://us.i.posthog.com');
+		vi.stubEnv('NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER', 'true');
+		const { initializeAnalytics } = await import('./posthog');
+
+		initializeAnalytics();
+
+		const options = initMock.mock.calls[0]?.[1] as { opt_out_useragent_filter: boolean };
+		expect(options.opt_out_useragent_filter).toBe(true);
 	});
 
 	it('pagehide 전송 옵션을 SDK에 넘기고 일반 전송은 기존 두 인자를 유지한다', async () => {
