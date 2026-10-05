@@ -33,11 +33,17 @@ function admit(source: string, summary: SentrySlackSummary, now: number): boolea
 
 function formatMainMessage(summary: SentrySlackSummary) {
 	const tags = Object.entries(summary.tags)
-		.map(([key, value]) => `${key}=${value}`)
-		.join(' · ');
+		.map(([key, value]) => `${key}: ${value}`)
+		.join('\n');
 	const title = summary.title.replace(/`/g, "'");
 	return {
-		text: [`🔴 ${summary.errorType}`, summary.route, title, tags, `Sentry event ID: ${summary.eventId}`]
+		text: [
+			`🔴 ${summary.errorType}`,
+			summary.route,
+			title,
+			tags ? `\`\`\`${tags}\`\`\`` : '',
+			`Sentry event ID: ${summary.eventId}`,
+		]
 			.filter(Boolean)
 			.join('\n'),
 		blocks: [
@@ -47,7 +53,7 @@ function formatMainMessage(summary: SentrySlackSummary) {
 				text: { type: 'mrkdwn', text: summary.route === 'unknown' ? '경로 알 수 없음' : summary.route },
 			},
 			{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${title}\`\`\`` } },
-			...(tags ? [{ type: 'context', elements: [{ type: 'mrkdwn', text: tags }] }] : []),
+			...(tags ? [{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${tags}\`\`\`` } }] : []),
 			{ type: 'context', elements: [{ type: 'mrkdwn', text: `Sentry event ID: \`${summary.eventId}\`` }] },
 		],
 	};
@@ -95,18 +101,25 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 				console.error('Sentry Slack parent alert delivery failed.');
 				return false;
 			}
-			if (summary.breadcrumbs.length === 0) return true;
-			const reply = await postSlackApi(
-				{
-					channel,
-					thread_ts: parent.ts,
-					reply_broadcast: false,
-					text: `*직전 흐름*\n${summary.breadcrumbs.map((item) => `• ${item}`).join('\n')}`,
-				},
-				token,
-			);
-			if (!reply.ok) console.error('Sentry Slack breadcrumb reply delivery failed.');
-			return reply.ok;
+			let repliesDelivered = true;
+			for (const [index, breadcrumb] of summary.breadcrumbs.entries()) {
+				// Slack generally allows one channel message per second, including thread replies.
+				await new Promise((resolve) => setTimeout(resolve, 1100));
+				const reply = await postSlackApi(
+					{
+						channel,
+						thread_ts: parent.ts,
+						reply_broadcast: false,
+						text: `*직전 흐름 ${index + 1}/${summary.breadcrumbs.length}*\n\`\`\`${JSON.stringify(breadcrumb, null, 2)}\`\`\``,
+					},
+					token,
+				);
+				if (!reply.ok) {
+					console.error('Sentry Slack breadcrumb reply delivery failed.');
+					repliesDelivered = false;
+				}
+			}
+			return repliesDelivered;
 		}
 		if (!webhook) return false;
 		const response = await postWithRetry(webhook, main);

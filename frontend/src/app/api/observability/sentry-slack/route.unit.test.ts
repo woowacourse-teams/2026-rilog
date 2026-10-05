@@ -11,7 +11,7 @@ const body = JSON.stringify({
 	errorType: 'TypeError',
 	route: '/write',
 	tags: { operation: 'post.publish' },
-	breadcrumbs: ['fetch GET 503'],
+	breadcrumbs: [{ category: 'fetch', data: { method: 'GET', status_code: 503 } }],
 });
 
 beforeEach(() => {

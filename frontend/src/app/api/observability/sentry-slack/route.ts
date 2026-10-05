@@ -5,17 +5,20 @@ import { parseSentrySlackSummary } from '@/shared/error-tracking/sentry-slack-su
 
 export const runtime = 'nodejs';
 
+const MAX_BODY_LENGTH = 12_288;
+
 export async function POST(request: Request): Promise<NextResponse> {
 	const origin = request.headers.get('origin');
 	const site = process.env.NEXT_PUBLIC_SITE_URL;
 	if (!origin || !site || origin !== new URL(site).origin) return new NextResponse(null, { status: 403 });
 	if (!request.headers.get('content-type')?.startsWith('application/json'))
 		return new NextResponse(null, { status: 415 });
-	if (Number(request.headers.get('content-length') ?? 0) > 4096) return new NextResponse(null, { status: 413 });
+	if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_LENGTH)
+		return new NextResponse(null, { status: 413 });
 	let data: unknown;
 	try {
 		const body = await request.text();
-		if (body.length > 4096) return new NextResponse(null, { status: 413 });
+		if (body.length > MAX_BODY_LENGTH) return new NextResponse(null, { status: 413 });
 		data = JSON.parse(body);
 	} catch {
 		return new NextResponse(null, { status: 400 });

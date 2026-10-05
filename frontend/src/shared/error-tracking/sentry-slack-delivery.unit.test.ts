@@ -17,7 +17,7 @@ it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 
 		errorType: 'TypeError',
 		route: '/write',
 		tags: { operation: 'post.publish', http_status: '503', environment: 'prod' },
-		breadcrumbs: ['fetch POST 503', 'ui.click'],
+		breadcrumbs: [{ category: 'fetch', data: { method: 'POST', status_code: 503 } }, { category: 'ui.click' }],
 	};
 	await deliverSentrySlackAlert(summary, 'test-ip');
 	await deliverSentrySlackAlert({ ...summary, eventId: 'fedcba9876543210fedcba9876543210' }, 'test-ip');
@@ -39,7 +39,7 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 	const post = vi
 		.fn()
 		.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ok: true, ts: '123.456' }) })
-		.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ok: true, ts: '123.457' }) });
+		.mockResolvedValue({ ok: true, json: () => Promise.resolve({ ok: true, ts: '123.457' }) });
 	vi.stubGlobal('fetch', post);
 	const delivered = await deliverSentrySlackAlert(
 		{
@@ -48,15 +48,23 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 			errorType: 'HTTPError',
 			route: '/write',
 			tags: { operation: 'post.publish', http_status: '503' },
-			breadcrumbs: ['fetch POST /v1/posts 503'],
+			breadcrumbs: [
+				{ category: 'navigation', data: { from: '/feed', to: '/write' } },
+				{ category: 'ui.click', message: 'button.publish' },
+				{
+					category: 'fetch',
+					message: 'POST https://api.rilog.test/v1/posts',
+					data: { method: 'POST', url: 'https://api.rilog.test/v1/posts', status_code: 503 },
+				},
+			],
 		},
 		'bot-test-ip',
 	);
 	expect(delivered).toBe(true);
-	expect(post).toHaveBeenCalledTimes(2);
+	expect(post).toHaveBeenCalledTimes(4);
 	const parent = JSON.parse((post.mock.calls[0] as [string, RequestInit])[1].body as string) as {
 		text: string;
-		blocks: unknown[];
+		blocks: Array<{ type: string; text?: { text: string } }>;
 	};
 	const reply = JSON.parse((post.mock.calls[1] as [string, RequestInit])[1].body as string) as {
 		thread_ts: string;
@@ -66,8 +74,16 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 	expect(parent.text).toContain('/write');
 	expect(parent.text).toContain('Sentry event ID: 11111111111111111111111111111111');
 	expect(parent.text).not.toContain('fetch POST');
+	expect(parent.blocks.some((block) => block.text?.text === '```operation: post.publish\nhttp_status: 503```')).toBe(
+		true,
+	);
 	expect(reply.thread_ts).toBe('123.456');
-	expect(reply.text).toContain('fetch POST /v1/posts 503');
+	expect(reply.text).toContain('"category": "navigation"');
+	expect(reply.text).toContain('"from": "/feed"');
+	const secondReply = JSON.parse((post.mock.calls[2] as [string, RequestInit])[1].body as string) as { text: string };
+	const thirdReply = JSON.parse((post.mock.calls[3] as [string, RequestInit])[1].body as string) as { text: string };
+	expect(secondReply.text).toContain('"category": "ui.click"');
+	expect(thirdReply.text).toContain('https://api.rilog.test/v1/posts');
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
@@ -88,7 +104,7 @@ it('Slack API가 HTTP 200에 ok=false를 반환하면 알림 실패로 처리한
 			errorType: 'HTTPError',
 			route: '/[slug]/posts/[postId]',
 			tags: { operation: 'comment.create' },
-			breadcrumbs: ['fetch POST /v1/comments 503'],
+			breadcrumbs: [{ category: 'fetch', data: { method: 'POST', status_code: 503 } }],
 		},
 		'bot-error-test-ip',
 	);
