@@ -52,3 +52,10 @@ if (!existsSync('.next-sentry-feed-503/BUILD_ID')) {
 }
 
 run('pnpm', ['test:sentry:post-503']);
+
+const issuesUrl = new URL('https://rilog-an.sentry.io/issues/');
+issuesUrl.searchParams.set('environment', 'prod');
+issuesUrl.searchParams.set('project', new URL(dsn).pathname.replaceAll('/', ''));
+issuesUrl.searchParams.set('statsPeriod', '24h');
+console.info(`Sentry prod issues: ${issuesUrl}`);
+console.info(`Find release ${release} and request_id sentry-smoke-post-503.`);

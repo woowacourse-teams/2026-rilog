@@ -50,7 +50,7 @@ nvm use
 pnpm test:sentry:post-503:prod
 ```
 
-이 명령은 별도 `.next-sentry-feed-503` 폴더에 production 빌드를 만들고, 고유 release로 소스맵을 업로드한 뒤 Playwright가 `pnpm start`로 서버를 띄워 게시글 발행 POST를 503으로 대체한다. 빌드나 업로드가 실패하면 테스트를 시작하지 않는다. 출력된 event ID를 Sentry에서 찾아 release와 원본 TS/TSX 파일·행이 복원됐는지 확인한다. 이 명령은 실제 Sentry 프로젝트에 테스트 이벤트를 하나 생성하며, 기존 개발 서버 smoke와 달리 `prod` 환경 이벤트로 기록된다. 업로드 대상 프로젝트와 DSN의 프로젝트가 같아야 한다.
+이 명령은 별도 `.next-sentry-feed-503` 폴더에 production 빌드를 만들고, 고유 release로 소스맵을 업로드한 뒤 Playwright가 `pnpm start`로 서버를 띄워 게시글 발행 POST를 503으로 대체한다. 빌드나 업로드가 실패하면 테스트를 시작하지 않는다. 완료 시 출력된 Sentry `prod` 이슈 링크에서 event ID 또는 release로 이벤트를 찾고 원본 TS/TSX 파일·행이 복원됐는지 확인한다. 이전 개발 서버 smoke의 `local` 필터로는 이 이벤트가 보이지 않는다. 이 명령은 실제 Sentry 프로젝트에 테스트 이벤트를 하나 생성한다. 업로드 대상 프로젝트와 DSN의 프로젝트가 같아야 한다.
 
 ## Sentry 전송 장애 확인
 
