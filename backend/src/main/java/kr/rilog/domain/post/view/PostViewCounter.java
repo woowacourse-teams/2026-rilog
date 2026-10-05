@@ -38,7 +38,7 @@ public final class PostViewCounter {
         this.capacity = capacity;
     }
 
-    public ViewResult recordView(ViewerIdentity viewer) {
+    ViewResult recordView(ViewerIdentity viewer) {
         Objects.requireNonNull(viewer, "독자 식별자가 필요합니다.");
         lock.lock();
         try {
@@ -103,7 +103,7 @@ public final class PostViewCounter {
         }
     }
 
-    public int removeExpiredViewerRecords(int limit) {
+    int removeExpiredViewerRecords(int limit) {
         if (limit <= 0) {
             throw new IllegalArgumentException("만료 정리 한도는 양수여야 합니다.");
         }

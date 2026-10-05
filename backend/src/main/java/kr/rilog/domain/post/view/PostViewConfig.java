@@ -3,10 +3,12 @@ package kr.rilog.domain.post.view;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Clock;
 
 @Configuration
+@EnableScheduling
 public class PostViewConfig {
 
     @Bean

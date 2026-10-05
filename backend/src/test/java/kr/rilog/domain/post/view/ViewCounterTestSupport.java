@@ -18,8 +18,8 @@ final class ViewCounterTestSupport {
 
     static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-04T00:00:00Z"), ZoneOffset.UTC);
 
-    static PostViewCounterRegistry registry(AtomicLong ticks, LongUnaryOperator loader, int counters, int viewers) {
-        return new PostViewCounterRegistry(loader, new PostViewProperties(counters, viewers), ticks::get, CLOCK);
+    static PostViewCounterRegistry registry(AtomicLong ticks, LongUnaryOperator loader, int viewers) {
+        return new PostViewCounterRegistry(loader, new PostViewProperties(viewers), ticks::get, CLOCK);
     }
 
     static <T> List<T> concurrently(int calls, IntFunction<T> operation) throws Exception {
@@ -58,6 +58,14 @@ final class ViewCounterTestSupport {
             Thread.currentThread().interrupt();
             throw new AssertionError(failure);
         }
+    }
+
+    static void awaitWaiting(Thread thread) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (thread.getState() != Thread.State.WAITING && System.nanoTime() - deadline < 0) {
+            Thread.sleep(1);
+        }
+        assertThat(thread.getState()).isEqualTo(Thread.State.WAITING);
     }
 
     private ViewCounterTestSupport() { }
