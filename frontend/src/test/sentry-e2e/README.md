@@ -52,7 +52,7 @@ pnpm test:sentry:post-503:prod
 
 이 명령은 별도 `.next-sentry-feed-503` 폴더에 production 빌드를 만들고, 고유 release로 소스맵을 업로드한 뒤 Playwright가 `pnpm start`로 서버를 띄워 게시글 발행 POST를 503으로 대체한다. 빌드나 업로드가 실패하면 테스트를 시작하지 않는다. 완료 시 출력된 Sentry `prod` 이슈 링크에서 event ID 또는 release로 이벤트를 찾고 원본 TS/TSX 파일·행이 복원됐는지 확인한다. 이전 개발 서버 smoke의 `local` 필터로는 이 이벤트가 보이지 않는다. 이 명령은 실제 Sentry 프로젝트에 테스트 이벤트를 하나 생성한다. 업로드 대상 프로젝트와 DSN의 프로젝트가 같아야 한다.
 
-`.env`에 `SENTRY_SLACK_WEBHOOK_URL`이 있으면 같은 production smoke에서 로컬 앱의 Slack 알림 API도 확인한다. 테스트 서버의 Origin은 `http://127.0.0.1:3109`로 맞추며, Slack이 성공 응답을 주지 않으면 테스트가 실패한다. 웹훅이 연결된 채널에 테스트 알림이 도착했는지도 확인한다.
+`.env`에 `SENTRY_SLACK_WEBHOOK_URL`이 있거나 `SENTRY_SLACK_BOT_TOKEN`과 `SENTRY_SLACK_CHANNEL_ID`가 모두 있으면 같은 production smoke에서 로컬 앱의 Slack 알림 API도 확인한다. 테스트 서버의 Origin은 `http://127.0.0.1:3109`로 맞추며, Slack이 성공 응답을 주지 않으면 테스트가 실패한다. Bot 설정 시 기본 알림과 breadcrumb 스레드 댓글이, 웹훅만 설정한 경우 기본 알림이 테스트 채널에 도착하는지도 확인한다.
 
 ## Sentry 전송 장애 확인
 

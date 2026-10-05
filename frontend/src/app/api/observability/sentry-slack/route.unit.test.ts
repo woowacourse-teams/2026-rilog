@@ -9,6 +9,7 @@ const body = JSON.stringify({
 	eventId: '0123456789abcdef0123456789abcdef',
 	title: 'TypeError',
 	errorType: 'TypeError',
+	route: '/write',
 	tags: { operation: 'post.publish' },
 	breadcrumbs: ['fetch GET 503'],
 });

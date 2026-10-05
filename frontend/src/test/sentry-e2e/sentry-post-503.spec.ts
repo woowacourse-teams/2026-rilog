@@ -72,7 +72,9 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 	});
 	const sentryRequest = page.waitForRequest(isPostPublishEvent, { timeout: 30_000 });
 	const slackResponse =
-		process.env.SENTRY_SMOKE_PRODUCTION === 'true' && process.env.SENTRY_SLACK_WEBHOOK_URL
+		process.env.SENTRY_SMOKE_PRODUCTION === 'true' &&
+		(process.env.SENTRY_SLACK_WEBHOOK_URL ||
+			(process.env.SENTRY_SLACK_BOT_TOKEN && process.env.SENTRY_SLACK_CHANNEL_ID))
 			? page.waitForResponse(
 					(response) =>
 						new URL(response.url()).pathname === '/api/observability/sentry-slack' &&

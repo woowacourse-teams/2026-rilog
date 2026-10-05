@@ -11,6 +11,7 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 		type: undefined,
 		event_id: EVENT_ID,
 		message: 'POST failed at https://api.rilog.kr/v1/posts?token=private',
+		request: { url: 'https://www.rilog.kr/write?draft=private' },
 		release: '572ccedd',
 		environment: 'prod',
 		exception: { values: [{ type: 'TypeError' }] },
@@ -32,6 +33,7 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 		eventId: EVENT_ID,
 		title: 'POST failed at [URL]',
 		errorType: 'TypeError',
+		route: '/write',
 		tags: { operation: 'post.publish', http_status: '503', release: '572ccedd', environment: 'prod' },
 		breadcrumbs: ['fetch GET /v1/posts 503', 'navigation', 'ui.click input'],
 	});
@@ -44,6 +46,7 @@ it('외부 요청이 임의의 태그나 긴 breadcrumb를 추가하면 거절�
 		eventId: EVENT_ID,
 		title: 'Error',
 		errorType: 'Error',
+		route: '/write',
 		tags: { secret: 'private' },
 		breadcrumbs: ['navigation'],
 	};

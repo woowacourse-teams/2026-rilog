@@ -4,6 +4,7 @@ export interface SentrySlackSummary {
 	eventId: string;
 	title: string;
 	errorType: string;
+	route: string;
 	tags: Record<string, string>;
 	breadcrumbs: string[];
 }
@@ -19,6 +20,21 @@ const TAG_NAMES = [
 ] as const;
 const SAFE_TAG = /^[\w.:-]{1,80}$/;
 const EVENT_ID = /^[a-f\d]{32}$/i;
+const ROUTES = new Set(['/', '/write', '/about', '/feed', '/login', '/search', '/settings']);
+const ROUTE_TEMPLATE = /^\/(?:\[slug\](?:\/posts\/\[postId\](?:\/markdown)?)?)$/;
+
+function safeRoute(event: ErrorEvent): string {
+	for (const candidate of [event.transaction, event.request?.url]) {
+		if (typeof candidate !== 'string') continue;
+		try {
+			const path = new URL(candidate, 'https://www.rilog.kr').pathname;
+			if (ROUTES.has(path) || ROUTE_TEMPLATE.test(path)) return path;
+		} catch {
+			// Unknown SDK route data is not copied into Slack.
+		}
+	}
+	return 'unknown';
+}
 
 function cleanText(value: string, limit: number): string {
 	return value
@@ -83,7 +99,7 @@ export function summarizeSentryEventForSlack(event: ErrorEvent): SentrySlackSumm
 		.map(summarizeBreadcrumb)
 		.filter((item): item is string => Boolean(item))
 		.slice(-3);
-	return { eventId: event.event_id, title, errorType, tags, breadcrumbs };
+	return { eventId: event.event_id, title, errorType, route: safeRoute(event), tags, breadcrumbs };
 }
 
 export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | null {
@@ -92,6 +108,11 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 	if (typeof data.eventId !== 'string' || !EVENT_ID.test(data.eventId)) return null;
 	if (typeof data.title !== 'string' || !data.title || data.title.length > 180) return null;
 	if (typeof data.errorType !== 'string' || !data.errorType || data.errorType.length > 80) return null;
+	if (
+		typeof data.route !== 'string' ||
+		!(ROUTES.has(data.route) || ROUTE_TEMPLATE.test(data.route) || data.route === 'unknown')
+	)
+		return null;
 	if (!data.tags || typeof data.tags !== 'object' || Array.isArray(data.tags)) return null;
 	if (
 		!Array.isArray(data.breadcrumbs) ||
@@ -110,6 +131,7 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 		eventId: data.eventId,
 		title: cleanText(data.title, 180),
 		errorType: cleanText(data.errorType, 80),
+		route: data.route,
 		tags: Object.fromEntries(Object.entries(data.tags)),
 		breadcrumbs: data.breadcrumbs.map((item) => cleanText(item, 140)),
 	};

@@ -118,11 +118,23 @@ jobs:
       - name: Deploy to Server
         env:
           SENTRY_SLACK_WEBHOOK_URL: ${{ secrets.SENTRY_SLACK_WEBHOOK_URL }}
+          SENTRY_SLACK_BOT_TOKEN: ${{ secrets.SENTRY_SLACK_BOT_TOKEN }}
+          SENTRY_SLACK_CHANNEL_ID: ${{ secrets.SENTRY_SLACK_CHANNEL_ID }}
         run: |
           TARGET_DIR="/home/ubuntu/rilog-next"
 
-          if [[ -z "$SENTRY_SLACK_WEBHOOK_URL" || "$SENTRY_SLACK_WEBHOOK_URL" != https://hooks.slack.com/services/* ]]; then
-            echo 'SENTRY_SLACK_WEBHOOK_URL secret is missing or invalid.' >&2
+          if [[ -n "$SENTRY_SLACK_WEBHOOK_URL" && "$SENTRY_SLACK_WEBHOOK_URL" != https://hooks.slack.com/services/* ]]; then
+            echo 'SENTRY_SLACK_WEBHOOK_URL secret is invalid.' >&2
+            exit 1
+          fi
+          if [[ -n "$SENTRY_SLACK_BOT_TOKEN" || -n "$SENTRY_SLACK_CHANNEL_ID" ]]; then
+            if [[ -z "$SENTRY_SLACK_BOT_TOKEN" || -z "$SENTRY_SLACK_CHANNEL_ID" ]]; then
+              echo 'Both SENTRY_SLACK_BOT_TOKEN and SENTRY_SLACK_CHANNEL_ID are required for threaded alerts.' >&2
+              exit 1
+            fi
+          fi
+          if [[ -z "$SENTRY_SLACK_WEBHOOK_URL" && -z "$SENTRY_SLACK_BOT_TOKEN" ]]; then
+            echo 'Slack webhook or bot credentials are required.' >&2
             exit 1
           fi
           
@@ -140,6 +152,7 @@ jobs:
           # 런타임 전용 secret. 빌드 artifact에는 포함하지 않는다.
           umask 077
           printf 'SENTRY_SLACK_WEBHOOK_URL=%s\n' "$SENTRY_SLACK_WEBHOOK_URL" > .env.production.local
+          printf 'SENTRY_SLACK_BOT_TOKEN=%s\nSENTRY_SLACK_CHANNEL_ID=%s\n' "$SENTRY_SLACK_BOT_TOKEN" "$SENTRY_SLACK_CHANNEL_ID" >> .env.production.local
           
           # 2. EC2 서버에서 의존성 설치 (실행 환경 호환성 문제 우회)
           npm install -g pnpm@11.21.0
