@@ -3,10 +3,11 @@ package kr.rilog.domain.post.view;
 import kr.rilog.domain.post.exception.PostException;
 
 import java.time.Clock;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,28 +15,30 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUN
 
 public final class PostViewCounter {
 
+    private static final int MAX_EXPIRED_ENTRIES_PER_REQUEST = 100;
+
     static final long MAX_VIEW_COUNT = 9_007_199_254_740_991L;
 
     private final long postId;
     private final ElapsedTimeSource timeSource;
     private final Clock clock;
     private final ViewPolicy policy;
-    private final ViewerRecordCapacity capacity;
     private final ReentrantLock lock = new ReentrantLock();
-    // 마지막으로 인정된 순서대로 보관해 만료 정리가 전체 Map을 순회하지 않게 한다.
-    private final Map<ViewerIdentity, Long> lastAcceptedTicks = new LinkedHashMap<>();
+    private final Map<ViewerIdentity, Long> lastAcceptedTicks = new HashMap<>();
+    // nanoTime의 long 경계 순환을 고려해 tick 차이로 정렬한다.
+    private final PriorityQueue<ExpiryEntry> expiryEntries = new PriorityQueue<>(
+            (first, second) -> Long.compare(first.acceptedTick() - second.acceptedTick(), 0));
     private long confirmedCount;
     private long pendingDelta;
     private ViewFlushBatch inFlightBatch;
 
     PostViewCounter(long postId, long confirmedCount, ElapsedTimeSource timeSource, Clock clock,
-                    ViewPolicy policy, ViewerRecordCapacity capacity) {
+                    ViewPolicy policy) {
         this.postId = postId;
         this.confirmedCount = confirmedCount;
         this.timeSource = timeSource;
         this.clock = clock;
         this.policy = policy;
-        this.capacity = capacity;
     }
 
     ViewResult recordView(ViewerIdentity viewer) {
@@ -43,6 +46,7 @@ public final class PostViewCounter {
         lock.lock();
         try {
             long now = timeSource.readNanos();
+            removeExpiredEntriesLocked(now);
             Long lastAccepted = lastAcceptedTicks.get(viewer);
             if (lastAccepted != null && !policy.canAccept(lastAccepted, now)) {
                 return new ViewResult(false, currentCountLocked());
@@ -50,12 +54,8 @@ public final class PostViewCounter {
             if (currentCountLocked() >= MAX_VIEW_COUNT) {
                 throw new PostException(POST_VIEW_COUNT_LIMIT_EXCEEDED);
             }
-            if (lastAccepted == null) {
-                capacity.reserve();
-            } else {
-                lastAcceptedTicks.remove(viewer);
-            }
             lastAcceptedTicks.put(viewer, now);
+            expiryEntries.add(new ExpiryEntry(viewer, now));
             pendingDelta++;
             return new ViewResult(true, currentCountLocked());
         } finally {
@@ -103,30 +103,21 @@ public final class PostViewCounter {
         }
     }
 
-    int removeExpiredViewerRecords(int limit) {
-        if (limit <= 0) {
-            throw new IllegalArgumentException("만료 정리 한도는 양수여야 합니다.");
-        }
-        lock.lock();
-        try {
-            long now = timeSource.readNanos();
-            int removed = 0;
-            var iterator = lastAcceptedTicks.entrySet().iterator();
-            while (iterator.hasNext() && removed < limit) {
-                if (!policy.canAccept(iterator.next().getValue(), now)) {
-                    break;
-                }
-                iterator.remove();
-                removed++;
+    private void removeExpiredEntriesLocked(long now) {
+        for (int processed = 0; processed < MAX_EXPIRED_ENTRIES_PER_REQUEST; processed++) {
+            ExpiryEntry first = expiryEntries.peek();
+            if (first == null || !policy.canAccept(first.acceptedTick(), now)) {
+                return;
             }
-            capacity.release(removed);
-            return removed;
-        } finally {
-            lock.unlock();
+            expiryEntries.poll();
+            // 예산 밖에 남았던 항목이 재조회로 갱신된 기록을 삭제하지 않도록 시각도 비교한다.
+            lastAcceptedTicks.remove(first.viewer(), first.acceptedTick());
         }
     }
 
     private long currentCountLocked() {
         return confirmedCount + pendingDelta + (inFlightBatch == null ? 0 : inFlightBatch.delta());
     }
+
+    private record ExpiryEntry(ViewerIdentity viewer, long acceptedTick) { }
 }

@@ -18,8 +18,8 @@ final class ViewCounterTestSupport {
 
     static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-04T00:00:00Z"), ZoneOffset.UTC);
 
-    static PostViewCounterRegistry registry(AtomicLong ticks, LongUnaryOperator loader, int viewers) {
-        return new PostViewCounterRegistry(loader, new PostViewProperties(viewers), ticks::get, CLOCK);
+    static PostViewCounterRegistry registry(AtomicLong ticks, LongUnaryOperator loader) {
+        return new PostViewCounterRegistry(loader, ticks::get, CLOCK);
     }
 
     static <T> List<T> concurrently(int calls, IntFunction<T> operation) throws Exception {

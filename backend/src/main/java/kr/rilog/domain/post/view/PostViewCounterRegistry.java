@@ -1,5 +1,7 @@
 package kr.rilog.domain.post.view;
 
+import kr.rilog.global.exception.RilogInfrastructureException;
+
 import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
@@ -9,24 +11,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.LongUnaryOperator;
 
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_INVALID;
+import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
+
 public final class PostViewCounterRegistry {
 
     private final LongUnaryOperator loader;
     private final ElapsedTimeSource timeSource;
     private final Clock clock;
     private final ViewPolicy policy = new ViewPolicy();
-    private final ViewerRecordCapacity viewerCapacity;
     private final ConcurrentMap<Long, CompletableFuture<PostViewCounter>> counters = new ConcurrentHashMap<>();
 
-    public PostViewCounterRegistry(LongUnaryOperator loader, PostViewProperties properties, ElapsedTimeSource timeSource, Clock clock) {
+    public PostViewCounterRegistry(LongUnaryOperator loader, ElapsedTimeSource timeSource, Clock clock) {
         this.loader = Objects.requireNonNull(loader);
-        Objects.requireNonNull(properties);
         this.timeSource = Objects.requireNonNull(timeSource);
         this.clock = Objects.requireNonNull(clock);
-        this.viewerCapacity = new ViewerRecordCapacity(properties.maxViewerRecords());
     }
 
     public ViewResult recordView(long postId, ViewerIdentity viewer) {
+        validatePostId(postId);
         Objects.requireNonNull(viewer, "독자 식별자가 필요합니다.");
         return getOrLoad(postId).recordView(viewer);
     }
@@ -41,7 +44,7 @@ public final class PostViewCounterRegistry {
                 pending = candidate;
                 // 등록에 성공한 요청만 초기화한다. DB I/O는 Map 연산과 Counter 잠금 밖이다.
                 try {
-                    candidate.complete(new PostViewCounter(postId, loadCount(postId), timeSource, clock, policy, viewerCapacity));
+                    candidate.complete(new PostViewCounter(postId, loadCount(postId), timeSource, clock, policy));
                 } catch (RuntimeException | Error failure) {
                     counters.remove(postId, candidate);
                     candidate.completeExceptionally(failure);
@@ -65,26 +68,10 @@ public final class PostViewCounterRegistry {
                 .toList();
     }
 
-    public int removeExpiredViewerRecords(int limit) {
-        if (limit <= 0) {
-            throw new IllegalArgumentException("게시글별 만료 정리 한도는 양수여야 합니다.");
-        }
-        int removed = 0;
-        for (var pending : counters.values()) {
-            PostViewCounter counter = loadedCounter(pending);
-            if (counter == null) {
-                continue;
-            }
-            removed += counter.removeExpiredViewerRecords(limit);
-        }
-        return removed;
-    }
-
     private long loadCount(long postId) {
         long storedCount = loader.applyAsLong(postId);
         if (storedCount < 0 || storedCount > PostViewCounter.MAX_VIEW_COUNT) {
-            throw new IllegalStateException("저장된 조회수가 허용 범위를 벗어났습니다. postId=" + postId);
-        }
+            throw new RilogInfrastructureException(POST_VIEW_COUNT_INVALID, "저장된 조회수가 허용 범위를 벗어났습니다. postId=" + postId, null);}
         return storedCount;
     }
 
@@ -109,7 +96,8 @@ public final class PostViewCounterRegistry {
             if (failure.getCause() instanceof Error cause) {
                 throw cause;
             }
-            throw new IllegalStateException("조회수 카운터 초기화에 실패했습니다.", failure.getCause());
+            throw new RilogInfrastructureException(
+                    INTERNAL_SERVER_ERROR, "조회수 카운터 초기화에 실패했습니다.", failure.getCause());
         }
     }
 

@@ -3,9 +3,9 @@ package kr.rilog.domain.post.view;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogMemberFixture;
 import kr.rilog.support.fixure.PostFixture;
@@ -15,18 +15,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_CAPACITY_EXCEEDED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
-        "post.views.max-viewer-records=2"
-})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PostViewCounterIntegrationTest extends ServiceSupport {
 
@@ -51,15 +47,22 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     private BlogMemberRepository blogMemberRepository;
     @Autowired
     private JdbcTemplate jdbc;
-    @Autowired(required = false)
-    private ScheduledAnnotationBeanPostProcessor scheduling;
 
     @Test
-    @DisplayName("Spring 카운터는 실제 DB 누계로 초기화하고 설정된 한도를 지키며 DB 쓰기 없이 집계한다")
-    void initializesFromDatabaseAndCountsWithinConfiguredLimits() {
+    @DisplayName("Spring 카운터는 실제 DB 누계로 초기화하고 DB 쓰기 없이 집계한다")
+    void initializesFromDatabaseAndCountsWithoutWritingThroughRequests() {
         assertThat(registry).isNotNull();
-        assertThatThrownBy(() -> registry.currentCount(999_999)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> registry.getOrLoad(999_999)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> registry.currentCount(999_999))
+                .isInstanceOfSatisfying(RilogInfrastructureException.class, failure -> {
+                    assertThat(failure.getErrorInformation().getErrorCode()).isEqualTo("POST_VIEW_COUNT_MISSING");
+                    assertThat(failure.getErrorInformation().getHttpStatus().value()).isEqualTo(500);
+                    assertThat(failure.getMessage()).contains("postId=999999");
+                });
+        assertThatThrownBy(() -> registry.getOrLoad(999_999))
+                .isInstanceOfSatisfying(RilogInfrastructureException.class, failure -> {
+                    assertThat(failure.getErrorInformation().getErrorCode()).isEqualTo("POST_VIEW_COUNT_MISSING");
+                    assertThat(failure.getErrorInformation().getHttpStatus().value()).isEqualTo(500);
+                });
         assertThat(registry.snapshot()).isEmpty();
 
         var writer = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("메모리작성자", "memory_writer"));
@@ -74,10 +77,9 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         assertThat(registry.recordView(postId, ViewerIdentity.member(1))).isEqualTo(new ViewResult(true, 43));
         assertThat(registry.recordView(postId, ViewerIdentity.member(2))).isEqualTo(new ViewResult(true, 44));
         assertThat(registry.recordView(postId, ViewerIdentity.member(1))).isEqualTo(new ViewResult(false, 44));
-        assertThat(registry.currentCount(postId)).isEqualTo(44);
-        assertThatThrownBy(() -> registry.recordView(postId, ViewerIdentity.member(3)))
-                .isInstanceOfSatisfying(PostException.class,
-                        failure -> assertThat(failure.getErrorInformation()).isEqualTo(POST_VIEW_CAPACITY_EXCEEDED));
+        assertThat(registry.recordView(postId, ViewerIdentity.member(3))).isEqualTo(new ViewResult(true, 45));
+        assertThat(registry.recordView(postId, ViewerIdentity.member(4))).isEqualTo(new ViewResult(true, 46));
+        assertThat(registry.currentCount(postId)).isEqualTo(46);
         long secondPostId = postService.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), writer.getId()).postId();
         var emptyCounter = registry.getOrLoad(secondPostId);
         assertThat(emptyCounter.currentCount()).isZero();
@@ -87,16 +89,8 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
                 .isEqualTo(42);
         assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isZero();
 
-        assertThat(scheduling).isNotNull();
-        var cleanupTasks = scheduling.getScheduledTasks().stream()
-                .filter(task -> task.getTask().toString().equals(
-                        PostViewCleanupScheduler.class.getName() + ".removeExpiredViewerRecords"))
-                .map(task -> task.getTask().getRunnable())
-                .toList();
-        assertThat(cleanupTasks).hasSize(1);
-        cleanupTasks.getFirst().run();
         assertThat(registry.snapshot()).containsExactlyInAnyOrder(counter, emptyCounter);
         assertThat(registry.currentCount(secondPostId)).isZero();
-        assertThat(registry.currentCount(postId)).isEqualTo(44);
+        assertThat(registry.currentCount(postId)).isEqualTo(46);
     }
 }
