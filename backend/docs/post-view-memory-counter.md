@@ -18,7 +18,7 @@ registry.currentCount(postId)는 이미 초기화된 카운터가 있으면 메�
 
 현재 조회수 = confirmedCount + pendingDelta + inFlightBatch.delta
 
-PostViewCounter가 숫자, 독자별 마지막 인정 tick 및 배치를 소유한다. 같은 게시글의 중복 판정·시각 갱신·증가·현재 값 읽기·배치 전환·만료 정리는 하나의 짧은 잠금으로 처리한다. 다른 게시글은 독립적으로 처리한다.
+PostViewCounter가 숫자와 배치를 소유하며 게시글별 ViewerRecordStore에 독자 기록을 위임한다. 같은 게시글의 중복 판정·시각 갱신·증가·현재 값 읽기·배치 전환·만료 정리는 하나의 짧은 잠금으로 처리한다. 다른 게시글은 독립적으로 처리한다.
 
 중복 제한은 마지막 인정 시점에서 정확히 1시간이 지난 경우에만 해제된다. 거절된 요청은 시각과 순서를 바꾸지 않는다. 경과 시간은 주입 가능한 System.nanoTime 기반 공급자로 판단하고, 배치 생성 시각은 기존 UTC Clock으로 기록한다.
 
@@ -26,11 +26,19 @@ prepareFlush는 대기분을 불변 UUID 배치로 이동한다. 미확정 배�
 
 후속 writer는 DB 반영이 확인된 뒤에만 completeFlush를 호출해야 한다. 저장 실패나 결과 불명확 상태에는 배치를 유지한다. 메모리 상태 전환만으로 DB 중복 반영을 막을 수 없으며, 후속 이슈에서 배치 원장과 증가 UPDATE를 같은 트랜잭션으로 구현한다.
 
+## 구현 교체 경계
+
+사용하는 서비스와 후속 writer는 PostViewStore 계약에 의존한다. 현재 구현은 PostViewCounterRegistry다. recordView·currentCount·prepareFlushBatches·completeFlush(postId, batchId)를 제공하며 Counter 객체를 외부에 전달하지 않는다. prepareFlushBatches는 이미 초기화된 Counter의 대기분을 배치로 옮기고, 같은 미확정 배치를 재반환한다. completeFlush는 알 수 없는 게시글의 Counter를 생성하지 않는다.
+
+JVM 내부 방문 기록 관리만 교체할 때는 ViewerRecordStore를 구현하고 Registry의 factory 생성자에 전달한다. 기본 생성자는 기존 QueueViewerRecordStore를 사용한다. 정리·중복 확인·기록 갱신·조회수 증가를 묶는 원자성은 Counter의 ReentrantLock이 보장한다. 저장소 객체 하나만 교체해도 이 잠금과 숫자·배치 로직은 공유한다.
+
+다중 JVM에서 공유 상태가 필요하면 PostViewStore 전체를 Redis 구현으로 교체해야 한다. 로컬 ViewerRecordStore를 Redis Map처럼 바꾸는 것만으로는 로컬 Counter와 원격 기록의 원자성이 보장되지 않는다. 원격 저장소에서는 중복 판정·등록·증가를 서버 측 원자적 연산으로 묶고 배치의 재시도·확정을 같은 계약으로 구현해야 한다.
+
 ## 초기화와 만료 정리
 
 Registry는 recordView 진입 시 입력을 검증한 뒤 ConcurrentMap.putIfAbsent로 생성 예정인 Future를 등록하고, 성공한 요청만 DB 누계를 읽어 Counter를 생성한다. Registry는 만료 정리를 오케스트레이션하지 않는다. 전역 등록 잠금과 카운터 개수 한도는 사용하지 않는다. 같은 글의 요청은 하나의 초기화를 기다리며 다른 글의 DB 로딩은 독립적으로 진행한다. 실패하면 해당 Future만 제거하고, 기다리던 요청에 원인을 전달한 뒤 다음 요청이 재시도하게 한다. DB I/O는 Map 연산과 카운터 잠금 밖에서 실행한다.
 
-각 Counter는 자신의 PriorityQueue에 해당 게시글의 인정 기록을 마지막 인정 acceptedTick 순서로 보관한다. acceptedTick에는 System.nanoTime 값을 기록하며, 만료 여부와 정렬은 tick 차이로 판단한다. 인정된 조회는 해당 Counter 잠금 안에서 독자별 마지막 인정 tick을 갱신하고 큐에 (viewer, acceptedTick) 항목을 넣는다. 중복 요청과 조회수 상한 초과로 거절된 요청은 큐 항목을 만들지 않는다.
+기본 구현 QueueViewerRecordStore는 Counter마다 하나씩 생성되며 자신의 PriorityQueue에 해당 게시글의 인정 기록을 마지막 인정 acceptedTick 순서로 보관한다. acceptedTick에는 System.nanoTime 값을 기록하며, 만료 여부와 정렬은 tick 차이로 판단한다. 인정된 조회는 해당 Counter 잠금 안에서 독자별 마지막 인정 tick을 갱신하고 큐에 (viewer, acceptedTick) 항목을 넣는다. 중복 요청과 조회수 상한 초과로 거절된 요청은 큐 항목을 만들지 않는다.
 
 정리는 같은 recordView 요청의 기존 Counter ReentrantLock 안에서 수행한다. 요청 1회당 해당 게시글의 만료 큐 항목을 최대 100개만 처리하며, 큐의 첫 항목이 아직 만료되지 않았으면 그대로 두고 정리를 멈춘다. 현재 독자 기록에 저장된 acceptedTick이 큐 항목의 acceptedTick과 아직 일치할 때만 stale이 아닌 기록으로 보고 삭제한다. 더 최근 조회로 갱신된 stale 항목은 아무 상태도 바꾸지 않는다. 독자별 마지막 인정 시각 조회는 기존 Map.get 기반 중복 판정을 유지한다.
 
@@ -42,7 +50,7 @@ DB 접근에서 발생한 RuntimeException이나 Error는 초기화 요청과 �
 
 ## 만료 독자 기록 정리와 Counter 유지
 
-별도 정리 스케줄러는 없다. Registry.recordView 요청이 있을 때 해당 게시글 Counter의 PriorityQueue만 기회적으로 정리한다. 어떤 게시글에 새 요청이 없으면 그 게시글의 만료 기록도 정리되지 않는다. 정리 작업은 DB 저장을 수행하지 않는다.
+별도 정리 스케줄러는 없다. Registry.recordView 요청이 있을 때 해당 게시글의 QueueViewerRecordStore에 있는 PriorityQueue만 기회적으로 정리한다. 어떤 게시글에 새 요청이 없으면 그 게시글의 만료 기록도 정리되지 않는다. 정리 작업은 DB 저장을 수행하지 않는다.
 
 Counter는 자신의 잠금 안에서 만료 독자 기록을 삭제한다. 누계·미저장 증가분·미확정 배치는 보존한다. 독자 기록이 비어 있거나 배치 저장이 완료되어도 Counter를 Registry에서 제거하지 않는다.
 

@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutionException;
@@ -256,6 +257,23 @@ class PostViewCounterRegistryTest {
         assertThatThrownBy(() -> registry.currentCount(-1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> registry.recordView(0, ViewerIdentity.member(1))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> registry.recordView(1, null)).isInstanceOf(NullPointerException.class);
+        assertThat(registry.snapshot()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("알 수 없는 배치 완료는 카운터를 초기화하지 않고 입력을 검증한다")
+    void completeFlushDoesNotInitializeUnknownCounter() {
+        AtomicInteger loads = new AtomicInteger();
+        var registry = registry(ticks, id -> {
+            loads.incrementAndGet();
+            return 0;
+        });
+        assertThatThrownBy(() -> registry.completeFlush(0, UUID.randomUUID()))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> registry.completeFlush(1, null))
+                .isInstanceOf(NullPointerException.class);
+        registry.completeFlush(1, UUID.randomUUID());
+        assertThat(loads.get()).isZero();
         assertThat(registry.snapshot()).isEmpty();
     }
 }

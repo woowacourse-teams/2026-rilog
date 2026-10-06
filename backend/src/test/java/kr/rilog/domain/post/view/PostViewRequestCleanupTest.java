@@ -161,6 +161,7 @@ class PostViewRequestCleanupTest {
     // 메모리 회수 결과를 확인하되 운영 코드에 테스트용 상태 조회 기능을 추가하지 않는다.
     @SuppressWarnings("unchecked")
     static Map<ViewerIdentity, Long> viewerRecords(PostViewCounter counter) {
-        return (Map<ViewerIdentity, Long>) ReflectionTestUtils.getField(counter, "lastAcceptedTicks");
+        Object store = ReflectionTestUtils.getField(counter, "viewerRecordStore");
+        return (Map<ViewerIdentity, Long>) ReflectionTestUtils.getField(store, "lastAcceptedTicks");
     }
 }
