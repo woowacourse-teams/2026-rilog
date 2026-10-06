@@ -85,6 +85,11 @@ export default withSentryConfig(nextConfig, {
 		disable: !isSentryUploadRequired,
 		deleteSourcemapsAfterUpload: true,
 	},
+	errorHandler: isSentryUploadRequired
+		? (error) => {
+				throw error;
+			}
+		: undefined,
 
 	// Only print logs for uploading source maps in CI
 	silent: !process.env.CI,
