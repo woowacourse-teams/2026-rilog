@@ -1,18 +1,18 @@
 import { blocksToMarkdown } from '@/domains/post/lib/blocks-to-markdown';
 import { isBlockNoteDocument } from '@/domains/post/lib/validate-blocknote-document';
+import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route-slug';
 import { isRecord } from '@/shared/api/response-validation';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import { toAbsoluteSiteUrl } from '@/shared/seo/site-url';
-import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 
 export const revalidate = 600;
 
 export const GET = async (_request: Request, { params }: { params: Promise<{ slug: string; postId: string }> }) => {
 	const { slug, postId } = await params;
-	const normalizedSlug = stripAtPrefix(slug);
+	const normalizedSlug = parseBlogRouteSlug(slug);
 	const numericId = Number(postId);
 
-	if (!Number.isSafeInteger(numericId) || numericId < 1 || normalizedSlug.length === 0) {
+	if (!Number.isSafeInteger(numericId) || numericId < 1 || normalizedSlug === null) {
 		return new Response('Not Found', { status: 404 });
 	}
 

@@ -27,7 +27,7 @@ describe('CologSettingsPage', () => {
 
 	it('canonical 설정 경로는 redirect하지 않는다', async () => {
 		const page = await CologSettingsPage({
-			params: Promise.resolve({ slug: '@rilog_fe' }),
+			params: Promise.resolve({ slug: 'rilog_fe' }),
 			searchParams: Promise.resolve({ tab: 'members' }),
 		});
 
@@ -39,7 +39,7 @@ describe('CologSettingsPage', () => {
 	it('하이픈이 포함된 기존 설정 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
 		await expect(
 			CologSettingsPage({
-				params: Promise.resolve({ slug: '@rilog-fe' }),
+				params: Promise.resolve({ slug: 'rilog-fe' }),
 				searchParams: Promise.resolve({ tab: 'members', invite: 'true' }),
 			}),
 		).rejects.toThrow('NEXT_REDIRECT');

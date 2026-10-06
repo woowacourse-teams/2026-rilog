@@ -36,7 +36,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', fetchMock);
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 		const markdown = await response.text();
 
@@ -58,7 +58,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createPostDetailResponse()));
 
 		const response = await GET(new Request('https://www.rilog.kr/@wrong/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@wrong', postId: '1' }),
+			params: Promise.resolve({ slug: 'wrong', postId: '1' }),
 		});
 
 		expect(response.status).toBe(404);
@@ -69,7 +69,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', fetchMock);
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/0/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '0' }),
+			params: Promise.resolve({ slug: 'actual', postId: '0' }),
 		});
 
 		expect(response.status).toBe(404);
@@ -80,7 +80,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(response.status).toBe(503);
@@ -91,7 +91,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Unavailable', { status })));
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(response.status).toBe(404);
@@ -102,7 +102,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Unavailable', { status })));
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(response.status).toBe(503);
@@ -117,10 +117,10 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', fetchMock);
 
 		const networkResponse = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 		const timeoutResponse = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(networkResponse.status).toBe(503);
@@ -132,7 +132,7 @@ describe('게시글 Markdown 표현', () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ data: { content: '잘못된 본문' } })));
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(response.status).toBe(503);
@@ -156,7 +156,7 @@ describe('게시글 Markdown 표현', () => {
 		);
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(response.status).toBe(503);
@@ -180,7 +180,7 @@ describe('게시글 Markdown 표현', () => {
 		);
 
 		const response = await GET(new Request('https://www.rilog.kr/@actual/posts/1/markdown'), {
-			params: Promise.resolve({ slug: '@actual', postId: '1' }),
+			params: Promise.resolve({ slug: 'actual', postId: '1' }),
 		});
 
 		expect(response.status).toBe(503);

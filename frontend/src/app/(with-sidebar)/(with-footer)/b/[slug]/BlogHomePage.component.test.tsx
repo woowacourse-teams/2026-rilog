@@ -63,7 +63,7 @@ const PROFILE_RESPONSE = {
 	},
 };
 
-const renderPage = async (slug = '@jetproc', searchParams: Record<string, string | string[] | undefined> = {}) => {
+const renderPage = async (slug = 'jetproc', searchParams: Record<string, string | string[] | undefined> = {}) => {
 	const page = await BlogHomePage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve(searchParams) });
 	return render(<QueryClientProvider client={createTestQueryClient()}>{page}</QueryClientProvider>);
 };
@@ -79,7 +79,7 @@ describe('BlogHomePage', () => {
 	});
 
 	it('정규화한 route 입력으로 블로그 홈 초기 상태를 준비하고 화면을 조립한다', async () => {
-		await renderPage('@jetproc', { notice: 'keep' });
+		await renderPage('jetproc', { notice: 'keep' });
 
 		expect(prefetchBlogHomeInitialState).toHaveBeenCalledWith(expect.any(QueryClient), {
 			slug: 'jetproc',
@@ -93,23 +93,13 @@ describe('BlogHomePage', () => {
 		vi.mocked(prefetchBlogHomeInitialState).mockResolvedValue({ status: 'not-found' });
 
 		await expect(
-			BlogHomePage({ params: Promise.resolve({ slug: '@missing' }), searchParams: Promise.resolve({}) }),
+			BlogHomePage({ params: Promise.resolve({ slug: 'missing' }), searchParams: Promise.resolve({}) }),
 		).rejects.toThrow('NEXT_NOT_FOUND');
 
 		expect(notFoundMock).toHaveBeenCalledOnce();
 	});
 
-	it('@ 접두사가 없는 경로는 feature를 호출하지 않고 not-found 처리한다', async () => {
-		await expect(
-			BlogHomePage({ params: Promise.resolve({ slug: 'jetproc' }), searchParams: Promise.resolve({}) }),
-		).rejects.toThrow('NEXT_NOT_FOUND');
-
-		expect(prefetchBlogHomeInitialState).not.toHaveBeenCalled();
-		expect(getBlogPublicProfile).not.toHaveBeenCalled();
-		expect(notFoundMock).toHaveBeenCalledOnce();
-	});
-
-	it.each(['@abc', '@invalid.slug', `@${'a'.repeat(21)}`])(
+	it.each(['abc', 'invalid.slug', 'a'.repeat(21)])(
 		'유효하지 않은 slug 경로 %s는 프로필을 조회하지 않고 not-found 처리한다',
 		async (slug) => {
 			await expect(
@@ -124,7 +114,7 @@ describe('BlogHomePage', () => {
 
 	it('메타데이터 생성도 유효하지 않은 slug를 조회하지 않고 not-found 처리한다', async () => {
 		await expect(
-			generateMetadata({ params: Promise.resolve({ slug: '@invalid.slug' }), searchParams: Promise.resolve({}) }),
+			generateMetadata({ params: Promise.resolve({ slug: 'invalid.slug' }), searchParams: Promise.resolve({}) }),
 		).rejects.toThrow('NEXT_NOT_FOUND');
 
 		expect(getBlogPublicProfile).not.toHaveBeenCalled();
@@ -132,7 +122,7 @@ describe('BlogHomePage', () => {
 	});
 
 	it('언더스코어가 포함된 slug는 유효한 블로그 경로로 조회한다', async () => {
-		await renderPage('@rilog_user');
+		await renderPage('rilog_user');
 
 		expect(getBlogPublicProfile).toHaveBeenCalledWith('rilog_user');
 	});
@@ -140,7 +130,7 @@ describe('BlogHomePage', () => {
 	it('하이픈이 포함된 기존 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
 		await expect(
 			BlogHomePage({
-				params: Promise.resolve({ slug: '@rilog-fe' }),
+				params: Promise.resolve({ slug: 'rilog-fe' }),
 				searchParams: Promise.resolve({ notice: ['one', 'two'] }),
 			}),
 		).rejects.toThrow('NEXT_REDIRECT');
@@ -152,7 +142,7 @@ describe('BlogHomePage', () => {
 	it('하이픈이 포함된 기존 경로의 metadata 요청도 canonical 경로로 redirect한다', async () => {
 		await expect(
 			generateMetadata({
-				params: Promise.resolve({ slug: '@rilog-fe' }),
+				params: Promise.resolve({ slug: 'rilog-fe' }),
 				searchParams: Promise.resolve({ from: 'feed' }),
 			}),
 		).rejects.toThrow('NEXT_REDIRECT');

@@ -2,10 +2,10 @@ import { notFound, permanentRedirect } from 'next/navigation';
 
 import type { Metadata } from 'next';
 
+import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route-slug';
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
-import { buildPostDetailPath, hasBlogSlugPrefix } from '@/shared/routes/app-routes';
+import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import { redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
-import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
 import PostDetail from '@/widgets/post-detail/PostDetail';
 
 import { createPostMetadata, getPostCanonicalPath } from './metadata';
@@ -25,7 +25,9 @@ const parsePostId = (postId: string) => {
 
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
 	const { slug, postId } = await params;
-	const post = await getPublicPostDetail(stripAtPrefix(slug), parsePostId(postId));
+	const normalizedSlug = parseBlogRouteSlug(slug);
+	if (normalizedSlug === null) notFound();
+	const post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
 	if (post === null) notFound();
 
 	return createPostMetadata(post);
@@ -33,21 +35,19 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 
 export default async function PostDetailPage({ params, searchParams }: PostDetailPageProps) {
 	const [{ slug, postId }, resolvedSearchParams] = await Promise.all([params, searchParams]);
-	if (!hasBlogSlugPrefix(slug)) {
-		notFound();
-	}
-
 	redirectLegacySlug({
 		slug,
 		searchParams: resolvedSearchParams,
 		buildPath: (normalizedSlug) => buildPostDetailPath(normalizedSlug, postId),
 	});
 
-	const post = await getPublicPostDetail(stripAtPrefix(slug), parsePostId(postId));
+	const normalizedSlug = parseBlogRouteSlug(slug);
+	if (normalizedSlug === null) notFound();
+	const post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
 	if (post === null) notFound();
 
 	const canonical = getPostCanonicalPath(post);
-	if (stripAtPrefix(slug) !== post.blog.slug) permanentRedirect(canonical);
+	if (normalizedSlug !== post.blog.slug) permanentRedirect(canonical);
 
 	return <PostDetail post={post} />;
 }
