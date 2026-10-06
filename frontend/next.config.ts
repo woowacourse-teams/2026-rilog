@@ -33,7 +33,10 @@ const nextConfig: NextConfig = {
 		]);
 	},
 	rewrites() {
-		return Promise.resolve([{ source: '/.well-known/llms.txt', destination: '/llms.txt' }]);
+		return Promise.resolve([
+			{ source: '/.well-known/llms.txt', destination: '/llms.txt' },
+			{ source: '/@:slug/:path*', destination: '/b/:slug/:path*' },
+		]);
 	},
 	images: {
 		remotePatterns: [
