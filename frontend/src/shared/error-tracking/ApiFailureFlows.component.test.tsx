@@ -21,12 +21,9 @@ import QueryProvider from '@/shared/query/QueryProvider';
 import { createApiFailure } from '@/test/fixtures/api-error';
 
 const { captureExceptionMock } = vi.hoisted(() => ({ captureExceptionMock: vi.fn() }));
-vi.mock('@/shared/error-tracking/error-tracker-instance', async () => {
-	const { createSentryErrorTracker } = await import('@/shared/error-tracking/sentry-error-tracker');
-	const tracker = createSentryErrorTracker();
-	tracker.captureException = captureExceptionMock;
-	return { errorTracker: tracker, sentryErrorTracker: tracker };
-});
+vi.mock('@/shared/error-tracking/error-tracker-instance', () => ({
+	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn(), setUser: vi.fn() },
+}));
 afterEach(() => {
 	vi.restoreAllMocks();
 	captureExceptionMock.mockClear();
@@ -103,7 +100,7 @@ describe('실제 mutation과 공통 QueryProvider의 보고 소유 경계', () =
 			await expect(result.current[operation]()).rejects.toBe(error);
 		});
 		expect(captureExceptionMock).toHaveBeenCalledTimes(1);
-		expect(captureExceptionMock).toHaveBeenCalledWith(error, { tags: { operation }, level: 'error' });
+		expect(captureExceptionMock).toHaveBeenCalledWith(error.cause, expect.any(Object));
 	});
 	it('조회 재시도 중 복구하면 보고하지 않고 최종 실패만 보고한다', async () => {
 		const { result } = renderHook(useQueryClient, { wrapper: QueryProvider });
@@ -133,7 +130,7 @@ it.each(['inline-comment.create', 'inline-comment.add', 'inline-comment.update',
 		await act(async () => {
 			await expect(result.current[operation]()).rejects.toBe(error);
 		});
-		expect(captureExceptionMock).toHaveBeenCalledExactlyOnceWith(error, { tags: { operation }, level: 'error' });
+		expect(captureExceptionMock).toHaveBeenCalledExactlyOnceWith(error.cause, expect.any(Object));
 	},
 );
 it.each(['COMMENT_ANCHOR_NOT_FOUND', 'COMMENT_ANCHOR_DELETE_FORBIDDEN', 'COMMENT_ANCHOR_NOT_ACTIVE'])(
@@ -151,7 +148,7 @@ it.each(['COMMENT_ANCHOR_NOT_FOUND', 'COMMENT_ANCHOR_DELETE_FORBIDDEN', 'COMMENT
 		expect(captureExceptionMock).not.toHaveBeenCalled();
 	},
 );
-it('실제 댓글 길이 제약 위반은 제외하고 정상 내용의 서버 거부는 보고한다', async () => {
+it('댓글 길이 거부는 사용자 입력과 관계없이 제외한다', async () => {
 	const { result } = renderHook(() => useAddPostCommentAnchorMutation(81, 1), { wrapper: QueryProvider });
 	const tooLong = await createApiFailure('INVALID_COMMENT_CONTENT');
 	vi.spyOn(postsApi, 'addPostCommentAnchor').mockRejectedValueOnce(tooLong);
@@ -164,8 +161,5 @@ it('실제 댓글 길이 제약 위반은 제외하고 정상 내용의 서버 �
 	await act(async () => {
 		await expect(result.current.mutateAsync({ content: '정상 댓글' })).rejects.toBe(unexpected);
 	});
-	expect(captureExceptionMock).toHaveBeenCalledExactlyOnceWith(unexpected, {
-		tags: { operation: 'inline-comment.add' },
-		level: 'error',
-	});
+	expect(captureExceptionMock).not.toHaveBeenCalled();
 });

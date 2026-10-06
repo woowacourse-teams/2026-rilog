@@ -117,9 +117,7 @@ describe('auth API', () => {
 		expect(normalized).toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
 		expect(getApiRequestDiagnostics(normalized.cause)).toEqual({
 			method: 'POST',
-			endpoint: '/v1/auth/github/callback',
-			operation: 'oauth.callback',
-			target: 'api',
+			url: 'https://api.rilog.test/v1/auth/github/callback',
 		});
 	});
 

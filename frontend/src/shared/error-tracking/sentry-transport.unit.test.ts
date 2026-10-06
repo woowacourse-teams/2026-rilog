@@ -1,14 +1,15 @@
 import * as Sentry from '@sentry/nextjs';
-import { afterAll, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, expect, it, vi } from 'vitest';
 
+import { rememberApiRequest } from '@/shared/api/request-diagnostics';
 import { createApiFailure } from '@/test/fixtures/api-error';
 
 import { apiErrorReporter } from './api-error-reporter-instance';
+import { errorTracker } from './error-tracker-instance';
 import { initializeSentry } from './initialize-sentry';
 
 const { envelopes } = vi.hoisted(() => ({ envelopes: [] as unknown[] }));
 
-// SDK 이벤트 처리와 직렬화는 실제 구현을 실행하고 네트워크 전송만 대체한다.
 vi.mock('@sentry/nextjs', async (importOriginal) => {
 	const imported = await importOriginal<typeof Sentry & { default?: typeof Sentry }>();
 	const sdk = imported.default ?? imported;
@@ -19,7 +20,6 @@ vi.mock('@sentry/nextjs', async (importOriginal) => {
 				...options,
 				enabled: true,
 				dsn: 'https://public@example.invalid/1',
-				release: 'test-release',
 				defaultIntegrations: [],
 				integrations: [],
 				transport: () => ({
@@ -37,78 +37,42 @@ afterAll(async () => {
 	await Sentry.close(1000);
 });
 
-it('실제 SDK 전송 묶음에서 일반·API 오류와 첨부파일의 민감정보를 차단한다', async () => {
+beforeEach(() => {
+	envelopes.length = 0;
+});
+
+it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하고 민감정보를 제거한다', async () => {
 	initializeSentry();
-	const secret = 'PRIVATE_SECRET_MARKER';
-	Sentry.withScope((scope) => {
-		scope.setUser({ email: secret });
-		scope.setExtra('body', secret);
-		scope.addAttachment({ filename: `${secret}.txt`, data: secret });
-		Sentry.captureEvent({
-			request: {
-				url: `https://rilog.test/${secret}/posts/42?code=${secret}`,
-				headers: { Authorization: secret, Cookie: secret, 'User-Agent': 'Googlebot/2.1' },
-			},
-			exception: {
-				values: [
-					{
-						type: 'TypeError',
-						value: `Request failed: https://private.test/${secret}`,
-						stacktrace: {
-							frames: [{ filename: `app:///_next/static/chunks/123abc.js?token=${secret}`, lineno: 12, colno: 34 }],
-						},
-					},
-				],
-			},
-		});
-	});
-	Sentry.captureMessage(`token=${secret}`);
+	errorTracker.setUser('42');
+	const error = await createApiFailure('INTERNAL_SERVER_ERROR', 500);
+	rememberApiRequest(error.cause, 'POST', 'https://api.rilog.test/v1/posts?code=private-code');
+	apiErrorReporter.report(error, { operation: 'post.publish' });
+	Sentry.captureException(error.cause);
+	await Sentry.flush(1000);
+	expect(envelopes).toHaveLength(1);
+	const sent = JSON.stringify(envelopes);
+	expect(sent).toContain('INTERNAL_SERVER_ERROR');
+	expect(sent).toContain('post.publish');
+	expect(sent).toContain('api_request');
+	expect(sent).toContain('api_response');
+	expect(sent).toContain('"id":"42"');
+	expect(sent).not.toContain('private-code');
+});
+
+it('실제 SDK 요청 문맥의 URL과 별도 query_string에서 민감 값을 제거한다', async () => {
+	initializeSentry();
 	Sentry.captureEvent({
-		type: 'transaction',
-		transaction: `/alice/posts/42?code=${secret}`,
-		start_timestamp: 1,
-		timestamp: 2,
-		contexts: {
-			trace: { trace_id: '11111111111111111111111111111111', span_id: '2222222222222222', data: { body: secret } },
+		message: 'request query string privacy regression',
+		request: {
+			url: 'https://api.rilog.test/v1/search?email=person%40example.com&page=2',
+			query_string: 'email=person%40example.com&nickname=private-nickname&content=private-content&page=2',
 		},
-		spans: [
-			{
-				span_id: '3333333333333333',
-				trace_id: '11111111111111111111111111111111',
-				start_timestamp: 1,
-				timestamp: 2,
-				description: `https://storage.test/${secret}?signature=${secret}`,
-				data: { body: secret },
-			},
-		],
 	});
-	const apiError = await createApiFailure('INTERNAL_SERVER_ERROR', 500);
-	apiErrorReporter.report(apiError, { operation: 'draft.save' });
-	Sentry.captureException(apiError);
-	const commentError = await createApiFailure('INVALID_COMMENT_ANCHOR');
-	Sentry.withScope((scope) => {
-		scope.setExtra('content', secret);
-		scope.setExtra('selectedText', secret);
-		scope.setTag('postId', secret);
-		apiErrorReporter.report(commentError, { operation: 'inline-comment.create' });
-	});
-	Sentry.captureException(commentError);
 	await Sentry.flush(1000);
 
-	const serialized = JSON.stringify(envelopes);
-	expect(serialized).not.toContain(secret);
-	expect(serialized).toContain('"user_agent":"Googlebot/2.1"');
-	expect(serialized).toContain('"client_type":"bot"');
-	expect(serialized).toContain('"bot_name":"Googlebot"');
-	expect(serialized).toContain('[comment] inline-comment.create failed: INVALID_COMMENT_ANCHOR (400; api)');
-	expect(serialized).toContain('"operation":"inline-comment.create"');
-	expect(serialized).not.toContain('"type":"attachment"');
-	expect(serialized).toContain('"api_error_code":"INTERNAL_SERVER_ERROR"');
-	expect(serialized).toContain('"route":"/[slug]/posts/[postId]"');
-	expect(serialized).toContain('"release":"test-release"');
-	expect(serialized).toContain('"lineno":12');
-	const items = (envelopes as [unknown, [{ type: string }, unknown][]][]).flatMap((envelope) => envelope[1]);
-	// SDK 누락 통계(client_report)는 오류·성능 이벤트와 별도로 센다.
-	expect(items.filter(([header]) => header.type === 'event')).toHaveLength(4);
-	expect(items.filter(([header]) => header.type === 'transaction')).toHaveLength(1);
+	expect(envelopes).toHaveLength(1);
+	const sent = JSON.stringify(envelopes);
+	expect(sent).toContain('page=2');
+	expect(sent).not.toMatch(/person%40example\.com|private-nickname|private-content/);
+	expect(sent).toContain('%5BFiltered%5D');
 });

@@ -161,6 +161,7 @@ const eslintConfig = defineConfig([
 	globalIgnores([
 		// Default ignores of eslint-config-next:
 		'.next/**',
+		'.next-sentry-feed-503/**',
 		'out/**',
 		'build/**',
 		'next-env.d.ts',

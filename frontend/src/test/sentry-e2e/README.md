@@ -1,5 +1,45 @@
 # Sentry 네트워크 실패 검증
 
+## 실제 Sentry에서 피드 503 확인
+
+테스트용 Sentry 프로젝트의 DSN을 환경 변수로 전달한다. 이 테스트는 실제 프로젝트에 오류 이벤트를 보낸다.
+운영 프로젝트의 DSN은 사용하지 않는다.
+
+```sh
+cd frontend
+nvm use
+SENTRY_SMOKE_DSN='<Sentry에서 복사한 테스트 프로젝트의 실제 DSN>' pnpm test:sentry:feed-503
+```
+
+DSN은 Sentry 프로젝트의 Client Keys 화면에서 복사한다. 위 꺾쇠 안의 문구는 예시이므로 그대로 실행하지 않는다.
+실제 전송 없이 로컬에서 테스트하려면 유효한 형식의 가짜 DSN과 `SENTRY_SMOKE_DRY_RUN=true`를 사용한다.
+Sentry 화면에서 확인할 때는 `SENTRY_SMOKE_DRY_RUN`을 설정하지 않는다.
+
+이 명령은 3109 포트에서 별도 빌드 폴더를 쓰는 개발 서버를 시작하므로 기존 개발 서버와 함께 실행할 수 있다.
+API 주소는 테스트용 호스트로 고정한다.
+브라우저에서 피드 정렬을 `latest`로 바꾸면 Playwright가 GET `/v1/feeds/posts` 요청만 503으로
+바꾼다. 실제 API 서버에는 이 요청을 보내지 않는다. 테스트는 실패 화면과 Sentry 전송 성공을
+확인하고 event ID를 출력한다. Sentry의 `local` 환경에서 해당 event ID 또는
+`request_id=sentry-smoke-feed-503`으로 이벤트를 찾는다. `operation=query`,
+`http_status=503`, `error_code=INTERNAL_SERVER_ERROR`, 요청 정보와 응답 정보를 확인한다.
+
+명령을 반복하면 테스트 프로젝트에 새 이벤트가 계속 쌓인다.
+
+## 실제 Sentry에서 게시글 발행 503 확인
+
+```sh
+cd frontend
+nvm use
+SENTRY_SMOKE_DSN='<Sentry에서 복사한 테스트 프로젝트의 실제 DSN>' pnpm test:sentry:post-503
+```
+
+기존 글쓰기 E2E와 같은 가짜 로그인 응답을 사용하며 내부 사용자 ID는 `1`이다. 글쓰기 화면에서 제목과
+본문을 입력한 뒤 발행한다. Playwright는 POST `/v1/posts`만 503으로 응답하고 실제 API 서버에는
+전달하지 않는다. 테스트는 발행 오류 화면과 Sentry 이벤트의 `operation=post.publish`,
+`http_status=503`, `error_code=INTERNAL_SERVER_ERROR`, `request_id=sentry-smoke-post-503`,
+사용자 ID `1`을 확인한다. 발행 POST는 한 번만 발생해야 하며, 이벤트에 글 제목·본문·테스트 토큰이
+없는지도 검사한다.
+
 Sentry 통신 장애가 오류 화면의 복구 동작을 막으면 사용자가 서비스 오류에서 빠져나올 수 없다.
 이 테스트는 실제 Next.js production 번들의 Sentry SDK를 실행하고, Playwright가 `/monitoring` 요청을
 중단하여 실패한 exception 이벤트 전송을 확인한다. SDK 함수 mock 테스트로는 실제 브라우저의

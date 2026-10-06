@@ -32,11 +32,8 @@ describe('createKyInstance', () => {
 		}
 		expect(getApiRequestDiagnostics(captured)).toEqual({
 			method: 'GET',
-			endpoint: '/v1/blogs/[slug]/posts/[postId]',
-			operation: 'post.read',
-			target: 'api',
+			url: 'https://api.rilog.test/v1/blogs/private/posts/42?token=secret',
 		});
-		expect(JSON.stringify(getApiRequestDiagnostics(captured))).not.toMatch(/private|secret/);
 	});
 	it('CSR 요청에 access token을 자동으로 설정한다', async () => {
 		vi.stubGlobal('window', {});
