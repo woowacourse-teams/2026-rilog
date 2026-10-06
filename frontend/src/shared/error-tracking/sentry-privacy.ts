@@ -23,6 +23,40 @@ function safeUrl(value: string): string {
 	}
 }
 
+function safeQueryString(value: unknown): unknown {
+	if (typeof value === 'string') {
+		try {
+			const query = new URLSearchParams(value.startsWith('?') ? value.slice(1) : value);
+			for (const key of query.keys()) {
+				if (PRIVATE_QUERY_KEY.test(key)) query.set(key, '[Filtered]');
+			}
+			return query.toString();
+		} catch {
+			return '[Filtered]';
+		}
+	}
+
+	if (Array.isArray(value)) {
+		const entries: unknown[] = value;
+		return entries.map((entry): unknown => {
+			const tuple: unknown[] | undefined = Array.isArray(entry) ? entry : undefined;
+			if (tuple && typeof tuple[0] === 'string' && PRIVATE_QUERY_KEY.test(tuple[0])) {
+				return [tuple[0], '[Filtered]', ...tuple.slice(2)];
+			}
+			return entry;
+		});
+	}
+
+	if (value !== null && typeof value === 'object') {
+		const query = value as Record<string, unknown>;
+		return Object.fromEntries(
+			Object.entries(query).map(([key, item]) => [key, PRIVATE_QUERY_KEY.test(key) ? '[Filtered]' : item]),
+		);
+	}
+
+	return value;
+}
+
 function safeText(value: string): string {
 	return value
 		.replace(/https?:\/\/[^\s<>"']+/gi, (url) => safeUrl(url))
@@ -48,7 +82,12 @@ function redact(value: unknown, depth = 0): unknown {
 /** Keep the SDK event and its stack; remove known credentials at the final transport boundary. */
 export function filterSentryEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
 	const request = event.request
-		? { ...event.request, data: undefined, headers: redact(event.request.headers) }
+		? {
+				...event.request,
+				data: undefined,
+				headers: redact(event.request.headers),
+				query_string: safeQueryString(event.request.query_string),
+			}
 		: undefined;
 	const filtered = redact({ ...event, request }) as T;
 	if (filtered.user) filtered.user = { id: filtered.user.id };

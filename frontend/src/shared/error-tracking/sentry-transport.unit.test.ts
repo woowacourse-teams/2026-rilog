@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import { afterAll, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { rememberApiRequest } from '@/shared/api/request-diagnostics';
 import { createApiFailure } from '@/test/fixtures/api-error';
@@ -37,6 +37,10 @@ afterAll(async () => {
 	await Sentry.close(1000);
 });
 
+beforeEach(() => {
+	envelopes.length = 0;
+});
+
 it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하고 민감정보를 제거한다', async () => {
 	initializeSentry();
 	errorTracker.setUser('42');
@@ -53,4 +57,22 @@ it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하
 	expect(sent).toContain('api_response');
 	expect(sent).toContain('"id":"42"');
 	expect(sent).not.toContain('private-code');
+});
+
+it('실제 SDK 요청 문맥의 URL과 별도 query_string에서 민감 값을 제거한다', async () => {
+	initializeSentry();
+	Sentry.captureEvent({
+		message: 'request query string privacy regression',
+		request: {
+			url: 'https://api.rilog.test/v1/search?email=person%40example.com&page=2',
+			query_string: 'email=person%40example.com&nickname=private-nickname&content=private-content&page=2',
+		},
+	});
+	await Sentry.flush(1000);
+
+	expect(envelopes).toHaveLength(1);
+	const sent = JSON.stringify(envelopes);
+	expect(sent).toContain('page=2');
+	expect(sent).not.toMatch(/person%40example\.com|private-nickname|private-content/);
+	expect(sent).toContain('%5BFiltered%5D');
 });
