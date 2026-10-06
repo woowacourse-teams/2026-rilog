@@ -6,6 +6,7 @@ import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
 import { buildPostDetailPath } from '@/shared/routes/app-routes';
 import { redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
+import { normalizeLegacySlug } from '@/shared/utils/normalize-legacy-slug';
 import PostDetail from '@/widgets/post-detail/PostDetail';
 
 import { createPostMetadata, getPostCanonicalPath } from './metadata';
@@ -25,8 +26,10 @@ const parsePostId = (postId: string) => {
 
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
 	const { slug, postId } = await params;
-	const normalizedSlug = parseBlogRouteSlug(slug);
+
+	const normalizedSlug = parseBlogRouteSlug(normalizeLegacySlug(slug));
 	if (normalizedSlug === null) notFound();
+
 	const post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
 	if (post === null) notFound();
 
