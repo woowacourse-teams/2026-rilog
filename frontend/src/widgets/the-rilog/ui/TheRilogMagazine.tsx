@@ -32,7 +32,9 @@ export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogM
 						</div>
 						<div className={styles.enterpriseArticleList}>
 							{enterpriseArticles.map((article) => (
-								<MagazineArticleCard key={article.id} article={article} />
+								<ScrollReveal className={`${styles.articleRow} ${styles.scrollReveal}`} key={article.id}>
+									<MagazineArticleCard article={article} />
+								</ScrollReveal>
 							))}
 						</div>
 					</section>
@@ -44,7 +46,7 @@ export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogM
 					</div>
 					<div className={styles.personalArticleList}>
 						{personalArticles.map((article, index) => (
-							<ScrollReveal className={`${styles.personalArticleRow} ${styles.scrollReveal}`} key={article.id}>
+							<ScrollReveal className={`${styles.articleRow} ${styles.scrollReveal}`} key={article.id}>
 								<MagazineArticleCard article={article} imagePosition={index === 0 ? 'left' : 'right'} />
 							</ScrollReveal>
 						))}
