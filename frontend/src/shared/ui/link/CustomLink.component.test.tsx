@@ -35,12 +35,12 @@ describe('CustomLink', () => {
 		expect(screen.getByRole('link', { name: '이동' })).toHaveAttribute('data-prefetch', expectedPrefetch);
 	});
 
-	it('hover일 때 처음 포인터가 올라가면 prefetch를 활성화하고 사용자 이벤트를 보존한다', async () => {
+	it('기본 hover 정책은 처음 포인터가 올라가면 prefetch를 활성화하고 사용자 이벤트를 보존한다', async () => {
 		const user = userEvent.setup();
 		const handleMouseEnter = vi.fn();
 
 		render(
-			<CustomLink href="/destination" prefetchType="hover" onMouseEnter={handleMouseEnter}>
+			<CustomLink href="/destination" onMouseEnter={handleMouseEnter}>
 				이동
 			</CustomLink>,
 		);

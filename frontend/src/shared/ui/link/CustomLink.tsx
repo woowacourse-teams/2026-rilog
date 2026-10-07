@@ -27,10 +27,10 @@ function getPrefetch(prefetchType: PrefetchType, isHoverPrefetchActive: boolean)
 
 /**
  * next/link의 Link 컴포넌트를 래핑한 컴포넌트입니다.
- * 기본적으로 prefetch를 비활성화하고, 필요한 링크만 hover, viewport 또는
- * 전체 route 단위로 prefetch할 수 있습니다.
+ * 기본적으로 hover 시 prefetch하고, 필요한 링크는 prefetch를 비활성화하거나
+ * viewport 또는 전체 route 단위로 prefetch할 수 있습니다.
  */
-export default function CustomLink({ prefetchType = 'none', onMouseEnter, ...props }: CustomLinkProps) {
+export default function CustomLink({ prefetchType = 'hover', onMouseEnter, ...props }: CustomLinkProps) {
 	const [isHoverPrefetchActive, setIsHoverPrefetchActive] = useState(false);
 	const prefetch = getPrefetch(prefetchType, isHoverPrefetchActive);
 
