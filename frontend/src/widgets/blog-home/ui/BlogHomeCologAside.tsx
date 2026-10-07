@@ -48,6 +48,7 @@ export default function BlogHomeCologAside({ slug, initialIndexRequestFailed = f
 			{index.cologIndexes.map((colog) => (
 				<li key={colog.id}>
 					<BlogProfileEntryLink
+						prefetchType="viewport"
 						href={buildBlogHomePath(colog.slug)}
 						entrySource="profile_colog_list"
 						aria-label={`${colog.name} Colog로 이동`}

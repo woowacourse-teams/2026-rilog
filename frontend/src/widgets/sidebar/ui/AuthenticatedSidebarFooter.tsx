@@ -54,6 +54,7 @@ export default function AuthenticatedSidebarFooter() {
 					{user ? (
 						<CustomLink
 							href={buildBlogHomePath(slug)}
+							prefetchType="hover"
 							aria-label={`${nickname} @${slug}`}
 							className={`flex min-w-0 flex-1 items-center justify-start gap-2 rounded-lg transition-colors hover:bg-surface-hover active:bg-surface-active ${FOCUS_CLASS_NAME}`}
 						>
