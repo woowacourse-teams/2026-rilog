@@ -26,7 +26,8 @@ public class PostViewConfig {
                         .orElseThrow(() -> new RilogInfrastructureException(
                                 POST_VIEW_COUNT_MISSING, "게시글 조회수 누계가 없습니다. postId=" + postId, null)),
                 timeSource,
-                clock
+                clock,
+                CaffeineViewerRecordStore::new
         );
     }
 }
