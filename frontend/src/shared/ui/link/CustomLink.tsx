@@ -1,17 +1,43 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 
 import type { LinkProps } from 'next/link';
-import type { ComponentPropsWithRef } from 'react';
+import type { ComponentPropsWithRef, MouseEventHandler } from 'react';
 
-type CustomLinkProps = LinkProps & Omit<ComponentPropsWithRef<'a'>, 'href'>;
+type PrefetchType = 'none' | 'hover' | 'viewport' | 'full';
+
+interface CustomLinkProps extends Omit<LinkProps, 'prefetch'>, Omit<ComponentPropsWithRef<'a'>, 'href'> {
+	prefetchType?: PrefetchType;
+}
+
+function getPrefetch(prefetchType: PrefetchType, isHoverPrefetchActive: boolean): LinkProps['prefetch'] {
+	switch (prefetchType) {
+		case 'none':
+			return false;
+		case 'hover':
+			return isHoverPrefetchActive ? null : false;
+		case 'viewport':
+			return null;
+		case 'full':
+			return true;
+	}
+}
 
 /**
  * next/link의 Link 컴포넌트를 래핑한 컴포넌트입니다.
- * prefetch 기본값을 false로 고정해 프로덕션 환경에서 발생하는
- * 뷰포트 기반 자동 prefetch로 인한 무한 요청을 방지합니다.
- *
- * hover 시 prefetch는 여전히 동작하므로 사용자 경험에는 영향이 없습니다.
+ * 기본적으로 prefetch를 비활성화하고, 필요한 링크만 hover, viewport 또는
+ * 전체 route 단위로 prefetch할 수 있습니다.
  */
-export default function CustomLink({ prefetch, ...props }: CustomLinkProps) {
-	return <Link prefetch={prefetch} {...props} />;
+export default function CustomLink({ prefetchType = 'none', onMouseEnter, ...props }: CustomLinkProps) {
+	const [isHoverPrefetchActive, setIsHoverPrefetchActive] = useState(false);
+	const prefetch = getPrefetch(prefetchType, isHoverPrefetchActive);
+
+	const handleMouseEnter: MouseEventHandler<HTMLAnchorElement> = (event) => {
+		onMouseEnter?.(event);
+		if (prefetchType === 'hover') setIsHoverPrefetchActive(true);
+	};
+
+	return <Link prefetch={prefetch} onMouseEnter={handleMouseEnter} {...props} />;
 }
