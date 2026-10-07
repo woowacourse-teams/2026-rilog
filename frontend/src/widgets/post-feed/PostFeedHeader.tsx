@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import type { BlogType } from '@/domains/blog/model/blog';
@@ -9,6 +8,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { buildFeedFilterHref, parseFeedFilters } from '@/features/post-feed/lib/feed-filter';
 import { navigateFeedFilter } from '@/features/post-feed/lib/navigate-feed-filter';
 import OrderSelect from '@/features/post-feed/ui/OrderSelect';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { usePostFeedHeaderScroll } from './hooks/use-post-feed-header-scroll';
 
@@ -57,7 +57,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 
 						return (
 							<li key={label} className="shrink-0">
-								<Link
+								<CustomLink
 									href={href}
 									scroll={false}
 									onClick={
@@ -71,7 +71,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 									className={`${isCurrent ? 'font-semibold text-text-primary' : 'text-text-secondary hover:text-focus-ring'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring`}
 								>
 									{label}
-								</Link>
+								</CustomLink>
 							</li>
 						);
 					})}
