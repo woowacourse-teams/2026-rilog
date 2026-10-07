@@ -4,13 +4,17 @@ import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 import { shouldCaptureAutomaticError } from './api-error-reporter';
 import { filterSentryEvent, filterSentrySpan } from './sentry-privacy';
+import { summarizeSentryEventForSlack, type SentrySlackSummary } from './sentry-slack-summary';
 
 interface InitializeSentryOptions {
 	tracesSampleRate?: number;
+	onSlackAlert?: (summary: SentrySlackSummary) => void;
+	getSessionReplayUrl?: () => string | undefined;
 }
 
 export function initializeSentry(options: InitializeSentryOptions = {}): void {
 	const isProduction = process.env.NODE_ENV === 'production';
+	const { getSessionReplayUrl, onSlackAlert, ...sentryOptions } = options;
 	try {
 		Sentry.init({
 			dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -20,7 +24,32 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 			beforeSend: (event, hint) => {
 				hint.attachments = [];
 				if (!shouldCaptureAutomaticError(hint.originalException, event.tags?.report_source === 'api')) return null;
-				return filterSentryEvent(event);
+				const filtered = filterSentryEvent(event);
+				try {
+					const sessionReplayUrl = getSessionReplayUrl?.();
+					if (sessionReplayUrl) {
+						filtered.tags = { ...filtered.tags, 'PostHog Recording URL': sessionReplayUrl };
+						filtered.contexts = {
+							...filtered.contexts,
+							posthog_session_replay: { url: sessionReplayUrl },
+						};
+					}
+				} catch {
+					logNonProductionWarning('PostHog session replay URL preparation failed.');
+				}
+				if (
+					isProduction &&
+					filtered.environment === 'prod' &&
+					(!filtered.level || filtered.level === 'error' || filtered.level === 'fatal')
+				) {
+					try {
+						const summary = summarizeSentryEventForSlack(filtered);
+						if (summary) onSlackAlert?.(summary);
+					} catch {
+						logNonProductionWarning('Sentry Slack alert preparation failed.');
+					}
+				}
+				return filtered;
 			},
 			beforeSendTransaction: (event, hint) => {
 				hint.attachments = [];
@@ -33,7 +62,7 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 					? null
 					: breadcrumb,
 			enableLogs: false,
-			...options,
+			...sentryOptions,
 		});
 	} catch {
 		logNonProductionWarning('Sentry initialization failed.');

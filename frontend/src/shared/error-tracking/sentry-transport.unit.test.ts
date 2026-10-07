@@ -42,7 +42,9 @@ beforeEach(() => {
 });
 
 it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하고 민감정보를 제거한다', async () => {
-	initializeSentry();
+	initializeSentry({
+		getSessionReplayUrl: () => 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+	});
 	errorTracker.setUser('42');
 	const error = await createApiFailure('INTERNAL_SERVER_ERROR', 500);
 	rememberApiRequest(error.cause, 'POST', 'https://api.rilog.test/v1/posts?code=private-code');
@@ -55,6 +57,9 @@ it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하
 	expect(sent).toContain('post.publish');
 	expect(sent).toContain('api_request');
 	expect(sent).toContain('api_response');
+	expect(sent).toContain('PostHog Recording URL');
+	expect(sent).toContain('posthog_session_replay');
+	expect(sent).toContain('https://us.posthog.com/project/phc_test/replay/session-1?t=30');
 	expect(sent).toContain('"id":"42"');
 	expect(sent).not.toContain('private-code');
 });

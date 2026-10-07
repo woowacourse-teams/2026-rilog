@@ -116,6 +116,8 @@ jobs:
           echo "$NODE_BIN" >> $GITHUB_PATH
 
       - name: Deploy to Server
+        env:
+          ENV_SECRET: ${{ secrets.ENV_PROD_FE }}
         run: |
           TARGET_DIR="/home/ubuntu/rilog-next"
           
@@ -129,6 +131,10 @@ jobs:
           rm -rf /tmp/rilog-fe
           
           cd $TARGET_DIR
+
+          # 런타임 전용 secret. 빌드 artifact에는 포함하지 않는다.
+          umask 077
+          printf '%s\n' "$ENV_SECRET" > .env.production.local
           
           # 2. EC2 서버에서 의존성 설치 (실행 환경 호환성 문제 우회)
           npm install -g pnpm@11.21.0

@@ -52,6 +52,40 @@ pnpm test:sentry:post-503:prod
 
 이 명령은 별도 `.next-sentry-feed-503` 폴더에 production 빌드를 만들고, 고유 release로 소스맵을 업로드한 뒤 Playwright가 `pnpm start`로 서버를 띄워 게시글 발행 POST를 503으로 대체한다. 빌드나 업로드가 실패하면 테스트를 시작하지 않는다. 완료 시 출력된 Sentry `prod` 이슈 링크에서 event ID 또는 release로 이벤트를 찾고 원본 TS/TSX 파일·행이 복원됐는지 확인한다. 이전 개발 서버 smoke의 `local` 필터로는 이 이벤트가 보이지 않는다. 이 명령은 실제 Sentry 프로젝트에 테스트 이벤트를 하나 생성한다. 업로드 대상 프로젝트와 DSN의 프로젝트가 같아야 한다.
 
+`.env`에 `SENTRY_SLACK_WEBHOOK_URL`이 있거나 `SENTRY_SLACK_BOT_TOKEN`과 `SENTRY_SLACK_CHANNEL_ID`가 모두 있으면 같은 production smoke에서 로컬 앱의 Slack 알림 API도 확인한다. 테스트 서버의 Origin은 `http://127.0.0.1:3109`로 맞추며, Slack이 성공 응답을 주지 않으면 테스트가 실패한다. Bot 설정 시 기본 알림과 breadcrumb 스레드 댓글이, 웹훅만 설정한 경우 기본 알림이 테스트 채널에 도착하는지도 확인한다.
+
+## PostHog 세션 리플레이 연결 확인
+
+PostHog 녹화부터 Sentry 이벤트와 Slack 알림의 리플레이 링크까지 한 번에 확인하려면 전용 production smoke를 실행한다.
+
+```sh
+cd frontend
+nvm use
+pnpm test:sentry:post-503:replay
+```
+
+`frontend/.env`에는 production 소스맵 smoke에 필요한 Sentry 설정과 함께 다음 값이 필요하다.
+
+```dotenv
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_...
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+SENTRY_SLACK_BOT_TOKEN=xoxb-...
+SENTRY_SLACK_CHANNEL_ID=C...
+```
+
+Slack은 bot token과 channel ID 대신 `SENTRY_SLACK_WEBHOOK_URL`을 사용할 수도 있다. PostHog 프로젝트 설정의
+Session Replay에서 `Record user sessions`를 켜고 테스트 세션이 샘플링되도록 녹화 비율을 100%로 설정해야
+결과를 매번 재현할 수 있다. SDK recorder 파일 다운로드만으로 녹화를 확인할 수는 없으므로, 테스트는 실제
+snapshot 업로드 요청(`/s/`)이 없으면 recorder의 브라우저 네트워크와 CSP 오류를 확인하라는 오류를 낸다.
+
+이 시나리오는 headless Playwright가 PostHog SDK의 기본 봇 필터에 걸리지 않도록 전용 smoke 빌드에서만
+user-agent 필터를 비활성화한다. 일반 앱 빌드의 설정은 바뀌지 않는다. 페이지에서 제목과 본문을 입력한 뒤
+PostHog 세션 snapshot 요청이 성공했는지 확인하고 기존 게시글 발행 503 오류를 만든다.
+Sentry envelope의 `PostHog Recording URL` 태그와 `posthog_session_replay.url` context가 같은 실제
+리플레이를 가리키는지, Slack 알림에도 그 URL이 포함되는지 검사한다. 실행할 때마다 실제 Sentry 이벤트,
+PostHog 세션 리플레이와 Slack 알림이 생성된다. 일반 `test:sentry:post-503:prod`에서는 PostHog를 비활성화하므로
+기존 소스맵 smoke가 분석 데이터까지 만들지는 않는다.
+
 ## Sentry 전송 장애 확인
 
 Sentry 통신 장애가 오류 화면의 복구 동작을 막으면 사용자가 서비스 오류에서 빠져나올 수 없다.

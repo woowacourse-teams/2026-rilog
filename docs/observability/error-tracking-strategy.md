@@ -2,6 +2,12 @@
 
 현재 구현 기준은 [ADR 0004](../adr/0004-sentry-sdk-context.md)다. [ADR 0003](../adr/0003-sentry-event-privacy.md)과 [이전 수집 검토](api-error-collection-review.md)는 변경 전 결정을 설명하는 기록이다.
 
+## Slack 오류 알림
+
+[ADR 0007](../adr/0007-sentry-slack-error-alerts.md)에 따라 Sentry SDK가 전송하려는 `prod` 오류에서 제목, 일부 태그, 최근 자동 breadcrumb 요약을 Slack으로 보낸다. Sentry에 저장된 이슈를 조회하는 알림이 아니므로 event ID가 실제 저장 성공을 보장하지 않는다. 브라우저·Edge는 자체 API를 거치고 Node는 서버에서 직접 Slack으로 전송한다. 배포 시 Slack 인증값은 EC2의 `.env.production.local`에만 저장된다. 인증값이 없으면 운영 배포가 중단된다. 운영 점검에서는 브라우저와 서버 오류의 Slack 도착, 반복 억제, 민감한 breadcrumb 내용의 미노출을 확인한다.
+
+기본 알림에는 오류 종류·경로·제목·event ID를 보여준다. `SENTRY_SLACK_BOT_TOKEN`과 `SENTRY_SLACK_CHANNEL_ID`를 설정하면 Slack 메시지 API로 기본 알림을 보내고 breadcrumbs를 해당 메시지의 스레드 댓글로 단다. 브라우저에서 PostHog session replay가 녹화 중이면 오류 시점 링크도 Sentry와 Slack에 함께 표시한다. Bot 설정 전에는 기존 `SENTRY_SLACK_WEBHOOK_URL`로 기본 알림만 보낸다. Slack 앱에는 `chat:write` 권한과 대상 채널 멤버십이 필요하다.
+
 Next.js client/server/edge의 Sentry SDK가 런타임 오류를 수집한다. 애플리케이션의 오류 보고와 사용자 ID 설정은 `errorTracker`를 통하고, SDK 호출은 `SentryErrorTracker`에 둔다. SDK 초기화와 Next.js 계측 진입점은 별도다. QueryCache와 MutationCache는 재시도가 끝난 API 실패를 보고한다. 작업별 진단이 필요한 mutation과 OAuth·업로드 등 직접 호출은 `api-error-reporter-instance.ts`의 `apiErrorReporter.report`를 사용하고, 공통 경계와 중복 보고하지 않는다.
 
 보고 함수는 원본 Error를 유지한다. tracker의 tag에는 operation, HTTP 상태, 공개 오류 코드, `X-Request-ID`를 넣고 Sentry adapter가 scope에 적용한다. context에는 요청 method/URL과 공개 오류 응답의 상태·코드·메시지·검증 정보를 넣는다. 로그인 상태에서는 내부 user ID를 연결하고 로그아웃 시 지운다. 서버 요청에는 다른 사용자의 scope를 공유하지 않는다.
