@@ -55,7 +55,7 @@
 	width: min(calc(100% - 2 * var(--about-gutter)), 30rem);
 	margin: 0;
 	opacity: 0;
-	font-size: var(--text-body-2);
+	font-size: var(--text-body-3);
 	font-weight: 500;
 	line-height: 1.6;
 	text-align: center;
@@ -142,7 +142,7 @@
 	width: min(100%, 32rem);
 	margin: 0;
 	color: var(--color-text-secondary);
-	font-size: var(--text-body-2);
+	font-size: var(--text-body-3);
 	font-weight: 400;
 	line-height: 1.65;
 	text-align: center;
@@ -267,7 +267,7 @@
 	max-width: 48rem;
 	margin: 0 auto;
 	padding: clamp(2.5rem, 5vw, 5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(3rem, 5vw, 5rem);
-	font-size: var(--text-body-2);
+	font-size: var(--text-body-3);
 	line-height: 1.65;
 }
 
@@ -417,7 +417,7 @@
 .featureCopy p,
 .roadmapCopy p {
 	margin: 0;
-	font-size: var(--text-body-2);
+	font-size: var(--text-body-3);
 	font-weight: 500;
 	line-height: 1.65;
 }
@@ -489,7 +489,7 @@
 	max-width: 21rem;
 	margin: 0;
 	color: var(--navy-300);
-	font-size: var(--text-body-2);
+	font-size: var(--text-body-3);
 	font-weight: 500;
 	line-height: 1.65;
 	text-align: left;
@@ -637,7 +637,7 @@
 	min-height: 3.5rem;
 	border-top: 1px solid color-mix(in srgb, var(--white) 65%, transparent);
 	color: inherit;
-	font-size: var(--text-body-2);
+	font-size: var(--text-body-3);
 	font-weight: 600;
 	text-decoration: none;
 }

@@ -17,7 +17,7 @@ test('서버 Sentry 전송 연결이 끊겨도 오류 화면과 다음 요청을
 				expect(state.ok()).toBe(true);
 				const received = (await state.json()) as { failedNodeExceptions: { tags?: { route?: string } }[] };
 				expect(JSON.stringify(received)).not.toContain('@sentry-server-e2e');
-				expect(received.failedNodeExceptions.some((event) => event.tags?.route === '/[slug]/posts/[postId]')).toBe(
+				expect(received.failedNodeExceptions.some((event) => event.tags?.route === '/blog/[slug]/posts/[postId]')).toBe(
 					true,
 				);
 				return received.failedNodeExceptions.length;

@@ -45,12 +45,12 @@ export default function PostDetailHeader({
 
 			{/* TODO: 게시글 상세 API에 description 필드가 추가되면 다시 활성화한다. */}
 			{/* {description ? (
-				<p className="mt-5 max-w-2xl text-body-1 wrap-break-word break-keep text-text-secondary sm:mt-6 sm:text-body-2">
+				<p className="mt-5 max-w-2xl text-body-4 wrap-break-word break-keep text-text-secondary sm:mt-6 sm:text-body-3">
 					{description}
 				</p>
 			) : null} */}
 
-			<div className="mt-6 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-3 text-label-2 text-text-secondary sm:mt-7">
+			<div className="mt-6 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-3 text-label-1 text-text-secondary sm:mt-7">
 				<BlogProfileEntryLink
 					href={buildBlogHomePath(author.slug)}
 					entrySource="post_detail_header"

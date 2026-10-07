@@ -286,7 +286,8 @@ public final class PostFixture {
                         rilog.getName(),
                         rilog.getProfileImageUrl()
                 ),
-                PostDetailResponse.ViewerPermissionsResponse.none()
+                PostDetailResponse.ViewerPermissionsResponse.none(),
+                0L
         );
     }
 

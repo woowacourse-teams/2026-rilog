@@ -3,12 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
+
 import Footer from './Footer';
 
 vi.mock('./FooterHomeLink', () => ({
 	default: ({ className, children }: { className: string; children: ReactNode }) => (
 		// eslint-disable-next-line @next/next/no-html-link-for-pages
-		<a className={className} href="/feeds" aria-label="Rilog 홈">
+		<a className={className} href="/feeds" aria-label={`${SITE_NAME} 홈`}>
 			{children}
 		</a>
 	),
@@ -24,17 +26,17 @@ describe('Footer', () => {
 
 		expect(copyright.compareDocumentPosition(links[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(links.map((link) => link.getAttribute('aria-label') ?? link.textContent)).toEqual([
-			'Rilog 이메일 문의',
-			'Rilog 오픈채팅방',
-			'Rilog Instagram',
-			'Rilog Threads',
+			`${SITE_NAME} 이메일 문의`,
+			`${SITE_NAME} 오픈채팅방`,
+			`${SITE_NAME} Instagram`,
+			`${SITE_NAME} Threads`,
 			'Rilog. 이야기',
 			'개인정보처리방침',
 			'이용약관',
-			'Rilog 홈',
+			`${SITE_NAME} 홈`,
 		]);
 
-		const homeLink = within(footer).getByRole('link', { name: 'Rilog 홈' });
+		const homeLink = within(footer).getByRole('link', { name: `${SITE_NAME} 홈` });
 		expect(homeLink).toHaveAttribute('href', '/feeds');
 		expect(homeLink.querySelector('img')).toHaveAttribute('src', '/brand/logo.svg');
 		expect(within(footer).queryByText('기록을 작성하고 함께 나누는 공간')).not.toBeInTheDocument();
@@ -65,15 +67,15 @@ describe('Footer', () => {
 	it('각 연락 채널을 접근 가능한 링크로 제공한다', () => {
 		render(<Footer />);
 
-		expect(screen.getByRole('link', { name: 'Rilog 이메일 문의' })).toHaveAttribute(
+		expect(screen.getByRole('link', { name: `${SITE_NAME} 이메일 문의` })).toHaveAttribute(
 			'href',
 			'mailto:rilog.admin@gmail.com',
 		);
 
 		const externalLinks = [
-			['Rilog 오픈채팅방', 'https://open.kakao.com/o/s8RvBMJi'],
-			['Rilog Instagram', 'https://www.instagram.com/rilog_official/'],
-			['Rilog Threads', 'https://www.threads.com/@rilog_official'],
+			[`${SITE_NAME} 오픈채팅방`, 'https://open.kakao.com/o/s8RvBMJi'],
+			[`${SITE_NAME} Instagram`, 'https://www.instagram.com/rilog_official/'],
+			[`${SITE_NAME} Threads`, 'https://www.threads.com/@rilog_official'],
 		] as const;
 
 		for (const [name, href] of externalLinks) {
@@ -85,10 +87,10 @@ describe('Footer', () => {
 		}
 
 		const iconSources = [
-			['Rilog 이메일 문의', '/icons/contact/email.svg'],
-			['Rilog 오픈채팅방', '/icons/contact/google-form.svg'],
-			['Rilog Instagram', '/icons/contact/instagram.svg'],
-			['Rilog Threads', '/icons/contact/threads.svg'],
+			[`${SITE_NAME} 이메일 문의`, '/icons/contact/email.svg'],
+			[`${SITE_NAME} 오픈채팅방`, '/icons/contact/google-form.svg'],
+			[`${SITE_NAME} Instagram`, '/icons/contact/instagram.svg'],
+			[`${SITE_NAME} Threads`, '/icons/contact/threads.svg'],
 		] as const;
 
 		for (const [name, src] of iconSources) {

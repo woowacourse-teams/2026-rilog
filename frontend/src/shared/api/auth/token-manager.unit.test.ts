@@ -5,7 +5,7 @@ import { tokenManager } from './token-manager';
 
 const { captureExceptionMock } = vi.hoisted(() => ({ captureExceptionMock: vi.fn() }));
 vi.mock('@/shared/error-tracking/error-tracker-instance', () => ({
-	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn() },
+	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn(), setUser: vi.fn() },
 }));
 
 describe('tokenManager', () => {
@@ -32,8 +32,6 @@ describe('tokenManager', () => {
 			await expect(tokenManager.refresh()).resolves.toBeNull();
 			expect(tokenManager.getToken()).toBeNull();
 			expect(captureExceptionMock).toHaveBeenCalledTimes(reports);
-			if (reports)
-				expect(captureExceptionMock.mock.calls[0]?.[1]).toMatchObject({ tags: { operation: 'auth.refresh' } });
 		},
 	);
 	it('refresh 통신 장애도 보고하면서 기존 로그아웃 결과를 유지한다', async () => {

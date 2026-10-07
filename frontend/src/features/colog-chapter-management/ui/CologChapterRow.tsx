@@ -22,8 +22,8 @@ export default function CologChapterRow({
 
 	return (
 		<tr className="h-18.5 border-b border-border-default">
-			<td className="py-3 pl-6 text-body-1 text-text-secondary">{rowNumber}</td>
-			<td className="px-2 py-3 text-body-1 font-semibold text-text-primary">
+			<td className="py-3 pl-6 text-body-4 text-text-secondary">{rowNumber}</td>
+			<td className="px-2 py-3 text-body-4 font-semibold text-text-primary">
 				{isEditing ? (
 					<Input
 						className="w-4/5!"
@@ -47,7 +47,7 @@ export default function CologChapterRow({
 						onClick={() => onDelete?.(chapter)}
 						className="inline-flex size-6 items-center justify-center rounded-full bg-surface-active text-danger transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-focus-ring"
 					>
-						<span aria-hidden="true" className="text-body-2 leading-none font-bold">
+						<span aria-hidden="true" className="text-body-3 leading-none font-bold">
 							−
 						</span>
 					</button>

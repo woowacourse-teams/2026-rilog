@@ -19,7 +19,7 @@ export default function EditPostLoader({ slug, postId }: EditPostLoaderProps) {
 	if (initialDataQuery.isPending) {
 		return (
 			<main className={loaderClassName}>
-				<p className="text-body-2 text-text-secondary" role="status">
+				<p className="text-body-3 text-text-secondary" role="status">
 					게시글을 불러오고 있어요.
 				</p>
 			</main>
@@ -30,7 +30,7 @@ export default function EditPostLoader({ slug, postId }: EditPostLoaderProps) {
 		return (
 			<main className={loaderClassName}>
 				<ContentLoadFailureTracker surface="post_editor" loadPhase="edit_initial_data" error={initialDataQuery.error} />
-				<p className="text-body-2 text-danger-text" role="alert">
+				<p className="text-body-3 text-danger-text" role="alert">
 					{/* TODO: 추가 피드백 필요(버튼 등) */}
 					게시글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
 				</p>

@@ -8,7 +8,6 @@ import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 
 import { createPostCommentAnchor } from '../api';
-import { getInvalidCommentInputFields } from '../comment-input-validation';
 import { postsQueryKeys } from '../queries/keys';
 
 export const useCreatePostCommentAnchorMutation = (postId: number) => {
@@ -17,10 +16,9 @@ export const useCreatePostCommentAnchorMutation = (postId: number) => {
 		mutationFn: (request: PostCommentAnchorCreateRequest) => createPostCommentAnchor(postId, request),
 		retry: false,
 		meta: { errorTracking: 'local' },
-		onError: async (error, request) => {
+		onError: async (error) => {
 			apiErrorReporter.report(error, {
 				operation: 'inline-comment.create',
-				invalidUserInputFields: getInvalidCommentInputFields(request.content),
 			});
 			if (isInvalidApiResponseError(error)) {
 				await queryClient.invalidateQueries({ queryKey: postsQueryKeys.commentAnchorLists(postId) });

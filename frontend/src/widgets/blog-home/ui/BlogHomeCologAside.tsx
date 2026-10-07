@@ -22,7 +22,7 @@ export default function BlogHomeCologAside({ slug, initialIndexRequestFailed = f
 		return (
 			<section aria-label="Colog" className="flex flex-col items-start gap-3" role="alert">
 				<h2 className="text-title-2 font-semibold text-text-primary">Colog</h2>
-				<p className="text-label-1 text-text-secondary">Colog 목록을 불러오지 못했어요.</p>
+				<p className="text-label-2 text-text-secondary">Colog 목록을 불러오지 못했어요.</p>
 				<Button variant="secondary" size="sm" onClick={retry}>
 					다시 시도
 				</Button>
@@ -34,7 +34,7 @@ export default function BlogHomeCologAside({ slug, initialIndexRequestFailed = f
 		return (
 			<section aria-label="Colog" aria-live="polite">
 				<h2 className="text-title-2 font-semibold text-text-primary">Colog</h2>
-				<p className="mt-3 text-label-1 text-text-secondary">Colog 목록을 불러오는 중...</p>
+				<p className="mt-3 text-label-2 text-text-secondary">Colog 목록을 불러오는 중...</p>
 			</section>
 		);
 	}

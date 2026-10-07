@@ -13,9 +13,10 @@ import { getApiErrorMessage, isErrorDetail, normalizeApiError } from '@/shared/a
 import { useInviteCologMemberMutation } from '@/shared/api/cologs/mutations/use-invite-colog-member-mutation';
 import { useRemoveCologMemberMutation } from '@/shared/api/cologs/mutations/use-remove-colog-member-mutation';
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
-import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
+
+import { useCurrentMemberUser } from '../hooks/use-current-member-user';
 
 import CologMemberRow from './CologMemberRow';
 import MemberInviteModal from './MemberInviteModal';
@@ -77,7 +78,7 @@ export default function CologMemberManagementSection({
 
 	const { mutateAsync: inviteMember } = useInviteCologMemberMutation();
 	const removeMember = useRemoveCologMemberMutation();
-	const { data: currentUser } = useMyInfoQuery({ select: (response) => response.data });
+	const { data: currentUser } = useCurrentMemberUser();
 	const removeMemberErrorMessage = removeMember.isError
 		? getApiErrorMessage(removeMember.error, REMOVE_MEMBER_ERROR_FALLBACK_MESSAGE)
 		: undefined;
@@ -165,7 +166,7 @@ export default function CologMemberManagementSection({
 							<col className="w-1/5" />
 						</colgroup>
 						<thead className="bg-background shadow-[inset_0_-1px_0_var(--color-border-default)]">
-							<tr className="h-13.5 text-body-1 font-semibold text-text-secondary">
+							<tr className="h-13.5 text-body-4 font-semibold text-text-secondary">
 								<th scope="col">
 									<span className="sr-only">번호</span>
 								</th>

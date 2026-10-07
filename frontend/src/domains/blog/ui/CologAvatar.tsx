@@ -13,10 +13,10 @@ interface CologAvatarProps extends Omit<ComponentPropsWithRef<typeof Avatar>, 's
 }
 
 const SIZE_CLASS_NAMES: Record<CologAvatarSize, string> = {
-	sm: 'size-6 rounded text-caption-1',
-	md: 'size-8 rounded-md text-caption-2',
-	aside: 'size-10 rounded-lg text-caption-2',
-	lg: 'size-12 rounded-lg text-caption-2',
+	sm: 'size-6 rounded text-caption-2',
+	md: 'size-8 rounded-md text-caption-1',
+	aside: 'size-10 rounded-lg text-caption-1',
+	lg: 'size-12 rounded-lg text-caption-1',
 	xl: 'size-24 rounded-xl text-heading-3 sm:size-32',
 	max: 'size-45 rounded-2xl text-caption-3',
 };

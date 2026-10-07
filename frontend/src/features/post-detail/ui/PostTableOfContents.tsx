@@ -100,7 +100,7 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 							<a
 								href={`#${encodeURIComponent(item.id)}`}
 								aria-current={isActive ? 'location' : undefined}
-								className={`block rounded-sm text-label-2 leading-[1.125rem] transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
+								className={`block rounded-sm text-label-1 leading-[1.125rem] transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
 								onClick={(event) => handleAnchorClick(event, item.id)}
 							>
 								{item.text}

@@ -21,6 +21,7 @@ import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
@@ -91,6 +92,9 @@ class PostServiceTest {
     @Mock
     private HardTrendingRepository trendingRepository;
 
+    @Mock
+    private PostViewCountRepository viewCountRepository;
+
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
@@ -105,7 +109,8 @@ class PostServiceTest {
                 chapterRepository,
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
-                trendingRepository
+                trendingRepository,
+                viewCountRepository
         );
     }
 
@@ -278,6 +283,8 @@ class PostServiceTest {
                 .thenReturn(Optional.of(publicPost));
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null);
 
         // then
@@ -318,6 +325,8 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
@@ -340,6 +349,8 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
@@ -364,6 +375,8 @@ class PostServiceTest {
         )).thenReturn(5L);
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, null);
 
         // then
@@ -400,6 +413,8 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
@@ -429,6 +444,8 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
@@ -460,6 +477,8 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, REQUESTER_ID);
 
         // then
@@ -493,6 +512,8 @@ class PostServiceTest {
                 .thenReturn(Optional.of(privatePost));
 
         // when
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
+
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then

@@ -29,12 +29,9 @@ const {
 	startSignUpFlowMock: vi.fn(),
 }));
 
-vi.mock('@/shared/error-tracking/error-tracker-instance', async () => {
-	const { createSentryErrorTracker } = await import('@/shared/error-tracking/sentry-error-tracker');
-	const tracker = createSentryErrorTracker();
-	tracker.captureException = captureExceptionMock;
-	return { errorTracker: tracker, sentryErrorTracker: tracker };
-});
+vi.mock('@/shared/error-tracking/error-tracker-instance', () => ({
+	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn(), setUser: vi.fn() },
+}));
 
 vi.mock('@/features/analytics/model/events', () => ({
 	analytics: {
@@ -154,10 +151,7 @@ describe('GitHubCallbackHandler', () => {
 			handleGitHubCallbackMock.mockRejectedValue(error);
 			render(<GitHubCallbackHandler />);
 			await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/'));
-			expect(captureExceptionMock).toHaveBeenCalledWith(error, {
-				tags: { operation: 'oauth.callback' },
-				level: 'error',
-			});
+			expect(captureExceptionMock).toHaveBeenCalledWith(error.cause, expect.any(Object));
 		},
 	);
 

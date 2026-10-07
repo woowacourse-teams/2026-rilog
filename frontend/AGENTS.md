@@ -97,6 +97,13 @@
 - 외부 응답을 새로 사용하거나 DTO를 바꿀 때 TypeScript 기준 문서의 런타임 경계 목록을 확인한다. 선택한 endpoint의 DTO·가드·fixture와 실패 정책을 함께 갱신하고 `as`로 검증을 우회하지 않는다.
 - 편집기 스키마 또는 BlockNote 버전을 바꾸면 저장 본문 decoder와 기존 문서 호환성 fixture를 함께 확인한다.
 
+### 새 API의 Sentry 작업
+
+- raw API는 기존 `apiClient` 또는 `apiRequest`/`kyInstance`를 사용한다. 성공 응답 검증 오류도 원래 요청의 method/URL을 오류에 연결한다. endpoint 등록표는 만들지 않는다.
+- Query와 mutation의 최종 실패는 `QueryProvider`의 공통 경계를 사용한다. 작업별 정보가 필요하면 해당 hook에서 `api-error-reporter-instance.ts`의 `apiErrorReporter.report`를 호출하고 `meta: { errorTracking: 'local' }`로 공통 보고를 끈다. 직접 호출의 실패도 보고 경계를 확인한다.
+- 앱 코드는 `errorTracker`를 사용한다. Sentry 직접 호출과 scope 설정은 adapter, SDK 초기화 및 Next.js 계측 진입점에 둔다. 원본 Error와 요청별 tag/context를 전송하되 토큰·쿠키·서명값·요청 본문은 전송하지 않는다. 개인정보 기준은 `docs/adr/0004-sentry-sdk-context.md`를 따른다.
+- 새 API의 테스트는 최종 실패 보고, 중복 방지, 복구 UI와 필요한 요청 정보의 연결을 검증한다. 민감정보 필터를 바꿨다면 실제 SDK 전송 테스트도 갱신한다.
+
 ## 테스트
 
 - 테스트를 추가·수정·삭제하기 전에 `docs/testing/README.md`를 읽고, 필요한 작성 예시와 결정 기록은 그 문서에서 연결한다.
@@ -132,5 +139,6 @@
 - 외부 값을 검증 없이 DTO로 단언하거나 검증 실패를 빈 본문·성공 응답으로 처리한 변경을 지적한다.
 - 쓰기 응답 검증 실패 뒤 자동 재전송하거나 작성 내용을 잃는 변경을 지적한다.
 - 새 API 입력 경계의 검증 여부, 실패 정책과 테스트 예외의 근거를 확인한다.
+- 새 API의 요청 method/URL·operation·오류 수집 정책·개인정보 차단·중복 보고 검증이 함께 갱신됐는지 확인한다.
 - 모듈 경계를 넘으면서 상대 경로를 사용한 import를 지적한다.
 - 재수출을 위한 `index.ts` 또는 `export *`를 추가한 변경을 지적한다.

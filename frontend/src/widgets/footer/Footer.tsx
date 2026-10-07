@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
 import AboutPageEntryLink from '@/features/analytics/ui/AboutPageEntryLink';
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
 
 import FooterHomeLink from './FooterHomeLink';
 
@@ -17,11 +18,15 @@ export default function Footer() {
 	return (
 		<footer className="bg-background text-text-primary">
 			<div className="flex flex-col items-center px-5 py-6 text-center sm:pt-4 sm:pb-11">
-				<p className="text-caption-1 font-medium">© {currentYear} Rilog. All rights reserved.</p>
+				<p className="text-caption-2 font-medium">© {currentYear} Rilog. All rights reserved.</p>
 
 				<section aria-label="연락 및 SNS" className="mt-1 sm:mt-2">
 					<div className="flex items-center">
-						<a className={ICON_LINK_CLASS_NAME} href="mailto:rilog.admin@gmail.com" aria-label="Rilog 이메일 문의">
+						<a
+							className={ICON_LINK_CLASS_NAME}
+							href="mailto:rilog.admin@gmail.com"
+							aria-label={`${SITE_NAME} 이메일 문의`}
+						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/email.svg" alt="" width={24} height={24} />
 						</a>
 						<a
@@ -29,7 +34,7 @@ export default function Footer() {
 							href="https://open.kakao.com/o/s8RvBMJi"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog 오픈채팅방"
+							aria-label={`${SITE_NAME} 오픈채팅방`}
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/google-form.svg" alt="" width={24} height={24} />
 						</a>
@@ -38,7 +43,7 @@ export default function Footer() {
 							href="https://www.instagram.com/rilog_official/"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog Instagram"
+							aria-label={`${SITE_NAME} Instagram`}
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/instagram.svg" alt="" width={24} height={24} />
 						</a>
@@ -47,14 +52,14 @@ export default function Footer() {
 							href="https://www.threads.com/@rilog_official"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog Threads"
+							aria-label={`${SITE_NAME} Threads`}
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/threads.svg" alt="" width={20} height={20} />
 						</a>
 					</div>
 				</section>
 
-				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-1 font-semibold">
+				<nav aria-label="정책" className="mt-1 flex items-center gap-1 text-caption-2 font-semibold">
 					<AboutPageEntryLink
 						className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center underline-offset-4 hover:underline sm:min-h-8`}
 						entrySource="footer"

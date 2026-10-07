@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { normalizeApiError } from '@/shared/api/api-error';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
 import { createEmptyResponse, createUnauthorizedResponse } from '@/test/fixtures/api-response';
 
 import { apiClient } from './client';
@@ -16,6 +18,31 @@ afterEach(() => {
 });
 
 describe('apiClient', () => {
+	it('네트워크 실패의 실제 API 요청을 오류와 연결하되 동적 경로는 치환한다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+		let captured: unknown;
+		try {
+			await apiClient.get('v1/blogs/private/posts/42');
+		} catch (error) {
+			captured = error;
+		}
+		expect(getApiRequestDiagnostics(normalizeApiError(captured).cause)).toEqual({
+			method: 'GET',
+			url: 'https://api.rilog.test/v1/blogs/private/posts/42',
+		});
+	});
+	it('HTTP 성공 뒤 JSON 파싱이 실패해도 원래 API 요청을 확인할 수 있다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not-json', { status: 200 })));
+		let captured: unknown;
+		try {
+			await apiClient.get('v1/blogs/private/posts/42');
+		} catch (error) {
+			captured = error;
+		}
+		expect(getApiRequestDiagnostics(normalizeApiError(captured).cause)).toMatchObject({
+			url: 'https://api.rilog.test/v1/blogs/private/posts/42',
+		});
+	});
 	it('설정된 API base URL을 사용하고 쿠키를 포함하는 전역 client를 제공한다', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());
 		vi.stubGlobal('fetch', fetchMock);

@@ -100,7 +100,7 @@ export default function CologProfileImageFields({
 							<p
 								id={`${id}-file-error`}
 								role={logoFileSizeError ? 'alert' : undefined}
-								className="text-label-1 text-danger"
+								className="text-label-2 text-danger"
 							>
 								{displayedLogoError}
 							</p>
@@ -160,7 +160,7 @@ export default function CologProfileImageFields({
 							</div>
 						</div>
 						{coverImageFileSizeError && (
-							<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+							<p id={`${id}-file-error`} role="alert" className="text-label-2 text-danger">
 								{coverImageFileSizeError}
 							</p>
 						)}

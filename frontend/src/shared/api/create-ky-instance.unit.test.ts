@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
+import { parseApiJsonResponse } from '@/shared/api/response-validation';
 import { createUnauthorizedResponse, createEmptyResponse } from '@/test/fixtures/api-response';
 
 import { createKyInstance } from './create-ky-instance';
@@ -13,6 +15,26 @@ afterEach(() => {
 });
 
 describe('createKyInstance', () => {
+	it('후속 hook이 응답을 교체해도 검증 오류에는 공개 요청 경로만 연결한다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data: null })));
+		const client = createKyInstance({
+			baseUrl: 'https://api.rilog.test',
+			hooks: {
+				afterResponse: [() => new Response('{broken', { status: 200 })],
+			},
+		});
+		const response = await client.get('v1/blogs/private/posts/42?token=secret');
+		let captured: unknown;
+		try {
+			await parseApiJsonResponse(response, 'post.read', (value): value is null => value === null);
+		} catch (error) {
+			captured = error;
+		}
+		expect(getApiRequestDiagnostics(captured)).toEqual({
+			method: 'GET',
+			url: 'https://api.rilog.test/v1/blogs/private/posts/42?token=secret',
+		});
+	});
 	it('CSR 요청에 access token을 자동으로 설정한다', async () => {
 		vi.stubGlobal('window', {});
 		const fetchMock = vi.fn().mockResolvedValue(createEmptyResponse());

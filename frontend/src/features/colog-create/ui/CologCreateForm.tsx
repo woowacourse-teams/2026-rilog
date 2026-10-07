@@ -234,7 +234,7 @@ export default function CologCreateForm({
 			/>
 
 			{error !== null && (
-				<p className="rounded-md border border-danger bg-background p-3 text-label-2 text-danger" role="alert">
+				<p className="rounded-md border border-danger bg-background p-3 text-label-1 text-danger" role="alert">
 					{errorMessage}
 				</p>
 			)}

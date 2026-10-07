@@ -40,7 +40,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 		>
 			<div className="mx-auto flex w-full max-w-7xl min-w-0 items-center justify-between gap-2 px-6 pt-5 pb-3 sm:pt-6 sm:pb-4 md:px-16">
 				<div className="flex items-center gap-1">
-					<h2 id={`${id}-title`} className="shrink-0 text-title-1 font-semibold text-logo-primary">
+					<h2 id={`${id}-title`} className="shrink-0 text-title-3 font-semibold text-logo-primary">
 						<span>{title}</span>
 						<span className="text-logo-secondary">.</span>
 					</h2>
@@ -49,7 +49,7 @@ export default function PostFeedHeader({ id }: PostFeedHeaderProps) {
 
 				<ul
 					aria-label="게시글 카테고리"
-					className="flex min-w-0 shrink justify-end gap-1.5 text-body-1 whitespace-nowrap sm:gap-4"
+					className="flex min-w-0 shrink justify-end gap-1.5 text-body-4 whitespace-nowrap sm:gap-4"
 				>
 					{CATEGORIES.map(({ label, value }) => {
 						const href = buildFeedFilterHref(searchParams, { category: value });

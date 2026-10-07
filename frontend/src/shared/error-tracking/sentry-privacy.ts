@@ -1,298 +1,103 @@
-import type { ErrorEvent, Event, init } from '@sentry/nextjs';
+import type { ErrorEvent, init } from '@sentry/nextjs';
 
 type SentryOptions = NonNullable<Parameters<typeof init>[0]>;
 type SpanJSON = Parameters<NonNullable<SentryOptions['beforeSendSpan']>>[0];
 type TransactionEvent = Parameters<NonNullable<SentryOptions['beforeSendTransaction']>>[0];
 
-import { API_ERROR_OPERATION_CONTRACTS, resolveApiOperation } from '@/shared/api/api-error-contracts';
-import { API_ERROR_CODES, API_ERROR_CODE_KINDS } from '@/shared/api/error-codes';
+const PRIVATE_KEY =
+	/^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-amz-.*|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|body|content)$/i;
+const PRIVATE_QUERY_KEY =
+	/^(code|state|password|client_secret|api_key|token|access_token|refresh_token|id_token|signature|nickname|email|filename|title|content|x-amz-.*)$/i;
 
-const STATIC_ROUTES = new Set([
-	'/',
-	'/feeds',
-	'/write',
-	'/about',
-	'/sign-up',
-	'/colog/create',
-	'/auth/github/callback',
-	'/api/auth/proxy-session',
-	'/feed.json',
-	'/sitemap.xml',
-	'/rss.xml',
-	'/robots.txt',
-	'/llms.txt',
-	'/.well-known/llms.txt',
-]);
-
-/** 알 수 없는 경로는 원문을 남기지 않는다. query에는 draft ID와 OAuth 정보가 들어갈 수 있다. */
-export function toSentryRoute(value?: string): string {
-	if (!value) return 'unknown';
-
+function safeUrl(value: string): string {
 	try {
-		const path =
-			new URL(
-				value.replace(/^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) /, ''),
-				'https://route.invalid',
-			).pathname.replace(/\/$/, '') || '/';
-
-		if (STATIC_ROUTES.has(path)) return path;
-		if (/^\/[^/]+\/posts\/[^/]+\/markdown$/.test(path)) return '/[slug]/posts/[postId]/markdown';
-		if (/^\/[^/]+\/posts\/[^/]+$/.test(path)) return '/[slug]/posts/[postId]';
-		if (/^\/[^/]+\/settings$/.test(path)) return '/[slug]/settings';
-		if (/^\/[^/]+$/.test(path)) return '/[slug]';
+		const url = new URL(value);
+		url.username = '';
+		url.password = '';
+		for (const key of url.searchParams.keys()) {
+			if (PRIVATE_QUERY_KEY.test(key)) url.searchParams.set(key, '[Filtered]');
+		}
+		return url.toString();
 	} catch {
-		/* 잘못된 URL도 원문을 보내지 않는다. */
+		return value;
+	}
+}
+
+function safeQueryString(value: unknown): unknown {
+	if (typeof value === 'string') {
+		try {
+			const query = new URLSearchParams(value.startsWith('?') ? value.slice(1) : value);
+			for (const key of query.keys()) {
+				if (PRIVATE_QUERY_KEY.test(key)) query.set(key, '[Filtered]');
+			}
+			return query.toString();
+		} catch {
+			return '[Filtered]';
+		}
 	}
 
-	return 'unknown';
+	if (Array.isArray(value)) {
+		const entries: unknown[] = value;
+		return entries.map((entry): unknown => {
+			const tuple: unknown[] | undefined = Array.isArray(entry) ? entry : undefined;
+			if (tuple && typeof tuple[0] === 'string' && PRIVATE_QUERY_KEY.test(tuple[0])) {
+				return [tuple[0], '[Filtered]', ...tuple.slice(2)];
+			}
+			return entry;
+		});
+	}
+
+	if (value !== null && typeof value === 'object') {
+		const query = value as Record<string, unknown>;
+		return Object.fromEntries(
+			Object.entries(query).map(([key, item]) => [key, PRIVATE_QUERY_KEY.test(key) ? '[Filtered]' : item]),
+		);
+	}
+
+	return value;
 }
 
-export interface SentryPrivacyContext {
-	environment: string;
-	release: string;
-	pathname?: string;
-	userAgent?: string;
+function safeText(value: string): string {
+	return value
+		.replace(/https?:\/\/[^\s<>"']+/gi, (url) => safeUrl(url))
+		.replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [Filtered]')
+		.replace(
+			/\b(?:Authorization|Cookie|Set-Cookie|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|code|state)\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;&]+)/gi,
+			(match) => `${match.split(/[:=]/, 1)[0]}=[Filtered]`,
+		)
+		.replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[Token]')
+		.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[Email]');
 }
 
-function clientTags(userAgent: string) {
-	const browsers: [string, RegExp][] = [
-		['Edge', /(?:Edg|EdgiOS|EdgA)\/(\d{1,3})/],
-		['Firefox', /(?:Firefox|FxiOS)\/(\d{1,3})/],
-		['Chrome', /(?:Chrome|CriOS)\/(\d{1,3})/],
-		['Safari', /Version\/(\d{1,3}).*Safari\//],
-	];
+function redact(value: unknown, depth = 0): unknown {
+	if (typeof value === 'string') return safeText(value);
+	if (depth >= 8) return '[Truncated]';
+	if (value === null || typeof value !== 'object') return value;
+	if (Array.isArray(value)) return value.map((item) => redact(item, depth + 1));
+	return Object.fromEntries(
+		Object.entries(value).flatMap(([key, item]) => (PRIVATE_KEY.test(key) ? [] : [[key, redact(item, depth + 1)]])),
+	);
+}
 
-	const match = browsers
-		.map(([name, pattern]) => ({ name, major: userAgent.match(pattern)?.[1] }))
-		.find((item) => item.major);
+/** Keep the SDK event and its stack; remove known credentials at the final transport boundary. */
+export function filterSentryEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
+	const request = event.request
+		? {
+				...event.request,
+				data: undefined,
+				headers: redact(event.request.headers),
+				query_string: safeQueryString(event.request.query_string),
+			}
+		: undefined;
+	const filtered = redact({ ...event, request }) as T;
+	if (filtered.user) filtered.user = { id: filtered.user.id };
+	return filtered;
+}
 
+export function filterSentrySpan(span: SpanJSON): SpanJSON {
 	return {
-		browser: match ? `${match.name}/${match.major}` : 'unknown',
-		device:
-			/iPad|Tablet/i.test(userAgent) || (/Android/.test(userAgent) && !/Mobile/.test(userAgent))
-				? 'tablet'
-				: /Mobi|iPhone/i.test(userAgent)
-					? 'mobile'
-					: userAgent
-						? 'desktop'
-						: 'unknown',
-	};
-}
-
-function routeFeature(route: string): string {
-	if (route === '/write') return 'writing';
-	if (route.startsWith('/auth/') || route === '/sign-up' || route === '/api/auth/proxy-session') return 'auth';
-	if (route === '/colog/create' || route === '/[slug]/settings') return 'colog';
-	if (route === '/feeds' || route.startsWith('/[slug]')) return 'content';
-
-	return 'app';
-}
-
-const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-
-function apiTags(event: Event): Record<string, string> {
-	const tags: Record<string, string> = {};
-	const code = event.tags?.api_error_code ?? event.tags?.errorCode;
-
-	if (typeof code === 'string' && code !== 'NO_ERROR_CODE') {
-		tags.api_error_code = Object.hasOwn(API_ERROR_CODES, code) ? code : 'UNKNOWN_ERROR_CODE';
-	}
-
-	for (const [key, allowed] of Object.entries({
-		error_type: ['api', 'http', 'network', 'timeout', 'unknown'],
-		error_kind: [...Object.values(API_ERROR_CODE_KINDS), 'unknown'],
-	})) {
-		const value = event.tags?.[key];
-		if (typeof value === 'string' && allowed.includes(value)) tags[key] = value;
-	}
-
-	const status = String(event.tags?.httpStatus ?? '');
-	if (/^[1-5]\d\d$/.test(status)) {
-		tags.httpStatus = status;
-	}
-
-	const requestId = event.tags?.request_id;
-	if (typeof requestId === 'string' && UUID.test(requestId)) {
-		tags.request_id = requestId;
-	}
-
-	return tags;
-}
-
-/** 빌드 결과물의 위치만 남기고 임의 URL·업로드 파일명·로컬 절대 경로를 제거한다. */
-function codeLocation(value?: string): string | undefined {
-	if (!value) return undefined;
-
-	const path = value.split(/[?#]/, 1)[0];
-	const built = path.match(/(?:^|\/)(_next\/static\/[a-zA-Z0-9_./()[\]@~-]+\.(?:js|mjs))$/);
-
-	if (built && !built[1].includes('..')) {
-		return `app:///${built[1]}`;
-	}
-
-	// 서버 스택도 배포한 Next chunk의 상대 위치만 보존한다.
-	const server = path.match(/(?:^|\/)(?:\.next|_next)\/(server\/[a-zA-Z0-9_./()[\]@~-]+\.js)$/);
-	if (server && !server[1].includes('/../')) {
-		return `app:///_next/${server[1]}`;
-	}
-
-	return undefined;
-}
-
-function commonEvent(event: Event, context: SentryPrivacyContext): Event {
-	const route = toSentryRoute(context.pathname ?? event.request?.url ?? event.transaction);
-	const operation = resolveApiOperation(typeof event.tags?.operation === 'string' ? event.tags.operation : undefined);
-	const tags = {
-		environment: context.environment,
-		release: context.release,
-		feature:
-			operation === 'unhandled' && event.exception?.values?.at(-1)?.type !== 'NormalizedApiError'
-				? routeFeature(route)
-				: API_ERROR_OPERATION_CONTRACTS[operation].feature,
-		operation,
-		route,
-		...clientTags(
-			context.userAgent ?? event.request?.headers?.['user-agent'] ?? event.request?.headers?.['User-Agent'] ?? '',
-		),
-		...apiTags(event),
-	};
-
-	return {
-		event_id: event.event_id,
-		timestamp: event.timestamp,
-		platform: 'javascript',
-		environment: context.environment,
-		release: context.release,
-		level: event.level,
-		transaction: route,
-		tags,
-		debug_meta: event.debug_meta
-			? {
-					images: event.debug_meta.images?.flatMap((item) => {
-						const codeFile = codeLocation(item.code_file);
-						return codeFile && item.debug_id && UUID.test(item.debug_id)
-							? [{ type: 'sourcemap', code_file: codeFile, debug_id: item.debug_id }]
-							: [];
-					}),
-				}
-			: undefined,
-	};
-}
-
-/** 허용한 필드만 골라 새 이벤트를 만든다. 원본 객체를 펼치지 않는다. */
-export function sanitizeSentryError(event: ErrorEvent, context: SentryPrivacyContext): ErrorEvent {
-	const safe = commonEvent(event, context);
-	const exception = event.exception?.values?.at(-1);
-	const isApi = exception?.type === 'NormalizedApiError';
-	const originalType = exception?.type ?? 'Error';
-	const type = isApi
-		? 'NormalizedApiError'
-		: ['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'URIError', 'EvalError'].includes(
-					originalType,
-			  )
-			? originalType
-			: 'Error';
-	const value = isApi
-		? `[${String(safe.tags?.feature)}] ${String(safe.tags?.operation)} failed: ${String(safe.tags?.api_error_code ?? 'NO_ERROR_CODE')} (${String(safe.tags?.httpStatus ?? 'NO_RESPONSE')})`
-		: exception
-			? `${type}: application error`
-			: 'Application message';
-
-	return {
-		...safe,
-		type: undefined,
-		...(exception
-			? {
-					exception: {
-						values: [
-							{
-								type,
-								value,
-								stacktrace: {
-									frames:
-										exception.stacktrace?.frames?.flatMap((frame) => {
-											const filename = codeLocation(frame.filename);
-											return filename
-												? [{ filename, lineno: frame.lineno, colno: frame.colno, in_app: frame.in_app }]
-												: [];
-										}) ?? [],
-								},
-								mechanism: { type: 'generic', handled: exception.mechanism?.handled ?? false },
-							},
-						],
-					},
-				}
-			: { message: value }),
-		breadcrumbs: event.breadcrumbs
-			?.filter((item) => item.category === 'rilog.rate_limit' && item.message === 'HTTP 429')
-			.map((item) => ({
-				category: 'rilog.rate_limit',
-				message: 'HTTP 429',
-				level: 'warning',
-				timestamp: item.timestamp,
-				data: {
-					method: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].includes(String(item.data?.method))
-						? String(item.data?.method)
-						: 'OTHER',
-					retry_count:
-						typeof item.data?.retry_count === 'number' && Number.isFinite(item.data.retry_count)
-							? item.data.retry_count
-							: 0,
-				},
-			})),
-	};
-}
-
-export function sanitizeSentrySpan(span: SpanJSON): SpanJSON {
-	try {
-		return {
-			span_id: span.span_id,
-			trace_id: span.trace_id,
-			parent_span_id: span.parent_span_id,
-			start_timestamp: span.start_timestamp,
-			timestamp: span.timestamp,
-			description: toSentryRoute(span.description),
-			op: ['http.client', 'http.server', 'pageload', 'navigation', 'resource.script', 'function'].includes(
-				span.op ?? '',
-			)
-				? span.op
-				: 'other',
-			data: {},
-		};
-	} catch {
-		// beforeSendSpan은 null을 반환할 수 없으므로 원문 대신 비어 있는 span을 반환한다.
-		return {
-			span_id: '0000000000000000',
-			trace_id: '00000000000000000000000000000000',
-			start_timestamp: 0,
-			data: {},
-			description: 'unavailable',
-		};
-	}
-}
-
-export function sanitizeSentryTransaction(event: TransactionEvent, context: SentryPrivacyContext): TransactionEvent {
-	const trace = event.contexts?.trace;
-
-	return {
-		...commonEvent(event, context),
-		type: 'transaction',
-		start_timestamp: event.start_timestamp,
-		transaction_info: { source: 'route' },
-		contexts:
-			trace &&
-			typeof trace.trace_id === 'string' &&
-			/^[a-f0-9]{32}$/i.test(trace.trace_id) &&
-			typeof trace.span_id === 'string' &&
-			/^[a-f0-9]{16}$/i.test(trace.span_id)
-				? {
-						trace: {
-							trace_id: trace.trace_id,
-							span_id: trace.span_id,
-							op: ['http.server', 'pageload', 'navigation'].includes(trace.op ?? '') ? trace.op : 'other',
-						},
-					}
-				: undefined,
-		spans: event.spans?.map(sanitizeSentrySpan),
+		...span,
+		description: span.description ? safeText(span.description) : undefined,
+		data: redact(span.data) as SpanJSON['data'],
 	};
 }

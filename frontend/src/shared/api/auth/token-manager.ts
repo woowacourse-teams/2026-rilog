@@ -2,6 +2,7 @@ import ky from 'ky';
 
 import type { AuthLogoutReason, AuthTokenType } from './types';
 
+import { rememberApiRequest } from '@/shared/api/request-diagnostics';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 import { logNonProductionError } from '@/shared/utils/non-production-console';
 
@@ -80,6 +81,7 @@ class TokenManager {
 			}
 		} catch (error) {
 			if (sessionVersion !== this.sessionVersion) return null;
+			rememberApiRequest(error, 'POST', `${baseUrl}/v1/auth/token/refresh`, baseUrl);
 			apiErrorReporter.report(error, { operation: 'auth.refresh' });
 			logNonProductionError('[TokenManager] Failed to refresh token:', error);
 		}

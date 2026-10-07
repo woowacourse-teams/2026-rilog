@@ -12,6 +12,7 @@ final class PostDetailResponseExamples {
                   "type": "doc",
                   "content": []
                 },
+                "viewCount": 42,
                 "publishedAt": "2026-08-17T04:30:00",
                 "thumbnailImageUrl": null,
                 "category": "기술",
@@ -51,6 +52,7 @@ final class PostDetailResponseExamples {
                   "type": "doc",
                   "content": []
                 },
+                "viewCount": 42,
                 "publishedAt": "2026-08-17T04:40:00",
                 "thumbnailImageUrl": null,
                 "category": "일상",

@@ -32,8 +32,8 @@ export default function ProfileSocialFields({
 }: ProfileSocialFieldsProps) {
 	return (
 		<fieldset className="flex flex-col gap-3" aria-describedby="profile-social-fields-description">
-			<legend className="text-body-2 font-semibold text-text-primary">소셜</legend>
-			<p id="profile-social-fields-description" className="text-label-2 text-text-secondary">
+			<legend className="text-body-3 font-semibold text-text-primary">소셜</legend>
+			<p id="profile-social-fields-description" className="text-label-1 text-text-secondary">
 				{description}
 			</p>
 

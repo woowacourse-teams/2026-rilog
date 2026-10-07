@@ -1,94 +1,61 @@
 import type { ApiErrorContext } from './api-error-policy';
-import type { ErrorTracker, ErrorTrackerContext } from './error-tracker';
+import type { ErrorTracker } from './error-tracker';
 
-import { isApiRequestError, isNormalizedApiError, normalizeApiError } from '@/shared/api/api-error';
+import { isApiRequestError, normalizeApiError } from '@/shared/api/api-error';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 import { shouldReportApiError } from './api-error-policy';
 
-export const RATE_LIMIT_REPORT_INTERVAL_MS = 60_000;
+const reported = new WeakSet<object>();
 
-export interface ApiErrorCaptureDecision {
-	capture: boolean;
-	level?: ErrorTrackerContext['level'];
+export function shouldCaptureAutomaticError(error: unknown, explicitApiReport = false): boolean {
+	if (explicitApiReport) return true;
+	if (error instanceof Error && error.name === 'AbortError') return false;
+	if (!isApiRequestError(error)) return true;
+	if (typeof error === 'object' && error !== null && reported.has(error)) return false;
+	const failure = normalizeApiError(error);
+	if (typeof failure.cause === 'object' && failure.cause !== null && reported.has(failure.cause)) return false;
+	return shouldReportApiError(failure, { operation: 'unhandled' });
 }
 
-export class ApiErrorReporter {
-	private readonly handled = new WeakMap<object, ApiErrorCaptureDecision>();
-	private readonly lastRateLimitReports = new Map<string, number>();
+export function createApiErrorReporter(tracker: ErrorTracker) {
+	return {
+		report(error: unknown, context: ApiErrorContext): void {
+			try {
+				if (typeof error === 'object' && error !== null && reported.has(error)) return;
+				const failure = normalizeApiError(error);
+				const original = failure.cause;
+				if (typeof original === 'object' && original !== null && reported.has(original)) return;
+				if (!shouldReportApiError(failure, context)) return;
 
-	constructor(
-		private readonly tracker: ErrorTracker,
-		private readonly now: () => number = Date.now,
-	) {}
-
-	private getHandled(error: unknown): ApiErrorCaptureDecision | undefined {
-		if (typeof error !== 'object' || error === null) return undefined;
-		const cause = isNormalizedApiError(error) ? error.cause : undefined;
-		return (
-			this.handled.get(error) ?? (typeof cause === 'object' && cause !== null ? this.handled.get(cause) : undefined)
-		);
-	}
-
-	private markHandled(error: unknown, decision: ApiErrorCaptureDecision): void {
-		if (typeof error === 'object' && error !== null) this.handled.set(error, decision);
-	}
-
-	private allowRateLimitReport(operation: string): boolean {
-		const timestamp = this.now();
-		const previous = this.lastRateLimitReports.get(operation);
-		if (previous !== undefined && timestamp - previous < RATE_LIMIT_REPORT_INTERVAL_MS) return false;
-		this.lastRateLimitReports.set(operation, timestamp);
-		return true;
-	}
-
-	private decide(error: ReturnType<typeof normalizeApiError>, context: ApiErrorContext): ApiErrorCaptureDecision {
-		const online = typeof navigator === 'undefined' || navigator.onLine !== false;
-		if (!shouldReportApiError(error, context, online)) return { capture: false };
-		const rateLimited = 'response' in error && error.response.status === 429;
-		if (rateLimited && !this.allowRateLimitReport(context.operation)) return { capture: false };
-		return {
-			capture: true,
-			level:
-				rateLimited && ['query', 'mutation', 'content.load', 'unhandled'].includes(context.operation)
-					? 'warning'
-					: 'error',
-		};
-	}
-
-	report(error: unknown, context: ApiErrorContext): void {
-		try {
-			if (error === undefined || error === null || this.getHandled(error)) return;
-			const normalized = normalizeApiError(error);
-			if (this.getHandled(normalized.cause)) return;
-			const decision = this.decide(normalized, context);
-			// 비핵심 경계가 제외한 오류는 복구 UI에서 추가로 판단할 수 있다.
-			if (
-				!decision.capture &&
-				['query', 'mutation'].includes(context.operation) &&
-				!('response' in normalized && normalized.response.status === 429)
-			)
-				return;
-			if (decision.capture)
-				this.tracker.captureException(normalized, { tags: { operation: context.operation }, level: decision.level });
-			this.markHandled(error, decision);
-			this.markHandled(normalized, decision);
-			this.markHandled(normalized.cause, decision);
-		} catch {
-			logNonProductionWarning('API error reporting failed.');
-		}
-	}
-
-	/** 자동 수집은 중복을 제거한다. 전송용으로 변환된 명시 보고는 이미 내린 판정을 유지한다. */
-	getCaptureDecision(error: unknown, explicitCapture = false): ApiErrorCaptureDecision {
-		const handled = this.getHandled(error);
-		if (handled) return explicitCapture ? handled : { capture: false };
-		if (error instanceof Error && error.name === 'AbortError') return { capture: false };
-		if (explicitCapture || !isApiRequestError(error)) return { capture: true };
-		const normalized = normalizeApiError(error);
-		const decision = this.decide(normalized, { operation: 'unhandled' });
-		this.markHandled(error, decision);
-		this.markHandled(normalized.cause, decision);
-		return decision;
-	}
+				const tags: Record<string, string> = { report_source: 'api', operation: context.operation };
+				const contexts: Record<string, Record<string, unknown>> = {};
+				if ('response' in failure) {
+					tags.http_status = String(failure.response.status);
+					const requestId = failure.response.headers.get('X-Request-ID');
+					if (requestId) tags.request_id = requestId;
+				}
+				if (failure.type === 'api') {
+					tags.error_code = failure.detail.errorCode;
+					contexts.api_response = {
+						status: failure.response.status,
+						error_code: failure.detail.errorCode,
+						message: failure.detail.message,
+						invalid_params: failure.detail.invalidParams?.map((param) => param.name),
+					};
+				}
+				const request = getApiRequestDiagnostics(original);
+				if (request) contexts.api_request = { method: request.method, url: request.url };
+				tracker.captureException(original instanceof Error ? original : new Error('API request failed'), {
+					tags,
+					contexts,
+				});
+				if (typeof error === 'object' && error !== null) reported.add(error);
+				if (typeof original === 'object' && original !== null) reported.add(original);
+			} catch {
+				logNonProductionWarning('API error reporting failed.');
+			}
+		},
+	};
 }

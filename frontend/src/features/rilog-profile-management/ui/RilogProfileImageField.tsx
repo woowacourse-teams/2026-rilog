@@ -79,7 +79,7 @@ export default function RilogProfileImageField({
 						/>
 					</div>
 					{fileSizeError && (
-						<p id={`${id}-file-error`} role="alert" className="text-label-1 text-danger">
+						<p id={`${id}-file-error`} role="alert" className="text-label-2 text-danger">
 							{fileSizeError}
 						</p>
 					)}

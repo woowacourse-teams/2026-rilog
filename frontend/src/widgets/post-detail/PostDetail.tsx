@@ -50,7 +50,7 @@ export default function PostDetail({ post }: PostDetailProps) {
 									<div
 										role="status"
 										aria-label="시리즈 로딩 중"
-										className="mt-5 border-y border-border-strong px-5 py-3 text-body-3 text-text-secondary sm:mt-10"
+										className="mt-5 border-y border-border-strong px-5 py-3 text-body-2 text-text-secondary sm:mt-10"
 									>
 										<div className="h-7 w-50 animate-pulse rounded bg-surface-active sm:w-100" />
 									</div>
@@ -66,7 +66,7 @@ export default function PostDetail({ post }: PostDetailProps) {
 	}
 
 	const publisher = (
-		<div className="mb-4 flex items-center gap-1 text-body-2 font-medium sm:mb-5">
+		<div className="mb-4 flex items-center gap-1 text-body-3 font-medium sm:mb-5">
 			<BlogProfileEntryLink
 				href={buildBlogHomePath(post.blog.slug)}
 				entrySource="post_detail_header"

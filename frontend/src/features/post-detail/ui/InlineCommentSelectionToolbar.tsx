@@ -149,7 +149,7 @@ export default function InlineCommentSelectionToolbar({
 				</svg>
 				<span
 					aria-hidden="true"
-					className="absolute left-7 translate-x-1 text-label-1 whitespace-nowrap opacity-0 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none"
+					className="absolute left-7 translate-x-1 text-label-2 whitespace-nowrap opacity-0 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none"
 				>
 					댓글 추가
 				</span>

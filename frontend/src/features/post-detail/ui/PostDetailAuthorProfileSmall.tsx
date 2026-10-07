@@ -26,11 +26,11 @@ export default function PostDetailAuthorProfileSmall({ author }: PostDetailAutho
 				<div className={`flex flex-col`}>
 					<h2
 						id="post-author-heading"
-						className="text-body-2 font-semibold [overflow-wrap:anywhere] text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-body-2"
+						className="text-body-3 font-semibold [overflow-wrap:anywhere] text-text-primary transition-colors group-hover:text-focus-ring group-focus-visible:text-focus-ring group-active:text-focus-ring sm:text-body-3"
 					>
 						{author.nickname}
 					</h2>
-					{hasDescription ? <p className="text-body-1 text-text-secondary">{author.description}</p> : null}
+					{hasDescription ? <p className="text-body-4 text-text-secondary">{author.description}</p> : null}
 				</div>
 			</BlogProfileEntryLink>
 		</section>

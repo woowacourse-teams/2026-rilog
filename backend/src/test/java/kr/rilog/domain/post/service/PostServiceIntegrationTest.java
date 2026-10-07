@@ -32,6 +32,7 @@ import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 
@@ -73,6 +74,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
@@ -866,7 +870,11 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     private Post savePost(Post post) {
-        return postRepository.saveAndFlush(post);
+        Post saved = postRepository.saveAndFlush(post);
+        if (saved.getStatus() == PUBLISHED) {
+            jdbcTemplate.update("insert into post_view_count (post_id, view_count) values (?, 0)", saved.getId());
+        }
+        return saved;
     }
 
     private PostDetail detailOf(Post post) {

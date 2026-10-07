@@ -75,7 +75,7 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 						/>
 					)}
 					{mutation.isError && (
-						<p role="alert" className="mt-2 text-label-2 text-danger-text">
+						<p role="alert" className="mt-2 text-label-1 text-danger-text">
 							{isResponseUnconfirmed
 								? '요청 결과를 확인하지 못했습니다. 댓글 목록에서 등록 여부를 확인해 주세요.'
 								: isStaleSelection
@@ -84,7 +84,7 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 						</p>
 					)}
 					{mutation.isSuccess && (
-						<p role="status" className="mt-2 text-label-2 text-text-secondary">
+						<p role="status" className="mt-2 text-label-1 text-text-secondary">
 							댓글을 등록했습니다.
 						</p>
 					)}

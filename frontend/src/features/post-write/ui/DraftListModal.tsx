@@ -59,7 +59,7 @@ export default function DraftListModal({
 			)}
 
 			{!isPending && !hasInitialError && draftPosts.length === 0 && (
-				<p className="text-center text-body-2 text-text-secondary" role="status">
+				<p className="text-center text-body-3 text-text-secondary" role="status">
 					임시 저장된 글이 없어요.
 				</p>
 			)}
@@ -72,14 +72,14 @@ export default function DraftListModal({
 							const content = (
 								<>
 									<span className="flex min-w-0 items-center gap-2">
-										<strong className="ph-mask min-w-0 truncate text-body-3">{post.title}</strong>
+										<strong className="ph-mask min-w-0 truncate text-body-2">{post.title}</strong>
 										{isSelected && (
-											<span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-caption-1 font-semibold text-brand-primary">
+											<span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-caption-2 font-semibold text-brand-primary">
 												현재 작성 중
 											</span>
 										)}
 									</span>
-									<span className="text-caption-2 text-text-secondary">{formatPublishedDate(post.savedAt)}</span>
+									<span className="text-caption-1 text-text-secondary">{formatPublishedDate(post.savedAt)}</span>
 								</>
 							);
 

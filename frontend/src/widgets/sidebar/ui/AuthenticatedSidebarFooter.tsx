@@ -59,8 +59,8 @@ export default function AuthenticatedSidebarFooter() {
 						>
 							<UserAvatar src={user.profileImageUrl} fallback={fallback} size="lg" />
 							<span className={`min-w-0 ${EXPANDED_TEXT_CLASS_NAME}`}>
-								<strong className="block truncate text-label-2 font-semibold text-text-primary">{nickname}</strong>
-								<span className="block truncate text-caption-1 text-text-secondary">@{slug}</span>
+								<strong className="block truncate text-label-1 font-semibold text-text-primary">{nickname}</strong>
+								<span className="block truncate text-caption-2 text-text-secondary">@{slug}</span>
 							</span>
 						</CustomLink>
 					) : hasInitialError ? (
@@ -72,7 +72,7 @@ export default function AuthenticatedSidebarFooter() {
 							<UserAvatar fallback={hasInitialError ? '!' : '…'} size="lg" tone="subtle" />
 							<span className={`min-w-0 ${EXPANDED_TEXT_CLASS_NAME}`}>
 								<strong
-									className="block truncate text-label-2 font-semibold text-text-primary"
+									className="block truncate text-label-1 font-semibold text-text-primary"
 									title={hasInitialError ? profileStatusMessage : undefined}
 								>
 									{hasInitialError ? '내 정보 오류' : profileStatusMessage}

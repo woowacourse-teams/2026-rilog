@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
+
 import FooterHomeLink from './FooterHomeLink';
 
 const { navigation, preventNavigation } = vi.hoisted(() => ({
@@ -57,7 +59,7 @@ describe('FooterHomeLink', () => {
 	it('다른 페이지에서는 떠나는 페이지를 스크롤하지 않고 기본 링크 이동에 맡긴다', () => {
 		render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
-		fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }));
+		fireEvent.click(screen.getByRole('link', { name: `${SITE_NAME} 홈` }));
 
 		expect(preventNavigation).not.toHaveBeenCalled();
 		expect(scrollToMock).not.toHaveBeenCalled();
@@ -67,7 +69,7 @@ describe('FooterHomeLink', () => {
 		navigation.pathname = '/feeds';
 		render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
-		fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }));
+		fireEvent.click(screen.getByRole('link', { name: `${SITE_NAME} 홈` }));
 
 		expect(preventNavigation).toHaveBeenCalledOnce();
 		expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
@@ -78,7 +80,7 @@ describe('FooterHomeLink', () => {
 		(modifier) => {
 			render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
-			fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }), { [modifier]: true });
+			fireEvent.click(screen.getByRole('link', { name: `${SITE_NAME} 홈` }), { [modifier]: true });
 
 			expect(preventNavigation).not.toHaveBeenCalled();
 			expect(scrollToMock).not.toHaveBeenCalled();
@@ -93,7 +95,7 @@ describe('FooterHomeLink', () => {
 		);
 		render(<FooterHomeLink className="test">Rilog.</FooterHomeLink>);
 
-		fireEvent.click(screen.getByRole('link', { name: 'Rilog 홈' }));
+		fireEvent.click(screen.getByRole('link', { name: `${SITE_NAME} 홈` }));
 
 		expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: 'auto' });
 	});
