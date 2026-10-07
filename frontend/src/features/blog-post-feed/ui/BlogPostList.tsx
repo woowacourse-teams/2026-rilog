@@ -33,7 +33,6 @@ export default function BlogPostList({ posts, blogType }: BlogPostListProps) {
 					<li key={post.id}>
 						<CustomLink
 							href={buildPostDetailPath(post.blog.slug, String(post.id))}
-							prefetchType="viewport"
 							onClick={() =>
 								recordPostDetailEntryContext({
 									postId: post.id,

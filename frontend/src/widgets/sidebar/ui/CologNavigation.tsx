@@ -62,7 +62,6 @@ export default function CologNavigation() {
 						<li key={colog.id} className="w-full">
 							<SidebarNavigationLink
 								href={buildBlogHomePath(colog.slug)}
-								prefetchType="hover"
 								icon={
 									<CologAvatar
 										className="size-6"

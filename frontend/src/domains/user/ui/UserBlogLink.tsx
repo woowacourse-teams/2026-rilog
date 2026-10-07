@@ -16,7 +16,6 @@ export default function UserBlogLink({ children, slug, onClick }: UserBlogLinkPr
 	return (
 		<CustomLink
 			href={buildBlogHomePath(normalizedSlug)}
-			prefetchType="hover"
 			aria-label={`@${normalizedSlug} 블로그로 이동`}
 			onClick={onClick}
 			className="inline-flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"

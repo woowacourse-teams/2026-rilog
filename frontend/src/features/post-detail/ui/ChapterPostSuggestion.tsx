@@ -44,7 +44,6 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 						<article className="flex sm:flex-col">
 							<PostNavigationLink
 								href={buildPostDetailPath(slug, String(post.id))}
-								prefetchType="viewport"
 								className="group/card h-full rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:rounded-xl sm:pb-2"
 								surface="chapter_suggestions"
 								targetType="post"
@@ -67,7 +66,6 @@ export default function ChapterPostSuggestion({ slug, chapter }: ChapterPostSugg
 							<div className="flex flex-col gap-2">
 								<PostNavigationLink
 									href={buildPostDetailPath(slug, String(post.id))}
-									prefetchType="viewport"
 									className="line-clamp-2 flex-1 rounded-sm text-body-3 font-medium [overflow-wrap:anywhere] break-keep text-text-primary sm:text-body-2"
 									surface="chapter_suggestions"
 									targetType="post"

@@ -15,13 +15,7 @@ type BlogProfileEntryLinkProps = Omit<ComponentProps<typeof CustomLink>, 'href' 
 	onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
-export default function BlogProfileEntryLink({
-	href,
-	entrySource,
-	onClick,
-	prefetchType = 'hover',
-	...props
-}: BlogProfileEntryLinkProps) {
+export default function BlogProfileEntryLink({ href, entrySource, onClick, ...props }: BlogProfileEntryLinkProps) {
 	const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
 		onClick?.(event);
 
@@ -32,5 +26,5 @@ export default function BlogProfileEntryLink({
 		recordBlogProfileEntryContext({ href, entrySource });
 	};
 
-	return <CustomLink href={href} prefetchType={prefetchType} onClick={handleClick} {...props} />;
+	return <CustomLink href={href} onClick={handleClick} {...props} />;
 }

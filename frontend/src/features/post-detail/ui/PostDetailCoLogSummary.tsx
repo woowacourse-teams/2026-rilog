@@ -13,7 +13,6 @@ export default function PostDetailCoLogSummary({ colog }: PostDetailCoLogSummary
 			<div className="flex items-center gap-3">
 				<CustomLink
 					href={buildBlogHomePath(colog.slug)}
-					prefetchType="hover"
 					className="flex min-w-0 flex-1 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
 				>
 					<CologAvatar

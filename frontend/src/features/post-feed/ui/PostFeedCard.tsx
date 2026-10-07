@@ -84,7 +84,6 @@ export default function PostFeedCard({ post, position }: PostFeedCardProps) {
 				</div>
 				<CustomLink
 					href={postPath}
-					prefetchType="viewport"
 					onClick={handleClick}
 					className="group/title mt-1 flex-1 before:absolute before:inset-0 before:z-0 before:rounded-xl before:content-[''] focus-visible:outline-none focus-visible:before:outline-2 focus-visible:before:outline-offset-4 focus-visible:before:outline-focus-ring"
 				>

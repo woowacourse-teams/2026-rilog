@@ -22,7 +22,6 @@ export default function CologMemberList({ members, action }: CologMemberListProp
 			{members.map((member) => (
 				<li key={member.id}>
 					<BlogProfileEntryLink
-						prefetchType="viewport"
 						href={buildBlogHomePath(stripAtPrefix(member.slug))}
 						entrySource="colog_members"
 						aria-label={`@${stripAtPrefix(member.slug)} 블로그로 이동`}

@@ -47,7 +47,6 @@ function NavigationRow({
 	return (
 		<CustomLink
 			href={buildBlogHomeFilterHref(pathname, searchParams, filter, blogType)}
-			prefetchType="hover"
 			scroll={false}
 			aria-label={`${item.name}, 글 ${item.postCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
@@ -77,7 +76,6 @@ function AllPostsRow({
 	return (
 		<CustomLink
 			href={buildBlogHomeFilterHref(pathname, searchParams, ALL_BLOG_POSTS_FILTER, blogType)}
-			prefetchType="hover"
 			scroll={false}
 			aria-label={`전체, 글 ${totalCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}

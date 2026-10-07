@@ -36,7 +36,7 @@ export default function SettingsAccessGuard({ children, type, slug }: SettingsAc
 		return (
 			<div className="flex min-h-80 flex-col items-center justify-center gap-4 px-6 text-center" role="alert">
 				<p className="text-body-4 text-danger-text">설정 접근 권한을 확인하지 못했습니다.</p>
-				<ButtonLink href={homePath} prefetchType="hover" variant="secondary">
+				<ButtonLink href={homePath} variant="secondary">
 					블로그 홈으로 돌아가기
 				</ButtonLink>
 			</div>
