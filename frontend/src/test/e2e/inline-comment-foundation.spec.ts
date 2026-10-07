@@ -45,7 +45,7 @@ const renderFixture = async (page: Page) => {
 		</article>
 	`);
 	const styles = await readFile(
-		new URL('../../app/(with-sidebar)/(with-footer)/[slug]/posts/[postId]/post-detail.css', import.meta.url),
+		new URL('../../app/(with-sidebar)/(with-footer)/blog/[slug]/posts/[postId]/post-detail.css', import.meta.url),
 		'utf8',
 	);
 	await page.addStyleTag({ content: styles.replace("@import '@blocknote/core/style.css';", '') });

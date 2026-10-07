@@ -22,5 +22,11 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ['/write/:path*', '/colog/create/:path*', '/:slug/settings/:path*', '/sign-up/:path*'],
+	matcher: [
+		'/write/:path*',
+		'/colog/create/:path*',
+		'/:slug/settings/:path*',
+		'/blog/:slug/settings/:path*',
+		'/sign-up/:path*',
+	],
 };
