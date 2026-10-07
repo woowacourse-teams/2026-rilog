@@ -61,6 +61,17 @@ describe('TheRilogMagazine', () => {
 		expect(screen.getByRole('link', { name: 'about. The Rilog.' })).toHaveAttribute('href', '/the-rilog/about');
 	});
 
+	it.each([
+		['2026-10-04T14:59:59Z', '2026.10.04', '2026-10-04'],
+		['2026-10-04T15:00:00Z', '2026.10.05', '2026-10-05'],
+		['2026-12-31T14:59:59Z', '2026.12.31', '2026-12-31'],
+		['2026-12-31T15:00:00Z', '2027.01.01', '2027-01-01'],
+	])('%s에 렌더링하면 한국 날짜 %s와 일치하는 dateTime을 제공한다', (instant, label, dateTime) => {
+		vi.setSystemTime(new Date(instant));
+		render(<TheRilogMagazine dailyHeadlines={DAILY_HEADLINES} articles={MAGAZINE_ARTICLES} />);
+		expect(screen.getByText(label)).toHaveAttribute('datetime', dateTime);
+	});
+
 	it('기사가 없으면 잘못된 상세 링크를 만들지 않는다', () => {
 		render(<TheRilogMagazine dailyHeadlines={[]} articles={[]} />);
 		expect(screen.queryByRole('article')).not.toBeInTheDocument();

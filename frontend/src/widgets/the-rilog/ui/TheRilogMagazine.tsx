@@ -9,6 +9,8 @@ import DailyHeadlines from '@/features/the-rilog-daily-headlines/ui/DailyHeadlin
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
+import { formatMagazineDate } from '../lib/format-magazine-date';
+
 import ScrollReveal from './ScrollReveal';
 import styles from './the-rilog-magazine.module.css';
 
@@ -71,24 +73,13 @@ function MagazineArticleCard({ article, imagePosition = 'left' }: MagazineArticl
 export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogMagazineProps) {
 	const enterpriseArticles = articles.filter((article) => article.profile.type === 'enterprise');
 	const personalArticles = articles.filter((article) => article.profile.type === 'bloger');
-	const now = new Date();
-	const calendarParts = new Intl.DateTimeFormat('ko-KR', {
-		timeZone: 'Asia/Seoul',
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-	}).formatToParts(now);
-	const calendarYear = calendarParts.find((part) => part.type === 'year')?.value ?? '';
-	const calendarMonth = calendarParts.find((part) => part.type === 'month')?.value ?? '';
-	const calendarDay = calendarParts.find((part) => part.type === 'day')?.value ?? '';
-	const calendarDate = `${calendarYear}.${calendarMonth}.${calendarDay}`;
-	const calendarDateIso = `${calendarYear}-${calendarMonth}-${calendarDay}`;
+	const editionDate = formatMagazineDate(new Date());
 	return (
 		<main className={styles.page}>
 			<header>
 				<div className={styles.masthead}>
 					<div className={styles.edition} aria-label="발행 정보">
-						<time dateTime={calendarDateIso}>{calendarDate}</time>
+						<time dateTime={editionDate.dateTime}>{editionDate.label}</time>
 						<CustomLink href={`${APP_ROUTES.theRilog}/about`}>about. The Rilog.</CustomLink>
 					</div>
 					<h1 aria-label="THE Rilog.">
