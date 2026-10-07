@@ -5,12 +5,12 @@ import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/
 export const AUTH_REFRESH_ROUTE = '**/v1/auth/token/refresh';
 export const MY_INFO_ROUTE = '**/v1/users/me';
 
-export const mockAuthenticatedAccess = async (page: Page) => {
+export const mockAuthenticatedAccess = async (page: Page, appOrigin = 'http://localhost:3000') => {
 	await page.context().addCookies([
 		{
 			name: PROXY_SESSION_COOKIE_NAME,
 			value: PROXY_SESSION_COOKIE_VALUE,
-			url: 'http://localhost:3000',
+			url: appOrigin,
 		},
 	]);
 	await page.route(AUTH_REFRESH_ROUTE, (route) =>
@@ -19,7 +19,7 @@ export const mockAuthenticatedAccess = async (page: Page) => {
 			headers: {
 				Authorization: 'Bearer e2e-access-token',
 				'Access-Control-Allow-Credentials': 'true',
-				'Access-Control-Allow-Origin': 'http://localhost:3000',
+				'Access-Control-Allow-Origin': appOrigin,
 				'Access-Control-Expose-Headers': 'Authorization',
 			},
 		}),

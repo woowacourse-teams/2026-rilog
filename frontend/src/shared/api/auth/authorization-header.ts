@@ -1,3 +1,4 @@
+import { copyApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
 import { InvalidApiResponseError } from '@/shared/api/response-validation';
 
 export const parseBearerToken = (header: string | null): string | null => {
@@ -5,8 +6,12 @@ export const parseBearerToken = (header: string | null): string | null => {
 	return token ?? null;
 };
 
-export const requireBearerToken = (header: string | null, operation: string): string => {
-	const token = parseBearerToken(header);
-	if (token === null) throw new InvalidApiResponseError(operation);
+export const requireBearerToken = (response: Response, operation: string): string => {
+	const token = parseBearerToken(response.headers.get('Authorization'));
+	if (token === null) {
+		const error = new InvalidApiResponseError(operation);
+		copyApiRequestDiagnostics(response, error);
+		throw error;
+	}
 	return token;
 };

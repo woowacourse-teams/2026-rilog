@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { identifyAnalyticsUser, resetAnalyticsIdentity } from '@/shared/analytics/posthog';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
+import { errorTracker } from '@/shared/error-tracking/error-tracker-instance';
 
 export default function AnalyticsIdentitySubscriber() {
 	const { data: response, dataUpdatedAt } = useMyInfoQuery();
@@ -17,6 +18,7 @@ export default function AnalyticsIdentitySubscriber() {
 		}
 
 		const userId = String(user.id);
+		errorTracker.setUser(userId);
 		if (identifiedUserIdRef.current === userId) {
 			return;
 		}
@@ -32,6 +34,7 @@ export default function AnalyticsIdentitySubscriber() {
 	useEffect(
 		() =>
 			tokenManager.subscribeLogout((reason) => {
+				errorTracker.setUser(null);
 				resetAnalyticsIdentity({ onlyIfIdentified: reason === 'refresh-failed' });
 				identifiedUserIdRef.current = undefined;
 			}),

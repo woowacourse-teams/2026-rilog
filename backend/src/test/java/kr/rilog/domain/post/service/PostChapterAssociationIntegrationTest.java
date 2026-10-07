@@ -22,6 +22,7 @@ import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 
@@ -52,6 +53,9 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     @DisplayName("게시글을 발행할 때 대상 블로그의 챕터를 지정하면 챕터 연결이 저장된다.")
@@ -388,7 +392,9 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         if (chapter != null) {
             post.update(PostFixture.updatedPostDetail(), scenario.blog(), chapter);
         }
-        return postRepository.saveAndFlush(post);
+        Post saved = postRepository.saveAndFlush(post);
+        jdbcTemplate.update("insert into post_view_count (post_id, view_count) values (?, 0)", saved.getId());
+        return saved;
     }
 
     private PostSaveCommand publishCommand(String slug, Long chapterId) {

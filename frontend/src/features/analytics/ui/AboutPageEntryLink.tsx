@@ -7,7 +7,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
-type AboutPageEntryLinkProps = Omit<ComponentProps<typeof CustomLink>, 'href'> & {
+type AboutPageEntryLinkProps = Omit<ComponentProps<typeof CustomLink>, 'href' | 'prefetchType'> & {
 	entrySource: AboutPageEntrySource;
 };
 
@@ -17,5 +17,5 @@ export default function AboutPageEntryLink({ entrySource, onClick, ...props }: A
 		analytics.aboutPageEntryClicked({ entrySource });
 	};
 
-	return <CustomLink href={APP_ROUTES.about} onClick={handleClick} {...props} />;
+	return <CustomLink {...props} href={APP_ROUTES.about} prefetchType="viewport" onClick={handleClick} />;
 }

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { APP_ROUTES } from '@/shared/routes/app-routes';
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface FooterHomeLinkProps {
@@ -26,7 +27,12 @@ export default function FooterHomeLink({ className, children }: FooterHomeLinkPr
 	};
 
 	return (
-		<CustomLink className={className} href={APP_ROUTES.feeds} aria-label="Rilog 홈" onNavigate={handleNavigate}>
+		<CustomLink
+			className={className}
+			href={APP_ROUTES.feeds}
+			aria-label={`${SITE_NAME} 홈`}
+			onNavigate={handleNavigate}
+		>
 			{children}
 		</CustomLink>
 	);

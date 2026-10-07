@@ -16,7 +16,7 @@ export const handleGitHubCallback = async (params: GitHubCallbackParams) => {
 			json: params,
 		});
 		const data = await parseApiJsonResponse(response, 'auth.github.callback', isAuthResponse);
-		const accessToken = requireBearerToken(response.headers.get('Authorization'), 'auth.github.callback');
+		const accessToken = requireBearerToken(response, 'auth.github.callback');
 
 		return { data, accessToken };
 	});

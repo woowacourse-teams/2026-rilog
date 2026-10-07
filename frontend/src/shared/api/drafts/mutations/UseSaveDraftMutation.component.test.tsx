@@ -13,12 +13,9 @@ import { createTestQueryClient } from '@/test/render-with-query';
 import { useSaveDraftMutation } from './use-save-draft-mutation';
 
 const { captureExceptionMock } = vi.hoisted(() => ({ captureExceptionMock: vi.fn() }));
-vi.mock('@/shared/error-tracking/error-tracker-instance', async () => {
-	const { createSentryErrorTracker } = await import('@/shared/error-tracking/sentry-error-tracker');
-	const tracker = createSentryErrorTracker();
-	tracker.captureException = captureExceptionMock;
-	return { errorTracker: tracker, sentryErrorTracker: tracker };
-});
+vi.mock('@/shared/error-tracking/error-tracker-instance', () => ({
+	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn(), setUser: vi.fn() },
+}));
 
 describe('useSaveDraftMutation', () => {
 	it('최초 임시저장 성공 후 drafts cache를 무효화한다', async () => {

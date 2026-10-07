@@ -1,8 +1,11 @@
 import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 
+const isSentryUploadRequired = process.env.SENTRY_UPLOAD_REQUIRED === 'true';
+
 const nextConfig: NextConfig = {
 	agentRules: false,
+	distDir: process.env.SENTRY_FEED_503_SMOKE === 'true' ? '.next-sentry-feed-503' : '.next',
 	serverExternalPackages: ['@blocknote/core', '@blocknote/react', '@blocknote/server-util'],
 	redirects() {
 		return [
@@ -25,14 +28,17 @@ const nextConfig: NextConfig = {
 					{
 						key: 'Content-Security-Policy',
 						value:
-							"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'",
+							"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; worker-src 'self' blob: data:; frame-ancestors 'none'",
 					},
 				],
 			},
 		]);
 	},
 	rewrites() {
-		return Promise.resolve([{ source: '/.well-known/llms.txt', destination: '/llms.txt' }]);
+		return Promise.resolve([
+			{ source: '/.well-known/llms.txt', destination: '/llms.txt' },
+			{ source: '/@:slug/:path*', destination: '/blog/:slug/:path*' },
+		]);
 	},
 	images: {
 		remotePatterns: [
@@ -70,9 +76,23 @@ export default withSentryConfig(nextConfig, {
 	// For all available options, see:
 	// https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-	org: 'rilog-an',
+	org: 'rilog-fontend',
 
 	project: 'rilog-frontend-nextjs',
+	release: {
+		name: process.env.SENTRY_RELEASE,
+		create: isSentryUploadRequired,
+		finalize: isSentryUploadRequired,
+	},
+	sourcemaps: {
+		disable: !isSentryUploadRequired,
+		deleteSourcemapsAfterUpload: true,
+	},
+	errorHandler: isSentryUploadRequired
+		? (error) => {
+				throw error;
+			}
+		: undefined,
 
 	// Only print logs for uploading source maps in CI
 	silent: !process.env.CI,

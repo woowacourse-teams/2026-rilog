@@ -1,5 +1,7 @@
 import type { ApiResponse } from './shared.types';
 
+import { copyApiRequestDiagnostics } from './request-diagnostics';
+
 export class InvalidApiResponseError extends Error {
 	constructor(operation: string) {
 		super(`Invalid API response: ${operation}`);
@@ -41,8 +43,14 @@ export const parseApiJsonResponse = async <T>(
 	try {
 		value = await response.json();
 	} catch (error) {
-		if (error instanceof SyntaxError) throw new InvalidApiResponseError(operation);
+		const failure = error instanceof SyntaxError ? new InvalidApiResponseError(operation) : error;
+		copyApiRequestDiagnostics(response, failure);
+		throw failure;
+	}
+	try {
+		return parseApiResponse(value, operation, isData);
+	} catch (error) {
+		copyApiRequestDiagnostics(response, error);
 		throw error;
 	}
-	return parseApiResponse(value, operation, isData);
 };

@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { BlogProfileUpdateRequest, ChapterCreateRequest, ChapterRenameRequest } from './types';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
+
 import {
 	createBlogChapter,
 	deleteBlogChapter,
@@ -276,5 +279,17 @@ describe('deleteBlogChapter', () => {
 		expect(request.method).toBe('DELETE');
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog%2Fteam/chapters/2');
 		expect(response.status).toBe(204);
+	});
+	it('삭제 요청이 실패하면 최종 Sentry 이벤트에서 챕터 삭제 작업을 식별한다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 400 })));
+		let captured: unknown;
+		try {
+			await deleteBlogChapter('@private', 2);
+		} catch (error) {
+			captured = error;
+		}
+		const normalized = normalizeApiError(captured);
+		const diagnostics = getApiRequestDiagnostics(normalized.cause);
+		expect(diagnostics).toEqual({ method: 'DELETE', url: 'https://api.rilog.test/v1/blogs/private/chapters/2' });
 	});
 });

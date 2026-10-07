@@ -43,7 +43,7 @@ export const completeOnboarding = async (data: OnboardingRequest) => {
 			json: data,
 		});
 		const responseData = await parseApiJsonResponse(response, 'users.me.onboarding', isNull);
-		const accessToken = requireBearerToken(response.headers.get('Authorization'), 'users.me.onboarding');
+		const accessToken = requireBearerToken(response, 'users.me.onboarding');
 
 		return { data: responseData, accessToken };
 	});

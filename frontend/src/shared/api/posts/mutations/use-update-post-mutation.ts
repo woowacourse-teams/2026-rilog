@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
 import { updatePost } from '@/shared/api/posts/api';
-import { getInvalidPostInputFields } from '@/shared/api/posts/input-validation';
 import { postsQueryKeys } from '@/shared/api/posts/queries/keys';
 import type { PostWriteRequest } from '@/shared/api/posts/types';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
@@ -25,7 +24,6 @@ export const useUpdatePostMutation = () => {
 		onError: async (error, variables) => {
 			apiErrorReporter.report(error, {
 				operation: 'post.update',
-				invalidUserInputFields: getInvalidPostInputFields(variables.request.title),
 			});
 			if (isInvalidApiResponseError(error)) {
 				await Promise.all([

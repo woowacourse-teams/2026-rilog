@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-import type { CapturedNetworkRequest, CaptureResult } from 'posthog-js';
+import type { CapturedNetworkRequest, CaptureOptions, CaptureResult } from 'posthog-js';
 
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
@@ -198,6 +198,7 @@ export const initializeAnalytics = () => {
 				enable_recording_console_log: false,
 				capture_pageview: true,
 				capture_pageleave: true,
+				opt_out_useragent_filter: process.env.NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER === 'true',
 				session_recording: {
 					recordHeaders: false,
 					recordBody: false,
@@ -216,16 +217,32 @@ export const initializeAnalytics = () => {
 	);
 };
 
+export const getAnalyticsSessionReplayUrl = (): string | undefined => {
+	if (!isAnalyticsConfigured()) return undefined;
+	try {
+		if (!posthog.sessionRecordingStarted()) return undefined;
+		return posthog.get_session_replay_url({ withTimestamp: true, timestampLookBack: 30 }) || undefined;
+	} catch {
+		return undefined;
+	}
+};
+
 /**
  * 분석 환경이 설정된 경우에만 사용자 행동 이벤트를 전송
  * 이벤트 이름과 payload 구성은 features/analytics에서 관리
  */
-export const captureAnalyticsEvent = (eventName: string, properties?: Record<string, unknown>) => {
+export const captureAnalyticsEvent = (
+	eventName: string,
+	properties?: Record<string, unknown>,
+	options?: CaptureOptions,
+) => {
 	if (!isAnalyticsConfigured()) {
 		return;
 	}
 
-	runPostHogOperation('capture', () => posthog.capture(eventName, properties));
+	runPostHogOperation('capture', () =>
+		options === undefined ? posthog.capture(eventName, properties) : posthog.capture(eventName, properties, options),
+	);
 };
 
 /**

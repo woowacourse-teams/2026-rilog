@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
 import AboutPageEntryLink from '@/features/analytics/ui/AboutPageEntryLink';
+import { SITE_NAME } from '@/shared/seo/create-social-metadata';
 
 import FooterHomeLink from './FooterHomeLink';
 
@@ -21,7 +22,11 @@ export default function Footer() {
 
 				<section aria-label="연락 및 SNS" className="mt-1 sm:mt-2">
 					<div className="flex items-center">
-						<a className={ICON_LINK_CLASS_NAME} href="mailto:rilog.admin@gmail.com" aria-label="Rilog 이메일 문의">
+						<a
+							className={ICON_LINK_CLASS_NAME}
+							href="mailto:rilog.admin@gmail.com"
+							aria-label={`${SITE_NAME} 이메일 문의`}
+						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/email.svg" alt="" width={24} height={24} />
 						</a>
 						<a
@@ -29,7 +34,7 @@ export default function Footer() {
 							href="https://open.kakao.com/o/s8RvBMJi"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog 오픈채팅방"
+							aria-label={`${SITE_NAME} 오픈채팅방`}
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/google-form.svg" alt="" width={24} height={24} />
 						</a>
@@ -38,7 +43,7 @@ export default function Footer() {
 							href="https://www.instagram.com/rilog_official/"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog Instagram"
+							aria-label={`${SITE_NAME} Instagram`}
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/instagram.svg" alt="" width={24} height={24} />
 						</a>
@@ -47,7 +52,7 @@ export default function Footer() {
 							href="https://www.threads.com/@rilog_official"
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label="Rilog Threads"
+							aria-label={`${SITE_NAME} Threads`}
 						>
 							<Image className={ICON_CLASS_NAME} src="/icons/contact/threads.svg" alt="" width={20} height={20} />
 						</a>

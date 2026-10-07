@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CologCreateValue } from '@/features/colog-create/model/colog-create';
 import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { createColog } from '@/shared/api/cologs/api';
-import { getInvalidCologInputFields } from '@/shared/api/cologs/input-validation';
 import type { CologCreateRequest, CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
 import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
@@ -41,16 +40,9 @@ export const useCreateCologMutation = () => {
 			return createColog(request);
 		},
 		meta: { errorTracking: 'local' },
-		onError: (error, variables) =>
+		onError: (error) =>
 			apiErrorReporter.report(error, {
 				operation: 'colog.create',
-				invalidUserInputFields: getInvalidCologInputFields({
-					name: variables.name,
-					slug: variables.slug,
-					introduction: variables.description,
-					serviceUrl: variables.serviceUrl,
-					githubUrl: variables.githubUrl,
-				}),
 			}),
 		onSuccess: () =>
 			Promise.all([

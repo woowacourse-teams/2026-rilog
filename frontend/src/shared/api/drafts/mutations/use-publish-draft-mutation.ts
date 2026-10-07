@@ -7,7 +7,6 @@ import { publishDraft } from '@/shared/api/drafts/api';
 import { draftsQueryKeys } from '@/shared/api/drafts/queries/keys';
 import type { DraftPublishRequest } from '@/shared/api/drafts/types';
 import { feedsQueryKeys } from '@/shared/api/feeds/queries/keys';
-import { getInvalidPostInputFields } from '@/shared/api/posts/input-validation';
 import { postsQueryKeys } from '@/shared/api/posts/queries/keys';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
@@ -23,10 +22,9 @@ export const usePublishDraftMutation = () => {
 	return useMutation({
 		mutationFn: ({ draftId, request }: PublishDraftVariables) => publishDraft(draftId, request),
 		meta: { errorTracking: 'local' },
-		onError: async (error, variables) => {
+		onError: async (error) => {
 			apiErrorReporter.report(error, {
 				operation: 'draft.publish',
-				invalidUserInputFields: getInvalidPostInputFields(variables.request.title),
 			});
 			if (isInvalidApiResponseError(error)) {
 				await Promise.all([

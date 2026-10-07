@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { normalizeApiError } from '@/shared/api/api-error';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
+
 import { handleGitHubCallback, logoutAuth } from './api';
 
 vi.hoisted(() => {
@@ -93,6 +96,30 @@ describe('auth API', () => {
 			});
 		},
 	);
+	it('callback 응답의 Authorization이 없으면 공개 요청 진단을 유지한다', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					status: 200,
+					message: 'success',
+					data: { onboardingStatus: 'COMPLETED', redirectUrl: '/' },
+				}),
+			),
+		);
+		let captured: unknown;
+		try {
+			await handleGitHubCallback({ code: 'private-code', state: 'private-state' });
+		} catch (error) {
+			captured = error;
+		}
+		const normalized = normalizeApiError(captured);
+		expect(normalized).toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
+		expect(getApiRequestDiagnostics(normalized.cause)).toEqual({
+			method: 'POST',
+			url: 'https://api.rilog.test/v1/auth/github/callback',
+		});
+	});
 
 	it('로그아웃을 credential과 함께 요청한다', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
