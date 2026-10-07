@@ -17,8 +17,10 @@ import type {
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
+import PostCommentsFloatingPane from '@/features/post-detail/ui/PostCommentsFloatingPane';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
@@ -49,6 +51,7 @@ export default function PostDetailCommentsWorkspace({
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
+	const isDesktop = useMediaQuery('(min-width: 79rem)');
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(false);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
@@ -135,15 +138,20 @@ export default function PostDetailCommentsWorkspace({
 			}
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-			setIsCommentsSidebarOpen(false);
-			window.setTimeout(() => {
-				const target =
-					findAnchorElement(thread.anchor.anchorId) ??
-					document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
-				target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-			}, 140);
+			if (!isDesktop) {
+				setIsCommentsSidebarOpen(false);
+			}
+			window.setTimeout(
+				() => {
+					const target =
+						findAnchorElement(thread.anchor.anchorId) ??
+						document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+					target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				},
+				isDesktop ? 0 : 140,
+			);
 		},
-		[postId],
+		[postId, isDesktop],
 	);
 
 	return (
@@ -170,30 +178,56 @@ export default function PostDetailCommentsWorkspace({
 
 			<aside className={styles.commentsColumn}>
 				<div className={styles.commentsSticky}>
-					<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
+					{!isCommentsSidebarOpen && (
+						<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
+					)}
+					{isDesktop && (
+						<PostCommentsFloatingPane
+							key={`desktop-${createRequestId}`}
+							postId={postId}
+							selection={selection}
+							composerAnchorId={composerAnchorId}
+							mode={sidebarMode}
+							entrySource={commentEntrySource}
+							open={isCommentsSidebarOpen}
+							threads={visibleThreads}
+							isLoading={sidebarQuery.isPending}
+							isError={sidebarQuery.isError}
+							onRetry={() => void sidebarQuery.refetch()}
+							onCreated={(commentAnchorId) => {
+								setSelection(null);
+								setCreatedCommentId(commentAnchorId);
+								setComposerAnchorId(null);
+							}}
+							onClose={() => setIsCommentsSidebarOpen(false)}
+							onNavigate={handleAnchorNavigate}
+						/>
+					)}
 				</div>
 			</aside>
 
-			<PostCommentsSidebar
-				key={createRequestId}
-				postId={postId}
-				selection={selection}
-				composerAnchorId={composerAnchorId}
-				mode={sidebarMode}
-				entrySource={commentEntrySource}
-				open={isCommentsSidebarOpen}
-				threads={visibleThreads}
-				isLoading={sidebarQuery.isPending}
-				isError={sidebarQuery.isError}
-				onRetry={() => void sidebarQuery.refetch()}
-				onCreated={(commentAnchorId) => {
-					setSelection(null);
-					setCreatedCommentId(commentAnchorId);
-					setComposerAnchorId(null);
-				}}
-				onClose={() => setIsCommentsSidebarOpen(false)}
-				onNavigate={handleAnchorNavigate}
-			/>
+			{!isDesktop && (
+				<PostCommentsSidebar
+					key={`mobile-${createRequestId}`}
+					postId={postId}
+					selection={selection}
+					composerAnchorId={composerAnchorId}
+					mode={sidebarMode}
+					entrySource={commentEntrySource}
+					open={isCommentsSidebarOpen}
+					threads={visibleThreads}
+					isLoading={sidebarQuery.isPending}
+					isError={sidebarQuery.isError}
+					onRetry={() => void sidebarQuery.refetch()}
+					onCreated={(commentAnchorId) => {
+						setSelection(null);
+						setCreatedCommentId(commentAnchorId);
+						setComposerAnchorId(null);
+					}}
+					onClose={() => setIsCommentsSidebarOpen(false)}
+					onNavigate={handleAnchorNavigate}
+				/>
+			)}
 		</>
 	);
 }
