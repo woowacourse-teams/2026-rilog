@@ -103,6 +103,27 @@ it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한�
 	});
 });
 
+it('navigation의 상대 URL은 Slack 요약과 수신 parser에서 민감한 쿼리를 제거한다', () => {
+	const relativeUrl = '/feeds?email=person%40example.com&nickname=private-nickname&content=private-content';
+	const summarized = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		breadcrumbs: [{ category: 'navigation', data: { from: relativeUrl, to: relativeUrl } }],
+	});
+	expect(summarized?.breadcrumbs[0]).toEqual({ category: 'navigation', from: '/feeds', to: '/feeds' });
+
+	const parsed = parseSentrySlackSummary({
+		eventId: EVENT_ID,
+		title: 'Error',
+		errorType: 'Error',
+		route: '/feed',
+		tags: {},
+		breadcrumbs: [{ category: 'navigation', from: relativeUrl, to: relativeUrl }],
+	});
+	expect(parsed?.breadcrumbs[0]).toEqual({ category: 'navigation', from: '/feeds', to: '/feeds' });
+	expect(JSON.stringify({ summarized, parsed })).not.toMatch(/person|private/);
+});
+
 it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나 거절한다', () => {
 	const summarized = summarizeSentryEventForSlack({
 		type: undefined,

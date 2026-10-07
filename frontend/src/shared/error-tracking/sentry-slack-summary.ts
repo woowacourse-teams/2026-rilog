@@ -60,7 +60,7 @@ function safeUrl(value: string): string | null {
 		url.username = '';
 		url.password = '';
 		url.hash = '';
-		for (const key of url.searchParams.keys()) {
+		for (const key of [...url.searchParams.keys()]) {
 			if (PRIVATE_QUERY_KEY.test(key)) url.searchParams.delete(key);
 		}
 		return value.startsWith('/') ? `${url.pathname}${url.search}` : url.toString();
@@ -127,7 +127,7 @@ function cleanText(value: string, limit: number): string {
 
 function cleanDiagnosticText(value: string, limit = 800): string {
 	return value
-		.replace(/https?:\/\/[^\s<>"']+/gi, (url) => safeUrl(url) ?? '[URL]')
+		.replace(/(?:https?:\/\/|\/)[^\s<>"']+/gi, (url) => safeUrl(url) ?? '[URL]')
 		.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[Email]')
 		.replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [Filtered]')
 		.replace(/\bvalue=(?:"[^"]*"|'[^']*'|[^\]\s]+)/gi, 'value=[Filtered]')
