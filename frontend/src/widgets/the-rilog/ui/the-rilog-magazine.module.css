@@ -504,7 +504,7 @@
 
 @media (width < 48rem) {
 	.masthead {
-		padding: 2rem 0 4.5rem;
+		padding: 2rem 0;
 	}
 
 	.masthead h1 {
