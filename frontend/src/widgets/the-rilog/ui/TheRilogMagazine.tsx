@@ -28,7 +28,7 @@ export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogM
 					<section className={styles.enterpriseArticlesSection} aria-labelledby="enterprise-articles-heading">
 						<div className={styles.sectionHeading}>
 							<h2 id="enterprise-articles-heading">Enterprise Articles</h2>
-							<span>updates Mon &amp; Thu</span>
+							<span>updates on Mon &amp; Thu</span>
 						</div>
 						<div className={styles.enterpriseArticleList}>
 							{enterpriseArticles.map((article) => (
@@ -42,7 +42,7 @@ export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogM
 				<section className={styles.personalArticlesSection} aria-labelledby="personal-articles-heading">
 					<div className={styles.sectionHeading}>
 						<h2 id="personal-articles-heading">Personal Articles</h2>
-						<span>updates Mon &amp; Thu</span>
+						<span>updates on Mon &amp; Thu</span>
 					</div>
 					<div className={styles.personalArticleList}>
 						{personalArticles.map((article, index) => (

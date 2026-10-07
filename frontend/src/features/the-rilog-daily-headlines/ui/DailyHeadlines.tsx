@@ -52,7 +52,7 @@ export default function DailyHeadlines({ dailyHeadlines }: DailyHeadlinesProps) 
 		>
 			<header className={styles.header}>
 				<h2 id="the-rilog-daily-headlines-heading">Daily Headlines</h2>
-				<p className={styles.publication}>updates daily 06:00</p>
+				<p className={styles.publication}>updates daily at 06:00</p>
 			</header>
 			<ol className={styles.list}>
 				{dailyHeadlines.map((headline, index) => (
