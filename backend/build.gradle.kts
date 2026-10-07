@@ -32,6 +32,9 @@ dependencies {
 	// Spring Data Jpa
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
+	// Local viewer records; version managed by Spring Boot BOM
+	implementation("com.github.ben-manes.caffeine:caffeine")
+
 	// Redis
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
@@ -100,4 +103,3 @@ tasks.register<Test>("testMySql") {
 
 	systemProperty("spring.profiles.active", "mysql-test")
 }
-
