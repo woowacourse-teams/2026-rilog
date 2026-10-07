@@ -1,16 +1,12 @@
-import Image from 'next/image';
-
 import type { MagazineArticle } from '../model/magazine-content';
 
-import CologAvatar from '@/domains/blog/ui/CologAvatar';
-import UserAvatar from '@/domains/user/ui/UserAvatar';
 import type { DailyHeadline } from '@/features/the-rilog-daily-headlines/model/daily-headline';
 import DailyHeadlines from '@/features/the-rilog-daily-headlines/ui/DailyHeadlines';
-import { APP_ROUTES } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { formatMagazineDate } from '../lib/format-magazine-date';
 
+import MagazineArticleCard from './MagazineArticleCard';
+import MagazineMasthead from './MagazineMasthead';
 import ScrollReveal from './ScrollReveal';
 import styles from './the-rilog-magazine.module.css';
 
@@ -19,80 +15,13 @@ interface TheRilogMagazineProps {
 	articles: readonly MagazineArticle[];
 }
 
-interface MagazineArticleCardProps {
-	article: MagazineArticle;
-	imagePosition?: 'left' | 'right';
-}
-
-function MagazineArticleCard({ article, imagePosition = 'left' }: MagazineArticleCardProps) {
-	const { profile } = article;
-	return (
-		<article
-			className={styles.card}
-			data-kind={profile.type === 'enterprise' ? 'enterprise' : 'personal'}
-			data-image-position={imagePosition}
-		>
-			<div className={styles.cardContent}>
-				<div className={styles.artworkFrame} data-thumbnail-ratio={article.thumbnailRatio} aria-hidden="true">
-					<div className={styles.artwork} data-artwork={article.artwork}>
-						<span className={styles.artworkShape} />
-						<span className={styles.artworkDetail} />
-					</div>
-				</div>
-				<div className={styles.cardBody}>
-					<div className={styles.profile}>
-						{profile.type === 'bloger' ? (
-							<UserAvatar
-								src={profile.profileImageUrl}
-								fallback={profile.name.slice(0, 1)}
-								label={`${profile.name} 프로필`}
-								size="sm"
-							/>
-						) : (
-							<CologAvatar
-								src={profile.profileImageUrl}
-								fallback={profile.name.slice(0, 1)}
-								label={`${profile.name} 프로필`}
-								size="sm"
-							/>
-						)}
-						<span className={styles.profileName}>{profile.name}.</span>
-					</div>
-					<h3 className={styles.cardTitle}>
-						<CustomLink href={`${APP_ROUTES.theRilog}/articles/${article.id}`} className={styles.cardLink}>
-							<span className={styles.cardTitleText}>{article.title}</span>
-						</CustomLink>
-					</h3>
-					<p className={styles.summary}>{article.summary}</p>
-				</div>
-			</div>
-		</article>
-	);
-}
-
 export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogMagazineProps) {
 	const enterpriseArticles = articles.filter((article) => article.profile.type === 'enterprise');
 	const personalArticles = articles.filter((article) => article.profile.type === 'bloger');
 	const editionDate = formatMagazineDate(new Date());
 	return (
 		<main className={styles.page}>
-			<header>
-				<div className={styles.masthead}>
-					<div className={styles.edition} aria-label="발행 정보">
-						<time dateTime={editionDate.dateTime}>{editionDate.label}</time>
-						<CustomLink href={`${APP_ROUTES.theRilog}/about`}>about. The Rilog.</CustomLink>
-					</div>
-					<h1 aria-label="THE Rilog.">
-						<span className={styles.titleWord}>THE</span>
-						<span className={styles.foxFrame}>
-							<Image className={styles.fox} src="/brand/the-rilog-fox.webp" alt="" width={640} height={640} priority />
-						</span>
-						<span className={styles.logoFrame}>
-							<Image className={styles.brandLogo} src="/brand/logo.svg" alt="" width={1186} height={472} priority />
-						</span>
-					</h1>
-				</div>
-			</header>
+			<MagazineMasthead editionDate={editionDate} />
 			<div className={styles.stories}>
 				<div className={styles.contentGrid}>
 					<DailyHeadlines dailyHeadlines={dailyHeadlines} />
