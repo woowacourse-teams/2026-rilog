@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
 	rewrites() {
 		return Promise.resolve([
 			{ source: '/.well-known/llms.txt', destination: '/llms.txt' },
-			{ source: '/@:slug/:path*', destination: '/b/:slug/:path*' },
+			{ source: '/@:slug/:path*', destination: '/blog/:slug/:path*' },
 		]);
 	},
 	images: {

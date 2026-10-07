@@ -26,7 +26,7 @@ export const config = {
 		'/write/:path*',
 		'/colog/create/:path*',
 		'/:slug/settings/:path*',
-		'/b/:slug/settings/:path*',
+		'/blog/:slug/settings/:path*',
 		'/sign-up/:path*',
 	],
 };
