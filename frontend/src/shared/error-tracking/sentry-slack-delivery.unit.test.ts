@@ -131,3 +131,72 @@ it('Slack API가 HTTP 200에 ok=false를 반환하면 알림 실패로 처리한
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
+
+it('Slack 429 응답의 Retry-After 전체 시간이 지난 뒤 재시도한다', async () => {
+	vi.useFakeTimers();
+	vi.stubEnv('NODE_ENV', 'production');
+	vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+	vi.stubEnv('SENTRY_SLACK_BOT_TOKEN', '');
+	vi.stubEnv('SENTRY_SLACK_CHANNEL_ID', '');
+	const post = vi
+		.fn()
+		.mockResolvedValueOnce({ ok: false, status: 429, headers: new Headers({ 'Retry-After': '30' }) })
+		.mockResolvedValueOnce({ ok: true, status: 200, headers: new Headers() });
+	vi.stubGlobal('fetch', post);
+
+	const delivery = deliverSentrySlackAlert(
+		{
+			eventId: '33333333333333333333333333333333',
+			title: '429 재시도 검증',
+			errorType: 'HTTPError',
+			route: '/write',
+			tags: { operation: 'post.publish', http_status: '429' },
+			breadcrumbs: [],
+		},
+		'rate-limit-test-ip',
+	);
+	await vi.advanceTimersByTimeAsync(29_999);
+	expect(post).toHaveBeenCalledOnce();
+	await vi.advanceTimersByTimeAsync(1);
+	await expect(delivery).resolves.toBe(true);
+	expect(post).toHaveBeenCalledTimes(2);
+
+	vi.useRealTimers();
+	vi.unstubAllGlobals();
+	vi.unstubAllEnvs();
+});
+
+it('Slack 본문 전송이 실패하면 같은 오류의 다음 실행을 중복으로 억제하지 않는다', async () => {
+	vi.useFakeTimers();
+	vi.stubEnv('NODE_ENV', 'production');
+	vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+	vi.stubEnv('SENTRY_SLACK_BOT_TOKEN', '');
+	vi.stubEnv('SENTRY_SLACK_CHANNEL_ID', '');
+	const failedResponse = { ok: false, status: 503, headers: new Headers() };
+	const post = vi.fn().mockResolvedValueOnce(failedResponse).mockResolvedValueOnce(failedResponse).mockResolvedValue({
+		ok: true,
+		status: 200,
+		headers: new Headers(),
+	});
+	vi.stubGlobal('fetch', post);
+	const summary = {
+		eventId: '44444444444444444444444444444444',
+		title: '본문 재시도 보존 검증',
+		errorType: 'HTTPError',
+		route: '/write',
+		tags: { operation: 'post.publish', http_status: '503' },
+		breadcrumbs: [],
+	};
+
+	const firstDelivery = deliverSentrySlackAlert(summary, 'delivery-failure-test-ip');
+	await vi.advanceTimersByTimeAsync(1000);
+	await expect(firstDelivery).resolves.toBe(false);
+	await expect(
+		deliverSentrySlackAlert({ ...summary, eventId: '55555555555555555555555555555555' }, 'delivery-failure-test-ip'),
+	).resolves.toBe(true);
+	expect(post).toHaveBeenCalledTimes(3);
+
+	vi.useRealTimers();
+	vi.unstubAllGlobals();
+	vi.unstubAllEnvs();
+});

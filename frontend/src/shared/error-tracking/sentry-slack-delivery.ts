@@ -10,7 +10,7 @@ const recentByIp = new Map<string, number[]>();
 const recentTotal: number[] = [];
 const duplicateUntil = new Map<string, number>();
 
-function admit(source: string, summary: SentrySlackSummary, now: number): boolean {
+function admit(source: string, summary: SentrySlackSummary, now: number): { key: string; until: number } | null {
 	for (const [ip, times] of recentByIp) {
 		const current = times.filter((time) => now - time < WINDOW_MS);
 		if (current.length) recentByIp.set(ip, current);
@@ -23,12 +23,13 @@ function admit(source: string, summary: SentrySlackSummary, now: number): boolea
 	const key = [summary.errorType, summary.title, summary.route, summary.tags.operation, summary.tags.http_status].join(
 		'|',
 	);
-	if (duplicateUntil.has(key) || ipTimes.length >= MAX_PER_IP || recentTotal.length >= MAX_TOTAL) return false;
+	if (duplicateUntil.has(key) || ipTimes.length >= MAX_PER_IP || recentTotal.length >= MAX_TOTAL) return null;
 	ipTimes.push(now);
 	recentByIp.set(source, ipTimes);
 	recentTotal.push(now);
-	duplicateUntil.set(key, now + DUPLICATE_MS);
-	return true;
+	const until = now + DUPLICATE_MS;
+	duplicateUntil.set(key, until);
+	return { key, until };
 }
 
 function formatMainMessage(summary: SentrySlackSummary) {
@@ -88,6 +89,15 @@ function formatBreadcrumb(breadcrumb: SentrySlackBreadcrumb): string {
 	return lines.join('\n');
 }
 
+function retryAfterMs(response: Response): number {
+	const value = response.headers.get('retry-after');
+	if (value === null) return 1000;
+	const seconds = Number(value);
+	if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+	const retryAt = Date.parse(value);
+	return Number.isFinite(retryAt) ? Math.max(retryAt - Date.now(), 0) : 1000;
+}
+
 async function postWithRetry(url: string, body: unknown, token?: string): Promise<Response | null> {
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		const response = await fetch(url, {
@@ -97,8 +107,7 @@ async function postWithRetry(url: string, body: unknown, token?: string): Promis
 			signal: AbortSignal.timeout(2500),
 		});
 		if (attempt === 0 && (response.status === 429 || response.status >= 500)) {
-			const retryAfter = Number(response.headers.get('retry-after') ?? 1);
-			await new Promise((resolve) => setTimeout(resolve, Math.min(Math.max(retryAfter, 1), 5) * 1000));
+			await new Promise((resolve) => setTimeout(resolve, retryAfterMs(response)));
 			continue;
 		}
 		return response;
@@ -121,7 +130,9 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 	const channel = process.env.SENTRY_SLACK_CHANNEL_ID;
 	const webhook = process.env.SENTRY_SLACK_WEBHOOK_URL;
 	if ((!token || !channel) && !webhook) return false;
-	if (!admit(source, summary, Date.now())) return true;
+	const admission = admit(source, summary, Date.now());
+	if (!admission) return true;
+	let mainDelivered = false;
 	try {
 		const main = formatMainMessage(summary);
 		if (token && channel) {
@@ -130,6 +141,7 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 				console.error('Sentry Slack parent alert delivery failed.');
 				return false;
 			}
+			mainDelivered = true;
 			let repliesDelivered = true;
 			for (const [index, breadcrumb] of summary.breadcrumbs.entries()) {
 				// Slack generally allows one channel message per second, including thread replies.
@@ -152,10 +164,17 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 		}
 		if (!webhook) return false;
 		const response = await postWithRetry(webhook, main);
-		if (response?.ok) return true;
+		if (response?.ok) {
+			mainDelivered = true;
+			return true;
+		}
 		console.error('Sentry Slack alert delivery failed:', response?.status);
 	} catch {
 		console.error('Sentry Slack alert delivery failed.');
+	} finally {
+		if (!mainDelivered && duplicateUntil.get(admission.key) === admission.until) {
+			duplicateUntil.delete(admission.key);
+		}
 	}
 	return false;
 }
