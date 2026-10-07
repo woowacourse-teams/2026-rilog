@@ -116,12 +116,34 @@ it('navigation의 상대 URL은 Slack 요약과 수신 parser에서 민감한 �
 		eventId: EVENT_ID,
 		title: 'Error',
 		errorType: 'Error',
-		route: '/feed',
+		route: '/feeds',
 		tags: {},
 		breadcrumbs: [{ category: 'navigation', from: relativeUrl, to: relativeUrl }],
 	});
 	expect(parsed?.breadcrumbs[0]).toEqual({ category: 'navigation', from: '/feeds', to: '/feeds' });
 	expect(JSON.stringify({ summarized, parsed })).not.toMatch(/person|private/);
+});
+
+it('클라이언트 오류에 transaction이 없어도 request URL을 식별자 없는 route로 정규화한다', () => {
+	const summarized = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		request: { url: 'https://www.rilog.kr/@private-blog/posts/72?email=person%40example.com' },
+	});
+	expect(summarized?.route).toBe('/blog/[slug]/posts/[postId]');
+	expect(JSON.stringify(summarized)).not.toMatch(/private-blog|person|72/);
+});
+
+it('수신 parser도 클라이언트 rewrite 경로를 식별자 없는 route로 정규화한다', () => {
+	const parsed = parseSentrySlackSummary({
+		eventId: EVENT_ID,
+		title: 'Error',
+		errorType: 'Error',
+		route: '/@private-blog/posts/72',
+		tags: {},
+		breadcrumbs: [],
+	});
+	expect(parsed?.route).toBe('/blog/[slug]/posts/[postId]');
 });
 
 it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나 거절한다', () => {

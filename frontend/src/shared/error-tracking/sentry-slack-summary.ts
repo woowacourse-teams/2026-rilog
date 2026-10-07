@@ -1,5 +1,7 @@
 import type { ErrorEvent } from '@sentry/nextjs';
 
+import { normalizeSentryRoute } from './sentry-route';
+
 export interface SentrySlackBreadcrumb {
 	category: string;
 	method?: string;
@@ -33,8 +35,7 @@ const TAG_NAMES = [
 ] as const;
 const SAFE_TAG = /^[\w.:-]{1,80}$/;
 const EVENT_ID = /^[a-f\d]{32}$/i;
-const ROUTES = new Set(['/', '/write', '/about', '/feed', '/login', '/search', '/settings']);
-const ROUTE_TEMPLATE = /^\/(?:\[slug\](?:\/posts\/\[postId\](?:\/markdown)?)?)$/;
+const ROUTE_BASE_URL = 'https://www.rilog.kr';
 const BREADCRUMB_CATEGORIES = /^(fetch|xhr|http|navigation|ui\.(click|input|submit))$/;
 const PRIVATE_KEY =
 	/^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-amz-.*|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|body|content|value)$/i;
@@ -45,8 +46,8 @@ function safeRoute(event: ErrorEvent): string {
 	for (const candidate of [event.transaction, event.request?.url]) {
 		if (typeof candidate !== 'string') continue;
 		try {
-			const path = new URL(candidate, 'https://www.rilog.kr').pathname;
-			if (ROUTES.has(path) || ROUTE_TEMPLATE.test(path)) return path;
+			const route = normalizeSentryRoute(new URL(candidate, ROUTE_BASE_URL).pathname);
+			if (route) return route;
 		} catch {
 			// Unknown SDK route data is not copied into Slack.
 		}
@@ -283,11 +284,9 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 	if (typeof data.eventId !== 'string' || !EVENT_ID.test(data.eventId)) return null;
 	if (typeof data.title !== 'string' || !data.title || data.title.length > 180) return null;
 	if (typeof data.errorType !== 'string' || !data.errorType || data.errorType.length > 80) return null;
-	if (
-		typeof data.route !== 'string' ||
-		!(ROUTES.has(data.route) || ROUTE_TEMPLATE.test(data.route) || data.route === 'unknown')
-	)
-		return null;
+	const route =
+		data.route === 'unknown' ? 'unknown' : typeof data.route === 'string' ? normalizeSentryRoute(data.route) : null;
+	if (!route) return null;
 	if (!data.tags || typeof data.tags !== 'object' || Array.isArray(data.tags)) return null;
 	const sessionReplayUrl =
 		data.sessionReplayUrl === undefined
@@ -310,7 +309,7 @@ export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | nu
 		eventId: data.eventId,
 		title: cleanText(data.title, 180),
 		errorType: cleanText(data.errorType, 80),
-		route: data.route,
+		route,
 		tags: Object.fromEntries(Object.entries(data.tags)),
 		breadcrumbs: breadcrumbs.filter((item): item is SentrySlackBreadcrumb => item !== null),
 		...(sessionReplayUrl ? { sessionReplayUrl } : {}),
