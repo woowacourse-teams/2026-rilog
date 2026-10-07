@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24' # package.json engines 기준
+          node-version: '24.19.0'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -66,7 +66,24 @@ jobs:
           echo "$ENV_SECRET" > .env
 
       - name: Build Next.js app
-        run: pnpm build
+        env:
+          SENTRY_RELEASE: ${{ github.sha }}
+          SENTRY_UPLOAD_REQUIRED: ${{ github.event_name == 'push' && 'true' || 'false' }}
+        shell: bash
+        run: |
+          if [[ "$SENTRY_UPLOAD_REQUIRED" == 'true' ]]; then
+            node --env-file=.env -e "if (!process.env.SENTRY_AUTH_TOKEN) { console.error('Production Sentry source map upload requires SENTRY_AUTH_TOKEN.'); process.exit(1); }"
+          fi
+          pnpm build
+
+      - name: Verify public source maps are absent
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          if [[ -n "$(find .next/static -type f -name '*.map' -print -quit)" ]]; then
+            echo 'Public source maps remain in the production artifact.' >&2
+            exit 1
+          fi
 
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)

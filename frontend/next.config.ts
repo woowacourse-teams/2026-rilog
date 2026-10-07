@@ -1,6 +1,8 @@
 import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 
+const isSentryUploadRequired = process.env.SENTRY_UPLOAD_REQUIRED === 'true';
+
 const nextConfig: NextConfig = {
 	agentRules: false,
 	distDir: process.env.SENTRY_FEED_503_SMOKE === 'true' ? '.next-sentry-feed-503' : '.next',
@@ -74,6 +76,20 @@ export default withSentryConfig(nextConfig, {
 	org: 'rilog-an',
 
 	project: 'rilog-frontend-nextjs',
+	release: {
+		name: process.env.SENTRY_RELEASE,
+		create: isSentryUploadRequired,
+		finalize: isSentryUploadRequired,
+	},
+	sourcemaps: {
+		disable: !isSentryUploadRequired,
+		deleteSourcemapsAfterUpload: true,
+	},
+	errorHandler: isSentryUploadRequired
+		? (error) => {
+				throw error;
+			}
+		: undefined,
 
 	// Only print logs for uploading source maps in CI
 	silent: !process.env.CI,

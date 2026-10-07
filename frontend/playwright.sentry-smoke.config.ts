@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const sentryDsn = process.env.SENTRY_SMOKE_DSN;
+const isProductionSmoke = process.env.SENTRY_SMOKE_PRODUCTION === 'true';
 
 if (!sentryDsn) {
 	throw new Error('SENTRY_SMOKE_DSN에 테스트용 Sentry DSN을 설정해 주세요.');
@@ -37,7 +38,7 @@ export default defineConfig({
 	},
 	projects: [{ name: 'chromium', use: devices['Desktop Chrome'] }],
 	webServer: {
-		command: 'pnpm dev --hostname 127.0.0.1 --port 3109',
+		command: `pnpm ${isProductionSmoke ? 'start' : 'dev'} --hostname 127.0.0.1 --port 3109`,
 		url: 'http://127.0.0.1:3109/about',
 		reuseExistingServer: false,
 		timeout: 120_000,

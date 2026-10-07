@@ -95,4 +95,12 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 		const { event_id: eventId } = JSON.parse(envelopeHeader) as { event_id?: string };
 		if (eventId) console.info(`Sentry event ID: ${eventId}`);
 	}
+	if (process.env.SENTRY_SMOKE_PRODUCTION === 'true') {
+		const event = JSON.parse(envelope?.split('\n')[2] ?? '{}') as {
+			release?: string;
+			debug_meta?: { images?: Array<{ debug_id?: string }> };
+		};
+		expect(event.release).toBe(process.env.SENTRY_RELEASE);
+		expect(event.debug_meta?.images?.some((image) => Boolean(image.debug_id))).toBe(true);
+	}
 });

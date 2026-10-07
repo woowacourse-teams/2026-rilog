@@ -17,6 +17,7 @@
 		"test:e2e:prod": "playwright test --config playwright.prod.config.ts",
 		"test:sentry:feed-503": "playwright test --config playwright.sentry-smoke.config.ts sentry-feed-503.spec.ts",
 		"test:sentry:post-503": "playwright test --config playwright.sentry-smoke.config.ts sentry-post-503.spec.ts",
+		"test:sentry:post-503:prod": "node --env-file=.env test-harness/run-sentry-sourcemap-smoke.mjs",
 		"check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:component && pnpm build"
 	},
 	"dependencies": {
