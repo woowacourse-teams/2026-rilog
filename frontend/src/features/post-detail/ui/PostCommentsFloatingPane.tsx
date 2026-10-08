@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
@@ -54,6 +54,13 @@ export default function PostCommentsFloatingPane({
 	const { isAuthenticated, isInitialized } = useAuth();
 	const login = useLoginModal();
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
+	const hasComposerThread =
+		composerAnchorId != null && threads.some(({ anchor }) => anchor.anchorId === composerAnchorId);
+	const shouldFocusInput = isAuthenticated && isInitialized && (selection != null || hasComposerThread);
+
+	useEffect(() => {
+		if (open && shouldFocusInput) inputRef.current?.focus({ preventScroll: true });
+	}, [open, shouldFocusInput, selection, composerAnchorId]);
 
 	if (!open) {
 		return null;
@@ -61,6 +68,8 @@ export default function PostCommentsFloatingPane({
 
 	return (
 		<div
+			role="region"
+			aria-labelledby={titleId}
 			className={`relative flex h-[calc(100dvh-10rem)] w-full flex-col overflow-hidden rounded-3xl border border-border-default bg-surface shadow-[0_4px_24px_rgba(0,0,0,0.12)] transition-all ${className}`}
 		>
 			<header className="flex h-15 shrink-0 items-center justify-between border-b border-border-default px-5">

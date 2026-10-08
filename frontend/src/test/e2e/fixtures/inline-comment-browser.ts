@@ -9,10 +9,17 @@ import type { Page } from '@playwright/test';
 // Vitest와 같은, lockfile에 고정된 Vite를 사용한다. 앱에 테스트용 route를 추가하지 않는다.
 const require = createRequire(import.meta.url);
 const vitePath = createRequire(require.resolve('vitest/config')).resolve('vite');
-let bundle: Promise<string> | undefined;
-const buildWorkspace = async (): Promise<string> => {
+interface WorkspaceBundle {
+	code: string;
+	css: string;
+}
+
+let bundle: Promise<WorkspaceBundle> | undefined;
+const buildWorkspace = async (): Promise<WorkspaceBundle> => {
 	const { build } = (await import(vitePath)) as {
-		build: (config: object) => Promise<{ output: { type: string; code?: string }[] }[]>;
+		build: (
+			config: object,
+		) => Promise<{ output: { type: string; code?: string; fileName: string; source?: string | Uint8Array }[] }[]>;
 	};
 	const result = await build({
 		configFile: false,
@@ -42,14 +49,20 @@ const buildWorkspace = async (): Promise<string> => {
 			},
 		},
 	});
-	const code = result.flatMap((item) => item.output).find((item) => item.type === 'chunk')?.code;
+	const output = result.flatMap((item) => item.output);
+	const code = output.find((item) => item.type === 'chunk')?.code;
 	if (!code) throw new Error('인라인 댓글 브라우저 fixture 빌드 실패');
-	return code;
+	const css = output
+		.filter((item) => item.type === 'asset' && item.fileName.endsWith('.css'))
+		.map((item) => (typeof item.source === 'string' ? item.source : new TextDecoder().decode(item.source)))
+		.join('\n');
+	if (!css) throw new Error('인라인 댓글 브라우저 fixture 스타일 빌드 실패');
+	return { code, css };
 };
 
 export const renderInlineCommentWorkspace = async (page: Page) => {
 	bundle ??= buildWorkspace();
-	const code = await bundle;
+	const { code, css } = await bundle;
 	await page.goto('/about');
 	const styles = await page
 		.locator('link[rel="stylesheet"]')
@@ -57,5 +70,6 @@ export const renderInlineCommentWorkspace = async (page: Page) => {
 			links.map((link) => `<link rel="stylesheet" href="${(link as HTMLLinkElement).href}">`).join(''),
 		);
 	await page.setContent(`<html><head>${styles}</head><body><div id="root"></div></body></html>`);
+	await page.addStyleTag({ content: css });
 	await page.addScriptTag({ content: code });
 };
