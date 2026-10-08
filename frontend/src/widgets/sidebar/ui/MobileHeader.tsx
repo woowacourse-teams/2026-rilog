@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
+import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 import { useAuth } from '@/features/auth/model/use-auth';
@@ -10,16 +11,13 @@ import { useAuthAction } from '@/features/login/model/use-auth-action';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
+import ButtonLink from '@/shared/ui/button/ButtonLink';
 import CustomLink from '@/shared/ui/link/CustomLink';
+import NotificationUnreadIcon from '@/widgets/sidebar/assets/notification-unread.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
-export default function MobileHeader() {
-	const { isAuthenticated } = useAuth();
-	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
-	const pathname = usePathname() ?? '';
-	const handleLoginClick = useAuthAction({ entrySurface: 'mobile_header' });
-	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
+function UserProfile({ user }: { user: User | null | undefined }) {
 	const userAvatar = (
 		<UserAvatar
 			src={user?.profileImageUrl}
@@ -29,7 +27,18 @@ export default function MobileHeader() {
 			hasBorder
 		/>
 	);
-	const userProfileControl = user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
+
+	return user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
+}
+
+export default function MobileHeader() {
+	const { isAuthenticated } = useAuth();
+	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
+
+	const pathname = usePathname() ?? '';
+	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
+
+	const handleLoginClick = useAuthAction({ entrySurface: 'mobile_header' });
 
 	return (
 		<nav
@@ -42,7 +51,12 @@ export default function MobileHeader() {
 			</CustomLink>
 
 			{isAuthenticated ? (
-				userProfileControl
+				<div className="flex items-center gap-2">
+					<ButtonLink href={APP_ROUTES.notifications} size="icon" variant="ghost">
+						<NotificationUnreadIcon width={24} height={24} />
+					</ButtonLink>
+					<UserProfile user={user} />
+				</div>
 			) : (
 				<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
 					로그인
