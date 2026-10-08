@@ -40,6 +40,14 @@
 	white-space: nowrap;
 }
 
+.listContainer {
+	position: relative;
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	flex-direction: column;
+}
+
 .list {
 	display: grid;
 	grid-auto-rows: minmax(3.75rem, 1fr);
@@ -74,20 +82,16 @@
 	text-decoration: none;
 }
 
-.itemLink::before {
+.indicator {
 	position: absolute;
-	top: 17%;
-	bottom: 17%;
+	top: 0;
 	left: -0.625rem;
 	width: 2px;
 	background: var(--brand-primary);
-	opacity: 0;
-	transition: opacity 200ms ease;
-	content: '';
-}
-
-.item[data-active='true'] .itemLink::before {
-	opacity: 1;
+	pointer-events: none;
+	transition:
+		transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+		height 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .itemLink:focus-visible {
@@ -155,7 +159,7 @@
 	padding: 0;
 	border: 0;
 	background: transparent;
-	color: var(--text-primary);
+	color: color-mix(in srgb, var(--text-disabled) 80%, var(--text-secondary));
 	font-family: inherit;
 	text-align: left;
 	font-size: 1rem;
@@ -163,6 +167,18 @@
 	line-height: 1.45;
 	word-break: keep-all;
 	overflow-wrap: anywhere;
+	transform: scale(0.88);
+	transform-origin: left center;
+	transition:
+		color 320ms ease,
+		transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.item:hover .titleText,
+.item:focus-within .titleText,
+.item[data-active='true'] .titleText {
+	color: var(--text-primary);
+	transform: scale(1);
 }
 
 .item:hover .titleText,
@@ -198,7 +214,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.itemLink::before,
+	.indicator,
+	.titleText,
 	.number {
 		transition: none;
 	}
@@ -207,6 +224,10 @@
 		animation: none;
 		transform: none;
 		opacity: 1;
+	}
+
+	.titleText {
+		transform: none;
 	}
 }
 
