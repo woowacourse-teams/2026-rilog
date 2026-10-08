@@ -4,6 +4,7 @@ export const APP_ROUTES = {
 	cologCreate: '/colog/create',
 	signUp: '/sign-up',
 	write: '/write',
+	notifications: '/notifications',
 } as const;
 
 export const COLOG_SETTINGS_TAB_IDS = ['profile', 'members', 'chapters', 'danger'] as const;
