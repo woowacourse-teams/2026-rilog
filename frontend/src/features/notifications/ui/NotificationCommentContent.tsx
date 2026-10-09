@@ -25,7 +25,7 @@ export default function NotificationCommentContent({
 			onNavigate={() => {
 				if (!isRead) onRead(notification.id);
 			}}
-			className="mt-4 block min-w-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring sm:ml-13"
+			className="mt-4 block min-w-0 after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus-ring sm:ml-13"
 		>
 			{children}
 			<blockquote
