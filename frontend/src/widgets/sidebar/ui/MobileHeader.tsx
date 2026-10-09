@@ -52,8 +52,14 @@ export default function MobileHeader() {
 
 			{isAuthenticated ? (
 				<div className="flex items-center gap-2">
-					<ButtonLink href={APP_ROUTES.notifications} size="icon" variant="ghost">
-						<NotificationUnreadIcon width={24} height={24} />
+					<ButtonLink
+						href={APP_ROUTES.notifications}
+						aria-label="알림"
+						aria-current={pathname === APP_ROUTES.notifications ? 'page' : undefined}
+						size="icon"
+						variant="ghost"
+					>
+						<NotificationUnreadIcon width={24} height={24} aria-hidden="true" focusable="false" />
 					</ButtonLink>
 					<UserProfile user={user} />
 				</div>

@@ -21,6 +21,7 @@ describe('app routes', () => {
 			cologCreate: '/colog/create',
 			signUp: '/sign-up',
 			write: '/write',
+			notifications: '/notifications',
 		});
 	});
 
