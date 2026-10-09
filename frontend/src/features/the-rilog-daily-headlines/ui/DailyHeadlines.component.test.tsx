@@ -10,36 +10,18 @@ const dailyHeadlines: DailyHeadline[] = Array.from({ length: 8 }, (_, index) => 
 	title: `헤드라인 ${index + 1}`,
 }));
 
-let shouldReduceMotion = false;
-const motionListeners = new Set<() => void>();
 const advance = async (milliseconds: number) => {
 	await act(async () => vi.advanceTimersByTimeAsync(milliseconds));
-};
-const setReducedMotion = (value: boolean) => {
-	act(() => {
-		shouldReduceMotion = value;
-		motionListeners.forEach((listener) => listener());
-	});
 };
 const currentHeadline = () => screen.getByRole('link', { current: true });
 
 describe('DailyHeadlines', () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
-		shouldReduceMotion = false;
-		motionListeners.clear();
-		vi.stubGlobal('matchMedia', () => ({
-			get matches() {
-				return shouldReduceMotion;
-			},
-			addEventListener: (_event: string, listener: () => void) => motionListeners.add(listener),
-			removeEventListener: (_event: string, listener: () => void) => motionListeners.delete(listener),
-		}));
 	});
 
 	afterEach(() => {
 		vi.useRealTimers();
-		vi.unstubAllGlobals();
 	});
 
 	it('모든 헤드라인이 한 게시글로 향하고 선택한 위치를 fragment로 구분한다', () => {
@@ -53,16 +35,13 @@ describe('DailyHeadlines', () => {
 		}
 	});
 
-	it('2초마다 현재 헤드라인을 옮기고 마지막 다음에는 첫 항목을 강조한다', async () => {
+	it('시간이 지나도 현재 헤드라인을 자동으로 옮기지 않는다', async () => {
 		render(<DailyHeadlines dailyHeadlines={dailyHeadlines} />);
-		for (const headline of dailyHeadlines) {
-			expect(currentHeadline()).toHaveAccessibleName(headline.title);
-			await advance(2000);
-		}
+		await advance(6000);
 		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[0].title);
 	});
 
-	it('마우스로 가리킨 항목에서 멈추고 영역을 벗어난 뒤 다시 순환한다', async () => {
+	it('마우스로 가리킨 항목을 강조하고 영역을 벗어나도 자동 이동하지 않는다', async () => {
 		render(<DailyHeadlines dailyHeadlines={dailyHeadlines} />);
 		const second = screen.getByRole('link', { name: dailyHeadlines[1].title });
 		fireEvent.mouseEnter(second);
@@ -70,10 +49,10 @@ describe('DailyHeadlines', () => {
 		expect(currentHeadline()).toBe(second);
 		fireEvent.mouseLeave(screen.getByRole('region', { name: 'Daily Headlines' }), { relatedTarget: document.body });
 		await advance(2000);
-		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[2].title);
+		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[1].title);
 	});
 
-	it('키보드 초점이 목록 안에 있으면 멈추고 목록을 떠나면 순환한다', async () => {
+	it('키보드 초점을 따라 강조하고 목록을 떠나도 자동 이동하지 않는다', async () => {
 		render(
 			<>
 				<DailyHeadlines dailyHeadlines={dailyHeadlines.slice(0, 2)} />
@@ -90,32 +69,12 @@ describe('DailyHeadlines', () => {
 		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[1].title);
 		act(() => screen.getByRole('button', { name: '다른 영역' }).focus());
 		await advance(2000);
-		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[0].title);
-	});
-
-	it('동작 축소 설정이면 자동 순환하지 않고 키보드로 항목을 선택할 수 있다', async () => {
-		shouldReduceMotion = true;
-		render(<DailyHeadlines dailyHeadlines={dailyHeadlines} />);
-		await advance(6000);
-		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[0].title);
-		act(() => screen.getByRole('link', { name: dailyHeadlines[1].title }).focus());
 		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[1].title);
 	});
 
-	it('페이지를 연 뒤 동작 축소 설정을 바꾸면 자동 순환을 중지하고 해제하면 재개한다', async () => {
-		render(<DailyHeadlines dailyHeadlines={dailyHeadlines} />);
-		await advance(2000);
-		setReducedMotion(true);
-		await advance(6000);
-		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[1].title);
-		setReducedMotion(false);
-		await advance(2000);
-		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[2].title);
-	});
-
-	it('순환 중 목록이 줄어들어도 존재하는 항목 하나를 현재 항목으로 제공한다', async () => {
+	it('선택 후 목록이 줄어들어도 존재하는 항목 하나를 현재 항목으로 제공한다', () => {
 		const { rerender } = render(<DailyHeadlines dailyHeadlines={dailyHeadlines} />);
-		await advance(14000);
+		fireEvent.mouseEnter(screen.getByRole('link', { name: dailyHeadlines[7].title }));
 		rerender(<DailyHeadlines dailyHeadlines={dailyHeadlines.slice(0, 2)} />);
 		expect(screen.getAllByRole('link', { current: true })).toHaveLength(1);
 		expect(currentHeadline()).toHaveAttribute('href', expect.stringMatching(/headline-[01]$/));

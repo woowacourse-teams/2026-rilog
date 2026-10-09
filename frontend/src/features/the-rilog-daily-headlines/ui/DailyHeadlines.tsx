@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useRef, useState } from 'react';
 
 import type { DailyHeadline } from '../model/daily-headline';
 
@@ -14,44 +14,15 @@ interface DailyHeadlinesProps {
 	dailyHeadlines: readonly DailyHeadline[];
 }
 
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const subscribeReducedMotion = (onChange: () => void) => {
-	const query = window.matchMedia(REDUCED_MOTION_QUERY);
-	query.addEventListener('change', onChange);
-	return () => query.removeEventListener('change', onChange);
-};
-const getReducedMotion = () => window.matchMedia(REDUCED_MOTION_QUERY).matches;
-const getServerReducedMotion = () => true;
-
 export default function DailyHeadlines({ dailyHeadlines }: DailyHeadlinesProps) {
 	const listRef = useRef<HTMLOListElement>(null);
 	const [activeIndex, setActiveIndex] = useState(0);
-	const [isHovered, setIsHovered] = useState(false);
-	const [isFocused, setIsFocused] = useState(false);
-	const shouldReduceMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, getServerReducedMotion);
 	const currentIndex = dailyHeadlines.length === 0 ? 0 : activeIndex % dailyHeadlines.length;
-
-	useEffect(() => {
-		if (dailyHeadlines.length < 2 || isHovered || isFocused || shouldReduceMotion) {
-			return;
-		}
-		const timer = window.setInterval(() => setActiveIndex((index) => (index + 1) % dailyHeadlines.length), 2000);
-		return () => window.clearInterval(timer);
-	}, [dailyHeadlines.length, isHovered, isFocused, shouldReduceMotion]);
 
 	if (dailyHeadlines.length === 0) return null;
 
 	return (
-		<section
-			className={styles.headlines}
-			aria-labelledby="the-rilog-daily-headlines-heading"
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
-			onFocusCapture={() => setIsFocused(true)}
-			onBlurCapture={(event) => {
-				if (!event.currentTarget.contains(event.relatedTarget)) setIsFocused(false);
-			}}
-		>
+		<section className={styles.headlines} aria-labelledby="the-rilog-daily-headlines-heading">
 			<header className={styles.header}>
 				<h2 id="the-rilog-daily-headlines-heading">Daily Headlines</h2>
 				<p className={styles.publication}>updates daily at 06:00</p>
