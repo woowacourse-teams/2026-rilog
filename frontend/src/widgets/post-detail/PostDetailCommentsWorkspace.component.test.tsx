@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -173,6 +173,40 @@ describe('PostDetailCommentsWorkspace', () => {
 		expect(await screen.findByRole('dialog', { name: '인라인 댓글 1' })).toBeVisible();
 		expect(screen.getByRole('region', { name: '"다른 블록 인용" 댓글' })).toBeVisible();
 		expect(screen.queryByRole('region', { name: '"첫 번째 인용" 댓글' })).not.toBeInTheDocument();
+	});
+
+	it('ACTIVE selection 링크로 진입하면 해당 본문 위치로 스크롤한다', async () => {
+		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=1');
+		const target = document.createElement('span');
+		const scrollIntoView = vi.fn();
+		target.dataset.inlineCommentAnchorId = '1';
+		target.scrollIntoView = scrollIntoView;
+		document.body.append(target);
+
+		renderWorkspaceUI(1);
+
+		expect(await screen.findByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeVisible();
+		await waitFor(() => {
+			expect(scrollIntoView).toHaveBeenCalledOnce();
+			expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+		});
+		target.remove();
+	});
+
+	it('OUTDATED selection 링크로 진입하면 본문을 스크롤하지 않는다', async () => {
+		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=2');
+		const target = document.createElement('span');
+		const scrollIntoView = vi.fn();
+		target.dataset.inlineCommentAnchorId = '2';
+		target.scrollIntoView = scrollIntoView;
+		document.body.append(target);
+
+		renderWorkspaceUI(2);
+
+		expect(await screen.findByRole('region', { name: '"오래된 인용" 댓글' })).toBeVisible();
+		expect(screen.getByText('Outdated')).toBeVisible();
+		expect(scrollIntoView).not.toHaveBeenCalled();
+		target.remove();
 	});
 
 	it('존재하지 않는 selection 링크에서도 사이드바를 열고 빈 상태를 안내한다', async () => {

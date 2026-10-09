@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ReactNode } from 'react';
 
@@ -36,11 +36,19 @@ interface PostDetailCommentsWorkspaceProps {
 }
 
 const EMPTY_INLINE_COMMENT_BLOCKS: InlineCommentBlockModel[] = [];
+const EMPTY_INLINE_COMMENT_THREADS: InlineCommentThreadModel[] = [];
 
 const findAnchorElement = (anchorId: number) =>
 	Array.from(document.querySelectorAll<HTMLElement>('[data-inline-comment-anchor-id]')).find(
 		(element) => element.dataset.inlineCommentAnchorId === String(anchorId),
 	);
+
+const scrollToThreadAnchor = (thread: InlineCommentThreadModel) => {
+	const target =
+		findAnchorElement(thread.anchor.anchorId) ??
+		document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+	target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
 const replaceSelectionSearchParam = (selectionId: number | null) => {
 	const url = new URL(window.location.href);
@@ -68,7 +76,7 @@ export default function PostDetailCommentsWorkspace({
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
-	const sidebarThreads = sidebarQuery.data ?? [];
+	const sidebarThreads = sidebarQuery.data ?? EMPTY_INLINE_COMMENT_THREADS;
 	const inlineCommentBlocks = commentsQuery.data ?? EMPTY_INLINE_COMMENT_BLOCKS;
 	const [openRequest, setOpenRequest] = useState<InlineCommentOpenRequest | null>(null);
 	const [deepLinkedSelectionId, setDeepLinkedSelectionId] = useState(initialSelectionId);
@@ -82,6 +90,7 @@ export default function PostDetailCommentsWorkspace({
 		initialSelectionId === null ? 'all' : 'highlight',
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
+	const hasHandledDeepLinkNavigationRef = useRef(false);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
@@ -100,6 +109,23 @@ export default function PostDetailCommentsWorkspace({
 		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
 		0,
 	);
+
+	useEffect(() => {
+		if (
+			hasHandledDeepLinkNavigationRef.current ||
+			deepLinkedSelectionId === null ||
+			!commentsQuery.isSuccess ||
+			!sidebarQuery.isSuccess
+		) {
+			return;
+		}
+
+		hasHandledDeepLinkNavigationRef.current = true;
+		const thread = sidebarThreads.find(({ anchor }) => anchor.anchorId === deepLinkedSelectionId);
+		if (thread?.anchor.state === 'ACTIVE') {
+			scrollToThreadAnchor(thread);
+		}
+	}, [commentsQuery.isSuccess, deepLinkedSelectionId, sidebarQuery.isSuccess, sidebarThreads]);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
 		replaceSelectionSearchParam(mode === 'single' ? (request?.anchorIds[0] ?? null) : null);
@@ -163,10 +189,7 @@ export default function PostDetailCommentsWorkspace({
 			setIsCommentsSidebarOpen(false);
 			replaceSelectionSearchParam(null);
 			window.setTimeout(() => {
-				const target =
-					findAnchorElement(thread.anchor.anchorId) ??
-					document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
-				target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				scrollToThreadAnchor(thread);
 			}, 140);
 		},
 		[postId],
