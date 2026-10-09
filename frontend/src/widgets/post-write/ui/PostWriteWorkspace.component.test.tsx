@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -869,13 +869,8 @@ describe('NewPostController', () => {
 		const historyBackSpy = vi.spyOn(window.history, 'back');
 		historyBackSpy.mockClear();
 		replaceMock.mockClear();
-		let resolvePublish: ((value: { postId: string; slug: string }) => void) | undefined;
-		const publishPost: PublishPost = vi.fn(
-			() =>
-				new Promise<{ postId: string; slug: string }>((resolve) => {
-					resolvePublish = resolve;
-				}),
-		);
+		const publication = Promise.withResolvers<{ postId: string; slug: string }>();
+		const publishPost: PublishPost = vi.fn(() => publication.promise);
 		render(<NewPostController editorComponent={FakeEditor} publishPost={publishPost} />);
 		await fillValidPost(user);
 		await user.click(screen.getByRole('button', { name: '발행' }));
@@ -895,7 +890,10 @@ describe('NewPostController', () => {
 		expect(dialog).toBeInTheDocument();
 		expect(publishPost).toHaveBeenCalledOnce();
 
-		resolvePublish?.({ postId: 'post/40', slug: 'rilog' });
+		await act(async () => {
+			publication.resolve({ postId: 'post/40', slug: 'rilog' });
+			await publication.promise;
+		});
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/@rilog/posts/post%2F40'));
 		expect(postPublishedMock).toHaveBeenCalledWith(
 			expect.objectContaining({

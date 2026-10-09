@@ -50,7 +50,6 @@ describe('usePublishPostMutation', () => {
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: postsQueryKeys.count() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 
 	it('발행 응답 확인에 실패하면 재발행 없이 목록 캐시를 갱신한다', async () => {

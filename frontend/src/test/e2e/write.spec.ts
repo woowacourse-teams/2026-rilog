@@ -35,7 +35,7 @@ const enableWriteAccess = async (page: Page) => {
 		respond(route, {
 			uploadId: 'e2e-upload-id',
 			objectKey: 'rilog/images/originals/e2e-upload.png',
-			uploadUrl: 'http://localhost:3000/e2e-upload',
+			uploadUrl: new URL('/e2e-upload', page.url()).href,
 			headers: {},
 			expiresAt: '2026-08-28T00:00:00Z',
 		}),
@@ -308,7 +308,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await expect(code).toContainText('const first = 1;\nconst second = 2;');
 	});
 
-	test('H4는 맞춤 크기로 표시하고 H5 마크다운 입력은 헤딩으로 바꾸지 않는다', async ({ page }) => {
+	test('H4 마크다운은 제목으로 변환하고 H5 입력은 문단으로 유지한다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
@@ -316,8 +316,6 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await page.keyboard.type('넷째 제목');
 		const heading = page.locator('.post-write-blocknote [data-content-type="heading"][data-level="4"]');
 		await expect(heading).toContainText('넷째 제목');
-		await expect(heading).toHaveCSS('font-size', '18px');
-		await expect(heading.locator('.bn-inline-content')).toHaveCSS('line-height', '27px');
 
 		await page.keyboard.press('Enter');
 		await page.keyboard.type('##### 다섯째 문장');

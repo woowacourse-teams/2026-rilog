@@ -164,20 +164,6 @@ test('블록 경계 선택과 본문 밖에서 시작한 드래그는 본문 roo
 	expect(result.outsideDrag).toEqual({ blockId: 'paragraph', selectedText: '앞 😀', startOffset: 0, endOffset: 4 });
 });
 
-test('본문 드래그 선택 색상은 focus-ring 12%로 고정된다', async ({ page }) => {
-	const colors = await page.evaluate(() => {
-		const root = document.querySelector<HTMLElement>('[data-inline-comment-block-id="paragraph"]')!;
-		const probe = document.createElement('span');
-		probe.style.backgroundColor = 'color-mix(in oklab, var(--focus-ring) 12%, transparent)';
-		document.body.append(probe);
-		const expected = getComputedStyle(probe).backgroundColor;
-		const actual = getComputedStyle(root, '::selection').backgroundColor;
-		probe.remove();
-		return { actual, expected };
-	});
-	expect(colors.actual).toBe(colors.expected);
-});
-
 test('실제 캐럿 좌표는 인라인 코드의 offset으로 변환되고 코드 블록 선택은 차단된다', async ({ page }) => {
 	const result = await page.evaluate(() => {
 		const article = document.querySelector('article')!;

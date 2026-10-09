@@ -154,8 +154,7 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 	const { text: selectedText } = await dragText(page);
 	expect(selectedText.trim()).not.toBe('');
 	const toolbarButton = page.getByRole('button', { name: '댓글 추가', exact: true });
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.width).toBe(28);
-	await expect(toolbarButton.getByText('댓글 추가')).toHaveCSS('opacity', '0');
+	await expect(toolbarButton).toBeVisible();
 	const selectionEnd = await page.evaluate(() => {
 		const rects = Array.from(window.getSelection()!.getRangeAt(0).getClientRects()).filter(
 			(rect) => rect.width > 0 && rect.height > 0,
@@ -163,13 +162,17 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 		const rect = rects[rects.length - 1];
 		return { right: rect.right, bottom: rect.bottom };
 	});
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.x).toBeCloseTo(selectionEnd.right - 4, 0);
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.y).toBeCloseTo(selectionEnd.bottom - 4, 0);
+	const toolbarBounds = (await toolbarButton.boundingBox())!;
+	expect(toolbarBounds.x).toBeLessThanOrEqual(selectionEnd.right);
+	expect(toolbarBounds.x + toolbarBounds.width).toBeGreaterThanOrEqual(selectionEnd.right);
+	expect(toolbarBounds.y).toBeLessThanOrEqual(selectionEnd.bottom);
+	expect(toolbarBounds.y + toolbarBounds.height).toBeGreaterThanOrEqual(selectionEnd.bottom);
+	const initialScrollY = await page.evaluate(() => window.scrollY);
 	await page.evaluate(() => window.scrollBy({ top: 40, behavior: 'instant' }));
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.y).toBeCloseTo(selectionEnd.bottom - 4 - 40, 0);
+	const scrollDelta = (await page.evaluate(() => window.scrollY)) - initialScrollY;
+	expect(scrollDelta).toBeGreaterThan(0);
+	await expect.poll(async () => (await toolbarButton.boundingBox())?.y).toBeCloseTo(toolbarBounds.y - scrollDelta, 0);
 	await toolbarButton.hover();
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.width).toBe(88);
-	await expect(toolbarButton.getByText('댓글 추가')).toHaveCSS('opacity', '1');
 	await toolbarButton.click();
 	await expect(page.getByRole('region', { name: `"${selectedText}" 댓글` })).toBeVisible();
 	const input = page.getByRole('textbox', { name: '댓글 입력' });

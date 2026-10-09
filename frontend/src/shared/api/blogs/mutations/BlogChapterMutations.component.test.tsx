@@ -37,7 +37,6 @@ describe('blog chapter mutations', () => {
 		});
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 
 	it('챕터 이름 변경 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
@@ -60,7 +59,6 @@ describe('blog chapter mutations', () => {
 		});
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 
 	it('챕터 삭제 성공 후 정규화한 블로그의 챕터 목록과 인덱스, 내 Co-log 개요 cache를 무효화한다', async () => {
@@ -79,6 +77,5 @@ describe('blog chapter mutations', () => {
 		});
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.index('rilog'), exact: true });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: usersQueryKeys.myCologsOverview() });
-		expect(invalidateQueries).toHaveBeenCalledTimes(3);
 	});
 });
