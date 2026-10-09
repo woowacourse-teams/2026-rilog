@@ -19,7 +19,6 @@ import type { InlineCommentThreadModel } from '@/features/post-detail/model/inli
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
-import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
@@ -48,19 +47,6 @@ const scrollToThreadAnchor = (thread: InlineCommentThreadModel) => {
 		findAnchorElement(thread.anchor.anchorId) ??
 		document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
 	target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-};
-
-const replaceSelectionSearchParam = (selectionId: number | null) => {
-	const url = new URL(window.location.href);
-	if (selectionId === null) {
-		url.searchParams.delete(POST_DETAIL_SELECTION_QUERY_PARAM);
-	} else {
-		url.searchParams.set(POST_DETAIL_SELECTION_QUERY_PARAM, String(selectionId));
-	}
-	if (url.href === window.location.href) return;
-
-	const historyState: unknown = window.history.state;
-	window.history.replaceState(historyState, '', `${url.pathname}${url.search}${url.hash}`);
 };
 
 export default function PostDetailCommentsWorkspace({
@@ -128,7 +114,6 @@ export default function PostDetailCommentsWorkspace({
 	}, [commentsQuery.isSuccess, deepLinkedSelectionId, sidebarQuery.isSuccess, sidebarThreads]);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
-		replaceSelectionSearchParam(mode === 'single' ? (request?.anchorIds[0] ?? null) : null);
 		setCommentEntrySource(request === null ? 'all' : request.source);
 		setSidebarMode(mode);
 		setSelection(null);
@@ -153,7 +138,6 @@ export default function PostDetailCommentsWorkspace({
 					anchor.range.endOffset === target.endOffset &&
 					anchor.selectedText === target.selectedText,
 			);
-		replaceSelectionSearchParam(existingThread?.anchor.anchorId ?? null);
 		setSelection(existingThread ? null : target);
 		setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 		setSidebarMode('single');
@@ -187,7 +171,6 @@ export default function PostDetailCommentsWorkspace({
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
 			setIsCommentsSidebarOpen(false);
-			replaceSelectionSearchParam(null);
 			window.setTimeout(() => {
 				scrollToThreadAnchor(thread);
 			}, 140);
@@ -243,7 +226,6 @@ export default function PostDetailCommentsWorkspace({
 				}}
 				onClose={() => {
 					setIsCommentsSidebarOpen(false);
-					replaceSelectionSearchParam(null);
 				}}
 				onNavigate={handleAnchorNavigate}
 			/>

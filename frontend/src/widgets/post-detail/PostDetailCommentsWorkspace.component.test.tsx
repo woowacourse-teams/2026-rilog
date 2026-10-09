@@ -141,7 +141,7 @@ const renderWorkspace = async () => {
 };
 
 describe('PostDetailCommentsWorkspace', () => {
-	it('사이드바를 닫으면 selection ID만 URL에서 제거한다', async () => {
+	it('초기 selection ID로 연 사이드바를 닫아도 URL을 변경하지 않는다', async () => {
 		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=3&from=notification#quote');
 		const user = userEvent.setup();
 		renderWorkspaceUI(3);
@@ -150,17 +150,17 @@ describe('PostDetailCommentsWorkspace', () => {
 		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
 
 		expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-			'/@rilog/posts/81?from=notification#quote',
+			'/@rilog/posts/81?selectionId=3&from=notification#quote',
 		);
 	});
 
-	it('인용을 열면 selection ID를 URL에 넣고 블록 보기에서는 제거한다', async () => {
+	it('하이라이트와 블록 클릭으로 사이드바를 열어도 URL을 변경하지 않는다', async () => {
 		window.history.replaceState(null, '', '/@rilog/posts/81?from=notification');
 		const user = userEvent.setup();
 		renderWorkspaceUI();
 		await screen.findAllByRole('button', { name: '전체 댓글 3개 보기' });
 		await user.click(screen.getByRole('button', { name: '하이라이트 댓글 열기' }));
-		expect(window.location.search).toBe('?from=notification&selectionId=1');
+		expect(window.location.search).toBe('?from=notification');
 
 		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
 		await user.click(screen.getByRole('button', { name: '블록 댓글 열기' }));

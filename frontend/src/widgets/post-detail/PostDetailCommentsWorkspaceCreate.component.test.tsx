@@ -193,7 +193,7 @@ describe('PostDetailCommentsWorkspace', () => {
 				}),
 		);
 		await user.click(screen.getByRole('button', { name: '기존 인용 댓글 입력' }));
-		expect(window.location.search).toBe('?selectionId=1');
+		expect(window.location.search).toBe('');
 		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '추가 댓글');
 		await user.dblClick(screen.getByRole('button', { name: '작성' }));
 		expect(addPostCommentAnchor).toHaveBeenCalledExactlyOnceWith(81, 1, { content: '추가 댓글' });
@@ -223,7 +223,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		resolve({ status: 0, message: 'OK', data: { commentAnchorId: 901 } });
 		expect(await screen.findByText('추가 댓글', { selector: 'p' })).toBeVisible();
 		expect(screen.getByRole('dialog', { name: '인라인 댓글 2' })).toBeVisible();
-		expect(window.location.search).toBe('?selectionId=1');
+		expect(window.location.search).toBe('');
 		await waitFor(() => expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue(''));
 		expect(sessionStorage.getItem('rilog:inline-comment-draft:1')).toBeNull();
 		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '다음 댓글');
