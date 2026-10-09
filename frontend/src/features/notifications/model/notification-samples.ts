@@ -19,8 +19,16 @@ export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 		isRead: false,
 		author: { id: 12, slug: 'bada', nickname: '바다', profileImageUrl: null },
 		post: { id: 102, slug: 'dev-log', title: '컴포넌트의 책임을 나누는 기준' },
-		anchor: { id: 202, content: '공통화의 기준은 모양이 아니라, 함께 바뀌어야 하는 이유에 있다.' },
-		comment: { id: 302, content: '비슷하게 생겼다는 이유만으로 분리했던 코드를 돌아보게 되네요. 좋은 글 감사합니다.' },
+		anchor: {
+			id: 202,
+			content:
+				'공통화의 기준은 모양이 아니라, 함께 바뀌어야 하는 이유에 있다. 공통화의 기준은 모양이 아니라, 함께 바뀌어야 하는 이유에 있다.',
+		},
+		comment: {
+			id: 302,
+			content:
+				'비슷하게 생겼다는 이유만으로 분리했던 코드를 돌아보게 되네요. 좋은 글 정말정말정말정말정말정말정말정말 감사합니다.',
+		},
 	},
 	{
 		id: 3,

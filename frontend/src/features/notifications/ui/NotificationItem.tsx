@@ -15,6 +15,8 @@ interface NotificationItemProps {
 	onRead: (id: number) => void;
 }
 
+const MAX_TITLE_LENGTH = 19;
+
 export default function NotificationItem({ notification, onRead }: NotificationItemProps) {
 	const readStatusId = useId();
 	const articleRef = useRef<HTMLElement>(null);
@@ -25,6 +27,12 @@ export default function NotificationItem({ notification, onRead }: NotificationI
 	};
 
 	const { type, author, post, anchor, comment, isRead } = notification;
+	const titleCharacters = Array.from(post.title);
+	const displayTitle =
+		titleCharacters.length > MAX_TITLE_LENGTH
+			? `${titleCharacters.slice(0, MAX_TITLE_LENGTH).join('')}...`
+			: post.title;
+
 	return (
 		<article
 			ref={articleRef}
@@ -43,7 +51,7 @@ export default function NotificationItem({ notification, onRead }: NotificationI
 				<div className="min-w-0 flex-1">
 					<p className="text-body-4 break-words">
 						<strong className="font-semibold">{author.nickname}</strong> 님이{' '}
-						{type === 'POST_COMMENT' ? <strong>{post.title}</strong> : '나와 같은 문장'}에 댓글을 남겼어요.
+						{type === 'POST_COMMENT' ? <strong>{displayTitle}</strong> : '나와 같은 문장'}에 댓글을 남겼어요.
 					</p>
 					<time
 						dateTime={toApiUtcISOString(notification.createdAt)}
@@ -67,7 +75,7 @@ export default function NotificationItem({ notification, onRead }: NotificationI
 			>
 				{type === 'SELECTION_COMMENT' && (
 					<p className="text-caption-1">
-						<strong className="font-semibold">{post.title}</strong> 글에서
+						<strong className="font-semibold">{displayTitle}</strong> 글에서
 					</p>
 				)}
 				<blockquote
@@ -76,7 +84,7 @@ export default function NotificationItem({ notification, onRead }: NotificationI
 					<p className="line-clamp-2 break-words whitespace-pre-wrap">{anchor.content}</p>
 				</blockquote>
 				<p
-					className={`mt-3 line-clamp-3 text-body-4 break-words whitespace-pre-wrap ${isRead ? 'text-text-disabled' : 'text-text-secondary'}`}
+					className={`mt-3 line-clamp-2 text-body-4 break-words whitespace-pre-wrap ${isRead ? 'text-text-disabled' : 'text-text-secondary'}`}
 				>
 					{comment.content}
 				</p>
