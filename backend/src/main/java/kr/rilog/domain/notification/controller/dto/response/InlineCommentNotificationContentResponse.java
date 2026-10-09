@@ -4,21 +4,21 @@ import kr.rilog.domain.comment.entity.enums.AnchorStatus;
 import kr.rilog.domain.notification.service.content.InlineCommentNotificationContent;
 
 public record InlineCommentNotificationContentResponse(
-        PostResponse post,
-        SelectionResponse selection,
-        CommentResponse comment,
-        ActorResponse actor
+        NotificationPostResponse post,
+        NotificationSelectionResponse selection,
+        NotificationCommentAnchorResponse commentAnchor,
+        NotificationActorResponse actor
 ) implements NotificationContentResponse {
 
     public static InlineCommentNotificationContentResponse from(InlineCommentNotificationContent content) {
         return new InlineCommentNotificationContentResponse(
-                new PostResponse(
+                new NotificationPostResponse(
                         content.postId(),
                         content.postTitle(),
                         content.blogId(),
                         content.blogSlug()
                 ),
-                new SelectionResponse(
+                new NotificationSelectionResponse(
                         content.selectionId(),
                         content.blockId(),
                         content.startOffset(),
@@ -26,11 +26,11 @@ public record InlineCommentNotificationContentResponse(
                         content.selectedText(),
                         content.selectionStatus()
                 ),
-                new CommentResponse(
+                new NotificationCommentAnchorResponse(
                         content.commentAnchorId(),
                         content.commentContent()
                 ),
-                new ActorResponse(
+                new NotificationActorResponse(
                         content.actorId(),
                         content.actorNickname(),
                         content.actorSlug(),
@@ -39,7 +39,7 @@ public record InlineCommentNotificationContentResponse(
         );
     }
 
-    public record PostResponse(
+    public record NotificationPostResponse(
             Long postId,
             String title,
             Long blogId,
@@ -47,7 +47,7 @@ public record InlineCommentNotificationContentResponse(
     ) {
     }
 
-    public record SelectionResponse(
+    public record NotificationSelectionResponse(
             Long selectionId,
             String blockId,
             int startOffset,
@@ -57,13 +57,13 @@ public record InlineCommentNotificationContentResponse(
     ) {
     }
 
-    public record CommentResponse(
+    public record NotificationCommentAnchorResponse(
             Long commentAnchorId,
             String content
     ) {
     }
 
-    public record ActorResponse(
+    public record NotificationActorResponse(
             Long userId,
             String nickname,
             String slug,

@@ -1,5 +1,6 @@
 package kr.rilog.domain.notification.controller.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import kr.rilog.domain.notification.entity.enums.NotificationType;
 import kr.rilog.domain.notification.service.content.NotificationSourceStatus;
 import kr.rilog.domain.notification.service.dto.result.NotificationListResult;
@@ -34,6 +35,21 @@ public record NotificationListResponse(
             boolean read,
             LocalDateTime readAt,
             LocalDateTime createdAt,
+
+            @Schema(
+                    description = """
+                        알림 출처 상태
+                        - AVAILABLE
+                        - POST_DELETED
+                        - SELECTION_DELETED
+                        - COMMENT_DELETED
+                        - ACTOR_DELETED
+                        - BLOG_DELETED
+                        - POST_UNAVAILABLE  -> content를 Null 처리
+                        - POST_INACCESSIBLE -> content를 Null 처리
+                        - SOURCE_NOT_FOUND  -> content를 Null 처리
+                        """
+            )
             NotificationSourceStatus sourceStatus,
             NotificationContentResponse content
     ) {
