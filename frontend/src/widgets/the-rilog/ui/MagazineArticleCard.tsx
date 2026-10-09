@@ -5,6 +5,9 @@ import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
+import { formatEnterpriseArticleText } from '../lib/format-enterprise-article-text';
+
+import MagazineArticleSummary from './MagazineArticleSummary';
 import styles from './the-rilog-magazine.module.css';
 
 interface MagazineArticleCardProps {
@@ -14,44 +17,45 @@ interface MagazineArticleCardProps {
 
 export default function MagazineArticleCard({ article, imagePosition = 'left' }: MagazineArticleCardProps) {
 	const { profile } = article;
+	const isEnterprise = profile.type === 'enterprise';
+	const { title, summary } = isEnterprise ? formatEnterpriseArticleText(article) : article;
 	return (
 		<article
 			className={styles.card}
-			data-kind={profile.type === 'enterprise' ? 'enterprise' : 'personal'}
+			data-kind={isEnterprise ? 'enterprise' : 'personal'}
 			data-image-position={imagePosition}
 		>
 			<div className={styles.cardContent}>
 				<div className={styles.artworkFrame} data-thumbnail-ratio={article.thumbnailRatio} aria-hidden="true">
-					<div className={styles.artwork} data-artwork={article.artwork}>
-						<span className={styles.artworkShape} />
-						<span className={styles.artworkDetail} />
-					</div>
+					<div className={styles.artwork} />
 				</div>
 				<div className={styles.cardBody}>
 					<div className={styles.profile}>
 						{profile.type === 'bloger' ? (
 							<UserAvatar
+								className={styles.profileAvatar}
 								src={profile.profileImageUrl}
 								fallback={profile.name.slice(0, 1)}
 								label={`${profile.name} 프로필`}
-								size="sm"
+								size="md"
 							/>
 						) : (
 							<CologAvatar
+								className={styles.profileAvatar}
 								src={profile.profileImageUrl}
 								fallback={profile.name.slice(0, 1)}
 								label={`${profile.name} 프로필`}
-								size="sm"
+								size="md"
 							/>
 						)}
 						<span className={styles.profileName}>{profile.name}.</span>
 					</div>
 					<h3 className={styles.cardTitle}>
 						<CustomLink href={`${APP_ROUTES.theRilog}/articles/${article.id}`} className={styles.cardLink}>
-							<span className={styles.cardTitleText}>{article.title}</span>
+							<span className={styles.cardTitleText}>{title}</span>
 						</CustomLink>
 					</h3>
-					<p className={styles.summary}>{article.summary}</p>
+					<MagazineArticleSummary text={summary} fitToThumbnail={isEnterprise} />
 				</div>
 			</div>
 		</article>

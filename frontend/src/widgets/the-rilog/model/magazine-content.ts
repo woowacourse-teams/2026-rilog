@@ -10,7 +10,7 @@ export interface MagazineArticle {
 	id: string;
 	title: string;
 	summary: string;
-	thumbnailRatio: '16:9' | '4:3';
+	thumbnailRatio: '16:9' | '16:10' | '4:3';
 	artwork: 'ai' | 'people' | 'systems' | 'code';
 	profile: MagazineArticleProfile;
 }
@@ -30,7 +30,8 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 	{
 		id: 'people-behind-tools',
 		title: '오픈소스 메인테이너는 어떤 이슈부터 볼까',
-		summary: '재현 코드, 수정 범위, 기존 동작에 미치는 영향을 기준으로 이슈와 PR을 읽는다.',
+		summary:
+			'좋은 이슈는 문제를 재현하는 방법부터 알려준다. 오픈소스 메인테이너가 재현 코드와 수정 범위, 기존 동작에 미치는 영향을 살펴보며 어떤 제안을 먼저 검토하는지 알아본다.',
 		thumbnailRatio: '16:9',
 		artwork: 'people',
 		profile: {
@@ -42,7 +43,8 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 	{
 		id: 'small-model-choice',
 		title: '작은 AI 모델을 고르기 전에 비교할 세 가지',
-		summary: '같은 작업을 입력해 응답 시간, 실행 비용, 결과의 정확도를 비교한다.',
+		summary:
+			'작은 AI 모델이 늘어날수록 이름이나 크기만으로 선택하기 어렵다. 같은 작업을 맡겨 응답 시간과 실행 비용, 결과의 정확도를 비교하고 서비스에 맞는 모델을 고르는 기준을 정리한다.',
 		thumbnailRatio: '16:9',
 		artwork: 'ai',
 		profile: {
@@ -54,8 +56,9 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 	{
 		id: 'open-source-trust',
 		title: '재현 코드에서 첫 PR까지',
-		summary: '실패하는 조건을 좁히고, 수정 전후의 차이를 설명하는 작은 PR을 만든다.',
-		thumbnailRatio: '4:3',
+		summary:
+			'첫 PR은 큰 기능보다 재현 가능한 문제에서 시작하는 편이 좋다. 실패 조건을 좁혀 테스트로 확인하고, 기존 동작을 지키면서 수정 전후의 차이를 설명하는 과정을 따라가 본다.',
+		thumbnailRatio: '16:10',
 		artwork: 'code',
 		profile: {
 			type: 'enterprise',
@@ -66,8 +69,9 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 	{
 		id: 'browser-experiments',
 		title: '브라우저의 텍스트 선택은 어디까지 정확할까',
-		summary: '인라인 코드와 줄바꿈이 섞인 문장을 Selection, Range, UTF-16 오프셋으로 연결한다.',
-		thumbnailRatio: '4:3',
+		summary:
+			'선택한 문장은 글이 바뀐 뒤에도 같은 자리를 가리킬까? 인라인 코드와 줄바꿈이 섞인 문장을 Selection, Range, UTF-16 오프셋으로 연결하는 과정을 살펴본다.',
+		thumbnailRatio: '16:10',
 		artwork: 'systems',
 		profile: {
 			type: 'enterprise',
@@ -78,8 +82,9 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 	{
 		id: 'company-platforms',
 		title: '플랫폼 팀이 공통 CI를 줄이는 방법',
-		summary: '변경 경로에 필요한 검사를 실행하고, 설치·빌드 비용과 테스트 시간을 따로 측정한다.',
-		thumbnailRatio: '4:3',
+		summary:
+			'모든 변경에 같은 검사를 반복하면 배포가 느려진다. 플랫폼 팀이 변경 경로에 필요한 CI만 실행하고 설치와 빌드 비용, 테스트 시간을 따로 측정하며 기준을 다듬는 방법을 소개한다.',
+		thumbnailRatio: '16:10',
 		artwork: 'systems',
 		profile: {
 			type: 'enterprise',

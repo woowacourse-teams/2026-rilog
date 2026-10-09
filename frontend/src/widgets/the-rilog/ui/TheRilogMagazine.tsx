@@ -20,14 +20,14 @@ export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogM
 	const personalArticles = articles.filter((article) => article.profile.type === 'bloger');
 	const editionDate = formatMagazineDate(new Date());
 	return (
-		<main className={styles.page}>
+		<main className={`${styles.page} mx-auto w-full max-w-7xl px-6 md:px-16`}>
 			<MagazineMasthead editionDate={editionDate} />
 			<div className={styles.stories}>
 				<div className={styles.contentGrid}>
 					<DailyHeadlines dailyHeadlines={dailyHeadlines} />
 					<section className={styles.enterpriseArticlesSection} aria-labelledby="enterprise-articles-heading">
 						<div className={styles.sectionHeading}>
-							<h2 id="enterprise-articles-heading">Enterprise Articles</h2>
+							<h2 id="enterprise-articles-heading">Enterprise Spotlight</h2>
 							<span>updates on Mon &amp; Thu</span>
 						</div>
 						<div className={styles.enterpriseArticleList}>
@@ -41,7 +41,7 @@ export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogM
 				</div>
 				<section className={styles.personalArticlesSection} aria-labelledby="personal-articles-heading">
 					<div className={styles.sectionHeading}>
-						<h2 id="personal-articles-heading">Personal Articles</h2>
+						<h2 id="personal-articles-heading">Personal Spotlight</h2>
 						<span>updates on Mon &amp; Thu</span>
 					</div>
 					<div className={styles.personalArticleList}>

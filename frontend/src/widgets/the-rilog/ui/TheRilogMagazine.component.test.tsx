@@ -19,8 +19,8 @@ describe('TheRilogMagazine', () => {
 
 	it('기업 3개와 개인 2개를 이름과 상세 링크가 있는 서로 다른 섹션으로 제공한다', () => {
 		render(<TheRilogMagazine dailyHeadlines={DAILY_HEADLINES} articles={MAGAZINE_ARTICLES} />);
-		const enterprise = screen.getByRole('region', { name: 'Enterprise Articles' });
-		const personal = screen.getByRole('region', { name: 'Personal Articles' });
+		const enterprise = screen.getByRole('region', { name: 'Enterprise Spotlight' });
+		const personal = screen.getByRole('region', { name: 'Personal Spotlight' });
 		expect(within(enterprise).getAllByRole('article')).toHaveLength(3);
 		expect(within(personal).getAllByRole('article')).toHaveLength(2);
 		for (const [region, names, ids] of [
@@ -52,6 +52,19 @@ describe('TheRilogMagazine', () => {
 		expect(
 			screen.getAllByRole('article').map((article) => within(article).getByRole('link').getAttribute('href')),
 		).toEqual(before);
+	});
+
+	it('제목 원문을 유지하고 기업 설명만 100자 제한을 적용한다', () => {
+		const title = '가'.repeat(21);
+		const summary = '나'.repeat(101);
+		const articles = MAGAZINE_ARTICLES.map((article) => ({ ...article, title, summary }));
+		render(<TheRilogMagazine dailyHeadlines={[]} articles={articles} />);
+		const enterprise = screen.getByRole('region', { name: 'Enterprise Spotlight' });
+		const personal = screen.getByRole('region', { name: 'Personal Spotlight' });
+		expect(within(enterprise).getAllByRole('link', { name: title })).toHaveLength(3);
+		expect(within(enterprise).getAllByText(`${'나'.repeat(99)}…`)).toHaveLength(3);
+		expect(within(personal).getAllByRole('link', { name: title })).toHaveLength(2);
+		expect(within(personal).getAllByText(summary)).toHaveLength(2);
 	});
 
 	it('한국 시간의 영문 날짜를 제공하고 소개 링크는 표시하지 않는다', () => {
