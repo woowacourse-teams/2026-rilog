@@ -18,6 +18,7 @@ export default function NotificationCommentContent({
 	children,
 }: NotificationCommentContentProps) {
 	const { post, anchor, comment, isRead } = notification;
+
 	return (
 		<CustomLink
 			href={buildPostDetailPath(post.slug, String(post.id))}
@@ -25,7 +26,7 @@ export default function NotificationCommentContent({
 			onNavigate={() => {
 				if (!isRead) onRead(notification.id);
 			}}
-			className="mt-4 block min-w-0 after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus-ring sm:ml-13"
+			className={`mt-4 block min-w-0 after:absolute after:inset-0 after:z-0 after:bg-transparent after:transition-colors after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus-ring motion-reduce:after:transition-none sm:ml-13 ${isRead ? 'hover:after:bg-surface-hover/20 active:after:bg-surface-active/20' : 'hover:after:bg-background/30 active:after:bg-surface-active/30'}`}
 		>
 			{children}
 			<blockquote

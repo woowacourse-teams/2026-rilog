@@ -42,8 +42,8 @@ export default function NotificationItemLayout({
 			{!isRead && <span aria-hidden="true" className="absolute top-8 right-6 size-1.5 rounded-full bg-danger" />}
 			{content}
 			{!isRead && (
-				<div className="relative z-10 mt-3 flex h-8 justify-end">
-					<Button size="sm" variant="ghost" onClick={handleRead}>
+				<div className="mt-3 flex h-8 justify-end">
+					<Button size="sm" variant="ghost" className="relative z-10" onClick={handleRead}>
 						읽음으로 표시
 					</Button>
 				</div>
