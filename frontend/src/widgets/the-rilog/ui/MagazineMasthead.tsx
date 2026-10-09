@@ -2,9 +2,6 @@ import Image from 'next/image';
 
 import type { MagazineDate } from '../lib/format-magazine-date';
 
-import { APP_ROUTES } from '@/shared/routes/app-routes';
-import CustomLink from '@/shared/ui/link/CustomLink';
-
 import styles from './the-rilog-magazine.module.css';
 
 interface MagazineMastheadProps {
@@ -17,7 +14,6 @@ export default function MagazineMasthead({ editionDate }: MagazineMastheadProps)
 			<div className={styles.masthead}>
 				<div className={styles.edition} aria-label="발행 정보">
 					<time dateTime={editionDate.dateTime}>{editionDate.label}</time>
-					<CustomLink href={`${APP_ROUTES.theRilog}/about`}>about. The Rilog.</CustomLink>
 				</div>
 				<h1 aria-label="THE Rilog.">
 					<span className={styles.titleWord}>THE</span>
