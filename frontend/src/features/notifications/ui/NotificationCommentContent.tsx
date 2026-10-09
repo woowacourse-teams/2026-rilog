@@ -6,6 +6,8 @@ import type { CommentNotification } from '@/domains/notification/model/notificat
 import { buildPostDetailSelectionPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
+import NotificationNavigationStatus from './NotificationNavigationStatus';
+
 interface NotificationCommentContentProps {
 	notification: CommentNotification;
 	onRead: (id: number) => void;
@@ -39,6 +41,7 @@ export default function NotificationCommentContent({
 			>
 				{comment.content}
 			</p>
+			<NotificationNavigationStatus />
 		</CustomLink>
 	);
 }
