@@ -11,6 +11,7 @@ import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import CustomLink from '@/shared/ui/link/CustomLink';
+import MagazineIcon from '@/widgets/sidebar/assets/magazine.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
@@ -44,11 +45,11 @@ export default function MobileHeader() {
 			<div className="flex items-center gap-2">
 				<CustomLink
 					href={APP_ROUTES.theRilog}
+					aria-label="The Rilog."
 					aria-current={isMagazineCurrent ? 'page' : undefined}
-					className="flex min-h-11 items-center gap-1 px-2.5 text-label-2 font-semibold whitespace-nowrap text-text-secondary hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring aria-[current=page]:text-brand-primary"
+					className="flex size-11 items-center justify-center rounded-md text-text-secondary transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring aria-[current=page]:text-brand-primary"
 				>
-					<span className="underline underline-offset-4">Magazine</span>
-					<span aria-hidden="true">↗</span>
+					<MagazineIcon aria-hidden="true" focusable="false" className="size-6" />
 				</CustomLink>
 				{isAuthenticated ? (
 					userProfileControl
