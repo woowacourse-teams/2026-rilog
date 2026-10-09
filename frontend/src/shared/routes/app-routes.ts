@@ -1,3 +1,5 @@
+import { appendSearchParams } from './append-search-params';
+
 export const APP_ROUTES = {
 	about: '/about',
 	feeds: '/feeds',
@@ -50,27 +52,25 @@ export const buildBlogHomePath = (slug: string, options?: BlogHomePathOptions) =
 		return pathname;
 	}
 
-	const searchParams = new URLSearchParams();
 	if ('seriesId' in options) {
-		searchParams.set(BLOG_HOME_FILTER_SEARCH_PARAMS.series, String(options.seriesId));
+		return appendSearchParams(pathname, { [BLOG_HOME_FILTER_SEARCH_PARAMS.series]: String(options.seriesId) });
 	} else if ('chapterId' in options) {
-		searchParams.set(BLOG_HOME_FILTER_SEARCH_PARAMS.chapter, String(options.chapterId));
-	} else {
-		searchParams.set(BLOG_HOME_FILTER_SEARCH_PARAMS.colog, options.cologSlug);
+		return appendSearchParams(pathname, { [BLOG_HOME_FILTER_SEARCH_PARAMS.chapter]: String(options.chapterId) });
 	}
 
-	return `${pathname}?${searchParams.toString()}`;
+	return appendSearchParams(pathname, { [BLOG_HOME_FILTER_SEARCH_PARAMS.colog]: options.cologSlug });
 };
 
 export const hasBlogSlugPrefix = (slug: string) => decodeSegment(slug).trim().startsWith('@');
 
 export const buildCologSettingsPath = (slug: string, tab: CologSettingsTab) =>
-	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
+	appendSearchParams(`${buildBlogHomePath(slug)}/settings`, { tab });
 
-export const buildCologMemberInvitePath = (slug: string) => `${buildCologSettingsPath(slug, 'members')}&invite=true`;
+export const buildCologMemberInvitePath = (slug: string) =>
+	appendSearchParams(buildCologSettingsPath(slug, 'members'), { invite: 'true' });
 
 export const buildRilogSettingsPath = (slug: string, tab: RilogSettingsTab) =>
-	`${buildBlogHomePath(slug)}/settings?tab=${tab}`;
+	appendSearchParams(`${buildBlogHomePath(slug)}/settings`, { tab });
 
 export const buildPostDetailPath = (slug: string, postId: string) =>
 	`${buildBlogHomePath(slug)}/posts/${normalizeSegment(postId, '게시글 ID가 필요합니다.')}`;
@@ -78,9 +78,10 @@ export const buildPostDetailPath = (slug: string, postId: string) =>
 export const POST_DETAIL_SELECTION_QUERY_PARAM = 'selectionId';
 
 export const buildPostDetailSelectionPath = (slug: string, postId: string, selectionId: number) =>
-	`${buildPostDetailPath(slug, postId)}?${new URLSearchParams({ [POST_DETAIL_SELECTION_QUERY_PARAM]: String(selectionId) })}`;
+	appendSearchParams(buildPostDetailPath(slug, postId), { [POST_DETAIL_SELECTION_QUERY_PARAM]: String(selectionId) });
 
-export const buildDraftWritePath = (draftId: number) => `${APP_ROUTES.write}?draftId=${draftId}`;
+export const buildDraftWritePath = (draftId: number) =>
+	appendSearchParams(APP_ROUTES.write, { draftId: String(draftId) });
 
 const isSettingsTab = <T extends string>(tab: string | undefined, tabs: readonly T[]): tab is T => {
 	return tab !== undefined && tabs.some((candidate) => candidate === tab);

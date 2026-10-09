@@ -5,7 +5,8 @@ import type { Metadata } from 'next';
 import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route-slug';
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
 import { POST_DETAIL_SELECTION_QUERY_PARAM, buildPostDetailPath } from '@/shared/routes/app-routes';
-import { appendSearchParams, redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
+import { appendSearchParams } from '@/shared/routes/append-search-params';
+import { redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
 import { normalizeLegacySlug } from '@/shared/utils/normalize-legacy-slug';
 import PostDetail from '@/widgets/post-detail/PostDetail';
 
