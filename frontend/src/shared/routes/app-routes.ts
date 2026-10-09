@@ -75,6 +75,11 @@ export const buildRilogSettingsPath = (slug: string, tab: RilogSettingsTab) =>
 export const buildPostDetailPath = (slug: string, postId: string) =>
 	`${buildBlogHomePath(slug)}/posts/${normalizeSegment(postId, '게시글 ID가 필요합니다.')}`;
 
+export const POST_DETAIL_SELECTION_QUERY_PARAM = 'selectionId';
+
+export const buildPostDetailSelectionPath = (slug: string, postId: string, selectionId: number) =>
+	`${buildPostDetailPath(slug, postId)}?${new URLSearchParams({ [POST_DETAIL_SELECTION_QUERY_PARAM]: String(selectionId) })}`;
+
 export const buildDraftWritePath = (draftId: number) => `${APP_ROUTES.write}?draftId=${draftId}`;
 
 const isSettingsTab = <T extends string>(tab: string | undefined, tabs: readonly T[]): tab is T => {

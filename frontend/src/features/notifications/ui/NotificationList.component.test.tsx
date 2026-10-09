@@ -30,9 +30,9 @@ describe('NotificationList', () => {
 		render(<NotificationList status="success" notifications={[notification]} onRead={vi.fn()} onReadAll={vi.fn()} />);
 
 		const article = within(screen.getByRole('article', { name: accessibleLabel }));
-		expect(article.getByRole('link', { name: `${notification.post.title} 게시글로 이동` })).toHaveAttribute(
+		expect(article.getByRole('link', { name: `${notification.post.title} 게시글의 댓글 보기` })).toHaveAttribute(
 			'href',
-			'/@post-blog/posts/101',
+			'/@post-blog/posts/101?selectionId=201',
 		);
 		expect(article.getByText(notification.anchor.content)).toBeInTheDocument();
 		expect(article.getByText(notification.comment.content)).toBeInTheDocument();

@@ -19,6 +19,7 @@ import type { InlineCommentThreadModel } from '@/features/post-detail/model/inli
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
+import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
@@ -26,6 +27,7 @@ import styles from './PostDetail.module.css';
 interface PostDetailCommentsWorkspaceProps {
 	html: string;
 	postId: number;
+	initialSelectionId?: number | null;
 	ownerType: BlogType;
 	category: PostCategory;
 	enableInlineCommentSelectionDebug: boolean;
@@ -40,51 +42,72 @@ const findAnchorElement = (anchorId: number) =>
 		(element) => element.dataset.inlineCommentAnchorId === String(anchorId),
 	);
 
+const replaceSelectionSearchParam = (selectionId: number | null) => {
+	const url = new URL(window.location.href);
+	if (selectionId === null) {
+		url.searchParams.delete(POST_DETAIL_SELECTION_QUERY_PARAM);
+	} else {
+		url.searchParams.set(POST_DETAIL_SELECTION_QUERY_PARAM, String(selectionId));
+	}
+	if (url.href === window.location.href) return;
+
+	const historyState: unknown = window.history.state;
+	window.history.replaceState(historyState, '', `${url.pathname}${url.search}${url.hash}`);
+};
+
 export default function PostDetailCommentsWorkspace({
 	html,
 	postId,
+	initialSelectionId = null,
 	ownerType,
 	category,
 	enableInlineCommentSelectionDebug,
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
-	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(false);
+	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
 	const sidebarThreads = sidebarQuery.data ?? [];
 	const inlineCommentBlocks = commentsQuery.data ?? EMPTY_INLINE_COMMENT_BLOCKS;
 	const [openRequest, setOpenRequest] = useState<InlineCommentOpenRequest | null>(null);
+	const [deepLinkedSelectionId, setDeepLinkedSelectionId] = useState(initialSelectionId);
 	const [createdCommentId, setCreatedCommentId] = useState<number | null>(null);
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
-	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
+	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>(
+		initialSelectionId === null ? 'all' : 'single',
+	);
 	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>(
-		'all',
+		initialSelectionId === null ? 'all' : 'highlight',
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
 			? sidebarThreads.filter(({ anchor }) => anchor.comments.some((comment) => comment.commentId === createdCommentId))
-			: openRequest
-				? sidebarThreads.filter(
-						({ blockId, anchor }) =>
-							blockId === openRequest.blockId &&
-							openRequest.anchorIds.includes(anchor.anchorId) &&
-							(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
-					)
-				: sidebarThreads;
+			: deepLinkedSelectionId !== null
+				? sidebarThreads.filter(({ anchor }) => anchor.anchorId === deepLinkedSelectionId)
+				: openRequest
+					? sidebarThreads.filter(
+							({ blockId, anchor }) =>
+								blockId === openRequest.blockId &&
+								openRequest.anchorIds.includes(anchor.anchorId) &&
+								(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
+						)
+					: sidebarThreads;
 	const inlineCommentCount = inlineCommentBlocks.reduce(
 		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
 		0,
 	);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+		replaceSelectionSearchParam(mode === 'single' ? (request?.anchorIds[0] ?? null) : null);
 		setCommentEntrySource(request === null ? 'all' : request.source);
 		setSidebarMode(mode);
 		setSelection(null);
 		setCreatedCommentId(null);
+		setDeepLinkedSelectionId(null);
 		setCommentEntrySource('selection_toolbar');
 		setComposerAnchorId(null);
 		setOpenRequest(request);
@@ -93,6 +116,7 @@ export default function PostDetailCommentsWorkspace({
 
 	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
 		setCreatedCommentId(null);
+		setDeepLinkedSelectionId(null);
 		const existingThread = inlineCommentBlocks
 			.flatMap(({ blockId, anchors }) => anchors.map((anchor) => ({ blockId, anchor })))
 			.find(
@@ -103,6 +127,7 @@ export default function PostDetailCommentsWorkspace({
 					anchor.range.endOffset === target.endOffset &&
 					anchor.selectedText === target.selectedText,
 			);
+		replaceSelectionSearchParam(existingThread?.anchor.anchorId ?? null);
 		setSelection(existingThread ? null : target);
 		setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 		setSidebarMode('single');
@@ -136,6 +161,7 @@ export default function PostDetailCommentsWorkspace({
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
 			setIsCommentsSidebarOpen(false);
+			replaceSelectionSearchParam(null);
 			window.setTimeout(() => {
 				const target =
 					findAnchorElement(thread.anchor.anchorId) ??
@@ -189,9 +215,13 @@ export default function PostDetailCommentsWorkspace({
 				onCreated={(commentAnchorId) => {
 					setSelection(null);
 					setCreatedCommentId(commentAnchorId);
+					setDeepLinkedSelectionId(null);
 					setComposerAnchorId(null);
 				}}
-				onClose={() => setIsCommentsSidebarOpen(false)}
+				onClose={() => {
+					setIsCommentsSidebarOpen(false);
+					replaceSelectionSearchParam(null);
+				}}
 				onNavigate={handleAnchorNavigate}
 			/>
 		</>

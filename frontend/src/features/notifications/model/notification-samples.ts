@@ -3,6 +3,44 @@ import type { Notification } from '@/domains/notification/model/notification';
 /** API 연결 전 UI 확인용. 실제 사용자 알림이나 API 응답 fixture가 아니다. */
 export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 	{
+		id: 5,
+		type: 'SELECTION_COMMENT',
+		createdAt: '2026-09-28T02:10:34.780901',
+		isRead: false,
+		author: {
+			id: 13,
+			slug: 'gustn99',
+			nickname: '개발자',
+			profileImageUrl: 'rilog/images/originals/13-8dd1e2ec-046b-4a28-93d5-055464797efa.png',
+		},
+		post: { id: 81, slug: 'rilog_fe2', title: '로그인 모달을 넘어 로그인 진입점을 설계하기' },
+		anchor: {
+			id: 1,
+			content:
+				'민을 했습니다. 로그인 모달을 전역으로 옮기는 것에서 시작했지만, 구현을 이어갈수록 단순히 모달의 위치만 바꿔서는 해결',
+		},
+		comment: { id: 1, content: 'ㅎㅇㅎㅇ' },
+	},
+	{
+		id: 4,
+		type: 'SELECTION_COMMENT',
+		createdAt: '2026-09-28T02:10:34.780901',
+		isRead: false,
+		author: {
+			id: 13,
+			slug: 'gustn99',
+			nickname: '개발자',
+			profileImageUrl: 'rilog/images/originals/13-8dd1e2ec-046b-4a28-93d5-055464797efa.png',
+		},
+		post: { id: 81, slug: 'rilog_fe2', title: '로그인 모달을 넘어 로그인 진입점을 설계하기' },
+		anchor: {
+			id: 27,
+			content:
+				'이 글에서는 로그인 모달의 렌더링 위치를 하나로 모으고, 다시 로그인 필요 액션의 진입점을 좁혀간 과정을 소개합니다. 토큰 재발급의 세부 구현보다는 각 모듈이 어떤 책임을 가져야 자연스럽게 연결되는지에 집중해 볼게요.',
+		},
+		comment: { id: 47, content: 'ㅁㄴㅇㄹ' },
+	},
+	{
 		id: 1,
 		type: 'POST_COMMENT',
 		createdAt: '2026-10-08T08:21:00Z',

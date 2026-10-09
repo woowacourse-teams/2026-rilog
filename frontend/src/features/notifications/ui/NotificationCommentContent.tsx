@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 
 import type { CommentNotification } from '@/domains/notification/model/notification';
-import { buildPostDetailPath } from '@/shared/routes/app-routes';
+import { buildPostDetailSelectionPath } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
 interface NotificationCommentContentProps {
@@ -21,8 +21,8 @@ export default function NotificationCommentContent({
 
 	return (
 		<CustomLink
-			href={buildPostDetailPath(post.slug, String(post.id))}
-			aria-label={`${post.title} 게시글로 이동`}
+			href={buildPostDetailSelectionPath(post.slug, String(post.id), anchor.id)}
+			aria-label={`${post.title} 게시글의 댓글 보기`}
 			onNavigate={() => {
 				if (!isRead) onRead(notification.id);
 			}}

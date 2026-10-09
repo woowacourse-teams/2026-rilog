@@ -8,7 +8,7 @@ export interface RedirectLegacySlugOptions {
 	buildPath: (normalizedSlug: string) => string;
 }
 
-const appendSearchParams = (pathname: string, searchParams: RedirectLegacySlugOptions['searchParams']) => {
+export const appendSearchParams = (pathname: string, searchParams: RedirectLegacySlugOptions['searchParams']) => {
 	const query = new URLSearchParams();
 
 	Object.entries(searchParams).forEach(([key, value]) => {
