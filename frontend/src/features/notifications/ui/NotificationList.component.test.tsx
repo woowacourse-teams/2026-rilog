@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Notification } from '@/domains/notification/model/notification';
 import { createNotification } from '@/test/fixtures/notification';
 
 import NotificationList from './NotificationList';
@@ -21,17 +22,28 @@ describe('NotificationList', () => {
 		expect(notifications).toEqual(original);
 	});
 
-	it('알림의 인용과 댓글을 표시하고 작성자가 아닌 게시글 블로그로 연결한다', () => {
-		const notification = createNotification();
+	it.each<{ type: Notification['type']; accessibleLabel: string }>([
+		{ type: 'POST_COMMENT', accessibleLabel: '작성자님의 댓글 알림' },
+		{ type: 'SELECTION_COMMENT', accessibleLabel: '작성자님의 댓글 알림' },
+	])('$type 알림의 문맥과 본문을 표시하고 게시글 블로그로 연결한다', ({ type, accessibleLabel }) => {
+		const notification = createNotification({ type });
 		render(<NotificationList status="success" notifications={[notification]} onRead={vi.fn()} onReadAll={vi.fn()} />);
 
-		const article = within(screen.getByRole('article', { name: `${notification.author.nickname}님의 댓글 알림` }));
+		const article = within(screen.getByRole('article', { name: accessibleLabel }));
 		expect(article.getByRole('link', { name: `${notification.post.title} 게시글로 이동` })).toHaveAttribute(
 			'href',
 			'/@post-blog/posts/101',
 		);
 		expect(article.getByText(notification.anchor.content)).toBeInTheDocument();
 		expect(article.getByText(notification.comment.content)).toBeInTheDocument();
+		expect(screen.getByRole('article')).toHaveTextContent(
+			type === 'POST_COMMENT'
+				? `${notification.author.nickname} 님이 ${notification.post.title}에 댓글을 남겼어요.`
+				: `${notification.author.nickname} 님이 나와 같은 문장에 댓글을 남겼어요.`,
+		);
+		if (type === 'SELECTION_COMMENT') {
+			expect(article.getByRole('link')).toHaveTextContent(`${notification.post.title} 글에서`);
+		}
 	});
 
 	it('수신한 알림이 없으면 빈 목록 안내를 표시한다', () => {
