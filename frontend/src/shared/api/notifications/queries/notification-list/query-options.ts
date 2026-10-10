@@ -28,6 +28,8 @@ export const notificationListQueryOptions = ({
 				? page + 1
 				: undefined;
 		},
-		staleTime: 60_000,
+		staleTime: 0,
+		gcTime: 0,
+		refetchOnMount: 'always',
 		retry: false,
 	});
