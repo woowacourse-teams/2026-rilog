@@ -1,12 +1,10 @@
-import type { LinkProps } from 'next/link';
-import type { ComponentPropsWithRef, ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { EXPANDED_TEXT_CLASS_NAME, FOCUS_CLASS_NAME } from './sidebar-class-names';
 
-interface SidebarNavigationLinkProps
-	extends LinkProps, Omit<ComponentPropsWithRef<'a'>, 'aria-current' | 'children' | 'href'> {
+interface SidebarNavigationLinkProps extends Omit<ComponentProps<typeof CustomLink>, 'aria-current' | 'children'> {
 	accessibilityLabel?: string;
 	badge?: ReactNode;
 	icon: ReactNode;

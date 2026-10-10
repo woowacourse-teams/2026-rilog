@@ -316,8 +316,8 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await page.keyboard.type('넷째 제목');
 		const heading = page.locator('.post-write-blocknote [data-content-type="heading"][data-level="4"]');
 		await expect(heading).toContainText('넷째 제목');
-		await expect(heading).toHaveCSS('font-size', '20px');
-		await expect(heading.locator('.bn-inline-content')).toHaveCSS('line-height', '30px');
+		await expect(heading).toHaveCSS('font-size', '18px');
+		await expect(heading.locator('.bn-inline-content')).toHaveCSS('line-height', '27px');
 
 		await page.keyboard.press('Enter');
 		await page.keyboard.type('##### 다섯째 문장');

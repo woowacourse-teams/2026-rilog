@@ -46,22 +46,26 @@
 		grid-column: 2;
 	}
 
-	.tableOfContentsColumn,
+	.tableOfContentsColumn {
+		display: block;
+		align-self: stretch;
+		width: calc(100% - 2rem);
+		max-width: 14rem;
+		margin-right: 2rem;
+		padding-block: 5rem;
+		grid-column: 1;
+		justify-self: end;
+	}
+
 	.commentsColumn {
 		display: block;
 		align-self: stretch;
-		width: 12rem;
+		width: calc(100% - 2rem);
+		max-width: 30rem;
+		margin-left: 2rem;
 		padding-block: 5rem;
-	}
-
-	.tableOfContentsColumn {
-		grid-column: 1;
-		justify-self: start;
-	}
-
-	.commentsColumn {
 		grid-column: 3;
-		justify-self: end;
+		justify-self: start;
 		padding-top: 2.5rem;
 	}
 

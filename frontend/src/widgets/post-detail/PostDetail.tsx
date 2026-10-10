@@ -105,14 +105,14 @@ export default function PostDetail({ post }: PostDetailProps) {
 				/>
 			}
 			profileSection={
-				<>
+				<div className="flex flex-col">
 					{blogProfile}
 					<div className="mx-auto mt-6 w-fit min-w-20 border-t border-border-default px-6 pt-6 sm:min-w-100">
 						<Suspense fallback={<PostDetailAuthorProfileSmall author={post.author} />}>
 							<PostDetailAuthorProfileSection authorSlug={post.author.slug} />
 						</Suspense>
 					</div>
-				</>
+				</div>
 			}
 			afterProfile={
 				post.chapter ? (
