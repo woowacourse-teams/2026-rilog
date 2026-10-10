@@ -5,6 +5,7 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.notification.controller.apispec.NotificationApiSpec;
 import kr.rilog.domain.notification.controller.dto.response.NotificationListResponse;
 import kr.rilog.domain.notification.service.NotificationQueryService;
+import kr.rilog.domain.notification.service.NotificationService;
 import kr.rilog.domain.notification.service.dto.command.NotificationFilter;
 import kr.rilog.domain.notification.service.dto.command.NotificationSearchCommand;
 import kr.rilog.domain.notification.service.dto.result.NotificationListResult;
@@ -12,10 +13,7 @@ import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Validated
 @RestController
@@ -23,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class NotificationController implements NotificationApiSpec {
 
+    private final NotificationService notificationService;
     private final NotificationQueryService notificationQueryService;
 
     @AuthGuard
@@ -38,4 +37,22 @@ public class NotificationController implements NotificationApiSpec {
         NotificationListResponse data = NotificationListResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "알림 목록을 조회했습니다.", data);
     }
+
+    @AuthGuard
+    @PatchMapping("/notifications/{notificationId}/read")
+    public ApiResponse<Void> readNotification(
+            @LoginUserId Long userId,
+            @PathVariable Long notificationId
+    ) {
+        notificationService.readNotification(notificationId, userId);
+        return ApiResponse.response(HttpStatus.OK, "알림을 읽음 처리했습니다.");
+    }
+
+    @AuthGuard
+    @PatchMapping("/notifications/read")
+    public ApiResponse<Void> readAllNotifications(@LoginUserId Long userId) {
+        notificationService.readAllNotifications(userId);
+        return ApiResponse.response(HttpStatus.OK, "모든 알림을 읽음 처리했습니다.");
+    }
+
 }
