@@ -5,12 +5,9 @@ const { contentLoadFailedMock, captureExceptionMock } = vi.hoisted(() => ({
 	contentLoadFailedMock: vi.fn(),
 	captureExceptionMock: vi.fn(),
 }));
-vi.mock('@/shared/error-tracking/error-tracker-instance', async () => {
-	const { createSentryErrorTracker } = await import('@/shared/error-tracking/sentry-error-tracker');
-	const tracker = createSentryErrorTracker();
-	tracker.captureException = captureExceptionMock;
-	return { errorTracker: tracker, sentryErrorTracker: tracker };
-});
+vi.mock('@/shared/error-tracking/error-tracker-instance', () => ({
+	errorTracker: { captureException: captureExceptionMock, captureMessage: vi.fn(), setUser: vi.fn() },
+}));
 
 vi.mock('@/features/analytics/model/events', () => ({
 	analytics: { contentLoadFailed: contentLoadFailedMock },

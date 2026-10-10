@@ -1,6 +1,7 @@
 # ADR-0002: API 오류 의미 분류와 비동기 태깅 관측 경계
 
-- 상태: 승인 (아래 확정 범위)
+- 상태: Sentry 수집 정책 부분은 ADR 0004로 대체됨
+- 현재 구현: [ADR 0004](0004-sentry-sdk-context.md)
 - 날짜: 2026-09-26
 - 소유자: Frontend, Backend 계약 확인
 

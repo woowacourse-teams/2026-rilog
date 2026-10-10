@@ -1,5 +1,7 @@
 # API 오류 분류와 추가 수집 검토
 
+> 이전 정책의 검토 기록이다. 현재 Sentry 수집 기준은 [ADR 0004](../adr/0004-sentry-sdk-context.md)를 따른다.
+
 기준: 2026-09-26 저장소의 BE `*ErrorInformation` enum과 FE `error-codes.ts`.
 배포 환경과 실시간 Swagger의 일치 여부는 별도 확인 대상이다.
 

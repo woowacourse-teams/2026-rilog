@@ -65,9 +65,9 @@ describe('PostDetailPage', () => {
 		vi.mocked(getPublicPostDetail).mockResolvedValue(POST_DETAIL);
 	});
 
-	it('인코딩된 @ 접두사의 canonical 상세 경로는 다시 redirect하지 않는다', async () => {
+	it('rewrite된 canonical 상세 경로는 다시 redirect하지 않는다', async () => {
 		const page = await PostDetailPage({
-			params: Promise.resolve({ slug: '%40jetproc', postId: '72' }),
+			params: Promise.resolve({ slug: 'jetproc', postId: '72' }),
 			searchParams: Promise.resolve({}),
 		});
 
@@ -80,7 +80,7 @@ describe('PostDetailPage', () => {
 	it('게시글 소유자와 다른 slug는 canonical 상세 경로로 redirect한다', async () => {
 		await expect(
 			PostDetailPage({
-				params: Promise.resolve({ slug: '@wrong_slug', postId: '72' }),
+				params: Promise.resolve({ slug: 'wrong_slug', postId: '72' }),
 				searchParams: Promise.resolve({}),
 			}),
 		).rejects.toThrow('NEXT_REDIRECT');
@@ -91,7 +91,7 @@ describe('PostDetailPage', () => {
 	it('하이픈이 포함된 기존 상세 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
 		await expect(
 			PostDetailPage({
-				params: Promise.resolve({ slug: '@rilog-fe', postId: '72' }),
+				params: Promise.resolve({ slug: 'rilog-fe', postId: '72' }),
 				searchParams: Promise.resolve({ from: 'feed' }),
 			}),
 		).rejects.toThrow('NEXT_REDIRECT');

@@ -198,6 +198,7 @@ export const initializeAnalytics = () => {
 				enable_recording_console_log: false,
 				capture_pageview: true,
 				capture_pageleave: true,
+				opt_out_useragent_filter: process.env.NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER === 'true',
 				session_recording: {
 					recordHeaders: false,
 					recordBody: false,
@@ -214,6 +215,16 @@ export const initializeAnalytics = () => {
 			}),
 		true,
 	);
+};
+
+export const getAnalyticsSessionReplayUrl = (): string | undefined => {
+	if (!isAnalyticsConfigured()) return undefined;
+	try {
+		if (!posthog.sessionRecordingStarted()) return undefined;
+		return posthog.get_session_replay_url({ withTimestamp: true, timestampLookBack: 30 }) || undefined;
+	} catch {
+		return undefined;
+	}
 };
 
 /**

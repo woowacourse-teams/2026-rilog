@@ -12,6 +12,6 @@ type CustomLinkProps = LinkProps & Omit<ComponentPropsWithRef<'a'>, 'href'>;
  *
  * hover 시 prefetch는 여전히 동작하므로 사용자 경험에는 영향이 없습니다.
  */
-export default function CustomLink({ prefetch = false, ...props }: CustomLinkProps) {
+export default function CustomLink({ prefetch, ...props }: CustomLinkProps) {
 	return <Link prefetch={prefetch} {...props} />;
 }
