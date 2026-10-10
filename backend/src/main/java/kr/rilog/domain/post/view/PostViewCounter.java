@@ -24,13 +24,11 @@ public final class PostViewCounter {
     private long pendingDelta;
     private ViewFlushBatch inFlightBatch;
 
-    PostViewCounter(long postId, long confirmedCount, ElapsedTimeSource timeSource, Clock clock,
-                    ViewPolicy policy) {
+    PostViewCounter(long postId, long confirmedCount, ElapsedTimeSource timeSource, Clock clock, ViewPolicy policy) {
         this(postId, confirmedCount, timeSource, clock, policy, new QueueViewerRecordStore(timeSource));
     }
 
-    PostViewCounter(long postId, long confirmedCount, ElapsedTimeSource timeSource, Clock clock,
-                    ViewPolicy policy, ViewerRecordStore viewerRecordStore) {
+    PostViewCounter(long postId, long confirmedCount, ElapsedTimeSource timeSource, Clock clock, ViewPolicy policy, ViewerRecordStore viewerRecordStore) {
         this.postId = postId;
         this.confirmedCount = confirmedCount;
         this.timeSource = timeSource;
