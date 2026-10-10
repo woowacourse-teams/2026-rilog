@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route-slug';
+import NotificationCommentDeletedToast from '@/features/notifications/ui/NotificationCommentDeletedToast';
 import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
 import { POST_DETAIL_SELECTION_QUERY_PARAM, buildPostDetailPath } from '@/shared/routes/app-routes';
 import { appendSearchParams } from '@/shared/routes/append-search-params';
@@ -60,9 +61,12 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 	if (normalizedSlug !== post.blog.slug) permanentRedirect(appendSearchParams(canonical, resolvedSearchParams));
 
 	return (
-		<PostDetail
-			post={post}
-			initialSelectionId={parseSelectionId(resolvedSearchParams[POST_DETAIL_SELECTION_QUERY_PARAM])}
-		/>
+		<>
+			<PostDetail
+				post={post}
+				initialSelectionId={parseSelectionId(resolvedSearchParams[POST_DETAIL_SELECTION_QUERY_PARAM])}
+			/>
+			{resolvedSearchParams.notificationCommentDeleted === 'true' && <NotificationCommentDeletedToast />}
+		</>
 	);
 }

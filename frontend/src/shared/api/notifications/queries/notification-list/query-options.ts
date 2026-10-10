@@ -1,10 +1,12 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 
-import { readNotifications } from '../../api';
 import type { NotificationFilter, NotificationListResponse } from '../../types';
-import { notificationsQueryKeys } from '../keys';
 
 import type { ApiResponse } from '@/shared/api/shared.types';
+
+import { readNotifications } from '../../api';
+import { notificationsQueryKeys } from '../keys';
+
 
 export const NOTIFICATIONS_PAGE_SIZE = 20;
 

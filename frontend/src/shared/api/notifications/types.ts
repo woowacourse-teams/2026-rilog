@@ -11,10 +11,7 @@ export type NotificationSourceStatus =
 	| 'POST_INACCESSIBLE'
 	| 'SOURCE_NOT_FOUND';
 
-export type NotificationType =
-	| 'POST_INLINE_COMMENT'
-	| 'SELECTION_INLINE_COMMENT'
-	| 'SUBSCRIBED_BLOG_POST_PUBLISHED';
+export type NotificationType = 'POST_INLINE_COMMENT' | 'SELECTION_INLINE_COMMENT' | 'SUBSCRIBED_BLOG_POST_PUBLISHED';
 
 export interface ReadNotificationsRequest {
 	filter: NotificationFilter;

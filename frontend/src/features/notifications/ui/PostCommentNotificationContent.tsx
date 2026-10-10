@@ -19,7 +19,11 @@ export default function PostCommentNotificationContent({ notification, onRead }:
 				summary={
 					<>
 						<strong className="font-semibold">{author.nickname}</strong> 님이{' '}
-						<NotificationPostTitle title={post.title} />에 댓글을 남겼어요.
+						<NotificationPostTitle
+							title={post.title}
+							isStruckThrough={notification.state === 'post-deleted' || notification.state === 'post-inaccessible'}
+						/>
+						에 댓글을 남겼어요.
 					</>
 				}
 			/>
