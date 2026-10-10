@@ -4,6 +4,7 @@ import kr.rilog.domain.auth.annotation.AuthGuard;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.notification.controller.apispec.NotificationApiSpec;
 import kr.rilog.domain.notification.controller.dto.response.NotificationListResponse;
+import kr.rilog.domain.notification.controller.dto.response.NotificationUnreadCountResponse;
 import kr.rilog.domain.notification.service.NotificationQueryService;
 import kr.rilog.domain.notification.service.NotificationService;
 import kr.rilog.domain.notification.service.dto.command.NotificationFilter;
@@ -36,6 +37,14 @@ public class NotificationController implements NotificationApiSpec {
         NotificationListResult result = notificationQueryService.readNotifications(command, userId);
         NotificationListResponse data = NotificationListResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "알림 목록을 조회했습니다.", data);
+    }
+
+    @AuthGuard
+    @GetMapping("/notifications/unread-count")
+    public ApiResponse<NotificationUnreadCountResponse> countUnreadNotifications(@LoginUserId Long userId) {
+        long unreadCount = notificationQueryService.countUnreadNotifications(userId);
+        NotificationUnreadCountResponse data = new NotificationUnreadCountResponse(unreadCount);
+        return ApiResponse.response(HttpStatus.OK, "읽지 않은 알림 수를 조회했습니다.", data);
     }
 
     @AuthGuard

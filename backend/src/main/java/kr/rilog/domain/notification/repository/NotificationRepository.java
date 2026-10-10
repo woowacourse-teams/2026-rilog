@@ -27,6 +27,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             Pageable pageable
     );
 
+    long countByRecipientIdAndReadAtIsNull(Long recipientId);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
         UPDATE Notification notification

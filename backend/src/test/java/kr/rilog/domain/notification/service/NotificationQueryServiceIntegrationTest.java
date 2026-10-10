@@ -135,6 +135,28 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("읽지 않은 알림 수를 조회하면 본인의 읽지 않은 알림만 센다.")
+    void countUnreadNotificationsCountsOnlyOwnUnreadNotifications() {
+        // given
+        InlineCommentScenario scenario = savePublicRilogScenario();
+        saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
+        saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.plusMinutes(1));
+        Notification readNotification = saveNotification(
+                scenario.recipient(),
+                scenario.anchor(),
+                BASE_TIME.plusMinutes(2)
+        );
+        markAsRead(readNotification, BASE_TIME.plusMinutes(3));
+        saveNotification(scenario.commentWriter(), scenario.anchor(), BASE_TIME);
+
+        // when
+        long unreadCount = notificationQueryService.countUnreadNotifications(scenario.recipient().getId());
+
+        // then
+        assertThat(unreadCount).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("알림 목록은 생성 시각과 ID를 기준으로 최신 알림부터 반환한다.")
     void readNotificationsOrdersByCreatedAtAndIdDescending() {
         // given

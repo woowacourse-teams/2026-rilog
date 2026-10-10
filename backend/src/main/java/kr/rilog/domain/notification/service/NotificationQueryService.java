@@ -39,4 +39,9 @@ public class NotificationQueryService {
         // Result 내부에서 Slice와 Map을 notificationId를 기준으로 일치시킨다.
         return NotificationListResult.from(notifications, contents);
     }
+
+    public long countUnreadNotifications(Long userId) {
+        return notificationRepository.countByRecipientIdAndReadAtIsNull(userId);
+    }
+
 }

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.notification.controller.dto.response.NotificationListResponse;
+import kr.rilog.domain.notification.controller.dto.response.NotificationUnreadCountResponse;
 import kr.rilog.domain.notification.service.dto.command.NotificationFilter;
 import kr.rilog.global.response.ApiResponse;
 
@@ -28,6 +29,17 @@ public interface NotificationApiSpec {
             int page,
             @Parameter(description = "한 페이지에 조회할 알림 개수", example = "20")
             int size
+    );
+
+    @Operation(
+            summary = "읽지 않은 알림 수 조회",
+            description = """
+                    로그인한 사용자의 읽지 않은 알림 개수를 조회합니다.
+                    출처가 삭제되었거나 접근할 수 없는 알림도 읽지 않았다면 개수에 포함합니다.
+                    """
+    )
+    ApiResponse<NotificationUnreadCountResponse> countUnreadNotifications(
+            @Parameter(hidden = true) @LoginUserId Long recipientId
     );
 
     @Operation(
