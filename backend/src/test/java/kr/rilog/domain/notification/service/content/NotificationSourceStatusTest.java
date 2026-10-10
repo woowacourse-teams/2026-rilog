@@ -14,13 +14,12 @@ class NotificationSourceStatusTest {
             names = {
                     "AVAILABLE",
                     "POST_DELETED",
-                    "SELECTION_DELETED",
                     "COMMENT_DELETED",
                     "ACTOR_DELETED",
-                    "BLOG_DELETED"
+                    "POST_INACCESSIBLE"
             }
     )
-    @DisplayName("조회 가능한 출처와 삭제된 출처는 알림 콘텐츠를 노출한다.")
+    @DisplayName("조회 가능한 출처, 삭제된 출처와 접근할 수 없는 출처는 알림 콘텐츠를 노출한다.")
     void exposableSourceStatusCanExposeContent(NotificationSourceStatus status) {
         assertThat(status.canExposeContent()).isTrue();
     }
@@ -30,11 +29,10 @@ class NotificationSourceStatusTest {
             value = NotificationSourceStatus.class,
             names = {
                     "POST_UNAVAILABLE",
-                    "POST_INACCESSIBLE",
                     "SOURCE_NOT_FOUND"
             }
     )
-    @DisplayName("이용할 수 없거나 접근할 수 없는 출처는 알림 콘텐츠를 노출하지 않는다.")
+    @DisplayName("이용할 수 없거나 찾을 수 없는 출처는 알림 콘텐츠를 노출하지 않는다.")
     void hiddenSourceStatusCannotExposeContent(NotificationSourceStatus status) {
         assertThat(status.canExposeContent()).isFalse();
     }
