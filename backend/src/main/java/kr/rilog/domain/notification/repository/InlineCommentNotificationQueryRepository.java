@@ -7,6 +7,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InlineCommentNotificationQueryRepository extends Repository<CommentAnchor, Long> {
 
@@ -53,5 +54,28 @@ public interface InlineCommentNotificationQueryRepository extends Repository<Com
             @Param("sourceIds") List<Long> sourceIds,
             @Param("userId") Long userId
     );
+
+    @Query("""
+            SELECT postWriter.id
+            FROM CommentAnchor anchor
+            JOIN anchor.commentAnchorSelection anchorSelection
+            JOIN anchorSelection.post post
+            JOIN post.user postWriter
+            WHERE anchor.id = :commentAnchorId
+              AND postWriter.deletedAt IS NULL
+            """)
+    Optional<Long> findPostWriterId(@Param("commentAnchorId") Long commentAnchorId);
+
+    @Query("""
+            SELECT DISTINCT participant.id
+            FROM CommentAnchor anchor
+            JOIN CommentAnchor participantAnchor
+                ON participantAnchor.commentAnchorSelection = anchor.commentAnchorSelection
+            JOIN participantAnchor.writer participant
+            WHERE anchor.id = :commentAnchorId
+              AND participantAnchor.deletedAt IS NULL
+              AND participant.deletedAt IS NULL
+            """)
+    List<Long> findSelectionParticipantIds(@Param("commentAnchorId") Long commentAnchorId);
 
 }
