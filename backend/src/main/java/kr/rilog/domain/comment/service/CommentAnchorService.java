@@ -17,6 +17,7 @@ import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
+import kr.rilog.domain.notification.event.NotificationEventPublisher;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.vo.TextBlock;
@@ -47,6 +48,7 @@ public class CommentAnchorService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final BlogMemberRepository blogMemberRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Transactional
     public CommentAnchorCreateResult createCommentAnchor(
@@ -60,9 +62,9 @@ public class CommentAnchorService {
 
         Selection selection = createSelection(post, command);
         CommentAnchorSelection anchorSelection = getOrCreateActiveSelection(post, selection);
-        CommentAnchor commentAnchor = CommentAnchor.create(anchorSelection, writer, command.content());
-        CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
-        return CommentAnchorCreateResult.from(savedCommentAnchor);
+        CommentAnchor commentAnchor = commentAnchorRepository.save(CommentAnchor.create(anchorSelection, writer, command.content()));
+        notificationEventPublisher.commentAnchorCreated(commentAnchor.getId(), requesterId, commentAnchor.getCreatedAt());
+        return CommentAnchorCreateResult.from(commentAnchor);
     }
 
     @Transactional
@@ -77,9 +79,9 @@ public class CommentAnchorService {
         User writer = getUser(requesterId);
 
         CommentAnchorSelection anchorSelection = getSelection(postId, selectionId);
-        CommentAnchor commentAnchor = CommentAnchor.create(anchorSelection, writer, command.content());
-        CommentAnchor savedCommentAnchor = commentAnchorRepository.save(commentAnchor);
-        return CommentAnchorCreateResult.from(savedCommentAnchor);
+        CommentAnchor commentAnchor = commentAnchorRepository.save(CommentAnchor.create(anchorSelection, writer, command.content()));
+        notificationEventPublisher.commentAnchorCreated(commentAnchor.getId(), requesterId, commentAnchor.getCreatedAt());
+        return CommentAnchorCreateResult.from(commentAnchor);
     }
 
     @Transactional
