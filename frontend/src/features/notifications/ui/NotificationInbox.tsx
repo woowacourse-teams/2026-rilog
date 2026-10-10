@@ -28,8 +28,13 @@ export default function NotificationInbox() {
 	}, [query.data?.pages, locallyReadIds]);
 
 	useEffect(() => {
+		if (!hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
+		if (notifications.length === 0) {
+			void fetchNextPage();
+			return;
+		}
 		const sentinel = sentinelRef.current;
-		if (sentinel === null || !hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
+		if (sentinel === null) return;
 
 		let hasRequestedNextPage = false;
 		const observer = new IntersectionObserver(
@@ -44,7 +49,7 @@ export default function NotificationInbox() {
 		);
 		observer.observe(sentinel);
 		return () => observer.disconnect();
-	}, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError]);
+	}, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError, notifications.length]);
 
 	if (!isInitialized) return <NotificationList status="loading" />;
 
@@ -59,6 +64,8 @@ export default function NotificationInbox() {
 	if (query.isPending) return <NotificationList status="loading" />;
 	if (query.isError && !isFetchNextPageError && notifications.length === 0)
 		return <NotificationList status="error" onRetry={() => void query.refetch()} />;
+	if (isFetchNextPageError && notifications.length === 0)
+		return <NotificationList status="error" onRetry={() => void query.fetchNextPage()} />;
 
 	return (
 		<>
