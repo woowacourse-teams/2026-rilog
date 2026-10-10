@@ -141,8 +141,12 @@ const renderWorkspace = async () => {
 };
 
 describe('PostDetailCommentsWorkspace', () => {
-	it('초기 selection ID로 연 사이드바를 닫아도 URL을 변경하지 않는다', async () => {
-		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=3&from=notification#quote');
+	it('초기 selection ID로 연 사이드바를 닫으면 알림 전용 query만 제거한다', async () => {
+		window.history.replaceState(
+			null,
+			'',
+			'/@rilog/posts/81?selectionId=3&notificationCommentDeleted=true&from=notification#quote',
+		);
 		const user = userEvent.setup();
 		renderWorkspaceUI(3);
 		await screen.findByRole('dialog', { name: '인라인 댓글 1' });
@@ -150,7 +154,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
 
 		expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-			'/@rilog/posts/81?selectionId=3&from=notification#quote',
+			'/@rilog/posts/81?from=notification#quote',
 		);
 	});
 
