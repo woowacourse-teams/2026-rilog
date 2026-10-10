@@ -15,6 +15,7 @@ import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 interface BasePostDetailProps {
 	post: PostDetail;
 	initialSelectionId?: number | null;
+	showDeletedCommentToast?: boolean;
 	header: ReactNode;
 	profileSection: ReactNode;
 	beforeContent?: ReactNode;
@@ -24,6 +25,7 @@ interface BasePostDetailProps {
 export default async function BasePostDetail({
 	post,
 	initialSelectionId,
+	showDeletedCommentToast = false,
 	header,
 	profileSection,
 	beforeContent,
@@ -62,6 +64,7 @@ export default async function BasePostDetail({
 							html={contentHtml}
 							postId={post.id}
 							initialSelectionId={initialSelectionId}
+							showDeletedCommentToast={showDeletedCommentToast}
 							ownerType={post.blog.type}
 							category={post.category}
 							enableInlineCommentSelectionDebug={false}

@@ -27,6 +27,7 @@ interface PostDetailCommentsWorkspaceProps {
 	html: string;
 	postId: number;
 	initialSelectionId?: number | null;
+	showDeletedCommentToast?: boolean;
 	ownerType: BlogType;
 	category: PostCategory;
 	enableInlineCommentSelectionDebug: boolean;
@@ -53,6 +54,7 @@ export default function PostDetailCommentsWorkspace({
 	html,
 	postId,
 	initialSelectionId = null,
+	showDeletedCommentToast = false,
 	ownerType,
 	category,
 	enableInlineCommentSelectionDebug,
@@ -77,6 +79,7 @@ export default function PostDetailCommentsWorkspace({
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const hasHandledDeepLinkNavigationRef = useRef(false);
+	const [isDeletedCommentToastVisible, setIsDeletedCommentToastVisible] = useState(showDeletedCommentToast);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
@@ -171,6 +174,7 @@ export default function PostDetailCommentsWorkspace({
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
 			setIsCommentsSidebarOpen(false);
+			setIsDeletedCommentToastVisible(false);
 			window.setTimeout(() => {
 				scrollToThreadAnchor(thread);
 			}, 140);
@@ -214,6 +218,7 @@ export default function PostDetailCommentsWorkspace({
 				mode={sidebarMode}
 				entrySource={commentEntrySource}
 				open={isCommentsSidebarOpen}
+				showDeletedCommentToast={isDeletedCommentToastVisible}
 				threads={visibleThreads}
 				isLoading={sidebarQuery.isPending}
 				isError={sidebarQuery.isError}
@@ -226,6 +231,7 @@ export default function PostDetailCommentsWorkspace({
 				}}
 				onClose={() => {
 					setIsCommentsSidebarOpen(false);
+					setIsDeletedCommentToastVisible(false);
 				}}
 				onNavigate={handleAnchorNavigate}
 			/>
