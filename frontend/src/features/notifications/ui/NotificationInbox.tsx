@@ -62,12 +62,16 @@ export default function NotificationInbox() {
 
 	return (
 		<>
-			<NotificationList
-				status="success"
-				notifications={notifications}
-				onRead={(id) => setLocallyReadIds((current) => new Set([...current, id]))}
-				onReadAll={() => setLocallyReadIds((current) => new Set([...current, ...notifications.map(({ id }) => id)]))}
-			/>
+			{notifications.length === 0 && hasNextPage ? (
+				<NotificationList status="loading" />
+			) : (
+				<NotificationList
+					status="success"
+					notifications={notifications}
+					onRead={(id) => setLocallyReadIds((current) => new Set([...current, id]))}
+					onReadAll={() => setLocallyReadIds((current) => new Set([...current, ...notifications.map(({ id }) => id)]))}
+				/>
+			)}
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />
 			{(isFetchingNextPage || isFetchNextPageError) && (
 				<div className="flex min-h-20 flex-col items-center justify-center gap-3" aria-live="polite">

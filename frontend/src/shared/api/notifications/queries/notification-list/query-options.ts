@@ -7,7 +7,6 @@ import type { ApiResponse } from '@/shared/api/shared.types';
 import { readNotifications } from '../../api';
 import { notificationsQueryKeys } from '../keys';
 
-
 export const NOTIFICATIONS_PAGE_SIZE = 20;
 
 export interface NotificationListQueryOptions {
