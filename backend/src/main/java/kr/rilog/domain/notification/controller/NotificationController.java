@@ -53,14 +53,14 @@ public class NotificationController implements NotificationApiSpec {
             @LoginUserId Long userId,
             @PathVariable Long notificationId
     ) {
-        notificationService.readNotification(notificationId, userId);
+        notificationService.markAsRead(notificationId, userId);
         return ApiResponse.response(HttpStatus.OK, "알림을 읽음 처리했습니다.");
     }
 
     @AuthGuard
     @PatchMapping("/notifications/read")
     public ApiResponse<Void> readAllNotifications(@LoginUserId Long userId) {
-        notificationService.readAllNotifications(userId);
+        notificationService.markAllAsRead(userId);
         return ApiResponse.response(HttpStatus.OK, "모든 알림을 읽음 처리했습니다.");
     }
 

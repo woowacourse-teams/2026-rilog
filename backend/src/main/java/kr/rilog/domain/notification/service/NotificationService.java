@@ -19,7 +19,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
 
     @Transactional
-    public void readNotification(Long notificationId, Long userId) {
+    public void markAsRead(Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .filter(found -> found.isRecipient(userId))
                 .orElseThrow(() -> new NotificationException(NOTIFICATION_NOT_FOUND));
@@ -28,7 +28,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void readAllNotifications(Long userId) {
+    public void markAllAsRead(Long userId) {
         notificationRepository.markAllAsReadByRecipientId(userId, LocalDateTime.now());
     }
 
