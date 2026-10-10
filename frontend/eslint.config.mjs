@@ -6,7 +6,7 @@ import checkFile from 'eslint-plugin-check-file';
 import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
-const nextComponentFiles = ['src/**/{page,layout,template,default,loading,error,global-error,not-found}.tsx'];
+const nextComponentFiles = ['src/**/{page,layout,template,default,loading,error,global-error,not-found,forbidden}.tsx'];
 
 const componentDefinitionRules = {
 	'import/no-anonymous-default-export': 'error',
