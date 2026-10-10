@@ -21,6 +21,8 @@ const mapInlineCommentState = (status: NotificationSourceStatus): CommentNotific
 		case 'POST_UNAVAILABLE':
 		case 'SOURCE_NOT_FOUND':
 			return null;
+		default:
+			return null;
 	}
 };
 
