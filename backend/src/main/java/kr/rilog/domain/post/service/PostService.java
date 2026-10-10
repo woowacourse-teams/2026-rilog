@@ -33,6 +33,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_MISSING;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -95,7 +97,8 @@ public class PostService {
 
     private PostDetailResponse toPostDetailResponse(Post post, ViewerPermissionsResponse viewerPermissions) {
         long viewCount = viewCountRepository.findViewCountByPostId(post.getId())
-                .orElseThrow(() -> new IllegalStateException("발행된 게시글의 조회수 누계가 없습니다: " + post.getId()));
+                .orElseThrow(() -> new RilogInfrastructureException(
+                        POST_VIEW_COUNT_MISSING, "발행된 게시글의 조회수 누계가 없습니다. postId=" + post.getId(), null));
         if (!post.isCologAffiliated()) {
             return PostDetailResponse.fromRilog(post, viewerPermissions, viewCount);
         }

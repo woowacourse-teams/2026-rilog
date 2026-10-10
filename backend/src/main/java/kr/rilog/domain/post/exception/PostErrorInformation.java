@@ -16,6 +16,9 @@ public enum PostErrorInformation implements ErrorInformation {
     INVALID_POST_CONTENT(HttpStatus.BAD_REQUEST, "게시글 본문 내용이 올바르지 않습니다."),
     INVALID_FEED_FILTER(HttpStatus.BAD_REQUEST, "사용할 수 없는 피드 필터 조합입니다."),
     DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 임시저장 글을 찾을 수 없습니다."),
+    POST_VIEW_COUNT_LIMIT_EXCEEDED(HttpStatus.SERVICE_UNAVAILABLE, "조회수가 집계 가능한 범위에 도달했습니다."),
+    POST_VIEW_COUNT_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 조회수 정보를 불러올 수 없습니다."),
+    POST_VIEW_COUNT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 조회수 정보가 올바르지 않습니다."),
 
     // TEXT
     TEXT_BLOCK_NOT_FOUND(HttpStatus.BAD_REQUEST, "본문에서 해당 텍스트 블록을 찾을 수 없습니다."),
