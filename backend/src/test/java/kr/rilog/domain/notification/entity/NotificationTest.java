@@ -46,6 +46,58 @@ class NotificationTest {
         });
     }
 
+    @Test
+    @DisplayName("읽지 않은 알림을 읽음 처리하면 전달받은 시각으로 읽은 상태가 된다.")
+    void markAsReadSetsReadAt() {
+        Notification notification = Notification.create(
+                1L,
+                NotificationType.POST_INLINE_COMMENT,
+                2L,
+                CREATED_AT
+        );
+        LocalDateTime readAt = CREATED_AT.plusMinutes(1);
+
+        notification.markAsRead(readAt);
+
+        assertSoftly(softly -> {
+            softly.assertThat(notification.isRead()).isTrue();
+            softly.assertThat(notification.getReadAt()).isEqualTo(readAt);
+        });
+    }
+
+    @Test
+    @DisplayName("이미 읽은 알림을 다시 읽음 처리해도 처음 읽은 시각을 유지한다.")
+    void markAsReadKeepsFirstReadAt() {
+        Notification notification = Notification.create(
+                1L,
+                NotificationType.POST_INLINE_COMMENT,
+                2L,
+                CREATED_AT
+        );
+        LocalDateTime firstReadAt = CREATED_AT.plusMinutes(1);
+        notification.markAsRead(firstReadAt);
+
+        notification.markAsRead(firstReadAt.plusMinutes(1));
+
+        assertThat(notification.getReadAt()).isEqualTo(firstReadAt);
+    }
+
+    @Test
+    @DisplayName("알림의 수신자인지 판단한다.")
+    void isRecipientChecksRecipientId() {
+        Notification notification = Notification.create(
+                1L,
+                NotificationType.POST_INLINE_COMMENT,
+                2L,
+                CREATED_AT
+        );
+
+        assertSoftly(softly -> {
+            softly.assertThat(notification.isRecipient(1L)).isTrue();
+            softly.assertThat(notification.isRecipient(2L)).isFalse();
+        });
+    }
+
     private static Stream<Arguments> notificationTypesAndSourceTypes() {
         return Stream.of(
                 Arguments.of(

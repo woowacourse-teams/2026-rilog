@@ -135,6 +135,28 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("읽지 않은 알림 수를 조회하면 본인의 읽지 않은 알림만 센다.")
+    void countUnreadNotificationsCountsOnlyOwnUnreadNotifications() {
+        // given
+        InlineCommentScenario scenario = savePublicRilogScenario();
+        saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
+        saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.plusMinutes(1));
+        Notification readNotification = saveNotification(
+                scenario.recipient(),
+                scenario.anchor(),
+                BASE_TIME.plusMinutes(2)
+        );
+        markAsRead(readNotification, BASE_TIME.plusMinutes(3));
+        saveNotification(scenario.commentWriter(), scenario.anchor(), BASE_TIME);
+
+        // when
+        long unreadCount = notificationQueryService.countUnreadNotifications(scenario.recipient().getId());
+
+        // then
+        assertThat(unreadCount).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("알림 목록은 생성 시각과 ID를 기준으로 최신 알림부터 반환한다.")
     void readNotificationsOrdersByCreatedAtAndIdDescending() {
         // given
@@ -215,7 +237,7 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("삭제된 팀 블로그의 인라인 댓글 알림은 블로그 삭제 상태와 기존 콘텐츠를 반환한다.")
+    @DisplayName("삭제된 팀 블로그의 인라인 댓글 알림은 게시글 삭제 상태와 기존 콘텐츠를 반환한다.")
     void readNotificationsReturnsDeletedBlogStatusForColog() {
         // given
         InlineCommentScenario scenario = savePublicCologScenario();
@@ -231,7 +253,7 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertSoftly(softly -> {
-            softly.assertThat(item.sourceStatus()).isEqualTo(NotificationSourceStatus.BLOG_DELETED);
+            softly.assertThat(item.sourceStatus()).isEqualTo(NotificationSourceStatus.POST_DELETED);
             softly.assertThat(item.content()).isNotNull();
         });
     }
@@ -257,8 +279,8 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("다른 사용자의 비공개 게시글 알림은 콘텐츠를 노출하지 않는다.")
-    void readNotificationsHidesContentForInaccessiblePrivatePost() {
+    @DisplayName("다른 사용자의 비공개 게시글 알림은 접근 불가 상태와 기존 콘텐츠를 반환한다.")
+    void readNotificationsReturnsContentForInaccessiblePrivatePost() {
         // given
         InlineCommentScenario scenario = savePrivateRilogScenario(false);
         saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
@@ -272,7 +294,7 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         // then
         assertSoftly(softly -> {
             softly.assertThat(item.sourceStatus()).isEqualTo(NotificationSourceStatus.POST_INACCESSIBLE);
-            softly.assertThat(item.content()).isNull();
+            softly.assertThat(item.content()).isNotNull();
         });
     }
 
@@ -472,10 +494,10 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
 
     private enum DeletedSource {
         POST(NotificationSourceStatus.POST_DELETED),
-        SELECTION(NotificationSourceStatus.SELECTION_DELETED),
+        SELECTION(NotificationSourceStatus.COMMENT_DELETED),
         COMMENT(NotificationSourceStatus.COMMENT_DELETED),
         ACTOR(NotificationSourceStatus.ACTOR_DELETED),
-        BLOG(NotificationSourceStatus.BLOG_DELETED),
+        BLOG(NotificationSourceStatus.POST_DELETED),
         ;
 
         private final NotificationSourceStatus expectedStatus;

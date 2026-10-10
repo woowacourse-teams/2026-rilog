@@ -48,7 +48,19 @@ public class Notification {
         return notification;
     }
 
+    public boolean isRecipient(Long userId) {
+        return recipientId.equals(userId);
+    }
+
+    public void markAsRead(LocalDateTime readAt) {
+        if (isRead()) {
+            return;
+        }
+        this.readAt = readAt;
+    }
+
     public boolean isRead() {
         return readAt != null;
     }
+
 }

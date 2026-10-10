@@ -40,13 +40,11 @@ public record NotificationListResponse(
                     description = """
                         알림 출처 상태
                         - AVAILABLE
-                        - POST_DELETED
-                        - SELECTION_DELETED
-                        - COMMENT_DELETED
+                        - POST_DELETED      (게시글 또는 블로그 삭제)
+                        - COMMENT_DELETED   (댓글 또는 selection 삭제)
                         - ACTOR_DELETED
-                        - BLOG_DELETED
+                        - POST_INACCESSIBLE
                         - POST_UNAVAILABLE  -> content를 Null 처리
-                        - POST_INACCESSIBLE -> content를 Null 처리
                         - SOURCE_NOT_FOUND  -> content를 Null 처리
                         """
             )

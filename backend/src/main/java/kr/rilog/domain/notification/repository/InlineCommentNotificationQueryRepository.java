@@ -16,11 +16,11 @@ public interface InlineCommentNotificationQueryRepository extends Repository<Com
                 anchor.id,
                 CASE
                     WHEN post.deletedAt IS NOT NULL THEN 'POST_DELETED'
-                    WHEN anchorSelection.deletedAt IS NOT NULL THEN 'SELECTION_DELETED'
+                    WHEN anchorSelection.deletedAt IS NOT NULL THEN 'COMMENT_DELETED'
                     WHEN anchor.deletedAt IS NOT NULL THEN 'COMMENT_DELETED'
                     WHEN writer.deletedAt IS NOT NULL THEN 'ACTOR_DELETED'
-                    WHEN rilog.deletedAt IS NOT NULL THEN 'BLOG_DELETED'
-                    WHEN colog.id IS NOT NULL AND colog.deletedAt IS NOT NULL THEN 'BLOG_DELETED'
+                    WHEN rilog.deletedAt IS NOT NULL THEN 'POST_DELETED'
+                    WHEN colog.id IS NOT NULL AND colog.deletedAt IS NOT NULL THEN 'POST_DELETED'
                     WHEN post.status <> kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED THEN 'POST_UNAVAILABLE'
                     WHEN post.visibility = kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE
                          AND post.user.id <> :userId THEN 'POST_INACCESSIBLE'
