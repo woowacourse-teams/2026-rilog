@@ -5,6 +5,7 @@ export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 	{
 		id: 5,
 		type: 'SELECTION_COMMENT',
+		state: 'available',
 		createdAt: '2026-09-28T02:10:34.780901',
 		isRead: false,
 		author: {
@@ -24,6 +25,7 @@ export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 	{
 		id: 4,
 		type: 'SELECTION_COMMENT',
+		state: 'available',
 		createdAt: '2026-09-28T02:10:34.780901',
 		isRead: false,
 		author: {
@@ -43,6 +45,7 @@ export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 	{
 		id: 1,
 		type: 'POST_COMMENT',
+		state: 'available',
 		createdAt: '2026-10-08T08:21:00Z',
 		isRead: false,
 		author: { id: 11, slug: 'gaeul', nickname: '닉네임은 최대 20글자까지 가능합니다', profileImageUrl: null },
@@ -53,6 +56,7 @@ export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 	{
 		id: 2,
 		type: 'SELECTION_COMMENT',
+		state: 'available',
 		createdAt: '2026-10-08T05:40:00Z',
 		isRead: false,
 		author: { id: 12, slug: 'bada', nickname: '바다', profileImageUrl: null },
@@ -71,6 +75,7 @@ export const NOTIFICATION_SAMPLES: readonly Notification[] = [
 	{
 		id: 3,
 		type: 'POST_COMMENT',
+		state: 'available',
 		createdAt: '2026-10-07T11:15:00Z',
 		isRead: true,
 		author: { id: 13, slug: 'yeon', nickname: '연', profileImageUrl: null },
