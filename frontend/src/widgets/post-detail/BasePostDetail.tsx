@@ -14,6 +14,7 @@ import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 
 interface BasePostDetailProps {
 	post: PostDetail;
+	initialSelectionId?: number | null;
 	header: ReactNode;
 	profileSection: ReactNode;
 	beforeContent?: ReactNode;
@@ -22,6 +23,7 @@ interface BasePostDetailProps {
 
 export default async function BasePostDetail({
 	post,
+	initialSelectionId,
 	header,
 	profileSection,
 	beforeContent,
@@ -56,8 +58,10 @@ export default async function BasePostDetail({
 						)}
 
 						<PostDetailCommentsWorkspace
+							key={initialSelectionId ?? 'no-selection'}
 							html={contentHtml}
 							postId={post.id}
+							initialSelectionId={initialSelectionId}
 							ownerType={post.blog.type}
 							category={post.category}
 							enableInlineCommentSelectionDebug={false}

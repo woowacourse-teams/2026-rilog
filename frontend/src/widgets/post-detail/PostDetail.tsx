@@ -16,9 +16,10 @@ import BasePostDetail from './BasePostDetail';
 
 interface PostDetailProps {
 	post: PostDetailModel;
+	initialSelectionId?: number | null;
 }
 
-export default function PostDetail({ post }: PostDetailProps) {
+export default function PostDetail({ post, initialSelectionId }: PostDetailProps) {
 	const header = (
 		<PostDetailHeader
 			postId={post.id}
@@ -40,6 +41,7 @@ export default function PostDetail({ post }: PostDetailProps) {
 		return (
 			<BasePostDetail
 				post={post}
+				initialSelectionId={initialSelectionId}
 				header={header}
 				profileSection={blogProfile}
 				beforeContent={
@@ -92,6 +94,7 @@ export default function PostDetail({ post }: PostDetailProps) {
 	return (
 		<BasePostDetail
 			post={post}
+			initialSelectionId={initialSelectionId}
 			header={
 				<PostDetailHeader
 					publisher={publisher}

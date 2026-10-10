@@ -8,6 +8,7 @@ import {
 	buildDraftWritePath,
 	buildRilogSettingsPath,
 	buildPostDetailPath,
+	buildPostDetailSelectionPath,
 	hasBlogSlugPrefix,
 	parseCologSettingsTab,
 	parseRilogSettingsTab,
@@ -21,6 +22,7 @@ describe('app routes', () => {
 			cologCreate: '/colog/create',
 			signUp: '/sign-up',
 			write: '/write',
+			notifications: '/notifications',
 		});
 	});
 
@@ -69,6 +71,10 @@ describe('app routes', () => {
 
 	it('코로그 slug와 게시글 ID로 상세 경로를 만든다', () => {
 		expect(buildPostDetailPath('rilog', 'post/40')).toBe('/@rilog/posts/post%2F40');
+	});
+
+	it('selection 알림에서 대상 게시글의 인용 댓글 링크를 만든다', () => {
+		expect(buildPostDetailSelectionPath('rilog_fe2', '81', 27)).toBe('/@rilog_fe2/posts/81?selectionId=27');
 	});
 
 	it('draftId로 임시저장 작성 경로를 만든다', () => {

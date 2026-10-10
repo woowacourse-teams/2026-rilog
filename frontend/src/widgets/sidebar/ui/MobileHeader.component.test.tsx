@@ -91,6 +91,7 @@ describe('MobileHeader', () => {
 		expect(feedLink).toHaveAttribute('href', '/feeds');
 		expect(feedLink).toHaveAttribute('aria-current', 'page');
 		expect(screen.getByRole('link', { name: '@e2e-user 블로그로 이동' })).toHaveAttribute('href', '/@e2e-user');
+		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
 		expect(screen.getByRole('img', { name: 'E2E 사용자 프로필' })).toHaveTextContent('E');
 		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
 	});

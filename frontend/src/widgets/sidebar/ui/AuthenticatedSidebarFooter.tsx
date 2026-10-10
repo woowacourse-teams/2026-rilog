@@ -7,6 +7,7 @@ import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import LogOutIcon from '@/widgets/sidebar/assets/log-out.svg';
+import NotificationUnreadIcon from '@/widgets/sidebar/assets/notification-unread.svg';
 import WriteIcon from '@/widgets/sidebar/assets/write.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
@@ -35,7 +36,19 @@ export default function AuthenticatedSidebarFooter() {
 
 	return (
 		<>
-			<div className="w-full shrink-0 px-1.75 pb-3">
+			<div className="w-full shrink-0 space-y-2 px-1.75 pb-3">
+				<ButtonLink
+					href={APP_ROUTES.notifications}
+					onClick={() => recordEditorEntryContext('sidebar')}
+					fullWidth
+					className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}
+					variant="ghost"
+				>
+					<span className="flex h-full w-11.25 shrink-0 items-center justify-center">
+						<NotificationUnreadIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
+					</span>
+					<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>알림</span>
+				</ButtonLink>
 				<ButtonLink
 					href={APP_ROUTES.write}
 					onClick={() => recordEditorEntryContext('sidebar')}
