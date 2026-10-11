@@ -77,6 +77,23 @@ export default function NotificationInbox() {
 			.catch(() => undefined);
 	};
 
+	const handleReadAll = () => {
+		const observedUnreadNotificationIds = notifications
+			.filter(
+				(notification) =>
+					exposedNotificationIdsRef.current.has(notification.id) &&
+					!notification.isRead &&
+					!completedReadIdsRef.current.has(notification.id),
+			)
+			.map((notification) => notification.id);
+		analytics.notificationAllReadClicked({ observedUnreadNotificationIds });
+
+		void markAllRead
+			.mutateAsync()
+			.then(() => analytics.notificationAllReadCompleted({ observedUnreadNotificationIds }))
+			.catch(() => undefined);
+	};
+
 	useEffect(() => {
 		if (!hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
 		if (notifications.length === 0) {
@@ -138,7 +155,7 @@ export default function NotificationInbox() {
 					unreadCount={unreadCountQuery.data?.data?.unreadCount ?? 0}
 					isReadPending={isReadPending}
 					onRead={handleRead}
-					onReadAll={() => markAllRead.mutate()}
+					onReadAll={handleReadAll}
 					onExpose={handleExpose}
 				/>
 			)}
