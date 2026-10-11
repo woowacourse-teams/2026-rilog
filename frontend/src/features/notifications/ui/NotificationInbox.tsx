@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
+import { useMarkNotificationReadMutation } from '@/shared/api/notifications/mutations/use-mark-notification-read-mutation';
 import { useNotificationListQuery } from '@/shared/api/notifications/queries/notification-list/use-query';
 import Button from '@/shared/ui/button/Button';
 
@@ -14,18 +15,18 @@ import NotificationList from './NotificationList';
 export default function NotificationInbox() {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const login = useLoginModal();
-	const [locallyReadIds, setLocallyReadIds] = useState<ReadonlySet<number>>(() => new Set());
-	const sentinelRef = useRef<HTMLDivElement>(null);
+
 	const query = useNotificationListQuery({ isEnabled: isInitialized && isAuthenticated });
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
+	const sentinelRef = useRef<HTMLDivElement>(null);
+	const markRead = useMarkNotificationReadMutation();
+
 	const notifications = useMemo(() => {
 		const items = query.data?.pages.flatMap((page) => page.data?.notifications ?? []) ?? [];
 		const mapped = mapNotifications(items);
 		const unique = new Map(mapped.map((notification) => [notification.id, notification]));
-		return Array.from(unique.values()).map((notification) =>
-			locallyReadIds.has(notification.id) ? { ...notification, isRead: true } : notification,
-		);
-	}, [query.data?.pages, locallyReadIds]);
+		return Array.from(unique.values());
+	}, [query.data?.pages]);
 
 	useEffect(() => {
 		if (!hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
@@ -69,14 +70,19 @@ export default function NotificationInbox() {
 
 	return (
 		<>
+			{markRead.isError && (
+				<p role="alert" className="px-5 pb-3 text-body-4 text-danger-text">
+					알림을 읽음 처리하지 못했어요. 다시 시도해 주세요.
+				</p>
+			)}
 			{notifications.length === 0 && hasNextPage ? (
 				<NotificationList status="loading" />
 			) : (
 				<NotificationList
 					status="success"
 					notifications={notifications}
-					onRead={(id) => setLocallyReadIds((current) => new Set([...current, id]))}
-					onReadAll={() => setLocallyReadIds((current) => new Set([...current, ...notifications.map(({ id }) => id)]))}
+					onRead={(id) => markRead.mutate(id)}
+					onReadAll={() => undefined}
 				/>
 			)}
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />
