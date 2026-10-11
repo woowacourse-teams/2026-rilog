@@ -20,6 +20,7 @@ import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
+import kr.rilog.domain.notification.event.NotificationEvent;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -32,6 +33,8 @@ import kr.rilog.support.fixure.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -51,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
+@RecordApplicationEvents
 class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
     private static final String PARAGRAPH_TEXT = "가나나다다라마";
@@ -128,6 +132,27 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         ).orElseThrow();
         assertThat(savedSelection.getPost().getId()).isEqualTo(post.getId());
         assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
+    }
+
+    @Test
+    @DisplayName("인라인 댓글을 작성하면 작성된 댓글과 작성자를 담은 알림 이벤트를 발행한다.")
+    void createCommentAnchorPublishesNotificationEvent(ApplicationEvents applicationEvents) {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
+                post.getId(), commenter.getId(), selectedCommand());
+
+        // then
+        assertThat(applicationEvents.stream(NotificationEvent.CommentAnchorCreated.class))
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.commentAnchorId()).isEqualTo(result.commentAnchorId());
+                    assertThat(event.writerId()).isEqualTo(commenter.getId());
+                });
     }
 
     @Test
@@ -402,6 +427,30 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
+    }
+
+    @Test
+    @DisplayName("기존 ACTIVE selection에 인라인 댓글을 추가하면 추가된 댓글과 작성자를 담은 알림 이벤트를 발행한다.")
+    void addCommentAnchorPublishesNotificationEvent(ApplicationEvents applicationEvents) {
+        // given
+        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
+        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
+        Post post = savePublicPost(postWriter);
+        CommentAnchorSelection selection = saveActiveSelection(post);
+        var command = new CommentAnchorAddCommand(CONTENT);
+
+        // when
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+                post.getId(), commenter.getId(), selection.getId(), command
+        );
+
+        // then
+        assertThat(applicationEvents.stream(NotificationEvent.CommentAnchorCreated.class))
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.commentAnchorId()).isEqualTo(result.commentAnchorId());
+                    assertThat(event.writerId()).isEqualTo(commenter.getId());
+                });
     }
 
     @Test

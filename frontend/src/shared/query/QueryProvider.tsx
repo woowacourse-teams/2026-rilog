@@ -30,7 +30,10 @@ export default function QueryProvider({ children }: QueryProviderProps) {
 					},
 				},
 				queryCache: new QueryCache({
-					onError: (error) => apiErrorReporter.report(error, { operation: 'query' }),
+					onError: (error, query) =>
+						apiErrorReporter.report(error, {
+							operation: typeof query.meta?.errorOperation === 'string' ? query.meta.errorOperation : 'query',
+						}),
 				}),
 				mutationCache: new MutationCache({
 					onError: (error, _variables, _context, mutation) => {

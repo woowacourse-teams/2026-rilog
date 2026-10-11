@@ -1,4 +1,4 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, QueryObserver } from '@tanstack/react-query';
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,6 +8,7 @@ vi.hoisted(() => {
 
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { apiClient } from '@/shared/api/client';
+import { notificationsQueryKeys } from '@/shared/api/notifications/queries/keys';
 import { myInfoQueryOptions } from '@/shared/api/users/queries/my-info/query-options';
 import { authenticatedQueryKeys } from '@/shared/query/authenticated-query-keys';
 import { createUnauthorizedResponse } from '@/test/fixtures/api-response';
@@ -96,5 +97,31 @@ describe('AuthenticatedQueryCacheSubscriber', () => {
 			response: { status: 401 },
 		});
 		expect(queryClient.getQueryData(currentUserQueryKey)).toEqual({ id: 1 });
+	});
+
+	it('알림 페이지가 열려 있을 때 로그아웃하면 알림 캐시를 제거하고 추가 조회를 시작하지 않는다', async () => {
+		const queryClient = createTestQueryClient();
+		const notificationKey = notificationsQueryKeys.list('ALL', 20);
+		const queryFn = vi.fn().mockResolvedValue(['이전 사용자 알림']);
+		queryClient.setQueryData(notificationKey, ['이전 사용자 알림']);
+		const observer = new QueryObserver(queryClient, {
+			queryKey: notificationKey,
+			queryFn,
+		});
+		const unsubscribe = observer.subscribe(() => {});
+		render(
+			<QueryClientProvider client={queryClient}>
+				<AuthenticatedQueryCacheSubscriber />
+			</QueryClientProvider>,
+		);
+		await waitFor(() => expect(queryFn).toHaveBeenCalledOnce());
+
+		await act(async () => {
+			await tokenManager.publishLogout();
+		});
+
+		expect(queryClient.getQueryData(notificationKey)).toBeUndefined();
+		expect(queryFn).toHaveBeenCalledOnce();
+		unsubscribe();
 	});
 });

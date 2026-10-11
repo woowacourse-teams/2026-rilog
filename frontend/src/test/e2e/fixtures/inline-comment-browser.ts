@@ -47,10 +47,10 @@ const buildWorkspace = async (): Promise<string> => {
 	return code;
 };
 
-export const renderInlineCommentWorkspace = async (page: Page) => {
+export const renderInlineCommentWorkspace = async (page: Page, selectionId?: number) => {
 	bundle ??= buildWorkspace();
 	const code = await bundle;
-	await page.goto('/about');
+	await page.goto(selectionId === undefined ? '/about' : `/about?selectionId=${selectionId}`);
 	const styles = await page
 		.locator('link[rel="stylesheet"]')
 		.evaluateAll((links) =>
