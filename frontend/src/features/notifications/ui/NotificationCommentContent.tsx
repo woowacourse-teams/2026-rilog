@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 
 import type { CommentNotification } from '@/domains/notification/model/notification';
+import { analytics } from '@/features/analytics/model/events';
 import { buildPostDetailSelectionPath } from '@/shared/routes/app-routes';
 import { appendSearchParams } from '@/shared/routes/append-search-params';
 import CustomLink from '@/shared/ui/link/CustomLink';
@@ -29,6 +30,7 @@ export default function NotificationCommentContent({
 		<CustomLink
 			href={isCommentDeleted ? appendSearchParams(destination, { notificationCommentDeleted: 'true' }) : destination}
 			aria-label={`${post.title} 게시글의 댓글 보기`}
+			onClick={() => analytics.notificationItemOpened({ notification })}
 			onNavigate={() => {
 				if (!isRead) onRead(notification.id);
 			}}
