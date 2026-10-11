@@ -7,7 +7,12 @@ import type { Notification } from '@/domains/notification/model/notification';
 import type { AuthContextValue } from '@/features/auth/model/auth-context';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
-import { markNotificationRead, readNotificationUnreadCount, readNotifications } from '@/shared/api/notifications/api';
+import {
+	markAllNotificationsRead,
+	markNotificationRead,
+	readNotificationUnreadCount,
+	readNotifications,
+} from '@/shared/api/notifications/api';
 import { notificationUnreadCountQueryOptions } from '@/shared/api/notifications/queries/unread-count/query-options';
 import type { NotificationItemResponse } from '@/shared/api/notifications/types';
 import { createNotification } from '@/test/fixtures/notification';
@@ -19,6 +24,7 @@ vi.mock('@/shared/api/notifications/api', () => ({
 	readNotifications: vi.fn(),
 	readNotificationUnreadCount: vi.fn(),
 	markNotificationRead: vi.fn(),
+	markAllNotificationsRead: vi.fn(),
 }));
 
 function UnreadCountStatus() {
@@ -85,6 +91,10 @@ function renderInbox(
 		if (notification) notification.read = true;
 		return Promise.resolve({ status: 200, message: '알림을 읽음 처리했습니다.', data: null });
 	});
+	vi.mocked(markAllNotificationsRead).mockImplementation(() => {
+		for (const notification of serverNotifications) notification.read = true;
+		return Promise.resolve({ status: 200, message: '모든 알림을 읽음 처리했습니다.', data: null });
+	});
 	renderWithQuery(
 		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false, ...overrides }}>
 			<LOGIN_MODAL_CONTEXT.Provider value={login}>
@@ -100,6 +110,7 @@ describe('NotificationInbox', () => {
 	beforeEach(() => {
 		vi.mocked(readNotificationUnreadCount).mockReset();
 		vi.mocked(markNotificationRead).mockReset();
+		vi.mocked(markAllNotificationsRead).mockReset();
 	});
 
 	it('인증 확인 중에는 알림 내용을 표시하지 않는다', () => {
@@ -166,15 +177,36 @@ describe('NotificationInbox', () => {
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 
-	// 전체 읽음 API 연동 시 이 사용자 흐름을 다시 활성화한다.
-	it.skip('모두 읽음을 누르면 전체 알림을 보존하며 읽음 처리하고 추가 처리를 비활성화한다', async () => {
+	it('모두 읽음을 누르면 전체 알림과 읽지 않은 수를 갱신하고 추가 처리를 비활성화한다', async () => {
 		const user = userEvent.setup();
 		const notifications = [createNotification({ id: 1 }), createNotification({ id: 2, type: 'SELECTION_COMMENT' })];
-		renderInbox(notifications);
+		vi.mocked(readNotificationUnreadCount)
+			.mockResolvedValueOnce({ status: 200, message: 'OK', data: { unreadCount: 2 } })
+			.mockResolvedValue({ status: 200, message: 'OK', data: { unreadCount: 0 } });
+		renderInbox(notifications, {}, true);
 		await screen.findAllByRole('article');
+		await waitFor(() => expect(screen.getByRole('status', { name: '읽지 않은 알림 수' })).toHaveTextContent('2'));
 		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
-		for (const article of screen.getAllByRole('article')) expect(article).toHaveAccessibleDescription('읽은 알림');
+		await waitFor(() => {
+			for (const article of screen.getAllByRole('article')) expect(article).toHaveAccessibleDescription('읽은 알림');
+		});
+		expect(markAllNotificationsRead).toHaveBeenCalledOnce();
 		expect(screen.queryByRole('button', { name: '읽음으로 표시' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
+		await waitFor(() => expect(screen.getByRole('status', { name: '읽지 않은 알림 수' })).toHaveTextContent('0'));
+	});
+
+	it('전체 읽음 요청이 실패하면 읽지 않은 상태를 유지하고 다시 시도할 수 있다', async () => {
+		const user = userEvent.setup();
+		renderInbox([createNotification({ id: 1 })]);
+		vi.mocked(markAllNotificationsRead).mockRejectedValueOnce(new Error('request failed'));
+		const article = await screen.findByRole('article');
+		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
+		expect(await screen.findByRole('alert')).toHaveTextContent('모든 알림을 읽음 처리하지 못했어요.');
+		expect(article).toHaveAccessibleDescription('읽지 않은 알림');
+
+		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
+		await waitFor(() => expect(article).toHaveAccessibleDescription('읽은 알림'));
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 });

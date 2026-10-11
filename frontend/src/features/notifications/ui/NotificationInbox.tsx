@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
+import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
 import { useMarkNotificationReadMutation } from '@/shared/api/notifications/mutations/use-mark-notification-read-mutation';
 import { useNotificationListQuery } from '@/shared/api/notifications/queries/notification-list/use-query';
 import Button from '@/shared/ui/button/Button';
@@ -20,6 +21,7 @@ export default function NotificationInbox() {
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const markRead = useMarkNotificationReadMutation();
+	const markAllRead = useMarkAllNotificationsReadMutation();
 
 	const notifications = useMemo(() => {
 		const items = query.data?.pages.flatMap((page) => page.data?.notifications ?? []) ?? [];
@@ -75,6 +77,11 @@ export default function NotificationInbox() {
 					알림을 읽음 처리하지 못했어요. 다시 시도해 주세요.
 				</p>
 			)}
+			{markAllRead.isError && (
+				<p role="alert" className="px-5 pb-3 text-body-4 text-danger-text">
+					모든 알림을 읽음 처리하지 못했어요. 다시 시도해 주세요.
+				</p>
+			)}
 			{notifications.length === 0 && hasNextPage ? (
 				<NotificationList status="loading" />
 			) : (
@@ -82,7 +89,7 @@ export default function NotificationInbox() {
 					status="success"
 					notifications={notifications}
 					onRead={(id) => markRead.mutate(id)}
-					onReadAll={() => undefined}
+					onReadAll={() => markAllRead.mutate()}
 				/>
 			)}
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />
