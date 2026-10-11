@@ -10,7 +10,7 @@ export interface MagazineArticle {
 	id: string;
 	title: string;
 	summary: string;
-	thumbnailRatio: '16:9' | '16:10' | '4:3';
+	thumbnailRatio: '16:10';
 	artwork: 'ai' | 'people' | 'systems' | 'code';
 	profile: MagazineArticleProfile;
 }
@@ -32,7 +32,7 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 		title: '오픈소스 메인테이너는 어떤 이슈부터 볼까',
 		summary:
 			'좋은 이슈는 문제를 재현하는 방법부터 알려준다. 오픈소스 메인테이너가 재현 코드와 수정 범위, 기존 동작에 미치는 영향을 살펴보며 어떤 제안을 먼저 검토하는지 알아본다.',
-		thumbnailRatio: '16:9',
+		thumbnailRatio: '16:10',
 		artwork: 'people',
 		profile: {
 			type: 'bloger',
@@ -45,7 +45,7 @@ export const MAGAZINE_ARTICLES: readonly MagazineArticle[] = [
 		title: '작은 AI 모델을 고르기 전에 비교할 세 가지',
 		summary:
 			'작은 AI 모델이 늘어날수록 이름이나 크기만으로 선택하기 어렵다. 같은 작업을 맡겨 응답 시간과 실행 비용, 결과의 정확도를 비교하고 서비스에 맞는 모델을 고르는 기준을 정리한다.',
-		thumbnailRatio: '16:9',
+		thumbnailRatio: '16:10',
 		artwork: 'ai',
 		profile: {
 			type: 'bloger',

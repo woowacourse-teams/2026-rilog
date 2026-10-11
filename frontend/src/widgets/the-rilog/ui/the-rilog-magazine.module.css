@@ -169,7 +169,6 @@
 .enterpriseArticlesSection {
 	display: flex;
 	flex-direction: column;
-	min-height: 37rem;
 }
 
 .sectionHeading {
@@ -202,16 +201,11 @@
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;
-	margin-top: 0.75rem;
+	margin-top: 1.25rem;
 }
 
 .articleRow {
 	min-width: 0;
-}
-
-.enterpriseArticleList {
-	flex: 1;
-	justify-content: space-between;
 }
 
 .scrollReveal[data-reveal='pending'] {
@@ -265,6 +259,7 @@
 
 .cardBody {
 	min-width: 0;
+	padding: 4px 4px 4px 0;
 }
 
 .card[data-kind='enterprise'] .artworkFrame {
@@ -275,7 +270,6 @@
 .card[data-kind='enterprise'] .cardBody {
 	grid-column: 2;
 	grid-row: 1;
-	padding-block: 0.375rem;
 }
 
 .card[data-kind='enterprise'] .enterpriseSummary {
@@ -300,7 +294,7 @@
 }
 
 .card[data-kind='enterprise'] .summary {
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 	overflow-wrap: anywhere;
 }
 
@@ -389,16 +383,8 @@
 	background-color: var(--navy-900);
 }
 
-.artworkFrame[data-thumbnail-ratio='16:9'] {
-	aspect-ratio: 16 / 9;
-}
-
 .artworkFrame[data-thumbnail-ratio='16:10'] {
 	aspect-ratio: 16 / 10;
-}
-
-.artworkFrame[data-thumbnail-ratio='4:3'] {
-	aspect-ratio: 4 / 3;
 }
 
 .artwork {
@@ -496,7 +482,7 @@
 	.enterpriseArticleList,
 	.personalArticleList {
 		gap: 1rem;
-		margin-top: 0.5rem;
+		margin-top: 1rem;
 	}
 
 	.card[data-kind][data-image-position] .cardContent {
@@ -517,6 +503,7 @@
 	}
 
 	.card[data-kind] .profile {
+		padding: 2px 2px 2px 0;
 		grid-column: 2;
 		grid-row: 1;
 		gap: 0.25rem;
@@ -535,7 +522,8 @@
 		grid-column: 2;
 		grid-row: 2;
 		max-width: none;
-		min-height: 2.5rem;
+		min-height: calc(2.5rem + 4px);
+		padding: 2px 2px 2px 0;
 		margin: 0;
 		font-size: 1rem;
 		line-height: 1.25rem;

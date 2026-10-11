@@ -37,7 +37,7 @@ export default function MagazineArticleCard({ article, imagePosition = 'left' }:
 								src={profile.profileImageUrl}
 								fallback={profile.name.slice(0, 1)}
 								label={`${profile.name} 프로필`}
-								size="md"
+								size="sm"
 							/>
 						) : (
 							<CologAvatar
@@ -45,7 +45,7 @@ export default function MagazineArticleCard({ article, imagePosition = 'left' }:
 								src={profile.profileImageUrl}
 								fallback={profile.name.slice(0, 1)}
 								label={`${profile.name} 프로필`}
-								size="md"
+								size="sm"
 							/>
 						)}
 						<span className={styles.profileName}>{profile.name}.</span>
