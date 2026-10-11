@@ -39,7 +39,6 @@ export default function AuthenticatedSidebarFooter() {
 			<div className="w-full shrink-0 space-y-2 px-1.75 pb-3">
 				<ButtonLink
 					href={APP_ROUTES.notifications}
-					onClick={() => recordEditorEntryContext('sidebar')}
 					fullWidth
 					className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}
 					variant="ghost"
