@@ -10,3 +10,6 @@ export const readNotifications = ({ filter, page, size }: ReadNotificationsReque
 
 export const readNotificationUnreadCount = (signal?: AbortSignal) =>
 	apiClient.get<ApiResponse<NotificationUnreadCountResponse>>('v1/notifications/unread-count', { signal });
+
+export const markNotificationRead = (notificationId: number) =>
+	apiClient.patch<ApiResponse<null>>(`v1/notifications/${notificationId}/read`);
