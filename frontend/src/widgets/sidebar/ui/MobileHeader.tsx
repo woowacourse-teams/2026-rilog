@@ -8,12 +8,14 @@ import UserAvatar from '@/domains/user/ui/UserAvatar';
 import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
+import { useNotificationUnreadCountQuery } from '@/shared/api/notifications/queries/unread-count/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import NotificationUnreadIcon from '@/widgets/sidebar/assets/notification-unread.svg';
+import NotificationIcon from '@/widgets/sidebar/assets/notification.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
@@ -34,6 +36,7 @@ function UserProfile({ user }: { user: User | null | undefined }) {
 export default function MobileHeader() {
 	const { isAuthenticated } = useAuth();
 	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
+	const unreadCount = useNotificationUnreadCountQuery().data?.data?.unreadCount ?? 0;
 
 	const pathname = usePathname() ?? '';
 	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
@@ -54,12 +57,16 @@ export default function MobileHeader() {
 				<div className="flex items-center gap-2">
 					<ButtonLink
 						href={APP_ROUTES.notifications}
-						aria-label="알림"
+						aria-label={unreadCount > 0 ? `알림, 읽지 않은 알림 ${unreadCount}개` : '알림'}
 						aria-current={pathname === APP_ROUTES.notifications ? 'page' : undefined}
 						size="icon"
 						variant="ghost"
 					>
-						<NotificationUnreadIcon width={24} height={24} aria-hidden="true" focusable="false" />
+						{unreadCount > 0 ? (
+							<NotificationUnreadIcon width={24} height={24} aria-hidden="true" focusable="false" />
+						) : (
+							<NotificationIcon width={24} height={24} aria-hidden="true" focusable="false" />
+						)}
 					</ButtonLink>
 					<UserProfile user={user} />
 				</div>
