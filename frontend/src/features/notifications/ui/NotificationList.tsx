@@ -16,6 +16,7 @@ type NotificationListProps =
 			isReadPending: boolean;
 			onRead: (id: number) => void;
 			onReadAll: () => void;
+			onExpose: (notification: Notification) => void;
 	  };
 
 export default function NotificationList(props: NotificationListProps) {
@@ -53,7 +54,7 @@ export default function NotificationList(props: NotificationListProps) {
 		);
 	}
 
-	const { notifications, unreadCount, isReadPending, onRead, onReadAll } = props;
+	const { notifications, unreadCount, isReadPending, onRead, onReadAll, onExpose } = props;
 	const visibleNotifications = notifications
 		.filter(() => true)
 		.sort(
@@ -76,9 +77,13 @@ export default function NotificationList(props: NotificationListProps) {
 			) : (
 				<ul className="divide-y divide-border-default border-b border-border-default">
 					{visibleNotifications.map((notification) => (
-						<li key={notification.id}>
-							<NotificationItem notification={notification} isReadPending={isReadPending} onRead={onRead} />
-						</li>
+						<NotificationItem
+							key={notification.id}
+							notification={notification}
+							isReadPending={isReadPending}
+							onRead={onRead}
+							onExpose={onExpose}
+						/>
 					))}
 				</ul>
 			)}

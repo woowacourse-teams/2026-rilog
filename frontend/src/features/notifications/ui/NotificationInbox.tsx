@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
+import type { Notification } from '@/domains/notification/model/notification';
+import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
 import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
@@ -17,6 +19,21 @@ import NotificationList from './NotificationList';
 export default function NotificationInbox() {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const login = useLoginModal();
+	const cutoffAtRef = useRef<string | null>(null);
+	const exposedNotificationIdsRef = useRef(new Set<number>());
+
+	useEffect(() => {
+		if (!isInitialized) return;
+		if (!isAuthenticated) {
+			cutoffAtRef.current = null;
+			exposedNotificationIdsRef.current.clear();
+			return;
+		}
+		if (cutoffAtRef.current !== null) return;
+		const cutoffAt = new Date().toISOString();
+		cutoffAtRef.current = cutoffAt;
+		analytics.notificationInboxEntered({ cutoffAt });
+	}, [isAuthenticated, isInitialized]);
 
 	const query = useNotificationListQuery({ isEnabled: isInitialized && isAuthenticated });
 	const unreadCountQuery = useNotificationUnreadCountQuery();
@@ -32,6 +49,20 @@ export default function NotificationInbox() {
 		const unique = new Map(mapped.map((notification) => [notification.id, notification]));
 		return Array.from(unique.values());
 	}, [query.data?.pages]);
+
+	const handleExpose = (notification: Notification) => {
+		if (exposedNotificationIdsRef.current.has(notification.id)) return;
+
+		let cutoffAt = cutoffAtRef.current;
+		if (cutoffAt === null) {
+			cutoffAt = new Date().toISOString();
+			cutoffAtRef.current = cutoffAt;
+			analytics.notificationInboxEntered({ cutoffAt });
+		}
+
+		exposedNotificationIdsRef.current.add(notification.id);
+		analytics.notificationItemExposed({ notification, cutoffAt });
+	};
 
 	useEffect(() => {
 		if (!hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
@@ -95,6 +126,7 @@ export default function NotificationInbox() {
 					isReadPending={isReadPending}
 					onRead={(id) => markRead.mutate(id)}
 					onReadAll={() => markAllRead.mutate()}
+					onExpose={handleExpose}
 				/>
 			)}
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />

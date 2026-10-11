@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { Notification } from '@/domains/notification/model/notification';
+import { useNotificationExposure } from '@/features/notifications/hooks/use-notification-exposure';
 
 import NotificationItemLayout from './NotificationItemLayout';
 import PostCommentNotificationContent from './PostCommentNotificationContent';
@@ -10,9 +11,11 @@ interface NotificationItemProps {
 	notification: Notification;
 	isReadPending: boolean;
 	onRead: (id: number) => void;
+	onExpose: (notification: Notification) => void;
 }
 
-export default function NotificationItem({ notification, isReadPending, onRead }: NotificationItemProps) {
+export default function NotificationItem({ notification, isReadPending, onRead, onExpose }: NotificationItemProps) {
+	const { itemRef, handleExpose } = useNotificationExposure(notification, onExpose);
 	let content: ReactNode;
 	let accessibleLabel: string;
 
@@ -28,12 +31,14 @@ export default function NotificationItem({ notification, isReadPending, onRead }
 	}
 
 	return (
-		<NotificationItemLayout
-			isRead={notification.isRead}
-			isReadPending={isReadPending}
-			onRead={() => onRead(notification.id)}
-			accessibleLabel={accessibleLabel}
-			content={content}
-		/>
+		<li ref={itemRef} onClickCapture={handleExpose}>
+			<NotificationItemLayout
+				isRead={notification.isRead}
+				isReadPending={isReadPending}
+				onRead={() => onRead(notification.id)}
+				accessibleLabel={accessibleLabel}
+				content={content}
+			/>
+		</li>
 	);
 }

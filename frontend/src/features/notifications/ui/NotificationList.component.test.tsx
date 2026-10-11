@@ -22,6 +22,7 @@ describe('NotificationList', () => {
 				isReadPending={false}
 				onRead={vi.fn()}
 				onReadAll={vi.fn()}
+				onExpose={vi.fn()}
 			/>,
 		);
 
@@ -44,6 +45,7 @@ describe('NotificationList', () => {
 				isReadPending={false}
 				onRead={vi.fn()}
 				onReadAll={vi.fn()}
+				onExpose={vi.fn()}
 			/>,
 		);
 
@@ -73,6 +75,7 @@ describe('NotificationList', () => {
 				isReadPending={false}
 				onRead={vi.fn()}
 				onReadAll={vi.fn()}
+				onExpose={vi.fn()}
 			/>,
 		);
 		expect(screen.getByText('아직 도착한 알림이 없어요.')).toBeInTheDocument();
