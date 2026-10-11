@@ -27,7 +27,11 @@ export default function SelectionCommentNotificationContent({
 			/>
 			<NotificationCommentContent notification={notification} onRead={onRead}>
 				<p className="text-caption-1">
-					<NotificationPostTitle title={post.title} /> 글에서
+					<NotificationPostTitle
+						title={post.title}
+						isStruckThrough={notification.state === 'post-deleted' || notification.state === 'post-inaccessible'}
+					/>{' '}
+					글에서
 				</p>
 			</NotificationCommentContent>
 		</>

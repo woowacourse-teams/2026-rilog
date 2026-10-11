@@ -16,6 +16,7 @@ interface NotificationPost extends Pick<PostSummary, 'id' | 'title'> {
 
 export interface CommentNotification extends NotificationBase {
 	type: 'POST_COMMENT' | 'SELECTION_COMMENT';
+	state: 'available' | 'post-deleted' | 'comment-deleted' | 'post-inaccessible';
 	author: User;
 	post: NotificationPost;
 	anchor: {

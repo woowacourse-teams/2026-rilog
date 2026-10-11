@@ -19,6 +19,7 @@ import type { InlineCommentThreadModel } from '@/features/post-detail/model/inli
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
+import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
@@ -27,6 +28,7 @@ interface PostDetailCommentsWorkspaceProps {
 	html: string;
 	postId: number;
 	initialSelectionId?: number | null;
+	showDeletedCommentToast?: boolean;
 	ownerType: BlogType;
 	category: PostCategory;
 	enableInlineCommentSelectionDebug: boolean;
@@ -53,6 +55,7 @@ export default function PostDetailCommentsWorkspace({
 	html,
 	postId,
 	initialSelectionId = null,
+	showDeletedCommentToast = false,
 	ownerType,
 	category,
 	enableInlineCommentSelectionDebug,
@@ -77,6 +80,7 @@ export default function PostDetailCommentsWorkspace({
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const hasHandledDeepLinkNavigationRef = useRef(false);
+	const [isDeletedCommentToastVisible, setIsDeletedCommentToastVisible] = useState(showDeletedCommentToast);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
@@ -163,6 +167,17 @@ export default function PostDetailCommentsWorkspace({
 		openComments(null, 'all');
 	}, [openComments, postId]);
 
+	const closeComments = useCallback(() => {
+		setIsCommentsSidebarOpen(false);
+		setIsDeletedCommentToastVisible(false);
+		const url = new URL(window.location.href);
+		if (!url.searchParams.has(POST_DETAIL_SELECTION_QUERY_PARAM) && !url.searchParams.has('notificationCommentDeleted'))
+			return;
+		url.searchParams.delete(POST_DETAIL_SELECTION_QUERY_PARAM);
+		url.searchParams.delete('notificationCommentDeleted');
+		window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+	}, []);
+
 	const handleAnchorNavigate = useCallback(
 		(thread: InlineCommentThreadModel) => {
 			if (thread.anchor.state === 'OUTDATED') {
@@ -170,12 +185,12 @@ export default function PostDetailCommentsWorkspace({
 			}
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-			setIsCommentsSidebarOpen(false);
+			closeComments();
 			window.setTimeout(() => {
 				scrollToThreadAnchor(thread);
 			}, 140);
 		},
-		[postId],
+		[closeComments, postId],
 	);
 
 	return (
@@ -214,6 +229,7 @@ export default function PostDetailCommentsWorkspace({
 				mode={sidebarMode}
 				entrySource={commentEntrySource}
 				open={isCommentsSidebarOpen}
+				showDeletedCommentToast={isDeletedCommentToastVisible}
 				threads={visibleThreads}
 				isLoading={sidebarQuery.isPending}
 				isError={sidebarQuery.isError}
@@ -224,9 +240,7 @@ export default function PostDetailCommentsWorkspace({
 					setDeepLinkedSelectionId(null);
 					setComposerAnchorId(null);
 				}}
-				onClose={() => {
-					setIsCommentsSidebarOpen(false);
-				}}
+				onClose={closeComments}
 				onNavigate={handleAnchorNavigate}
 			/>
 		</>

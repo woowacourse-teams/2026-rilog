@@ -17,9 +17,10 @@ import BasePostDetail from './BasePostDetail';
 interface PostDetailProps {
 	post: PostDetailModel;
 	initialSelectionId?: number | null;
+	showDeletedCommentToast?: boolean;
 }
 
-export default function PostDetail({ post, initialSelectionId }: PostDetailProps) {
+export default function PostDetail({ post, initialSelectionId, showDeletedCommentToast = false }: PostDetailProps) {
 	const header = (
 		<PostDetailHeader
 			postId={post.id}
@@ -42,6 +43,7 @@ export default function PostDetail({ post, initialSelectionId }: PostDetailProps
 			<BasePostDetail
 				post={post}
 				initialSelectionId={initialSelectionId}
+				showDeletedCommentToast={showDeletedCommentToast}
 				header={header}
 				profileSection={blogProfile}
 				beforeContent={
@@ -95,6 +97,7 @@ export default function PostDetail({ post, initialSelectionId }: PostDetailProps
 		<BasePostDetail
 			post={post}
 			initialSelectionId={initialSelectionId}
+			showDeletedCommentToast={showDeletedCommentToast}
 			header={
 				<PostDetailHeader
 					publisher={publisher}

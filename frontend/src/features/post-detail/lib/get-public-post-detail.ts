@@ -13,6 +13,12 @@ const isInvalidSlugApiError = (error: unknown): boolean =>
 	error.response.status === 400 &&
 	error.detail.errorCode === API_ERROR_CODES.INVALID_SLUG;
 
+export const isPrivatePostReadError = (error: unknown): boolean =>
+	isNormalizedApiError(error) &&
+	error.type === 'api' &&
+	error.response.status === 403 &&
+	error.detail.errorCode === API_ERROR_CODES.PRIVATE_POST_READ_FORBIDDEN;
+
 export const getPublicPostDetail = cache(async (slug: string, postId: number): Promise<PostDetail | null> => {
 	try {
 		const response = await readPostDetail({ slug, postId });

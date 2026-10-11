@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 
-import { NOTIFICATION_SAMPLES } from '@/features/notifications/model/notification-samples';
 import NotificationInbox from '@/features/notifications/ui/NotificationInbox';
 import PageShell from '@/shared/ui/page-shell/PageShell';
 
@@ -19,7 +18,7 @@ export default function NotificationsPage() {
 			}
 		>
 			<div className="pb-16 sm:px-8">
-				<NotificationInbox initialNotifications={NOTIFICATION_SAMPLES} />
+				<NotificationInbox />
 			</div>
 		</PageShell>
 	);

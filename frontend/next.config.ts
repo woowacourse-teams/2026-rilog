@@ -5,6 +5,7 @@ const isSentryUploadRequired = process.env.SENTRY_UPLOAD_REQUIRED === 'true';
 
 const nextConfig: NextConfig = {
 	agentRules: false,
+	experimental: { authInterrupts: true },
 	distDir: process.env.SENTRY_FEED_503_SMOKE === 'true' ? '.next-sentry-feed-503' : '.next',
 	serverExternalPackages: ['@blocknote/core', '@blocknote/react', '@blocknote/server-util'],
 	redirects() {
