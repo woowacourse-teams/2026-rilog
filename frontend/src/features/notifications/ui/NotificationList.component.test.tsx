@@ -48,6 +48,7 @@ describe('NotificationList', () => {
 		);
 
 		const article = within(screen.getByRole('article', { name: accessibleLabel }));
+		expect(article.getByRole('button', { name: '읽음으로 표시' })).toBeInTheDocument();
 		expect(article.getByRole('link', { name: `${notification.post.title} 게시글의 댓글 보기` })).toHaveAttribute(
 			'href',
 			'/@post-blog/posts/101?selectionId=201',

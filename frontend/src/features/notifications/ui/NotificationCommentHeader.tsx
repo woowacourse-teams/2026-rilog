@@ -13,7 +13,7 @@ interface NotificationCommentHeaderProps {
 
 export default function NotificationCommentHeader({ author, createdAt, summary }: NotificationCommentHeaderProps) {
 	return (
-		<div className="flex items-start gap-3 pr-5">
+		<div className="flex min-w-0 items-start gap-3">
 			<UserAvatar src={author.profileImageUrl} fallback={author.nickname.slice(0, 1)} size="lg" />
 			<div className="min-w-0 flex-1">
 				<p className="text-body-4 break-words">{summary}</p>

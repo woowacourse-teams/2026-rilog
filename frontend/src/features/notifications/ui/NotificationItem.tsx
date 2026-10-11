@@ -1,10 +1,7 @@
-import type { ReactNode } from 'react';
-
 import type { Notification } from '@/domains/notification/model/notification';
 
-import NotificationItemLayout from './NotificationItemLayout';
-import PostCommentNotificationContent from './PostCommentNotificationContent';
-import SelectionCommentNotificationContent from './SelectionCommentNotificationContent';
+import PostCommentNotificationItem from './PostCommentNotificationItem';
+import SelectionCommentNotificationItem from './SelectionCommentNotificationItem';
 
 interface NotificationItemProps {
 	notification: Notification;
@@ -13,27 +10,12 @@ interface NotificationItemProps {
 }
 
 export default function NotificationItem({ notification, isReadPending, onRead }: NotificationItemProps) {
-	let content: ReactNode;
-	let accessibleLabel: string;
-
 	switch (notification.type) {
 		case 'POST_COMMENT':
-			content = <PostCommentNotificationContent notification={notification} onRead={onRead} />;
-			accessibleLabel = `${notification.author.nickname}님의 댓글 알림`;
-			break;
+			return <PostCommentNotificationItem notification={notification} isReadPending={isReadPending} onRead={onRead} />;
 		case 'SELECTION_COMMENT':
-			content = <SelectionCommentNotificationContent notification={notification} onRead={onRead} />;
-			accessibleLabel = `${notification.author.nickname}님의 댓글 알림`;
-			break;
+			return (
+				<SelectionCommentNotificationItem notification={notification} isReadPending={isReadPending} onRead={onRead} />
+			);
 	}
-
-	return (
-		<NotificationItemLayout
-			isRead={notification.isRead}
-			isReadPending={isReadPending}
-			onRead={() => onRead(notification.id)}
-			accessibleLabel={accessibleLabel}
-			content={content}
-		/>
-	);
 }
