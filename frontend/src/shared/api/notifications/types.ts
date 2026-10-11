@@ -3,10 +3,8 @@ export type NotificationFilter = 'ALL' | 'UNREAD';
 export type NotificationSourceStatus =
 	| 'AVAILABLE'
 	| 'POST_DELETED'
-	| 'SELECTION_DELETED'
 	| 'COMMENT_DELETED'
 	| 'ACTOR_DELETED'
-	| 'BLOG_DELETED'
 	| 'POST_UNAVAILABLE'
 	| 'POST_INACCESSIBLE'
 	| 'SOURCE_NOT_FOUND';

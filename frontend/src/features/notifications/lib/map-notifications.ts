@@ -10,9 +10,7 @@ const mapInlineCommentState = (status: NotificationSourceStatus): CommentNotific
 		case 'AVAILABLE':
 			return 'available';
 		case 'POST_DELETED':
-		case 'BLOG_DELETED':
 			return 'post-deleted';
-		case 'SELECTION_DELETED':
 		case 'COMMENT_DELETED':
 		case 'ACTOR_DELETED':
 			return 'comment-deleted';
