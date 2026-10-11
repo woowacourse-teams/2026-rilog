@@ -7,6 +7,7 @@ import { useLoginModal } from '@/features/login/model/use-login-modal';
 import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
 import { useMarkNotificationReadMutation } from '@/shared/api/notifications/mutations/use-mark-notification-read-mutation';
 import { useNotificationListQuery } from '@/shared/api/notifications/queries/notification-list/use-query';
+import { useNotificationUnreadCountQuery } from '@/shared/api/notifications/queries/unread-count/use-query';
 import Button from '@/shared/ui/button/Button';
 
 import { mapNotifications } from '../lib/map-notifications';
@@ -18,6 +19,7 @@ export default function NotificationInbox() {
 	const login = useLoginModal();
 
 	const query = useNotificationListQuery({ isEnabled: isInitialized && isAuthenticated });
+	const unreadCountQuery = useNotificationUnreadCountQuery();
 	const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = query;
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const markRead = useMarkNotificationReadMutation();
@@ -89,6 +91,7 @@ export default function NotificationInbox() {
 				<NotificationList
 					status="success"
 					notifications={notifications}
+					unreadCount={unreadCountQuery.data?.data?.unreadCount ?? 0}
 					isReadPending={isReadPending}
 					onRead={(id) => markRead.mutate(id)}
 					onReadAll={() => markAllRead.mutate()}

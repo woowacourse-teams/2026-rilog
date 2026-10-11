@@ -18,6 +18,7 @@ describe('NotificationList', () => {
 			<NotificationList
 				status="success"
 				notifications={notifications}
+				unreadCount={3}
 				isReadPending={false}
 				onRead={vi.fn()}
 				onReadAll={vi.fn()}
@@ -39,6 +40,7 @@ describe('NotificationList', () => {
 			<NotificationList
 				status="success"
 				notifications={[notification]}
+				unreadCount={1}
 				isReadPending={false}
 				onRead={vi.fn()}
 				onReadAll={vi.fn()}
@@ -67,6 +69,7 @@ describe('NotificationList', () => {
 			<NotificationList
 				status="success"
 				notifications={[]}
+				unreadCount={0}
 				isReadPending={false}
 				onRead={vi.fn()}
 				onReadAll={vi.fn()}

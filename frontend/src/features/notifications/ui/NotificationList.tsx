@@ -12,6 +12,7 @@ type NotificationListProps =
 	| {
 			status: 'success';
 			notifications: readonly Notification[];
+			unreadCount: number;
 			isReadPending: boolean;
 			onRead: (id: number) => void;
 			onReadAll: () => void;
@@ -52,8 +53,7 @@ export default function NotificationList(props: NotificationListProps) {
 		);
 	}
 
-	const { notifications, isReadPending, onRead, onReadAll } = props;
-	const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+	const { notifications, unreadCount, isReadPending, onRead, onReadAll } = props;
 	const visibleNotifications = notifications
 		.filter(() => true)
 		.sort(

@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Notification } from '@/domains/notification/model/notification';
 import type { AuthContextValue } from '@/features/auth/model/auth-context';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
+import { tokenManager } from '@/shared/api/auth/token-manager';
 import {
 	markAllNotificationsRead,
 	markNotificationRead,
@@ -108,10 +109,15 @@ function renderInbox(
 
 describe('NotificationInbox', () => {
 	beforeEach(() => {
-		vi.mocked(readNotificationUnreadCount).mockReset();
+		vi.spyOn(tokenManager, 'getToken').mockReturnValue('access-token');
+		vi.mocked(readNotificationUnreadCount)
+			.mockReset()
+			.mockResolvedValue({ status: 200, message: 'OK', data: { unreadCount: 1 } });
 		vi.mocked(markNotificationRead).mockReset();
 		vi.mocked(markAllNotificationsRead).mockReset();
 	});
+
+	afterEach(() => vi.restoreAllMocks());
 
 	it('인증 확인 중에는 알림 내용을 표시하지 않는다', () => {
 		renderInbox(undefined, { isInitialized: false });
@@ -218,6 +224,43 @@ describe('NotificationInbox', () => {
 		expect(screen.queryByRole('button', { name: '읽음으로 표시' })).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
 		await waitFor(() => expect(screen.getByRole('status', { name: '읽지 않은 알림 수' })).toHaveTextContent('0'));
+	});
+
+	it('현재 목록이 모두 읽혔어도 서버에 읽지 않은 알림이 남아 있으면 모두 읽을 수 있다', async () => {
+		const user = userEvent.setup();
+		vi.mocked(readNotificationUnreadCount)
+			.mockResolvedValueOnce({ status: 200, message: 'OK', data: { unreadCount: 1 } })
+			.mockResolvedValue({ status: 200, message: 'OK', data: { unreadCount: 0 } });
+		renderInbox([createNotification({ isRead: true })]);
+		const article = await screen.findByRole('article');
+		expect(article).toHaveAccessibleDescription('읽은 알림');
+		const readAllButton = screen.getByRole('button', { name: '모두 읽음' });
+		await waitFor(() => expect(readAllButton).toBeEnabled());
+
+		await user.click(readAllButton);
+		expect(markAllNotificationsRead).toHaveBeenCalledOnce();
+		await waitFor(() => expect(readAllButton).toBeDisabled());
+	});
+
+	it('목록에 읽지 않은 알림이 보여도 서버의 전체 안읽음 수가 0이면 모두 읽음을 비활성화한다', async () => {
+		vi.mocked(readNotificationUnreadCount).mockResolvedValue({ status: 200, message: 'OK', data: { unreadCount: 0 } });
+		renderInbox([createNotification()]);
+		const article = await screen.findByRole('article');
+		expect(article).toHaveAccessibleDescription('읽지 않은 알림');
+		await waitFor(() => expect(readNotificationUnreadCount).toHaveBeenCalled());
+		expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
+	});
+
+	it('전체 안읽음 수 응답을 기다리는 동안 모두 읽음을 비활성화한다', async () => {
+		const request = Promise.withResolvers<Awaited<ReturnType<typeof readNotificationUnreadCount>>>();
+		vi.mocked(readNotificationUnreadCount).mockReturnValueOnce(request.promise);
+		renderInbox([createNotification()]);
+		await screen.findByRole('article');
+		const readAllButton = screen.getByRole('button', { name: '모두 읽음' });
+		expect(readAllButton).toBeDisabled();
+
+		request.resolve({ status: 200, message: 'OK', data: { unreadCount: 1 } });
+		await waitFor(() => expect(readAllButton).toBeEnabled());
 	});
 
 	it('전체 읽음 요청이 실패하면 읽지 않은 상태를 유지하고 다시 시도할 수 있다', async () => {
