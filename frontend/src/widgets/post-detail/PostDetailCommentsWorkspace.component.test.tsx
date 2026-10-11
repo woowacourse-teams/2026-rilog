@@ -1,6 +1,6 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
@@ -92,11 +92,12 @@ const render = (ui: ReactNode) =>
 		</AUTH_CONTEXT.Provider>,
 	);
 
-const renderWorkspaceUI = () =>
+const renderWorkspaceUI = (initialSelectionId?: number) =>
 	render(
 		<PostDetailCommentsWorkspace
 			html="<p>본문</p>"
 			postId={81}
+			initialSelectionId={initialSelectionId}
 			ownerType="RILOG"
 			category="TECH"
 			enableInlineCommentSelectionDebug={false}
@@ -140,6 +141,81 @@ const renderWorkspace = async () => {
 };
 
 describe('PostDetailCommentsWorkspace', () => {
+	it('초기 selection ID로 연 사이드바를 닫아도 URL을 변경하지 않는다', async () => {
+		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=3&from=notification#quote');
+		const user = userEvent.setup();
+		renderWorkspaceUI(3);
+		await screen.findByRole('dialog', { name: '인라인 댓글 1' });
+
+		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
+
+		expect(window.location.pathname + window.location.search + window.location.hash).toBe(
+			'/@rilog/posts/81?selectionId=3&from=notification#quote',
+		);
+	});
+
+	it('하이라이트와 블록 클릭으로 사이드바를 열어도 URL을 변경하지 않는다', async () => {
+		window.history.replaceState(null, '', '/@rilog/posts/81?from=notification');
+		const user = userEvent.setup();
+		renderWorkspaceUI();
+		await screen.findAllByRole('button', { name: '전체 댓글 3개 보기' });
+		await user.click(screen.getByRole('button', { name: '하이라이트 댓글 열기' }));
+		expect(window.location.search).toBe('?from=notification');
+
+		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
+		await user.click(screen.getByRole('button', { name: '블록 댓글 열기' }));
+		expect(window.location.search).toBe('?from=notification');
+	});
+
+	it('selection 링크로 진입하면 해당 인용 댓글만 열린다', async () => {
+		renderWorkspaceUI(3);
+
+		expect(await screen.findByRole('dialog', { name: '인라인 댓글 1' })).toBeVisible();
+		expect(screen.getByRole('region', { name: '"다른 블록 인용" 댓글' })).toBeVisible();
+		expect(screen.queryByRole('region', { name: '"첫 번째 인용" 댓글' })).not.toBeInTheDocument();
+	});
+
+	it('ACTIVE selection 링크로 진입하면 해당 본문 위치로 스크롤한다', async () => {
+		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=1');
+		const target = document.createElement('span');
+		const scrollIntoView = vi.fn();
+		target.dataset.inlineCommentAnchorId = '1';
+		target.scrollIntoView = scrollIntoView;
+		document.body.append(target);
+
+		renderWorkspaceUI(1);
+
+		expect(await screen.findByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeVisible();
+		await waitFor(() => {
+			expect(scrollIntoView).toHaveBeenCalledOnce();
+			expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+		});
+		target.remove();
+	});
+
+	it('OUTDATED selection 링크로 진입하면 본문을 스크롤하지 않는다', async () => {
+		window.history.replaceState(null, '', '/@rilog/posts/81?selectionId=2');
+		const target = document.createElement('span');
+		const scrollIntoView = vi.fn();
+		target.dataset.inlineCommentAnchorId = '2';
+		target.scrollIntoView = scrollIntoView;
+		document.body.append(target);
+
+		renderWorkspaceUI(2);
+
+		expect(await screen.findByRole('region', { name: '"오래된 인용" 댓글' })).toBeVisible();
+		expect(screen.getByText('Outdated')).toBeVisible();
+		expect(scrollIntoView).not.toHaveBeenCalled();
+		target.remove();
+	});
+
+	it('존재하지 않는 selection 링크에서도 사이드바를 열고 빈 상태를 안내한다', async () => {
+		renderWorkspaceUI(999);
+
+		expect(await screen.findByRole('dialog')).toBeVisible();
+		expect(await screen.findByText('표시할 댓글이 없습니다.')).toBeVisible();
+	});
+
 	it('사이드바 응답의 블록 간 순서를 그대로 렌더한다', async () => {
 		const response = toSidebarResponse(RESPONSE);
 		const [first, second, third] = response.data.anchorGroups;
@@ -187,9 +263,13 @@ describe('PostDetailCommentsWorkspace', () => {
 	});
 
 	beforeEach(() => {
+		window.history.replaceState(null, '', '/');
 		sessionStorage.clear();
 		vi.mocked(readPostCommentAnchors).mockReset().mockResolvedValue(RESPONSE);
 		vi.mocked(readPostCommentAnchorsSidebar).mockReset().mockResolvedValue(toSidebarResponse(RESPONSE));
+	});
+	afterEach(() => {
+		window.history.replaceState(null, '', '/');
 	});
 	it('하이라이트 클릭 시 해당 인용 댓글 세트만 연다', async () => {
 		const user = userEvent.setup();

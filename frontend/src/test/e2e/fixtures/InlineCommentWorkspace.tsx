@@ -7,6 +7,8 @@ import PostDetailCommentsWorkspace from '@/widgets/post-detail/PostDetailComment
 
 const root = document.getElementById('root');
 if (root === null) throw new Error('인라인 댓글 브라우저 fixture 루트가 없습니다.');
+const selectionIdParam = new URLSearchParams(window.location.search).get('selectionId');
+const initialSelectionId = selectionIdParam === null ? null : Number(selectionIdParam);
 
 createRoot(root).render(
 	<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -15,6 +17,7 @@ createRoot(root).render(
 				<PostDetailCommentsWorkspace
 					html=""
 					postId={106}
+					initialSelectionId={initialSelectionId}
 					ownerType="RILOG"
 					category="TECH"
 					enableInlineCommentSelectionDebug={false}

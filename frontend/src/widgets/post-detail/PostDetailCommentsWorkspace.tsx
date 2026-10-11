@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ReactNode } from 'react';
 
@@ -26,6 +26,7 @@ import styles from './PostDetail.module.css';
 interface PostDetailCommentsWorkspaceProps {
 	html: string;
 	postId: number;
+	initialSelectionId?: number | null;
 	ownerType: BlogType;
 	category: PostCategory;
 	enableInlineCommentSelectionDebug: boolean;
@@ -34,57 +35,90 @@ interface PostDetailCommentsWorkspaceProps {
 }
 
 const EMPTY_INLINE_COMMENT_BLOCKS: InlineCommentBlockModel[] = [];
+const EMPTY_INLINE_COMMENT_THREADS: InlineCommentThreadModel[] = [];
 
 const findAnchorElement = (anchorId: number) =>
 	Array.from(document.querySelectorAll<HTMLElement>('[data-inline-comment-anchor-id]')).find(
 		(element) => element.dataset.inlineCommentAnchorId === String(anchorId),
 	);
 
+const scrollToThreadAnchor = (thread: InlineCommentThreadModel) => {
+	const target =
+		findAnchorElement(thread.anchor.anchorId) ??
+		document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+	target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
 export default function PostDetailCommentsWorkspace({
 	html,
 	postId,
+	initialSelectionId = null,
 	ownerType,
 	category,
 	enableInlineCommentSelectionDebug,
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
-	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(false);
+	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
-	const sidebarThreads = sidebarQuery.data ?? [];
+	const sidebarThreads = sidebarQuery.data ?? EMPTY_INLINE_COMMENT_THREADS;
 	const inlineCommentBlocks = commentsQuery.data ?? EMPTY_INLINE_COMMENT_BLOCKS;
 	const [openRequest, setOpenRequest] = useState<InlineCommentOpenRequest | null>(null);
+	const [deepLinkedSelectionId, setDeepLinkedSelectionId] = useState(initialSelectionId);
 	const [createdCommentId, setCreatedCommentId] = useState<number | null>(null);
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
-	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>('all');
+	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>(
+		initialSelectionId === null ? 'all' : 'single',
+	);
 	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>(
-		'all',
+		initialSelectionId === null ? 'all' : 'highlight',
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
+	const hasHandledDeepLinkNavigationRef = useRef(false);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
 			? sidebarThreads.filter(({ anchor }) => anchor.comments.some((comment) => comment.commentId === createdCommentId))
-			: openRequest
-				? sidebarThreads.filter(
-						({ blockId, anchor }) =>
-							blockId === openRequest.blockId &&
-							openRequest.anchorIds.includes(anchor.anchorId) &&
-							(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
-					)
-				: sidebarThreads;
+			: deepLinkedSelectionId !== null
+				? sidebarThreads.filter(({ anchor }) => anchor.anchorId === deepLinkedSelectionId)
+				: openRequest
+					? sidebarThreads.filter(
+							({ blockId, anchor }) =>
+								blockId === openRequest.blockId &&
+								openRequest.anchorIds.includes(anchor.anchorId) &&
+								(openRequest.source !== 'block' || anchor.state === 'ACTIVE'),
+						)
+					: sidebarThreads;
 	const inlineCommentCount = inlineCommentBlocks.reduce(
 		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
 		0,
 	);
+
+	useEffect(() => {
+		if (
+			hasHandledDeepLinkNavigationRef.current ||
+			deepLinkedSelectionId === null ||
+			!commentsQuery.isSuccess ||
+			!sidebarQuery.isSuccess
+		) {
+			return;
+		}
+
+		hasHandledDeepLinkNavigationRef.current = true;
+		const thread = sidebarThreads.find(({ anchor }) => anchor.anchorId === deepLinkedSelectionId);
+		if (thread?.anchor.state === 'ACTIVE') {
+			scrollToThreadAnchor(thread);
+		}
+	}, [commentsQuery.isSuccess, deepLinkedSelectionId, sidebarQuery.isSuccess, sidebarThreads]);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
 		setCommentEntrySource(request === null ? 'all' : request.source);
 		setSidebarMode(mode);
 		setSelection(null);
 		setCreatedCommentId(null);
+		setDeepLinkedSelectionId(null);
 		setCommentEntrySource('selection_toolbar');
 		setComposerAnchorId(null);
 		setOpenRequest(request);
@@ -93,6 +127,7 @@ export default function PostDetailCommentsWorkspace({
 
 	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
 		setCreatedCommentId(null);
+		setDeepLinkedSelectionId(null);
 		const existingThread = inlineCommentBlocks
 			.flatMap(({ blockId, anchors }) => anchors.map((anchor) => ({ blockId, anchor })))
 			.find(
@@ -137,10 +172,7 @@ export default function PostDetailCommentsWorkspace({
 
 			setIsCommentsSidebarOpen(false);
 			window.setTimeout(() => {
-				const target =
-					findAnchorElement(thread.anchor.anchorId) ??
-					document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
-				target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				scrollToThreadAnchor(thread);
 			}, 140);
 		},
 		[postId],
@@ -189,9 +221,12 @@ export default function PostDetailCommentsWorkspace({
 				onCreated={(commentAnchorId) => {
 					setSelection(null);
 					setCreatedCommentId(commentAnchorId);
+					setDeepLinkedSelectionId(null);
 					setComposerAnchorId(null);
 				}}
-				onClose={() => setIsCommentsSidebarOpen(false)}
+				onClose={() => {
+					setIsCommentsSidebarOpen(false);
+				}}
 				onNavigate={handleAnchorNavigate}
 			/>
 		</>

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ReactNode } from 'react';
 
@@ -193,6 +193,7 @@ describe('PostDetailCommentsWorkspace', () => {
 				}),
 		);
 		await user.click(screen.getByRole('button', { name: '기존 인용 댓글 입력' }));
+		expect(window.location.search).toBe('');
 		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '추가 댓글');
 		await user.dblClick(screen.getByRole('button', { name: '작성' }));
 		expect(addPostCommentAnchor).toHaveBeenCalledExactlyOnceWith(81, 1, { content: '추가 댓글' });
@@ -222,6 +223,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		resolve({ status: 0, message: 'OK', data: { commentAnchorId: 901 } });
 		expect(await screen.findByText('추가 댓글', { selector: 'p' })).toBeVisible();
 		expect(screen.getByRole('dialog', { name: '인라인 댓글 2' })).toBeVisible();
+		expect(window.location.search).toBe('');
 		await waitFor(() => expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue(''));
 		expect(sessionStorage.getItem('rilog:inline-comment-draft:1')).toBeNull();
 		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '다음 댓글');
@@ -278,6 +280,7 @@ describe('PostDetailCommentsWorkspace', () => {
 				}),
 		);
 		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		expect(window.location.search).toBe('');
 		await user.type(screen.getByRole('textbox', { name: '댓글 입력' }), '새 댓글');
 		await user.dblClick(screen.getByRole('button', { name: '작성' }));
 		expect(createPostCommentAnchor).toHaveBeenCalledExactlyOnceWith(81, {
@@ -305,6 +308,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		resolve({ status: 0, message: 'OK', data: { commentAnchorId: 900 } });
 		expect(await screen.findByRole('article', { name: '댓글러 1님의 댓글' })).toHaveTextContent('새 댓글');
 		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('');
+		expect(window.location.search).toBe('');
 		expect(
 			sessionStorage.getItem(
 				'rilog:inline-comment-draft:selection:' + JSON.stringify([81, 'block-1', 4, 8, '새 인용']),
@@ -347,6 +351,7 @@ describe('PostDetailCommentsWorkspace', () => {
 	});
 
 	beforeEach(() => {
+		window.history.replaceState(null, '', '/');
 		sessionStorage.clear();
 		vi.mocked(createPostCommentAnchor).mockReset();
 		vi.mocked(addPostCommentAnchor)
@@ -354,6 +359,9 @@ describe('PostDetailCommentsWorkspace', () => {
 			.mockResolvedValue({ status: 0, message: 'OK', data: { commentAnchorId: 901 } });
 		vi.mocked(readPostCommentAnchors).mockReset().mockResolvedValue(RESPONSE);
 		vi.mocked(readPostCommentAnchorsSidebar).mockReset().mockResolvedValue(toSidebarResponse(RESPONSE));
+	});
+	afterEach(() => {
+		window.history.replaceState(null, '', '/');
 	});
 	it('새 선택은 인용과 입력창을 바로 열고 초안을 다시 복원한다', async () => {
 		const user = userEvent.setup();

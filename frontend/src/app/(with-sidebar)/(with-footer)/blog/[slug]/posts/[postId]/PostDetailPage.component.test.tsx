@@ -21,8 +21,13 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/features/post-detail/lib/get-public-post-detail');
 vi.mock('@/widgets/post-detail/PostDetail', () => ({
-	default: function MockPostDetail() {
-		return <div>게시글 상세</div>;
+	default: function MockPostDetail({ initialSelectionId }: { initialSelectionId: number | null }) {
+		return (
+			<div>
+				게시글 상세
+				<output aria-label="초기 selection ID">{initialSelectionId ?? '없음'}</output>
+			</div>
+		);
 	},
 }));
 
@@ -77,15 +82,24 @@ describe('PostDetailPage', () => {
 		expect(permanentRedirectMock).not.toHaveBeenCalled();
 	});
 
+	it('유효한 selection ID를 댓글 화면으로 전달하고 잘못된 ID는 무시한다', async () => {
+		const params = Promise.resolve({ slug: 'jetproc', postId: '72' });
+		render(await PostDetailPage({ params, searchParams: Promise.resolve({ selectionId: '27' }) }));
+		expect(screen.getByRole('status', { name: '초기 selection ID' })).toHaveTextContent('27');
+
+		render(await PostDetailPage({ params, searchParams: Promise.resolve({ selectionId: ['27', '28'] }) }));
+		expect(screen.getAllByRole('status', { name: '초기 selection ID' })[1]).toHaveTextContent('없음');
+	});
+
 	it('게시글 소유자와 다른 slug는 canonical 상세 경로로 redirect한다', async () => {
 		await expect(
 			PostDetailPage({
 				params: Promise.resolve({ slug: 'wrong_slug', postId: '72' }),
-				searchParams: Promise.resolve({}),
+				searchParams: Promise.resolve({ selectionId: '27' }),
 			}),
 		).rejects.toThrow('NEXT_REDIRECT');
 
-		expect(permanentRedirectMock).toHaveBeenCalledWith('/@jetproc/posts/72');
+		expect(permanentRedirectMock).toHaveBeenCalledWith('/@jetproc/posts/72?selectionId=27');
 	});
 
 	it('하이픈이 포함된 기존 상세 경로는 query를 보존한 canonical 경로로 redirect한다', async () => {
