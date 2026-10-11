@@ -1,6 +1,7 @@
 'use client';
 
 import type { Notification } from '@/domains/notification/model/notification';
+import type { NotificationReadSource } from '@/features/analytics/model/events';
 import Button from '@/shared/ui/button/Button';
 import { parseApiUtcDate } from '@/shared/utils/parse-api-utc-date';
 
@@ -14,7 +15,7 @@ type NotificationListProps =
 			notifications: readonly Notification[];
 			unreadCount: number;
 			isReadPending: boolean;
-			onRead: (id: number) => void;
+			onRead: (id: number, source: NotificationReadSource) => void;
 			onReadAll: () => void;
 			onExpose: (notification: Notification) => void;
 	  };

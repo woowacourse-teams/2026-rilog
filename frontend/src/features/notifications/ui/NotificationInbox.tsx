@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import type { Notification } from '@/domains/notification/model/notification';
 import { analytics } from '@/features/analytics/model/events';
+import type { NotificationReadSource } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
 import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
@@ -21,12 +22,14 @@ export default function NotificationInbox() {
 	const login = useLoginModal();
 	const cutoffAtRef = useRef<string | null>(null);
 	const exposedNotificationIdsRef = useRef(new Set<number>());
+	const completedReadIdsRef = useRef(new Set<number>());
 
 	useEffect(() => {
 		if (!isInitialized) return;
 		if (!isAuthenticated) {
 			cutoffAtRef.current = null;
 			exposedNotificationIdsRef.current.clear();
+			completedReadIdsRef.current.clear();
 			return;
 		}
 		if (cutoffAtRef.current !== null) return;
@@ -62,6 +65,16 @@ export default function NotificationInbox() {
 
 		exposedNotificationIdsRef.current.add(notification.id);
 		analytics.notificationItemExposed({ notification, cutoffAt });
+	};
+
+	const handleRead = (id: number, readSource: NotificationReadSource) => {
+		void markRead
+			.mutateAsync(id)
+			.then(() => {
+				completedReadIdsRef.current.add(id);
+				analytics.notificationReadCompleted({ notificationId: id, readSource });
+			})
+			.catch(() => undefined);
 	};
 
 	useEffect(() => {
@@ -124,7 +137,7 @@ export default function NotificationInbox() {
 					notifications={notifications}
 					unreadCount={unreadCountQuery.data?.data?.unreadCount ?? 0}
 					isReadPending={isReadPending}
-					onRead={(id) => markRead.mutate(id)}
+					onRead={handleRead}
 					onReadAll={() => markAllRead.mutate()}
 					onExpose={handleExpose}
 				/>

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Notification } from '@/domains/notification/model/notification';
+import { analytics } from '@/features/analytics/model/events';
 import type { AuthContextValue } from '@/features/auth/model/auth-context';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
@@ -118,6 +119,20 @@ describe('NotificationInbox', () => {
 	});
 
 	afterEach(() => vi.restoreAllMocks());
+
+	it('개별 읽음 버튼은 클릭 의도와 API 성공을 구분해 기록한다', async () => {
+		const clicked = vi.spyOn(analytics, 'notificationReadButtonClicked');
+		const completed = vi.spyOn(analytics, 'notificationReadCompleted');
+		const notification = createNotification();
+		renderInbox([notification]);
+		const article = await screen.findByRole('article');
+		await userEvent.setup().click(within(article).getByRole('button', { name: '읽음으로 표시' }));
+
+		expect(clicked).toHaveBeenCalledWith({ notification });
+		await waitFor(() =>
+			expect(completed).toHaveBeenCalledWith({ notificationId: notification.id, readSource: 'button' }),
+		);
+	});
 
 	it('인증 확인 중에는 알림 내용을 표시하지 않는다', () => {
 		renderInbox(undefined, { isInitialized: false });

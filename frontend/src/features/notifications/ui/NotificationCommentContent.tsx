@@ -12,7 +12,7 @@ import NotificationNavigationStatus from './NotificationNavigationStatus';
 
 interface NotificationCommentContentProps {
 	notification: CommentNotification;
-	onRead: (id: number) => void;
+	onRead: () => void;
 	children?: ReactNode;
 }
 
@@ -32,7 +32,7 @@ export default function NotificationCommentContent({
 			aria-label={`${post.title} 게시글의 댓글 보기`}
 			onClick={() => analytics.notificationItemOpened({ notification })}
 			onNavigate={() => {
-				if (!isRead) onRead(notification.id);
+				if (!isRead) onRead();
 			}}
 			className={`mt-4 block min-w-0 after:absolute after:inset-0 after:z-0 after:bg-transparent after:transition-colors after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus-ring motion-reduce:after:transition-none sm:ml-13 ${isRead ? 'hover:after:bg-surface-hover/20 active:after:bg-surface-active/20' : 'hover:after:bg-background/30 active:after:bg-surface-active/30'}`}
 		>

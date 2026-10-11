@@ -6,7 +6,7 @@ import NotificationPostTitle from './NotificationPostTitle';
 
 interface PostCommentNotificationContentProps {
 	notification: CommentNotification;
-	onRead: (id: number) => void;
+	onRead: () => void;
 }
 
 export default function PostCommentNotificationContent({ notification, onRead }: PostCommentNotificationContentProps) {
