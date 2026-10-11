@@ -207,6 +207,25 @@ describe('NotificationInbox', () => {
 		});
 	});
 
+	it('단건 읽음 요청이 끝나도 미읽음 수 재조회가 끝날 때까지 모두 읽음을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		const unreadCountResponse = Promise.withResolvers<Awaited<ReturnType<typeof readNotificationUnreadCount>>>();
+		renderInbox([createNotification()], {}, true);
+		const article = await screen.findByRole('article');
+		await waitFor(() => expect(screen.getByRole('status', { name: '읽지 않은 알림 수' })).toHaveTextContent('1'));
+		vi.mocked(readNotificationUnreadCount).mockClear().mockReturnValue(unreadCountResponse.promise);
+
+		await user.click(within(article).getByRole('button', { name: '읽음으로 표시' }));
+		await waitFor(() => expect(readNotificationUnreadCount).toHaveBeenCalled());
+		await waitFor(() => expect(article).toHaveAccessibleDescription('읽은 알림'));
+		expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
+		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
+		expect(markAllNotificationsRead).not.toHaveBeenCalled();
+
+		unreadCountResponse.resolve({ status: 200, message: 'OK', data: { unreadCount: 0 } });
+		await waitFor(() => expect(screen.getByRole('status', { name: '읽지 않은 알림 수' })).toHaveTextContent('0'));
+	});
+
 	it('모두 읽음을 누르면 전체 알림과 읽지 않은 수를 갱신하고 추가 처리를 비활성화한다', async () => {
 		const user = userEvent.setup();
 		const notifications = [createNotification({ id: 1 }), createNotification({ id: 2, type: 'SELECTION_COMMENT' })];
@@ -295,5 +314,31 @@ describe('NotificationInbox', () => {
 			expect(screen.getByRole('button', { name: '모두 읽음' })).toBeEnabled();
 			expect(within(article).getByRole('button', { name: '읽음으로 표시' })).toBeEnabled();
 		});
+	});
+
+	it('전체 읽음 요청이 끝나도 목록 재조회가 끝날 때까지 읽음 버튼들을 비활성화한다', async () => {
+		const user = userEvent.setup();
+		const listResponse = Promise.withResolvers<void>();
+		renderInbox([createNotification()]);
+		const article = await screen.findByRole('article');
+		await waitFor(() => expect(screen.getByRole('button', { name: '모두 읽음' })).toBeEnabled());
+		const readList = vi.mocked(readNotifications).getMockImplementation();
+		if (!readList) throw new Error('알림 목록 mock이 설정되지 않았습니다.');
+		vi.mocked(readNotifications)
+			.mockClear()
+			.mockImplementation(async (request) => {
+				await listResponse.promise;
+				return readList(request);
+			});
+
+		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
+		await waitFor(() => expect(readNotifications).toHaveBeenCalled());
+		expect(within(article).getByRole('button', { name: '읽음으로 표시' })).toBeDisabled();
+		expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
+		await user.click(within(article).getByRole('button', { name: '읽음으로 표시' }));
+		expect(markNotificationRead).not.toHaveBeenCalled();
+
+		listResponse.resolve();
+		await waitFor(() => expect(article).toHaveAccessibleDescription('읽은 알림'));
 	});
 });

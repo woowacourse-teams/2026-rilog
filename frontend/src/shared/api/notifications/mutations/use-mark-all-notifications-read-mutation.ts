@@ -12,7 +12,7 @@ export const useMarkAllNotificationsReadMutation = () => {
 		mutationFn: markAllNotificationsRead,
 		retry: false,
 		onSuccess: () => {
-			void Promise.all([
+			return Promise.all([
 				queryClient.invalidateQueries({ queryKey: notificationsQueryKeys.lists() }),
 				queryClient.invalidateQueries({ queryKey: notificationsQueryKeys.unreadCount() }),
 			]);
