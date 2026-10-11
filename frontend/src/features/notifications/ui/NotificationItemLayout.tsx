@@ -40,7 +40,7 @@ export default function NotificationItemLayout({
 			tabIndex={-1}
 			aria-label={accessibleLabel}
 			aria-describedby={readStatusId}
-			className={`relative isolate px-6 py-6 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring ${
+			className={`relative isolate px-6 py-6 transition-colors hover:bg-focus-ring/3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring active:bg-focus-ring/8! motion-reduce:transition-none ${
 				isRead ? 'bg-transparent text-text-secondary' : 'bg-focus-ring/5 text-text-primary'
 			}`}
 		>
@@ -56,7 +56,7 @@ export default function NotificationItemLayout({
 					<Button
 						size="sm"
 						variant="ghost"
-						className="relative z-10 -mt-0.5 size-6! shrink-0 p-0! hover:bg-focus-ring/10! sm:mr-3 sm:w-auto! sm:gap-1 sm:px-1!"
+						className="relative z-10 -mt-0.5 size-6! shrink-0 p-0! hover:bg-transparent! hover:text-focus-ring! active:bg-transparent! active:text-focus-ring! sm:mr-3 sm:w-auto! sm:gap-1 sm:px-1!"
 						aria-label="읽음으로 표시"
 						disabled={isReadPending}
 						onClick={handleRead}
