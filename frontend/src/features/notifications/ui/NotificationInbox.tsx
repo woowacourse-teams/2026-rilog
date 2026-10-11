@@ -22,6 +22,7 @@ export default function NotificationInbox() {
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const markRead = useMarkNotificationReadMutation();
 	const markAllRead = useMarkAllNotificationsReadMutation();
+	const isReadPending = markRead.isPending || markAllRead.isPending;
 
 	const notifications = useMemo(() => {
 		const items = query.data?.pages.flatMap((page) => page.data?.notifications ?? []) ?? [];
@@ -88,6 +89,7 @@ export default function NotificationInbox() {
 				<NotificationList
 					status="success"
 					notifications={notifications}
+					isReadPending={isReadPending}
 					onRead={(id) => markRead.mutate(id)}
 					onReadAll={() => markAllRead.mutate()}
 				/>

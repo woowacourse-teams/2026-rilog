@@ -177,6 +177,30 @@ describe('NotificationInbox', () => {
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 
+	it('단건 읽음 처리 중에는 읽음 버튼들이 비활성화되고 실패 후 다시 사용할 수 있다', async () => {
+		const user = userEvent.setup();
+		const request = Promise.withResolvers<Awaited<ReturnType<typeof markNotificationRead>>>();
+		renderInbox([createNotification({ id: 1 }), createNotification({ id: 2 })]);
+		vi.mocked(markNotificationRead).mockReturnValueOnce(request.promise);
+		const articles = await screen.findAllByRole('article');
+		await user.click(within(articles[0]).getByRole('button', { name: '읽음으로 표시' }));
+
+		await waitFor(() => {
+			for (const article of articles) {
+				expect(within(article).getByRole('button', { name: '읽음으로 표시' })).toBeDisabled();
+			}
+			expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
+		});
+
+		request.reject(new Error('request failed'));
+		await waitFor(() => {
+			for (const article of articles) {
+				expect(within(article).getByRole('button', { name: '읽음으로 표시' })).toBeEnabled();
+			}
+			expect(screen.getByRole('button', { name: '모두 읽음' })).toBeEnabled();
+		});
+	});
+
 	it('모두 읽음을 누르면 전체 알림과 읽지 않은 수를 갱신하고 추가 처리를 비활성화한다', async () => {
 		const user = userEvent.setup();
 		const notifications = [createNotification({ id: 1 }), createNotification({ id: 2, type: 'SELECTION_COMMENT' })];
@@ -208,5 +232,25 @@ describe('NotificationInbox', () => {
 		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
 		await waitFor(() => expect(article).toHaveAccessibleDescription('읽은 알림'));
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+	});
+
+	it('전체 읽음 처리 중에는 읽음 버튼들이 비활성화되고 실패 후 다시 사용할 수 있다', async () => {
+		const user = userEvent.setup();
+		const request = Promise.withResolvers<Awaited<ReturnType<typeof markAllNotificationsRead>>>();
+		renderInbox([createNotification()]);
+		vi.mocked(markAllNotificationsRead).mockReturnValueOnce(request.promise);
+		const article = await screen.findByRole('article');
+		await user.click(screen.getByRole('button', { name: '모두 읽음' }));
+
+		await waitFor(() => {
+			expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
+			expect(within(article).getByRole('button', { name: '읽음으로 표시' })).toBeDisabled();
+		});
+
+		request.reject(new Error('request failed'));
+		await waitFor(() => {
+			expect(screen.getByRole('button', { name: '모두 읽음' })).toBeEnabled();
+			expect(within(article).getByRole('button', { name: '읽음으로 표시' })).toBeEnabled();
+		});
 	});
 });

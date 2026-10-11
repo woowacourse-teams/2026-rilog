@@ -8,10 +8,11 @@ import SelectionCommentNotificationContent from './SelectionCommentNotificationC
 
 interface NotificationItemProps {
 	notification: Notification;
+	isReadPending: boolean;
 	onRead: (id: number) => void;
 }
 
-export default function NotificationItem({ notification, onRead }: NotificationItemProps) {
+export default function NotificationItem({ notification, isReadPending, onRead }: NotificationItemProps) {
 	let content: ReactNode;
 	let accessibleLabel: string;
 
@@ -29,6 +30,7 @@ export default function NotificationItem({ notification, onRead }: NotificationI
 	return (
 		<NotificationItemLayout
 			isRead={notification.isRead}
+			isReadPending={isReadPending}
 			onRead={() => onRead(notification.id)}
 			accessibleLabel={accessibleLabel}
 			content={content}

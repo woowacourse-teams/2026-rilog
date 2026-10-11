@@ -12,6 +12,7 @@ type NotificationListProps =
 	| {
 			status: 'success';
 			notifications: readonly Notification[];
+			isReadPending: boolean;
 			onRead: (id: number) => void;
 			onReadAll: () => void;
 	  };
@@ -51,7 +52,7 @@ export default function NotificationList(props: NotificationListProps) {
 		);
 	}
 
-	const { notifications, onRead, onReadAll } = props;
+	const { notifications, isReadPending, onRead, onReadAll } = props;
 	const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 	const visibleNotifications = notifications
 		.filter(() => true)
@@ -63,7 +64,7 @@ export default function NotificationList(props: NotificationListProps) {
 	return (
 		<section aria-label="알림 목록">
 			<div className="flex flex-wrap items-center justify-end gap-3 border-b border-border-default px-5 pb-4 sm:px-0">
-				<Button size="sm" variant="ghost" disabled={unreadCount === 0} onClick={onReadAll}>
+				<Button size="sm" variant="ghost" disabled={unreadCount === 0 || isReadPending} onClick={onReadAll}>
 					모두 읽음
 				</Button>
 			</div>
@@ -76,7 +77,7 @@ export default function NotificationList(props: NotificationListProps) {
 				<ul className="divide-y divide-border-default border-b border-border-default">
 					{visibleNotifications.map((notification) => (
 						<li key={notification.id}>
-							<NotificationItem notification={notification} onRead={onRead} />
+							<NotificationItem notification={notification} isReadPending={isReadPending} onRead={onRead} />
 						</li>
 					))}
 				</ul>

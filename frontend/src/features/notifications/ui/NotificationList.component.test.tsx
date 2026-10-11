@@ -14,7 +14,15 @@ describe('NotificationList', () => {
 		const middle = createNotification({ id: 3, createdAt: '2026-10-02T00:00:00Z' });
 		const notifications = [oldest, newest, middle];
 		const original = [...notifications];
-		render(<NotificationList status="success" notifications={notifications} onRead={vi.fn()} onReadAll={vi.fn()} />);
+		render(
+			<NotificationList
+				status="success"
+				notifications={notifications}
+				isReadPending={false}
+				onRead={vi.fn()}
+				onReadAll={vi.fn()}
+			/>,
+		);
 
 		expect(
 			screen.getAllByRole('article').map((article) => within(article).getByRole('time').getAttribute('datetime')),
@@ -27,7 +35,15 @@ describe('NotificationList', () => {
 		{ type: 'SELECTION_COMMENT', accessibleLabel: '작성자님의 댓글 알림' },
 	])('$type 알림의 문맥과 본문을 표시하고 게시글 블로그로 연결한다', ({ type, accessibleLabel }) => {
 		const notification = createNotification({ type });
-		render(<NotificationList status="success" notifications={[notification]} onRead={vi.fn()} onReadAll={vi.fn()} />);
+		render(
+			<NotificationList
+				status="success"
+				notifications={[notification]}
+				isReadPending={false}
+				onRead={vi.fn()}
+				onReadAll={vi.fn()}
+			/>,
+		);
 
 		const article = within(screen.getByRole('article', { name: accessibleLabel }));
 		expect(article.getByRole('link', { name: `${notification.post.title} 게시글의 댓글 보기` })).toHaveAttribute(
@@ -47,7 +63,15 @@ describe('NotificationList', () => {
 	});
 
 	it('수신한 알림이 없으면 빈 목록 안내를 표시한다', () => {
-		render(<NotificationList status="success" notifications={[]} onRead={vi.fn()} onReadAll={vi.fn()} />);
+		render(
+			<NotificationList
+				status="success"
+				notifications={[]}
+				isReadPending={false}
+				onRead={vi.fn()}
+				onReadAll={vi.fn()}
+			/>,
+		);
 		expect(screen.getByText('아직 도착한 알림이 없어요.')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled();
 	});
