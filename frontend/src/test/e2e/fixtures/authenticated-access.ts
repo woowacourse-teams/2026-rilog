@@ -1,3 +1,5 @@
+import { test } from '@playwright/test';
+
 import type { Page } from '@playwright/test';
 
 import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/api/proxy/constants';
@@ -5,12 +7,14 @@ import { PROXY_SESSION_COOKIE_NAME, PROXY_SESSION_COOKIE_VALUE } from '@/shared/
 export const AUTH_REFRESH_ROUTE = '**/v1/auth/token/refresh';
 export const MY_INFO_ROUTE = '**/v1/users/me';
 
-export const mockAuthenticatedAccess = async (page: Page, appOrigin = 'http://localhost:3000') => {
+export const mockAuthenticatedAccess = async (page: Page, appOrigin = test.info().project.use.baseURL) => {
+	if (!appOrigin) throw new Error('인증 fixture에 앱 주소 또는 Playwright baseURL이 필요합니다.');
+	const origin = new URL(appOrigin).origin;
 	await page.context().addCookies([
 		{
 			name: PROXY_SESSION_COOKIE_NAME,
 			value: PROXY_SESSION_COOKIE_VALUE,
-			url: appOrigin,
+			url: origin,
 		},
 	]);
 	await page.route(AUTH_REFRESH_ROUTE, (route) =>
@@ -19,7 +23,7 @@ export const mockAuthenticatedAccess = async (page: Page, appOrigin = 'http://lo
 			headers: {
 				Authorization: 'Bearer e2e-access-token',
 				'Access-Control-Allow-Credentials': 'true',
-				'Access-Control-Allow-Origin': appOrigin,
+				'Access-Control-Allow-Origin': origin,
 				'Access-Control-Expose-Headers': 'Authorization',
 			},
 		}),

@@ -39,6 +39,7 @@
 2. RTL은 role, accessible name, label을 우선해 요소를 찾는다. `data-testid`는 접근 가능한 선택지가 없을 때만 사용한다.
 3. URL, query parameter, 요청 payload, 화면 결과, 이동 경로처럼 외부에서 관찰할 수 있는 계약을 검증한다. 내부 state, private 함수, 시각 구현 className, 대형 DOM snapshot, 사용자 결과와 무관한 호출 횟수는 성공 기준으로 사용하지 않는다. 분석 privacy masking class는 수집 경계 계약으로 검증할 수 있다.
 4. 임의의 시간 대기 대신 응답, 화면 상태, URL처럼 완료를 확인할 수 있는 조건을 기다린다. retry, skip, snapshot 갱신으로 실패를 숨기지 않는다. 조건부 skip은 이유와 제거 조건을 이슈에 기록한다.
+   테스트가 직접 제어하는 Promise를 완료시켜 React 상태를 바꿀 때는 `await act(async () => ...)` 안에서 해당 Promise까지 기다린다. 이동 함수의 호출만으로 effect의 이벤트 해제까지 완료됐다고 가정하지 않는다.
 5. 정상 흐름 외에 해당 기능의 빈 상태, 실패·재시도, 권한 거부, 중복 제출을 검토한다. 모든 상태를 모든 계층에 중복 작성하지 않는다.
 
 ## mock·fixture·상태 격리
