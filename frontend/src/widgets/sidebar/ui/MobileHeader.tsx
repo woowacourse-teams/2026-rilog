@@ -11,6 +11,7 @@ import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import CustomLink from '@/shared/ui/link/CustomLink';
+import MagazineIcon from '@/widgets/sidebar/assets/magazine.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
@@ -20,6 +21,7 @@ export default function MobileHeader() {
 	const pathname = usePathname() ?? '';
 	const handleLoginClick = useAuthAction({ entrySurface: 'mobile_header' });
 	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
+	const isMagazineCurrent = pathname === APP_ROUTES.theRilog || pathname.startsWith(`${APP_ROUTES.theRilog}/`);
 	const userAvatar = (
 		<UserAvatar
 			src={user?.profileImageUrl}
@@ -40,14 +42,23 @@ export default function MobileHeader() {
 			<CustomLink href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
 				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={34} priority />
 			</CustomLink>
-
-			{isAuthenticated ? (
-				userProfileControl
-			) : (
-				<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
-					로그인
-				</Button>
-			)}
+			<div className="flex items-center gap-2">
+				<CustomLink
+					href={APP_ROUTES.theRilog}
+					aria-label="The Rilog."
+					aria-current={isMagazineCurrent ? 'page' : undefined}
+					className="flex size-11 items-center justify-center rounded-md text-text-secondary transition-colors hover:text-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring aria-[current=page]:text-brand-primary"
+				>
+					<MagazineIcon aria-hidden="true" focusable="false" className="size-6" />
+				</CustomLink>
+				{isAuthenticated ? (
+					userProfileControl
+				) : (
+					<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
+						로그인
+					</Button>
+				)}
+			</div>
 		</nav>
 	);
 }

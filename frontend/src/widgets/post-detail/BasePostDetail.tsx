@@ -38,15 +38,15 @@ export default async function BasePostDetail({
 			ownerType={post.blog.type}
 			chapterId={post.chapter?.id ?? null}
 		>
-			<main className="min-h-dvh bg-background px-4 py-5 sm:px-5 sm:py-7 lg:px-8 lg:py-10">
+			<main className="min-h-dvh bg-background px-2 py-2.5 sm:px-2.5 sm:py-3.5 lg:px-4 lg:py-5">
 				<div
-					className={`${styles.postDetailCard} mx-auto max-w-[87.5rem] rounded-xl border border-border-default bg-surface`}
+					className={`${styles.postDetailCard} mx-auto max-w-[105rem] rounded-xl border border-border-default bg-surface`}
 				>
 					{header}
 					<PostDetailHero title={post.title} thumbnailUrl={post.thumbnailUrl} />
 					{beforeContent}
 
-					<div className={`${styles.contentLayout} px-5 sm:px-10`}>
+					<div className={`${styles.contentLayout} px-2.5`}>
 						{tableOfContents.length === 0 ? null : (
 							<aside className={styles.tableOfContentsColumn}>
 								<div className={styles.tableOfContentsSticky}>

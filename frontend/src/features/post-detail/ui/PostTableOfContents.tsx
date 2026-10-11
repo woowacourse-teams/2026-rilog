@@ -12,14 +12,8 @@ interface PostTableOfContentsProps {
 
 const INDENT_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string | undefined> = {
 	1: undefined,
-	2: 'pl-3',
-	3: 'pl-6',
-};
-
-const LINE_INDENT_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string | undefined> = {
-	1: undefined,
-	2: 'pl-1',
-	3: 'pl-2',
+	2: 'pl-1.5',
+	3: 'pl-3',
 };
 
 // 목차 ui 구현
@@ -72,26 +66,8 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 	};
 
 	return (
-		<nav aria-label="게시글 목차" className="group relative">
-			<ol
-				aria-hidden="true"
-				className="max-h-[var(--post-toc-max-height)] overflow-hidden border-l border-border-default pl-5 transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 motion-reduce:transition-none"
-			>
-				{items.map((item) => {
-					const isActive = item.id === activeId;
-
-					return (
-						<li key={item.id}>
-							<span
-								className={`block leading-4 font-extrabold -tracking-[0.2em] ${LINE_INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'text-text-primary' : 'text-text-placeholder'}`}
-							>
-								{'-'.repeat(item.text.length)}
-							</span>
-						</li>
-					);
-				})}
-			</ol>
-			<ol className="pointer-events-none absolute inset-x-0 top-0 max-h-[var(--post-toc-max-height)] [scrollbar-gutter:stable] space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-border-default pr-2 pl-5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none">
+		<nav aria-label="게시글 목차">
+			<ol className="max-h-[var(--post-toc-max-height)] [scrollbar-gutter:stable] space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-border-default pr-1 pl-2.5">
 				{items.map((item) => {
 					const isActive = item.id === activeId;
 

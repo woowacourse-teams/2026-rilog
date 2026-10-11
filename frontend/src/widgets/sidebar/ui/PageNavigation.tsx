@@ -8,6 +8,7 @@ import { navigateFeedFilter } from '@/features/post-feed/lib/navigate-feed-filte
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CologIcon from '@/widgets/sidebar/assets/colog.svg';
 import FeedIcon from '@/widgets/sidebar/assets/feed.svg';
+import MagazineIcon from '@/widgets/sidebar/assets/magazine.svg';
 import PersonalIcon from '@/widgets/sidebar/assets/personal.svg';
 
 import { useSidebarPostsCount } from '../hooks/use-sidebar-posts-count';
@@ -95,6 +96,13 @@ export default function PageNavigation() {
 					);
 				})}
 			</ul>
+			<SidebarNavigationLink
+				href={APP_ROUTES.theRilog}
+				className="mt-3"
+				icon={<MagazineIcon aria-hidden="true" focusable="false" className={FEED_ICON_CLASS_NAME} />}
+				label="The Rilog."
+				isCurrent={pathname === APP_ROUTES.theRilog}
+			/>
 		</nav>
 	);
 }

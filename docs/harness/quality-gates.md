@@ -12,16 +12,16 @@
 
 ## 현재 로컬 검증
 
-| 순서 | 게이트                      | 책임                                             |
-| ---: | --------------------------- | ------------------------------------------------ |
-|    1 | format                      | 기계적 포맷                                      |
-|    2 | lint                        | 코드 품질, import와 React 규칙                   |
-|    3 | typecheck                   | TypeScript 계약                                  |
-|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수           |
-|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성                   |
-|    6 | Next.js build               | Server/Client 경계와 production build            |
-|    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 필수 4건과 인라인 댓글 검증 |
-|    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 브라우저 검증     |
+| 순서 | 게이트                      | 책임                                                                 |
+| ---: | --------------------------- | -------------------------------------------------------------------- |
+|    1 | format                      | 기계적 포맷                                                          |
+|    2 | lint                        | 코드 품질, import와 React 규칙                                       |
+|    3 | typecheck                   | TypeScript 계약                                                      |
+|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수                               |
+|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성                                       |
+|    6 | Next.js build               | Server/Client 경계와 production build                                |
+|    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 필수 4건·편집기 입력·인라인 댓글·읽기 위치 검증 |
+|    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 브라우저 검증                         |
 
 현재 `frontend/package.json`에는 다음 script가 있다.
 
@@ -39,7 +39,7 @@ check
 
 `check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. `typecheck`는 `next typegen && tsc --noEmit`으로 build 전에 실행된다. 컴파일 타임의 타입 검사는 외부 JSON 값을 검사하지 않으므로 선택한 입력 경계에는 런타임 가드와 실패 흐름 테스트를 둔다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
 
-현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책을 검증한다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
+현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책, 실제 편집기 입력, 인라인 댓글 Selection·모달 동작과 읽기 위치를 검증한다. 색상·고정 폰트 크기·아이콘 파일 경로는 이 게이트의 보호 대상이 아니다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
 
 ```sh
 pnpm check

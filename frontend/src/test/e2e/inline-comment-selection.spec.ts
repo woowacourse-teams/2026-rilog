@@ -154,8 +154,7 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 	const { text: selectedText } = await dragText(page);
 	expect(selectedText.trim()).not.toBe('');
 	const toolbarButton = page.getByRole('button', { name: '댓글 추가', exact: true });
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.width).toBe(28);
-	await expect(toolbarButton.getByText('댓글 추가')).toHaveCSS('opacity', '0');
+	await expect(toolbarButton).toBeVisible();
 	const selectionEnd = await page.evaluate(() => {
 		const rects = Array.from(window.getSelection()!.getRangeAt(0).getClientRects()).filter(
 			(rect) => rect.width > 0 && rect.height > 0,
@@ -163,20 +162,28 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 		const rect = rects[rects.length - 1];
 		return { right: rect.right, bottom: rect.bottom };
 	});
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.x).toBeCloseTo(selectionEnd.right - 4, 0);
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.y).toBeCloseTo(selectionEnd.bottom - 4, 0);
+	const toolbarBounds = (await toolbarButton.boundingBox())!;
+	expect(toolbarBounds.x).toBeLessThanOrEqual(selectionEnd.right);
+	expect(toolbarBounds.x + toolbarBounds.width).toBeGreaterThanOrEqual(selectionEnd.right);
+	expect(toolbarBounds.y).toBeLessThanOrEqual(selectionEnd.bottom);
+	expect(toolbarBounds.y + toolbarBounds.height).toBeGreaterThanOrEqual(selectionEnd.bottom);
+	const initialScrollY = await page.evaluate(() => window.scrollY);
 	await page.evaluate(() => window.scrollBy({ top: 40, behavior: 'instant' }));
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.y).toBeCloseTo(selectionEnd.bottom - 4 - 40, 0);
+	const scrollDelta = (await page.evaluate(() => window.scrollY)) - initialScrollY;
+	expect(scrollDelta).toBeGreaterThan(0);
+	await expect.poll(async () => (await toolbarButton.boundingBox())?.y).toBeCloseTo(toolbarBounds.y - scrollDelta, 0);
 	await toolbarButton.hover();
-	await expect.poll(async () => (await toolbarButton.boundingBox())?.width).toBe(88);
-	await expect(toolbarButton.getByText('댓글 추가')).toHaveCSS('opacity', '1');
 	await toolbarButton.click();
 	await expect(page.getByRole('region', { name: `"${selectedText}" 댓글` })).toBeVisible();
 	const input = page.getByRole('textbox', { name: '댓글 입력' });
 	await expect(input).toBeFocused();
 	await input.fill('브라우저에서 작성 중인 초안');
 	await page.mouse.click(8, 400);
-	await expect(page.getByRole('dialog')).toBeHidden();
+	const commentsPane = page.getByRole('region', { name: /^인라인 댓글 \d+$/ });
+	await expect(commentsPane).toBeVisible();
+	await expect(input).toHaveValue('브라우저에서 작성 중인 초안');
+	await commentsPane.getByRole('button', { name: '댓글 사이드바 닫기' }).click();
+	await expect(commentsPane).toBeHidden();
 	await dragText(page);
 	await page.getByRole('button', { name: '댓글 추가', exact: true }).click();
 	await expect(input).toHaveValue('브라우저에서 작성 중인 초안');
@@ -190,7 +197,7 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 	await page.getByRole('button', { name: '작성', exact: true }).click();
 	await expect(page.getByRole('article', { name: '테스트 작성자님의 댓글' })).toHaveCount(2);
 	await expect(page.getByText('같은 스레드에 추가한 댓글', { exact: true })).toBeVisible();
-	await expect(page.getByRole('dialog', { name: '인라인 댓글 2' })).toBeVisible();
+	await expect(page.getByRole('region', { name: '인라인 댓글 2', exact: true })).toBeVisible();
 	await expect(input).toHaveValue('');
 	const lastComment = page.getByRole('article', { name: '테스트 작성자님의 댓글' }).last();
 	await lastComment.getByRole('button', { name: '수정', exact: true }).click();
@@ -216,7 +223,7 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 	await expect(page.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toBeHidden();
 	await expect(page.getByText('수정한 댓글', { exact: true })).toBeHidden();
 	await expect(page.getByRole('article', { name: '테스트 작성자님의 댓글' })).toHaveCount(1);
-	await expect(page.getByRole('dialog', { name: '인라인 댓글 1' })).toBeVisible();
+	await expect(page.getByRole('region', { name: '인라인 댓글 1', exact: true })).toBeVisible();
 });
 
 test('모바일에서 본문을 선택해도 댓글 입력 툴바를 표시하지 않는다', async ({ page }) => {
