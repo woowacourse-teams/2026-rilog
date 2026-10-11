@@ -18,6 +18,7 @@ import NotificationList from './NotificationList';
 export default function NotificationInbox() {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const login = useLoginModal();
+
 	useEffect(() => {
 		if (isInitialized && isAuthenticated) analytics.notificationInboxEntered();
 	}, [isAuthenticated, isInitialized]);

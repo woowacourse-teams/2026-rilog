@@ -76,12 +76,9 @@ export default function NotificationList(props: NotificationListProps) {
 			) : (
 				<ul className="divide-y divide-border-default border-b border-border-default">
 					{visibleNotifications.map((notification) => (
-						<NotificationItem
-							key={notification.id}
-							notification={notification}
-							isReadPending={isReadPending}
-							onRead={onRead}
-						/>
+						<li key={notification.id}>
+							<NotificationItem notification={notification} isReadPending={isReadPending} onRead={onRead} />
+						</li>
 					))}
 				</ul>
 			)}
