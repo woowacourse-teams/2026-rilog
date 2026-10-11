@@ -7,9 +7,14 @@ import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 
 import MobileHeader from './MobileHeader';
 
-const { navigationMock, useMyInfoQueryMock } = vi.hoisted(() => ({
+const { navigationMock, useMyInfoQueryMock, unreadCountQuery } = vi.hoisted(() => ({
 	navigationMock: { pathname: '/feeds' },
 	useMyInfoQueryMock: vi.fn(),
+	unreadCountQuery: { current: 0 },
+}));
+
+vi.mock('@/shared/api/notifications/queries/unread-count/use-query', () => ({
+	useNotificationUnreadCountQuery: () => ({ data: { data: { unreadCount: unreadCountQuery.current } } }),
 }));
 
 const { githubLoginStartedMock } = vi.hoisted(() => ({
@@ -47,6 +52,14 @@ describe('MobileHeader', () => {
 		navigationMock.pathname = '/feeds';
 		window.history.replaceState({}, '', '/feeds?tab=latest');
 		useMyInfoQueryMock.mockReset().mockReturnValue({ data: null });
+		unreadCountQuery.current = 0;
+	});
+
+	it('로그인 사용자의 읽지 않은 알림 수를 알림 링크에 표시한다', () => {
+		unreadCountQuery.current = 2;
+		renderHeader(true);
+
+		expect(screen.getByRole('link', { name: '알림, 읽지 않은 알림 2개' })).toHaveAttribute('href', '/notifications');
 	});
 
 	it('비로그인 사용자에게 피드 링크와 로그인 버튼을 제공한다', async () => {

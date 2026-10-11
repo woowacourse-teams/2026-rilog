@@ -7,7 +7,7 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
-const { MY_INFO_RESPONSE, mutateMock, myInfoQuery } = vi.hoisted(() => {
+const { MY_INFO_RESPONSE, mutateMock, myInfoQuery, unreadCountQuery } = vi.hoisted(() => {
 	const myInfoResponse = {
 		status: 200,
 		message: 'OK',
@@ -34,8 +34,13 @@ const { MY_INFO_RESPONSE, mutateMock, myInfoQuery } = vi.hoisted(() => {
 		MY_INFO_RESPONSE: myInfoResponse,
 		mutateMock: vi.fn(),
 		myInfoQuery: { current },
+		unreadCountQuery: { current: 0 },
 	};
 });
+
+vi.mock('@/shared/api/notifications/queries/unread-count/use-query', () => ({
+	useNotificationUnreadCountQuery: () => ({ data: { data: { unreadCount: unreadCountQuery.current } } }),
+}));
 
 vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
 	useLogoutMutation: () => ({ mutate: mutateMock }),
@@ -70,6 +75,14 @@ describe('AuthenticatedSidebarFooter', () => {
 			isFetching: false,
 		};
 		mutateMock.mockReset();
+		unreadCountQuery.current = 0;
+	});
+
+	it('읽지 않은 알림 수를 알림 링크의 접근 가능한 이름에 표시한다', () => {
+		unreadCountQuery.current = 3;
+		renderFooter();
+
+		expect(screen.getByRole('link', { name: '알림, 읽지 않은 알림 3개' })).toHaveAttribute('href', '/notifications');
 	});
 
 	it('알림과 글쓰기, 프로필 진입점과 로그아웃 버튼을 제공한다', () => {

@@ -8,6 +8,7 @@ import Button from '@/shared/ui/button/Button';
 
 interface NotificationItemLayoutProps {
 	isRead: boolean;
+	isReadPending: boolean;
 	accessibleLabel: string;
 	content: ReactNode;
 	onRead: () => void;
@@ -15,6 +16,7 @@ interface NotificationItemLayoutProps {
 
 export default function NotificationItemLayout({
 	isRead,
+	isReadPending,
 	accessibleLabel,
 	content,
 	onRead,
@@ -43,7 +45,7 @@ export default function NotificationItemLayout({
 			{content}
 			{!isRead && (
 				<div className="mt-3 flex h-8 justify-end">
-					<Button size="sm" variant="ghost" className="relative z-10" onClick={handleRead}>
+					<Button size="sm" variant="ghost" className="relative z-10" disabled={isReadPending} onClick={handleRead}>
 						읽음으로 표시
 					</Button>
 				</div>

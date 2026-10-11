@@ -61,3 +61,7 @@ export interface NotificationListResponse {
 	numberOfElements: number;
 	hasNext: boolean;
 }
+
+export interface NotificationUnreadCountResponse {
+	unreadCount: number;
+}
