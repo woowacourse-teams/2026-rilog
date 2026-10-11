@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { markNotificationRead, readNotificationUnreadCount } from './api';
+import { markAllNotificationsRead, markNotificationRead, readNotificationUnreadCount } from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -56,5 +56,19 @@ describe('markNotificationRead', () => {
 			type: 'api',
 			detail: { errorCode: 'NOTIFICATION_NOT_FOUND' },
 		});
+	});
+});
+
+describe('markAllNotificationsRead', () => {
+	it('로그인 사용자의 모든 알림 읽음을 PATCH로 요청한다', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValue(Response.json({ status: 200, message: '모든 알림을 읽음 처리했습니다.', data: null }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await markAllNotificationsRead();
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.method).toBe('PATCH');
+		expect(request.url).toBe('https://api.rilog.test/v1/notifications/read');
 	});
 });

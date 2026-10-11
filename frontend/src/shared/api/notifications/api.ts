@@ -13,3 +13,5 @@ export const readNotificationUnreadCount = (signal?: AbortSignal) =>
 
 export const markNotificationRead = (notificationId: number) =>
 	apiClient.patch<ApiResponse<null>>(`v1/notifications/${notificationId}/read`);
+
+export const markAllNotificationsRead = () => apiClient.patch<ApiResponse<null>>('v1/notifications/read');
