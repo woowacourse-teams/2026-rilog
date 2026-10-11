@@ -13,6 +13,7 @@ describe('notificationUnreadCountQueryOptions', () => {
 		const options = notificationUnreadCountQueryOptions();
 		expect(options.queryKey).toEqual(notificationsQueryKeys.unreadCount());
 		expect(options.queryKey[0]).toBe('authenticated');
+		expect(options.meta).toEqual({ errorOperation: 'notification.unread-count' });
 		expect(options.refetchInterval).toBe(30_000);
 		expect(options.retry).toBe(false);
 	});

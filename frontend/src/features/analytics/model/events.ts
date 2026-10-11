@@ -30,6 +30,7 @@ import type {
 } from './analytics-event';
 
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { Notification } from '@/domains/notification/model/notification';
 import type { PostCategory } from '@/domains/post/model/post';
 import { captureAnalyticsEvent } from '@/shared/analytics/posthog';
 
@@ -37,7 +38,23 @@ export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introd
 
 export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
+const notificationProperties = (notification: Notification) => ({
+	notification_id: notification.id,
+	notification_type: notification.type,
+	notification_state: notification.state,
+	post_id: notification.post.id,
+	selection_id: notification.type === 'SELECTION_COMMENT' ? notification.anchor.id : null,
+	created_at: notification.createdAt,
+	was_unread: !notification.isRead,
+});
+
 export const analytics = {
+	notificationInboxEntered: () => captureAnalyticsEvent('notification inbox entered'),
+	notificationItemOpened: ({ notification }: { notification: Notification }) =>
+		captureAnalyticsEvent('notification item opened', notificationProperties(notification)),
+	notificationReadButtonClicked: ({ notification }: { notification: Notification }) =>
+		captureAnalyticsEvent('notification read button clicked', notificationProperties(notification)),
+	notificationAllReadClicked: () => captureAnalyticsEvent('notification all read clicked'),
 	aboutPageViewed: ({ acquisitionSource }: { acquisitionSource: AboutPageAcquisitionSource }) =>
 		captureAnalyticsEvent('about page viewed', { acquisition_source: acquisitionSource }),
 	aboutPageEntryClicked: ({ entrySource }: { entrySource: AboutPageEntrySource }) =>

@@ -6,7 +6,7 @@ import NotificationPostTitle from './NotificationPostTitle';
 
 interface SelectionCommentNotificationContentProps {
 	notification: CommentNotification;
-	onRead: (id: number) => void;
+	onRead: () => void;
 }
 
 export default function SelectionCommentNotificationContent({

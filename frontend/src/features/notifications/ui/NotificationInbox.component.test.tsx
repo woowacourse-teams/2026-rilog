@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Notification } from '@/domains/notification/model/notification';
+import { analytics } from '@/features/analytics/model/events';
 import type { AuthContextValue } from '@/features/auth/model/auth-context';
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
@@ -117,7 +118,32 @@ describe('NotificationInbox', () => {
 		vi.mocked(markAllNotificationsRead).mockReset();
 	});
 
-	afterEach(() => vi.restoreAllMocks());
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
+	it('로그인한 사용자가 모두 읽음을 누르면 클릭 이벤트를 기록한다', async () => {
+		const entered = vi.spyOn(analytics, 'notificationInboxEntered');
+		const clicked = vi.spyOn(analytics, 'notificationAllReadClicked');
+		vi.mocked(readNotificationUnreadCount).mockResolvedValue({ status: 200, message: 'OK', data: { unreadCount: 2 } });
+		renderInbox([createNotification({ id: 1 }), createNotification({ id: 2 })]);
+		await screen.findAllByRole('article');
+		await userEvent.setup().click(screen.getByRole('button', { name: '모두 읽음' }));
+
+		expect(entered).toHaveBeenCalledOnce();
+		expect(clicked).toHaveBeenCalledOnce();
+	});
+
+	it('개별 읽음 버튼을 누르면 클릭 이벤트를 기록한다', async () => {
+		const clicked = vi.spyOn(analytics, 'notificationReadButtonClicked');
+		const notification = createNotification();
+		renderInbox([notification]);
+		const article = await screen.findByRole('article');
+		await userEvent.setup().click(within(article).getByRole('button', { name: '읽음으로 표시' }));
+
+		expect(clicked).toHaveBeenCalledWith({ notification });
+	});
 
 	it('인증 확인 중에는 알림 내용을 표시하지 않는다', () => {
 		renderInbox(undefined, { isInitialized: false });

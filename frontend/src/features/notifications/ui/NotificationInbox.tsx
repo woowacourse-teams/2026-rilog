@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
+import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
 import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
@@ -17,6 +18,9 @@ import NotificationList from './NotificationList';
 export default function NotificationInbox() {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const login = useLoginModal();
+	useEffect(() => {
+		if (isInitialized && isAuthenticated) analytics.notificationInboxEntered();
+	}, [isAuthenticated, isInitialized]);
 
 	const query = useNotificationListQuery({ isEnabled: isInitialized && isAuthenticated });
 	const unreadCountQuery = useNotificationUnreadCountQuery();
@@ -32,6 +36,13 @@ export default function NotificationInbox() {
 		const unique = new Map(mapped.map((notification) => [notification.id, notification]));
 		return Array.from(unique.values());
 	}, [query.data?.pages]);
+
+	const handleRead = (id: number) => markRead.mutate(id);
+
+	const handleReadAll = () => {
+		analytics.notificationAllReadClicked();
+		markAllRead.mutate();
+	};
 
 	useEffect(() => {
 		if (!hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
@@ -93,8 +104,8 @@ export default function NotificationInbox() {
 					notifications={notifications}
 					unreadCount={unreadCountQuery.data?.data?.unreadCount ?? 0}
 					isReadPending={isReadPending}
-					onRead={(id) => markRead.mutate(id)}
-					onReadAll={() => markAllRead.mutate()}
+					onRead={handleRead}
+					onReadAll={handleReadAll}
 				/>
 			)}
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />
