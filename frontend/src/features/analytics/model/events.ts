@@ -30,14 +30,56 @@ import type {
 } from './analytics-event';
 
 import type { BlogType } from '@/domains/blog/model/blog';
+import type { Notification } from '@/domains/notification/model/notification';
 import type { PostCategory } from '@/domains/post/model/post';
 import { captureAnalyticsEvent } from '@/shared/analytics/posthog';
 
 export type CologProfileChangedField = 'name' | 'logo' | 'cover_image' | 'introduction' | 'service_url' | 'github_url';
+export type NotificationReadSource = 'button' | 'item_navigation';
 
 export type { BlogProfileEntrySource, EditorEntrySource, PostEntrySource } from './analytics-event';
 
+const notificationProperties = (notification: Notification) => ({
+	notification_id: notification.id,
+	notification_type: notification.type,
+	notification_state: notification.state,
+	post_id: notification.post.id,
+	selection_id: notification.type === 'SELECTION_COMMENT' ? notification.anchor.id : null,
+	created_at: notification.createdAt,
+	was_unread: !notification.isRead,
+});
+
 export const analytics = {
+	notificationInboxEntered: ({ cutoffAt }: { cutoffAt: string }) =>
+		captureAnalyticsEvent('notification inbox entered', { cutoff_at: cutoffAt }),
+	notificationItemExposed: ({ notification, cutoffAt }: { notification: Notification; cutoffAt: string }) =>
+		captureAnalyticsEvent('notification item exposed', {
+			...notificationProperties(notification),
+			cutoff_at: cutoffAt,
+		}),
+	notificationItemOpened: ({ notification }: { notification: Notification }) =>
+		captureAnalyticsEvent('notification item opened', notificationProperties(notification)),
+	notificationReadButtonClicked: ({ notification }: { notification: Notification }) =>
+		captureAnalyticsEvent('notification read button clicked', notificationProperties(notification)),
+	notificationReadCompleted: ({
+		notificationId,
+		readSource,
+	}: {
+		notificationId: number;
+		readSource: NotificationReadSource;
+	}) =>
+		captureAnalyticsEvent('notification read completed', {
+			notification_id: notificationId,
+			read_source: readSource,
+		}),
+	notificationAllReadClicked: ({ observedUnreadNotificationIds }: { observedUnreadNotificationIds: number[] }) =>
+		captureAnalyticsEvent('notification all read clicked', {
+			observed_unread_notification_ids: observedUnreadNotificationIds,
+		}),
+	notificationAllReadCompleted: ({ observedUnreadNotificationIds }: { observedUnreadNotificationIds: number[] }) =>
+		captureAnalyticsEvent('notification all read completed', {
+			observed_unread_notification_ids: observedUnreadNotificationIds,
+		}),
 	aboutPageViewed: ({ acquisitionSource }: { acquisitionSource: AboutPageAcquisitionSource }) =>
 		captureAnalyticsEvent('about page viewed', { acquisition_source: acquisitionSource }),
 	aboutPageEntryClicked: ({ entrySource }: { entrySource: AboutPageEntrySource }) =>
