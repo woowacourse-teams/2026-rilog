@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import type { Notification } from '@/domains/notification/model/notification';
 import { analytics } from '@/features/analytics/model/events';
-import type { NotificationReadSource } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useLoginModal } from '@/features/login/model/use-login-modal';
 import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
@@ -20,22 +18,8 @@ import NotificationList from './NotificationList';
 export default function NotificationInbox() {
 	const { isAuthenticated, isInitialized } = useAuth();
 	const login = useLoginModal();
-	const cutoffAtRef = useRef<string | null>(null);
-	const exposedNotificationIdsRef = useRef(new Set<number>());
-	const completedReadIdsRef = useRef(new Set<number>());
-
 	useEffect(() => {
-		if (!isInitialized) return;
-		if (!isAuthenticated) {
-			cutoffAtRef.current = null;
-			exposedNotificationIdsRef.current.clear();
-			completedReadIdsRef.current.clear();
-			return;
-		}
-		if (cutoffAtRef.current !== null) return;
-		const cutoffAt = new Date().toISOString();
-		cutoffAtRef.current = cutoffAt;
-		analytics.notificationInboxEntered({ cutoffAt });
+		if (isInitialized && isAuthenticated) analytics.notificationInboxEntered();
 	}, [isAuthenticated, isInitialized]);
 
 	const query = useNotificationListQuery({ isEnabled: isInitialized && isAuthenticated });
@@ -53,45 +37,11 @@ export default function NotificationInbox() {
 		return Array.from(unique.values());
 	}, [query.data?.pages]);
 
-	const handleExpose = (notification: Notification) => {
-		if (exposedNotificationIdsRef.current.has(notification.id)) return;
-
-		let cutoffAt = cutoffAtRef.current;
-		if (cutoffAt === null) {
-			cutoffAt = new Date().toISOString();
-			cutoffAtRef.current = cutoffAt;
-			analytics.notificationInboxEntered({ cutoffAt });
-		}
-
-		exposedNotificationIdsRef.current.add(notification.id);
-		analytics.notificationItemExposed({ notification, cutoffAt });
-	};
-
-	const handleRead = (id: number, readSource: NotificationReadSource) => {
-		void markRead
-			.mutateAsync(id)
-			.then(() => {
-				completedReadIdsRef.current.add(id);
-				analytics.notificationReadCompleted({ notificationId: id, readSource });
-			})
-			.catch(() => undefined);
-	};
+	const handleRead = (id: number) => markRead.mutate(id);
 
 	const handleReadAll = () => {
-		const observedUnreadNotificationIds = notifications
-			.filter(
-				(notification) =>
-					exposedNotificationIdsRef.current.has(notification.id) &&
-					!notification.isRead &&
-					!completedReadIdsRef.current.has(notification.id),
-			)
-			.map((notification) => notification.id);
-		analytics.notificationAllReadClicked({ observedUnreadNotificationIds });
-
-		void markAllRead
-			.mutateAsync()
-			.then(() => analytics.notificationAllReadCompleted({ observedUnreadNotificationIds }))
-			.catch(() => undefined);
+		analytics.notificationAllReadClicked();
+		markAllRead.mutate();
 	};
 
 	useEffect(() => {
@@ -156,7 +106,6 @@ export default function NotificationInbox() {
 					isReadPending={isReadPending}
 					onRead={handleRead}
 					onReadAll={handleReadAll}
-					onExpose={handleExpose}
 				/>
 			)}
 			<div ref={sentinelRef} aria-hidden="true" className="h-px" />

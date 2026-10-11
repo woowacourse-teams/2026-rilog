@@ -1,7 +1,6 @@
 'use client';
 
 import type { Notification } from '@/domains/notification/model/notification';
-import type { NotificationReadSource } from '@/features/analytics/model/events';
 import Button from '@/shared/ui/button/Button';
 import { parseApiUtcDate } from '@/shared/utils/parse-api-utc-date';
 
@@ -15,9 +14,8 @@ type NotificationListProps =
 			notifications: readonly Notification[];
 			unreadCount: number;
 			isReadPending: boolean;
-			onRead: (id: number, source: NotificationReadSource) => void;
+			onRead: (id: number) => void;
 			onReadAll: () => void;
-			onExpose: (notification: Notification) => void;
 	  };
 
 export default function NotificationList(props: NotificationListProps) {
@@ -55,7 +53,7 @@ export default function NotificationList(props: NotificationListProps) {
 		);
 	}
 
-	const { notifications, unreadCount, isReadPending, onRead, onReadAll, onExpose } = props;
+	const { notifications, unreadCount, isReadPending, onRead, onReadAll } = props;
 	const visibleNotifications = notifications
 		.filter(() => true)
 		.sort(
@@ -83,7 +81,6 @@ export default function NotificationList(props: NotificationListProps) {
 							notification={notification}
 							isReadPending={isReadPending}
 							onRead={onRead}
-							onExpose={onExpose}
 						/>
 					))}
 				</ul>

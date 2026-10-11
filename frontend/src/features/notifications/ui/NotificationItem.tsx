@@ -2,8 +2,6 @@ import type { ReactNode } from 'react';
 
 import type { Notification } from '@/domains/notification/model/notification';
 import { analytics } from '@/features/analytics/model/events';
-import type { NotificationReadSource } from '@/features/analytics/model/events';
-import { useNotificationExposure } from '@/features/notifications/hooks/use-notification-exposure';
 
 import NotificationItemLayout from './NotificationItemLayout';
 import PostCommentNotificationContent from './PostCommentNotificationContent';
@@ -12,15 +10,13 @@ import SelectionCommentNotificationContent from './SelectionCommentNotificationC
 interface NotificationItemProps {
 	notification: Notification;
 	isReadPending: boolean;
-	onRead: (id: number, source: NotificationReadSource) => void;
-	onExpose: (notification: Notification) => void;
+	onRead: (id: number) => void;
 }
 
-export default function NotificationItem({ notification, isReadPending, onRead, onExpose }: NotificationItemProps) {
-	const { itemRef, handleExpose } = useNotificationExposure(notification, onExpose);
+export default function NotificationItem({ notification, isReadPending, onRead }: NotificationItemProps) {
 	let content: ReactNode;
 	let accessibleLabel: string;
-	const handleNavigationRead = () => onRead(notification.id, 'item_navigation');
+	const handleNavigationRead = () => onRead(notification.id);
 
 	switch (notification.type) {
 		case 'POST_COMMENT':
@@ -34,13 +30,13 @@ export default function NotificationItem({ notification, isReadPending, onRead, 
 	}
 
 	return (
-		<li ref={itemRef} onClickCapture={handleExpose}>
+		<li>
 			<NotificationItemLayout
 				isRead={notification.isRead}
 				isReadPending={isReadPending}
 				onRead={() => {
 					analytics.notificationReadButtonClicked({ notification });
-					onRead(notification.id, 'button');
+					onRead(notification.id);
 				}}
 				accessibleLabel={accessibleLabel}
 				content={content}

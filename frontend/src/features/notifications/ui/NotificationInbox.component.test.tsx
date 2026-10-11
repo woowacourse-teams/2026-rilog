@@ -123,45 +123,26 @@ describe('NotificationInbox', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('화면에 나타난 알림만 노출로 기록하고 모두 읽음 성공에 해당 ID를 연결한다', async () => {
-		class IntersectionObserverMock {
-			constructor(private callback: IntersectionObserverCallback) {}
-			observe(element: Element) {
-				if (element.tagName === 'LI') {
-					this.callback(
-						[{ isIntersecting: true } as IntersectionObserverEntry],
-						this as unknown as IntersectionObserver,
-					);
-				}
-			}
-			disconnect() {}
-		}
-		vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
-		const exposed = vi.spyOn(analytics, 'notificationItemExposed');
+	it('로그인한 사용자가 모두 읽음을 누르면 클릭 이벤트를 기록한다', async () => {
+		const entered = vi.spyOn(analytics, 'notificationInboxEntered');
 		const clicked = vi.spyOn(analytics, 'notificationAllReadClicked');
-		const completed = vi.spyOn(analytics, 'notificationAllReadCompleted');
 		vi.mocked(readNotificationUnreadCount).mockResolvedValue({ status: 200, message: 'OK', data: { unreadCount: 2 } });
 		renderInbox([createNotification({ id: 1 }), createNotification({ id: 2 })]);
 		await screen.findAllByRole('article');
-		await waitFor(() => expect(exposed).toHaveBeenCalledTimes(2));
 		await userEvent.setup().click(screen.getByRole('button', { name: '모두 읽음' }));
 
-		expect(clicked).toHaveBeenCalledWith({ observedUnreadNotificationIds: [1, 2] });
-		await waitFor(() => expect(completed).toHaveBeenCalledWith({ observedUnreadNotificationIds: [1, 2] }));
+		expect(entered).toHaveBeenCalledOnce();
+		expect(clicked).toHaveBeenCalledOnce();
 	});
 
-	it('개별 읽음 버튼은 클릭 의도와 API 성공을 구분해 기록한다', async () => {
+	it('개별 읽음 버튼을 누르면 클릭 이벤트를 기록한다', async () => {
 		const clicked = vi.spyOn(analytics, 'notificationReadButtonClicked');
-		const completed = vi.spyOn(analytics, 'notificationReadCompleted');
 		const notification = createNotification();
 		renderInbox([notification]);
 		const article = await screen.findByRole('article');
 		await userEvent.setup().click(within(article).getByRole('button', { name: '읽음으로 표시' }));
 
 		expect(clicked).toHaveBeenCalledWith({ notification });
-		await waitFor(() =>
-			expect(completed).toHaveBeenCalledWith({ notificationId: notification.id, readSource: 'button' }),
-		);
 	});
 
 	it('인증 확인 중에는 알림 내용을 표시하지 않는다', () => {
