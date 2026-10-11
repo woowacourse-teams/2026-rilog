@@ -4,34 +4,38 @@ import { useId, useRef } from 'react';
 
 import type { ReactNode } from 'react';
 
+import type { Notification } from '@/domains/notification/model/notification';
+import { analytics } from '@/features/analytics/model/events';
 import Button from '@/shared/ui/button/Button';
 
 import ReadIcon from '../assets/read.svg';
 
 interface NotificationItemLayoutProps {
-	isRead: boolean;
+	notification: Notification;
 	isReadPending: boolean;
 	accessibleLabel: string;
 	header: ReactNode;
 	content: ReactNode;
-	onRead: () => void;
+	onRead: (id: number) => void;
 }
 
 export default function NotificationItemLayout({
-	isRead,
+	notification,
 	isReadPending,
 	accessibleLabel,
 	header,
 	content,
 	onRead,
 }: NotificationItemLayoutProps) {
+	const { isRead } = notification;
 	const readStatusId = useId();
 	const articleRef = useRef<HTMLElement>(null);
 
-	const handleRead = () => {
+	const handleReadButtonClick = () => {
 		// 버튼이 사라져도 현재 행에서 키보드 탐색을 이어가고 스크롤 위치를 유지한다.
 		articleRef.current?.focus({ preventScroll: true });
-		onRead();
+		analytics.notificationReadButtonClicked({ notification });
+		onRead(notification.id);
 	};
 
 	return (
@@ -59,7 +63,7 @@ export default function NotificationItemLayout({
 						className="relative z-10 -mt-0.5 size-6! shrink-0 p-0! hover:bg-transparent! hover:text-focus-ring! active:bg-transparent! active:text-focus-ring! sm:mr-3 sm:w-auto! sm:gap-1 sm:px-1!"
 						aria-label="읽음으로 표시"
 						disabled={isReadPending}
-						onClick={handleRead}
+						onClick={handleReadButtonClick}
 					>
 						<ReadIcon aria-hidden="true" className="size-5" />
 						<span className="hidden sm:inline">읽음</span>

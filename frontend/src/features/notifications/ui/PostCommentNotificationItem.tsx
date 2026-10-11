@@ -8,22 +8,21 @@ import NotificationPostTitle from './NotificationPostTitle';
 interface PostCommentNotificationItemProps {
 	notification: CommentNotification;
 	isReadPending: boolean;
-	onRead: () => void;
-	onReadButton: () => void;
+	onRead: (id: number) => void;
 }
 
 export default function PostCommentNotificationItem({
 	notification,
 	isReadPending,
 	onRead,
-	onReadButton,
 }: PostCommentNotificationItemProps) {
 	const { author, post } = notification;
+
 	return (
 		<NotificationItemLayout
-			isRead={notification.isRead}
+			notification={notification}
 			isReadPending={isReadPending}
-			onRead={onReadButton}
+			onRead={onRead}
 			accessibleLabel={`${author.nickname}님의 댓글 알림`}
 			header={
 				<NotificationCommentHeader

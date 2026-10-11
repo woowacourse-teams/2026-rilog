@@ -2,10 +2,26 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ComponentProps } from 'react';
+
 import type { Notification } from '@/domains/notification/model/notification';
 import { createNotification } from '@/test/fixtures/notification';
 
 import NotificationList from './NotificationList';
+
+vi.mock('next/link', () => ({
+	default: ({ onNavigate, ...props }: ComponentProps<'a'> & { onNavigate?: () => void }) => (
+		<a
+			{...props}
+			onClick={(event) => {
+				event.preventDefault();
+				props.onClick?.(event);
+				onNavigate?.();
+			}}
+		/>
+	),
+	useLinkStatus: () => ({ pending: false }),
+}));
 
 describe('NotificationList', () => {
 	it('순서가 섞인 알림을 최신순으로 표시하고 입력 순서는 보존한다', () => {
@@ -64,6 +80,52 @@ describe('NotificationList', () => {
 			expect(article.getByRole('link')).toHaveTextContent(`${notification.post.title} 글에서`);
 		}
 	});
+
+	it.each<Notification['type']>(['POST_COMMENT', 'SELECTION_COMMENT'])(
+		'%s 읽지 않은 알림의 게시글 링크를 열면 해당 알림을 읽음 처리한다',
+		async (type) => {
+			const notification = createNotification({ type });
+			const onRead = vi.fn();
+			render(
+				<NotificationList
+					status="success"
+					notifications={[notification]}
+					unreadCount={1}
+					isReadPending={false}
+					onRead={onRead}
+					onReadAll={vi.fn()}
+				/>,
+			);
+
+			await userEvent
+				.setup()
+				.click(screen.getByRole('link', { name: `${notification.post.title} 게시글의 댓글 보기` }));
+			expect(onRead).toHaveBeenCalledWith(notification.id);
+		},
+	);
+
+	it.each<Notification['type']>(['POST_COMMENT', 'SELECTION_COMMENT'])(
+		'%s 이미 읽은 알림의 게시글 링크를 열면 읽음 처리를 반복하지 않는다',
+		async (type) => {
+			const notification = createNotification({ type, isRead: true });
+			const onRead = vi.fn();
+			render(
+				<NotificationList
+					status="success"
+					notifications={[notification]}
+					unreadCount={0}
+					isReadPending={false}
+					onRead={onRead}
+					onReadAll={vi.fn()}
+				/>,
+			);
+
+			await userEvent
+				.setup()
+				.click(screen.getByRole('link', { name: `${notification.post.title} 게시글의 댓글 보기` }));
+			expect(onRead).not.toHaveBeenCalled();
+		},
+	);
 
 	it('수신한 알림이 없으면 빈 목록 안내를 표시한다', () => {
 		render(
