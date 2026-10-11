@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createNotification } from '@/test/fixtures/notification';
+
 import { analytics } from './events';
 
 const { captureMock } = vi.hoisted(() => ({ captureMock: vi.fn() }));
@@ -9,6 +11,40 @@ vi.mock('@/shared/analytics/posthog', () => ({ captureAnalyticsEvent: captureMoc
 describe('analytics events', () => {
 	beforeEach(() => {
 		captureMock.mockReset();
+	});
+
+	it('알림 진입과 클릭은 본문 없이 실제 ID와 화면 상태를 전송한다', () => {
+		const notification = createNotification({ state: 'comment-deleted', type: 'SELECTION_COMMENT' });
+		analytics.notificationInboxEntered();
+		analytics.notificationItemOpened({ notification });
+		analytics.notificationReadButtonClicked({ notification });
+		analytics.notificationAllReadClicked();
+
+		const properties = {
+			notification_id: notification.id,
+			notification_type: 'SELECTION_COMMENT',
+			notification_state: 'comment-deleted',
+			post_id: notification.post.id,
+			selection_id: notification.anchor.id,
+			created_at: notification.createdAt,
+			was_unread: true,
+		};
+		expect(captureMock).toHaveBeenNthCalledWith(1, 'notification inbox entered');
+		expect(captureMock).toHaveBeenNthCalledWith(2, 'notification item opened', properties);
+		expect(captureMock).toHaveBeenNthCalledWith(3, 'notification read button clicked', properties);
+		expect(captureMock).toHaveBeenNthCalledWith(4, 'notification all read clicked');
+		expect(JSON.stringify(captureMock.mock.calls)).not.toContain(notification.comment.content);
+	});
+
+	it('게시글 댓글 알림은 셀렉션 ID 없이 전송한다', () => {
+		const notification = createNotification({ type: 'POST_COMMENT' });
+		analytics.notificationItemOpened({ notification });
+
+		expect(captureMock).toHaveBeenNthCalledWith(
+			1,
+			'notification item opened',
+			expect.objectContaining({ selection_id: null }),
+		);
 	});
 
 	it('읽기 진행 상태는 방문 ID, 누적 시간, 깊이 이력과 계측 버전을 전송한다', () => {

@@ -20,6 +20,7 @@ export const notificationListQueryOptions = ({
 }: NotificationListQueryOptions = {}) =>
 	infiniteQueryOptions<ApiResponse<NotificationListResponse>>({
 		queryKey: notificationsQueryKeys.list(filter, size),
+		meta: { errorOperation: 'notification.list' },
 		queryFn: ({ pageParam }) => readNotifications({ filter, page: Number(pageParam), size }),
 		initialPageParam: 0,
 		getNextPageParam: (lastPage) => {
