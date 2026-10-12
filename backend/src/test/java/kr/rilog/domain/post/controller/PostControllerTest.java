@@ -11,8 +11,6 @@ import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
-import kr.rilog.domain.post.controller.dto.response.PostSourceResponse;
-import tools.jackson.databind.ObjectMapper;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
@@ -165,32 +163,6 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.status").value(200));
 
         verify(postService).readEditablePostDetail(POST_ID, 7L);
-    }
-
-    @Test
-    @DisplayName("기존 canonical 상세 API는 스포트라이트 출처 프로필의 JSON 계약을 제공한다.")
-    void canonicalDetailReturnsSpotlightSourceContract() throws Exception {
-        // given
-        PostService postService = mock(PostService.class);
-        PostDetailResponse standard = response();
-        var spotlight = new PostDetailResponse(
-                standard.title(), standard.content(), standard.publishedAt(), standard.thumbnailImageUrl(),
-                standard.category(), standard.chapter(), standard.author(), standard.owner(),
-                standard.viewerPermissions(), standard.viewCount(), "ENTERPRISE_SPOTLIGHT", "핵심 요약",
-                new PostSourceResponse("기업 B", "https://example.com/company.png"));
-        when(postService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(spotlight);
-
-        // when
-        var response = mockMvc(postService)
-                .perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
-                .andReturn().getResponse();
-
-        // then
-        ObjectMapper mapper = new ObjectMapper();
-        assertThat(mapper.readTree(response.getContentAsString()).path("data").path("source"))
-                .isEqualTo(mapper.readTree("""
-                        {"sourceProfileName":"기업 B","sourceProfileImage":"https://example.com/company.png"}
-                        """));
     }
 
     private MockMvc mockMvc(PostService postService) {

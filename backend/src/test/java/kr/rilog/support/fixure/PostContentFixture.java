@@ -51,6 +51,17 @@ public class PostContentFixture {
                 """.formatted(text);
     }
 
+    public static String heading(String id, int level, String title) {
+        var block = MAPPER.createObjectNode();
+        block.put("id", id);
+        block.put("type", "heading");
+        block.putObject("props").put("level", level);
+        block.putArray("content").addObject()
+                .put("type", "text").put("text", title).putObject("styles");
+        block.putArray("children");
+        return block.toString();
+    }
+
     /** 토글 — children 안에 블록이 통째로 들어간다 */
     public static String toggle(String... children) {
         return """
