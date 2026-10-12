@@ -60,4 +60,4 @@ API나 DTO를 수정할 때는 다음을 함께 확인한다.
 
 `pnpm check`는 `format:check → lint → next typegen + tsc --noEmit → unit → component → next build` 순서다. TypeScript 검사는 build 전에 독립적으로 실행되고, Next.js build에서도 production 빌드 계약을 확인한다. `pnpm test:e2e:prod`는 build 결과를 사용해 별도로 실행한다. LLM 작업 지침과 리뷰는 판단을 돕지만 결정적인 위반 검출은 컴파일러·린트·테스트가 담당한다.
 
-품질 workflow는 `develop`·`production` 대상 모든 PR에서 실행된다. frontend와 품질 workflow 파일이 바뀌지 않은 PR은 `Frontend Quality` job의 무거운 검증 단계를 건너뛴다. 이 job은 두 브랜치의 required check다. 자세한 실행 환경과 유지·변경 조건은 [품질 게이트](quality-gates.md)를 따른다.
+품질 workflow는 `develop`·`production` 대상 모든 PR에서 실행된다. frontend와 품질 workflow 파일이 바뀌지 않은 PR은 `Frontend Quality` job의 무거운 검증 단계를 건너뛴다. 이 job은 두 브랜치에서 실행하지만 병합 필수 조건은 아니다. 자세한 실행 환경과 유지·변경 조건은 [품질 게이트](quality-gates.md)를 따른다.
