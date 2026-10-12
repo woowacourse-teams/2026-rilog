@@ -6,7 +6,9 @@ import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
+import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.entity.vo.TheRilogPostMetadata;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.entity.vo.TextBlock;
@@ -17,6 +19,7 @@ import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.global.entity.BaseEntity;
 import lombok.AccessLevel;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -27,6 +30,8 @@ import java.util.Objects;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.DUPLICATED_PUBLISH;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_THE_RILOG_METADATA;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_THE_RILOG_POST;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 
@@ -43,6 +48,8 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_R
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post extends BaseEntity {
+
+    public static final String THE_RILOG_BLOG_SLUG = "the_rilog";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,6 +70,17 @@ public class Post extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chapter_id")
     private Chapter chapter;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Default
+    private PostType postType = PostType.STANDARD;
+
+    @Column(length = 100, nullable = true)
+    private String description;
+
+    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private PostSource source;
 
     @Column(length = 512)
     private String title;
@@ -131,6 +149,53 @@ public class Post extends BaseEntity {
                 .build();
     }
 
+    public static Post createTheRilog(Blog blog, User writer, PostDetail detail, Chapter chapter, TheRilogPostMetadata metadata) {
+        if (metadata == null) {
+            throw new PostException(INVALID_THE_RILOG_METADATA);
+        }
+        validateTheRilogPost(metadata.postType(), detail, blog, chapter);
+        blog.validateIsOwner(writer);
+        Post post = create(blog, writer, detail, chapter);
+        post.postType = metadata.postType();
+        post.description = metadata.description();
+        if (post.postType.isSpotlight()) {
+            post.source = PostSource.create(post, metadata);
+        }
+        return post;
+    }
+
+    private static void validateTheRilogPost(PostType type, PostDetail detail, Blog blog, Chapter chapter) {
+        validateTheRilogBlog(blog);
+        validateTheRilogChapter(type, blog, chapter);
+        validateTheRilogDetail(type, detail);
+    }
+
+    private static void validateTheRilogBlog(Blog blog) {
+        if (blog == null || blog.isColog() || !THE_RILOG_BLOG_SLUG.equals(blog.getSlug())) {
+            throw new PostException(INVALID_THE_RILOG_POST);
+        }
+    }
+
+    private static void validateTheRilogChapter(PostType type, Blog blog, Chapter chapter) {
+        if (chapter == null || chapter.getDeletedAt() != null
+                || !type.theRilogChapterName().equals(chapter.getName())
+                || !sameBlog(blog, chapter.getBlog())) {
+            throw new PostException(INVALID_THE_RILOG_POST);
+        }
+    }
+
+    private static void validateTheRilogDetail(PostType type, PostDetail detail) {
+        if (detail == null || detail.category() == null || detail.visibility() == null
+                || TheRilogPostMetadata.isBlankOrTooLong(detail.title(), type.isSpotlight() ? 20 : 512)) {
+            throw new PostException(INVALID_THE_RILOG_POST);
+        }
+    }
+
+    private static boolean sameBlog(Blog first, Blog second) {
+        return first == second || first != null && second != null && first.getId() != null
+                && first.getId().equals(second.getId());
+    }
+
     public static Post draft(DraftSaveCommand command, User author, Blog rilog) {
         return Post.builder()
                 .user(author)
@@ -145,10 +210,11 @@ public class Post extends BaseEntity {
 
     public void update(PostDetail detail, Blog targetBlog, Chapter chapter) {
         validateTargetBlog(targetBlog);
+        PostContent updatedContent = PostContent.from(detail.content());
         this.category = detail.category();
         this.visibility = detail.visibility();
         this.title = detail.title();
-        this.content = PostContent.from(detail.content());
+        this.content = updatedContent;
         this.thumbnailImageUrl = detail.thumbnailUrl();
         this.colog = targetBlog.isColog() ? targetBlog : null;
         this.chapter = chapter;

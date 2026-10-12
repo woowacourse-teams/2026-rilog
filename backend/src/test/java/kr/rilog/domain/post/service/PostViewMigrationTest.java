@@ -25,7 +25,8 @@ class PostViewMigrationTest {
                     .target(MigrationVersion.fromVersion("3")).load().migrate();
             seedPosts(jdbc);
 
-            var flyway = Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load();
+            var flyway = Flyway.configure().dataSource(dataSource).locations("classpath:db/migration")
+                    .target(MigrationVersion.fromVersion("4")).load();
             assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
 
             assertThat(jdbc.queryForList("select post_id from post_view_count order by post_id", Long.class))

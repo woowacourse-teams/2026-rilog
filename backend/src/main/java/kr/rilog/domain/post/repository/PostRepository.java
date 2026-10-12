@@ -83,6 +83,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             JOIN FETCH p.rilog r
             LEFT JOIN FETCH p.colog c
             LEFT JOIN FETCH p.chapter ch
+            LEFT JOIN FETCH p.source src
             WHERE p.id = :postId
               AND p.deletedAt IS NULL
             """)
@@ -97,6 +98,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             JOIN FETCH p.rilog r
             LEFT JOIN FETCH p.colog c
             LEFT JOIN FETCH p.chapter ch
+            LEFT JOIN FETCH p.source src
             WHERE p.id = :postId
               AND p.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
               AND p.deletedAt IS NULL
@@ -118,6 +120,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         JOIN FETCH p.rilog r
         LEFT JOIN FETCH p.colog c
         LEFT JOIN FETCH p.chapter ch
+            LEFT JOIN FETCH p.source src
         WHERE p.id = :postId
           AND p.status = :status
           AND p.deletedAt IS NULL
