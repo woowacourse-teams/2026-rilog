@@ -50,7 +50,7 @@ public class TheRilogService {
     private final PostViewCountRepository viewCountRepository;
 
     public TheRilogResult readTheRilog() {
-        NewsResult news = readNews();
+        NewsResult news = readLatestPublicNews();
         List<SpotlightResult> spotlights = readSpotlights();
         return new TheRilogResult(THE_RILOG_BLOG_SLUG, readDate(news, spotlights), news, spotlights);
     }
@@ -69,7 +69,7 @@ public class TheRilogService {
         return PostPublishResult.of(published, blog);
     }
 
-    private NewsResult readNews() {
+    private NewsResult readLatestPublicNews() {
         return theRilogRepository.findLatestPublicNews(Slug.from(THE_RILOG_BLOG_SLUG), PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
