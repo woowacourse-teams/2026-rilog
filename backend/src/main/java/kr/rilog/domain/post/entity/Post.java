@@ -166,7 +166,7 @@ public class Post extends BaseEntity {
 
     private static void validateTheRilogPost(PostType type, PostDetail detail, Blog blog, Chapter chapter) {
         validateTheRilogBlog(blog);
-        validateTheRilogChapter(type, blog, chapter);
+        validateTheRilogChapter(blog, chapter);
         validateTheRilogDetail(type, detail);
     }
 
@@ -176,9 +176,8 @@ public class Post extends BaseEntity {
         }
     }
 
-    private static void validateTheRilogChapter(PostType type, Blog blog, Chapter chapter) {
+    private static void validateTheRilogChapter(Blog blog, Chapter chapter) {
         if (chapter == null || chapter.getDeletedAt() != null
-                || !type.theRilogChapterName().equals(chapter.getName())
                 || !sameBlog(blog, chapter.getBlog())) {
             throw new PostException(INVALID_THE_RILOG_POST);
         }

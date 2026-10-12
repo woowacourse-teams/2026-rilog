@@ -24,6 +24,7 @@ import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -54,6 +55,19 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(blog, writer));
         headlines = chapterRepository.saveAndFlush(Chapter.create(blog, "headlines", 0));
         spotlights = chapterRepository.saveAndFlush(Chapter.create(blog, "spotlights", 1));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "DAILY_HEADLINES, headlines",
+            "ENTERPRISE_SPOTLIGHT, spotlights",
+            "PERSONAL_SPOTLIGHT, spotlights"
+    })
+    void publishingServiceSelectsChapterForPostType(PostType type, String expectedChapterName) {
+        Long id = postService.publishTheRilog(command(type), writer.getId()).postId();
+        Post saved = postRepository.findDetailById(id).orElseThrow();
+        assertThat(saved.getChapter().getName()).isEqualTo(expectedChapterName);
+        assertThat(saved.getChapter().getBlog().getId()).isEqualTo(blog.getId());
     }
 
     @ParameterizedTest

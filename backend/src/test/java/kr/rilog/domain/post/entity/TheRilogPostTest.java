@@ -89,17 +89,22 @@ class TheRilogPostTest {
     }
 
     @Test
-    void rejectsWrongBlogOwnerAndChapterOnCreate() {
+    void rejectsWrongBlogOwnerOrForeignChapterOnCreate() {
         TheRilogPostMetadata metadata = metadata("설명");
         assertThatThrownBy(() -> Post.createTheRilog(createRilog(writer), writer, detail("제목"), spotlights, metadata))
                 .isInstanceOf(PostException.class);
         assertThatThrownBy(() -> Post.createTheRilog(blog, createUser(2L), detail("제목"), spotlights, metadata))
                 .isInstanceOf(BlogException.class);
-        assertThatThrownBy(() -> Post.createTheRilog(blog, writer, detail("제목"), headlines, metadata))
-                .isInstanceOf(PostException.class);
         Chapter foreign = Chapter.create(otherUserRilog(), "spotlights", 0);
         assertThatThrownBy(() -> Post.createTheRilog(blog, writer, detail("제목"), foreign, metadata))
                 .isInstanceOf(PostException.class);
+    }
+
+    @Test
+    void acceptsValidChapterSelectedByPublishingService() {
+        Chapter selected = Chapter.create(blog, "서비스 선택 챕터", 2);
+        Post post = Post.createTheRilog(blog, writer, detail("제목"), selected, metadata("설명"));
+        assertThat(post.getChapter()).isSameAs(selected);
     }
 
     @Test
