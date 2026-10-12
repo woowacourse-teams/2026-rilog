@@ -8,6 +8,7 @@ import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.controller.dto.response.PostSourceResponse;
 import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
@@ -56,6 +57,9 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     private PostService postService;
 
     @Autowired
+    private TheRilogService theRilogService;
+
+    @Autowired
     private PostRepository postRepository;
 
     @Autowired
@@ -97,7 +101,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -112,7 +116,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -127,7 +131,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -146,7 +150,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(postType);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -162,7 +166,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(postType);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -177,7 +181,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(postType);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -192,7 +196,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(postType);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -208,7 +212,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = spotlightCommand(postType, SOURCE_PROFILE_NAME, null);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -223,7 +227,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.DAILY_HEADLINES);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -237,7 +241,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.DAILY_HEADLINES);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -293,7 +297,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when
-        PostPublishResult result = postService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
 
         // then
         assertThat(postViewCountRepository.findViewCountByPostId(result.postId()))
@@ -304,7 +308,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글 상세 조회는 기존 canonical 경로를 사용한다.")
     void readTheRilogPostDetailUsesExistingCanonicalPath() {
         // given
-        PostPublishResult result = postService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
+        PostPublishResult result = theRilogService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
 
         // when
         String title = postService.readPostDetailByCanonicalPath(THE_RILOG_SLUG, result.postId(), null)
@@ -318,7 +322,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정하면 canonical 상세 조회에 수정한 제목이 반환된다.")
     void updateTheRilogPostReturnsUpdatedTitleFromCanonicalDetail() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, null), published.postId(), writer.getId());
@@ -333,7 +337,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정하면 기존 수정 경로로 제목이 변경된다.")
     void updateTheRilogPostChangesTitleThroughExistingEditPath() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, null), published.postId(), writer.getId());
@@ -347,7 +351,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정하면 기존 수정 경로로 본문이 변경된다.")
     void updateTheRilogPostChangesContentThroughExistingEditPath() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
         PostUpdateCommand command = updateCommand("수정한 제목", null, null);
 
         // when
@@ -362,7 +366,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정할 때 챕터를 생략하면 챕터가 해제된다.")
     void updateTheRilogPostClearsChapterWhenChapterIsOmitted() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, null), published.postId(), writer.getId());
@@ -377,7 +381,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정해도 공식 유형이 유지된다.")
     void updateTheRilogPostPreservesPostType(PostType postType) {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(postType), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(postType), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, null), published.postId(), writer.getId());
@@ -392,7 +396,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정해도 요약 설명이 유지된다.")
     void updateTheRilogPostPreservesDescription(PostType postType) {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(postType), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(postType), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, null), published.postId(), writer.getId());
@@ -407,7 +411,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정해도 출처 프로필이 유지된다.")
     void updateTheRilogPostPreservesSource(PostType postType) {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(postType), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(postType), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, null), published.postId(), writer.getId());
@@ -421,7 +425,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정할 때 기존 일반 글 제목 규칙이 적용된다.")
     void updateTheRilogPostUsesStandardTitleRule() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
         String title = "가".repeat(21);
 
         // when
@@ -436,7 +440,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("더 리로그 글을 수정할 때 기존 챕터 변경 규칙이 적용된다.")
     void updateTheRilogPostChangesChapterThroughExistingEditPath() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // when
         postService.update(updateCommand("수정한 제목", null, headlines.getId()), published.postId(), writer.getId());
@@ -452,7 +456,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         // given
         Blog colog = blogRepository.saveAndFlush(Blog.createColog(writer, "team", BlogFixture.cologProfile()));
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(colog, writer));
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // when
         PostUpdateResult result = postService.update(updateCommand("변경", "team", null), published.postId(), writer.getId());
@@ -469,7 +473,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         // given
         Blog colog = blogRepository.saveAndFlush(Blog.createColog(writer, "team", BlogFixture.cologProfile()));
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(colog, writer));
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // when
         postService.update(updateCommand("변경", "team", null), published.postId(), writer.getId());
@@ -483,7 +487,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("작성자가 아닌 사용자가 더 리로그 글을 수정하면 제목이 유지된다.")
     void updateTheRilogPostRejectsNonAuthorAndKeepsTitle() {
         // given
-        PostPublishResult published = postService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
         User other = userRepository.saveAndFlush(UserFixture.user(444L, "other_writer"));
 
         // when & then
@@ -501,7 +505,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when & then
-        assertThatThrownBy(() -> postService.publishTheRilog(command, other.getId()))
+        assertThatThrownBy(() -> theRilogService.publishTheRilog(command, other.getId()))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
         assertThat(postRepository.count()).isZero();
@@ -516,7 +520,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when & then
-        assertThatThrownBy(() -> postService.publishTheRilog(command, writer.getId()))
+        assertThatThrownBy(() -> theRilogService.publishTheRilog(command, writer.getId()))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
         assertThat(postRepository.count()).isZero();
@@ -532,11 +536,54 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when & then
-        assertThatThrownBy(() -> postService.publishTheRilog(command, writer.getId()))
+        assertThatThrownBy(() -> theRilogService.publishTheRilog(command, writer.getId()))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
         assertThat(postRepository.count()).isZero();
         assertThat(viewCountRows()).isZero();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PostType.class, names = {"ENTERPRISE_SPOTLIGHT", "PERSONAL_SPOTLIGHT"})
+    @DisplayName("기존 canonical 상세 조회는 저장된 스포트라이트 출처를 반환한다.")
+    void canonicalDetailReturnsPersistedSpotlightSource(PostType type) {
+        // given
+        PostPublishResult published = theRilogService.publishTheRilog(command(type), writer.getId());
+
+        // when
+        var response = postService.readPostDetailByCanonicalPath(THE_RILOG_SLUG, published.postId(), null);
+
+        // then
+        assertThat(response.source()).isEqualTo(new PostSourceResponse(SOURCE_PROFILE_NAME, SOURCE_PROFILE_IMAGE));
+    }
+
+    @Test
+    @DisplayName("기존 편집용 상세 조회는 저장된 스포트라이트 출처를 반환한다.")
+    void editableDetailReturnsPersistedSpotlightSource() {
+        // given
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+
+        // when
+        var response = postService.readEditablePostDetail(published.postId(), writer.getId());
+
+        // then
+        assertThat(response.source()).isEqualTo(new PostSourceResponse(SOURCE_PROFILE_NAME, SOURCE_PROFILE_IMAGE));
+    }
+
+    @Test
+    @DisplayName("Colog로 이동한 스포트라이트도 canonical 상세 조회에서 저장된 출처를 반환한다.")
+    void transferredSpotlightDetailReturnsPersistedSource() {
+        // given
+        Blog colog = blogRepository.saveAndFlush(Blog.createColog(writer, "team", BlogFixture.cologProfile()));
+        blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(colog, writer));
+        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        postService.update(updateCommand("변경", "team", null), published.postId(), writer.getId());
+
+        // when
+        var response = postService.readPostDetailByCanonicalPath("team", published.postId(), null);
+
+        // then
+        assertThat(response.source()).isEqualTo(new PostSourceResponse(SOURCE_PROFILE_NAME, SOURCE_PROFILE_IMAGE));
     }
 
     private TheRilogPostPublishCommand command(PostType postType) {
