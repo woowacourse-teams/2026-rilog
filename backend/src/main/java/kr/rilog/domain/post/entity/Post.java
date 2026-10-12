@@ -11,6 +11,7 @@ import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.TheRilogPostMetadata;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
+import kr.rilog.domain.post.entity.vo.PostSource;
 import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
@@ -79,7 +80,7 @@ public class Post extends BaseEntity {
     @Column(length = 100, nullable = true)
     private String description;
 
-    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Embedded
     private PostSource source;
 
     @Column(length = 512)
@@ -159,7 +160,7 @@ public class Post extends BaseEntity {
         post.postType = metadata.postType();
         post.description = metadata.description();
         if (post.postType.isSpotlight()) {
-            post.source = PostSource.create(post, metadata);
+            post.source = PostSource.create(metadata.sourceProfileName(), metadata.sourceProfileImage());
         }
         return post;
     }

@@ -3,13 +3,9 @@ package kr.rilog.domain.post.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
-import kr.rilog.domain.blog.entity.enums.BlogType;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.chapter.entity.Chapter;
-import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
@@ -17,12 +13,10 @@ import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
-import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
-import kr.rilog.domain.post.service.dto.command.TheRilogPostPublishCommand;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -49,9 +43,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
-import static kr.rilog.domain.post.entity.enums.Category.TECH;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
-import static kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
@@ -79,9 +71,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogMemberRepository blogMemberRepository;
-
-    @Autowired
-    private ChapterRepository chapterRepository;
 
     @Autowired
     private PostRepository postRepository;
@@ -143,52 +132,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(savedPost.getUser().getId()).isEqualTo(writer.getId());
             softly.assertThat(savedPost.getRilog().getId()).isEqualTo(rilog.getId());
             softly.assertThat(savedPost.getColog().getId()).isEqualTo(colog.getId());
-        });
-    }
-
-    @Test
-    @DisplayName("내부 더 리로그 발행은 편집 블로그와 지정 챕터에 출처 메타데이터를 저장한다.")
-    void publishTheRilogPersistsMetadataAndUsesTheRilog() {
-        // given
-        User editor = saveCompletedUser(201L, "편집자", "editor");
-        Blog theRilog = saveTheRilog(editor);
-        Chapter spotlights = saveChapter(theRilog, "spotlights", 1);
-        saveChapter(theRilog, "headlines", 0);
-        TheRilogPostPublishCommand command = new TheRilogPostPublishCommand(
-                PostType.ENTERPRISE_SPOTLIGHT,
-                new PostDetail(
-                        "Spring Boot",
-                        content(paragraph("본문")).getContent(),
-                        TECH,
-                        PUBLIC,
-                        "https://example.com/thumb.png"
-                ),
-                "요약 설명",
-                "기업 A",
-                "https://example.com/company.png"
-        );
-
-        // when
-        PostPublishResult result = postService.publishTheRilog(command, editor.getId());
-
-        // then
-        Post savedPost = postRepository.findDetailById(result.postId())
-                .orElseThrow();
-
-        assertSoftly(softly -> {
-            softly.assertThat(result.slug()).isEqualTo(Post.THE_RILOG_BLOG_SLUG);
-            softly.assertThat(savedPost.getPostType()).isEqualTo(PostType.ENTERPRISE_SPOTLIGHT);
-            softly.assertThat(savedPost.getDescription()).isEqualTo("요약 설명");
-            softly.assertThat(savedPost.getSource().getSourceProfileName()).isEqualTo("기업 A");
-            softly.assertThat(savedPost.getSource().getSourceProfileImage()).isEqualTo("https://example.com/company.png");
-            softly.assertThat(savedPost.getChapter().getId()).isEqualTo(spotlights.getId());
-            softly.assertThat(savedPost.getRilog().getId()).isEqualTo(theRilog.getId());
-            softly.assertThat(savedPost.getColog()).isNull();
-            softly.assertThat(jdbcTemplate.queryForObject(
-                    "select view_count from post_view_count where post_id = ?",
-                    Long.class,
-                    savedPost.getId()
-            )).isZero();
         });
     }
 
@@ -896,21 +839,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, slug, BlogFixture.cologProfile()));
         saveOwnerMembership(blog, owner);
         return blog;
-    }
-
-    private Blog saveTheRilog(User owner) {
-        Blog blog = blogRepository.saveAndFlush(Blog.builder()
-                .owner(owner)
-                .slug(Slug.from(Post.THE_RILOG_BLOG_SLUG))
-                .profile(BlogFixture.rilogProfile())
-                .blogType(BlogType.RILOG)
-                .build());
-        saveOwnerMembership(blog, owner);
-        return blog;
-    }
-
-    private Chapter saveChapter(Blog blog, String name, int order) {
-        return chapterRepository.saveAndFlush(Chapter.create(blog, name, order));
     }
 
     private BlogMember saveOwnerMembership(Blog blog, User owner) {

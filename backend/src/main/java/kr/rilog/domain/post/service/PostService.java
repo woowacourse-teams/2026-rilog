@@ -74,7 +74,11 @@ public class PostService {
                 ? publishToColog(command, publishingBlog, writer, chapter)
                 : publishToRilog(command, publishingBlog, writer, chapter);
 
-        return savePublishedPost(post, publishingBlog);
+        Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
+        trendingRepository.save(HardTrending.from(published));
+        tagAssetsPublisher.attach(published.getTagAssets());
+        return PostPublishResult.of(published, publishingBlog);
     }
 
     public PostDetailResponse readPostDetailByCanonicalPath(String slug, Long postId, Long requesterId) {
@@ -163,15 +167,11 @@ public class PostService {
         blog.validateIsOwner(writer);
         Chapter chapter = getTheRilogChapter(blog, command.postType());
         Post post = Post.createTheRilog(blog, writer, command.detail(), chapter, command.toMetadata());
-        return savePublishedPost(post, blog);
-    }
 
-    private PostPublishResult savePublishedPost(Post post, Blog publishingBlog) {
         Post published = postRepository.save(post);
         viewCountRepository.initialize(published.getId());
-        trendingRepository.save(HardTrending.from(published));
         tagAssetsPublisher.attach(published.getTagAssets());
-        return PostPublishResult.of(published, publishingBlog);
+        return PostPublishResult.of(published, blog);
     }
 
     private void validateCologMember(Blog colog, User writer) {
