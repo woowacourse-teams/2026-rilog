@@ -17,12 +17,14 @@ import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.HardTrending;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
+import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
+import kr.rilog.domain.post.service.dto.command.TheRilogPostPublishCommand;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -158,6 +160,20 @@ public class PostService {
         return Post.create(colog, rilog, writer, command.toDetail(), chapter);
     }
 
+    @Transactional
+    public PostPublishResult publishTheRilog(TheRilogPostPublishCommand command, Long requesterId) {
+        Blog blog = getBlog(Post.THE_RILOG_BLOG_SLUG);
+        User writer = getUser(requesterId);
+        blog.validateIsOwner(writer);
+        Chapter chapter = getTheRilogChapter(blog, command.postType());
+        Post post = Post.createTheRilog(blog, writer, command.detail(), chapter, command.toMetadata());
+
+        Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
+        tagAssetsPublisher.attach(published.getTagAssets());
+        return PostPublishResult.of(published, blog);
+    }
+
     private void validateCologMember(Blog colog, User writer) {
         boolean activeMember = blogMemberRepository.existsByBlogIdAndUserIdAndStatus(
                 colog.getId(),
@@ -187,6 +203,16 @@ public class PostService {
     private BlogMember getBlogMember(Slug slug, Long memberId) {
         return blogMemberRepository.findWithBlogBySlugAndUserId(slug, memberId)
                 .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
+    }
+
+    private Chapter getTheRilogChapter(Blog blog, PostType postType) {
+        String chapterName = switch (postType) {
+            case DAILY_HEADLINES -> "headlines";
+            case ENTERPRISE_SPOTLIGHT, PERSONAL_SPOTLIGHT -> "spotlights";
+            case STANDARD -> throw new IllegalStateException("일반 글에는 지정된 편집 챕터가 없습니다.");
+        };
+        return chapterRepository.findByBlogIdAndName(blog.getId(), chapterName)
+                .orElseThrow(() -> new ChapterException(CHAPTER_NOT_FOUND));
     }
 
     private Chapter getChapterIfPresent(Long chapterId, Blog blog) {
