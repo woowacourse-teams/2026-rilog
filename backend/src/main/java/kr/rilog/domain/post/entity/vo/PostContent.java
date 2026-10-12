@@ -111,6 +111,12 @@ public class PostContent {
         return List.copyOf(result);
     }
 
+    public List<TextBlock> extractHeadingBlocks() {
+        return extractTextBlocks().stream()
+                .filter(textBlock -> "heading".equals(textBlock.type()))
+                .toList();
+    }
+
     private void collectTextBlocks(JsonNode block, List<TextBlock> result) {
         if (!block.isObject()) {
             throw new PostException(INVALID_POST_CONTENT);
