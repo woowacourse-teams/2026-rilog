@@ -1,6 +1,6 @@
 name: Rilog FE Quality Gates
 
-# Frontend Quality is required on both target branches. Keep a check on every PR;
+# Frontend Quality is advisory on both target branches. Keep a check on every PR;
 # unrelated changes skip the expensive steps inside the job.
 on:
   pull_request:

@@ -16,9 +16,11 @@ import BasePostDetail from './BasePostDetail';
 
 interface PostDetailProps {
 	post: PostDetailModel;
+	initialSelectionId?: number | null;
+	showDeletedCommentToast?: boolean;
 }
 
-export default function PostDetail({ post }: PostDetailProps) {
+export default function PostDetail({ post, initialSelectionId, showDeletedCommentToast = false }: PostDetailProps) {
 	const header = (
 		<PostDetailHeader
 			postId={post.id}
@@ -40,6 +42,8 @@ export default function PostDetail({ post }: PostDetailProps) {
 		return (
 			<BasePostDetail
 				post={post}
+				initialSelectionId={initialSelectionId}
+				showDeletedCommentToast={showDeletedCommentToast}
 				header={header}
 				profileSection={blogProfile}
 				beforeContent={
@@ -92,6 +96,8 @@ export default function PostDetail({ post }: PostDetailProps) {
 	return (
 		<BasePostDetail
 			post={post}
+			initialSelectionId={initialSelectionId}
+			showDeletedCommentToast={showDeletedCommentToast}
 			header={
 				<PostDetailHeader
 					publisher={publisher}
@@ -105,14 +111,14 @@ export default function PostDetail({ post }: PostDetailProps) {
 				/>
 			}
 			profileSection={
-				<>
+				<div className="flex flex-col">
 					{blogProfile}
 					<div className="mx-auto mt-6 w-fit min-w-20 border-t border-border-default px-6 pt-6 sm:min-w-100">
 						<Suspense fallback={<PostDetailAuthorProfileSmall author={post.author} />}>
 							<PostDetailAuthorProfileSection authorSlug={post.author.slug} />
 						</Suspense>
 					</div>
-				</>
+				</div>
 			}
 			afterProfile={
 				post.chapter ? (

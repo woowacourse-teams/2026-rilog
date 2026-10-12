@@ -19,7 +19,7 @@ THE Rilog는 별도 게시글 테이블 없이 기존 Post에 저장한다. `pos
 
 코드 네이밍은 클래스의 `TheRilog`, 메서드의 `theRilog`, 상수·오류 코드의 `THE_RILOG`, 실제 슬러그의 `the_rilog`로 통일한다. 내부 발행 진입점은 `PostService.publishTheRilog`다.
 
-PostType의 DB 타입과 Lombok 기본값 표기는 기존 User 엔티티와 통일한다. Java에서는 `@Enumerated(STRING)`, `@Column`, `@Default`를 사용하며 VARCHAR용 JDBC override는 두지 않는다. 공유·운영 DB 적용 전인 이슈의 마이그레이션은 V6 하나로 정리하고 다른 작업의 V5 번호를 사용하지 않는다. 현재 브랜치의 선행 마이그레이션은 V1–V4이며, V5가 병합되면 V6보다 먼저 적용된다. V6에서 post_type을 native ENUM으로 생성하고 별도의 CHECK나 후속 변환 마이그레이션은 만들지 않는다. 기존 글은 STANDARD가 되며 DB 기본값도 STANDARD를 사용한다. 이후 PostType 값을 추가할 때는 기존 enum 컬럼과 마찬가지로 DB ENUM 값도 migration으로 추가해야 한다.
+PostType의 DB 타입과 Lombok 기본값 표기는 기존 User 엔티티와 통일한다. Java에서는 `@Enumerated(STRING)`, `@Column`, `@Default`를 사용하며 VARCHAR용 JDBC override는 두지 않는다. 공유·운영 DB 적용 전인 이슈의 마이그레이션은 V6 하나로 정리하고 다른 작업의 V5 번호를 사용하지 않는다. develop의 알림 마이그레이션 `V5__create_notification.sql`을 그대로 유지하고 그 다음 V6에서 더 리로그를 확장한다. V6에서 post_type을 native ENUM으로 생성하고 별도의 CHECK나 후속 변환 마이그레이션은 만들지 않는다. 기존 글은 STANDARD가 되며 DB 기본값도 STANDARD를 사용한다. 이후 PostType 값을 추가할 때는 기존 enum 컬럼과 마찬가지로 DB ENUM 값도 migration으로 추가해야 한다.
 
 V6 마이그레이션과 enum 매핑은 H2 및 MySQL 테스트에서 검증한다.
 

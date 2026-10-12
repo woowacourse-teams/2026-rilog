@@ -1,10 +1,11 @@
-import { notFound, permanentRedirect } from 'next/navigation';
+import { forbidden, notFound, permanentRedirect } from 'next/navigation';
 
 import type { Metadata } from 'next';
 
 import { parseBlogRouteSlug } from '@/features/blog-profile/lib/parse-blog-route-slug';
-import { getPublicPostDetail } from '@/features/post-detail/lib/get-public-post-detail';
-import { buildPostDetailPath } from '@/shared/routes/app-routes';
+import { getPublicPostDetail, isPrivatePostReadError } from '@/features/post-detail/lib/get-public-post-detail';
+import { POST_DETAIL_SELECTION_QUERY_PARAM, buildPostDetailPath } from '@/shared/routes/app-routes';
+import { appendSearchParams } from '@/shared/routes/append-search-params';
 import { redirectLegacySlug } from '@/shared/routes/redirect-legacy-slug';
 import { normalizeLegacySlug } from '@/shared/utils/normalize-legacy-slug';
 import PostDetail from '@/widgets/post-detail/PostDetail';
@@ -24,13 +25,25 @@ const parsePostId = (postId: string) => {
 	return value;
 };
 
+const parseSelectionId = (value: string | string[] | undefined): number | null => {
+	if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return null;
+	const selectionId = Number(value);
+	return Number.isSafeInteger(selectionId) ? selectionId : null;
+};
+
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
 	const { slug, postId } = await params;
 
 	const normalizedSlug = parseBlogRouteSlug(normalizeLegacySlug(slug));
 	if (normalizedSlug === null) notFound();
 
-	const post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
+	let post;
+	try {
+		post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
+	} catch (error) {
+		if (isPrivatePostReadError(error)) return { title: '비공개 게시글', robots: { index: false, follow: false } };
+		throw error;
+	}
 	if (post === null) notFound();
 
 	return createPostMetadata(post);
@@ -46,11 +59,23 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 
 	const normalizedSlug = parseBlogRouteSlug(slug);
 	if (normalizedSlug === null) notFound();
-	const post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
+	let post;
+	try {
+		post = await getPublicPostDetail(normalizedSlug, parsePostId(postId));
+	} catch (error) {
+		if (isPrivatePostReadError(error)) forbidden();
+		throw error;
+	}
 	if (post === null) notFound();
 
 	const canonical = getPostCanonicalPath(post);
-	if (normalizedSlug !== post.blog.slug) permanentRedirect(canonical);
+	if (normalizedSlug !== post.blog.slug) permanentRedirect(appendSearchParams(canonical, resolvedSearchParams));
 
-	return <PostDetail post={post} />;
+	return (
+		<PostDetail
+			post={post}
+			initialSelectionId={parseSelectionId(resolvedSearchParams[POST_DETAIL_SELECTION_QUERY_PARAM])}
+			showDeletedCommentToast={resolvedSearchParams.notificationCommentDeleted === 'true'}
+		/>
+	);
 }

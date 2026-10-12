@@ -7,7 +7,7 @@ import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
 
-const { MY_INFO_RESPONSE, mutateMock, myInfoQuery } = vi.hoisted(() => {
+const { MY_INFO_RESPONSE, mutateMock, myInfoQuery, unreadCountQuery } = vi.hoisted(() => {
 	const myInfoResponse = {
 		status: 200,
 		message: 'OK',
@@ -34,8 +34,13 @@ const { MY_INFO_RESPONSE, mutateMock, myInfoQuery } = vi.hoisted(() => {
 		MY_INFO_RESPONSE: myInfoResponse,
 		mutateMock: vi.fn(),
 		myInfoQuery: { current },
+		unreadCountQuery: { current: 0 },
 	};
 });
+
+vi.mock('@/shared/api/notifications/queries/unread-count/use-query', () => ({
+	useNotificationUnreadCountQuery: () => ({ data: { data: { unreadCount: unreadCountQuery.current } } }),
+}));
 
 vi.mock('@/shared/api/auth/mutations/use-logout-mutation', () => ({
 	useLogoutMutation: () => ({ mutate: mutateMock }),
@@ -70,14 +75,25 @@ describe('AuthenticatedSidebarFooter', () => {
 			isFetching: false,
 		};
 		mutateMock.mockReset();
+		unreadCountQuery.current = 0;
 	});
 
-	it('글쓰기와 프로필 진입점, 로그아웃 버튼을 제공한다', () => {
+	it('읽지 않은 알림 수를 알림 링크의 접근 가능한 이름에 표시한다', () => {
+		unreadCountQuery.current = 3;
 		renderFooter();
 
-		const [writeLink, profileLink] = screen.getAllByRole('link');
+		expect(screen.getByRole('link', { name: '알림, 읽지 않은 알림 3개' })).toHaveAttribute('href', '/notifications');
+	});
+
+	it('알림과 글쓰기, 프로필 진입점과 로그아웃 버튼을 제공한다', () => {
+		renderFooter();
+
+		const notificationLink = screen.getByRole('link', { name: '알림' });
+		const writeLink = screen.getByRole('link', { name: '글쓰기' });
+		const profileLink = screen.getByRole('link', { name: '파라디 @jetproc' });
 		const logoutButton = screen.getByRole('button');
 
+		expect(notificationLink).toHaveAttribute('href', '/notifications');
 		expect(writeLink).toHaveAttribute('href', '/write');
 		expect(profileLink).toHaveAttribute('href', '/@jetproc');
 		expect(profileLink).toHaveAccessibleName();
@@ -87,8 +103,13 @@ describe('AuthenticatedSidebarFooter', () => {
 	it('키보드로 푸터 링크와 로그아웃 버튼을 순차적으로 이동한다', async () => {
 		const user = userEvent.setup();
 		renderFooter();
-		const [writeLink, profileLink] = screen.getAllByRole('link');
+		const notificationLink = screen.getByRole('link', { name: '알림' });
+		const writeLink = screen.getByRole('link', { name: '글쓰기' });
+		const profileLink = screen.getByRole('link', { name: '파라디 @jetproc' });
 		const logoutButton = screen.getByRole('button');
+
+		await user.tab();
+		expect(notificationLink).toHaveFocus();
 
 		await user.tab();
 		expect(writeLink).toHaveFocus();
@@ -122,7 +143,8 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		expect(screen.getByRole('status', { name: '내 정보를 불러오는 중' })).toBeInTheDocument();
 		expect(screen.getByRole('status').querySelectorAll('.animate-pulse')).toHaveLength(2);
-		expect(screen.getAllByRole('link')).toHaveLength(1);
+		expect(screen.getAllByRole('link')).toHaveLength(2);
+		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
 		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');
 		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '' })).not.toBeInTheDocument();
@@ -140,12 +162,13 @@ describe('AuthenticatedSidebarFooter', () => {
 		expect(screen.getByRole('alert', { name: '내 정보를 불러오지 못했어요.' })).toHaveTextContent('내 정보 오류');
 		expect(screen.getByText('내 정보 오류')).toHaveAttribute('title', '내 정보를 불러오지 못했어요.');
 		expect(screen.getByRole('alert')).toHaveTextContent('!');
-		expect(screen.getAllByRole('link')).toHaveLength(1);
+		expect(screen.getAllByRole('link')).toHaveLength(2);
+		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
 		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument();
 	});
 
-	it('내 정보 실패 상태에서 글쓰기와 로그아웃으로 키보드 이동한다', async () => {
+	it('내 정보 실패 상태에서 알림과 글쓰기, 로그아웃으로 키보드 이동한다', async () => {
 		myInfoQuery.current = {
 			response: undefined,
 			isPending: false,
@@ -157,6 +180,7 @@ describe('AuthenticatedSidebarFooter', () => {
 		renderFooter();
 
 		for (const control of [
+			screen.getByRole('link', { name: '알림' }),
 			screen.getByRole('link', { name: '글쓰기' }),
 			screen.getByRole('button', { name: '로그아웃' }),
 		]) {

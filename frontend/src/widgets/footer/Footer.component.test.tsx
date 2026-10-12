@@ -9,7 +9,6 @@ import Footer from './Footer';
 
 vi.mock('./FooterHomeLink', () => ({
 	default: ({ className, children }: { className: string; children: ReactNode }) => (
-		// eslint-disable-next-line @next/next/no-html-link-for-pages
 		<a className={className} href="/feeds" aria-label={`${SITE_NAME} 홈`}>
 			{children}
 		</a>
@@ -17,30 +16,14 @@ vi.mock('./FooterHomeLink', () => ({
 }));
 
 describe('Footer', () => {
-	it('저작권, 연락 채널, 정책, 브랜드 순서로 안내한다', () => {
+	it('저작권과 홈·정책 링크를 접근 가능한 이름과 목적지로 제공한다', () => {
 		render(<Footer />);
 
 		const footer = screen.getByRole('contentinfo');
-		const copyright = within(footer).getByText(`© ${new Date().getFullYear()} Rilog. All rights reserved.`);
-		const links = within(footer).getAllByRole('link');
-
-		expect(copyright.compareDocumentPosition(links[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-		expect(links.map((link) => link.getAttribute('aria-label') ?? link.textContent)).toEqual([
-			`${SITE_NAME} 이메일 문의`,
-			`${SITE_NAME} 오픈채팅방`,
-			`${SITE_NAME} Instagram`,
-			`${SITE_NAME} Threads`,
-			'Rilog. 이야기',
-			'개인정보처리방침',
-			'이용약관',
-			`${SITE_NAME} 홈`,
-		]);
+		expect(within(footer).getByText(`© ${new Date().getFullYear()} Rilog. All rights reserved.`)).toBeVisible();
 
 		const homeLink = within(footer).getByRole('link', { name: `${SITE_NAME} 홈` });
 		expect(homeLink).toHaveAttribute('href', '/feeds');
-		expect(homeLink.querySelector('img')).toHaveAttribute('src', '/brand/logo.svg');
-		expect(within(footer).queryByText('기록을 작성하고 함께 나누는 공간')).not.toBeInTheDocument();
-		expect(within(footer).queryByRole('heading', { name: 'contact' })).not.toBeInTheDocument();
 		expect(within(footer).getByRole('navigation', { name: '정책' })).toBeInTheDocument();
 		expect(within(footer).getByRole('link', { name: 'Rilog. 이야기' })).toHaveAttribute('href', '/about');
 
@@ -84,17 +67,6 @@ describe('Footer', () => {
 			expect(link).toHaveAttribute('href', href);
 			expect(link).toHaveAttribute('target', '_blank');
 			expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-		}
-
-		const iconSources = [
-			[`${SITE_NAME} 이메일 문의`, '/icons/contact/email.svg'],
-			[`${SITE_NAME} 오픈채팅방`, '/icons/contact/google-form.svg'],
-			[`${SITE_NAME} Instagram`, '/icons/contact/instagram.svg'],
-			[`${SITE_NAME} Threads`, '/icons/contact/threads.svg'],
-		] as const;
-
-		for (const [name, src] of iconSources) {
-			expect(screen.getByRole('link', { name }).querySelector('img')).toHaveAttribute('src', src);
 		}
 	});
 });

@@ -1,0 +1,577 @@
+.page {
+	min-height: 100vh;
+	padding-bottom: 2rem;
+	background: var(--background);
+	color: var(--text-primary);
+}
+
+.page::after {
+	display: block;
+	height: 9px;
+	border-top: 2px solid var(--text-primary);
+	border-bottom: 1px solid var(--border-default);
+	content: '';
+}
+
+.masthead {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 3rem 0 3.5rem;
+	text-align: center;
+}
+
+.masthead::before,
+.masthead::after {
+	position: absolute;
+	right: 0;
+	left: 0;
+	transform: scaleX(0);
+	transform-origin: center;
+	animation: masthead-rule-open 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	content: '';
+}
+
+.masthead::before {
+	bottom: 0;
+	height: 2px;
+	background: var(--text-primary);
+	animation-delay: 40ms;
+}
+
+.masthead::after {
+	bottom: -7px;
+	height: 1px;
+	background: var(--border-default);
+	animation-delay: 100ms;
+}
+
+@keyframes masthead-rule-open {
+	to {
+		transform: scaleX(1);
+	}
+}
+
+@keyframes masthead-mark-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes section-strip-reveal {
+	from {
+		clip-path: inset(0 100% 0 0);
+	}
+
+	to {
+		clip-path: inset(0 0 0 0);
+	}
+}
+
+.edition {
+	display: flex;
+	width: 100%;
+	max-width: 84rem;
+	align-items: center;
+	justify-content: center;
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid var(--border-default);
+	color: var(--text-secondary);
+	font-family: Georgia, 'Times New Roman', serif;
+	font-size: 1.25rem;
+	letter-spacing: 0.04em;
+}
+
+.masthead h1 {
+	--mark-height: clamp(3rem, 6vw, 6rem);
+	animation: masthead-mark-arrive 420ms ease-out both;
+	display: flex;
+	width: 100%;
+	max-width: 84rem;
+	align-items: center;
+	justify-content: center;
+	gap: clamp(1.5rem, 3vw, 3rem);
+	margin-top: 2.75rem;
+}
+
+.titleWord {
+	font-family: Georgia, 'Times New Roman', serif;
+	font-size: calc(var(--mark-height) / 0.693);
+	font-weight: 400;
+	letter-spacing: -0.045em;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.foxFrame,
+.logoFrame {
+	position: relative;
+	display: inline-block;
+	overflow: hidden;
+	flex: 0 0 auto;
+}
+
+.foxFrame {
+	width: calc(var(--mark-height) * 1.65 * 603 / 522);
+	height: calc(var(--mark-height) * 1.65);
+}
+
+.fox {
+	position: absolute;
+	top: -9.962%;
+	left: -2.985%;
+	width: 106.136%;
+	max-width: none;
+	height: auto;
+}
+
+.logoFrame {
+	top: calc(var(--mark-height) * 0.08);
+	width: calc(var(--mark-height) * 1.3 * 1186 / 472);
+	height: calc(var(--mark-height) * 1.3);
+}
+
+.brandLogo {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.contentGrid {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	align-items: stretch;
+	gap: 1.25rem;
+}
+
+.stories {
+	min-width: 0;
+	padding-top: 1.5rem;
+	padding-bottom: 5rem;
+}
+
+.enterpriseArticlesSection,
+.personalArticlesSection {
+	min-width: 0;
+}
+
+.personalArticlesSection {
+	margin-top: 1.5rem;
+}
+
+.enterpriseArticlesSection {
+	display: flex;
+	flex-direction: column;
+}
+
+.sectionHeading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.25rem 1rem;
+	padding: 0.35rem 0.65rem;
+	background: var(--brand-primary);
+	color: var(--on-brand-primary);
+	animation: section-strip-reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+
+.sectionHeading h2 {
+	font-family: Georgia, 'Times New Roman', serif;
+	font-size: 1.6rem;
+	font-weight: 700;
+	line-height: 1.4;
+}
+
+.sectionHeading span {
+	font-size: 0.6875rem;
+	color: rgb(255 255 255 / 80%);
+	white-space: nowrap;
+}
+
+.enterpriseArticleList,
+.personalArticleList {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.articleRow {
+	min-width: 0;
+}
+
+.scrollReveal[data-reveal='pending'] {
+	opacity: 0;
+	transform: translateY(8px);
+	transition: none;
+}
+
+.scrollReveal[data-reveal='visible'] {
+	opacity: 1;
+	transform: translateY(0);
+	transition:
+		opacity 240ms ease-out,
+		transform 240ms ease-out;
+}
+
+.card {
+	position: relative;
+	min-width: 0;
+	width: 100%;
+}
+
+.cardContent {
+	display: grid;
+	align-items: start;
+	gap: 1rem;
+}
+
+.card[data-kind='enterprise'] .cardContent {
+	display: grid;
+	grid-template-columns: 50% minmax(0, 1fr);
+}
+
+.card[data-kind='personal'] .cardContent {
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.card[data-kind='personal'][data-image-position='right'] .cardContent {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.card[data-image-position='right'] .artworkFrame {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.card[data-image-position='right'] .cardBody {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.cardBody {
+	min-width: 0;
+	padding: 4px 4px 4px 0;
+}
+
+.card[data-kind='enterprise'] .artworkFrame {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.card[data-kind='enterprise'] .cardBody {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.card[data-kind='enterprise'] .enterpriseSummary {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 1;
+}
+
+.card[data-kind='enterprise'] .cardTitle {
+	max-width: none;
+	font-size: 1.5rem;
+	word-break: break-all;
+	overflow-wrap: anywhere;
+}
+
+.card[data-kind='enterprise'] .cardTitleText {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+
+.card[data-kind='enterprise'] .summary {
+	font-size: 0.875rem;
+	overflow-wrap: anywhere;
+}
+
+.profile {
+	display: flex;
+	min-width: 0;
+	gap: 0.375rem;
+	align-items: center;
+	color: var(--text-secondary);
+	font-size: 0.875rem;
+	font-weight: 400;
+}
+
+.profileName {
+	overflow: hidden;
+	min-width: 0;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cardTitle {
+	max-width: 19ch;
+	margin-top: 0.8rem;
+	font-size: 1.75rem;
+	font-weight: 650;
+	letter-spacing: -0.04em;
+	line-height: 1.3;
+	word-break: keep-all;
+}
+
+.cardLink {
+	color: inherit;
+	text-decoration: none;
+}
+
+.cardLink::after {
+	position: absolute;
+	z-index: 2;
+	inset: 0;
+	content: '';
+}
+
+.cardLink:focus-visible::after {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 4px;
+}
+
+.cardTitleText {
+	text-decoration-line: underline;
+	text-decoration-color: transparent;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.15em;
+	transition: text-decoration-color 220ms ease-in-out;
+}
+
+@media (any-hover: hover) {
+	.card:hover .cardTitleText {
+		text-decoration-color: currentcolor;
+	}
+
+	.card:hover .artwork {
+		transform: scale(1.02);
+	}
+}
+
+.card:focus-within .cardTitleText {
+	text-decoration-color: currentcolor;
+}
+
+.card:focus-within .artwork {
+	transform: scale(1.02);
+}
+
+.summary {
+	margin-top: 0.85rem;
+	color: var(--text-secondary);
+	font-size: 0.875rem;
+	line-height: 1.6;
+	word-break: keep-all;
+}
+
+.artworkFrame {
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+	background-color: var(--navy-900);
+}
+
+.artworkFrame[data-thumbnail-ratio='16:10'] {
+	aspect-ratio: 16 / 10;
+}
+
+.artwork {
+	position: relative;
+	isolation: isolate;
+	width: 100%;
+	height: 100%;
+	background-color: var(--navy-900);
+	transition: transform 220ms ease;
+}
+
+@media (width < 70rem) {
+	.contentGrid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.enterpriseArticlesSection {
+		min-height: 0;
+	}
+}
+
+@media (48rem <= width < 60rem) {
+	.card[data-kind='personal'] .cardContent,
+	.card[data-kind='personal'][data-image-position='right'] .cardContent {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.card[data-kind='personal'] .cardTitle {
+		margin-top: 0.5rem;
+		font-size: 1.5rem;
+	}
+
+	.card[data-kind='personal'] .summary {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		margin-top: 0.25rem;
+	}
+}
+
+@media (width < 48rem) {
+	.page {
+		padding-bottom: 1rem;
+	}
+
+	.page a {
+		scroll-margin-top: 4.5rem;
+	}
+
+	.masthead {
+		padding: 1rem 0;
+	}
+
+	.masthead h1 {
+		--mark-height: clamp(1.5rem, 6vw, 2rem);
+		gap: 0.625rem;
+		margin-top: 0.75rem;
+	}
+
+	.edition {
+		padding-bottom: 0.375rem;
+		font-size: 0.75rem;
+		line-height: 1rem;
+	}
+
+	.stories {
+		padding-top: 1rem;
+		padding-bottom: 2rem;
+	}
+
+	.contentGrid {
+		gap: 1rem;
+	}
+
+	.personalArticlesSection {
+		margin-top: 1rem;
+	}
+
+	.sectionHeading {
+		gap: 0.25rem 0.5rem;
+		padding: 0.3125rem 0.5rem;
+	}
+
+	.sectionHeading h2 {
+		font-size: 1.125rem;
+		line-height: 1.5rem;
+	}
+
+	.sectionHeading span {
+		font-size: 0.625rem;
+		line-height: 0.875rem;
+	}
+
+	.enterpriseArticleList,
+	.personalArticleList {
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	.card[data-kind][data-image-position] .cardContent {
+		display: grid;
+		grid-template-columns: 7rem minmax(0, 1fr);
+		gap: 0.75rem;
+	}
+
+	.card[data-kind] .artworkFrame {
+		grid-column: 1;
+		grid-row: 1;
+	}
+
+	.card[data-kind] .cardBody {
+		display: flex;
+		flex-direction: column;
+		grid-column: 2;
+		grid-row: 1;
+		gap: 0.25rem;
+		padding: 2px 2px 2px 0;
+	}
+
+	.card[data-kind] .profile {
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		line-height: 1rem;
+	}
+
+	.card[data-kind] .profileAvatar {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+		font-size: 0.5rem;
+	}
+
+	.card[data-kind] .cardTitle {
+		max-width: none;
+		min-height: 2.5rem;
+		margin: 0;
+		font-size: 1rem;
+		line-height: 1.25rem;
+		word-break: break-all;
+		overflow-wrap: anywhere;
+	}
+
+	.card[data-kind] .cardTitleText {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+	}
+
+	.card[data-kind] .summary {
+		display: none;
+	}
+}
+
+@media (width < 22.5rem) {
+	.card[data-kind] .cardTitle {
+		font-size: 0.9375rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.masthead::before,
+	.masthead::after {
+		transform: scaleX(1);
+		animation: none;
+	}
+
+	.masthead h1,
+	.sectionHeading {
+		animation: none;
+	}
+
+	.scrollReveal[data-reveal='pending'] {
+		opacity: 1;
+		transform: none;
+	}
+
+	.scrollReveal[data-reveal='pending'],
+	.scrollReveal[data-reveal='visible'],
+	.artwork,
+	.cardTitleText {
+		transition: none;
+	}
+
+	.card:hover .artwork,
+	.card:focus-within .artwork {
+		transform: none;
+	}
+}

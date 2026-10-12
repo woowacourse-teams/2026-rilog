@@ -1,12 +1,15 @@
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { useLogoutMutation } from '@/shared/api/auth/mutations/use-logout-mutation';
+import { useNotificationUnreadCountQuery } from '@/shared/api/notifications/queries/unread-count/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES, buildBlogHomePath } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
 import ButtonLink from '@/shared/ui/button/ButtonLink';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import LogOutIcon from '@/widgets/sidebar/assets/log-out.svg';
+import NotificationUnreadIcon from '@/widgets/sidebar/assets/notification-unread.svg';
+import NotificationIcon from '@/widgets/sidebar/assets/notification.svg';
 import WriteIcon from '@/widgets/sidebar/assets/write.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
@@ -20,6 +23,7 @@ import {
 
 export default function AuthenticatedSidebarFooter() {
 	const myInfoQuery = useMyInfoQuery({ select: mapMyInfoResponse });
+	const unreadCount = useNotificationUnreadCountQuery().data?.data?.unreadCount ?? 0;
 	const { mutate: executeLogout } = useLogoutMutation();
 
 	const handleLogout = () => {
@@ -35,7 +39,23 @@ export default function AuthenticatedSidebarFooter() {
 
 	return (
 		<>
-			<div className="w-full shrink-0 px-1.75 pb-3">
+			<div className="w-full shrink-0 space-y-2 px-1.75 pb-3">
+				<ButtonLink
+					href={APP_ROUTES.notifications}
+					aria-label={unreadCount > 0 ? `알림, 읽지 않은 알림 ${unreadCount}개` : '알림'}
+					fullWidth
+					className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}
+					variant="ghost"
+				>
+					<span className="flex h-full w-11.25 shrink-0 items-center justify-center">
+						{unreadCount > 0 ? (
+							<NotificationUnreadIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
+						) : (
+							<NotificationIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
+						)}
+					</span>
+					<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>알림</span>
+				</ButtonLink>
 				<ButtonLink
 					href={APP_ROUTES.write}
 					onClick={() => recordEditorEntryContext('sidebar')}

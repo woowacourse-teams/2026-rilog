@@ -17,7 +17,7 @@ module.exports = {
 			},
 
 			// 메모리 안전장치 — 이 이상 쓰면 pm2가 자동으로 재시작
-			max_memory_restart: '400M',
+			max_memory_restart: '550M',
 
 			// 비정상 종료 시 자동 재시작 정책
 			autorestart: true,

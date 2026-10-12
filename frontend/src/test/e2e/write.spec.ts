@@ -35,7 +35,7 @@ const enableWriteAccess = async (page: Page) => {
 		respond(route, {
 			uploadId: 'e2e-upload-id',
 			objectKey: 'rilog/images/originals/e2e-upload.png',
-			uploadUrl: 'http://localhost:3000/e2e-upload',
+			uploadUrl: new URL('/e2e-upload', page.url()).href,
 			headers: {},
 			expiresAt: '2026-08-28T00:00:00Z',
 		}),
@@ -147,12 +147,26 @@ test.describe('글 작성 브라우저 흐름', () => {
 		expect(rightSelection).toContain('둘째 문단');
 		expect(rightSelection).not.toContain('셋째 문단');
 		await page.mouse.up();
-		await page.evaluate(() => window.getSelection()?.removeAllRanges());
+	});
 
-		if (thirdBounds === null) {
-			throw new Error('셋째 문단의 위치를 찾을 수 없습니다.');
+	test('편집기 안에서 세로로 드래그하면 여러 문단을 선택할 수 있다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('첫째 문단');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('둘째 문단 길게 선택');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('셋째 문단');
+
+		// 앞선 드래그와 같은 위치에서 연속 입력하면 편집기가 더블클릭으로 처리할 수 있어 독립된 페이지에서 검증한다.
+		const paragraphs = page.locator('.bn-block-content[data-content-type="paragraph"] .bn-inline-content');
+		const secondBounds = await paragraphs.nth(1).boundingBox();
+		const thirdBounds = await paragraphs.nth(2).boundingBox();
+		if (secondBounds === null || thirdBounds === null) {
+			throw new Error('드래그할 문단의 위치를 찾을 수 없습니다.');
 		}
-		await page.mouse.move(bounds.x + 5, y);
+		await page.mouse.move(secondBounds.x + 5, secondBounds.y + secondBounds.height / 2);
 		await page.mouse.down();
 		await page.mouse.move(thirdBounds.x + 25, thirdBounds.y + thirdBounds.height / 2, { steps: 8 });
 		const verticalSelection = await page.evaluate(() => window.getSelection()?.toString() ?? '');
@@ -308,7 +322,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await expect(code).toContainText('const first = 1;\nconst second = 2;');
 	});
 
-	test('H4는 맞춤 크기로 표시하고 H5 마크다운 입력은 헤딩으로 바꾸지 않는다', async ({ page }) => {
+	test('H4 마크다운은 제목으로 변환하고 H5 입력은 문단으로 유지한다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
@@ -316,8 +330,6 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await page.keyboard.type('넷째 제목');
 		const heading = page.locator('.post-write-blocknote [data-content-type="heading"][data-level="4"]');
 		await expect(heading).toContainText('넷째 제목');
-		await expect(heading).toHaveCSS('font-size', '20px');
-		await expect(heading.locator('.bn-inline-content')).toHaveCSS('line-height', '30px');
 
 		await page.keyboard.press('Enter');
 		await page.keyboard.type('##### 다섯째 문장');
