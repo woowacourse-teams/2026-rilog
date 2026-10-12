@@ -7,9 +7,14 @@ import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 
 import MobileHeader from './MobileHeader';
 
-const { navigationMock, useMyInfoQueryMock } = vi.hoisted(() => ({
+const { navigationMock, useMyInfoQueryMock, unreadCountQuery } = vi.hoisted(() => ({
 	navigationMock: { pathname: '/feeds' },
 	useMyInfoQueryMock: vi.fn(),
+	unreadCountQuery: { current: 0 },
+}));
+
+vi.mock('@/shared/api/notifications/queries/unread-count/use-query', () => ({
+	useNotificationUnreadCountQuery: () => ({ data: { data: { unreadCount: unreadCountQuery.current } } }),
 }));
 
 const { githubLoginStartedMock } = vi.hoisted(() => ({
@@ -47,6 +52,18 @@ describe('MobileHeader', () => {
 		navigationMock.pathname = '/feeds';
 		window.history.replaceState({}, '', '/feeds?tab=latest');
 		useMyInfoQueryMock.mockReset().mockReturnValue({ data: null });
+		unreadCountQuery.current = 0;
+	});
+
+	it('로그인 사용자에게 매거진 링크와 읽지 않은 알림 링크를 함께 제공한다', () => {
+		unreadCountQuery.current = 2;
+		navigationMock.pathname = '/notifications';
+		renderHeader(true);
+
+		expect(screen.getByRole('link', { name: '알림, 읽지 않은 알림 2개' })).toHaveAttribute('href', '/notifications');
+		expect(screen.getByRole('link', { name: '알림, 읽지 않은 알림 2개' })).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByRole('link', { name: 'The Rilog.' })).toHaveAttribute('href', '/the-rilog');
+		expect(screen.getByRole('link', { name: 'The Rilog.' })).not.toHaveAttribute('aria-current');
 	});
 
 	it('비로그인 사용자에게 피드 링크와 로그인 버튼을 제공한다', async () => {
@@ -107,6 +124,7 @@ describe('MobileHeader', () => {
 		expect(feedLink).toHaveAttribute('href', '/feeds');
 		expect(feedLink).toHaveAttribute('aria-current', 'page');
 		expect(screen.getByRole('link', { name: '@e2e-user 블로그로 이동' })).toHaveAttribute('href', '/@e2e-user');
+		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
 		expect(screen.getByRole('img', { name: 'E2E 사용자 프로필' })).toHaveTextContent('E');
 		expect(screen.queryByRole('button', { name: '로그인' })).not.toBeInTheDocument();
 	});

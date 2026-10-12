@@ -3,25 +3,24 @@
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
+import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
+import { useNotificationUnreadCountQuery } from '@/shared/api/notifications/queries/unread-count/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
+import ButtonLink from '@/shared/ui/button/ButtonLink';
 import CustomLink from '@/shared/ui/link/CustomLink';
 import MagazineIcon from '@/widgets/sidebar/assets/magazine.svg';
+import NotificationUnreadIcon from '@/widgets/sidebar/assets/notification-unread.svg';
+import NotificationIcon from '@/widgets/sidebar/assets/notification.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
-export default function MobileHeader() {
-	const { isAuthenticated } = useAuth();
-	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
-	const pathname = usePathname() ?? '';
-	const handleLoginClick = useAuthAction({ entrySurface: 'mobile_header' });
-	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
-	const isMagazineCurrent = pathname === APP_ROUTES.theRilog || pathname.startsWith(`${APP_ROUTES.theRilog}/`);
+function UserProfile({ user }: { user: User | null | undefined }) {
 	const userAvatar = (
 		<UserAvatar
 			src={user?.profileImageUrl}
@@ -31,7 +30,21 @@ export default function MobileHeader() {
 			hasBorder
 		/>
 	);
-	const userProfileControl = user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
+
+	return user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
+}
+
+export default function MobileHeader() {
+	const { isAuthenticated } = useAuth();
+	const { data: user } = useMyInfoQuery({ isEnabled: isAuthenticated, select: mapMyInfoResponse });
+	const unreadCount = useNotificationUnreadCountQuery().data?.data?.unreadCount ?? 0;
+
+	const pathname = usePathname() ?? '';
+	const isFeedCurrent = pathname === APP_ROUTES.feeds || /^\/@[^/]+\/posts\//.test(pathname);
+
+	const isMagazineCurrent = pathname === APP_ROUTES.theRilog || pathname.startsWith(`${APP_ROUTES.theRilog}/`);
+
+	const handleLoginClick = useAuthAction({ entrySurface: 'mobile_header' });
 
 	return (
 		<nav
@@ -42,6 +55,7 @@ export default function MobileHeader() {
 			<CustomLink href={APP_ROUTES.feeds} aria-current={isFeedCurrent ? 'page' : undefined}>
 				<Image src="/brand/logo.svg" alt="Rilog." width={85} height={34} priority />
 			</CustomLink>
+
 			<div className="flex items-center gap-2">
 				<CustomLink
 					href={APP_ROUTES.theRilog}
@@ -52,7 +66,22 @@ export default function MobileHeader() {
 					<MagazineIcon aria-hidden="true" focusable="false" className="size-6" />
 				</CustomLink>
 				{isAuthenticated ? (
-					userProfileControl
+					<div className="flex items-center gap-2">
+						<ButtonLink
+							href={APP_ROUTES.notifications}
+							aria-label={unreadCount > 0 ? `알림, 읽지 않은 알림 ${unreadCount}개` : '알림'}
+							aria-current={pathname === APP_ROUTES.notifications ? 'page' : undefined}
+							size="icon"
+							variant="ghost"
+						>
+							{unreadCount > 0 ? (
+								<NotificationUnreadIcon width={24} height={24} aria-hidden="true" focusable="false" />
+							) : (
+								<NotificationIcon width={24} height={24} aria-hidden="true" focusable="false" />
+							)}
+						</ButtonLink>
+						<UserProfile user={user} />
+					</div>
 				) : (
 					<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
 						로그인
