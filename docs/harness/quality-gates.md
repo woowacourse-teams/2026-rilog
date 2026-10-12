@@ -69,7 +69,7 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 - `develop`·`production` 대상 모든 PR
 - GitHub Actions의 수동 실행
 
-문서·백엔드만 바뀐 PR에도 workflow가 실행된다. `Frontend Quality`가 두 대상 브랜치의 required check이므로 workflow에 `paths` 제한을 두면 관련 없는 PR에서 검사가 Pending으로 남아 병합을 막는다. PR의 기준 커밋과 검사 대상 merge commit을 비교해 `frontend/` 또는 품질 workflow가 바뀌지 않았으면 setup·설치·검증 단계를 건너뛰고 job을 성공으로 끝낸다. 변경 파일 확인 자체가 실패하면 job도 실패한다. `workflow_dispatch`는 변경 파일 판단 없이 전체 검증을 실행한다. `develop`에 직접 push할 때 실행되는 `push` trigger는 없다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다.
+문서·백엔드만 바뀐 PR에도 workflow가 실행된다. `Frontend Quality`는 두 대상 브랜치에서 실행하지만 병합 필수 조건은 아니다. 기존 실행 범위를 유지하기 위해 workflow에 `paths` 제한을 두지 않는다. PR의 기준 커밋과 검사 대상 merge commit을 비교해 `frontend/` 또는 품질 workflow가 바뀌지 않았으면 setup·설치·검증 단계를 건너뛰고 job을 성공으로 끝낸다. 변경 파일 확인 자체가 실패하면 job도 실패한다. `workflow_dispatch`는 변경 파일 판단 없이 전체 검증을 실행한다. `develop`에 직접 push할 때 실행되는 `push` trigger는 없다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다.
 
 수동 실행은 workflow가 기본 브랜치에 등록된 뒤 GitHub Actions에서 선택한 ref를 검증한다.
 
@@ -87,7 +87,7 @@ CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한�
 
 단위·RTL·E2E가 0건을 수집하면 실패한다. `test:e2e:prod`는 필수 태그 4개 중 누락·중복·skip·미실행·실패가 있으면 custom reporter가 job을 실패시킨다. `test:e2e`는 파일·grep 선택으로 개별 흐름을 조사할 수 있다. retry는 0이고 CI에서는 `test.only`를 금지한다.
 
-`.github/workflows/rilog-fe-prod.yml`의 기존 `production` PR build와 `production` push 배포는 그대로 유지한다. 품질 workflow는 `develop`·`production`의 required check이며, 배포 workflow의 선행 job은 아니다.
+`.github/workflows/rilog-fe-prod.yml`의 기존 `production` PR build와 `production` push 배포는 그대로 유지한다. 품질 workflow는 `develop`·`production`에서 실행하지만 병합 필수 조건은 아니며, 배포 workflow의 선행 job도 아니다.
 
 ## Backend
 
