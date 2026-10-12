@@ -17,10 +17,8 @@ import type {
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
-import PostCommentsFloatingPane from '@/features/post-detail/ui/PostCommentsFloatingPane';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
-import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
@@ -64,7 +62,6 @@ export default function PostDetailCommentsWorkspace({
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
-	const isDesktop = useMediaQuery('(min-width: 79rem)');
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
@@ -188,12 +185,12 @@ export default function PostDetailCommentsWorkspace({
 			}
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-			if (!isDesktop) {
-				closeComments();
-			}
-			window.setTimeout(() => scrollToThreadAnchor(thread), isDesktop ? 0 : 140);
+			closeComments();
+			window.setTimeout(() => {
+				scrollToThreadAnchor(thread);
+			}, 140);
 		},
-		[closeComments, isDesktop, postId],
+		[closeComments, postId],
 	);
 
 	return (
@@ -220,60 +217,32 @@ export default function PostDetailCommentsWorkspace({
 
 			<aside className={styles.commentsColumn}>
 				<div className={styles.commentsSticky}>
-					{!isCommentsSidebarOpen && (
-						<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
-					)}
-					{isDesktop && (
-						<PostCommentsFloatingPane
-							key={`desktop-${createRequestId}`}
-							postId={postId}
-							selection={selection}
-							composerAnchorId={composerAnchorId}
-							mode={sidebarMode}
-							entrySource={commentEntrySource}
-							open={isCommentsSidebarOpen}
-							showDeletedCommentToast={isDeletedCommentToastVisible}
-							threads={visibleThreads}
-							isLoading={sidebarQuery.isPending}
-							isError={sidebarQuery.isError}
-							onRetry={() => void sidebarQuery.refetch()}
-							onCreated={(commentAnchorId) => {
-								setSelection(null);
-								setCreatedCommentId(commentAnchorId);
-								setDeepLinkedSelectionId(null);
-								setComposerAnchorId(null);
-							}}
-							onClose={closeComments}
-							onNavigate={handleAnchorNavigate}
-						/>
-					)}
+					<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
 				</div>
 			</aside>
 
-			{!isDesktop && (
-				<PostCommentsSidebar
-					key={`mobile-${createRequestId}`}
-					postId={postId}
-					selection={selection}
-					composerAnchorId={composerAnchorId}
-					mode={sidebarMode}
-					entrySource={commentEntrySource}
-					open={isCommentsSidebarOpen}
-					showDeletedCommentToast={isDeletedCommentToastVisible}
-					threads={visibleThreads}
-					isLoading={sidebarQuery.isPending}
-					isError={sidebarQuery.isError}
-					onRetry={() => void sidebarQuery.refetch()}
-					onCreated={(commentAnchorId) => {
-						setSelection(null);
-						setCreatedCommentId(commentAnchorId);
-						setDeepLinkedSelectionId(null);
-						setComposerAnchorId(null);
-					}}
-					onClose={closeComments}
-					onNavigate={handleAnchorNavigate}
-				/>
-			)}
+			<PostCommentsSidebar
+				key={createRequestId}
+				postId={postId}
+				selection={selection}
+				composerAnchorId={composerAnchorId}
+				mode={sidebarMode}
+				entrySource={commentEntrySource}
+				open={isCommentsSidebarOpen}
+				showDeletedCommentToast={isDeletedCommentToastVisible}
+				threads={visibleThreads}
+				isLoading={sidebarQuery.isPending}
+				isError={sidebarQuery.isError}
+				onRetry={() => void sidebarQuery.refetch()}
+				onCreated={(commentAnchorId) => {
+					setSelection(null);
+					setCreatedCommentId(commentAnchorId);
+					setDeepLinkedSelectionId(null);
+					setComposerAnchorId(null);
+				}}
+				onClose={closeComments}
+				onNavigate={handleAnchorNavigate}
+			/>
 		</>
 	);
 }
