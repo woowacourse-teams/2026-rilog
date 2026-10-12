@@ -48,6 +48,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('selection 링크의 댓글 작성은 URL을 유지하고 사이드바 닫기는 selection ID를 제거한다', async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 1000 });
 	await mockAuthenticatedAccess(page);
 	await page.route('**/v1/**', (route) => route.abort());
 	await page.route('**/v1/posts/106/selections/91/comment-anchors', (route) =>
@@ -93,7 +94,7 @@ test('selection 링크의 댓글 작성은 URL을 유지하고 사이드바 닫�
 	});
 	await renderInlineCommentWorkspace(page, 91);
 
-	await expect(page.getByRole('dialog', { name: '인라인 댓글 1' })).toBeVisible();
+	await expect(page.getByRole('region', { name: '인라인 댓글 1' })).toBeVisible();
 	await expect(page.getByRole('region', { name: '"테스트 인용" 댓글' })).toBeVisible();
 	await expect(page.getByRole('article', { name: '작성자님의 댓글' })).toBeVisible();
 	await page.getByRole('textbox', { name: '댓글 입력' }).fill('추가 댓글');

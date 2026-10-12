@@ -20,8 +20,8 @@ import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButt
 import PostCommentsFloatingPane from '@/features/post-detail/ui/PostCommentsFloatingPane';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
-import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
+import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
