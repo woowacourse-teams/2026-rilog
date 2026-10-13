@@ -1,4 +1,4 @@
-package kr.rilog.domain.post.service;
+package kr.rilog.domain.therilog.service;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,12 +14,12 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostSource;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
-import kr.rilog.domain.post.repository.TheRilogRepository;
-import kr.rilog.domain.post.repository.projection.TheRilogSpotlightRow;
-import kr.rilog.domain.post.service.dto.command.TheRilogPostPublishCommand;
+import kr.rilog.domain.therilog.repository.TheRilogRepository;
+import kr.rilog.domain.therilog.repository.projection.TheRilogSpotlightRow;
+import kr.rilog.domain.therilog.service.dto.command.TheRilogPostPublishCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
-import kr.rilog.domain.post.service.dto.result.TheRilogResult;
-import kr.rilog.domain.post.service.dto.result.TheRilogResult.*;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogResult;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogResult.*;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;

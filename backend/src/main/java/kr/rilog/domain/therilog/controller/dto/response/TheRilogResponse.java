@@ -1,7 +1,8 @@
-package kr.rilog.domain.post.controller.dto.response;
+package kr.rilog.domain.therilog.controller.dto.response;
 
+import kr.rilog.domain.post.controller.dto.response.PostSourceResponse;
 import kr.rilog.domain.post.entity.enums.PostType;
-import kr.rilog.domain.post.service.dto.result.TheRilogResult;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogResult;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

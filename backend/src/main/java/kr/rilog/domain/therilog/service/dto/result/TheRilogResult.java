@@ -1,4 +1,4 @@
-package kr.rilog.domain.post.service.dto.result;
+package kr.rilog.domain.therilog.service.dto.result;
 
 import kr.rilog.domain.post.entity.enums.PostType;
 

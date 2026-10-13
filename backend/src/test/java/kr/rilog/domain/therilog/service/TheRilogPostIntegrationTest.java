@@ -1,5 +1,7 @@
-package kr.rilog.domain.post.service;
+package kr.rilog.domain.therilog.service;
 
+import kr.rilog.domain.post.service.FeedService;
+import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -16,7 +18,7 @@ import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
-import kr.rilog.domain.post.service.dto.command.TheRilogPostPublishCommand;
+import kr.rilog.domain.therilog.service.dto.command.TheRilogPostPublishCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
 import kr.rilog.domain.user.entity.User;
