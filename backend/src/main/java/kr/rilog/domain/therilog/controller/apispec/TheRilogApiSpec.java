@@ -1,10 +1,10 @@
-package kr.rilog.domain.post.controller.apispec;
+package kr.rilog.domain.therilog.controller.apispec;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import kr.rilog.domain.post.controller.dto.response.TheRilogResponse;
+import kr.rilog.domain.therilog.controller.dto.response.TheRilogResponse;
 import kr.rilog.global.response.ApiResponse;
 
 @Tag(name = "더 리로그 API")

@@ -63,3 +63,12 @@ site:
   sitemap:
     base-url: ${SITE_BASE_URL:https://www.rilog.kr}
     cache-max-age: ${SITEMAP_CACHE_MAX_AGE:10m}
+
+the-rilog:
+  enabled: ${THE_RILOG_ENABLED:false}
+  spreadsheet-id: ${THE_RILOG_SPREADSHEET_ID:}
+  sheet-range: ${THE_RILOG_SHEET_RANGE:SPOTLIGHTS!A:M}
+  production-cron: ${THE_RILOG_PRODUCTION_CRON:}
+  credentials-path: ${THE_RILOG_CREDENTIALS_PATH:}
+  connect-timeout: 3s
+  read-timeout: 5s

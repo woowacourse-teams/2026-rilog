@@ -1,5 +1,6 @@
-package kr.rilog.domain.post.service;
+package kr.rilog.domain.therilog.service;
 
+import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
@@ -10,7 +11,7 @@ import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
-import kr.rilog.domain.post.service.dto.result.TheRilogResult;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogResult;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;

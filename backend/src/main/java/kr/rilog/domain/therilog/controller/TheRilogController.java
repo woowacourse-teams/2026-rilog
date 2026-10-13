@@ -1,9 +1,9 @@
-package kr.rilog.domain.post.controller;
+package kr.rilog.domain.therilog.controller;
 
-import kr.rilog.domain.post.controller.apispec.TheRilogApiSpec;
-import kr.rilog.domain.post.controller.dto.response.TheRilogResponse;
-import kr.rilog.domain.post.service.TheRilogService;
-import kr.rilog.domain.post.service.dto.result.TheRilogResult;
+import kr.rilog.domain.therilog.controller.apispec.TheRilogApiSpec;
+import kr.rilog.domain.therilog.controller.dto.response.TheRilogResponse;
+import kr.rilog.domain.therilog.service.TheRilogService;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

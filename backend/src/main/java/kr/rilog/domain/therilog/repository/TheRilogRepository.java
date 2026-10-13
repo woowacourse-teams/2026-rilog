@@ -1,9 +1,9 @@
-package kr.rilog.domain.post.repository;
+package kr.rilog.domain.therilog.repository;
 
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostType;
-import kr.rilog.domain.post.repository.projection.TheRilogSpotlightRow;
+import kr.rilog.domain.therilog.repository.projection.TheRilogSpotlightRow;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -35,7 +35,7 @@ public interface TheRilogRepository extends JpaRepository<Post, Long> {
     );
 
     @Query("""
-            SELECT new kr.rilog.domain.post.repository.projection.TheRilogSpotlightRow(
+            SELECT new kr.rilog.domain.therilog.repository.projection.TheRilogSpotlightRow(
                 post.id,
                 post.postType,
                 post.title,

@@ -1,4 +1,4 @@
-package kr.rilog.domain.post.repository.projection;
+package kr.rilog.domain.therilog.repository.projection;
 
 import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostSource;
