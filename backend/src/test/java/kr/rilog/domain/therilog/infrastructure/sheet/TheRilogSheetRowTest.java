@@ -15,11 +15,33 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TheRilogSheetRowTest {
 
     @Test
+    @DisplayName("뉴스 제작 입력에는 원문 URL이 필요하지 않다.")
+    void newsInputDoesNotRequireSourceUrl() {
+        TheRilogSheetRow row = new TheRilogSheetRow(
+                "news_20261015", "NEWS", "", "기술", "2026-10-15 06:00", "제작대기");
+
+        assertThat(row.toProductionInput().sourceUrl()).isNull();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "알 수 없는 분류"})
+    @DisplayName("운영자가 입력한 카테고리가 유효하지 않으면 제작 입력으로 변환할 수 없다.")
+    void productionInputRequiresValidCategory(String category) {
+        TheRilogSheetRow row = new TheRilogSheetRow(
+                "spotlight_001", "SPOTLIGHT", "https://example.com/blog", category,
+                "2026-10-15 06:00", "제작대기");
+
+        assertThatThrownBy(row::toProductionInput)
+                .isInstanceOf(TheRilogSheetException.class).hasMessage(INVALID_THE_RILOG_SHEET_INPUT.getMessage());
+    }
+
+    @Test
     @DisplayName("제작대기인 스포트라이트는 필수 입력이 비어 있어도 검증 대상이다.")
     void pendingSpotlightWithMissingInputStillRequiresValidation() {
         TheRilogSheetRow row = row("spotlight_001", "", "2026-10-15 06:00");
 
-        assertThat(row.isProductionPendingSpotlight()).isTrue();
+        assertThat(row.isProductionPending()).isTrue();
     }
 
     @ParameterizedTest
