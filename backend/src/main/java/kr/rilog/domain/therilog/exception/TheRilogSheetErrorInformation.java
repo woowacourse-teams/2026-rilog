@@ -7,9 +7,9 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum TheRilogTaskErrorInformation implements ErrorInformation {
+public enum TheRilogSheetErrorInformation implements ErrorInformation {
 
-    INVALID_THE_RILOG_TASK_INPUT(HttpStatus.BAD_REQUEST, "더 리로그 제작 요청의 필수 입력이 올바르지 않습니다.");
+    INVALID_THE_RILOG_SHEET_INPUT(HttpStatus.BAD_REQUEST, "더 리로그 시트의 제작 입력이 올바르지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

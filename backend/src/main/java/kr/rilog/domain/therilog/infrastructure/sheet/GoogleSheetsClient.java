@@ -2,7 +2,6 @@ package kr.rilog.domain.therilog.infrastructure.sheet;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -139,7 +138,7 @@ public class GoogleSheetsClient {
                 .skip(1)
                 .map(row -> new TheRilogSheetRow(
                         cell(row, columns, "rowId"),
-                        TheRilogContentType.SPOTLIGHT.name(),
+                        "SPOTLIGHT",
                         cell(row, columns, "originalArticleUrl"),
                         cell(row, columns, "category"),
                         cell(row, columns, "scheduledAt"),

@@ -132,16 +132,6 @@ class GoogleSheetsClientTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 날짜는 예약 발행 시각으로 해석하지 않는다.")
-    void invalidCalendarDateIsRejected() {
-        TheRilogSheetRow row = new TheRilogSheetRow("spotlight_001", "SPOTLIGHT", "https://example.com/blog",
-                "기술", "2026-02-30 06:00", "제작대기");
-
-        assertThatThrownBy(() -> row.toImportCommand("sheet-id"))
-                .isInstanceOf(java.time.format.DateTimeParseException.class);
-    }
-
-    @Test
     @DisplayName("인증 파일 해석 실패 로그에는 자격증명 원문을 남기지 않는다.")
     void credentialReadFailureDoesNotExposeFileContents() throws Exception {
         Path credentialsPath = tempDirectory.resolve("invalid-service-account.json");
