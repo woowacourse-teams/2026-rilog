@@ -10,16 +10,11 @@ interface PostTableOfContentsProps {
 	items: PostTableOfContentsItem[];
 }
 
-const INDENT_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string | undefined> = {
-	1: undefined,
-	2: 'pl-3',
-	3: 'pl-6',
-};
-
-const LINE_INDENT_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string | undefined> = {
-	1: undefined,
-	2: 'pl-1',
-	3: 'pl-2',
+const STYLE_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string> = {
+	1: 'leading-[1.125rem]',
+	2: 'pl-3 leading-[1.125rem]',
+	3: 'pl-6 leading-4',
+	4: 'pl-9 leading-4',
 };
 
 // 목차 ui 구현
@@ -72,35 +67,17 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 	};
 
 	return (
-		<nav aria-label="게시글 목차" className="group relative">
-			<ol
-				aria-hidden="true"
-				className="max-h-[var(--post-toc-max-height)] overflow-hidden border-l border-border-default pl-5 transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 motion-reduce:transition-none"
-			>
+		<nav aria-label="게시글 목차" className="max-w-55">
+			<ol className="max-h-[var(--post-toc-max-height)] [scrollbar-gutter:stable] space-y-1 overflow-x-hidden overflow-y-auto overscroll-contain pb-20 motion-reduce:transition-none">
 				{items.map((item) => {
 					const isActive = item.id === activeId;
 
 					return (
-						<li key={item.id}>
-							<span
-								className={`block leading-4 font-extrabold -tracking-[0.2em] ${LINE_INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'text-text-primary' : 'text-text-placeholder'}`}
-							>
-								{'-'.repeat(item.text.length)}
-							</span>
-						</li>
-					);
-				})}
-			</ol>
-			<ol className="pointer-events-none absolute inset-x-0 top-0 max-h-[var(--post-toc-max-height)] [scrollbar-gutter:stable] space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-border-default pr-2 pl-5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none">
-				{items.map((item) => {
-					const isActive = item.id === activeId;
-
-					return (
-						<li key={item.id}>
+						<li key={item.id} className={`text-[13px] first:mt-0 last:mb-0 ${STYLE_CLASS_BY_LEVEL[item.level]}`}>
 							<a
 								href={`#${encodeURIComponent(item.id)}`}
 								aria-current={isActive ? 'location' : undefined}
-								className={`block rounded-sm text-label-1 leading-[1.125rem] transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
+								className={`block rounded-sm transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
 								onClick={(event) => handleAnchorClick(event, item.id)}
 							>
 								{item.text}

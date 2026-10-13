@@ -30,19 +30,6 @@
 	margin-inline: auto;
 }
 
-.postDetailShell:has(.articleColumn[data-comments-open]) .contentLayout {
-	grid-template-columns: minmax(0, 42rem);
-	justify-content: center;
-}
-
-.postDetailShell:has(.articleColumn[data-comments-open]) .articleColumn {
-	grid-column: 1;
-}
-
-.postDetailShell:has(.articleColumn[data-comments-open]) .tableOfContentsColumn {
-	display: none;
-}
-
 .dockedCommentsHost:not(:empty) {
 	display: block;
 	position: sticky;
@@ -52,38 +39,9 @@
 	max-width: 28rem;
 }
 
-@container post-detail-card (min-width: 75rem) {
-	.postDetailShell:has(.articleColumn[data-comments-open]) .contentLayout {
-		grid-template-columns: minmax(12.5rem, 1fr) minmax(0, 42rem) minmax(12.5rem, 1fr);
-		justify-content: stretch;
-	}
-
-	.postDetailShell:has(.articleColumn[data-comments-open]) .articleColumn {
-		grid-column: 2;
-		width: auto;
-	}
-
-	.postDetailShell:has(.articleColumn[data-comments-open]) .tableOfContentsColumn {
-		display: block;
-		grid-column: 1;
-		align-self: stretch;
-		justify-self: start;
-		width: 12.5rem;
-		padding-block: 5rem;
-	}
-
-	.postDetailShell:has(.articleColumn[data-comments-open]) .tableOfContentsSticky {
-		--post-toc-max-height: calc(100dvh - 5rem);
-
-		position: sticky;
-		top: 5rem;
-		overflow-wrap: anywhere;
-	}
-}
-
 .contentLayout {
 	display: grid;
-	grid-template-columns: minmax(0, 42rem);
+	grid-template-columns: minmax(0, min(42rem, calc(100% - 2.5rem)));
 	justify-content: center;
 }
 
@@ -100,7 +58,9 @@
 .compactCommentsEntry {
 	display: flex;
 	justify-content: flex-end;
-	margin-top: 1rem;
+	width: 100%;
+	margin-top: 1.25rem;
+	margin-right: 1.25rem;
 }
 
 .profileSection {
@@ -127,19 +87,21 @@
 	.commentsColumn {
 		display: block;
 		align-self: stretch;
-		width: 12rem;
-		padding-block: 5rem;
+		width: 100%;
+		padding-block: 2.5rem;
 	}
 
 	.tableOfContentsColumn {
 		grid-column: 1;
 		justify-self: start;
+		padding-left: 1.25rem;
 	}
 
 	.commentsColumn {
 		grid-column: 3;
 		justify-self: end;
 		padding-top: 2.5rem;
+		padding-right: 2.5rem;
 	}
 
 	.tableOfContentsSticky,
@@ -147,7 +109,7 @@
 		--post-toc-max-height: calc(100dvh - 5rem);
 
 		position: sticky;
-		top: 5rem;
+		top: 4rem;
 		overflow-wrap: anywhere;
 	}
 
@@ -163,5 +125,11 @@
 
 	.profileSection {
 		margin-top: 7.5rem;
+	}
+}
+
+@container post-detail-card (min-width: 80rem) {
+	.tableOfContentsColumn {
+		padding-left: 2.5rem;
 	}
 }

@@ -224,14 +224,11 @@ export default function PostDetailCommentsWorkspace({
 
 	return (
 		<>
-			<div className="mt-5 mr-5 flex w-full justify-end @min-[75rem]:hidden">
+			<div className={styles.compactCommentsEntry}>
 				<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
 			</div>
 
-			<div
-				className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}
-				data-comments-open={isCommentsSidebarOpen ? true : undefined}
-			>
+			<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
 				<PostDetailContent
 					html={html}
 					postId={postId}

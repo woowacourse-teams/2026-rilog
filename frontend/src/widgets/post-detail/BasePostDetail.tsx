@@ -52,7 +52,7 @@ export default async function BasePostDetail({
 						<PostDetailHero title={post.title} thumbnailUrl={post.thumbnailUrl} />
 						{beforeContent}
 
-						<div className={`${styles.contentLayout} px-5 sm:px-10`}>
+						<div className={`${styles.contentLayout} gap-x-10`}>
 							{tableOfContents.length === 0 ? null : (
 								<aside className={styles.tableOfContentsColumn}>
 									<div className={styles.tableOfContentsSticky}>

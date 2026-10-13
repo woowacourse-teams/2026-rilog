@@ -61,6 +61,13 @@ const HEADING_BLOCKS: Block[] = [
 		children: [],
 	},
 	{
+		id: 'heading-level-4',
+		type: 'heading',
+		props: { ...DEFAULT_TEXT_PROPS, level: 4, isToggleable: false },
+		content: text('네 번째 제목'),
+		children: [],
+	},
+	{
 		id: 'paragraph-block',
 		type: 'paragraph',
 		props: DEFAULT_TEXT_PROPS,
@@ -141,7 +148,7 @@ describe('renderPostDetailContent', () => {
 
 	it('목차 대상 헤딩의 바깥 블록에 고유한 DOM id를 부여한다', async () => {
 		const html = await renderPostDetailContent(HEADING_BLOCKS);
-		const expectedHeadingIds = ['첫-번째-제목', '두-번째-제목', '세-번째-제목'];
+		const expectedHeadingIds = ['첫-번째-제목', '두-번째-제목', '세-번째-제목', '네-번째-제목'];
 
 		expectedHeadingIds.forEach((headingId, index) => {
 			expect(html).toMatch(
