@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import kr.rilog.domain.therilog.exception.TheRilogSheetException;
 import kr.rilog.domain.therilog.service.dto.command.TheRilogSheetWriteCommand;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogPublishedArticle;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ import java.util.Base64;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.EnumMap;
 import java.util.concurrent.TimeUnit;
 
 import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
@@ -80,19 +82,64 @@ public class GoogleSheetsClient {
             String accessToken = requestAccessToken(readCredentials());
             TheRilogSheet sheet = readSheet(command.contentType(), accessToken);
             GoogleSheetValuesUpdateRequest request = sheet.createWriteRequest(command);
-            sheetsRestClient.post()
-                    .uri(GOOGLE_SHEETS_BASE_URL + "/v4/spreadsheets/{spreadsheetId}/values:batchUpdate",
-                            properties.spreadsheetId())
-                    .header("Authorization", "Bearer " + accessToken)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(request)
-                    .retrieve()
-                    .toBodilessEntity();
+            writeValues(accessToken, request);
         } catch (TheRilogSheetException exception) {
             throw exception;
         } catch (Exception exception) {
             throw writeFailure(startedAt, exception, command);
         }
+    }
+
+    public List<TheRilogPublicationRow> readPublicationRows(boolean includeSpotlights) {
+        long startedAt = System.nanoTime();
+        try {
+            String accessToken = requestAccessToken(readCredentials());
+            List<TheRilogPublicationRow> rows = new ArrayList<>();
+            for (TheRilogContentType type : TheRilogContentType.values()) {
+                if (includeSpotlights || type == TheRilogContentType.NEWS) {
+                    rows.addAll(readSheet(type, accessToken).readPublicationRows());
+                }
+            }
+            return List.copyOf(rows);
+        } catch (Exception exception) {
+            throw readFailure(startedAt, exception);
+        }
+    }
+
+    public void writePublicationResults(List<TheRilogPublishedArticle> articles) {
+        if (articles.isEmpty()) {
+            return;
+        }
+        long startedAt = System.nanoTime();
+        try {
+            String accessToken = requestAccessToken(readCredentials());
+            Map<TheRilogContentType, TheRilogSheet> sheets = new EnumMap<>(TheRilogContentType.class);
+            List<GoogleSheetValuesUpdateRequest.ValueRange> updates = new ArrayList<>();
+            for (TheRilogPublishedArticle article : articles) {
+                if (article.contentType() == null || article.postId() == null || article.postId() <= 0) {
+                    throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_RESULT);
+                }
+                TheRilogSheet sheet = sheets.computeIfAbsent(article.contentType(), type -> readSheet(type, accessToken));
+                updates.addAll(sheet.createPublicationUpdates(article));
+            }
+            writeValues(accessToken, new GoogleSheetValuesUpdateRequest("RAW", updates));
+        } catch (TheRilogSheetException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.getMessage(),
+                    exception, Map.of("operation", "write_the_rilog_publication", "articles", articles,
+                    "durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)));
+        }
+    }
+
+    private void writeValues(String accessToken, GoogleSheetValuesUpdateRequest request) {
+        sheetsRestClient.post()
+                .uri(GOOGLE_SHEETS_BASE_URL + "/v4/spreadsheets/{spreadsheetId}/values:batchUpdate", properties.spreadsheetId())
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     private TheRilogSheet readSheet(TheRilogContentType type, String accessToken) {

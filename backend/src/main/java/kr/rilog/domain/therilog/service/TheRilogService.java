@@ -1,6 +1,9 @@
 package kr.rilog.domain.therilog.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Stream;
 import kr.rilog.domain.blog.entity.Blog;
@@ -15,6 +18,8 @@ import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostSource;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.therilog.repository.TheRilogRepository;
+import kr.rilog.domain.therilog.entity.vo.TheRilogPublication;
+import kr.rilog.domain.therilog.service.dto.result.TheRilogPublishedArticle;
 import kr.rilog.domain.therilog.repository.projection.TheRilogSpotlightRow;
 import kr.rilog.domain.therilog.service.dto.command.TheRilogPostPublishCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
@@ -41,6 +46,7 @@ public class TheRilogService {
 
     private static final int ENTERPRISE_SPOTLIGHT_SIZE = 3;
     private static final int PERSONAL_SPOTLIGHT_SIZE = 2;
+    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
     private final TheRilogRepository theRilogRepository;
     private final BlogRepository blogRepository;
@@ -48,6 +54,7 @@ public class TheRilogService {
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final PostViewCountRepository viewCountRepository;
+    private final Clock clock;
 
     public TheRilogResult readTheRilog() {
         NewsResult news = readLatestPublicNews();
@@ -61,12 +68,25 @@ public class TheRilogService {
         User writer = getUser(requesterId);
         blog.validateIsOwner(writer);
         Chapter chapter = getTheRilogChapter(blog, command.postType());
-        Post post = Post.createTheRilog(blog, writer, command.detail(), chapter, command.toMetadata());
+        Post post = Post.createTheRilog(blog, writer, command.detail(), chapter, command.toMetadata(),
+                LocalDateTime.ofInstant(clock.instant(), SEOUL));
 
         Post published = theRilogRepository.save(post);
         viewCountRepository.initialize(published.getId());
         tagAssetsPublisher.attach(published.getTagAssets());
         return PostPublishResult.of(published, blog);
+    }
+
+    @Transactional
+    public List<TheRilogPublishedArticle> publishPublication(TheRilogPublication publication) {
+        Long ownerId = getTheRilogBlog().getOwner().getId();
+        return publication.articles().stream().map(article -> {
+            var metadata = article.metadata();
+            var command = new TheRilogPostPublishCommand(metadata.postType(), article.detail(),
+                    metadata.description(), metadata.sourceProfileName(), metadata.sourceProfileImage());
+            PostPublishResult published = publishTheRilog(command, ownerId);
+            return new TheRilogPublishedArticle(article.rowId(), article.contentType(), published.postId());
+        }).toList();
     }
 
     private NewsResult readLatestPublicNews() {

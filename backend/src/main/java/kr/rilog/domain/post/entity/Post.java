@@ -151,12 +151,21 @@ public class Post extends BaseEntity {
     }
 
     public static Post createTheRilog(Blog blog, User writer, PostDetail detail, Chapter chapter, TheRilogPostMetadata metadata) {
+        return createTheRilog(blog, writer, detail, chapter, metadata, LocalDateTime.now());
+    }
+
+    public static Post createTheRilog(Blog blog, User writer, PostDetail detail, Chapter chapter,
+                                      TheRilogPostMetadata metadata, LocalDateTime publishedAt) {
         if (metadata == null) {
             throw new PostException(INVALID_THE_RILOG_METADATA);
+        }
+        if (publishedAt == null) {
+            throw new PostException(INVALID_THE_RILOG_POST);
         }
         validateTheRilogPost(metadata.postType(), detail, blog, chapter);
         blog.validateIsOwner(writer);
         Post post = create(blog, writer, detail, chapter);
+        post.publishedAt = publishedAt;
         post.postType = metadata.postType();
         post.description = metadata.description();
         if (post.postType.isSpotlight()) {

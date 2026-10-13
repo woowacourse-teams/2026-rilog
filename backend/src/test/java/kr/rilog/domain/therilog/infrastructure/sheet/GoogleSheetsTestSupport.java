@@ -29,6 +29,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
 class GoogleSheetsTestSupport {
 
@@ -108,5 +109,11 @@ class GoogleSheetsTestSupport {
     void verifyRequests() {
         tokenServer.verify();
         sheetsServer.verify();
+    }
+
+    void expectFailedWrite() {
+        sheetsServer.expect(requestTo("https://sheets.googleapis.com/v4/spreadsheets/sheet-id/values:batchUpdate"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withServerError());
     }
 }

@@ -8,11 +8,13 @@ import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
 import java.util.Arrays;
 
+import static kr.rilog.domain.therilog.entity.enums.TheRilogSheetStatus.PRODUCTION_PENDING;
 import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.INVALID_THE_RILOG_SHEET_INPUT;
 
 public record TheRilogSheetRow(
@@ -27,10 +29,9 @@ public record TheRilogSheetRow(
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
     private static final DateTimeFormatter SCHEDULED_AT_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final String PRODUCTION_PENDING = "제작대기";
 
     public boolean isProductionPending() {
-        return PRODUCTION_PENDING.equals(status)
+        return PRODUCTION_PENDING.matches(status)
                 && ("SPOTLIGHT".equals(contentType) || "NEWS".equals(contentType));
     }
 
@@ -42,10 +43,12 @@ public record TheRilogSheetRow(
                 type,
                 type == TheRilogContentType.NEWS ? null : sourceUrl,
                 parseCategory(category),
-                LocalDateTime.parse(scheduledAt, SCHEDULED_AT_FORMAT)
-                        .atZone(SEOUL)
-                        .toInstant()
+                parseScheduledAt()
         );
+    }
+
+    public Instant parseScheduledAt() {
+        return LocalDateTime.parse(scheduledAt, SCHEDULED_AT_FORMAT).atZone(SEOUL).toInstant();
     }
 
     private void validateProductionInput() {
