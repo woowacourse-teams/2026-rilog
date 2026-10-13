@@ -8,6 +8,8 @@ import kr.rilog.domain.therilog.service.dto.result.TheRilogProductionInput;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static kr.rilog.domain.therilog.entity.enums.TheRilogContentType.NEWS;
+import static kr.rilog.domain.therilog.entity.enums.TheRilogContentType.SPOTLIGHT;
 import static kr.rilog.domain.post.entity.enums.Category.DAILY;
 import static kr.rilog.domain.post.entity.enums.Category.TECH;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,8 +19,8 @@ import static org.mockito.Mockito.when;
 class TheRilogSheetServiceTest {
 
     @Test
-    @DisplayName("시트에서 제작대기 상태인 스포트라이트 입력만 읽는다.")
-    void readsOnlyProductionPendingSpotlightInputs() {
+    @DisplayName("시트에서 제작대기 상태인 뉴스와 스포트라이트 입력만 읽는다.")
+    void readsOnlyProductionPendingInputs() {
         GoogleSheetsClient client = mock(GoogleSheetsClient.class);
         when(client.readRows()).thenReturn(List.of(
                 row("waiting", "SPOTLIGHT", "제작대기"),
@@ -32,7 +34,8 @@ class TheRilogSheetServiceTest {
         List<TheRilogProductionInput> inputs = service.readProductionInputs();
 
         assertThat(inputs).containsExactly(new TheRilogProductionInput(
-                "waiting", "https://example.com/blog", TECH, Instant.parse("2026-10-14T21:00:00Z")));
+                "waiting", SPOTLIGHT, "https://example.com/blog", TECH, Instant.parse("2026-10-14T21:00:00Z")),
+                new TheRilogProductionInput("news", NEWS, null, TECH, Instant.parse("2026-10-14T21:00:00Z")));
     }
 
     @Test
@@ -48,7 +51,7 @@ class TheRilogSheetServiceTest {
         List<TheRilogProductionInput> inputs = service.readProductionInputs();
 
         assertThat(inputs).containsExactly(new TheRilogProductionInput(
-                "same-row", "https://example.com/changed", DAILY, Instant.parse("2026-10-15T21:00:00Z")));
+                "same-row", SPOTLIGHT, "https://example.com/changed", DAILY, Instant.parse("2026-10-15T21:00:00Z")));
     }
 
     @Test
@@ -63,7 +66,7 @@ class TheRilogSheetServiceTest {
         List<TheRilogProductionInput> inputs = service.readProductionInputs();
 
         assertThat(inputs).containsExactly(new TheRilogProductionInput(
-                "waiting", "https://example.com/blog", TECH, Instant.parse("2026-10-14T21:00:00Z")));
+                "waiting", SPOTLIGHT, "https://example.com/blog", TECH, Instant.parse("2026-10-14T21:00:00Z")));
     }
 
     private TheRilogSheetRow row(String rowId, String contentType, String status) {

@@ -1,6 +1,7 @@
 package kr.rilog.domain.therilog.infrastructure.sheet;
 
 import kr.rilog.domain.post.entity.enums.Category;
+import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import kr.rilog.domain.therilog.exception.TheRilogSheetException;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogProductionInput;
 import org.springframework.util.StringUtils;
@@ -28,16 +29,18 @@ public record TheRilogSheetRow(
             .withResolverStyle(ResolverStyle.STRICT);
     private static final String PRODUCTION_PENDING = "제작대기";
 
-    public boolean isProductionPendingSpotlight() {
+    public boolean isProductionPending() {
         return PRODUCTION_PENDING.equals(status)
-                && "SPOTLIGHT".equals(contentType);
+                && ("SPOTLIGHT".equals(contentType) || "NEWS".equals(contentType));
     }
 
     public TheRilogProductionInput toProductionInput() {
         validateProductionInput();
+        TheRilogContentType type = TheRilogContentType.valueOf(contentType);
         return new TheRilogProductionInput(
                 rowId,
-                sourceUrl,
+                type,
+                type == TheRilogContentType.NEWS ? null : sourceUrl,
                 parseCategory(category),
                 LocalDateTime.parse(scheduledAt, SCHEDULED_AT_FORMAT)
                         .atZone(SEOUL)
@@ -47,7 +50,9 @@ public record TheRilogSheetRow(
 
     private void validateProductionInput() {
         if (!StringUtils.hasText(rowId) || rowId.length() > 128 || !rowId.equals(rowId.strip())
-                || !isHttpUrl(sourceUrl) || !StringUtils.hasText(category) || !StringUtils.hasText(scheduledAt)) {
+                || (!"NEWS".equals(contentType) && !"SPOTLIGHT".equals(contentType))
+                || ("SPOTLIGHT".equals(contentType) && !isHttpUrl(sourceUrl))
+                || !StringUtils.hasText(category) || !StringUtils.hasText(scheduledAt)) {
             throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_INPUT);
         }
     }

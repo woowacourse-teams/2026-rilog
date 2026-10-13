@@ -1,5 +1,6 @@
 package kr.rilog.domain.therilog.infrastructure.sheet;
 
+import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
@@ -10,6 +11,7 @@ public record TheRilogSheetProperties(
         boolean enabled,
         String spreadsheetId,
         String sheetRange,
+        String newsSheetRange,
         String productionCron,
         String credentialsPath,
         Duration connectTimeout,
@@ -25,9 +27,17 @@ public record TheRilogSheetProperties(
         if (enabled) {
             validateRequired(spreadsheetId, "spreadsheetId");
             validateRequired(sheetRange, "sheetRange");
+            validateRequired(newsSheetRange, "newsSheetRange");
             validateRequired(credentialsPath, "credentialsPath");
             validateDailyCron(productionCron);
         }
+    }
+
+    public String rangeFor(TheRilogContentType type) {
+        return switch (type) {
+            case NEWS -> newsSheetRange;
+            case SPOTLIGHT -> sheetRange;
+        };
     }
 
     private static void validateRequired(String value, String name) {

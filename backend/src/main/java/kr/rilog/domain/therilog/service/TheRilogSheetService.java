@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import kr.rilog.domain.therilog.infrastructure.sheet.GoogleSheetsClient;
 import kr.rilog.domain.therilog.infrastructure.sheet.TheRilogSheetRow;
+import kr.rilog.domain.therilog.service.dto.command.TheRilogSheetWriteCommand;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogProductionInput;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +23,15 @@ public class TheRilogSheetService {
         List<TheRilogSheetRow> rows = googleSheetsClient.readRows();
         List<TheRilogProductionInput> inputs = new ArrayList<>();
         for (TheRilogSheetRow row : rows) {
-            if (row.isProductionPendingSpotlight()) {
+            if (row.isProductionPending()) {
                 readProductionInput(row, inputs);
             }
         }
         return List.copyOf(inputs);
+    }
+
+    public void writeProductionResult(TheRilogSheetWriteCommand command) {
+        googleSheetsClient.writeProductionResult(command);
     }
 
     private void readProductionInput(TheRilogSheetRow row, List<TheRilogProductionInput> inputs) {
