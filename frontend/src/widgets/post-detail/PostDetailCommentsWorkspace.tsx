@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { ReactNode } from 'react';
 
@@ -17,12 +18,14 @@ import type {
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
 import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
+import PostCommentsDockedCard from '@/features/post-detail/ui/PostCommentsDockedCard';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
+import { useDockedCommentsHost } from './use-docked-comments-host';
 
 interface PostDetailCommentsWorkspaceProps {
 	html: string;
@@ -62,7 +65,11 @@ export default function PostDetailCommentsWorkspace({
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
+	const dockHost = useDockedCommentsHost(postId);
+	const isDocked = dockHost !== null && dockHost !== undefined;
+	const isLayoutReady = dockHost !== undefined;
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
+	const openerRef = useRef<HTMLElement | null>(null);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
 	const sidebarThreads = sidebarQuery.data ?? EMPTY_INLINE_COMMENT_THREADS;
@@ -118,18 +125,19 @@ export default function PostDetailCommentsWorkspace({
 	}, [commentsQuery.isSuccess, deepLinkedSelectionId, sidebarQuery.isSuccess, sidebarThreads]);
 
 	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+		openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		setCommentEntrySource(request === null ? 'all' : request.source);
 		setSidebarMode(mode);
 		setSelection(null);
 		setCreatedCommentId(null);
 		setDeepLinkedSelectionId(null);
-		setCommentEntrySource('selection_toolbar');
 		setComposerAnchorId(null);
 		setOpenRequest(request);
 		setIsCommentsSidebarOpen(true);
 	}, []);
 
 	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
+		openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		setCreatedCommentId(null);
 		setDeepLinkedSelectionId(null);
 		const existingThread = inlineCommentBlocks
@@ -143,6 +151,7 @@ export default function PostDetailCommentsWorkspace({
 					anchor.selectedText === target.selectedText,
 			);
 		setSelection(existingThread ? null : target);
+		setCommentEntrySource('selection_toolbar');
 		setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 		setSidebarMode('single');
 		setOpenRequest(
@@ -170,13 +179,14 @@ export default function PostDetailCommentsWorkspace({
 	const closeComments = useCallback(() => {
 		setIsCommentsSidebarOpen(false);
 		setIsDeletedCommentToastVisible(false);
+		if (isDocked && openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
 		const url = new URL(window.location.href);
 		if (!url.searchParams.has(POST_DETAIL_SELECTION_QUERY_PARAM) && !url.searchParams.has('notificationCommentDeleted'))
 			return;
 		url.searchParams.delete(POST_DETAIL_SELECTION_QUERY_PARAM);
 		url.searchParams.delete('notificationCommentDeleted');
 		window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-	}, []);
+	}, [isDocked]);
 
 	const handleAnchorNavigate = useCallback(
 		(thread: InlineCommentThreadModel) => {
@@ -185,17 +195,43 @@ export default function PostDetailCommentsWorkspace({
 			}
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-			closeComments();
-			window.setTimeout(() => {
-				scrollToThreadAnchor(thread);
-			}, 140);
+			if (!isDocked) closeComments();
+			window.setTimeout(() => scrollToThreadAnchor(thread), isDocked ? 0 : 140);
 		},
-		[closeComments, postId],
+		[closeComments, isDocked, postId],
 	);
+
+	const panelProps = {
+		postId,
+		selection,
+		composerAnchorId,
+		mode: sidebarMode,
+		entrySource: commentEntrySource,
+		showDeletedCommentToast: isDeletedCommentToastVisible,
+		threads: visibleThreads,
+		isLoading: sidebarQuery.isPending,
+		isError: sidebarQuery.isError,
+		onRetry: () => void sidebarQuery.refetch(),
+		onCreated: (commentAnchorId: number) => {
+			setSelection(null);
+			setCreatedCommentId(commentAnchorId);
+			setDeepLinkedSelectionId(null);
+			setComposerAnchorId(null);
+		},
+		onClose: closeComments,
+		onNavigate: handleAnchorNavigate,
+	};
 
 	return (
 		<>
-			<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
+			<div className="mt-5 mr-5 flex w-full justify-end @min-[75rem]:hidden">
+				<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
+			</div>
+
+			<div
+				className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}
+				data-comments-open={isCommentsSidebarOpen ? true : undefined}
+			>
 				<PostDetailContent
 					html={html}
 					postId={postId}
@@ -208,9 +244,6 @@ export default function PostDetailCommentsWorkspace({
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />
-				<div className={styles.compactCommentsEntry}>
-					<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
-				</div>
 				<div className={`${styles.profileSection} mx-auto max-w-lg`}>{profileSection}</div>
 				{afterProfile}
 			</div>
@@ -221,28 +254,12 @@ export default function PostDetailCommentsWorkspace({
 				</div>
 			</aside>
 
-			<PostCommentsSidebar
-				key={createRequestId}
-				postId={postId}
-				selection={selection}
-				composerAnchorId={composerAnchorId}
-				mode={sidebarMode}
-				entrySource={commentEntrySource}
-				open={isCommentsSidebarOpen}
-				showDeletedCommentToast={isDeletedCommentToastVisible}
-				threads={visibleThreads}
-				isLoading={sidebarQuery.isPending}
-				isError={sidebarQuery.isError}
-				onRetry={() => void sidebarQuery.refetch()}
-				onCreated={(commentAnchorId) => {
-					setSelection(null);
-					setCreatedCommentId(commentAnchorId);
-					setDeepLinkedSelectionId(null);
-					setComposerAnchorId(null);
-				}}
-				onClose={closeComments}
-				onNavigate={handleAnchorNavigate}
-			/>
+			{isDocked &&
+				isCommentsSidebarOpen &&
+				createPortal(<PostCommentsDockedCard key={createRequestId} {...panelProps} />, dockHost)}
+			{isLayoutReady && !isDocked && (
+				<PostCommentsSidebar key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />
+			)}
 		</>
 	);
 }

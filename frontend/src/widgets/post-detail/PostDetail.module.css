@@ -1,7 +1,84 @@
+.postDetailShell {
+	min-width: 0;
+}
+
 .postDetailCard {
 	container-name: post-detail-card;
 	container-type: inline-size;
 	overflow-wrap: anywhere;
+}
+
+.dockedCommentsHost {
+	display: none;
+}
+
+.postDetailShell:has(.dockedCommentsHost:not(:empty)) {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+	gap: 1.5rem;
+	width: calc(100% + 2rem);
+	max-width: none;
+	margin-right: -2rem;
+	margin-left: 0;
+}
+
+.postDetailShell:has(.dockedCommentsHost:not(:empty)) .postDetailCard {
+	flex: 1 1 87.5rem;
+	min-width: 50rem;
+	max-width: 87.5rem;
+	margin-inline: auto;
+}
+
+.postDetailShell:has(.articleColumn[data-comments-open]) .contentLayout {
+	grid-template-columns: minmax(0, 42rem);
+	justify-content: center;
+}
+
+.postDetailShell:has(.articleColumn[data-comments-open]) .articleColumn {
+	grid-column: 1;
+}
+
+.postDetailShell:has(.articleColumn[data-comments-open]) .tableOfContentsColumn {
+	display: none;
+}
+
+.dockedCommentsHost:not(:empty) {
+	display: block;
+	position: sticky;
+	top: 1.5rem;
+	flex: 0 0 clamp(21.5rem, calc(100% - 51.5rem), 28rem);
+	min-width: 21.5rem;
+	max-width: 28rem;
+}
+
+@container post-detail-card (min-width: 75rem) {
+	.postDetailShell:has(.articleColumn[data-comments-open]) .contentLayout {
+		grid-template-columns: minmax(12.5rem, 1fr) minmax(0, 42rem) minmax(12.5rem, 1fr);
+		justify-content: stretch;
+	}
+
+	.postDetailShell:has(.articleColumn[data-comments-open]) .articleColumn {
+		grid-column: 2;
+		width: auto;
+	}
+
+	.postDetailShell:has(.articleColumn[data-comments-open]) .tableOfContentsColumn {
+		display: block;
+		grid-column: 1;
+		align-self: stretch;
+		justify-self: start;
+		width: 12.5rem;
+		padding-block: 5rem;
+	}
+
+	.postDetailShell:has(.articleColumn[data-comments-open]) .tableOfContentsSticky {
+		--post-toc-max-height: calc(100dvh - 5rem);
+
+		position: sticky;
+		top: 5rem;
+		overflow-wrap: anywhere;
+	}
 }
 
 .contentLayout {

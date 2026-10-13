@@ -130,6 +130,16 @@
 	}
 }
 
+@container post-detail-card (max-width: 50rem) {
+	.post-detail-body [data-inline-comment-block-button] {
+		left: calc(100% + 0.25rem);
+	}
+
+	.post-detail-body [data-inline-comment-block-button] span {
+		display: none;
+	}
+}
+
 @media (max-width: 40rem) {
 	.post-detail-body [data-inline-comment-block-button] {
 		display: none;

@@ -9,6 +9,7 @@ import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
 
+import { getPostCommentsDockHostId } from './get-post-comments-dock-host-id';
 import styles from './PostDetail.module.css';
 import PostDetailCommentsWorkspace from './PostDetailCommentsWorkspace';
 
@@ -43,35 +44,38 @@ export default async function BasePostDetail({
 			chapterId={post.chapter?.id ?? null}
 		>
 			<main className="min-h-dvh bg-background px-4 py-5 sm:px-5 sm:py-7 lg:px-8 lg:py-10">
-				<div
-					className={`${styles.postDetailCard} mx-auto max-w-[87.5rem] rounded-xl border border-border-default bg-surface`}
-				>
-					{header}
-					<PostDetailHero title={post.title} thumbnailUrl={post.thumbnailUrl} />
-					{beforeContent}
+				<div className={styles.postDetailShell}>
+					<div
+						className={`${styles.postDetailCard} mx-auto max-w-[87.5rem] rounded-xl border border-border-default bg-surface`}
+					>
+						{header}
+						<PostDetailHero title={post.title} thumbnailUrl={post.thumbnailUrl} />
+						{beforeContent}
 
-					<div className={`${styles.contentLayout} px-5 sm:px-10`}>
-						{tableOfContents.length === 0 ? null : (
-							<aside className={styles.tableOfContentsColumn}>
-								<div className={styles.tableOfContentsSticky}>
-									<PostTableOfContents items={tableOfContents} />
-								</div>
-							</aside>
-						)}
+						<div className={`${styles.contentLayout} px-5 sm:px-10`}>
+							{tableOfContents.length === 0 ? null : (
+								<aside className={styles.tableOfContentsColumn}>
+									<div className={styles.tableOfContentsSticky}>
+										<PostTableOfContents items={tableOfContents} />
+									</div>
+								</aside>
+							)}
 
-						<PostDetailCommentsWorkspace
-							key={initialSelectionId ?? 'no-selection'}
-							html={contentHtml}
-							postId={post.id}
-							initialSelectionId={initialSelectionId}
-							showDeletedCommentToast={showDeletedCommentToast}
-							ownerType={post.blog.type}
-							category={post.category}
-							enableInlineCommentSelectionDebug={false}
-							profileSection={profileSection}
-							afterProfile={afterProfile}
-						/>
+							<PostDetailCommentsWorkspace
+								key={initialSelectionId ?? 'no-selection'}
+								html={contentHtml}
+								postId={post.id}
+								initialSelectionId={initialSelectionId}
+								showDeletedCommentToast={showDeletedCommentToast}
+								ownerType={post.blog.type}
+								category={post.category}
+								enableInlineCommentSelectionDebug={false}
+								profileSection={profileSection}
+								afterProfile={afterProfile}
+							/>
+						</div>
 					</div>
+					<aside id={getPostCommentsDockHostId(post.id)} className={styles.dockedCommentsHost} />
 				</div>
 			</main>
 		</PostNavigationVisitProvider>
