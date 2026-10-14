@@ -86,8 +86,11 @@ describe('DailyHeadlines', () => {
 		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[0].title);
 	});
 
-	it('빈 목록이면 헤드라인 영역을 표시하지 않는다', () => {
+	it('빈 목록이면 헤드라인 영역에 빈 상태를 표시한다', () => {
 		render(<DailyHeadlines dailyHeadlines={[]} />);
-		expect(screen.queryByRole('region', { name: 'Daily Headlines' })).not.toBeInTheDocument();
+		expect(screen.getByRole('region', { name: 'Daily Headlines' })).toHaveTextContent(
+			'아직 등록된 헤드라인이 없습니다.',
+		);
+		expect(screen.queryByRole('link')).not.toBeInTheDocument();
 	});
 });

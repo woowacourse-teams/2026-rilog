@@ -78,5 +78,7 @@ describe('TheRilogMagazine', () => {
 		render(<TheRilogMagazine dailyHeadlines={[]} articles={[]} />);
 		expect(screen.queryByRole('article')).not.toBeInTheDocument();
 		expect(screen.queryAllByRole('link')).toHaveLength(0);
+		expect(screen.getAllByText('아직 등록된 아티클이 없습니다.')).toHaveLength(2);
+		expect(screen.getByText('아직 등록된 헤드라인이 없습니다.')).toBeInTheDocument();
 	});
 });

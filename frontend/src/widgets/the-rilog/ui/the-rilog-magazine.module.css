@@ -205,6 +205,12 @@
 	margin-top: 1.25rem;
 }
 
+.empty {
+	padding-block: 1rem;
+	color: var(--text-secondary);
+	font-size: 0.875rem;
+}
+
 .articleRow {
 	min-width: 0;
 }
