@@ -107,40 +107,43 @@ describe('PostCommentsSidebar', () => {
 		expect(login).toHaveBeenCalledWith({ entrySurface: 'sidebar' });
 	});
 
-	it.each(['block', 'all'] as const)('%s 목록은 인용이 하나여도 댓글을 펼치고 접을 수 있다', async (mode) => {
-		const user = userEvent.setup();
-		render(
-			<PostCommentsSidebar
-				mode={mode}
-				postId={81}
-				open
-				threads={[THREADS[0]]}
-				onClose={vi.fn()}
-				onNavigate={vi.fn()}
-			/>,
-		);
+	it.each(['block', 'all'] as const)(
+		'%s 목록은 인용이 하나여도 처음부터 펼쳐지고 접었다 다시 펼칠 수 있다',
+		async (mode) => {
+			const user = userEvent.setup();
+			render(
+				<PostCommentsSidebar
+					mode={mode}
+					postId={81}
+					open
+					threads={[THREADS[0]]}
+					onClose={vi.fn()}
+					onNavigate={vi.fn()}
+				/>,
+			);
 
-		expect(
-			screen.getByRole('dialog', { name: `${mode === 'all' ? '전체 인라인 댓글' : '인라인 댓글'} 1` }),
-		).toBeInTheDocument();
-		await user.click(screen.getByRole('button', { name: '댓글 펼치기' }));
-		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toBeInTheDocument();
-		await user.click(screen.getByRole('button', { name: '댓글 접기' }));
-		expect(screen.queryByRole('article', { name: '작성자님의 댓글' })).not.toBeInTheDocument();
-	});
+			expect(
+				screen.getByRole('dialog', { name: `${mode === 'all' ? '전체 인라인 댓글' : '인라인 댓글'} 1` }),
+			).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: '댓글 접기' })).toHaveAttribute('aria-expanded', 'true');
+			expect(screen.getByRole('textbox', { name: '댓글 입력' })).toBeInTheDocument();
+			await user.click(screen.getByRole('button', { name: '댓글 접기' }));
+			expect(screen.queryByRole('article', { name: '작성자님의 댓글' })).not.toBeInTheDocument();
+			await user.click(screen.getByRole('button', { name: '댓글 펼치기' }));
+			expect(screen.getByRole('article', { name: '작성자님의 댓글' })).toBeVisible();
+		},
+	);
 
-	it('인용과 댓글 입력을 표시하고 펼친 댓글 목록을 제공한다', async () => {
-		const user = userEvent.setup();
+	it('모든 인용의 댓글과 입력창을 처음부터 펼쳐 제공한다', () => {
 		render(
 			<PostCommentsSidebar mode="all" postId={81} open threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />,
 		);
 
 		expect(screen.getByRole('dialog', { name: '전체 인라인 댓글 2' })).toBeInTheDocument();
 		expect(screen.getByRole('region', { name: '"활성 인용문" 댓글' })).toBeInTheDocument();
-		expect(screen.queryByRole('article', { name: '작성자님의 댓글' })).not.toBeInTheDocument();
-		const expandButtons = screen.getAllByRole('button', { name: '댓글 펼치기' });
-		await user.click(expandButtons[0]);
-		await user.click(expandButtons[1]);
+		for (const button of screen.getAllByRole('button', { name: '댓글 접기' })) {
+			expect(button).toHaveAttribute('aria-expanded', 'true');
+		}
 		expect(screen.getByRole('article', { name: '작성자님의 댓글' })).toHaveTextContent('첫 번째 댓글');
 		expect(screen.getByText('작성자', { selector: 'span' })).toBeInTheDocument();
 		expect(screen.getByText('멤버')).toBeInTheDocument();
@@ -164,7 +167,6 @@ describe('PostCommentsSidebar', () => {
 		expect(screen.queryByRole('button', { name: '인용문으로 이동: 활성 인용문' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '인용문으로 이동: 오래된 인용문' })).not.toBeInTheDocument();
 
-		await user.click(screen.getAllByRole('button', { name: '댓글 펼치기' })[0]);
 		await user.click(screen.getByRole('button', { name: '본문으로 이동' }));
 		expect(onNavigate).toHaveBeenCalledWith(THREADS[0]);
 
@@ -193,14 +195,13 @@ describe('PostCommentsSidebar 탐색 회귀', () => {
 		expect(screen.getByRole('textbox')).toBeEnabled();
 	});
 
-	it('전체 목록을 펼쳐 OUTDATED를 읽되 본문 이동은 ACTIVE에만 제공한다', async () => {
+	it('처음부터 OUTDATED 댓글을 읽을 수 있고 본문 이동은 ACTIVE에만 제공한다', async () => {
 		const user = userEvent.setup();
 		const onNavigate = vi.fn();
 		const onClose = vi.fn();
 		render(
 			<PostCommentsSidebar postId={81} open mode="all" threads={THREADS} onClose={onClose} onNavigate={onNavigate} />,
 		);
-		for (const button of screen.getAllByRole('button', { name: '댓글 펼치기' })) await user.click(button);
 		expect(screen.getByText('Outdated')).toBeInTheDocument();
 		expect(screen.getAllByRole('button', { name: '본문으로 이동' })).toHaveLength(1);
 		await user.click(screen.getByRole('button', { name: '본문으로 이동' }));
