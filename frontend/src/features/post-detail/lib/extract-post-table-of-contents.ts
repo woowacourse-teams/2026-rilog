@@ -3,7 +3,7 @@ import type { Block, DefaultInlineContentSchema, DefaultStyleSchema, InlineConte
 export interface PostTableOfContentsItem {
 	id: string;
 	text: string;
-	level: 1 | 2 | 3;
+	level: 1 | 2 | 3 | 4;
 }
 
 export interface PostHeadingAnchor extends PostTableOfContentsItem {
@@ -49,7 +49,7 @@ const createPostHeadingAnchorId = (text: string, blockId: string, usedIds: Set<s
 	return id;
 };
 
-// h1부터 h3까지 추출
+// h1부터 h4까지 추출
 export const extractPostHeadingAnchors = (blocks: Block[]): PostHeadingAnchor[] => {
 	const anchors: PostHeadingAnchor[] = [];
 	const usedIds = new Set<string>();
@@ -57,7 +57,10 @@ export const extractPostHeadingAnchors = (blocks: Block[]): PostHeadingAnchor[] 
 	// 재귀로 목차 탐색
 	const visit = (currentBlocks: Block[]) => {
 		currentBlocks.forEach((block) => {
-			if (block.type === 'heading' && (block.props.level === 1 || block.props.level === 2 || block.props.level === 3)) {
+			if (
+				block.type === 'heading' &&
+				(block.props.level === 1 || block.props.level === 2 || block.props.level === 3 || block.props.level === 4)
+			) {
 				const text = extractInlineText(block.content).trim();
 
 				if (text.length > 0) {

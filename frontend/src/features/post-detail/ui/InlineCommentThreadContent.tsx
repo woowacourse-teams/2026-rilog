@@ -26,7 +26,7 @@ export default function InlineCommentThreadContent({
 	onNavigate,
 	renderInput,
 }: InlineCommentThreadContentProps) {
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(true);
 	const isOpen = !isCollapsible || isExpanded;
 	const panelId = useId();
 	const toggleThread = () => {
