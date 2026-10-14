@@ -69,7 +69,6 @@ the-rilog:
   spreadsheet-id: ${THE_RILOG_SPREADSHEET_ID:}
   sheet-range: ${THE_RILOG_SHEET_RANGE:SPOTLIGHTS!A:M}
   news-sheet-range: ${THE_RILOG_NEWS_SHEET_RANGE:NEWS!A:G}
-  production-cron: ${THE_RILOG_PRODUCTION_CRON:}
   publication-cron: ${THE_RILOG_PUBLICATION_CRON:0 0 5 * * *}
   credentials-path: ${THE_RILOG_CREDENTIALS_PATH:}
   connect-timeout: 3s

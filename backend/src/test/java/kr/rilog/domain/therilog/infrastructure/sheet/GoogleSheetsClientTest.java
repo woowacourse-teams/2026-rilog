@@ -23,46 +23,34 @@ class GoogleSheetsClientTest {
     private Path tempDirectory;
 
     @Test
-    @DisplayName("서비스 계정 토큰으로 뉴스와 스포트라이트 탭의 행을 읽는다.")
-    void readRowsWithServiceAccountToken() throws Exception {
+    @DisplayName("서비스 계정 토큰으로 뉴스와 스포트라이트 탭의 발행 데이터를 읽는다.")
+    void readPublicationRowsWithServiceAccountToken() throws Exception {
         GoogleSheetsTestSupport sheets = new GoogleSheetsTestSupport(tempDirectory, "NEWS!A:G");
         sheets.expectToken();
         sheets.expectRows("NEWS%21A%3AG", """
                 {"range":"NEWS!A1:G10","majorDimension":"ROWS","values":[
                   ["rowId","title","content","category","scheduledAt","status","postId"],
-                  ["news_20261015","","","기술","2026-10-15 06:00","제작대기",""]
+                  ["news_20261015","오늘의 뉴스","뉴스 요약","기술","2026-10-15 06:00","승인완료",""]
                 ]}
                 """);
         sheets.expectRows("SPOTLIGHTS%21A%3AM", """
                 {"range":"SPOTLIGHTS!A1:M10","majorDimension":"ROWS","values":[
                   ["status","title","rowId","scheduledAt","category","originalArticleUrl","content","postId",
                    "articleType","description","thumbnailImageUrl","sourceProfileName","sourceProfileImage"],
-                  ["제작대기","","spotlight_20261015_01","2026-10-15 06:00","기술","https://example.com/post"]
+                  ["승인완료","기술 요약","spotlight_20261015_01","2026-10-15 06:00","기술","https://example.com/post",
+                   "기술 본문","","enterprise","기술 소개","","기업",""]
                 ]}
                 """);
 
-        List<TheRilogSheetRow> rows = sheets.client().readRows();
+        List<TheRilogPublicationRow> rows = sheets.client().readPublicationRows(true);
 
         assertThat(rows).containsExactly(
-                new TheRilogSheetRow("news_20261015", "NEWS", "", "기술", "2026-10-15 06:00", "제작대기"),
-                new TheRilogSheetRow("spotlight_20261015_01", "SPOTLIGHT", "https://example.com/post", "기술",
-                        "2026-10-15 06:00", "제작대기"));
+                new TheRilogPublicationRow(new TheRilogSheetRow("news_20261015", "NEWS", "", "기술",
+                        "2026-10-15 06:00", "승인완료"), "오늘의 뉴스", "뉴스 요약", null, ""),
+                new TheRilogPublicationRow(new TheRilogSheetRow("spotlight_20261015_01", "SPOTLIGHT", "https://example.com/post", "기술",
+                        "2026-10-15 06:00", "승인완료"), "기술 요약", "기술 본문",
+                        new TheRilogPublicationRow.Spotlight("enterprise", "기술 소개", "", "기업", ""), ""));
         sheets.verifyRequests();
-    }
-
-    @Test
-    @DisplayName("제작 배치 cron은 하루 한 번 실행되는 시각만 허용한다.")
-    void productionCronAllowsOnlyDailyTime() {
-        assertThatThrownBy(() -> new TheRilogSheetProperties(
-                true,
-                "sheet-id",
-                "SPOTLIGHTS!A:M",
-                "NEWS!A:G",
-                "0 */5 * * * *",
-                "/tmp/google.json",
-                Duration.ofSeconds(1),
-                Duration.ofSeconds(1)
-        )).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -73,13 +61,13 @@ class GoogleSheetsClientTest {
         GoogleSheetsClient client = new GoogleSheetsClient(RestClient.create(), RestClient.create(),
                 properties(credentialsPath), Clock.systemUTC());
 
-        assertThatThrownBy(client::readRows).isInstanceOf(RilogInfrastructureException.class)
+        assertThatThrownBy(() -> client.readPublicationRows(false)).isInstanceOf(RilogInfrastructureException.class)
                 .satisfies(error -> assertThat(new SanitizingStackTracePrinter().printStackTraceToString(error))
                         .doesNotContain("PRIVATE_CREDENTIAL_CONTENT"));
     }
 
     @Test
-    @DisplayName("시트 수집을 활성화하면 기존 HTTP 클라이언트와 구분하여 구글 클라이언트를 구성한다.")
+    @DisplayName("cron 설정 없이 시트 연동을 켜면 기존 HTTP 클라이언트와 구분하여 구글 클라이언트를 구성한다.")
     void enabledSheetConfigurationCreatesGoogleClient() {
         new ApplicationContextRunner()
                 .withUserConfiguration(TheRilogSheetConfig.class)
@@ -96,7 +84,6 @@ class GoogleSheetsClientTest {
                 "sheet-id",
                 "SPOTLIGHTS!A:M",
                 "NEWS!A:G",
-                "0 0 18 * * *",
                 credentialsPath.toString(),
                 Duration.ofSeconds(1),
                 Duration.ofSeconds(1)

@@ -56,7 +56,7 @@ class GoogleSheetsTestSupport {
                 """.formatted(privateKey));
         client = new GoogleSheetsClient(tokenBuilder.build(), sheetsBuilder.build(),
                 new TheRilogSheetProperties(true, "sheet-id", "SPOTLIGHTS!A:M", newsRange,
-                        "0 0 23 * * *", credentialsPath.toString(), Duration.ofSeconds(1), Duration.ofSeconds(1)),
+                        credentialsPath.toString(), Duration.ofSeconds(1), Duration.ofSeconds(1)),
                 Clock.fixed(Instant.parse("2026-10-13T00:00:00Z"), ZoneOffset.UTC));
     }
 

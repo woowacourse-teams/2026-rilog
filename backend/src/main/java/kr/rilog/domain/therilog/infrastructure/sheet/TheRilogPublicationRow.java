@@ -5,7 +5,6 @@ import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.entity.vo.TheRilogPostMetadata;
 import kr.rilog.domain.therilog.entity.vo.TheRilogPublicationArticle;
 import kr.rilog.domain.therilog.exception.TheRilogSheetException;
-import kr.rilog.domain.therilog.service.dto.command.TheRilogSheetWriteCommand.Spotlight;
 import org.springframework.util.StringUtils;
 import tools.jackson.databind.JsonNode;
 
@@ -37,12 +36,12 @@ public record TheRilogPublicationRow(
     }
 
     public TheRilogPublicationArticle toArticle(JsonNode blockNote) {
-        var productionInput = input.toProductionInput();
-        PostType type = productionInput.contentType() == NEWS ? PostType.DAILY_HEADLINES : spotlightType();
+        input.validate();
+        PostType type = NEWS.name().equals(input.contentType()) ? PostType.DAILY_HEADLINES : spotlightType();
         var metadata = type.isSpotlight()
                 ? new TheRilogPostMetadata(type, spotlight.description(), spotlight.sourceProfileName(), nullable(spotlight.sourceProfileImage()))
                 : new TheRilogPostMetadata(type, null, null, null);
-        var detail = new PostDetail(title, blockNote, productionInput.category(), PUBLIC,
+        var detail = new PostDetail(title, blockNote, input.parseCategory(), PUBLIC,
                 type.isSpotlight() ? nullable(spotlight.thumbnailImageUrl()) : null);
         return new TheRilogPublicationArticle(input.rowId(), detail, metadata);
     }
@@ -60,5 +59,14 @@ public record TheRilogPublicationRow(
 
     private String nullable(String value) {
         return StringUtils.hasText(value) ? value : null;
+    }
+
+    public record Spotlight(
+            String articleType,
+            String description,
+            String thumbnailImageUrl,
+            String sourceProfileName,
+            String sourceProfileImage
+    ) {
     }
 }

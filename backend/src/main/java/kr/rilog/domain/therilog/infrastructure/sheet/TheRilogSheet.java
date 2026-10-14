@@ -2,7 +2,7 @@ package kr.rilog.domain.therilog.infrastructure.sheet;
 
 import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import kr.rilog.domain.therilog.exception.TheRilogSheetException;
-import kr.rilog.domain.therilog.service.dto.command.TheRilogSheetWriteCommand;
+import kr.rilog.domain.therilog.infrastructure.sheet.TheRilogPublicationRow.Spotlight;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogPublishedArticle;
 import org.springframework.util.StringUtils;
 
@@ -16,11 +16,8 @@ import java.util.regex.Pattern;
 import static kr.rilog.domain.therilog.entity.enums.TheRilogContentType.SPOTLIGHT;
 import static kr.rilog.domain.therilog.entity.enums.TheRilogSheetStatus.APPROVED;
 import static kr.rilog.domain.therilog.entity.enums.TheRilogSheetStatus.PUBLISHED;
-import static kr.rilog.domain.therilog.entity.enums.TheRilogSheetStatus.REVIEW_PENDING;
 import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.DUPLICATE_THE_RILOG_SHEET_ROW_ID;
 import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.INVALID_THE_RILOG_SHEET_INPUT;
-import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.INVALID_THE_RILOG_SHEET_RESULT;
-import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.INVALID_THE_RILOG_SHEET_STATUS;
 import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.INVALID_THE_RILOG_PUBLICATION_STATUS;
 import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.THE_RILOG_SHEET_ROW_NOT_FOUND;
 
@@ -38,14 +35,6 @@ final class TheRilogSheet {
         this.range = response != null && StringUtils.hasText(response.range()) ? response.range() : requestedRange;
         this.values = response == null || response.values() == null ? List.of() : response.values();
         this.columns = values.isEmpty() ? Map.of() : readColumns(values.getFirst());
-    }
-
-    List<TheRilogSheetRow> readRows() {
-        if (values.isEmpty()) {
-            return List.of();
-        }
-        validateInputColumns();
-        return values.stream().skip(1).map(this::toRow).toList();
     }
 
     List<TheRilogPublicationRow> readPublicationRows() {
@@ -71,16 +60,6 @@ final class TheRilogSheet {
         result.put("postId", article.postId().toString());
         result.put("status", PUBLISHED.getSheetValue());
         return createUpdates(rowIndex, result);
-    }
-
-    GoogleSheetValuesUpdateRequest createWriteRequest(TheRilogSheetWriteCommand command) {
-        validateInputColumns();
-        int rowIndex = getUniqueRowIndex(command.rowId());
-        if (!toRow(values.get(rowIndex)).isProductionPending()) {
-            throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_STATUS);
-        }
-        Map<String, String> result = resultCells(command);
-        return new GoogleSheetValuesUpdateRequest("RAW", createUpdates(rowIndex, result));
     }
 
     private List<GoogleSheetValuesUpdateRequest.ValueRange> createUpdates(int rowIndex, Map<String, String> result) {
@@ -153,35 +132,12 @@ final class TheRilogSheet {
                 cell(row, "category"), cell(row, "scheduledAt"), cell(row, "status"));
     }
 
-    private TheRilogSheetWriteCommand.Spotlight readSpotlight(List<String> row) {
+    private Spotlight readSpotlight(List<String> row) {
         if (contentType != SPOTLIGHT) {
             return null;
         }
-        return new TheRilogSheetWriteCommand.Spotlight(cell(row, "articleType"), cell(row, "description"),
+        return new Spotlight(cell(row, "articleType"), cell(row, "description"),
                 cell(row, "thumbnailImageUrl"), cell(row, "sourceProfileName"), cell(row, "sourceProfileImage"));
-    }
-
-    private Map<String, String> resultCells(TheRilogSheetWriteCommand command) {
-        if (!StringUtils.hasText(command.title()) || !StringUtils.hasText(command.content())) {
-            throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_RESULT);
-        }
-        Map<String, String> result = new LinkedHashMap<>();
-        result.put("title", command.title());
-        result.put("content", command.content());
-        if (contentType == SPOTLIGHT) {
-            TheRilogSheetWriteCommand.Spotlight spotlight = command.spotlight();
-            if (spotlight == null || (!"enterprise".equals(spotlight.articleType())
-                    && !"personal".equals(spotlight.articleType()))) {
-                throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_RESULT);
-            }
-            result.put("articleType", spotlight.articleType());
-            result.put("description", emptyIfNull(spotlight.description()));
-            result.put("thumbnailImageUrl", emptyIfNull(spotlight.thumbnailImageUrl()));
-            result.put("sourceProfileName", emptyIfNull(spotlight.sourceProfileName()));
-            result.put("sourceProfileImage", emptyIfNull(spotlight.sourceProfileImage()));
-        }
-        result.put("status", REVIEW_PENDING.getSheetValue());
-        return result;
     }
 
     private String cellRange(int rowIndex, int columnIndex) {
@@ -217,7 +173,4 @@ final class TheRilogSheet {
         return name.reverse().toString();
     }
 
-    private String emptyIfNull(String value) {
-        return value == null ? "" : value;
-    }
 }

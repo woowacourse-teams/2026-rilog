@@ -4,7 +4,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import kr.rilog.domain.therilog.exception.TheRilogSheetException;
-import kr.rilog.domain.therilog.service.dto.command.TheRilogSheetWriteCommand;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogPublishedArticle;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -57,37 +56,6 @@ public class GoogleSheetsClient {
         this.sheetsRestClient = sheetsRestClient;
         this.properties = properties;
         this.clock = clock;
-    }
-
-    public List<TheRilogSheetRow> readRows() {
-        long startedAt = System.nanoTime();
-        try {
-            String accessToken = requestAccessToken(readCredentials());
-            List<TheRilogSheetRow> rows = new ArrayList<>();
-            for (TheRilogContentType type : TheRilogContentType.values()) {
-                rows.addAll(readSheet(type, accessToken).readRows());
-            }
-            return List.copyOf(rows);
-        } catch (Exception exception) {
-            throw readFailure(startedAt, exception);
-        }
-    }
-
-    public void writeProductionResult(TheRilogSheetWriteCommand command) {
-        long startedAt = System.nanoTime();
-        try {
-            if (command == null || command.contentType() == null) {
-                throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_RESULT);
-            }
-            String accessToken = requestAccessToken(readCredentials());
-            TheRilogSheet sheet = readSheet(command.contentType(), accessToken);
-            GoogleSheetValuesUpdateRequest request = sheet.createWriteRequest(command);
-            writeValues(accessToken, request);
-        } catch (TheRilogSheetException exception) {
-            throw exception;
-        } catch (Exception exception) {
-            throw writeFailure(startedAt, exception, command);
-        }
     }
 
     public List<TheRilogPublicationRow> readPublicationRows(boolean includeSpotlights) {
@@ -221,15 +189,4 @@ public class GoogleSheetsClient {
         );
     }
 
-    private RilogInfrastructureException writeFailure(long startedAt, Throwable cause,
-                                                      TheRilogSheetWriteCommand command) {
-        Map<String, Object> context = Map.of(
-                "operation", "write_the_rilog_sheet",
-                "spreadsheetId", properties.spreadsheetId(),
-                "rowId", command.rowId() == null ? "" : command.rowId(),
-                "contentType", command.contentType().name(),
-                "durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)
-        );
-        return new RilogInfrastructureException(INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.getMessage(), cause, context);
-    }
 }
