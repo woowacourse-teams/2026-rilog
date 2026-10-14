@@ -85,22 +85,23 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
 
     private User writer;
     private Blog theRilog;
-    private Chapter spotlights;
+    private Chapter enterprise;
 
     @BeforeEach
     void setUpTheRilogBlog() {
         writer = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("편집자", THE_RILOG_SLUG));
         theRilog = blogRepository.saveAndFlush(Blog.createRilog(writer));
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(theRilog, writer));
-        chapterRepository.saveAndFlush(Chapter.create(theRilog, "headlines", 0));
-        spotlights = chapterRepository.saveAndFlush(Chapter.create(theRilog, "spotlights", 1));
+        chapterRepository.saveAndFlush(Chapter.create(theRilog, "news", 0));
+        enterprise = chapterRepository.saveAndFlush(Chapter.create(theRilog, "enterprise", 1));
+        chapterRepository.saveAndFlush(Chapter.create(theRilog, "personal", 2));
     }
 
     @ParameterizedTest
     @CsvSource({
-            "DAILY_HEADLINES, headlines",
-            "ENTERPRISE_SPOTLIGHT, spotlights",
-            "PERSONAL_SPOTLIGHT, spotlights"
+            "DAILY_HEADLINES, news",
+            "ENTERPRISE_SPOTLIGHT, enterprise",
+            "PERSONAL_SPOTLIGHT, personal"
     })
     @DisplayName("더 리로그 발행은 유형에 맞는 기존 챕터에 글을 저장한다.")
     void publishTheRilogPersistsPostInChapterSelectedByType(PostType postType, String expectedChapterName) {
@@ -152,10 +153,10 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     void publishTheRilogRejectsUnavailableChapterWithoutPartialWrites(String chapterState) {
         // given
         if ("missing".equals(chapterState)) {
-            chapterRepository.delete(spotlights);
+            chapterRepository.delete(enterprise);
         } else {
-            spotlights.delete();
-            chapterRepository.saveAndFlush(spotlights);
+            enterprise.delete();
+            chapterRepository.saveAndFlush(enterprise);
         }
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 

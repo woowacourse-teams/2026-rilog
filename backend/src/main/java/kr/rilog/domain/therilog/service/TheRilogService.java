@@ -126,8 +126,9 @@ public class TheRilogService {
 
     private Chapter getTheRilogChapter(Blog blog, PostType postType) {
         String chapterName = switch (postType) {
-            case DAILY_HEADLINES -> "headlines";
-            case ENTERPRISE_SPOTLIGHT, PERSONAL_SPOTLIGHT -> "spotlights";
+            case DAILY_HEADLINES -> "news";
+            case ENTERPRISE_SPOTLIGHT -> "enterprise";
+            case PERSONAL_SPOTLIGHT -> "personal";
             case STANDARD -> throw new IllegalStateException("일반 글에는 지정된 편집 챕터가 없습니다.");
         };
         return chapterRepository.findByBlogIdAndName(blog.getId(), chapterName)

@@ -66,15 +66,17 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
     private GoogleSheetsTestSupport sheets;
     private TheRilogPublicationService publicationService;
-    private Chapter headlines;
-    private Chapter spotlights;
+    private Chapter news;
+    private Chapter enterprise;
+    private Chapter personal;
 
     @BeforeEach
     void prepareOfficialBlogAndSheets() throws Exception {
         var owner = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("공식 계정", "the_rilog"));
         var blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
-        headlines = chapterRepository.saveAndFlush(Chapter.create(blog, "headlines", 0));
-        spotlights = chapterRepository.saveAndFlush(Chapter.create(blog, "spotlights", 1));
+        news = chapterRepository.saveAndFlush(Chapter.create(blog, "news", 0));
+        enterprise = chapterRepository.saveAndFlush(Chapter.create(blog, "enterprise", 1));
+        personal = chapterRepository.saveAndFlush(Chapter.create(blog, "personal", 2));
         sheets = new GoogleSheetsTestSupport(directory, "NEWS!A:G");
         publicationService = new TheRilogPublicationService(new TheRilogSheetService(sheets.client()),
                 new TheRilogBlockNoteConverter(), theRilogService);
@@ -152,13 +154,13 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
     @DisplayName("일부 스포트라이트만 승인됐으면 해당 글을 발행하고 이전 뉴스와 스포트라이트도 최신순으로 보여준다.")
     void publishesPartialInputAndKeepsPreviousContentsInMain() {
         LocalDateTime previousTime = LocalDateTime.of(2026, 10, 12, 5, 0);
-        var previousNews = postRepository.saveAndFlush(publishedNews(headlines, previousTime,
+        var previousNews = postRepository.saveAndFlush(publishedNews(news, previousTime,
                 content(heading("previous-news", 2, "이전 소식"))));
-        postRepository.saveAndFlush(publishedSpotlight(spotlights, ENTERPRISE_SPOTLIGHT, previousTime.minusHours(2)));
-        postRepository.saveAndFlush(publishedSpotlight(spotlights, ENTERPRISE_SPOTLIGHT, previousTime.minusHours(1)));
-        var previousEnterprise = postRepository.saveAndFlush(publishedSpotlight(spotlights, ENTERPRISE_SPOTLIGHT, previousTime));
-        var previousPersonal1 = postRepository.saveAndFlush(publishedSpotlight(spotlights, PERSONAL_SPOTLIGHT, previousTime.minusHours(1)));
-        var previousPersonal2 = postRepository.saveAndFlush(publishedSpotlight(spotlights, PERSONAL_SPOTLIGHT, previousTime));
+        postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, previousTime.minusHours(2)));
+        postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, previousTime.minusHours(1)));
+        var previousEnterprise = postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, previousTime));
+        var previousPersonal1 = postRepository.saveAndFlush(publishedSpotlight(personal, PERSONAL_SPOTLIGHT, previousTime.minusHours(1)));
+        var previousPersonal2 = postRepository.saveAndFlush(publishedSpotlight(personal, PERSONAL_SPOTLIGHT, previousTime));
         String approved = approvedSpotlights("2026-10-15", 2);
         sheets.expectToken();
         sheets.expectRows("NEWS%21A%3AG", MAPPER.writeValueAsString(new GoogleSheetValuesResponse("NEWS!A1:G1", List.of(HEADER))));
