@@ -13,6 +13,7 @@ import SeriesAccordionSection from '@/features/post-detail/ui/SeriesAccordionSec
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 
 import BasePostDetail from './BasePostDetail';
+import OfficialPostMetadata from './OfficialPostMetadata';
 
 interface PostDetailProps {
 	post: PostDetailModel;
@@ -22,15 +23,18 @@ interface PostDetailProps {
 
 export default function PostDetail({ post, initialSelectionId, showDeletedCommentToast = false }: PostDetailProps) {
 	const header = (
-		<PostDetailHeader
-			postId={post.id}
-			slug={post.blog.slug}
-			title={post.title}
-			publishedAt={post.publishedAt}
-			category={post.category}
-			author={post.author}
-			viewerPermissions={post.viewerPermissions}
-		/>
+		<>
+			<PostDetailHeader
+				postId={post.id}
+				slug={post.blog.slug}
+				title={post.title}
+				publishedAt={post.publishedAt}
+				category={post.category}
+				author={post.author}
+				viewerPermissions={post.viewerPermissions}
+			/>
+			<OfficialPostMetadata post={post} />
+		</>
 	);
 	const blogProfile = (
 		<Suspense fallback={<PostDetailBlogProfile profile={post.blog} />}>
@@ -99,16 +103,19 @@ export default function PostDetail({ post, initialSelectionId, showDeletedCommen
 			initialSelectionId={initialSelectionId}
 			showDeletedCommentToast={showDeletedCommentToast}
 			header={
-				<PostDetailHeader
-					publisher={publisher}
-					postId={post.id}
-					slug={post.blog.slug}
-					title={post.title}
-					publishedAt={post.publishedAt}
-					category={post.category}
-					author={post.author}
-					viewerPermissions={post.viewerPermissions}
-				/>
+				<>
+					<PostDetailHeader
+						publisher={publisher}
+						postId={post.id}
+						slug={post.blog.slug}
+						title={post.title}
+						publishedAt={post.publishedAt}
+						category={post.category}
+						author={post.author}
+						viewerPermissions={post.viewerPermissions}
+					/>
+					<OfficialPostMetadata post={post} />
+				</>
 			}
 			profileSection={
 				<div className="flex flex-col">
