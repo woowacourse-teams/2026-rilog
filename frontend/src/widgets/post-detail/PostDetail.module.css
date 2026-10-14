@@ -158,3 +158,9 @@
 		margin-top: 7.5rem;
 	}
 }
+
+@container post-detail-card (min-width: 83.75rem) {
+	.tableOfContentsColumn {
+		padding-left: 2.5rem;
+	}
+}
