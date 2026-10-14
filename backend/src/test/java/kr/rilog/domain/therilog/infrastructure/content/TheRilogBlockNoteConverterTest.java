@@ -163,6 +163,19 @@ class TheRilogBlockNoteConverterTest {
     }
 
     @ParameterizedTest
+    @CsvSource(value = {
+            "'응답 시간 < 100ms'|'응답 시간 < 100ms'",
+            "'1<2 && 3>2'|'1<2 && 3>2'",
+            "'\\<span>태그 문자\\</span>'|'<span>태그 문자</span>'"
+    }, delimiter = '|')
+    @DisplayName("비교 기호와 이스케이프한 꺾쇠는 일반 텍스트로 보존한다.")
+    void preserveLiteralAngleBrackets(String markdown, String expectedText) {
+        JsonNode converted = converter.convert(markdown);
+
+        assertThat(PostContent.from(converted).extractTextBlocks().getFirst().text()).isEqualTo(expectedText);
+    }
+
+    @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "\n\t"})
     @DisplayName("비어 있는 Markdown은 발행할 본문으로 변환하지 않는다.")
@@ -176,6 +189,7 @@ class TheRilogBlockNoteConverterTest {
     @ValueSource(strings = {
             "[원문](javascript:alert(1))", "[원문](data:text/html,content)",
             "![사진](https://example.com/image.png)", "<script>alert(1)</script>",
+            "<span title=\"1 < 2\">본문</span>", "</span>", "<!-- 주석 -->", "<!doctype html>",
             "##### 지원하지 않는 제목", "```java\n닫히지 않은 코드",
             "| 제목 | 값 |\n| --- | --- |\n| 하나 | 둘 |", "- [x] 미지원 체크 목록",
             "밑줄 제목\n===", "[참조 링크][source]"

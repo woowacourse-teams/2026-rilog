@@ -112,6 +112,28 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("날짜가 지난 뉴스도 예약 순서대로 발행하여 메인에 최신 예약분을 보여준다.")
+    void publishesOverdueNewsBeforeLatestScheduledNews() {
+        String approved = MAPPER.writeValueAsString(new GoogleSheetValuesResponse("NEWS!A1:G3", List.of(HEADER,
+                List.of("latest", "최신 뉴스", "## 최신 소식\n\n본문", "기술", "2026-10-14 05:00", "승인완료", ""),
+                List.of("overdue", "이전 뉴스", "## 이전 소식\n\n본문", "기술", "2026-10-13 06:00", "승인완료", ""))));
+        sheets.expectToken();
+        sheets.expectRows("NEWS%21A%3AG", approved);
+        sheets.expectToken();
+        sheets.expectRows("NEWS%21A%3AG", approved);
+        sheets.expectWrite(request -> {
+            var payload = MAPPER.readTree(((MockClientHttpRequest) request).getBodyAsString());
+            assertThat(payload.path("data").size()).isEqualTo(4);
+        });
+
+        var published = publicationService.publishDueContent(NOW);
+
+        assertThat(published.stream().map(article -> article.rowId()).toList()).containsExactly("overdue", "latest");
+        assertThat(theRilogService.readTheRilog().news().postId()).isEqualTo(published.getLast().postId());
+        sheets.verifyRequests();
+    }
+
+    @Test
     @DisplayName("시트 발행 결과 기록이 실패해도 이미 커밋된 게시글을 취소하지 않는다.")
     void keepsCommittedPublicationWhenSheetWriteFails() {
         expectApprovedNewsRead();

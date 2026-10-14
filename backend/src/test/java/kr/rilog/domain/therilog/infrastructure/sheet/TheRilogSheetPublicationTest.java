@@ -8,7 +8,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 
 import static kr.rilog.domain.therilog.entity.enums.TheRilogContentType.NEWS;
@@ -18,23 +17,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TheRilogSheetPublicationTest {
 
-    private static final LocalDate DATE = LocalDate.of(2026, 10, 15);
     private static final Instant NOW = Instant.parse("2026-10-14T20:00:00Z");
     private static final List<String> HEADER = List.of("rowId", "title", "content", "category", "scheduledAt", "status", "postId");
 
     @Test
-    @DisplayName("당일 예약 시각이 지난 승인된 미발행 행만 발행 대상으로 읽는다.")
+    @DisplayName("예약 시각이 지난 승인된 미발행 행은 이전 날짜여도 발행 대상으로 읽는다.")
     void selectsOnlyDueApprovedUnpublishedRows() {
         var sheet = sheet(List.of(HEADER,
                 row("due", "2026-10-15 05:00", "승인완료", ""),
                 row("future", "2026-10-15 06:00", "승인완료", ""),
                 row("review", "2026-10-15 05:00", "검토대기", ""),
                 row("posted", "2026-10-15 05:00", "승인완료", "601"),
-                row("yesterday", "2026-10-14 05:00", "승인완료", "")));
+                row("yesterday", "2026-10-14 06:00", "승인완료", "")));
 
-        var rows = sheet.readPublicationRows().stream().filter(row -> row.isDueOn(DATE, NOW)).toList();
+        var rows = sheet.readPublicationRows().stream().filter(row -> row.isDue(NOW)).toList();
 
-        assertThat(rows.stream().map(row -> row.input().rowId()).toList()).containsExactly("due");
+        assertThat(rows.stream().map(row -> row.input().rowId()).toList()).containsExactly("due", "yesterday");
         assertThat(rows.getFirst().content()).isEqualTo("## 첫 기사\n\n본문");
     }
 

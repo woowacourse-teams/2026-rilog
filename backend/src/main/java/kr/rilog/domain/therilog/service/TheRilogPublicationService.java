@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -28,7 +29,9 @@ public class TheRilogPublicationService {
     public List<TheRilogPublishedArticle> publishDueContent(Instant now) {
         LocalDate date = now.atZone(SEOUL).toLocalDate();
         var rows = sheetService.readPublicationRows(TheRilogPublication.isSpotlightDay(date)).stream()
-                .filter(row -> row.isDueOn(date, now)).toList();
+                .filter(row -> row.isDue(now))
+                .sorted(Comparator.comparing(row -> row.input().parseScheduledAt()))
+                .toList();
         if (rows.isEmpty()) {
             return List.of();
         }

@@ -9,8 +9,6 @@ import org.springframework.util.StringUtils;
 import tools.jackson.databind.JsonNode;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC;
 import static kr.rilog.domain.therilog.entity.enums.TheRilogContentType.NEWS;
@@ -25,14 +23,12 @@ public record TheRilogPublicationRow(
         String postId
 ) {
 
-    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
-
-    public boolean isDueOn(LocalDate date, Instant now) {
+    public boolean isDue(Instant now) {
         if (!APPROVED.matches(input.status()) || StringUtils.hasText(postId)) {
             return false;
         }
         Instant scheduledAt = input.parseScheduledAt();
-        return scheduledAt.atZone(SEOUL).toLocalDate().equals(date) && !scheduledAt.isAfter(now);
+        return !scheduledAt.isAfter(now);
     }
 
     public TheRilogPublicationArticle toArticle(JsonNode blockNote) {

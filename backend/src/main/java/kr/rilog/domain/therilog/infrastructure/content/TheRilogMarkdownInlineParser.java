@@ -8,6 +8,7 @@ import tools.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_POST_CONTENT;
 
@@ -15,7 +16,11 @@ final class TheRilogMarkdownInlineParser {
 
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
     private static final Set<String> LINK_SCHEMES = Set.of("http", "https", "mailto");
-    private static final String ESCAPABLE = "\\`*_{}[]()#+-.!>|~";
+    private static final String ESCAPABLE = "\\`*_{}[]()#+-.!<>|~";
+    private static final Pattern HTML = Pattern.compile(
+            "</?[A-Za-z][A-Za-z0-9-]*"
+                    + "(?:\\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\\s*=\\s*(?:\"[^\"]*\"|'[^']*'|[^\\s\"'=<>`]+))?)*"
+                    + "\\s*/?>|<!--|<\\?|<![A-Za-z]|<!\\[CDATA\\[");
 
     private final String source;
     private int cursor;
@@ -44,7 +49,7 @@ final class TheRilogMarkdownInlineParser {
                 cursor += 2;
                 continue;
             }
-            if (source.startsWith("![", cursor) || current == '<' || source.startsWith("~~", cursor)) {
+            if (source.startsWith("![", cursor) || (current == '<' && isHtmlAtCursor()) || source.startsWith("~~", cursor)) {
                 throw new PostException(INVALID_POST_CONTENT);
             }
             if (current == '[' && allowLinks && readLink(content, plain, styles)) {
@@ -72,6 +77,10 @@ final class TheRilogMarkdownInlineParser {
         }
         appendText(content, plain, styles);
         return content;
+    }
+
+    private boolean isHtmlAtCursor() {
+        return HTML.matcher(source).region(cursor, source.length()).lookingAt();
     }
 
     private boolean closesEmphasis(String closing, ObjectNode styles) {
