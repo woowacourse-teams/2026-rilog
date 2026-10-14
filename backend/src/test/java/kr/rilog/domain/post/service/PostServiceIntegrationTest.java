@@ -6,6 +6,8 @@ import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
 import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
@@ -28,6 +30,7 @@ import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
 import kr.rilog.support.fixure.BlogMemberFixture;
 import kr.rilog.support.fixure.PostFixture;
+import kr.rilog.support.fixure.TheRilogPostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,6 +74,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogMemberRepository blogMemberRepository;
+
+    @Autowired
+    private ChapterRepository chapterRepository;
 
     @Autowired
     private PostRepository postRepository;
@@ -607,6 +613,26 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("전체 게시글 수를 조회하면 더 리로그 게시글은 집계하지 않는다.")
+    void readPostsCountExcludesTheRilogPosts() {
+        // given
+        User writer = saveCompletedUser(35L, "표준집계작성자", "standard_total_count");
+        Blog rilog = saveRilog(writer);
+        savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
+
+        User theRilogOwner = saveCompletedUser(36L, "더리로그주인", "the_rilog");
+        Blog theRilog = saveRilog(theRilogOwner);
+        Chapter headlines = saveChapter(theRilog, "headlines", 0);
+        savePost(TheRilogPostFixture.publishedNews(headlines, PUBLISHED_AT, content(paragraph("오늘의 소식"))));
+
+        // when
+        TotalPostsCountResponse result = postService.readPostsCount();
+
+        // then
+        assertThat(result.totalPostsCount()).isEqualTo(1L);
+    }
+
+    @Test
     @DisplayName("게시글 작성자는 개인 블로그의 발행된 게시글을 삭제할 수 있다.")
     void writerDeletesPublishedRilogPost() {
         // given
@@ -839,6 +865,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Blog blog = blogRepository.saveAndFlush(Blog.createColog(owner, slug, BlogFixture.cologProfile()));
         saveOwnerMembership(blog, owner);
         return blog;
+    }
+
+    private Chapter saveChapter(Blog blog, String name, int order) {
+        return chapterRepository.saveAndFlush(Chapter.create(blog, name, order));
     }
 
     private BlogMember saveOwnerMembership(Blog blog, User owner) {
