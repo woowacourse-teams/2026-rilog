@@ -48,3 +48,7 @@ export class SentryErrorTracker implements ErrorTracker {
 export function createSentryErrorTracker(): SentryErrorTracker {
 	return new SentryErrorTracker();
 }
+
+export async function flushSentryEvents(timeoutMilliseconds = 2000): Promise<void> {
+	await Sentry.flush(timeoutMilliseconds);
+}
