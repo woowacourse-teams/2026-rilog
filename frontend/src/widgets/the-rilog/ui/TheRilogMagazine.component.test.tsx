@@ -1,7 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DAILY_HEADLINES, MAGAZINE_ARTICLES } from '../model/magazine-content';
+import { mapTheRilogContent } from '@/features/the-rilog/lib/map-the-rilog-content';
+import { createTheRilogFixtureData, createTheRilogFixtureNewsContent } from '@/test/fixtures/the-rilog';
+
+import { DAILY_HEADLINES, MAGAZINE_ARTICLES } from '../model/magazine-content.fixture';
 
 import TheRilogMagazine from './TheRilogMagazine';
 
@@ -35,12 +38,31 @@ describe('TheRilogMagazine', () => {
 				within(region)
 					.getAllByRole('link')
 					.map((link) => link.getAttribute('href')),
-			).toEqual(ids.map((id) => `/the-rilog/articles/${id}`));
+			).toEqual(ids.map((id) => `/@articles/${id}`));
 			for (const name of names) {
 				expect(within(region).getByText(`${name}.`)).toBeInTheDocument();
 				expect(within(region).getByRole('img', { name: `${name} 프로필` })).toBeInTheDocument();
 			}
 		}
+	});
+
+	it('API 썸네일을 카드에 전달하고 실패 후 주소가 바뀌면 새 이미지를 표시한다', () => {
+		const data = createTheRilogFixtureData();
+		const article = data.spotlights[0];
+		article.thumbnailImageUrl = 'https://images.rilog.test/first.jpg';
+		const newsContent = createTheRilogFixtureNewsContent();
+		const { rerender } = render(<TheRilogMagazine {...mapTheRilogContent(data, newsContent)} />);
+		const card = screen.getByRole('link', { name: article.title }).closest('article')!;
+		const image = card.querySelector('img[alt=""]')!;
+		expect(decodeURIComponent(image.getAttribute('src') ?? '')).toContain(article.thumbnailImageUrl);
+
+		fireEvent.error(image);
+		expect(card.querySelector('img[alt=""]')).toBeNull();
+
+		article.thumbnailImageUrl = 'https://images.rilog.test/second.jpg';
+		rerender(<TheRilogMagazine {...mapTheRilogContent(data, newsContent)} />);
+		const replacement = card.querySelector('img[alt=""]')!;
+		expect(decodeURIComponent(replacement.getAttribute('src') ?? '')).toContain(article.thumbnailImageUrl);
 	});
 
 	it('다시 렌더링해도 기업과 개인 기사의 읽는 순서를 바꾸지 않는다', () => {

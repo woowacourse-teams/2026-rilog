@@ -8,6 +8,7 @@ import DailyHeadlines from './DailyHeadlines';
 const dailyHeadlines: DailyHeadline[] = Array.from({ length: 8 }, (_, index) => ({
 	id: `headline-${index}`,
 	title: `헤드라인 ${index + 1}`,
+	href: `/@news/1#headline-${index}`,
 }));
 
 const advance = async (milliseconds: number) => {
@@ -30,7 +31,7 @@ describe('DailyHeadlines', () => {
 		expect(within(region).getAllByRole('listitem')).toHaveLength(8);
 		for (const headline of dailyHeadlines) {
 			const link = within(region).getByRole('link', { name: headline.title });
-			expect(link).toHaveAttribute('href', `/the-rilog/daily-headlines#${headline.id}`);
+			expect(link).toHaveAttribute('href', headline.href);
 			expect(link).toHaveAttribute('title', headline.title);
 		}
 	});

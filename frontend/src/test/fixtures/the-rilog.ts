@@ -1,3 +1,5 @@
+import type { Block } from '@blocknote/core';
+
 import type { TheRilogResponse } from '@/shared/api/the-rilog/types';
 
 export const createTheRilogFixtureData = (overrides: Partial<TheRilogResponse> = {}): TheRilogResponse => ({
@@ -34,3 +36,12 @@ export const createTheRilogFixtureData = (overrides: Partial<TheRilogResponse> =
 	],
 	...overrides,
 });
+
+export const createTheRilogFixtureNewsContent = (): Block[] =>
+	['새 모델 공개', '웹 플랫폼 업데이트'].map((text, index) => ({
+		id: `headline-${index + 1}`,
+		type: 'heading',
+		props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left', level: 2, isToggleable: false },
+		content: [{ type: 'text', text, styles: {} }],
+		children: [],
+	}));

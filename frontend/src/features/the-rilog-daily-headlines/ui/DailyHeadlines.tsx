@@ -4,7 +4,6 @@ import { useRef, useState } from 'react';
 
 import type { DailyHeadline } from '../model/daily-headline';
 
-import { APP_ROUTES } from '@/shared/routes/app-routes';
 import CustomLink from '@/shared/ui/link/CustomLink';
 
 import styles from './daily-headlines.module.css';
@@ -39,7 +38,7 @@ export default function DailyHeadlines({ dailyHeadlines }: DailyHeadlinesProps) 
 								onFocusCapture={() => setActiveIndex(index)}
 							>
 								<CustomLink
-									href={`${APP_ROUTES.theRilog}/daily-headlines#${encodeURIComponent(headline.id)}`}
+									href={headline.href}
 									className={styles.itemLink}
 									title={headline.title}
 									aria-current={index === currentIndex ? 'true' : undefined}

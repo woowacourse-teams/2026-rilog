@@ -1,5 +1,4 @@
-import type { MagazineArticle } from '../model/magazine-content';
-
+import type { MagazineArticle } from '@/features/the-rilog/model/magazine';
 import type { DailyHeadline } from '@/features/the-rilog-daily-headlines/model/daily-headline';
 import DailyHeadlines from '@/features/the-rilog-daily-headlines/ui/DailyHeadlines';
 
