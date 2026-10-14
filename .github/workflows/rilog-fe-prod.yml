@@ -73,6 +73,7 @@ jobs:
         run: |
           if [[ "$SENTRY_UPLOAD_REQUIRED" == 'true' ]]; then
             node --env-file=.env -e "if (!process.env.SENTRY_AUTH_TOKEN) { console.error('Production Sentry source map upload requires SENTRY_AUTH_TOKEN.'); process.exit(1); }"
+            node --env-file=.env -e "if (!process.env.THE_RILOG_REVALIDATION_SECRET?.trim()) { console.error('Daily ISR requires THE_RILOG_REVALIDATION_SECRET.'); process.exit(1); }"
           fi
           if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
             node scripts/create-the-rilog-fixture.mjs
@@ -95,7 +96,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts .the-rilog-build/snapshot.json
+          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -128,6 +129,28 @@ jobs:
         run: |
           TARGET_DIR="/home/ubuntu/rilog-next"
 
+          # Check timer installation privileges before changing the running deployment.
+          sudo -n true
+          if sudo -n systemctl cat the-rilog-refresh.timer >/dev/null 2>&1; then
+            # Restore scheduling even if a later deployment command fails.
+            if sudo -n systemctl is-active --quiet the-rilog-refresh.timer; then
+              trap 'sudo -n systemctl start the-rilog-refresh.timer' EXIT
+            fi
+            sudo -n systemctl stop the-rilog-refresh.timer
+            # Let an existing refresh finish before replacing its snapshot and page files.
+            for attempt in {1..190}; do
+              REFRESH_STATE=$(sudo -n systemctl show --property=ActiveState --value the-rilog-refresh.service)
+              if [[ "$REFRESH_STATE" == 'inactive' || "$REFRESH_STATE" == 'failed' ]]; then
+                break
+              fi
+              if [[ "$attempt" == 190 ]]; then
+                echo 'The Rilog refresh did not finish before the deployment wait limit.' >&2
+                exit 1
+              fi
+              sleep 2
+            done
+          fi
+
           # 0. 이전 빌드 산출물 정리 (node_modules는 재사용해서 install 속도 확보)
           mkdir -p $TARGET_DIR
           rm -rf $TARGET_DIR/.next $TARGET_DIR/public
@@ -151,3 +174,6 @@ jobs:
           # ecosystem.config.cjs를 사용해 프로세스 리로드 (update-env로 환경변수 갱신 보장)
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
           pm2 save
+
+          # The daily job captures data and warms only /the-rilog; it never builds or reloads PM2.
+          bash scripts/install-the-rilog-timer.sh

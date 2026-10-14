@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh The Rilog static pages from the backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/rilog-next
+ExecStart=/bin/bash -c 'source /home/ubuntu/.nvm/nvm.sh && nvm use 24.19.0 >/dev/null && exec node --env-file=.env.production.local scripts/refresh-the-rilog.mjs'
+TimeoutStartSec=6min

@@ -1,0 +1,77 @@
+name: The Rilog Build Preparation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: the-rilog-build-preparation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.19.0"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Load build environment
+        env:
+          ENV_SECRET: ${{ secrets.ENV_PROD_FE }}
+        run: |
+          umask 077
+          printf '%s\n' "$ENV_SECRET" > .env
+      - name: Capture input and build
+        env:
+          SENTRY_RELEASE: ${{ github.sha }}
+          SENTRY_UPLOAD_REQUIRED: "false"
+        run: |
+          pnpm prepare:the-rilog
+          pnpm build
+      - name: Verify static output
+        run: node scripts/verify-the-rilog-build.mjs
+      - name: Record preparation manifest
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+
+          const snapshot = JSON.parse(await readFile('.the-rilog-build/snapshot.json', 'utf8'));
+          const html = await readFile('.next/server/app/the-rilog.html', 'utf8');
+          const manifest = {
+            artifactPurpose: 'build-preparation-only',
+            publicationReadinessChecked: false,
+            codeSha: process.env.GITHUB_SHA ?? null,
+            runId: process.env.GITHUB_RUN_ID ?? null,
+            inputSource: snapshot.source,
+            inputChecksum: snapshot.checksum,
+            htmlChecksum: createHash('sha256').update(html).digest('hex'),
+            staticRoute: '/the-rilog',
+            validation: 'passed',
+          };
+          await writeFile('.the-rilog-build/manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+      - name: Package preparation artifact
+        run: |
+          tar --exclude=.next/cache --exclude=.next/dev -czf the-rilog-preparation.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml next.config.ts .the-rilog-build/snapshot.json .the-rilog-build/manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: the-rilog-build-preparation-${{ github.run_id }}
+          path: frontend/the-rilog-preparation.tar.gz
+          retention-days: 7
+      - name: Explain preparation boundary
+        run: |
+          printf '%s\n' 'Static build input and artifact verified. Publication readiness, scheduling, and deployment are not part of this workflow.' >> "$GITHUB_STEP_SUMMARY"

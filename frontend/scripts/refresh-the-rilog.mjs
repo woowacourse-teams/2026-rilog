@@ -2,6 +2,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 
 const WARM_ATTEMPTS = 6;
+const READY_ATTEMPTS = 6;
 
 /** @param {unknown} value */
 function readReceipt(value) {
@@ -38,6 +39,28 @@ function readBaseUrl(value = 'http://127.0.0.1:3000') {
 }
 
 /**
+ * @param {URL} baseUrl
+ * @param {(url: URL, options: RequestInit) => Promise<Response>} fetchImpl
+ * @param {(milliseconds: number) => Promise<void>} wait
+ */
+async function waitForServer(baseUrl, fetchImpl, wait) {
+	for (let attempt = 0; attempt < READY_ATTEMPTS; attempt += 1) {
+		try {
+			const response = await fetchImpl(new URL('/the-rilog', baseUrl), {
+				redirect: 'error',
+				signal: AbortSignal.timeout(5_000),
+			});
+			await response.text();
+			if (response.ok) return;
+		} catch {
+			// A persistent timer may run before the app starts listening after reboot.
+		}
+		if (attempt + 1 < READY_ATTEMPTS) await wait(1_000);
+	}
+	throw new Error('The Rilog server did not become ready before the retry limit');
+}
+
+/**
  * @param {{
  *   env?: Record<string, string | undefined>,
  *   fetchImpl?: (url: URL, options: RequestInit) => Promise<Response>,
@@ -49,6 +72,7 @@ export async function refreshTheRilog({ env = process.env, fetchImpl = fetch, wa
 	const secret = env.THE_RILOG_REVALIDATION_SECRET;
 	if (!secret?.trim()) throw new Error('THE_RILOG_REVALIDATION_SECRET is required');
 	const baseUrl = readBaseUrl(env.THE_RILOG_REFRESH_BASE_URL);
+	await waitForServer(baseUrl, fetchImpl, wait);
 	const response = await fetchImpl(new URL('/api/internal/the-rilog/revalidate', baseUrl), {
 		method: 'POST',
 		headers: { Authorization: `Bearer ${secret}` },

@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh The Rilog every morning at 06:00 Korea time
+
+[Timer]
+OnCalendar=*-*-* 06:00:00 Asia/Seoul
+Persistent=true
+AccuracySec=1s
+Unit=the-rilog-refresh.service
+
+[Install]
+WantedBy=timers.target
