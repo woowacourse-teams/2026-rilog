@@ -109,6 +109,39 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
 			},
 		],
 	},
+	{
+		id: '2026-10-14-notification-the_rilog-detail_view',
+		title: 'Rilog. 패치노트 v5',
+		publishedAt: '2026-10-14',
+		intro: '',
+		items: [
+			{
+				title: '🔔 새로운 소식을 바로 확인하는 알림 기능',
+				description:
+					'내 글에 달린 인라인 댓글과 반응을 놓치지 않도록 사이드바 하단에 알림 기능이 추가되었어요. 리로그에서 더 즐겁게 소통해 보세요.',
+			},
+			{
+				title: '🗞️ 리로그 정기 발행 매거진, ‘THE Rilog.’',
+				description:
+					'매일 아침 6시에 배달되는 IT 최신 뉴스부터 영감을 주는 기술 블로그 요약까지, 독자분들의 성장을 도울 알찬 인사이트를 선별해서 큐레이션 해드려요.',
+			},
+			{
+				title: '👀️ 게시글 상세 화면을 더 읽기 편하게 개선했어요',
+				description:
+					'손쉽게 목차를 확인할 수 있도록 ToC를 상시 펼침으로 변경하고, 댓글을 읽으며 본문을 함께 볼 수 있도록 인라인 댓글 레이아웃을 다듬었어요.',
+			},
+		],
+		links: [
+			{
+				label: '업데이트 자세히 보기 ↗',
+				href: 'https://www.rilog.kr/@official/posts/177',
+			},
+			{
+				label: 'The Rilog. ↗',
+				href: 'https://www.rilog.kr/the-rilog',
+			},
+		],
+	},
 ];
 
 export function getLatestReleaseNote(notes: readonly ReleaseNote[]): ReleaseNote | undefined {
