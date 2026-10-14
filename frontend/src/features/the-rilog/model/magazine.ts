@@ -2,6 +2,7 @@ import type { DailyHeadline } from '@/features/the-rilog-daily-headlines/model/d
 
 export interface MagazineArticle {
 	id: string;
+	postId: number;
 	title: string;
 	summary: string;
 	thumbnailImageUrl: string | null;

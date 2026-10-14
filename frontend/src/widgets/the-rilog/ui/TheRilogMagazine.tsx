@@ -39,9 +39,9 @@ export default function TheRilogMagazine({
 						</div>
 						<div className={styles.enterpriseArticleList}>
 							{enterpriseArticles.length === 0 && <p className={styles.empty}>아직 등록된 아티클이 없습니다.</p>}
-							{enterpriseArticles.map((article) => (
+							{enterpriseArticles.map((article, index) => (
 								<ScrollReveal className={`${styles.articleRow} ${styles.scrollReveal}`} key={article.id}>
-									<MagazineArticleCard article={article} />
+									<MagazineArticleCard article={article} position={index + 1} />
 								</ScrollReveal>
 							))}
 						</div>
@@ -56,7 +56,11 @@ export default function TheRilogMagazine({
 						{personalArticles.length === 0 && <p className={styles.empty}>아직 등록된 아티클이 없습니다.</p>}
 						{personalArticles.map((article, index) => (
 							<ScrollReveal className={`${styles.articleRow} ${styles.scrollReveal}`} key={article.id}>
-								<MagazineArticleCard article={article} imagePosition={index === 0 ? 'left' : 'right'} />
+								<MagazineArticleCard
+									article={article}
+									position={index + 1}
+									imagePosition={index === 0 ? 'left' : 'right'}
+								/>
 							</ScrollReveal>
 						))}
 					</div>
