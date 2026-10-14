@@ -1,6 +1,4 @@
 import type {
-	TheRilogAttribution,
-	TheRilogNavigationType,
 	AboutPageAcquisitionSource,
 	AboutPageEntrySource,
 	AboutPageLinkTarget,
@@ -50,45 +48,7 @@ const notificationProperties = (notification: Notification) => ({
 	was_unread: !notification.isRead,
 });
 
-const theRilogAttributionProperties = (attribution?: TheRilogAttribution) =>
-	attribution === undefined
-		? {}
-		: {
-				the_rilog_visit_id: attribution.theRilogVisitId,
-				the_rilog_click_id: attribution.theRilogClickId,
-				content_type: attribution.contentType,
-				position: attribution.position,
-				...(attribution.headlineId === undefined ? {} : { headline_id: attribution.headlineId }),
-			};
-
 export const analytics = {
-	theRilogViewed: ({ theRilogVisitId }: { theRilogVisitId: string }) =>
-		captureAnalyticsEvent('the rilog viewed', { the_rilog_visit_id: theRilogVisitId }),
-	theRilogContentClicked: ({
-		postId,
-		navigationType,
-		...attribution
-	}: TheRilogAttribution & { postId: number; navigationType: TheRilogNavigationType }) => {
-		const names = {
-			headline: 'the rilog headline clicked',
-			enterprise: 'the rilog enterprise clicked',
-			personal: 'the rilog personal clicked',
-		} as const;
-		return captureAnalyticsEvent(names[attribution.contentType], {
-			...theRilogAttributionProperties(attribution),
-			post_id: postId,
-			navigation_type: navigationType,
-		});
-	},
-	theRilogEngagementUpdated: (
-		{ theRilogVisitId, engagementSeconds }: { theRilogVisitId: string; engagementSeconds: number },
-		useBeacon = false,
-	) => {
-		const properties = { the_rilog_visit_id: theRilogVisitId, engagement_seconds: engagementSeconds };
-		return useBeacon
-			? captureAnalyticsEvent('the rilog engagement updated', properties, { transport: 'sendBeacon' })
-			: captureAnalyticsEvent('the rilog engagement updated', properties);
-	},
 	notificationInboxEntered: () => captureAnalyticsEvent('notification inbox entered'),
 	notificationItemOpened: ({ notification }: { notification: Notification }) =>
 		captureAnalyticsEvent('notification item opened', notificationProperties(notification)),
@@ -159,14 +119,12 @@ export const analytics = {
 		category,
 		entrySource,
 		feedPosition,
-		theRilog,
 	}: {
 		postId: number;
 		ownerType: BlogType;
 		category: PostCategory;
 		entrySource: PostEntrySource;
 		feedPosition: number | null;
-		theRilog?: TheRilogAttribution;
 	}) =>
 		captureAnalyticsEvent('post detail viewed', {
 			post_id: postId,
@@ -174,7 +132,6 @@ export const analytics = {
 			category,
 			entry_source: entrySource,
 			feed_position: feedPosition,
-			...theRilogAttributionProperties(theRilog),
 		}),
 	postReadEngaged: ({
 		postId,
@@ -196,13 +153,11 @@ export const analytics = {
 			readingVisitId,
 			engagementSeconds,
 			hasReached50Percent,
-			theRilog,
 		}: {
 			postId: number;
 			readingVisitId: string;
 			engagementSeconds: number;
 			hasReached50Percent: boolean;
-			theRilog?: TheRilogAttribution;
 		},
 		useBeacon: boolean = false,
 	) => {
@@ -212,7 +167,6 @@ export const analytics = {
 			engagement_seconds: engagementSeconds,
 			has_reached_50_percent: hasReached50Percent,
 			read_tracking_version: 2,
-			...(theRilog === undefined ? {} : { entry_source: 'the_rilog', ...theRilogAttributionProperties(theRilog) }),
 		};
 		return useBeacon
 			? captureAnalyticsEvent('post reading progress', properties, { transport: 'sendBeacon' })

@@ -22,11 +22,9 @@ describe('mapTheRilogContent', () => {
 		const content = mapTheRilogContent(data, createTheRilogFixtureNewsContent());
 		expect(content.dailyHeadlines[0]).toEqual({
 			id: '100:headline-1',
-			postId: 100,
 			title: '새 모델 공개',
 			href: `/@the_rilog/posts/100#${encodeURIComponent('새-모델-공개')}`,
 		});
-		expect(content.articles.map((article) => article.postId)).toEqual([101, 102]);
 		expect(content.articles.map((article) => article.href)).toEqual(['/@the_rilog/posts/101', '/@the_rilog/posts/102']);
 		expect(content.articles[0]?.thumbnailImageUrl).toBe('https://images.rilog.test/article.jpg');
 		expect(content.articles[0]?.profile).toEqual({

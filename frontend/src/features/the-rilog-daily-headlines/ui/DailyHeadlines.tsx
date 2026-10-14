@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 
 import type { DailyHeadline } from '../model/daily-headline';
 
-import TheRilogArticleLink from '@/features/analytics/ui/TheRilogArticleLink';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import styles from './daily-headlines.module.css';
 import DailyHeadlineIndicator from './DailyHeadlineIndicator';
@@ -37,12 +37,8 @@ export default function DailyHeadlines({ dailyHeadlines }: DailyHeadlinesProps) 
 								onMouseEnter={() => setActiveIndex(index)}
 								onFocusCapture={() => setActiveIndex(index)}
 							>
-								<TheRilogArticleLink
+								<CustomLink
 									href={headline.href}
-									postId={headline.postId}
-									contentType="headline"
-									position={index + 1}
-									headlineId={headline.id}
 									className={styles.itemLink}
 									title={headline.title}
 									aria-current={index === currentIndex ? 'true' : undefined}
@@ -51,7 +47,7 @@ export default function DailyHeadlines({ dailyHeadlines }: DailyHeadlinesProps) 
 										{String(index + 1).padStart(2, '0')}
 									</span>
 									<span className={styles.titleText}>{headline.title}</span>
-								</TheRilogArticleLink>
+								</CustomLink>
 							</li>
 						))}
 					</ol>
