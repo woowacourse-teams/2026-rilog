@@ -1,5 +1,6 @@
 import type { Block } from '@blocknote/core';
 
+import { createTheRilogSnapshot } from '@/features/the-rilog/server/the-rilog-snapshot';
 import type { TheRilogResponse } from '@/shared/api/the-rilog/types';
 
 export const createTheRilogFixtureData = (overrides: Partial<TheRilogResponse> = {}): TheRilogResponse => ({
@@ -45,3 +46,11 @@ export const createTheRilogFixtureNewsContent = (): Block[] =>
 		content: [{ type: 'text', text, styles: {} }],
 		children: [],
 	}));
+
+export const createTheRilogFixtureSnapshot = () =>
+	createTheRilogSnapshot(
+		createTheRilogFixtureData(),
+		createTheRilogFixtureNewsContent(),
+		'fixture',
+		'2026-10-13T00:00:00Z',
+	);
