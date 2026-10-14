@@ -1,6 +1,6 @@
 import type { Block } from '@blocknote/core';
 
-import type { PostCategory, PostCategoryLabel } from '@/domains/post/model/post';
+import type { PostCategory, PostCategoryLabel, PostType } from '@/domains/post/model/post';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
 
 export type PostCategoryRequest = PostCategory;
@@ -66,7 +66,15 @@ interface PostViewerPermissionsResponse {
 	canDelete: boolean;
 }
 
+export interface PostSourceResponse {
+	sourceProfileName: string;
+	sourceProfileImage: string | null;
+}
+
 export interface PostDetailResponse {
+	postType: PostType;
+	description: string | null;
+	source: PostSourceResponse | null;
 	title: string;
 	content: Block[];
 	publishedAt: string;

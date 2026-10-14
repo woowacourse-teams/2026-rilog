@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
-import { POST_DETAIL_READABILITY_CONTENT } from '../model/post-detail.mock';
+import { POST_DETAIL_READABILITY_CONTENT } from '@/test/fixtures/post-detail';
 
 import { renderPostDetailContent } from './render-post-detail-content';
 

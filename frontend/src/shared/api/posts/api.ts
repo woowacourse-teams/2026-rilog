@@ -101,6 +101,17 @@ const isPostDetailResponse = (value: unknown): value is PostDetailResponse => {
 	const { author, owner, viewerPermissions } = value;
 	if (
 		!isString(value.title) ||
+		!(
+			value.postType === 'STANDARD' ||
+			value.postType === 'DAILY_HEADLINES' ||
+			value.postType === 'ENTERPRISE_SPOTLIGHT' ||
+			value.postType === 'PERSONAL_SPOTLIGHT'
+		) ||
+		!isNullableString(value.description) ||
+		(value.source !== null &&
+			(!isRecord(value.source) ||
+				!isString(value.source.sourceProfileName) ||
+				!isNullableString(value.source.sourceProfileImage))) ||
 		!isBlockNoteDocument(value.content) ||
 		!isString(value.publishedAt) ||
 		!isNullableString(value.thumbnailImageUrl) ||

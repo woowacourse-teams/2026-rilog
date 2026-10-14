@@ -182,23 +182,15 @@ export const composePostPage = ({ domain, feature, widget }: PageDependencies) =
 	},
 ];
 
-const cologPostContent: Block[] = [
-	paragraph(
-		'colog-introduction',
-		'함께 만드는 기록 공간을 운영하며 합의한 컴포넌트 설계 원칙과 실제 적용 사례를 정리합니다.',
-	),
-	heading('shared-rule', '함께 지키는 기준', 2),
-	paragraph('shared-rule-description', '공통 규칙은 구현을 제한하기보다 판단의 기준을 맞추는 데 사용합니다.'),
-	bullet('shared-rule-one', '도메인 책임을 컴포넌트 이름에 드러냅니다.'),
-	bullet('shared-rule-two', '공통 UI는 특정 화면의 정책을 알지 않게 합니다.'),
-];
-
-const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
-	'1': {
+export function createPostDetailFixture(overrides: Partial<PostDetail> = {}): PostDetail {
+	return {
 		id: 1,
 		title: '컴포넌트 시스템, 이렇게 도입했어요',
-		content: POST_DETAIL_READABILITY_CONTENT,
+		content: structuredClone(POST_DETAIL_READABILITY_CONTENT),
 		publishedAt: '2024-05-20T09:00:00+09:00',
+		postType: 'STANDARD',
+		description: null,
+		source: null,
 		thumbnailUrl: null,
 		category: 'TECH',
 		chapter: { id: 1, name: '프론트엔드', order: 1 },
@@ -223,35 +215,6 @@ const MOCK_POST_DETAILS: Readonly<Record<string, PostDetail>> = {
 				profileImageUrl: null,
 			},
 		},
-	},
-	'5': {
-		id: 5,
-		title: '함께 만드는 컴포넌트 설계 원칙',
-		content: cologPostContent,
-		publishedAt: '2024-06-03T11:30:00+09:00',
-		thumbnailUrl: null,
-		category: 'TECH',
-		chapter: null,
-		viewerPermissions: { canEdit: true, canDelete: true },
-		author: {
-			id: 2,
-			nickname: '박리로그',
-			slug: 'park-rilog',
-			profileImageUrl: null,
-			description: '함께 만드는 개발 문화를 기록합니다.',
-		},
-		blog: {
-			id: 5,
-			type: 'COLOG',
-			name: '리로그',
-			slug: 'rilog',
-			description: 'React와 클린 아키텍처를 함께 공부합니다.',
-			profileImageUrl: null,
-			coverImageUrl: null,
-			memberCount: 7,
-			postCount: 6,
-		},
-	},
-};
-
-export const getMockPostDetail = (postId: string): PostDetail | null => MOCK_POST_DETAILS[postId] ?? null;
+		...overrides,
+	};
+}
