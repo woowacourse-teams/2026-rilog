@@ -59,15 +59,13 @@ export const consumePostDetailEntryContext = (postId: number): Omit<PostDetailEn
 			return null;
 		}
 
-		if (context.entrySource === 'the_rilog' && (!('theRilog' in context) || !isTheRilogAttribution(context.theRilog)))
-			return null;
-		return {
-			...(context.entrySource === 'the_rilog' && 'theRilog' in context && isTheRilogAttribution(context.theRilog)
-				? { theRilog: context.theRilog }
-				: {}),
+		const entryContext: Omit<PostDetailEntryContext, 'postId'> = {
 			entrySource: context.entrySource,
 			feedPosition: typeof context.feedPosition === 'number' ? context.feedPosition : null,
 		};
+		if (context.entrySource !== 'the_rilog') return entryContext;
+		if (!('theRilog' in context) || !isTheRilogAttribution(context.theRilog)) return null;
+		return { ...entryContext, theRilog: context.theRilog };
 	} catch {
 		return null;
 	}

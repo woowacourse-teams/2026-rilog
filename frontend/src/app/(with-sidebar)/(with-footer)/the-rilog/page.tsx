@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import TheRilogAnalyticsTracker from '@/features/analytics/ui/TheRilogAnalyticsTracker';
 import { loadTheRilogContent } from '@/features/the-rilog/server/load-the-rilog-content';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import { createSocialMetadata, DEFAULT_OG_IMAGE, SITE_NAME } from '@/shared/seo/create-social-metadata';
@@ -27,11 +28,13 @@ export const metadata: Metadata = {
 export default async function TheRilogPage() {
 	const content = await loadTheRilogContent();
 	return (
-		<TheRilogMagazine
-			dailyHeadlines={content.dailyHeadlines}
-			articles={content.articles}
-			inputChecksum={content.inputChecksum}
-			capturedAt={content.capturedAt}
-		/>
+		<TheRilogAnalyticsTracker>
+			<TheRilogMagazine
+				dailyHeadlines={content.dailyHeadlines}
+				articles={content.articles}
+				inputChecksum={content.inputChecksum}
+				capturedAt={content.capturedAt}
+			/>
+		</TheRilogAnalyticsTracker>
 	);
 }
