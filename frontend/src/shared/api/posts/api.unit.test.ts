@@ -120,6 +120,9 @@ describe('readPostDetail', () => {
 				title: '첫 번째 글',
 				content: [],
 				publishedAt: '2026-08-17T00:00:00Z',
+				postType: 'STANDARD',
+				description: null,
+				source: null,
 				thumbnailImageUrl: null,
 				category: '기술',
 				chapter: null,
@@ -145,11 +148,69 @@ describe('readPostDetail', () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(readPostDetail({ slug: '@rilog-team', postId: 42 })).resolves.toEqual(responseBody);
+		await expect(readPostDetail({ slug: '@rilog-team', postId: 42 }, { cache: 'no-store' })).resolves.toEqual(
+			responseBody,
+		);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts/42');
+		expect(request.cache).toBe('no-store');
+	});
+
+	const detailData = {
+		title: '공식 뉴스',
+		content: [],
+		publishedAt: '2026-10-13T05:00:00',
+		thumbnailImageUrl: null,
+		category: '기술',
+		chapter: null,
+		author: { userId: 1, nickname: '편집자', slug: 'editor', profileImageUrl: null },
+		owner: { type: 'RILOG', blogId: 1, slug: 'rilog', name: 'Rilog.', profileImageUrl: null },
+		viewerPermissions: { canEdit: false, canDelete: false },
+		postType: 'STANDARD',
+		description: null,
+		source: null,
+	};
+
+	it.each(['STANDARD', 'DAILY_HEADLINES', 'ENTERPRISE_SPOTLIGHT', 'PERSONAL_SPOTLIGHT'])(
+		'게시글 유형 %s와 설명·출처를 검증해 반환한다',
+		async (postType) => {
+			const responseBody = {
+				status: 200,
+				message: 'OK',
+				data: {
+					...detailData,
+					postType,
+					description: '오늘의 기술 소식',
+					source: { sourceProfileName: '기술 블로그', sourceProfileImage: null },
+				},
+			};
+			vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(responseBody)));
+			await expect(readPostDetail({ slug: 'rilog', postId: 42 })).resolves.toEqual(responseBody);
+		},
+	);
+
+	it.each([
+		{ postType: 'UNKNOWN' },
+		{ postType: null },
+		{ postType: undefined },
+		{ description: 123 },
+		{ description: undefined },
+		{ source: undefined },
+		{ source: [] },
+		{ source: { sourceProfileName: null, sourceProfileImage: null } },
+		{ source: { sourceProfileName: '블로그', sourceProfileImage: 123 } },
+		{ source: { sourceProfileName: '블로그' } },
+	])('누락되거나 손상된 공식 메타데이터를 정상 상세로 반환하지 않는다: %j', async (fields) => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data: { ...detailData, ...fields } })),
+		);
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
 	});
 
 	it.each([
@@ -174,6 +235,9 @@ describe('readPostDetail', () => {
 						title: '첫 번째 글',
 						content,
 						publishedAt: '2026-08-17T00:00:00Z',
+						postType: 'STANDARD',
+						description: null,
+						source: null,
 						thumbnailImageUrl: null,
 						category: '기술',
 						chapter: null,

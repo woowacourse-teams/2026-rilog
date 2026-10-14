@@ -7,8 +7,13 @@ const productionReporters: ReporterDescription[] = [
 	...createPlaywrightReporters(),
 ];
 
-export default createPlaywrightConfig({
-	reporters: productionReporters,
-	reuseExistingServer: false,
-	serverCommand: 'pnpm start',
-});
+const config = {
+	...createPlaywrightConfig({
+		reporters: productionReporters,
+		reuseExistingServer: false,
+		serverCommand: 'pnpm start',
+	}),
+	testIgnore: [],
+};
+
+export default config;

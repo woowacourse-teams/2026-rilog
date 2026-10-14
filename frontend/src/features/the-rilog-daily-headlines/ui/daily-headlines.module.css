@@ -39,6 +39,12 @@
 	white-space: normal;
 }
 
+.empty {
+	padding-block: 1rem;
+	color: var(--text-secondary);
+	font-size: 0.875rem;
+}
+
 .listContainer {
 	position: relative;
 	display: flex;

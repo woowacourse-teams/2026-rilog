@@ -8,6 +8,7 @@ import DailyHeadlines from './DailyHeadlines';
 const dailyHeadlines: DailyHeadline[] = Array.from({ length: 8 }, (_, index) => ({
 	id: `headline-${index}`,
 	title: `헤드라인 ${index + 1}`,
+	href: `/@news/1#headline-${index}`,
 }));
 
 const advance = async (milliseconds: number) => {
@@ -30,7 +31,7 @@ describe('DailyHeadlines', () => {
 		expect(within(region).getAllByRole('listitem')).toHaveLength(8);
 		for (const headline of dailyHeadlines) {
 			const link = within(region).getByRole('link', { name: headline.title });
-			expect(link).toHaveAttribute('href', `/the-rilog/daily-headlines#${headline.id}`);
+			expect(link).toHaveAttribute('href', headline.href);
 			expect(link).toHaveAttribute('title', headline.title);
 		}
 	});
@@ -86,8 +87,11 @@ describe('DailyHeadlines', () => {
 		expect(currentHeadline()).toHaveAccessibleName(dailyHeadlines[0].title);
 	});
 
-	it('빈 목록이면 헤드라인 영역을 표시하지 않는다', () => {
+	it('빈 목록이면 헤드라인 영역에 빈 상태를 표시한다', () => {
 		render(<DailyHeadlines dailyHeadlines={[]} />);
-		expect(screen.queryByRole('region', { name: 'Daily Headlines' })).not.toBeInTheDocument();
+		expect(screen.getByRole('region', { name: 'Daily Headlines' })).toHaveTextContent(
+			'아직 등록된 헤드라인이 없습니다.',
+		);
+		expect(screen.queryByRole('link')).not.toBeInTheDocument();
 	});
 });

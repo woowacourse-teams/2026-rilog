@@ -1,20 +1,13 @@
 import Image from 'next/image';
 
-import type { MagazineDate } from '../lib/format-magazine-date';
-
 import styles from './the-rilog-magazine.module.css';
+import TodayDate from './TodayDate';
 
-interface MagazineMastheadProps {
-	editionDate: MagazineDate;
-}
-
-export default function MagazineMasthead({ editionDate }: MagazineMastheadProps) {
+export default function MagazineMasthead() {
 	return (
 		<header>
 			<div className={styles.masthead}>
-				<div className={styles.edition} aria-label="발행 정보">
-					<time dateTime={editionDate.dateTime}>{editionDate.label}</time>
-				</div>
+				<TodayDate />
 				<h1 aria-label="THE Rilog.">
 					<span className={styles.titleWord}>THE</span>
 					<span className={styles.foxFrame}>

@@ -65,6 +65,9 @@ const BASE_POST: Omit<PostDetailModel, 'blog'> = {
 	title: '게시글 제목',
 	content: [],
 	publishedAt: '2026-09-01T00:00:00+09:00',
+	postType: 'STANDARD',
+	description: null,
+	source: null,
 	thumbnailUrl: null,
 	category: 'TECH',
 	chapter: { id: 3, name: '프론트엔드', order: 1 },
@@ -79,6 +82,23 @@ const BASE_POST: Omit<PostDetailModel, 'blog'> = {
 };
 
 describe('PostDetail', () => {
+	it.each(['RILOG', 'COLOG'] as const)('공식 %s 글의 설명·출처를 기존 상세 헤더 아래에 연결한다', (type) => {
+		const post = {
+			...BASE_POST,
+			postType: 'DAILY_HEADLINES',
+			description: '공식 뉴스 소개',
+			source: { name: '원문 출처', profileImageUrl: null },
+			blog:
+				type === 'RILOG'
+					? { id: 1, type, name: 'Rilog.', slug: 'rilog', profileImageUrl: null, owner: BASE_POST.author }
+					: { id: 1, type, name: 'Rilog.', slug: 'rilog', profileImageUrl: null, coverImageUrl: null },
+		} satisfies PostDetailModel;
+		render(<PostDetail post={post} />);
+		expect(screen.getByText('상세 헤더')).toBeInTheDocument();
+		expect(screen.getByRole('region', { name: '공식 콘텐츠 정보' })).toHaveTextContent('공식 뉴스 소개');
+		expect(screen.getByText('원문 출처')).toBeInTheDocument();
+	});
+
 	it('Rilog 글에는 시리즈를 본문 위에 표시하고 별도 작성자 프로필은 표시하지 않는다', () => {
 		const post = {
 			...BASE_POST,

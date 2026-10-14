@@ -14,27 +14,42 @@ export const createPlaywrightReporters = (): ReporterDescription[] => [
 	['json', { outputFile: 'test-results/results.json' }],
 ];
 
-export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverCommand }: PlaywrightConfigOptions) =>
-	defineConfig({
+export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverCommand }: PlaywrightConfigOptions) => {
+	const port = Number(process.env.PLAYWRIGHT_PORT ?? '3000');
+	if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PLAYWRIGHT_PORT must be a valid port.');
+	const serverUrl = `http://localhost:${port}`;
+	return defineConfig({
 		testDir: './src/test/e2e',
+		testIgnore: '**/*.prod.spec.ts',
 		fullyParallel: false,
 		workers: 1,
 		retries: 0,
 		forbidOnly: Boolean(process.env.CI),
 		reporter: reporters ?? createPlaywrightReporters(),
 		use: {
-			baseURL: 'http://localhost:3000',
+			baseURL: serverUrl,
 			screenshot: 'only-on-failure',
 			trace: 'retain-on-failure',
 		},
 		webServer: {
-			command: serverCommand,
-			url: 'http://localhost:3000',
+			command: `${serverCommand} --port ${port}`,
+			url: serverUrl,
 			reuseExistingServer,
 			env: {
 				NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 				NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
 				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
+				NEXT_PUBLIC_SENTRY_DSN: '',
+				NEXT_PUBLIC_SENTRY_ENABLED: 'false',
+				SENTRY_SLACK_BOT_TOKEN: '',
+				SENTRY_SLACK_CHANNEL_ID: '',
+				SENTRY_SLACK_WEBHOOK_URL: '',
+				NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import=./test-harness/the-rilog-server-fixture.mjs`.trim(),
+				THE_RILOG_ALLOW_FIXTURE: 'true',
+				THE_RILOG_SNAPSHOT_PATH: '.the-rilog-build/fixture.json',
+				THE_RILOG_REVALIDATION_SECRET: 'playwright-local-refresh-secret',
+				THE_RILOG_SERVER_FIXTURE_STATE_PATH: '.the-rilog-build/server-fixture-state.json',
+				THE_RILOG_SERVER_FIXTURE_REQUEST_LOG: '.the-rilog-build/server-fixture-requests.log',
 			},
 		},
 		projects: [
@@ -44,8 +59,9 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 			},
 		],
 	});
+};
 
 export default createPlaywrightConfig({
-	reuseExistingServer: !process.env.CI,
-	serverCommand: 'pnpm dev',
+	reuseExistingServer: false,
+	serverCommand: 'node scripts/create-the-rilog-fixture.mjs && pnpm prepare:the-rilog && pnpm dev',
 });

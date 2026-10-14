@@ -28,6 +28,10 @@ jobs:
       NEXT_PUBLIC_API_BASE_URL: https://api.rilog.test
       NEXT_PUBLIC_DEV_MASTER_TOKEN: ""
       NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ""
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      NEXT_PUBLIC_SENTRY_ENABLED: "false"
+      THE_RILOG_SNAPSHOT_PATH: .the-rilog-build/fixture.json
+      THE_RILOG_ALLOW_FIXTURE: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +45,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
-          git diff --name-only "$BASE_SHA" HEAD -- frontend/ .github/workflows/rilog-fe-quality-gates.yml > "$RUNNER_TEMP/frontend-changed-paths"
+          git diff --name-only "$BASE_SHA" HEAD -- frontend/ .github/workflows/rilog-fe-quality-gates.yml .github/workflows/rilog-fe-the-rilog-build.yml > "$RUNNER_TEMP/frontend-changed-paths"
           if [[ -s "$RUNNER_TEMP/frontend-changed-paths" ]]; then
             echo 'frontend=true' >> "$GITHUB_OUTPUT"
             echo 'Frontend 또는 품질 workflow 변경이 있어 전체 검증을 실행합니다.' >> "$GITHUB_STEP_SUMMARY"
@@ -75,7 +79,10 @@ jobs:
           QUALITY_LOG_DIR="${RUNNER_TEMP}/rilog-quality-logs"
           mkdir -p "$QUALITY_LOG_DIR"
           set -o pipefail
+          node scripts/create-the-rilog-fixture.mjs
+          pnpm prepare:the-rilog
           pnpm check 2>&1 | tee "$QUALITY_LOG_DIR/check.log"
+          node scripts/verify-the-rilog-build.mjs 2>&1 | tee "$QUALITY_LOG_DIR/the-rilog-build.log"
 
       - name: Install Playwright Chromium headless shell
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'

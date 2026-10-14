@@ -18,6 +18,9 @@ describe('mapPostDetailResponse', () => {
 				},
 			],
 			publishedAt: '2026-08-17T04:30:00',
+			postType: 'ENTERPRISE_SPOTLIGHT',
+			description: '공식 콘텐츠 요약',
+			source: { sourceProfileName: '출처 기업', sourceProfileImage: 'https://images.rilog.test/source.png' },
 			thumbnailImageUrl: null,
 			category: '기술',
 			chapter: { chapterId: 12, name: 'Spring', order: 1 },
@@ -44,6 +47,9 @@ describe('mapPostDetailResponse', () => {
 
 		expect(postDetail.id).toBe(42);
 		expect(postDetail.title).toBe('Spring 트랜잭션 정리');
+		expect(postDetail.postType).toBe('ENTERPRISE_SPOTLIGHT');
+		expect(postDetail.description).toBe('공식 콘텐츠 요약');
+		expect(postDetail.source).toEqual({ name: '출처 기업', profileImageUrl: 'https://images.rilog.test/source.png' });
 		expect(postDetail.author).toEqual({
 			id: 7,
 			nickname: '파라디',
@@ -66,6 +72,9 @@ describe('mapPostDetailResponse', () => {
 			title: '리로그 개발 회고',
 			content: [],
 			publishedAt: '2026-08-17T04:40:00',
+			postType: 'STANDARD',
+			description: null,
+			source: null,
 			thumbnailImageUrl: 'https://images.rilog.test/cover.png',
 			category: '일상',
 			chapter: null,
@@ -94,6 +103,9 @@ describe('mapPostDetailResponse', () => {
 		const postDetail = mapPostDetailResponse(response, 100);
 
 		expect(postDetail.id).toBe(100);
+		expect(postDetail.postType).toBe('STANDARD');
+		expect(postDetail.description).toBeNull();
+		expect(postDetail.source).toBeNull();
 		expect(postDetail.title).toBe('리로그 개발 회고');
 		expect(postDetail.thumbnailUrl).toBe('https://images.rilog.test/cover.png');
 		expect(postDetail.blog.type).toBe('COLOG');
@@ -112,6 +124,9 @@ describe('mapPostDetailResponse', () => {
 			title: '스프린트 회고',
 			content: [],
 			publishedAt: '2026-08-17T04:40:00',
+			postType: 'STANDARD',
+			description: null,
+			source: null,
 			thumbnailImageUrl: null,
 			category: '회고',
 			chapter: null,
