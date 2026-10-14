@@ -29,6 +29,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.global.exception.RilogInfrastructureException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -292,6 +293,22 @@ class PostServiceTest {
         assertThat(response.owner().type()).isEqualTo(BlogType.RILOG);
         assertThat(response.viewerPermissions().canEdit()).isFalse();
         assertThat(response.viewerPermissions().canDelete()).isFalse();
+    }
+
+    @Test
+    @DisplayName("발행된 게시글의 조회수 누계가 없으면 조회수 전용 서버 오류로 분류한다")
+    void readPublicPostFailsWhenViewCountMissing() {
+        Post publicPost = createPost(createWriter(), PostVisibility.PUBLIC);
+        when(postRepository.findDetailByCanonicalPath(Slug.from(RILOG_SLUG), POST_ID))
+                .thenReturn(Optional.of(publicPost));
+        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null))
+                .isInstanceOfSatisfying(RilogInfrastructureException.class, failure -> {
+                    assertThat(failure.getErrorInformation().getErrorCode()).isEqualTo("POST_VIEW_COUNT_MISSING");
+                    assertThat(failure.getErrorInformation().getHttpStatus().value()).isEqualTo(500);
+                    assertThat(failure.getMessage()).contains("postId=1");
+                });
     }
 
     @Test

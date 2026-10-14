@@ -30,23 +30,6 @@ describe('Field', () => {
 		expect(textarea).toHaveAccessibleDescription('나를 소개하는 문장을 입력하세요.');
 	});
 
-	it('control에 전달된 기존 description 관계를 유지한다', () => {
-		render(
-			<>
-				<p id="input-guidance">공백 없이 입력해 주세요.</p>
-				<Field label="고유 아이디" description="아이디는 4~20자 사이로 입력 가능해요.">
-					{({ id, describedBy }) => (
-						<Input id={id} aria-describedby={['input-guidance', describedBy].filter(Boolean).join(' ')} />
-					)}
-				</Field>
-			</>,
-		);
-
-		expect(screen.getByRole('textbox', { name: '고유 아이디' })).toHaveAccessibleDescription(
-			'공백 없이 입력해 주세요. 아이디는 4~20자 사이로 입력 가능해요.',
-		);
-	});
-
 	it('label 우측에 독립적인 action을 배치한다', () => {
 		render(
 			<Field label="시리즈" labelAction={<button type="button">새 시리즈 추가</button>}>

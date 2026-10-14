@@ -3,7 +3,7 @@ import { BlockNoteEditor } from '@blocknote/core';
 import { expect, it } from 'vitest';
 
 import { isBlockNoteDocument } from '@/domains/post/lib/validate-blocknote-document';
-import { POST_DETAIL_READABILITY_CONTENT } from '@/features/post-detail/model/post-detail.mock';
+import { POST_DETAIL_READABILITY_CONTENT } from '@/test/fixtures/post-detail';
 
 import { POST_WRITE_SCHEMA } from './post-write-schema';
 

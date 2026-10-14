@@ -5,6 +5,7 @@ import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.user.entity.User;
 import tools.jackson.databind.JsonNode;
 
@@ -20,8 +21,40 @@ public record PostDetailResponse(
         AuthorResponse author,
         PostOwnerResponse owner,
         ViewerPermissionsResponse viewerPermissions,
-        long viewCount
+        long viewCount,
+        String postType,
+        String description,
+        PostSourceResponse source
 ) {
+
+    public PostDetailResponse(
+            String title,
+            JsonNode content,
+            LocalDateTime publishedAt,
+            String thumbnailImageUrl,
+            String category,
+            ChapterResponse chapter,
+            AuthorResponse author,
+            PostOwnerResponse owner,
+            ViewerPermissionsResponse viewerPermissions,
+            long viewCount
+    ) {
+        this(
+                title,
+                content,
+                publishedAt,
+                thumbnailImageUrl,
+                category,
+                chapter,
+                author,
+                owner,
+                viewerPermissions,
+                viewCount,
+                PostType.STANDARD.name(),
+                null,
+                null
+        );
+    }
 
     public PostDetailResponse(
             String title,
@@ -44,7 +77,10 @@ public record PostDetailResponse(
                 author,
                 owner,
                 viewerPermissions,
-                viewCount
+                viewCount,
+                PostType.STANDARD.name(),
+                null,
+                null
         );
     }
 
@@ -59,7 +95,10 @@ public record PostDetailResponse(
                 AuthorResponse.from(post.getUser()),
                 RilogOwnerResponse.from(post.getRilog()),
                 viewerPermissions,
-                viewCount
+                viewCount,
+                post.getPostType().name(),
+                post.getDescription(),
+                PostSourceResponse.from(post.getSource())
         );
     }
 
@@ -80,7 +119,10 @@ public record PostDetailResponse(
                 AuthorResponse.from(post.getUser()),
                 CologOwnerResponse.of(post.getColog(), memberCount, postCount),
                 viewerPermissions,
-                viewCount
+                viewCount,
+                post.getPostType().name(),
+                post.getDescription(),
+                PostSourceResponse.from(post.getSource())
         );
     }
 

@@ -35,7 +35,17 @@ export interface PostDetailAuthor extends User {
 	description: string | null;
 }
 
+export type PostType = 'STANDARD' | 'DAILY_HEADLINES' | 'ENTERPRISE_SPOTLIGHT' | 'PERSONAL_SPOTLIGHT';
+
+export interface PostSource {
+	name: string;
+	profileImageUrl: string | null;
+}
+
 export interface PostDetail extends PostSummary {
+	postType: PostType;
+	description: string | null;
+	source: PostSource | null;
 	author: PostDetailAuthor;
 	content: Block[];
 	category: PostCategory;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { POST_DETAIL_READABILITY_CONTENT } from '@/features/post-detail/model/post-detail.mock';
+import { POST_DETAIL_READABILITY_CONTENT } from '@/test/fixtures/post-detail';
 
 import { isBlockNoteDocument } from './validate-blocknote-document';
 

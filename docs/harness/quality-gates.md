@@ -12,16 +12,16 @@
 
 ## 현재 로컬 검증
 
-| 순서 | 게이트                      | 책임                                             |
-| ---: | --------------------------- | ------------------------------------------------ |
-|    1 | format                      | 기계적 포맷                                      |
-|    2 | lint                        | 코드 품질, import와 React 규칙                   |
-|    3 | typecheck                   | TypeScript 계약                                  |
-|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수           |
-|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성                   |
-|    6 | Next.js build               | Server/Client 경계와 production build            |
-|    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 필수 4건과 인라인 댓글 검증 |
-|    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 브라우저 검증     |
+| 순서 | 게이트                      | 책임                                                                 |
+| ---: | --------------------------- | -------------------------------------------------------------------- |
+|    1 | format                      | 기계적 포맷                                                          |
+|    2 | lint                        | 코드 품질, import와 React 규칙                                       |
+|    3 | typecheck                   | TypeScript 계약                                                      |
+|    4 | Vitest unit                 | policy, mapper, serializer와 순수 함수                               |
+|    5 | RTL component               | 입력, 상태 전이, 오류와 접근성                                       |
+|    6 | Next.js build               | Server/Client 경계와 production build                                |
+|    7 | `pnpm test:e2e` (별도 실행) | 개발 서버에서 글쓰기 필수 4건·편집기 입력·인라인 댓글·읽기 위치 검증 |
+|    8 | `pnpm test:e2e:prod`        | 기존 production build에서 같은 브라우저 검증                         |
 
 현재 `frontend/package.json`에는 다음 script가 있다.
 
@@ -39,7 +39,7 @@ check
 
 `check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. `typecheck`는 `next typegen && tsc --noEmit`으로 build 전에 실행된다. 컴파일 타임의 타입 검사는 외부 JSON 값을 검사하지 않으므로 선택한 입력 경계에는 런타임 가드와 실패 흐름 테스트를 둔다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
 
-현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책을 검증한다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
+현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책, 실제 편집기 입력, 인라인 댓글 Selection·모달 동작과 읽기 위치를 검증한다. 색상·고정 폰트 크기·아이콘 파일 경로는 이 게이트의 보호 대상이 아니다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
 
 ```sh
 pnpm check
@@ -48,17 +48,28 @@ pnpm test:e2e:prod
 
 CI와 동일한 production E2E를 재현할 때는 build 전부터 아래 환경을 적용한다.
 
+더 리로그의 초기 정적 HTML은 명시적 테스트 스냅샷으로 빌드한다. ISR 갱신도 API 수집·검증 실패 시 입력과 캐시를 유지하고, 성공 후 production HTML의 checksum·capturedAt을 확인하는 회귀 검증을 둔다. 먼저 `node scripts/create-the-rilog-fixture.mjs`를 실행하고, `THE_RILOG_SNAPSHOT_PATH=.the-rilog-build/fixture.json`, `THE_RILOG_ALLOW_FIXTURE=true`로 `pnpm prepare:the-rilog`를 실행한 뒤 check를 실행한다. 전체 명령은 [더 리로그 빌드 안내](../qa/the-rilog-build.md)에 있다. 실제 API 실패를 fixture로 자동 대체하지 않는다.
+
 ```sh
+node scripts/create-the-rilog-fixture.mjs
+THE_RILOG_SNAPSHOT_PATH=.the-rilog-build/fixture.json \
+THE_RILOG_ALLOW_FIXTURE=true \
+pnpm prepare:the-rilog
+
 NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test \
 NEXT_PUBLIC_DEV_MASTER_TOKEN='' \
 NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN='' \
+NEXT_PUBLIC_SENTRY_DSN='' \
 pnpm check
 
 NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test \
 NEXT_PUBLIC_DEV_MASTER_TOKEN='' \
 NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN='' \
+NEXT_PUBLIC_SENTRY_DSN='' \
 pnpm test:e2e:prod
 ```
+
+개발 및 production E2E는 기존 서버를 재사용하지 않는다. 기존 개발 서버에는 fixture 환경과 서버 fetch preload를 뒤늦게 주입할 수 없기 때문이다. 기본 포트가 사용 중이면 `PLAYWRIGHT_PORT=3002`처럼 별도 포트를 지정한다. 같은 작업 디렉터리에서 Next 개발 서버가 실행 중이면 dev lock 때문에 별도 개발 E2E 서버를 띄울 수 없으므로, 기존 개발 서버를 유지할 때는 production E2E 또는 격리된 체크아웃을 사용한다. ISR 캐시 검증인 `*.prod.spec.ts`는 production 설정에서만 실행한다.
 
 screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 운영하지 않는다.
 
@@ -69,11 +80,11 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 - `develop`·`production` 대상 모든 PR
 - GitHub Actions의 수동 실행
 
-문서·백엔드만 바뀐 PR에도 workflow가 실행된다. `Frontend Quality`가 두 대상 브랜치의 required check이므로 workflow에 `paths` 제한을 두면 관련 없는 PR에서 검사가 Pending으로 남아 병합을 막는다. PR의 기준 커밋과 검사 대상 merge commit을 비교해 `frontend/` 또는 품질 workflow가 바뀌지 않았으면 setup·설치·검증 단계를 건너뛰고 job을 성공으로 끝낸다. 변경 파일 확인 자체가 실패하면 job도 실패한다. `workflow_dispatch`는 변경 파일 판단 없이 전체 검증을 실행한다. `develop`에 직접 push할 때 실행되는 `push` trigger는 없다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다.
+문서·백엔드만 바뀐 PR에도 workflow가 실행된다. `Frontend Quality`는 두 대상 브랜치에서 실행하지만 병합 필수 조건은 아니다. 기존 실행 범위를 유지하기 위해 workflow에 `paths` 제한을 두지 않는다. PR의 기준 커밋과 검사 대상 merge commit을 비교해 `frontend/` 또는 품질 workflow가 바뀌지 않았으면 setup·설치·검증 단계를 건너뛰고 job을 성공으로 끝낸다. 변경 파일 확인 자체가 실패하면 job도 실패한다. `workflow_dispatch`는 변경 파일 판단 없이 전체 검증을 실행한다. `develop`에 직접 push할 때 실행되는 `push` trigger는 없다. LLM 지침은 작성·리뷰를 돕고, 위반을 기계적으로 검출하는 단계는 lint·typecheck·테스트다.
 
 수동 실행은 workflow가 기본 브랜치에 등록된 뒤 GitHub Actions에서 선택한 ref를 검증한다.
 
-정기 실행은 운영하지 않는다. 현재 검증은 고정된 의존성과 fixture를 사용하고 실제 계정·외부 API에 의존하지 않아 PR 검증과 필요 시 수동 실행으로 관리한다. 외부 서비스·시간 의존 계약이나 별도 브라우저 버전 검증을 도입하면 정기 실행의 필요성을 다시 검토한다.
+품질 CI의 정기 실행은 운영하지 않는다. 더 리로그 콘텐츠 갱신은 EC2의 오전 6시 systemd timer에서 수행하며 이 품질 workflow의 예약 실행이 아니다. 현재 검증은 고정된 의존성과 fixture를 사용하고 실제 계정·외부 API에 의존하지 않아 PR 검증과 필요 시 수동 실행으로 관리한다. 외부 서비스·시간 의존 계약이나 별도 브라우저 버전 검증을 도입하면 정기 실행의 필요성을 다시 검토한다.
 
 CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한다. pnpm 저장소는 `setup-node`로 cache한다. Next.js `.next/cache`는 로컬 확인에서 약 475MB로, 압축해도 약 387MB였다. GitHub의 PR cache는 해당 PR 범위에서만 재사용되고 최근 CI에서 build 컴파일은 약 16~20초였으므로, 대용량 cache의 전송 비용이 절감 시간을 넘을 수 있어 추가하지 않았다.
 
@@ -87,7 +98,7 @@ CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한�
 
 단위·RTL·E2E가 0건을 수집하면 실패한다. `test:e2e:prod`는 필수 태그 4개 중 누락·중복·skip·미실행·실패가 있으면 custom reporter가 job을 실패시킨다. `test:e2e`는 파일·grep 선택으로 개별 흐름을 조사할 수 있다. retry는 0이고 CI에서는 `test.only`를 금지한다.
 
-`.github/workflows/rilog-fe-prod.yml`의 기존 `production` PR build와 `production` push 배포는 그대로 유지한다. 품질 workflow는 `develop`·`production`의 required check이며, 배포 workflow의 선행 job은 아니다.
+`.github/workflows/rilog-fe-prod.yml`은 기존 `production` PR build와 `production` push 배포를 유지하고, 운영 artifact에 초기 스냅샷·갱신 스크립트·timer 설치 파일을 포함한다. 배포 시 server-only secret과 EC2 권한을 확인하고 systemd timer를 설치한다. 일일 콘텐츠 갱신은 `/the-rilog`만 재생성한다. 운영 설정과 실패 확인은 [더 리로그 빌드·갱신 안내](../qa/the-rilog-build.md)를 따른다. 품질 workflow는 `develop`·`production`에서 실행하지만 병합 필수 조건은 아니며, 배포 workflow의 선행 job도 아니다.
 
 ## Backend
 

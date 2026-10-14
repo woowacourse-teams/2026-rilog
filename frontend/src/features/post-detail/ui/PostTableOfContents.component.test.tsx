@@ -9,6 +9,7 @@ import PostTableOfContents from './PostTableOfContents';
 const ITEMS: PostTableOfContentsItem[] = [
 	{ id: '문제-상황', text: '문제 상황', level: 2 },
 	{ id: '해결-방법', text: '해결 방법', level: 3 },
+	{ id: '세부-단계', text: '세부 단계', level: 4 },
 ];
 const HISTORY_STATE = { route: 'post-detail' };
 
@@ -49,16 +50,16 @@ describe('PostTableOfContents', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('장식 목록은 접근성 트리에서 숨기고 하나의 링크 목록으로 목차를 제공한다', () => {
+	it('각 헤딩을 링크로 제공한다', () => {
 		const { container } = render(<PostTableOfContents items={ITEMS} />);
 		const navigation = screen.getByRole('navigation', { name: '게시글 목차' });
 
 		expect(container.firstElementChild).toBe(navigation);
-		expect(container.querySelector('ol[aria-hidden="true"]')).toBeInTheDocument();
 		expect(screen.getAllByRole('list')).toHaveLength(1);
 		expect(screen.getAllByRole('link')).toHaveLength(ITEMS.length);
 		expect(screen.getByRole('link', { name: '문제 상황' })).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '해결 방법' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: '세부 단계' })).toBeInTheDocument();
 	});
 
 	it('본문 스크롤에 따라 현재 헤딩을 표시한다', () => {
@@ -66,11 +67,16 @@ describe('PostTableOfContents', () => {
 			<>
 				<h2 id="문제-상황">문제 상황</h2>
 				<h3 id="해결-방법">해결 방법</h3>
+				<h4 id="세부-단계">세부 단계</h4>
 				<PostTableOfContents items={ITEMS} />
 			</>,
 		);
 
-		expect(observedHeadings).toEqual([document.getElementById('문제-상황'), document.getElementById('해결-방법')]);
+		expect(observedHeadings).toEqual([
+			document.getElementById('문제-상황'),
+			document.getElementById('해결-방법'),
+			document.getElementById('세부-단계'),
+		]);
 
 		act(() => {
 			observerCallback(

@@ -53,6 +53,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                    ON anchor.commentAnchorSelection = anchorSelection
                   AND anchor.deletedAt IS NULL
             WHERE p.status = :status
+              AND p.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
               AND p.visibility = :publicVisibility
               AND (:category IS NULL OR p.category = :category)
               AND (
@@ -121,6 +122,7 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
             LEFT JOIN p.colog colog
             LEFT JOIN p.chapter chapter
             WHERE p.status = :status
+              AND p.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
               AND p.visibility = :publicVisibility
               AND (:category IS NULL OR p.category = :category)
               AND (

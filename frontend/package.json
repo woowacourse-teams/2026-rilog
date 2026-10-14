@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
+		"prepare:the-rilog": "node scripts/prepare-the-rilog.mjs",
 		"start": "next start",
 		"lint": "eslint",
 		"format": "prettier --write .",

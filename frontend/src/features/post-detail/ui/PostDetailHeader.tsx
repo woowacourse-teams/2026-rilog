@@ -15,7 +15,6 @@ interface PostDetailHeaderProps {
 	postId: number;
 	slug: string;
 	title: string;
-	// description: string;
 	publishedAt: string;
 	category: PostCategory;
 	author: User;
@@ -27,7 +26,6 @@ export default function PostDetailHeader({
 	postId,
 	slug,
 	title,
-	// description,
 	publishedAt,
 	category,
 	author,
@@ -42,13 +40,6 @@ export default function PostDetailHeader({
 			<h1 className="text-heading-4 font-extrabold [overflow-wrap:anywhere] break-keep text-text-primary sm:text-heading-1">
 				{title}
 			</h1>
-
-			{/* TODO: 게시글 상세 API에 description 필드가 추가되면 다시 활성화한다. */}
-			{/* {description ? (
-				<p className="mt-5 max-w-2xl text-body-4 wrap-break-word break-keep text-text-secondary sm:mt-6 sm:text-body-3">
-					{description}
-				</p>
-			) : null} */}
 
 			<div className="mt-6 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-3 text-label-1 text-text-secondary sm:mt-7">
 				<BlogProfileEntryLink

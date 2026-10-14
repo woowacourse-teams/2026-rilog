@@ -1,4 +1,4 @@
-/* BlockNote의 특수 블록은 작성과 상세 화면에서 같은 세로 리듬을 사용한다. */
+/* BlockNote의 작성과 상세 화면에 공통 본문 스타일을 적용한다. */
 :is(.post-detail-body, .post-write-blocknote) {
 	--post-body-line-height: 1.65;
 	--post-heading-1-line-height: 1.35;
@@ -428,6 +428,54 @@
 	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='divider'])
 	+ .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading']) {
 	margin-top: var(--post-heading-divider-top-space);
+}
+
+/* 매거진 작업에서 조정한 작성 화면의 밀도는 유지하고 상세 화면만 이전 값으로 되돌린다. */
+.post-write-blocknote {
+	--post-paragraph-space: 0.6rem;
+	--post-special-block-space: 0.75rem;
+	--post-special-block-shared-space: 0.375rem;
+}
+
+.post-write-blocknote .bn-editor {
+	font-size: var(--text-body-4);
+}
+
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading']:not([data-level])) {
+	--post-heading-top-space: 2.5rem;
+	--post-heading-adjacent-top-space: 1.25rem;
+	--post-heading-divider-top-space: 1.5rem;
+}
+
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'][data-level='2']) {
+	--post-heading-top-space: 2rem;
+	--post-heading-adjacent-top-space: 1rem;
+	--post-heading-divider-top-space: 1.25rem;
+}
+
+.post-write-blocknote
+	.bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='heading'][data-level='3']) {
+	--post-heading-top-space: 1.5rem;
+	--post-heading-adjacent-top-space: 0.75rem;
+	--post-heading-divider-top-space: 1rem;
+}
+
+.post-write-blocknote .bn-block-outer > .bn-block > .bn-block-content[data-content-type='heading']:not([data-level]) {
+	font-size: 2rem;
+}
+
+.post-write-blocknote .bn-block-outer > .bn-block > .bn-block-content[data-content-type='heading'][data-level='2'] {
+	font-size: 1.75rem;
+}
+
+.post-write-blocknote .bn-block-outer > .bn-block > .bn-block-content[data-content-type='heading'][data-level='3'] {
+	font-size: 1.25rem;
+}
+
+.post-write-blocknote .bn-block-outer > .bn-block > .bn-block-content[data-content-type='heading'][data-level='4'] {
+	font-size: var(--text-body-2);
 }
 
 @media (max-width: 40rem) {

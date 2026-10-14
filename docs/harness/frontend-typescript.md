@@ -35,6 +35,8 @@ TypeScript의 타입은 컴파일 후 사라진다. `strict`와 `tsc --noEmit`�
 | 로그인 후 이동 경로                                         | 저장된 redirect가 앱 내부 경로인지 확인한다.                                          | 외부 URL·실행 스킴은 기본 경로 `/`로 돌린다.                                                      |
 | URL의 ID·필터·enum, 분석용 storage                          | 기존 가드를 재사용하고 JSON parse 결과를 `unknown`에서 좁힌다.                        | 기존 유효하지 않은 값 처리를 유지한다.                                                            |
 
+더 리로그 메인 응답과 JSON 스냅샷은 최초 빌드와 ISR 갱신 모두에서 runtime 가드·checksum·상세에서 생성하는 h1~h3 앵커와 본문의 대응을 검사한다. 공식 게시글 상세의 postType·description·source도 기존 상세 가드에 포함한다. 잘못된 입력은 최초 빌드 또는 갱신 실패로 처리하며 정상 빈 응답으로 변환하지 않는다. 갱신은 API 수집·검증·atomic 저장이 성공한 뒤에만 페이지 캐시를 무효화한다. 인증은 서버 전용 `THE_RILOG_REVALIDATION_SECRET`을 사용하고, 갱신 CLI는 응답의 checksum·capturedAt 구조와 재생성 HTML의 두 표시를 확인한다.
+
 ### 이번 범위에서 검증하지 않는 값
 
 아래 항목은 `apiClient`의 JSON 파싱과 TypeScript 타입을 사용하지만 DTO 구조는 확인하지 않는다. HTTP 오류 처리와 화면별 방어는 일부 실패만 막는다. 검증 대상 전환 조건이 생기면 해당 endpoint의 raw API 함수에서 가드와 실패 정책을 함께 추가한다.
@@ -60,4 +62,4 @@ API나 DTO를 수정할 때는 다음을 함께 확인한다.
 
 `pnpm check`는 `format:check → lint → next typegen + tsc --noEmit → unit → component → next build` 순서다. TypeScript 검사는 build 전에 독립적으로 실행되고, Next.js build에서도 production 빌드 계약을 확인한다. `pnpm test:e2e:prod`는 build 결과를 사용해 별도로 실행한다. LLM 작업 지침과 리뷰는 판단을 돕지만 결정적인 위반 검출은 컴파일러·린트·테스트가 담당한다.
 
-품질 workflow는 `develop`·`production` 대상 모든 PR에서 실행된다. frontend와 품질 workflow 파일이 바뀌지 않은 PR은 `Frontend Quality` job의 무거운 검증 단계를 건너뛴다. 이 job은 두 브랜치의 required check다. 자세한 실행 환경과 유지·변경 조건은 [품질 게이트](quality-gates.md)를 따른다.
+품질 workflow는 `develop`·`production` 대상 모든 PR에서 실행된다. frontend와 품질 workflow 파일이 바뀌지 않은 PR은 `Frontend Quality` job의 무거운 검증 단계를 건너뛴다. 이 job은 두 브랜치에서 실행하지만 병합 필수 조건은 아니다. 자세한 실행 환경과 유지·변경 조건은 [품질 게이트](quality-gates.md)를 따른다.

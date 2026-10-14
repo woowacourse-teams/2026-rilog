@@ -3,6 +3,8 @@ package kr.rilog.domain.post.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
@@ -13,6 +15,7 @@ import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
 import kr.rilog.support.fixure.PostFixture;
+import kr.rilog.support.fixure.TheRilogPostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 
+import static kr.rilog.support.fixure.PostContentFixture.content;
+import static kr.rilog.support.fixure.PostContentFixture.paragraph;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TrendingServiceIntegrationTest extends ServiceSupport {
@@ -41,6 +46,9 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private BlogRepository blogRepository;
+
+    @Autowired
+    private ChapterRepository chapterRepository;
 
     @Autowired
     private PostFeedQueryRepository postFeedQueryRepository;
@@ -98,6 +106,34 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
                 .containsExactly(publicPost.getId());
+    }
+
+    @Test
+    @DisplayName("트렌딩 피드는 더 리로그 게시글을 반환하지 않는다.")
+    void readTrendingPostsExcludesTheRilogPosts() {
+        // given
+        User author = saveCompletedUser(5L, "표준트렌딩작성자", "standard_trending");
+        Blog rilog = saveRilog(author);
+        Post standardPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+
+        User theRilogOwner = saveCompletedUser(6L, "더리로그주인", "the_rilog");
+        Blog theRilog = saveRilog(theRilogOwner);
+        Chapter headlines = saveChapter(theRilog, "headlines", 0);
+        Post theRilogPost = savePost(TheRilogPostFixture.publishedNews(
+                headlines,
+                BASE_PUBLISHED_AT,
+                content(paragraph("오늘의 소식"))
+        ));
+        saveHardTrending(10L, standardPost);
+        saveHardTrending(20L, theRilogPost);
+
+        // when
+        FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
+
+        // then
+        assertThat(result.posts())
+                .extracting(FullFeedPostResult.PostItemResult::postId)
+                .containsExactly(standardPost.getId());
     }
 
     @Test
@@ -170,6 +206,10 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
 
     private Blog saveColog(User owner, String slug) {
         return blogRepository.saveAndFlush(Blog.createColog(owner, slug, BlogFixture.cologProfile()));
+    }
+
+    private Chapter saveChapter(Blog blog, String name, int order) {
+        return chapterRepository.saveAndFlush(Chapter.create(blog, name, order));
     }
 
     private Post savePost(Post post) {

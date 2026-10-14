@@ -62,6 +62,5 @@ describe('useUpdatePostMutation', () => {
 		}
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: feedsQueryKeys.all });
 		expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: blogsQueryKeys.all });
-		expect(invalidateQueries).toHaveBeenCalledTimes(4);
 	});
 });

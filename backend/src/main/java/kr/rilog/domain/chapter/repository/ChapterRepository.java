@@ -27,6 +27,18 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
     Optional<Chapter> findByIdAndBlogIdAndDeletedAtIsNull(Long chapterId, Long blogId);
 
     @Query("""
+            SELECT chapter
+            FROM Chapter chapter
+            WHERE chapter.blog.id = :blogId
+              AND chapter.name.value = :name
+              AND chapter.deletedAt IS NULL
+            """)
+    Optional<Chapter> findByBlogIdAndName(
+            @Param("blogId") Long blogId,
+            @Param("name") String name
+    );
+
+    @Query("""
         SELECT new kr.rilog.domain.chapter.repository.projection.ChapterIndexProjection(
             chapter.id,
             chapter.name.value,

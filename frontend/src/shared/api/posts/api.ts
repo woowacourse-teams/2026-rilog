@@ -101,6 +101,17 @@ const isPostDetailResponse = (value: unknown): value is PostDetailResponse => {
 	const { author, owner, viewerPermissions } = value;
 	if (
 		!isString(value.title) ||
+		!(
+			value.postType === 'STANDARD' ||
+			value.postType === 'DAILY_HEADLINES' ||
+			value.postType === 'ENTERPRISE_SPOTLIGHT' ||
+			value.postType === 'PERSONAL_SPOTLIGHT'
+		) ||
+		!isNullableString(value.description) ||
+		(value.source !== null &&
+			(!isRecord(value.source) ||
+				!isString(value.source.sourceProfileName) ||
+				!isNullableString(value.source.sourceProfileImage))) ||
 		!isBlockNoteDocument(value.content) ||
 		!isString(value.publishedAt) ||
 		!isNullableString(value.thumbnailImageUrl) ||
@@ -150,11 +161,14 @@ export const readPostsCount = () => {
 };
 
 // NOTE: 게시글 상세 조회 - posts 쪽에 있는 게 자연스럽다고 판단되어 일단 유지
-export const readPostDetail = ({ slug, postId }: PostDetailRequest): Promise<ApiResponse<PostDetailResponse>> => {
+export const readPostDetail = (
+	{ slug, postId }: PostDetailRequest,
+	options?: Pick<RequestInit, 'cache'>,
+): Promise<ApiResponse<PostDetailResponse>> => {
 	const normalizedSlug = stripAtPrefix(slug);
 
 	return apiRequest(async () => {
-		const response = await kyInstance.get(`v1/blogs/${normalizedSlug}/posts/${postId}`);
+		const response = await kyInstance.get(`v1/blogs/${normalizedSlug}/posts/${postId}`, options);
 		return parseApiJsonResponse(response, 'read post detail', isPostDetailResponse);
 	});
 };

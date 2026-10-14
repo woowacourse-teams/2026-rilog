@@ -39,6 +39,12 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 	return {
 		id: postId ?? response.owner.blogId,
 		title: response.title,
+		postType: response.postType,
+		description: response.description,
+		source:
+			response.source === null
+				? null
+				: { name: response.source.sourceProfileName, profileImageUrl: response.source.sourceProfileImage },
 		content: response.content,
 		publishedAt: response.publishedAt,
 		thumbnailUrl: response.thumbnailImageUrl ?? null,
