@@ -3,8 +3,6 @@ import type { MagazineArticle } from '../model/magazine-content';
 import type { DailyHeadline } from '@/features/the-rilog-daily-headlines/model/daily-headline';
 import DailyHeadlines from '@/features/the-rilog-daily-headlines/ui/DailyHeadlines';
 
-import { formatMagazineDate } from '../lib/format-magazine-date';
-
 import MagazineArticleCard from './MagazineArticleCard';
 import MagazineMasthead from './MagazineMasthead';
 import ScrollReveal from './ScrollReveal';
@@ -18,10 +16,9 @@ interface TheRilogMagazineProps {
 export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogMagazineProps) {
 	const enterpriseArticles = articles.filter((article) => article.profile.type === 'enterprise');
 	const personalArticles = articles.filter((article) => article.profile.type === 'bloger');
-	const editionDate = formatMagazineDate(new Date());
 	return (
 		<main className={`${styles.page} mx-auto w-full max-w-7xl px-6 md:px-16`}>
-			<MagazineMasthead editionDate={editionDate} />
+			<MagazineMasthead />
 			<div className={styles.stories}>
 				<div className={styles.contentGrid}>
 					<DailyHeadlines dailyHeadlines={dailyHeadlines} />

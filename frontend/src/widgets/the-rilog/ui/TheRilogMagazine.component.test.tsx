@@ -74,17 +74,6 @@ describe('TheRilogMagazine', () => {
 		expect(screen.queryByRole('link', { name: 'about. The Rilog.' })).not.toBeInTheDocument();
 	});
 
-	it.each([
-		['2026-10-04T14:59:59Z', 'Sunday october 4 2026', '2026-10-04'],
-		['2026-10-04T15:00:00Z', 'Monday october 5 2026', '2026-10-05'],
-		['2026-12-31T14:59:59Z', 'Thursday december 31 2026', '2026-12-31'],
-		['2026-12-31T15:00:00Z', 'Friday january 1 2027', '2027-01-01'],
-	])('%s에 렌더링하면 한국 날짜 %s와 일치하는 dateTime을 제공한다', (instant, label, dateTime) => {
-		vi.setSystemTime(new Date(instant));
-		render(<TheRilogMagazine dailyHeadlines={DAILY_HEADLINES} articles={MAGAZINE_ARTICLES} />);
-		expect(screen.getByText(label)).toHaveAttribute('datetime', dateTime);
-	});
-
 	it('기사가 없으면 잘못된 상세 링크를 만들지 않는다', () => {
 		render(<TheRilogMagazine dailyHeadlines={[]} articles={[]} />);
 		expect(screen.queryByRole('article')).not.toBeInTheDocument();
