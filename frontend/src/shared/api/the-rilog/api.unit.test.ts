@@ -21,6 +21,7 @@ describe('readTheRilog', () => {
 		const fetchMock = vi.fn((request: Request) => {
 			expect(request.method).toBe('GET');
 			expect(request.url).toBe('https://api.rilog.test/v1/the-rilog');
+			expect(request.cache).toBe('no-store');
 			return Promise.resolve(Response.json(body));
 		});
 		vi.stubGlobal('fetch', fetchMock);

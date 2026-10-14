@@ -148,11 +148,14 @@ describe('readPostDetail', () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(readPostDetail({ slug: '@rilog-team', postId: 42 })).resolves.toEqual(responseBody);
+		await expect(readPostDetail({ slug: '@rilog-team', postId: 42 }, { cache: 'no-store' })).resolves.toEqual(
+			responseBody,
+		);
 
 		const request = fetchMock.mock.calls[0]?.[0] as Request;
 		expect(request.method).toBe('GET');
 		expect(request.url).toBe('https://api.rilog.test/v1/blogs/rilog-team/posts/42');
+		expect(request.cache).toBe('no-store');
 	});
 
 	const detailData = {
