@@ -248,8 +248,10 @@ export default function PostDetailCommentsWorkspace({
 			</div>
 
 			{isDocked &&
-				isCommentsSidebarOpen &&
-				createPortal(<PostCommentsDockedCard key={createRequestId} {...panelProps} />, dockHost)}
+				createPortal(
+					<PostCommentsDockedCard key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />,
+					dockHost,
+				)}
 			{isLayoutReady && !isDocked && (
 				<PostCommentsSidebar key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />
 			)}
