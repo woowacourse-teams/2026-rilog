@@ -10,10 +10,11 @@ interface PostTableOfContentsProps {
 	items: PostTableOfContentsItem[];
 }
 
-const INDENT_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string | undefined> = {
-	1: undefined,
-	2: 'pl-1.5',
-	3: 'pl-3',
+const STYLE_CLASS_BY_LEVEL: Record<PostTableOfContentsItem['level'], string> = {
+	1: 'leading-[1.125rem]',
+	2: 'pl-3 leading-[1.125rem]',
+	3: 'pl-6 leading-4',
+	4: 'pl-9 leading-4',
 };
 
 // 목차 ui 구현
@@ -66,17 +67,17 @@ export default function PostTableOfContents({ items }: PostTableOfContentsProps)
 	};
 
 	return (
-		<nav aria-label="게시글 목차">
-			<ol className="max-h-[var(--post-toc-max-height)] [scrollbar-gutter:stable] space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-border-default pr-1 pl-2.5">
+		<nav aria-label="게시글 목차" className="max-w-55">
+			<ol className="max-h-[var(--post-toc-max-height)] [scrollbar-gutter:stable] space-y-1 overflow-x-hidden overflow-y-auto overscroll-contain pb-20 motion-reduce:transition-none">
 				{items.map((item) => {
 					const isActive = item.id === activeId;
 
 					return (
-						<li key={item.id}>
+						<li key={item.id} className={`text-[13px] first:mt-0 last:mb-0 ${STYLE_CLASS_BY_LEVEL[item.level]}`}>
 							<a
 								href={`#${encodeURIComponent(item.id)}`}
 								aria-current={isActive ? 'location' : undefined}
-								className={`block rounded-sm text-label-1 leading-[1.125rem] transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${INDENT_CLASS_BY_LEVEL[item.level]} ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
+								className={`block rounded-sm transition-colors hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${isActive ? 'font-semibold text-brand-primary' : 'font-medium text-text-placeholder'}`}
 								onClick={(event) => handleAnchorClick(event, item.id)}
 							>
 								{item.text}

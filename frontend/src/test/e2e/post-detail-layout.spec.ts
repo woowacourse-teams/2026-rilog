@@ -14,12 +14,11 @@ const renderLayoutFixture = async (page: Page) => {
 		<div class="postDetailCard">
 			<div class="contentLayout">
 				<aside class="tableOfContentsColumn"><div class="tableOfContentsSticky">목차</div></aside>
+				<aside class="commentsColumn"><div class="commentsEntry"><button>전체 댓글 8</button></div></aside>
 				<article class="articleColumn">
 					<hr />
-					<div class="compactCommentsEntry"><button>전체 댓글 <span>8</span></button></div>
 					<div class="profileSection">프로필</div>
 				</article>
-				<aside class="commentsColumn"><div class="commentsSticky">전체 댓글 8</div></aside>
 			</div>
 		</div>
 	`);
@@ -41,15 +40,15 @@ test.describe('게시글 상세 사이드 레이아웃', () => {
 		const commentsBox = (await comments.boundingBox())!;
 		expect(tocBox.x + tocBox.width).toBeLessThanOrEqual(articleBox.x);
 		expect(articleBox.x + articleBox.width).toBeLessThanOrEqual(commentsBox.x);
-		await expect(page.locator('.compactCommentsEntry')).toBeHidden();
+		await expect(page.getByRole('button', { name: '전체 댓글 8' })).toHaveCount(1);
 	});
 
-	test('좁은 화면에서 사이드 영역이 사라져도 전체 댓글 버튼에 접근할 수 있다', async ({ page }) => {
+	test('좁은 화면에서 목차가 사라져도 전체 댓글 버튼에 접근할 수 있다', async ({ page }) => {
 		await page.setViewportSize({ width: 900, height: 800 });
 		await renderLayoutFixture(page);
 
 		await expect(page.locator('.tableOfContentsColumn')).toBeHidden();
-		await expect(page.locator('.commentsColumn')).toBeHidden();
+		await expect(page.locator('.commentsColumn')).toBeVisible();
 		await expect(page.getByRole('button', { name: '전체 댓글 8' })).toBeVisible();
 	});
 });

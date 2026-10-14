@@ -53,6 +53,7 @@ public interface HardTrendingQueryRepository extends Repository<HardTrending, Lo
                   AND anchor.deletedAt IS NULL
             WHERE post.status = :status
               AND post.visibility = :publicVisibility
+              AND post.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
               AND post.deletedAt IS NULL
               AND (:category IS NULL OR post.category = :category)
               AND (

@@ -25,12 +25,11 @@ const THREAD = {
 
 describe('InlineCommentThread', () => {
 	beforeEach(() => sessionStorage.clear());
-	it('댓글을 펼치면 바로 입력할 수 있고 다시 펼쳐도 작성 내용을 유지한다', async () => {
+	it('처음부터 댓글을 입력할 수 있고 접었다 다시 펼쳐도 작성 내용을 유지한다', async () => {
 		const user = userEvent.setup();
 		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} entrySource="all" />);
 
 		await user.tab();
-		await user.keyboard('{Enter}');
 		await user.tab(); // 본문 이동
 		await user.tab(); // 프로필 이미지 링크
 		expect(screen.getByRole('link', { name: '인라인댓글테스터님의 블로그로 이동' })).toHaveFocus();
@@ -62,8 +61,7 @@ describe('InlineCommentThread', () => {
 		expect(submitButton).toBeDisabled();
 	});
 
-	it('아직 댓글이 없는 스레드에도 입력창을 표시한다', async () => {
-		const user = userEvent.setup();
+	it('아직 댓글이 없는 스레드에도 처음부터 입력창을 표시한다', () => {
 		render(
 			<InlineCommentThread
 				postId={81}
@@ -73,7 +71,6 @@ describe('InlineCommentThread', () => {
 			/>,
 		);
 
-		await user.click(screen.getByRole('button', { name: '댓글 펼치기' }));
 		expect(screen.getByText('아직 댓글이 없습니다.')).toBeVisible();
 		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toBeEnabled();
 	});
@@ -82,7 +79,12 @@ describe('InlineCommentThread', () => {
 		const user = userEvent.setup();
 		render(<InlineCommentThread postId={81} thread={THREAD} onNavigate={vi.fn()} entrySource="all" />);
 
-		const toggle = screen.getByRole('button', { name: '댓글 펼치기' });
+		const toggle = screen.getByRole('button', { name: '댓글 접기' });
+		expect(toggle).toHaveAttribute('aria-expanded', 'true');
+		expect(screen.getByRole('article', { name: '인라인댓글테스터님의 댓글' })).toBeInTheDocument();
+		await user.tab();
+		expect(toggle).toHaveFocus();
+		await user.keyboard('{Enter}');
 		const comments = screen.getByRole('list', { hidden: true });
 		expect(toggle).toHaveAttribute('aria-expanded', 'false');
 		expect(toggle.getAttribute('aria-controls')?.split(' ')).toContain(comments.id);

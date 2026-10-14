@@ -37,7 +37,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             Pageable pageable
     );
 
-    long countByStatusAndVisibilityAndDeletedAtIsNull(PostStatus status, PostVisibility visibility);
+    @Query("""
+            SELECT COUNT(post)
+            FROM Post post
+            WHERE post.status = :status
+              AND post.visibility = :visibility
+              AND post.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
+              AND post.deletedAt IS NULL
+            """)
+    long countByStatusAndVisibilityAndDeletedAtIsNull(
+            @Param("status") PostStatus status,
+            @Param("visibility") PostVisibility visibility
+    );
 
     @Query("""
             SELECT COUNT(post)

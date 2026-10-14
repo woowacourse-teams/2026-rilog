@@ -32,7 +32,8 @@ const moduleUrl = (source: string) => `data:text/javascript;base64,${Buffer.from
 const renderFixture = async (page: Page) => {
 	await page.route('**/*', (route) => route.abort());
 	await page.setContent(`
-		<article class="post-detail-body" style="width: 70%; margin: 40px">
+		<div class="postDetailCard" style="width: 70%; margin: 40px">
+		<article class="post-detail-body">
 			<div class="bn-block-outer" data-id="paragraph">
 				<p data-inline-comment-root data-inline-comment-block-id="paragraph">앞 😀 <code>inlineCode</code> 뒤쪽 텍스트</p>
 			</div>
@@ -43,7 +44,11 @@ const renderFixture = async (page: Page) => {
 				<code data-inline-comment-root data-inline-comment-block-id="code">const value = 1;</code>
 			</div>
 		</article>
+		</div>
 	`);
+	await page.addStyleTag({
+		content: await readFile(new URL('../../widgets/post-detail/PostDetail.module.css', import.meta.url), 'utf8'),
+	});
 	const styles = await readFile(
 		new URL('../../app/(with-sidebar)/(with-footer)/blog/[slug]/posts/[postId]/post-detail.css', import.meta.url),
 		'utf8',
@@ -205,6 +210,7 @@ test('블록 댓글 진입점은 본문 우측에 배치되고 모바일에서 �
 		});
 	const button = page.getByRole('button', { name: '이 블록의 댓글 1개 보기' });
 	await expect(button).toBeVisible();
+	await expect(button.locator('span')).toBeVisible();
 	const hostBox = await page.locator('.bn-block-outer').first().boundingBox();
 	const buttonBox = await button.boundingBox();
 	expect(buttonBox!.x).toBeGreaterThanOrEqual(hostBox!.x + hostBox!.width);
