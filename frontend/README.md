@@ -1,4 +1,4 @@
-# Rilog Frontend
+# Rilog. Frontend
 
 Rilog의 사용자 UI를 제공하는 Next.js App Router 애플리케이션이다.
 
@@ -6,8 +6,8 @@ Rilog의 사용자 UI를 제공하는 Next.js App Router 애플리케이션이�
 
 - Node.js 24.19.0
 - pnpm 11.21.0
-- Next.js 16.3.0
-- React 19.2.8
+- Next.js 16.3.8
+- React 19.3.0
 - TypeScript 5.9.3
 - Tailwind CSS 4.3.3
 - TanStack Query 5.101.4
