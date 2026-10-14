@@ -12,7 +12,6 @@ public record TheRilogSheetProperties(
         String spreadsheetId,
         String sheetRange,
         String newsSheetRange,
-        String productionCron,
         String credentialsPath,
         Duration connectTimeout,
         Duration readTimeout
@@ -29,7 +28,6 @@ public record TheRilogSheetProperties(
             validateRequired(sheetRange, "sheetRange");
             validateRequired(newsSheetRange, "newsSheetRange");
             validateRequired(credentialsPath, "credentialsPath");
-            validateDailyCron(productionCron);
         }
     }
 
@@ -46,21 +44,4 @@ public record TheRilogSheetProperties(
         }
     }
 
-    private static void validateDailyCron(String cron) {
-        validateRequired(cron, "productionCron");
-        String[] fields = cron.trim().split("\\s+");
-        if (fields.length != 6
-                || !isNumber(fields[0])
-                || !isNumber(fields[1])
-                || !isNumber(fields[2])
-                || !"*".equals(fields[3])
-                || !"*".equals(fields[4])
-                || !"*".equals(fields[5])) {
-            throw new IllegalArgumentException("더 리로그 제작 배치는 하루 한 번 실행되는 6필드 cron이어야 합니다.");
-        }
-    }
-
-    private static boolean isNumber(String value) {
-        return value.matches("\\d+");
-    }
 }

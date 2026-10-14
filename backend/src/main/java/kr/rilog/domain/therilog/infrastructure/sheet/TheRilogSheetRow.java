@@ -1,13 +1,12 @@
 package kr.rilog.domain.therilog.infrastructure.sheet;
 
 import kr.rilog.domain.post.entity.enums.Category;
-import kr.rilog.domain.therilog.entity.enums.TheRilogContentType;
 import kr.rilog.domain.therilog.exception.TheRilogSheetException;
-import kr.rilog.domain.therilog.service.dto.result.TheRilogProductionInput;
 import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
@@ -27,34 +26,27 @@ public record TheRilogSheetRow(
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
     private static final DateTimeFormatter SCHEDULED_AT_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final String PRODUCTION_PENDING = "제작대기";
 
-    public boolean isProductionPending() {
-        return PRODUCTION_PENDING.equals(status)
-                && ("SPOTLIGHT".equals(contentType) || "NEWS".equals(contentType));
-    }
-
-    public TheRilogProductionInput toProductionInput() {
-        validateProductionInput();
-        TheRilogContentType type = TheRilogContentType.valueOf(contentType);
-        return new TheRilogProductionInput(
-                rowId,
-                type,
-                type == TheRilogContentType.NEWS ? null : sourceUrl,
-                parseCategory(category),
-                LocalDateTime.parse(scheduledAt, SCHEDULED_AT_FORMAT)
-                        .atZone(SEOUL)
-                        .toInstant()
-        );
-    }
-
-    private void validateProductionInput() {
+    public void validate() {
         if (!StringUtils.hasText(rowId) || rowId.length() > 128 || !rowId.equals(rowId.strip())
                 || (!"NEWS".equals(contentType) && !"SPOTLIGHT".equals(contentType))
                 || ("SPOTLIGHT".equals(contentType) && !isHttpUrl(sourceUrl))
                 || !StringUtils.hasText(category) || !StringUtils.hasText(scheduledAt)) {
             throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_INPUT);
         }
+        parseCategory();
+        parseScheduledAt();
+    }
+
+    public Instant parseScheduledAt() {
+        return LocalDateTime.parse(scheduledAt, SCHEDULED_AT_FORMAT).atZone(SEOUL).toInstant();
+    }
+
+    public Category parseCategory() {
+        return Arrays.stream(Category.values())
+                .filter(candidate -> candidate.name().equals(category) || candidate.getName().equals(category))
+                .findFirst()
+                .orElseThrow(() -> new TheRilogSheetException(INVALID_THE_RILOG_SHEET_INPUT));
     }
 
     private boolean isHttpUrl(String value) {
@@ -70,10 +62,4 @@ public record TheRilogSheetRow(
         }
     }
 
-    private Category parseCategory(String value) {
-        return Arrays.stream(Category.values())
-                .filter(category -> category.name().equals(value) || category.getName().equals(value))
-                .findFirst()
-                .orElseThrow(() -> new TheRilogSheetException(INVALID_THE_RILOG_SHEET_INPUT));
-    }
 }

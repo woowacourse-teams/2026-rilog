@@ -29,6 +29,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
 class GoogleSheetsTestSupport {
 
@@ -55,7 +56,7 @@ class GoogleSheetsTestSupport {
                 """.formatted(privateKey));
         client = new GoogleSheetsClient(tokenBuilder.build(), sheetsBuilder.build(),
                 new TheRilogSheetProperties(true, "sheet-id", "SPOTLIGHTS!A:M", newsRange,
-                        "0 0 23 * * *", credentialsPath.toString(), Duration.ofSeconds(1), Duration.ofSeconds(1)),
+                        credentialsPath.toString(), Duration.ofSeconds(1), Duration.ofSeconds(1)),
                 Clock.fixed(Instant.parse("2026-10-13T00:00:00Z"), ZoneOffset.UTC));
     }
 
@@ -108,5 +109,11 @@ class GoogleSheetsTestSupport {
     void verifyRequests() {
         tokenServer.verify();
         sheetsServer.verify();
+    }
+
+    void expectFailedWrite() {
+        sheetsServer.expect(requestTo("https://sheets.googleapis.com/v4/spreadsheets/sheet-id/values:batchUpdate"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withServerError());
     }
 }
