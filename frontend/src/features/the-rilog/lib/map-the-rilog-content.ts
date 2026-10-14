@@ -24,6 +24,7 @@ const mapHeadlines = (data: TheRilogResponse, newsContent: Block[] | null): Dail
 		}
 		return {
 			id: `${news.postId}:${anchor.blockId}`,
+			postId: news.postId,
 			title: headline.title,
 			href: `${buildPostDetailPath(news.slug, String(news.postId))}#${encodeURIComponent(anchor.id)}`,
 		};
@@ -34,6 +35,7 @@ export const mapTheRilogContent = (data: TheRilogResponse, newsContent: Block[] 
 	dailyHeadlines: mapHeadlines(data, newsContent),
 	articles: data.spotlights.map((article) => ({
 		id: String(article.postId),
+		postId: article.postId,
 		title: article.title,
 		summary: article.description,
 		thumbnailImageUrl: article.thumbnailImageUrl,

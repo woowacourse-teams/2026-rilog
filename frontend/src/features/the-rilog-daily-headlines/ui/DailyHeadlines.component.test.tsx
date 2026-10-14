@@ -7,6 +7,7 @@ import DailyHeadlines from './DailyHeadlines';
 
 const dailyHeadlines: DailyHeadline[] = Array.from({ length: 8 }, (_, index) => ({
 	id: `headline-${index}`,
+	postId: 1,
 	title: `헤드라인 ${index + 1}`,
 	href: `/@news/1#headline-${index}`,
 }));
