@@ -399,9 +399,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		const thirdRegion = () => within(screen.getByRole('region', { name: '"다른 블록 인용" 댓글' }));
 
 		await openAll();
-		await user.click(firstRegion().getByRole('button', { name: '댓글 펼치기' }));
 		await user.type(firstRegion().getByRole('textbox', { name: '댓글 입력' }), '첫 초안{Enter}둘째 줄');
-		await user.click(thirdRegion().getByRole('button', { name: '댓글 펼치기' }));
 		await user.type(thirdRegion().getByRole('textbox', { name: '댓글 입력' }), '다른 앵커 초안');
 		await user.click(screen.getByRole('dialog'));
 		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -413,7 +411,6 @@ describe('PostDetailCommentsWorkspace', () => {
 		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
 		await openAll();
-		await user.click(thirdRegion().getByRole('button', { name: '댓글 펼치기' }));
 		expect(thirdRegion().getByRole('textbox', { name: '댓글 입력' })).toHaveValue('다른 앵커 초안');
 		await user.clear(firstRegion().getByRole('textbox', { name: '댓글 입력' }));
 		await user.click(screen.getByRole('button', { name: '댓글 사이드바 닫기' }));
@@ -429,7 +426,7 @@ describe('PostDetailCommentsWorkspace', () => {
 
 		await user.click(screen.getByRole('button', { name: '블록 댓글 열기' }));
 		expect(screen.getByRole('dialog', { name: '인라인 댓글 1' })).toBeInTheDocument();
-		expect(screen.getAllByRole('button', { name: '댓글 펼치기' })).toHaveLength(1);
+		expect(screen.getAllByRole('button', { name: '댓글 접기' })).toHaveLength(1);
 
 		expect(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeInTheDocument();
 		expect(screen.queryByRole('region', { name: '"오래된 인용" 댓글' })).not.toBeInTheDocument();

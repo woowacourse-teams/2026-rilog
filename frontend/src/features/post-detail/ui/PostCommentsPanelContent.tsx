@@ -102,7 +102,7 @@ export default function PostCommentsPanelContent({
 									/>
 									{mode !== 'single' && (
 										<div className="px-5">
-											<Divider />
+											<Divider className="border-border-strong!" />
 										</div>
 									)}
 								</div>
