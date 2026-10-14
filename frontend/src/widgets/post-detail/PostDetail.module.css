@@ -41,23 +41,23 @@
 
 .contentLayout {
 	display: grid;
+	grid-template-areas: 'comments' 'article';
 	grid-template-columns: minmax(0, min(42rem, calc(100% - 2.5rem)));
 	justify-content: center;
 }
 
 .articleColumn {
-	grid-column: 1;
-	grid-row: 2;
+	grid-area: article;
 	min-width: 0;
 }
 
 .tableOfContentsColumn {
+	grid-area: toc;
 	display: none;
 }
 
 .commentsColumn {
-	grid-column: 1;
-	grid-row: 1;
+	grid-area: comments;
 	display: flex;
 	justify-content: flex-end;
 	min-width: 0;
@@ -76,13 +76,9 @@
 
 @container post-detail-card (min-width: 75rem) {
 	.contentLayout {
+		grid-template-areas: 'toc article comments';
 		grid-template-columns: minmax(0, 1fr) minmax(0, 42rem) minmax(0, 1fr);
 		justify-content: stretch;
-	}
-
-	.articleColumn {
-		grid-column: 2;
-		grid-row: 1;
 	}
 
 	.tableOfContentsColumn,
@@ -92,7 +88,6 @@
 
 	.tableOfContentsColumn {
 		display: block;
-		grid-column: 1;
 		justify-self: start;
 		align-self: stretch;
 		width: 100%;
@@ -101,8 +96,6 @@
 	}
 
 	.commentsColumn {
-		grid-column: 3;
-		grid-row: 1;
 		justify-self: end;
 		align-self: stretch;
 		width: 100%;
@@ -127,11 +120,5 @@
 
 	.profileSection {
 		margin-top: 7.5rem;
-	}
-}
-
-@container post-detail-card (min-width: 80rem) {
-	.tableOfContentsColumn {
-		padding-left: 2.5rem;
 	}
 }
