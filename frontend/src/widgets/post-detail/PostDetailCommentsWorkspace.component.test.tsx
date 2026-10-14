@@ -136,7 +136,7 @@ const toSidebarResponse = (response: typeof RESPONSE) => ({
 });
 const renderWorkspace = async () => {
 	const result = renderWorkspaceUI();
-	await screen.findAllByRole('button', { name: '전체 댓글 3개 보기' });
+	await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
 	return result;
 };
 
@@ -162,7 +162,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		window.history.replaceState(null, '', '/@rilog/posts/81?from=notification');
 		const user = userEvent.setup();
 		renderWorkspaceUI();
-		await screen.findAllByRole('button', { name: '전체 댓글 3개 보기' });
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
 		await user.click(screen.getByRole('button', { name: '하이라이트 댓글 열기' }));
 		expect(window.location.search).toBe('?from=notification');
 
@@ -229,7 +229,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		});
 		const user = userEvent.setup();
 		await renderWorkspace();
-		await user.click(screen.getAllByRole('button', { name: '전체 댓글 3개 보기' })[0]);
+		await user.click(screen.getByRole('button', { name: '전체 댓글 3개 보기' }));
 		expect(screen.getAllByRole('region').map((region) => region.getAttribute('aria-label'))).toEqual([
 			'"첫 번째 인용" 댓글',
 			'"다른 블록 인용" 댓글',
@@ -246,7 +246,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		);
 		const user = userEvent.setup();
 		renderWorkspaceUI();
-		await user.click(screen.getAllByRole('button', { name: /전체 댓글 \d+개 보기/ })[0]);
+		await user.click(screen.getByRole('button', { name: /전체 댓글 \d+개 보기/ }));
 		expect(screen.getByRole('status')).toHaveTextContent('인라인 댓글을 불러오는 중');
 		resolve(toSidebarResponse(RESPONSE));
 		expect(await screen.findByRole('region', { name: '"첫 번째 인용" 댓글' })).toBeVisible();
@@ -259,7 +259,7 @@ describe('PostDetailCommentsWorkspace', () => {
 			.mockResolvedValueOnce({ status: 0, message: 'OK', data: { anchorGroups: [] } });
 		const user = userEvent.setup();
 		renderWorkspaceUI();
-		await user.click(screen.getAllByRole('button', { name: /전체 댓글 \d+개 보기/ })[0]);
+		await user.click(screen.getByRole('button', { name: /전체 댓글 \d+개 보기/ }));
 		expect(await screen.findByRole('alert')).toHaveTextContent('인라인 댓글을 불러오지 못했습니다.');
 		await user.click(screen.getByRole('button', { name: '다시 시도' }));
 		expect(await screen.findByText('표시할 댓글이 없습니다.')).toBeVisible();
@@ -306,7 +306,7 @@ describe('PostDetailCommentsWorkspace', () => {
 		const user = userEvent.setup();
 		await renderWorkspace();
 
-		await user.click(screen.getAllByRole('button', { name: '전체 댓글 3개 보기' })[0]);
+		await user.click(screen.getByRole('button', { name: '전체 댓글 3개 보기' }));
 
 		expect(screen.getByRole('dialog', { name: '전체 인라인 댓글 3' })).toBeInTheDocument();
 		expect(screen.getAllByRole('button', { name: '댓글 펼치기' })).toHaveLength(3);

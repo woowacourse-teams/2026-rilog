@@ -224,9 +224,11 @@ export default function PostDetailCommentsWorkspace({
 
 	return (
 		<>
-			<div className={styles.compactCommentsEntry}>
-				<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
-			</div>
+			<aside className={styles.commentsColumn}>
+				<div className={styles.commentsEntry}>
+					<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
+				</div>
+			</aside>
 
 			<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
 				<PostDetailContent
@@ -244,12 +246,6 @@ export default function PostDetailCommentsWorkspace({
 				<div className={`${styles.profileSection} mx-auto max-w-lg`}>{profileSection}</div>
 				{afterProfile}
 			</div>
-
-			<aside className={styles.commentsColumn}>
-				<div className={styles.commentsSticky}>
-					<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
-				</div>
-			</aside>
 
 			{isDocked &&
 				isCommentsSidebarOpen &&

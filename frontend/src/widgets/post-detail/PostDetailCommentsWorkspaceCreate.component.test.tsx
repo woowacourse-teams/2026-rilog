@@ -177,7 +177,7 @@ const setReadResponses = (response: typeof RESPONSE) => {
 };
 const renderWorkspace = async () => {
 	const result = renderWorkspaceUI();
-	await screen.findAllByRole('button', { name: '전체 댓글 3개 보기' });
+	await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
 	return result;
 };
 
@@ -394,7 +394,7 @@ describe('PostDetailCommentsWorkspace', () => {
 	it('백드롭으로 닫거나 다른 앵커 목록으로 전환해도 초안을 앵커별로 복원한다', async () => {
 		const user = userEvent.setup();
 		await renderWorkspace();
-		const openAll = () => user.click(screen.getAllByRole('button', { name: '전체 댓글 3개 보기' })[0]);
+		const openAll = () => user.click(screen.getByRole('button', { name: '전체 댓글 3개 보기' }));
 		const firstRegion = () => within(screen.getByRole('region', { name: '"첫 번째 인용" 댓글' }));
 		const thirdRegion = () => within(screen.getByRole('region', { name: '"다른 블록 인용" 댓글' }));
 

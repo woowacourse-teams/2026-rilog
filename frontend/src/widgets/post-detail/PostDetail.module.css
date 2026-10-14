@@ -47,20 +47,21 @@
 
 .articleColumn {
 	grid-column: 1;
+	grid-row: 2;
 	min-width: 0;
 }
 
-.tableOfContentsColumn,
-.commentsColumn {
+.tableOfContentsColumn {
 	display: none;
 }
 
-.compactCommentsEntry {
+.commentsColumn {
+	grid-column: 1;
+	grid-row: 1;
 	display: flex;
 	justify-content: flex-end;
-	width: 100%;
+	min-width: 0;
 	margin-top: 1.25rem;
-	margin-right: 1.25rem;
 }
 
 .profileSection {
@@ -81,31 +82,36 @@
 
 	.articleColumn {
 		grid-column: 2;
+		grid-row: 1;
 	}
 
 	.tableOfContentsColumn,
 	.commentsColumn {
-		display: block;
-		align-self: stretch;
-		width: 100%;
-		padding-block: 2.5rem;
+		box-sizing: border-box;
 	}
 
 	.tableOfContentsColumn {
+		display: block;
 		grid-column: 1;
 		justify-self: start;
+		align-self: stretch;
+		width: 100%;
+		padding-block: 2.5rem;
 		padding-left: 1.25rem;
 	}
 
 	.commentsColumn {
 		grid-column: 3;
+		grid-row: 1;
 		justify-self: end;
-		padding-top: 2.5rem;
+		align-self: stretch;
+		width: 100%;
+		margin-top: 0;
+		padding-block: 2.5rem;
 		padding-right: 2.5rem;
 	}
 
-	.tableOfContentsSticky,
-	.commentsSticky {
+	.tableOfContentsSticky {
 		--post-toc-max-height: calc(100dvh - 5rem);
 
 		position: sticky;
@@ -113,14 +119,10 @@
 		overflow-wrap: anywhere;
 	}
 
-	.commentsSticky {
-		display: flex;
-		justify-content: flex-end;
+	.commentsEntry {
+		position: sticky;
+		align-self: flex-start;
 		top: 2.5rem;
-	}
-
-	.compactCommentsEntry {
-		display: none;
 	}
 
 	.profileSection {
