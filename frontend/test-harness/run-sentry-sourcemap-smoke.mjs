@@ -51,6 +51,8 @@ const env = {
 	NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER: isPostHogReplaySmoke ? 'true' : 'false',
 	NEXT_PUBLIC_SENTRY_DSN: dsn,
 	NEXT_PUBLIC_SENTRY_ENABLED: 'true',
+	THE_RILOG_SNAPSHOT_PATH: '.the-rilog-build/fixture.json',
+	THE_RILOG_ALLOW_FIXTURE: 'true',
 };
 
 function run(command, args) {
@@ -65,6 +67,8 @@ function run(command, args) {
 console.info(
 	`Building and uploading source maps for release ${release}${isPostHogReplaySmoke ? ' with PostHog replay' : ''}`,
 );
+run(process.execPath, ['scripts/create-the-rilog-fixture.mjs']);
+run('pnpm', ['prepare:the-rilog']);
 run('pnpm', ['build']);
 
 if (!existsSync('.next-sentry-feed-503/BUILD_ID')) {

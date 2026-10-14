@@ -23,6 +23,7 @@ nvm install
 nvm use
 corepack enable
 pnpm install --frozen-lockfile
+pnpm prepare:the-rilog
 pnpm dev
 ```
 
@@ -36,20 +37,27 @@ pnpm exec playwright install chromium
 
 ## 명령어
 
-| 명령어                | 설명                                      |
-| --------------------- | ----------------------------------------- |
-| `pnpm dev`            | 개발 서버 실행                            |
-| `pnpm build`          | 프로덕션 빌드                             |
-| `pnpm start`          | 빌드된 애플리케이션 실행                  |
-| `pnpm format`         | Prettier 자동 포맷                        |
-| `pnpm format:check`   | 포맷 검사                                 |
-| `pnpm lint`           | ESLint 검사                               |
-| `pnpm typecheck`      | Next.js route type 생성과 TypeScript 검사 |
-| `pnpm test:unit`      | 순수 로직 단위 테스트                     |
-| `pnpm test:component` | jsdom 기반 컴포넌트 테스트                |
-| `pnpm test:e2e`       | 개발 서버 기반 Chromium E2E               |
-| `pnpm test:e2e:prod`  | 기존 production build 기반 Chromium E2E   |
-| `pnpm check`          | PR 전 기본 품질 검사 전체 실행            |
+새 환경에서는 개발 서버 실행 또는 빌드 전에 `pnpm prepare:the-rilog`로 더 리로그 입력을 준비한다. `pnpm check`도 빌드를 포함하므로 준비가 필요하다. `build` 명령은 기존 `next build`를 유지한다.
+
+```sh
+pnpm prepare:the-rilog && pnpm build
+```
+
+| 명령어                   | 설명                                      |
+| ------------------------ | ----------------------------------------- |
+| `pnpm dev`               | 개발 서버 실행                            |
+| `pnpm build`             | 프로덕션 빌드                             |
+| `pnpm prepare:the-rilog` | 더 리로그 API 빌드 입력 준비              |
+| `pnpm start`             | 빌드된 애플리케이션 실행                  |
+| `pnpm format`            | Prettier 자동 포맷                        |
+| `pnpm format:check`      | 포맷 검사                                 |
+| `pnpm lint`              | ESLint 검사                               |
+| `pnpm typecheck`         | Next.js route type 생성과 TypeScript 검사 |
+| `pnpm test:unit`         | 순수 로직 단위 테스트                     |
+| `pnpm test:component`    | jsdom 기반 컴포넌트 테스트                |
+| `pnpm test:e2e`          | 개발 서버 기반 Chromium E2E               |
+| `pnpm test:e2e:prod`     | 기존 production build 기반 Chromium E2E   |
+| `pnpm check`             | PR 전 기본 품질 검사 전체 실행            |
 
 `pnpm check`는 포맷, lint, typecheck, unit/component test와 프로덕션 빌드를 순서대로 실행한다. E2E는 브라우저가
 필요하므로 핵심 사용자 흐름을 변경했을 때 별도로 실행한다.

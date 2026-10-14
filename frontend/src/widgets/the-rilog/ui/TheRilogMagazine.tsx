@@ -10,13 +10,24 @@ import styles from './the-rilog-magazine.module.css';
 interface TheRilogMagazineProps {
 	dailyHeadlines: readonly DailyHeadline[];
 	articles: readonly MagazineArticle[];
+	inputChecksum?: string;
+	capturedAt?: string;
 }
 
-export default function TheRilogMagazine({ dailyHeadlines, articles }: TheRilogMagazineProps) {
+export default function TheRilogMagazine({
+	dailyHeadlines,
+	articles,
+	inputChecksum,
+	capturedAt,
+}: TheRilogMagazineProps) {
 	const enterpriseArticles = articles.filter((article) => article.profile.type === 'enterprise');
 	const personalArticles = articles.filter((article) => article.profile.type === 'bloger');
 	return (
-		<main className={`${styles.page} mx-auto w-full max-w-7xl px-6 md:px-16`}>
+		<main
+			className={`${styles.page} mx-auto w-full max-w-7xl px-6 md:px-16`}
+			data-the-rilog-input={inputChecksum}
+			data-the-rilog-captured-at={capturedAt}
+		>
 			<MagazineMasthead />
 			<div className={styles.stories}>
 				<div className={styles.contentGrid}>

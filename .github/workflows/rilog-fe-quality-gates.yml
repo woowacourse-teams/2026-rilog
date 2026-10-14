@@ -28,6 +28,10 @@ jobs:
       NEXT_PUBLIC_API_BASE_URL: https://api.rilog.test
       NEXT_PUBLIC_DEV_MASTER_TOKEN: ""
       NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ""
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      NEXT_PUBLIC_SENTRY_ENABLED: "false"
+      THE_RILOG_SNAPSHOT_PATH: .the-rilog-build/fixture.json
+      THE_RILOG_ALLOW_FIXTURE: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +79,10 @@ jobs:
           QUALITY_LOG_DIR="${RUNNER_TEMP}/rilog-quality-logs"
           mkdir -p "$QUALITY_LOG_DIR"
           set -o pipefail
+          node scripts/create-the-rilog-fixture.mjs
+          pnpm prepare:the-rilog
           pnpm check 2>&1 | tee "$QUALITY_LOG_DIR/check.log"
+          node scripts/verify-the-rilog-build.mjs 2>&1 | tee "$QUALITY_LOG_DIR/the-rilog-build.log"
 
       - name: Install Playwright Chromium headless shell
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'

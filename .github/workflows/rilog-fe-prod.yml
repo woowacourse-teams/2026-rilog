@@ -5,14 +5,14 @@ on:
   workflow_dispatch:
   # production 브랜치에 코드가 병합(Push)될 때 배포 실행
   push:
-    branches: [ "production" ]
+    branches: ["production"]
     paths:
       - "frontend/**"
       - ".github/workflows/rilog-fe-prod.yml"
-  
+
   # PR 생성/업데이트 시에는 빌드(build) Job까지만 실행하여 사전 검증
   pull_request:
-    branches: [ "production" ]
+    branches: ["production"]
     paths:
       - "frontend/**"
       - ".github/workflows/rilog-fe-prod.yml"
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.19.0'
+          node-version: "24.19.0"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -74,7 +74,14 @@ jobs:
           if [[ "$SENTRY_UPLOAD_REQUIRED" == 'true' ]]; then
             node --env-file=.env -e "if (!process.env.SENTRY_AUTH_TOKEN) { console.error('Production Sentry source map upload requires SENTRY_AUTH_TOKEN.'); process.exit(1); }"
           fi
+          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            node scripts/create-the-rilog-fixture.mjs
+            THE_RILOG_SNAPSHOT_PATH=.the-rilog-build/fixture.json THE_RILOG_ALLOW_FIXTURE=true pnpm prepare:the-rilog
+          else
+            pnpm prepare:the-rilog
+          fi
           pnpm build
+          node scripts/verify-the-rilog-build.mjs
 
       - name: Verify public source maps are absent
         if: github.event_name == 'push'
@@ -88,7 +95,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts
+          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts .the-rilog-build/snapshot.json
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -99,7 +106,7 @@ jobs:
 
   deploy:
     name: Deploy Rilog FE PROD
-    runs-on: [ self-hosted, frontend ] # frontend 라벨로 분기
+    runs-on: [self-hosted, frontend] # frontend 라벨로 분기
     needs: build
     if: github.event_name == 'push'
 
@@ -120,26 +127,26 @@ jobs:
           ENV_SECRET: ${{ secrets.ENV_PROD_FE }}
         run: |
           TARGET_DIR="/home/ubuntu/rilog-next"
-          
+
           # 0. 이전 빌드 산출물 정리 (node_modules는 재사용해서 install 속도 확보)
           mkdir -p $TARGET_DIR
           rm -rf $TARGET_DIR/.next $TARGET_DIR/public
-          
+
           # 1. 대상 디렉터리 생성 및 압축 해제
           mkdir -p $TARGET_DIR
           tar -xzf /tmp/rilog-fe/fe-build.tar.gz -C $TARGET_DIR
           rm -rf /tmp/rilog-fe
-          
+
           cd $TARGET_DIR
 
           # 런타임 전용 secret. 빌드 artifact에는 포함하지 않는다.
           umask 077
           printf '%s\n' "$ENV_SECRET" > .env.production.local
-          
+
           # 2. EC2 서버에서 의존성 설치 (실행 환경 호환성 문제 우회)
           npm install -g pnpm@11.21.0
           pnpm install --prod --frozen-lockfile
-          
+
           # 3. pm2 재시작
           # ecosystem.config.cjs를 사용해 프로세스 리로드 (update-env로 환경변수 갱신 보장)
           pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
