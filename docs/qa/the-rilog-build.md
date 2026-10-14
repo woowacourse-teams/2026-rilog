@@ -51,6 +51,16 @@ fixture source는 명시적 허용 없이 빌드 입력으로 사용할 수 없�
 
 artifact 이름은 `the-rilog-build-preparation-<run id>`이며 기존 운영 배포 artifact와 구분한다. 스냅샷과 manifest, Next 산출물을 7일간 보관한다. manifest의 `publicationReadinessChecked`는 항상 false다. 이 workflow에는 schedule, deploy job, PM2 변경이 없다. Sentry 업로드 없이 만든 준비 artifact를 운영 배포 완료로 사용하지 않는다.
 
+## GitHub Actions에서 수동 운영 갱신
+
+GitHub 저장소의 **Actions → The Rilog Production Refresh → Run workflow**로 수동 갱신한다. 추가 입력은 없다. 선택한 ref의 workflow 정의로 실행되지만, 작업 대상은 항상 `/home/ubuntu/rilog-next`에 이미 배포된 운영 애플리케이션이다. checkout·의존성 설치·빌드·산출물 배포·PM2 재시작 없이 운영 갱신 스크립트를 실행한다. 운영 `.env.production.local`의 secret을 사용하므로 workflow 입력에 토큰을 넣지 않는다.
+
+GitHub 수동 실행 버튼을 사용하려면 workflow 파일이 저장소 기본 브랜치에 있어야 한다. 기본 브랜치에 반영하고 ISR 코드를 운영에 최초 배포한 뒤 사용할 수 있다. self-hosted `frontend` runner가 실행 중이어야 한다. 매번 갱신할 때 EC2에 직접 접속하거나 sudo를 실행할 필요는 없다.
+
+운영 deploy job과 수동 refresh job은 `rilog-fe-production` concurrency group을 공유하며 진행 중인 작업을 취소하지 않고 기다린다. `queue: max`로 대기 중인 배포와 갱신도 유지한다. 새 production push도 진행 중인 배포를 취소하지 않는다. 실행 시 이미 진행 중인 systemd 예약 갱신이 있으면 종료를 최대 약 378초 기다린다. 예약 service가 설치되지 않은 서버에서는 이 대기를 생략한다. 예약 작업이 확인 이후 새로 시작해 수동 수집과 겹치면 앱의 동시 갱신 경계에서 409로 거부될 수 있으며 실패한 실행을 나중에 다시 실행한다.
+
+성공한 실행은 운영 HTML의 checksum과 capturedAt을 검증한 뒤 Actions 로그와 Summary에 성공을 표시한다. 준비·API 수집·저장·HTML 확인 중 실패하면 workflow도 실패한다. 이 workflow를 추가하는 것만으로 운영에 새 코드가 배포되거나 예약 timer가 활성화되지는 않는다.
+
 ## 오전 6시 운영 갱신
 
 EC2 systemd timer가 `Asia/Seoul` 오전 6시에 `scripts/refresh-the-rilog.mjs`를 실행한다. `Persistent=true`이므로 서버가 중단돼 놓친 실행은 timer가 다시 활성화될 때 보충한다. 수집·페이지 생성에 걸리는 시간만큼 실제 노출은 6시 이후가 될 수 있다. 일일 작업은 전체 Next 빌드, artifact 배포나 PM2 재시작을 수행하지 않는다.

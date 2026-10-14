@@ -1,0 +1,48 @@
+name: The Rilog Production Refresh
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Refresh The Rilog production content
+    runs-on: [self-hosted, frontend]
+    timeout-minutes: 15
+    # Share the deployment lock and keep queued runs instead of replacing a pending deploy.
+    concurrency:
+      group: rilog-fe-production
+      cancel-in-progress: false
+      queue: max
+
+    steps:
+      - name: Wait for scheduled refresh
+        shell: bash
+        run: |
+          if ! systemctl cat the-rilog-refresh.service >/dev/null 2>&1; then
+            echo 'No scheduled refresh service is installed; continuing with manual refresh.'
+            exit 0
+          fi
+          for attempt in {1..190}; do
+            REFRESH_STATE=$(systemctl show --property=ActiveState --value the-rilog-refresh.service)
+            if [[ "$REFRESH_STATE" == 'inactive' || "$REFRESH_STATE" == 'failed' ]]; then
+              exit 0
+            fi
+            if [[ "$attempt" == 190 ]]; then
+              echo 'The scheduled refresh did not finish before the wait limit.' >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Capture data and verify refreshed HTML
+        shell: bash
+        run: |
+          cd /home/ubuntu/rilog-next
+          export NVM_DIR="$HOME/.nvm"
+          source "$NVM_DIR/nvm.sh"
+          nvm use 24.19.0 >/dev/null
+          node --env-file=.env.production.local scripts/refresh-the-rilog.mjs
+          printf '%s\n' 'The Rilog production HTML was refreshed and verified from the current backend data.' >> "$GITHUB_STEP_SUMMARY"

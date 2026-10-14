@@ -18,8 +18,9 @@ on:
       - ".github/workflows/rilog-fe-prod.yml"
 
 concurrency:
+  # Never interrupt an in-progress production deploy when a newer push arrives.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
   build:
@@ -110,6 +111,10 @@ jobs:
     runs-on: [self-hosted, frontend] # frontend 라벨로 분기
     needs: build
     if: github.event_name == 'push'
+    concurrency:
+      group: rilog-fe-production
+      cancel-in-progress: false
+      queue: max
 
     steps:
       - name: Download Build Artifacts
