@@ -1,7 +1,7 @@
 import CologAvatar from '@/domains/blog/ui/CologAvatar';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import TheRilogArticleLink from '@/features/analytics/ui/TheRilogArticleLink';
 import type { MagazineArticle } from '@/features/the-rilog/model/magazine';
+import CustomLink from '@/shared/ui/link/CustomLink';
 
 import { formatEnterpriseArticleText } from '../lib/format-enterprise-article-text';
 
@@ -12,10 +12,9 @@ import styles from './the-rilog-magazine.module.css';
 interface MagazineArticleCardProps {
 	article: MagazineArticle;
 	imagePosition?: 'left' | 'right';
-	position: number;
 }
 
-export default function MagazineArticleCard({ article, position, imagePosition = 'left' }: MagazineArticleCardProps) {
+export default function MagazineArticleCard({ article, imagePosition = 'left' }: MagazineArticleCardProps) {
 	const { profile } = article;
 	const isEnterprise = profile.type === 'enterprise';
 	const { title, summary } = isEnterprise ? formatEnterpriseArticleText(article) : article;
@@ -49,15 +48,9 @@ export default function MagazineArticleCard({ article, position, imagePosition =
 						<span className={styles.profileName}>{profile.name}.</span>
 					</div>
 					<h3 className={styles.cardTitle}>
-						<TheRilogArticleLink
-							href={article.href}
-							postId={article.postId}
-							contentType={isEnterprise ? 'enterprise' : 'personal'}
-							position={position}
-							className={styles.cardLink}
-						>
+						<CustomLink href={article.href} className={styles.cardLink}>
 							<span className={styles.cardTitleText}>{title}</span>
-						</TheRilogArticleLink>
+						</CustomLink>
 					</h3>
 					<MagazineArticleSummary text={summary} fitToThumbnail={isEnterprise} />
 				</div>

@@ -8,7 +8,6 @@ import type { MouseEvent } from 'react';
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { consumePostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
-import type { TheRilogAttribution } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
@@ -46,7 +45,6 @@ interface ReadingVisit {
 	hasReached50Percent: boolean;
 	lastSent: { elapsedMs: number; hasReached50Percent: boolean } | null;
 	pendingExitTimer: number | null;
-	theRilog?: TheRilogAttribution;
 }
 
 const retainTrackerKey = (trackerKey: string) => {
@@ -149,7 +147,6 @@ export default function PostDetailContent({
 			readingVisitId: visit.id,
 			engagementSeconds: elapsedMs / 1_000,
 			hasReached50Percent,
-			...(visit.theRilog === undefined ? {} : { theRilog: visit.theRilog }),
 		};
 		if (useBeacon) {
 			analytics.postReadingProgress(properties, true);
@@ -208,21 +205,19 @@ export default function PostDetailContent({
 			viewedTrackerKeys.add(trackerKey);
 
 			const entryContext = consumePostDetailEntryContext(postId);
-			getReadingVisit().theRilog = entryContext?.theRilog;
 			analytics.postDetailViewed({
 				postId,
 				ownerType,
 				category,
 				entrySource: entryContext?.entrySource ?? 'direct',
 				feedPosition: entryContext?.feedPosition ?? null,
-				...(entryContext?.theRilog === undefined ? {} : { theRilog: entryContext.theRilog }),
 			});
 		}
 
 		return () => {
 			releaseTrackerKey(trackerKey);
 		};
-	}, [category, ownerType, postId, getReadingVisit]);
+	}, [category, ownerType, postId]);
 
 	useEffect(() => {
 		const trackerKey = getTrackerKey(postId);
