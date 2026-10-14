@@ -8,7 +8,7 @@ export interface AnalyticsErrorProperties {
 // 로그인 진입점을 판별할 수 있음(모바일/pc)
 export type LoginEntrySurface = 'sidebar' | 'mobile_header';
 // 게시글 진입점이 피드인지, 블로그 프로필인지, 직접 url인지 등을 기록함으로서, 유입 경로 파악 가능 + 개선 지점 선정 가능
-export type PostEntrySource = 'feed' | 'blog_profile' | 'publish_redirect' | 'direct';
+export type PostEntrySource = 'feed' | 'blog_profile' | 'publish_redirect' | 'the_rilog' | 'direct';
 // 새 글 작성과 기존 글 편집의 비중, 임시저장에서 재개하는 사용 흐름을 확인하는 데 필요
 export type EditorEntrySource = 'sidebar' | 'post_detail_edit' | 'draft_list' | 'direct';
 // Co-log 생성 화면에 들어온 위치, 현재는 사이드바 또는 직접 접근만 구분 가능, 추후 Co-log 생성 기능을 어디에 노출해야 효과적인지 판단할 수 있음
@@ -90,3 +90,14 @@ export const getAnalyticsFailureStage = (error: unknown): PublishFailureStage =>
 	typeof error === 'object' && error !== null && 'analyticsFailureStage' in error
 		? (error as AnalyticsStagedError).analyticsFailureStage
 		: 'publish_request';
+
+export type TheRilogContentType = 'headline' | 'enterprise' | 'personal';
+export type TheRilogNavigationType = 'same_tab' | 'new_tab';
+
+export interface TheRilogAttribution {
+	theRilogVisitId: string;
+	theRilogClickId: string;
+	contentType: TheRilogContentType;
+	position: number;
+	headlineId?: string;
+}
