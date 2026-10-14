@@ -79,6 +79,8 @@ public class TheRilogBlockNoteConverter {
                     readList(blocks);
                 } else if (line.startsWith(">")) {
                     blocks.add(readQuote());
+                } else if (isTableStart()) {
+                    blocks.add(readTable());
                 } else {
                     blocks.add(readParagraph());
                 }
@@ -102,7 +104,7 @@ public class TheRilogBlockNoteConverter {
             StringBuilder paragraph = new StringBuilder();
             while (cursor < lines.size() && !lines.get(cursor).isBlank()) {
                 String line = lines.get(cursor);
-                if (!paragraph.isEmpty() && isBlockStart(line)) {
+                if (!paragraph.isEmpty() && (isBlockStart(line) || isTableStart())) {
                     break;
                 }
                 rejectUnsupportedBlock(line);
@@ -124,6 +126,25 @@ public class TheRilogBlockNoteConverter {
                     || FENCE.matcher(line).matches()
                     || DIVIDER.matcher(line.strip()).matches()
                     || line.startsWith(">");
+        }
+
+        private boolean isTableStart() {
+            return cursor + 1 < lines.size()
+                    && TheRilogMarkdownTableParser.isTableStart(lines.get(cursor), lines.get(cursor + 1));
+        }
+
+        private ObjectNode readTable() {
+            String header = lines.get(cursor++);
+            String delimiter = lines.get(cursor++);
+            List<String> rows = new ArrayList<>();
+            while (cursor < lines.size() && !lines.get(cursor).isBlank()
+                    && !isBlockStart(lines.get(cursor)) && !isTableStart()
+                    && TheRilogMarkdownTableParser.isTableRow(lines.get(cursor))) {
+                rows.add(lines.get(cursor++));
+            }
+            ObjectNode table = block("table");
+            table.set("content", TheRilogMarkdownTableParser.parse(header, delimiter, rows));
+            return table;
         }
 
         private void rejectUnsupportedBlock(String line) {

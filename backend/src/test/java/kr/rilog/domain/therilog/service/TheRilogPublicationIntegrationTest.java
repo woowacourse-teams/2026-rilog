@@ -64,14 +64,15 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     private JdbcTemplate jdbc;
 
 
-    private Chapter spotlights;
+    private Chapter enterprise;
 
     @BeforeEach
     void prepareOfficialBlog() {
         var owner = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("공식 계정", "the_rilog"));
         var blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
-        chapterRepository.saveAndFlush(Chapter.create(blog, "headlines", 0));
-        spotlights = chapterRepository.saveAndFlush(Chapter.create(blog, "spotlights", 1));
+        chapterRepository.saveAndFlush(Chapter.create(blog, "news", 0));
+        enterprise = chapterRepository.saveAndFlush(Chapter.create(blog, "enterprise", 1));
+        chapterRepository.saveAndFlush(Chapter.create(blog, "personal", 2));
     }
 
     @Test
@@ -96,7 +97,7 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     @Test
     @DisplayName("뉴스 저장 뒤 스포트라이트 발행이 실패하면 해당 발행분의 게시글과 조회수도 롤백한다.")
     void rollsBackEarlierArticlesWhenLaterPublicationFails() {
-        chapterRepository.delete(spotlights);
+        chapterRepository.delete(enterprise);
         TheRilogPublication publication = thursdayPublication();
 
         assertThatThrownBy(() -> theRilogService.publishPublication(publication))

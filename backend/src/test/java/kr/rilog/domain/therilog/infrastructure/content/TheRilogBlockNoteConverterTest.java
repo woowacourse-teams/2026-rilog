@@ -175,6 +175,125 @@ class TheRilogBlockNoteConverterTest {
         assertThat(PostContent.from(converted).extractTextBlocks().getFirst().text()).isEqualTo(expectedText);
     }
 
+    @Test
+    @DisplayName("표의 셀 서식과 열 정렬을 기존 BlockNote 표 구조로 보존한다.")
+    void preserveTableFormattingAndAlignment() {
+        String markdown = """
+                | **기능** | 코드 | 출처 |
+                | :--- | :---: | ---: |
+                | GC | `freeze()` | [원문](https://example.com/gc) |
+                """;
+        JsonNode expected = MAPPER.readTree("""
+                {
+                  "type": "tableContent", "columnWidths": [null, null, null], "headerRows": 1, "headerCols": 0,
+                  "rows": [
+                    {"cells": [
+                      {"type": "tableCell", "props": {"backgroundColor": "default", "textColor": "default", "textAlignment": "left", "colspan": 1, "rowspan": 1},
+                       "content": [{"type": "text", "text": "기능", "styles": {"bold": true}}]},
+                      {"type": "tableCell", "props": {"backgroundColor": "default", "textColor": "default", "textAlignment": "center", "colspan": 1, "rowspan": 1},
+                       "content": [{"type": "text", "text": "코드", "styles": {}}]},
+                      {"type": "tableCell", "props": {"backgroundColor": "default", "textColor": "default", "textAlignment": "right", "colspan": 1, "rowspan": 1},
+                       "content": [{"type": "text", "text": "출처", "styles": {}}]}
+                    ]},
+                    {"cells": [
+                      {"type": "tableCell", "props": {"backgroundColor": "default", "textColor": "default", "textAlignment": "left", "colspan": 1, "rowspan": 1},
+                       "content": [{"type": "text", "text": "GC", "styles": {}}]},
+                      {"type": "tableCell", "props": {"backgroundColor": "default", "textColor": "default", "textAlignment": "center", "colspan": 1, "rowspan": 1},
+                       "content": [{"type": "text", "text": "freeze()", "styles": {"code": true}}]},
+                      {"type": "tableCell", "props": {"backgroundColor": "default", "textColor": "default", "textAlignment": "right", "colspan": 1, "rowspan": 1},
+                       "content": [{"type": "link", "href": "https://example.com/gc", "content": [{"type": "text", "text": "원문", "styles": {}}]}]}
+                    ]}
+                  ]
+                }
+                """);
+
+        JsonNode converted = converter.convert(markdown);
+
+        assertThat(converted.get(0).path("type").asString()).isEqualTo("table");
+        assertThat(converted.get(0).path("content")).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("표 셀의 이스케이프한 파이프를 열 구분자로 나누지 않고 코드와 강조 안에도 보존한다.")
+    void preserveEscapedPipesInTableCells() {
+        String markdown = """
+                | f\\|oo |
+                | --- |
+                | `\\|` **\\|** |
+                """;
+        JsonNode expected = MAPPER.readTree("""
+                [{"type":"text","text":"|","styles":{"code":true}},
+                 {"type":"text","text":" ","styles":{}},
+                 {"type":"text","text":"|","styles":{"bold":true}}]
+                """);
+
+        JsonNode converted = converter.convert(markdown);
+
+        JsonNode rows = converted.get(0).path("content").path("rows");
+        assertThat(rows.get(0).path("cells").get(0).path("content").get(0).path("text").asString())
+                .isEqualTo("f|oo");
+        assertThat(rows.get(1).path("cells")).hasSize(1);
+        assertThat(rows.get(1).path("cells").get(0).path("content")).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "이름 | 값\n--- | ---\n하나 | 둘",
+            "| 이름 | 값\n--- | --- |\n하나 | 둘 |"
+    })
+    @DisplayName("양끝 파이프를 생략한 표도 두 열의 셀 내용으로 변환한다.")
+    void convertTablesWithoutOuterPipes(String markdown) {
+        JsonNode converted = converter.convert(markdown);
+
+        JsonNode cells = converted.get(0).path("content").path("rows").get(1).path("cells");
+        assertThat(cells).hasSize(2);
+        assertThat(cells.get(0).path("content").get(0).path("text").asString()).isEqualTo("하나");
+        assertThat(cells.get(1).path("content").get(0).path("text").asString()).isEqualTo("둘");
+    }
+
+    @Test
+    @DisplayName("표의 부족한 셀은 빈 셀로 채워 열 수를 유지한다.")
+    void padShortTableRows() {
+        JsonNode converted = converter.convert("| 이름 | 값 |\n| --- | --- |\n| 하나 |");
+
+        JsonNode cells = converted.get(0).path("content").path("rows").get(1).path("cells");
+        assertThat(cells).hasSize(2);
+        assertThat(cells.get(1).path("content")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"'## 다음 제목', heading", "'다음 문장', paragraph"})
+    @DisplayName("표 앞 문단과 표 뒤 제목 및 문단을 독립된 블록으로 보존한다.")
+    void preserveBlocksSurroundingTable(String followingBlock, String followingType) {
+        String markdown = """
+                소개 문장
+                | 이름 | 값 |
+                | --- | --- |
+                | 하나 | 둘 |
+                %s
+
+                마지막 문장
+                """.formatted(followingBlock);
+
+        JsonNode converted = converter.convert(markdown);
+
+        List<String> types = new ArrayList<>();
+        converted.forEach(block -> types.add(block.path("type").asString()));
+        assertThat(types).containsExactly("paragraph", "table", followingType, "paragraph");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "| 이름 | 값 |\n| --- |\n| 하나 | 둘 |",
+            "| 이름 | 값 |\n| --- | --- |\n| 하나 | 둘 | 초과 셀 |"
+    })
+    @DisplayName("표의 열 수가 맞지 않아 내용을 버려야 하는 입력은 변환하지 않는다.")
+    void rejectTablesThatWouldLoseCells(String markdown) {
+        assertThatThrownBy(() -> converter.convert(markdown))
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_POST_CONTENT.getMessage());
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "\n\t"})
@@ -191,7 +310,7 @@ class TheRilogBlockNoteConverterTest {
             "![사진](https://example.com/image.png)", "<script>alert(1)</script>",
             "<span title=\"1 < 2\">본문</span>", "</span>", "<!-- 주석 -->", "<!doctype html>",
             "##### 지원하지 않는 제목", "```java\n닫히지 않은 코드",
-            "| 제목 | 값 |\n| --- | --- |\n| 하나 | 둘 |", "- [x] 미지원 체크 목록",
+            "| 제목 | 값 |\n| --- | --- |\n| 하나 | [원문](javascript:alert(1)) |", "- [x] 미지원 체크 목록",
             "밑줄 제목\n===", "[참조 링크][source]"
     })
     @DisplayName("위험한 링크와 지원하지 않는 구조는 내용을 유실하며 발행하지 않는다.")
