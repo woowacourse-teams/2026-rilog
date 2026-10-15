@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { recordPostDetailEntryContext } from '@/features/analytics/lib/post-detail-entry-context';
 import { analytics } from '@/features/analytics/model/events';
 
 import PostDetailContent from './PostDetailContent';
@@ -59,6 +60,7 @@ describe('게시글 읽기 진행 계측', () => {
 
 	afterEach(() => {
 		cleanup();
+		sessionStorage.clear();
 		advance(0);
 		vi.useRealTimers();
 		vi.restoreAllMocks();
@@ -276,5 +278,39 @@ describe('게시글 읽기 진행 계측', () => {
 		expect(visitIds).toHaveLength(2);
 		expect(qualifiesAt(visitIds[0])).toEqual([true, true, false]);
 		expect(qualifiesAt(visitIds[1])).toEqual([false, false, false]);
+	});
+	it('더 리로그 클릭 정보는 해당 상세 읽기 방문에만 연결하고 다음 글에는 전달하지 않는다', () => {
+		const theRilog = {
+			theRilogVisitId: 'magazine',
+			theRilogClickId: 'click',
+			contentType: 'enterprise' as const,
+			position: 1,
+		};
+		recordPostDetailEntryContext({ postId, entrySource: 'the_rilog', feedPosition: null, theRilog });
+		const view = render(<StrictMode>{content()}</StrictMode>);
+		expect(analytics.postDetailViewed).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ entrySource: 'the_rilog', theRilog }),
+		);
+		advance(10000);
+		expect(snapshots()[0]).toEqual(expect.objectContaining({ theRilog }));
+		view.rerender(content(postId + 1));
+		advance(10000);
+		expect(snapshots().find((snapshot) => snapshot.postId === postId + 1)).not.toHaveProperty('theRilog');
+	});
+
+	it('페이지 이탈 후 복원된 새 읽기 방문에는 이전 더 리로그 유입을 재사용하지 않는다', () => {
+		const theRilog = {
+			theRilogVisitId: 'magazine',
+			theRilogClickId: 'click',
+			contentType: 'personal' as const,
+			position: 2,
+		};
+		recordPostDetailEntryContext({ postId, entrySource: 'the_rilog', feedPosition: null, theRilog });
+		render(content());
+		advance(10000);
+		fireEvent(window, new Event('pagehide'));
+		fireEvent(window, new Event('pageshow'));
+		advance(10000);
+		expect(snapshots().at(-1)).not.toHaveProperty('theRilog');
 	});
 });
