@@ -19,6 +19,7 @@ public enum PostErrorInformation implements ErrorInformation {
     POST_VIEW_COUNT_LIMIT_EXCEEDED(HttpStatus.SERVICE_UNAVAILABLE, "조회수가 집계 가능한 범위에 도달했습니다."),
     POST_VIEW_COUNT_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 조회수 정보를 불러올 수 없습니다."),
     POST_VIEW_COUNT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 조회수 정보가 올바르지 않습니다."),
+    POST_VIEW_REGISTRATION_DISABLED(HttpStatus.SERVICE_UNAVAILABLE, "게시글 조회 등록이 활성화되지 않았습니다."),
 
     INVALID_THE_RILOG_METADATA(HttpStatus.BAD_REQUEST, "더 리로그 게시글의 유형, 설명 또는 출처 정보가 올바르지 않습니다."),
     INVALID_THE_RILOG_POST(HttpStatus.BAD_REQUEST, "더 리로그 게시글의 제목, 블로그 또는 챕터가 올바르지 않습니다."),

@@ -15,6 +15,7 @@ import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
+import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
@@ -80,6 +81,9 @@ class PostServiceTagAssetsLifecycleTest {
     @Mock
     private PostViewCountRepository viewCountRepository;
 
+    @Mock
+    private PostViewStore postViewStore;
+
     private PostService postService;
 
     @BeforeEach
@@ -93,7 +97,8 @@ class PostServiceTagAssetsLifecycleTest {
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
                 trendingRepository,
-                viewCountRepository
+                viewCountRepository,
+                postViewStore
         );
     }
 

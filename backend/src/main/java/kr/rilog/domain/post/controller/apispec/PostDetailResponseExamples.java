@@ -9,7 +9,7 @@ final class PostDetailResponseExamples {
               "data": {
                 "title": "Spring 트랜잭션 정리",
                 "content": [],
-                "viewCount": 42,
+                "viewCount": null,
                 "publishedAt": "2026-08-17T04:30:00",
                 "thumbnailImageUrl": null,
                 "category": "기술",
@@ -49,7 +49,7 @@ final class PostDetailResponseExamples {
               "data": {
                 "title": "리로그 개발 회고",
                 "content": [],
-                "viewCount": 42,
+                "viewCount": null,
                 "publishedAt": "2026-08-17T04:40:00",
                 "thumbnailImageUrl": null,
                 "category": "일상",
