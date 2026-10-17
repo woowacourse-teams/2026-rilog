@@ -19,9 +19,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -32,18 +29,9 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = "post.view.registration.enabled=true")
 class PostViewWebIntegrationTest extends ServiceSupport {
-
-    @DynamicPropertySource
-    static void isolateH2Database(DynamicPropertyRegistry properties) {
-        if ("test".equals(System.getProperty("spring.profiles.active", "test"))) {
-            properties.add("spring.datasource.url",
-                    () -> "jdbc:h2:mem:post_view_web;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
-        }
-    }
 
     @Autowired private WebApplicationContext context;
     @Autowired private UserRepository users;

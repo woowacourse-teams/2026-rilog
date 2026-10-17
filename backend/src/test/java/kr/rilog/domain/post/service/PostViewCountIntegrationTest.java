@@ -32,9 +32,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -49,14 +46,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Import(PostViewCountIntegrationTest.EventFailureConfiguration.class)
 class PostViewCountIntegrationTest extends ServiceSupport {
-
-    @DynamicPropertySource
-    static void isolateH2Database(DynamicPropertyRegistry properties) {
-        if ("test".equals(System.getProperty("spring.profiles.active", "test"))) {
-            properties.add("spring.datasource.url",
-                    () -> "jdbc:h2:mem:post_view_count;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
-        }
-    }
 
     @Autowired
     private PostService postService;
@@ -163,7 +152,6 @@ class PostViewCountIntegrationTest extends ServiceSupport {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     @DisplayName("삭제 권한이 있는 작성자는 상세 조회에서 미반영 조회수를 포함한 누계를 받는다.")
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void authorDetailIncludesPendingViews(boolean editable) {
         // given
         Scenario scenario = scenario();

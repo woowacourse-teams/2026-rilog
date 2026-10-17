@@ -18,10 +18,7 @@ import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.UUID;
 
@@ -31,22 +28,11 @@ import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "post.view.registration.enabled=true")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@TestPropertySource(properties = "post.view.registration.enabled=true")
 class PostViewRegistrationIntegrationTest extends ServiceSupport {
 
     private static final ViewerIdentity ANONYMOUS_VIEWER =
             ViewerIdentity.anonymous(UUID.fromString("23330a5d-00d7-4f91-b45a-c10a1e3bd3ec"));
-
-    @DynamicPropertySource
-    static void isolateH2Database(DynamicPropertyRegistry properties) {
-        if ("test".equals(System.getProperty("spring.profiles.active", "test"))) {
-            // 컨텍스트 종료의 create-drop이 다른 테스트의 공유 H2 스키마를 삭제하지 않게 한다.
-            properties.add("spring.datasource.url",
-                    () -> "jdbc:h2:mem:rilog_post_view_registration;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1");
-        }
-    }
 
     @Autowired
     private PostViewRegistrationService registrationService;
