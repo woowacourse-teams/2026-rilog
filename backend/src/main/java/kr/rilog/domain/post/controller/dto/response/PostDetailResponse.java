@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.controller.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.PostOwnerResponse;
@@ -21,7 +22,8 @@ public record PostDetailResponse(
         AuthorResponse author,
         PostOwnerResponse owner,
         ViewerPermissionsResponse viewerPermissions,
-        long viewCount,
+        @Schema(description = "viewerPermissions.canDelete가 true이면 현재 조회수, 아니면 null", nullable = true)
+        Long viewCount,
         String postType,
         String description,
         PostSourceResponse source
@@ -37,7 +39,7 @@ public record PostDetailResponse(
             AuthorResponse author,
             PostOwnerResponse owner,
             ViewerPermissionsResponse viewerPermissions,
-            long viewCount
+            Long viewCount
     ) {
         this(
                 title,
@@ -65,7 +67,7 @@ public record PostDetailResponse(
             AuthorResponse author,
             PostOwnerResponse owner,
             ViewerPermissionsResponse viewerPermissions,
-            long viewCount
+            Long viewCount
     ) {
         this(
                 title,
@@ -84,7 +86,7 @@ public record PostDetailResponse(
         );
     }
 
-    public static PostDetailResponse fromRilog(Post post, ViewerPermissionsResponse viewerPermissions, long viewCount) {
+    public static PostDetailResponse fromRilog(Post post, ViewerPermissionsResponse viewerPermissions, Long viewCount) {
         return new PostDetailResponse(
                 post.getTitle(),
                 post.getContent().getContent(),
@@ -107,7 +109,7 @@ public record PostDetailResponse(
             long memberCount,
             long postCount,
             ViewerPermissionsResponse viewerPermissions,
-            long viewCount
+            Long viewCount
     ) {
         return new PostDetailResponse(
                 post.getTitle(),
