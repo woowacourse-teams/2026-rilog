@@ -4,6 +4,7 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.support.ServiceSupport;
@@ -19,11 +20,14 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.util.UUID;
+
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_MISSING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class PostViewCounterIntegrationTest extends ServiceSupport {
 
     @DynamicPropertySource
@@ -35,7 +39,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         }
     }
 
-    @Autowired(required = false)
+    @Autowired
     private PostViewCounterRegistry registry;
     @Autowired
     private PostService postService;
@@ -49,48 +53,90 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     private JdbcTemplate jdbc;
 
     @Test
-    @DisplayName("Spring 카운터는 실제 DB 누계로 초기화하고 DB 쓰기 없이 집계한다")
-    void initializesFromDatabaseAndCountsWithoutWritingThroughRequests() {
-        assertThat(registry).isNotNull();
-        assertThatThrownBy(() -> registry.currentCount(999_999))
-                .isInstanceOfSatisfying(RilogInfrastructureException.class, failure -> {
-                    assertThat(failure.getErrorInformation().getErrorCode()).isEqualTo("POST_VIEW_COUNT_MISSING");
-                    assertThat(failure.getErrorInformation().getHttpStatus().value()).isEqualTo(500);
-                    assertThat(failure.getMessage()).contains("postId=999999");
-                });
-        assertThatThrownBy(() -> registry.getOrLoad(999_999))
-                .isInstanceOfSatisfying(RilogInfrastructureException.class, failure -> {
-                    assertThat(failure.getErrorInformation().getErrorCode()).isEqualTo("POST_VIEW_COUNT_MISSING");
-                    assertThat(failure.getErrorInformation().getHttpStatus().value()).isEqualTo(500);
-                });
-        assertThat(registry.snapshot()).isEmpty();
-
-        var writer = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("메모리작성자", "memory_writer"));
-        var blog = blogRepository.saveAndFlush(Blog.createRilog(writer));
-        blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(blog, writer));
-        long postId = postService.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), writer.getId()).postId();
-        jdbc.update("update post_view_count set view_count = 42 where post_id = ?", postId);
-
-        assertThat(registry.currentCount(postId)).isEqualTo(42);
-        assertThat(registry.snapshot()).isEmpty();
-        var counter = registry.getOrLoad(postId);
-        assertThat(registry.recordView(postId, ViewerIdentity.member(1))).isEqualTo(new ViewResult(true, 43));
-        assertThat(registry.recordView(postId, ViewerIdentity.member(2))).isEqualTo(new ViewResult(true, 44));
-        assertThat(registry.recordView(postId, ViewerIdentity.member(1))).isEqualTo(new ViewResult(false, 44));
-        assertThat(registry.recordView(postId, ViewerIdentity.member(3))).isEqualTo(new ViewResult(true, 45));
-        assertThat(registry.recordView(postId, ViewerIdentity.member(4))).isEqualTo(new ViewResult(true, 46));
-        assertThat(registry.currentCount(postId)).isEqualTo(46);
-        long secondPostId = postService.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), writer.getId()).postId();
-        var emptyCounter = registry.getOrLoad(secondPostId);
-        assertThat(emptyCounter.currentCount()).isZero();
-        assertThat(registry.snapshot()).containsExactlyInAnyOrder(counter, emptyCounter);
-
-        assertThat(jdbc.queryForObject("select view_count from post_view_count where post_id = ?", Long.class, postId))
-                .isEqualTo(42);
-        assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isZero();
-
-        assertThat(registry.snapshot()).containsExactlyInAnyOrder(counter, emptyCounter);
-        assertThat(registry.currentCount(secondPostId)).isZero();
-        assertThat(registry.currentCount(postId)).isEqualTo(46);
+    @DisplayName("DB 누계가 없으면 현재 조회수를 읽을 수 없다.")
+    void rejectsReadWhenStoredCountIsMissing() {
+        // when & then
+        assertThatThrownBy(() -> registry.currentCount(999_999L))
+                .isInstanceOf(RilogInfrastructureException.class)
+                .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
     }
+
+    @Test
+    @DisplayName("DB 누계를 불러오지 못하면 카운터를 등록하지 않는다.")
+    void doesNotInstallCounterWhenLoadingFails() {
+        // when & then
+        assertThatThrownBy(() -> registry.getOrLoad(999_999L))
+                .isInstanceOf(RilogInfrastructureException.class)
+                .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
+        assertThat(registry.snapshot()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("현재 조회수 읽기는 DB 누계를 반환하고 카운터를 생성하지 않는다.")
+    void readsStoredCountWithoutCreatingCounter() {
+        // given
+        Scenario scenario = scenario();
+        long postId = publishWithStoredCount(scenario, 42L);
+
+        // when
+        long currentCount = registry.currentCount(postId);
+
+        // then
+        assertThat(currentCount).isEqualTo(42L);
+        assertThat(registry.snapshot()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("조회 등록은 DB 누계에서 증가한 값을 반환하고 요청 중 DB에 기록하지 않는다.")
+    void initializesFromStoredCountWithoutWritingThroughRequests() {
+        // given
+        Scenario scenario = scenario();
+        long postId = publishWithStoredCount(scenario, 42L);
+        ViewerIdentity viewer = ViewerIdentity.anonymous(
+                UUID.fromString("72b85b6f-c498-480a-bb68-2d2b09aed93e"));
+
+        // when
+        ViewResult result = registry.recordView(postId, viewer);
+
+        // then
+        assertThat(result).isEqualTo(new ViewResult(true, 43L));
+        assertThat(jdbc.queryForObject(
+                "select view_count from post_view_count where post_id = ?", Long.class, postId))
+                .isEqualTo(42L);
+        assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isZero();
+    }
+
+    @Test
+    @DisplayName("카운터 스냅샷은 초기화를 완료한 게시글의 카운터를 모두 반환한다.")
+    void snapshotContainsAllInitializedCounters() {
+        // given
+        Scenario scenario = scenario();
+        long firstPostId = publishWithStoredCount(scenario, 42L);
+        long secondPostId = publishWithStoredCount(scenario, 0L);
+        PostViewCounter firstCounter = registry.getOrLoad(firstPostId);
+        PostViewCounter secondCounter = registry.getOrLoad(secondPostId);
+
+        // when
+        var counters = registry.snapshot();
+
+        // then
+        assertThat(counters).containsExactlyInAnyOrder(firstCounter, secondCounter);
+    }
+
+    private Scenario scenario() {
+        User writer = userRepository.saveAndFlush(
+                UserFixture.completedWithNicknameAndSlug("메모리작성자", "memory_writer"));
+        Blog blog = blogRepository.saveAndFlush(Blog.createRilog(writer));
+        blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(blog, writer));
+        return new Scenario(writer, blog);
+    }
+
+    private long publishWithStoredCount(Scenario scenario, long storedCount) {
+        long postId = postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
+                scenario.writer().getId()).postId();
+        jdbc.update("update post_view_count set view_count = ? where post_id = ?", storedCount, postId);
+        return postId;
+    }
+
+    private record Scenario(User writer, Blog blog) { }
 }

@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.util.Optional;
 
 import static kr.rilog.domain.post.view.ViewCounterTestSupport.CLOCK;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_MISSING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -25,7 +26,7 @@ class PostViewConfigTest {
             .withBean(Clock.class, () -> CLOCK);
 
     @Test
-    @DisplayName("Spring은 Caffeine 방문 기록을 선택하고 PostViewStore로 집계한다")
+    @DisplayName("Spring은 Caffeine 방문 기록을 선택하고 PostViewStore로 집계한다.")
     void selectsCaffeineAndExposesPostViewStore() {
         when(repository.findViewCountByPostId(1L)).thenReturn(Optional.of(42L));
 
@@ -42,20 +43,25 @@ class PostViewConfigTest {
     }
 
     @Test
-    @DisplayName("Spring 저장소는 누계 누락을 0으로 숨기지 않는다")
+    @DisplayName("Spring 저장소는 누계 누락을 0으로 숨기지 않는다.")
     void propagatesMissingDatabaseCount() {
         when(repository.findViewCountByPostId(999L)).thenReturn(Optional.empty());
 
         contextRunner.run(context -> {
             PostViewStore store = context.getBean(PostViewStore.class);
             assertThatThrownBy(() -> store.currentCount(999))
-                    .isInstanceOfSatisfying(RilogInfrastructureException.class, failure ->
-                            assertThat(failure.getErrorInformation().getErrorCode())
-                                    .isEqualTo("POST_VIEW_COUNT_MISSING"));
+                    .isInstanceOf(RilogInfrastructureException.class)
+                    .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
             assertThatThrownBy(() -> store.recordView(999, ViewerIdentity.member(1)))
-                    .isInstanceOfSatisfying(RilogInfrastructureException.class, failure ->
-                            assertThat(failure.getErrorInformation().getErrorCode())
-                                    .isEqualTo("POST_VIEW_COUNT_MISSING"));
+                    .isInstanceOf(RilogInfrastructureException.class)
+                    .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
         });
+    }
+
+    @Test
+    @DisplayName("조회 등록은 기본 설정에서 비활성화된다.")
+    void registrationDefaultsOff() {
+        contextRunner.run(context ->
+                assertThat(context.getBean(PostViewRegistrationProperties.class).enabled()).isFalse());
     }
 }

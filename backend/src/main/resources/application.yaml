@@ -25,6 +25,13 @@ app:
 server:
   forward-headers-strategy: framework
 
+post:
+  view:
+    registration:
+      enabled: ${POST_VIEW_REGISTRATION_ENABLED:false}
+      cookie-secure: ${POST_VIEW_COOKIE_SECURE:true}
+      cookie-same-site: ${POST_VIEW_COOKIE_SAME_SITE:Lax}
+
 github:
   oauth:
     client-id: ${GITHUB_CLIENT_ID:}
