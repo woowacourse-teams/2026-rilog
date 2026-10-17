@@ -27,13 +27,13 @@ import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
+import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
-import kr.rilog.global.exception.RilogInfrastructureException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +44,6 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
-import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_MISSING;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
@@ -61,6 +60,7 @@ public class PostService {
     private final CommentAnchorSelectionRepository selectionRepository;
     private final HardTrendingRepository trendingRepository;
     private final PostViewCountRepository viewCountRepository;
+    private final PostViewStore postViewStore;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -95,10 +95,11 @@ public class PostService {
         return toPostDetailResponse(post, viewerPermissions);
     }
 
-    private PostDetailResponse toPostDetailResponse(Post post, ViewerPermissionsResponse viewerPermissions) {
-        long viewCount = viewCountRepository.findViewCountByPostId(post.getId())
-                .orElseThrow(() -> new RilogInfrastructureException(
-                        POST_VIEW_COUNT_MISSING, "발행된 게시글의 조회수 누계가 없습니다. postId=" + post.getId(), null));
+    private PostDetailResponse toPostDetailResponse(
+            Post post,
+            ViewerPermissionsResponse viewerPermissions
+    ) {
+        Long viewCount = viewerPermissions.canDelete() ? postViewStore.currentCount(post.getId()) : null;
         if (!post.isCologAffiliated()) {
             return PostDetailResponse.fromRilog(post, viewerPermissions, viewCount);
         }

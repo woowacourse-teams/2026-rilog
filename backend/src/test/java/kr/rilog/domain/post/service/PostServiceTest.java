@@ -24,6 +24,7 @@ import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -48,10 +49,12 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUN
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_MISSING;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,7 +63,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
-    private static final String ERROR_INFORMATION = "errorInformation";
     private static final Long POST_ID = 1L;
     private static final Long WRITER_ID = 2L;
     private static final Long REQUESTER_ID = 9L;
@@ -96,6 +98,9 @@ class PostServiceTest {
     @Mock
     private PostViewCountRepository viewCountRepository;
 
+    @Mock
+    private PostViewStore postViewStore;
+
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
     private PostService postService;
@@ -111,12 +116,13 @@ class PostServiceTest {
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
                 trendingRepository,
-                viewCountRepository
+                viewCountRepository,
+                postViewStore
         );
     }
 
     @Test
-    @DisplayName("개인 블로그에 게시글을 발행하면 해당 개인 블로그에만 게시글을 발행한다")
+    @DisplayName("개인 블로그에 게시글을 발행하면 해당 개인 블로그에만 게시글을 발행한다.")
     void publishToRilogPublishesOnlyToRilog() {
         // given
         User writer = createWriter();
@@ -140,14 +146,16 @@ class PostServiceTest {
         verify(postRepository).save(postCaptor.capture());
         Post publishedPost = postCaptor.getValue();
 
-        assertThat(publishedPost.getUser()).isSameAs(writer);
-        assertThat(publishedPost.getRilog()).isSameAs(rilog);
-        assertThat(publishedPost.getColog()).isNull();
-        assertThat(result).isEqualTo(new PostPublishResult(POST_ID, RILOG_SLUG));
+        assertSoftly(softly -> {
+            softly.assertThat(publishedPost.getUser()).isSameAs(writer);
+            softly.assertThat(publishedPost.getRilog()).isSameAs(rilog);
+            softly.assertThat(publishedPost.getColog()).isNull();
+            softly.assertThat(result).isEqualTo(new PostPublishResult(POST_ID, RILOG_SLUG));
+        });
     }
 
     @Test
-    @DisplayName("팀 블로그에 게시글을 발행하면 팀 블로그와 작성자의 개인 블로그에 함께 게시글을 발행한다")
+    @DisplayName("팀 블로그에 게시글을 발행하면 팀 블로그와 작성자의 개인 블로그에 함께 게시글을 발행한다.")
     void publishToCologPublishesToCologAndWriterRilog() {
         // given
         User writer = createWriter();
@@ -175,14 +183,16 @@ class PostServiceTest {
         verify(postRepository).save(postCaptor.capture());
         Post publishedPost = postCaptor.getValue();
 
-        assertThat(publishedPost.getUser()).isSameAs(writer);
-        assertThat(publishedPost.getRilog()).isSameAs(rilog);
-        assertThat(publishedPost.getColog()).isSameAs(colog);
-        assertThat(result).isEqualTo(new PostPublishResult(POST_ID, COLOG_SLUG));
+        assertSoftly(softly -> {
+            softly.assertThat(publishedPost.getUser()).isSameAs(writer);
+            softly.assertThat(publishedPost.getRilog()).isSameAs(rilog);
+            softly.assertThat(publishedPost.getColog()).isSameAs(colog);
+            softly.assertThat(result).isEqualTo(new PostPublishResult(POST_ID, COLOG_SLUG));
+        });
     }
 
     @Test
-    @DisplayName("팀 블로그의 활성 멤버가 아니면 팀 블로그에 게시글을 발행할 수 없다")
+    @DisplayName("팀 블로그의 활성 멤버가 아니면 팀 블로그에 게시글을 발행할 수 없다.")
     void publishToCologFailsWhenWriterIsNotActiveMember() {
         // given
         User writer = createWriter();
@@ -195,14 +205,13 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(COLOG_POST_PUBLISH_FORBIDDEN);
+                .hasMessage(COLOG_POST_PUBLISH_FORBIDDEN.getMessage());
         verify(blogRepository, never()).findRilogByOwnerId(WRITER_ID);
         verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
-    @DisplayName("발행할 블로그가 존재하지 않으면 게시글 발행에 실패한다")
+    @DisplayName("발행할 블로그가 존재하지 않으면 게시글 발행에 실패한다.")
     void publishFailsWhenPublishingBlogDoesNotExist() {
         // given
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.empty());
@@ -210,13 +219,12 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(BLOG_NOT_FOUND);
+                .hasMessage(BLOG_NOT_FOUND.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
-    @DisplayName("작성자가 존재하지 않으면 게시글 발행에 실패한다")
+    @DisplayName("작성자가 존재하지 않으면 게시글 발행에 실패한다.")
     void publishFailsWhenWriterDoesNotExist() {
         // given
         User rilogOwner = createWriter();
@@ -227,13 +235,12 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(UserException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(USER_NOT_FOUND);
+                .hasMessage(USER_NOT_FOUND.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
-    @DisplayName("팀 블로그에 발행할 때 작성자의 개인 블로그가 없으면 게시글 발행에 실패한다")
+    @DisplayName("팀 블로그에 발행할 때 작성자의 개인 블로그가 없으면 게시글 발행에 실패한다.")
     void publishToCologFailsWhenWriterRilogDoesNotExist() {
         // given
         User writer = createWriter();
@@ -247,13 +254,12 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(RILOG_NOT_FOUND);
+                .hasMessage(RILOG_NOT_FOUND.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
-    @DisplayName("다른 사용자의 개인 블로그에는 게시글을 발행할 수 없다")
+    @DisplayName("다른 사용자의 개인 블로그에는 게시글을 발행할 수 없다.")
     void publishToRilogFailsWhenWriterIsNotOwner() {
         // given
         Long notOwnerId = 5L;
@@ -269,13 +275,12 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(RILOG_POST_PUBLISH_FORBIDDEN);
+                .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
-    @DisplayName("개인 블로그의 공개 게시글은 로그인하지 않아도 조회할 수 있다")
+    @DisplayName("개인 블로그의 공개 게시글은 로그인하지 않아도 조회할 수 있다.")
     void readPublicRilogPostAllowsAnonymousUser() {
         // given
         User writer = createWriter();
@@ -284,35 +289,34 @@ class PostServiceTest {
                 .thenReturn(Optional.of(publicPost));
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
         assertThat(response.owner().type()).isEqualTo(BlogType.RILOG);
-        assertThat(response.viewerPermissions().canEdit()).isFalse();
-        assertThat(response.viewerPermissions().canDelete()).isFalse();
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
     }
 
     @Test
-    @DisplayName("발행된 게시글의 조회수 누계가 없으면 조회수 전용 서버 오류로 분류한다")
+    @DisplayName("발행된 게시글의 조회수 누계가 없으면 조회수 전용 서버 오류로 분류한다.")
     void readPublicPostFailsWhenViewCountMissing() {
+        // given
         Post publicPost = createPost(createWriter(), PostVisibility.PUBLIC);
         when(postRepository.findDetailByCanonicalPath(Slug.from(RILOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(publicPost));
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.empty());
+        when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                RILOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE
+        )).thenReturn(Optional.of(createMember(publicPost.getRilog(), createWriter(), BlogPermission.OWNER)));
+        when(postViewStore.currentCount(POST_ID)).thenThrow(new RilogInfrastructureException(POST_VIEW_COUNT_MISSING));
 
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null))
-                .isInstanceOfSatisfying(RilogInfrastructureException.class, failure -> {
-                    assertThat(failure.getErrorInformation().getErrorCode()).isEqualTo("POST_VIEW_COUNT_MISSING");
-                    assertThat(failure.getErrorInformation().getHttpStatus().value()).isEqualTo(500);
-                    assertThat(failure.getMessage()).contains("postId=1");
-                });
+        // when & then
+        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, WRITER_ID))
+                .isInstanceOf(RilogInfrastructureException.class)
+                .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
     }
 
     @Test
-    @DisplayName("Canonical URL 상세 조회는 postId가 존재해도 URL slug가 게시글 소속 블로그와 다르면 찾을 수 없다")
+    @DisplayName("Canonical URL 상세 조회는 postId가 존재해도 URL slug가 게시글 소속 블로그와 다르면 찾을 수 없다.")
     void readPublicPostRejectsMismatchedSlug() {
         // given
         String wrongSlug = "wrong_slug";
@@ -322,12 +326,11 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(wrongSlug, POST_ID, null))
                 .isInstanceOf(PostException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(POST_NOT_FOUND);
+                .hasMessage(POST_NOT_FOUND.getMessage());
     }
 
     @Test
-    @DisplayName("개인 블로그 게시글 작성자는 수정과 삭제를 할 수 있다")
+    @DisplayName("개인 블로그 게시글 작성자는 수정과 삭제를 할 수 있다.")
     void readRilogPostAllowsWriterToEditAndDelete() {
         // given
         User writer = createWriter();
@@ -342,17 +345,14 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
-        assertThat(response.viewerPermissions().canEdit()).isTrue();
-        assertThat(response.viewerPermissions().canDelete()).isTrue();
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(true, true));
     }
 
     @Test
-    @DisplayName("개인 블로그 게시글 작성자라도 활성 멤버가 아니면 수정과 삭제를 할 수 없다")
+    @DisplayName("개인 블로그 게시글 작성자라도 활성 멤버가 아니면 수정과 삭제를 할 수 없다.")
     void readRilogPostRejectsWriterWithoutActiveMember() {
         // given
         User writer = createWriter();
@@ -366,17 +366,14 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
-        assertThat(response.viewerPermissions().canEdit()).isFalse();
-        assertThat(response.viewerPermissions().canDelete()).isFalse();
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
     }
 
     @Test
-    @DisplayName("팀 블로그 게시글을 조회하면 활성 멤버 수와 공개 게시글 수를 포함한다")
+    @DisplayName("팀 블로그 게시글을 조회하면 활성 멤버 수와 공개 게시글 수를 포함한다.")
     void readCologPostContainsMemberAndPostCounts() {
         // given
         User writer = createWriter();
@@ -392,23 +389,18 @@ class PostServiceTest {
         )).thenReturn(5L);
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, null);
 
         // then
-        assertThat(response.owner())
-                .isInstanceOfSatisfying(CologOwnerResponse.class, affiliation -> {
-                    assertThat(affiliation.type()).isEqualTo(BlogType.COLOG);
-                    assertThat(affiliation.memberCount()).isEqualTo(3L);
-                    assertThat(affiliation.postCount()).isEqualTo(5L);
-                });
-        assertThat(response.viewerPermissions().canEdit()).isFalse();
-        assertThat(response.viewerPermissions().canDelete()).isFalse();
+        assertThat(response.owner()).isEqualTo(new CologOwnerResponse(
+                BlogType.COLOG, COLOG_ID, COLOG_SLUG, cologPost.getColog().getName(),
+                cologPost.getColog().getProfileImageUrl(), cologPost.getColog().getCoverImageUrl(), 3L, 5L
+        ));
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
     }
 
     @Test
-    @DisplayName("팀 블로그 게시글 작성자가 현재 활성 멤버이면 수정과 삭제를 할 수 있다")
+    @DisplayName("팀 블로그 게시글 작성자가 현재 활성 멤버이면 수정과 삭제를 할 수 있다.")
     void readCologPostAllowsActiveWriterToEditAndDelete() {
         // given
         User writer = createWriter();
@@ -430,17 +422,14 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
-        assertThat(response.viewerPermissions().canEdit()).isTrue();
-        assertThat(response.viewerPermissions().canDelete()).isTrue();
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(true, true));
     }
 
     @Test
-    @DisplayName("팀 블로그 게시글 작성자가 현재 활성 멤버가 아니면 수정과 삭제를 할 수 없다")
+    @DisplayName("팀 블로그 게시글 작성자가 현재 활성 멤버가 아니면 수정과 삭제를 할 수 없다.")
     void readCologPostRejectsLeftWriterPermissions() {
         // given
         User writer = createWriter();
@@ -461,17 +450,14 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
-        assertThat(response.viewerPermissions().canEdit()).isFalse();
-        assertThat(response.viewerPermissions().canDelete()).isFalse();
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
     }
 
     @Test
-    @DisplayName("팀 블로그 OWNER와 ADMIN은 다른 작성자의 게시글을 삭제할 수 있다")
+    @DisplayName("팀 블로그 관리자는 다른 작성자의 게시글을 삭제할 수 있다.")
     void readCologPostAllowsManagerToDeleteAnotherWritersPost() {
         // given
         User writer = createWriter();
@@ -494,17 +480,14 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, REQUESTER_ID);
 
         // then
-        assertThat(response.viewerPermissions().canEdit()).isFalse();
-        assertThat(response.viewerPermissions().canDelete()).isTrue();
+        assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(false, true));
     }
 
     @Test
-    @DisplayName("블로그의 비공개 게시글은 로그인하지 않으면 조회할 수 없다")
+    @DisplayName("블로그의 비공개 게시글은 로그인하지 않으면 조회할 수 없다.")
     void readPrivateBlogPostRejectsAnonymousUser() {
         // given
         User writer = createWriter();
@@ -515,12 +498,11 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null))
                 .isInstanceOf(PostException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
 
     @Test
-    @DisplayName("블로그의 비공개 게시글은 작성자가 조회할 수 있다")
+    @DisplayName("블로그의 비공개 게시글은 작성자가 조회할 수 있다.")
     void readPrivateBlogPostAllowsWriter() {
         // given
         User writer = createWriter();
@@ -529,8 +511,6 @@ class PostServiceTest {
                 .thenReturn(Optional.of(privatePost));
 
         // when
-        when(viewCountRepository.findViewCountByPostId(POST_ID)).thenReturn(Optional.of(42L));
-
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
@@ -538,7 +518,7 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("블로그의 비공개 게시글은 작성자가 아닌 사용자가 조회할 수 없다")
+    @DisplayName("블로그의 비공개 게시글은 작성자가 아닌 사용자가 조회할 수 없다.")
     void readPrivateBlogPostRejectsNonWriter() {
         // given
         User writer = createWriter();
@@ -549,12 +529,11 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, 999L))
                 .isInstanceOf(PostException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
+                .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
 
     @Test
-    @DisplayName("개인 블로그 게시글 작성자라도 활성 멤버가 아니면 삭제할 수 없다")
+    @DisplayName("개인 블로그 게시글 작성자라도 활성 멤버가 아니면 삭제할 수 없다.")
     void deleteRilogPostRejectsWriterWithoutActiveMember() {
         // given
         User writer = createWriter();
@@ -570,8 +549,7 @@ class PostServiceTest {
         // when - then
         assertThatThrownBy(() -> postService.deletePublishedPost(POST_ID, WRITER_ID))
                 .isInstanceOf(PostException.class)
-                .extracting(ERROR_INFORMATION)
-                .isEqualTo(POST_DELETE_FORBIDDEN);
+                .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
     }
 
     private User createWriter() {

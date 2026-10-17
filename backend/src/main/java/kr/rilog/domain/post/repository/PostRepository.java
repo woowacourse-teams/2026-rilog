@@ -5,6 +5,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
+import kr.rilog.domain.post.repository.projection.PostViewTarget;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +19,15 @@ import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+    @Query("""
+            select new kr.rilog.domain.post.repository.projection.PostViewTarget(p.id, p.user.id, p.visibility)
+            from Post p
+            where p.id = :postId
+              and p.status = kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED
+              and p.deletedAt is null
+            """)
+    Optional<PostViewTarget> findViewTargetById(@Param("postId") Long postId);
 
     @Query("""
             SELECT new kr.rilog.domain.post.repository.projection.DraftListRow(

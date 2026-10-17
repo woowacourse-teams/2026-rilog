@@ -436,16 +436,17 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User writer = saveCompletedUser(11L, "공개글작성자", "public_post_writer");
         Blog rilog = saveRilog(writer);
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
-        PostDetailResponse expected = PostFixture.postDetailResponse(post, writer, rilog);
+        PostDetailResponse fixture = PostFixture.postDetailResponse(post, writer, rilog);
+        PostDetailResponse expected = new PostDetailResponse(
+                fixture.title(), fixture.content(), fixture.publishedAt(), fixture.thumbnailImageUrl(),
+                fixture.category(), fixture.author(), fixture.owner(), fixture.viewerPermissions(), null
+        );
 
         // when
         PostDetailResponse result = postService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId(), null);
 
         // then
-        assertThat(result)
-                .usingRecursiveComparison()
-                .ignoringFields("publishedAt")
-                .isEqualTo(expected);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
