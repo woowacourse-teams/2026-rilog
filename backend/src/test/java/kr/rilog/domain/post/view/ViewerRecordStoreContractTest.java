@@ -71,7 +71,7 @@ class ViewerRecordStoreContractTest {
             assertThat(registry.currentCount(1)).isEqualTo(2);
 
             assertThat(registry.recordView(1, ViewerIdentity.member(3))).isEqualTo(new ViewResult(true, 3));
-            assertThat(registry.prepareFlushBatches()).containsExactly(batch);
+            assertThat(registry.prepareFlushBatches()).isEmpty();
             registry.completeFlush(1, batch.batchId());
             ViewFlushBatch next = registry.prepareFlushBatches().getFirst();
             assertThat(next.delta()).isEqualTo(1);

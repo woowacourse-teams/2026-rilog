@@ -219,7 +219,7 @@ class PostViewCounterRegistryTest {
         var batch = original.prepareFlush().orElseThrow();
         assertThat(batch.delta()).isEqualTo(2);
         assertThat(registry.recordView(1, ViewerIdentity.member(2))).isEqualTo(new ViewResult(false, 2));
-        assertThat(original.prepareFlush()).contains(batch);
+        assertThat(original.prepareFlush()).isEmpty();
         original.completeFlush(batch.batchId());
         assertThat(registry.getOrLoad(1)).isSameAs(original);
         assertThat(registry.getOrLoad(3)).isSameAs(empty);

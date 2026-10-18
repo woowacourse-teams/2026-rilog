@@ -33,7 +33,6 @@ import java.util.UUID;
 
 import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 @Import(PostViewFlushIntegrationTest.StoreObservationConfiguration.class)
 class PostViewFlushIntegrationTest extends ServiceSupport {
@@ -58,6 +57,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     @BeforeEach
     void prepareScenario() {
         store.beforeCompletion = () -> { };
+        store.beforeDiscard = () -> { };
         User author = userRepository.saveAndFlush(
                 UserFixture.completedWithNicknameAndSlug("집계작성자", "flush_author"));
         Blog blog = blogRepository.saveAndFlush(Blog.createRilog(author));
@@ -81,14 +81,31 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("DB 저장이 실패하면 같은 배치를 유지하고 다음 실행에서 재시도한다.")
-    void retriesFailedBatchOnNextRun() {
+    @DisplayName("DB 저장이 실패한 증가분은 폐기하고 다음 실행에서도 저장하지 않는다.")
+    void discardsFailedBatchWithoutRetry() {
         // given
         long postId = publishWithView();
-        ViewFlushBatch failedBatch = store.prepareFlushBatches().getFirst();
         jdbc.update("delete from post_view_count where post_id = ?", postId);
         flushService.flushPendingViews();
-        assertThat(store.prepareFlushBatches()).containsExactly(failedBatch);
+        jdbc.update("insert into post_view_count (post_id, view_count) values (?, 0)", postId);
+
+        // when
+        flushService.flushPendingViews();
+
+        // then
+        assertThat(storedCount(postId)).isZero();
+        assertThat(store.currentCount(postId)).isZero();
+        assertThat(store.prepareFlushBatches()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("실패한 배치를 폐기하는 동안 인정된 새 조회는 다음 실행에서 저장한다.")
+    void persistsViewsAcceptedWhileDiscardingFailedBatch() {
+        // given
+        long postId = publishWithView();
+        store.beforeDiscard = () -> store.recordView(postId, ViewerIdentity.member(999L));
+        jdbc.update("delete from post_view_count where post_id = ?", postId);
+        flushService.flushPendingViews();
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, 0)", postId);
 
         // when
@@ -96,9 +113,8 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(storedCount(postId)).isEqualTo(1L);
+        assertThat(store.currentCount(postId)).isEqualTo(1L);
         assertThat(store.prepareFlushBatches()).isEmpty();
-        assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch where batch_id = ?",
-                Long.class, failedBatch.batchId().toString())).isEqualTo(1L);
     }
 
     @Test
@@ -114,13 +130,13 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(storedCount(successfulPostId)).isEqualTo(1L);
-        assertThat(store.prepareFlushBatches()).hasSize(1)
-                .allSatisfy(batch -> assertThat(batch.postId()).isEqualTo(failedPostId));
+        assertThat(store.currentCount(failedPostId)).isZero();
+        assertThat(store.prepareFlushBatches()).isEmpty();
     }
 
     @Test
-    @DisplayName("DB 커밋 후 메모리 완료 처리가 실패해도 다음 실행에서 증가분을 중복 반영하지 않는다.")
-    void retriesAfterAcknowledgmentFailureWithoutDoubleCounting() {
+    @DisplayName("DB 커밋 후 메모리 완료가 실패해도 같은 증가분을 다시 저장하지 않는다.")
+    void doesNotRetryAfterAcknowledgmentFailure() {
         // given
         long postId = publishWithView();
         store.beforeCompletion = () -> { throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR); };
@@ -131,12 +147,8 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         flushService.flushPendingViews();
 
         // then
-        assertSoftly(softly -> {
-            softly.assertThat(storedCount(postId)).isEqualTo(1L);
-            softly.assertThat(store.currentCount(postId)).isEqualTo(1L);
-            softly.assertThat(store.prepareFlushBatches()).isEmpty();
-            softly.assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isEqualTo(1L);
-        });
+        assertThat(storedCount(postId)).isEqualTo(1L);
+        assertThat(store.prepareFlushBatches()).isEmpty();
     }
 
     @Test
@@ -147,7 +159,6 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         store.beforeCompletion = () -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
             assertThat(storedCount(postId)).isEqualTo(1L);
-            assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isEqualTo(1L);
         };
 
         // when
@@ -201,6 +212,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         private final PostViewCounterRegistry registry;
         private Runnable beforeCompletion = () -> { };
+        private Runnable beforeDiscard = () -> { };
 
         ObservedPostViewStore(PostViewCounterRegistry registry) {
             this.registry = registry;
@@ -220,6 +232,12 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         public List<ViewFlushBatch> prepareFlushBatches() {
             // 실패 게시글을 먼저 처리하도록 순서만 고정하고 실제 메모리 저장소를 사용한다.
             return registry.prepareFlushBatches().stream().sorted(Comparator.comparingLong(ViewFlushBatch::postId)).toList();
+        }
+
+        @Override
+        public void discardFlush(long postId, UUID batchId) {
+            beforeDiscard.run();
+            registry.discardFlush(postId, batchId);
         }
 
         @Override

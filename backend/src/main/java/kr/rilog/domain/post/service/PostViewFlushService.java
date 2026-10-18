@@ -21,7 +21,8 @@ public class PostViewFlushService {
                 batchWriter.write(batch);
                 postViewStore.completeFlush(batch.postId(), batch.batchId());
             } catch (RuntimeException exception) {
-                log.error("조회수 배치 저장에 실패했습니다. 다음 실행에서 재시도합니다. batchId={}, postId={}, delta={}",
+                postViewStore.discardFlush(batch.postId(), batch.batchId());
+                log.error("조회수 배치 저장 또는 완료 처리에 실패하여 증가분을 폐기합니다. batchId={}, postId={}, delta={}",
                         batch.batchId(), batch.postId(), batch.delta(), exception);
             }
         }

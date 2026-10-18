@@ -71,7 +71,7 @@ public final class PostViewCounter {
         lock.lock();
         try {
             if (inFlightBatch != null) {
-                return Optional.of(inFlightBatch);
+                return Optional.empty();
             }
             if (pendingDelta == 0) {
                 return Optional.empty();
@@ -91,6 +91,18 @@ public final class PostViewCounter {
         try {
             if (inFlightBatch != null && inFlightBatch.batchId().equals(batchId)) {
                 confirmedCount += inFlightBatch.delta();
+                inFlightBatch = null;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void discardFlush(UUID batchId) {
+        Objects.requireNonNull(batchId, "폐기할 배치 ID가 필요합니다.");
+        lock.lock();
+        try {
+            if (inFlightBatch != null && inFlightBatch.batchId().equals(batchId)) {
                 inFlightBatch = null;
             }
         } finally {
