@@ -174,6 +174,17 @@ export const readPostDetail = (
 	});
 };
 
+export const registerPostView = (postId: number): Promise<void> => {
+	const url = `v1/posts/${postId}/views`;
+	return apiRequest(
+		async () => {
+			// Leave one forced token-refresh retry available, while disabling ordinary retries.
+			await kyInstance.post(url, { retry: { limit: 1, methods: [] } });
+		},
+		{ method: 'POST', url },
+	);
+};
+
 export const updatePost = (postId: number, request: PostWriteRequest): Promise<ApiResponse<PostWriteResponse>> => {
 	const { slug, ...post } = request;
 	const body: PostWriteRequest = {

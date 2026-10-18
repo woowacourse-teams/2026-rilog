@@ -50,6 +50,7 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 				THE_RILOG_REVALIDATION_SECRET: 'playwright-local-refresh-secret',
 				THE_RILOG_SERVER_FIXTURE_STATE_PATH: '.the-rilog-build/server-fixture-state.json',
 				THE_RILOG_SERVER_FIXTURE_REQUEST_LOG: '.the-rilog-build/server-fixture-requests.log',
+				THE_RILOG_SERVER_FIXTURE_HTTP_LOG: '.the-rilog-build/server-fixture-http.log',
 			},
 		},
 		projects: [

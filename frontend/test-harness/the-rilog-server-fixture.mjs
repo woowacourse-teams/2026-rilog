@@ -60,6 +60,10 @@ globalThis.fetch = async (input, init) => {
 		if (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) return originalFetch(input, init);
 		throw new Error(`Unexpected external HTTP request: ${url.origin}${url.pathname}`);
 	}
+	if (process.env.THE_RILOG_SERVER_FIXTURE_HTTP_LOG) {
+		const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+		await appendFile(process.env.THE_RILOG_SERVER_FIXTURE_HTTP_LOG, `${method} ${url.pathname}\n`);
+	}
 	if (url.pathname === '/v1/the-rilog') {
 		if (process.env.THE_RILOG_SERVER_FIXTURE_REQUEST_LOG) {
 			await appendFile(process.env.THE_RILOG_SERVER_FIXTURE_REQUEST_LOG, `${url.pathname}\n`);
