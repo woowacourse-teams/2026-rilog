@@ -26,9 +26,9 @@ describe('pending auth action', () => {
 		expect(takePendingAuthAction()).toBeNull();
 	});
 
-	it('저장한 지 한 시간이 지나면 작업을 실행하지 않는다', () => {
+	it('저장한 지 10분이 지나면 작업을 실행하지 않는다', () => {
 		savePendingAuthAction({ blockId: 'block-1' });
-		vi.spyOn(Date, 'now').mockReturnValue(1_000_000 + 60 * 60 * 1000 + 1);
+		vi.spyOn(Date, 'now').mockReturnValue(1_000_000 + 10 * 60 * 1000 + 1);
 		expect(takePendingAuthAction()).toBeNull();
 	});
 });

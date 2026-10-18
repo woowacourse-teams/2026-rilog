@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'pendingAuthAction';
-const MAX_AGE_MS = 60 * 60 * 1000;
+const MAX_AGE_MS = 10 * 60 * 1000;
 
 export const clearPendingAuthAction = () => {
 	sessionStorage.removeItem(STORAGE_KEY);
