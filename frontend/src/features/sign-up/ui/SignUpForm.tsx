@@ -6,6 +6,7 @@ import { useId, useRef, useState } from 'react';
 import type { SignUpNavigateOptions } from '../hooks/use-sign-up-form';
 
 import { BLOG_PROFILE_URL_MAX_LENGTH } from '@/domains/blog/model/blog';
+import { clearPostLoginRedirect } from '@/features/login/lib/post-login-redirect';
 import { mapOnboardingRequest } from '@/features/sign-up/lib/map-onboarding-request';
 import { clearSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -138,6 +139,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 	};
 	const handleCancel = () => {
 		clearSignUpFlow();
+		clearPostLoginRedirect();
 		window.history.back();
 	};
 

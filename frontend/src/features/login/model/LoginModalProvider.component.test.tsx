@@ -81,6 +81,7 @@ describe('LoginModalProvider', () => {
 
 	it('GitHub 로그인을 시작하면 중복 요청과 모달 닫기를 막는다', async () => {
 		const user = userEvent.setup();
+		window.history.replaceState({}, '', '/feeds?tab=latest#recent');
 		render(
 			<LoginModalProvider>
 				<LoginButton />
@@ -98,6 +99,6 @@ describe('LoginModalProvider', () => {
 			entrySurface: 'sidebar',
 			redirectTarget: '/feeds',
 		});
-		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest');
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest#recent');
 	});
 });

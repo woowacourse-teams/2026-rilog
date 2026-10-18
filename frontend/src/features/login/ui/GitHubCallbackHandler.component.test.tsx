@@ -74,6 +74,7 @@ describe('GitHubCallbackHandler', () => {
 	});
 
 	it('온보딩 세션 등록을 기다린 뒤 회원가입 흐름을 시작하고 이동한다', async () => {
+		localStorage.setItem('postLoginRedirect', '/posts/81?tab=comments');
 		let finishOnboarding: (() => void) | undefined;
 		publishOnboardingMock.mockImplementation(
 			() =>
@@ -99,6 +100,7 @@ describe('GitHubCallbackHandler', () => {
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/sign-up'));
 		expect(publishLoginMock).not.toHaveBeenCalled();
 		expect(startSignUpFlowMock).toHaveBeenCalledOnce();
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/posts/81?tab=comments');
 		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'new' });
 		expect(publishOnboardingMock.mock.invocationCallOrder[0]).toBeLessThan(
 			startSignUpFlowMock.mock.invocationCallOrder[0] ?? 0,
