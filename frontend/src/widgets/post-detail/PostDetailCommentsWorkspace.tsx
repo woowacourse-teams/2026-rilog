@@ -8,15 +8,9 @@ import type { ReactNode } from 'react';
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { analytics } from '@/features/analytics/model/events';
-import { useAuth } from '@/features/auth/model/use-auth';
-import { useAuthAction } from '@/features/login/model/use-auth-action';
+import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
-import { getInlineCommentRootText } from '@/features/post-detail/lib/inline-comment-selection';
-import {
-	savePendingInlineCommentSelection,
-	takePendingInlineCommentSelection,
-} from '@/features/post-detail/lib/pending-inline-comment-selection';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type {
 	InlineCommentOpenRequest,
@@ -49,17 +43,6 @@ interface PostDetailCommentsWorkspaceProps {
 const EMPTY_INLINE_COMMENT_BLOCKS: InlineCommentBlockModel[] = [];
 const EMPTY_INLINE_COMMENT_THREADS: InlineCommentThreadModel[] = [];
 
-const isSelectionStillCurrent = (target: InlineCommentSelectionTarget) => {
-	const article = document.querySelector<HTMLElement>('[data-post-detail-content]');
-	const root = Array.from(
-		article?.querySelectorAll<HTMLElement>('[data-inline-comment-root][data-inline-comment-block-id]') ?? [],
-	).find((element) => element.dataset.inlineCommentBlockId === target.blockId);
-	return (
-		root !== undefined &&
-		getInlineCommentRootText(root).slice(target.startOffset, target.endOffset) === target.selectedText
-	);
-};
-
 const findAnchorElement = (anchorId: number) =>
 	Array.from(document.querySelectorAll<HTMLElement>('[data-inline-comment-anchor-id]')).find(
 		(element) => element.dataset.inlineCommentAnchorId === String(anchorId),
@@ -84,7 +67,6 @@ export default function PostDetailCommentsWorkspace({
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
 	const dockHost = useDockedCommentsHost(postId);
-	const { isAuthenticated, isInitialized } = useAuth();
 	const isDocked = dockHost !== null && dockHost !== undefined;
 	const isLayoutReady = dockHost !== undefined;
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
@@ -185,28 +167,11 @@ export default function PostDetailCommentsWorkspace({
 		[inlineCommentBlocks],
 	);
 
-	const handleSelectionCreate = useAuthAction<[InlineCommentSelectionTarget]>({
-		action: handleInlineCommentCreate,
-		beforeAuth: (target) => {
-			savePendingInlineCommentSelection(postId, target);
-		},
-		entrySurface: 'sidebar',
-	});
-
-	useEffect(() => {
-		if (!isInitialized || !isAuthenticated || !commentsQuery.isSuccess || !sidebarQuery.isSuccess) return;
-		const target = takePendingInlineCommentSelection(postId);
-		if (target !== null && isSelectionStillCurrent(target)) {
-			queueMicrotask(() => handleInlineCommentCreate(target));
-		}
-	}, [
-		commentsQuery.isSuccess,
-		handleInlineCommentCreate,
-		isAuthenticated,
-		isInitialized,
+	const handleSelectionCreate = useInlineCommentAuthAction({
 		postId,
-		sidebarQuery.isSuccess,
-	]);
+		isCommentsReady: commentsQuery.isSuccess && sidebarQuery.isSuccess,
+		onCreate: handleInlineCommentCreate,
+	});
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {

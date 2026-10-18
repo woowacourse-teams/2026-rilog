@@ -15,6 +15,7 @@ export default function InlineCommentContent({
 			<article
 				ref={setArticle}
 				aria-label="게시글 본문"
+				data-post-detail-content=""
 				data-comment-selection-ready={Boolean(onInlineCommentCreate)}
 				style={{ margin: '200px 80px', minHeight: '1500px' }}
 			>

@@ -47,7 +47,7 @@ test.beforeEach(async ({ page }) => {
 	}
 });
 
-test('비회원이 본문을 드래그하고 댓글 추가를 누르면 로그인 창을 연다', async ({ page }) => {
+test('비회원이 본문을 드래그하고 로그인 후 돌아오면 댓글 입력을 이어간다', async ({ page }) => {
 	await page.setViewportSize({ width: 1100, height: 1000 });
 	await page.route('**/v1/**', (route) => route.abort());
 	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
@@ -64,6 +64,9 @@ test('비회원이 본문을 드래그하고 댓글 추가를 누르면 로그�
 	await page.getByRole('button', { name: '댓글 추가' }).click();
 	await expect(page.getByRole('dialog', { name: '로그인' })).toBeVisible();
 	await expect(page.getByRole('textbox', { name: '댓글 입력' })).toHaveCount(0);
+
+	await renderInlineCommentWorkspace(page);
+	await expect(page.getByRole('textbox', { name: '댓글 입력' })).toBeFocused();
 });
 
 test('selection 링크의 댓글 작성은 URL을 유지하고 사이드바 닫기는 selection ID를 제거한다', async ({ page }) => {
