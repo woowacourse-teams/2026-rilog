@@ -14,21 +14,31 @@ export const savePendingAuthAction = (value: unknown) => {
 	}
 };
 
-export const takePendingAuthAction = (): unknown => {
+export const takePendingAuthAction = (matches?: (value: unknown) => boolean): unknown => {
 	const raw = sessionStorage.getItem(STORAGE_KEY);
-	clearPendingAuthAction();
 	if (raw === null) return null;
 
 	try {
 		const parsed: unknown = JSON.parse(raw);
 		if (typeof parsed !== 'object' || parsed === null || !('createdAt' in parsed) || !('value' in parsed)) {
+			clearPendingAuthAction();
 			return null;
 		}
 		const { createdAt, value } = parsed;
-		if (typeof createdAt !== 'number' || !Number.isFinite(createdAt)) return null;
+		if (typeof createdAt !== 'number' || !Number.isFinite(createdAt)) {
+			clearPendingAuthAction();
+			return null;
+		}
 		const age = Date.now() - createdAt;
-		return age >= 0 && age <= MAX_AGE_MS ? value : null;
+		if (age < 0 || age > MAX_AGE_MS) {
+			clearPendingAuthAction();
+			return null;
+		}
+		if (matches !== undefined && !matches(value)) return null;
+		clearPendingAuthAction();
+		return value;
 	} catch {
+		clearPendingAuthAction();
 		return null;
 	}
 };

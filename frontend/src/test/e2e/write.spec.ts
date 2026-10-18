@@ -2,6 +2,9 @@ import { devices, expect, test } from '@playwright/test';
 
 import type { Page, Route } from '@playwright/test';
 
+import { RELEASE_NOTE_STORAGE_KEY } from '@/features/release-notes/model/release-note-storage';
+import { getLatestReleaseNote, RELEASE_NOTES } from '@/features/release-notes/model/release-notes';
+
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
 import { REQUIRED_E2E_FLOW_TAGS } from './required-flows';
 
@@ -42,6 +45,40 @@ const enableWriteAccess = async (page: Page) => {
 	);
 	await page.route('**/e2e-upload', (route) => route.fulfill({ status: 200 }));
 };
+
+test('비회원이 글쓰기를 누르고 로그인하면 원래 페이지를 거쳐 글쓰기 화면으로 이동한다', async ({ page }) => {
+	const latestReleaseNote = getLatestReleaseNote(RELEASE_NOTES);
+	if (latestReleaseNote) {
+		await page.addInitScript(({ key, id }) => localStorage.setItem(key, id), {
+			key: RELEASE_NOTE_STORAGE_KEY,
+			id: latestReleaseNote.id,
+		});
+	}
+	await page.route('**/v1/**', (route) => route.abort('failed'));
+	await page.route('**/v1/auth/token/refresh', (route) => route.fulfill({ status: 401 }));
+	await page.goto('/feeds');
+	await page.getByRole('button', { name: '글쓰기' }).click();
+	await expect(page.getByRole('dialog', { name: '로그인' })).toBeVisible();
+
+	const appOrigin = new URL(page.url()).origin;
+	await enableWriteAccess(page);
+	await page.route(
+		(url) => url.pathname === '/v1/auth/github',
+		(route) => route.fulfill({ status: 302, headers: { Location: `${appOrigin}/auth/github/callback?code=e2e-code` } }),
+	);
+	await page.route('**/v1/auth/github/callback', (route) =>
+		route.fulfill({
+			contentType: 'application/json',
+			headers: { Authorization: 'Bearer e2e-access-token' },
+			body: JSON.stringify({ status: 200, message: 'OK', data: { onboardingStatus: 'COMPLETED', redirectUrl: '/' } }),
+		}),
+	);
+	await page.getByRole('button', { name: 'GitHub로 계속하기' }).click();
+
+	await expect(page).toHaveURL('/write');
+	await page.goBack();
+	await expect(page).toHaveURL('/feeds');
+});
 
 test.describe('글 작성 브라우저 흐름', () => {
 	test.beforeEach(async ({ page }) => {

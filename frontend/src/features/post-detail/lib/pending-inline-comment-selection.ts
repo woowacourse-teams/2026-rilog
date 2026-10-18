@@ -6,7 +6,9 @@ export const savePendingInlineCommentSelection = (postId: number, target: Inline
 	savePendingAuthAction({ postId, pathname: window.location.pathname, target });
 
 export const takePendingInlineCommentSelection = (postId: number): InlineCommentSelectionTarget | null => {
-	const value: unknown = takePendingAuthAction();
+	const value: unknown = takePendingAuthAction(
+		(candidate) => typeof candidate === 'object' && candidate !== null && 'target' in candidate,
+	);
 	if (
 		typeof value !== 'object' ||
 		value === null ||

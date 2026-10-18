@@ -1,8 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useCallback, useEffect } from 'react';
 
 import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
+import { useAuth } from '@/features/auth/model/use-auth';
+import { savePendingAuthAction, takePendingAuthAction } from '@/features/login/lib/pending-auth-action';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import Button from '@/shared/ui/button/Button';
@@ -12,12 +15,34 @@ import { EXPANDED_TEXT_CLASS_NAME, EXPANDING_ACTION_CLASS_NAME, SIDEBAR_GLYPH_CL
 
 export default function WriteButton() {
 	const router = useRouter();
-	const navigate = () => {
+	const { isAuthenticated, isInitialized } = useAuth();
+	const navigate = useCallback(() => {
 		recordEditorEntryContext('sidebar');
 		router.push(APP_ROUTES.write);
-	};
+	}, [router]);
 
-	const handleWriteButtonClick = useAuthAction({ action: navigate, entrySurface: 'sidebar' });
+	const handleWriteButtonClick = useAuthAction({
+		action: navigate,
+		beforeAuth: () => savePendingAuthAction({ write: true, pathname: window.location.pathname }),
+		entrySurface: 'sidebar',
+	});
+
+	useEffect(() => {
+		if (!isInitialized || !isAuthenticated) return;
+		const value = takePendingAuthAction(
+			(candidate) => typeof candidate === 'object' && candidate !== null && 'write' in candidate,
+		);
+		if (
+			typeof value === 'object' &&
+			value !== null &&
+			'write' in value &&
+			'pathname' in value &&
+			value.write === true &&
+			value.pathname === window.location.pathname
+		) {
+			navigate();
+		}
+	}, [isAuthenticated, isInitialized, navigate]);
 
 	return (
 		<Button onClick={handleWriteButtonClick} fullWidth className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}>
