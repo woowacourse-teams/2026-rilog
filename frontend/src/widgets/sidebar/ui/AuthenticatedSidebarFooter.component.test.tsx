@@ -3,9 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import { renderWithQuery } from '@/test/render-with-query';
 
 import AuthenticatedSidebarFooter from './AuthenticatedSidebarFooter';
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 const { MY_INFO_RESPONSE, mutateMock, myInfoQuery, unreadCountQuery } = vi.hoisted(() => {
 	const myInfoResponse = {
@@ -61,7 +64,9 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({
 function renderFooter() {
 	return renderWithQuery(
 		<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: true, isInitialized: true }}>
-			<AuthenticatedSidebarFooter />
+			<LoginModalProvider>
+				<AuthenticatedSidebarFooter />
+			</LoginModalProvider>
 		</AUTH_CONTEXT.Provider>,
 	);
 }
@@ -89,12 +94,12 @@ describe('AuthenticatedSidebarFooter', () => {
 		renderFooter();
 
 		const notificationLink = screen.getByRole('link', { name: '알림' });
-		const writeLink = screen.getByRole('link', { name: '글쓰기' });
+		const writeButton = screen.getByRole('button', { name: '글쓰기' });
 		const profileLink = screen.getByRole('link', { name: '파라디 @jetproc' });
-		const logoutButton = screen.getByRole('button');
+		const logoutButton = screen.getByRole('button', { name: '로그아웃' });
 
 		expect(notificationLink).toHaveAttribute('href', '/notifications');
-		expect(writeLink).toHaveAttribute('href', '/write');
+		expect(writeButton).toBeEnabled();
 		expect(profileLink).toHaveAttribute('href', '/@jetproc');
 		expect(profileLink).toHaveAccessibleName();
 		expect(logoutButton).toBeEnabled();
@@ -104,15 +109,15 @@ describe('AuthenticatedSidebarFooter', () => {
 		const user = userEvent.setup();
 		renderFooter();
 		const notificationLink = screen.getByRole('link', { name: '알림' });
-		const writeLink = screen.getByRole('link', { name: '글쓰기' });
+		const writeButton = screen.getByRole('button', { name: '글쓰기' });
 		const profileLink = screen.getByRole('link', { name: '파라디 @jetproc' });
-		const logoutButton = screen.getByRole('button');
+		const logoutButton = screen.getByRole('button', { name: '로그아웃' });
 
 		await user.tab();
 		expect(notificationLink).toHaveFocus();
 
 		await user.tab();
-		expect(writeLink).toHaveFocus();
+		expect(writeButton).toHaveFocus();
 
 		await user.tab();
 		expect(profileLink).toHaveFocus();
@@ -143,9 +148,8 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		expect(screen.getByRole('status', { name: '내 정보를 불러오는 중' })).toBeInTheDocument();
 		expect(screen.getByRole('status').querySelectorAll('.animate-pulse')).toHaveLength(2);
-		expect(screen.getAllByRole('link')).toHaveLength(2);
 		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
-		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');
+		expect(screen.getByRole('button', { name: '글쓰기' })).toBeEnabled();
 		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '' })).not.toBeInTheDocument();
 	});
@@ -162,7 +166,6 @@ describe('AuthenticatedSidebarFooter', () => {
 		expect(screen.getByRole('alert', { name: '내 정보를 불러오지 못했어요.' })).toHaveTextContent('내 정보 오류');
 		expect(screen.getByText('내 정보 오류')).toHaveAttribute('title', '내 정보를 불러오지 못했어요.');
 		expect(screen.getByRole('alert')).toHaveTextContent('!');
-		expect(screen.getAllByRole('link')).toHaveLength(2);
 		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
 		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument();
@@ -181,7 +184,7 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		for (const control of [
 			screen.getByRole('link', { name: '알림' }),
-			screen.getByRole('link', { name: '글쓰기' }),
+			screen.getByRole('button', { name: '글쓰기' }),
 			screen.getByRole('button', { name: '로그아웃' }),
 		]) {
 			await user.tab();

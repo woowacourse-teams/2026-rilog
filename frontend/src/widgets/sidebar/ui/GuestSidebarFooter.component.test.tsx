@@ -9,6 +9,8 @@ import GuestSidebarFooter from './GuestSidebarFooter';
 
 const { githubLoginStartedMock } = vi.hoisted(() => ({ githubLoginStartedMock: vi.fn() }));
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 vi.mock('@/features/analytics/model/events', () => ({
 	analytics: {
 		githubLoginStarted: githubLoginStartedMock,
@@ -33,13 +35,12 @@ describe('GuestSidebarFooter', () => {
 		);
 
 		const loginButton = screen.getByRole('button', { name: '로그인' });
-		const writeLink = screen.getByRole('link', { name: '글쓰기' });
-		expect(writeLink).toHaveAttribute('href', '/write');
+		const writeButton = screen.getByRole('button', { name: '글쓰기' });
 		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('dialog', { name: '로그인' })).not.toBeInTheDocument();
 
 		await user.tab();
-		expect(writeLink).toHaveFocus();
+		expect(writeButton).toHaveFocus();
 		await user.tab();
 		expect(loginButton).toHaveFocus();
 
