@@ -14,7 +14,9 @@ const initialSelectionId = selectionIdParam === null ? null : Number(selectionId
 
 createRoot(root).render(
 	<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+		<AUTH_CONTEXT.Provider
+			value={{ isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+		>
 			<LOGIN_MODAL_CONTEXT.Provider value={() => {}}>
 				<div className="px-8 sm:ml-15">
 					<div className={styles.postDetailShell}>

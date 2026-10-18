@@ -43,7 +43,7 @@ function postDetail(postId) {
 		author: { userId: 1, nickname: 'Rilog 편집부', slug: data.blogSlug, profileImageUrl: null },
 		owner: { type: 'RILOG', blogId: 1, slug: data.blogSlug, name: 'The Rilog.', profileImageUrl: null },
 		viewerPermissions: { canEdit: false, canDelete: false },
-		viewCount: 0,
+		viewCount: null,
 		postType: article
 			? article.articleType === 'enterprise'
 				? 'ENTERPRISE_SPOTLIGHT'
@@ -102,6 +102,12 @@ globalThis.fetch = async (input, init) => {
 			memberCount: 1,
 			postCount: 3,
 		});
+	}
+	if (url.pathname === '/v1/blogs/the_rilog/index') {
+		return envelope({ blogType: 'RILOG', totalCount: 0, chapterIndexes: [], cologIndexes: [] });
+	}
+	if (url.pathname === '/v1/blogs/the_rilog/posts') {
+		return envelope({ type: 'RILOG', posts: [], page: 0, size: 12, numberOfElements: 0, hasNext: false });
 	}
 	throw new Error(`No server HTTP fixture for ${url.pathname}`);
 };

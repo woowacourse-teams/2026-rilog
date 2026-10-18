@@ -49,7 +49,7 @@ describe('InlineCommentSelectionToolbar', () => {
 	};
 	const renderToolbar = (isAuthenticated = true, isInitialized = true) =>
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized, isOnboarding: false }}>
+			<AUTH_CONTEXT.Provider value={{ isAuthenticated, sessionVersion: 0, isInitialized, isOnboarding: false }}>
 				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={vi.fn()} />
 			</AUTH_CONTEXT.Provider>,
 		);
@@ -57,7 +57,9 @@ describe('InlineCommentSelectionToolbar', () => {
 	it('선택 위치의 버튼을 누르면 DOM Range 없이 선택 정보를 전달한다', async () => {
 		const onCreateComment = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+			>
 				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onCreateComment} />
 			</AUTH_CONTEXT.Provider>,
 		);
@@ -106,8 +108,8 @@ describe('InlineCommentSelectionToolbar', () => {
 	});
 
 	it.each([
-		{ isAuthenticated: false, isInitialized: true },
-		{ isAuthenticated: false, isInitialized: false },
+		{ isAuthenticated: false, sessionVersion: 0, isInitialized: true },
+		{ isAuthenticated: false, sessionVersion: 0, isInitialized: false },
 	])('로그인하지 않은 사용자의 선택에는 댓글 추가 버튼을 표시하지 않는다: %j', (auth) => {
 		renderToolbar(auth.isAuthenticated, auth.isInitialized);
 		select();
@@ -125,7 +127,9 @@ describe('InlineCommentSelectionToolbar', () => {
 		const user = userEvent.setup();
 		const onCreateComment = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+			>
 				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onCreateComment} />
 			</AUTH_CONTEXT.Provider>,
 		);

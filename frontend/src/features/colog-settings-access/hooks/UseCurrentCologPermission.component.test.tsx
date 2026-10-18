@@ -17,7 +17,7 @@ vi.mock('@/shared/api/users/queries/my-info/use-query', () => ({ useMyInfoQuery:
 
 describe('useCurrentCologPermission', () => {
 	beforeEach(() => {
-		useAuthMock.mockReturnValue({ isAuthenticated: true, isInitialized: true });
+		useAuthMock.mockReturnValue({ isAuthenticated: true, sessionVersion: 0, isInitialized: true });
 		useMyInfoQueryMock.mockReturnValue({ data: { data: { id: 7 } } });
 		useCologMembersQueryMock.mockReturnValue({
 			data: {
@@ -37,7 +37,7 @@ describe('useCurrentCologPermission', () => {
 	});
 
 	it('비로그인 사용자에게는 권한을 반환하지 않고 query를 비활성화한다', () => {
-		useAuthMock.mockReturnValue({ isAuthenticated: false, isInitialized: true });
+		useAuthMock.mockReturnValue({ isAuthenticated: false, sessionVersion: 0, isInitialized: true });
 		const { result } = renderHook(() => useCurrentCologPermission('rilog'));
 
 		expect(result.current).toBeUndefined();

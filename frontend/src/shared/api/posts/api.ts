@@ -133,7 +133,8 @@ const isPostDetailResponse = (value: unknown): value is PostDetailResponse => {
 		!isString(owner.name) ||
 		!isNullableString(owner.profileImageUrl) ||
 		typeof viewerPermissions.canEdit !== 'boolean' ||
-		typeof viewerPermissions.canDelete !== 'boolean'
+		typeof viewerPermissions.canDelete !== 'boolean' ||
+		(viewerPermissions.canDelete ? !isCount(value.viewCount) : value.viewCount !== null)
 	)
 		return false;
 
@@ -163,7 +164,7 @@ export const readPostsCount = () => {
 // NOTE: 게시글 상세 조회 - posts 쪽에 있는 게 자연스럽다고 판단되어 일단 유지
 export const readPostDetail = (
 	{ slug, postId }: PostDetailRequest,
-	options?: Pick<RequestInit, 'cache'>,
+	options?: Pick<RequestInit, 'cache' | 'signal'>,
 ): Promise<ApiResponse<PostDetailResponse>> => {
 	const normalizedSlug = stripAtPrefix(slug);
 

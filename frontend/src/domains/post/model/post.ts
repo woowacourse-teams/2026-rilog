@@ -43,6 +43,7 @@ export interface PostSource {
 }
 
 export interface PostDetail extends PostSummary {
+	viewCount: number | null;
 	postType: PostType;
 	description: string | null;
 	source: PostSource | null;

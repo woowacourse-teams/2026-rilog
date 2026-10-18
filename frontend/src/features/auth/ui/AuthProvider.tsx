@@ -11,20 +11,30 @@ interface AuthProviderProps {
 	children: ReactNode;
 }
 
+interface AuthSessionState {
+	status: 'anonymous' | 'onboarding' | 'authenticated';
+	isInitialized: boolean;
+	sessionVersion: number;
+}
+
 export default function AuthProvider({ children }: AuthProviderProps) {
-	const [sessionStatus, setSessionStatus] = useState<'anonymous' | 'onboarding' | 'authenticated'>('anonymous');
-	const [isInitialized, setIsInitialized] = useState(false);
+	const [session, setSession] = useState<AuthSessionState>(() => ({
+		status: 'anonymous',
+		isInitialized: false,
+		sessionVersion: tokenManager.getSessionVersion(),
+	}));
 
 	useEffect(() => {
 		let isActive = true;
 		const registerSession = async (status: 'onboarding' | 'authenticated') => {
 			const sessionVersion = tokenManager.getSessionVersion();
+			if (!isActive) return;
+			setSession({ status: 'anonymous', isInitialized: false, sessionVersion });
 			try {
 				await registerProxySession();
 			} finally {
 				if (isActive && sessionVersion === tokenManager.getSessionVersion()) {
-					setSessionStatus(status);
-					setIsInitialized(true);
+					setSession({ status, isInitialized: true, sessionVersion });
 				}
 			}
 		};
@@ -33,8 +43,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
 		const unsubscribeLogout = tokenManager.subscribeLogout(async () => {
 			if (isActive) {
-				setSessionStatus('anonymous');
-				setIsInitialized(true);
+				setSession({ status: 'anonymous', isInitialized: true, sessionVersion: tokenManager.getSessionVersion() });
 			}
 
 			await clearProxySession();
@@ -57,8 +66,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 				}
 			}
 
-			if (isActive) {
-				setIsInitialized(true);
+			if (isActive && sessionVersion === tokenManager.getSessionVersion() && !token) {
+				setSession({ status: 'anonymous', isInitialized: true, sessionVersion });
 			}
 		};
 
@@ -75,12 +84,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 	return (
 		<AUTH_CONTEXT.Provider
 			value={{
-				isAuthenticated: sessionStatus === 'authenticated',
-				isOnboarding: sessionStatus === 'onboarding',
-				isInitialized,
+				isAuthenticated: session.status === 'authenticated',
+				isOnboarding: session.status === 'onboarding',
+				isInitialized: session.isInitialized,
+				sessionVersion: session.sessionVersion,
 			}}
 		>
-			{/* 초기화 완료 전에 UI를 가리거나 그대로 둘 수 있습니다. 여기서는 기존처럼 그대로 렌더링합니다. */}
 			{children}
 		</AUTH_CONTEXT.Provider>
 	);

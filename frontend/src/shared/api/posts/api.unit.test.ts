@@ -139,6 +139,7 @@ describe('readPostDetail', () => {
 					name: '제트프로크',
 					profileImageUrl: 'https://cdn.example.com/blog.png',
 				},
+				viewCount: null,
 				viewerPermissions: {
 					canEdit: false,
 					canDelete: false,
@@ -167,11 +168,51 @@ describe('readPostDetail', () => {
 		chapter: null,
 		author: { userId: 1, nickname: '편집자', slug: 'editor', profileImageUrl: null },
 		owner: { type: 'RILOG', blogId: 1, slug: 'rilog', name: 'Rilog.', profileImageUrl: null },
+		viewCount: null,
 		viewerPermissions: { canEdit: false, canDelete: false },
 		postType: 'STANDARD',
 		description: null,
 		source: null,
 	};
+	it.each([0, 17, null])('상세 조회수 %s를 원값으로 보존한다', async (viewCount) => {
+		const data = { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete: viewCount !== null } };
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data })));
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).resolves.toMatchObject({ data: { viewCount } });
+	});
+
+	it.each([undefined, '0', -1, 0.5, Number.MAX_SAFE_INTEGER + 1])('손상된 조회수 %s를 거절한다', async (viewCount) => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					status: 200,
+					message: 'OK',
+					data: { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete: true } },
+				}),
+			),
+		);
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
+
+	it.each([
+		{ canDelete: false, viewCount: 1 },
+		{ canDelete: true, viewCount: null },
+	])('권한과 조회수 계약이 어긋나면 거절한다: %j', async ({ canDelete, viewCount }) => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					status: 200,
+					message: 'OK',
+					data: { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete } },
+				}),
+			),
+		);
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).rejects.toMatchObject({ type: 'unknown' });
+	});
 
 	it.each(['STANDARD', 'DAILY_HEADLINES', 'ENTERPRISE_SPOTLIGHT', 'PERSONAL_SPOTLIGHT'])(
 		'게시글 유형 %s와 설명·출처를 검증해 반환한다',
@@ -243,6 +284,7 @@ describe('readPostDetail', () => {
 						chapter: null,
 						author: { userId: 1, nickname: 'jetproc', slug: 'jetproc', profileImageUrl: null },
 						owner: { type: 'RILOG', blogId: 1, slug: 'jetproc', name: '블로그', profileImageUrl: null },
+						viewCount: null,
 						viewerPermissions: { canEdit: false, canDelete: false },
 					},
 				}),

@@ -22,7 +22,9 @@ it('댓글 쓰기의 JSON을 확인할 수 없으면 초안을 보존하고 목�
 	vi.stubGlobal('fetch', fetchMock);
 	const user = userEvent.setup();
 	const { queryClient } = renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+		<AUTH_CONTEXT.Provider
+			value={{ isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+		>
 			<InlineCommentComposer
 				postId={81}
 				selection={{ blockId: 'block-1', startOffset: 0, endOffset: 2, selectedText: '인용' }}
