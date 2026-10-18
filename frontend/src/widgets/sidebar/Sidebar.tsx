@@ -15,7 +15,7 @@ import { EXPANDED_TEXT_CLASS_NAME, FOCUS_CLASS_NAME } from './ui/sidebar-class-n
 import SidebarHeader from './ui/SidebarHeader';
 
 export default function Sidebar() {
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, isInitialized } = useAuth();
 
 	return (
 		<>
@@ -53,7 +53,9 @@ export default function Sidebar() {
 					</a>
 				</nav>
 
-				{isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />}
+				<footer className="w-full shrink-0">
+					{isInitialized && (isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />)}
+				</footer>
 			</aside>
 		</>
 	);
