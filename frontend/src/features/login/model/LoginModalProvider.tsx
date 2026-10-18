@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import type { LoginOptions } from './login-modal-context';
 import type { ReactNode } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
@@ -20,18 +19,13 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoginPending, setIsLoginPending] = useState(false);
 	const [loginEntrySurface, setLoginEntrySurface] = useState<'sidebar' | 'mobile_header'>('sidebar');
-	const onCloseRef = useRef<(() => void) | undefined>(undefined);
 
-	const login = useCallback((options?: LoginOptions) => {
-		onCloseRef.current = options?.onClose;
+	const login = useCallback((options?: { entrySurface?: 'sidebar' | 'mobile_header' }) => {
 		setLoginEntrySurface(options?.entrySurface ?? 'sidebar');
 		setIsLoginPending(false);
 		setIsOpen(true);
 	}, []);
 	const close = useCallback(() => {
-		const onClose = onCloseRef.current;
-		onCloseRef.current = undefined;
-		onClose?.();
 		setIsLoginPending(false);
 		setIsOpen(false);
 	}, []);

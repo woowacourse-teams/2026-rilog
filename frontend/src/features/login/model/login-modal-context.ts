@@ -6,7 +6,6 @@ export type { LoginEntrySurface } from '@/features/analytics/model/analytics-eve
 
 export interface LoginOptions {
 	entrySurface?: LoginEntrySurface;
-	onClose?: () => void;
 }
 
 export type Login = (options?: LoginOptions) => void;

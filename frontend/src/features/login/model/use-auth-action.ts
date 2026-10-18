@@ -29,7 +29,7 @@ export const useAuthAction = <TArgs extends unknown[] = []>({
 			if (!isAuthenticated) {
 				clearPendingAuthAction();
 				beforeAuth?.(...args);
-				login({ entrySurface, onClose: beforeAuth === undefined ? undefined : clearPendingAuthAction });
+				login({ entrySurface });
 				return;
 			}
 
