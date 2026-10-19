@@ -37,7 +37,7 @@ describe('GuestSidebarFooter', () => {
 		);
 
 		const loginButton = screen.getByRole('button', { name: '로그인' });
-		const writeButton = screen.getByRole('button', { name: '글쓰기' });
+		const writeButton = screen.getByRole('link', { name: '글쓰기' });
 		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('dialog', { name: '로그인' })).not.toBeInTheDocument();
 

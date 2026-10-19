@@ -57,7 +57,7 @@ test('비회원이 글쓰기를 누르고 로그인하면 원래 페이지를 �
 	await page.route('**/v1/**', (route) => route.abort('failed'));
 	await page.route('**/v1/auth/token/refresh', (route) => route.fulfill({ status: 401 }));
 	await page.goto('/feeds');
-	await page.getByRole('button', { name: '글쓰기' }).click();
+	await page.getByRole('link', { name: '글쓰기' }).click();
 	await expect(page.getByRole('dialog', { name: '로그인' })).toBeVisible();
 
 	const appOrigin = new URL(page.url()).origin;

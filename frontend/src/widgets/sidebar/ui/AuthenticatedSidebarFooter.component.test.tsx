@@ -96,7 +96,7 @@ describe('AuthenticatedSidebarFooter', () => {
 		renderFooter();
 
 		const notificationLink = screen.getByRole('link', { name: '알림' });
-		const writeButton = screen.getByRole('button', { name: '글쓰기' });
+		const writeButton = screen.getByRole('link', { name: '글쓰기' });
 		const profileLink = screen.getByRole('link', { name: '파라디 @jetproc' });
 		const logoutButton = screen.getByRole('button', { name: '로그아웃' });
 
@@ -111,7 +111,7 @@ describe('AuthenticatedSidebarFooter', () => {
 		const user = userEvent.setup();
 		renderFooter();
 		const notificationLink = screen.getByRole('link', { name: '알림' });
-		const writeButton = screen.getByRole('button', { name: '글쓰기' });
+		const writeButton = screen.getByRole('link', { name: '글쓰기' });
 		const profileLink = screen.getByRole('link', { name: '파라디 @jetproc' });
 		const logoutButton = screen.getByRole('button', { name: '로그아웃' });
 
@@ -151,7 +151,7 @@ describe('AuthenticatedSidebarFooter', () => {
 		expect(screen.getByRole('status', { name: '내 정보를 불러오는 중' })).toBeInTheDocument();
 		expect(screen.getByRole('status').querySelectorAll('.animate-pulse')).toHaveLength(2);
 		expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
-		expect(screen.getByRole('button', { name: '글쓰기' })).toBeEnabled();
+		expect(screen.getByRole('link', { name: '글쓰기' })).toHaveAttribute('href', '/write');
 		expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: '' })).not.toBeInTheDocument();
 	});
@@ -186,7 +186,7 @@ describe('AuthenticatedSidebarFooter', () => {
 
 		for (const control of [
 			screen.getByRole('link', { name: '알림' }),
-			screen.getByRole('button', { name: '글쓰기' }),
+			screen.getByRole('link', { name: '글쓰기' }),
 			screen.getByRole('button', { name: '로그아웃' }),
 		]) {
 			await user.tab();
