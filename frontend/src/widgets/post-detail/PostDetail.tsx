@@ -127,7 +127,7 @@ export default function PostDetail({ post, initialSelectionId, showDeletedCommen
 			}
 			afterProfile={
 				post.chapter ? (
-					<div className="mt-20 sm:mt-24">
+					<div key="chapter-post-suggestions" className="mt-20 sm:mt-24">
 						<Suspense
 							fallback={
 								<div role="status" aria-label="챕터 게시글 추천 로딩 중">
