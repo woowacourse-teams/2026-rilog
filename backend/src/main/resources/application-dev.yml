@@ -12,6 +12,11 @@ spring:
         format_sql: false
     open-in-view: false
 
+post:
+  view:
+    registration:
+      enabled: ${POST_VIEW_REGISTRATION_ENABLED:true}
+
 logging:
   structured:
     format:

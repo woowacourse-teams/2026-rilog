@@ -33,7 +33,7 @@ UPDATE가 0건이면 누계 행 부재나 값의 범위 초과 등 누계가 유
 | `POST_VIEW_FLUSH_INTERVAL` | `10m` | 최초 대기 시간과 실행 완료 후 대기 시간 |
 | `POST_VIEW_REGISTRATION_ENABLED` | `false` | 기존 조회 등록 API 활성화 |
 
-저장 주기는 1밀리초 이상의 Duration이어야 하며, 예를 들어 `1h`로 바꿀 수 있다. H2·MySQL 테스트 프로필에서는 자동 저장을 꺼서 테스트 도중 DB 상태가 바뀌지 않게 한다. 조회 등록 기본값은 계속 비활성이며 이번 변경으로 운영 집계를 켜지 않는다.
+저장 주기는 1밀리초 이상의 Duration이어야 하며, 예를 들어 `1h`로 바꿀 수 있다. H2·MySQL 테스트 프로필에서는 자동 저장을 꺼서 테스트 도중 DB 상태가 바뀌지 않게 한다. `dev` 프로필의 조회 등록 기본값은 `true`이며, `POST_VIEW_REGISTRATION_ENABLED=false`로 끌 수 있다. 공통 설정과 운영 프로필의 기본값은 `false`다.
 
 ## 한계와 검증 범위
 
