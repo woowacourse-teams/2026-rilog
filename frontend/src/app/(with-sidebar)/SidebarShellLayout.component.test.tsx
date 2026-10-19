@@ -14,6 +14,7 @@ vi.mock('next/navigation', async (importOriginal) => ({
 	...(await importOriginal<typeof NextNavigation>()),
 	usePathname: () => '/feeds',
 	useSearchParams: () => new URLSearchParams(),
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 describe('SidebarLayout', () => {

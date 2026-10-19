@@ -43,7 +43,7 @@ export default function InlineCommentSelectionToolbar({
 	postId,
 	onCreateComment,
 }: InlineCommentSelectionToolbarProps) {
-	const { isAuthenticated, isInitialized } = useAuth();
+	const { isInitialized } = useAuth();
 	const { isMobileDevice, isResolved } = useMobileDevice();
 	const isDesktopViewport = useSyncExternalStore(
 		subscribeDesktopViewport,
@@ -52,7 +52,7 @@ export default function InlineCommentSelectionToolbar({
 	);
 	const [toolbar, setToolbar] = useState<SelectionToolbarState | null>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
-	const isEnabled = isInitialized && isAuthenticated && isResolved && !isMobileDevice && isDesktopViewport;
+	const isEnabled = isInitialized && isResolved && !isMobileDevice && isDesktopViewport;
 
 	useEffect(() => {
 		if (!isEnabled) return;

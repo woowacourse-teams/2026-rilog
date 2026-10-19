@@ -81,6 +81,7 @@ describe('SignUpForm', () => {
 	beforeEach(async () => {
 		await tokenManager.publishLogout();
 		sessionStorage.clear();
+		localStorage.clear();
 		vi.clearAllMocks();
 		registerProxySessionMock.mockReset().mockResolvedValue(undefined);
 		readMyInfoMock.mockReset();
@@ -128,6 +129,16 @@ describe('SignUpForm', () => {
 		await user.click(screen.getByRole('checkbox', { name: '[필수] 아래 약관에 동의합니다.' }));
 		await user.click(screen.getByRole('button', { name: '시작하기' }));
 	};
+
+	it('회원가입을 완료하면 로그인을 시작한 페이지로 돌아간다', async () => {
+		startSignUpFlow();
+		localStorage.setItem('postLoginRedirect', '/posts/81?from=feed');
+		const navigate = vi.fn();
+		renderSignUpForm({ navigate });
+		await submitValidSignUp();
+		await waitFor(() => expect(navigate).toHaveBeenCalledWith('/posts/81?from=feed', { replace: true }));
+		expect(localStorage.getItem('postLoginRedirect')).toBeNull();
+	});
 
 	it.each([false, true])(
 		'가입 후 정식 로그인으로 전환하고 내 정보 조회 실패(%s)와 무관하게 이동한다',
@@ -641,11 +652,13 @@ describe('SignUpForm', () => {
 		const user = userEvent.setup();
 		const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
 		startSignUpFlow();
+		localStorage.setItem('postLoginRedirect', '/posts/81');
 		renderSignUpForm();
 
 		await user.click(screen.getByRole('button', { name: '취소' }));
 
 		expect(hasActiveSignUpFlow()).toBe(false);
+		expect(localStorage.getItem('postLoginRedirect')).toBeNull();
 		expect(historyBack).toHaveBeenCalledOnce();
 		historyBack.mockRestore();
 	});

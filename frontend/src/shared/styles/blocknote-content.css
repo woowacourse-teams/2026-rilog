@@ -430,7 +430,7 @@
 	margin-top: var(--post-heading-divider-top-space);
 }
 
-/* 매거진 작업에서 조정한 작성 화면의 밀도는 유지하고 상세 화면만 이전 값으로 되돌린다. */
+/* 매거진 작업에서 조정한 작성 화면의 간격은 유지하고 상세 화면만 이전 값으로 되돌린다. */
 .post-write-blocknote {
 	--post-paragraph-space: 0.6rem;
 	--post-special-block-space: 0.75rem;
@@ -438,7 +438,7 @@
 }
 
 .post-write-blocknote .bn-editor {
-	font-size: var(--text-body-4);
+	font-size: var(--text-body-3);
 }
 
 .post-write-blocknote

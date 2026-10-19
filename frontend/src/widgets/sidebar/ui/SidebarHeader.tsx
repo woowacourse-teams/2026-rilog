@@ -28,7 +28,7 @@ export default function SidebarHeader() {
 						alt=""
 						width={1186}
 						height={472}
-						className="absolute top-0 h-7 w-auto opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+						className="absolute top-0 h-7 w-auto opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100"
 						priority
 					/>
 				</span>

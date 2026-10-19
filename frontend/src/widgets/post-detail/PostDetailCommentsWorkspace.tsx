@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import { analytics } from '@/features/analytics/model/events';
+import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
@@ -136,32 +137,41 @@ export default function PostDetailCommentsWorkspace({
 		setIsCommentsSidebarOpen(true);
 	}, []);
 
-	const handleInlineCommentCreate = (target: InlineCommentSelectionTarget) => {
-		openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-		setCreatedCommentId(null);
-		setDeepLinkedSelectionId(null);
-		const existingThread = inlineCommentBlocks
-			.flatMap(({ blockId, anchors }) => anchors.map((anchor) => ({ blockId, anchor })))
-			.find(
-				({ blockId, anchor }) =>
-					blockId === target.blockId &&
-					anchor.state === 'ACTIVE' &&
-					anchor.range.startOffset === target.startOffset &&
-					anchor.range.endOffset === target.endOffset &&
-					anchor.selectedText === target.selectedText,
+	const handleInlineCommentCreate = useCallback(
+		(target: InlineCommentSelectionTarget) => {
+			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+			setCreatedCommentId(null);
+			setDeepLinkedSelectionId(null);
+			const existingThread = inlineCommentBlocks
+				.flatMap(({ blockId, anchors }) => anchors.map((anchor) => ({ blockId, anchor })))
+				.find(
+					({ blockId, anchor }) =>
+						blockId === target.blockId &&
+						anchor.state === 'ACTIVE' &&
+						anchor.range.startOffset === target.startOffset &&
+						anchor.range.endOffset === target.endOffset &&
+						anchor.selectedText === target.selectedText,
+				);
+			setSelection(existingThread ? null : target);
+			setCommentEntrySource('selection_toolbar');
+			setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
+			setSidebarMode('single');
+			setOpenRequest(
+				existingThread
+					? { blockId: existingThread.blockId, anchorIds: [existingThread.anchor.anchorId], source: 'highlight' }
+					: null,
 			);
-		setSelection(existingThread ? null : target);
-		setCommentEntrySource('selection_toolbar');
-		setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
-		setSidebarMode('single');
-		setOpenRequest(
-			existingThread
-				? { blockId: existingThread.blockId, anchorIds: [existingThread.anchor.anchorId], source: 'highlight' }
-				: null,
-		);
-		setCreateRequestId((previous) => previous + 1);
-		setIsCommentsSidebarOpen(true);
-	};
+			setCreateRequestId((previous) => previous + 1);
+			setIsCommentsSidebarOpen(true);
+		},
+		[inlineCommentBlocks],
+	);
+
+	const handleSelectionCreate = useInlineCommentAuthAction({
+		postId,
+		isCommentsReady: commentsQuery.isSuccess && sidebarQuery.isSuccess,
+		onCreate: handleInlineCommentCreate,
+	});
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
@@ -239,7 +249,7 @@ export default function PostDetailCommentsWorkspace({
 					inlineCommentBlocks={inlineCommentBlocks}
 					enableInlineCommentSelectionDebug={enableInlineCommentSelectionDebug}
 					onInlineCommentOpen={handleInlineCommentOpen}
-					onInlineCommentCreate={commentsQuery.isSuccess ? handleInlineCommentCreate : undefined}
+					onInlineCommentCreate={commentsQuery.isSuccess ? handleSelectionCreate : undefined}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />

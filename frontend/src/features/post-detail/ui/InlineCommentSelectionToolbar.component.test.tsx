@@ -107,11 +107,14 @@ describe('InlineCommentSelectionToolbar', () => {
 		outside.remove();
 	});
 
-	it.each([
-		{ isAuthenticated: false, sessionVersion: 0, isInitialized: true },
-		{ isAuthenticated: false, sessionVersion: 0, isInitialized: false },
-	])('로그인하지 않은 사용자의 선택에는 댓글 추가 버튼을 표시하지 않는다: %j', (auth) => {
-		renderToolbar(auth.isAuthenticated, auth.isInitialized);
+	it('로그인하지 않은 사용자도 선택 후 댓글 추가 버튼을 누를 수 있다', () => {
+		renderToolbar(false, true);
+		select();
+		expect(screen.getByRole('button', { name: '댓글 추가' })).toBeVisible();
+	});
+
+	it('인증 초기화 전에는 댓글 추가 버튼을 표시하지 않는다', () => {
+		renderToolbar(false, false);
 		select();
 		expect(screen.queryByRole('button', { name: '댓글 추가' })).not.toBeInTheDocument();
 	});

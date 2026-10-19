@@ -15,13 +15,13 @@ import { EXPANDED_TEXT_CLASS_NAME, FOCUS_CLASS_NAME } from './ui/sidebar-class-n
 import SidebarHeader from './ui/SidebarHeader';
 
 export default function Sidebar() {
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, isInitialized } = useAuth();
 
 	return (
 		<>
 			<aside
 				aria-label="사이드바"
-				className="group fixed inset-y-0 left-0 z-40 flex h-dvh w-15 flex-col overflow-hidden border-r border-border-default bg-surface transition-[width] duration-200 ease-out hover:w-60 motion-reduce:transition-none"
+				className="group fixed inset-y-0 left-0 z-40 flex h-dvh w-15 flex-col overflow-hidden border-r border-border-default bg-surface transition-[width] duration-200 ease-out focus-within:w-60 hover:w-60 motion-reduce:transition-none"
 			>
 				<SidebarHeader />
 
@@ -53,7 +53,9 @@ export default function Sidebar() {
 					</a>
 				</nav>
 
-				{isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />}
+				<footer className="w-full shrink-0">
+					{isInitialized && (isAuthenticated ? <AuthenticatedSidebarFooter /> : <GuestSidebarFooter />)}
+				</footer>
 			</aside>
 		</>
 	);
