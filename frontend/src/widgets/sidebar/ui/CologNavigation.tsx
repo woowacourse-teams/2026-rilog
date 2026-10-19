@@ -84,7 +84,7 @@ export default function CologNavigation() {
 				onClick={() => recordCologCreationEntryContext('sidebar')}
 				variant="secondary"
 				aria-label="팀 만들기"
-				className={`mx-1.25 mt-3 flex! h-8.75! w-[calc(100%-10px)]! border-dashed border-transparent! text-text-secondary group-focus-within:border-border-default! group-hover:border-border-default! ${EXPANDING_ACTION_CLASS_NAME}`}
+				className={`mx-1.25 mt-3 flex! h-8.75! w-[calc(100%-10px)]! border-dashed border-transparent! text-text-secondary group-hover:border-border-default! group-has-[:focus-visible]:border-border-default! ${EXPANDING_ACTION_CLASS_NAME}`}
 			>
 				<span
 					aria-hidden="true"
