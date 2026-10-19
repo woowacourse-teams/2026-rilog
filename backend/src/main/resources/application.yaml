@@ -83,4 +83,4 @@ the-rilog:
   publication-fallback-cron: ${THE_RILOG_PUBLICATION_FALLBACK_CRON:0 30 5 * * *}
   credentials-path: ${THE_RILOG_CREDENTIALS_PATH:}
   connect-timeout: 3s
-  read-timeout: ${THE_RILOG_READ_TIMEOUT:60s}
+  read-timeout: 5s
