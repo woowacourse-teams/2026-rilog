@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
+import { clearPendingAuthAction } from '@/features/login/lib/pending-auth-action';
 import { clearPostLoginRedirect, takePostLoginRedirect } from '@/features/login/lib/post-login-redirect';
 import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
@@ -66,6 +67,7 @@ export default function GitHubCallbackHandler() {
 				const { errorCode } = getAnalyticsErrorProperties(err);
 				analytics.githubLoginFailed({ failureStage, errorCode });
 				clearSignUpFlow();
+				clearPendingAuthAction();
 				clearPostLoginRedirect();
 				logNonProductionError('GitHub login failed:', err);
 				router.replace('/');

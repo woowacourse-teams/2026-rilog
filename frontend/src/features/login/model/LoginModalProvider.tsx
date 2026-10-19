@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 
+import { clearPendingAuthAction } from '../lib/pending-auth-action';
 import { savePostLoginRedirect } from '../lib/post-login-redirect';
 import LoginModal from '../ui/LoginModal';
 
@@ -26,6 +27,7 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 		setIsOpen(true);
 	}, []);
 	const close = useCallback(() => {
+		clearPendingAuthAction();
 		setIsLoginPending(false);
 		setIsOpen(false);
 	}, []);

@@ -54,6 +54,20 @@ describe('WriteButton', () => {
 		expect(consumeEditorEntryContext()).toBe('sidebar');
 	});
 
+	it('글쓰기 로그인 모달을 닫으면 이후 로그인해도 글쓰기로 이동하지 않는다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/feeds');
+		const guestView = renderWriteButton(false);
+
+		await user.click(screen.getByRole('link', { name: '글쓰기' }));
+		await user.click(screen.getByRole('button', { name: '모달 닫기' }));
+		guestView.unmount();
+		renderWriteButton(true);
+
+		expect(routerPushMock).not.toHaveBeenCalled();
+		expect(consumeEditorEntryContext()).toBe('direct');
+	});
+
 	it('로그인 후 다른 페이지에 도착하면 글쓰기 페이지로 이동하지 않는다', async () => {
 		const user = userEvent.setup();
 		window.history.replaceState(null, '', '/feeds');

@@ -5,8 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
-import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
 import type { Login } from '@/features/login/model/login-modal-context';
+import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
+import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
 import {
@@ -405,6 +406,35 @@ describe('PostDetailCommentsWorkspace', () => {
 		renderWorkspaceUI();
 		expect(await screen.findByRole('region', { name: '"새 인용" 댓글' })).toBeVisible();
 		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveFocus();
+	});
+
+	it('선택 댓글 로그인 모달을 닫으면 이후 로그인해도 댓글 입력을 열지 않는다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/posts/81');
+		const guestView = renderWithQuery(
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+			>
+				<LoginModalProvider>
+					<PostDetailCommentsWorkspace
+						html="1234새 인용5678"
+						postId={81}
+						ownerType="RILOG"
+						category="TECH"
+						enableInlineCommentSelectionDebug={false}
+						profileSection={<div>프로필</div>}
+					/>
+				</LoginModalProvider>
+			</AUTH_CONTEXT.Provider>,
+		);
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		await user.click(screen.getByRole('button', { name: '모달 닫기' }));
+		guestView.unmount();
+
+		renderWorkspaceUI();
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 	});
 
 	it('로그인 중 본문이 바뀌어 선택 범위가 달라지면 댓글 입력을 열지 않는다', async () => {
