@@ -105,14 +105,14 @@ export default function AuthenticatedSidebarFooter() {
 					)}
 					<span
 						aria-hidden="true"
-						className="invisible mx-1 h-7 w-px shrink-0 bg-border-default opacity-0 transition-opacity group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-hover:visible group-hover:opacity-100 motion-reduce:transition-none"
+						className="invisible mx-1 h-7 w-px shrink-0 bg-border-default opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none"
 					/>
 					<Button
 						aria-label="로그아웃"
 						onClick={handleLogout}
 						size="icon"
 						variant="ghost"
-						className={`invisible flex! shrink-0 items-center justify-center opacity-0 transition-opacity group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-hover:visible group-hover:opacity-100 ${FOCUS_CLASS_NAME}`}
+						className={`invisible flex! shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 ${FOCUS_CLASS_NAME}`}
 					>
 						<LogOutIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					</Button>

@@ -75,7 +75,7 @@ export default function PageNavigation() {
 				badge={feedBadge}
 				isCurrent={isFeedCurrent}
 			/>
-			<ul className="relative mt-1 flex flex-col gap-1 before:absolute before:inset-y-0 before:left-1 before:w-px before:bg-border-default before:opacity-0 before:transition-opacity before:duration-150 group-has-[:focus-visible]:before:opacity-100 group-hover:before:opacity-100">
+			<ul className="relative mt-1 flex flex-col gap-1 before:absolute before:inset-y-0 before:left-1 before:w-px before:bg-border-default before:opacity-0 before:transition-opacity before:duration-150 group-hover:before:opacity-100 group-has-[:focus-visible]:before:opacity-100">
 				{SUB_MENUS.map(({ blogType, label, icon }) => {
 					const href = buildFeedFilterHref(currentFeedSearchParams, { blogType });
 					const isCurrent = isFeedPage && filters.blogType === blogType;
@@ -90,7 +90,7 @@ export default function PageNavigation() {
 								icon={icon}
 								label={label}
 								isCurrent={isCurrent}
-								className="group-has-[:focus-visible]:rounded-l-none group-hover:rounded-l-none"
+								className="group-hover:rounded-l-none group-has-[:focus-visible]:rounded-l-none"
 							/>
 						</li>
 					);
