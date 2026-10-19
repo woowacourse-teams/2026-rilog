@@ -1,7 +1,7 @@
 export const FOCUS_CLASS_NAME = 'focus-visible:outline-2 focus-visible:outline-focus-ring';
 
 export const EXPANDED_TEXT_CLASS_NAME =
-	'block min-w-0 whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none';
+	'block min-w-0 whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none';
 
 export const EXPANDING_ACTION_CLASS_NAME = 'relative justify-start! gap-0! overflow-hidden px-0!';
 
