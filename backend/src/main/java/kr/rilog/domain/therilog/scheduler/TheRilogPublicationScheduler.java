@@ -29,7 +29,7 @@ public class TheRilogPublicationScheduler {
     private FailedPublication failedPublication;
 
     @Scheduled(cron = "${the-rilog.publication-cron}", zone = "Asia/Seoul")
-    public synchronized void publishApprovedContent() {
+    public void publishApprovedContent() {
         Instant now = Instant.now(clock);
         failedPublication = null;
         try {
@@ -45,7 +45,7 @@ public class TheRilogPublicationScheduler {
     }
 
     @Scheduled(cron = "${the-rilog.publication-fallback-cron:0 30 5 * * *}", zone = "Asia/Seoul")
-    public synchronized void publishFailedContent() {
+    public void publishFailedContent() {
         Instant now = Instant.now(clock);
         FailedPublication failed = failedPublication;
         failedPublication = null;
