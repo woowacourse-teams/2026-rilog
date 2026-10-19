@@ -14,7 +14,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: routerPushMock }) 
 
 function renderWriteButton(isAuthenticated: boolean) {
 	return render(
-		<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated, isInitialized: true }}>
+		<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated, sessionVersion: 0, isInitialized: true }}>
 			<LoginModalProvider>
 				<WriteButton />
 			</LoginModalProvider>

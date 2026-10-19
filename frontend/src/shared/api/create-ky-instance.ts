@@ -10,6 +10,7 @@ import { rememberApiRequest, rememberApiResponse } from './request-diagnostics';
 interface TokenManager {
 	getToken: () => string | null;
 	refresh: () => Promise<string | null>;
+	getSessionVersion?: () => number;
 }
 
 export interface RequestAuthOptions {
@@ -66,12 +67,30 @@ export const createKyInstance = ({
 }: CreateKyInstanceOptions = {}): KyInstance => {
 	const resolvedBaseUrl = typeof options.baseUrl === 'string' ? options.baseUrl : undefined;
 	const getApiBase = (): string | undefined => resolvedBaseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+	// Ky keeps the per-request context object through request clones and forced retries.
+	const requestSessions = new WeakMap<object, number>();
 
 	return ky.create({
 		...options,
 		retry: ensureRefreshRetry(retry),
 		hooks: {
 			...hooks,
+			init: [
+				...(hooks?.init ?? []),
+				(requestOptions) => {
+					if (!isBrowser()) return;
+					requestOptions.context ??= {};
+					const send = requestOptions.fetch ?? globalThis.fetch.bind(globalThis);
+					// Retries skip beforeRequest. Check after every retry delay/hook, at dispatch.
+					requestOptions.fetch = (input, init) => {
+						const sessionVersion = requestOptions.context ? requestSessions.get(requestOptions.context) : undefined;
+						if (sessionVersion !== undefined && sessionVersion !== tokenManager.getSessionVersion?.()) {
+							return Promise.reject(new DOMException('Authentication session changed before dispatch.', 'AbortError'));
+						}
+						return send(input, init);
+					};
+				},
+			],
 			beforeError: [
 				({ request, error }) => {
 					rememberApiRequest(error, request.method, request.url, getApiBase());
@@ -100,6 +119,8 @@ export const createKyInstance = ({
 					}
 
 					const accessToken = tokenManager.getToken();
+					const sessionVersion = tokenManager.getSessionVersion?.();
+					if (sessionVersion !== undefined) requestSessions.set(requestOptions.context, sessionVersion);
 
 					if (accessToken !== null) {
 						request.headers.set('Authorization', `Bearer ${accessToken}`);
@@ -141,9 +162,13 @@ export const createKyInstance = ({
 					if (retryCount > 0) {
 						return;
 					}
+					const sessionVersion = requestSessions.get(requestOptions.context);
+					const isCurrentSession = () =>
+						sessionVersion === undefined || sessionVersion === tokenManager.getSessionVersion?.();
+					if (!isCurrentSession()) return;
 
 					const isExpiredToken = await isExpiredTokenResponse(response.clone());
-					if (!isExpiredToken) {
+					if (!isExpiredToken || !isCurrentSession()) {
 						return;
 					}
 
@@ -151,7 +176,7 @@ export const createKyInstance = ({
 					// 중복 요청 방지 및 실패 시 로그아웃 처리는 tokenManager 내부에서 수행합니다.
 					const accessToken = await tokenManager.refresh();
 
-					if (accessToken === null) {
+					if (accessToken === null || !isCurrentSession()) {
 						return;
 					}
 

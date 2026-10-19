@@ -1,6 +1,26 @@
 import type { Block } from '@blocknote/core';
 
 import type { PostDetail } from '@/domains/post/model/post';
+import type { PostDetailResponse } from '@/shared/api/posts/types';
+
+export function createPostDetailResponseFixture(overrides: Partial<PostDetailResponse> = {}): PostDetailResponse {
+	return {
+		title: '테스트 게시글',
+		content: [],
+		publishedAt: '2026-10-18T00:00:00Z',
+		postType: 'STANDARD',
+		description: null,
+		source: null,
+		thumbnailImageUrl: null,
+		category: '기술',
+		chapter: null,
+		author: { userId: 1, nickname: '작성자', slug: 'author', profileImageUrl: null },
+		owner: { type: 'RILOG', blogId: 1, slug: 'author', name: '블로그', profileImageUrl: null },
+		viewerPermissions: { canEdit: false, canDelete: false },
+		viewCount: null,
+		...overrides,
+	};
+}
 
 const DEFAULT_TEXT_PROPS = {
 	backgroundColor: 'default',
@@ -195,6 +215,7 @@ export function createPostDetailFixture(overrides: Partial<PostDetail> = {}): Po
 		category: 'TECH',
 		chapter: { id: 1, name: '프론트엔드', order: 1 },
 		viewerPermissions: { canEdit: true, canDelete: true },
+		viewCount: 0,
 		author: {
 			id: 1,
 			nickname: '김지연',

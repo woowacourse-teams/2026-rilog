@@ -16,4 +16,14 @@ public interface PostViewCountRepository extends Repository<PostViewCount, Long>
 
     @Query("select counter.viewCount from PostViewCount counter where counter.postId = :postId")
     Optional<Long> findViewCountByPostId(@Param("postId") Long postId);
+
+    @Modifying
+    @Query(value = """
+            update post_view_count
+            set view_count = view_count + :delta
+            where post_id = :postId
+              and :delta between 1 and 9007199254740991
+              and view_count <= 9007199254740991 - :delta
+            """, nativeQuery = true)
+    int increaseBy(@Param("postId") long postId, @Param("delta") long delta);
 }

@@ -133,7 +133,7 @@ const BLOCKS: InlineCommentBlockModel[] = [
 
 const render = (ui: ReactNode, isAuthenticated = true, login = vi.fn()) =>
 	renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized: true, isOnboarding: false }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, sessionVersion: 0, isInitialized: true, isOnboarding: false }}>
 			<LOGIN_MODAL_CONTEXT.Provider value={login}>{ui}</LOGIN_MODAL_CONTEXT.Provider>
 		</AUTH_CONTEXT.Provider>,
 	);

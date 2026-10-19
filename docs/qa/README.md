@@ -6,3 +6,4 @@
 
 - [SEO 운영 점검](./seo-operations.md): 공개 응답과 Search Console의 배포 전후 수동 확인·기록 양식
 - [읽기 계측 v2](./post-reading-metric.md): 방문별 상태 이벤트 계약, 방문 경계와 배포 후 수집·대시보드 연결 기준
+- [조회수 활성화 후 연동 QA](./post-view-registration.md): 백엔드 저장 연결·성능 검증 이후 등록, 쿠키, 권한과 DB 반영 확인

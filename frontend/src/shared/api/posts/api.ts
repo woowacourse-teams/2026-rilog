@@ -133,7 +133,8 @@ const isPostDetailResponse = (value: unknown): value is PostDetailResponse => {
 		!isString(owner.name) ||
 		!isNullableString(owner.profileImageUrl) ||
 		typeof viewerPermissions.canEdit !== 'boolean' ||
-		typeof viewerPermissions.canDelete !== 'boolean'
+		typeof viewerPermissions.canDelete !== 'boolean' ||
+		(viewerPermissions.canDelete ? !isCount(value.viewCount) : value.viewCount !== null)
 	)
 		return false;
 
@@ -163,7 +164,7 @@ export const readPostsCount = () => {
 // NOTE: 게시글 상세 조회 - posts 쪽에 있는 게 자연스럽다고 판단되어 일단 유지
 export const readPostDetail = (
 	{ slug, postId }: PostDetailRequest,
-	options?: Pick<RequestInit, 'cache'>,
+	options?: Pick<RequestInit, 'cache' | 'signal'>,
 ): Promise<ApiResponse<PostDetailResponse>> => {
 	const normalizedSlug = stripAtPrefix(slug);
 
@@ -171,6 +172,17 @@ export const readPostDetail = (
 		const response = await kyInstance.get(`v1/blogs/${normalizedSlug}/posts/${postId}`, options);
 		return parseApiJsonResponse(response, 'read post detail', isPostDetailResponse);
 	});
+};
+
+export const registerPostView = (postId: number): Promise<void> => {
+	const url = `v1/posts/${postId}/views`;
+	return apiRequest(
+		async () => {
+			// Leave one forced token-refresh retry available, while disabling ordinary retries.
+			await kyInstance.post(url, { retry: { limit: 1, methods: [] } });
+		},
+		{ method: 'POST', url },
+	);
 };
 
 export const updatePost = (postId: number, request: PostWriteRequest): Promise<ApiResponse<PostWriteResponse>> => {

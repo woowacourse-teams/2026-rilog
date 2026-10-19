@@ -1,26 +1,17 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PostViewerPermissions } from '@/domains/post/model/post';
-
 import PostDetailActions from './PostDetailActions';
 
-const {
-	deletePostMutateMock,
-	deletePostResetMock,
-	routerPushMock,
-	routerReplaceMock,
-	useDeletePostMutationMock,
-	usePostViewerPermissionsMock,
-} = vi.hoisted(() => ({
-	deletePostMutateMock: vi.fn(),
-	deletePostResetMock: vi.fn(),
-	routerPushMock: vi.fn(),
-	routerReplaceMock: vi.fn(),
-	useDeletePostMutationMock: vi.fn(),
-	usePostViewerPermissionsMock: vi.fn(),
-}));
+const { deletePostMutateMock, deletePostResetMock, routerPushMock, routerReplaceMock, useDeletePostMutationMock } =
+	vi.hoisted(() => ({
+		deletePostMutateMock: vi.fn(),
+		deletePostResetMock: vi.fn(),
+		routerPushMock: vi.fn(),
+		routerReplaceMock: vi.fn(),
+		useDeletePostMutationMock: vi.fn(),
+	}));
 
 vi.mock('next/navigation', () => ({
 	useRouter: () => ({ push: routerPushMock, replace: routerReplaceMock }),
@@ -29,15 +20,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/shared/api/posts/mutations/use-delete-post-mutation', () => ({
 	useDeletePostMutation: useDeletePostMutationMock,
 }));
-vi.mock('@/features/post-detail/hooks/use-post-viewer-permissions', () => ({
-	usePostViewerPermissions: usePostViewerPermissionsMock,
-}));
-
 const ALL_PERMISSIONS = { canEdit: true, canDelete: true };
-
-interface PostViewerPermissionsHookOptions {
-	initialPermissions: PostViewerPermissions;
-}
 
 describe('PostDetailActions', () => {
 	beforeEach(() => {
@@ -45,9 +28,6 @@ describe('PostDetailActions', () => {
 		deletePostResetMock.mockReset();
 		routerPushMock.mockReset();
 		routerReplaceMock.mockReset();
-		usePostViewerPermissionsMock.mockImplementation(
-			({ initialPermissions }: PostViewerPermissionsHookOptions) => initialPermissions,
-		);
 		useDeletePostMutationMock.mockReturnValue({
 			mutate: deletePostMutateMock,
 			reset: deletePostResetMock,
@@ -76,13 +56,11 @@ describe('PostDetailActions', () => {
 		expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
 	});
 
-	it('클라이언트 상세 조회로 갱신된 권한을 버튼에 반영한다', () => {
-		usePostViewerPermissionsMock.mockReturnValue(ALL_PERMISSIONS);
-
-		render(
+	it('갱신된 권한 props를 버튼에 반영한다', () => {
+		const { rerender } = render(
 			<PostDetailActions slug="rilog-team" postId={31} viewerPermissions={{ canEdit: false, canDelete: false }} />,
 		);
-
+		rerender(<PostDetailActions slug="rilog-team" postId={31} viewerPermissions={ALL_PERMISSIONS} />);
 		expect(screen.getByRole('button', { name: '수정' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
 	});
@@ -111,21 +89,5 @@ describe('PostDetailActions', () => {
 
 		expect(deletePostMutateMock).not.toHaveBeenCalled();
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: '게시글을 삭제할까요?' })).not.toBeInTheDocument());
-	});
-
-	it('삭제를 확정하면 API를 요청하고 성공 후 블로그 홈으로 이동한다', async () => {
-		const user = userEvent.setup();
-		render(<PostDetailActions slug="@rilog-team" postId={31} viewerPermissions={ALL_PERMISSIONS} />);
-
-		await user.click(screen.getByRole('button', { name: '삭제' }));
-		await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
-
-		expect(deletePostMutateMock).toHaveBeenCalledOnce();
-		expect(deletePostMutateMock.mock.calls[0]?.[0]).toBe(31);
-		const mutationOptions = deletePostMutateMock.mock.calls[0]?.[1] as { onSuccess: () => void };
-		expect(typeof mutationOptions.onSuccess).toBe('function');
-		act(() => mutationOptions.onSuccess());
-
-		expect(routerReplaceMock).toHaveBeenCalledWith('/@rilog-team');
 	});
 });

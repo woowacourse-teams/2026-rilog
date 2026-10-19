@@ -15,7 +15,7 @@ const isAuthenticated = new URLSearchParams(window.location.search).get('guest')
 
 createRoot(root).render(
 	<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized: true, isOnboarding: false }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, sessionVersion: 0, isInitialized: true, isOnboarding: false }}>
 			<LoginModalProvider>
 				<div className="px-8 sm:ml-15">
 					<div className={styles.postDetailShell}>

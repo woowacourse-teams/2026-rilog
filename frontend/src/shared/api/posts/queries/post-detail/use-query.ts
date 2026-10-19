@@ -10,6 +10,7 @@ import { postDetailQueryOptions } from './query-options';
 interface UsePostDetailQueryOptions<TData> {
 	slug: string;
 	postId: number;
+	sessionVersion: number;
 	isEnabled?: boolean;
 	select?: (data: ApiResponse<PostDetailResponse>) => TData;
 }
@@ -17,11 +18,12 @@ interface UsePostDetailQueryOptions<TData> {
 export const usePostDetailQuery = <TData = ApiResponse<PostDetailResponse>>({
 	slug,
 	postId,
+	sessionVersion,
 	isEnabled = true,
 	select,
 }: UsePostDetailQueryOptions<TData>) =>
 	useQuery({
-		...postDetailQueryOptions(slug, postId),
+		...postDetailQueryOptions(slug, postId, sessionVersion),
 		enabled: isEnabled,
 		select,
 	});

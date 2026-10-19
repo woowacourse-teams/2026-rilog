@@ -14,9 +14,9 @@ import { useDeletePostMutation } from './use-delete-post-mutation';
 describe('useDeletePostMutation', () => {
 	it('삭제 성공 후 전체 상세, 피드, 블로그와 게시글 수 캐시를 무효화한다', async () => {
 		const queryClient = createTestQueryClient();
-		const deletedKey = postsQueryKeys.detail('personal-blog', 31);
-		const deletedAliasKey = postsQueryKeys.detail('@personal-blog', 31);
-		const otherKey = postsQueryKeys.detail('personal-blog', 32);
+		const deletedKey = postsQueryKeys.detail('personal-blog', 31, 1);
+		const deletedAliasKey = postsQueryKeys.detail('@personal-blog', 31, 2);
+		const otherKey = postsQueryKeys.detail('personal-blog', 32, 1);
 		for (const key of [deletedKey, deletedAliasKey, otherKey]) queryClient.setQueryData(key, { title: '글' });
 		const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 		const deletePost = vi.spyOn(postsApi, 'deletePost').mockResolvedValue(new Response(null, { status: 204 }));

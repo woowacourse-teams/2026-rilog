@@ -1,4 +1,5 @@
 import type { NormalizedApiError } from '@/shared/api/api-error';
+import { API_ERROR_CODES } from '@/shared/api/error-codes';
 
 export interface ApiErrorContext {
 	operation: string;
@@ -12,6 +13,13 @@ export function shouldReportApiError(error: NormalizedApiError, context: ApiErro
 	if (typeof navigator !== 'undefined' && navigator.onLine === false && error.type === 'network') return false;
 	if (error.type === 'network' || error.type === 'timeout' || error.type === 'unknown') return true;
 	const status = error.response.status;
+	if (
+		context.operation === 'post.view.register' &&
+		error.type === 'api' &&
+		status === 503 &&
+		error.detail.errorCode === API_ERROR_CODES.POST_VIEW_REGISTRATION_DISABLED
+	)
+		return false;
 	if (status >= 500 || status === 429) return true;
 	if (context.operation === 'upload.put' && error.type === 'http' && (status === 403 || status === 404)) return true;
 	if (error.type === 'api') {

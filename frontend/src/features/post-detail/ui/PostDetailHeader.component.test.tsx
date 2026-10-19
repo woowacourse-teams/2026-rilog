@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import PostDetailHeader from './PostDetailHeader';
 
-vi.mock('./PostDetailActions', () => ({
+vi.mock('./PostDetailViewerMeta', () => ({
 	default: function MockPostDetailActions() {
 		return <span>수정 삭제</span>;
 	},
@@ -26,7 +26,6 @@ describe('PostDetailHeader', () => {
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="TECH"
 				author={AUTHOR}
-				viewerPermissions={{ canEdit: true, canDelete: true }}
 			/>,
 		);
 
@@ -47,7 +46,6 @@ describe('PostDetailHeader', () => {
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="DAILY"
 				author={AUTHOR}
-				viewerPermissions={{ canEdit: false, canDelete: false }}
 			/>,
 		);
 
@@ -64,7 +62,6 @@ describe('PostDetailHeader', () => {
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="RETROSPECT"
 				author={AUTHOR}
-				viewerPermissions={{ canEdit: false, canDelete: false }}
 			/>,
 		);
 
@@ -81,7 +78,6 @@ describe('PostDetailHeader', () => {
 				publishedAt="2026-09-08T10:00:00+09:00"
 				category="TECH"
 				author={AUTHOR}
-				viewerPermissions={{ canEdit: false, canDelete: false }}
 			/>,
 		);
 

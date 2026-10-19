@@ -53,6 +53,10 @@ vi.mock('next/navigation', () => ({
 	useSearchParams: () => ({ get: searchParamsGetMock }),
 }));
 
+vi.mock('@/features/auth/model/use-auth', () => ({
+	useAuth: () => ({ isInitialized: true, isAuthenticated: true, sessionVersion: 0 }),
+}));
+
 vi.mock('@/features/post-write/hooks/use-post-write-initial-data', () => ({
 	usePostWriteInitialData: usePostWriteInitialDataMock,
 }));

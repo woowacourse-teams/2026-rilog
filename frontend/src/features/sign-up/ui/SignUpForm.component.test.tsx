@@ -108,7 +108,9 @@ describe('SignUpForm', () => {
 
 	const renderSignUpForm = (props: React.ComponentProps<typeof SignUpForm> = {}) => {
 		return render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<SignUpForm {...props} />
 			</AUTH_CONTEXT.Provider>,
 		);
@@ -540,7 +542,9 @@ describe('SignUpForm', () => {
 		const navigate = vi.fn();
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<SignUpAccessGuard>
 					<SignUpForm completeSignUp={vi.fn().mockResolvedValue({ slug: 'rilog' })} navigate={navigate} />
 				</SignUpAccessGuard>
@@ -566,7 +570,9 @@ describe('SignUpForm', () => {
 			.mockResolvedValue({ slug: 'rilog' });
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<SignUpAccessGuard>
 					<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />
 				</SignUpAccessGuard>
@@ -600,7 +606,9 @@ describe('SignUpForm', () => {
 		const navigate = vi.fn();
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<SignUpAccessGuard>
 					<SignUpForm completeSignUp={completeSignUp} navigate={navigate} />
 				</SignUpAccessGuard>

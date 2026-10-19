@@ -25,7 +25,9 @@ describe('useAuthAction', () => {
 	it('인증 작업을 취소한 뒤 일반 로그인을 시작하면 이전 작업을 지운다', async () => {
 		const user = userEvent.setup();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<LoginModalProvider>
 					<CommentButton />
 					<LoginButton />
