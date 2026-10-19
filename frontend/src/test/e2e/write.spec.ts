@@ -80,6 +80,22 @@ const prepareGuestWriteLogin = async (page: Page) => {
 	};
 };
 
+test('접힌 사이드바의 글쓰기 링크에 키보드 포커스가 오면 문구가 보인다', async ({ page }) => {
+	await page.route(AUTH_REFRESH_ROUTE, (route) => route.fulfill({ status: 401 }));
+	await page.goto('/the-rilog');
+	const writeLink = page.getByRole('link', { name: '글쓰기' });
+	const writeLabel = writeLink.getByText('글쓰기');
+	const sidebar = page.getByRole('complementary', { name: '사이드바' });
+	await page.mouse.move(500, 300);
+	await expect(writeLink).toBeVisible();
+	await expect.poll(() => writeLabel.evaluate((element) => getComputedStyle(element).opacity)).toBe('0');
+
+	await writeLink.focus();
+	await expect(writeLink).toBeFocused();
+	await expect.poll(async () => (await sidebar.boundingBox())?.width ?? 0).toBeGreaterThan(150);
+	await expect.poll(() => writeLabel.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+});
+
 test('비회원이 글쓰기를 누르고 로그인하면 원래 페이지를 거쳐 글쓰기 화면으로 이동한다', async ({ page }) => {
 	const { completeOAuth } = await prepareGuestWriteLogin(page);
 	await page.route('**/v1/auth/github/callback', (route) => {
