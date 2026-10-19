@@ -98,7 +98,9 @@ function renderInbox(
 		return Promise.resolve({ status: 200, message: '모든 알림을 읽음 처리했습니다.', data: null });
 	});
 	renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false, ...overrides }}>
+		<AUTH_CONTEXT.Provider
+			value={{ isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false, ...overrides }}
+		>
 			<LOGIN_MODAL_CONTEXT.Provider value={login}>
 				<NotificationInbox />
 				{showUnreadCount && <UnreadCountStatus />}
@@ -146,7 +148,7 @@ describe('NotificationInbox', () => {
 	});
 
 	it('인증 확인 중에는 알림 내용을 표시하지 않는다', () => {
-		renderInbox(undefined, { isInitialized: false });
+		renderInbox(undefined, { sessionVersion: 0, isInitialized: false });
 		expect(screen.getByRole('status', { name: '알림 불러오는 중' })).toBeInTheDocument();
 		expect(screen.queryByRole('article')).not.toBeInTheDocument();
 	});

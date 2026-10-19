@@ -31,7 +31,6 @@ export default function PostDetail({ post, initialSelectionId, showDeletedCommen
 				publishedAt={post.publishedAt}
 				category={post.category}
 				author={post.author}
-				viewerPermissions={post.viewerPermissions}
 			/>
 			<OfficialPostMetadata post={post} />
 		</>
@@ -112,7 +111,6 @@ export default function PostDetail({ post, initialSelectionId, showDeletedCommen
 						publishedAt={post.publishedAt}
 						category={post.category}
 						author={post.author}
-						viewerPermissions={post.viewerPermissions}
 					/>
 					<OfficialPostMetadata post={post} />
 				</>

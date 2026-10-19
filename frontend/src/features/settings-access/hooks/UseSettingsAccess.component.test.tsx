@@ -35,7 +35,7 @@ const createMemberResponse = (permission: 'OWNER' | 'ADMIN' | 'MEMBER') => ({
 
 describe('useSettingsAccess', () => {
 	beforeEach(() => {
-		useAuthMock.mockReturnValue({ isAuthenticated: true, isInitialized: true });
+		useAuthMock.mockReturnValue({ isAuthenticated: true, sessionVersion: 0, isInitialized: true });
 		useMyInfoQueryMock.mockReturnValue({
 			data: { status: 200, message: 'ok', data: { id: 1, slug: 'rilogger' } },
 			isError: false,
@@ -49,7 +49,7 @@ describe('useSettingsAccess', () => {
 	});
 
 	it('인증 초기화 전에는 initializing 상태를 반환한다', () => {
-		useAuthMock.mockReturnValue({ isAuthenticated: false, isInitialized: false });
+		useAuthMock.mockReturnValue({ isAuthenticated: false, sessionVersion: 0, isInitialized: false });
 
 		function StatusProbe() {
 			return useSettingsAccess({ type: 'COLOG', slug: 'rilog' });
@@ -59,7 +59,7 @@ describe('useSettingsAccess', () => {
 	});
 
 	it('비인증 사용자에게 unauthenticated 상태를 반환한다', () => {
-		useAuthMock.mockReturnValue({ isAuthenticated: false, isInitialized: true });
+		useAuthMock.mockReturnValue({ isAuthenticated: false, sessionVersion: 0, isInitialized: true });
 
 		const { result } = renderHook(() => useSettingsAccess({ type: 'RILOG', slug: 'rilogger' }));
 

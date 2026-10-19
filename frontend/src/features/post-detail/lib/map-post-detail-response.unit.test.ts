@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PostDetailResponse } from '@/shared/api/posts/types';
+import { createPostDetailResponseFixture } from '@/test/fixtures/post-detail';
 
 import { mapPostDetailResponse } from './map-post-detail-response';
 
 describe('mapPostDetailResponse', () => {
+	it.each([0, 24, null])('조회수 %s를 보정 없이 상세 모델로 전달한다', (viewCount) => {
+		const response = createPostDetailResponseFixture({
+			viewCount,
+			viewerPermissions: { canEdit: false, canDelete: viewCount !== null },
+		});
+		expect(mapPostDetailResponse(response, 42).viewCount).toBe(viewCount);
+	});
 	it('개인 블로그(RILOG) 상세 응답을 PostDetail 도메인 모델로 올바르게 매핑한다', () => {
 		const response: PostDetailResponse = {
 			title: 'Spring 트랜잭션 정리',
@@ -37,6 +45,7 @@ describe('mapPostDetailResponse', () => {
 				name: '파라디',
 				profileImageUrl: null,
 			},
+			viewCount: null,
 			viewerPermissions: {
 				canEdit: false,
 				canDelete: false,
@@ -94,6 +103,7 @@ describe('mapPostDetailResponse', () => {
 				memberCount: 8,
 				postCount: 42,
 			},
+			viewCount: 0,
 			viewerPermissions: {
 				canEdit: true,
 				canDelete: true,
@@ -138,6 +148,7 @@ describe('mapPostDetailResponse', () => {
 				name: '파라디',
 				profileImageUrl: null,
 			},
+			viewCount: 0,
 			viewerPermissions: { canEdit: true, canDelete: true },
 		};
 

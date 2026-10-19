@@ -21,10 +21,10 @@ const renderInput = (auth: AuthContextValue) => (
 
 describe('InlineCommentInput', () => {
 	it.each([
-		{ isAuthenticated: false, isInitialized: true, isOnboarding: false },
-		{ isAuthenticated: false, isInitialized: false, isOnboarding: false },
-		{ isAuthenticated: true, isInitialized: false, isOnboarding: false },
-		{ isAuthenticated: false, isInitialized: true, isOnboarding: true },
+		{ isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: false },
+		{ isAuthenticated: false, sessionVersion: 0, isInitialized: false, isOnboarding: false },
+		{ isAuthenticated: true, sessionVersion: 0, isInitialized: false, isOnboarding: false },
+		{ isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: true },
 	])('회원 인증이 완료되지 않으면 댓글 입력을 렌더링하지 않는다: %j', (auth) => {
 		render(renderInput(auth));
 		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('InlineCommentInput', () => {
 
 	it('로그인하면 입력을 허용하고 작성 중 로그아웃하면 입력과 작성을 막는다', async () => {
 		const user = userEvent.setup();
-		const guest = { isAuthenticated: false, isInitialized: true, isOnboarding: false };
+		const guest = { isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: false };
 		const { rerender } = render(renderInput(guest));
 		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 

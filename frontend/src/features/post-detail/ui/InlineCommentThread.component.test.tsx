@@ -13,7 +13,9 @@ import InlineCommentThread from './InlineCommentThread';
 
 const render = (ui: ReactNode) =>
 	renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
+		<AUTH_CONTEXT.Provider
+			value={{ isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+		>
 			{ui}
 		</AUTH_CONTEXT.Provider>,
 	);

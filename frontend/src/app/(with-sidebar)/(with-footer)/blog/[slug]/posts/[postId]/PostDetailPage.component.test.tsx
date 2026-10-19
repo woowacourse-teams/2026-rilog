@@ -42,6 +42,7 @@ const POST_DETAIL: PostDetail = {
 	thumbnailUrl: null,
 	category: 'TECH',
 	chapter: { id: 3, name: '프론트엔드', order: 1 },
+	viewCount: 0,
 	viewerPermissions: { canEdit: true, canDelete: true },
 	author: {
 		id: 1,

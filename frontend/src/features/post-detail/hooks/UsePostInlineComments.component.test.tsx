@@ -49,7 +49,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('인라인 댓글 조회 consumer', () => {
 	it('인증 초기화 후 조회하고 로그인 전후의 권한과 본문·사이드바 캐시를 분리한다', async () => {
-		let auth = { isAuthenticated: false, isInitialized: false, isOnboarding: false };
+		let auth = { isAuthenticated: false, sessionVersion: 0, isInitialized: false, isOnboarding: false };
 		const readBody = vi.spyOn(postsApi, 'readPostCommentAnchors').mockImplementation(() =>
 			Promise.resolve({
 				status: 200,
@@ -77,7 +77,7 @@ describe('인라인 댓글 조회 consumer', () => {
 		expect(readBody).not.toHaveBeenCalled();
 		expect(readSidebar).not.toHaveBeenCalled();
 
-		auth = { ...auth, isInitialized: true };
+		auth = { ...auth, sessionVersion: 0, isInitialized: true };
 		rerender();
 		await waitFor(() => expect(result.current.body.isSuccess && result.current.sidebar.isSuccess).toBe(true));
 		expect(result.current.body.data?.[0].anchors[0]).toMatchObject({
@@ -121,7 +121,9 @@ describe('인라인 댓글 조회 consumer', () => {
 		const { result, unmount } = renderHook(useBothQueries, {
 			wrapper: ({ children }: { children: ReactNode }) => (
 				<QueryClientProvider client={queryClient}>
-					<AUTH_CONTEXT.Provider value={{ isAuthenticated: false, isInitialized: true, isOnboarding: false }}>
+					<AUTH_CONTEXT.Provider
+						value={{ isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+					>
 						{children}
 					</AUTH_CONTEXT.Provider>
 				</QueryClientProvider>

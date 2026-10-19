@@ -60,5 +60,6 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 					},
 		blog,
 		viewerPermissions: response.viewerPermissions,
+		viewCount: response.viewCount,
 	};
 };

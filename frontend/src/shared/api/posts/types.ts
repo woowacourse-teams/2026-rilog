@@ -72,6 +72,7 @@ export interface PostSourceResponse {
 }
 
 export interface PostDetailResponse {
+	viewCount: number | null;
 	postType: PostType;
 	description: string | null;
 	source: PostSourceResponse | null;

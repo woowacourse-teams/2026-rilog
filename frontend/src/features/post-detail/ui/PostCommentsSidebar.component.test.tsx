@@ -14,7 +14,7 @@ import PostCommentsSidebar from './PostCommentsSidebar';
 
 const withAuth = (
 	ui: ReactNode,
-	auth: AuthContextValue = { isAuthenticated: true, isInitialized: true, isOnboarding: false },
+	auth: AuthContextValue = { isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false },
 	login: (options?: { entrySurface?: 'sidebar' | 'mobile_header' }) => void = vi.fn(),
 ) => (
 	<AUTH_CONTEXT.Provider value={auth}>
@@ -23,7 +23,7 @@ const withAuth = (
 );
 const render = (
 	ui: ReactNode,
-	auth: AuthContextValue = { isAuthenticated: true, isInitialized: true, isOnboarding: false },
+	auth: AuthContextValue = { isAuthenticated: true, sessionVersion: 0, isInitialized: true, isOnboarding: false },
 	login?: (options?: { entrySurface?: 'sidebar' | 'mobile_header' }) => void,
 ) => {
 	const result = renderWithQuery(withAuth(ui, auth, login));
@@ -97,7 +97,7 @@ describe('PostCommentsSidebar', () => {
 		const login = vi.fn();
 		render(
 			<PostCommentsSidebar mode="all" postId={81} open threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />,
-			{ isAuthenticated: false, isInitialized: true, isOnboarding: false },
+			{ isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: false },
 			login,
 		);
 
