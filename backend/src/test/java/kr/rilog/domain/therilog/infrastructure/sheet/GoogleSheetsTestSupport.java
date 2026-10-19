@@ -22,6 +22,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
+import java.util.ArrayList;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -94,6 +97,70 @@ class GoogleSheetsTestSupport {
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("Authorization", "Bearer google-access-token"))
                 .andRespond(withSuccess(response, MediaType.APPLICATION_JSON));
+    }
+
+    void expectBatchRows(List<String> ranges, String response) {
+        sheetsServer.expect(request -> {
+                    var query = org.springframework.web.util.UriComponentsBuilder.fromUri(request.getURI())
+                            .build().getQueryParams();
+                    assertSoftly(softly -> {
+                        softly.assertThat(request.getURI().getPath())
+                                .isEqualTo("/v4/spreadsheets/sheet-id/values:batchGet");
+                        softly.assertThat(query.get("ranges").stream()
+                                .map(value -> URLDecoder.decode(value, StandardCharsets.UTF_8)).toList())
+                                .containsExactlyElementsOf(ranges);
+                    });
+                })
+                .andExpect(method(HttpMethod.GET))
+                .andExpect(header("Authorization", "Bearer google-access-token"))
+                .andRespond(withSuccess(response, MediaType.APPLICATION_JSON));
+    }
+
+    void expectPublicationRead(String range, String response) {
+        expectSelectedRead(range, response, true);
+    }
+
+    void expectPublicationResultRead(String range, String response) {
+        expectSelectedRead(range, response, false);
+    }
+
+    private void expectSelectedRead(String range, String response, boolean includeContent) {
+        JsonMapper mapper = JsonMapper.builder().build();
+        GoogleSheetValuesResponse full = mapper.readValue(response, GoogleSheetValuesResponse.class);
+        List<String> header = full.values().getFirst();
+        String tab = range.substring(0, range.lastIndexOf('!') + 1);
+        String lastColumn = range.substring(range.indexOf(':') + 1);
+        expectRows(tab.replace("!", "%21") + "A1%3A" + lastColumn + "1",
+                mapper.writeValueAsString(new GoogleSheetValuesResponse(tab + "A1:" + lastColumn + "1", List.of(header))));
+        List<String> metadataRanges = new ArrayList<>();
+        List<GoogleSheetValuesResponse> metadata = new ArrayList<>();
+        for (String name : List.of("rowId", "status", "postId")) {
+            int column = header.indexOf(name);
+            String columnName = Character.toString((char) ('A' + column));
+            String columnRange = tab + columnName + "2:" + columnName;
+            metadataRanges.add(columnRange);
+            List<List<String>> cells = full.values().stream().skip(1)
+                    .map(row -> List.of(column < row.size() ? row.get(column) : "")).toList();
+            metadata.add(new GoogleSheetValuesResponse(columnRange, cells));
+        }
+        expectBatchRows(metadataRanges, mapper.writeValueAsString(java.util.Map.of("valueRanges", metadata)));
+        if (!includeContent) {
+            return;
+        }
+        List<String> selectedRanges = new ArrayList<>();
+        List<GoogleSheetValuesResponse> selected = new ArrayList<>();
+        for (int index = 1; index < full.values().size(); index++) {
+            List<String> row = full.values().get(index);
+            int postId = header.indexOf("postId");
+            if ("승인완료".equals(row.get(header.indexOf("status"))) && (postId >= row.size() || row.get(postId).isBlank())) {
+                String selectedRange = tab + "A" + (index + 1) + ":" + lastColumn + (index + 1);
+                selectedRanges.add(selectedRange);
+                selected.add(new GoogleSheetValuesResponse(selectedRange, List.of(row)));
+            }
+        }
+        if (!selected.isEmpty()) {
+            expectBatchRows(selectedRanges, mapper.writeValueAsString(java.util.Map.of("valueRanges", selected)));
+        }
     }
 
     void expectWrite(RequestMatcher payload) {
