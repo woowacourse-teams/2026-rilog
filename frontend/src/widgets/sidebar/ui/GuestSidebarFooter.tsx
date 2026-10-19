@@ -18,6 +18,7 @@ export default function GuestSidebarFooter() {
 			<Button
 				aria-label="로그인"
 				fullWidth
+				variant="secondary"
 				className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}
 				onClick={handleLoginClick}
 			>
