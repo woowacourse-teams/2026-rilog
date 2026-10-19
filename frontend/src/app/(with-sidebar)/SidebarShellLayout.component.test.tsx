@@ -14,6 +14,7 @@ vi.mock('next/navigation', async (importOriginal) => ({
 	...(await importOriginal<typeof NextNavigation>()),
 	usePathname: () => '/feeds',
 	useSearchParams: () => new URLSearchParams(),
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 describe('SidebarLayout', () => {
@@ -22,7 +23,9 @@ describe('SidebarLayout', () => {
 
 		render(
 			<QueryClientProvider client={queryClient}>
-				<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+				<AUTH_CONTEXT.Provider
+					value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+				>
 					<LoginModalProvider>
 						<SidebarLayout>
 							<main>페이지 콘텐츠</main>

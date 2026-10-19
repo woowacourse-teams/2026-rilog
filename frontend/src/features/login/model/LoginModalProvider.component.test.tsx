@@ -49,7 +49,9 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
@@ -66,7 +68,9 @@ describe('LoginModalProvider', () => {
 		const user = userEvent.setup();
 		const action = vi.fn();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: true, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: true, sessionVersion: 0, isInitialized: true }}
+			>
 				<LoginModalProvider>
 					<AuthActionButton action={action} />
 				</LoginModalProvider>
@@ -81,6 +85,7 @@ describe('LoginModalProvider', () => {
 
 	it('GitHub 로그인을 시작하면 중복 요청과 모달 닫기를 막는다', async () => {
 		const user = userEvent.setup();
+		window.history.replaceState({}, '', '/feeds?tab=latest#recent');
 		render(
 			<LoginModalProvider>
 				<LoginButton />
@@ -98,6 +103,6 @@ describe('LoginModalProvider', () => {
 			entrySurface: 'sidebar',
 			redirectTarget: '/feeds',
 		});
-		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest');
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/feeds?tab=latest#recent');
 	});
 });

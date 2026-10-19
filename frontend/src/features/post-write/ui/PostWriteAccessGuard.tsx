@@ -7,7 +7,7 @@ import { useAuth } from '@/features/auth/model/use-auth';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
 
 interface PostWriteAccessGuardProps {
-	authorId: number;
+	authorId?: number;
 	children: ReactNode;
 }
 
@@ -20,7 +20,8 @@ export default function PostWriteAccessGuard({ authorId, children }: PostWriteAc
 	const myInfoQuery = useMyInfoQuery({ isEnabled: isInitialized && isAuthenticated });
 	const isAccessDenied =
 		isInitialized &&
-		(!isAuthenticated || (myInfoQuery.data?.data !== undefined && myInfoQuery.data.data.id !== authorId));
+		(!isAuthenticated ||
+			(authorId !== undefined && myInfoQuery.data?.data !== undefined && myInfoQuery.data.data.id !== authorId));
 
 	useEffect(() => {
 		if (!isAccessDenied || hasRedirectedRef.current) {
@@ -44,7 +45,7 @@ export default function PostWriteAccessGuard({ authorId, children }: PostWriteAc
 		);
 	}
 
-	if (!isInitialized || myInfoQuery.isPending) {
+	if (!isInitialized || myInfoQuery.isPending || authorId === undefined) {
 		return (
 			<div className={guardClassName} role="status">
 				게시글 수정 권한을 확인하고 있어요.

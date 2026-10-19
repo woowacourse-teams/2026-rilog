@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
-import { useLoginModal } from '@/features/login/model/use-login-modal';
+import { useAuthAction } from '@/features/login/model/use-auth-action';
 import { useMarkAllNotificationsReadMutation } from '@/shared/api/notifications/mutations/use-mark-all-notifications-read-mutation';
 import { useMarkNotificationReadMutation } from '@/shared/api/notifications/mutations/use-mark-notification-read-mutation';
 import { useNotificationListQuery } from '@/shared/api/notifications/queries/notification-list/use-query';
@@ -17,7 +17,7 @@ import NotificationList from './NotificationList';
 
 export default function NotificationInbox() {
 	const { isAuthenticated, isInitialized } = useAuth();
-	const login = useLoginModal();
+	const login = useAuthAction();
 
 	useEffect(() => {
 		if (isInitialized && isAuthenticated) analytics.notificationInboxEntered();

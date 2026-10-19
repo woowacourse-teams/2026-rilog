@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import type { Login } from '@/features/login/model/login-modal-context';
 import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
+import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
 import {
@@ -29,13 +31,20 @@ vi.mock('@/shared/api/posts/api', () => ({
 
 vi.mock('@/features/post-detail/ui/PostDetailContent', () => ({
 	default: ({
+		html,
 		onInlineCommentOpen,
 		onInlineCommentCreate,
 	}: {
+		html: string;
 		onInlineCommentOpen: (request: unknown) => void;
 		onInlineCommentCreate: (selection: InlineCommentSelectionTarget) => void;
 	}) => (
 		<div>
+			<article data-post-detail-content>
+				<p data-inline-comment-root data-inline-comment-block-id="block-1">
+					{html}
+				</p>
+			</article>
 			<button
 				type="button"
 				onClick={() =>
@@ -123,23 +132,25 @@ const BLOCKS: InlineCommentBlockModel[] = [
 	},
 ];
 
-const render = (ui: ReactNode) =>
+const render = (ui: ReactNode, isAuthenticated = true, login = vi.fn()) =>
 	renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false }}>
-			<LOGIN_MODAL_CONTEXT.Provider value={vi.fn()}>{ui}</LOGIN_MODAL_CONTEXT.Provider>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, sessionVersion: 0, isInitialized: true, isOnboarding: false }}>
+			<LOGIN_MODAL_CONTEXT.Provider value={login}>{ui}</LOGIN_MODAL_CONTEXT.Provider>
 		</AUTH_CONTEXT.Provider>,
 	);
 
-const renderWorkspaceUI = () =>
+const renderWorkspaceUI = (isAuthenticated = true, login = vi.fn(), html = '1234새 인용5678') =>
 	render(
 		<PostDetailCommentsWorkspace
-			html="<p>본문</p>"
+			html={html}
 			postId={81}
 			ownerType="RILOG"
 			category="TECH"
 			enableInlineCommentSelectionDebug={false}
 			profileSection={<div>프로필</div>}
 		/>,
+		isAuthenticated,
+		login,
 	);
 
 const RESPONSE = {
@@ -378,6 +389,66 @@ describe('PostDetailCommentsWorkspace', () => {
 		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveValue('작성 중인 초안');
 		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveFocus();
 		expect(screen.queryByRole('button', { name: /댓글 (펼치기|접기)/ })).not.toBeInTheDocument();
+	});
+
+	it('비회원이 선택 댓글을 누르고 로그인 후 돌아오면 같은 범위의 댓글 입력을 이어간다', async () => {
+		const user = userEvent.setup();
+		const login = vi.fn<Login>();
+		window.history.replaceState(null, '', '/posts/81');
+		const guestView = renderWorkspaceUI(false, login);
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		expect(login).toHaveBeenCalledOnce();
+		expect(login.mock.calls[0]?.[0]?.entrySurface).toBe('sidebar');
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
+		guestView.unmount();
+
+		renderWorkspaceUI();
+		expect(await screen.findByRole('region', { name: '"새 인용" 댓글' })).toBeVisible();
+		expect(screen.getByRole('textbox', { name: '댓글 입력' })).toHaveFocus();
+	});
+
+	it('선택 댓글 로그인 모달을 닫으면 이후 로그인해도 댓글 입력을 열지 않는다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/posts/81');
+		const guestView = renderWithQuery(
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, sessionVersion: 0, isInitialized: true, isOnboarding: false }}
+			>
+				<LoginModalProvider>
+					<PostDetailCommentsWorkspace
+						html="1234새 인용5678"
+						postId={81}
+						ownerType="RILOG"
+						category="TECH"
+						enableInlineCommentSelectionDebug={false}
+						profileSection={<div>프로필</div>}
+					/>
+				</LoginModalProvider>
+			</AUTH_CONTEXT.Provider>,
+		);
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		await user.click(screen.getByRole('button', { name: '모달 닫기' }));
+		guestView.unmount();
+
+		renderWorkspaceUI();
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
+	});
+
+	it('로그인 중 본문이 바뀌어 선택 범위가 달라지면 댓글 입력을 열지 않는다', async () => {
+		const user = userEvent.setup();
+		window.history.replaceState(null, '', '/posts/81');
+		const guestView = renderWorkspaceUI(false);
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		await user.click(screen.getByRole('button', { name: '새 인용 댓글 입력' }));
+		guestView.unmount();
+
+		renderWorkspaceUI(true, vi.fn(), '1234다른 글5678');
+		await screen.findByRole('button', { name: '전체 댓글 3개 보기' });
+		await waitFor(() => expect(sessionStorage.getItem('pendingAuthAction')).toBeNull());
+		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 	});
 
 	it('같은 범위의 기존 앵커가 있으면 해당 스레드를 펼치고 입력창에 포커스한다', async () => {

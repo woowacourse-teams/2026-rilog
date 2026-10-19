@@ -13,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
@@ -65,7 +66,12 @@ public class GoogleSheetsClient {
             List<TheRilogPublicationRow> rows = new ArrayList<>();
             for (TheRilogContentType type : TheRilogContentType.values()) {
                 if (includeSpotlights || type == TheRilogContentType.NEWS) {
-                    rows.addAll(readSheet(type, accessToken).readPublicationRows());
+                    TheRilogSheet sheet = readSheetIndex(type, accessToken);
+                    List<TheRilogSheet.SelectedRow> selected = sheet.selectedRows();
+                    if (!selected.isEmpty()) {
+                        rows.addAll(sheet.readSelectedRows(selected, readRanges(accessToken,
+                                selected.stream().map(TheRilogSheet.SelectedRow::range).toList())));
+                    }
                 }
             }
             return List.copyOf(rows);
@@ -87,10 +93,12 @@ public class GoogleSheetsClient {
                 if (article.contentType() == null || article.postId() == null || article.postId() <= 0) {
                     throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_RESULT);
                 }
-                TheRilogSheet sheet = sheets.computeIfAbsent(article.contentType(), type -> readSheet(type, accessToken));
+                TheRilogSheet sheet = sheets.computeIfAbsent(article.contentType(), type -> readSheetIndex(type, accessToken));
                 updates.addAll(sheet.createPublicationUpdates(article));
             }
-            writeValues(accessToken, new GoogleSheetValuesUpdateRequest("RAW", updates));
+            if (!updates.isEmpty()) {
+                writeValues(accessToken, new GoogleSheetValuesUpdateRequest("RAW", updates));
+            }
         } catch (TheRilogSheetException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -110,15 +118,36 @@ public class GoogleSheetsClient {
                 .toBodilessEntity();
     }
 
-    private TheRilogSheet readSheet(TheRilogContentType type, String accessToken) {
+    private TheRilogSheet readSheetIndex(TheRilogContentType type, String accessToken) {
         String range = properties.rangeFor(type);
-        GoogleSheetValuesResponse response = sheetsRestClient.get()
+        TheRilogSheetRange coordinates = TheRilogSheetRange.from(range);
+        TheRilogSheet sheet = new TheRilogSheet(type, range, readRange(accessToken, coordinates.header()));
+        return sheet.isEmpty() || !coordinates.hasDataRows()
+                ? sheet : sheet.withIndex(readRanges(accessToken, sheet.indexRanges()));
+    }
+
+    private GoogleSheetValuesResponse readRange(String accessToken, String range) {
+        return sheetsRestClient.get()
                 .uri(GOOGLE_SHEETS_BASE_URL + "/v4/spreadsheets/{spreadsheetId}/values/{range}",
                         properties.spreadsheetId(), range)
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
                 .body(GoogleSheetValuesResponse.class);
-        return new TheRilogSheet(type, range, response);
+    }
+
+    private GoogleSheetBatchValuesResponse readRanges(String accessToken, List<String> ranges) {
+        return sheetsRestClient.get()
+                .uri(builder -> {
+                    UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(GOOGLE_SHEETS_BASE_URL)
+                            .path("/v4/spreadsheets/{spreadsheetId}/values:batchGet");
+                    for (String range : ranges) {
+                        uri.queryParam("ranges", range);
+                    }
+                    return uri.buildAndExpand(properties.spreadsheetId()).encode().toUri();
+                })
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(GoogleSheetBatchValuesResponse.class);
     }
 
     private String requestAccessToken(GoogleServiceAccountCredentials credentials) {

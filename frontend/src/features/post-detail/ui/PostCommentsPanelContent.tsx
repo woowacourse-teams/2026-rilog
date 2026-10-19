@@ -6,7 +6,7 @@ import type { RefObject } from 'react';
 
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { useAuth } from '@/features/auth/model/use-auth';
-import { useLoginModal } from '@/features/login/model/use-login-modal';
+import { useAuthAction } from '@/features/login/model/use-auth-action';
 import NotificationCommentDeletedToast from '@/features/notifications/ui/NotificationCommentDeletedToast';
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
@@ -53,7 +53,7 @@ export default function PostCommentsPanelContent({
 	onNavigate,
 }: PostCommentsPanelContentProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
-	const login = useLoginModal();
+	const login = useAuthAction({ entrySurface: 'sidebar' });
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
 	return (
@@ -114,7 +114,7 @@ export default function PostCommentsPanelContent({
 					<footer className="shrink-0 bg-surface-hover px-5 pt-5 pb-7 shadow-[0_0_12px_rgba(0,0,0,0.10)]">
 						<p className="text-center text-body-4 text-text-secondary">
 							<button
-								onClick={() => login({ entrySurface: 'sidebar' })}
+								onClick={login}
 								className="mr-0.5 font-medium text-focus-ring transition-colors hover:text-focus-ring/80"
 							>
 								로그인

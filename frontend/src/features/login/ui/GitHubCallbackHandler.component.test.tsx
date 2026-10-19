@@ -1,7 +1,11 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
+import LoginModalProvider from '@/features/login/model/LoginModalProvider';
 import { createApiFailure } from '@/test/fixtures/api-error';
+import WriteButton from '@/widgets/sidebar/ui/WriteButton';
 
 import GitHubCallbackHandler from './GitHubCallbackHandler';
 
@@ -15,6 +19,7 @@ const {
 	publishLoginMock,
 	publishOnboardingMock,
 	replaceMock,
+	pushMock,
 	startSignUpFlowMock,
 } = vi.hoisted(() => ({
 	captureExceptionMock: vi.fn(),
@@ -26,6 +31,7 @@ const {
 	publishLoginMock: vi.fn(),
 	publishOnboardingMock: vi.fn(),
 	replaceMock: vi.fn(),
+	pushMock: vi.fn(),
 	startSignUpFlowMock: vi.fn(),
 }));
 
@@ -41,7 +47,7 @@ vi.mock('@/features/analytics/model/events', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-	useRouter: () => ({ replace: replaceMock }),
+	useRouter: () => ({ replace: replaceMock, push: pushMock }),
 	useSearchParams: searchParamsMock,
 }));
 
@@ -69,11 +75,15 @@ describe('GitHubCallbackHandler', () => {
 		publishLoginMock.mockReset().mockResolvedValue(undefined);
 		publishOnboardingMock.mockReset().mockResolvedValue(undefined);
 		replaceMock.mockReset();
+		pushMock.mockReset();
 		startSignUpFlowMock.mockReset();
 		localStorage.clear();
+		sessionStorage.clear();
+		window.history.replaceState(null, '', '/feeds');
 	});
 
 	it('온보딩 세션 등록을 기다린 뒤 회원가입 흐름을 시작하고 이동한다', async () => {
+		localStorage.setItem('postLoginRedirect', '/posts/81?tab=comments');
 		let finishOnboarding: (() => void) | undefined;
 		publishOnboardingMock.mockImplementation(
 			() =>
@@ -99,6 +109,7 @@ describe('GitHubCallbackHandler', () => {
 		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/sign-up'));
 		expect(publishLoginMock).not.toHaveBeenCalled();
 		expect(startSignUpFlowMock).toHaveBeenCalledOnce();
+		expect(localStorage.getItem('postLoginRedirect')).toBe('/posts/81?tab=comments');
 		expect(githubLoginCompletedMock).toHaveBeenCalledWith({ userType: 'new' });
 		expect(publishOnboardingMock.mock.invocationCallOrder[0]).toBeLessThan(
 			startSignUpFlowMock.mock.invocationCallOrder[0] ?? 0,
@@ -174,5 +185,35 @@ describe('GitHubCallbackHandler', () => {
 			failureStage: 'github_callback',
 			errorCode: 'UNKNOWN_ERROR',
 		});
+	});
+
+	it('글쓰기 로그인 콜백이 실패하면 나중에 인증되어도 글쓰기로 이동하지 않는다', async () => {
+		const user = userEvent.setup();
+		const guestView = render(
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: false, isInitialized: true, isOnboarding: false, sessionVersion: 0 }}
+			>
+				<LoginModalProvider>
+					<WriteButton />
+				</LoginModalProvider>
+			</AUTH_CONTEXT.Provider>,
+		);
+		await user.click(screen.getByRole('link', { name: '글쓰기' }));
+		guestView.unmount();
+		handleGitHubCallbackMock.mockRejectedValue(new Error('callback failed'));
+
+		render(<GitHubCallbackHandler />);
+		await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/'));
+
+		render(
+			<AUTH_CONTEXT.Provider
+				value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false, sessionVersion: 0 }}
+			>
+				<LoginModalProvider>
+					<WriteButton />
+				</LoginModalProvider>
+			</AUTH_CONTEXT.Provider>,
+		);
+		expect(pushMock).not.toHaveBeenCalled();
 	});
 });

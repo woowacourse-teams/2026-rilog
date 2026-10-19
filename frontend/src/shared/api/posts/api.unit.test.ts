@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { tokenManager } from '@/shared/api/auth/token-manager';
+import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
+
 import {
 	addPostCommentAnchor,
 	createPostCommentAnchor,
@@ -9,6 +12,7 @@ import {
 	readPostCommentAnchors,
 	readPostCommentAnchorsSidebar,
 	readPostDetail,
+	registerPostView,
 	updatePost,
 	updatePostCommentAnchor,
 } from './api';
@@ -139,6 +143,7 @@ describe('readPostDetail', () => {
 					name: '제트프로크',
 					profileImageUrl: 'https://cdn.example.com/blog.png',
 				},
+				viewCount: null,
 				viewerPermissions: {
 					canEdit: false,
 					canDelete: false,
@@ -167,11 +172,51 @@ describe('readPostDetail', () => {
 		chapter: null,
 		author: { userId: 1, nickname: '편집자', slug: 'editor', profileImageUrl: null },
 		owner: { type: 'RILOG', blogId: 1, slug: 'rilog', name: 'Rilog.', profileImageUrl: null },
+		viewCount: null,
 		viewerPermissions: { canEdit: false, canDelete: false },
 		postType: 'STANDARD',
 		description: null,
 		source: null,
 	};
+	it.each([0, 17, null])('상세 조회수 %s를 원값으로 보존한다', async (viewCount) => {
+		const data = { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete: viewCount !== null } };
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data })));
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).resolves.toMatchObject({ data: { viewCount } });
+	});
+
+	it.each([undefined, '0', -1, 0.5, Number.MAX_SAFE_INTEGER + 1])('손상된 조회수 %s를 거절한다', async (viewCount) => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					status: 200,
+					message: 'OK',
+					data: { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete: true } },
+				}),
+			),
+		);
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).rejects.toMatchObject({
+			type: 'unknown',
+			cause: { name: 'InvalidApiResponseError' },
+		});
+	});
+
+	it.each([
+		{ canDelete: false, viewCount: 1 },
+		{ canDelete: true, viewCount: null },
+	])('권한과 조회수 계약이 어긋나면 거절한다: %j', async ({ canDelete, viewCount }) => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				Response.json({
+					status: 200,
+					message: 'OK',
+					data: { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete } },
+				}),
+			),
+		);
+		await expect(readPostDetail({ slug: 'rilog', postId: 42 })).rejects.toMatchObject({ type: 'unknown' });
+	});
 
 	it.each(['STANDARD', 'DAILY_HEADLINES', 'ENTERPRISE_SPOTLIGHT', 'PERSONAL_SPOTLIGHT'])(
 		'게시글 유형 %s와 설명·출처를 검증해 반환한다',
@@ -243,6 +288,7 @@ describe('readPostDetail', () => {
 						chapter: null,
 						author: { userId: 1, nickname: 'jetproc', slug: 'jetproc', profileImageUrl: null },
 						owner: { type: 'RILOG', blogId: 1, slug: 'jetproc', name: '블로그', profileImageUrl: null },
+						viewCount: null,
 						viewerPermissions: { canEdit: false, canDelete: false },
 					},
 				}),
@@ -252,6 +298,58 @@ describe('readPostDetail', () => {
 			type: 'unknown',
 			cause: { name: 'InvalidApiResponseError' },
 		});
+	});
+});
+
+describe('registerPostView', () => {
+	it('로그인 요청은 기존 Bearer 인증을 사용한다', async () => {
+		vi.stubGlobal('window', {});
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal('fetch', fetchMock);
+		await tokenManager.publishLogin('test-access-token');
+		try {
+			await registerPostView(42);
+			expect((fetchMock.mock.calls[0][0] as Request).headers.get('Authorization')).toBe('Bearer test-access-token');
+		} finally {
+			await tokenManager.publishLogout();
+		}
+	});
+	it('본문 없이 정확한 POST URL에 credentials를 유지하고 빈 204를 처리한다', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(registerPostView(42)).resolves.toBeUndefined();
+		const request = fetchMock.mock.calls[0][0] as Request;
+		expect(request.url).toBe('https://api.rilog.test/v1/posts/42/views');
+		expect(request.method).toBe('POST');
+		expect(request.credentials).toBe('include');
+		expect(await request.text()).toBe('');
+		expect(request.headers.has('Content-Type')).toBe(false);
+	});
+
+	it.each([403, 404, 500, 503])('등록 HTTP %i를 실패로 유지하고 재전송하지 않는다', async (status) => {
+		const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(null, { status })));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(registerPostView(42)).rejects.toMatchObject({ response: { status } });
+		expect(fetchMock).toHaveBeenCalledOnce();
+	});
+
+	it('네트워크 실패를 재전송하지 않는다', async () => {
+		const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(registerPostView(42)).rejects.toMatchObject({ type: 'network' });
+		expect(fetchMock).toHaveBeenCalledOnce();
+	});
+	it('정규화된 네트워크 오류에도 요청 method와 URL을 연결한다', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+		try {
+			await registerPostView(42);
+			throw new Error('등록은 실패해야 합니다.');
+		} catch (error) {
+			expect(getApiRequestDiagnostics((error as { cause: unknown }).cause)).toEqual({
+				method: 'POST',
+				url: 'https://api.rilog.test/v1/posts/42/views',
+			});
+		}
 	});
 });
 

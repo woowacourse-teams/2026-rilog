@@ -1,6 +1,7 @@
 'use client';
 
 import ContentLoadFailureTracker from '@/features/analytics/ui/ContentLoadFailureTracker';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { usePostWriteInitialData } from '@/features/post-write/hooks/use-post-write-initial-data';
 import PostWriteAccessGuard from '@/features/post-write/ui/PostWriteAccessGuard';
 
@@ -14,7 +15,12 @@ interface EditPostLoaderProps {
 }
 
 export default function EditPostLoader({ slug, postId }: EditPostLoaderProps) {
+	const { isInitialized, isAuthenticated } = useAuth();
 	const initialDataQuery = usePostWriteInitialData({ slug, postId, isEnabled: true });
+
+	if (!isInitialized || !isAuthenticated) {
+		return <PostWriteAccessGuard>{null}</PostWriteAccessGuard>;
+	}
 
 	if (initialDataQuery.isPending) {
 		return (

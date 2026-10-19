@@ -6,6 +6,7 @@ import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.therilog.infrastructure.content.TheRilogBlockNoteConverter;
+import kr.rilog.domain.therilog.exception.TheRilogPublicationResultWriteException;
 import kr.rilog.domain.therilog.service.TheRilogPublicationService;
 import kr.rilog.domain.therilog.service.TheRilogService;
 import kr.rilog.domain.therilog.service.TheRilogSheetService;
@@ -37,6 +38,7 @@ import static kr.rilog.support.fixure.TheRilogPostFixture.publishedNews;
 import static kr.rilog.support.fixure.TheRilogPostFixture.publishedSpotlight;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
@@ -87,11 +89,11 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
     void writesPublicationResultAfterDatabaseCommit() {
         String date = "2026-10-15";
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", approvedNews(date));
-        sheets.expectRows("SPOTLIGHTS%21A%3AM", approvedSpotlights(date));
+        sheets.expectPublicationRead("NEWS!A:G", approvedNews(date));
+        sheets.expectPublicationRead("SPOTLIGHTS!A:M", approvedSpotlights(date));
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", approvedNews(date));
-        sheets.expectRows("SPOTLIGHTS%21A%3AM", approvedSpotlights(date));
+        sheets.expectPublicationResultRead("NEWS!A:G", approvedNews(date));
+        sheets.expectPublicationResultRead("SPOTLIGHTS!A:M", approvedSpotlights(date));
         sheets.expectWrite(request -> {
             var saved = postRepository.findAll().stream().sorted(java.util.Comparator.comparing(post -> post.getId())).toList();
             var payload = MAPPER.readTree(((MockClientHttpRequest) request).getBodyAsString());
@@ -120,9 +122,9 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
                 List.of("latest", "최신 뉴스", "## 최신 소식\n\n본문", "기술", "2026-10-14 05:00", "승인완료", ""),
                 List.of("overdue", "이전 뉴스", "## 이전 소식\n\n본문", "기술", "2026-10-13 06:00", "승인완료", ""))));
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", approved);
+        sheets.expectPublicationRead("NEWS!A:G", approved);
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", approved);
+        sheets.expectPublicationResultRead("NEWS!A:G", approved);
         sheets.expectWrite(request -> {
             var payload = MAPPER.readTree(((MockClientHttpRequest) request).getBodyAsString());
             assertThat(payload.path("data").size()).isEqualTo(4);
@@ -151,6 +153,32 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("시트 기록 실패 후 완료 처리를 재개해도 게시글을 다시 생성하지 않고 발행 결과만 기록한다.")
+    void resumesOnlySheetWriteAfterDatabaseCommit() {
+        expectApprovedNewsRead();
+        expectPublicationWriteRead();
+        sheets.expectFailedWrite();
+        expectPublicationWriteRead();
+        sheets.expectWrite(request -> {
+            Long postId = postRepository.findAll().getFirst().getId();
+            var payload = MAPPER.readTree(((MockClientHttpRequest) request).getBodyAsString());
+            var expected = new GoogleSheetValuesUpdateRequest("RAW", List.of(
+                    new GoogleSheetValuesUpdateRequest.ValueRange("NEWS!G2", List.of(List.of(postId.toString()))),
+                    new GoogleSheetValuesUpdateRequest.ValueRange("NEWS!F2", List.of(List.of("발행완료")))));
+            assertThat(payload).isEqualTo(MAPPER.valueToTree(expected));
+        });
+        TheRilogPublicationResultWriteException failure = catchThrowableOfType(
+                () -> publicationService.publishDueContent(NOW), TheRilogPublicationResultWriteException.class);
+        assertThat(failure).hasMessage(INTERNAL_SERVER_ERROR.getMessage());
+
+        publicationService.completePublication(failure.getPublishedArticles());
+
+        assertThat(postRepository.findAll().stream().map(post -> post.getId()).toList())
+                .containsExactly(failure.getPublishedArticles().getFirst().postId());
+        sheets.verifyRequests();
+    }
+
+    @Test
     @DisplayName("일부 스포트라이트만 승인됐으면 해당 글을 발행하고 이전 뉴스와 스포트라이트도 최신순으로 보여준다.")
     void publishesPartialInputAndKeepsPreviousContentsInMain() {
         LocalDateTime previousTime = LocalDateTime.of(2026, 10, 12, 5, 0);
@@ -163,10 +191,10 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         var previousPersonal2 = postRepository.saveAndFlush(publishedSpotlight(personal, PERSONAL_SPOTLIGHT, previousTime));
         String approved = approvedSpotlights("2026-10-15", 2);
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", MAPPER.writeValueAsString(new GoogleSheetValuesResponse("NEWS!A1:G1", List.of(HEADER))));
-        sheets.expectRows("SPOTLIGHTS%21A%3AM", approved);
+        sheets.expectPublicationRead("NEWS!A:G", MAPPER.writeValueAsString(new GoogleSheetValuesResponse("NEWS!A1:G1", List.of(HEADER))));
+        sheets.expectPublicationRead("SPOTLIGHTS!A:M", approved);
         sheets.expectToken();
-        sheets.expectRows("SPOTLIGHTS%21A%3AM", approved);
+        sheets.expectPublicationResultRead("SPOTLIGHTS!A:M", approved);
         sheets.expectWrite(request -> {
             var payload = MAPPER.readTree(((MockClientHttpRequest) request).getBodyAsString());
             assertThat(payload.path("data").size()).isEqualTo(4);
@@ -185,12 +213,12 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
     private void expectApprovedNewsRead() {
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", approvedNews("2026-10-14"));
+        sheets.expectPublicationRead("NEWS!A:G", approvedNews("2026-10-14"));
     }
 
     private void expectPublicationWriteRead() {
         sheets.expectToken();
-        sheets.expectRows("NEWS%21A%3AG", approvedNews("2026-10-14"));
+        sheets.expectPublicationResultRead("NEWS!A:G", approvedNews("2026-10-14"));
     }
 
     private String approvedNews(String date) {

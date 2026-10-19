@@ -1,5 +1,4 @@
 import UserAvatar from '@/domains/user/ui/UserAvatar';
-import { recordEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { useLogoutMutation } from '@/shared/api/auth/mutations/use-logout-mutation';
 import { useNotificationUnreadCountQuery } from '@/shared/api/notifications/queries/unread-count/use-query';
 import { useMyInfoQuery } from '@/shared/api/users/queries/my-info/use-query';
@@ -10,7 +9,6 @@ import CustomLink from '@/shared/ui/link/CustomLink';
 import LogOutIcon from '@/widgets/sidebar/assets/log-out.svg';
 import NotificationUnreadIcon from '@/widgets/sidebar/assets/notification-unread.svg';
 import NotificationIcon from '@/widgets/sidebar/assets/notification.svg';
-import WriteIcon from '@/widgets/sidebar/assets/write.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
@@ -20,6 +18,7 @@ import {
 	FOCUS_CLASS_NAME,
 	SIDEBAR_GLYPH_CLASS_NAME,
 } from './sidebar-class-names';
+import WriteButton from './WriteButton';
 
 export default function AuthenticatedSidebarFooter() {
 	const myInfoQuery = useMyInfoQuery({ select: mapMyInfoResponse });
@@ -56,20 +55,10 @@ export default function AuthenticatedSidebarFooter() {
 					</span>
 					<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>알림</span>
 				</ButtonLink>
-				<ButtonLink
-					href={APP_ROUTES.write}
-					onClick={() => recordEditorEntryContext('sidebar')}
-					fullWidth
-					className={`rounded-lg! ${EXPANDING_ACTION_CLASS_NAME}`}
-				>
-					<span className="flex h-full w-11.25 shrink-0 items-center justify-center">
-						<WriteIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
-					</span>
-					<span className={`absolute left-1/2 -translate-x-1/2 ${EXPANDED_TEXT_CLASS_NAME}`}>글쓰기</span>
-				</ButtonLink>
+				<WriteButton />
 			</div>
 
-			<footer className="w-full shrink-0 px-1.75 py-3">
+			<div className="w-full shrink-0 px-1.75 py-3">
 				<div className="flex w-56.25 items-center px-0.5 py-1.5">
 					{user ? (
 						<CustomLink
@@ -116,19 +105,19 @@ export default function AuthenticatedSidebarFooter() {
 					)}
 					<span
 						aria-hidden="true"
-						className="invisible mx-1 h-7 w-px shrink-0 bg-border-default opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 motion-reduce:transition-none"
+						className="invisible mx-1 h-7 w-px shrink-0 bg-border-default opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none"
 					/>
 					<Button
 						aria-label="로그아웃"
 						onClick={handleLogout}
 						size="icon"
 						variant="ghost"
-						className={`invisible flex! shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 ${FOCUS_CLASS_NAME}`}
+						className={`invisible flex! shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 ${FOCUS_CLASS_NAME}`}
 					>
 						<LogOutIcon aria-hidden="true" focusable="false" className={SIDEBAR_GLYPH_CLASS_NAME} />
 					</Button>
 				</div>
-			</footer>
+			</div>
 		</>
 	);
 }

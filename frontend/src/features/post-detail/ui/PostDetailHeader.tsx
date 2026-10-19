@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
 
 import { formatPublishedDate } from '@/domains/post/lib/format-published-date';
-import { POST_CATEGORY_OPTIONS, type PostCategory, type PostViewerPermissions } from '@/domains/post/model/post';
+import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import type { User } from '@/domains/user/model/user';
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import BlogProfileEntryLink from '@/features/analytics/ui/BlogProfileEntryLink';
 import { buildBlogHomePath } from '@/shared/routes/app-routes';
 import { toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
 
-import PostDetailActions from './PostDetailActions';
+import PostDetailViewerMeta from './PostDetailViewerMeta';
 
 interface PostDetailHeaderProps {
 	publisher?: ReactNode;
@@ -18,7 +18,6 @@ interface PostDetailHeaderProps {
 	publishedAt: string;
 	category: PostCategory;
 	author: User;
-	viewerPermissions: PostViewerPermissions;
 }
 
 export default function PostDetailHeader({
@@ -29,7 +28,6 @@ export default function PostDetailHeader({
 	publishedAt,
 	category,
 	author,
-	viewerPermissions,
 }: PostDetailHeaderProps) {
 	const categoryLabel = POST_CATEGORY_OPTIONS.find(({ value }) => value === category)?.label;
 
@@ -60,7 +58,7 @@ export default function PostDetailHeader({
 				<span aria-hidden="true">·</span>
 				<time dateTime={toApiUtcISOString(publishedAt)}>{formatPublishedDate(publishedAt)}</time>
 
-				<PostDetailActions slug={slug} postId={postId} viewerPermissions={viewerPermissions} />
+				<PostDetailViewerMeta slug={slug} postId={postId} />
 			</div>
 		</header>
 	);

@@ -60,10 +60,13 @@ const buildWorkspace = async (): Promise<WorkspaceBundle> => {
 	return { code, css };
 };
 
-export const renderInlineCommentWorkspace = async (page: Page, selectionId?: number) => {
+export const renderInlineCommentWorkspace = async (page: Page, selectionId?: number, isAuthenticated = true) => {
 	bundle ??= buildWorkspace();
 	const { code, css } = await bundle;
-	await page.goto(selectionId === undefined ? '/about' : `/about?selectionId=${selectionId}`);
+	const params = new URLSearchParams();
+	if (selectionId !== undefined) params.set('selectionId', String(selectionId));
+	if (!isAuthenticated) params.set('guest', '1');
+	await page.goto(`/about${params.size > 0 ? `?${params}` : ''}`);
 	const styles = await page
 		.locator('link[rel="stylesheet"]')
 		.evaluateAll((links) =>

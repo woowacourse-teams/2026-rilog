@@ -9,6 +9,7 @@ public interface PostViewStore {
 
     long currentCount(long postId);
 
+    // 미완료 배치를 재반환한다. 저장 실행의 겹침 방지는 호출자가 보장한다.
     List<ViewFlushBatch> prepareFlushBatches();
 
     void completeFlush(long postId, UUID batchId);

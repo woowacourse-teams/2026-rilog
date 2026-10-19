@@ -25,6 +25,16 @@ app:
 server:
   forward-headers-strategy: framework
 
+post:
+  view:
+    flush:
+      enabled: ${POST_VIEW_FLUSH_ENABLED:true}
+      interval: ${POST_VIEW_FLUSH_INTERVAL:10m}
+    registration:
+      enabled: ${POST_VIEW_REGISTRATION_ENABLED:false}
+      cookie-secure: ${POST_VIEW_COOKIE_SECURE:true}
+      cookie-same-site: ${POST_VIEW_COOKIE_SAME_SITE:Lax}
+
 github:
   oauth:
     client-id: ${GITHUB_CLIENT_ID:}
@@ -70,6 +80,7 @@ the-rilog:
   sheet-range: ${THE_RILOG_SHEET_RANGE:SPOTLIGHTS!A:M}
   news-sheet-range: ${THE_RILOG_NEWS_SHEET_RANGE:NEWS!A:G}
   publication-cron: ${THE_RILOG_PUBLICATION_CRON:0 0 5 * * *}
+  publication-fallback-cron: ${THE_RILOG_PUBLICATION_FALLBACK_CRON:0 30 5 * * *}
   credentials-path: ${THE_RILOG_CREDENTIALS_PATH:}
   connect-timeout: 3s
   read-timeout: 5s

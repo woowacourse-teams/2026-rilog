@@ -2,7 +2,10 @@ import { devices, expect, test } from '@playwright/test';
 
 import type { Page, Route } from '@playwright/test';
 
-import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
+import { RELEASE_NOTE_STORAGE_KEY } from '@/features/release-notes/model/release-note-storage';
+import { getLatestReleaseNote, RELEASE_NOTES } from '@/features/release-notes/model/release-notes';
+
+import { AUTH_REFRESH_ROUTE, mockAuthenticatedAccess } from './fixtures/authenticated-access';
 import { REQUIRED_E2E_FLOW_TAGS } from './required-flows';
 
 const TEST_IMAGE_BYTES = Buffer.from(
@@ -42,6 +45,110 @@ const enableWriteAccess = async (page: Page) => {
 	);
 	await page.route('**/e2e-upload', (route) => route.fulfill({ status: 200 }));
 };
+
+const prepareGuestWriteLogin = async (page: Page) => {
+	const latestReleaseNote = getLatestReleaseNote(RELEASE_NOTES);
+	if (latestReleaseNote) {
+		await page.addInitScript(({ key, id }) => localStorage.setItem(key, id), {
+			key: RELEASE_NOTE_STORAGE_KEY,
+			id: latestReleaseNote.id,
+		});
+	}
+	await page.route('**/v1/**', (route) => route.abort('failed'));
+	await page.route(AUTH_REFRESH_ROUTE, (route) => route.fulfill({ status: 401 }));
+	const guestRefresh = page.waitForResponse((response) => response.url().endsWith('/v1/auth/token/refresh'));
+	await page.goto('/the-rilog');
+	await guestRefresh;
+	await page.getByRole('link', { name: '글쓰기' }).click();
+	await expect(page.getByRole('dialog', { name: '로그인' })).toBeVisible();
+	await expect(page).toHaveURL('/the-rilog');
+
+	const appOrigin = new URL(page.url()).origin;
+	await enableWriteAccess(page);
+	let hasCompletedOAuth = false;
+	await page.route(AUTH_REFRESH_ROUTE, (route) =>
+		hasCompletedOAuth ? route.fallback() : route.fulfill({ status: 401 }),
+	);
+	await page.route(
+		(url) => url.pathname === '/v1/auth/github',
+		(route) => route.fulfill({ status: 302, headers: { Location: `${appOrigin}/auth/github/callback?code=e2e-code` } }),
+	);
+	return {
+		completeOAuth: () => {
+			hasCompletedOAuth = true;
+		},
+	};
+};
+
+test('접힌 사이드바의 글쓰기 링크에 키보드 포커스가 오면 문구가 보인다', async ({ page }) => {
+	await page.route(AUTH_REFRESH_ROUTE, (route) => route.fulfill({ status: 401 }));
+	await page.goto('/the-rilog');
+	const writeLink = page.getByRole('link', { name: '글쓰기' });
+	const writeLabel = writeLink.getByText('글쓰기');
+	const sidebar = page.getByRole('complementary', { name: '사이드바' });
+	await page.mouse.move(500, 300);
+	await expect(writeLink).toBeVisible();
+	await expect.poll(() => writeLabel.evaluate((element) => getComputedStyle(element).opacity)).toBe('0');
+
+	const logoLink = page.getByRole('link', { name: /메인으로 이동/ });
+	await logoLink.focus();
+	for (
+		let attempt = 0;
+		attempt < 20 && !(await writeLink.evaluate((element) => element === document.activeElement));
+		attempt += 1
+	) {
+		await page.keyboard.press('Tab');
+	}
+	await expect(writeLink).toBeFocused();
+	await page.mouse.move(500, 300);
+	await expect.poll(async () => (await sidebar.boundingBox())?.width ?? 0).toBeGreaterThan(150);
+	await expect.poll(() => writeLabel.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+});
+
+test('사이드바 링크를 클릭하면 포인터가 벗어난 뒤 접힌 상태로 돌아간다', async ({ page }) => {
+	await page.route(AUTH_REFRESH_ROUTE, (route) => route.fulfill({ status: 401 }));
+	await page.goto('/the-rilog');
+	const sidebar = page.getByRole('complementary', { name: '사이드바' });
+	const logoLink = page.getByRole('link', { name: /메인으로 이동/ });
+	const writeLabel = page.getByRole('link', { name: '글쓰기' }).getByText('글쓰기');
+
+	await logoLink.click();
+	await expect(page).toHaveURL('/feeds');
+	await page.mouse.move(500, 300);
+	await expect.poll(async () => (await sidebar.boundingBox())?.width ?? 0).toBeLessThan(100);
+	await expect.poll(() => writeLabel.evaluate((element) => getComputedStyle(element).opacity)).toBe('0');
+});
+
+test('비회원이 글쓰기를 누르고 로그인하면 원래 페이지를 거쳐 글쓰기 화면으로 이동한다', async ({ page }) => {
+	const { completeOAuth } = await prepareGuestWriteLogin(page);
+	await page.route('**/v1/auth/github/callback', (route) => {
+		completeOAuth();
+		return route.fulfill({
+			contentType: 'application/json',
+			headers: {
+				Authorization: 'Bearer e2e-access-token',
+				'Access-Control-Allow-Credentials': 'true',
+				'Access-Control-Allow-Origin': new URL(page.url()).origin,
+				'Access-Control-Expose-Headers': 'Authorization',
+			},
+			body: JSON.stringify({ status: 200, message: 'OK', data: { onboardingStatus: 'COMPLETED', redirectUrl: '/' } }),
+		});
+	});
+	await page.getByRole('button', { name: 'GitHub로 계속하기' }).click();
+
+	await expect(page).toHaveURL('/write');
+	await page.goBack();
+	await expect(page).toHaveURL('/the-rilog');
+});
+
+test('글쓰기 로그인 콜백이 실패하면 글쓰기 화면으로 이동하지 않는다', async ({ page }) => {
+	await prepareGuestWriteLogin(page);
+	await page.route('**/v1/auth/github/callback', (route) => route.fulfill({ status: 500 }));
+	await page.getByRole('button', { name: 'GitHub로 계속하기' }).click();
+
+	await expect(page.getByRole('button', { name: '로그인' })).toBeVisible();
+	await expect(page).toHaveURL('/feeds');
+});
 
 test.describe('글 작성 브라우저 흐름', () => {
 	test.beforeEach(async ({ page }) => {

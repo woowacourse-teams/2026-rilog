@@ -7,11 +7,12 @@ import kr.rilog.domain.therilog.service.dto.result.TheRilogPublishedArticle;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Set;
 
 import static kr.rilog.domain.therilog.entity.enums.TheRilogContentType.SPOTLIGHT;
 import static kr.rilog.domain.therilog.entity.enums.TheRilogSheetStatus.APPROVED;
@@ -23,7 +24,7 @@ import static kr.rilog.domain.therilog.exception.TheRilogSheetErrorInformation.T
 
 final class TheRilogSheet {
 
-    private static final Pattern FIRST_CELL = Pattern.compile("\\$?([A-Z]+)\\$?([1-9]\\d*)?");
+    private static final List<String> INDEX_COLUMNS = List.of("rowId", "status", "postId");
 
     private final TheRilogContentType contentType;
     private final String range;
@@ -32,9 +33,100 @@ final class TheRilogSheet {
 
     TheRilogSheet(TheRilogContentType contentType, String requestedRange, GoogleSheetValuesResponse response) {
         this.contentType = contentType;
-        this.range = response != null && StringUtils.hasText(response.range()) ? response.range() : requestedRange;
+        this.range = requestedRange;
         this.values = response == null || response.values() == null ? List.of() : response.values();
         this.columns = values.isEmpty() ? Map.of() : readColumns(values.getFirst());
+    }
+
+    List<String> indexRanges() {
+        validateInputColumns();
+        getColumn("title");
+        getColumn("content");
+        getColumn("postId");
+        TheRilogSheetRange coordinates = TheRilogSheetRange.from(range);
+        return INDEX_COLUMNS.stream().map(name -> coordinates.column(getColumn(name))).toList();
+    }
+
+    TheRilogSheet withIndex(GoogleSheetBatchValuesResponse response) {
+        List<GoogleSheetValuesResponse> ranges = requireRanges(response, INDEX_COLUMNS.size());
+        int rowCount = ranges.stream().mapToInt(value -> value.values() == null ? 0 : value.values().size()).max().orElse(0);
+        List<List<String>> indexedValues = new ArrayList<>();
+        indexedValues.add(values.getFirst());
+        for (int row = 0; row < rowCount; row++) {
+            List<String> cells = new ArrayList<>(Collections.nCopies(values.getFirst().size(), ""));
+            for (int column = 0; column < INDEX_COLUMNS.size(); column++) {
+                List<List<String>> columnValues = ranges.get(column).values();
+                if (columnValues != null && row < columnValues.size() && !columnValues.get(row).isEmpty()) {
+                    cells.set(getColumn(INDEX_COLUMNS.get(column)), columnValues.get(row).getFirst());
+                }
+            }
+            indexedValues.add(cells);
+        }
+        TheRilogSheet index = new TheRilogSheet(contentType, range, new GoogleSheetValuesResponse(range, indexedValues));
+        index.validateUniqueRowIds();
+        return index;
+    }
+
+    List<SelectedRow> selectedRows() {
+        TheRilogSheetRange coordinates = TheRilogSheetRange.from(range);
+        List<SelectedRow> selected = new ArrayList<>();
+        for (int index = 1; index < values.size(); index++) {
+            List<String> row = values.get(index);
+            if (isApprovedUnpublished(row)) {
+                selected.add(new SelectedRow(cell(row, "rowId"), coordinates.row(index)));
+            }
+        }
+        return List.copyOf(selected);
+    }
+
+    List<TheRilogPublicationRow> readSelectedRows(List<SelectedRow> selected, GoogleSheetBatchValuesResponse response) {
+        List<GoogleSheetValuesResponse> ranges = requireRanges(response, selected.size());
+        List<TheRilogPublicationRow> rows = new ArrayList<>();
+        for (int index = 0; index < selected.size(); index++) {
+            List<List<String>> returnedRows = ranges.get(index).values();
+            if (returnedRows == null || returnedRows.size() != 1
+                    || !selected.get(index).rowId().equals(cell(returnedRows.getFirst(), "rowId"))) {
+                throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_INPUT);
+            }
+            List<String> row = returnedRows.getFirst();
+            if (isApprovedUnpublished(row)) {
+                rows.add(readPublicationRow(row));
+            }
+        }
+        return List.copyOf(rows);
+    }
+
+    boolean isEmpty() {
+        return values.isEmpty();
+    }
+
+    private List<GoogleSheetValuesResponse> requireRanges(GoogleSheetBatchValuesResponse response, int count) {
+        if (response == null || response.valueRanges() == null || response.valueRanges().size() != count) {
+            throw new TheRilogSheetException(INVALID_THE_RILOG_SHEET_INPUT);
+        }
+        return response.valueRanges();
+    }
+
+    private void validateUniqueRowIds() {
+        Set<String> ids = new HashSet<>();
+        for (List<String> row : values.subList(1, values.size())) {
+            String rowId = cell(row, "rowId");
+            if (StringUtils.hasText(rowId) && !ids.add(rowId)) {
+                throw new TheRilogSheetException(DUPLICATE_THE_RILOG_SHEET_ROW_ID);
+            }
+        }
+    }
+
+    private boolean isApprovedUnpublished(List<String> row) {
+        return APPROVED.matches(cell(row, "status")) && !StringUtils.hasText(cell(row, "postId"));
+    }
+
+    private TheRilogPublicationRow readPublicationRow(List<String> row) {
+        return new TheRilogPublicationRow(toRow(row), cell(row, "title"), cell(row, "content"),
+                readSpotlight(row), cell(row, "postId"));
+    }
+
+    record SelectedRow(String rowId, String range) {
     }
 
     List<TheRilogPublicationRow> readPublicationRows() {
@@ -45,15 +137,17 @@ final class TheRilogSheet {
         getColumn("title");
         getColumn("content");
         getColumn("postId");
-        return values.stream().skip(1).map(row -> new TheRilogPublicationRow(toRow(row),
-                cell(row, "title"), cell(row, "content"), readSpotlight(row), cell(row, "postId"))).toList();
+        return values.stream().skip(1).map(this::readPublicationRow).toList();
     }
 
     List<GoogleSheetValuesUpdateRequest.ValueRange> createPublicationUpdates(TheRilogPublishedArticle article) {
         validateInputColumns();
         int rowIndex = getUniqueRowIndex(article.rowId());
         List<String> row = values.get(rowIndex);
-        if (!APPROVED.matches(cell(row, "status")) || StringUtils.hasText(cell(row, "postId"))) {
+        if (PUBLISHED.matches(cell(row, "status")) && article.postId().toString().equals(cell(row, "postId"))) {
+            return List.of();
+        }
+        if (!isApprovedUnpublished(row)) {
             throw new TheRilogSheetException(INVALID_THE_RILOG_PUBLICATION_STATUS);
         }
         Map<String, String> result = new LinkedHashMap<>();
@@ -141,36 +235,7 @@ final class TheRilogSheet {
     }
 
     private String cellRange(int rowIndex, int columnIndex) {
-        int separator = range.lastIndexOf('!');
-        if (separator == -1) {
-            throw new IllegalArgumentException("더 리로그 시트 범위는 탭을 포함한 A1 표기여야 합니다.");
-        }
-        String firstCell = range.substring(separator + 1).split(":")[0];
-        Matcher matcher = FIRST_CELL.matcher(firstCell);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("더 리로그 시트 범위의 시작 셀을 해석할 수 없습니다.");
-        }
-        int firstColumn = columnNumber(matcher.group(1));
-        int firstRow = matcher.group(2) == null ? 1 : Integer.parseInt(matcher.group(2));
-        return range.substring(0, separator + 1) + columnName(firstColumn + columnIndex) + (firstRow + rowIndex);
-    }
-
-    private int columnNumber(String name) {
-        int number = 0;
-        for (char letter : name.toCharArray()) {
-            number = number * 26 + letter - 'A' + 1;
-        }
-        return number;
-    }
-
-    private String columnName(int number) {
-        StringBuilder name = new StringBuilder();
-        while (number > 0) {
-            number--;
-            name.append((char) ('A' + number % 26));
-            number /= 26;
-        }
-        return name.reverse().toString();
+        return TheRilogSheetRange.from(range).cell(rowIndex, columnIndex);
     }
 
 }

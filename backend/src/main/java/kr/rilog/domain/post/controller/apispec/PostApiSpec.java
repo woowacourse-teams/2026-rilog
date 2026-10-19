@@ -42,7 +42,7 @@ public interface PostApiSpec {
     @OptionalAuthGuard
     @Operation(
             summary = "게시글 상세 조회 API",
-            description = "블로그 slug와 게시글 ID로 canonical 경로의 게시글 상세 정보를 조회합니다. URL slug가 게시글 소속 블로그와 다르면 찾을 수 없습니다. 저장된 viewCount를 반환하며, GET 호출로 조회수가 증가하지 않습니다."
+            description = "블로그 slug와 게시글 ID로 canonical 경로의 게시글 상세 정보를 조회합니다. URL slug가 게시글 소속 블로그와 다르면 찾을 수 없습니다. 상세 응답의 viewerPermissions.canDelete가 true인 사용자에게만 메모리 증가분을 포함한 현재 viewCount를 반환하고 다른 독자는 null입니다. 코로그 OWNER·ADMIN·작성자는 기존 삭제 권한 정책을 따릅니다. GET·prefetch로 조회수나 방문 기록이 증가하지 않습니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
@@ -78,7 +78,7 @@ public interface PostApiSpec {
     @AuthGuard
     @Operation(
             summary = "게시글 수정 초기 데이터 조회 API",
-            description = "작성자 본인이 발행된 게시글을 수정하기 위한 초기 데이터를 조회합니다. 저장된 viewCount를 포함하며 조회수는 증가하지 않습니다."
+            description = "작성자 본인이 발행된 게시글을 수정하기 위한 초기 데이터를 조회합니다. 기존 viewerPermissions.canDelete가 true인 경우에만 현재 viewCount를 반환하고, 삭제 권한이 없으면 null입니다. GET은 조회수를 증가시키지 않습니다."
     )
     ApiResponse<PostDetailResponse> getEditablePostDetails(
             @Parameter(description = "게시글 ID", example = "1")

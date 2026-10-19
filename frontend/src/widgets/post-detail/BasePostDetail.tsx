@@ -8,6 +8,7 @@ import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
+import PostViewRegistration from '@/features/post-detail/ui/PostViewRegistration';
 
 import { getPostCommentsDockHostId } from './get-post-comments-dock-host-id';
 import styles from './PostDetail.module.css';
@@ -43,6 +44,7 @@ export default async function BasePostDetail({
 			ownerType={post.blog.type}
 			chapterId={post.chapter?.id ?? null}
 		>
+			<PostViewRegistration postId={post.id} />
 			<main className="min-h-dvh bg-background px-4 py-5 sm:px-5 sm:py-7 lg:px-8 lg:py-10">
 				<div className={styles.postDetailShell}>
 					<div

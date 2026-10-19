@@ -28,7 +28,7 @@ describe('PostWriteAccessGuard', () => {
 		routerReplaceMock.mockReset();
 		useAuthMock.mockReset();
 		useMyInfoQueryMock.mockReset();
-		useAuthMock.mockReturnValue({ isAuthenticated: true, isInitialized: true });
+		useAuthMock.mockReturnValue({ isAuthenticated: true, sessionVersion: 0, isInitialized: true });
 		useMyInfoQueryMock.mockReturnValue({ isPending: false, isError: false, data: { data: { id: 7 } } });
 		Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
 	});
@@ -42,6 +42,19 @@ describe('PostWriteAccessGuard', () => {
 
 		expect(screen.getByText('게시글 수정 화면')).toBeInTheDocument();
 		expect(routerBackMock).not.toHaveBeenCalled();
+	});
+
+	it('인증되어도 작성자 정보가 없으면 이동하거나 children을 표시하지 않고 기다린다', () => {
+		render(
+			<PostWriteAccessGuard>
+				<p>게시글 수정 화면</p>
+			</PostWriteAccessGuard>,
+		);
+
+		expect(screen.getByRole('status')).toHaveTextContent('게시글 수정 권한을 확인하고 있어요.');
+		expect(screen.queryByText('게시글 수정 화면')).not.toBeInTheDocument();
+		expect(routerBackMock).not.toHaveBeenCalled();
+		expect(routerReplaceMock).not.toHaveBeenCalled();
 	});
 
 	it('접근자가 작성자가 아니면 children을 숨기고 이전 페이지로 돌아간다', () => {
@@ -74,7 +87,7 @@ describe('PostWriteAccessGuard', () => {
 	});
 
 	it('인증되지 않은 접근자는 내 정보를 조회하지 않고 이전 페이지로 돌아간다', () => {
-		useAuthMock.mockReturnValue({ isAuthenticated: false, isInitialized: true });
+		useAuthMock.mockReturnValue({ isAuthenticated: false, sessionVersion: 0, isInitialized: true });
 
 		render(
 			<PostWriteAccessGuard authorId={7}>
@@ -88,7 +101,7 @@ describe('PostWriteAccessGuard', () => {
 	});
 
 	it('인증이나 내 정보 확인 중에는 pending 상태를 보여 준다', () => {
-		useAuthMock.mockReturnValue({ isAuthenticated: false, isInitialized: false });
+		useAuthMock.mockReturnValue({ isAuthenticated: false, sessionVersion: 0, isInitialized: false });
 		useMyInfoQueryMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
 
 		render(

@@ -9,6 +9,8 @@ import GuestSidebarFooter from './GuestSidebarFooter';
 
 const { githubLoginStartedMock } = vi.hoisted(() => ({ githubLoginStartedMock: vi.fn() }));
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 vi.mock('@/features/analytics/model/events', () => ({
 	analytics: {
 		githubLoginStarted: githubLoginStartedMock,
@@ -25,7 +27,9 @@ describe('GuestSidebarFooter', () => {
 	it('로그인 버튼을 누르면 로그인 모달을 연다', async () => {
 		const user = userEvent.setup();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<LoginModalProvider>
 					<GuestSidebarFooter />
 				</LoginModalProvider>
@@ -33,9 +37,12 @@ describe('GuestSidebarFooter', () => {
 		);
 
 		const loginButton = screen.getByRole('button', { name: '로그인' });
+		const writeButton = screen.getByRole('link', { name: '글쓰기' });
 		expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('dialog', { name: '로그인' })).not.toBeInTheDocument();
 
+		await user.tab();
+		expect(writeButton).toHaveFocus();
 		await user.tab();
 		expect(loginButton).toHaveFocus();
 
@@ -47,7 +54,9 @@ describe('GuestSidebarFooter', () => {
 	it('사이드바에서 시작한 GitHub 로그인에 진입면과 검색 조건을 포함한 복귀 경로를 남긴다', async () => {
 		const user = userEvent.setup();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<LoginModalProvider>
 					<GuestSidebarFooter />
 				</LoginModalProvider>

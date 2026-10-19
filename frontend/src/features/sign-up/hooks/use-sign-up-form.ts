@@ -7,6 +7,7 @@ import type { ChangeEvent, SubmitEvent } from 'react';
 
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
+import { takePostLoginRedirect } from '@/features/login/lib/post-login-redirect';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
 import { mockCompleteSignUp } from '../lib/mock-complete-sign-up';
@@ -187,12 +188,13 @@ export function useSignUpForm({ completeSignUp = mockCompleteSignUp, navigate }:
 			return;
 		}
 
+		const redirectUrl = takePostLoginRedirect();
 		if (navigate !== undefined) {
-			navigate('/', { replace: true });
+			navigate(redirectUrl, { replace: true });
 			return;
 		}
 
-		window.location.replace('/');
+		window.location.replace(redirectUrl);
 	};
 
 	return {

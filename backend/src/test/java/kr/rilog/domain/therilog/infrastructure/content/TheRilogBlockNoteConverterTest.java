@@ -151,6 +151,30 @@ class TheRilogBlockNoteConverterTest {
     }
 
     @Test
+    @DisplayName("Mermaid 코드의 언어와 화살표 및 줄바꿈을 기존 BlockNote 코드 블록에 보존한다.")
+    void preserveMermaidCode() {
+        String mermaid = """
+                flowchart TD
+                    A[03:00 n8n 시작] --> B[GitHub 최신 지침 버전 고정]
+                    B --> C[후보 수집 · 기존 발행분과 중복 검사]
+                    C --> D[Codex CLI 원문 검증 · 선별 · 작성]
+                    D --> E[썸네일 제작 · Rilog S3 업로드]
+                    E --> F[원문 대조 · 수량 · 형식 · 이미지 검사]
+                    F -->|통과| G[시트 저장 · 재조회 · 자동 승인]
+                    F -->|실패| H[대체 후보 또는 보류]
+                    G --> I[05:00 Rilog 배치 발행]
+                    I --> J[발행 결과 확인 · 실패 기록]""";
+
+        JsonNode converted = converter.convert("```mermaid\n" + mermaid + "\n```");
+
+        assertThat(converted).singleElement().satisfies(block -> {
+            assertThat(block.path("type").asString()).isEqualTo("codeBlock");
+            assertThat(block.path("props").path("language").asString()).isEqualTo("mermaid");
+            assertThat(block.path("content").get(0).path("text").asString()).isEqualTo(mermaid);
+        });
+    }
+
+    @Test
     @DisplayName("변환된 모든 블록은 댓글과 목차에서 사용할 서로 다른 UUID를 가진다.")
     void assignUniqueBlockIds() {
         JsonNode converted = converter.convert("# 제목\n\n- 항목\n  - 자식\n\n***");

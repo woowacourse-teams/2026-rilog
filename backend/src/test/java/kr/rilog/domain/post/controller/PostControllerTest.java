@@ -23,10 +23,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -79,25 +82,30 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("블로그 게시글 상세 조회는 slug와 postId로 로그인하지 않아도 가능하다")
+    @DisplayName("블로그 게시글 상세 조회는 slug와 postId로 로그인하지 않아도 가능하다.")
     void getPostDetailsByCanonicalPathAllowsAnonymousUser() throws Exception {
         // given
         PostService postService = mock(PostService.class);
-        when(postService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(response());
+        when(postService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(anonymousResponse());
         MockMvc mockMvc = mockMvc(postService);
+        JsonMapper mapper = JsonMapper.builder().build();
 
-        // when - then
-        mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.chapter.chapterId").value(12L))
-                .andExpect(jsonPath("$.data.chapter.name").value("Spring"))
-                .andExpect(jsonPath("$.data.chapter.order").value(0))
-                .andExpect(jsonPath("$.data.owner.type").value("RILOG"))
-                .andExpect(jsonPath("$.data.viewCount").value(42))
-                .andExpect(jsonPath("$.data.viewerPermissions.canEdit").value(false))
-                .andExpect(jsonPath("$.data.viewerPermissions.canDelete").value(false));
+        // when
+        var response = mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
+                .andReturn().getResponse();
 
+        // then
+        JsonNode body = mapper.readTree(response.getContentAsString());
+        assertSoftly(softly -> {
+            softly.assertThat(response.getStatus()).isEqualTo(200);
+            softly.assertThat(body.path("status").asInt()).isEqualTo(200);
+            softly.assertThat(mapper.treeToValue(body.at("/data/chapter"), ChapterResponse.class))
+                    .isEqualTo(new ChapterResponse(12L, "Spring", 0));
+            softly.assertThat(body.at("/data/owner/type").asText()).isEqualTo("RILOG");
+            softly.assertThat(body.at("/data/viewCount").isNull()).isTrue();
+            softly.assertThat(mapper.treeToValue(body.at("/data/viewerPermissions"), PostDetailResponse.ViewerPermissionsResponse.class))
+                    .isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
+        });
         verify(postService).readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null);
     }
 
@@ -219,6 +227,13 @@ class PostControllerTest {
                 response.viewerPermissions(),
                 response.viewCount()
         );
+    }
+
+    private PostDetailResponse anonymousResponse() {
+        PostDetailResponse result = response();
+        return new PostDetailResponse(result.title(), result.content(), result.publishedAt(),
+                result.thumbnailImageUrl(), result.category(), result.chapter(), result.author(), result.owner(),
+                result.viewerPermissions(), null);
     }
 
     private static class FixedAccessTokenProvider implements AccessTokenProvider {

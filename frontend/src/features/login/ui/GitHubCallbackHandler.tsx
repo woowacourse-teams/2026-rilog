@@ -5,29 +5,14 @@ import { useEffect, useRef } from 'react';
 
 import { getAnalyticsErrorProperties } from '@/features/analytics/lib/get-analytics-error-properties';
 import { analytics } from '@/features/analytics/model/events';
+import { clearPendingAuthAction } from '@/features/login/lib/pending-auth-action';
+import { clearPostLoginRedirect, takePostLoginRedirect } from '@/features/login/lib/post-login-redirect';
 import { clearSignUpFlow, startSignUpFlow } from '@/features/sign-up/lib/sign-up-flow-session';
 import { handleGitHubCallback } from '@/shared/api/auth/api';
 import { tokenManager } from '@/shared/api/auth/token-manager';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 import { APP_ROUTES } from '@/shared/routes/app-routes';
 import { logNonProductionError } from '@/shared/utils/non-production-console';
-
-const getPostLoginRedirect = (storedValue: string | null): string => {
-	if (
-		storedValue === null ||
-		!storedValue.startsWith('/') ||
-		storedValue.startsWith('//') ||
-		/[\\\u0000-\u001f\u007f]/.test(storedValue)
-	) {
-		return '/';
-	}
-
-	try {
-		return new URL(storedValue, window.location.origin).origin === window.location.origin ? storedValue : '/';
-	} catch {
-		return '/';
-	}
-};
 
 export default function GitHubCallbackHandler() {
 	const searchParams = useSearchParams();
@@ -72,9 +57,7 @@ export default function GitHubCallbackHandler() {
 					router.replace(APP_ROUTES.signUp);
 				} else {
 					clearSignUpFlow();
-					const redirectUrl = getPostLoginRedirect(localStorage.getItem('postLoginRedirect'));
-					localStorage.removeItem('postLoginRedirect');
-					router.replace(redirectUrl);
+					router.replace(takePostLoginRedirect());
 				}
 			} catch (err) {
 				apiErrorReporter.report(err, {
@@ -84,6 +67,8 @@ export default function GitHubCallbackHandler() {
 				const { errorCode } = getAnalyticsErrorProperties(err);
 				analytics.githubLoginFailed({ failureStage, errorCode });
 				clearSignUpFlow();
+				clearPendingAuthAction();
+				clearPostLoginRedirect();
 				logNonProductionError('GitHub login failed:', err);
 				router.replace('/');
 			}

@@ -15,7 +15,9 @@ describe('SignUpPage', () => {
 	it('프로필 설정 페이지 제목을 안내한다', async () => {
 		startSignUpFlow();
 		render(
-			<AUTH_CONTEXT.Provider value={{ isOnboarding: false, isAuthenticated: false, isInitialized: true }}>
+			<AUTH_CONTEXT.Provider
+				value={{ isOnboarding: false, isAuthenticated: false, sessionVersion: 0, isInitialized: true }}
+			>
 				<SignUpPage />
 			</AUTH_CONTEXT.Provider>,
 		);

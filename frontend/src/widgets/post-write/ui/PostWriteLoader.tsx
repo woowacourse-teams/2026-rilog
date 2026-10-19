@@ -3,6 +3,8 @@
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
+import { stripAtPrefix } from '@/shared/utils/strip-at-prefix';
+
 import DraftPostLoader from './DraftPostLoader';
 import EditPostLoader from './EditPostLoader';
 import NewPostController from './NewPostController';
@@ -42,12 +44,9 @@ const parsePostWriteEntry = (
 
 	if (rawPostId !== null) {
 		const postId = Number(rawPostId);
-		return rawPostId.trim().length > 0 &&
-			rawSlug !== null &&
-			rawSlug.trim().length > 0 &&
-			Number.isSafeInteger(postId) &&
-			postId > 0
-			? { type: 'edit', slug: rawSlug, postId }
+		const slug = rawSlug === null ? '' : stripAtPrefix(rawSlug);
+		return rawPostId.trim().length > 0 && slug.length > 0 && Number.isSafeInteger(postId) && postId > 0
+			? { type: 'edit', slug, postId }
 			: { type: 'invalid-post' };
 	}
 

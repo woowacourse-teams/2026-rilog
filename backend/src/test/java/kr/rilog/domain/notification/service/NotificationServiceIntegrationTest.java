@@ -4,6 +4,9 @@ import kr.rilog.domain.notification.entity.Notification;
 import kr.rilog.domain.notification.exception.NotificationException;
 import kr.rilog.domain.notification.repository.NotificationRepository;
 import kr.rilog.support.ServiceSupport;
+import kr.rilog.support.fixure.UserFixture;
+import kr.rilog.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +23,8 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
 
     private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 10, 10, 12, 0);
     private static final LocalDateTime ALREADY_READ_AT = CREATED_AT.plusMinutes(1);
-    private static final Long RECIPIENT_ID = 1L;
-    private static final Long OTHER_USER_ID = 2L;
+    private Long recipientId;
+    private Long otherUserId;
     private static final Long SOURCE_ID = 10L;
 
     @Autowired
@@ -30,14 +33,23 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @BeforeEach
+    void saveRecipients() {
+        recipientId = userRepository.saveAndFlush(UserFixture.user(1001L, "notification-recipient")).getId();
+        otherUserId = userRepository.saveAndFlush(UserFixture.user(1002L, "notification-other")).getId();
+    }
+
     @Test
     @DisplayName("읽지 않은 알림을 읽음 처리하면 읽은 상태가 된다.")
     void markAsReadMarksUnreadNotification() {
         // given
-        Notification notification = saveUnreadNotification(RECIPIENT_ID);
+        Notification notification = saveUnreadNotification(recipientId);
 
         // when
-        notificationService.markAsRead(notification.getId(), RECIPIENT_ID);
+        notificationService.markAsRead(notification.getId(), recipientId);
 
         // then
         Notification found = findNotification(notification);
@@ -51,10 +63,10 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
     @DisplayName("이미 읽은 알림을 다시 읽음 처리해도 처음 읽은 시각을 유지한다.")
     void markAsReadKeepsReadAtOfAlreadyReadNotification() {
         // given
-        Notification notification = saveReadNotification(RECIPIENT_ID, ALREADY_READ_AT);
+        Notification notification = saveReadNotification(recipientId, ALREADY_READ_AT);
 
         // when
-        notificationService.markAsRead(notification.getId(), RECIPIENT_ID);
+        notificationService.markAsRead(notification.getId(), recipientId);
 
         // then
         assertThat(findNotification(notification).getReadAt()).isEqualTo(ALREADY_READ_AT);
@@ -64,11 +76,11 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
     @DisplayName("알림 하나를 읽음 처리해도 같은 수신자의 다른 알림은 읽지 않은 상태로 남는다.")
     void markAsReadDoesNotMarkOtherNotificationsOfRecipient() {
         // given
-        Notification target = saveUnreadNotification(RECIPIENT_ID);
-        Notification other = saveUnreadNotification(RECIPIENT_ID);
+        Notification target = saveUnreadNotification(recipientId);
+        Notification other = saveUnreadNotification(recipientId);
 
         // when
-        notificationService.markAsRead(target.getId(), RECIPIENT_ID);
+        notificationService.markAsRead(target.getId(), recipientId);
 
         // then
         assertThat(findNotification(other).isRead()).isFalse();
@@ -78,13 +90,12 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
     @DisplayName("다른 사용자의 알림을 읽음 처리하면 알림을 찾을 수 없다는 예외가 발생하고 읽지 않은 상태로 남는다.")
     void markAsReadThrowsWhenNotificationBelongsToOtherUser() {
         // given
-        Notification notification = saveUnreadNotification(RECIPIENT_ID);
+        Notification notification = saveUnreadNotification(recipientId);
 
         // when & then
-        assertThatThrownBy(() -> notificationService.markAsRead(notification.getId(), OTHER_USER_ID))
+        assertThatThrownBy(() -> notificationService.markAsRead(notification.getId(), otherUserId))
                 .isInstanceOf(NotificationException.class)
-                .extracting("errorInformation")
-                .isEqualTo(NOTIFICATION_NOT_FOUND);
+                .hasMessage(NOTIFICATION_NOT_FOUND.getMessage());
         assertThat(findNotification(notification).isRead()).isFalse();
     }
 
@@ -92,35 +103,34 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 알림을 읽음 처리하면 알림을 찾을 수 없다는 예외가 발생한다.")
     void markAsReadThrowsWhenNotificationDoesNotExist() {
         // when & then
-        assertThatThrownBy(() -> notificationService.markAsRead(Long.MAX_VALUE, RECIPIENT_ID))
+        assertThatThrownBy(() -> notificationService.markAsRead(Long.MAX_VALUE, recipientId))
                 .isInstanceOf(NotificationException.class)
-                .extracting("errorInformation")
-                .isEqualTo(NOTIFICATION_NOT_FOUND);
+                .hasMessage(NOTIFICATION_NOT_FOUND.getMessage());
     }
 
     @Test
     @DisplayName("전체 읽음 처리하면 수신자의 읽지 않은 알림이 모두 읽은 상태가 된다.")
     void markAllAsReadMarksAllUnreadNotificationsOfRecipient() {
         // given
-        saveUnreadNotification(RECIPIENT_ID);
-        saveUnreadNotification(RECIPIENT_ID);
+        saveUnreadNotification(recipientId);
+        saveUnreadNotification(recipientId);
 
         // when
-        notificationService.markAllAsRead(RECIPIENT_ID);
+        notificationService.markAllAsRead(recipientId);
 
         // then
-        assertThat(notificationRepository.countByRecipientIdAndReadAtIsNull(RECIPIENT_ID)).isZero();
+        assertThat(notificationRepository.countByRecipientIdAndReadAtIsNull(recipientId)).isZero();
     }
 
     @Test
     @DisplayName("전체 읽음 처리해도 다른 사용자의 알림은 읽지 않은 상태로 남는다.")
     void markAllAsReadDoesNotMarkNotificationsOfOtherUser() {
         // given
-        saveUnreadNotification(RECIPIENT_ID);
-        Notification otherUserNotification = saveUnreadNotification(OTHER_USER_ID);
+        saveUnreadNotification(recipientId);
+        Notification otherUserNotification = saveUnreadNotification(otherUserId);
 
         // when
-        notificationService.markAllAsRead(RECIPIENT_ID);
+        notificationService.markAllAsRead(recipientId);
 
         // then
         assertThat(findNotification(otherUserNotification).isRead()).isFalse();

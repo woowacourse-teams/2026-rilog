@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 
+import { clearPendingAuthAction } from '../lib/pending-auth-action';
+import { savePostLoginRedirect } from '../lib/post-login-redirect';
 import LoginModal from '../ui/LoginModal';
 
 import { LOGIN_MODAL_CONTEXT } from './login-modal-context';
@@ -25,17 +27,17 @@ export default function LoginModalProvider({ children }: LoginModalProviderProps
 		setIsOpen(true);
 	}, []);
 	const close = useCallback(() => {
+		clearPendingAuthAction();
 		setIsLoginPending(false);
 		setIsOpen(false);
 	}, []);
 
 	const handleGitHubLogin = useCallback(() => {
 		const redirectTarget = window.location.pathname;
-		const postLoginRedirect = `${redirectTarget}${window.location.search}`;
 		analytics.githubLoginStarted({ entrySurface: loginEntrySurface, redirectTarget });
 		setIsLoginPending(true);
 
-		localStorage.setItem('postLoginRedirect', postLoginRedirect);
+		savePostLoginRedirect();
 
 		const frontendCallbackUrl = '/auth/github/callback';
 		const backendAuthUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/github?redirectUrl=${frontendCallbackUrl}`;

@@ -14,9 +14,9 @@ import { useUpdatePostMutation } from './use-update-post-mutation';
 describe('useUpdatePostMutation', () => {
 	it('수정 성공 후 상세·목록과 해당 글의 로그인·비회원 인라인 댓글 캐시를 무효화한다', async () => {
 		const queryClient = createTestQueryClient();
-		const updatedKey = postsQueryKeys.detail('personal-blog', 31);
-		const updatedAliasKey = postsQueryKeys.detail('@personal-blog', 31);
-		const otherKey = postsQueryKeys.detail('personal-blog', 32);
+		const updatedKey = postsQueryKeys.detail('personal-blog', 31, 1);
+		const updatedAliasKey = postsQueryKeys.detail('@personal-blog', 31, 2);
+		const otherKey = postsQueryKeys.detail('personal-blog', 32, 1);
 		for (const key of [updatedKey, updatedAliasKey, otherKey]) queryClient.setQueryData(key, { title: '글' });
 		const commentKeys = [
 			postsQueryKeys.commentAnchors(31, true),

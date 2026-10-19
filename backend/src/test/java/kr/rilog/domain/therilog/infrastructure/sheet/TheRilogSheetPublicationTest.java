@@ -49,7 +49,7 @@ class TheRilogSheetPublicationTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"검토대기,''", "승인완료,601"})
+    @CsvSource(value = {"검토대기,''", "승인완료,601", "발행완료,602"})
     @DisplayName("승인이 취소되거나 게시글 ID가 이미 기록된 행에는 발행 결과를 덮어쓰지 않는다.")
     void rejectsChangedPublicationStatus(String status, String postId) {
         var sheet = sheet(List.of(HEADER, row("news", "2026-10-15 05:00", status, postId)));

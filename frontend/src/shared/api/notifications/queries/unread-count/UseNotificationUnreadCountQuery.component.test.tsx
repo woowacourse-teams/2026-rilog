@@ -20,7 +20,7 @@ function CountStatus() {
 
 function renderCount(isAuthenticated: boolean, isInitialized = true) {
 	return renderWithQuery(
-		<AUTH_CONTEXT.Provider value={{ isAuthenticated, isInitialized, isOnboarding: false }}>
+		<AUTH_CONTEXT.Provider value={{ isAuthenticated, sessionVersion: 0, isInitialized, isOnboarding: false }}>
 			<CountStatus />
 		</AUTH_CONTEXT.Provider>,
 	);
