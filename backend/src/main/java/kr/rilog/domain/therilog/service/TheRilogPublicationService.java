@@ -1,6 +1,7 @@
 package kr.rilog.domain.therilog.service;
 
 import kr.rilog.domain.therilog.entity.vo.TheRilogPublication;
+import kr.rilog.domain.therilog.exception.TheRilogPublicationResultWriteException;
 import kr.rilog.domain.therilog.infrastructure.content.TheRilogBlockNoteConverter;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogPublishedArticle;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +41,18 @@ public class TheRilogPublicationService {
         warnIfCountsDiffer(publication);
         List<TheRilogPublishedArticle> published = theRilogService.publishPublication(publication);
         log.info("더 리로그 발행분의 DB 저장을 완료했습니다. date={}, articles={}", date, published);
-        writePublishedResults(date, published);
+        completePublication(published);
         return published;
+    }
+
+    public void completePublication(List<TheRilogPublishedArticle> published) {
+        try {
+            sheetService.writePublicationResults(published);
+        } catch (RuntimeException exception) {
+            log.error("더 리로그 게시글은 저장됐지만 시트 발행 결과 기록에 실패했습니다. articles={}",
+                    published, exception);
+            throw new TheRilogPublicationResultWriteException(published, exception);
+        }
     }
 
     private void warnIfCountsDiffer(TheRilogPublication publication) {
@@ -51,13 +62,4 @@ public class TheRilogPublicationService {
         }
     }
 
-    private void writePublishedResults(LocalDate date, List<TheRilogPublishedArticle> published) {
-        try {
-            sheetService.writePublicationResults(published);
-        } catch (RuntimeException exception) {
-            log.error("더 리로그 게시글은 저장됐지만 시트 발행 결과 기록에 실패했습니다. 시트를 수동으로 맞춰주세요. date={}, articles={}",
-                    date, published, exception);
-            throw exception;
-        }
-    }
 }

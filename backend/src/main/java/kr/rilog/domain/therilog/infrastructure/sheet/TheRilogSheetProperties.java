@@ -18,7 +18,7 @@ public record TheRilogSheetProperties(
 ) {
 
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
-    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(60);
 
     public TheRilogSheetProperties {
         connectTimeout = connectTimeout == null ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
