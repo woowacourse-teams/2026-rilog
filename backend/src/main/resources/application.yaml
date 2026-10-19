@@ -27,6 +27,9 @@ server:
 
 post:
   view:
+    flush:
+      enabled: ${POST_VIEW_FLUSH_ENABLED:true}
+      interval: ${POST_VIEW_FLUSH_INTERVAL:10m}
     registration:
       enabled: ${POST_VIEW_REGISTRATION_ENABLED:false}
       cookie-secure: ${POST_VIEW_COOKIE_SECURE:true}

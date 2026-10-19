@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.view;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -18,6 +19,7 @@ class PostViewStoreContractTest {
 
     @ParameterizedTest
     @EnumSource(ViewerStorage.class)
+    @DisplayName("배치 준비와 저장 완료 중에도 현재 조회수 합계를 유지한다.")
     void batchTransitionsPreserveCurrentCount(ViewerStorage storage) {
         PostViewStore store = store(storage);
         acceptReaders(store, 10);
@@ -35,6 +37,7 @@ class PostViewStoreContractTest {
 
     @ParameterizedTest
     @EnumSource(ViewerStorage.class)
+    @DisplayName("미완료 배치를 재반환하고 이전 배치의 완료 요청은 새 배치에 영향을 주지 않는다.")
     void unconfirmedBatchesRetryAndStaleCompletionsDoNotConfirmNewBatch(ViewerStorage storage) {
         PostViewStore store = store(storage);
         acceptReaders(store, 10);
@@ -61,6 +64,7 @@ class PostViewStoreContractTest {
 
     @ParameterizedTest
     @EnumSource(ViewerStorage.class)
+    @DisplayName("독자 기록이 만료되어도 미완료 배치와 새 증가분을 보존한다.")
     void expiredVisitorRecordsDoNotRemoveUnconfirmedBatch(ViewerStorage storage) {
         PostViewStore store = store(storage);
         ViewerIdentity viewer = ViewerIdentity.member(1);
@@ -77,6 +81,7 @@ class PostViewStoreContractTest {
 
     @ParameterizedTest
     @EnumSource(ViewerStorage.class)
+    @DisplayName("조회 등록과 배치 완료가 경쟁해도 새 증가분을 보존한다.")
     void concurrentReadersAndCompletionPreserveAllNewViews(ViewerStorage storage) throws Exception {
         PostViewStore store = store(storage);
         acceptReaders(store, 10);
@@ -98,6 +103,7 @@ class PostViewStoreContractTest {
 
     @ParameterizedTest
     @EnumSource(ViewerStorage.class)
+    @DisplayName("동시 재시도 준비와 조회수 읽기는 새 증가분을 변경하지 않는다.")
     void concurrentPreparationAndCountReadsPreservePendingViews(ViewerStorage storage) throws Exception {
         PostViewStore store = store(storage);
         acceptReaders(store, 10);

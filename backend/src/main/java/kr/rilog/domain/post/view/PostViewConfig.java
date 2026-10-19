@@ -5,6 +5,7 @@ import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Clock;
 import java.util.Map;
@@ -12,7 +13,8 @@ import java.util.Map;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_MISSING;
 
 @Configuration
-@EnableConfigurationProperties(PostViewRegistrationProperties.class)
+@EnableScheduling
+@EnableConfigurationProperties({PostViewRegistrationProperties.class, PostViewFlushProperties.class})
 public class PostViewConfig {
 
     @Bean
