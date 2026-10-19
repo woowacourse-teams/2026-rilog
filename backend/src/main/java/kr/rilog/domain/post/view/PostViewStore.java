@@ -13,7 +13,4 @@ public interface PostViewStore {
     List<ViewFlushBatch> prepareFlushBatches();
 
     void completeFlush(long postId, UUID batchId);
-
-    // DB에서 삭제 또는 부재가 확인된 게시글만 제거한다.
-    void removeCounter(long postId);
 }

@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -28,14 +27,10 @@ public class PostViewFlushService {
             if (batches.isEmpty()) {
                 return;
             }
-            // 전체 DB 트랜잭션이 커밋된 뒤에만 메모리를 완료하거나 삭제된 글의 Counter를 제거한다.
-            Set<Long> excludedPostIds = batchWriter.writeAll(batches);
+            // 전체 DB 트랜잭션이 커밋된 뒤에만 메모리 배치를 완료한다.
+            batchWriter.writeAll(batches);
             for (ViewFlushBatch batch : batches) {
-                if (excludedPostIds.contains(batch.postId())) {
-                    postViewStore.removeCounter(batch.postId());
-                } else {
-                    postViewStore.completeFlush(batch.postId(), batch.batchId());
-                }
+                postViewStore.completeFlush(batch.postId(), batch.batchId());
             }
         } catch (RuntimeException exception) {
             log.error("조회수 배치 저장 또는 완료 처리에 실패했습니다. 미완료 배치는 다음 정기 실행에서 재시도합니다.", exception);

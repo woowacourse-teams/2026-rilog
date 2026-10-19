@@ -93,12 +93,6 @@ public final class PostViewCounterRegistry implements PostViewStore {
         }
     }
 
-    @Override
-    public void removeCounter(long postId) {
-        validatePostId(postId);
-        counters.remove(postId);
-    }
-
     List<PostViewCounter> snapshot() {
         return counters.values().stream()
                 .map(this::loadedCounter)

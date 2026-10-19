@@ -140,8 +140,8 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("삭제된 글은 배치에서 제외하고 다른 게시글의 조회수는 저장한다.")
-    void skipsDeletedPostWithoutBlockingOtherPosts() {
+    @DisplayName("소프트 삭제된 글도 삭제 전에 인정한 조회수를 다른 게시글과 함께 저장한다.")
+    void persistsAcceptedViewsAfterSoftDeletion() {
         // given
         long deletedPostId = publishWithView();
         long activePostId = publishWithView();
@@ -152,9 +152,9 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         // then
         assertSoftly(softly -> {
-            softly.assertThat(storedCount(deletedPostId)).isZero();
+            softly.assertThat(storedCount(deletedPostId)).isEqualTo(1L);
             softly.assertThat(storedCount(activePostId)).isEqualTo(1L);
-            softly.assertThat(store.currentCount(deletedPostId)).isZero();
+            softly.assertThat(store.currentCount(deletedPostId)).isEqualTo(1L);
             softly.assertThat(store.prepareFlushBatches()).isEmpty();
         });
     }
@@ -199,8 +199,8 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("배치를 준비한 뒤 삭제된 글도 DB 저장에서 제외한다.")
-    void skipsPostDeletedAfterPreparation() {
+    @DisplayName("배치를 준비한 뒤 소프트 삭제되어도 이미 인정한 조회수는 저장한다.")
+    void persistsViewsWhenPostIsDeletedAfterPreparation() {
         // given
         long postId = publishWithView();
         store.afterPreparation = () -> {
@@ -212,14 +212,14 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         flushService.flushPendingViews();
 
         // then
-        assertThat(storedCount(postId)).isZero();
-        assertThat(store.currentCount(postId)).isZero();
+        assertThat(storedCount(postId)).isEqualTo(1L);
+        assertThat(store.currentCount(postId)).isEqualTo(1L);
         assertThat(store.prepareFlushBatches()).isEmpty();
     }
 
     @Test
-    @DisplayName("전체 저장이 롤백되면 삭제된 글의 Counter 제거도 보류한다.")
-    void retainsDeletedCounterWhenWholeTransactionRollsBack() {
+    @DisplayName("전체 저장이 롤백되면 소프트 삭제된 글의 증가분도 DB에 반영하지 않고 유지한다.")
+    void retainsDeletedPostBatchWhenWholeTransactionRollsBack() {
         // given
         long deletedPostId = publishWithView();
         long activePostId = publishWithView();
@@ -231,9 +231,12 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         flushService.flushPendingViews();
 
         // then
-        assertThat(store.currentCount(deletedPostId)).isEqualTo(1L);
-        assertThat(storedCount(activePostId)).isZero();
-        assertThat(store.prepareFlushBatches()).hasSize(3);
+        assertSoftly(softly -> {
+            softly.assertThat(storedCount(deletedPostId)).isZero();
+            softly.assertThat(store.currentCount(deletedPostId)).isEqualTo(1L);
+            softly.assertThat(storedCount(activePostId)).isZero();
+            softly.assertThat(store.prepareFlushBatches()).hasSize(3);
+        });
     }
 
     @Test
@@ -337,11 +340,6 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
                     .sorted(Comparator.comparingLong(ViewFlushBatch::postId)).toList();
             afterPreparation.run();
             return batches;
-        }
-
-        @Override
-        public void removeCounter(long postId) {
-            registry.removeCounter(postId);
         }
 
         @Override
