@@ -87,7 +87,7 @@ class PostViewCounterTest {
 
     @Test
     @DisplayName("배치 분리와 새 조회와 완료 사이에 현재 값이 유지된다")
-    void batchTransitionsPreserveCount() {
+    void batchTransitionsPreserveCountAndRetryIdentity() {
         var registry = registry(ticks, id -> 100);
         PostViewCounter counter = registry.getOrLoad(1);
         registry.recordView(1, ViewerIdentity.member(1));
@@ -99,10 +99,10 @@ class PostViewCounterTest {
         assertThat(counter.currentCount()).isEqualTo(102);
 
         registry.recordView(1, ViewerIdentity.member(3));
-        assertThat(counter.prepareFlush()).isEmpty();
+        assertThat(counter.prepareFlush()).contains(first);
         assertThat(counter.currentCount()).isEqualTo(103);
         counter.completeFlush(UUID.randomUUID());
-        assertThat(counter.prepareFlush()).isEmpty();
+        assertThat(counter.prepareFlush()).contains(first);
         counter.completeFlush(first.batchId());
         counter.completeFlush(first.batchId());
         assertThat(counter.currentCount()).isEqualTo(103);
@@ -111,7 +111,7 @@ class PostViewCounterTest {
         assertThat(second.batchId()).isNotEqualTo(first.batchId());
         assertThat(second.delta()).isEqualTo(1);
         counter.completeFlush(first.batchId());
-        assertThat(counter.prepareFlush()).isEmpty();
+        assertThat(counter.prepareFlush()).contains(second);
         counter.completeFlush(second.batchId());
         assertThat(counter.prepareFlush()).isEmpty();
         assertThat(counter.currentCount()).isEqualTo(103);
@@ -132,16 +132,14 @@ class PostViewCounterTest {
     }
 
     @Test
-    @DisplayName("동시에 배치를 준비해도 저장할 배치는 한 번만 반환한다.")
-    void concurrentPreparationClaimsBatchOnce() throws Exception {
+    @DisplayName("동시 배치 분리는 하나의 불변 배치를 공유한다")
+    void concurrentPreparationSharesOneBatch() throws Exception {
         var registry = registry(ticks, id -> 0);
         PostViewCounter counter = registry.getOrLoad(1);
         registry.recordView(1, ViewerIdentity.member(1));
-        var batches = concurrently(100, i -> counter.prepareFlush()).stream()
-                .flatMap(java.util.Optional::stream)
-                .toList();
-        assertThat(batches).hasSize(1)
-                .allSatisfy(batch -> assertThat(batch.delta()).isEqualTo(1));
+        var batches = concurrently(100, i -> counter.prepareFlush().orElseThrow());
+        assertThat(batches).allMatch(batches.getFirst()::equals);
+        assertThat(batches.getFirst().delta()).isEqualTo(1);
         assertThat(counter.currentCount()).isEqualTo(1);
     }
 
@@ -193,7 +191,7 @@ class PostViewCounterTest {
         ticks.set(Duration.ofHours(1).toNanos());
         assertThatThrownBy(() -> registry.recordView(1, ViewerIdentity.member(1))).isInstanceOf(PostException.class);
         assertThat(PostViewRequestCleanupTest.viewerRecords(counter)).isEmpty();
-        assertThat(counter.prepareFlush()).isEmpty();
+        assertThat(counter.prepareFlush()).contains(batch);
         assertThat(counter.currentCount()).isEqualTo(9_007_199_254_740_991L);
         registry.getOrLoad(2);
         assertThat(registry.recordView(2, ViewerIdentity.member(2))).isEqualTo(new ViewResult(true, 1));

@@ -30,9 +30,15 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERVER_ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 @Import(PostViewFlushIntegrationTest.StoreObservationConfiguration.class)
 class PostViewFlushIntegrationTest extends ServiceSupport {
@@ -57,7 +63,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     @BeforeEach
     void prepareScenario() {
         store.beforeCompletion = () -> { };
-        store.beforeDiscard = () -> { };
+        store.afterPreparation = () -> { };
         User author = userRepository.saveAndFlush(
                 UserFixture.completedWithNicknameAndSlug("집계작성자", "flush_author"));
         Blog blog = blogRepository.saveAndFlush(Blog.createRilog(author));
@@ -81,29 +87,10 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("DB 저장이 실패한 증가분은 폐기하고 다음 실행에서도 저장하지 않는다.")
-    void discardsFailedBatchWithoutRetry() {
+    @DisplayName("저장 실패 시 증가분을 유지하고 다음 실행에서 같은 배치를 재시도한다.")
+    void retriesFailedBatchOnNextRun() {
         // given
         long postId = publishWithView();
-        jdbc.update("delete from post_view_count where post_id = ?", postId);
-        flushService.flushPendingViews();
-        jdbc.update("insert into post_view_count (post_id, view_count) values (?, 0)", postId);
-
-        // when
-        flushService.flushPendingViews();
-
-        // then
-        assertThat(storedCount(postId)).isZero();
-        assertThat(store.currentCount(postId)).isZero();
-        assertThat(store.prepareFlushBatches()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("실패한 배치를 폐기하는 동안 인정된 새 조회는 다음 실행에서 저장한다.")
-    void persistsViewsAcceptedWhileDiscardingFailedBatch() {
-        // given
-        long postId = publishWithView();
-        store.beforeDiscard = () -> store.recordView(postId, ViewerIdentity.member(999L));
         jdbc.update("delete from post_view_count where post_id = ?", postId);
         flushService.flushPendingViews();
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, 0)", postId);
@@ -118,25 +105,25 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("한 게시글의 배치 저장이 실패해도 나머지 게시글의 증가분을 저장한다.")
-    void continuesAfterOnePostFails() {
+    @DisplayName("뒤 게시글 저장이 실패하면 앞 게시글의 UPDATE도 롤백하고 모든 배치를 유지한다.")
+    void rollsBackAllPostsAndKeepsAllBatches() {
         // given
+        long firstPostId = publishWithView();
         long failedPostId = publishWithView();
-        long successfulPostId = publishWithView();
         jdbc.update("delete from post_view_count where post_id = ?", failedPostId);
 
         // when
         flushService.flushPendingViews();
 
         // then
-        assertThat(storedCount(successfulPostId)).isEqualTo(1L);
-        assertThat(store.currentCount(failedPostId)).isZero();
-        assertThat(store.prepareFlushBatches()).isEmpty();
+        assertThat(storedCount(firstPostId)).isZero();
+        assertThat(store.currentCount(firstPostId)).isEqualTo(1L);
+        assertThat(store.prepareFlushBatches()).hasSize(2);
     }
 
     @Test
-    @DisplayName("DB 커밋 후 메모리 완료가 실패해도 같은 증가분을 다시 저장하지 않는다.")
-    void doesNotRetryAfterAcknowledgmentFailure() {
+    @DisplayName("커밋 후 메모리 완료 실패로 같은 배치를 재시도하면 DB 중복 증가를 허용한다.")
+    void allowsDuplicateIncrementAfterAcknowledgmentFailure() {
         // given
         long postId = publishWithView();
         store.beforeCompletion = () -> { throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR); };
@@ -147,18 +134,41 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         flushService.flushPendingViews();
 
         // then
-        assertThat(storedCount(postId)).isEqualTo(1L);
+        assertThat(storedCount(postId)).isEqualTo(2L);
+        assertThat(store.currentCount(postId)).isEqualTo(1L);
         assertThat(store.prepareFlushBatches()).isEmpty();
     }
 
     @Test
-    @DisplayName("DB 트랜잭션이 커밋된 뒤에만 메모리 배치를 완료한다.")
-    void acknowledgesOnlyAfterDatabaseCommit() {
+    @DisplayName("삭제된 글은 배치에서 제외하고 다른 게시글의 조회수는 저장한다.")
+    void skipsDeletedPostWithoutBlockingOtherPosts() {
         // given
-        long postId = publishWithView();
+        long deletedPostId = publishWithView();
+        long activePostId = publishWithView();
+        postService.deletePublishedPost(deletedPostId, scenario.author().getId());
+
+        // when
+        flushService.flushPendingViews();
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(storedCount(deletedPostId)).isZero();
+            softly.assertThat(storedCount(activePostId)).isEqualTo(1L);
+            softly.assertThat(store.currentCount(deletedPostId)).isZero();
+            softly.assertThat(store.prepareFlushBatches()).isEmpty();
+        });
+    }
+
+    @Test
+    @DisplayName("모든 게시글의 DB 트랜잭션이 커밋된 뒤에만 메모리 배치를 완료한다.")
+    void acknowledgesOnlyAfterAllPostsCommit() {
+        // given
+        long firstPostId = publishWithView();
+        long secondPostId = publishWithView();
         store.beforeCompletion = () -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
-            assertThat(storedCount(postId)).isEqualTo(1L);
+            assertThat(storedCount(firstPostId)).isEqualTo(1L);
+            assertThat(storedCount(secondPostId)).isEqualTo(1L);
         };
 
         // when
@@ -166,6 +176,99 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(store.prepareFlushBatches()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("실패 후 새로 들어온 조회는 재시도 중인 배치에 합치지 않고 다음 배치에 보존한다.")
+    void preservesNewViewsAcrossRetry() {
+        // given
+        long postId = publishWithView();
+        jdbc.update("delete from post_view_count where post_id = ?", postId);
+        flushService.flushPendingViews();
+        store.recordView(postId, ViewerIdentity.member(999L));
+        jdbc.update("insert into post_view_count (post_id, view_count) values (?, 0)", postId);
+
+        // when
+        flushService.flushPendingViews();
+
+        // then
+        assertThat(storedCount(postId)).isEqualTo(1L);
+        assertThat(store.currentCount(postId)).isEqualTo(2L);
+        assertThat(store.prepareFlushBatches()).hasSize(1)
+                .allSatisfy(batch -> assertThat(batch.delta()).isEqualTo(1L));
+    }
+
+    @Test
+    @DisplayName("배치를 준비한 뒤 삭제된 글도 DB 저장에서 제외한다.")
+    void skipsPostDeletedAfterPreparation() {
+        // given
+        long postId = publishWithView();
+        store.afterPreparation = () -> {
+            store.afterPreparation = () -> { };
+            postService.deletePublishedPost(postId, scenario.author().getId());
+        };
+
+        // when
+        flushService.flushPendingViews();
+
+        // then
+        assertThat(storedCount(postId)).isZero();
+        assertThat(store.currentCount(postId)).isZero();
+        assertThat(store.prepareFlushBatches()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("전체 저장이 롤백되면 삭제된 글의 Counter 제거도 보류한다.")
+    void retainsDeletedCounterWhenWholeTransactionRollsBack() {
+        // given
+        long deletedPostId = publishWithView();
+        long activePostId = publishWithView();
+        long failedPostId = publishWithView();
+        postService.deletePublishedPost(deletedPostId, scenario.author().getId());
+        jdbc.update("delete from post_view_count where post_id = ?", failedPostId);
+
+        // when
+        flushService.flushPendingViews();
+
+        // then
+        assertThat(store.currentCount(deletedPostId)).isEqualTo(1L);
+        assertThat(storedCount(activePostId)).isZero();
+        assertThat(store.prepareFlushBatches()).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("배치 실행이 겹치면 후속 실행은 건너뛰고 새 조회는 계속 받을 수 있다.")
+    void skipsOverlappingFlushWhileAcceptingNewViews() throws Exception {
+        // given
+        long postId = publishWithView();
+        CountDownLatch prepared = new CountDownLatch(1);
+        CompletableFuture<Void> release = new CompletableFuture<>();
+        AtomicBoolean firstPreparation = new AtomicBoolean(true);
+        store.afterPreparation = () -> {
+            if (firstPreparation.compareAndSet(true, false)) {
+                prepared.countDown();
+                release.join();
+            }
+        };
+
+        // when
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var first = executor.submit(flushService::flushPendingViews);
+            try {
+                assertThat(prepared.await(5, TimeUnit.SECONDS)).isTrue();
+                store.recordView(postId, ViewerIdentity.member(999L));
+                executor.submit(flushService::flushPendingViews).get(2, TimeUnit.SECONDS);
+            } finally {
+                release.complete(null);
+            }
+            first.get(10, TimeUnit.SECONDS);
+        }
+
+        // then
+        assertThat(storedCount(postId)).isEqualTo(1L);
+        assertThat(store.currentCount(postId)).isEqualTo(2L);
+        assertThat(store.prepareFlushBatches()).hasSize(1)
+                .allSatisfy(batch -> assertThat(batch.delta()).isEqualTo(1L));
     }
 
     @Test
@@ -212,7 +315,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         private final PostViewCounterRegistry registry;
         private Runnable beforeCompletion = () -> { };
-        private Runnable beforeDiscard = () -> { };
+        private Runnable afterPreparation = () -> { };
 
         ObservedPostViewStore(PostViewCounterRegistry registry) {
             this.registry = registry;
@@ -230,14 +333,15 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
         @Override
         public List<ViewFlushBatch> prepareFlushBatches() {
-            // 실패 게시글을 먼저 처리하도록 순서만 고정하고 실제 메모리 저장소를 사용한다.
-            return registry.prepareFlushBatches().stream().sorted(Comparator.comparingLong(ViewFlushBatch::postId)).toList();
+            List<ViewFlushBatch> batches = registry.prepareFlushBatches().stream()
+                    .sorted(Comparator.comparingLong(ViewFlushBatch::postId)).toList();
+            afterPreparation.run();
+            return batches;
         }
 
         @Override
-        public void discardFlush(long postId, UUID batchId) {
-            beforeDiscard.run();
-            registry.discardFlush(postId, batchId);
+        public void removeCounter(long postId) {
+            registry.removeCounter(postId);
         }
 
         @Override

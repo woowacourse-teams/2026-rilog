@@ -20,6 +20,8 @@ import java.util.Optional;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+    boolean existsByIdAndDeletedAtIsNull(Long postId);
+
     @Query("""
             select new kr.rilog.domain.post.repository.projection.PostViewTarget(p.id, p.user.id, p.visibility)
             from Post p

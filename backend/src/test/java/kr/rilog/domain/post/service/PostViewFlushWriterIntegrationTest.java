@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_VIEW_COUNT_INVALID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,7 +48,7 @@ class PostViewFlushWriterIntegrationTest extends ServiceSupport {
         ViewFlushBatch batch = batch(postId, 3L);
 
         // when
-        writer.write(batch);
+        writer.writeAll(List.of(batch));
 
         // then
         assertThat(storedCount(postId)).isEqualTo(45L);
@@ -63,7 +64,7 @@ class PostViewFlushWriterIntegrationTest extends ServiceSupport {
         ViewFlushBatch batch = batch(postId, 1L);
 
         // when & then
-        assertThatThrownBy(() -> writer.write(batch))
+        assertThatThrownBy(() -> writer.writeAll(List.of(batch)))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(POST_VIEW_COUNT_INVALID.getMessage());
         assertThat(storedCount(postId)).isEqualTo(9_007_199_254_740_991L);
@@ -73,10 +74,12 @@ class PostViewFlushWriterIntegrationTest extends ServiceSupport {
     @DisplayName("조회수 누계가 없으면 배치 저장에 실패한다.")
     void rejectsMissingCount() {
         // given
-        ViewFlushBatch batch = batch(999_999L, 1L);
+        long postId = publish();
+        jdbc.update("delete from post_view_count where post_id = ?", postId);
+        ViewFlushBatch batch = batch(postId, 1L);
 
         // when & then
-        assertThatThrownBy(() -> writer.write(batch))
+        assertThatThrownBy(() -> writer.writeAll(List.of(batch)))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(POST_VIEW_COUNT_INVALID.getMessage());
     }

@@ -48,7 +48,7 @@ class PostViewRequestCleanupTest {
         assertThat(viewerRecords(counter)).hasSize(1);
         registry.recordView(1, ViewerIdentity.member(3));
         assertThat(viewerRecords(counter).keySet()).containsExactly(ViewerIdentity.member(3));
-        assertThat(counter.prepareFlush()).isEmpty();
+        assertThat(counter.prepareFlush()).contains(batch);
         assertThat(counter.currentCount()).isEqualTo(2);
         assertThat(registry.getOrLoad(1)).isSameAs(counter);
         assertThat(viewerRecords(registry.getOrLoad(2))).hasSize(1);

@@ -94,13 +94,9 @@ public final class PostViewCounterRegistry implements PostViewStore {
     }
 
     @Override
-    public void discardFlush(long postId, UUID batchId) {
+    public void removeCounter(long postId) {
         validatePostId(postId);
-        Objects.requireNonNull(batchId, "폐기할 배치 ID가 필요합니다.");
-        PostViewCounter counter = loadedCounter(counters.get(postId));
-        if (counter != null) {
-            counter.discardFlush(batchId);
-        }
+        counters.remove(postId);
     }
 
     List<PostViewCounter> snapshot() {
