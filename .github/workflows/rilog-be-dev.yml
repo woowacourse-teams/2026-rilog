@@ -49,6 +49,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Test with MySQL Testcontainers
+        if: github.event_name == 'pull_request'
         run: ./gradlew testMySql --build-cache
 
       - name: Build Rilog Service
