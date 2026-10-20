@@ -48,6 +48,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      - name: Test with MySQL Testcontainers
+        run: ./gradlew testMySql --build-cache
+
       - name: Build Rilog Service
         run: ./gradlew build -x test --build-cache
 
