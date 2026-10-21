@@ -467,6 +467,64 @@ test.describe('글 작성 브라우저 흐름', () => {
 			await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
 		},
 	);
+
+	test('파일 선택 업로드가 실패하면 이미지 블록에 오류를 표시하고 재시도할 수 있다', async ({ page }) => {
+		let shouldFailUpload = true;
+		await page.route('**/v1/uploads/presigned-url', (route) =>
+			shouldFailUpload ? route.fulfill({ status: 500 }) : route.fallback(),
+		);
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		await page.getByRole('tabpanel', { name: '업로드' }).locator('input[type="file"]').setInputFiles({
+			name: 'selected.png',
+			mimeType: 'image/png',
+			buffer: TEST_IMAGE_BYTES,
+		});
+
+		const imageBlock = page.locator('[data-content-type="image"]');
+		await expect(imageBlock.locator('.bn-add-file-button [role="alert"]')).toHaveText(
+			'파일 업로드에 실패했어요. 다시 시도해 주세요.',
+		);
+		await expect(page.getByText('오류: 업로드 실패')).not.toBeVisible();
+		await expect(page.getByText('Loading...', { exact: true })).not.toBeVisible();
+		await page.getByRole('textbox', { name: '게시글 제목' }).fill('업로드 재시도');
+		await expect(imageBlock.locator('.bn-add-file-button [role="alert"]')).toBeVisible();
+
+		shouldFailUpload = false;
+		await imageBlock.getByText('이미지 추가', { exact: true }).click();
+		await expect(imageBlock.locator('.bn-add-file-button [role="alert"]')).toBeVisible();
+		await page.getByRole('tabpanel', { name: '업로드' }).locator('input[type="file"]').setInputFiles({
+			name: 'retried.png',
+			mimeType: 'image/png',
+			buffer: TEST_IMAGE_BYTES,
+		});
+		await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
+	});
+
+	test('붙여넣은 파일 업로드가 실패하면 이미지 블록에 오류를 표시한다', async ({ page }) => {
+		await page.route('**/v1/uploads/presigned-url', (route) => route.fulfill({ status: 500 }));
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.evaluate(
+			(bytes) => {
+				const file = new File([new Uint8Array(bytes)], 'pasted.png', { type: 'image/png' });
+				const clipboard = new DataTransfer();
+				clipboard.items.add(file);
+				const editor = document.querySelector('[aria-label="게시글 내용"]');
+				editor?.dispatchEvent(
+					new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }),
+				);
+			},
+			[...TEST_IMAGE_BYTES],
+		);
+
+		await expect(page.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toHaveText(
+			'파일 업로드에 실패했어요. 다시 시도해 주세요.',
+		);
+		await expect(page.getByText('Loading...', { exact: true })).not.toBeVisible();
+	});
 });
 
 test.describe('모바일 글쓰기 정책', () => {

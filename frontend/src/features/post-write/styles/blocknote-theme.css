@@ -46,6 +46,37 @@
 	min-height: 22rem;
 }
 
+.post-write-blocknote .bn-add-file-button {
+	color: var(--color-text-secondary);
+	background-color: var(--color-surface-active);
+}
+
+.post-write-blocknote .bn-add-file-button:hover {
+	background-color: var(--color-border-default) !important;
+}
+
+.post-write-blocknote .bn-add-file-button:has(.post-write-upload-error) {
+	flex-wrap: wrap;
+}
+
+.post-write-blocknote .bn-add-file-button .post-write-upload-error {
+	flex-basis: 100%;
+	color: var(--danger-text);
+	font-size: var(--text-body-4);
+	line-height: var(--text-body-4--line-height);
+}
+
+.post-write-blocknote .bn-tab-panel .post-write-upload-error,
+.post-write-blocknote .bn-tab-panel .post-write-upload-status {
+	margin-top: 0.5rem;
+	font-size: var(--text-body-4);
+	line-height: var(--text-body-4--line-height);
+}
+
+.post-write-blocknote .bn-tab-panel .post-write-upload-error {
+	color: var(--danger-text);
+}
+
 .post-write-blocknote .bn-default-styles {
 	font-family: var(--font-sans);
 }

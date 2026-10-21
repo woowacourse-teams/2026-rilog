@@ -67,6 +67,10 @@ vi.mock('@blocknote/shadcn', () => ({
 	),
 }));
 
+vi.mock('./PostWriteFormattingToolbar', () => ({
+	default: () => null,
+}));
+
 describe('BlockNoteEditor', () => {
 	const blocks: Block[] = [
 		{
@@ -253,10 +257,9 @@ describe('BlockNoteEditor', () => {
 		const configuredUploadFile = vi.fn<(file: File) => Promise<string>>();
 		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={configuredUploadFile} />);
 
-		expect(useCreateBlockNote).toHaveBeenCalledWith(expect.objectContaining({ uploadFile: configuredUploadFile }), [
-			undefined,
-			configuredUploadFile,
-		]);
+		const options = useCreateBlockNote.mock.lastCall?.[0] as { uploadFile: (file: File) => Promise<string> };
+		expect(options.uploadFile).toBeInstanceOf(Function);
+		expect(useCreateBlockNote.mock.lastCall?.[1]).toEqual([undefined, options.uploadFile]);
 	});
 
 	it('전달받은 본문 블록을 BlockNote 초기 문서로 사용한다', () => {
@@ -264,9 +267,10 @@ describe('BlockNoteEditor', () => {
 			<BlockNoteEditor initialBlocks={blocks} onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />,
 		);
 
+		const options = useCreateBlockNote.mock.lastCall?.[0] as { uploadFile: (file: File) => Promise<string> };
 		expect(useCreateBlockNote).toHaveBeenLastCalledWith(expect.objectContaining({ initialContent: blocks }), [
 			blocks,
-			defaultUploadFile,
+			options.uploadFile,
 		]);
 	});
 
@@ -276,12 +280,13 @@ describe('BlockNoteEditor', () => {
 			default: '마크다운 단축 문법을 사용할 수 있습니다. /를 입력하면 블록을 선택할 수 있습니다.',
 		}) as unknown as Record<string, unknown>;
 		const dictionary = expect.objectContaining({ placeholders }) as unknown as Record<string, unknown>;
+		const options = useCreateBlockNote.mock.lastCall?.[0] as { uploadFile: (file: File) => Promise<string> };
 
 		expect(useCreateBlockNote).toHaveBeenLastCalledWith(
 			expect.objectContaining({
 				dictionary,
 			}),
-			[undefined, defaultUploadFile],
+			[undefined, options.uploadFile],
 		);
 	});
 
@@ -298,7 +303,8 @@ describe('BlockNoteEditor', () => {
 
 		const latestCall = useCreateBlockNote.mock.calls.at(-1);
 		expect(latestCall?.[0]).not.toHaveProperty('initialContent');
-		expect(latestCall?.[1]).toEqual([initialBlocks, defaultUploadFile]);
+		const options = latestCall?.[0] as { uploadFile: (file: File) => Promise<string> };
+		expect(latestCall?.[1]).toEqual([initialBlocks, options.uploadFile]);
 	});
 
 	it('가용 공간을 기준으로 배치하는 커스텀 슬래시 메뉴를 사용한다', () => {
