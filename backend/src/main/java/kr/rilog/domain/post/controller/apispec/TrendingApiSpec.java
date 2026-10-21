@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface TrendingApiSpec {
 
     @Operation(
-            description = "개발자가 지정한 순서로 트렌딩 게시물 목록을 조회합니다.",
+            description = "최근 한 달 공개 게시글 중 3시간마다 선정한 최대 36개를 점수순으로 조회합니다.",
             summary = "트렌딩 피드 게시물 목록 조회 API"
     )
     ApiResponse<FullFeedPostResponse> readTrendingPosts(

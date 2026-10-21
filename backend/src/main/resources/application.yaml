@@ -26,6 +26,10 @@ server:
   forward-headers-strategy: framework
 
 post:
+  trending:
+    enabled: ${POST_TRENDING_ENABLED:true}
+    cron: ${POST_TRENDING_CRON:0 0 */3 * * *}
+    half-life-days: ${POST_TRENDING_HALF_LIFE_DAYS:7}
   view:
     flush:
       enabled: ${POST_VIEW_FLUSH_ENABLED:true}

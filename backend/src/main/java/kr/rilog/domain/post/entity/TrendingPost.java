@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -12,20 +13,17 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(
-        name = "hard_trending",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_hard_trending_post_id",
-                columnNames = "post_id"
-        )
-)
-@SuperBuilder
+@Table(name = "trending_post", uniqueConstraints = @UniqueConstraint(name = "uk_hard_trending_post_id", columnNames = "post_id"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HardTrending {
+public class TrendingPost {
+
+    public static final int MAX_POSTS = 36;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,9 +33,9 @@ public class HardTrending {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    public static HardTrending from(Post post) {
-        return HardTrending.builder()
-                .post(post)
-                .build();
-    }
+    @Column(nullable = false, precision = 30, scale = 6)
+    private BigDecimal score;
+
+    @Column(nullable = false)
+    private LocalDateTime calculatedAt;
 }

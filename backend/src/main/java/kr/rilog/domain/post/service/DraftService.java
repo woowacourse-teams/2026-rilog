@@ -10,10 +10,8 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
-import kr.rilog.domain.post.entity.HardTrending;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.repository.projection.DraftListRow;
@@ -52,7 +50,6 @@ public class DraftService {
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
-    private final HardTrendingRepository trendingRepository;
     private final PostViewCountRepository viewCountRepository;
 
     // THINK 멱등성.
@@ -94,7 +91,6 @@ public class DraftService {
         viewCountRepository.initialize(draft.getId());
         TagAssets current = draft.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previous, current);
-        trendingRepository.save(HardTrending.from(draft));
 
         return PostPublishResult.of(draft);
     }

@@ -9,6 +9,8 @@ spring:
     open-in-view: false
 
 post:
+  trending:
+    enabled: false
   view:
     flush:
       enabled: false
