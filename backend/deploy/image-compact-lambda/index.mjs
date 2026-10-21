@@ -50,9 +50,9 @@ async function compact(context, bucket, key) {
     return;
   }
 
-  const { width, height, orientation = 1, pages = 1 } = await sharp(input).metadata();
-  // Orientation 5~8은 90도 또는 270도 회전이라 돌린 뒤에는 가로와 세로가 바뀐다.
-  const sourceWidth = orientation >= 5 ? height : width;
+  const { autoOrient, pages = 1 } = await sharp(input).metadata();
+  // autoOrient는 EXIF Orientation을 반영한 크기다. 5~8은 90도 또는 270도 회전이라 가로와 세로가 바뀐다.
+  const sourceWidth = autoOrient.width;
   if (pages > 1) {
     log('skip', { key, reason: 'animated_image', pages });
     return;
@@ -64,7 +64,7 @@ async function compact(context, bucket, key) {
   // EXIF Orientation이 있으면 그 방향대로 픽셀을 돌리고, 없으면 그대로 둔다.
   // 그 뒤 keepMetadata/withMetadata를 호출하지 않으므로 sharp가 EXIF(GPS 포함), ICC, XMP, IPTC를 모두 제거한다.
   const encode = (targetWidth) => sharp(input, { failOn: 'none' })
-    .rotate()
+    .autoOrient()
     .resize({ width: targetWidth, withoutEnlargement: true })
     .webp({ quality: WEBP_QUALITY })
     .toBuffer();

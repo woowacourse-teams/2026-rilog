@@ -19,7 +19,7 @@
 - `raw/.../original.*`가 아닌 key는 무시한다. 결과물은 `compact/`에 쓰므로 다시 트리거되지 않는다.
 - 압축본에서는 메타데이터(EXIF와 GPS, ICC 프로필, XMP, IPTC)를 모두 제거한다. 색 공간은 sRGB로 맞춘다.
 - EXIF Orientation이 있으면 그 방향대로 픽셀을 돌린 뒤 메타데이터를 지운다. 휴대폰 세로 사진도 원본이 보이던 방향 그대로 압축된다. Orientation이 없으면 돌리지 않는다.
-- 원본 너비는 회전을 반영한 값으로 판단한다. Orientation 5~8은 가로와 세로가 바뀌므로 높이를 너비로 쓴다.
+- 원본 너비는 회전을 반영한 값(sharp `metadata().autoOrient.width`)으로 판단한다. Orientation 5~8은 가로와 세로가 바뀌므로 회전 전 높이가 너비가 된다.
 
 ## 처리 흐름
 
