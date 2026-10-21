@@ -27,14 +27,14 @@ public class TrendingService {
     private final Clock clock;
 
     public FullFeedPostResult readTrendingPostList(FullFeedSearchCommand command) {
-        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), properties.postTimeZone());
         PageRequest pageable = PageRequest.of(command.page(), command.size());
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), properties.postTimeZone());
         Slice<PostFullFeedRow> posts = trendingPostQueryRepository.findTrendingPosts(
                 PUBLISHED,
                 PUBLIC,
                 command.category(),
                 command.blogType(),
-                now.minusMonths(1),
+                now.minusMonths(2),
                 now,
                 pageable
         );

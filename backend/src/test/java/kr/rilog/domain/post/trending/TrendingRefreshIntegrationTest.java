@@ -88,7 +88,7 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         anchor(personalPost, member, false, false); // 같은 코로그 멤버여도 개인 리로그에서는 외부인
         anchor(personalPost, author, false, false);
 
-        List<TrendingCandidate> result = candidates.findCandidates(NOW.minusMonths(1), NOW);
+        List<TrendingCandidate> result = candidates.findCandidates(NOW.minusMonths(2), NOW);
 
         assertThat(result).containsExactlyInAnyOrder(
                 new TrendingCandidate(cologPost.getId(), NOW.minusDays(1), 123L, 3L),
@@ -96,20 +96,20 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         );
         Long cologPostId = cologPost.getId();
         members.saveAndFlush(BlogMemberFixture.blogMember(colog, outsider));
-        assertThat(candidates.findCandidates(NOW.minusMonths(1), NOW))
+        assertThat(candidates.findCandidates(NOW.minusMonths(2), NOW))
                 .filteredOn(candidate -> candidate.postId().equals(cologPostId))
                 .extracting(TrendingCandidate::externalCommentCount)
                 .containsExactly(2L);
     }
 
     @Test
-    @DisplayName("한 달 경계는 포함하고 미래·만료·비공개·초안·삭제·더 리로그 글은 후보에서 제외한다")
-    void aggregatesOnlyEligiblePostsWithinCalendarMonth() {
+    @DisplayName("배치는 두 달 경계를 포함하고 미래·만료·비공개·초안·삭제·더 리로그 글을 제외한다")
+    void refreshesOnlyEligiblePostsWithinTwoCalendarMonths() {
         User author = user(1);
         Blog rilog = blogs.saveAndFlush(Blog.createRilog(author));
-        Post boundary = post(rilog, author, NOW.minusMonths(1));
+        Post boundary = post(rilog, author, NOW.minusMonths(2));
         Post newest = post(rilog, author, NOW);
-        post(rilog, author, NOW.minusMonths(1).minusNanos(1_000));
+        post(rilog, author, NOW.minusMonths(2).minusNanos(1_000));
         post(rilog, author, NOW.plusSeconds(1));
         Post privatePost = post(rilog, author, NOW.minusDays(1));
         Post draft = post(rilog, author, NOW.minusDays(1));
@@ -120,14 +120,13 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         jdbc.update("update post set deleted_at = ? where id = ?", NOW, deleted.getId());
         jdbc.update("update post set post_type = 'DAILY_HEADLINES' where id = ?", editorial.getId());
 
-        assertThat(candidates.findCandidates(NOW.minusMonths(1), NOW))
-                .extracting(TrendingCandidate::postId)
-                .containsExactlyInAnyOrder(boundary.getId(), newest.getId());
+        assertThat(refreshService.refresh(NOW)).isEqualTo(2);
+        assertThat(rankedIds()).containsExactlyInAnyOrder(boundary.getId(), newest.getId());
     }
 
     @Test
-    @DisplayName("갱신은 점수·발행일·ID 순 상위 36개만 저장하며 후보가 줄거나 없어지면 이전 결과를 제거한다")
-    void refreshesTopThirtySixAndReplacesSmallerOrEmptySnapshots() {
+    @DisplayName("갱신은 모든 후보의 점수를 저장하며 후보가 줄거나 없어지면 이전 결과를 제거한다")
+    void refreshesAllCandidatesAndReplacesSmallerOrEmptySnapshots() {
         User author = user(1);
         Blog rilog = blogs.saveAndFlush(Blog.createRilog(author));
         List<Long> equalScoreIds = new ArrayList<>();
@@ -139,10 +138,10 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, ?)", newer.getId(), 100L);
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, ?)", older.getId(), 100L);
 
-        assertThat(refreshService.refresh(NOW)).isEqualTo(36);
+        assertThat(refreshService.refresh(NOW)).isEqualTo(40);
         List<Long> expected = new ArrayList<>(List.of(newer.getId(), older.getId()));
         equalScoreIds.sort(Comparator.reverseOrder());
-        expected.addAll(equalScoreIds.subList(0, 34));
+        expected.addAll(equalScoreIds);
         assertThat(rankedIds()).containsExactlyElementsOf(expected);
         assertThat(jdbc.queryForObject("select min(calculated_at) from trending_post", LocalDateTime.class))
                 .isEqualTo(NOW);
@@ -153,7 +152,7 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
                 (candidate, at) -> candidate.postId().equals(older.getId()) ? BigDecimal.TEN : BigDecimal.ZERO,
                 trendingPosts);
         differentPolicy.refresh(NOW);
-        assertThat(rankedIds()).hasSize(36).first().isEqualTo(older.getId());
+        assertThat(rankedIds()).hasSize(40).first().isEqualTo(older.getId());
 
         jdbc.update("update post set visibility = 'PRIVATE' where id <> ?", newer.getId());
         assertThat(refreshService.refresh(NOW)).isEqualTo(1);
@@ -170,11 +169,11 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         Blog rilog = blogs.saveAndFlush(Blog.createRilog(author));
         Post previous = post(rilog, author, NOW);
         Post replacement = post(rilog, author, NOW);
-        trendingPosts.replaceAll(List.of(new TrendingRank(previous.getId(), NOW, BigDecimal.TEN)), NOW);
+        trendingPosts.replaceAll(List.of(new TrendingScore(previous.getId(), BigDecimal.TEN)), NOW);
 
         assertThatThrownBy(() -> trendingPosts.replaceAll(List.of(
-                new TrendingRank(replacement.getId(), NOW, BigDecimal.ONE),
-                new TrendingRank(Long.MAX_VALUE, NOW, BigDecimal.ONE)
+                new TrendingScore(replacement.getId(), BigDecimal.ONE),
+                new TrendingScore(Long.MAX_VALUE, BigDecimal.ONE)
         ), NOW.plusHours(3))).isInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(rankedIds()).containsExactly(previous.getId());

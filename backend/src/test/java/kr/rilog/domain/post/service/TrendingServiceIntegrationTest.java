@@ -19,11 +19,15 @@ import kr.rilog.support.fixure.TheRilogPostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import org.springframework.test.util.ReflectionTestUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 import static kr.rilog.support.fixure.PostContentFixture.content;
 import static kr.rilog.support.fixure.PostContentFixture.paragraph;
@@ -100,6 +104,9 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, author));
         Post expiredPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         Post futurePost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post olderEligiblePost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        jdbcTemplate.update("update post set published_at = ? where id = ?", BASE_PUBLISHED_AT.minusMonths(1).minusDays(10), olderEligiblePost.getId());
+        saveTrending(15L, olderEligiblePost);
         jdbcTemplate.update("update post set published_at = ? where id = ?", BASE_PUBLISHED_AT.minusMonths(2), expiredPost.getId());
         jdbcTemplate.update("update post set published_at = ? where id = ?", BASE_PUBLISHED_AT.plusMonths(2), futurePost.getId());
         saveTrending(50L, expiredPost);
@@ -115,7 +122,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(publicPost.getId());
+                .containsExactly(publicPost.getId(), olderEligiblePost.getId());
     }
 
     @Test
@@ -146,31 +153,45 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 .containsExactly(standardPost.getId());
     }
 
-    @Test
-    @DisplayName("트렌딩 피드는 기존 전체 피드와 같은 카테고리와 블로그 유형 필터를 적용한다.")
-    void readTrendingPostsAppliesFeedFilters() {
-        // given
+    @ParameterizedTest(name = "category={0}, blogType={1}, page={2}, size={3}")
+    @CsvSource(value = {
+            "NONE, NONE, 3, 12, 36, 48, true",
+            "DAILY, NONE, 1, 25, 25, 40, false",
+            "NONE, COLOG, 2, 25, 40, 40, false",
+            "DAILY, COLOG, 0, 50, 0, 40, false"
+    }, nullValues = "NONE")
+    @DisplayName("전체와 필터별 피드는 36개 제한 없이 요청한 페이지와 다음 페이지 여부를 반환한다")
+    void readTrendingPostsPaginatesAllMatchingPostsWithoutTotalLimit(
+            Category category, BlogType blogType, int page, int size, int expectedFrom, int expectedTo, boolean hasNext
+    ) {
         User author = saveCompletedUser(3L, "필터작성자", "trend_filter");
         Blog rilog = saveRilog(author);
         Blog colog = saveColog(author, "trend_colog");
-        Post rilogPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        Post dailyCologPost = savePost(PostFixture.dailyPublicPublishedCologPost(rilog, colog, author));
-        saveTrending(10L, rilogPost);
-        saveTrending(20L, dailyCologPost);
-        FullFeedSearchCommand command = new FullFeedSearchCommand(
-                Category.DAILY,
-                BlogType.COLOG,
-                0,
-                10
+        List<Long> higherScoreIds = new ArrayList<>();
+        List<Long> filteredIds = new ArrayList<>();
+        for (int i = 1; i <= 40; i++) {
+            Post techRilogPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+            saveTrending((long) i, techRilogPost);
+            higherScoreIds.add(techRilogPost.getId());
+            Post dailyCologPost = savePost(PostFixture.dailyPublicPublishedCologPost(rilog, colog, author));
+            saveTrending(100L + i, dailyCologPost);
+            filteredIds.add(dailyCologPost.getId());
+        }
+
+        FullFeedPostResult result = trendingService.readTrendingPostList(
+                new FullFeedSearchCommand(category, blogType, page, size)
         );
 
-        // when
-        FullFeedPostResult result = trendingService.readTrendingPostList(command);
-
-        // then
+        List<Long> expectedIds = new ArrayList<>();
+        if (category == null && blogType == null) expectedIds.addAll(higherScoreIds);
+        expectedIds.addAll(filteredIds);
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(dailyCologPost.getId());
+                .containsExactlyElementsOf(expectedIds.subList(expectedFrom, expectedTo));
+        assertThat(result.page()).isEqualTo(page);
+        assertThat(result.size()).isEqualTo(size);
+        assertThat(result.numberOfElements()).isEqualTo(expectedTo - expectedFrom);
+        assertThat(result.hasNext()).isEqualTo(hasNext);
     }
 
     @Test

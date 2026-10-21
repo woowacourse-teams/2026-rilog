@@ -28,7 +28,7 @@ server:
 post:
   trending:
     enabled: ${POST_TRENDING_ENABLED:true}
-    cron: ${POST_TRENDING_CRON:0 0 */3 * * *}
+    cron: ${POST_TRENDING_CRON:0 0 5,11,17,23 * * *}
     half-life-days: ${POST_TRENDING_HALF_LIFE_DAYS:7}
   view:
     flush:

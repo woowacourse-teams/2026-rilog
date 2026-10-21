@@ -23,8 +23,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TrendingPost {
 
-    public static final int MAX_POSTS = 36;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

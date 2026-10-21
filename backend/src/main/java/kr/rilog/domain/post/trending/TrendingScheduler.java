@@ -19,7 +19,7 @@ public class TrendingScheduler {
     private final TrendingProperties properties;
     private final Clock clock;
 
-    @Scheduled(cron = "${post.trending.cron:0 0 */3 * * *}", zone = "Asia/Seoul")
+    @Scheduled(cron = "${post.trending.cron:0 0 5,11,17,23 * * *}", zone = "Asia/Seoul")
     public void refresh() {
         LocalDateTime evaluatedAt = LocalDateTime.ofInstant(clock.instant(), properties.postTimeZone());
         int count = refreshService.refresh(evaluatedAt);
