@@ -17,7 +17,7 @@ public class S3ImageObjectKeyPolicy {
     private static final Pattern OWNED_IMAGE_FILE_PATTERN = Pattern.compile(
             "^(?<userId>\\d+)-"
                     + "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-                    + "\\.(jpg|png|webp|gif)$"
+                    + "\\.(jpg|png|webp|gif|avif|svg|heic)$"
     );
 
     private final S3Properties properties;
