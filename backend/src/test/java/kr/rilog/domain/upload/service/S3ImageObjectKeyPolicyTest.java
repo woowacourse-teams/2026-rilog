@@ -48,6 +48,15 @@ class S3ImageObjectKeyPolicyTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"avif", "svg", "heic"})
+    @DisplayName("추가 지원 이미지 확장자도 소유자를 검증한다.")
+    void recognizeOwnedImageWithSupportedExtension(String extension) {
+        String objectKey = policy.create(7L, UPLOAD_ID, extension);
+
+        assertThat(policy.isOwnedBy(objectKey, 7L)).isTrue();
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {
             "rilog/uploads/images/originals/b38e9b2c-4c13-4f52-9c31-0e52d768d517.png",
             "rilog/uploads/images/originals/7-not-a-uuid.png",
