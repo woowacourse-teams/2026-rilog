@@ -12,7 +12,6 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
@@ -75,9 +74,6 @@ class DraftServiceTest {
     private TagAssetsPublisher tagAssetsPublisher;
 
     @Mock
-    private HardTrendingRepository trendingRepository;
-
-    @Mock
     private PostViewCountRepository viewCountRepository;
 
     private DraftService draftService;
@@ -91,7 +87,6 @@ class DraftServiceTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
-                trendingRepository,
                 viewCountRepository
         );
     }

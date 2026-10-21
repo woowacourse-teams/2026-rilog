@@ -19,10 +19,15 @@ import kr.rilog.support.fixure.TheRilogPostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static kr.rilog.support.fixure.PostContentFixture.content;
 import static kr.rilog.support.fixure.PostContentFixture.paragraph;
@@ -30,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TrendingServiceIntegrationTest extends ServiceSupport {
 
-    private static final LocalDateTime BASE_PUBLISHED_AT = LocalDateTime.of(2026, 9, 30, 12, 0);
+    private static final LocalDateTime BASE_PUBLISHED_AT = LocalDateTime.now().minusDays(1).withNano(0);
     private static final FullFeedSearchCommand DEFAULT_SEARCH = new FullFeedSearchCommand(
             null,
             null,
@@ -57,8 +62,8 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    @DisplayName("트렌딩 피드는 발행 시각과 관계없이 HardTrending 아이디 오름차순으로 반환한다.")
-    void readTrendingPostsOrdersByHardTrendingId() {
+    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 최근 발행 순으로 반환한다.")
+    void readTrendingPostsOrdersByScoreAndPublicationTime() {
         // given
         User author = saveCompletedUser(1L, "트렌딩작성자", "trending_author");
         Blog rilog = saveRilog(author);
@@ -72,8 +77,11 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 author,
                 BASE_PUBLISHED_AT.plusMinutes(1)
         ));
-        saveHardTrending(10L, olderPost);
-        saveHardTrending(20L, newerPost);
+        saveTrending(10L, olderPost);
+        saveTrending(20L, newerPost);
+        jdbcTemplate.update("update trending_post set score = 100");
+        Post highestScorePost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.minusDays(1)));
+        saveTrending(30L, highestScorePost);
 
         // when
         FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
@@ -81,11 +89,11 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(olderPost.getId(), newerPost.getId());
+                .containsExactly(highestScorePost.getId(), newerPost.getId(), olderPost.getId());
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 공개 발행 상태이면서 삭제되지 않은 게시글만 반환한다.")
+    @DisplayName("트렌딩 피드는 다음 배치 전에도 만료·미래·비공개·초안·삭제 게시글은 반환하지 않는다.")
     void readTrendingPostsReturnsOnlyReadablePublishedPosts() {
         // given
         User author = saveCompletedUser(2L, "상태필터작성자", "trend_status");
@@ -94,10 +102,19 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, author));
         Post draftPost = savePost(PostFixture.publicDraftRilogPost(rilog, author));
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, author));
-        saveHardTrending(10L, publicPost);
-        saveHardTrending(20L, privatePost);
-        saveHardTrending(30L, draftPost);
-        saveHardTrending(40L, deletedPost);
+        Post expiredPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post futurePost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post olderEligiblePost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        jdbcTemplate.update("update post set published_at = ? where id = ?", BASE_PUBLISHED_AT.minusMonths(1).minusDays(10), olderEligiblePost.getId());
+        saveTrending(15L, olderEligiblePost);
+        jdbcTemplate.update("update post set published_at = ? where id = ?", BASE_PUBLISHED_AT.minusMonths(2), expiredPost.getId());
+        jdbcTemplate.update("update post set published_at = ? where id = ?", BASE_PUBLISHED_AT.plusMonths(2), futurePost.getId());
+        saveTrending(50L, expiredPost);
+        saveTrending(60L, futurePost);
+        saveTrending(10L, publicPost);
+        saveTrending(20L, privatePost);
+        saveTrending(30L, draftPost);
+        saveTrending(40L, deletedPost);
 
         // when
         FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
@@ -105,7 +122,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(publicPost.getId());
+                .containsExactly(publicPost.getId(), olderEligiblePost.getId());
     }
 
     @Test
@@ -124,8 +141,8 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 BASE_PUBLISHED_AT,
                 content(paragraph("오늘의 소식"))
         ));
-        saveHardTrending(10L, standardPost);
-        saveHardTrending(20L, theRilogPost);
+        saveTrending(10L, standardPost);
+        saveTrending(20L, theRilogPost);
 
         // when
         FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
@@ -136,31 +153,45 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 .containsExactly(standardPost.getId());
     }
 
-    @Test
-    @DisplayName("트렌딩 피드는 기존 전체 피드와 같은 카테고리와 블로그 유형 필터를 적용한다.")
-    void readTrendingPostsAppliesFeedFilters() {
-        // given
+    @ParameterizedTest(name = "category={0}, blogType={1}, page={2}, size={3}")
+    @CsvSource(value = {
+            "NONE, NONE, 3, 12, 36, 48, true",
+            "DAILY, NONE, 1, 25, 25, 40, false",
+            "NONE, COLOG, 2, 25, 40, 40, false",
+            "DAILY, COLOG, 0, 50, 0, 40, false"
+    }, nullValues = "NONE")
+    @DisplayName("전체와 필터별 피드는 36개 제한 없이 요청한 페이지와 다음 페이지 여부를 반환한다")
+    void readTrendingPostsPaginatesAllMatchingPostsWithoutTotalLimit(
+            Category category, BlogType blogType, int page, int size, int expectedFrom, int expectedTo, boolean hasNext
+    ) {
         User author = saveCompletedUser(3L, "필터작성자", "trend_filter");
         Blog rilog = saveRilog(author);
         Blog colog = saveColog(author, "trend_colog");
-        Post rilogPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        Post dailyCologPost = savePost(PostFixture.dailyPublicPublishedCologPost(rilog, colog, author));
-        saveHardTrending(10L, rilogPost);
-        saveHardTrending(20L, dailyCologPost);
-        FullFeedSearchCommand command = new FullFeedSearchCommand(
-                Category.DAILY,
-                BlogType.COLOG,
-                0,
-                10
+        List<Long> higherScoreIds = new ArrayList<>();
+        List<Long> filteredIds = new ArrayList<>();
+        for (int i = 1; i <= 40; i++) {
+            Post techRilogPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+            saveTrending((long) i, techRilogPost);
+            higherScoreIds.add(techRilogPost.getId());
+            Post dailyCologPost = savePost(PostFixture.dailyPublicPublishedCologPost(rilog, colog, author));
+            saveTrending(100L + i, dailyCologPost);
+            filteredIds.add(dailyCologPost.getId());
+        }
+
+        FullFeedPostResult result = trendingService.readTrendingPostList(
+                new FullFeedSearchCommand(category, blogType, page, size)
         );
 
-        // when
-        FullFeedPostResult result = trendingService.readTrendingPostList(command);
-
-        // then
+        List<Long> expectedIds = new ArrayList<>();
+        if (category == null && blogType == null) expectedIds.addAll(higherScoreIds);
+        expectedIds.addAll(filteredIds);
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(dailyCologPost.getId());
+                .containsExactlyElementsOf(expectedIds.subList(expectedFrom, expectedTo));
+        assertThat(result.page()).isEqualTo(page);
+        assertThat(result.size()).isEqualTo(size);
+        assertThat(result.numberOfElements()).isEqualTo(expectedTo - expectedFrom);
+        assertThat(result.hasNext()).isEqualTo(hasNext);
     }
 
     @Test
@@ -172,9 +203,9 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         Post firstPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         Post secondPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         Post thirdPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        saveHardTrending(10L, firstPost);
-        saveHardTrending(20L, secondPost);
-        saveHardTrending(30L, thirdPost);
+        saveTrending(10L, firstPost);
+        saveTrending(20L, secondPost);
+        saveTrending(30L, thirdPost);
         FullFeedSearchCommand command = new FullFeedSearchCommand(null, null, 0, 2);
 
         // when
@@ -213,14 +244,19 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     private Post savePost(Post post) {
+        if (post.getPublishedAt() != null && post.getPublishedAt().isBefore(BASE_PUBLISHED_AT.minusMonths(1))) {
+            ReflectionTestUtils.setField(post, "publishedAt", BASE_PUBLISHED_AT);
+        }
         return postFeedQueryRepository.saveAndFlush(post);
     }
 
-    private void saveHardTrending(Long id, Post post) {
+    private void saveTrending(Long id, Post post) {
         jdbcTemplate.update(
-                "insert into hard_trending (id, post_id) values (?, ?)",
+                "insert into trending_post (id, post_id, score, calculated_at) values (?, ?, ?, ?)",
                 id,
-                post.getId()
+                post.getId(),
+                1000 - id,
+                BASE_PUBLISHED_AT
         );
     }
 }

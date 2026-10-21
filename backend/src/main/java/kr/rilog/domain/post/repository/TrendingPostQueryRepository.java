@@ -1,7 +1,7 @@
 package kr.rilog.domain.post.repository;
 
 import kr.rilog.domain.blog.entity.enums.BlogType;
-import kr.rilog.domain.post.entity.HardTrending;
+import kr.rilog.domain.post.entity.TrendingPost;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
@@ -12,7 +12,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
-public interface HardTrendingQueryRepository extends Repository<HardTrending, Long> {
+import java.time.LocalDateTime;
+
+public interface TrendingPostQueryRepository extends Repository<TrendingPost, Long> {
 
     @Query("""
             SELECT new kr.rilog.domain.post.repository.projection.PostFullFeedRow(
@@ -40,7 +42,7 @@ public interface HardTrendingQueryRepository extends Repository<HardTrending, Lo
 
                 COUNT(anchor.id)
             )
-            FROM HardTrending trending
+            FROM TrendingPost trending
             JOIN trending.post post
             JOIN post.user author
             JOIN post.rilog rilog
@@ -55,6 +57,8 @@ public interface HardTrendingQueryRepository extends Repository<HardTrending, Lo
               AND post.visibility = :publicVisibility
               AND post.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
               AND post.deletedAt IS NULL
+              AND post.publishedAt >= :from
+              AND post.publishedAt <= :until
               AND (:category IS NULL OR post.category = :category)
               AND (
                   :blogType IS NULL
@@ -63,6 +67,7 @@ public interface HardTrendingQueryRepository extends Repository<HardTrending, Lo
               )
             GROUP BY
                 trending.id,
+                trending.score,
                 post.id,
                 post.title,
                 post.thumbnailImageUrl,
@@ -81,13 +86,15 @@ public interface HardTrendingQueryRepository extends Repository<HardTrending, Lo
                 CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END
-            ORDER BY trending.id ASC
+            ORDER BY trending.score DESC, post.publishedAt DESC, post.id DESC
             """)
     Slice<PostFullFeedRow> findTrendingPosts(
             @Param("status") PostStatus status,
             @Param("publicVisibility") PostVisibility publicVisibility,
             @Param("category") Category category,
             @Param("blogType") BlogType blogType,
+            @Param("from") LocalDateTime from,
+            @Param("until") LocalDateTime until,
             Pageable pageable
     );
 }

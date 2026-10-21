@@ -186,10 +186,10 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("일반 발행은 트렌딩 후보를 저장하고 더 리로그 전용 발행은 후보를 저장하지 않는다.")
-    void theRilogPublicationDoesNotRegisterTrendingCandidates() {
+    @DisplayName("일반 발행과 더 리로그 발행은 배치를 우회하여 트렌딩에 등록하지 않는다.")
+    void publicationDoesNotRegisterTrendingBeforeBatch() {
         // given
-        var standard = postService.publish(PostFixture.publicPostPublishCommand(THE_RILOG_SLUG), writer.getId());
+        postService.publish(PostFixture.publicPostPublishCommand(THE_RILOG_SLUG), writer.getId());
 
         // when
         theRilogService.publishTheRilog(command(PostType.DAILY_HEADLINES), writer.getId());
@@ -197,8 +197,8 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // then
-        assertThat(jdbc.queryForList("select post_id from hard_trending", Long.class))
-                .containsExactly(standard.postId());
+        assertThat(jdbc.queryForList("select post_id from trending_post", Long.class))
+                .isEmpty();
     }
 
     @Test
