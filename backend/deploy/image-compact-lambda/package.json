@@ -1,0 +1,11 @@
+{
+  "name": "rilog-image-compact-lambda",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "sharp": "0.34.2"
+  }
+}
