@@ -158,6 +158,49 @@ class UploadServiceTest {
         verifyNoInteractions(s3Presigner);
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "image/avif,avif",
+            "image/svg+xml,svg",
+            "image/heic,heic"
+    })
+    @DisplayName("추가 지원 이미지 형식은 MIME 타입에 맞는 확장자로 객체 키를 만든다.")
+    void createImageUploadUrlWithSupportedExtension(String contentType, String extension) throws Exception {
+        var service = new UploadService(s3Presigner, s3Client,
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
+        var command = new PresignedUrlCreateCommand("image", contentType, 1024, UploadType.IMAGE);
+        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(extension))).thenReturn(OBJECT_KEY);
+        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
+        when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
+
+        service.createUploadUrl(USER_ID, command);
+
+        verify(imageObjectKeyPolicy).create(eq(USER_ID), any(UUID.class), eq(extension));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "video/mp4,mp4",
+            "video/webm,webm",
+            "video/quicktime,mov",
+            "text/markdown,md",
+            "application/json,json",
+            "text/csv,csv"
+    })
+    @DisplayName("추가 지원 파일 형식은 MIME 타입에 맞는 확장자로 객체 키를 만든다.")
+    void createFileUploadUrlWithSupportedExtension(String contentType, String extension) throws Exception {
+        var service = new UploadService(s3Presigner, s3Client,
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
+        var command = new PresignedUrlCreateCommand("file", contentType, 1024, UploadType.FILE);
+        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
+        when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
+
+        PresignedUrlCreateResult result = service.createUploadUrl(USER_ID, command);
+
+        assertThat(result.objectKey())
+                .isEqualTo("rilog/uploads/files/%s.%s".formatted(result.uploadId(), extension));
+    }
+
     @Test
     @DisplayName("이미지 업로드 URL을 발급할 때 사용자 소유 객체 키를 사용한다.")
     void createImageUploadUrlWithOwnedObjectKey() throws Exception {

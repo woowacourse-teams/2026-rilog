@@ -15,11 +15,17 @@ public record PreSignedUrlCreateRequest(
                 description = "파일의 MIME 타입",
                 allowableValues = {
                         "image/jpeg", "image/png", "image/webp", "image/gif",
-                        "application/pdf", "pdf", "application/zip", "zip", "text/plain", "txt"
+                        "image/avif", "image/svg+xml", "image/heic",
+                        "application/pdf", "application/zip", "text/plain",
+                        "video/mp4", "video/webm", "video/quicktime",
+                        "text/markdown", "application/json", "text/csv"
                 },
                 examples = {
                         "image/jpeg", "image/png", "image/webp", "image/gif",
-                        "application/pdf", "pdf", "application/zip", "zip", "text/plain", "txt"
+                        "image/avif", "image/svg+xml", "image/heic",
+                        "application/pdf", "application/zip", "text/plain",
+                        "video/mp4", "video/webm", "video/quicktime",
+                        "text/markdown", "application/json", "text/csv"
                 }
         )
         @NotBlank(message = "contentType은 필수입니다.")

@@ -38,17 +38,26 @@ public class UploadService {
     private static final long IMAGE_MAX_SIZE = 10 * MB;
     private static final long FILE_MAX_SIZE = 20 * MB;
 
-    private static final Set<String> IMAGE_CONTENT_TYPES = Set.of(
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/gif"
+    private static final Map<String, String> IMAGE_EXTENSIONS = Map.of(
+            "image/jpeg", "jpg",
+            "image/png", "png",
+            "image/webp", "webp",
+            "image/gif", "gif",
+            "image/avif", "avif",
+            "image/svg+xml", "svg",
+            "image/heic", "heic"
     );
 
     private static final Map<String, String> FILE_EXTENSIONS = Map.of(
             "application/pdf", "pdf",
             "application/zip", "zip",
-            "text/plain", "txt"
+            "text/plain", "txt",
+            "video/mp4", "mp4",
+            "video/webm", "webm",
+            "video/quicktime", "mov",
+            "text/markdown", "md",
+            "application/json", "json",
+            "text/csv", "csv"
     );
 
     private final S3Presigner s3Presigner;
@@ -177,7 +186,7 @@ public class UploadService {
     }
 
     private void validateImage(PresignedUrlCreateCommand command) {
-        if (!IMAGE_CONTENT_TYPES.contains(command.contentType())) {
+        if (!IMAGE_EXTENSIONS.containsKey(command.contentType())) {
             throw new UploadException(UNSUPPORTED_IMAGE_FORMAT);
         }
 
@@ -200,13 +209,13 @@ public class UploadService {
             PresignedUrlCreateCommand command
     ) {
         if (command.type() == UploadType.IMAGE) {
-            return switch (command.contentType()) {
-                case "image/jpeg" -> "jpg";
-                case "image/png" -> "png";
-                case "image/webp" -> "webp";
-                case "image/gif" -> "gif";
-                default -> throw new UploadException(UNSUPPORTED_IMAGE_FORMAT);
-            };
+            String extension = IMAGE_EXTENSIONS.get(command.contentType());
+
+            if (extension == null) {
+                throw new UploadException(UNSUPPORTED_IMAGE_FORMAT);
+            }
+
+            return extension;
         }
 
         String extension =
