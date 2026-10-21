@@ -162,6 +162,7 @@ CloudWatch Logs에 JSON 한 줄로 남긴다.
 
 - `image_compact_compacted`: 변환 완료 (`key`, `sourceWidth`, `widths`)
 - `image_compact_upload_exists`: 이미 있는 압축본이라 412를 받음 (`width`)
+- `image_compact_failed`: 처리 중 예외 (`bucket`, `key`, `errorName`, `errorMessage`, `stack`). `console.error`로 남겨 ERROR 레벨로 보이고, 예외는 다시 던져 비동기 재시도로 넘긴다.
 - `image_compact_skip`: 건너뜀 (`reason`: `not_original_key`, `unsupported_extension`, `animated_image`, `source_not_found`)
 
 ## 아직 하지 않은 것

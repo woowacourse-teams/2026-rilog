@@ -51,6 +51,7 @@ describe('압축본 업로드 재시도', () => {
 
   beforeEach(() => {
     mock.method(console, 'log', () => {});
+    mock.method(console, 'error', () => {});
   });
 
   afterEach(() => {
@@ -68,6 +69,20 @@ describe('압축본 업로드 재시도', () => {
     storage.failOnce.set(1400, 500);
 
     await assert.rejects(run(storage), /HTTP 500 \(width 1400\)/);
+  });
+
+  it('예외가 나면 원본 key와 원인을 ERROR 레벨 로그로 남긴다', async () => {
+    const storage = fakeCompactStorage();
+    storage.failOnce.set(1400, 500);
+
+    await assert.rejects(run(storage));
+
+    assert.equal(console.error.mock.callCount(), 1);
+    const logged = JSON.parse(console.error.mock.calls[0].arguments[0]);
+    assert.equal(logged.event, 'image_compact_failed');
+    assert.equal(logged.key, KEY);
+    assert.match(logged.errorMessage, /HTTP 500 \(width 1400\)/);
+    assert.ok(logged.stack);
   });
 
   it('재시도에서는 이미 올라간 너비의 412를 성공으로 보고 남은 너비만 올린다', async () => {

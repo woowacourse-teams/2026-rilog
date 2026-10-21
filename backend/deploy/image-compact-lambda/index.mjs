@@ -27,7 +27,13 @@ export async function handleEvent(event, client, options = {}) {
     const bucket = record.s3.bucket.name;
     // S3 이벤트의 key는 URL 인코딩되어 있고 공백은 +로 온다.
     const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
-    await compact({ client, config, fetchFn, now }, bucket, key);
+    try {
+      await compact({ client, config, fetchFn, now }, bucket, key);
+    } catch (error) {
+      logError('failed', { bucket, key }, error);
+      // 다시 던져야 Lambda가 비동기 재시도하고, 재시도가 끝나면 실패 SQS로 남긴다.
+      throw error;
+    }
   }
 }
 
@@ -169,4 +175,15 @@ function readConfig() {
 
 function log(event, fields) {
   console.log(JSON.stringify({ event: `image_compact_${event}`, ...fields }));
+}
+
+// console.error는 CloudWatch Logs에 ERROR 레벨로 남는다.
+function logError(event, fields, error) {
+  console.error(JSON.stringify({
+    event: `image_compact_${event}`,
+    ...fields,
+    errorName: error.name,
+    errorMessage: error.message,
+    stack: error.stack,
+  }));
 }
