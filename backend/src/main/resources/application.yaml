@@ -65,6 +65,11 @@ auth:
     cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
     cookie-same-site: ${REFRESH_TOKEN_SAME_SITE_OPTION:Lax}
 
+internal-api:
+  lambda:
+    # 이미지 압축 Lambda와 공유하는 HMAC 비밀키. 기본값을 두지 않아 누락 시 기동에 실패한다.
+    secret: ${INTERNAL_LAMBDA_SECRET}
+
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET}

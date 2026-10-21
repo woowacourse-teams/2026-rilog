@@ -4,6 +4,10 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+internal-api:
+  lambda:
+    secret: test-internal-lambda-secret-at-least-32-chars
+
 post:
   trending:
     enabled: false

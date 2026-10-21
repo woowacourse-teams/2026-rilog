@@ -8,6 +8,10 @@ spring:
       ddl-auto: create-drop
     open-in-view: false
 
+internal-api:
+  lambda:
+    secret: test-internal-lambda-secret-at-least-32-chars
+
 post:
   trending:
     enabled: false
