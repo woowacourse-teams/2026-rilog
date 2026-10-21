@@ -45,6 +45,17 @@
 - 백엔드 응답이 2xx가 아니면 예외를 던져 비동기 재시도에 맡긴다. 비밀키 교체 중의 401도 재시도로 회복될 수 있다.
 - presigned URL은 `If-None-Match: *` 조건이라 이미 있는 압축본에 PUT하면 412가 온다. 재시도 중 먼저 올라간 너비이므로 성공으로 본다.
 
+## 테스트
+
+Node 내장 `node:test`로 실행한다. 빌드용 `node_modules`에는 Linux용 sharp만 있으므로 테스트 전에 로컬용으로 다시 설치한다.
+
+```powershell
+npm install
+npm test
+```
+
+S3와 백엔드는 가짜로 바꿔서, 일부 너비만 업로드된 뒤 재시도하는 흐름(412를 성공으로 처리)을 확인한다. 테스트 후 배포할 때는 아래 빌드 명령으로 Linux용 sharp를 다시 설치한다.
+
 ## 빌드
 
 Lambda는 Linux arm64에서 실행되므로 sharp를 Linux용으로 설치해야 한다. Windows에서는 PowerShell로 실행한다.
