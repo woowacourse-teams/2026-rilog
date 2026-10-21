@@ -19,6 +19,7 @@ import {
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
+import { getUploadFormatError } from '../lib/get-upload-format-error';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
@@ -162,8 +163,18 @@ export default function BlockNoteEditor({
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
 	const resetFailedUploadBlockRef = useRef<(blockId: string, message: string) => void>(() => undefined);
+	const getUploadBlockTypeRef = useRef<(blockId: string) => string | undefined>(() => undefined);
+
 	const uploadFileWithFeedback = useCallback(
 		async (file: File, blockId?: string) => {
+			if (blockId !== undefined) {
+				const blockType = getUploadBlockTypeRef.current(blockId);
+				const formatError = blockType === undefined ? null : getUploadFormatError(file, blockType);
+				if (formatError !== null) {
+					window.setTimeout(() => resetFailedUploadBlockRef.current(blockId, formatError), 0);
+					return {};
+				}
+			}
 			try {
 				return await uploadFile(file);
 			} catch (error) {
@@ -178,6 +189,7 @@ export default function BlockNoteEditor({
 		},
 		[uploadFile],
 	);
+
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
 		{
@@ -202,6 +214,7 @@ export default function BlockNoteEditor({
 	);
 
 	useEffect(() => {
+		getUploadBlockTypeRef.current = (blockId) => editor.getBlock(blockId)?.type;
 		resetFailedUploadBlockRef.current = (blockId, message) => {
 			const block = editor.getBlock(blockId);
 			if (block !== undefined && 'url' in block.props && block.props.url === '') {
@@ -219,6 +232,7 @@ export default function BlockNoteEditor({
 			}
 		};
 		return () => {
+			getUploadBlockTypeRef.current = () => undefined;
 			resetFailedUploadBlockRef.current = () => undefined;
 		};
 	}, [editor]);

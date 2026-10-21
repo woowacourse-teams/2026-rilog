@@ -17,6 +17,7 @@ import { useCallback, useState } from 'react';
 import type { UploadPostBodyFile } from '../model/post-editor';
 
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
+import { getUploadFormatError } from '../lib/get-upload-format-error';
 
 interface PostWriteFormattingToolbarProps {
 	uploadFile: UploadPostBodyFile;
@@ -124,6 +125,15 @@ function PostWriteReplaceUploadTab({ blockId, uploadFile, onSuccess }: PostWrite
 			}
 			setInputKey((key) => key + 1);
 			setErrorMessage(null);
+			const currentBlock = editor.getBlock(blockId);
+			if (currentBlock === undefined) {
+				return;
+			}
+			const formatError = getUploadFormatError(file, currentBlock.type);
+			if (formatError !== null) {
+				setErrorMessage(formatError);
+				return;
+			}
 			setIsUploading(true);
 			try {
 				const url = await uploadFile(file);
@@ -144,14 +154,12 @@ function PostWriteReplaceUploadTab({ blockId, uploadFile, onSuccess }: PostWrite
 		return null;
 	}
 
-	const accept = editor.schema.blockSpecs[block.type].implementation.meta?.fileBlockAccept?.join(',') || '*/*';
-
 	return (
 		<components.FilePanel.TabPanel className="bn-tab-panel">
 			<components.FilePanel.FileInput
 				key={inputKey}
 				className="bn-file-input"
-				accept={accept}
+				accept="*/*"
 				placeholder={
 					dict.file_panel.upload.file_placeholder[block.type] ?? dict.file_panel.upload.file_placeholder.file
 				}
