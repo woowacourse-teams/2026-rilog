@@ -22,6 +22,7 @@ import { getUploadErrorMessage } from '../lib/get-upload-error-message';
 import { getUploadFormatError } from '../lib/get-upload-format-error';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
+import { prepareUploadFile } from '../lib/prepare-upload-file';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import '../styles/blocknote-theme.css';
 
@@ -167,8 +168,8 @@ export default function BlockNoteEditor({
 
 	const uploadFileWithFeedback = useCallback(
 		async (file: File, blockId?: string) => {
+			const blockType = blockId === undefined ? undefined : getUploadBlockTypeRef.current(blockId);
 			if (blockId !== undefined) {
-				const blockType = getUploadBlockTypeRef.current(blockId);
 				const formatError = blockType === undefined ? null : getUploadFormatError(file, blockType);
 				if (formatError !== null) {
 					window.setTimeout(() => resetFailedUploadBlockRef.current(blockId, formatError), 0);
@@ -176,7 +177,11 @@ export default function BlockNoteEditor({
 				}
 			}
 			try {
-				return await uploadFile(file);
+				const preparedFile =
+					blockType !== undefined || /\.heic$/i.test(file.name)
+						? await prepareUploadFile(file, blockType ?? 'image')
+						: file;
+				return await uploadFile(preparedFile);
 			} catch (error) {
 				const message = getUploadErrorMessage(error);
 				if (blockId !== undefined) {

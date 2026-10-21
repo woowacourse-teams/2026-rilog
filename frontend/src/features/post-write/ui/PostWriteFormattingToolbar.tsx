@@ -18,6 +18,7 @@ import type { UploadPostBodyFile } from '../model/post-editor';
 
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
 import { getUploadFormatError } from '../lib/get-upload-format-error';
+import { prepareUploadFile } from '../lib/prepare-upload-file';
 
 interface PostWriteFormattingToolbarProps {
 	uploadFile: UploadPostBodyFile;
@@ -136,7 +137,7 @@ function PostWriteReplaceUploadTab({ blockId, uploadFile, onSuccess }: PostWrite
 			}
 			setIsUploading(true);
 			try {
-				const url = await uploadFile(file);
+				const url = await uploadFile(await prepareUploadFile(file, currentBlock.type));
 				if (editor.getBlock(blockId) !== undefined) {
 					editor.updateBlock(blockId, { props: { name: file.name, url } });
 					onSuccess();
