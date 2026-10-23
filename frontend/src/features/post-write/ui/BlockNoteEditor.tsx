@@ -4,7 +4,7 @@ import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
 import { getDefaultReactSlashMenuItems, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { useEffect, useImperativeHandle, useRef } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 
 import type { PostEditorProps } from '../model/post-editor';
 import type { FloatingUIOptions } from '@blocknote/react';
@@ -18,12 +18,16 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { getUploadErrorMessage } from '../lib/get-upload-error-message';
+import { getUploadFormatError } from '../lib/get-upload-format-error';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
+import { prepareUploadFile } from '../lib/prepare-upload-file';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import '../styles/blocknote-theme.css';
 
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
+import PostWriteFormattingToolbar from './PostWriteFormattingToolbar';
 
 const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
@@ -159,6 +163,38 @@ export default function BlockNoteEditor({
 	ref,
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
+	const resetFailedUploadBlockRef = useRef<(blockId: string, message: string) => void>(() => undefined);
+	const getUploadBlockTypeRef = useRef<(blockId: string) => string | undefined>(() => undefined);
+
+	const uploadFileWithFeedback = useCallback(
+		async (file: File, blockId?: string) => {
+			const blockType = blockId === undefined ? undefined : getUploadBlockTypeRef.current(blockId);
+			if (blockId !== undefined) {
+				const formatError = blockType === undefined ? null : getUploadFormatError(file, blockType);
+				if (formatError !== null) {
+					window.setTimeout(() => resetFailedUploadBlockRef.current(blockId, formatError), 0);
+					return {};
+				}
+			}
+			try {
+				const preparedFile =
+					blockType !== undefined || /\.heic$/i.test(file.name)
+						? await prepareUploadFile(file, blockType ?? 'image')
+						: file;
+				return await uploadFile(preparedFile);
+			} catch (error) {
+				const message = getUploadErrorMessage(error);
+				if (blockId !== undefined) {
+					// BlockNote의 업로드 후 블록 갱신이 끝난 뒤 빈 파일 블록과 오류 문구를 복구한다.
+					window.setTimeout(() => resetFailedUploadBlockRef.current(blockId, message), 0);
+				}
+				// BlockNote는 붙여넣기 업로드 Promise를 기다리지 않는다. 빈 업데이트로 실패 블록을 남겨 재시도할 수 있게 한다.
+				return {};
+			}
+		},
+		[uploadFile],
+	);
+
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
 		{
@@ -168,15 +204,43 @@ export default function BlockNoteEditor({
 			schema: POST_WRITE_SCHEMA,
 			dictionary: {
 				...ko,
+				file_panel: {
+					...ko.file_panel,
+					upload: { ...ko.file_panel.upload, upload_error: '' },
+				},
 				placeholders: {
 					...ko.placeholders,
 					default: '마크다운 단축 문법을 사용할 수 있습니다. /를 입력하면 블록을 선택할 수 있습니다.',
 				},
 			},
-			uploadFile,
+			uploadFile: uploadFileWithFeedback,
 		},
-		[initialBlocks, uploadFile],
+		[initialBlocks, uploadFileWithFeedback],
 	);
+
+	useEffect(() => {
+		getUploadBlockTypeRef.current = (blockId) => editor.getBlock(blockId)?.type;
+		resetFailedUploadBlockRef.current = (blockId, message) => {
+			const block = editor.getBlock(blockId);
+			if (block !== undefined && 'url' in block.props && block.props.url === '') {
+				// BlockNote 0.53은 같은 파일 노드의 로딩 DOM을 재사용하므로 타입 변경으로 다시 렌더링한다.
+				editor.replaceBlocks([block], [{ id: block.id, type: 'paragraph' }]);
+				editor.replaceBlocks([block.id], [block]);
+				const addFileButton = editor.domElement?.querySelector(`[data-id="${blockId}"] .bn-add-file-button`);
+				if (addFileButton !== undefined && addFileButton !== null) {
+					const errorMessage = document.createElement('p');
+					errorMessage.className = 'post-write-upload-error';
+					errorMessage.setAttribute('role', 'alert');
+					errorMessage.textContent = message;
+					addFileButton.appendChild(errorMessage);
+				}
+			}
+		};
+		return () => {
+			getUploadBlockTypeRef.current = () => undefined;
+			resetFailedUploadBlockRef.current = () => undefined;
+		};
+	}, [editor]);
 
 	useEffect(
 		() =>
@@ -277,7 +341,14 @@ export default function BlockNoteEditor({
 
 	return (
 		<div className="post-write-blocknote">
-			<BlockNoteView editor={editor} theme="light" slashMenu={false} onChange={() => onChange([...editor.document])}>
+			<BlockNoteView
+				editor={editor}
+				theme="light"
+				slashMenu={false}
+				formattingToolbar={false}
+				onChange={() => onChange([...editor.document])}
+			>
+				<PostWriteFormattingToolbar uploadFile={uploadFile} />
 				<SuggestionMenuController
 					triggerCharacter="/"
 					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
