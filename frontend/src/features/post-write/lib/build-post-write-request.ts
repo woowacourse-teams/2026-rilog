@@ -1,9 +1,9 @@
 import { POST_THUMBNAIL_FALLBACK_URL } from '@/domains/post/lib/post-thumbnail';
+import { removeEmptyUploadBlocks } from '@/domains/post/lib/remove-empty-upload-blocks';
 import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 import type { PostWriteRequest } from '@/shared/api/posts/types';
 
-import { removeEmptyUploadBlocks } from './remove-empty-upload-blocks';
 import { findFirstBodyImageUrl } from './resolve-representative-image';
 
 type UploadRepresentativeImage = (file: File) => Promise<string>;
