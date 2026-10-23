@@ -146,6 +146,21 @@ describe('renderPostDetailContent', () => {
 		expect(html).toContain('src="https://images.rilog.test/post.png"');
 	});
 
+	it('빈 업로드 블록은 렌더링하지 않고 자식 본문은 유지한다', async () => {
+		const pendingImage: Block = {
+			...IMAGE_BLOCK,
+			id: 'pending-image',
+			props: { ...IMAGE_BLOCK.props, url: '' },
+			children: [HEADING_BLOCKS[0]],
+		};
+
+		const html = await renderPostDetailContent([pendingImage, IMAGE_BLOCK]);
+
+		expect(html).not.toContain('data-id="pending-image"');
+		expect(html).toContain('data-id="heading-level-1"');
+		expect(html).toContain('src="https://images.rilog.test/post.png"');
+	});
+
 	it('목차 대상 헤딩의 바깥 블록에 고유한 DOM id를 부여한다', async () => {
 		const html = await renderPostDetailContent(HEADING_BLOCKS);
 		const expectedHeadingIds = ['첫-번째-제목', '두-번째-제목', '세-번째-제목', '네-번째-제목'];
