@@ -3,6 +3,7 @@ import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 import type { DraftPublishRequest } from '@/shared/api/drafts/types';
 
+import { removeEmptyUploadBlocks } from './remove-empty-upload-blocks';
 import { findFirstBodyImageUrl } from './resolve-representative-image';
 
 type UploadRepresentativeImage = (file: File) => Promise<string>;
@@ -14,9 +15,10 @@ export const buildDraftPublishRequest = async (
 	if (settings.blog === null) {
 		throw new Error('Colog를 선택해 주세요.');
 	}
+	const content = removeEmptyUploadBlocks(document.blocks);
 
 	let thumbnailImageUrl =
-		settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL;
+		settings.representativeImageUrl ?? findFirstBodyImageUrl(content) ?? POST_THUMBNAIL_FALLBACK_URL;
 	if (settings.representativeImage !== null) {
 		try {
 			thumbnailImageUrl = await uploadRepresentativeImage(settings.representativeImage);
@@ -28,7 +30,7 @@ export const buildDraftPublishRequest = async (
 	return {
 		slug: settings.blog.slug,
 		title: document.title,
-		content: document.blocks,
+		content,
 		category: settings.category,
 		visibility: 'PUBLIC',
 		thumbnailImageUrl,

@@ -3,6 +3,7 @@ import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-
 import type { PublishPostCommand } from '@/features/post-write/model/post-publication';
 import type { PostWriteRequest } from '@/shared/api/posts/types';
 
+import { removeEmptyUploadBlocks } from './remove-empty-upload-blocks';
 import { findFirstBodyImageUrl } from './resolve-representative-image';
 
 type UploadRepresentativeImage = (file: File) => Promise<string>;
@@ -14,9 +15,10 @@ export const buildPostWriteRequest = async (
 	if (settings.blog === null) {
 		throw new Error('Colog를 선택해 주세요.');
 	}
+	const content = removeEmptyUploadBlocks(document.blocks);
 
 	let thumbnailImageUrl =
-		settings.representativeImageUrl ?? findFirstBodyImageUrl(document.blocks) ?? POST_THUMBNAIL_FALLBACK_URL;
+		settings.representativeImageUrl ?? findFirstBodyImageUrl(content) ?? POST_THUMBNAIL_FALLBACK_URL;
 	if (settings.representativeImage !== null) {
 		try {
 			thumbnailImageUrl = await uploadRepresentativeImage(settings.representativeImage);
@@ -28,7 +30,7 @@ export const buildPostWriteRequest = async (
 	return {
 		slug: settings.blog.slug,
 		title: document.title,
-		content: document.blocks,
+		content,
 		category: settings.category,
 		// TODO: 공개 범위 선택 UI가 추가되면 사용자 선택값으로 교체한다.
 		visibility: 'PUBLIC',
