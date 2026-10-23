@@ -2,8 +2,6 @@
 
 import { blockHasType } from '@blocknote/core';
 import {
-	EmbedTab,
-	FilePanel,
 	FormattingToolbar,
 	FormattingToolbarController,
 	getFormattingToolbarItems,
@@ -14,17 +12,9 @@ import {
 } from '@blocknote/react';
 import { useCallback, useState } from 'react';
 
-import type { UploadPostBodyFile } from '../model/post-editor';
+import PostWriteFilePanel from './PostWriteFilePanel';
 
-import { getUploadErrorMessage } from '../lib/get-upload-error-message';
-import { getUploadFormatError } from '../lib/get-upload-format-error';
-import { prepareUploadFile } from '../lib/prepare-upload-file';
-
-interface PostWriteFormattingToolbarProps {
-	uploadFile: UploadPostBodyFile;
-}
-
-function PostWriteFileReplaceButton({ uploadFile }: PostWriteFormattingToolbarProps) {
+function PostWriteFileReplaceButton() {
 	const editor = useBlockNoteEditor();
 	const components = useComponentsContext();
 	const dict = useDictionary();
@@ -81,122 +71,22 @@ function PostWriteFileReplaceButton({ uploadFile }: PostWriteFormattingToolbarPr
 				/>
 			</components.Generic.Popover.Trigger>
 			<components.Generic.Popover.Content className="bn-popover-content bn-panel-popover" variant="panel-popover">
-				{isOpen && (
-					<PostWriteReplaceFilePanel blockId={block.id} uploadFile={uploadFile} onSuccess={() => setIsOpen(false)} />
-				)}
+				{isOpen && <PostWriteFilePanel blockId={block.id} onSuccess={() => setIsOpen(false)} />}
 			</components.Generic.Popover.Content>
 		</components.Generic.Popover.Root>
 	);
 }
 
-interface PostWriteReplaceFilePanelProps extends PostWriteFormattingToolbarProps {
-	blockId: string;
-	onSuccess: () => void;
-}
-
-function PostWriteReplaceFilePanel({ blockId, uploadFile, onSuccess }: PostWriteReplaceFilePanelProps) {
-	const dict = useDictionary();
-	return (
-		<FilePanel
-			blockId={blockId}
-			tabs={[
-				{
-					name: dict.file_panel.upload.title,
-					tabPanel: <PostWriteReplaceUploadTab blockId={blockId} uploadFile={uploadFile} onSuccess={onSuccess} />,
-				},
-				{ name: dict.file_panel.embed.title, tabPanel: <EmbedTab blockId={blockId} /> },
-			]}
-		/>
-	);
-}
-
-function PostWriteReplaceUploadTab({ blockId, uploadFile, onSuccess }: PostWriteReplaceFilePanelProps) {
-	const editor = useBlockNoteEditor();
-	const components = useComponentsContext();
-	const dict = useDictionary();
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const [isUploading, setIsUploading] = useState(false);
-	const [inputKey, setInputKey] = useState(0);
-	const block = editor.getBlock(blockId);
-
-	const handleFileChange = useCallback(
-		async (file: File | null) => {
-			if (file === null || isUploading) {
-				return;
-			}
-			setInputKey((key) => key + 1);
-			setErrorMessage(null);
-			const currentBlock = editor.getBlock(blockId);
-			if (currentBlock === undefined) {
-				return;
-			}
-			const formatError = getUploadFormatError(file, currentBlock.type);
-			if (formatError !== null) {
-				setErrorMessage(formatError);
-				return;
-			}
-			setIsUploading(true);
-			try {
-				const url = await uploadFile(await prepareUploadFile(file, currentBlock.type));
-				if (editor.getBlock(blockId) !== undefined) {
-					editor.updateBlock(blockId, { props: { name: file.name, url } });
-					onSuccess();
-				}
-			} catch (error) {
-				setErrorMessage(getUploadErrorMessage(error));
-			} finally {
-				setIsUploading(false);
-			}
-		},
-		[blockId, editor, isUploading, onSuccess, uploadFile],
-	);
-
-	if (block === undefined || components === undefined) {
-		return null;
-	}
-
-	return (
-		<components.FilePanel.TabPanel className="bn-tab-panel">
-			<components.FilePanel.FileInput
-				key={inputKey}
-				className="bn-file-input"
-				accept="*/*"
-				placeholder={
-					dict.file_panel.upload.file_placeholder[block.type] ?? dict.file_panel.upload.file_placeholder.file
-				}
-				value={null}
-				onChange={(file) => {
-					void handleFileChange(file);
-				}}
-			/>
-			{isUploading && (
-				<p className="post-write-upload-status" role="status">
-					업로드 중...
-				</p>
-			)}
-			{errorMessage !== null && (
-				<p className="post-write-upload-error" role="alert">
-					{errorMessage}
-				</p>
-			)}
-		</components.FilePanel.TabPanel>
-	);
-}
-
-export default function PostWriteFormattingToolbar({ uploadFile }: PostWriteFormattingToolbarProps) {
+export default function PostWriteFormattingToolbar() {
 	const toolbar = useCallback(
 		() => (
 			<FormattingToolbar>
 				{getFormattingToolbarItems().map((item) =>
-					item.key === 'replaceFileButton' ? (
-						<PostWriteFileReplaceButton key={item.key} uploadFile={uploadFile} />
-					) : (
-						item
-					),
+					item.key === 'replaceFileButton' ? <PostWriteFileReplaceButton key={item.key} /> : item,
 				)}
 			</FormattingToolbar>
 		),
-		[uploadFile],
+		[],
 	);
 	return <FormattingToolbarController formattingToolbar={toolbar} />;
 }
