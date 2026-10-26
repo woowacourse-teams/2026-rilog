@@ -10,6 +10,7 @@ import type { PostEditorProps } from '../model/post-editor';
 import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
+import { usePostWriteMediaTransferGuard } from '../hooks/use-post-write-media-transfer-guard';
 import {
 	calculateSlashMenuLayout,
 	clampSlashMenuCoordinate,
@@ -177,6 +178,7 @@ export default function BlockNoteEditor({
 		},
 		[initialBlocks, uploadFile],
 	);
+	const transferError = usePostWriteMediaTransferGuard(editor);
 
 	useEffect(
 		() =>
@@ -298,6 +300,11 @@ export default function BlockNoteEditor({
 				/>
 			</BlockNoteView>
 			<CodeLanguageDropdownController editor={editor} />
+			{transferError !== null && (
+				<p className="mt-3 text-body-4 text-danger-text" role="alert">
+					{transferError}
+				</p>
+			)}
 		</div>
 	);
 }
