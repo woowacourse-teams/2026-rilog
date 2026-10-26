@@ -1,13 +1,20 @@
 import { useState } from 'react';
 
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
+import InlineCommentFloatingSelection from '@/features/post-detail/ui/InlineCommentFloatingSelection';
 import InlineCommentSelectionToolbar from '@/features/post-detail/ui/InlineCommentSelectionToolbar';
 
 // 본문 서버 렌더링·분석은 별도 검증한다. 브라우저 Selection과 실제 툴바는 그대로 연결한다.
 export default function InlineCommentContent({
 	onInlineCommentCreate,
+	onFloatingCommentCreate,
+	isSelectionMode = false,
+	onSelectionModeChange,
 }: {
 	onInlineCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
+	onFloatingCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
+	isSelectionMode?: boolean;
+	onSelectionModeChange?: (active: boolean) => void;
 }) {
 	const [article, setArticle] = useState<HTMLElement | null>(null);
 	return (
@@ -17,7 +24,8 @@ export default function InlineCommentContent({
 				aria-label="게시글 본문"
 				data-post-detail-content=""
 				data-comment-selection-ready={Boolean(onInlineCommentCreate)}
-				style={{ margin: '200px 80px', minHeight: '1500px' }}
+				className="mx-0 md:mx-20"
+				style={{ marginBlock: '200px', minHeight: '1500px' }}
 			>
 				<div className="bn-block-outer" data-id="block-1">
 					<p data-inline-comment-root data-inline-comment-block-id="block-1">
@@ -26,7 +34,17 @@ export default function InlineCommentContent({
 				</div>
 			</article>
 			{article && onInlineCommentCreate && (
-				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onInlineCommentCreate} />
+				<>
+					{!isSelectionMode && (
+						<InlineCommentSelectionToolbar article={article} postId={106} onCreateComment={onInlineCommentCreate} />
+					)}
+					<InlineCommentFloatingSelection
+						article={article}
+						isActive={isSelectionMode}
+						onActiveChange={onSelectionModeChange ?? (() => undefined)}
+						onCreateComment={onFloatingCommentCreate ?? onInlineCommentCreate}
+					/>
+				</>
 			)}
 		</>
 	);
