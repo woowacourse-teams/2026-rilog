@@ -94,3 +94,62 @@ describe('buildPostWriteRequest', () => {
 		expect(getAnalyticsFailureStage(error)).toBe('representative_image_upload');
 	});
 });
+
+describe('buildPostWriteRequest 미디어 저장 경계', () => {
+	it('정상 썸네일로 바꿔도 본문 Base64가 남으면 요청 생성을 거부한다', async () => {
+		const command = createCommand();
+		command.document.blocks = [
+			{
+				...paragraph,
+				type: 'image',
+				props: { ...paragraph.props, url: 'data:image/heic;base64,private-image' },
+			} as unknown as Block,
+		];
+		const upload = vi.fn();
+
+		await expect(buildPostWriteRequest(command, upload)).rejects.toThrow('파일로 다시 업로드');
+		expect(upload).not.toHaveBeenCalled();
+	});
+});
+
+describe('buildPostWriteRequest 대표 이미지 경계', () => {
+	it('본문에 Base64가 있으면 새 대표 이미지 업로드도 시작하지 않는다', async () => {
+		const command = createCommand();
+		command.document.blocks = [
+			{
+				...paragraph,
+				type: 'image',
+				props: { ...paragraph.props, url: 'data:image/png;base64,x' },
+			} as unknown as Block,
+		];
+		command.settings.representativeImage = new File(['cover'], 'cover.png', { type: 'image/png' });
+		const upload = vi.fn();
+		await expect(buildPostWriteRequest(command, upload)).rejects.toThrow('파일로 다시 업로드');
+		expect(upload).not.toHaveBeenCalled();
+	});
+
+	it.each(['data:image/png;base64,x', ' blob:preview '])(
+		'최종 대표 이미지 %s가 임시 주소이면 요청을 거부한다',
+		async (url) => {
+			const command = createCommand();
+			command.settings.representativeImageUrl = url;
+			await expect(buildPostWriteRequest(command, vi.fn())).rejects.toThrow('파일로 다시 업로드');
+		},
+	);
+
+	it('선택 파일의 미리보기가 blob이어도 업로드한 최종 URL을 사용한다', async () => {
+		const command = createCommand();
+		command.settings.representativeImageUrl = 'blob:preview';
+		command.settings.representativeImage = new File(['cover'], 'cover.png', { type: 'image/png' });
+		const result = await buildPostWriteRequest(command, vi.fn().mockResolvedValue('posts/cover.png'));
+		expect(result.thumbnailImageUrl).toBe('posts/cover.png');
+	});
+
+	it('업로드 결과가 blob 주소이면 요청을 거부한다', async () => {
+		const command = createCommand();
+		command.settings.representativeImage = new File(['cover'], 'cover.png', { type: 'image/png' });
+		await expect(buildPostWriteRequest(command, vi.fn().mockResolvedValue('blob:uploaded'))).rejects.toThrow(
+			'파일로 다시 업로드',
+		);
+	});
+});
