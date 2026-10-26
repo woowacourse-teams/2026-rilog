@@ -468,6 +468,110 @@ test.describe('글 작성 브라우저 흐름', () => {
 		},
 	);
 
+	test('슬래시 메뉴와 파일 블록 팝오버에서 여러 이미지와 파일을 선택하면 모두 순서대로 추가한다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		const uploadInput = page.getByRole('tabpanel', { name: '업로드' }).locator('input[type="file"]');
+		await expect(uploadInput).toHaveAttribute('multiple', '');
+		await uploadInput.setInputFiles([
+			{ name: 'first.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+			{ name: 'second.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+		]);
+		await expect(page.locator('[data-content-type="image"] img')).toHaveCount(2);
+		await page.locator('[data-content-type="image"]').first().click();
+		await page.getByRole('button', { name: '이미지 교체' }).click();
+		await page
+			.getByRole('dialog')
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles([
+				{ name: 'replacement.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+				{ name: 'added.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+			]);
+		await expect(page.locator('[data-content-type="image"] img')).toHaveCount(3);
+
+		await editor.click();
+		await page.keyboard.press('End');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('/파일');
+		await page.keyboard.press('Enter');
+		await page
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles([
+				{ name: 'first.pdf', mimeType: 'application/pdf', buffer: Buffer.from('first') },
+				{ name: 'second.pdf', mimeType: 'application/pdf', buffer: Buffer.from('second') },
+			]);
+		await expect(page.locator('[data-content-type="file"]')).toHaveCount(2);
+		await expect(page.locator('[data-content-type="file"]')).toContainText(['first.pdf', 'second.pdf']);
+	});
+
+	test('두 이미지를 선택하면 첫 업로드가 지연되어도 두 블록이 함께 업로드 중으로 바뀐다', async ({ page }) => {
+		let releaseUploads: () => void = () => undefined;
+		const uploadsBlocked = new Promise<void>((resolve) => {
+			releaseUploads = resolve;
+		});
+		await page.route('**/e2e-upload', async (route) => {
+			await uploadsBlocked;
+			await route.fulfill({ status: 200 });
+		});
+		try {
+			await page.goto('/write');
+			await page.getByRole('textbox', { name: '게시글 내용' }).click();
+			await page.keyboard.type('/이미지');
+			await page.keyboard.press('Enter');
+			await page
+				.getByRole('tabpanel', { name: '업로드' })
+				.locator('input[type="file"]')
+				.setInputFiles([
+					{ name: 'first.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+					{ name: 'second.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+				]);
+			const imageBlocks = page.locator('[data-content-type="image"]');
+			await expect(imageBlocks).toHaveCount(2);
+			await expect(imageBlocks.getByText('Loading...', { exact: true })).toHaveCount(2);
+		} finally {
+			releaseUploads();
+		}
+		await expect(page.locator('[data-content-type="image"] img')).toHaveCount(2);
+	});
+
+	test('이미지와 파일을 함께 붙여넣거나 드롭하면 각각 업로드한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.evaluate(
+			(bytes) => {
+				const clipboard = new DataTransfer();
+				clipboard.items.add(new File([new Uint8Array(bytes)], 'paste-first.png', { type: 'image/png' }));
+				clipboard.items.add(new File(['pdf'], 'paste-second.pdf', { type: 'application/pdf' }));
+				document
+					.querySelector('[aria-label="게시글 내용"]')
+					?.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }));
+			},
+			[...TEST_IMAGE_BYTES],
+		);
+		await expect(page.locator('[data-content-type="image"] img')).toHaveCount(1);
+		await expect(page.locator('[data-content-type="file"]')).toContainText('paste-second.pdf');
+
+		await page.evaluate(
+			(bytes) => {
+				const transfer = new DataTransfer();
+				transfer.items.add(new File([new Uint8Array(bytes)], 'drop-first.png', { type: 'image/png' }));
+				transfer.items.add(new File(['pdf'], 'drop-second.pdf', { type: 'application/pdf' }));
+				document
+					.querySelector('[aria-label="게시글 내용"]')
+					?.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer }));
+			},
+			[...TEST_IMAGE_BYTES],
+		);
+		await expect(page.locator('[data-content-type="image"] img')).toHaveCount(2);
+		await expect(page.locator('[data-content-type="file"]')).toHaveCount(2);
+		await expect(page.locator('[data-content-type="file"]').filter({ hasText: 'drop-second.pdf' })).toHaveCount(1);
+	});
+
 	test('파일 선택 업로드가 실패하면 이미지 블록에 오류를 표시하고 재시도할 수 있다', async ({ page }) => {
 		let shouldFailUpload = true;
 		await page.route('**/v1/uploads/presigned-url', (route) =>

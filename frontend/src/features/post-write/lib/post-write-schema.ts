@@ -16,3 +16,5 @@ export const POST_WRITE_SCHEMA = BlockNoteSchema.create().extend({
 		heading: createHeadingBlockSpec({ levels: [1, 2, 3, 4] }),
 	},
 });
+
+export type PostWriteBlockNoteEditor = typeof POST_WRITE_SCHEMA.BlockNoteEditor;
