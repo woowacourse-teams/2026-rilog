@@ -14,9 +14,10 @@ interface PostCommentsSidebarProps extends Omit<
 	'titleId' | 'titleRef' | 'inputRef' | 'showCloseButton' | 'isMobile' | 'isOpen'
 > {
 	open: boolean;
+	onClosed?: () => void;
 }
 
-export default function PostCommentsSidebar({ open, ...contentProps }: PostCommentsSidebarProps) {
+export default function PostCommentsSidebar({ open, onClosed, ...contentProps }: PostCommentsSidebarProps) {
 	const titleId = useId();
 	const titleRef = useRef<HTMLHeadingElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -31,6 +32,7 @@ export default function PostCommentsSidebar({ open, ...contentProps }: PostComme
 			open={open}
 			historyManaged
 			onDismiss={contentProps.onClose}
+			onClosed={onClosed}
 			accessibility={{ labelledBy: titleId }}
 			initialFocusRef={shouldFocusInput ? inputRef : titleRef}
 			style={sheet.style}

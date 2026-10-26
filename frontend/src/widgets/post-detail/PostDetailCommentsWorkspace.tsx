@@ -13,6 +13,7 @@ import { useAuth } from '@/features/auth/model/use-auth';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
+import { navigateInlineCommentAnchor } from '@/features/post-detail/lib/navigate-inline-comment-anchor';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type {
 	InlineCommentOpenRequest,
@@ -90,6 +91,30 @@ export default function PostDetailCommentsWorkspace({
 	} = useCommentHistory(postId, initialSelectionId !== null);
 	const isCommentsSidebarOpen = view === 'comments';
 	const openerRef = useRef<HTMLElement | null>(null);
+	const pendingNavigation = useRef<InlineCommentThreadModel | null>(null);
+	const navigationCleanup = useRef<(() => void) | null>(null);
+	const cancelAnchorNavigation = useCallback(() => {
+		pendingNavigation.current = null;
+		navigationCleanup.current?.();
+		navigationCleanup.current = null;
+	}, []);
+	useEffect(() => cancelAnchorNavigation, [cancelAnchorNavigation]);
+	const navigateToThread = useCallback((thread: InlineCommentThreadModel) => {
+		navigationCleanup.current?.();
+		const highlights = Array.from(
+			document.querySelectorAll<HTMLElement>(
+				`[data-inline-comment-highlight][data-inline-comment-anchor-id="${thread.anchor.anchorId}"]`,
+			),
+		);
+		const target =
+			highlights[0] ?? document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+		if (target) navigationCleanup.current = navigateInlineCommentAnchor(target, highlights);
+	}, []);
+	const handleCommentsClosed = useCallback(() => {
+		const thread = pendingNavigation.current;
+		pendingNavigation.current = null;
+		if (thread) navigateToThread(thread);
+	}, [navigateToThread]);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
 	const sidebarThreads = sidebarQuery.data ?? EMPTY_INLINE_COMMENT_THREADS;
@@ -147,6 +172,7 @@ export default function PostDetailCommentsWorkspace({
 
 	const openComments = useCallback(
 		(request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+			cancelAnchorNavigation();
 			setScrollResetKey((previous) => previous + 1);
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCommentEntrySource(request === null ? 'all' : request.source);
@@ -158,11 +184,12 @@ export default function PostDetailCommentsWorkspace({
 			setOpenRequest(request);
 			openCommentView('comments');
 		},
-		[openCommentView],
+		[openCommentView, cancelAnchorNavigation],
 	);
 
 	const handleInlineCommentCreate = useCallback(
 		(target: InlineCommentSelectionTarget, entrySource: InlineCommentCreateEntrySource = 'selection_toolbar') => {
+			cancelAnchorNavigation();
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCreatedCommentId(null);
 			setDeepLinkedSelectionId(null);
@@ -188,7 +215,7 @@ export default function PostDetailCommentsWorkspace({
 			setCreateRequestId((previous) => previous + 1);
 			openCommentView('comments');
 		},
-		[inlineCommentBlocks, openCommentView],
+		[inlineCommentBlocks, openCommentView, cancelAnchorNavigation],
 	);
 
 	const handleSelectionCreate = useInlineCommentAuthAction({
@@ -239,10 +266,13 @@ export default function PostDetailCommentsWorkspace({
 			}
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-			if (!isDocked) closeComments();
-			window.setTimeout(() => scrollToThreadAnchor(thread), isDocked ? 0 : 140);
+			if (isDocked) navigateToThread(thread);
+			else {
+				pendingNavigation.current = thread;
+				closeComments();
+			}
 		},
-		[closeComments, isDocked, postId],
+		[closeComments, isDocked, navigateToThread, postId],
 	);
 
 	const panelProps = {
@@ -327,7 +357,12 @@ export default function PostDetailCommentsWorkspace({
 					dockHost,
 				)}
 			{isLayoutReady && !isDocked && (
-				<PostCommentsSidebar key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />
+				<PostCommentsSidebar
+					key={createRequestId}
+					open={isCommentsSidebarOpen}
+					onClosed={handleCommentsClosed}
+					{...panelProps}
+				/>
 			)}
 		</>
 	);
