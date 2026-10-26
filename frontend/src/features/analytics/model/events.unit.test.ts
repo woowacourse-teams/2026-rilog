@@ -13,6 +13,18 @@ describe('analytics events', () => {
 		captureMock.mockReset();
 	});
 
+	it('선택 툴바와 플로팅 버튼의 진입점을 구분하고 댓글 내용 없이 작성 성공을 전송한다', () => {
+		analytics.inlineCommentSelectionReplyClicked({ postId: 12 });
+		analytics.inlineCommentSelectionReplyClicked({ postId: 12, entrySource: 'floating_button' });
+		analytics.inlineCommentCreated({ postId: 12, entrySource: 'floating_button', commentType: 'new_anchor' });
+
+		expect(captureMock.mock.calls).toEqual([
+			['inline comment selection reply clicked', { post_id: 12, entry_source: 'selection_toolbar' }],
+			['inline comment selection reply clicked', { post_id: 12, entry_source: 'floating_button' }],
+			['inline comment created', { post_id: 12, entry_source: 'floating_button', comment_type: 'new_anchor' }],
+		]);
+	});
+
 	it('알림 진입과 클릭은 본문 없이 실제 ID와 화면 상태를 전송한다', () => {
 		const notification = createNotification({ state: 'comment-deleted', type: 'SELECTION_COMMENT' });
 		analytics.notificationInboxEntered();

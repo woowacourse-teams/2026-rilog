@@ -8,10 +8,10 @@ import type { InlineCommentSelectionTarget } from '../model/inline-comment-inter
 
 import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
-import { useMobileDevice } from '@/shared/hooks/use-mobile-device';
-import Button from '@/shared/ui/button/Button';
 
 import { createInlineCommentSelectionDraft } from '../lib/inline-comment-selection';
+
+import InlineCommentSelectionAction from './InlineCommentSelectionAction';
 
 interface InlineCommentSelectionToolbarProps {
 	article: HTMLElement;
@@ -44,7 +44,6 @@ export default function InlineCommentSelectionToolbar({
 	onCreateComment,
 }: InlineCommentSelectionToolbarProps) {
 	const { isInitialized } = useAuth();
-	const { isMobileDevice, isResolved } = useMobileDevice();
 	const isDesktopViewport = useSyncExternalStore(
 		subscribeDesktopViewport,
 		getDesktopViewport,
@@ -52,13 +51,15 @@ export default function InlineCommentSelectionToolbar({
 	);
 	const [toolbar, setToolbar] = useState<SelectionToolbarState | null>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
-	const isEnabled = isInitialized && isResolved && !isMobileDevice && isDesktopViewport;
+	const isEnabled = isInitialized;
 
 	useEffect(() => {
 		if (!isEnabled) return;
 		let isSelecting = false;
+		let isActivating = false;
+		let releaseFrame: number | undefined;
 		const updateSelection = () => {
-			if (isSelecting) return;
+			if (isSelecting || isActivating) return;
 			const selection = window.getSelection();
 			const draft = selection === null ? null : createInlineCommentSelectionDraft(selection, article);
 			if (draft === null && document.activeElement === buttonRef.current) return;
@@ -68,29 +69,56 @@ export default function InlineCommentSelectionToolbar({
 				setToolbar(null);
 				return;
 			}
-			const height = buttonRef.current?.offsetHeight || 28;
-			const shouldAlignRight = rect.right - TOOLBAR_OVERLAP + EXPANDED_WIDTH > window.innerWidth - VIEWPORT_PADDING;
-			const x = shouldAlignRight
-				? Math.min(Math.max(rect.right, EXPANDED_WIDTH + VIEWPORT_PADDING), window.innerWidth - VIEWPORT_PADDING)
-				: Math.max(rect.right - TOOLBAR_OVERLAP, VIEWPORT_PADDING);
-			const y =
-				rect.bottom + height - TOOLBAR_OVERLAP <= window.innerHeight - VIEWPORT_PADDING
-					? rect.bottom - TOOLBAR_OVERLAP
-					: rect.top - height + TOOLBAR_OVERLAP;
+			const viewport = window.visualViewport;
+			const viewportTop = viewport?.offsetTop ?? 0;
+			const viewportBottom = viewportTop + (viewport?.height ?? window.innerHeight);
+			const viewportLeft = viewport?.offsetLeft ?? 0;
+			const viewportRight = viewportLeft + (viewport?.width ?? window.innerWidth);
+			const height = buttonRef.current?.offsetHeight || (isDesktopViewport ? 28 : 44);
+			const width = isDesktopViewport ? EXPANDED_WIDTH : 112;
+			const shouldAlignRight =
+				isDesktopViewport && rect.right - TOOLBAR_OVERLAP + width > viewportRight - VIEWPORT_PADDING;
+			let x = shouldAlignRight
+				? Math.min(Math.max(rect.right, width + VIEWPORT_PADDING), viewportRight - VIEWPORT_PADDING)
+				: Math.max(rect.right - TOOLBAR_OVERLAP, viewportLeft + VIEWPORT_PADDING);
+			let y = rect.bottom - TOOLBAR_OVERLAP;
+			if (!isDesktopViewport) {
+				const isBackward =
+					selection?.focusNode === draft.range.startContainer && selection.focusOffset === draft.range.startOffset;
+				const caret = draft.range.cloneRange();
+				caret.collapse(isBackward);
+				const endRect =
+					Array.from(caret.getClientRects()).find((item) => item.height > 0) ??
+					rects[isBackward ? 0 : rects.length - 1];
+				x = Math.min(Math.max(endRect.left, viewportLeft + VIEWPORT_PADDING), viewportRight - width - VIEWPORT_PADDING);
+				y = endRect.bottom + 16;
+				if (y + height > viewportBottom - VIEWPORT_PADDING) y = endRect.top - height - 16;
+			} else if (y + height > viewportBottom - VIEWPORT_PADDING) y = rect.top - height + TOOLBAR_OVERLAP;
+
 			setToolbar({
 				draft,
 				x,
-				y: Math.min(Math.max(y, VIEWPORT_PADDING), window.innerHeight - height - VIEWPORT_PADDING),
+				y: Math.min(Math.max(y, viewportTop + VIEWPORT_PADDING), viewportBottom - height - VIEWPORT_PADDING),
 				shouldAlignRight,
 			});
 		};
 		const startSelection = (event: PointerEvent) => {
-			if (event.target instanceof Node && buttonRef.current?.contains(event.target)) return;
+			if (event.target instanceof Node && buttonRef.current?.contains(event.target)) {
+				isActivating = true;
+				return;
+			}
+			if (!isDesktopViewport) return;
 			isSelecting = true;
 			setToolbar(null);
 		};
-		const finishSelection = (event: PointerEvent) => {
-			if (event.target instanceof Node && buttonRef.current?.contains(event.target)) return;
+		const finishSelection = () => {
+			if (isActivating) {
+				releaseFrame = window.requestAnimationFrame(() => {
+					isActivating = false;
+					updateSelection();
+				});
+				return;
+			}
 			isSelecting = false;
 			updateSelection();
 		};
@@ -103,20 +131,28 @@ export default function InlineCommentSelectionToolbar({
 		document.addEventListener('selectionchange', updateSelection);
 		document.addEventListener('pointerdown', startSelection);
 		document.addEventListener('pointerup', finishSelection);
+		document.addEventListener('pointercancel', finishSelection);
 		document.addEventListener('keyup', updateSelection);
 		document.addEventListener('keydown', dismissOnEscape);
 		window.addEventListener('scroll', updateSelection, true);
 		window.addEventListener('resize', updateSelection);
+		window.visualViewport?.addEventListener('resize', updateSelection);
+		window.visualViewport?.addEventListener('scroll', updateSelection);
+		updateSelection();
 		return () => {
 			document.removeEventListener('selectionchange', updateSelection);
 			document.removeEventListener('pointerdown', startSelection);
 			document.removeEventListener('pointerup', finishSelection);
+			document.removeEventListener('pointercancel', finishSelection);
+			if (releaseFrame !== undefined) window.cancelAnimationFrame(releaseFrame);
 			document.removeEventListener('keyup', updateSelection);
 			document.removeEventListener('keydown', dismissOnEscape);
 			window.removeEventListener('scroll', updateSelection, true);
 			window.removeEventListener('resize', updateSelection);
+			window.visualViewport?.removeEventListener('resize', updateSelection);
+			window.visualViewport?.removeEventListener('scroll', updateSelection);
 		};
-	}, [article, isEnabled]);
+	}, [article, isEnabled, isDesktopViewport]);
 
 	if (!isEnabled || toolbar === null) return null;
 
@@ -129,13 +165,9 @@ export default function InlineCommentSelectionToolbar({
 				transform: `translate3d(${toolbar.x}px, ${toolbar.y}px, 0)${toolbar.shouldAlignRight ? ' translateX(-100%)' : ''}`,
 			}}
 		>
-			<Button
-				ref={buttonRef}
-				size="icon"
-				variant="ghost"
-				aria-label="댓글 추가"
-				className="group relative h-7! w-7! justify-start! overflow-hidden rounded-full! bg-brand-primary! pl-1.75! text-white! shadow-modal transition-[width]! duration-200 ease-out hover:w-22! focus-visible:w-22! focus-visible:outline-offset-2 motion-reduce:transition-none!"
-				onPointerDown={(event) => event.preventDefault()}
+			<InlineCommentSelectionAction
+				buttonRef={buttonRef}
+				expanded={!isDesktopViewport}
 				onClick={() => {
 					analytics.inlineCommentSelectionReplyClicked({ postId });
 					const { blockId, startOffset, endOffset, selectedText } = toolbar.draft;
@@ -143,17 +175,7 @@ export default function InlineCommentSelectionToolbar({
 					setToolbar(null);
 					window.getSelection()?.removeAllRanges();
 				}}
-			>
-				<svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" className="size-3.5 shrink-0" fill="none">
-					<path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-				</svg>
-				<span
-					aria-hidden="true"
-					className="absolute left-7 translate-x-1 text-label-2 whitespace-nowrap opacity-0 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none"
-				>
-					댓글 추가
-				</span>
-			</Button>
+			/>
 		</div>,
 		document.body,
 	);

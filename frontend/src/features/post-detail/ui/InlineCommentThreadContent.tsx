@@ -17,6 +17,8 @@ interface InlineCommentThreadContentProps {
 	isCollapsible: boolean;
 	onNavigate?: () => void;
 	renderInput?: (isOpen: boolean) => ReactNode;
+	onSelectComposer?: () => void;
+	isComposerSelected?: boolean;
 }
 
 export default function InlineCommentThreadContent({
@@ -25,6 +27,8 @@ export default function InlineCommentThreadContent({
 	isCollapsible,
 	onNavigate,
 	renderInput,
+	onSelectComposer,
+	isComposerSelected = false,
 }: InlineCommentThreadContentProps) {
 	const [isExpanded, setIsExpanded] = useState(true);
 	const isOpen = !isCollapsible || isExpanded;
@@ -40,12 +44,22 @@ export default function InlineCommentThreadContent({
 	return (
 		<section aria-label={`"${anchor.selectedText}" 댓글`}>
 			<div
-				className={`flex items-start justify-between gap-3 rounded px-5 py-6 text-left ${isCollapsible ? 'cursor-pointer transition-colors duration-200 hover:bg-surface-hover motion-reduce:transition-none' : ''}`}
-				onClick={isCollapsible ? toggleThread : undefined}
+				className={`flex items-start justify-between gap-3 rounded px-5 py-6 text-left ${isCollapsible && onSelectComposer === undefined ? 'cursor-pointer transition-colors duration-200 hover:bg-surface-hover motion-reduce:transition-none' : ''}`}
+				onClick={isCollapsible && onSelectComposer === undefined ? toggleThread : undefined}
 			>
 				<div className="w-full min-w-0 border-l-4 border-border-default pl-2">
 					<div className="flex w-full min-w-0 items-center justify-between gap-3">
-						{isCollapsible ? (
+						{onSelectComposer !== undefined ? (
+							<button
+								type="button"
+								aria-label={`인용문 선택: ${anchor.selectedText}`}
+								aria-pressed={isComposerSelected}
+								className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-2 focus-visible:outline-focus-ring"
+								onClick={onSelectComposer}
+							>
+								<InlineCommentQuote anchor={anchor} />
+							</button>
+						) : isCollapsible ? (
 							<button
 								type="button"
 								aria-expanded={isOpen}
@@ -58,13 +72,29 @@ export default function InlineCommentThreadContent({
 						) : (
 							<InlineCommentQuote anchor={anchor} />
 						)}
-						{isCollapsible && (
-							<ChevronIcon
-								aria-hidden="true"
-								focusable="false"
-								className={`size-6 shrink-0 rounded p-1 text-text-secondary transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
-							/>
-						)}
+						{isCollapsible &&
+							(onSelectComposer !== undefined ? (
+								<button
+									type="button"
+									aria-label={isOpen ? '댓글 접기' : '댓글 펼치기'}
+									aria-expanded={isOpen}
+									aria-controls={panelId}
+									className="flex size-11 shrink-0 items-center justify-center rounded focus-visible:outline-2 focus-visible:outline-focus-ring"
+									onClick={toggleThread}
+								>
+									<ChevronIcon
+										aria-hidden="true"
+										focusable="false"
+										className={`size-6 transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
+									/>
+								</button>
+							) : (
+								<ChevronIcon
+									aria-hidden="true"
+									focusable="false"
+									className={`size-6 shrink-0 rounded p-1 text-text-secondary transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
+								/>
+							))}
 					</div>
 					{anchor.state === 'ACTIVE' && onNavigate !== undefined && (
 						<div

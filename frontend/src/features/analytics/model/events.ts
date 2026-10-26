@@ -220,8 +220,13 @@ export const analytics = {
 	},
 	inlineCommentEntryClicked: ({ postId, entrySource }: { postId: number; entrySource: InlineCommentEntrySource }) =>
 		captureAnalyticsEvent('inline comment entry clicked', { post_id: postId, entry_source: entrySource }),
-	inlineCommentSelectionReplyClicked: ({ postId }: { postId: number }) =>
-		captureAnalyticsEvent('inline comment selection reply clicked', { post_id: postId }),
+	inlineCommentSelectionReplyClicked: ({
+		postId,
+		entrySource = 'selection_toolbar',
+	}: {
+		postId: number;
+		entrySource?: 'selection_toolbar' | 'floating_button';
+	}) => captureAnalyticsEvent('inline comment selection reply clicked', { post_id: postId, entry_source: entrySource }),
 	inlineCommentCreated: ({
 		postId,
 		entrySource,

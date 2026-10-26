@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { analytics } from '@/features/analytics/model/events';
 import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
@@ -50,11 +50,19 @@ export default function InlineCommentEditForm({
 		input?.setSelectionRange(input.value.length, input.value.length);
 	}, []);
 
+	useLayoutEffect(() => {
+		const input = inputRef.current;
+		if (input !== null && document.activeElement === input && input.closest('[data-comment-bottom-sheet]')) {
+			input.closest<HTMLElement>('[data-inline-comment-composer]')?.scrollIntoView?.({ block: 'nearest' });
+		}
+	}, [value]);
+
 	return (
-		<>
+		<div data-inline-comment-composer>
 			<Textarea
 				ref={inputRef}
 				aria-label="댓글 수정"
+				className="text-[16px]! md:text-label-1!"
 				rows={1}
 				readOnly={mutation.isPending}
 				value={value}
@@ -63,7 +71,7 @@ export default function InlineCommentEditForm({
 					fieldSizing: 'content',
 					height: 'auto',
 					minHeight: 'calc(1lh + 1rem + 2px)',
-					maxHeight: 'calc(20lh + 1rem + 2px)',
+					maxHeight: 'min(calc(20lh + 1rem + 2px), var(--comment-input-max-height, calc(20lh + 1rem + 2px)))',
 					resize: 'none',
 					overflowY: 'auto',
 				}}
@@ -84,6 +92,6 @@ export default function InlineCommentEditForm({
 				onAction={() => setIsErrorOpen(false)}
 				onClose={() => setIsErrorOpen(false)}
 			/>
-		</>
+		</div>
 	);
 }
