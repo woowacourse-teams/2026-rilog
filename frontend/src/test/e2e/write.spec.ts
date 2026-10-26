@@ -484,6 +484,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await page.locator('[data-content-type="image"]').first().click();
 		await page.getByRole('button', { name: '이미지 교체' }).click();
 		await page
+			.getByRole('dialog')
 			.getByRole('tabpanel', { name: '업로드' })
 			.locator('input[type="file"]')
 			.setInputFiles([
@@ -506,6 +507,36 @@ test.describe('글 작성 브라우저 흐름', () => {
 			]);
 		await expect(page.locator('[data-content-type="file"]')).toHaveCount(2);
 		await expect(page.locator('[data-content-type="file"]')).toContainText(['first.pdf', 'second.pdf']);
+	});
+
+	test('두 이미지를 선택하면 첫 업로드가 지연되어도 두 블록이 함께 업로드 중으로 바뀐다', async ({ page }) => {
+		let releaseUploads: () => void = () => undefined;
+		const uploadsBlocked = new Promise<void>((resolve) => {
+			releaseUploads = resolve;
+		});
+		await page.route('**/e2e-upload', async (route) => {
+			await uploadsBlocked;
+			await route.fulfill({ status: 200 });
+		});
+		try {
+			await page.goto('/write');
+			await page.getByRole('textbox', { name: '게시글 내용' }).click();
+			await page.keyboard.type('/이미지');
+			await page.keyboard.press('Enter');
+			await page
+				.getByRole('tabpanel', { name: '업로드' })
+				.locator('input[type="file"]')
+				.setInputFiles([
+					{ name: 'first.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+					{ name: 'second.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+				]);
+			const imageBlocks = page.locator('[data-content-type="image"]');
+			await expect(imageBlocks).toHaveCount(2);
+			await expect(imageBlocks.getByText('Loading...', { exact: true })).toHaveCount(2);
+		} finally {
+			releaseUploads();
+		}
+		await expect(page.locator('[data-content-type="image"] img')).toHaveCount(2);
 	});
 
 	test('이미지와 파일을 함께 붙여넣거나 드롭하면 각각 업로드한다', async ({ page }) => {

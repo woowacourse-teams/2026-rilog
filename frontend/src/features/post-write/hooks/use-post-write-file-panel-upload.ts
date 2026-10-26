@@ -18,7 +18,8 @@ export const usePostWriteFilePanelUpload = (
 	const [isUploading, setIsUploading] = useState(false);
 
 	const uploadFiles = async (files: File[]) => {
-		if (files.length === 0 || isUploading || editor.uploadFile === undefined) {
+		const uploadFile = editor.uploadFile;
+		if (files.length === 0 || isUploading || uploadFile === undefined) {
 			return;
 		}
 		const currentBlock = editor.getBlock(blockId);
@@ -38,26 +39,28 @@ export const usePostWriteFilePanelUpload = (
 		}
 
 		let failures = 0;
-		for (const [index, file] of files.entries()) {
-			const destinationId = destinations[index];
-			const formatError = getUploadFormatError(file, currentBlock.type);
-			try {
-				const result = await editor.uploadFile(file, destinationId);
-				if (!editor.getBlock(destinationId)) {
-					continue;
-				}
-				const url = getUploadedUrl(result);
-				if (url !== null) {
-					editor.updateBlock(destinationId, { props: { name: file.name, url } });
-				} else {
+		await Promise.all(
+			files.map(async (file, index) => {
+				const destinationId = destinations[index];
+				const formatError = getUploadFormatError(file, currentBlock.type);
+				try {
+					const result = await uploadFile(file, destinationId);
+					if (!editor.getBlock(destinationId)) {
+						return;
+					}
+					const url = getUploadedUrl(result);
+					if (url !== null) {
+						editor.updateBlock(destinationId, { props: { name: file.name, url } });
+					} else {
+						failures += 1;
+						setErrorMessage(formatError ?? '일부 파일을 업로드하지 못했습니다. 빈 블록에서 다시 시도해 주세요.');
+					}
+				} catch (error) {
 					failures += 1;
-					setErrorMessage(formatError ?? '일부 파일을 업로드하지 못했습니다. 빈 블록에서 다시 시도해 주세요.');
+					setErrorMessage(getUploadErrorMessage(error));
 				}
-			} catch (error) {
-				failures += 1;
-				setErrorMessage(getUploadErrorMessage(error));
-			}
-		}
+			}),
+		);
 		setIsUploading(false);
 		if (failures === 0) {
 			onSuccess?.();
