@@ -50,4 +50,8 @@ public class ImageReference extends BaseEntity {
                 .referenceId(referenceId)
                 .build();
     }
+
+    public boolean isDeleted() {
+        return getDeletedAt() != null;
+    }
 }

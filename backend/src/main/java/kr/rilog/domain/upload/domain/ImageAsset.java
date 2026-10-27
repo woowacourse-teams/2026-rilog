@@ -49,4 +49,8 @@ public class ImageAsset extends BaseEntity {
                 .unreferencedAt(now)
                 .build();
     }
+
+    public boolean isDeleteRequested() {
+        return status == ImageAssetStatus.DELETE_REQUESTED;
+    }
 }
