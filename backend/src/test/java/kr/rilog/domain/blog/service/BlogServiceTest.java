@@ -14,6 +14,7 @@ import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Email;
@@ -63,13 +64,16 @@ class BlogServiceTest {
     private TagAssetsPublisher tagAssetsPublisher;
 
     @Mock
+    private ImageReferenceSynchronizer imageReferenceSynchronizer;
+
+    @Mock
     private ChapterRepository chapterRepository;
 
     private BlogService blogService;
 
     @BeforeEach
     void setUp() {
-        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, chapterRepository, tagAssetsPublisher);
+        blogService = new BlogService(blogRepository, blogMemberRepository, postRepository, chapterRepository, tagAssetsPublisher, imageReferenceSynchronizer);
     }
 
     @Test

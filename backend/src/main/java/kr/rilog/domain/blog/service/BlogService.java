@@ -16,6 +16,7 @@ import kr.rilog.domain.chapter.repository.projection.ChapterIndexProjection;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_INVITE_FORBIDDEN;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.BLOG;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.USER;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class BlogService {
     private final PostRepository postRepository;
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer;
 
     @Transactional
     public void changeBlogProfile(Long requesterId, String slug, BlogProfileUpdateCommand command) {
@@ -47,11 +51,15 @@ public class BlogService {
 
         validateDuplicatedProfileName(command.name(), blog.getId());
 
+        User owner = blog.getOwner();
         TagAssets previous = blog.getTagAssets();
+        TagAssets previousOwnerAssets = owner.getTagAssets();
         blog.changeProfile(command.toProfile());
         synchronizeOwnerProfileIfRilog(blog, command);
         TagAssets current = blog.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previous, current);
+        imageReferenceSynchronizer.synchronize(BLOG, blog.getId(), previous, current);
+        imageReferenceSynchronizer.synchronize(USER, owner.getId(), previousOwnerAssets, owner.getTagAssets());
     }
 
     public BlogIndexResult readBlogIndex(String slug) {

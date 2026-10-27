@@ -21,6 +21,7 @@ import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.entity.vo.ChapterName;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.entity.vo.Nickname;
@@ -84,6 +85,9 @@ class CologServiceTest {
     @Mock
     private TagAssetsPublisher tagAssetsPublisher;
 
+    @Mock
+    private ImageReferenceSynchronizer imageReferenceSynchronizer;
+
     private CologService cologService;
 
     @BeforeEach
@@ -95,6 +99,7 @@ class CologServiceTest {
                 postRepository,
                 userRepository,
                 tagAssetsPublisher,
+                imageReferenceSynchronizer,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
