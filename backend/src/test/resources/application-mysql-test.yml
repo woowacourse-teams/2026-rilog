@@ -4,6 +4,12 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+aws:
+  s3:
+    bucket: rilog-test-bucket
+    region: ap-northeast-2
+    root-directory: rilog
+
 internal-api:
   lambda:
     secret: test-internal-lambda-secret-at-least-32-chars
