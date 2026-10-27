@@ -11,7 +11,13 @@ import lombok.experimental.SuperBuilder;
 
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.INVALID_UPLOAD_TARGET;
 
-@Table(name = "image_reference")
+@Table(
+        name = "image_reference",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_image_reference_source",
+                columnNames = {"image_asset_id", "reference_type", "reference_id"}
+        )
+)
 @Getter
 @Entity
 @SuperBuilder

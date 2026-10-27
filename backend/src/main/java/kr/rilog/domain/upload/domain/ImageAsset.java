@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.INVALID_UPLOAD_TARGET;
 
-@Table(name = "image_asset")
+@Table(name = "image_asset", uniqueConstraints = @UniqueConstraint(name = "uk_image_asset_object_key", columnNames = "object_key"))
 @Getter
 @Entity
 @SuperBuilder
