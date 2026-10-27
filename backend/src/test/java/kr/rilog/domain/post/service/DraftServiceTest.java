@@ -18,6 +18,7 @@ import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -74,6 +75,9 @@ class DraftServiceTest {
     private TagAssetsPublisher tagAssetsPublisher;
 
     @Mock
+    private ImageReferenceSynchronizer imageReferenceSynchronizer;
+
+    @Mock
     private PostViewCountRepository viewCountRepository;
 
     private DraftService draftService;
@@ -87,6 +91,7 @@ class DraftServiceTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
+                imageReferenceSynchronizer,
                 viewCountRepository
         );
     }

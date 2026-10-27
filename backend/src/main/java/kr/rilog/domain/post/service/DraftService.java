@@ -23,6 +23,7 @@ import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -38,6 +39,7 @@ import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.POST;
 
 @Service
 @Transactional(readOnly = true)
@@ -50,6 +52,7 @@ public class DraftService {
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer;
     private final PostViewCountRepository viewCountRepository;
 
     // THINK 멱등성.
@@ -60,6 +63,7 @@ public class DraftService {
 
         Post saved = postRepository.save(Post.draft(command, writer, rilog));
         tagAssetsPublisher.attach(saved.getTagAssets());
+        imageReferenceSynchronizer.attach(POST, saved.getId(), saved.getTagAssets());
         return DraftIdResult.from(saved.getId());
     }
 
@@ -91,6 +95,7 @@ public class DraftService {
         viewCountRepository.initialize(draft.getId());
         TagAssets current = draft.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previous, current);
+        imageReferenceSynchronizer.synchronize(POST, draftId, previous, current);
 
         return PostPublishResult.of(draft);
     }
@@ -104,6 +109,7 @@ public class DraftService {
         draft.overwriteDraft(command);
         TagAssets current = draft.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previous, current);
+        imageReferenceSynchronizer.synchronize(POST, postId, previous, current);
         return DraftIdResult.from(draft.getId());
     }
 
@@ -114,6 +120,7 @@ public class DraftService {
 
         draft.delete();
         tagAssetsPublisher.detach(requesterId, draft.getTagAssets());
+        imageReferenceSynchronizer.detach(POST, postId, draft.getTagAssets());
     }
 
     private User getUser(Long requesterId) {

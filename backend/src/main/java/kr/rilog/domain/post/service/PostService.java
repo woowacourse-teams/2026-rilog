@@ -27,6 +27,7 @@ import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
 import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -43,6 +44,7 @@ import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.POST;
 
 @Service
 @Transactional(readOnly = true)
@@ -55,6 +57,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer;
     private final CommentAnchorSelectionRepository selectionRepository;
     private final PostViewCountRepository viewCountRepository;
     private final PostViewStore postViewStore;
@@ -72,6 +75,7 @@ public class PostService {
         Post published = postRepository.save(post);
         viewCountRepository.initialize(published.getId());
         tagAssetsPublisher.attach(published.getTagAssets());
+        imageReferenceSynchronizer.attach(POST, published.getId(), published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
     }
 
@@ -128,6 +132,7 @@ public class PostService {
 
         TagAssets updatedTagAssets = post.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previousTagAssets, updatedTagAssets);
+        imageReferenceSynchronizer.synchronize(POST, postId, previousTagAssets, updatedTagAssets);
 
         CommentAnchorSelections selections = findActiveCommentAnchorSelections(postId);
         selections.recalculate(previousContent, post.getContent());
@@ -142,6 +147,7 @@ public class PostService {
         validateCanDeletePublishedPost(post, requesterId);
         post.delete();
         tagAssetsPublisher.detach(requesterId, post.getTagAssets());
+        imageReferenceSynchronizer.detach(POST, postId, post.getTagAssets());
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {
