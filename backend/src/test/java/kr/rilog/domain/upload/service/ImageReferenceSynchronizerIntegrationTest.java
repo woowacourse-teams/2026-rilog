@@ -180,6 +180,65 @@ class ImageReferenceSynchronizerIntegrationTest extends ServiceSupport {
     }
 
     @Test
+    @DisplayName("여러 이미지의 참조 추가, 복구, 삭제를 한 번의 동기화로 반영한다.")
+    void synchronizeAppliesManyChangesAtOnce() {
+        // given
+        ImageAsset restoredA = saveAsset();
+        ImageAsset restoredB = saveAsset();
+        ImageAsset removedA = saveAsset();
+        ImageAsset removedB = saveAsset();
+        ImageAsset addedA = saveAsset();
+        ImageAsset addedB = saveAsset();
+        TagAssets restoredImages = TagAssets.of(urlOf(restoredA), urlOf(restoredB));
+        inTransaction(() -> synchronizer.attach(POST, POST_ID, restoredImages));
+        inTransaction(() -> synchronizer.detach(POST, POST_ID, restoredImages));
+        TagAssets previous = TagAssets.of(urlOf(removedA), urlOf(removedB));
+        inTransaction(() -> synchronizer.attach(POST, POST_ID, previous));
+        List<Long> restoredReferenceIds = List.of(
+                referenceOf(restoredA, POST_ID).getId(),
+                referenceOf(restoredB, POST_ID).getId()
+        );
+        TagAssets current = TagAssets.of(urlOf(restoredA), urlOf(restoredB), urlOf(addedA), urlOf(addedB));
+
+        // when
+        inTransaction(() -> synchronizer.synchronize(POST, POST_ID, previous, current));
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(activeAssetIdsOf(POST_ID)).containsExactlyInAnyOrder(
+                    restoredA.getId(), restoredB.getId(), addedA.getId(), addedB.getId()
+            );
+            softly.assertThat(List.of(referenceOf(restoredA, POST_ID).getId(), referenceOf(restoredB, POST_ID).getId()))
+                    .isEqualTo(restoredReferenceIds);
+            softly.assertThat(referenceOf(removedA, POST_ID).isDeleted()).isTrue();
+            softly.assertThat(referenceOf(removedB, POST_ID).isDeleted()).isTrue();
+            softly.assertThat(imageReferenceRepository.findAll()).hasSize(6);
+        });
+    }
+
+    @Test
+    @DisplayName("한 번에 저장하고 삭제한 참조도 생성 시각과 수정 시각을 기록한다.")
+    void bulkOperationsRecordAuditTimes() {
+        // given
+        ImageAsset asset = saveAsset();
+        TagAssets assets = TagAssets.of(urlOf(asset));
+
+        // when
+        inTransaction(() -> synchronizer.attach(POST, POST_ID, assets));
+        ImageReference created = referenceOf(asset, POST_ID);
+        inTransaction(() -> synchronizer.detach(POST, POST_ID, assets));
+        ImageReference deleted = referenceOf(asset, POST_ID);
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(created.getCreatedAt()).isNotNull();
+            softly.assertThat(created.getUpdatedAt()).isEqualTo(created.getCreatedAt());
+            softly.assertThat(deleted.getDeletedAt()).isNotNull();
+            softly.assertThat(deleted.getUpdatedAt()).isEqualTo(deleted.getDeletedAt());
+        });
+    }
+
+    @Test
     @DisplayName("사용처에서 이미지를 분리해도 다른 사용처의 참조는 그대로 남는다.")
     void detachKeepsOtherReferences() {
         // given

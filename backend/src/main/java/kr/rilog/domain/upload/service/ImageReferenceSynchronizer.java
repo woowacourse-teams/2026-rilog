@@ -5,12 +5,15 @@ import kr.rilog.domain.upload.domain.ImageReference;
 import kr.rilog.domain.upload.domain.enums.ImageReferenceType;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.repository.ImageAssetRepository;
+import kr.rilog.domain.upload.repository.ImageReferenceBulkRepository;
 import kr.rilog.domain.upload.repository.ImageReferenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +34,7 @@ public class ImageReferenceSynchronizer {
 
     private final ImageAssetRepository imageAssetRepository;
     private final ImageReferenceRepository imageReferenceRepository;
+    private final ImageReferenceBulkRepository imageReferenceBulkRepository;
     private final S3ObjectKeyResolver objectKeyResolver;
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -58,8 +62,7 @@ public class ImageReferenceSynchronizer {
             return;
         }
 
-        imageReferenceRepository.findAllByReferenceTypeAndReferenceIdInAndDeletedAtIsNull(referenceType, referenceIds)
-                .forEach(ImageReference::delete);
+        imageReferenceRepository.softDeleteAllByReferenceTypeAndReferenceIdIn(referenceType, referenceIds, now());
     }
 
     private void apply(ImageReferenceType referenceType, Long referenceId, Set<String> addedKeys, Set<String> removedKeys) {
@@ -79,38 +82,44 @@ public class ImageReferenceSynchronizer {
                 .stream()
                 .collect(Collectors.toMap(reference -> reference.getImageAsset().getId(), Function.identity()));
 
+        List<Long> insertAssetIds = new ArrayList<>();
+        List<Long> restoreIds = new ArrayList<>();
+        List<Long> deleteIds = new ArrayList<>();
+
         for (ImageAsset asset : assets) {
             ImageReference reference = references.get(asset.getId());
-            if (addedKeys.contains(asset.getObjectKey())) {
-                reference(asset, reference, referenceType, referenceId);
+            if (!addedKeys.contains(asset.getObjectKey())) {
+                if (reference != null && !reference.isDeleted()) {
+                    deleteIds.add(reference.getId());
+                }
                 continue;
             }
-            unreference(reference);
+
+            // 삭제 요청된 자산은 곧 정리되므로 새 참조를 만들지 않는다.
+            if (asset.isDeleteRequested()) {
+                continue;
+            }
+
+            if (reference == null) {
+                insertAssetIds.add(asset.getId());
+            } else if (reference.isDeleted()) {
+                restoreIds.add(reference.getId());
+            }
+        }
+
+        LocalDateTime now = now();
+        imageReferenceBulkRepository.insertAll(referenceType, referenceId, insertAssetIds, now);
+        if (!restoreIds.isEmpty()) {
+            imageReferenceRepository.restoreAllByIdIn(restoreIds, now);
+        }
+        if (!deleteIds.isEmpty()) {
+            imageReferenceRepository.softDeleteAllByIdIn(deleteIds, now);
         }
     }
 
-    private void reference(ImageAsset asset, ImageReference reference, ImageReferenceType referenceType, Long referenceId) {
-        // 삭제 요청된 자산은 곧 정리되므로 새 참조를 만들지 않는다.
-        if (asset.isDeleteRequested()) {
-            return;
-        }
-
-        if (reference == null) {
-            imageReferenceRepository.save(ImageReference.create(asset, referenceType, referenceId));
-            return;
-        }
-
-        if (reference.isDeleted()) {
-            reference.restore();
-        }
-    }
-
-    private void unreference(ImageReference reference) {
-        if (reference == null || reference.isDeleted()) {
-            return;
-        }
-
-        reference.delete();
+    // 벌크 쿼리는 감사 기능을 거치지 않으므로 BaseEntity와 같은 기준의 시각을 직접 넣는다.
+    private LocalDateTime now() {
+        return LocalDateTime.now();
     }
 
     private Set<String> toObjectKeys(TagAssets assets) {
