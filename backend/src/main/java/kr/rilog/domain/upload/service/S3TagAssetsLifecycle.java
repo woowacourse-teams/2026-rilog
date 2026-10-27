@@ -4,6 +4,7 @@ import kr.rilog.domain.upload.domain.enums.TagStatus;
 import kr.rilog.domain.upload.domain.vo.S3TagTarget;
 import kr.rilog.domain.upload.domain.vo.TagAssetChanges;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.repository.ImageAssetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,6 +27,7 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
     private final S3ObjectTagger objectTagger;
     private final S3ObjectKeyResolver objectKeyResolver;
     private final S3ImageObjectKeyPolicy imageObjectKeyPolicy;
+    private final ImageAssetRepository imageAssetRepository;
 
     @Override
     public void attach(TagAssets assets) {
@@ -74,9 +78,25 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
             TagAssets assets,
             TagStatus status
     ) {
-        return toTargets(assets, status).stream()
+        List<S3TagTarget> targets = toTargets(assets, status);
+        Set<String> registeredKeys = findRegisteredKeys(targets);
+
+        return targets.stream()
+                .filter(target -> !registeredKeys.contains(target.key()))
                 .filter(target -> canChangeTag(requesterId, target.key(), status))
                 .toList();
+    }
+
+    // 이미지 자산으로 등록된 객체는 참조로 수명을 관리하므로 임시 태그를 붙이지 않는다.
+    private Set<String> findRegisteredKeys(List<S3TagTarget> targets) {
+        if (targets.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<String> keys = targets.stream()
+                .map(S3TagTarget::key)
+                .collect(Collectors.toSet());
+        return Set.copyOf(imageAssetRepository.findObjectKeysIn(keys));
     }
 
     private boolean canChangeTag(Long requesterId, String objectKey, TagStatus status) {
