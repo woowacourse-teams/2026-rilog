@@ -7,6 +7,7 @@ import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.global.entity.BaseEntity;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import lombok.AccessLevel;
 import lombok.Builder.Default;
 import lombok.Getter;
@@ -129,6 +130,10 @@ public class User extends BaseEntity {
 
     public String getEmail() {
         return email == null ? null : email.getValue();
+    }
+
+    public TagAssets getTagAssets() {
+        return TagAssets.of(profileImageUrl);
     }
 
 }

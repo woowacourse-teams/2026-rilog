@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -39,11 +40,13 @@ class UserServiceTest {
     private final BlogRepository blogRepository = mock(BlogRepository.class);
     private final BlogMemberRepository blogMemberRepository = mock(BlogMemberRepository.class);
     private final TagAssetsPublisher tagAssetsPublisher = mock(TagAssetsPublisher.class);
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer = mock(ImageReferenceSynchronizer.class);
     private final UserService userService = new UserService(
             userRepository,
             blogRepository,
             blogMemberRepository,
-            tagAssetsPublisher
+            tagAssetsPublisher,
+            imageReferenceSynchronizer
     );
 
     @Test

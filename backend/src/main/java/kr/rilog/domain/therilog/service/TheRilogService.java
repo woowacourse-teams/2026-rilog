@@ -25,6 +25,7 @@ import kr.rilog.domain.therilog.service.dto.command.TheRilogPostPublishCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogResult;
 import kr.rilog.domain.therilog.service.dto.result.TheRilogResult.*;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -38,6 +39,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
 import static kr.rilog.domain.post.entity.Post.THE_RILOG_BLOG_SLUG;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.POST;
 
 @Service
 @Transactional(readOnly = true)
@@ -53,6 +55,7 @@ public class TheRilogService {
     private final UserRepository userRepository;
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer;
     private final PostViewCountRepository viewCountRepository;
     private final Clock clock;
 
@@ -74,6 +77,7 @@ public class TheRilogService {
         Post published = theRilogRepository.save(post);
         viewCountRepository.initialize(published.getId());
         tagAssetsPublisher.attach(published.getTagAssets());
+        imageReferenceSynchronizer.attach(POST, published.getId(), published.getTagAssets());
         return PostPublishResult.of(published, blog);
     }
 

@@ -3,6 +3,7 @@ package kr.rilog.domain.upload.service;
 import kr.rilog.domain.upload.domain.enums.TagStatus;
 import kr.rilog.domain.upload.domain.vo.S3TagTarget;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.repository.ImageAssetRepository;
 import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,19 +33,22 @@ class S3TagAssetsLifecycleTest {
 
     private S3ObjectTagger objectTagger;
     private S3ObjectKeyResolver objectKeyResolver;
+    private ImageAssetRepository imageAssetRepository;
     private S3TagAssetsLifecycle lifecycle;
 
     @BeforeEach
     void setUp() {
         objectTagger = mock(S3ObjectTagger.class);
         objectKeyResolver = mock(S3ObjectKeyResolver.class);
+        imageAssetRepository = mock(ImageAssetRepository.class);
         S3ImageObjectKeyPolicy imageObjectKeyPolicy = new S3ImageObjectKeyPolicy(
                 new S3Properties("bucket", "ap-northeast-2", ROOT_DIRECTORY, 10)
         );
         lifecycle = new S3TagAssetsLifecycle(
                 objectTagger,
                 objectKeyResolver,
-                imageObjectKeyPolicy
+                imageObjectKeyPolicy,
+                imageAssetRepository
         );
     }
 
@@ -183,6 +187,38 @@ class S3TagAssetsLifecycleTest {
 
         verify(objectTagger).tag(List.of(
                 new S3TagTarget(fileKey, TagStatus.TEMPORARY)
+        ));
+    }
+
+    @Test
+    @DisplayName("참조로 관리하는 이미지는 분리해도 TEMPORARY 태그를 지정하지 않는다.")
+    void excludeRegisteredImageFromDetachTargets() {
+        when(objectKeyResolver.resolve(REMOVED_URL))
+                .thenReturn(Optional.of(REMOVED_KEY));
+        when(imageAssetRepository.findObjectKeysIn(Set.of(REMOVED_KEY)))
+                .thenReturn(List.of(REMOVED_KEY));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verify(objectTagger).tag(List.of());
+    }
+
+    @Test
+    @DisplayName("참조로 관리하는 이미지를 제거해도 TEMPORARY 태그를 지정하지 않고 추가된 자산만 CONFIRMED로 변경한다.")
+    void excludeRegisteredImageFromSynchronizationTargets() {
+        TagAssets previous = new TagAssets(Set.of(REMOVED_URL));
+        TagAssets current = new TagAssets(Set.of(ADDED_URL));
+        when(objectKeyResolver.resolve(ADDED_URL))
+                .thenReturn(Optional.of(ADDED_KEY));
+        when(objectKeyResolver.resolve(REMOVED_URL))
+                .thenReturn(Optional.of(REMOVED_KEY));
+        when(imageAssetRepository.findObjectKeysIn(Set.of(REMOVED_KEY)))
+                .thenReturn(List.of(REMOVED_KEY));
+
+        lifecycle.synchronize(REQUESTER_ID, previous, current);
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(ADDED_KEY, TagStatus.CONFIRMED)
         ));
     }
 

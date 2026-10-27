@@ -18,6 +18,7 @@ import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -72,6 +73,9 @@ class PostServiceTagAssetsLifecycleTest {
     private TagAssetsPublisher tagAssetsPublisher;
 
     @Mock
+    private ImageReferenceSynchronizer imageReferenceSynchronizer;
+
+    @Mock
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
     @Mock
@@ -91,6 +95,7 @@ class PostServiceTagAssetsLifecycleTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
+                imageReferenceSynchronizer,
                 commentAnchorSelectionRepository,
                 viewCountRepository,
                 postViewStore

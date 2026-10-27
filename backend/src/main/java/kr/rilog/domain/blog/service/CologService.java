@@ -19,6 +19,7 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
@@ -38,6 +39,8 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.OWNER;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.BLOG;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.POST;
 
 @Service
 @Transactional(readOnly = true)
@@ -53,6 +56,7 @@ public class CologService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer;
     private final Clock clock;
 
     @Transactional
@@ -73,6 +77,7 @@ public class CologService {
         blogMemberRepository.save(ownerMember);
 
         tagAssetsPublisher.attach(savedColog.getTagAssets());
+        imageReferenceSynchronizer.attach(BLOG, savedColog.getId(), savedColog.getTagAssets());
 
         return CologCreateResult.from(savedColog);
     }
@@ -142,6 +147,8 @@ public class CologService {
 
         LocalDateTime deletedAt = LocalDateTime.now(clock);
         colog.delete();
+        imageReferenceSynchronizer.detach(BLOG, colog.getId(), colog.getTagAssets());
+        imageReferenceSynchronizer.detachAll(POST, postRepository.findActiveIdsByCologId(colog.getId()));
         blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
     }

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 import static kr.rilog.domain.upload.exception.UploadErrorInformation.INVALID_UPLOAD_TARGET;
 
-@Table(name = "image_asset")
+@Table(name = "image_asset", uniqueConstraints = @UniqueConstraint(name = "uk_image_asset_object_key", columnNames = "object_key"))
 @Getter
 @Entity
 @SuperBuilder
@@ -48,5 +48,9 @@ public class ImageAsset extends BaseEntity {
                 .status(ImageAssetStatus.ACTIVE)
                 .unreferencedAt(now)
                 .build();
+    }
+
+    public boolean isDeleteRequested() {
+        return status == ImageAssetStatus.DELETE_REQUESTED;
     }
 }

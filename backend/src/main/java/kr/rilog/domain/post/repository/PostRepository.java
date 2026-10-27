@@ -15,6 +15,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -163,6 +164,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             PostStatus status,
             PostVisibility visibility
     );
+
+    @Query("""
+            SELECT post.id
+            FROM Post post
+            WHERE post.colog.id = :cologId
+              AND post.deletedAt IS NULL
+            """)
+    List<Long> findActiveIdsByCologId(@Param("cologId") Long cologId);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""

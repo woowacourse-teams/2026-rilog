@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.upload.service.ImageReferenceSynchronizer;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -22,6 +23,8 @@ import java.time.LocalDateTime;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_SLUG_ALREADY_EXISTS;
 import static kr.rilog.domain.user.exception.UserErrorInformation.*;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.BLOG;
+import static kr.rilog.domain.upload.domain.enums.ImageReferenceType.USER;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,6 +36,7 @@ public class UserService {
     private final BlogMemberRepository blogMemberRepository;
 
     private final TagAssetsPublisher tagAssetsPublisher;
+    private final ImageReferenceSynchronizer imageReferenceSynchronizer;
 
     public UserInfoResult getUserInformation(Long userId) {
         User user = getUser(userId);
@@ -69,6 +73,8 @@ public class UserService {
         User completedUser = userRepository.saveAndFlush(user);
         Blog rilog = createRilog(completedUser, command.serviceUrl());
         tagAssetsPublisher.attach(rilog.getTagAssets());
+        imageReferenceSynchronizer.attach(USER, completedUser.getId(), completedUser.getTagAssets());
+        imageReferenceSynchronizer.attach(BLOG, rilog.getId(), rilog.getTagAssets());
         return completedUser;
     }
 
