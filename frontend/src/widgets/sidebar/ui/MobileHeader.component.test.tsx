@@ -164,6 +164,35 @@ describe('MobileHeader', () => {
 		expect(trigger).toHaveFocus();
 	});
 
+	it('열린 메뉴에서 Shift+Tab으로 트리거에 돌아온 뒤 Escape로 닫을 수 있다', async () => {
+		const user = userEvent.setup();
+		renderHeader(true);
+		const trigger = screen.getByRole('button', { name: '프로필 메뉴' });
+		await user.click(trigger);
+		await user.tab({ shift: true });
+		expect(trigger).toHaveFocus();
+		await user.keyboard('{Escape}');
+		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+		expect(trigger).toHaveFocus();
+	});
+
+	it('열린 메뉴의 트리거에서도 방향키로 첫 항목과 마지막 항목에 다시 진입한다', async () => {
+		const user = userEvent.setup();
+		useMyInfoQueryMock.mockReturnValue({
+			data: { id: 1, slug: 'e2e-user', nickname: 'E2E 사용자', profileImageUrl: null },
+		});
+		renderHeader(true);
+		const trigger = screen.getByRole('button', { name: '프로필 메뉴' });
+		await user.click(trigger);
+		await user.tab({ shift: true });
+		await user.keyboard('{ArrowUp}');
+		expect(screen.getByRole('menuitem', { name: '로그아웃' })).toHaveFocus();
+		await user.keyboard('{Home}');
+		await user.tab({ shift: true });
+		await user.keyboard('{ArrowDown}');
+		expect(screen.getByRole('menuitem', { name: '내 블로그' })).toHaveFocus();
+	});
+
 	it('메뉴 바깥을 누르면 닫히고 Tab으로 벗어나도 닫힌다', async () => {
 		const user = userEvent.setup();
 		renderHeader(true);

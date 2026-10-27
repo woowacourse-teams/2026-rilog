@@ -31,7 +31,15 @@ test('실제 모바일 헤더에서 내 블로그 메뉴와 알림을 보고 로
 	await page.getByRole('button', { name: '프로필 메뉴', exact: true }).click();
 	await expect(page.getByRole('menuitem', { name: '내 블로그' })).toHaveAttribute('href', '/@e2e-user');
 	await expect(page.getByRole('menuitem', { name: '로그아웃' })).toBeVisible();
+	await page.keyboard.press('Shift+Tab');
+	await expect(page.getByRole('button', { name: '프로필 메뉴', exact: true })).toBeFocused();
+	await page.keyboard.press('ArrowUp');
+	await expect(page.getByRole('menuitem', { name: '로그아웃' })).toBeFocused();
+	await page.keyboard.press('Home');
+	await page.keyboard.press('Shift+Tab');
 	await page.keyboard.press('Escape');
+	await expect(page.getByRole('menu')).toHaveCount(0);
+	await expect(page.getByRole('button', { name: '프로필 메뉴', exact: true })).toBeFocused();
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await expect(page.getByRole('link', { name: '알림, 읽지 않은 알림 3개', exact: true })).toBeVisible();
 	await page.setViewportSize({ width: 390, height: 844 });

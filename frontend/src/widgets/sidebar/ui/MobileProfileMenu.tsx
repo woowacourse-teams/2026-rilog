@@ -42,10 +42,6 @@ export default function MobileProfileMenu({ user }: MobileProfileMenuProps) {
 		} else if (event.key === 'Home' || event.key === 'End') {
 			event.preventDefault();
 			itemRefs.current[event.key === 'Home' ? 0 : itemCount - 1]?.focus();
-		} else if (event.key === 'Escape') {
-			event.preventDefault();
-			setIsOpen(false);
-			triggerRef.current?.focus();
 		}
 	};
 
@@ -53,6 +49,12 @@ export default function MobileProfileMenu({ user }: MobileProfileMenuProps) {
 		<div
 			ref={rootRef}
 			className="relative"
+			onKeyDown={(event) => {
+				if (!isOpen || event.key !== 'Escape') return;
+				event.preventDefault();
+				setIsOpen(false);
+				triggerRef.current?.focus();
+			}}
 			onBlur={(event) => {
 				if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false);
 			}}
@@ -74,7 +76,8 @@ export default function MobileProfileMenu({ user }: MobileProfileMenuProps) {
 					if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 					event.preventDefault();
 					firstFocusIndex.current = event.key === 'ArrowDown' ? 0 : itemCount - 1;
-					setIsOpen(true);
+					if (isOpen) itemRefs.current[firstFocusIndex.current]?.focus();
+					else setIsOpen(true);
 				}}
 			>
 				<UserAvatar
