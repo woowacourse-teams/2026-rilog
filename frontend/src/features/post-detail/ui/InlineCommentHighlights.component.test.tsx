@@ -198,44 +198,4 @@ describe('InlineCommentHighlights', () => {
 		fireEvent.click(getByRole('button', { name: '이 블록의 댓글 0개 보기' }));
 		expect(handleOpen).toHaveBeenLastCalledWith({ blockId: 'block-1', anchorIds: [1, 3, 4], source: 'block' });
 	});
-	it('선택 모드에서는 밑줄을 유지하면서 호버·본문 클릭·댓글 버튼을 막고 종료 후 복구한다', async () => {
-		const onOpen = vi.fn();
-		const props = {
-			html: HTML,
-			postId: 1,
-			ownerType: 'RILOG' as const,
-			category: 'TECH' as const,
-			inlineCommentBlocks: BLOCKS,
-			onInlineCommentOpen: onOpen,
-		};
-		const { container, rerender, getByRole } = render(<PostDetailContent {...props} />);
-		await waitFor(() => expect(container.querySelectorAll('[data-inline-comment-highlight]')).toHaveLength(4));
-		const root = container.querySelector<HTMLElement>('[data-inline-comment-root]')!;
-		Object.defineProperty(document, 'caretPositionFromPoint', {
-			configurable: true,
-			value: () => ({ offsetNode: root.firstChild, offset: 1 }),
-		});
-		fireEvent.pointerMove(root, { clientX: 20, clientY: 30 });
-		expect(root).toHaveAttribute('data-inline-comment-pointer');
-		rerender(<PostDetailContent {...props} isSelectionMode />);
-		await waitFor(() => expect(container.querySelectorAll('[data-inline-comment-highlight]')).toHaveLength(4));
-		expect(root).not.toHaveAttribute('data-inline-comment-pointer');
-		fireEvent.pointerMove(root, { clientX: 20, clientY: 30 });
-		fireEvent.click(root, { clientX: 20, clientY: 30 });
-		const anchor = getByRole('button', { name: '인용 “댓글”의 댓글 0개 보기', hidden: true });
-		const block = getByRole('button', { name: '이 블록의 댓글 0개 보기', hidden: true });
-		expect(anchor).toBeDisabled();
-		expect(block).toBeDisabled();
-		fireEvent.focus(anchor);
-		fireEvent.click(anchor);
-		fireEvent.click(block);
-		expect(container.querySelector('[data-inline-comment-active]')).toBeNull();
-		expect(root).not.toHaveAttribute('data-inline-comment-pointer');
-		expect(onOpen).not.toHaveBeenCalled();
-		rerender(<PostDetailContent {...props} isSelectionMode={false} />);
-		fireEvent.pointerMove(root, { clientX: 20, clientY: 30 });
-		expect(root).toHaveAttribute('data-inline-comment-pointer');
-		fireEvent.click(root, { clientX: 20, clientY: 30 });
-		expect(onOpen).toHaveBeenCalledExactlyOnceWith({ blockId: 'block-1', anchorIds: [3], source: 'highlight' });
-	});
 });

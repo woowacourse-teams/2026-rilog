@@ -2,7 +2,56 @@ import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
+import type { PostCommentAnchorResponse, PostCommentAnchorSidebarGroupResponse } from '@/shared/api/posts/types';
+
 import { renderInlineCommentWorkspace } from './fixtures/inline-comment-browser';
+
+const createComposerThreadGroup = (
+	selectionId: number,
+	selectedText: string,
+	startOffset: number,
+	commentOverrides: Partial<PostCommentAnchorResponse> = {},
+): PostCommentAnchorSidebarGroupResponse => ({
+	selectionId,
+	blockId: 'block-1',
+	range: { startOffset, endOffset: startOffset + selectedText.length },
+	selectedText,
+	state: 'ACTIVE',
+	anchorCount: 1,
+	commentAnchors: [
+		{
+			commentAnchorId: 900 + selectionId,
+			content: `${selectedText}에 남긴 기존 댓글입니다. `.repeat(120),
+			author: {
+				userId: 1,
+				nickname: '댓글 작성자',
+				slug: 'author',
+				profileImageUrl: null,
+				isPostAuthor: false,
+				isBlogMember: false,
+			},
+			canEdit: false,
+			canDelete: false,
+			isEdited: false,
+			createdAt: '2026-10-26T00:00:00',
+			updatedAt: '2026-10-26T00:00:00',
+			...commentOverrides,
+		},
+	],
+});
+
+const mockThreadGroups = (page: Page, groups: readonly PostCommentAnchorSidebarGroupResponse[]) =>
+	page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
+		route.fulfill({
+			json: {
+				status: 0,
+				message: 'OK',
+				data: route.request().url().endsWith('/sidebar')
+					? { anchorGroups: groups }
+					: { blocks: groups.length ? [{ blockId: 'block-1', anchorGroups: groups }] : [] },
+			},
+		}),
+	);
 
 const runtimeErrors = new WeakMap<Page, string[]>();
 
@@ -14,15 +63,7 @@ test.beforeEach(async ({ page }) => {
 		route.fulfill({ contentType: 'text/html', body: '<p>이전 페이지</p>' }),
 	);
 	await page.route('**/v1/**', (route) => route.abort());
-	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
-		route.fulfill({
-			json: {
-				status: 0,
-				message: 'OK',
-				data: route.request().url().endsWith('/sidebar') ? { anchorGroups: [] } : { blocks: [] },
-			},
-		}),
-	);
+	await mockThreadGroups(page, []);
 });
 
 test.afterEach(({ page }) => {
@@ -158,63 +199,6 @@ test('모바일 선택은 native 이벤트를 막지 않고 메뉴와 무관하�
 	await page.mouse.wheel(0, 120);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 	expect(await page.evaluate(() => getComputedStyle(document.body).position)).not.toBe('fixed');
-});
-
-test('PC 선택 모드에서 뒤로가기로 취소하면 읽던 스크롤 위치를 복원한다', async ({ page }) => {
-	await page.setViewportSize({ width: 1100, height: 844 });
-	await renderInlineCommentWorkspace(page);
-	await page.evaluate(() => window.scrollTo(0, 120));
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
-	await page.getByRole('button', { name: '댓글 작성' }).click();
-	await expect(page.getByRole('button', { name: '선택 취소' })).toBeVisible();
-	await page.mouse.wheel(0, 250);
-	await page.goBack();
-	await expect(page).toHaveURL(/\/about$/);
-	await expect(page.getByRole('button', { name: '댓글 작성' })).toBeVisible();
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
-});
-
-test('바텀시트 손잡이로 확장하고 목록 상단을 내려 축소한 뒤 손잡이로 닫는다', async ({ page }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await renderInlineCommentWorkspace(page);
-	await page.getByRole('button', { name: '전체 댓글 0개 보기' }).click();
-	const dialog = page.getByRole('dialog', { name: '전체 인라인 댓글 0' });
-	await expect(dialog).toBeVisible();
-	await expect(page.getByRole('heading', { name: '전체 인라인 댓글 0' })).toBeFocused();
-	const dragHandle = async (delta: number) => {
-		await dialog.evaluate(async (element) => {
-			element.getBoundingClientRect();
-			await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
-		});
-		const handle = page.getByRole('button', { name: /댓글창 (확장|축소)/ });
-		const box = await handle.boundingBox();
-		if (!box) throw new Error('시트 손잡이가 없습니다.');
-		const x = box.x + box.width / 2;
-		const y = box.y + box.height / 2;
-		await page.mouse.move(x, y);
-		await page.mouse.down();
-		await page.mouse.move(x, y + delta, { steps: 10 });
-		await page.mouse.up();
-	};
-	await dragHandle(-100);
-	await expect(page.getByRole('button', { name: '댓글창 축소' })).toHaveAttribute('aria-expanded', 'true');
-	await expect.poll(async () => (await dialog.boundingBox())?.height ?? 0).toBeGreaterThan(844 * 0.9);
-	const expandedHeight = (await dialog.boundingBox())?.height ?? 0;
-	const empty = page.getByText('표시할 댓글이 없습니다.');
-	const box = await empty.boundingBox();
-	if (!box) throw new Error('댓글 목록이 없습니다.');
-	await page.mouse.move(box.x + 40, box.y + 10);
-	await page.mouse.down();
-	await page.mouse.move(box.x + 40, box.y + 110, { steps: 10 });
-	await page.mouse.up();
-	await expect(dialog).toBeVisible();
-	await expect(page.getByRole('button', { name: '댓글창 확장' })).toHaveAttribute('aria-expanded', 'false');
-	await expect
-		.poll(async () => (await dialog.boundingBox())?.height ?? 0)
-		.toBeLessThan(Math.min(expandedHeight, 844 * 0.75));
-	await dragHandle(100);
-	await expect(dialog).toBeHidden();
-	await expect(page).toHaveURL(/\/about$/);
 });
 
 test('실제 App Router 상세에서 댓글을 닫은 뒤에만 이전 매거진으로 돌아간다', async ({ page }) => {
@@ -468,44 +452,14 @@ test('처음 빠르게 작성창을 열어 키보드가 올라와도 하단 입�
 test('긴 댓글을 수정할 때 키보드 위에 수정 입력과 저장 버튼이 함께 보인다', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	const content = Array.from({ length: 20 }, (_, index) => `수정할 댓글 ${index + 1}`).join('\n');
-	const group = {
-		selectionId: 91,
-		blockId: 'block-1',
-		range: { startOffset: 0, endOffset: 5 },
-		selectedText: '브라우저에',
-		state: 'ACTIVE',
-		anchorCount: 1,
-		commentAnchors: [
-			{
-				commentAnchorId: 900,
-				content,
-				author: {
-					userId: 1,
-					nickname: '작성자',
-					slug: 'author',
-					profileImageUrl: null,
-					isPostAuthor: false,
-					isBlogMember: false,
-				},
-				canEdit: true,
-				canDelete: true,
-				isEdited: false,
-				createdAt: '2026-10-26T00:00:00',
-				updatedAt: '2026-10-26T00:00:00',
-			},
-		],
-	};
-	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
-		route.fulfill({
-			json: {
-				status: 0,
-				message: 'OK',
-				data: route.request().url().endsWith('/sidebar')
-					? { anchorGroups: [group] }
-					: { blocks: [{ blockId: 'block-1', anchorGroups: [group] }] },
-			},
-		}),
-	);
+	const group = createComposerThreadGroup(91, '브라우저에', 0, {
+		commentAnchorId: 900,
+		content,
+		canEdit: true,
+		canDelete: true,
+	});
+	group.commentAnchors[0].author.nickname = '작성자';
+	await mockThreadGroups(page, [group]);
 	await renderInlineCommentWorkspace(page, 91);
 	await page.getByRole('button', { name: '수정', exact: true }).click();
 	const input = page.getByRole('textbox', { name: '댓글 수정' });
@@ -549,7 +503,10 @@ for (const width of [1100, 1440]) {
 		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
 		await page.mouse.wheel(0, 250);
 		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
-		await page.getByRole('button', { name: '선택 취소' }).click();
+		if (width === 1100) await page.goBack();
+		else await page.getByRole('button', { name: '선택 취소' }).click();
+		await expect(page).toHaveURL(/\/about$/);
+		await expect(page.getByRole('button', { name: '댓글 작성' })).toBeVisible();
 		await expect.poll(async () => (await article.boundingBox())?.width).toBeCloseTo(before.width, 0);
 		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
 		await expect.poll(() => page.evaluate(() => document.documentElement.style.overflowY)).toBe('scroll');
@@ -609,32 +566,9 @@ test('모바일 전체 댓글 진입은 하나의 하단 버튼이며 입력에 
 
 test('실제 상세의 기존 밑줄은 선택 중에도 남고 호버·클릭은 선택 종료 후에만 반응한다', async ({ page }) => {
 	await page.setViewportSize({ width: 1100, height: 900 });
-	const group = {
-		selectionId: 91,
-		range: { startOffset: 0, endOffset: 2 },
-		selectedText: '실제',
-		state: 'ACTIVE',
-		anchorCount: 1,
-		commentAnchors: [
-			{
-				commentAnchorId: 900,
-				content: '기존 댓글',
-				author: {
-					userId: 1,
-					nickname: '작성자',
-					slug: 'author',
-					profileImageUrl: null,
-					isPostAuthor: false,
-					isBlogMember: false,
-				},
-				canEdit: false,
-				canDelete: false,
-				isEdited: false,
-				createdAt: '2026-10-26T00:00:00',
-				updatedAt: '2026-10-26T00:00:00',
-			},
-		],
-	};
+	const group = createComposerThreadGroup(91, '실제', 0, { commentAnchorId: 900, content: '기존 댓글' });
+	group.blockId = 'article-101';
+	group.commentAnchors[0].author.nickname = '작성자';
 	await page.route('https://api.rilog.test/**', async (route) => {
 		const path = new URL(route.request().url()).pathname;
 		if (path.endsWith('/comment-anchors/sidebar'))
@@ -652,6 +586,10 @@ test('실제 상세의 기존 밑줄은 선택 중에도 남고 호버·클릭�
 	const root = page.locator('[data-inline-comment-block-id="article-101"]');
 	const line = page.locator('[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]');
 	await expect(line).toHaveCount(1);
+	const anchorButton = page.locator('[data-inline-comment-anchor-proxy]');
+	const blockButton = page.locator('[data-inline-comment-block-button]');
+	await expect(anchorButton).toBeEnabled();
+	await expect(blockButton).toBeEnabled();
 	await root.scrollIntoViewIfNeeded();
 	const height = (await line.boundingBox())?.height;
 	if (height === undefined) throw new Error('밑줄을 찾을 수 없습니다.');
@@ -671,16 +609,26 @@ test('실제 상세의 기존 밑줄은 선택 중에도 남고 호버·클릭�
 	await page.keyboard.press('Enter');
 	await expect(line).toHaveCount(1);
 	await expect(line).toBeVisible();
+	await expect(anchorButton).toBeDisabled();
+	await expect(blockButton).toBeDisabled();
 	await page.mouse.move(point.x, point.y);
 	await expect.poll(async () => (await line.boundingBox())?.height).toBe(height);
 	await page.mouse.click(point.x, point.y);
 	await expect(page.getByRole('dialog', { name: '인라인 댓글 1', exact: true })).toBeHidden();
 	await expect(line).toBeVisible();
 	await page.getByRole('button', { name: '선택 취소' }).click();
+	await expect(anchorButton).toBeEnabled();
+	await expect(blockButton).toBeEnabled();
 	await page.mouse.move(point.x + 1, point.y);
 	await expect.poll(async () => (await line.boundingBox())?.height ?? 0).toBeGreaterThan(height);
 	await page.mouse.click(point.x, point.y);
-	await expect(page.getByRole('dialog', { name: '인라인 댓글 1', exact: true })).toBeVisible();
+	const comments = page.getByRole('dialog', { name: '인라인 댓글 1', exact: true });
+	await expect(comments).toBeVisible();
+	await page.getByRole('button', { name: '댓글 사이드바 닫기', exact: true }).click();
+	await expect(comments).toBeHidden();
+	await anchorButton.focus();
+	await page.keyboard.press('Enter');
+	await expect(comments).toBeVisible();
 });
 
 test('모바일 시트는 열고 닫는 동안 화면 안에서 연속적으로 이동한다', async ({ page }) => {
@@ -799,48 +747,10 @@ test('올라오는 시트의 손잡이를 잡아도 현재 위치에서 튀지 �
 	await page.mouse.up();
 });
 
-const createComposerThreadGroup = (selectionId: number, selectedText: string, startOffset: number) => ({
-	selectionId,
-	blockId: 'block-1',
-	range: { startOffset, endOffset: startOffset + selectedText.length },
-	selectedText,
-	state: 'ACTIVE',
-	anchorCount: 1,
-	commentAnchors: [
-		{
-			commentAnchorId: 900 + selectionId,
-			content: `${selectedText}에 남긴 기존 댓글입니다. `.repeat(120),
-			author: {
-				userId: 1,
-				nickname: '댓글 작성자',
-				slug: 'author',
-				profileImageUrl: null,
-				isPostAuthor: false,
-				isBlogMember: false,
-			},
-			canEdit: false,
-			canDelete: false,
-			isEdited: false,
-			createdAt: '2026-10-26T00:00:00',
-			updatedAt: '2026-10-26T00:00:00',
-		},
-	],
-});
-
 test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 보존하고 선택한 대상에만 작성한다', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	const groups = [createComposerThreadGroup(91, '브라우저에서', 0), createComposerThreadGroup(92, '선택하여', 7)];
-	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
-		route.fulfill({
-			json: {
-				status: 0,
-				message: 'OK',
-				data: route.request().url().endsWith('/sidebar')
-					? { anchorGroups: groups }
-					: { blocks: [{ blockId: 'block-1', anchorGroups: groups }] },
-			},
-		}),
-	);
+	await mockThreadGroups(page, groups);
 	await page.route('**/v1/posts/106/selections/91/comment-anchors', (route) =>
 		route.fulfill({
 			json: { status: 0, message: 'OK', data: { commentAnchorId: 999 } },
@@ -899,17 +809,7 @@ test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 
 test('기존 댓글 목록을 스크롤해도 작성 버튼이 있는 하단 입력바는 같은 자리에 남는다', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	const group = createComposerThreadGroup(91, '브라우저에서', 0);
-	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
-		route.fulfill({
-			json: {
-				status: 0,
-				message: 'OK',
-				data: route.request().url().endsWith('/sidebar')
-					? { anchorGroups: [group] }
-					: { blocks: [{ blockId: 'block-1', anchorGroups: [group] }] },
-			},
-		}),
-	);
+	await mockThreadGroups(page, [group]);
 	await renderInlineCommentWorkspace(page, 91);
 	const dialog = page.getByRole('dialog', { name: '인라인 댓글 1', exact: true });
 	await expect(dialog).toHaveAttribute('data-state', 'open');
@@ -947,17 +847,7 @@ const renderOwnedCommentThread = async (page: Page) => {
 		canEdit: true,
 		canDelete: true,
 	};
-	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
-		route.fulfill({
-			json: {
-				status: 0,
-				message: 'OK',
-				data: route.request().url().endsWith('/sidebar')
-					? { anchorGroups: [group] }
-					: { blocks: [{ blockId: 'block-1', anchorGroups: [group] }] },
-			},
-		}),
-	);
+	await mockThreadGroups(page, [group]);
 	await renderInlineCommentWorkspace(page);
 	await page.getByRole('button', { name: '전체 댓글 1개 보기' }).click();
 };

@@ -265,9 +265,9 @@ describe('모바일 댓글 바텀시트', () => {
 		return onClose;
 	};
 
-	it('손잡이는 키보드로 확장과 축소할 수 있고 읽기 진입은 제목에 focus한다', async () => {
+	it('손잡이는 키보드로 확장·축소하고 Escape로 닫으며 읽기 진입은 제목에 focus한다', async () => {
 		const user = userEvent.setup();
-		renderMobileSheet();
+		const onClose = renderMobileSheet();
 		expect(screen.queryByRole('button', { name: '댓글 사이드바 닫기' })).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: '전체 인라인 댓글 2' })).toHaveFocus();
 		const expand = screen.getByRole('button', { name: '댓글창 확장' });
@@ -276,26 +276,7 @@ describe('모바일 댓글 바텀시트', () => {
 		expect(screen.getByRole('button', { name: '댓글창 축소' })).toHaveAttribute('aria-expanded', 'true');
 		await user.keyboard('{Enter}');
 		expect(screen.getByRole('button', { name: '댓글창 확장' })).toHaveAttribute('aria-expanded', 'false');
-	});
-
-	it('스크롤된 댓글 목록은 유지하고 맨 위에서는 아래로 당겨 닫는다', () => {
-		const onClose = renderMobileSheet();
-		const dragEvent = (element: HTMLElement, type: string, clientY: number) => {
-			const event = new Event(type, { bubbles: true, cancelable: true });
-			Object.assign(event, { pointerId: 1, clientX: 100, clientY, button: 0, isPrimary: true });
-			fireEvent(element, event);
-		};
-		const content = screen.getByText('첫 번째 댓글');
-		const list = content.closest<HTMLElement>('[data-comment-list]')!;
-		list.scrollTop = 100;
-		dragEvent(content, 'pointerdown', 200);
-		dragEvent(content, 'pointermove', 320);
-		dragEvent(content, 'pointerup', 320);
-		expect(onClose).not.toHaveBeenCalled();
-		list.scrollTop = 0;
-		dragEvent(content, 'pointerdown', 200);
-		dragEvent(content, 'pointermove', 320);
-		dragEvent(content, 'pointerup', 320);
+		await user.keyboard('{Escape}');
 		expect(onClose).toHaveBeenCalledOnce();
 	});
 
@@ -371,13 +352,6 @@ describe('모바일 댓글 바텀시트', () => {
 		}
 		fireEvent.click(handle);
 		expect(handle).toHaveAttribute('aria-expanded', 'false');
-	});
-
-	it('Escape는 이력 관리 댓글창에도 닫기를 한 번 요청한다', async () => {
-		const user = userEvent.setup();
-		const onClose = renderMobileSheet();
-		await user.keyboard('{Escape}');
-		expect(onClose).toHaveBeenCalledOnce();
 	});
 });
 
@@ -648,14 +622,7 @@ describe('댓글 패널의 하위 모달 수명주기', () => {
 		const viewWithBodyAction = (open: boolean) => (
 			<>
 				<button>본문 동작</button>
-				<PostCommentsSidebar
-					postId={81}
-					open={open}
-					mode="all"
-					threads={THREADS}
-					onClose={vi.fn()}
-					onNavigate={vi.fn()}
-				/>
+				{view(open)}
 			</>
 		);
 		const { rerender } = render(viewWithBodyAction(true));

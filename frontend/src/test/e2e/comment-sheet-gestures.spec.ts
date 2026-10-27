@@ -89,7 +89,7 @@ const expectExpanded = async (page: Page, expanded: boolean) => {
 };
 
 test('제목 영역을 올려 확장하고 목록 상단을 내려 축소·닫기한다', async ({ page }) => {
-	const dialog = await openSheet(page);
+	let dialog = await openSheet(page);
 	await drag(page, dialog.getByRole('heading', { name: '인라인 댓글 1' }), -100);
 	await expectExpanded(page, true);
 	await settle(dialog);
@@ -98,11 +98,40 @@ test('제목 영역을 올려 확장하고 목록 상단을 내려 축소·닫�
 	await settle(dialog);
 	await drag(page, dialog.locator('[data-comment-list]'), 120);
 	await expect(dialog).toBeHidden();
+	await page.getByRole('button', { name: '전체 댓글 1개 보기' }).click();
+	dialog = page.getByRole('dialog', { name: '전체 인라인 댓글 1', exact: true });
+	await expect(dialog).toHaveAttribute('data-state', 'open');
+	await settle(dialog);
+	const handle = page.getByRole('button', { name: /댓글창 (확장|축소)/ });
+	await drag(page, handle, -100);
+	await expectExpanded(page, true);
+	await expect.poll(async () => (await dialog.boundingBox())?.height ?? 0).toBeGreaterThan(844 * 0.9);
+	await settle(dialog);
+	const expandedHeight = (await dialog.boundingBox())?.height ?? 0;
+	await drag(page, dialog.locator('[data-comment-list]'), 100);
+	await expectExpanded(page, false);
+	await expect
+		.poll(async () => (await dialog.boundingBox())?.height ?? 0)
+		.toBeLessThan(Math.min(expandedHeight, 844 * 0.75));
+	await settle(dialog);
+	await drag(page, handle, 100);
+	await expect(dialog).toBeHidden();
+	await expect(page).toHaveURL(/\/about$/);
 });
 
 test('축소된 목록을 올리면 먼저 시트를 확장하고 수평 드래그는 무시한다', async ({ page }) => {
 	const dialog = await openSheet(page);
 	const list = dialog.locator('[data-comment-list]');
+	await list.hover();
+	await page.mouse.wheel(0, 300);
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(100);
+	await drag(page, list, 100);
+	await expect(dialog).toBeVisible();
+	await expectExpanded(page, false);
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await list.evaluate((element) => {
+		element.scrollTop = 0;
+	});
 	await drag(page, list, 0, 100);
 	await expectExpanded(page, false);
 	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
