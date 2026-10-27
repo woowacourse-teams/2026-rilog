@@ -116,6 +116,7 @@ export default function BaseModal({
 	};
 
 	const handleCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
+		if (event.target instanceof Element && event.target.closest('dialog') !== event.currentTarget) return;
 		event.preventDefault(); //애니메이션 적용을 위해 기본 <dialog> 태그의 action 막기
 		if (!dismissDisabled && closeOnEscape && event.currentTarget.dataset.state !== 'closing') {
 			onDismiss();

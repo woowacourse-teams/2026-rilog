@@ -174,6 +174,27 @@ describe('Modal', () => {
 		expect(onClose).toHaveBeenCalledTimes(2);
 	});
 
+	it.each([false, true])('중첩 모달의 Escape는 pending=%s에서 부모를 닫지 않는다', (isPending) => {
+		const onParentClose = vi.fn();
+		const onChildClose = vi.fn();
+		render(
+			<Modal open title="부모 댓글창" onClose={onParentClose}>
+				<Modal open title="댓글 삭제 확인" isPending={isPending} onClose={onChildClose} />
+			</Modal>,
+		);
+
+		const child = screen.getByRole('dialog', { name: '댓글 삭제 확인' });
+		fireEvent(child, new Event('cancel', { bubbles: false, cancelable: true }));
+		expect(onChildClose).toHaveBeenCalledTimes(isPending ? 0 : 1);
+		expect(onParentClose).not.toHaveBeenCalled();
+
+		fireEvent(
+			screen.getByRole('dialog', { name: '부모 댓글창' }),
+			new Event('cancel', { bubbles: false, cancelable: true }),
+		);
+		expect(onParentClose).toHaveBeenCalledOnce();
+	});
+
 	it('primary action disabled는 dismiss를 차단하지 않는다', () => {
 		const onClose = vi.fn();
 		render(
