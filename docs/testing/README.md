@@ -161,3 +161,7 @@ pnpm test:e2e:prod
 키보드로 가용 화면이 줄어든 댓글 입력은 실제 브라우저에서 입력창과 제출 버튼의 가시 영역으로 검증한다. RTL에서 `scrollIntoView` 호출만 확인하는 중복 검증은 두지 않는다. 새 분석 진입점은 이벤트 facade의 payload 계약 테스트로 보호한다.
 
 댓글 등록 후 닫기의 스크롤 복구는 `inline-comment-scroll-unlock.spec.ts`에서 실제 Next.js 상세 경로로 검증한다. 열린 상태의 마운트와 등록 후 재조회, POST·재조회 대기 중 닫기를 포함하며, native `:modal` 해제와 실제 휠·터치 이동을 함께 확인한다. Strict Mode와 초기 포커스 변경·빠른 재진입의 모달 수명은 공용 모달 컴포넌트 테스트로 보호한다.
+
+## 모바일 댓글 터치 입력의 조건부 제외
+
+`comment-sheet-gestures.spec.ts`의 실제 터치 주입 검사는 Chromium CDP를 사용하므로 WebKit·Firefox에서는 제외한다. 공통 pointer·wheel 제스처 검사는 세 엔진에서 계속 실행한다. 다른 엔진에 동등한 터치 주입 API를 연결하거나 검사를 엔진 공통 입력 도구로 전환할 때 이 제외를 재검토하고, 같은 사용자 동작을 검증할 수 있으면 제거한다. 이 조건은 #782의 검증 기록과 PR에도 남긴다.

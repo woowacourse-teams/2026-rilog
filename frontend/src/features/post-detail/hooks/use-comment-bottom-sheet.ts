@@ -4,17 +4,13 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState, useSyncExtern
 
 import type { CSSProperties, MouseEvent, PointerEvent, RefObject } from 'react';
 
+import { revealInlineCommentInput } from '../lib/reveal-inline-comment-input';
+
+import { useCommentViewport } from './use-comment-viewport';
+
 export const COMMENT_SHEET_ENTER_DURATION_MS = 320;
 export const COMMENT_SHEET_EXIT_DURATION_MS = 240;
 
-const MOBILE_QUERY = '(max-width: 767px)';
-const subscribeMobile = (onChange: () => void) => {
-	const query = window.matchMedia?.(MOBILE_QUERY);
-	query?.addEventListener('change', onChange);
-	return () => query?.removeEventListener('change', onChange);
-};
-const getMobile = () => window.matchMedia?.(MOBILE_QUERY).matches ?? false;
-const getServerMobile = () => false;
 const subscribeViewport = (onChange: () => void) => {
 	window.visualViewport?.addEventListener('resize', onChange);
 	window.visualViewport?.addEventListener('scroll', onChange);
@@ -79,7 +75,7 @@ export function useCommentBottomSheet(
 	onClose: () => void,
 	contentRef: RefObject<HTMLDivElement | null>,
 ) {
-	const isMobile = useSyncExternalStore(subscribeMobile, getMobile, getServerMobile);
+	const isMobile = useCommentViewport('mobile');
 	const { height: viewportHeight, top: viewportTop } = useSyncExternalStore(
 		subscribeViewport,
 		getViewportSnapshot,
@@ -104,14 +100,7 @@ export function useCommentBottomSheet(
 
 	const revealInput = useCallback(() => {
 		const active = document.activeElement;
-		if (
-			active instanceof HTMLTextAreaElement &&
-			contentRef.current?.contains(active) &&
-			!active.closest('[data-mobile-comment-composer]') &&
-			active.closest('dialog') === contentRef.current.closest('dialog')
-		) {
-			active.closest<HTMLElement>('[data-inline-comment-composer]')?.scrollIntoView?.({ block: 'nearest' });
-		}
+		if (contentRef.current?.contains(active)) revealInlineCommentInput(active);
 	}, [contentRef]);
 	useEffect(() => {
 		if (!open || !isMobile) return;

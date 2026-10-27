@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { ReactNode } from 'react';
@@ -10,6 +10,7 @@ import type { PostCategory } from '@/domains/post/model/post';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
+import { useCommentViewport } from '@/features/post-detail/hooks/use-comment-viewport';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
@@ -45,14 +46,6 @@ interface PostDetailCommentsWorkspaceProps {
 	afterProfile?: ReactNode;
 }
 
-const subscribeMobileViewport = (onChange: () => void) => {
-	const query = window.matchMedia?.('(max-width: 767px)');
-	query?.addEventListener('change', onChange);
-	return () => query?.removeEventListener('change', onChange);
-};
-const getMobileViewport = () => window.matchMedia?.('(max-width: 767px)').matches ?? false;
-const getServerMobileViewport = () => false;
-
 const EMPTY_INLINE_COMMENT_BLOCKS: InlineCommentBlockModel[] = [];
 const EMPTY_INLINE_COMMENT_THREADS: InlineCommentThreadModel[] = [];
 
@@ -79,7 +72,7 @@ export default function PostDetailCommentsWorkspace({
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
-	const isMobileViewport = useSyncExternalStore(subscribeMobileViewport, getMobileViewport, getServerMobileViewport);
+	const isMobileViewport = useCommentViewport('mobile');
 	const dockHost = useDockedCommentsHost(postId);
 	const isDocked = dockHost !== null && dockHost !== undefined;
 	const isLayoutReady = dockHost !== undefined;
@@ -101,14 +94,15 @@ export default function PostDetailCommentsWorkspace({
 	useEffect(() => cancelAnchorNavigation, [cancelAnchorNavigation]);
 	const navigateToThread = useCallback((thread: InlineCommentThreadModel) => {
 		navigationCleanup.current?.();
-		const highlights = Array.from(
-			document.querySelectorAll<HTMLElement>(
-				`[data-inline-comment-highlight][data-inline-comment-anchor-id="${thread.anchor.anchorId}"]`,
-			),
-		);
+		const getHighlights = () =>
+			Array.from(
+				document.querySelectorAll<HTMLElement>(
+					`[data-inline-comment-highlight][data-inline-comment-anchor-id="${thread.anchor.anchorId}"]`,
+				),
+			);
 		const target =
-			highlights[0] ?? document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
-		if (target) navigationCleanup.current = navigateInlineCommentAnchor(target, highlights);
+			document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`) ?? getHighlights()[0];
+		if (target) navigationCleanup.current = navigateInlineCommentAnchor(target, getHighlights);
 	}, []);
 	const handleCommentsClosed = useCallback(() => {
 		const thread = pendingNavigation.current;

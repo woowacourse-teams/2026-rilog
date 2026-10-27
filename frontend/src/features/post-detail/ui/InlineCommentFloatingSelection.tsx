@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useSyncExternalStore } from 'react';
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
@@ -8,6 +8,7 @@ import type { InlineCommentSelectionTarget } from '../model/inline-comment-inter
 import CommentIcon from '@/shared/assets/icons/comment.svg';
 import Button from '@/shared/ui/button/Button';
 
+import { useCommentViewport } from '../hooks/use-comment-viewport';
 import { useInlineCommentSelectionMode } from '../hooks/use-inline-comment-selection-mode';
 
 import InlineCommentSelectionAction from './InlineCommentSelectionAction';
@@ -24,21 +25,13 @@ const ACTION_HEIGHT = 44;
 const ACTION_GAP = 12;
 const VIEWPORT_PADDING = 8;
 
-const subscribeDesktop = (onChange: () => void) => {
-	const query = window.matchMedia?.('(min-width: 768px)');
-	query?.addEventListener('change', onChange);
-	return () => query?.removeEventListener('change', onChange);
-};
-const getDesktop = () => window.matchMedia?.('(min-width: 768px)').matches ?? false;
-const getServerDesktop = () => false;
-
 export default function InlineCommentFloatingSelection({
 	article,
 	isActive,
 	onActiveChange,
 	onCreateComment,
 }: InlineCommentFloatingSelectionProps) {
-	const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktop, getServerDesktop);
+	const isDesktop = useCommentViewport('desktop');
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const statusBarRef = useRef<HTMLDivElement>(null);
 	const cancel = () => {

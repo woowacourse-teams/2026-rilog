@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { InlineCommentSelectionDraft } from '../lib/inline-comment-selection';
@@ -9,6 +9,7 @@ import type { InlineCommentSelectionTarget } from '../model/inline-comment-inter
 import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 
+import { useCommentViewport } from '../hooks/use-comment-viewport';
 import { createInlineCommentSelectionDraft } from '../lib/inline-comment-selection';
 
 import InlineCommentSelectionAction from './InlineCommentSelectionAction';
@@ -29,26 +30,13 @@ interface SelectionToolbarState {
 const TOOLBAR_OVERLAP = 4;
 const EXPANDED_WIDTH = 88;
 const VIEWPORT_PADDING = 8;
-const DESKTOP_VIEWPORT_QUERY = '(min-width: 768px)';
-const subscribeDesktopViewport = (onChange: () => void) => {
-	const query = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
-	query.addEventListener('change', onChange);
-	return () => query.removeEventListener('change', onChange);
-};
-const getDesktopViewport = () => window.matchMedia(DESKTOP_VIEWPORT_QUERY).matches;
-const getServerDesktopViewport = () => false;
-
 export default function InlineCommentSelectionToolbar({
 	article,
 	postId,
 	onCreateComment,
 }: InlineCommentSelectionToolbarProps) {
 	const { isInitialized } = useAuth();
-	const isDesktopViewport = useSyncExternalStore(
-		subscribeDesktopViewport,
-		getDesktopViewport,
-		getServerDesktopViewport,
-	);
+	const isDesktopViewport = useCommentViewport('desktop');
 	const [toolbar, setToolbar] = useState<SelectionToolbarState | null>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const isEnabled = isInitialized;

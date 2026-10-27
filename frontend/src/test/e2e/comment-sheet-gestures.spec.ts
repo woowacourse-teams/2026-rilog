@@ -159,7 +159,13 @@ for (const width of [390, 1440]) {
 		await input.fill('첫째 줄\n둘째 줄\n셋째 줄\n넷째 줄\n다섯째 줄');
 		const submit = composer.getByRole('button', { name: '작성', exact: true });
 		await expect(submit).toBeEnabled();
-		// Measure one layout frame; separate browser calls can span an entrance animation.
+		if (width < 1280) {
+			const dialog = page.getByRole('dialog', { name: '인라인 댓글 1', exact: true });
+			await expect(dialog).toHaveAttribute('data-state', 'open');
+			await settle(dialog);
+		}
+		// Static containment uses settled geometry; entering keyboard visibility has its own regression.
+		// Sample controls together so their relative bounds share the same layout.
 		const { outer, text, button } = await composer.evaluate((element) => {
 			const inputElement = element.querySelector('textarea');
 			const submitElement = element.querySelector('button');

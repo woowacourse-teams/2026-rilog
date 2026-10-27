@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
@@ -13,6 +13,8 @@ import NotificationCommentDeletedToast from '@/features/notifications/ui/Notific
 import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
+
+import { COMMENT_PANEL_SESSION_CONTEXT } from '../hooks/use-comment-panel-session';
 
 import InlineCommentComposer from './InlineCommentComposer';
 import InlineCommentThread from './InlineCommentThread';
@@ -63,6 +65,8 @@ export default function PostCommentsPanelContent({
 	onNavigate,
 }: PostCommentsPanelContentProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
+	// A new visibility session prevents old requests from reopening hidden native dialogs.
+	const session = useMemo(() => ({ isOpen, scrollResetKey }), [isOpen, scrollResetKey]);
 	const listRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {
 		if (!isOpen) return;
@@ -89,7 +93,7 @@ export default function PostCommentsPanelContent({
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
 	return (
-		<>
+		<COMMENT_PANEL_SESSION_CONTEXT value={session}>
 			{showDeletedCommentToast && <NotificationCommentDeletedToast />}
 			<div className="flex h-full min-h-0 flex-col">
 				<header
@@ -200,6 +204,6 @@ export default function PostCommentsPanelContent({
 					</footer>
 				)}
 			</div>
-		</>
+		</COMMENT_PANEL_SESSION_CONTEXT>
 	);
 }

@@ -937,3 +937,62 @@ test('기존 댓글 목록을 스크롤해도 작성 버튼이 있는 하단 입
 	expect(after.height).toBeCloseTo(before.height, 0);
 	await expect(composer.getByRole('button', { name: '작성', exact: true })).toBeInViewport();
 });
+
+const renderOwnedCommentThread = async (page: Page) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	const group = createComposerThreadGroup(91, '브라우저에서', 0);
+	group.commentAnchors[0] = {
+		...group.commentAnchors[0],
+		content: '수정 또는 삭제할 댓글',
+		canEdit: true,
+		canDelete: true,
+	};
+	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
+		route.fulfill({
+			json: {
+				status: 0,
+				message: 'OK',
+				data: route.request().url().endsWith('/sidebar')
+					? { anchorGroups: [group] }
+					: { blocks: [{ blockId: 'block-1', anchorGroups: [group] }] },
+			},
+		}),
+	);
+	await renderInlineCommentWorkspace(page);
+	await page.getByRole('button', { name: '전체 댓글 1개 보기' }).click();
+};
+
+test('삭제 확인창에서 브라우저 뒤로가기로 댓글창을 닫아도 숨은 모달이 본문 클릭을 막지 않는다', async ({ page }) => {
+	await renderOwnedCommentThread(page);
+	await page.getByRole('button', { name: '삭제', exact: true }).click();
+	await expect(page.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toBeVisible();
+	await page.goBack();
+	await expect(page).toHaveURL(/\/about$/);
+	await expect(page.locator('dialog:modal')).toHaveCount(0);
+	await page.getByRole('button', { name: '전체 댓글 1개 보기' }).click();
+	await expect(page.getByRole('dialog', { name: '전체 인라인 댓글 1', exact: true })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toBeHidden();
+});
+
+test('댓글창을 닫은 뒤 수정 요청이 실패해도 숨은 오류 모달 없이 편집 초안으로 재진입한다', async ({ page }) => {
+	const pending = Promise.withResolvers<void>();
+	await page.route('**/v1/posts/106/comment-anchors/991', async (route) => {
+		await pending.promise;
+		await route.fulfill({ status: 500, json: { status: 500, message: '실패', data: null } });
+	});
+	await renderOwnedCommentThread(page);
+	await page.getByRole('button', { name: '수정', exact: true }).click();
+	await page.getByRole('textbox', { name: '댓글 수정' }).fill('기존 수정 초안');
+	const requested = page.waitForRequest((request) => request.method() === 'PATCH');
+	await page.getByRole('button', { name: '저장', exact: true }).click();
+	await requested;
+	await page.goBack();
+	await expect(page.locator('dialog:modal')).toHaveCount(0);
+	const failedResponse = page.waitForResponse((response) => response.request().method() === 'PATCH');
+	pending.resolve();
+	await failedResponse;
+	await page.getByRole('button', { name: '전체 댓글 1개 보기' }).click();
+	await expect(page.getByRole('textbox', { name: '댓글 수정' })).toHaveValue('기존 수정 초안');
+	await expect(page.getByRole('button', { name: '저장', exact: true })).toBeEnabled();
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});

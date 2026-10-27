@@ -297,7 +297,30 @@ for (const width of [390, 1440]) {
 		await page.setViewportSize({ width, height: 844 });
 		const quote = page.locator('[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]');
 		await expect(quote).not.toHaveCount(0);
+		// Fonts/layout updates may redraw the overlay as navigation begins.
+		if (width < 768) {
+			await page.locator('dialog[open]').evaluate((dialog) => {
+				dialog.addEventListener(
+					'close',
+					() => window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))),
+					{ once: true },
+				);
+			});
+		} else {
+			await page.getByRole('button', { name: '본문으로 이동', exact: true }).evaluate((button) => {
+				button.addEventListener(
+					'click',
+					() => window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))),
+					{ once: true },
+				);
+			});
+		}
 		await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
+		await expect
+			.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content))
+			.toBe('""');
+		// An additional reflow during the hold must keep the current quote highlighted.
+		await page.evaluate(() => window.dispatchEvent(new Event('resize')));
 		await expect
 			.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content))
 			.toBe('""');

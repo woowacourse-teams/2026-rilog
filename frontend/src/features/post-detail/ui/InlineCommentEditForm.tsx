@@ -2,12 +2,17 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import type { CommentPanelSession } from '../hooks/use-comment-panel-session';
+
 import { analytics } from '@/features/analytics/model/events';
 import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import Button from '@/shared/ui/button/Button';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import Textarea from '@/shared/ui/textarea/Textarea';
+
+import { useCommentPanelSession } from '../hooks/use-comment-panel-session';
+import { revealInlineCommentInput } from '../lib/reveal-inline-comment-input';
 
 interface InlineCommentEditFormProps {
 	postId: number;
@@ -26,7 +31,8 @@ export default function InlineCommentEditForm({
 }: InlineCommentEditFormProps) {
 	const mutation = useUpdatePostCommentAnchorMutation(postId, commentAnchorId);
 	const isResponseUnconfirmed = isInvalidApiResponseError(mutation.error);
-	const [isErrorOpen, setIsErrorOpen] = useState(false);
+	const session = useCommentPanelSession();
+	const [errorSession, setErrorSession] = useState<CommentPanelSession | null>(null);
 	const [value, setValue] = useState(content);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmitting = useRef(false);
@@ -38,7 +44,7 @@ export default function InlineCommentEditForm({
 			analytics.inlineCommentUpdated({ postId });
 			onSaved();
 		} catch {
-			setIsErrorOpen(true);
+			setErrorSession(session);
 		} finally {
 			isSubmitting.current = false;
 		}
@@ -51,10 +57,7 @@ export default function InlineCommentEditForm({
 	}, []);
 
 	useLayoutEffect(() => {
-		const input = inputRef.current;
-		if (input !== null && document.activeElement === input && input.closest('[data-comment-bottom-sheet]')) {
-			input.closest<HTMLElement>('[data-inline-comment-composer]')?.scrollIntoView?.({ block: 'nearest' });
-		}
+		revealInlineCommentInput(inputRef.current);
 	}, [value]);
 
 	return (
@@ -86,11 +89,11 @@ export default function InlineCommentEditForm({
 				</Button>
 			</div>
 			<AlertModal
-				open={isErrorOpen}
+				open={session.isOpen && errorSession === session}
 				title={isResponseUnconfirmed ? '수정 결과를 확인하지 못했습니다.' : '댓글을 수정하지 못했습니다.'}
 				description={isResponseUnconfirmed ? '댓글 목록에서 수정 여부를 확인해 주세요.' : '잠시 후 다시 시도해 주세요.'}
-				onAction={() => setIsErrorOpen(false)}
-				onClose={() => setIsErrorOpen(false)}
+				onAction={() => setErrorSession(null)}
+				onClose={() => setErrorSession(null)}
 			/>
 		</div>
 	);

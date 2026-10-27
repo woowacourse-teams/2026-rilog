@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createElement, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,7 @@ import { AUTH_CONTEXT } from '@/features/auth/model/auth-context';
 import type { AuthContextValue } from '@/features/auth/model/auth-context';
 import { LOGIN_MODAL_CONTEXT } from '@/features/login/model/login-modal-context';
 import type * as PostsApi from '@/shared/api/posts/api';
+import * as postsApi from '@/shared/api/posts/api';
 import { addPostCommentAnchor, createPostCommentAnchor } from '@/shared/api/posts/api';
 import { renderWithQuery } from '@/test/render-with-query';
 
@@ -569,5 +570,117 @@ describe.each([
 		rerender(view(true, 1));
 		expect(list.scrollTop).toBe(0);
 		expect(input).toHaveValue('보존할 댓글 초안');
+	});
+});
+
+describe('댓글 패널의 하위 모달 수명주기', () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	const view = (open: boolean) => (
+		<PostCommentsSidebar postId={81} open={open} mode="all" threads={THREADS} onClose={vi.fn()} onNavigate={vi.fn()} />
+	);
+
+	it('부모 패널을 닫으면 삭제 확인창도 닫히고 다시 열어도 이전 확인창이 나타나지 않는다', async () => {
+		const user = userEvent.setup();
+		const { rerender } = render(view(true));
+		await user.click(screen.getByRole('button', { name: '삭제' }));
+		expect(screen.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toBeVisible();
+		rerender(view(false));
+		await waitFor(() => expect(document.querySelectorAll('dialog[open]')).toHaveLength(0));
+		rerender(view(true));
+		expect(screen.queryByRole('dialog', { name: '댓글을 삭제할까요?' })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '삭제' })).toBeEnabled();
+	});
+
+	it.each([false, true])(
+		'패널을 닫은 수정 요청이 늦게 실패해도 오류창을 열지 않고 편집 초안을 보존한다 (응답 전 재진입=%s)',
+		async (reopenBeforeFailure) => {
+			const user = userEvent.setup();
+			const pending = Promise.withResolvers<Awaited<ReturnType<typeof postsApi.updatePostCommentAnchor>>>();
+			vi.spyOn(postsApi, 'updatePostCommentAnchor').mockReturnValue(pending.promise);
+			const { rerender } = render(view(true));
+			await user.click(screen.getByRole('button', { name: '수정' }));
+			const input = screen.getByRole('textbox', { name: '댓글 수정' });
+			await user.clear(input);
+			await user.type(input, '보존할 수정 초안');
+			await user.click(screen.getByRole('button', { name: '저장' }));
+			rerender(view(false));
+			await waitFor(() => expect(document.querySelectorAll('dialog[open]')).toHaveLength(0));
+			if (reopenBeforeFailure) rerender(view(true));
+			await act(async () => {
+				pending.reject(new Error('offline'));
+				await pending.promise.catch(() => undefined);
+			});
+			if (!reopenBeforeFailure) {
+				await waitFor(() => expect(document.querySelectorAll('dialog[open]')).toHaveLength(0));
+				rerender(view(true));
+			}
+			expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+			expect(screen.getByRole('textbox', { name: '댓글 수정' })).toHaveValue('보존할 수정 초안');
+			await waitFor(() => expect(screen.getByRole('button', { name: '저장' })).toBeEnabled());
+		},
+	);
+
+	it('부모 패널을 닫은 삭제 요청이 늦게 실패해도 오류창을 열지 않는다', async () => {
+		const user = userEvent.setup();
+		const pending = Promise.withResolvers<Awaited<ReturnType<typeof postsApi.deletePostCommentAnchor>>>();
+		vi.spyOn(postsApi, 'deletePostCommentAnchor').mockReturnValue(pending.promise);
+		const { rerender } = render(view(true));
+		await user.click(screen.getByRole('button', { name: '삭제' }));
+		await user.click(
+			within(screen.getByRole('dialog', { name: '댓글을 삭제할까요?' })).getByRole('button', { name: '삭제' }),
+		);
+		rerender(view(false));
+		await act(async () => {
+			pending.reject(new Error('offline'));
+			await pending.promise.catch(() => undefined);
+		});
+		await waitFor(() => expect(document.querySelectorAll('dialog[open]')).toHaveLength(0));
+		rerender(view(true));
+		expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+		expect(screen.getByText('첫 번째 댓글')).toBeVisible();
+	});
+
+	it('닫힌 댓글창의 수정이 늦게 성공해도 본문 포커스를 가져가지 않는다', async () => {
+		const user = userEvent.setup();
+		const pending = Promise.withResolvers<Awaited<ReturnType<typeof postsApi.updatePostCommentAnchor>>>();
+		vi.spyOn(postsApi, 'updatePostCommentAnchor').mockReturnValue(pending.promise);
+		const viewWithBodyAction = (open: boolean) => (
+			<>
+				<button>본문 동작</button>
+				<PostCommentsSidebar
+					postId={81}
+					open={open}
+					mode="all"
+					threads={THREADS}
+					onClose={vi.fn()}
+					onNavigate={vi.fn()}
+				/>
+			</>
+		);
+		const { rerender } = render(viewWithBodyAction(true));
+		await user.click(screen.getByRole('button', { name: '수정' }));
+		await user.click(screen.getByRole('button', { name: '저장' }));
+		rerender(viewWithBodyAction(false));
+		await waitFor(() => expect(document.querySelectorAll('dialog[open]')).toHaveLength(0));
+		const bodyAction = screen.getByRole('button', { name: '본문 동작' });
+		bodyAction.focus();
+		await act(async () => {
+			pending.resolve({
+				status: 0,
+				message: 'OK',
+				data: {
+					commentAnchorId: 1,
+					content: '완료한 수정',
+					isEdited: true,
+					createdAt: '2026-09-17T10:20:00',
+					updatedAt: '2026-09-17T10:20:00',
+				},
+			});
+			await pending.promise;
+		});
+		expect(bodyAction).toHaveFocus();
+		rerender(viewWithBodyAction(true));
+		expect(screen.queryByRole('textbox', { name: '댓글 수정' })).not.toBeInTheDocument();
 	});
 });

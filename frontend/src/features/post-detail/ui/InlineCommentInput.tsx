@@ -8,6 +8,8 @@ import { useAuth } from '@/features/auth/model/use-auth';
 import Button from '@/shared/ui/button/Button';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
+import { revealInlineCommentInput } from '../lib/reveal-inline-comment-input';
+
 interface InlineCommentInputProps {
 	isOpen: boolean;
 	shouldAutoFocus?: boolean;
@@ -44,13 +46,7 @@ export default function InlineCommentInput({
 		if (isOpen && textareaRef.current !== null) {
 			const textarea = textareaRef.current;
 			resizeTextarea(textarea);
-			if (
-				!textarea.closest('[data-mobile-comment-composer]') &&
-				document.activeElement === textarea &&
-				textarea.closest('[data-comment-bottom-sheet]')
-			) {
-				textarea.closest<HTMLElement>('[data-inline-comment-composer]')?.scrollIntoView?.({ block: 'nearest' });
-			}
+			revealInlineCommentInput(textarea);
 		}
 	}, [isOpen, value, textareaRef]);
 
