@@ -629,6 +629,25 @@ test.describe('글 작성 브라우저 흐름', () => {
 		);
 		await expect(page.getByText('Loading...', { exact: true })).not.toBeVisible();
 	});
+
+	test('base64 이미지 HTML을 붙여넣으면 빈 이미지 블록에 오류를 표시하고 파일 업로드를 안내한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.evaluate(() => {
+			const clipboard = new DataTransfer();
+			clipboard.setData('text/html', '<img src="data:image/png;base64,private-image">');
+			document
+				.querySelector('[aria-label="게시글 내용"]')
+				?.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }));
+		});
+
+		const imageBlock = page.locator('[data-content-type="image"]');
+		await expect(imageBlock.locator('.bn-add-file-button [role="alert"]')).toContainText(
+			'저장할 수 없는 주소가 포함되어 있습니다',
+		);
+		await expect(imageBlock.getByText('이미지 추가', { exact: true })).toBeVisible();
+		await expect(imageBlock.locator('img[src^="data:"]')).toHaveCount(0);
+	});
 });
 
 test.describe('모바일 글쓰기 정책', () => {

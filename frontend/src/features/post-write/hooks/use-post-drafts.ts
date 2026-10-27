@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 
+import { InvalidPostMediaError } from '@/features/post-write/lib/validate-post-media';
 import type { DraftPostItem } from '@/features/post-write/model/post-draft';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
@@ -40,7 +41,9 @@ export function usePostDrafts({ prepareDocument, posts = [], onSave, onDelete }:
 			setSaveError(
 				isInvalidApiResponseError(error)
 					? '저장 결과를 확인하지 못했습니다. 이미 저장됐을 수 있으니 임시 저장 목록을 확인해 주세요.'
-					: '임시 저장하지 못했습니다. 입력한 내용은 유지됩니다.',
+					: error instanceof InvalidPostMediaError
+						? error.message
+						: '임시 저장하지 못했습니다. 입력한 내용은 유지됩니다.',
 			);
 		} finally {
 			isSavingRef.current = false;
