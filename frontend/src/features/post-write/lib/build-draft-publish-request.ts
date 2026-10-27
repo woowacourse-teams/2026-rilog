@@ -5,6 +5,7 @@ import type { PublishPostCommand } from '@/features/post-write/model/post-public
 import type { DraftPublishRequest } from '@/shared/api/drafts/types';
 
 import { findFirstBodyImageUrl } from './resolve-representative-image';
+import { validatePostMedia, validatePostMediaUrl } from './validate-post-media';
 
 type UploadRepresentativeImage = (file: File) => Promise<string>;
 
@@ -17,6 +18,8 @@ export const buildDraftPublishRequest = async (
 	}
 	const content = removeEmptyUploadBlocks(document.blocks);
 
+	validatePostMedia(document.blocks);
+
 	let thumbnailImageUrl =
 		settings.representativeImageUrl ?? findFirstBodyImageUrl(content) ?? POST_THUMBNAIL_FALLBACK_URL;
 	if (settings.representativeImage !== null) {
@@ -26,6 +29,8 @@ export const buildDraftPublishRequest = async (
 			throw withAnalyticsFailureStage(error, 'representative_image_upload');
 		}
 	}
+
+	validatePostMediaUrl(thumbnailImageUrl);
 
 	return {
 		slug: settings.blog.slug,
