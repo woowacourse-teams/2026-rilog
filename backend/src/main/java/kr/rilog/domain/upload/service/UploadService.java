@@ -1,14 +1,17 @@
 package kr.rilog.domain.upload.service;
 
+import kr.rilog.domain.upload.domain.ImageAsset;
 import kr.rilog.domain.upload.domain.enums.TagStatus;
 import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.exception.UploadException;
+import kr.rilog.domain.upload.repository.ImageAssetRepository;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -19,7 +22,9 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -64,7 +69,10 @@ public class UploadService {
     private final S3Client s3Client;
     private final S3Properties properties;
     private final S3ImageObjectKeyPolicy imageObjectKeyPolicy;
+    private final ImageAssetRepository imageAssetRepository;
+    private final Clock clock;
 
+    @Transactional
     public PresignedUrlCreateResult createUploadUrl(Long userId, PresignedUrlCreateCommand command) {
         validate(command);
 
@@ -78,6 +86,10 @@ public class UploadService {
         );
 
         PresignedPutObjectRequest presignedRequest = presignUpload(objectKey, command);
+
+        if (command.type() == UploadType.IMAGE) {
+            imageAssetRepository.save(ImageAsset.create(objectKey, userId, LocalDateTime.now(clock)));
+        }
 
         return new PresignedUrlCreateResult(
                 uploadId,
@@ -113,7 +125,7 @@ public class UploadService {
                     .bucket(properties.bucket())
                     .key(objectKey)
                     .contentType(command.contentType())
-                    .tagging(createTaggingQuery(TEMPORARY))
+                    .tagging(createTaggingQuery(command.type() == UploadType.IMAGE ? CONFIRMED : TEMPORARY))
                     .build();
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofMinutes(properties.presignedUrlExpirationMinutes()))
