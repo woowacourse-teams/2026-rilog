@@ -184,6 +184,33 @@ class PostImageReferenceIntegrationTest extends ServiceSupport {
         assertThat(activeAssetIdsOf(postId)).containsExactly(othersImage.getId());
     }
 
+    @Test
+    @DisplayName("원본 게시글이 삭제된 뒤 다른 사용자가 복사해둔 이미지로 발행하면 삭제된 참조는 그대로 두고 새 참조를 만든다.")
+    void publishWithCopiedImageAfterOriginalDeletedCreatesNewReference() {
+        // given
+        User uploader = saveCompletedUser(1L, "uploader");
+        User copier = saveCompletedUser(2L, "copier");
+        Blog uploaderRilog = saveRilog(uploader);
+        Blog copierRilog = saveRilog(copier);
+        ImageAsset image = saveAsset(uploader);
+        Long originalPostId = postService.publish(publishCommand(uploaderRilog, null, image), uploader.getId()).postId();
+        postService.deletePublishedPost(originalPostId, uploader.getId());
+
+        // when
+        Long copiedPostId = postService.publish(publishCommand(copierRilog, null, image), copier.getId()).postId();
+
+        // then
+        List<ImageReference> references = imageReferenceRepository.findAll();
+        assertSoftly(softly -> {
+            softly.assertThat(references).hasSize(2);
+            softly.assertThat(references)
+                    .filteredOn(reference -> reference.getReferenceId().equals(originalPostId))
+                    .singleElement()
+                    .satisfies(reference -> assertThat(reference.isDeleted()).isTrue());
+            softly.assertThat(activeAssetIdsOf(copiedPostId)).containsExactly(image.getId());
+        });
+    }
+
     private PostSaveCommand publishCommand(Blog blog, String thumbnailUrl, ImageAsset... bodyImages) {
         return new PostSaveCommand(
                 blog.getSlug(),
