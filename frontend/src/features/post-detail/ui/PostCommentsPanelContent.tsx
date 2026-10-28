@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
@@ -12,6 +14,8 @@ import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
 
+import { COMMENT_PANEL_SESSION_CONTEXT } from '../hooks/use-comment-panel-session';
+
 import InlineCommentComposer from './InlineCommentComposer';
 import InlineCommentThread from './InlineCommentThread';
 
@@ -20,6 +24,8 @@ interface PostCommentsPanelContentProps {
 	titleRef: RefObject<HTMLHeadingElement | null>;
 	inputRef: RefObject<HTMLTextAreaElement | null>;
 	showDeletedCommentToast?: boolean;
+	isOpen?: boolean;
+	scrollResetKey?: number;
 	onCreated?: (commentAnchorId: number) => void;
 	isLoading?: boolean;
 	isError?: boolean;
@@ -39,6 +45,8 @@ export default function PostCommentsPanelContent({
 	titleRef,
 	inputRef,
 	showDeletedCommentToast = false,
+	isOpen = true,
+	scrollResetKey = 0,
 	onCreated,
 	isLoading = false,
 	isError = false,
@@ -53,11 +61,12 @@ export default function PostCommentsPanelContent({
 	onNavigate,
 }: PostCommentsPanelContentProps) {
 	const { isAuthenticated, isInitialized } = useAuth();
+	const session = useMemo(() => ({ isOpen, scrollResetKey }), [isOpen, scrollResetKey]);
 	const login = useAuthAction({ entrySurface: 'sidebar' });
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
 	return (
-		<>
+		<COMMENT_PANEL_SESSION_CONTEXT value={session}>
 			{showDeletedCommentToast && <NotificationCommentDeletedToast />}
 			<div className="flex h-full min-h-0 flex-col">
 				<header className="flex h-15 shrink-0 items-center justify-between border-b border-border-default px-5">
@@ -130,6 +139,6 @@ export default function PostCommentsPanelContent({
 					</footer>
 				)}
 			</div>
-		</>
+		</COMMENT_PANEL_SESSION_CONTEXT>
 	);
 }

@@ -95,6 +95,7 @@ export default function PostDetailCommentsWorkspace({
 		initialSelectionId === null ? 'all' : 'highlight',
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
+	const [scrollResetKey, setScrollResetKey] = useState(0);
 	const hasHandledDeepLinkNavigationRef = useRef(false);
 	const [isDeletedCommentToastVisible, setIsDeletedCommentToastVisible] = useState(showDeletedCommentToast);
 	const visibleThreads = selection
@@ -145,6 +146,7 @@ export default function PostDetailCommentsWorkspace({
 
 	const openComments = useCallback(
 		(request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+			setScrollResetKey((previous) => previous + 1);
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCommentEntrySource(request === null ? 'all' : request.source);
 			setSidebarMode(mode);
@@ -233,6 +235,7 @@ export default function PostDetailCommentsWorkspace({
 	);
 
 	const panelProps = {
+		scrollResetKey,
 		postId,
 		selection,
 		composerAnchorId,
