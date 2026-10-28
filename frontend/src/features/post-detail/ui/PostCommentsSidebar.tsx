@@ -12,9 +12,10 @@ interface PostCommentsSidebarProps extends Omit<
 	'titleId' | 'titleRef' | 'inputRef'
 > {
 	open: boolean;
+	onClosed?: () => void;
 }
 
-export default function PostCommentsSidebar({ open, ...contentProps }: PostCommentsSidebarProps) {
+export default function PostCommentsSidebar({ open, onClosed, ...contentProps }: PostCommentsSidebarProps) {
 	const titleId = useId();
 	const titleRef = useRef<HTMLHeadingElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -26,6 +27,7 @@ export default function PostCommentsSidebar({ open, ...contentProps }: PostComme
 		<BaseModal
 			open={open}
 			onDismiss={contentProps.onClose}
+			onClosed={onClosed}
 			accessibility={{ labelledBy: titleId }}
 			initialFocusRef={shouldFocusInput ? inputRef : titleRef}
 			className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-none translate-x-full overflow-hidden border-l border-border-default transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none sm:w-112"

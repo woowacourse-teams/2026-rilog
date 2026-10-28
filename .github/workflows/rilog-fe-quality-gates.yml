@@ -84,9 +84,9 @@ jobs:
           pnpm check 2>&1 | tee "$QUALITY_LOG_DIR/check.log"
           node scripts/verify-the-rilog-build.mjs 2>&1 | tee "$QUALITY_LOG_DIR/the-rilog-build.log"
 
-      - name: Install Playwright Chromium headless shell
+      - name: Install Playwright browsers
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
-        run: pnpm exec playwright install --with-deps --only-shell chromium
+        run: pnpm exec playwright install --with-deps chromium webkit firefox
 
       - name: Run production E2E
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'

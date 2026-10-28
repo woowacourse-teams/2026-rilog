@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { ReactNode } from 'react';
@@ -11,6 +11,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
+import { navigateInlineCommentAnchor } from '@/features/post-detail/lib/navigate-inline-comment-anchor';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type {
 	InlineCommentOpenRequest,
@@ -71,6 +72,34 @@ export default function PostDetailCommentsWorkspace({
 	const isLayoutReady = dockHost !== undefined;
 	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
 	const openerRef = useRef<HTMLElement | null>(null);
+	const pendingNavigation = useRef<InlineCommentThreadModel | null>(null);
+	const navigationCleanup = useRef<(() => void) | null>(null);
+	const cancelAnchorNavigation = useCallback(() => {
+		pendingNavigation.current = null;
+		navigationCleanup.current?.();
+		navigationCleanup.current = null;
+	}, []);
+	useEffect(() => cancelAnchorNavigation, [cancelAnchorNavigation]);
+	useLayoutEffect(() => {
+		if (isCommentsSidebarOpen) cancelAnchorNavigation();
+	}, [isCommentsSidebarOpen, cancelAnchorNavigation]);
+	const navigateToThread = useCallback((thread: InlineCommentThreadModel) => {
+		navigationCleanup.current?.();
+		const getHighlights = () =>
+			Array.from(
+				document.querySelectorAll<HTMLElement>(
+					`[data-inline-comment-highlight][data-inline-comment-anchor-id="${thread.anchor.anchorId}"]`,
+				),
+			);
+		const target =
+			document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`) ?? getHighlights()[0];
+		if (target) navigationCleanup.current = navigateInlineCommentAnchor(target, getHighlights);
+	}, []);
+	const handleCommentsClosed = useCallback(() => {
+		const thread = pendingNavigation.current;
+		pendingNavigation.current = null;
+		if (thread) navigateToThread(thread);
+	}, [navigateToThread]);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
 	const sidebarThreads = sidebarQuery.data ?? EMPTY_INLINE_COMMENT_THREADS;
@@ -167,24 +196,34 @@ export default function PostDetailCommentsWorkspace({
 		[inlineCommentBlocks],
 	);
 
+	const handleAuthenticatedCreate = useCallback(
+		(...args: Parameters<typeof handleInlineCommentCreate>) => {
+			cancelAnchorNavigation();
+			handleInlineCommentCreate(...args);
+		},
+		[cancelAnchorNavigation, handleInlineCommentCreate],
+	);
+
 	const handleSelectionCreate = useInlineCommentAuthAction({
 		postId,
 		isCommentsReady: commentsQuery.isSuccess && sidebarQuery.isSuccess,
-		onCreate: handleInlineCommentCreate,
+		onCreate: handleAuthenticatedCreate,
 	});
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
+			cancelAnchorNavigation();
 			analytics.inlineCommentEntryClicked({ postId, entrySource: request.source });
 			openComments(request, request.source === 'highlight' ? 'single' : 'block');
 		},
-		[openComments, postId],
+		[cancelAnchorNavigation, openComments, postId],
 	);
 
 	const handleAllCommentsOpen = useCallback(() => {
+		cancelAnchorNavigation();
 		analytics.inlineCommentEntryClicked({ postId, entrySource: 'all' });
 		openComments(null, 'all');
-	}, [openComments, postId]);
+	}, [cancelAnchorNavigation, openComments, postId]);
 
 	const closeComments = useCallback(() => {
 		setIsCommentsSidebarOpen(false);
@@ -205,10 +244,13 @@ export default function PostDetailCommentsWorkspace({
 			}
 			analytics.inlineCommentAnchorNavigationClicked({ postId, anchorState: thread.anchor.state });
 
-			if (!isDocked) closeComments();
-			window.setTimeout(() => scrollToThreadAnchor(thread), isDocked ? 0 : 140);
+			if (isDocked) navigateToThread(thread);
+			else {
+				pendingNavigation.current = thread;
+				closeComments();
+			}
 		},
-		[closeComments, isDocked, postId],
+		[closeComments, isDocked, navigateToThread, postId],
 	);
 
 	const panelProps = {
@@ -263,7 +305,12 @@ export default function PostDetailCommentsWorkspace({
 					dockHost,
 				)}
 			{isLayoutReady && !isDocked && (
-				<PostCommentsSidebar key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />
+				<PostCommentsSidebar
+					key={createRequestId}
+					open={isCommentsSidebarOpen}
+					onClosed={handleCommentsClosed}
+					{...panelProps}
+				/>
 			)}
 		</>
 	);
