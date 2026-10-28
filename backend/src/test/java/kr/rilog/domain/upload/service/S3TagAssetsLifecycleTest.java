@@ -202,6 +202,43 @@ class S3TagAssetsLifecycleTest {
     }
 
     @Test
+    @DisplayName("본문 이미지를 썸네일로 쓰다가 썸네일만 바꾸면 본문에 남은 이미지는 TEMPORARY로 바꾸지 않는다.")
+    void keepImageStillUsedByContentWhenThumbnailChanges() {
+        String contentImageUrl = "https://s3.example.com/content.png";
+        String previousThumbnailUrl = "https://s3.example.com/content.png#1200x1500";
+        String currentThumbnailUrl = "https://s3.example.com/thumbnail.png#800x600";
+        String contentImageKey = ROOT_DIRECTORY + "/images/raw/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        String thumbnailKey = ROOT_DIRECTORY + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(contentImageUrl)).thenReturn(Optional.of(contentImageKey));
+        when(objectKeyResolver.resolve(previousThumbnailUrl)).thenReturn(Optional.of(contentImageKey));
+        when(objectKeyResolver.resolve(currentThumbnailUrl)).thenReturn(Optional.of(thumbnailKey));
+
+        lifecycle.synchronize(
+                REQUESTER_ID,
+                new TagAssets(Set.of(contentImageUrl, previousThumbnailUrl)),
+                new TagAssets(Set.of(contentImageUrl, currentThumbnailUrl))
+        );
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(thumbnailKey, TagStatus.CONFIRMED)
+        ));
+    }
+
+    @Test
+    @DisplayName("같은 이미지의 크기 fragment만 바뀌면 태그를 바꾸지 않는다.")
+    void doNothingWhenOnlyImageSizeFragmentChanges() {
+        String previousUrl = "https://s3.example.com/thumbnail.png#1200x1500";
+        String currentUrl = "https://s3.example.com/thumbnail.png#1200x1501";
+        String thumbnailKey = ROOT_DIRECTORY + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(previousUrl)).thenReturn(Optional.of(thumbnailKey));
+        when(objectKeyResolver.resolve(currentUrl)).thenReturn(Optional.of(thumbnailKey));
+
+        lifecycle.synchronize(REQUESTER_ID, new TagAssets(Set.of(previousUrl)), new TagAssets(Set.of(currentUrl)));
+
+        verifyNoInteractions(objectTagger);
+    }
+
+    @Test
     @DisplayName("일반 파일은 이미지 소유권 검증과 관계없이 기존대로 태깅한다.")
     void retainExistingFileTaggingBehavior() {
         String fileKey = ROOT_DIRECTORY + "/files/a38e9b2c-4c13-4f52-9c31-0e52d768d517.pdf";
