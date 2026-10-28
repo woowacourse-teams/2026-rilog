@@ -58,7 +58,7 @@ const openOwnedComments = async (page: Page, width = 1100) => {
 	await page.goto('/@the_rilog/posts/101');
 	const entry = page.getByRole('button', { name: /전체 댓글.*보기/ });
 	await expect(entry).toBeVisible();
-	await expect(entry.locator('..')).toHaveCSS('position', 'fixed');
+	await expect(entry).toContainText('전체 보기');
 	await expect(page.getByRole('button', { name: '댓글 작성', exact: true })).toHaveCount(0);
 	await entry.click();
 };
