@@ -7,7 +7,6 @@ import kr.rilog.domain.auth.application.token.TokenType;
 import kr.rilog.domain.upload.controller.dto.request.PreSignedUrlCreateRequest;
 import kr.rilog.domain.upload.controller.dto.response.PresignedUrlCreateResponse;
 import kr.rilog.domain.upload.service.UploadService;
-import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,14 +26,7 @@ public class UploadController {
             @LoginUserId Long userId,
             @Valid @RequestBody PreSignedUrlCreateRequest request
     ) {
-        PresignedUrlCreateCommand command = new PresignedUrlCreateCommand(
-                request.fileName(),
-                request.contentType(),
-                request.size(),
-                request.type()
-        );
-
-        PresignedUrlCreateResult result = uploadService.createUploadUrl(userId, command);
+        PresignedUrlCreateResult result = uploadService.createUploadUrl(userId, request.toCommand());
 
         return ApiResponse.response(
                 HttpStatus.OK,

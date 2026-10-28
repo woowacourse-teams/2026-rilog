@@ -20,7 +20,7 @@ public class S3ObjectKeyResolver {
         }
 
         if (isInRootDirectory(objectReference)) {
-            return Optional.of(objectReference);
+            return Optional.of(removeFragment(objectReference));
         }
 
         URI uri;
@@ -51,6 +51,15 @@ public class S3ObjectKeyResolver {
 
         return Optional.of(objectKey);
 
+    }
+
+    // NOTE 프론트가 레이아웃 계산용 크기(#1200x1500)를 붙여 보내므로 S3 객체 키에서 제외
+    private String removeFragment(String objectKey) {
+        int fragmentIndex = objectKey.indexOf('#');
+        if (fragmentIndex < 0) {
+            return objectKey;
+        }
+        return objectKey.substring(0, fragmentIndex);
     }
 
     private boolean isInRootDirectory(String objectKey) {

@@ -7,6 +7,8 @@ import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -170,6 +172,70 @@ class S3TagAssetsLifecycleTest {
         lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
 
         verify(objectTagger).tag(List.of());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"images/raw", "profiles/raw"})
+    @DisplayName("신경로 원본도 소유자의 이미지만 분리 대상으로 태깅한다.")
+    void detachOnlyOwnedImageInPurposeDirectory(String directory) {
+        String ownedKey = ROOT_DIRECTORY + "/" + directory + "/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        String foreignKey = ROOT_DIRECTORY + "/" + directory + "/8-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(ownedKey));
+        when(objectKeyResolver.resolve(RETAINED_URL)).thenReturn(Optional.of(foreignKey));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL, RETAINED_URL)));
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(ownedKey, TagStatus.TEMPORARY)
+        ));
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 압축본도 분리 대상에서 제외한다.")
+    void excludeForeignCompactImageFromDetachTargets() {
+        String foreignCompactKey = ROOT_DIRECTORY + "/images/compact/8-a38e9b2c-4c13-4f52-9c31-0e52d768d517/750.webp";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(foreignCompactKey));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verify(objectTagger).tag(List.of());
+    }
+
+    @Test
+    @DisplayName("본문 이미지를 썸네일로 쓰다가 썸네일만 바꾸면 본문에 남은 이미지는 TEMPORARY로 바꾸지 않는다.")
+    void keepImageStillUsedByContentWhenThumbnailChanges() {
+        String contentImageUrl = "https://s3.example.com/content.png";
+        String previousThumbnailUrl = "https://s3.example.com/content.png#1200x1500";
+        String currentThumbnailUrl = "https://s3.example.com/thumbnail.png#800x600";
+        String contentImageKey = ROOT_DIRECTORY + "/images/raw/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        String thumbnailKey = ROOT_DIRECTORY + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(contentImageUrl)).thenReturn(Optional.of(contentImageKey));
+        when(objectKeyResolver.resolve(previousThumbnailUrl)).thenReturn(Optional.of(contentImageKey));
+        when(objectKeyResolver.resolve(currentThumbnailUrl)).thenReturn(Optional.of(thumbnailKey));
+
+        lifecycle.synchronize(
+                REQUESTER_ID,
+                new TagAssets(Set.of(contentImageUrl, previousThumbnailUrl)),
+                new TagAssets(Set.of(contentImageUrl, currentThumbnailUrl))
+        );
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(thumbnailKey, TagStatus.CONFIRMED)
+        ));
+    }
+
+    @Test
+    @DisplayName("같은 이미지의 크기 fragment만 바뀌면 태그를 바꾸지 않는다.")
+    void doNothingWhenOnlyImageSizeFragmentChanges() {
+        String previousUrl = "https://s3.example.com/thumbnail.png#1200x1500";
+        String currentUrl = "https://s3.example.com/thumbnail.png#1200x1501";
+        String thumbnailKey = ROOT_DIRECTORY + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(previousUrl)).thenReturn(Optional.of(thumbnailKey));
+        when(objectKeyResolver.resolve(currentUrl)).thenReturn(Optional.of(thumbnailKey));
+
+        lifecycle.synchronize(REQUESTER_ID, new TagAssets(Set.of(previousUrl)), new TagAssets(Set.of(currentUrl)));
+
+        verifyNoInteractions(objectTagger);
     }
 
     @Test

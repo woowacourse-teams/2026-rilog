@@ -6,6 +6,7 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.upload.domain.enums.ImagePurpose;
 import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.service.S3ImageObjectKeyPolicy;
 import kr.rilog.domain.upload.service.UploadService;
@@ -69,7 +70,7 @@ class AdminPostImportServiceTest {
         var result = service.createUploadUrl(TARGET_ID, imageCommand());
 
         // then
-        assertThat(result.objectKey()).startsWith("rilog/uploads/images/originals/123-");
+        assertThat(result.objectKey()).startsWith("rilog/uploads/images/raw/123-");
     }
 
     @Test
@@ -94,7 +95,7 @@ class AdminPostImportServiceTest {
     }
 
     private PresignedUrlCreateCommand imageCommand() {
-        return new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE);
+        return new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE, ImagePurpose.CONTENT);
     }
 
     private PostSaveCommand postCommand(String bodyImage, String thumbnail) {

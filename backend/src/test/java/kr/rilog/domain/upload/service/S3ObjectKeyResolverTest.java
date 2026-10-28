@@ -60,6 +60,19 @@ class S3ObjectKeyResolverTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {
+            "images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png#1200x1500",
+            "https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/"
+                    + "images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png#1200x1500"
+    })
+    @DisplayName("이미지 크기 fragment가 붙은 객체 키와 S3 주소는 fragment를 제외한 객체 키로 추출한다.")
+    void resolveObjectKeyWithoutFragment(String objectReference) {
+        Optional<String> objectKey = resolver.resolve(objectReference);
+
+        assertThat(objectKey).contains("images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png");
+    }
+
+    @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", " "})
     @DisplayName("S3 객체 주소가 비어 있으면 객체 키를 추출하지 않는다.")
