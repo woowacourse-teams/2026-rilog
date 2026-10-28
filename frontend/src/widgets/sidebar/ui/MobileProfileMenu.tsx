@@ -117,9 +117,10 @@ export default function MobileProfileMenu({ user }: MobileProfileMenuProps) {
 						type="button"
 						role="menuitem"
 						tabIndex={-1}
-						disabled={logout.isPending}
-						className="flex min-h-11 w-full items-center rounded-sm px-4 text-label-1 text-danger hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring disabled:opacity-50"
+						aria-disabled={logout.isPending}
+						className="flex min-h-11 w-full items-center rounded-sm px-4 text-label-1 text-danger hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-focus-ring aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
 						onClick={() => {
+							if (logout.isPending) return;
 							setIsOpen(false);
 							triggerRef.current?.focus();
 							logout.mutate();

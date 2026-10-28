@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -144,6 +144,37 @@ describe('MobileHeader', () => {
 		await user.click(screen.getByRole('button', { name: '프로필 메뉴' }));
 		expect(screen.queryByRole('menuitem', { name: '내 블로그' })).not.toBeInTheDocument();
 		await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
+		await waitFor(() => expect(publishLogoutMock).toHaveBeenCalledOnce());
+	});
+
+	it('내 정보 조회 전 로그아웃 대기 중 메뉴를 다시 열어도 키보드로 상태를 확인하고 닫을 수 있다', async () => {
+		const user = userEvent.setup();
+		const pending = Promise.withResolvers<Response>();
+		vi.mocked(authApi.logoutAuth).mockReturnValue(pending.promise);
+		renderHeader(true);
+		const trigger = screen.getByRole('button', { name: '프로필 메뉴' });
+		await user.click(trigger);
+		await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
+		await waitFor(() => expect(authApi.logoutAuth).toHaveBeenCalledOnce());
+		await user.keyboard('{ArrowDown}');
+		await waitFor(() =>
+			expect(screen.getByRole('menuitem', { name: '로그아웃' })).toHaveAttribute('aria-disabled', 'true'),
+		);
+		await user.keyboard('{Escape}');
+		await user.keyboard('{ArrowDown}');
+		const logout = screen.getByRole('menuitem', { name: '로그아웃' });
+		expect(logout).toHaveFocus();
+		await user.keyboard('{Enter}');
+		expect(authApi.logoutAuth).toHaveBeenCalledOnce();
+		await user.click(logout);
+		expect(authApi.logoutAuth).toHaveBeenCalledOnce();
+		await user.keyboard('{Escape}');
+		expect(trigger).toHaveFocus();
+		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+		await act(async () => {
+			pending.resolve(new Response(null, { status: 204 }));
+			await pending.promise;
+		});
 		await waitFor(() => expect(publishLogoutMock).toHaveBeenCalledOnce());
 	});
 
