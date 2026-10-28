@@ -185,6 +185,7 @@ export default function PostDetailCommentsWorkspace({
 
 	const handleInlineCommentCreate = useCallback(
 		(target: InlineCommentSelectionTarget, entrySource: InlineCommentCreateEntrySource = 'selection_toolbar') => {
+			cancelAnchorNavigation();
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCreatedCommentId(null);
 			setDeepLinkedSelectionId(null);
@@ -210,21 +211,13 @@ export default function PostDetailCommentsWorkspace({
 			setCreateRequestId((previous) => previous + 1);
 			openCommentView('comments');
 		},
-		[inlineCommentBlocks, openCommentView],
-	);
-
-	const handleAuthenticatedCreate = useCallback(
-		(...args: Parameters<typeof handleInlineCommentCreate>) => {
-			cancelAnchorNavigation();
-			handleInlineCommentCreate(...args);
-		},
-		[cancelAnchorNavigation, handleInlineCommentCreate],
+		[inlineCommentBlocks, openCommentView, cancelAnchorNavigation],
 	);
 
 	const handleSelectionCreate = useInlineCommentAuthAction({
 		postId,
 		isCommentsReady: commentsQuery.isSuccess && sidebarQuery.isSuccess,
-		onCreate: handleAuthenticatedCreate,
+		onCreate: handleInlineCommentCreate,
 	});
 
 	const handleInlineCommentOpen = useCallback(
