@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 
-import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
 
@@ -18,7 +17,7 @@ import {
 interface UseInlineCommentAuthActionOptions {
 	postId: number;
 	isCommentsReady: boolean;
-	onCreate: (target: InlineCommentSelectionTarget, entrySource?: InlineCommentCreateEntrySource) => void;
+	onCreate: (target: InlineCommentSelectionTarget) => void;
 }
 
 const isSelectionStillCurrent = (target: InlineCommentSelectionTarget): boolean => {
@@ -39,9 +38,9 @@ export const useInlineCommentAuthAction = ({
 }: UseInlineCommentAuthActionOptions) => {
 	const { isAuthenticated, isInitialized } = useAuth();
 
-	const handleSelectionCreate = useAuthAction<[InlineCommentSelectionTarget, InlineCommentCreateEntrySource?]>({
+	const handleSelectionCreate = useAuthAction<[InlineCommentSelectionTarget]>({
 		action: onCreate,
-		beforeAuth: (target, entrySource) => savePendingInlineCommentSelection(postId, target, entrySource),
+		beforeAuth: (target) => savePendingInlineCommentSelection(postId, target),
 		entrySurface: 'sidebar',
 	});
 
@@ -49,8 +48,7 @@ export const useInlineCommentAuthAction = ({
 		if (!isInitialized || !isAuthenticated || !isCommentsReady) return;
 		const target = takePendingInlineCommentSelection(postId);
 		if (target !== null && isSelectionStillCurrent(target)) {
-			const { entrySource, ...selection } = target;
-			queueMicrotask(() => (entrySource ? onCreate(selection, entrySource) : onCreate(selection)));
+			queueMicrotask(() => onCreate(target));
 		}
 	}, [isAuthenticated, isCommentsReady, isInitialized, onCreate, postId]);
 

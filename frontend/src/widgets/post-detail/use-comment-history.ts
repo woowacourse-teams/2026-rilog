@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type CommentView = 'closed' | 'selection' | 'comments';
+type CommentView = 'closed' | 'comments';
 
 const HISTORY_KEY = '__rilogCommentView';
 
@@ -24,7 +24,7 @@ const readView = (postId: number): CommentView => {
 		!('view' in value)
 	)
 		return 'closed';
-	return value.view === 'selection' || value.view === 'comments' ? value.view : 'closed';
+	return value.view === 'comments' ? value.view : 'closed';
 };
 
 const detailUrl = () => {

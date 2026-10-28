@@ -19,7 +19,6 @@ import type {
 	InlineCommentSidebarMode,
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
-import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
 import PostCommentsDockedCard from '@/features/post-detail/ui/PostCommentsDockedCard';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
@@ -28,7 +27,7 @@ import Divider from '@/shared/ui/divider/Divider';
 import styles from './PostDetail.module.css';
 import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
-import { useFloatingCommentCreation } from './use-floating-comment-creation';
+import AllCommentsFloatingButton from './AllCommentsFloatingButton';
 
 interface PostDetailCommentsWorkspaceProps {
 	html: string;
@@ -114,16 +113,6 @@ export default function PostDetailCommentsWorkspace({
 	const inlineCommentCount = inlineCommentBlocks.reduce(
 		(total, block) => total + block.anchors.reduce((blockTotal, anchor) => blockTotal + anchor.commentCount, 0),
 		0,
-	);
-
-	const handleSelectionModeChange = useCallback(
-		(active: boolean) => {
-			if (active) {
-				openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-				openCommentView('selection');
-			} else closeCommentView();
-		},
-		[openCommentView, closeCommentView],
 	);
 
 	useEffect(() => {
@@ -233,8 +222,6 @@ export default function PostDetailCommentsWorkspace({
 		[closeComments, isDocked, postId],
 	);
 
-	const handleFloatingCommentCreate = useFloatingCommentCreation(postId, handleSelectionCreate, closeCommentView);
-
 	const panelProps = {
 		scrollResetKey,
 		postId,
@@ -259,11 +246,7 @@ export default function PostDetailCommentsWorkspace({
 
 	return (
 		<>
-			<aside className={styles.commentsColumn}>
-				<div className={styles.commentsEntry}>
-					<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
-				</div>
-			</aside>
+			<AllCommentsFloatingButton count={inlineCommentCount} hidden={view !== 'closed'} onClick={handleAllCommentsOpen} />
 
 			<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
 				<PostDetailContent
@@ -274,10 +257,7 @@ export default function PostDetailCommentsWorkspace({
 					inlineCommentBlocks={inlineCommentBlocks}
 					enableInlineCommentSelectionDebug={enableInlineCommentSelectionDebug}
 					onInlineCommentOpen={handleInlineCommentOpen}
-					isSelectionMode={view === 'selection'}
-					onSelectionModeChange={handleSelectionModeChange}
 					onInlineCommentCreate={commentsQuery.isSuccess ? handleSelectionCreate : undefined}
-					onFloatingCommentCreate={commentsQuery.isSuccess ? handleFloatingCommentCreate : undefined}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />

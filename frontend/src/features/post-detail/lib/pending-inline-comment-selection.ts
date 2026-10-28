@@ -1,17 +1,11 @@
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 
-import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { savePendingAuthAction, takePendingAuthAction } from '@/features/login/lib/pending-auth-action';
 
-export const savePendingInlineCommentSelection = (
-	postId: number,
-	target: InlineCommentSelectionTarget,
-	entrySource?: InlineCommentCreateEntrySource,
-) => savePendingAuthAction({ postId, pathname: window.location.pathname, target, entrySource });
+export const savePendingInlineCommentSelection = (postId: number, target: InlineCommentSelectionTarget) =>
+	savePendingAuthAction({ postId, pathname: window.location.pathname, target });
 
-export const takePendingInlineCommentSelection = (
-	postId: number,
-): (InlineCommentSelectionTarget & { entrySource?: InlineCommentCreateEntrySource }) | null => {
+export const takePendingInlineCommentSelection = (postId: number): InlineCommentSelectionTarget | null => {
 	const value: unknown = takePendingAuthAction(
 		(candidate) => typeof candidate === 'object' && candidate !== null && 'target' in candidate,
 	);
@@ -51,8 +45,5 @@ export const takePendingInlineCommentSelection = (
 		startOffset: target.startOffset,
 		endOffset: target.endOffset,
 		selectedText: target.selectedText,
-		...('entrySource' in value && value.entrySource === 'floating_button'
-			? { entrySource: 'floating_button' as const }
-			: {}),
 	};
 };
