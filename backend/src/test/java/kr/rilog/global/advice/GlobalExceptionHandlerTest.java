@@ -277,8 +277,7 @@ class GlobalExceptionHandlerTest {
                 .thenThrow(SdkClientException.create("credentials unavailable"));
         var service = new UploadService(presigner, mock(S3Client.class),
                 new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10),
-                mock(S3ImageObjectKeyPolicy.class),
-                mock(kr.rilog.domain.upload.repository.ImageAssetRepository.class), java.time.Clock.systemUTC());
+                mock(S3ImageObjectKeyPolicy.class));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new PresignController(service))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
         logCapture = LogCapture.start();

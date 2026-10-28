@@ -38,7 +38,7 @@ Nginx와 Certbot은 Ubuntu 호스트에 설치한다. API는 프로세스당 한
 ## 기존 이미지 자산과의 경계
 
 `S3_KEY_PREFIX=images/imported`로 별도 객체를 저장한다. Spring의 사용자 ID 포함 originals 키,
-ImageAsset DB 등록, CONFIRMED 태그, 사용처 참조·압축·삭제 수명주기에 자동 편입하지 않는다.
+CONFIRMED 태그와 기존 압축·삭제 처리에 자동 편입하지 않는다. Spring의 이미지 자산·참조 관리는 중단했다.
 기존 관리 대상 originals 경로를 prefix로 재사용하지 않는다. 기존 S3/Lambda 이벤트 규칙이
 가져오기 prefix에도 적용되는지 배포 전에 확인한다. 관련 통합은 별도 backend 변경으로 진행한다.
 현재 관리 경계는 `docs/adr/0018-external-image-import-server.md`에 기록했다.
