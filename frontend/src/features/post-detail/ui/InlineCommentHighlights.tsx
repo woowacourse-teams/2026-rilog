@@ -19,7 +19,6 @@ interface InlineCommentHighlightsProps {
 	article: HTMLElement;
 	blocks: readonly InlineCommentBlockModel[];
 	contentKey: string;
-	isInteractive?: boolean;
 	onOpenComments?: (request: InlineCommentOpenRequest) => void;
 }
 
@@ -54,7 +53,6 @@ export default function InlineCommentHighlights({
 	article,
 	blocks,
 	contentKey,
-	isInteractive = true,
 	onOpenComments,
 }: InlineCommentHighlightsProps) {
 	const iconTemplateRef = useRef<HTMLSpanElement>(null);
@@ -72,7 +70,6 @@ export default function InlineCommentHighlights({
 		};
 
 		const setActiveAnchor = (nextAnchor: RenderedAnchor | null) => {
-			if (!isInteractive && nextAnchor !== null) return;
 			if (activeAnchor === nextAnchor) {
 				return;
 			}
@@ -108,7 +105,6 @@ export default function InlineCommentHighlights({
 
 				const layer = host.ownerDocument.createElement('span');
 				layer.dataset.inlineCommentHighlightLayer = '';
-				layer.inert = !isInteractive;
 				host.dataset.inlineCommentHighlightHost = '';
 				host.append(layer);
 
@@ -166,13 +162,11 @@ export default function InlineCommentHighlights({
 
 					const focusProxy = host.ownerDocument.createElement('button');
 					focusProxy.type = 'button';
-					focusProxy.disabled = !isInteractive;
 					focusProxy.dataset.inlineCommentAnchorProxy = '';
 					focusProxy.setAttribute('aria-label', `인용 “${anchor.selectedText}”의 댓글 ${anchor.commentCount}개 보기`);
 					focusProxy.addEventListener('focus', () => setActiveAnchor(renderedAnchor));
 					focusProxy.addEventListener('blur', () => setActiveAnchor(null));
 					focusProxy.addEventListener('click', () => {
-						if (!isInteractive) return;
 						onOpenComments?.({ blockId: block.blockId, anchorIds: [anchor.anchorId], source: 'highlight' });
 					});
 					layer.append(focusProxy);
@@ -181,7 +175,6 @@ export default function InlineCommentHighlights({
 				const commentCount = activeAnchors.reduce((count, anchor) => count + anchor.commentCount, 0);
 				const blockButton = host.ownerDocument.createElement('button');
 				blockButton.type = 'button';
-				blockButton.disabled = !isInteractive;
 				blockButton.dataset.inlineCommentBlockButton = '';
 				blockButton.setAttribute('aria-label', `이 블록의 댓글 ${commentCount}개 보기`);
 				// React가 렌더한 공통 SVG를 기존 DOM 하이라이트 레이어에 복제한다.
@@ -191,7 +184,6 @@ export default function InlineCommentHighlights({
 				count.textContent = String(formatCommentCount(commentCount));
 				blockButton.append(count);
 				blockButton.addEventListener('click', () => {
-					if (!isInteractive) return;
 					onOpenComments?.({
 						blockId: block.blockId,
 						anchorIds: activeAnchors.map((anchor) => anchor.anchorId),
@@ -229,12 +221,9 @@ export default function InlineCommentHighlights({
 			return anchor === null ? null : (renderedBlock.anchorsById.get(anchor.anchorId) ?? null);
 		};
 
-		const handlePointerMove = (event: PointerEvent) => {
-			if (isInteractive) setActiveAnchor(findPointerAnchor(event));
-		};
+		const handlePointerMove = (event: PointerEvent) => setActiveAnchor(findPointerAnchor(event));
 		const handlePointerLeave = () => setActiveAnchor(null);
 		const handleClick = (event: MouseEvent) => {
-			if (!isInteractive) return;
 			if (event.target instanceof Element && event.target.closest(HIGHLIGHT_LAYER_SELECTOR) !== null) {
 				return;
 			}
@@ -280,7 +269,7 @@ export default function InlineCommentHighlights({
 			clearActiveAnchor();
 			removeHighlightLayers(article);
 		};
-	}, [article, blocks, contentKey, isInteractive, onOpenComments]);
+	}, [article, blocks, contentKey, onOpenComments]);
 
 	return (
 		<span ref={iconTemplateRef} hidden aria-hidden="true">

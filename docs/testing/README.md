@@ -150,16 +150,16 @@ pnpm test:e2e:prod
 - 순수 선택·UTF-16 범위·mapper·오류 분류는 unit, 조회·mutation·캐시 연결과 오류 후 입력 보존은 RTL에서 확인한다. 직접 검증하는 hook을 대체하지 않고 raw API·Sentry 전송 경계만 대체한다.
 - PostDetailCommentsWorkspace.component.test.tsx가 조회 로딩·실패·재시도·전체/단일 탐색을 소유한다. PostDetailCommentsWorkspaceCreate.component.test.tsx에서는 중복 4건을 제거하고 신규·추가 작성, 초안·충돌·중복 제출을 유지한다.
 - ApiFailureFlows.component.test.tsx는 실제 QueryProvider와 댓글 mutation을 연결해 알려진 400 누락, 5xx 중복 보고와 정상 거부 제외를 검증한다. 정책 경계값은 unit, 개인정보 최종 차단은 SDK transport 테스트가 소유한다.
-- 선택 모드의 밑줄·호버·클릭·댓글 버튼 비활성화와 복구는 실제 상세를 여는 `mobile-comment-interaction.spec.ts`가 보호한다. `comment-sheet-gestures.spec.ts`는 손잡이·헤더·목록 제스처와 접힌 목록의 스크롤 소유권을 함께 검증한다. 같은 경로를 pointer 이벤트 호출만으로 반복하는 RTL은 두지 않는다.
+- `comment-sheet-gestures.spec.ts`는 손잡이·헤더·목록 제스처와 접힌 목록의 스크롤 소유권을 함께 검증한다. 같은 경로를 pointer 이벤트 호출만으로 반복하는 RTL은 두지 않는다.
 - 브라우저에서는 실제 Selection/Range·캐럿 좌표, 선택 툴바, 모바일 입력 정책과 native dialog의 Escape·focus를 검증한다. jsdom이 실제 좌표·top layer·focus 복귀를 재현하지 못하므로 글쓰기 필수 흐름과 별도로 유지한다. CRUD는 선택에서 시작하는 기존 흐름 안에 연결한다.
 - 하이라이트 장식 높이·padding·grid 번호·사이드바 고정 너비를 assertion으로 고정하지 않는다. 레이아웃 fixture는 비겹침·진입점 노출만 확인하며 실제 앱 전체 레이아웃을 증명하지 않는다. 모바일 모달 검증은 소스 class를 추출한 가짜 dialog 대신 실제 workspace를 사용한다.
 - 운영 API와 실제 서버 렌더링 본문을 함께 검증하는 E2E는 포함하지 않는다. 게시글 본문·분석 환경은 고정 fixture이므로 배포 API 호환성과 BlockNote 전체 렌더링은 별도 통합 확인이 필요하다.
 
 ### 모바일 댓글 브라우저 검증
 
-`mobile-comment-interaction.spec.ts`는 Chromium·WebKit·Firefox에서 선택 모드, 시트 조작, 직접 링크·뒤로가기·앞으로가기·새로고침을 확인한다. 기존 전체 E2E는 Chromium 범위를 유지한다. 로컬 최초 실행 전에 `pnpm exec playwright install chromium webkit firefox`로 해당 버전 엔진을 준비한다. CI도 세 엔진을 설치한다. Chromium의 직접 터치 입력 검증과 실제 iOS·Android 기기 검증은 구분한다.
+`mobile-comment-interaction.spec.ts`는 Chromium·WebKit·Firefox에서 모바일 선택, 시트 조작, 직접 링크·뒤로가기·앞으로가기·새로고침을 확인한다. 기존 전체 E2E는 Chromium 범위를 유지한다. 로컬 최초 실행 전에 `pnpm exec playwright install chromium webkit firefox`로 해당 버전 엔진을 준비한다. CI도 세 엔진을 설치한다. Chromium의 직접 터치 입력 검증과 실제 iOS·Android 기기 검증은 구분한다.
 
-키보드로 가용 화면이 줄어든 댓글 입력은 실제 브라우저에서 입력창과 제출 버튼의 가시 영역으로 검증한다. RTL에서 `scrollIntoView` 호출만 확인하는 중복 검증은 두지 않는다. 새 분석 진입점은 이벤트 facade의 payload 계약 테스트로 보호한다.
+키보드로 가용 화면이 줄어든 댓글 입력은 실제 브라우저에서 입력창과 제출 버튼의 가시 영역으로 검증한다. RTL에서 `scrollIntoView` 호출만 확인하는 중복 검증은 두지 않는다.
 
 댓글 등록 후 닫기의 스크롤 복구는 `inline-comment-scroll-unlock.spec.ts`에서 실제 Next.js 상세 경로로 검증한다. 열린 상태의 마운트와 등록 후 재조회, POST·재조회 대기 중 닫기를 포함하며, native `:modal` 해제와 실제 휠·터치 이동을 함께 확인한다. Strict Mode와 초기 포커스 변경·빠른 재진입의 모달 수명은 공용 모달 컴포넌트 테스트로 보호한다.
 

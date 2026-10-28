@@ -1,20 +1,13 @@
 import { useState } from 'react';
 
 import type { InlineCommentSelectionTarget } from '@/features/post-detail/model/inline-comment-interaction';
-import InlineCommentFloatingSelection from '@/features/post-detail/ui/InlineCommentFloatingSelection';
 import InlineCommentSelectionToolbar from '@/features/post-detail/ui/InlineCommentSelectionToolbar';
 
 // 본문 서버 렌더링·분석은 별도 검증한다. 브라우저 Selection과 실제 툴바는 그대로 연결한다.
 export default function InlineCommentContent({
 	onInlineCommentCreate,
-	onFloatingCommentCreate,
-	isSelectionMode = false,
-	onSelectionModeChange,
 }: {
 	onInlineCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
-	onFloatingCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
-	isSelectionMode?: boolean;
-	onSelectionModeChange?: (active: boolean) => void;
 }) {
 	const [article, setArticle] = useState<HTMLElement | null>(null);
 	return (
@@ -34,17 +27,7 @@ export default function InlineCommentContent({
 				</div>
 			</article>
 			{article && onInlineCommentCreate && (
-				<>
-					{!isSelectionMode && (
-						<InlineCommentSelectionToolbar article={article} postId={106} onCreateComment={onInlineCommentCreate} />
-					)}
-					<InlineCommentFloatingSelection
-						article={article}
-						isActive={isSelectionMode}
-						onActiveChange={onSelectionModeChange ?? (() => undefined)}
-						onCreateComment={onFloatingCommentCreate ?? onInlineCommentCreate}
-					/>
-				</>
+				<InlineCommentSelectionToolbar article={article} postId={106} onCreateComment={onInlineCommentCreate} />
 			)}
 		</>
 	);

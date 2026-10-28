@@ -17,7 +17,6 @@ import { logNonProductionInfo } from '@/shared/utils/non-production-console';
 
 import { createReadingVisitId } from '../lib/create-reading-visit-id';
 
-import InlineCommentFloatingSelection from './InlineCommentFloatingSelection';
 import InlineCommentHighlights from './InlineCommentHighlights';
 import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
 
@@ -30,9 +29,6 @@ interface PostDetailContentProps {
 	enableInlineCommentSelectionDebug?: boolean;
 	onInlineCommentOpen?: (request: InlineCommentOpenRequest) => void;
 	onInlineCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
-	onFloatingCommentCreate?: (selection: InlineCommentSelectionTarget) => void;
-	isSelectionMode?: boolean;
-	onSelectionModeChange?: (active: boolean) => void;
 }
 
 const EMPTY_INLINE_COMMENT_BLOCKS: readonly InlineCommentBlockModel[] = [];
@@ -121,13 +117,7 @@ export default function PostDetailContent({
 	enableInlineCommentSelectionDebug = false,
 	onInlineCommentOpen,
 	onInlineCommentCreate,
-	onFloatingCommentCreate,
-	isSelectionMode,
-	onSelectionModeChange,
 }: PostDetailContentProps) {
-	const [localSelectionMode, setLocalSelectionMode] = useState(false);
-	const isSelecting = isSelectionMode ?? localSelectionMode;
-	const changeSelectionMode = onSelectionModeChange ?? setLocalSelectionMode;
 	const contentRef = useRef<HTMLElement>(null);
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
 	const [visitEpoch, setVisitEpoch] = useState(0);
@@ -339,29 +329,16 @@ export default function PostDetailContent({
 					article={contentElement}
 					blocks={inlineCommentBlocks}
 					contentKey={html}
-					isInteractive={!isSelecting}
 					onOpenComments={handleInlineCommentOpen}
 				/>
 			)}
 			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
-			{contentElement !== null && onInlineCommentCreate !== undefined && !isSelecting && (
+			{contentElement !== null && onInlineCommentCreate !== undefined && (
 				<InlineCommentSelectionToolbar
 					key={postId}
 					article={contentElement}
 					postId={postId}
 					onCreateComment={onInlineCommentCreate}
-				/>
-			)}
-			{contentElement !== null && onInlineCommentCreate !== undefined && (
-				<InlineCommentFloatingSelection
-					key={`floating-${postId}`}
-					article={contentElement}
-					isActive={isSelecting}
-					onActiveChange={changeSelectionMode}
-					onCreateComment={(selection) => {
-						if (isSelectionMode === undefined) setLocalSelectionMode(false);
-						(onFloatingCommentCreate ?? onInlineCommentCreate)(selection);
-					}}
 				/>
 			)}
 		</article>

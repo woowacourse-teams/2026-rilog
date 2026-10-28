@@ -17,8 +17,8 @@
 
 ## 모바일 선택과 탐색
 
-- 모바일은 기본 길게 누르기로 본문을 선택하면 선택 끝에 `＋ 댓글 추가`를 표시한다. 네이티브 선택·메뉴·스크롤은 유지한다. 모바일 플로팅 `전체 댓글`은 전체 바텀시트를 열며 상단 전체 보기는 숨긴다. PC 플로팅 선택 모드는 스크롤을 잠그고 보이는 단일 블록을 직접 드래그하는 기존 방식을 유지한다.
-- PC의 기존 선택 툴바는 유지한다. 댓글창과 선택 모드에서 첫 뒤로가기는 해당 UI만 닫고 상세페이지를 유지한다.
+- 모바일은 기본 길게 누르기로 본문을 선택하면 선택 끝에 `＋ 댓글 추가`를 표시한다. 네이티브 선택·메뉴·스크롤은 유지한다. 모바일 플로팅 `전체 댓글`은 전체 바텀시트를 열며 상단 전체 보기는 숨긴다.
+- PC의 기존 선택 툴바는 유지한다. 댓글창에서 첫 뒤로가기는 해당 UI만 닫고 상세페이지를 유지한다.
 - 상세한 정책과 검증 경계는 [ADR 0015](../adr/0015-mobile-inline-comment-interaction.md)를 따른다.
 
 ## 본문·선택 계약 — #639
@@ -39,14 +39,14 @@
 
 아래 endpoint는 #570 작업 브랜치의 API 구현 기준이다. #640은 두 GET API와 consumer hook을 제공하고, #641이 실제 상세 페이지의 본문·사이드바에 연결한다. 작성·수정·삭제 API는 해당 후속 이슈에서 추가한다.
 
-| 기능 | method / path | 통합 이슈 |
-| --- | --- | --- |
-| 본문 앵커 조회 | GET /v1/posts/{postId}/comment-anchors | #640 |
-| 사이드바 조회 | GET /v1/posts/{postId}/comment-anchors/sidebar | #640 |
-| 신규 선택 영역에 작성 | POST /v1/posts/{postId}/comment-anchors | #642 |
-| 기존 선택 영역에 작성 | POST /v1/posts/{postId}/selections/{selectionId}/comment-anchors | #642 |
-| 댓글 수정 | PATCH /v1/posts/{postId}/comment-anchors/{commentAnchorId} | #643 |
-| 댓글 삭제 | DELETE /v1/posts/{postId}/comment-anchors/{commentAnchorId} | #643 |
+| 기능                  | method / path                                                    | 통합 이슈 |
+| --------------------- | ---------------------------------------------------------------- | --------- |
+| 본문 앵커 조회        | GET /v1/posts/{postId}/comment-anchors                           | #640      |
+| 사이드바 조회         | GET /v1/posts/{postId}/comment-anchors/sidebar                   | #640      |
+| 신규 선택 영역에 작성 | POST /v1/posts/{postId}/comment-anchors                          | #642      |
+| 기존 선택 영역에 작성 | POST /v1/posts/{postId}/selections/{selectionId}/comment-anchors | #642      |
+| 댓글 수정             | PATCH /v1/posts/{postId}/comment-anchors/{commentAnchorId}       | #643      |
+| 댓글 삭제             | DELETE /v1/posts/{postId}/comment-anchors/{commentAnchorId}      | #643      |
 
 - 서버 DTO의 selectionId는 화면의 anchorId, commentAnchorId는 화면의 commentId에 대응한다.
 - 서버 ORPHANED는 화면 OUTDATED로 변환한다. 서버 상태·range·배열 순서는 프론트가 재판정하지 않는다.

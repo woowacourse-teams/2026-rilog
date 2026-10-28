@@ -9,7 +9,6 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
-import { useAuth } from '@/features/auth/model/use-auth';
 import { useCommentViewport } from '@/features/post-detail/hooks/use-comment-viewport';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
@@ -76,7 +75,6 @@ export default function PostDetailCommentsWorkspace({
 	const dockHost = useDockedCommentsHost(postId);
 	const isDocked = dockHost !== null && dockHost !== undefined;
 	const isLayoutReady = dockHost !== undefined;
-	const { isAuthenticated } = useAuth();
 	const {
 		view,
 		open: openCommentView,
@@ -184,7 +182,7 @@ export default function PostDetailCommentsWorkspace({
 	);
 
 	const handleInlineCommentCreate = useCallback(
-		(target: InlineCommentSelectionTarget, entrySource: InlineCommentCreateEntrySource = 'selection_toolbar') => {
+		(target: InlineCommentSelectionTarget) => {
 			cancelAnchorNavigation();
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCreatedCommentId(null);
@@ -200,7 +198,7 @@ export default function PostDetailCommentsWorkspace({
 						anchor.selectedText === target.selectedText,
 				);
 			setSelection(existingThread ? null : target);
-			setCommentEntrySource(entrySource);
+			setCommentEntrySource('selection_toolbar');
 			setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 			setSidebarMode('single');
 			setOpenRequest(
@@ -246,16 +244,6 @@ export default function PostDetailCommentsWorkspace({
 			openerRef.current.focus({ preventScroll: true });
 		}
 	}, [view, isDocked]);
-
-	const handleSelectionModeChange = useCallback(
-		(active: boolean) => {
-			if (active) {
-				openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-				openCommentView('selection');
-			} else closeCommentView();
-		},
-		[openCommentView, closeCommentView],
-	);
 
 	const handleAnchorNavigate = useCallback(
 		(thread: InlineCommentThreadModel) => {
@@ -330,18 +318,7 @@ export default function PostDetailCommentsWorkspace({
 					inlineCommentBlocks={inlineCommentBlocks}
 					enableInlineCommentSelectionDebug={enableInlineCommentSelectionDebug}
 					onInlineCommentOpen={handleInlineCommentOpen}
-					isSelectionMode={view === 'selection'}
-					onSelectionModeChange={handleSelectionModeChange}
 					onInlineCommentCreate={commentsQuery.isSuccess ? handleSelectionCreate : undefined}
-					onFloatingCommentCreate={
-						commentsQuery.isSuccess
-							? (target) => {
-									analytics.inlineCommentSelectionReplyClicked({ postId, entrySource: 'floating_button' });
-									handleSelectionCreate(target, 'floating_button');
-									if (!isAuthenticated) closeCommentView();
-								}
-							: undefined
-					}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />
