@@ -9,7 +9,6 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
-import { useAuth } from '@/features/auth/model/use-auth';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
@@ -29,6 +28,7 @@ import Divider from '@/shared/ui/divider/Divider';
 import styles from './PostDetail.module.css';
 import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
+import { useFloatingCommentCreation } from './use-floating-comment-creation';
 
 interface PostDetailCommentsWorkspaceProps {
 	html: string;
@@ -86,7 +86,6 @@ export default function PostDetailCommentsWorkspace({
 	const [deepLinkedSelectionId, setDeepLinkedSelectionId] = useState(initialSelectionId);
 	const [createdCommentId, setCreatedCommentId] = useState<number | null>(null);
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
-	const { isAuthenticated } = useAuth();
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
 	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>(
 		initialSelectionId === null ? 'all' : 'single',
@@ -234,6 +233,8 @@ export default function PostDetailCommentsWorkspace({
 		[closeComments, isDocked, postId],
 	);
 
+	const handleFloatingCommentCreate = useFloatingCommentCreation(postId, handleSelectionCreate, closeCommentView);
+
 	const panelProps = {
 		scrollResetKey,
 		postId,
@@ -276,15 +277,7 @@ export default function PostDetailCommentsWorkspace({
 					isSelectionMode={view === 'selection'}
 					onSelectionModeChange={handleSelectionModeChange}
 					onInlineCommentCreate={commentsQuery.isSuccess ? handleSelectionCreate : undefined}
-					onFloatingCommentCreate={
-						commentsQuery.isSuccess
-							? (target) => {
-									analytics.inlineCommentSelectionReplyClicked({ postId, entrySource: 'floating_button' });
-									handleSelectionCreate(target, 'floating_button');
-									if (!isAuthenticated) closeCommentView();
-								}
-							: undefined
-					}
+					onFloatingCommentCreate={commentsQuery.isSuccess ? handleFloatingCommentCreate : undefined}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />
