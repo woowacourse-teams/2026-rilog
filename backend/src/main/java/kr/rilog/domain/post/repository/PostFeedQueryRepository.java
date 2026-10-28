@@ -40,18 +40,13 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END,
 
-                COUNT(anchor.id)
+                p.commentCount
             )
             FROM Post p
             JOIN p.user author
             JOIN p.rilog rilog
             LEFT JOIN p.colog colog
             LEFT JOIN p.chapter chapter
-            LEFT JOIN CommentAnchorSelection anchorSelection
-                   ON anchorSelection.post = p
-            LEFT JOIN CommentAnchor anchor
-                   ON anchor.commentAnchorSelection = anchorSelection
-                  AND anchor.deletedAt IS NULL
             WHERE p.status = :status
               AND p.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
               AND p.visibility = :publicVisibility
@@ -62,25 +57,6 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
                   OR (colog.id IS NULL AND rilog.blogType = :blogType)
               )
               AND p.deletedAt IS NULL
-            GROUP BY
-                p.id,
-                p.title,
-                p.thumbnailImageUrl,
-                p.category,
-                p.visibility,
-                p.publishedAt,
-                chapter.id,
-                chapter.name.value,
-                chapter.order,
-                author.id,
-                author.nickname.value,
-                author.slug.value,
-                author.profileImageUrl,
-                CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END
             ORDER BY p.publishedAt DESC, p.id DESC
             """)
     Slice<PostFullFeedRow> findFullFeedWithInlineCommentCount(

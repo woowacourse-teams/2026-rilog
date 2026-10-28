@@ -40,7 +40,7 @@ public interface TrendingPostQueryRepository extends Repository<TrendingPost, Lo
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
                 CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END,
 
-                COUNT(anchor.id)
+                post.commentCount
             )
             FROM TrendingPost trending
             JOIN trending.post post
@@ -48,11 +48,6 @@ public interface TrendingPostQueryRepository extends Repository<TrendingPost, Lo
             JOIN post.rilog rilog
             LEFT JOIN post.colog colog
             LEFT JOIN post.chapter chapter
-            LEFT JOIN CommentAnchorSelection anchorSelection
-                   ON anchorSelection.post = post
-            LEFT JOIN CommentAnchor anchor
-                   ON anchor.commentAnchorSelection = anchorSelection
-                  AND anchor.deletedAt IS NULL
             WHERE post.status = :status
               AND post.visibility = :publicVisibility
               AND post.postType = kr.rilog.domain.post.entity.enums.PostType.STANDARD
@@ -65,27 +60,6 @@ public interface TrendingPostQueryRepository extends Repository<TrendingPost, Lo
                   OR (colog.id IS NOT NULL AND colog.blogType = :blogType)
                   OR (colog.id IS NULL AND rilog.blogType = :blogType)
               )
-            GROUP BY
-                trending.id,
-                trending.score,
-                post.id,
-                post.title,
-                post.thumbnailImageUrl,
-                post.category,
-                post.visibility,
-                post.publishedAt,
-                chapter.id,
-                chapter.name.value,
-                chapter.order,
-                author.id,
-                author.nickname.value,
-                author.slug.value,
-                author.profileImageUrl,
-                CASE WHEN colog.id IS NOT NULL THEN colog.blogType ELSE rilog.blogType END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.id ELSE rilog.id END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.slug.value ELSE rilog.slug.value END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profile.name ELSE rilog.profile.name END,
-                CASE WHEN colog.id IS NOT NULL THEN colog.profile.profileImageUrl ELSE rilog.profile.profileImageUrl END
             ORDER BY trending.score DESC, post.publishedAt DESC, post.id DESC
             """)
     Slice<PostFullFeedRow> findTrendingPosts(
