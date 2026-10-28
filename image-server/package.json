@@ -1,0 +1,20 @@
+{
+  "name": "rilog-image-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "check": "node --check src/server.mjs && node --check src/app.mjs && node --check src/image.mjs && node --check src/download.mjs && node --check src/config.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1158.0",
+    "express": "5.3.0",
+    "ipaddr.js": "2.5.0",
+    "sharp": "0.35.5"
+  }
+}

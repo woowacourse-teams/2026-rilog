@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class S3ObjectTagger {
 
     private static final String S3_TAGGING_FAILED_EVENT = "s3_object_tagging_failed";
+    private static final String S3_TAGGING_SUCCESS_EVENT = "s3_object_tagging_success";
     private static final String S3_TAGGING_FAILED_LOG_FORMAT =
             "event=s3_object_tagging_failed bucket={} key={} tagStatus={}";
 
@@ -39,6 +40,13 @@ public class S3ObjectTagger {
                     .key(uploadTarget.key())
                     .tagging(uploadTarget.tagStatus().toTagging())
                     .build());
+            log.atInfo()
+                    .addKeyValue("event", S3_TAGGING_SUCCESS_EVENT)
+                    .addKeyValue("operation", "put_object_tagging")
+                    .addKeyValue("bucket", properties.bucket())
+                    .addKeyValue("key", uploadTarget.key())
+                    .addKeyValue("tagStatus", uploadTarget.tagStatus())
+                    .addKeyValue("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
         } catch (SdkException exception) {
             var event = log.atError()
                     .addKeyValue("event", S3_TAGGING_FAILED_EVENT)

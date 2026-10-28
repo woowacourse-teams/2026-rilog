@@ -18,10 +18,12 @@
 
 ## 배포 순서
 
-V9는 컬럼을 추가하고 **전체 게시글**을 기존 기준으로 백필한다. 구버전 앱은 댓글을 써도 새 카운터를 갱신하지 않으므로 일반 롤링 배포로 섞어 실행하면 안 된다.
+V8은 컬럼을 추가하고 **전체 게시글**을 기존 기준으로 백필한다. 구버전 앱은 댓글을 써도 새 카운터를 갱신하지 않으므로 일반 롤링 배포로 섞어 실행하면 안 된다.
+
+기존 이미지 자산용 V8 삭제가 반영된 develop을 통합한 뒤 이 마이그레이션을 V9에서 V8로 변경했다. 부하테스트용 개발 DB의 적용 이력은 V7까지임을 읽기 전용 조회로 확인했고, 운영 DB도 V7까지 적용됐다는 사용자 확인을 받았다. 기존 V8이 적용된 DB에는 이 번호 변경을 그대로 적용하면 안 된다.
 
 1. 댓글 쓰기와 직접 SQL 시딩을 중지하고, 진행 중인 댓글 트랜잭션을 종료한다. 구버전 앱 인스턴스가 쓰기를 재개하지 않도록 정지한다.
-2. V9 마이그레이션과 새 앱 전환을 완료한다. 이미 시작한 새 앱에도 확인 완료 전 댓글 쓰기를 허용하지 않는다.
+2. V8 마이그레이션과 새 앱 전환을 완료한다. 이미 시작한 새 앱에도 확인 완료 전 댓글 쓰기를 허용하지 않는다.
 3. 아래 조회에서 불일치가 0건인지 확인한다.
 4. 댓글 쓰기를 재개한다. 이후 직접 SQL로 댓글을 추가·삭제하면 카운터도 함께 반영해야 한다.
 
@@ -46,7 +48,7 @@ WHERE p.comment_count <> COALESCE(actual.comment_count, 0);
 - 일반 서비스 테스트: 생성 두 경로, 삭제, 생성·추가 도중 실패 롤백, 0 카운터에서 삭제 실패와 롤백. 두 피드의 댓글 수와 정렬·필터·페이지 기존 테스트 유지.
 - 마이그레이션 전용 테스트와 DTO 전용 테스트는 backend/.agents 규칙에 따라 추가하지 않았다. MySQL 테스트 앱 기동 시 기존 Flyway 경로로 마이그레이션을 적용한다.
 
-2026-10-28 로컬 검증 결과:
+2026-10-28 develop 통합 전 로컬 검증 결과:
 
 | 검증 | 결과 |
 | --- | --- |
@@ -61,10 +63,23 @@ H2 실패는 `ImageAssetRepositoryIntegrationTest.objectKeyIsUnique`, `assetAndS
 
 최종 관련 테스트의 대상은 `CommentAnchorCounterIntegrationTest`, `CommentAnchorServiceIntegrationTest`, `FeedServiceIntegrationTest`, `TrendingServiceIntegrationTest`이며, MySQL에는 `CommentAnchorCounterConcurrencyIntegrationTest`를 추가했다. 독립 코드 리뷰에서 중대한 결함은 발견되지 않았다.
 
+### V8 버전 정리 후 재검증
+
+2026-10-28 develop `d35f4bfb`를 통합하고 댓글 수 마이그레이션을 V8로 변경한 뒤 `./gradlew clean testH2 testMySql build -x test`를 실행했다. SQL 내용은 기존 V9와 동일하다.
+
+| 검증 | 결과 |
+| --- | --- |
+| H2 전체 | 1,417건, 실패·오류·스킵 0건 |
+| MySQL 전체 | 1,425건, 실패·오류·스킵 0건 |
+| 패키징 빌드 | 성공 |
+| 변경 파일 검사 | `git diff --cached --check` 통과 |
+
+테스트 수 차이는 develop에서 이미지 자산·참조 코드와 관련 테스트가 제거된 결과다. 앞서 기록한 이미지 중복 제약 H2 실패도 현재 통합 상태에서는 남아 있지 않다. 이번 버전 변경을 위해 테스트를 삭제하거나 검증을 약화하지 않았다.
+
 ## 변경 파일
 
 - 운영 코드: Post, PostRepository, PostErrorInformation, CommentAnchor, CommentAnchorRepository, CommentAnchorService, PostFeedQueryRepository, TrendingPostQueryRepository.
-- DB: V9__add_post_comment_count.sql.
+- DB: V8__add_post_comment_count.sql.
 - 테스트: 신규 CommentAnchorCounterIntegrationTest, CommentAnchorCounterConcurrencyIntegrationTest 및 기존 댓글·최신순·트렌딩 서비스 통합 테스트.
 - 피드 Service와 응답 DTO, 트렌딩 점수 배치, 의존성, 서버 설정은 변경하지 않았다.
 

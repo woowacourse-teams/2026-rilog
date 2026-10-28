@@ -33,6 +33,7 @@ flowchart LR
 .
 ├─ frontend/    # Next.js 사용자 애플리케이션
 ├─ backend/     # Spring Boot API와 도메인 로직
+├─ image-server/ # 외부 이미지 가져오기 Node API와 Docker 배포 설정
 ├─ docs/        # 백엔드 가이드, ADR, 팀 하네스
 ├─ .github/     # 이슈·PR 템플릿과 배포 워크플로우
 └─ AGENTS.md    # 저장소 공통 작업 규칙
