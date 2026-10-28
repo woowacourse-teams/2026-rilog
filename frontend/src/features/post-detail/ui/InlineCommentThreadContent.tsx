@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { analytics } from '@/features/analytics/model/events';
 import type { InlineCommentAnchorModel } from '@/features/post-detail/model/inline-comment';
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
+import Button from '@/shared/ui/button/Button';
 
 import InlineCommentItem from './InlineCommentItem';
 import InlineCommentQuote from './InlineCommentQuote';
@@ -49,17 +50,7 @@ export default function InlineCommentThreadContent({
 			>
 				<div className="w-full min-w-0 border-l-4 border-border-default pl-2">
 					<div className="flex w-full min-w-0 items-center justify-between gap-3">
-						{onSelectComposer !== undefined ? (
-							<button
-								type="button"
-								aria-label={`인용문 선택: ${anchor.selectedText}`}
-								aria-pressed={isComposerSelected}
-								className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-2 focus-visible:outline-focus-ring"
-								onClick={onSelectComposer}
-							>
-								<InlineCommentQuote anchor={anchor} />
-							</button>
-						) : isCollapsible ? (
+						{onSelectComposer === undefined && isCollapsible ? (
 							<button
 								type="button"
 								aria-expanded={isOpen}
@@ -120,7 +111,7 @@ export default function InlineCommentThreadContent({
 			<div
 				className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 			>
-				<div className="min-h-0 overflow-hidden" {...(!isOpen && { inert: true })}>
+				<div className="min-h-0 overflow-hidden" aria-hidden={!isOpen} {...(!isOpen && { inert: true })}>
 					<div className="px-8 pb-4">
 						{anchor.comments.length === 0 ? (
 							<p
@@ -143,6 +134,21 @@ export default function InlineCommentThreadContent({
 									</div>
 								</li>
 							</ul>
+						)}
+						{onSelectComposer !== undefined && (
+							<Button
+								variant="ghost"
+								size="sm"
+								aria-label={`댓글 추가: ${anchor.selectedText}`}
+								aria-pressed={isComposerSelected}
+								className="min-h-11 px-2!"
+								onClick={onSelectComposer}
+							>
+								<svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" className="size-4" fill="none">
+									<path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+								</svg>
+								댓글 추가
+							</Button>
 						)}
 						{renderInput && <div aria-hidden={!isOpen}>{renderInput(isOpen)}</div>}
 					</div>

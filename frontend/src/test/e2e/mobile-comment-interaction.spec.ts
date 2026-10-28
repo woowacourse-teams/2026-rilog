@@ -284,7 +284,7 @@ test('키보드 위의 고정 입력바는 상단 인용문을 중복하지 않�
 	const input = composer.getByRole('textbox', { name: '댓글 입력' });
 	const submit = composer.getByRole('button', { name: '작성', exact: true });
 	await expect(quoteRegion.getByText(quotedText, { exact: true })).toBeVisible();
-	await expect(composer.getByLabel('댓글 대상 인용문')).toHaveCount(0);
+	await expect(composer).toHaveCount(0);
 	await expect(input).toBeFocused();
 	await expect(submit).toBeDisabled();
 	expect(await input.evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
@@ -894,11 +894,12 @@ test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 
 	await expect(page.getByRole('heading', { name: '전체 인라인 댓글 2' })).toBeFocused();
 	const first = page.getByRole('region', { name: '"브라우저에서" 댓글', exact: true });
 	const second = page.getByRole('region', { name: '"선택하여" 댓글', exact: true });
-	const firstTarget = first.getByRole('button', { name: '인용문 선택: 브라우저에서', exact: true });
-	const secondTarget = second.getByRole('button', { name: '인용문 선택: 선택하여', exact: true });
+	const firstTarget = first.getByRole('button', { name: '댓글 추가: 브라우저에서', exact: true });
+	const secondTarget = second.getByRole('button', { name: '댓글 추가: 선택하여', exact: true });
 	await expect(first.getByRole('button', { name: '댓글 쓰기', exact: true })).toHaveCount(0);
 	await expect(second.getByRole('button', { name: '댓글 쓰기', exact: true })).toHaveCount(0);
 	await firstTarget.click();
+	await expect(composer.getByLabel('댓글 대상 인용문')).toHaveText('브라우저에서');
 	await expect(firstTarget).toHaveAttribute('aria-pressed', 'true');
 	await expect(first.getByRole('button', { name: '댓글 접기', exact: true })).toHaveAttribute('aria-expanded', 'true');
 	await expect(input).toBeFocused();
@@ -918,7 +919,7 @@ test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 
 		'false',
 	);
 	await expect(secondTarget).toHaveAttribute('aria-pressed', 'true');
-	await expect(firstTarget).toHaveAttribute('aria-pressed', 'false');
+	await expect(firstTarget).toBeHidden();
 	await expect(input).toHaveValue('두 번째 인용문 초안');
 	await first.getByRole('button', { name: '댓글 펼치기', exact: true }).click();
 	await expect(secondTarget).toHaveAttribute('aria-pressed', 'true');

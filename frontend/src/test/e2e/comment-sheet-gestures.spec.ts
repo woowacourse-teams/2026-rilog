@@ -167,7 +167,7 @@ test('링크·버튼과 입력창에서 시작한 제스처는 시트를 잡지 
 	const before = await dialog.boundingBox();
 	await drag(page, dialog.getByRole('link', { name: '댓글 작성자', exact: true }), 100);
 	await expectExpanded(page, false);
-	await drag(page, dialog.getByRole('button', { name: '인용문 선택: 브라우저에서', exact: true }), 100);
+	await drag(page, dialog.getByRole('button', { name: '댓글 추가: 브라우저에서', exact: true }), 100);
 	await expectExpanded(page, false);
 	const input = dialog.getByRole('textbox', { name: '댓글 입력' });
 	await input.fill('입력창은 계속 사용할 수 있습니다.');

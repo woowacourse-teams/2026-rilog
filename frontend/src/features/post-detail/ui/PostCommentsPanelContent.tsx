@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import type { CommentPanelSession } from '../hooks/use-comment-panel-session';
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
@@ -42,6 +43,11 @@ interface PostCommentsPanelContentProps {
 	onNavigate: (thread: InlineCommentThreadModel) => void;
 }
 
+interface MobileReplySelection {
+	session: CommentPanelSession;
+	anchorId: number | null;
+}
+
 export default function PostCommentsPanelContent({
 	titleId,
 	titleRef,
@@ -79,16 +85,17 @@ export default function PostCommentsPanelContent({
 		return () => window.cancelAnimationFrame(frame);
 	}, [isOpen, scrollResetKey]);
 	const [mobileComposerHost, setMobileComposerHost] = useState<HTMLDivElement | null>(null);
-	const [mobileAnchorId, setMobileAnchorId] = useState<number | null>(null);
+	const [mobileReply, setMobileReply] = useState<MobileReplySelection>({ session, anchorId: null });
+	const mobileAnchorId = mobileReply.session === session ? mobileReply.anchorId : null;
 	const activeThread =
 		threads.find(({ anchor }) => anchor.anchorId === mobileAnchorId) ??
-		threads.find(({ anchor }) => anchor.anchorId === composerAnchorId) ??
-		(threads.length === 1 ? threads[0] : undefined);
+		(mode !== 'all' ? threads.find(({ anchor }) => anchor.anchorId === composerAnchorId) : undefined) ??
+		(mode !== 'all' && threads.length === 1 ? threads[0] : undefined);
 	const canShowMobileComposer =
 		isMobile &&
 		isInitialized &&
 		isAuthenticated &&
-		(selection != null || (!isLoading && !isError && threads.length > 0));
+		(selection != null || (!isLoading && !isError && activeThread !== undefined));
 	const login = useAuthAction({ entrySurface: 'sidebar' });
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
@@ -162,7 +169,7 @@ export default function PostCommentsPanelContent({
 														isActive: activeThread?.anchor.anchorId === thread.anchor.anchorId,
 														shouldFocus:
 															mobileAnchorId === thread.anchor.anchorId || composerAnchorId === thread.anchor.anchorId,
-														onActivate: () => setMobileAnchorId(thread.anchor.anchorId),
+														onActivate: () => setMobileReply({ session, anchorId: thread.anchor.anchorId }),
 													}
 												: undefined
 										}
@@ -185,8 +192,10 @@ export default function PostCommentsPanelContent({
 						aria-label="댓글 작성 입력바"
 						className="shrink-0 border-t border-border-default bg-surface px-4 py-3"
 					>
-						{selection == null && activeThread === undefined && (
-							<p className="text-body-4 text-text-secondary">댓글을 남길 인용문을 선택해 주세요.</p>
+						{mode === 'all' && activeThread !== undefined && (
+							<p aria-label="댓글 대상 인용문" className="mb-2 truncate text-label-2 text-text-secondary">
+								{activeThread.anchor.selectedText}
+							</p>
 						)}
 					</div>
 				)}
