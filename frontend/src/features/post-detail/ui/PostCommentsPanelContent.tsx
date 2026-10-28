@@ -72,7 +72,13 @@ export default function PostCommentsPanelContent({
 
 				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 					{selection != null ? (
-						<InlineCommentComposer postId={postId} selection={selection} inputRef={inputRef} onCreated={onCreated} />
+						<InlineCommentComposer
+							entrySource={entrySource}
+							postId={postId}
+							selection={selection}
+							inputRef={inputRef}
+							onCreated={onCreated}
+						/>
 					) : isLoading ? (
 						<p role="status" className="px-5 py-6 text-body-4 text-text-placeholder">
 							인라인 댓글을 불러오는 중입니다.

@@ -7,7 +7,9 @@ import type { ReactNode } from 'react';
 
 import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
+import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
+import { useAuth } from '@/features/auth/model/use-auth';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
@@ -22,10 +24,10 @@ import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButt
 import PostCommentsDockedCard from '@/features/post-detail/ui/PostCommentsDockedCard';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
-import { POST_DETAIL_SELECTION_QUERY_PARAM } from '@/shared/routes/app-routes';
 import Divider from '@/shared/ui/divider/Divider';
 
 import styles from './PostDetail.module.css';
+import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
 
 interface PostDetailCommentsWorkspaceProps {
@@ -69,7 +71,12 @@ export default function PostDetailCommentsWorkspace({
 	const dockHost = useDockedCommentsHost(postId);
 	const isDocked = dockHost !== null && dockHost !== undefined;
 	const isLayoutReady = dockHost !== undefined;
-	const [isCommentsSidebarOpen, setIsCommentsSidebarOpen] = useState(initialSelectionId !== null);
+	const {
+		view,
+		open: openCommentView,
+		close: closeCommentView,
+	} = useCommentHistory(postId, initialSelectionId !== null);
+	const isCommentsSidebarOpen = view === 'comments';
 	const openerRef = useRef<HTMLElement | null>(null);
 	const commentsQuery = usePostInlineComments(postId);
 	const sidebarQuery = usePostInlineCommentsSidebar(postId);
@@ -79,11 +86,12 @@ export default function PostDetailCommentsWorkspace({
 	const [deepLinkedSelectionId, setDeepLinkedSelectionId] = useState(initialSelectionId);
 	const [createdCommentId, setCreatedCommentId] = useState<number | null>(null);
 	const [selection, setSelection] = useState<InlineCommentSelectionTarget | null>(null);
+	const { isAuthenticated } = useAuth();
 	const [composerAnchorId, setComposerAnchorId] = useState<number | null>(null);
 	const [sidebarMode, setSidebarMode] = useState<InlineCommentSidebarMode>(
 		initialSelectionId === null ? 'all' : 'single',
 	);
-	const [commentEntrySource, setCommentEntrySource] = useState<'highlight' | 'block' | 'all' | 'selection_toolbar'>(
+	const [commentEntrySource, setCommentEntrySource] = useState<InlineCommentCreateEntrySource>(
 		initialSelectionId === null ? 'all' : 'highlight',
 	);
 	const [createRequestId, setCreateRequestId] = useState(0);
@@ -108,6 +116,16 @@ export default function PostDetailCommentsWorkspace({
 		0,
 	);
 
+	const handleSelectionModeChange = useCallback(
+		(active: boolean) => {
+			if (active) {
+				openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+				openCommentView('selection');
+			} else closeCommentView();
+		},
+		[openCommentView, closeCommentView],
+	);
+
 	useEffect(() => {
 		if (
 			hasHandledDeepLinkNavigationRef.current ||
@@ -125,20 +143,23 @@ export default function PostDetailCommentsWorkspace({
 		}
 	}, [commentsQuery.isSuccess, deepLinkedSelectionId, sidebarQuery.isSuccess, sidebarThreads]);
 
-	const openComments = useCallback((request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
-		openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-		setCommentEntrySource(request === null ? 'all' : request.source);
-		setSidebarMode(mode);
-		setSelection(null);
-		setCreatedCommentId(null);
-		setDeepLinkedSelectionId(null);
-		setComposerAnchorId(null);
-		setOpenRequest(request);
-		setIsCommentsSidebarOpen(true);
-	}, []);
+	const openComments = useCallback(
+		(request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
+			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+			setCommentEntrySource(request === null ? 'all' : request.source);
+			setSidebarMode(mode);
+			setSelection(null);
+			setCreatedCommentId(null);
+			setDeepLinkedSelectionId(null);
+			setComposerAnchorId(null);
+			setOpenRequest(request);
+			openCommentView('comments');
+		},
+		[openCommentView],
+	);
 
 	const handleInlineCommentCreate = useCallback(
-		(target: InlineCommentSelectionTarget) => {
+		(target: InlineCommentSelectionTarget, entrySource: InlineCommentCreateEntrySource = 'selection_toolbar') => {
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCreatedCommentId(null);
 			setDeepLinkedSelectionId(null);
@@ -153,7 +174,7 @@ export default function PostDetailCommentsWorkspace({
 						anchor.selectedText === target.selectedText,
 				);
 			setSelection(existingThread ? null : target);
-			setCommentEntrySource('selection_toolbar');
+			setCommentEntrySource(entrySource);
 			setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 			setSidebarMode('single');
 			setOpenRequest(
@@ -162,9 +183,9 @@ export default function PostDetailCommentsWorkspace({
 					: null,
 			);
 			setCreateRequestId((previous) => previous + 1);
-			setIsCommentsSidebarOpen(true);
+			openCommentView('comments');
 		},
-		[inlineCommentBlocks],
+		[inlineCommentBlocks, openCommentView],
 	);
 
 	const handleSelectionCreate = useInlineCommentAuthAction({
@@ -187,16 +208,16 @@ export default function PostDetailCommentsWorkspace({
 	}, [openComments, postId]);
 
 	const closeComments = useCallback(() => {
-		setIsCommentsSidebarOpen(false);
+		closeCommentView();
 		setIsDeletedCommentToastVisible(false);
 		if (isDocked && openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
-		const url = new URL(window.location.href);
-		if (!url.searchParams.has(POST_DETAIL_SELECTION_QUERY_PARAM) && !url.searchParams.has('notificationCommentDeleted'))
-			return;
-		url.searchParams.delete(POST_DETAIL_SELECTION_QUERY_PARAM);
-		url.searchParams.delete('notificationCommentDeleted');
-		window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-	}, [isDocked]);
+	}, [closeCommentView, isDocked]);
+
+	useEffect(() => {
+		if (view === 'closed' && isDocked && openerRef.current?.isConnected) {
+			openerRef.current.focus({ preventScroll: true });
+		}
+	}, [view, isDocked]);
 
 	const handleAnchorNavigate = useCallback(
 		(thread: InlineCommentThreadModel) => {
@@ -249,7 +270,18 @@ export default function PostDetailCommentsWorkspace({
 					inlineCommentBlocks={inlineCommentBlocks}
 					enableInlineCommentSelectionDebug={enableInlineCommentSelectionDebug}
 					onInlineCommentOpen={handleInlineCommentOpen}
+					isSelectionMode={view === 'selection'}
+					onSelectionModeChange={handleSelectionModeChange}
 					onInlineCommentCreate={commentsQuery.isSuccess ? handleSelectionCreate : undefined}
+					onFloatingCommentCreate={
+						commentsQuery.isSuccess
+							? (target) => {
+									analytics.inlineCommentSelectionReplyClicked({ postId, entrySource: 'floating_button' });
+									handleSelectionCreate(target, 'floating_button');
+									if (!isAuthenticated) closeCommentView();
+								}
+							: undefined
+					}
 				/>
 
 				<Divider className="mt-30 sm:mt-40" />

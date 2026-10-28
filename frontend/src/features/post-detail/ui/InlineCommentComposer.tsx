@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import type { InlineCommentSelectionTarget } from '../model/inline-comment-interaction';
 import type { RefObject } from 'react';
 
+import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { isNormalizedApiError } from '@/shared/api/api-error';
@@ -17,13 +18,20 @@ import InlineCommentInput from './InlineCommentInput';
 import InlineCommentThreadContent from './InlineCommentThreadContent';
 
 interface InlineCommentComposerProps {
+	entrySource?: InlineCommentCreateEntrySource;
 	postId: number;
 	onCreated?: (commentAnchorId: number) => void;
 	selection: InlineCommentSelectionTarget;
 	inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
-export default function InlineCommentComposer({ postId, selection, inputRef, onCreated }: InlineCommentComposerProps) {
+export default function InlineCommentComposer({
+	entrySource = 'selection_toolbar',
+	postId,
+	selection,
+	inputRef,
+	onCreated,
+}: InlineCommentComposerProps) {
 	const draftId = `selection:${JSON.stringify([postId, selection.blockId, selection.startOffset, selection.endOffset, selection.selectedText])}`;
 	const { commentText, onCommentChange } = useInlineCommentDraft(draftId);
 
@@ -47,7 +55,7 @@ export default function InlineCommentComposer({ postId, selection, inputRef, onC
 		isSubmitting.current = true;
 		try {
 			const response = await mutation.mutateAsync({ ...selection, content: commentText });
-			analytics.inlineCommentCreated({ postId, entrySource: 'selection_toolbar', commentType: 'new_anchor' });
+			analytics.inlineCommentCreated({ postId, entrySource, commentType: 'new_anchor' });
 			onCommentChange('');
 			if (isMounted.current && response.data) onCreated?.(response.data.commentAnchorId);
 		} catch {
