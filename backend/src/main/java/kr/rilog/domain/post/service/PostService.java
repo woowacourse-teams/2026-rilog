@@ -36,6 +36,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
@@ -73,6 +76,33 @@ public class PostService {
         viewCountRepository.initialize(published.getId());
         tagAssetsPublisher.attach(published.getTagAssets());
         return PostPublishResult.of(published, publishingBlog);
+    }
+
+    @Transactional
+    public PostPublishResult publishImported(PostSaveCommand command, Long targetUserId, Instant originalPublishedAt) {
+        Blog publishingBlog = getBlog(command.slug());
+        User writer = getUser(targetUserId);
+        LocalDateTime publishedAt = LocalDateTime.ofInstant(originalPublishedAt, ZoneId.systemDefault());
+
+        Post post = createImportedPost(publishingBlog, writer, command, publishedAt);
+
+        Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
+        tagAssetsPublisher.attach(published.getTagAssets());
+
+        return PostPublishResult.of(published, publishingBlog);
+    }
+
+    private Post createImportedPost(Blog publishingBlog, User writer, PostSaveCommand command, LocalDateTime publishedAt) {
+        if (!publishingBlog.isColog()) {
+            publishingBlog.validateIsOwner(writer);
+            return Post.createImportedToRilog(publishingBlog, writer, command.toDetail(), publishedAt);
+        }
+
+        blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(publishingBlog.getId(), writer.getId(), BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(COLOG_POST_PUBLISH_FORBIDDEN));
+
+        return Post.createImportedToColog(publishingBlog, getRilog(writer), writer, command.toDetail(), publishedAt);
     }
 
     public PostDetailResponse readPostDetailByCanonicalPath(String slug, Long postId, Long requesterId) {
