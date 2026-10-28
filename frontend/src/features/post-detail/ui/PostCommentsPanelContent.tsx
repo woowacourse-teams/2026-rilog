@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { CommentPanelSession } from '../hooks/use-comment-panel-session';
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
@@ -15,8 +15,9 @@ import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
 
-import { COMMENT_PANEL_SESSION_CONTEXT } from '../hooks/use-comment-panel-session';
+import { useCommentPanelSessionValue } from '../hooks/use-comment-panel-session';
 
+import CommentPanelProviders from './CommentPanelProviders';
 import InlineCommentComposer from './InlineCommentComposer';
 import InlineCommentThread from './InlineCommentThread';
 
@@ -25,8 +26,6 @@ interface PostCommentsPanelContentProps {
 	titleRef: RefObject<HTMLHeadingElement | null>;
 	inputRef: RefObject<HTMLTextAreaElement | null>;
 	showDeletedCommentToast?: boolean;
-	showCloseButton?: boolean;
-	isMobile?: boolean;
 	isOpen?: boolean;
 	scrollResetKey?: number;
 	onCreated?: (commentAnchorId: number) => void;
@@ -39,6 +38,8 @@ interface PostCommentsPanelContentProps {
 	selection?: InlineCommentSelectionTarget | null;
 	composerAnchorId?: number | null;
 	threads: readonly InlineCommentThreadModel[];
+	showCloseButton?: boolean;
+	isMobile?: boolean;
 	onClose: () => void;
 	onNavigate: (thread: InlineCommentThreadModel) => void;
 }
@@ -53,9 +54,7 @@ export default function PostCommentsPanelContent({
 	titleRef,
 	inputRef,
 	showDeletedCommentToast = false,
-	showCloseButton = true,
-	isMobile = false,
-	isOpen = true,
+	isOpen,
 	scrollResetKey = 0,
 	onCreated,
 	isLoading = false,
@@ -65,17 +64,20 @@ export default function PostCommentsPanelContent({
 	mode,
 	entrySource = 'all',
 	threads,
+	showCloseButton = true,
+	isMobile = false,
 	selection,
 	composerAnchorId,
 	onClose,
 	onNavigate,
 }: PostCommentsPanelContentProps) {
+	const session = useCommentPanelSessionValue(isOpen, scrollResetKey);
 	const { isAuthenticated, isInitialized } = useAuth();
-	// A new visibility session prevents old requests from reopening hidden native dialogs.
-	const session = useMemo(() => ({ isOpen, scrollResetKey }), [isOpen, scrollResetKey]);
+	const login = useAuthAction({ entrySurface: 'sidebar' });
+	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 	const listRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {
-		if (!isOpen) return;
+		if (!session.isOpen) return;
 		const resetScroll = () => {
 			if (listRef.current) listRef.current.scrollTop = 0;
 		};
@@ -83,7 +85,7 @@ export default function PostCommentsPanelContent({
 		// Native dialog opening/focus can restore a saved scroll after the first reset.
 		const frame = window.requestAnimationFrame(resetScroll);
 		return () => window.cancelAnimationFrame(frame);
-	}, [isOpen, scrollResetKey]);
+	}, [session.isOpen, scrollResetKey]);
 	const [mobileComposerHost, setMobileComposerHost] = useState<HTMLDivElement | null>(null);
 	const [mobileReply, setMobileReply] = useState<MobileReplySelection>({ session, anchorId: null });
 	const mobileAnchorId = mobileReply.session === session ? mobileReply.anchorId : null;
@@ -96,11 +98,9 @@ export default function PostCommentsPanelContent({
 		isInitialized &&
 		isAuthenticated &&
 		(selection != null || (!isLoading && !isError && activeThread !== undefined));
-	const login = useAuthAction({ entrySurface: 'sidebar' });
-	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
 	return (
-		<COMMENT_PANEL_SESSION_CONTEXT value={session}>
+		<CommentPanelProviders session={session} entrySource={entrySource}>
 			{showDeletedCommentToast && <NotificationCommentDeletedToast />}
 			<div className="flex h-full min-h-0 flex-col">
 				<header
@@ -122,7 +122,6 @@ export default function PostCommentsPanelContent({
 					{selection != null ? (
 						<InlineCommentComposer
 							postId={postId}
-							entrySource={entrySource}
 							selection={selection}
 							inputRef={inputRef}
 							mobileComposerHost={isMobile ? mobileComposerHost : undefined}
@@ -213,6 +212,6 @@ export default function PostCommentsPanelContent({
 					</footer>
 				)}
 			</div>
-		</COMMENT_PANEL_SESSION_CONTEXT>
+		</CommentPanelProviders>
 	);
 }
