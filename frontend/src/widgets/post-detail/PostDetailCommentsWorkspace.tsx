@@ -30,6 +30,7 @@ import Divider from '@/shared/ui/divider/Divider';
 
 import AllCommentsFloatingButton from './AllCommentsFloatingButton';
 import styles from './PostDetail.module.css';
+import { useAllCommentsEntryVisibility } from './use-all-comments-entry-visibility';
 import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
 
@@ -75,6 +76,7 @@ export default function PostDetailCommentsWorkspace({
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
 	const isMobileViewport = useCommentViewport('mobile');
+	const { entryRef, isVisible: isEntryVisible } = useAllCommentsEntryVisibility(isMobileViewport);
 	const dockHost = useDockedCommentsHost(postId);
 	const isDocked = dockHost !== null && dockHost !== undefined;
 	const isLayoutReady = dockHost !== undefined;
@@ -287,13 +289,13 @@ export default function PostDetailCommentsWorkspace({
 	return (
 		<>
 			<aside className={`${styles.commentsColumn} max-md:hidden!`}>
-				<div className={styles.commentsEntry}>
+				<div ref={entryRef} className={styles.commentsEntry}>
 					{!isMobileViewport && (
 						<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
 					)}
 				</div>
 			</aside>
-			{isMobileViewport && (
+			{(isMobileViewport || !isEntryVisible) && (
 				<AllCommentsFloatingButton
 					count={inlineCommentCount}
 					hidden={view !== 'closed'}
