@@ -84,9 +84,6 @@ export default function PostDetailCommentsWorkspace({
 		navigationCleanup.current = null;
 	}, []);
 	useEffect(() => cancelAnchorNavigation, [cancelAnchorNavigation]);
-	useLayoutEffect(() => {
-		if (isCommentsSidebarOpen) cancelAnchorNavigation();
-	}, [isCommentsSidebarOpen, cancelAnchorNavigation]);
 	const navigateToThread = useCallback((thread: InlineCommentThreadModel) => {
 		navigationCleanup.current?.();
 		const getHighlights = () =>
@@ -121,6 +118,9 @@ export default function PostDetailCommentsWorkspace({
 	const [createRequestId, setCreateRequestId] = useState(0);
 	const hasHandledDeepLinkNavigationRef = useRef(false);
 	const [isDeletedCommentToastVisible, setIsDeletedCommentToastVisible] = useState(showDeletedCommentToast);
+	useLayoutEffect(() => {
+		if (isCommentsSidebarOpen) cancelAnchorNavigation();
+	}, [isCommentsSidebarOpen, createRequestId, cancelAnchorNavigation]);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
@@ -199,18 +199,10 @@ export default function PostDetailCommentsWorkspace({
 		[inlineCommentBlocks],
 	);
 
-	const handleAuthenticatedCreate = useCallback(
-		(...args: Parameters<typeof handleInlineCommentCreate>) => {
-			cancelAnchorNavigation();
-			handleInlineCommentCreate(...args);
-		},
-		[cancelAnchorNavigation, handleInlineCommentCreate],
-	);
-
 	const handleSelectionCreate = useInlineCommentAuthAction({
 		postId,
 		isCommentsReady: commentsQuery.isSuccess && sidebarQuery.isSuccess,
-		onCreate: handleAuthenticatedCreate,
+		onCreate: handleInlineCommentCreate,
 	});
 
 	const handleInlineCommentOpen = useCallback(
