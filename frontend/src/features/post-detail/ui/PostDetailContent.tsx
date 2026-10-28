@@ -11,11 +11,11 @@ import { consumePostDetailEntryContext } from '@/features/analytics/lib/post-det
 import type { TheRilogAttribution } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
+import InlineCommentFloatingSelection from '@/features/post-detail/ui/InlineCommentFloatingSelection';
 import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 import { logNonProductionInfo } from '@/shared/utils/non-production-console';
 
-import InlineCommentFloatingSelection from './InlineCommentFloatingSelection';
 import InlineCommentHighlights from './InlineCommentHighlights';
 import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
 

@@ -25,13 +25,8 @@ interface InlineCommentComposerProps {
 	inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
-export default function InlineCommentComposer({
-	entrySource = 'selection_toolbar',
-	postId,
-	selection,
-	inputRef,
-	onCreated,
-}: InlineCommentComposerProps) {
+export default function InlineCommentComposer(props: InlineCommentComposerProps) {
+	const { postId, selection, inputRef, onCreated, entrySource = 'selection_toolbar' } = props;
 	const draftId = `selection:${JSON.stringify([postId, selection.blockId, selection.startOffset, selection.endOffset, selection.selectedText])}`;
 	const { commentText, onCommentChange } = useInlineCommentDraft(draftId);
 
