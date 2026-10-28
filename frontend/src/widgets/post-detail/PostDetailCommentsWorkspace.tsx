@@ -26,11 +26,11 @@ import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import Divider from '@/shared/ui/divider/Divider';
 
+import AllCommentsFloatingButton from './AllCommentsFloatingButton';
 import styles from './PostDetail.module.css';
 import { useAllCommentsEntryVisibility } from './use-all-comments-entry-visibility';
 import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
-import AllCommentsFloatingButton from './AllCommentsFloatingButton';
 
 interface PostDetailCommentsWorkspaceProps {
 	html: string;
