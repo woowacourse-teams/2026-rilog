@@ -13,7 +13,9 @@ test('실제 팝업에서 승인한 관리자 계정만 연결하고 갱신 중�
 	const bridgeUrl = `${bridgeOrigin}/plugin-connect?state=${STATE}&environment=develop`;
 	let refreshRequests = 0;
 	let tokenNow = Date.now();
-	const profile = { id: 3, nickname: '팝업 테스트 관리자', slug: 'popup_admin' };
+	let holdProfile = false;
+	const delayed = Promise.withResolvers<void>();
+	let profile = { id: 3, nickname: '팝업 테스트 관리자', slug: 'popup_admin' };
 	const jwt = () =>
 		`header.${Buffer.from(JSON.stringify({ userId: profile.id, role: 'ADMIN', tokenType: 'ACCESS', exp: Math.floor(tokenNow / 1000) + 60 })).toString('base64url')}.signature`;
 	const cors = {
@@ -36,6 +38,7 @@ test('실제 팝업에서 승인한 관리자 계정만 연결하고 갱신 중�
 			refreshRequests += 1;
 			await route.fulfill({ status: 204, headers: { ...cors, Authorization: `Bearer ${jwt()}` } });
 		} else if (path === '/v1/users/me' && request.method() === 'GET') {
+			if (holdProfile) await delayed.promise;
 			await route.fulfill({ status: 200, headers: cors, json: { status: 200, message: 'OK', data: profile } });
 		} else {
 			await route.abort('failed');
@@ -58,29 +61,49 @@ document.getElementById('refresh').onclick=()=>popup?.postMessage({type:'rilog-i
 	const popup = await popupPromise;
 	await expect(popup.getByRole('heading', { name: 'Rilog 관리자 계정 연결' })).toBeVisible();
 	expect(refreshRequests).toBe(0);
-	await expect(page.getByRole('status')).toHaveText('미연결');
 	await expect(page.getByRole('status')).toHaveAttribute('data-ready', 'true');
 	await popup.clock.install();
 	await popup.getByRole('button', { name: '이 계정으로 연결' }).click();
 	await expect(page.getByRole('status')).toHaveText('팝업 테스트 관리자 (@popup_admin) 연결됨');
 	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '1');
-	await expect(popup.getByRole('status')).toContainText('관리자 인증을 확인했습니다');
-	await test.info().attach('connected-popup', { body: await popup.screenshot(), contentType: 'image/png' });
-	expect(refreshRequests).toBe(1);
 	await expect(popup.locator('body')).not.toContainText('header.');
-	await expect(page.locator('body')).not.toContainText('header.');
 	tokenNow += 31_000;
 	await popup.clock.fastForward(31_000);
-	await expect.poll(() => refreshRequests).toBe(2);
 	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '2');
 	tokenNow += 31_000;
 	await popup.clock.fastForward(31_000);
-	await expect.poll(() => refreshRequests).toBe(3);
 	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '3');
+	await popup.evaluate(
+		({ state, origin }) => {
+			const data = { type: 'rilog-import-auth-refresh', state, environment: 'develop' };
+			for (const change of [
+				{ origin: 'https://evil.com' },
+				{ source: window },
+				{ data: { ...data, state: 'b'.repeat(64) } },
+				{ data: { ...data, environment: 'production' } },
+			])
+				window.dispatchEvent(
+					new MessageEvent('message', { origin, source: window.opener as Window | null, data, ...change }),
+				);
+		},
+		{ state: STATE, origin: STUDIO_ORIGIN },
+	);
+	profile = { id: 4, nickname: '다른 관리자', slug: 'other_admin' };
+	await popup.getByRole('button', { name: '지금 갱신' }).click();
+	await expect(popup.getByRole('status')).toContainText('로그인 계정이 바뀌었습니다');
+	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '3');
+	await popup.getByRole('button', { name: '이 계정으로 연결' }).click();
+	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '4');
+	holdProfile = true;
+	await popup.getByRole('button', { name: '지금 갱신' }).click();
+	await expect(popup.getByRole('status')).toContainText('관리자 계정을 확인하고 있습니다');
+	await page.getByRole('button', { name: '연결 갱신', exact: true }).click({ clickCount: 2 });
+	const response = popup.waitForResponse('https://develop.rilog.kr/v1/users/me');
 	await popup.getByRole('button', { name: '갱신 중지' }).click();
-	await expect(popup.getByRole('status')).toContainText('인증 갱신을 중지했습니다');
-	await page.getByRole('button', { name: '연결 갱신', exact: true }).click();
+	delayed.resolve();
+	await (await response).finished();
 	await popup.clock.fastForward(120_000);
-	expect(refreshRequests).toBe(3);
-	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '3');
+	await expect(popup.getByRole('status')).toContainText('인증 갱신을 중지했습니다');
+	expect(refreshRequests).toBe(6);
+	await expect(page.getByRole('status')).toHaveAttribute('data-accepted', '4');
 });

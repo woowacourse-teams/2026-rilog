@@ -25,6 +25,6 @@ Import Studio는 별도 Site origin에서 실행되므로 Rilog의 HttpOnly refr
 - 최초 로그인은 같은 API 환경에 연결된 Rilog 프론트에서 수행해야 한다. 운영 빌드의 GitHub callback은 baked production API를 사용하므로 새 개발 로그인을 대신 처리할 수 없다. localhost:3000의 개발 프론트에서 개발 로그인을 수행할 수 있다.
 - 운영에서는 고정된 Site origin만 허용한다. 로컬 QA만 NODE_ENV=development에서 localhost/127.0.0.1:4317 override를 허용한다.
 - Rilog 프론트 배포 전에는 운영 주소의 `/plugin-connect`가 존재하지 않는다. 플러그인만 배포해서 자동 연결이 완성됐다고 주장하지 않는다.
-- 순수 프로토콜 테스트와 raw API 테스트, RTL로 사용자 승인·출처 검증·갱신·중지·정리를 확인한다. 실제 브라우저 popup/opener, CORS와 자동 갱신은 부모의 로컬 브라우저 QA에서 확인한다.
+- 인증 API의 필수 경계만 작은 단위 테스트로 남긴다. 출처 검증·사용자 승인·만료 후 갱신·계정 변경·중지 후 늦은 응답 차단은 실제 핸들러를 사용하는 하나의 popup E2E로 확인하며, 별도 프로토콜 단위·RTL 파일은 제거한다. 실제 API의 CORS와 갱신은 별도 로컬 QA로 확인한다.
 
 배포 순서와 환경별 확인 항목은 [관리자 연결 배포 절차](../qa/plugin-connection-rollout.md)를 따른다. Site의 자동 연결은 서버 활성화 설정이 없으면 숨기며 기존 수동 연결을 유지한다.

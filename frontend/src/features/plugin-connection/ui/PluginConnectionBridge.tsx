@@ -37,7 +37,7 @@ export default function PluginConnectionBridge() {
 	const profileIdRef = useRef<number | null>(null);
 	const generationRef = useRef(0);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const flightRef = useRef<Promise<void> | null>(null);
+	const isRefreshingRef = useRef(false);
 
 	const clearRefreshTimer = useCallback(() => {
 		if (timerRef.current !== null) clearTimeout(timerRef.current);
@@ -45,19 +45,19 @@ export default function PluginConnectionBridge() {
 	}, []);
 
 	const refresh = useCallback(
-		function refreshConnection(): Promise<void> {
-			if (flightRef.current !== null) return flightRef.current;
-			if (request === null || !authorizedRef.current) return Promise.resolve();
+		function refreshConnection(): void {
+			if (isRefreshingRef.current || request === null || !authorizedRef.current) return;
 			const generation = generationRef.current;
 			const opener = openerRef.current;
 			if (opener === null || opener.closed) {
 				authorizedRef.current = false;
 				setView({ status: 'error', message: '플러그인의 계정 연결 화면에서 이 창을 다시 열어 주세요.' });
-				return Promise.resolve();
+				return;
 			}
 			clearRefreshTimer();
 			setView((current) => ({ ...current, status: 'pending', message: 'Rilog 관리자 계정을 확인하고 있습니다.' }));
-			const pending = (async () => {
+			isRefreshingRef.current = true;
+			void (async () => {
 				try {
 					const credentials = await refreshPluginConnection(request.environment);
 					if (generation !== generationRef.current || !authorizedRef.current || opener.closed) return;
@@ -76,7 +76,7 @@ export default function PluginConnectionBridge() {
 					});
 					timerRef.current = setTimeout(() => {
 						// refresh handles its own rejection and reports only sanitized errors.
-						void refreshConnection();
+						refreshConnection();
 					}, getPluginRefreshDelay(credentials.expiresAt));
 				} catch (error) {
 					if (generation !== generationRef.current || !authorizedRef.current) return;
@@ -93,11 +93,9 @@ export default function PluginConnectionBridge() {
 					}
 					setView({ status: 'error', message: safe.message, errorCode: safe.code });
 				} finally {
-					flightRef.current = null;
+					isRefreshingRef.current = false;
 				}
 			})();
-			flightRef.current = pending;
-			return pending;
 		},
 		[clearRefreshTimer, request, studioOrigin],
 	);
@@ -112,12 +110,12 @@ export default function PluginConnectionBridge() {
 		}
 		const handleMessage = (event: MessageEvent<unknown>) => {
 			if (opener === null || request === null || !authorizedRef.current) return;
-			if (isPluginRefreshRequest(event, opener, request, studioOrigin)) void refresh();
+			if (isPluginRefreshRequest(event, opener, request, studioOrigin)) refresh();
 		};
 		const watchOpener =
 			request !== null && opener !== null
 				? setInterval(() => {
-						if (opener !== null && opener.closed && authorizedRef.current) {
+						if (opener.closed && authorizedRef.current) {
 							authorizedRef.current = false;
 							generationRef.current += 1;
 							clearRefreshTimer();
@@ -136,10 +134,10 @@ export default function PluginConnectionBridge() {
 	}, [clearRefreshTimer, refresh, request, studioOrigin]);
 
 	const connect = () => {
-		if (flightRef.current !== null) return;
+		if (isRefreshingRef.current) return;
 		if (view.status !== 'connected') profileIdRef.current = null;
 		authorizedRef.current = true;
-		void refresh();
+		refresh();
 	};
 	const stop = () => {
 		authorizedRef.current = false;
