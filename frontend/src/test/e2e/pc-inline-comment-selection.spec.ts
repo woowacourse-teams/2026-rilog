@@ -58,24 +58,26 @@ const openOwnedComments = async (page: Page, width = 1100, open = true) => {
 	await page.goto('/@the_rilog/posts/101');
 	const entry = page.getByRole('button', { name: /전체 댓글.*보기/ });
 	await expect(entry).toBeVisible();
-	await expect(entry).toContainText('전체 보기');
+	await expect(entry).toContainText(width >= 1440 ? '전체 보기' : '전체 댓글');
 	await expect(page.getByRole('button', { name: '댓글 작성', exact: true })).toHaveCount(0);
 	if (open) await entry.click();
 };
 
-test('PC 전체 보기 버튼이 화면 밖이면 플로팅 버튼으로 댓글을 열 수 있다', async ({ page }) => {
-	await openOwnedComments(page, 1100, false);
+test('PC 스티키 레이아웃이 해제되면 플로팅 버튼으로 댓글을 연다', async ({ page }) => {
+	await openOwnedComments(page, 1440, false);
 	const original = page.getByRole('button', { name: /전체 댓글.*보기/ }).filter({ hasText: '전체 보기' });
 	const floating = page.getByRole('button', { name: /전체 댓글.*보기/ }).filter({ hasText: '전체 댓글' });
-	await original.scrollIntoViewIfNeeded();
+	await expect(original).toBeVisible();
 	await expect(floating).toHaveCount(0);
-	await page.evaluate(() => window.scrollBy(0, 1200));
+	await page.setViewportSize({ width: 1100, height: 900 });
+	await expect(original).toHaveCount(0);
 	await expect(floating).toBeVisible();
 	await floating.click();
 	await expect(page.getByRole('dialog', { name: '전체 인라인 댓글 1' })).toBeVisible();
 	await page.goBack();
 	await expect(floating).toBeVisible();
-	await original.scrollIntoViewIfNeeded();
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await expect(original).toBeVisible();
 	await expect(floating).toHaveCount(0);
 });
 
