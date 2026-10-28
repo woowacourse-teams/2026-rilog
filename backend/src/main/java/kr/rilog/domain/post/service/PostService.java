@@ -162,7 +162,6 @@ public class PostService {
         CommentAnchorSelections selections = findActiveCommentAnchorSelections(postId);
         selections.recalculate(previousContent, post.getContent());
 
-        System.out.println("이벤트 발송");
         return PostUpdateResult.of(post, targetBlog);
     }
 
