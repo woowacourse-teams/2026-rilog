@@ -6,6 +6,7 @@ import type { ComponentType, ReactNode } from 'react';
 
 import { consumeEditorEntryContext } from '@/features/analytics/lib/editor-entry-context';
 import { analytics } from '@/features/analytics/model/events';
+import { appendImageSizeHash } from '@/features/post-write/lib/append-image-size-hash';
 import { mapMyCologsOverviewResponse } from '@/features/post-write/lib/map-my-cologs-overview-response';
 import type {
 	PostEditorProps,
@@ -71,7 +72,7 @@ export default function PostWriteWorkspace({
 			const uploadType = file.type.startsWith('image/') ? 'IMAGE' : 'FILE';
 			const { objectKey } = await uploadFileToStorage({ file, type: uploadType });
 
-			return getImageUrl(objectKey);
+			return getImageUrl(await appendImageSizeHash(file, objectKey));
 		},
 		[uploadFileToStorage],
 	);
