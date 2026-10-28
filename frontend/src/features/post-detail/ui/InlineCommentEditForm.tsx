@@ -2,8 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import type { CommentPanelSession } from '../hooks/use-comment-panel-session';
-
 import { analytics } from '@/features/analytics/model/events';
 import { revealInlineCommentInput } from '@/features/post-detail/lib/reveal-inline-comment-input';
 import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
@@ -32,7 +30,7 @@ export default function InlineCommentEditForm({
 	const mutation = useUpdatePostCommentAnchorMutation(postId, commentAnchorId);
 	const isResponseUnconfirmed = isInvalidApiResponseError(mutation.error);
 	const session = useCommentPanelSession();
-	const [errorSession, setErrorSession] = useState<CommentPanelSession | null>(null);
+	const [errorSession, setErrorSession] = useState<ReturnType<typeof useCommentPanelSession> | null>(null);
 	const [value, setValue] = useState(content);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmitting = useRef(false);

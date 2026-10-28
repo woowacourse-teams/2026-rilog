@@ -265,8 +265,8 @@ export default function PostDetailCommentsWorkspace({
 	);
 
 	const panelProps = {
-		postId,
 		scrollResetKey,
+		postId,
 		selection,
 		composerAnchorId,
 		mode: sidebarMode,
