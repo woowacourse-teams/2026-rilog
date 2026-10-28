@@ -19,9 +19,11 @@ import InlineCommentThreadContent from './InlineCommentThreadContent';
 
 interface MobileComposerOptions {
 	host: HTMLElement | null;
+	showAddButton: boolean;
 	isActive: boolean;
 	shouldFocus: boolean;
 	onActivate: () => void;
+	onSubmitted: () => void;
 }
 
 interface InlineCommentThreadProps {
@@ -57,6 +59,7 @@ export default function InlineCommentThread({
 			await mutation.mutateAsync({ content: commentText });
 			analytics.inlineCommentCreated({ postId, entrySource, commentType: 'reply' });
 			onCommentChange('');
+			mobileComposer?.onSubmitted();
 		} catch {
 			// 작성 실패 시 초안을 유지한다.
 		} finally {
@@ -101,6 +104,7 @@ export default function InlineCommentThread({
 						: undefined
 				}
 				isComposerSelected={mobileComposer?.isActive}
+				showAddButton={mobileComposer?.showAddButton}
 			/>
 			{mobileComposer?.isActive &&
 				mobileComposer.host !== null &&

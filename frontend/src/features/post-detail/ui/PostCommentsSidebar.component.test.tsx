@@ -410,8 +410,7 @@ describe('모바일 하단 댓글 입력바', () => {
 		await waitFor(() => expect(onCreated).toHaveBeenCalledWith(902));
 	});
 
-	it('단일 인용을 읽으면 제목에 포커스하고 상단 인용문을 선택하면 하단 입력으로 이동한다', async () => {
-		const user = userEvent.setup();
+	it('단일 인용을 읽으면 댓글 추가 버튼 없이 하단 입력을 표시한다', async () => {
 		render(
 			<PostCommentsSidebar
 				postId={81}
@@ -426,8 +425,8 @@ describe('모바일 하단 댓글 입력바', () => {
 		expect(within(footer).queryByText('활성 인용문')).not.toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: '댓글 쓰기' })).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: '인라인 댓글 1' })).toHaveFocus();
-		await user.click(screen.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
-		await waitFor(() => expect(within(footer).getByRole('textbox', { name: '댓글 입력' })).toHaveFocus());
+		expect(screen.queryByRole('button', { name: '댓글 작성: 활성 인용문' })).not.toBeInTheDocument();
+		expect(within(footer).getByRole('textbox', { name: '댓글 입력' })).toBeVisible();
 	});
 
 	it('전체 댓글은 답글을 고른 뒤 입력바를 열고 대상을 바꿔도 초안을 복원해 해당 인용으로 제출한다', async () => {
@@ -443,39 +442,43 @@ describe('모바일 하단 댓글 입력바', () => {
 		expect(
 			first
 				.getByText('첫 번째 댓글')
-				.compareDocumentPosition(first.getByRole('button', { name: '댓글 추가: 활성 인용문' })) &
+				.compareDocumentPosition(first.getByRole('button', { name: '댓글 작성: 활성 인용문' })) &
 				Node.DOCUMENT_POSITION_FOLLOWING,
 		).toBeTruthy();
-		await user.click(first.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
+		await user.click(first.getByRole('button', { name: '댓글 작성: 활성 인용문' }));
 		const footer = await screen.findByRole('region', { name: '댓글 작성 입력바' });
 		expect(screen.getAllByRole('textbox', { name: '댓글 입력' })).toHaveLength(1);
 		expect(first.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 		await user.type(within(footer).getByRole('textbox', { name: '댓글 입력' }), '첫 인용 초안');
-		await user.click(second.getByRole('button', { name: '댓글 추가: 오래된 인용문' }));
-		expect(second.getByRole('button', { name: '댓글 추가: 오래된 인용문' })).toHaveAttribute('aria-pressed', 'true');
-		expect(first.getByRole('button', { name: '댓글 추가: 활성 인용문' })).toHaveAttribute('aria-pressed', 'false');
+		await user.click(second.getByRole('button', { name: '댓글 작성: 오래된 인용문' }));
+		expect(second.getByRole('button', { name: '댓글 작성: 오래된 인용문' })).toHaveAttribute('aria-pressed', 'true');
+		expect(first.getByRole('button', { name: '댓글 작성: 활성 인용문' })).toHaveAttribute('aria-pressed', 'false');
 		expect(within(footer).getByLabelText('댓글 대상 인용문')).toHaveTextContent('오래된 인용문');
 		await user.type(within(footer).getByRole('textbox', { name: '댓글 입력' }), '둘째 인용 초안');
-		await user.click(first.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
+		await user.click(first.getByRole('button', { name: '댓글 작성: 활성 인용문' }));
 		expect(within(footer).getByRole('textbox', { name: '댓글 입력' })).toHaveValue('첫 인용 초안');
-		await user.click(second.getByRole('button', { name: '댓글 추가: 오래된 인용문' }));
+		await user.click(second.getByRole('button', { name: '댓글 작성: 오래된 인용문' }));
 		expect(within(footer).getByRole('textbox', { name: '댓글 입력' })).toHaveValue('둘째 인용 초안');
 		await user.click(within(footer).getByRole('button', { name: '작성' }));
 		await waitFor(() => expect(addPostCommentAnchor).toHaveBeenCalledWith(81, 2, { content: '둘째 인용 초안' }));
-		await waitFor(() => expect(within(footer).getByRole('textbox', { name: '댓글 입력' })).toHaveValue(''));
-		await user.click(first.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
-		expect(within(footer).getByRole('textbox', { name: '댓글 입력' })).toHaveValue('첫 인용 초안');
+		await waitFor(() => expect(screen.queryByRole('region', { name: '댓글 작성 입력바' })).not.toBeInTheDocument());
+		expect(second.getByRole('button', { name: '댓글 작성: 오래된 인용문' })).toHaveAttribute('aria-pressed', 'false');
+		await user.click(first.getByRole('button', { name: '댓글 작성: 활성 인용문' }));
+		expect(
+			within(await screen.findByRole('region', { name: '댓글 작성 입력바' })).getByRole('textbox', {
+				name: '댓글 입력',
+			}),
+		).toHaveValue('첫 인용 초안');
 		expect(createPostCommentAnchor).not.toHaveBeenCalled();
 	});
 
-	it('전체 댓글은 인용이 하나여도 답글을 골라야 입력이 열리고 재진입하면 읽기 상태로 돌아간다', async () => {
+	it('전체 댓글에서 인용이 하나면 버튼 없이 입력을 표시하고 재진입 후 초안을 유지한다', async () => {
 		const user = userEvent.setup();
 		const emptyThread = { ...THREADS[0], anchor: { ...THREADS[0].anchor, commentCount: 0, comments: [] } };
-		const view = (open: boolean, scrollResetKey = 0) => (
+		const view = (open: boolean) => (
 			<PostCommentsSidebar
 				postId={81}
 				open={open}
-				scrollResetKey={scrollResetKey}
 				mode="all"
 				threads={[emptyThread]}
 				onClose={vi.fn()}
@@ -483,24 +486,13 @@ describe('모바일 하단 댓글 입력바', () => {
 			/>
 		);
 		const result = render(view(true));
-		expect(screen.queryByRole('region', { name: '댓글 작성 입력바' })).not.toBeInTheDocument();
-		expect(
-			screen
-				.getByText('아직 댓글이 없습니다.')
-				.compareDocumentPosition(screen.getByRole('button', { name: '댓글 추가: 활성 인용문' })) &
-				Node.DOCUMENT_POSITION_FOLLOWING,
-		).toBeTruthy();
-		await user.click(screen.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
+		expect(screen.getByText('아직 댓글이 없습니다.')).toBeVisible();
+		expect(screen.queryByRole('button', { name: '댓글 작성: 활성 인용문' })).not.toBeInTheDocument();
 		const input = await screen.findByRole('textbox', { name: '댓글 입력' });
-		await waitFor(() => expect(input).toHaveFocus());
 		await user.type(input, '재진입 후에도 남길 초안');
 		result.rerender(view(false));
 		result.rerender(view(true));
-		expect(screen.queryByRole('region', { name: '댓글 작성 입력바' })).not.toBeInTheDocument();
-		await user.click(screen.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
 		expect(await screen.findByRole('textbox', { name: '댓글 입력' })).toHaveValue('재진입 후에도 남길 초안');
-		result.rerender(view(true, 1));
-		expect(screen.queryByRole('region', { name: '댓글 작성 입력바' })).not.toBeInTheDocument();
 	});
 
 	it('기존 인용의 작성이 실패하면 하단 입력과 초안을 유지하고 오류를 표시한다', async () => {
@@ -533,18 +525,18 @@ describe('모바일 하단 댓글 입력바', () => {
 		const second = within(screen.getByRole('region', { name: '"오래된 인용문" 댓글' }));
 		await user.click(first.getByRole('button', { name: '댓글 접기' }));
 		expect(first.getByRole('button', { name: '댓글 펼치기' })).toHaveAttribute('aria-expanded', 'false');
-		expect(first.queryByRole('button', { name: '댓글 추가: 활성 인용문' })).not.toBeInTheDocument();
+		expect(first.queryByRole('button', { name: '댓글 작성: 활성 인용문' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('textbox', { name: '댓글 입력' })).not.toBeInTheDocument();
 		await user.click(first.getByRole('button', { name: '댓글 펼치기' }));
-		await user.click(first.getByRole('button', { name: '댓글 추가: 활성 인용문' }));
+		await user.click(first.getByRole('button', { name: '댓글 작성: 활성 인용문' }));
 		const footer = await screen.findByRole('region', { name: '댓글 작성 입력바' });
 		const input = within(footer).getByRole('textbox', { name: '댓글 입력' });
 		await waitFor(() => expect(input).toHaveFocus());
 		expect(first.getByRole('button', { name: '댓글 접기' })).toHaveAttribute('aria-expanded', 'true');
 		await user.type(input, '첫 인용에 남길 초안');
 		await user.click(second.getByRole('button', { name: '댓글 접기' }));
-		expect(first.getByRole('button', { name: '댓글 추가: 활성 인용문' })).toHaveAttribute('aria-pressed', 'true');
-		expect(second.queryByRole('button', { name: '댓글 추가: 오래된 인용문' })).not.toBeInTheDocument();
+		expect(first.getByRole('button', { name: '댓글 작성: 활성 인용문' })).toHaveAttribute('aria-pressed', 'true');
+		expect(second.queryByRole('button', { name: '댓글 작성: 오래된 인용문' })).not.toBeInTheDocument();
 		expect(input).toHaveValue('첫 인용에 남길 초안');
 		expect(input).not.toHaveFocus();
 	});

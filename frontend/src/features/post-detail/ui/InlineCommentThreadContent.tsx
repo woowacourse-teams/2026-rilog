@@ -20,6 +20,7 @@ interface InlineCommentThreadContentProps {
 	renderInput?: (isOpen: boolean) => ReactNode;
 	onSelectComposer?: () => void;
 	isComposerSelected?: boolean;
+	showAddButton?: boolean;
 }
 
 export default function InlineCommentThreadContent({
@@ -30,6 +31,7 @@ export default function InlineCommentThreadContent({
 	renderInput,
 	onSelectComposer,
 	isComposerSelected = false,
+	showAddButton = true,
 }: InlineCommentThreadContentProps) {
 	const [isExpanded, setIsExpanded] = useState(true);
 	const isOpen = !isCollapsible || isExpanded;
@@ -135,11 +137,11 @@ export default function InlineCommentThreadContent({
 								</li>
 							</ul>
 						)}
-						{onSelectComposer !== undefined && (
+						{showAddButton && onSelectComposer !== undefined && (
 							<Button
 								variant="ghost"
 								size="sm"
-								aria-label={`댓글 추가: ${anchor.selectedText}`}
+								aria-label={`댓글 작성: ${anchor.selectedText}`}
 								aria-pressed={isComposerSelected}
 								className="min-h-11 px-2!"
 								onClick={onSelectComposer}
@@ -147,7 +149,7 @@ export default function InlineCommentThreadContent({
 								<svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" className="size-4" fill="none">
 									<path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 								</svg>
-								댓글 추가
+								댓글 작성
 							</Button>
 						)}
 						{renderInput && <div aria-hidden={!isOpen}>{renderInput(isOpen)}</div>}

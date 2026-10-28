@@ -92,7 +92,7 @@ export default function PostCommentsPanelContent({
 	const activeThread =
 		threads.find(({ anchor }) => anchor.anchorId === mobileAnchorId) ??
 		(mode !== 'all' ? threads.find(({ anchor }) => anchor.anchorId === composerAnchorId) : undefined) ??
-		(mode !== 'all' && threads.length === 1 ? threads[0] : undefined);
+		(threads.length === 1 ? threads[0] : undefined);
 	const canShowMobileComposer =
 		isMobile &&
 		isInitialized &&
@@ -165,10 +165,18 @@ export default function PostCommentsPanelContent({
 											isMobile
 												? {
 														host: mobileComposerHost,
+														showAddButton: threads.length > 1,
 														isActive: activeThread?.anchor.anchorId === thread.anchor.anchorId,
 														shouldFocus:
 															mobileAnchorId === thread.anchor.anchorId || composerAnchorId === thread.anchor.anchorId,
 														onActivate: () => setMobileReply({ session, anchorId: thread.anchor.anchorId }),
+														onSubmitted: () => {
+															setMobileReply((current) =>
+																current.session === session && current.anchorId === thread.anchor.anchorId
+																	? { session, anchorId: null }
+																	: current,
+															);
+														},
 													}
 												: undefined
 										}
