@@ -40,7 +40,7 @@ const createComposerThreadGroup = (
 	],
 });
 
-const openOwnedComments = async (page: Page, width = 1100) => {
+const openOwnedComments = async (page: Page, width = 1100, open = true) => {
 	await page.setViewportSize({ width, height: 900 });
 	const group = createComposerThreadGroup(91, 'Rilog', 0, { canDelete: true, canEdit: true });
 	await page.route('https://api.rilog.test/**', async (route) => {
@@ -60,8 +60,24 @@ const openOwnedComments = async (page: Page, width = 1100) => {
 	await expect(entry).toBeVisible();
 	await expect(entry).toContainText('전체 보기');
 	await expect(page.getByRole('button', { name: '댓글 작성', exact: true })).toHaveCount(0);
-	await entry.click();
+	if (open) await entry.click();
 };
+
+test('PC 전체 보기 버튼이 화면 밖이면 플로팅 버튼으로 댓글을 열 수 있다', async ({ page }) => {
+	await openOwnedComments(page, 1100, false);
+	const original = page.getByRole('button', { name: /전체 댓글.*보기/ }).filter({ hasText: '전체 보기' });
+	const floating = page.getByRole('button', { name: /전체 댓글.*보기/ }).filter({ hasText: '전체 댓글' });
+	await original.scrollIntoViewIfNeeded();
+	await expect(floating).toHaveCount(0);
+	await page.evaluate(() => window.scrollBy(0, 1200));
+	await expect(floating).toBeVisible();
+	await floating.click();
+	await expect(page.getByRole('dialog', { name: '전체 인라인 댓글 1' })).toBeVisible();
+	await page.goBack();
+	await expect(floating).toBeVisible();
+	await original.scrollIntoViewIfNeeded();
+	await expect(floating).toHaveCount(0);
+});
 
 test('도킹 댓글창을 닫고 늦게 수정이 실패해도 숨은 오류 모달이 열리지 않는다', async ({ page }) => {
 	await openOwnedComments(page, 1440);
