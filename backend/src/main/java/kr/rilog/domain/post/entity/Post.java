@@ -150,6 +150,18 @@ public class Post extends BaseEntity {
                 .build();
     }
 
+    public static Post createImportedToRilog(Blog rilog, User writer, PostDetail detail, LocalDateTime publishedAt) {
+        Post post = create(rilog, writer, detail, null);
+        post.publishedAt = Objects.requireNonNull(publishedAt);
+        return post;
+    }
+
+    public static Post createImportedToColog(Blog colog, Blog rilog, User writer, PostDetail detail, LocalDateTime publishedAt) {
+        Post post = create(colog, rilog, writer, detail, null);
+        post.publishedAt = Objects.requireNonNull(publishedAt);
+        return post;
+    }
+
     public static Post createTheRilog(Blog blog, User writer, PostDetail detail, Chapter chapter, TheRilogPostMetadata metadata) {
         return createTheRilog(blog, writer, detail, chapter, metadata, LocalDateTime.now());
     }
