@@ -26,10 +26,9 @@ import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButt
 import PostCommentsDockedCard from '@/features/post-detail/ui/PostCommentsDockedCard';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
-import CommentIcon from '@/shared/assets/icons/comment.svg';
-import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
 
+import MobileAllCommentsButton from './MobileAllCommentsButton';
 import styles from './PostDetail.module.css';
 import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
@@ -94,9 +93,6 @@ export default function PostDetailCommentsWorkspace({
 		navigationCleanup.current = null;
 	}, []);
 	useEffect(() => cancelAnchorNavigation, [cancelAnchorNavigation]);
-	useLayoutEffect(() => {
-		if (isCommentsSidebarOpen) cancelAnchorNavigation();
-	}, [isCommentsSidebarOpen, cancelAnchorNavigation]);
 	const navigateToThread = useCallback((thread: InlineCommentThreadModel) => {
 		navigationCleanup.current?.();
 		const getHighlights = () =>
@@ -132,6 +128,9 @@ export default function PostDetailCommentsWorkspace({
 	const [scrollResetKey, setScrollResetKey] = useState(0);
 	const hasHandledDeepLinkNavigationRef = useRef(false);
 	const [isDeletedCommentToastVisible, setIsDeletedCommentToastVisible] = useState(showDeletedCommentToast);
+	useLayoutEffect(() => {
+		if (isCommentsSidebarOpen) cancelAnchorNavigation();
+	}, [isCommentsSidebarOpen, createRequestId, cancelAnchorNavigation]);
 	const visibleThreads = selection
 		? []
 		: createdCommentId !== null
@@ -185,8 +184,7 @@ export default function PostDetailCommentsWorkspace({
 	);
 
 	const handleInlineCommentCreate = useCallback(
-		(target: InlineCommentSelectionTarget) => {
-			cancelAnchorNavigation();
+		(target: InlineCommentSelectionTarget, entrySource: InlineCommentCreateEntrySource = 'selection_toolbar') => {
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCreatedCommentId(null);
 			setDeepLinkedSelectionId(null);
@@ -201,7 +199,7 @@ export default function PostDetailCommentsWorkspace({
 						anchor.selectedText === target.selectedText,
 				);
 			setSelection(existingThread ? null : target);
-			setCommentEntrySource('selection_toolbar');
+			setCommentEntrySource(entrySource);
 			setComposerAnchorId(existingThread?.anchor.anchorId ?? null);
 			setSidebarMode('single');
 			setOpenRequest(
@@ -212,7 +210,7 @@ export default function PostDetailCommentsWorkspace({
 			setCreateRequestId((previous) => previous + 1);
 			openCommentView('comments');
 		},
-		[inlineCommentBlocks, openCommentView, cancelAnchorNavigation],
+		[inlineCommentBlocks, openCommentView],
 	);
 
 	const handleSelectionCreate = useInlineCommentAuthAction({
@@ -297,19 +295,11 @@ export default function PostDetailCommentsWorkspace({
 			</aside>
 
 			{isMobileViewport && (
-				<div
+				<MobileAllCommentsButton
+					count={inlineCommentCount}
 					hidden={view !== 'closed'}
-					className="fixed right-5 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 md:hidden"
-				>
-					<Button
-						className="h-12! rounded-full! px-5! shadow-sm"
-						aria-label={`전체 댓글 ${inlineCommentCount}개 보기`}
-						onClick={handleAllCommentsOpen}
-					>
-						<CommentIcon aria-hidden="true" focusable="false" className="size-5 shrink-0" />
-						전체 댓글
-					</Button>
-				</div>
+					onClick={handleAllCommentsOpen}
+				/>
 			)}
 
 			<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
