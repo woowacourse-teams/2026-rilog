@@ -1,7 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
-
 import type { InlineCommentSelectionTarget, InlineCommentSidebarMode } from '../model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
@@ -14,8 +12,9 @@ import XIcon from '@/shared/assets/icons/x.svg';
 import Button from '@/shared/ui/button/Button';
 import Divider from '@/shared/ui/divider/Divider';
 
-import { COMMENT_PANEL_SESSION_CONTEXT } from '../hooks/use-comment-panel-session';
+import { useCommentPanelSessionValue } from '../hooks/use-comment-panel-session';
 
+import CommentPanelProviders from './CommentPanelProviders';
 import InlineCommentComposer from './InlineCommentComposer';
 import InlineCommentThread from './InlineCommentThread';
 
@@ -45,7 +44,7 @@ export default function PostCommentsPanelContent({
 	titleRef,
 	inputRef,
 	showDeletedCommentToast = false,
-	isOpen = true,
+	isOpen,
 	scrollResetKey = 0,
 	onCreated,
 	isLoading = false,
@@ -60,13 +59,13 @@ export default function PostCommentsPanelContent({
 	onClose,
 	onNavigate,
 }: PostCommentsPanelContentProps) {
+	const session = useCommentPanelSessionValue(isOpen, scrollResetKey);
 	const { isAuthenticated, isInitialized } = useAuth();
-	const session = useMemo(() => ({ isOpen, scrollResetKey }), [isOpen, scrollResetKey]);
 	const login = useAuthAction({ entrySurface: 'sidebar' });
 	const commentCount = threads.reduce((total, thread) => total + thread.anchor.commentCount, 0);
 
 	return (
-		<COMMENT_PANEL_SESSION_CONTEXT value={session}>
+		<CommentPanelProviders session={session} entrySource={entrySource}>
 			{showDeletedCommentToast && <NotificationCommentDeletedToast />}
 			<div className="flex h-full min-h-0 flex-col">
 				<header className="flex h-15 shrink-0 items-center justify-between border-b border-border-default px-5">
@@ -81,13 +80,7 @@ export default function PostCommentsPanelContent({
 
 				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 					{selection != null ? (
-						<InlineCommentComposer
-							entrySource={entrySource}
-							postId={postId}
-							selection={selection}
-							inputRef={inputRef}
-							onCreated={onCreated}
-						/>
+						<InlineCommentComposer postId={postId} selection={selection} inputRef={inputRef} onCreated={onCreated} />
 					) : isLoading ? (
 						<p role="status" className="px-5 py-6 text-body-4 text-text-placeholder">
 							인라인 댓글을 불러오는 중입니다.
@@ -139,6 +132,6 @@ export default function PostCommentsPanelContent({
 					</footer>
 				)}
 			</div>
-		</COMMENT_PANEL_SESSION_CONTEXT>
+		</CommentPanelProviders>
 	);
 }

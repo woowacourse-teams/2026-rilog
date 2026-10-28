@@ -40,8 +40,8 @@ const createComposerThreadGroup = (
 	],
 });
 
-const openOwnedComments = async (page: Page) => {
-	await page.setViewportSize({ width: 1100, height: 900 });
+const openOwnedComments = async (page: Page, width = 1100) => {
+	await page.setViewportSize({ width, height: 900 });
 	const group = createComposerThreadGroup(91, 'Rilog', 0, { canDelete: true, canEdit: true });
 	await page.route('https://api.rilog.test/**', async (route) => {
 		const path = new URL(route.request().url()).pathname;
@@ -58,6 +58,30 @@ const openOwnedComments = async (page: Page) => {
 	await page.goto('/@the_rilog/posts/101');
 	await page.getByRole('button', { name: /전체 댓글.*보기/ }).click();
 };
+
+test('도킹 댓글창을 닫고 늦게 수정이 실패해도 숨은 오류 모달이 열리지 않는다', async ({ page }) => {
+	await openOwnedComments(page, 1440);
+	const pending = Promise.withResolvers<void>();
+	await page.route('**/v1/posts/101/comment-anchors/991', async (route) => {
+		await pending.promise;
+		await route.fulfill({ status: 400, json: { status: 400, message: '실패', data: null } });
+	});
+	const panel = page.getByRole('region', { name: '전체 인라인 댓글 1', exact: true });
+	await expect(panel).toBeVisible();
+	await panel.getByRole('button', { name: '수정', exact: true }).click();
+	await panel.getByRole('textbox', { name: '댓글 수정' }).fill('닫은 뒤에도 남길 수정 초안');
+	const requested = page.waitForRequest((request) => request.method() === 'PATCH');
+	await panel.getByRole('button', { name: '저장', exact: true }).click();
+	await requested;
+	await panel.getByRole('button', { name: '댓글 사이드바 닫기' }).click();
+	await expect(panel).toBeHidden();
+	const response = page.waitForResponse((item) => item.request().method() === 'PATCH');
+	pending.resolve();
+	await response;
+	await page.getByRole('button', { name: /전체 댓글.*보기/ }).click();
+	await expect(page.getByRole('textbox', { name: '댓글 수정' })).toHaveValue('닫은 뒤에도 남길 수정 초안');
+	await expect(page.locator('dialog:modal')).toHaveCount(0);
+});
 
 test('삭제 확인창에서 뒤로가기로 댓글창을 닫으면 본문을 다시 클릭할 수 있다', async ({ page }) => {
 	await openOwnedComments(page);

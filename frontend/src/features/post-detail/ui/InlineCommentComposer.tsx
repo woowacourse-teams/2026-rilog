@@ -13,6 +13,7 @@ import { useCreatePostCommentAnchorMutation } from '@/shared/api/posts/mutations
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 
 import { useInlineCommentDraft } from '../hooks/use-inline-comment-draft';
+import { useInlineCommentEntrySource } from '../hooks/use-inline-comment-entry-source';
 
 import InlineCommentInput from './InlineCommentInput';
 import InlineCommentThreadContent from './InlineCommentThreadContent';
@@ -26,7 +27,9 @@ interface InlineCommentComposerProps {
 }
 
 export default function InlineCommentComposer(props: InlineCommentComposerProps) {
-	const { postId, selection, inputRef, onCreated, entrySource = 'selection_toolbar' } = props;
+	const { postId, selection, inputRef, onCreated, entrySource: explicitEntrySource } = props;
+	const inheritedEntrySource = useInlineCommentEntrySource();
+	const entrySource = explicitEntrySource ?? inheritedEntrySource;
 	const draftId = `selection:${JSON.stringify([postId, selection.blockId, selection.startOffset, selection.endOffset, selection.selectedText])}`;
 	const { commentText, onCommentChange } = useInlineCommentDraft(draftId);
 

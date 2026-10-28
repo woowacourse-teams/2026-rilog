@@ -5,6 +5,7 @@ import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import type { BaseModalAccessibility } from './modal.types';
 import type { CSSProperties, MouseEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
 
+import { MODAL_OPEN_CONTEXT } from './modal-open-context';
 import { BASE_MODAL_CLASS_NAME } from './modal.styles';
 
 interface BaseModalProps {
@@ -164,7 +165,7 @@ export default function BaseModal({
 			}
 			onClick={handleBackdropClick}
 		>
-			{children}
+			<MODAL_OPEN_CONTEXT value={open}>{children}</MODAL_OPEN_CONTEXT>
 		</dialog>
 	);
 }

@@ -9,8 +9,9 @@ import PostCommentsPanelContent from './PostCommentsPanelContent';
 
 interface PostCommentsSidebarProps extends Omit<
 	Parameters<typeof PostCommentsPanelContent>[0],
-	'titleId' | 'titleRef' | 'inputRef' | 'isOpen'
+	'titleId' | 'titleRef' | 'inputRef'
 > {
+	isOpen?: never;
 	open: boolean;
 }
 
@@ -30,13 +31,7 @@ export default function PostCommentsSidebar({ open, ...contentProps }: PostComme
 			initialFocusRef={shouldFocusInput ? inputRef : titleRef}
 			className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-none translate-x-full overflow-hidden border-l border-border-default transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none sm:w-112"
 		>
-			<PostCommentsPanelContent
-				{...contentProps}
-				isOpen={open}
-				titleId={titleId}
-				titleRef={titleRef}
-				inputRef={inputRef}
-			/>
+			<PostCommentsPanelContent {...contentProps} titleId={titleId} titleRef={titleRef} inputRef={inputRef} />
 		</BaseModal>
 	);
 }
