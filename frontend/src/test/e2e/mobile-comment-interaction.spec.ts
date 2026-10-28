@@ -803,8 +803,8 @@ test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 
 	await expect(page.getByRole('heading', { name: '전체 인라인 댓글 2' })).toBeFocused();
 	const first = page.getByRole('region', { name: '"브라우저에서" 댓글', exact: true });
 	const second = page.getByRole('region', { name: '"선택하여" 댓글', exact: true });
-	const firstTarget = first.getByRole('button', { name: '댓글 추가: 브라우저에서', exact: true });
-	const secondTarget = second.getByRole('button', { name: '댓글 추가: 선택하여', exact: true });
+	const firstTarget = first.getByRole('button', { name: '댓글 작성: 브라우저에서', exact: true });
+	const secondTarget = second.getByRole('button', { name: '댓글 작성: 선택하여', exact: true });
 	await expect(first.getByRole('button', { name: '댓글 쓰기', exact: true })).toHaveCount(0);
 	await expect(second.getByRole('button', { name: '댓글 쓰기', exact: true })).toHaveCount(0);
 	await firstTarget.click();
@@ -840,7 +840,8 @@ test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 
 	);
 	await composer.getByRole('button', { name: '작성', exact: true }).click();
 	expect((await submitted).postDataJSON()).toEqual({ content: '첫 번째 인용문 초안' });
-	await expect(input).toHaveValue('');
+	await expect(composer).toHaveCount(0);
+	await expect(firstTarget).toHaveAttribute('aria-pressed', 'false');
 	await secondTarget.click();
 	await expect(input).toHaveValue('두 번째 인용문 초안');
 });

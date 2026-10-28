@@ -167,10 +167,10 @@ test('링크·버튼과 입력창에서 시작한 제스처는 시트를 잡지 
 	const before = await dialog.boundingBox();
 	await drag(page, dialog.getByRole('link', { name: '댓글 작성자', exact: true }), 100);
 	await expectExpanded(page, false);
-	await drag(page, dialog.getByRole('button', { name: '댓글 추가: 브라우저에서', exact: true }), 100);
-	await expectExpanded(page, false);
 	const input = dialog.getByRole('textbox', { name: '댓글 입력' });
 	await input.fill('입력창은 계속 사용할 수 있습니다.');
+	await drag(page, dialog.getByRole('button', { name: '작성', exact: true }), 100);
+	await expectExpanded(page, false);
 	await drag(page, input, -90);
 	await expect(input).toHaveValue('입력창은 계속 사용할 수 있습니다.');
 	await expectExpanded(page, false);
@@ -237,8 +237,7 @@ for (const width of [390, 1440]) {
 			await page.getByRole('button', { name: /전체 댓글 \d+개 보기/ }).click();
 			await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
 			if (width < 768) {
-				await expect(input).toHaveCount(0);
-				await page.getByRole('button', { name: '댓글 추가: 브라우저에서', exact: true }).click();
+				await expect(page.getByRole('button', { name: '댓글 작성: 브라우저에서', exact: true })).toHaveCount(0);
 			}
 			await expect(input).toHaveValue('첫째 줄\n둘째 줄\n셋째 줄\n넷째 줄\n다섯째 줄');
 		}
