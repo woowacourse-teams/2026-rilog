@@ -11,6 +11,7 @@ import { analytics } from '@/features/analytics/model/events';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
+import { findInlineCommentRoot } from '@/features/post-detail/lib/inline-comment-range';
 import { navigateInlineCommentAnchor } from '@/features/post-detail/lib/navigate-inline-comment-anchor';
 import type { InlineCommentBlockModel } from '@/features/post-detail/model/inline-comment';
 import type {
@@ -49,10 +50,13 @@ const findAnchorElement = (anchorId: number) =>
 		(element) => element.dataset.inlineCommentAnchorId === String(anchorId),
 	);
 
+const findBlockElement = (blockId: string) => {
+	const article = document.querySelector<HTMLElement>('[data-post-detail-content]');
+	return article === null ? null : findInlineCommentRoot(article, blockId);
+};
+
 const scrollToThreadAnchor = (thread: InlineCommentThreadModel) => {
-	const target =
-		findAnchorElement(thread.anchor.anchorId) ??
-		document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`);
+	const target = findAnchorElement(thread.anchor.anchorId) ?? findBlockElement(thread.blockId);
 	target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
@@ -91,8 +95,7 @@ export default function PostDetailCommentsWorkspace({
 					`[data-inline-comment-highlight][data-inline-comment-anchor-id="${thread.anchor.anchorId}"]`,
 				),
 			);
-		const target =
-			document.querySelector<HTMLElement>(`[data-inline-comment-block-id="${thread.blockId}"]`) ?? getHighlights()[0];
+		const target = findBlockElement(thread.blockId) ?? getHighlights()[0];
 		if (target) navigationCleanup.current = navigateInlineCommentAnchor(target, getHighlights);
 	}, []);
 	const handleCommentsClosed = useCallback(() => {
