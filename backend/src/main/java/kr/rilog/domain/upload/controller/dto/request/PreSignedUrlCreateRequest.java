@@ -4,7 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import kr.rilog.domain.upload.domain.enums.ImagePurpose;
 import kr.rilog.domain.upload.domain.enums.UploadType;
+import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 
 public record PreSignedUrlCreateRequest(
 
@@ -39,7 +41,17 @@ public record PreSignedUrlCreateRequest(
                 examples = {"IMAGE", "FILE"}
         )
         @NotNull(message = "type은 필수입니다.")
-        UploadType type
+        UploadType type,
+
+        @Schema(
+                description = "이미지 목적. type이 IMAGE일 때만 사용하고 FILE이면 무시한다. 생략하면 CONTENT로 처리한다.",
+                examples = {"PROFILE", "CONTENT"}
+        )
+        ImagePurpose imagePurpose
 
 ) {
+
+    public PresignedUrlCreateCommand toCommand() {
+        return new PresignedUrlCreateCommand(fileName, contentType, size, type, imagePurpose);
+    }
 }

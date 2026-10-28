@@ -1,5 +1,6 @@
 package kr.rilog.domain.upload.service;
 
+import kr.rilog.domain.upload.domain.enums.ImagePurpose;
 import kr.rilog.domain.upload.domain.enums.TagStatus;
 import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.exception.UploadException;
@@ -73,7 +74,7 @@ public class UploadService {
         String objectKey = createObjectKey(
                 userId,
                 uploadId,
-                command.type(),
+                command,
                 extension
         );
 
@@ -161,17 +162,26 @@ public class UploadService {
                 .build();
     }
 
-    private String createObjectKey(Long userId, UUID uploadId, UploadType type, String extension) {
-        if (type == UploadType.IMAGE) {
-            return imageObjectKeyPolicy.create(userId, uploadId, extension);
+    private String createObjectKey(Long userId, UUID uploadId, PresignedUrlCreateCommand command, String extension) {
+        if (command.type() == UploadType.IMAGE) {
+            return imageObjectKeyPolicy.create(userId, uploadId, resolveImagePurpose(command), extension);
         }
 
         return "%s/%s/%s.%s".formatted(
                 properties.rootDirectory(),
-                type.getDirectory(),
+                command.type().getDirectory(),
                 uploadId,
                 extension
         );
+    }
+
+    // 프론트가 imagePurpose를 보내기 전까지 생략된 요청은 기존 용도인 일반 이미지로 처리한다.
+    private ImagePurpose resolveImagePurpose(PresignedUrlCreateCommand command) {
+        if (command.imagePurpose() == null) {
+            return ImagePurpose.CONTENT;
+        }
+
+        return command.imagePurpose();
     }
 
     private String createTaggingQuery(TagStatus status) {

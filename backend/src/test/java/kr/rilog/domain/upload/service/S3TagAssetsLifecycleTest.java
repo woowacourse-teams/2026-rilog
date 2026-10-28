@@ -7,6 +7,8 @@ import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -166,6 +168,33 @@ class S3TagAssetsLifecycleTest {
     void excludeLegacyImageFromDetachTargets() {
         when(objectKeyResolver.resolve(REMOVED_URL))
                 .thenReturn(Optional.of(LEGACY_KEY));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verify(objectTagger).tag(List.of());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"images/raw", "profiles/raw"})
+    @DisplayName("신경로 원본도 소유자의 이미지만 분리 대상으로 태깅한다.")
+    void detachOnlyOwnedImageInPurposeDirectory(String directory) {
+        String ownedKey = ROOT_DIRECTORY + "/" + directory + "/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        String foreignKey = ROOT_DIRECTORY + "/" + directory + "/8-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(ownedKey));
+        when(objectKeyResolver.resolve(RETAINED_URL)).thenReturn(Optional.of(foreignKey));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL, RETAINED_URL)));
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(ownedKey, TagStatus.TEMPORARY)
+        ));
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 압축본도 분리 대상에서 제외한다.")
+    void excludeForeignCompactImageFromDetachTargets() {
+        String foreignCompactKey = ROOT_DIRECTORY + "/images/compact/8-a38e9b2c-4c13-4f52-9c31-0e52d768d517/750.webp";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(foreignCompactKey));
 
         lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
 

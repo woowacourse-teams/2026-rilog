@@ -11,7 +11,6 @@ import kr.rilog.domain.auth.application.token.TokenType;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.upload.controller.dto.request.PreSignedUrlCreateRequest;
 import kr.rilog.domain.upload.controller.dto.response.PresignedUrlCreateResponse;
-import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +36,7 @@ public class AdminPostImportController implements AdminPostImportApiSpec {
             @PathVariable Long targetUserId,
             @Valid @RequestBody PreSignedUrlCreateRequest request
     ) {
-        var command = new PresignedUrlCreateCommand(
-                request.fileName(), request.contentType(), request.size(), request.type()
-        );
-        var result = importService.createUploadUrl(targetUserId, command);
+        var result = importService.createUploadUrl(targetUserId, request.toCommand());
         return ApiResponse.response(HttpStatus.OK, "PresignedUrl을 정상적으로 발급했습니다",
                 PresignedUrlCreateResponse.from(result));
     }

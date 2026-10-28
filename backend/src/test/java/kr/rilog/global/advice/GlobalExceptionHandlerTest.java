@@ -400,7 +400,7 @@ class GlobalExceptionHandlerTest {
         @PostMapping("/v1/uploads/presigned-url")
         PresignedUrlCreateResult create() {
             return service.createUploadUrl(7L,
-                    new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.pdf", "application/pdf", 1024, UploadType.FILE));
+                    new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.pdf", "application/pdf", 1024, UploadType.FILE, null));
         }
     }
 

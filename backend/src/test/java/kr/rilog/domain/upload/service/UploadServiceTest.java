@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import kr.rilog.domain.upload.domain.enums.ImagePurpose;
 import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.exception.UploadErrorInformation;
 import kr.rilog.domain.upload.exception.UploadException;
@@ -51,7 +52,7 @@ class UploadServiceTest {
 
     private static final Long USER_ID = 7L;
     private static final String OBJECT_KEY =
-            "rilog/uploads/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png";
+            "rilog/uploads/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
 
     @Mock
     private S3Presigner s3Presigner;
@@ -92,8 +93,8 @@ class UploadServiceTest {
     void presignFailurePreservesContext(String failureType, RuntimeException cause) {
         var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
         var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy);
-        var command = new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.png", "image/png", 1024, UploadType.IMAGE);
-        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq("png"))).thenReturn(OBJECT_KEY);
+        var command = new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.png", "image/png", 1024, UploadType.IMAGE, ImagePurpose.CONTENT);
+        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(ImagePurpose.CONTENT), eq("png"))).thenReturn(OBJECT_KEY);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenThrow(cause);
 
         assertThatThrownBy(() -> service.createUploadUrl(USER_ID, command))
@@ -122,7 +123,7 @@ class UploadServiceTest {
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenThrow(cause);
 
         assertThatThrownBy(() -> service.createUploadUrl(USER_ID,
-                new PresignedUrlCreateCommand("file.pdf", "application/pdf", 1024, UploadType.FILE)))
+                new PresignedUrlCreateCommand("file.pdf", "application/pdf", 1024, UploadType.FILE, null)))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(GlobalExceptionInformation.INTERNAL_SERVER_ERROR.getMessage())
                 .hasCause(cause)
@@ -146,9 +147,9 @@ class UploadServiceTest {
     void signsUploadWithInitialTag(UploadType type, String contentType, String expectedStatus) throws Exception {
         var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
         var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy);
-        var command = new PresignedUrlCreateCommand("file", contentType, 1024, type);
+        var command = new PresignedUrlCreateCommand("file", contentType, 1024, type, null);
         if (type == UploadType.IMAGE) {
-            when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq("png"))).thenReturn(OBJECT_KEY);
+            when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(ImagePurpose.CONTENT), eq("png"))).thenReturn(OBJECT_KEY);
         }
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
         when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
@@ -173,7 +174,7 @@ class UploadServiceTest {
     ) {
         var service = new UploadService(s3Presigner, s3Client,
                 new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
-        var command = new PresignedUrlCreateCommand("file", contentType, size, type);
+        var command = new PresignedUrlCreateCommand("file", contentType, size, type, null);
 
         assertThatThrownBy(() -> service.createUploadUrl(USER_ID, command))
                 .isInstanceOf(UploadException.class).hasMessage(error.getMessage());
@@ -191,14 +192,14 @@ class UploadServiceTest {
     void createImageUploadUrlWithSupportedExtension(String contentType, String extension) throws Exception {
         var service = new UploadService(s3Presigner, s3Client,
                 new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
-        var command = new PresignedUrlCreateCommand("image", contentType, 1024, UploadType.IMAGE);
-        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(extension))).thenReturn(OBJECT_KEY);
+        var command = new PresignedUrlCreateCommand("image", contentType, 1024, UploadType.IMAGE, ImagePurpose.CONTENT);
+        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(ImagePurpose.CONTENT), eq(extension))).thenReturn(OBJECT_KEY);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
         when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
 
         service.createUploadUrl(USER_ID, command);
 
-        verify(imageObjectKeyPolicy).create(eq(USER_ID), any(UUID.class), eq(extension));
+        verify(imageObjectKeyPolicy).create(eq(USER_ID), any(UUID.class), eq(ImagePurpose.CONTENT), eq(extension));
     }
 
     @ParameterizedTest
@@ -214,7 +215,7 @@ class UploadServiceTest {
     void createFileUploadUrlWithSupportedExtension(String contentType, String extension) throws Exception {
         var service = new UploadService(s3Presigner, s3Client,
                 new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
-        var command = new PresignedUrlCreateCommand("file", contentType, 1024, UploadType.FILE);
+        var command = new PresignedUrlCreateCommand("file", contentType, 1024, UploadType.FILE, null);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
         when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
 
@@ -243,9 +244,10 @@ class UploadServiceTest {
                 "image.png",
                 "image/png",
                 1024,
-                UploadType.IMAGE
+                UploadType.IMAGE,
+                ImagePurpose.CONTENT
         );
-        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq("png")))
+        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(ImagePurpose.CONTENT), eq("png")))
                 .thenReturn(OBJECT_KEY);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class)))
                 .thenReturn(presignedRequest);
@@ -256,7 +258,7 @@ class UploadServiceTest {
         PresignedUrlCreateResult result = uploadService.createUploadUrl(USER_ID, command);
 
         ArgumentCaptor<UUID> uploadIdCaptor = ArgumentCaptor.forClass(UUID.class);
-        verify(imageObjectKeyPolicy).create(eq(USER_ID), uploadIdCaptor.capture(), eq("png"));
+        verify(imageObjectKeyPolicy).create(eq(USER_ID), uploadIdCaptor.capture(), eq(ImagePurpose.CONTENT), eq("png"));
         ArgumentCaptor<PutObjectPresignRequest> presignRequestCaptor =
                 ArgumentCaptor.forClass(PutObjectPresignRequest.class);
         verify(s3Presigner).presignPutObject(presignRequestCaptor.capture());
@@ -264,5 +266,41 @@ class UploadServiceTest {
         assertThat(result.objectKey()).isEqualTo(OBJECT_KEY);
         assertThat(presignRequestCaptor.getValue().putObjectRequest().key()).isEqualTo(OBJECT_KEY);
         assertThat(appender.list).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "PROFILE,PROFILE",
+            "CONTENT,CONTENT",
+            "null,CONTENT"
+    }, nullValues = "null")
+    @DisplayName("이미지 목적에 맞는 원본 키를 만들고, 목적이 없으면 일반 이미지로 처리한다.")
+    void createImageObjectKeyByPurpose(ImagePurpose requested, ImagePurpose expected) throws Exception {
+        var service = new UploadService(s3Presigner, s3Client,
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
+        var command = new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE, requested);
+        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(expected), eq("png"))).thenReturn(OBJECT_KEY);
+        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
+        when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
+
+        PresignedUrlCreateResult result = service.createUploadUrl(USER_ID, command);
+
+        verify(imageObjectKeyPolicy).create(eq(USER_ID), any(UUID.class), eq(expected), eq("png"));
+        assertThat(result.objectKey()).isEqualTo(OBJECT_KEY);
+    }
+
+    @Test
+    @DisplayName("일반 파일 업로드는 이미지 목적을 무시하고 파일 경로를 사용한다.")
+    void fileUploadIgnoresImagePurpose() throws Exception {
+        var service = new UploadService(s3Presigner, s3Client,
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
+        var command = new PresignedUrlCreateCommand("file.pdf", "application/pdf", 1024, UploadType.FILE, ImagePurpose.PROFILE);
+        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
+        when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
+
+        PresignedUrlCreateResult result = service.createUploadUrl(USER_ID, command);
+
+        assertThat(result.objectKey()).isEqualTo("rilog/uploads/files/%s.pdf".formatted(result.uploadId()));
+        verifyNoInteractions(imageObjectKeyPolicy);
     }
 }

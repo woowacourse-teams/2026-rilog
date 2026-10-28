@@ -15,6 +15,7 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.upload.domain.enums.ImagePurpose;
 import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
@@ -124,7 +125,7 @@ class AdminPostImportControllerTest {
         var headers = Map.of("x-amz-tagging", List.of("status=CONFIRMED"));
         when(importService.createUploadUrl(eq(TARGET_ID), any())).thenReturn(new PresignedUrlCreateResult(
                 UUID.fromString("b38e9b2c-4c13-4f52-9c31-0e52d768d517"),
-                "rilog/uploads/images/originals/123-example.png",
+                "rilog/uploads/profiles/raw/123-example/original.png",
                 "https://storage.example/upload", headers, Instant.parse("2030-01-01T00:00:00Z")
         ));
 
@@ -133,13 +134,13 @@ class AdminPostImportControllerTest {
                         .header("Authorization", "Bearer admin-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"fileName":"image.png","contentType":"image/png","size":1024,"type":"IMAGE"}
+                                {"fileName":"image.png","contentType":"image/png","size":1024,"type":"IMAGE","imagePurpose":"PROFILE"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.headers['x-amz-tagging'][0]").value("status=CONFIRMED"));
 
         verify(importService).createUploadUrl(TARGET_ID,
-                new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE));
+                new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE, ImagePurpose.PROFILE));
     }
 
     @ParameterizedTest
