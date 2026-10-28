@@ -12,10 +12,35 @@ export const COMMENT_SHEET_ENTER_DURATION_MS = 320;
 export const COMMENT_SHEET_EXIT_DURATION_MS = 240;
 
 const subscribeViewport = (onChange: () => void) => {
+	let frame: number | undefined;
+	const followKeyboardViewport = (input: EventTarget | null) => {
+		if (!(input instanceof HTMLTextAreaElement) || !input.closest('[data-mobile-comment-composer]')) return;
+		if (frame !== undefined) window.cancelAnimationFrame(frame);
+		const started = performance.now();
+		let lastHeight = window.visualViewport?.height;
+		let lastTop = window.visualViewport?.offsetTop;
+		const sample = () => {
+			if (document.activeElement !== input || performance.now() - started > 1800) return;
+			const height = window.visualViewport?.height;
+			const top = window.visualViewport?.offsetTop;
+			if (height !== lastHeight || top !== lastTop) {
+				lastHeight = height;
+				lastTop = top;
+				onChange();
+			}
+			frame = window.requestAnimationFrame(sample);
+		};
+		frame = window.requestAnimationFrame(sample);
+	};
+	const onFocus = (event: FocusEvent) => followKeyboardViewport(event.target);
+	document.addEventListener('focusin', onFocus);
+	followKeyboardViewport(document.activeElement);
 	window.visualViewport?.addEventListener('resize', onChange);
 	window.visualViewport?.addEventListener('scroll', onChange);
 	window.addEventListener('resize', onChange);
 	return () => {
+		document.removeEventListener('focusin', onFocus);
+		if (frame !== undefined) window.cancelAnimationFrame(frame);
 		window.visualViewport?.removeEventListener('resize', onChange);
 		window.visualViewport?.removeEventListener('scroll', onChange);
 		window.removeEventListener('resize', onChange);

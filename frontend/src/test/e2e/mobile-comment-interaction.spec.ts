@@ -433,6 +433,11 @@ test('처음 빠르게 작성창을 열어 키보드가 올라와도 하단 입�
 						capture();
 					}
 				}
+				// Some mobile keyboard transitions update the visual viewport before a resize event arrives.
+				height = 380;
+				offsetTop = 18;
+				for (let index = 0; index < 4; index += 1) await nextFrame();
+				capture();
 				record.finished = true;
 			})();
 		});

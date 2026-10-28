@@ -200,9 +200,11 @@ export default function PostCommentsPanelContent({
 						className="shrink-0 border-t border-border-default bg-surface px-4 py-3"
 					>
 						{mode === 'all' && activeThread !== undefined && (
-							<p aria-label="댓글 대상 인용문" className="mb-2 truncate text-label-2 text-text-secondary">
-								{activeThread.anchor.selectedText}
-							</p>
+							<div className="mb-3 border-l-4 border-border-default py-1 pl-2">
+								<p aria-label="댓글 대상 인용문" className="line-clamp-2 text-body-4 leading-6 text-text-secondary">
+									{activeThread.anchor.selectedText}
+								</p>
+							</div>
 						)}
 					</div>
 				)}
