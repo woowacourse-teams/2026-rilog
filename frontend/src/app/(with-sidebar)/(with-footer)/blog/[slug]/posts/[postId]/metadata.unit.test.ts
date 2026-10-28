@@ -7,6 +7,12 @@ import { createPostMetadata } from './metadata';
 const post = createPostDetailFixture();
 
 describe('createPostMetadata', () => {
+	it('공유 이미지 URL에서 크기 해시를 제거한다', () => {
+		const metadata = createPostMetadata({ ...post, thumbnailUrl: 'posts/cover.png#1200x800' });
+
+		expect(JSON.stringify(metadata.openGraph)).not.toContain('#1200x800');
+		expect(JSON.stringify(metadata.twitter)).not.toContain('#1200x800');
+	});
 	it('공식 콘텐츠의 제공된 요약을 검색·공유 설명에 사용하고 작성자는 유지한다', () => {
 		const metadata = createPostMetadata({
 			...post,
