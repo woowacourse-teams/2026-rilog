@@ -14,7 +14,13 @@ interface PostedSelection {
 	content: string;
 }
 
-const setupPost = async (page: Page, existing: boolean, gate?: Promise<void>, refetchGate?: Promise<void>) => {
+const setupPost = async (
+	page: Page,
+	existing: boolean,
+	gate?: Promise<void>,
+	refetchGate?: Promise<void>,
+	blockId = 'article-101',
+) => {
 	let posted: PostedSelection | null = null;
 	let added = false;
 	await page.route('https://api.rilog.test/**', async (route) => {
@@ -29,7 +35,7 @@ const setupPost = async (page: Page, existing: boolean, gate?: Promise<void>, re
 						title: '기업 기사',
 						content: [
 							{
-								id: 'article-101',
+								id: blockId,
 								type: 'paragraph',
 								props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
 								content: [{ type: 'text', text: '실제 게시글 상세 경로에서 표시하는 테스트 본문입니다.', styles: {} }],
@@ -96,8 +102,8 @@ const setupPost = async (page: Page, existing: boolean, gate?: Promise<void>, re
 					status: 0,
 					message: 'OK',
 					data: path.endsWith('/sidebar')
-						? { anchorGroups: groups.map((anchor) => ({ ...anchor, blockId: 'article-101' })) }
-						: { blocks: groups.length ? [{ blockId: 'article-101', anchorGroups: groups }] : [] },
+						? { anchorGroups: groups.map((anchor) => ({ ...anchor, blockId })) }
+						: { blocks: groups.length ? [{ blockId, anchorGroups: groups }] : [] },
 				},
 			});
 			return;
@@ -409,4 +415,71 @@ test('본문 이동 중 앞으로가기로 댓글을 다시 열면 이전 이동
 	await page.waitForTimeout(400);
 	await expect(dialog).toBeVisible();
 	expect(await page.evaluate(() => Number(Reflect.get(window, 'staleNavigationCalls')))).toBe(0);
+});
+
+test('선택자 특수 문자가 있는 블록의 본문 이동은 해당 인용을 찾는다', async ({ page }) => {
+	const errors: string[] = [];
+	const blockId = 'article-"quoted\\part';
+	page.on('pageerror', (error) => errors.push(error.message));
+	await setupPost(page, true, undefined, undefined, blockId);
+	const dialog = page.getByRole('dialog', { name: /^인라인 댓글 \d+$/ });
+	await expect(dialog).toHaveAttribute('data-state', 'open');
+	const target = page.locator('[data-inline-comment-block-id]').first();
+	await target.evaluate((element, id) => {
+		if (!(element instanceof HTMLElement)) throw new Error('본문 블록이 없습니다.');
+		element.dataset.inlineCommentBlockId = id;
+		window.dispatchEvent(new Event('resize'));
+	}, blockId);
+	await page.evaluate(() => window.scrollTo({ top: 900, behavior: 'instant' }));
+	await expect(target).not.toBeInViewport();
+	await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
+	await expect(dialog).toBeHidden();
+	await expect(target).toBeInViewport();
+	expect(errors).toEqual([]);
+});
+
+test('본문 이동이 시작된 뒤 댓글창을 다시 열면 진행 중인 스크롤이 멈춘다', async ({ page }) => {
+	await setupPost(page, true);
+	const dialog = page.getByRole('dialog', { name: /^인라인 댓글 \d+$/ });
+	await expect(dialog).toHaveAttribute('data-state', 'open');
+	await page.locator('[data-inline-comment-block-id="article-101"]').evaluate((root) => {
+		const host = root.closest<HTMLElement>('.bn-block-outer');
+		if (host === null) throw new Error('본문 블록이 없습니다.');
+		host.style.marginTop = '2400px';
+		window.scrollTo({ top: 0, behavior: 'instant' });
+	});
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await page.evaluate(() => {
+		const movement = new Promise<number>((resolve) => {
+			const reopen = () => {
+				if (window.scrollY === 0 || document.querySelector('dialog:modal') !== null) return;
+				window.removeEventListener('scroll', reopen);
+				window.history.forward();
+				const waitForOpen = () => {
+					if (document.querySelector('dialog:modal') === null) {
+						window.requestAnimationFrame(waitForOpen);
+						return;
+					}
+					const positions = [window.scrollY];
+					const sample = () => {
+						positions.push(window.scrollY);
+						if (positions.length === 12) resolve(Math.max(...positions) - Math.min(...positions));
+						else window.requestAnimationFrame(sample);
+					};
+					window.requestAnimationFrame(sample);
+				};
+				waitForOpen();
+			};
+			window.addEventListener('scroll', reopen);
+		});
+		Reflect.set(window, 'navigationMovement', movement);
+	});
+	await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
+	const movement = await page.evaluate(async () => {
+		const result: unknown = await Reflect.get(window, 'navigationMovement');
+		if (typeof result !== 'number') throw new Error('스크롤 측정값이 없습니다.');
+		return result;
+	});
+	await expect(dialog).toBeVisible();
+	expect(movement).toBeLessThan(1);
 });
