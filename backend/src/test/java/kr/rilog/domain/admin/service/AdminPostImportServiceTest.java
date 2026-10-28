@@ -6,9 +6,7 @@ import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
-import kr.rilog.domain.upload.domain.ImageAsset;
 import kr.rilog.domain.upload.domain.enums.UploadType;
-import kr.rilog.domain.upload.repository.ImageAssetRepository;
 import kr.rilog.domain.upload.service.S3ImageObjectKeyPolicy;
 import kr.rilog.domain.upload.service.UploadService;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
@@ -18,7 +16,6 @@ import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -26,7 +23,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -45,7 +41,6 @@ class AdminPostImportServiceTest {
     private BlogRepository blogs;
     private PostService posts;
     private S3Presigner presigner;
-    private ImageAssetRepository assets;
     private AdminPostImportService service;
 
     @BeforeEach
@@ -54,16 +49,15 @@ class AdminPostImportServiceTest {
         blogs = mock(BlogRepository.class);
         posts = mock(PostService.class);
         presigner = mock(S3Presigner.class);
-        assets = mock(ImageAssetRepository.class);
         var properties = new S3Properties("test-bucket", "ap-northeast-2", "rilog/uploads", 10);
         var keyPolicy = new S3ImageObjectKeyPolicy(properties);
         var uploads = new UploadService(presigner, mock(S3Client.class), properties,
-                keyPolicy, assets, Clock.systemUTC());
+                keyPolicy);
         service = new AdminPostImportService(users, blogs, uploads, posts);
     }
 
     @Test
-    @DisplayName("실제 업로드 로직이 대상 작성자 ID로 이미지 키와 자산 소유자를 생성한다")
+    @DisplayName("실제 업로드 로직이 대상 작성자 ID로 이미지 키를 생성한다")
     void createsImageOwnedByTarget() throws Exception {
         // given
         validTarget();
@@ -75,11 +69,7 @@ class AdminPostImportServiceTest {
         var result = service.createUploadUrl(TARGET_ID, imageCommand());
 
         // then
-        var asset = ArgumentCaptor.forClass(ImageAsset.class);
-        verify(assets).save(asset.capture());
         assertThat(result.objectKey()).startsWith("rilog/uploads/images/originals/123-");
-        assertThat(asset.getValue().getObjectKey()).isEqualTo(result.objectKey());
-        assertThat(asset.getValue().getUploaderId()).isEqualTo(TARGET_ID);
     }
 
     @Test

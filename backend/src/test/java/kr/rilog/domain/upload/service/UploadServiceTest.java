@@ -7,7 +7,6 @@ import ch.qos.logback.core.read.ListAppender;
 import kr.rilog.domain.upload.domain.enums.UploadType;
 import kr.rilog.domain.upload.exception.UploadErrorInformation;
 import kr.rilog.domain.upload.exception.UploadException;
-import kr.rilog.domain.upload.repository.ImageAssetRepository;
 import kr.rilog.domain.upload.service.dto.command.PresignedUrlCreateCommand;
 import kr.rilog.domain.upload.service.dto.result.PresignedUrlCreateResult;
 import kr.rilog.global.s3.properties.S3Properties;
@@ -26,7 +25,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -34,7 +32,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -66,9 +63,6 @@ class UploadServiceTest {
     private S3ImageObjectKeyPolicy imageObjectKeyPolicy;
 
     @Mock
-    private ImageAssetRepository imageAssetRepository;
-
-    @Mock
     private PresignedPutObjectRequest presignedRequest;
 
     private Logger logger;
@@ -97,7 +91,7 @@ class UploadServiceTest {
     @DisplayName("Presign 실패는 네 가지 진단 필드만 보존하고 서비스에서 중복 로그를 남기지 않는다.")
     void presignFailurePreservesContext(String failureType, RuntimeException cause) {
         var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
-        var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
+        var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy);
         var command = new PresignedUrlCreateCommand("TEST_PRIVATE_FILENAME.png", "image/png", 1024, UploadType.IMAGE);
         when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq("png"))).thenReturn(OBJECT_KEY);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenThrow(cause);
@@ -124,7 +118,7 @@ class UploadServiceTest {
     void missingBucketDoesNotHidePresignFailure() {
         var cause = SdkClientException.create("bucket unavailable");
         var service = new UploadService(s3Presigner, s3Client,
-                new S3Properties(null, "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
+                new S3Properties(null, "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenThrow(cause);
 
         assertThatThrownBy(() -> service.createUploadUrl(USER_ID,
@@ -151,7 +145,7 @@ class UploadServiceTest {
     @DisplayName("업로드 유형에 맞는 초기 태그를 포함해 S3 업로드 요청을 서명한다.")
     void signsUploadWithInitialTag(UploadType type, String contentType, String expectedStatus) throws Exception {
         var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
-        var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
+        var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy);
         var command = new PresignedUrlCreateCommand("file", contentType, 1024, type);
         if (type == UploadType.IMAGE) {
             when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq("png"))).thenReturn(OBJECT_KEY);
@@ -166,20 +160,6 @@ class UploadServiceTest {
         assertThat(captor.getValue().putObjectRequest().tagging()).isEqualTo("status=" + expectedStatus);
     }
 
-    @Test
-    @DisplayName("이미지 자산 저장이 실패하면 업로드 URL을 반환하지 않는다.")
-    void assetRegistrationFailurePreventsUrlResponse() {
-        var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
-        var service = new UploadService(s3Presigner, s3Client, properties, imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
-        var command = new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE);
-        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq("png"))).thenReturn(OBJECT_KEY);
-        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
-        when(imageAssetRepository.save(any())).thenThrow(new DataIntegrityViolationException("asset save failed"));
-
-        assertThatThrownBy(() -> service.createUploadUrl(USER_ID, command))
-                .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
     @ParameterizedTest
     @CsvSource({
             "IMAGE,image/bmp,1024,UNSUPPORTED_IMAGE_FORMAT",
@@ -192,7 +172,7 @@ class UploadServiceTest {
             UploadType type, String contentType, long size, UploadErrorInformation error
     ) {
         var service = new UploadService(s3Presigner, s3Client,
-                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
         var command = new PresignedUrlCreateCommand("file", contentType, size, type);
 
         assertThatThrownBy(() -> service.createUploadUrl(USER_ID, command))
@@ -210,7 +190,7 @@ class UploadServiceTest {
     @DisplayName("추가 지원 이미지 형식은 MIME 타입에 맞는 확장자로 객체 키를 만든다.")
     void createImageUploadUrlWithSupportedExtension(String contentType, String extension) throws Exception {
         var service = new UploadService(s3Presigner, s3Client,
-                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
         var command = new PresignedUrlCreateCommand("image", contentType, 1024, UploadType.IMAGE);
         when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(extension))).thenReturn(OBJECT_KEY);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
@@ -233,7 +213,7 @@ class UploadServiceTest {
     @DisplayName("추가 지원 파일 형식은 MIME 타입에 맞는 확장자로 객체 키를 만든다.")
     void createFileUploadUrlWithSupportedExtension(String contentType, String extension) throws Exception {
         var service = new UploadService(s3Presigner, s3Client,
-                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy, imageAssetRepository, Clock.systemUTC());
+                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
         var command = new PresignedUrlCreateCommand("file", contentType, 1024, UploadType.FILE);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
         when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
@@ -257,9 +237,7 @@ class UploadServiceTest {
                 s3Presigner,
                 s3Client,
                 properties,
-                imageObjectKeyPolicy,
-                imageAssetRepository,
-                Clock.systemUTC()
+                imageObjectKeyPolicy
         );
         PresignedUrlCreateCommand command = new PresignedUrlCreateCommand(
                 "image.png",
