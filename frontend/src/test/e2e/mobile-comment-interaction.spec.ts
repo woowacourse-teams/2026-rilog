@@ -284,7 +284,7 @@ test('키보드 위의 고정 입력바는 상단 인용문을 중복하지 않�
 	const input = composer.getByRole('textbox', { name: '댓글 입력' });
 	const submit = composer.getByRole('button', { name: '작성', exact: true });
 	await expect(quoteRegion.getByText(quotedText, { exact: true })).toBeVisible();
-	await expect(composer).toHaveCount(0);
+	await expect(composer.getByLabel('댓글 대상 인용문')).toHaveCount(0);
 	await expect(input).toBeFocused();
 	await expect(submit).toBeDisabled();
 	expect(await input.evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
@@ -888,7 +888,7 @@ test('여러 인용문 사이에서 하단 입력 대상을 바꿔도 초안을 
 	await renderInlineCommentWorkspace(page);
 	await page.getByRole('button', { name: '전체 댓글 2개 보기' }).click();
 	const composer = page.getByRole('region', { name: '댓글 작성 입력바', exact: true });
-	await expect(composer.getByLabel('댓글 대상 인용문')).toHaveCount(0);
+	await expect(composer).toHaveCount(0);
 	const input = composer.getByRole('textbox', { name: '댓글 입력' });
 	await expect(input).toHaveCount(0);
 	await expect(page.getByRole('heading', { name: '전체 인라인 댓글 2' })).toBeFocused();
