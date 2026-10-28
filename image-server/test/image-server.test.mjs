@@ -7,9 +7,20 @@ import { createApp } from '../src/app.mjs';
 import { createPublicLookup, downloadImage, validateUrl } from '../src/download.mjs';
 import { normalizeImage } from '../src/image.mjs';
 import { loadConfig } from '../src/config.mjs';
+import { sign } from '../src/auth.mjs';
 
-const config = { rootDirectory: 'rilog', imageBaseUrl: 'https://cdn.example.com' };
+const SECRET = 'test-image-server-secret-at-least-32-chars';
+const NOW = Date.parse('2026-10-29T00:00:00Z');
+const config = { rootDirectory: 'rilog', imageBaseUrl: 'https://cdn.example.com', secret: SECRET };
 const target = { userId: 7, imagePurpose: 'CONTENT' };
+
+function signedHeaders(raw, { secret = SECRET, timestamp = String(NOW / 1000) } = {}) {
+  return {
+    'content-type': 'application/json',
+    'x-rilog-image-timestamp': timestamp,
+    'x-rilog-image-signature': `v1=${sign(secret, timestamp, '/api/images/import', Buffer.from(raw)).toString('hex')}`,
+  };
+}
 
 test('URL policy rejects credentials, IP literals, non-HTTPS and alternate ports', () => {
   for (const source of [null, '', 'file:///etc/passwd', 'http://example.com/a', 'https://127.1/a', 'https://[::1]/a', 'https://a:b@example.com/a', 'https://example.com:8443/a']) {
@@ -82,17 +93,21 @@ test('image conversion generates a decodable WebP with original dimensions', asy
 });
 
 async function serve(t, dependencies) {
-  const server = createApp({ config, ...dependencies }).listen(0, '127.0.0.1');
+  const server = createApp({ config, now: () => NOW, ...dependencies }).listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
   const base = `http://127.0.0.1:${server.address().port}`;
   return {
     base,
-    post: (body) => fetch(`${base}/api/images/import`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...target, ...body }) }),
+    post: (body, options) => {
+      const raw = JSON.stringify({ ...target, ...body });
+      return fetch(`${base}/api/images/import`, { method: 'POST', headers: signedHeaders(raw, options), body: raw });
+    },
+    postRaw: (raw, headers) => fetch(`${base}/api/images/import`, { method: 'POST', headers, body: raw }),
   };
 }
 
-test('import stores raw originals under the purpose directory of the user', async t => {
+test('import stores raw originals under the purpose directory of the signed user', async t => {
   const stored = [];
   const png = await sharp({ create: { width: 1, height: 1, channels: 3, background: 'red' } }).png().toBuffer();
   const api = await serve(t, { download: async () => png, upload: async (key, data) => stored.push({ key, data }) });
@@ -107,7 +122,27 @@ test('import stores raw originals under the purpose directory of the user', asyn
   assert.equal((await sharp(stored[0].data).metadata()).format, 'webp');
 });
 
-test('import rejects requests without a valid user or purpose', async t => {
+test('import rejects missing, forged, tampered and stale signatures before any work', async t => {
+  let downloads = 0;
+  const api = await serve(t, { download: async () => { downloads++; return Buffer.alloc(0); }, upload: async () => {} });
+  const raw = JSON.stringify({ ...target, sourceUrl: 'https://example.com/a.png' });
+  const tampered = JSON.stringify({ ...target, userId: 8, sourceUrl: 'https://example.com/a.png' });
+  for (const request of [
+    api.postRaw(raw, { 'content-type': 'application/json' }),
+    api.postRaw(raw, signedHeaders(raw, { secret: 'another-image-server-secret-at-least-32-chars' })),
+    api.postRaw(tampered, signedHeaders(raw)),
+    api.postRaw(raw, signedHeaders(raw, { timestamp: String(NOW / 1000 - 301) })),
+    api.postRaw(raw, signedHeaders(raw, { timestamp: String(NOW / 1000 + 31) })),
+    api.postRaw('{', { 'content-type': 'application/json' }),
+  ]) {
+    const response = await request;
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).error.code, 'INVALID_SIGNATURE');
+  }
+  assert.equal(downloads, 0);
+});
+
+test('import rejects signed requests without a valid user or purpose', async t => {
   const api = await serve(t, { download: async () => assert.fail('must not download'), upload: async () => {} });
   for (const body of [{ userId: 0 }, { userId: '7' }, { userId: null }, { imagePurpose: 'FILE' }, { imagePurpose: 'toString' }]) {
     const response = await api.post({ sourceUrl: 'https://example.com/a.png', ...body });
@@ -137,8 +172,9 @@ test('busy imports return 429 while health stays available; slot is released on 
 test('body and storage failures have stable errors without internal details', async t => {
   const api = await serve(t, { download: async () => Buffer.from('test'), normalize: async data => data, upload: async () => { throw new Error('secret'); } });
   assert.equal((await api.post({ sourceUrl: 'x'.repeat(9000) })).status, 413);
-  const invalid = await fetch(`${api.base}/api/images/import`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{' });
+  const invalid = await api.postRaw('{', signedHeaders('{'));
   assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json()).error.code, 'INVALID_JSON');
   const failed = await api.post({ sourceUrl: 'https://example.com/a' });
   assert.equal(failed.status, 502);
   const body = await failed.json();
@@ -148,11 +184,16 @@ test('body and storage failures have stable errors without internal details', as
 
 test('configuration requires runtime settings and rejects unsafe delivery URLs', () => {
   assert.throws(() => loadConfig({}), /AWS_REGION/);
-  const env = { AWS_REGION: 'ap-northeast-2', S3_BUCKET: 'bucket', S3_ROOT_DIRECTORY: '/rilog/', IMAGE_BASE_URL: 'https://cdn.example.com/' };
+  const env = {
+    AWS_REGION: 'ap-northeast-2', S3_BUCKET: 'bucket', S3_ROOT_DIRECTORY: '/rilog/', IMAGE_BASE_URL: 'https://cdn.example.com/',
+    RILOG_IMAGE_SERVER_SECRET: SECRET,
+  };
   assert.equal(loadConfig(env).imageBaseUrl, 'https://cdn.example.com');
   assert.equal(loadConfig(env).rootDirectory, 'rilog');
   assert.throws(() => loadConfig({ ...env, IMAGE_BASE_URL: 'http://cdn.example.com' }), /HTTPS/);
   for (const root of ['../originals', 'rilog/../x', 'rilog//x']) {
     assert.throws(() => loadConfig({ ...env, S3_ROOT_DIRECTORY: root }), /S3_ROOT_DIRECTORY/);
   }
+  assert.throws(() => loadConfig({ ...env, RILOG_IMAGE_SERVER_SECRET: undefined }), /RILOG_IMAGE_SERVER_SECRET is required/);
+  assert.throws(() => loadConfig({ ...env, RILOG_IMAGE_SERVER_SECRET: 'short' }), /at least 32/);
 });
