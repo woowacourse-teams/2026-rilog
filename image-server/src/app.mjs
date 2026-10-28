@@ -34,7 +34,9 @@ export function createApp({ config, upload, download = downloadImage, normalize 
   let active = false;
 
   app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
-  app.post(IMPORT_PATH, express.raw({ type: () => true, limit: '8kb' }), async (req, res, next) => {
+  // Spring은 sourceUrl을 4,096자(문자 수)까지 받는다. 비ASCII는 문자당 최대 3바이트, JSON 이스케이프는 6바이트라
+  // 최악 약 24KiB이므로 여유를 두고 32KiB로 둔다. nginx client_max_body_size와 같이 바꾼다.
+  app.post(IMPORT_PATH, express.raw({ type: () => true, limit: '32kb' }), async (req, res, next) => {
     const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
     try {
       verifySignature({

@@ -171,7 +171,15 @@ test('busy imports return 429 while health stays available; slot is released on 
 
 test('body and storage failures have stable errors without internal details', async t => {
   const api = await serve(t, { download: async () => Buffer.from('test'), normalize: async data => data, upload: async () => { throw new Error('secret'); } });
-  assert.equal((await api.post({ sourceUrl: 'x'.repeat(9000) })).status, 413);
+  const oversized = await api.post({ sourceUrl: 'x'.repeat(33_000) });
+  assert.equal(oversized.status, 413);
+  assert.equal((await oversized.json()).error.code, 'BODY_TOO_LARGE');
+  // Spring이 허용하는 4,096자 URL은 비ASCII(3바이트)와 JSON 이스케이프(\u0001, 6바이트)여도 본문 한도에 걸리지 않는다.
+  for (const filler of ['가', '\u0001']) {
+    const sourceUrl = 'https://example.com/' + filler.repeat(4096 - 'https://example.com/'.length);
+    const response = await api.post({ sourceUrl });
+    assert.equal((await response.json()).error.code, 'STORAGE_UNAVAILABLE');
+  }
   const invalid = await api.postRaw('{', signedHeaders('{'));
   assert.equal(invalid.status, 400);
   assert.equal((await invalid.json()).error.code, 'INVALID_JSON');

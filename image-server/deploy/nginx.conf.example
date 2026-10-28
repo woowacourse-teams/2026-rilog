@@ -6,7 +6,7 @@ limit_req_zone $binary_remote_addr zone=rilog_image_import:1m rate=30r/m;
 server {
     listen 80;
     server_name image.rilog.kr;
-    client_max_body_size 8k;
+    client_max_body_size 32k;
 
     location = /healthz {
         proxy_pass http://127.0.0.1:8000;
