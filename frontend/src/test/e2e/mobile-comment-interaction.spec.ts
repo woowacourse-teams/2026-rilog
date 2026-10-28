@@ -375,7 +375,7 @@ test('처음 빠르게 작성창을 열어 키보드가 올라와도 하단 입�
 		});
 		const record = {
 			footerScrollCalls: 0,
-			frames: [] as { bottom: number; visibleBottom: number }[],
+			frames: [] as { bottom: number; visibleBottom: number; handleOffset: number }[],
 			finished: false,
 			started: false,
 		};
@@ -395,9 +395,14 @@ test('처음 빠르게 작성창을 열어 키보드가 올라와도 하단 입�
 			void (async () => {
 				const footer = event.target instanceof Element ? event.target.closest('[data-mobile-comment-composer]') : null;
 				const dialog = footer?.closest('dialog');
-				if (!footer || !dialog) throw new Error('하단 입력바가 없습니다.');
+				const handle = dialog?.querySelector<HTMLElement>('[data-comment-sheet-handle]');
+				if (!footer || !dialog || !handle) throw new Error('댓글 시트나 하단 입력바가 없습니다.');
 				const capture = () => {
-					record.frames.push({ bottom: footer.getBoundingClientRect().bottom, visibleBottom: height + offsetTop });
+					record.frames.push({
+						bottom: footer.getBoundingClientRect().bottom,
+						visibleBottom: height + offsetTop,
+						handleOffset: handle.getBoundingClientRect().top - dialog.getBoundingClientRect().top,
+					});
 				};
 				capture();
 				for (const frame of [
@@ -441,12 +446,14 @@ test('처음 빠르게 작성창을 열어 키보드가 올라와도 하단 입�
 		() =>
 			Reflect.get(window, 'keyboardEntryRecord') as {
 				footerScrollCalls: number;
-				frames: { bottom: number; visibleBottom: number }[];
+				frames: { bottom: number; visibleBottom: number; handleOffset: number }[];
 			},
 	);
 	expect(record.footerScrollCalls).toBe(0);
 	expect(record.frames.length).toBeGreaterThanOrEqual(12);
 	for (const frame of record.frames) expect(frame.bottom).toBeLessThanOrEqual(frame.visibleBottom + 1);
+	const offsets = record.frames.map((frame) => frame.handleOffset);
+	expect(Math.max(...offsets) - Math.min(...offsets)).toBeGreaterThan(2);
 });
 
 test('긴 댓글을 수정할 때 키보드 위에 수정 입력과 저장 버튼이 함께 보인다', async ({ page }) => {
@@ -676,6 +683,115 @@ test('모바일 시트는 열고 닫는 동안 화면 안에서 연속적으로 
 	const isBetween = (top: number) => top > restingTop + 20 && top < 844 - 20;
 	expect(frames.some(({ top, state }) => state === 'open' && isBetween(top))).toBe(true);
 	expect(frames.some(({ top, state }) => state === 'closing' && isBetween(top))).toBe(true);
+
+	// Keep the visible entry in progress while the user immediately closes the sheet.
+	await page.evaluate(() => {
+		const pauseEntry = (event: TransitionEvent) => {
+			if (!(event.target instanceof HTMLDialogElement) || event.pseudoElement) return;
+			const entryDialog = event.target;
+			const entries = entryDialog
+				.getAnimations()
+				.filter(
+					(animation) =>
+						animation.effect instanceof KeyframeEffect &&
+						animation.effect.target === entryDialog &&
+						!animation.effect.pseudoElement,
+				);
+			const header = entryDialog.querySelector<HTMLElement>('[data-comment-panel-header]');
+			const headerEntries = header?.getAnimations() ?? [];
+			if (!entries.length || !headerEntries.length) return;
+			entries.forEach((animation) => {
+				animation.pause();
+				animation.currentTime = 80;
+			});
+			headerEntries.forEach((animation) => {
+				animation.pause();
+				animation.currentTime = 100;
+			});
+			Reflect.set(window, 'composeEntryAnimations', entries);
+			Reflect.set(window, 'composeHeaderAnimations', headerEntries);
+			document.removeEventListener('transitionrun', pauseEntry, true);
+		};
+		document.addEventListener('transitionrun', pauseEntry, true);
+	});
+	await selectNativeRange(page);
+	await page.getByRole('button', { name: '댓글 추가', exact: true }).click();
+	const compose = page.getByRole('dialog', { name: '인라인 댓글 0', exact: true });
+	await expect.poll(() => page.evaluate(() => Array.isArray(Reflect.get(window, 'composeEntryAnimations')))).toBe(true);
+	await compose.evaluate((element) => {
+		const header = element.querySelector<HTMLElement>('[data-comment-panel-header]');
+		if (!header || !(element instanceof HTMLDialogElement)) throw new Error('댓글 시트 헤더가 없습니다.');
+		const headerEntries = Reflect.get(window, 'composeHeaderAnimations') as Animation[];
+		const isContentVisible = () => {
+			const rect = header.getBoundingClientRect();
+			const viewport = window.visualViewport;
+			const top = viewport?.offsetTop ?? 0;
+			const left = viewport?.offsetLeft ?? 0;
+			const onScreen =
+				rect.bottom > top &&
+				rect.top < top + (viewport?.height ?? window.innerHeight) &&
+				rect.right > left &&
+				rect.left < left + (viewport?.width ?? window.innerWidth);
+			return onScreen && header.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+		};
+		let visibleBeforeClose: boolean | undefined;
+		const onEscape = (event: KeyboardEvent) => {
+			if (event.key !== 'Escape') return;
+			headerEntries.forEach((animation) => {
+				animation.currentTime = 100;
+				animation.play();
+			});
+			visibleBeforeClose = isContentVisible();
+			document.removeEventListener('keydown', onEscape, true);
+		};
+		document.addEventListener('keydown', onEscape, true);
+		const sample = new Promise<{ entryContinued: boolean; headerEntryContinued: boolean; contentAppeared: boolean }>(
+			(resolve, reject) => {
+				const observer = new MutationObserver(() => {
+					if (element.getAttribute('data-state') !== 'closing') return;
+					observer.disconnect();
+					const entries = Reflect.get(window, 'composeEntryAnimations') as Animation[];
+					const current = element.getAnimations();
+					const entryContinued = entries.every(
+						(animation) => current.includes(animation) && animation.playState !== 'idle',
+					);
+					const currentHeaderAnimations = header.getAnimations();
+					const headerEntryContinued = headerEntries.some(
+						(animation) => currentHeaderAnimations.includes(animation) && animation.playState !== 'idle',
+					);
+					if (visibleBeforeClose === undefined) {
+						reject(new Error('댓글 시트 닫기 입력을 감지하지 못했습니다.'));
+						return;
+					}
+					let contentAppeared = false;
+					const capture = () => {
+						if (!element.open) {
+							resolve({ entryContinued, headerEntryContinued, contentAppeared });
+							return;
+						}
+						if (!visibleBeforeClose && isContentVisible()) contentAppeared = true;
+						requestAnimationFrame(capture);
+					};
+					capture();
+				});
+				observer.observe(element, { attributes: true, attributeFilter: ['data-state'] });
+			},
+		);
+		Reflect.set(window, 'composeCloseSample', sample);
+	});
+	await page.keyboard.press('Escape');
+	const afterClose = await page.evaluate(
+		() =>
+			Reflect.get(window, 'composeCloseSample') as Promise<{
+				entryContinued: boolean;
+				headerEntryContinued: boolean;
+				contentAppeared: boolean;
+			}>,
+	);
+	expect(afterClose.entryContinued).toBe(true);
+	expect(afterClose.headerEntryContinued).toBe(false);
+	expect(afterClose.contentAppeared).toBe(false);
+	await expect(compose).toBeHidden();
 });
 
 test('시트를 조금 아래로 당길 때 내용 높이를 유지하고 놓으면 원래 위치로 돌아온다', async ({ page }) => {
@@ -718,6 +834,19 @@ test('동작 줄이기 설정에서는 시트 이동 애니메이션 없이 열�
 	await page.keyboard.press('Escape');
 	await expect(dialog).toBeHidden();
 	await expect(entry).toBeFocused();
+	await selectNativeRange(page);
+	await page.getByRole('button', { name: '댓글 추가', exact: true }).click();
+	await expect(page.getByRole('textbox', { name: '댓글 입력' })).toBeFocused();
+	const compose = page.getByRole('dialog', { name: '인라인 댓글 0', exact: true });
+	await expect(compose).toHaveAttribute('data-state', 'open');
+	expect(
+		await compose.evaluate((element) => {
+			const parts = element.querySelectorAll(
+				'[data-comment-sheet-handle], [data-comment-panel-header], [data-comment-list]',
+			);
+			return [element, ...parts].flatMap((part) => part.getAnimations()).length;
+		}),
+	).toBe(0);
 });
 
 test('올라오는 시트의 손잡이를 잡아도 현재 위치에서 튀지 않는다', async ({ page }) => {

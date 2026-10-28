@@ -8,6 +8,7 @@ import BaseModal from '@/shared/ui/modal/BaseModal';
 import { COMMENT_SHEET_EXIT_DURATION_MS, useCommentBottomSheet } from '../hooks/use-comment-bottom-sheet';
 
 import PostCommentsPanelContent from './PostCommentsPanelContent';
+import './comment-compose-entry.css';
 
 interface PostCommentsSidebarProps extends Omit<
 	Parameters<typeof PostCommentsPanelContent>[0],
@@ -39,7 +40,7 @@ export default function PostCommentsSidebar({ open, onClosed, ...contentProps }:
 			exitDurationMs={sheet.isMobile ? COMMENT_SHEET_EXIT_DURATION_MS : undefined}
 			className={
 				sheet.isMobile
-					? `fixed inset-x-0 top-auto m-0 w-full max-w-none translate-y-full overflow-hidden rounded-t-modal shadow-modal transition-[translate,top,height,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-[cubic-bezier(0.32,0.72,0,1)] has-[textarea:focus]:transition-[translate,overlay,display] data-[state=closing]:ease-[cubic-bezier(0.4,0,1,1)] data-[state=open]:translate-y-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none ${shouldFocusInput ? 'data-[state=opening]:translate-y-0 data-[state=opening]:transition-none' : ''}`
+					? `fixed inset-x-0 top-auto m-0 w-full max-w-none translate-y-full overflow-hidden rounded-t-modal shadow-modal transition-[translate,top,height,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-[cubic-bezier(0.32,0.72,0,1)] has-[textarea:focus]:transition-[translate,overlay,display] data-[state=closing]:ease-[cubic-bezier(0.4,0,1,1)] data-[state=open]:translate-y-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none ${shouldFocusInput ? 'comment-compose-entry data-[state=opening]:translate-y-0 data-[state=opening]:transition-none' : ''}`
 					: 'fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-none translate-x-full overflow-hidden border-l border-border-default transition-[transform,overlay,display] [transition-behavior:allow-discrete] duration-(--modal-exit-duration) ease-out data-[state=open]:translate-x-0 data-[state=open]:duration-(--modal-enter-duration) motion-reduce:transition-none md:w-112'
 			}
 		>
