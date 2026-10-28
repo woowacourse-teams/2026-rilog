@@ -205,11 +205,13 @@ for (const width of [390, 1440]) {
 			};
 			return { outer: box(element), text: box(inputElement), button: box(submitElement) };
 		});
+		// Firefox can round equal DOMRect edges differently by a fraction of a CSS pixel.
+		const coordinatePrecision = 1 / 1024;
 		for (const control of [text, button]) {
-			expect(control.x).toBeGreaterThanOrEqual(outer.x);
-			expect(control.y).toBeGreaterThanOrEqual(outer.y);
-			expect(control.x + control.width).toBeLessThanOrEqual(outer.x + outer.width);
-			expect(control.y + control.height).toBeLessThanOrEqual(outer.y + outer.height);
+			expect(control.x).toBeGreaterThanOrEqual(outer.x - coordinatePrecision);
+			expect(control.y).toBeGreaterThanOrEqual(outer.y - coordinatePrecision);
+			expect(control.x + control.width).toBeLessThanOrEqual(outer.x + outer.width + coordinatePrecision);
+			expect(control.y + control.height).toBeLessThanOrEqual(outer.y + outer.height + coordinatePrecision);
 		}
 		expect(button.x).toBeGreaterThan(text.x + text.width);
 		const border = await input.evaluate((element) => ({

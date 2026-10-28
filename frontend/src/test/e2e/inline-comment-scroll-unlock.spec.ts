@@ -130,6 +130,21 @@ const setupPost = async (page: Page, existing: boolean, gate?: Promise<void>, re
 	await expect(page.getByRole('region', { name: '댓글 작성 입력바' })).toBeVisible();
 };
 
+// Wait for the browser's scroll transaction to end before starting another gesture.
+const scrollToTopAndWait = async (page: Page, browserName: string) => {
+	if (browserName !== 'webkit') {
+		await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+		return;
+	}
+	await page.evaluate(async () => {
+		if (window.scrollY === 0) return;
+		await new Promise<void>((resolve) => {
+			document.addEventListener('scrollend', () => resolve(), { once: true });
+			window.scrollTo({ top: 0, behavior: 'instant' });
+		});
+	});
+};
+
 const dismissAndCheckScroll = async (page: Page, browserName: string) => {
 	const dialog = page.getByRole('dialog', { name: /^인라인 댓글 \d+$/ });
 	await expect(dialog).toHaveAttribute('data-state', 'open');
@@ -184,14 +199,23 @@ const dismissAndCheckScroll = async (page: Page, browserName: string) => {
 		selectionPrompt: false,
 	});
 	expect(diagnostics.computedOverflow).not.toContain('hidden');
-	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+	await scrollToTopAndWait(page, browserName);
 	await page.mouse.move(190, 600);
+	if (browserName === 'webkit') {
+		await page.evaluate(() => {
+			const settled = new Promise<void>((resolve) =>
+				document.addEventListener('scrollend', () => resolve(), { once: true }),
+			);
+			Reflect.set(window, 'commentWheelSettled', settled);
+		});
+	}
 	await page.mouse.wheel(0, 300);
 	await expect
 		.poll(() => page.evaluate(() => window.scrollY), { message: JSON.stringify(diagnostics) })
 		.toBeGreaterThan(100);
+	if (browserName === 'webkit') await page.evaluate(() => Reflect.get(window, 'commentWheelSettled') as Promise<void>);
 	if (browserName === 'chromium') {
-		await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+		await scrollToTopAndWait(page, browserName);
 		const session = await page.context().newCDPSession(page);
 		await session.send('Emulation.setTouchEmulationEnabled', { enabled: true });
 		await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 190, y: 650 }] });
@@ -254,7 +278,7 @@ test('작성 요청 중 시트를 내리고 늦게 응답이 와도 본문 스�
 	}
 	await expect(page.locator('[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]')).toHaveCount(1);
 	await expect.poll(() => page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
-	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+	await scrollToTopAndWait(page, browserName);
 	await page.mouse.wheel(0, 300);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
 });
@@ -285,7 +309,7 @@ test('등록 뒤 목록 재조회 중 시트를 내려도 늦은 재조회가 �
 	}
 	await expect(page.locator('[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]')).toHaveCount(1);
 	await expect.poll(() => page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
-	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+	await scrollToTopAndWait(page, browserName);
 	await page.mouse.wheel(0, 300);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
 });
