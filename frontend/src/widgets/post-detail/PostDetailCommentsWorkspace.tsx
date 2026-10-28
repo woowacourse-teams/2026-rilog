@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { ReactNode } from 'react';
@@ -92,6 +92,9 @@ export default function PostDetailCommentsWorkspace({
 		navigationCleanup.current = null;
 	}, []);
 	useEffect(() => cancelAnchorNavigation, [cancelAnchorNavigation]);
+	useLayoutEffect(() => {
+		if (isCommentsSidebarOpen) cancelAnchorNavigation();
+	}, [isCommentsSidebarOpen, cancelAnchorNavigation]);
 	const navigateToThread = useCallback((thread: InlineCommentThreadModel) => {
 		navigationCleanup.current?.();
 		const getHighlights = () =>
@@ -166,7 +169,6 @@ export default function PostDetailCommentsWorkspace({
 
 	const openComments = useCallback(
 		(request: InlineCommentOpenRequest | null, mode: InlineCommentSidebarMode) => {
-			cancelAnchorNavigation();
 			setScrollResetKey((previous) => previous + 1);
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCommentEntrySource(request === null ? 'all' : request.source);
@@ -178,12 +180,11 @@ export default function PostDetailCommentsWorkspace({
 			setOpenRequest(request);
 			openCommentView('comments');
 		},
-		[openCommentView, cancelAnchorNavigation],
+		[openCommentView],
 	);
 
 	const handleInlineCommentCreate = useCallback(
 		(target: InlineCommentSelectionTarget, entrySource: InlineCommentCreateEntrySource = 'selection_toolbar') => {
-			cancelAnchorNavigation();
 			openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setCreatedCommentId(null);
 			setDeepLinkedSelectionId(null);
@@ -209,27 +210,37 @@ export default function PostDetailCommentsWorkspace({
 			setCreateRequestId((previous) => previous + 1);
 			openCommentView('comments');
 		},
-		[inlineCommentBlocks, openCommentView, cancelAnchorNavigation],
+		[inlineCommentBlocks, openCommentView],
+	);
+
+	const handleAuthenticatedCreate = useCallback(
+		(...args: Parameters<typeof handleInlineCommentCreate>) => {
+			cancelAnchorNavigation();
+			handleInlineCommentCreate(...args);
+		},
+		[cancelAnchorNavigation, handleInlineCommentCreate],
 	);
 
 	const handleSelectionCreate = useInlineCommentAuthAction({
 		postId,
 		isCommentsReady: commentsQuery.isSuccess && sidebarQuery.isSuccess,
-		onCreate: handleInlineCommentCreate,
+		onCreate: handleAuthenticatedCreate,
 	});
 
 	const handleInlineCommentOpen = useCallback(
 		(request: InlineCommentOpenRequest) => {
+			cancelAnchorNavigation();
 			analytics.inlineCommentEntryClicked({ postId, entrySource: request.source });
 			openComments(request, request.source === 'highlight' ? 'single' : 'block');
 		},
-		[openComments, postId],
+		[cancelAnchorNavigation, openComments, postId],
 	);
 
 	const handleAllCommentsOpen = useCallback(() => {
+		cancelAnchorNavigation();
 		analytics.inlineCommentEntryClicked({ postId, entrySource: 'all' });
 		openComments(null, 'all');
-	}, [openComments, postId]);
+	}, [cancelAnchorNavigation, openComments, postId]);
 
 	const closeComments = useCallback(() => {
 		closeCommentView();

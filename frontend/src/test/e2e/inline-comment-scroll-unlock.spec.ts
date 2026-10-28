@@ -314,54 +314,99 @@ test('등록 뒤 목록 재조회 중 시트를 내려도 늦은 재조회가 �
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
 });
 
-for (const width of [390, 1440]) {
-	test(`${width < 768 ? '모바일' : 'PC'} 본문 이동은 인용을 잠깐 강조하고 기존 밑줄로 복귀한다`, async ({ page }) => {
-		await page.emulateMedia({ reducedMotion: width < 768 ? 'no-preference' : 'reduce' });
-		await setupPost(page, true);
-		await page.setViewportSize({ width, height: 844 });
-		const quote = page.locator('[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]');
-		await expect(quote).not.toHaveCount(0);
-		// Fonts/layout updates may redraw the overlay as navigation begins.
-		if (width < 768) {
-			await page.locator('dialog[open]').evaluate((dialog) => {
-				dialog.addEventListener(
-					'close',
-					() => window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))),
-					{ once: true },
-				);
-			});
-		} else {
-			await page.getByRole('button', { name: '본문으로 이동', exact: true }).evaluate((button) => {
-				button.addEventListener(
-					'click',
-					() => window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))),
-					{ once: true },
-				);
-			});
-		}
-		await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
-		await expect
-			.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content))
-			.toBe('""');
-		// An additional reflow during the hold must keep the current quote highlighted.
-		await page.evaluate(() => window.dispatchEvent(new Event('resize')));
-		await expect
-			.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content))
-			.toBe('""');
-		await expect(quote.first()).toBeInViewport();
-		if (width < 768) {
-			await expect.poll(() => page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
-		} else {
-			await expect(page.getByRole('heading', { name: '인라인 댓글 1', exact: true })).toBeVisible();
-		}
-		expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
-		await expect(page.getByRole('toolbar', { name: '인라인 댓글', exact: true })).toHaveCount(0);
-		expect(
-			await quote.first().evaluate((element) => Number.parseFloat(getComputedStyle(element, '::before').opacity)),
-		).toBeGreaterThan(0);
-		await expect
-			.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content), { timeout: 5000 })
-			.toBe('none');
-		await expect(quote).not.toHaveCount(0);
+test('본문으로 이동은 시트가 닫힌 뒤 대상 위치로 스크롤한다', async ({ page }) => {
+	await setupPost(page, true);
+	const dialog = page.getByRole('dialog', { name: /^인라인 댓글 \d+$/ });
+	await expect(dialog).toHaveAttribute('data-state', 'open');
+	await page.evaluate(async () => {
+		if (window.scrollY === 900) return;
+		await new Promise<void>((resolve) => {
+			document.addEventListener('scrollend', () => resolve(), { once: true });
+			window.scrollTo({ top: 900, behavior: 'instant' });
+		});
 	});
-}
+	const target = page.locator('[data-inline-comment-block-id="article-101"]');
+	await expect(target).not.toBeInViewport();
+	await page.evaluate(() => {
+		const activeDialog = document.querySelector('dialog:modal');
+		const observations: boolean[] = [];
+		let requested = false;
+		Reflect.set(window, 'anchorNavigationWhileOpen', observations);
+		document.addEventListener(
+			'click',
+			(event) => {
+				if (event.target instanceof Element && event.target.closest('button')?.textContent?.trim() === '본문으로 이동')
+					requested = true;
+			},
+			true,
+		);
+		const originalScrollTo = window.scrollTo.bind(window);
+		Reflect.set(window, 'scrollTo', (options: ScrollToOptions | number, y?: number) => {
+			if (requested) observations.push(activeDialog instanceof HTMLDialogElement && activeDialog.open);
+			if (typeof options === 'number') originalScrollTo(options, y ?? 0);
+			else originalScrollTo(options);
+		});
+		// Recreate an off-screen reading position before the native close reaches React.
+		document.addEventListener(
+			'close',
+			(event) => {
+				if (event.target === activeDialog) originalScrollTo({ top: 900, behavior: 'instant' });
+			},
+			{ capture: true, once: true },
+		);
+		const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView')
+			?.value as Element['scrollIntoView'];
+		Element.prototype.scrollIntoView = function (options) {
+			if (
+				requested &&
+				(this.getAttribute('data-inline-comment-anchor-id') === '91' ||
+					this.getAttribute('data-inline-comment-block-id') === 'article-101')
+			) {
+				observations.push(activeDialog instanceof HTMLDialogElement && activeDialog.open);
+			}
+			original.call(this, options);
+		};
+	});
+	await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
+	await expect(dialog).toBeHidden();
+	await expect(target).toBeInViewport();
+	const observations = await page.evaluate(() => Reflect.get(window, 'anchorNavigationWhileOpen') as boolean[]);
+	expect(observations).not.toContain(true);
+});
+
+test('본문 이동 중 앞으로가기로 댓글을 다시 열면 이전 이동을 취소한다', async ({ page }) => {
+	await setupPost(page, true);
+	const dialog = page.getByRole('dialog', { name: /^인라인 댓글 \d+$/ });
+	await expect(dialog).toHaveAttribute('data-state', 'open');
+	await page.evaluate(() => {
+		Reflect.set(window, 'staleNavigationCalls', 0);
+		const originalScrollTo = window.scrollTo.bind(window);
+		Reflect.set(window, 'scrollTo', (options: ScrollToOptions | number, y?: number) => {
+			Reflect.set(window, 'staleNavigationCalls', Number(Reflect.get(window, 'staleNavigationCalls')) + 1);
+			if (typeof options === 'number') originalScrollTo(options, y ?? 0);
+			else originalScrollTo(options);
+		});
+		Reflect.set(window, 'forwardRestored', false);
+		window.addEventListener(
+			'popstate',
+			() => {
+				window.addEventListener(
+					'popstate',
+					() => {
+						Reflect.set(window, 'forwardRestored', true);
+					},
+					{ once: true },
+				);
+				window.history.forward();
+			},
+			{ once: true },
+		);
+	});
+	await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
+	await expect.poll(() => page.evaluate(() => Boolean(Reflect.get(window, 'forwardRestored')))).toBe(true);
+	await expect(dialog).toHaveAttribute('data-state', 'open');
+	// Allow the closing sheet's animation to finish; the prior request must stay canceled.
+	await page.waitForTimeout(400);
+	await expect(dialog).toBeVisible();
+	expect(await page.evaluate(() => Number(Reflect.get(window, 'staleNavigationCalls')))).toBe(0);
+});

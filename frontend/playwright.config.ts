@@ -63,6 +63,7 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 				testMatch: [
 					'**/mobile-comment-interaction.spec.ts',
 					'**/inline-comment-scroll-unlock.spec.ts',
+					'**/inline-comment-anchor-navigation.spec.ts',
 					'**/comment-sheet-gestures.spec.ts',
 				],
 				use: { ...devices['Desktop Safari'], hasTouch: true },
@@ -72,6 +73,7 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 				testMatch: [
 					'**/mobile-comment-interaction.spec.ts',
 					'**/inline-comment-scroll-unlock.spec.ts',
+					'**/inline-comment-anchor-navigation.spec.ts',
 					'**/comment-sheet-gestures.spec.ts',
 				],
 				use: devices['Desktop Firefox'],
