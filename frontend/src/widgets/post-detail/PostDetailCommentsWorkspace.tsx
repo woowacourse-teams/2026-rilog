@@ -9,7 +9,6 @@ import type { BlogType } from '@/domains/blog/model/blog';
 import type { PostCategory } from '@/domains/post/model/post';
 import type { InlineCommentCreateEntrySource } from '@/features/analytics/model/analytics-event';
 import { analytics } from '@/features/analytics/model/events';
-import { useCommentViewport } from '@/features/post-detail/hooks/use-comment-viewport';
 import { useInlineCommentAuthAction } from '@/features/post-detail/hooks/use-inline-comment-auth-action';
 import { usePostInlineComments } from '@/features/post-detail/hooks/use-post-inline-comments';
 import { usePostInlineCommentsSidebar } from '@/features/post-detail/hooks/use-post-inline-comments-sidebar';
@@ -22,13 +21,12 @@ import type {
 	InlineCommentSidebarMode,
 } from '@/features/post-detail/model/inline-comment-interaction';
 import type { InlineCommentThreadModel } from '@/features/post-detail/model/inline-comment-thread';
-import PostAllCommentsButton from '@/features/post-detail/ui/PostAllCommentsButton';
 import PostCommentsDockedCard from '@/features/post-detail/ui/PostCommentsDockedCard';
 import PostCommentsSidebar from '@/features/post-detail/ui/PostCommentsSidebar';
 import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import Divider from '@/shared/ui/divider/Divider';
 
-import MobileAllCommentsButton from './MobileAllCommentsButton';
+import AllCommentsFloatingButton from './AllCommentsFloatingButton';
 import styles from './PostDetail.module.css';
 import { useCommentHistory } from './use-comment-history';
 import { useDockedCommentsHost } from './use-docked-comments-host';
@@ -74,7 +72,6 @@ export default function PostDetailCommentsWorkspace({
 	profileSection,
 	afterProfile,
 }: PostDetailCommentsWorkspaceProps) {
-	const isMobileViewport = useCommentViewport('mobile');
 	const dockHost = useDockedCommentsHost(postId);
 	const isDocked = dockHost !== null && dockHost !== undefined;
 	const isLayoutReady = dockHost !== undefined;
@@ -286,21 +283,7 @@ export default function PostDetailCommentsWorkspace({
 
 	return (
 		<>
-			<aside className={`${styles.commentsColumn} max-md:hidden!`}>
-				<div className={styles.commentsEntry}>
-					{!isMobileViewport && (
-						<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
-					)}
-				</div>
-			</aside>
-
-			{isMobileViewport && (
-				<MobileAllCommentsButton
-					count={inlineCommentCount}
-					hidden={view !== 'closed'}
-					onClick={handleAllCommentsOpen}
-				/>
-			)}
+			<AllCommentsFloatingButton count={inlineCommentCount} hidden={view !== 'closed'} onClick={handleAllCommentsOpen} />
 
 			<div className={`${styles.articleColumn} pt-5 pb-30 sm:pt-10 sm:pb-35`}>
 				<PostDetailContent
