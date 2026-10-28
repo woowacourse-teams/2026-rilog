@@ -82,6 +82,49 @@ const openQuote = async (page: Page, width: number, blockId = 'article-101', dir
 	if (directLink) await expect(page.getByRole('button', { name: '본문으로 이동', exact: true })).toBeVisible();
 };
 
+const observeHighlight = (page: Page, afterResize = false) =>
+	page.evaluate((shouldResize) => {
+		const selector = '[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]';
+		const previous = shouldResize ? new Set(document.querySelectorAll(selector)) : null;
+		Reflect.set(window, '__navigationHighlightObserved', false);
+		const cleanup = () => {
+			observer.disconnect();
+			window.removeEventListener('pagehide', cleanup);
+		};
+		const observer = new MutationObserver(() => {
+			const viewport = window.visualViewport;
+			const top = viewport?.offsetTop ?? 0;
+			const bottom = top + (viewport?.height ?? window.innerHeight);
+			const visibleLine = [...document.querySelectorAll(selector)].some((line) => {
+				if (previous?.has(line)) return false;
+				const rect = line.getBoundingClientRect();
+				const style = getComputedStyle(line, '::before');
+				return (
+					rect.width > 0 &&
+					rect.height > 0 &&
+					rect.bottom > top &&
+					rect.top < bottom &&
+					style.content === '""' &&
+					Number.parseFloat(style.opacity) > 0
+				);
+			});
+			if (!visibleLine) return;
+			Reflect.set(window, '__navigationHighlightObserved', true);
+			cleanup();
+		});
+		observer.observe(document.body, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ['data-inline-comment-navigation'],
+		});
+		window.addEventListener('pagehide', cleanup, { once: true });
+		if (shouldResize) window.dispatchEvent(new Event('resize'));
+	}, afterResize);
+
+const expectHighlightObserved = (page: Page) =>
+	expect.poll(() => page.evaluate(() => Reflect.get(window, '__navigationHighlightObserved') === true)).toBe(true);
+
 test('따옴표와 역슬래시가 포함된 블록에서도 본문으로 이동하고 해당 인용을 강조한다', async ({ page }) => {
 	const pageErrors: string[] = [];
 	page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -95,13 +138,12 @@ test('따옴표와 역슬래시가 포함된 블록에서도 본문으로 이동
 		window.dispatchEvent(new Event('resize'));
 	}, blockId);
 	await entry.click();
+	await observeHighlight(page);
 	await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
 	await expect(page.locator('dialog:modal')).toHaveCount(0);
 	const quote = page.locator('[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]');
 	await expect(quote.first()).toBeInViewport();
-	await expect
-		.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content))
-		.toBe('""');
+	await expectHighlightObserved(page);
 	expect(pageErrors).toEqual([]);
 });
 
@@ -180,29 +222,11 @@ for (const width of [390, 1440]) {
 				);
 			});
 		}
+		await observeHighlight(page);
 		await page.getByRole('button', { name: '본문으로 이동', exact: true }).click();
-		await expect
-			.poll(() => quote.first().evaluate((element) => getComputedStyle(element, '::before').content))
-			.toBe('""');
-		await page.evaluate(() => {
-			const selector = '[data-inline-comment-highlight][data-inline-comment-anchor-id="91"]';
-			const previous = new Set(document.querySelectorAll(selector));
-			Reflect.set(window, '__highlightObservedAfterResize', false);
-			const observer = new MutationObserver(() => {
-				const visibleNewLine = [...document.querySelectorAll(selector)].some(
-					(line) => !previous.has(line) && getComputedStyle(line, '::before').content === '""',
-				);
-				if (!visibleNewLine) return;
-				Reflect.set(window, '__highlightObservedAfterResize', true);
-				observer.disconnect();
-			});
-			observer.observe(document.body, { subtree: true, childList: true, attributes: true });
-			window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
-			window.dispatchEvent(new Event('resize'));
-		});
-		await expect
-			.poll(() => page.evaluate(() => Reflect.get(window, '__highlightObservedAfterResize') === true))
-			.toBe(true);
+		await expectHighlightObserved(page);
+		await observeHighlight(page, true);
+		await expectHighlightObserved(page);
 		await expect(quote.first()).toBeInViewport();
 		if (width < 768) {
 			await expect.poll(() => page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
