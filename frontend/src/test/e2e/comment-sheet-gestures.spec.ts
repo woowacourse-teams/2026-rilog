@@ -236,6 +236,10 @@ for (const width of [390, 1440]) {
 			}
 			await page.getByRole('button', { name: /전체 댓글 \d+개 보기/ }).click();
 			await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
+			if (width < 768) {
+				await expect(input).toHaveCount(0);
+				await page.getByRole('button', { name: '댓글 추가: 브라우저에서', exact: true }).click();
+			}
 			await expect(input).toHaveValue('첫째 줄\n둘째 줄\n셋째 줄\n넷째 줄\n다섯째 줄');
 		}
 	});
