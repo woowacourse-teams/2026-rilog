@@ -8,7 +8,8 @@ import { createPublicLookup, downloadImage, validateUrl } from '../src/download.
 import { normalizeImage } from '../src/image.mjs';
 import { loadConfig } from '../src/config.mjs';
 
-const config = { prefix: 'images/imported', imageBaseUrl: 'https://cdn.example.com' };
+const config = { rootDirectory: 'rilog', imageBaseUrl: 'https://cdn.example.com' };
+const target = { userId: 7, imagePurpose: 'CONTENT' };
 
 test('URL policy rejects credentials, IP literals, non-HTTPS and alternate ports', () => {
   for (const source of [null, '', 'file:///etc/passwd', 'http://example.com/a', 'https://127.1/a', 'https://[::1]/a', 'https://a:b@example.com/a', 'https://example.com:8443/a']) {
@@ -87,23 +88,32 @@ async function serve(t, dependencies) {
   const base = `http://127.0.0.1:${server.address().port}`;
   return {
     base,
-    post: (body) => fetch(`${base}/api/images/import`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
+    post: (body) => fetch(`${base}/api/images/import`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...target, ...body }) }),
   };
 }
 
-test('import creates independent keys and returns the delivery origin', async t => {
+test('import stores raw originals under the purpose directory of the user', async t => {
   const stored = [];
   const png = await sharp({ create: { width: 1, height: 1, channels: 3, background: 'red' } }).png().toBuffer();
   const api = await serve(t, { download: async () => png, upload: async (key, data) => stored.push({ key, data }) });
-  for (let i = 0; i < 2; i++) {
-    const response = await api.post({ sourceUrl: 'https://example.com/a.png' });
+  for (const [imagePurpose, directory] of [['CONTENT', 'images'], ['CONTENT', 'images'], ['PROFILE', 'profiles']]) {
+    const response = await api.post({ sourceUrl: 'https://example.com/a.png', imagePurpose });
     assert.equal(response.status, 201);
     const body = await response.json();
     assert.equal(body.url, `${config.imageBaseUrl}/${body.key}`);
-    assert.match(body.key, /^images\/imported\/[\da-f-]+\.webp$/);
+    assert.match(body.key, new RegExp(`^rilog/${directory}/raw/7-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/original[.]webp$`));
   }
   assert.notEqual(stored[0].key, stored[1].key);
   assert.equal((await sharp(stored[0].data).metadata()).format, 'webp');
+});
+
+test('import rejects requests without a valid user or purpose', async t => {
+  const api = await serve(t, { download: async () => assert.fail('must not download'), upload: async () => {} });
+  for (const body of [{ userId: 0 }, { userId: '7' }, { userId: null }, { imagePurpose: 'FILE' }, { imagePurpose: 'toString' }]) {
+    const response = await api.post({ sourceUrl: 'https://example.com/a.png', ...body });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error.code, 'INVALID_REQUEST');
+  }
 });
 
 test('busy imports return 429 while health stays available; slot is released on failure', async t => {
@@ -138,8 +148,11 @@ test('body and storage failures have stable errors without internal details', as
 
 test('configuration requires runtime settings and rejects unsafe delivery URLs', () => {
   assert.throws(() => loadConfig({}), /AWS_REGION/);
-  const env = { AWS_REGION: 'ap-northeast-2', S3_BUCKET: 'bucket', IMAGE_BASE_URL: 'https://cdn.example.com/' };
+  const env = { AWS_REGION: 'ap-northeast-2', S3_BUCKET: 'bucket', S3_ROOT_DIRECTORY: '/rilog/', IMAGE_BASE_URL: 'https://cdn.example.com/' };
   assert.equal(loadConfig(env).imageBaseUrl, 'https://cdn.example.com');
+  assert.equal(loadConfig(env).rootDirectory, 'rilog');
   assert.throws(() => loadConfig({ ...env, IMAGE_BASE_URL: 'http://cdn.example.com' }), /HTTPS/);
-  assert.throws(() => loadConfig({ ...env, S3_KEY_PREFIX: '../originals' }), /S3_KEY_PREFIX/);
+  for (const root of ['../originals', 'rilog/../x', 'rilog//x']) {
+    assert.throws(() => loadConfig({ ...env, S3_ROOT_DIRECTORY: root }), /S3_ROOT_DIRECTORY/);
+  }
 });

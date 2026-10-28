@@ -3,6 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { ApiError, validateUrl, downloadImage } from './download.mjs';
 import { normalizeImage } from './image.mjs';
 
+// Spring ImagePurpose와 같은 목적별 디렉터리
+const PURPOSE_DIRECTORIES = { PROFILE: 'profiles', CONTENT: 'images' };
+
+function validateImportTarget(body) {
+  const { userId, imagePurpose } = body ?? {};
+  if (!Number.isSafeInteger(userId) || userId <= 0 || !Object.hasOwn(PURPOSE_DIRECTORIES, imagePurpose)) {
+    throw new ApiError(400, 'INVALID_REQUEST', 'userId와 imagePurpose가 올바르지 않습니다.');
+  }
+  return { userId, directory: PURPOSE_DIRECTORIES[imagePurpose] };
+}
+
 export function createApp({ config, upload, download = downloadImage, normalize = normalizeImage }) {
   const app = express();
   app.disable('x-powered-by');
@@ -14,9 +25,10 @@ export function createApp({ config, upload, download = downloadImage, normalize 
     if (active) return res.status(429).set('Retry-After', '2').json({ error: { code: 'BUSY', message: '잠시 후 다시 시도해주세요.' } });
     active = true;
     try {
+      const { userId, directory } = validateImportTarget(req.body);
       const url = validateUrl(req.body?.sourceUrl);
       const bytes = await normalize(await download(url));
-      const key = `${config.prefix}/${randomUUID()}.webp`;
+      const key = `${config.rootDirectory}/${directory}/raw/${userId}-${randomUUID()}/original.webp`;
       try {
         await upload(key, bytes);
       } catch (error) {
