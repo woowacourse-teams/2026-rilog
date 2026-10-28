@@ -113,7 +113,7 @@ public class UploadService {
                     .bucket(properties.bucket())
                     .key(objectKey)
                     .contentType(command.contentType())
-                    .tagging(createTaggingQuery(command.type() == UploadType.IMAGE ? CONFIRMED : TEMPORARY))
+                    .tagging(createTaggingQuery(TEMPORARY))
                     .build();
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofMinutes(properties.presignedUrlExpirationMinutes()))

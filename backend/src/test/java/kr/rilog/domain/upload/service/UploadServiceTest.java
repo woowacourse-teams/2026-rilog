@@ -139,7 +139,7 @@ class UploadServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "IMAGE,image/png,CONFIRMED",
+            "IMAGE,image/png,TEMPORARY",
             "FILE,application/pdf,TEMPORARY"
     })
     @DisplayName("업로드 유형에 맞는 초기 태그를 포함해 S3 업로드 요청을 서명한다.")
