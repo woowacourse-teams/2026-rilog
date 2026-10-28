@@ -71,16 +71,12 @@ export default function InlineCommentSelectionToolbar({
 				: Math.max(rect.right - TOOLBAR_OVERLAP, viewportLeft + VIEWPORT_PADDING);
 			let y = rect.bottom - TOOLBAR_OVERLAP;
 			if (!isDesktopViewport) {
-				const isBackward =
-					selection?.focusNode === draft.range.startContainer && selection.focusOffset === draft.range.startOffset;
-				const caret = draft.range.cloneRange();
-				caret.collapse(isBackward);
-				const endRect =
-					Array.from(caret.getClientRects()).find((item) => item.height > 0) ??
-					rects[isBackward ? 0 : rects.length - 1];
-				x = Math.min(Math.max(endRect.left, viewportLeft + VIEWPORT_PADDING), viewportRight - width - VIEWPORT_PADDING);
-				y = endRect.bottom + 16;
-				if (y + height > viewportBottom - VIEWPORT_PADDING) y = endRect.top - height - 16;
+				x = Math.min(
+					Math.max(rect.right - TOOLBAR_OVERLAP, viewportLeft + VIEWPORT_PADDING),
+					viewportRight - width - VIEWPORT_PADDING,
+				);
+				y = rect.bottom + 16;
+				if (y + height > viewportBottom - VIEWPORT_PADDING) y = rect.top - height - 16;
 			} else if (y + height > viewportBottom - VIEWPORT_PADDING) y = rect.top - height + TOOLBAR_OVERLAP;
 
 			setToolbar({
