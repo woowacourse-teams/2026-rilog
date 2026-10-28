@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CommentPanelSession } from '../hooks/use-comment-panel-session';
 
 import { analytics } from '@/features/analytics/model/events';
+import { revealInlineCommentInput } from '@/features/post-detail/lib/reveal-inline-comment-input';
 import { useUpdatePostCommentAnchorMutation } from '@/shared/api/posts/mutations/use-update-comment-anchor-mutation';
 import { isInvalidApiResponseError } from '@/shared/api/response-validation';
 import Button from '@/shared/ui/button/Button';
@@ -12,7 +13,6 @@ import AlertModal from '@/shared/ui/modal/AlertModal';
 import Textarea from '@/shared/ui/textarea/Textarea';
 
 import { useCommentPanelSession } from '../hooks/use-comment-panel-session';
-import { revealInlineCommentInput } from '../lib/reveal-inline-comment-input';
 
 interface InlineCommentEditFormProps {
 	postId: number;

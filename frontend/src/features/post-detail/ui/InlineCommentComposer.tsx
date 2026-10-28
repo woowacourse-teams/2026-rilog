@@ -27,18 +27,13 @@ interface InlineCommentComposerProps {
 	mobileComposerHost?: HTMLElement | null;
 }
 
-export default function InlineCommentComposer({
-	postId,
-	selection,
-	inputRef,
-	mobileComposerHost,
-	onCreated,
-	entrySource = 'selection_toolbar',
-}: InlineCommentComposerProps) {
+export default function InlineCommentComposer(props: InlineCommentComposerProps) {
+	const { postId, selection, inputRef, onCreated, entrySource = 'selection_toolbar' } = props;
 	const draftId = `selection:${JSON.stringify([postId, selection.blockId, selection.startOffset, selection.endOffset, selection.selectedText])}`;
 	const { commentText, onCommentChange } = useInlineCommentDraft(draftId);
 
 	const { isAuthenticated, isInitialized } = useAuth();
+	const mobileComposerHost = props.mobileComposerHost;
 	const mutation = useCreatePostCommentAnchorMutation(postId);
 	const isStaleSelection =
 		isNormalizedApiError(mutation.error) &&
