@@ -241,6 +241,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
 
@@ -293,7 +294,7 @@ function FakeEditor({ initialBlocks, onChange, onReady, ariaDescribedBy, ref }: 
 	);
 }
 
-function BodyImageUploadEditor({ onReady, uploadFile }: PostEditorProps) {
+function BodyImageUploadEditor({ onChange, onReady, uploadFile }: PostEditorProps) {
 	const [uploadedImageUrl, setUploadedImageUrl] = useState('');
 
 	useEffect(() => {
@@ -305,7 +306,10 @@ function BodyImageUploadEditor({ onReady, uploadFile }: PostEditorProps) {
 			<button
 				type="button"
 				onClick={() => {
-					void uploadFile(new File(['body-image'], 'body.png', { type: 'image/png' })).then(setUploadedImageUrl);
+					void uploadFile(new File(['body-image'], 'body.png', { type: 'image/png' })).then((url) => {
+						setUploadedImageUrl(url);
+						onChange([createParagraph('이미지 본문'), createImage(url)]);
+					});
 				}}
 			>
 				본문 이미지 업로드
@@ -762,19 +766,31 @@ describe('NewPostController', () => {
 		expect(within(cologSelect).getByRole('option', { name: 'Rilog Team' })).toHaveValue('20');
 	});
 
-	it('본문 이미지를 스토리지에 업로드하고 완성된 URL을 에디터에 전달한다', async () => {
-		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://images.rilog.test');
+	it('본문 이미지 업로드 후 크기 해시가 붙은 URL을 에디터와 임시저장 요청에 전달한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://rilog-bucket.s3.ap-northeast-2.amazonaws.com');
+		const close = vi.fn();
+		vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ width: 1200, height: 800, close }));
 		uploadRepresentativeImageMock.mockResolvedValue({ objectKey: 'posts/body-image.png' });
 		const user = userEvent.setup();
 		render(<NewPostController editorComponent={BodyImageUploadEditor} />);
 
 		await user.click(screen.getByRole('button', { name: '본문 이미지 업로드' }));
 
-		expect(await screen.findByText('https://images.rilog.test/posts/body-image.png')).toBeInTheDocument();
+		const imageUrl = 'https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/posts/body-image.png#1200x800';
+		expect(await screen.findByText(imageUrl)).toBeInTheDocument();
 		const uploadedBodyImage = uploadRepresentativeImageMock.mock.calls[0]?.[0];
 		expect(uploadedBodyImage?.file.name).toBe('body.png');
 		expect(uploadedBodyImage?.file.type).toBe('image/png');
 		expect(uploadedBodyImage?.type).toBe('IMAGE');
+		expect(close).toHaveBeenCalledOnce();
+
+		await user.type(screen.getByRole('textbox', { name: '게시글 제목' }), '이미지 크기 저장');
+		await user.click(screen.getByRole('button', { name: '임시저장' }));
+		await waitFor(() => expect(requestDraftSaveMock).toHaveBeenCalledOnce());
+		expect(requestDraftSaveMock.mock.calls[0]?.[0].content).toEqual([
+			createParagraph('이미지 본문'),
+			createImage(imageUrl),
+		]);
 	});
 
 	it('본문의 PDF 파일을 범용 파일로 업로드하고 완성된 URL을 에디터에 전달한다', async () => {

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL, resolvePostThumbnailUrl } from '@/domains/post/lib/post-thumbnail';
+import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
 interface PostDetailHeroProps {
 	title: string;
@@ -12,6 +13,7 @@ interface PostDetailHeroProps {
 export default function PostDetailHero({ title, thumbnailUrl }: PostDetailHeroProps) {
 	const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 	const resolvedThumbnailUrl = resolvePostThumbnailUrl(thumbnailUrl);
+	const imageSize = parseImageSizeHash(thumbnailUrl ?? '');
 	const isFallback = resolvedThumbnailUrl === POST_THUMBNAIL_FALLBACK_URL || failedImageUrl === resolvedThumbnailUrl;
 
 	if (isFallback) return null;
@@ -20,6 +22,11 @@ export default function PostDetailHero({ title, thumbnailUrl }: PostDetailHeroPr
 		<figure
 			aria-label={`${title} 대표 이미지`}
 			className="[container-type:inline-size] relative m-0 w-full overflow-hidden bg-thumbnail-background"
+			style={
+				imageSize === null
+					? undefined
+					: { aspectRatio: `${imageSize.width} / ${Math.min(imageSize.height, imageSize.width * 0.75)}` }
+			}
 		>
 			{/* 원본 비율을 유지하되 높이가 너비의 75%를 넘을 때만 중앙을 기준으로 자른다. */}
 			{/* eslint-disable-next-line @next/next/no-img-element */}

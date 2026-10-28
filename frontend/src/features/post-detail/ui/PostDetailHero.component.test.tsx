@@ -34,6 +34,21 @@ describe('PostDetailHero', () => {
 		expect(getSourceImageUrl('외부 이미지 글')).toBe('https://cdn.rilog.test/thumbnail.png');
 	});
 
+	it('크기 해시로 로딩 전 공간을 예약하고 이미지 src에서는 해시를 제거한다', () => {
+		render(<PostDetailHero title="크기 있는 글" thumbnailUrl="posts/cover.png#1200x800" />);
+
+		expect(screen.getByRole('figure', { name: '크기 있는 글 대표 이미지' })).toHaveStyle({ aspectRatio: '1200 / 800' });
+		expect(getSourceImageUrl('크기 있는 글')).toBe('https://images.rilog.test/posts/cover.png');
+	});
+
+	it('세로로 긴 이미지는 높이를 너비의 75%로 제한해 예약한다', () => {
+		render(<PostDetailHero title="세로 이미지 글" thumbnailUrl="posts/tall.png#600x1200" />);
+
+		expect(screen.getByRole('figure', { name: '세로 이미지 글 대표 이미지' })).toHaveStyle({
+			aspectRatio: '600 / 450',
+		});
+	});
+
 	it('썸네일이 없거나 fallback 이미지면 Hero를 렌더링하지 않는다', () => {
 		const { rerender } = render(<PostDetailHero title="이미지 없는 글" thumbnailUrl={null} />);
 

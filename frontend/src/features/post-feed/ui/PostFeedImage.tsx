@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import { getImageUrl } from '@/shared/utils/get-image-url';
+import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
 interface PostFeedImageProps {
 	src: string | null;
@@ -29,7 +30,7 @@ export default function PostFeedImage({
 	isScaledOnInteraction = false,
 }: PostFeedImageProps) {
 	const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-	const sourceImageUrl = getImageUrl(src);
+	const sourceImageUrl = getImageUrl(parseImageSizeHash(src ?? '')?.url ?? src);
 	const hasFallback = sourceImageUrl === '' || sourceImageUrl === failedImageUrl;
 	const imageUrl = hasFallback ? getImageUrl(fallbackSrc) : sourceImageUrl;
 

@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 
 import { withAnalyticsFailureStage } from '@/features/analytics/model/analytics-event';
+import { appendImageSizeHash } from '@/features/post-write/lib/append-image-size-hash';
 import { buildDraftPublishRequest } from '@/features/post-write/lib/build-draft-publish-request';
 import { buildPostWriteRequest } from '@/features/post-write/lib/build-post-write-request';
 import { mapDraftPublishResponse } from '@/features/post-write/lib/map-draft-publish-response';
@@ -34,7 +35,7 @@ export function usePublishNewPost(): PublishPost {
 		async (command) => {
 			const request = await buildPostWriteRequest(command, async (file) => {
 				const { objectKey } = await uploadFile({ file, type: 'IMAGE' });
-				return objectKey;
+				return appendImageSizeHash(file, objectKey);
 			});
 
 			try {
@@ -55,7 +56,7 @@ export function usePublishPostDraft(): PublishPostDraft {
 		async (draftId, command) => {
 			const request = await buildDraftPublishRequest(command, async (file) => {
 				const { objectKey } = await uploadFile({ file, type: 'IMAGE' });
-				return objectKey;
+				return appendImageSizeHash(file, objectKey);
 			});
 
 			try {
@@ -76,7 +77,7 @@ export function useUpdatePublishedPost(postId: number): PublishPost {
 		async (command) => {
 			const request = await buildPostWriteRequest(command, async (file) => {
 				const { objectKey } = await uploadFile({ file, type: 'IMAGE' });
-				return objectKey;
+				return appendImageSizeHash(file, objectKey);
 			});
 
 			try {
