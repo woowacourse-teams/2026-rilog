@@ -3,6 +3,7 @@
 - 상태: 적용
 - 날짜: 2026-10-04
 - 영향: frontend의 오류 관측 및 사용자 식별 정보
+- 후속 보완: [ADR 0024](./0024-diagnostic-data-minimization.md)는 URL·breadcrumb·header 허용 목록과 replay 링크 검증을 제안한다. 운영 적용 여부는 후속 ADR 및 PR을 따른다.
 - 대체: ADR 0003의 이벤트 전체 재구성과 operation별 수집 계약. 백엔드 로그 정책은 유지한다.
 
 ## 배경

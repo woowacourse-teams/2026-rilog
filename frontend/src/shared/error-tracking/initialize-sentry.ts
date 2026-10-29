@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 import { shouldCaptureAutomaticError } from './api-error-reporter';
+import { safePostHogReplayUrl } from './sentry-diagnostic-privacy';
 import { resolveSentryEnvironment } from './sentry-environment';
 import { filterSentryEvent, filterSentrySpan } from './sentry-privacy';
 import { resolveSentrySlackMode } from './sentry-slack-mode';
@@ -36,7 +37,8 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 				if (!shouldCaptureAutomaticError(hint.originalException, event.tags?.report_source === 'api')) return null;
 				const filtered = filterSentryEvent(event);
 				try {
-					const sessionReplayUrl = getSessionReplayUrl?.();
+					const rawReplayUrl = getSessionReplayUrl?.();
+					const sessionReplayUrl = rawReplayUrl ? safePostHogReplayUrl(rawReplayUrl) : null;
 					if (sessionReplayUrl) {
 						filtered.tags = { ...filtered.tags, 'PostHog Recording URL': sessionReplayUrl };
 						filtered.contexts = {

@@ -65,7 +65,7 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 			errorType: 'HTTPError',
 			route: '/write',
 			tags: { operation: 'post.publish', http_status: '503' },
-			sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+			sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 			breadcrumbs: [
 				{ category: 'navigation', from: '/feed', to: '/write' },
 				{
@@ -98,13 +98,13 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 	expect(parent.text).toContain('/write');
 	expect(parent.text).toContain('Sentry event ID: 11111111111111111111111111111111');
 	expect(parent.text).toContain(
-		'PostHog session replay: https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+		'PostHog session replay: https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 	);
 	expect(
 		parent.blocks.some(
 			(block) =>
 				block.text?.text ===
-				'<https://us.posthog.com/project/phc_test/replay/session-1?t=30|PostHog session replay 보기>',
+				'<https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30|PostHog session replay 보기>',
 		),
 	).toBe(true);
 	expect(parent.text).not.toContain('fetch POST');
