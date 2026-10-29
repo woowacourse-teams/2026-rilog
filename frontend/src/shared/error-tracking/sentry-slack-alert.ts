@@ -1,6 +1,9 @@
 import type { SentrySlackSummary } from './sentry-slack-summary';
 
+import { resolveSentrySlackMode } from './sentry-slack-mode';
+
 export function notifySlackFromBrowser(summary: SentrySlackSummary): void {
+	if (resolveSentrySlackMode(process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE) !== 'legacy') return;
 	try {
 		void fetch('/api/observability/sentry-slack', {
 			method: 'POST',
@@ -15,6 +18,7 @@ export function notifySlackFromBrowser(summary: SentrySlackSummary): void {
 }
 
 export function notifySlackFromEdge(summary: SentrySlackSummary): void {
+	if (resolveSentrySlackMode(process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE) !== 'legacy') return;
 	const site = process.env.NEXT_PUBLIC_SITE_URL;
 	if (!site) return;
 	try {

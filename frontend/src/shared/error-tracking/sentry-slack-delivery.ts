@@ -3,6 +3,7 @@ import 'server-only';
 import type { SentrySlackBreadcrumb, SentrySlackSummary } from './sentry-slack-summary';
 
 import { resolveSentryEnvironment } from './sentry-environment';
+import { resolveSentrySlackMode } from './sentry-slack-mode';
 
 const WINDOW_MS = 60_000;
 const DUPLICATE_MS = 5 * 60_000;
@@ -34,11 +35,17 @@ function admit(source: string, summary: SentrySlackSummary, now: number): { key:
 	return { key, until };
 }
 
-function formatMainMessage(summary: SentrySlackSummary) {
+function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 	const tags = Object.entries(summary.tags)
 		.map(([key, value]) => `${key}: ${value}`)
 		.join('\n');
 	const title = summary.title.replace(/`/g, "'");
+	const flow = eventUrl
+		? summary.breadcrumbs.map(
+				(breadcrumb, index) =>
+					`직전 흐름 ${index + 1}\n${formatBreadcrumb(breadcrumb).slice(0, 2500).replace(/```/g, "'''")}`,
+			)
+		: [];
 	return {
 		text: [
 			`🔴 ${summary.errorType}`,
@@ -46,6 +53,8 @@ function formatMainMessage(summary: SentrySlackSummary) {
 			title,
 			tags ? `\`\`\`${tags}\`\`\`` : '',
 			`Sentry event ID: ${summary.eventId}`,
+			eventUrl ? `Sentry 이벤트: ${eventUrl}` : '수집 상태: SDK 전송 전 · Sentry 저장 미확인',
+			...flow,
 			summary.sessionReplayUrl ? `PostHog session replay: ${summary.sessionReplayUrl}` : '',
 		]
 			.filter(Boolean)
@@ -59,6 +68,18 @@ function formatMainMessage(summary: SentrySlackSummary) {
 			{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${title}\`\`\`` } },
 			...(tags ? [{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${tags}\`\`\`` } }] : []),
 			{ type: 'context', elements: [{ type: 'mrkdwn', text: `Sentry event ID: \`${summary.eventId}\`` }] },
+			{
+				type: 'context',
+				elements: [
+					{
+						type: 'mrkdwn',
+						text: eventUrl
+							? `<${eventUrl}|Sentry 이벤트 보기> · 서명된 Sentry alert`
+							: 'SDK 전송 전 · Sentry 저장 미확인',
+					},
+				],
+			},
+			...flow.map((text) => ({ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${text}\`\`\`` } })),
 			...(summary.sessionReplayUrl
 				? [
 						{
@@ -126,23 +147,54 @@ async function postSlackApi(body: unknown, token: string): Promise<{ ok: boolean
 	return { ok: result.ok === true, ts: typeof result.ts === 'string' ? result.ts : undefined };
 }
 
-export async function deliverSentrySlackAlert(summary: SentrySlackSummary, source: string): Promise<boolean> {
+interface SlackDeliveryOptions {
+	mode?: 'legacy' | 'webhook';
+	eventUrl?: string;
+}
+
+export async function deliverSentrySlackAlert(
+	summary: SentrySlackSummary,
+	source: string,
+	options: SlackDeliveryOptions = {},
+): Promise<boolean> {
+	const mode = resolveSentrySlackMode(process.env.SENTRY_SLACK_MODE ?? process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE);
+	const deliveryMode = options.mode ?? 'legacy';
+	if (mode !== deliveryMode) return false;
+	if (deliveryMode === 'webhook') {
+		const org = process.env.SENTRY_WEBHOOK_ORG;
+		if (!org || !/^[a-z0-9_-]+$/.test(org) || !options.eventUrl || !/^[a-f\d]{32}$/.test(summary.eventId)) return false;
+		try {
+			const url = new URL(options.eventUrl);
+			if (
+				url.origin !== `https://${org}.sentry.io` ||
+				url.username ||
+				url.password ||
+				url.search ||
+				url.hash ||
+				!/^\/issues\/[1-9]\d*\/events\/[a-f\d]{32}\/$/.test(url.pathname) ||
+				!url.pathname.endsWith(`/events/${summary.eventId}/`)
+			)
+				return false;
+		} catch {
+			return false;
+		}
+	}
 	const config = resolveSentryEnvironment({
 		environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
 		enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
 		dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 		siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
 	});
-	if (!config.enabled || config.environment !== 'prod') return false;
+	if (deliveryMode === 'legacy' && (!config.enabled || config.environment !== 'prod')) return false;
 	const token = process.env.SENTRY_SLACK_BOT_TOKEN;
 	const channel = process.env.SENTRY_SLACK_CHANNEL_ID;
 	const webhook = process.env.SENTRY_SLACK_WEBHOOK_URL;
 	if ((!token || !channel) && !webhook) return false;
-	const admission = admit(source, summary, Date.now());
-	if (!admission) return true;
+	const admission = deliveryMode === 'legacy' ? admit(source, summary, Date.now()) : undefined;
+	if (deliveryMode === 'legacy' && !admission) return true;
 	let mainDelivered = false;
 	try {
-		const main = formatMainMessage(summary);
+		const main = formatMainMessage(summary, deliveryMode === 'webhook' ? options.eventUrl : undefined);
 		if (token && channel) {
 			const parent = await postSlackApi({ channel, ...main, unfurl_links: false }, token);
 			if (!parent.ok || !parent.ts) {
@@ -150,6 +202,7 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 				return false;
 			}
 			mainDelivered = true;
+			if (deliveryMode === 'webhook') return true;
 			let repliesDelivered = true;
 			for (const [index, breadcrumb] of summary.breadcrumbs.entries()) {
 				// Slack generally allows one channel message per second, including thread replies.
@@ -180,7 +233,7 @@ export async function deliverSentrySlackAlert(summary: SentrySlackSummary, sourc
 	} catch {
 		console.error('Sentry Slack alert delivery failed.');
 	} finally {
-		if (!mainDelivered && duplicateUntil.get(admission.key) === admission.until) {
+		if (admission && !mainDelivered && duplicateUntil.get(admission.key) === admission.until) {
 			duplicateUntil.delete(admission.key);
 		}
 	}

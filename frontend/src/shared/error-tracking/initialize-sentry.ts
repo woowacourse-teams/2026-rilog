@@ -5,6 +5,7 @@ import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 import { shouldCaptureAutomaticError } from './api-error-reporter';
 import { resolveSentryEnvironment } from './sentry-environment';
 import { filterSentryEvent, filterSentrySpan } from './sentry-privacy';
+import { resolveSentrySlackMode } from './sentry-slack-mode';
 import { summarizeSentryEventForSlack, type SentrySlackSummary } from './sentry-slack-summary';
 
 interface InitializeSentryOptions {
@@ -47,6 +48,7 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 					logNonProductionWarning('PostHog session replay URL preparation failed.');
 				}
 				if (
+					resolveSentrySlackMode(process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE) === 'legacy' &&
 					config.enabled &&
 					config.environment === 'prod' &&
 					filtered.environment === 'prod' &&

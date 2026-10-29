@@ -65,3 +65,20 @@ it('다른 출처나 임의 필드를 포함한 요청은 Slack에 전달하지 
 	expect(malformed.status).toBe(400);
 	expect(deliverSentrySlackAlert).not.toHaveBeenCalled();
 });
+
+it.each(['webhook', 'off', 'invalid'])('전환 모드 %s에서는 같은 Origin의 임의 summary도 거부한다', async (mode) => {
+	vi.stubEnv('SENTRY_SLACK_MODE', mode);
+	try {
+		const response = await POST(
+			new Request('https://www.rilog.kr/api/observability/sentry-slack', {
+				method: 'POST',
+				headers: { origin: 'https://www.rilog.kr', 'content-type': 'application/json' },
+				body,
+			}),
+		);
+		expect(response.status).toBe(410);
+		expect(deliverSentrySlackAlert).not.toHaveBeenCalled();
+	} finally {
+		vi.unstubAllEnvs();
+	}
+});

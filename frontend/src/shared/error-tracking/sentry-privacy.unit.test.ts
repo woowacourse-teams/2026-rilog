@@ -100,3 +100,20 @@ it('Sentry query_string의 객체와 key-value tuple 형식도 민감 키를 가
 		['page', '2'],
 	]);
 });
+
+it.each([
+	{ headers: { 'Sentry-Hook-Signature': 'fixture-webhook-signature', 'User-Agent': 'fixture-browser' } },
+	{
+		headers: [
+			['Sentry-Hook-Signature', 'fixture-webhook-signature'],
+			['Cookie', 'fixture-session'],
+			['User-Agent', 'fixture-browser'],
+		],
+	},
+])('webhook 인증 서명은 SDK request header의 객체와 tuple 표현 모두에서 제거한다', ({ headers }) => {
+	const event = { type: undefined, request: { headers } } as Parameters<typeof filterSentryEvent>[0];
+	const sent = JSON.stringify(filterSentryEvent(event));
+	expect(sent).not.toContain('fixture-webhook-signature');
+	expect(sent).not.toContain('fixture-session');
+	expect(sent).toContain('fixture-browser');
+});
