@@ -109,8 +109,8 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 트렌딩 ID 내림차순으로 반환한다.")
-    void readTrendingPostsOrdersByScoreAndTrendingId() {
+    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 최근 발행 순으로 반환한다.")
+    void readTrendingPostsOrdersByScoreAndPublicationTime() {
         // given
         User author = saveCompletedUser(1L, "트렌딩작성자", "trending_author");
         Blog rilog = saveRilog(author);
@@ -136,7 +136,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(highestScorePost.getId(), olderPost.getId(), newerPost.getId());
+                .containsExactly(highestScorePost.getId(), newerPost.getId(), olderPost.getId());
     }
 
     @Test
@@ -242,14 +242,14 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 Slice 페이지 정보와 다음 페이지 존재 여부를 반환한다.")
-    void readTrendingPostsReturnsRequestedSlice() {
+    @DisplayName("점수와 발행 시각이 같은 트렌딩 글은 게시글 ID 내림차순의 Slice와 다음 페이지 여부를 반환한다.")
+    void readTrendingPostsPaginatesTiesByPostId() {
         // given
         User author = saveCompletedUser(4L, "페이지작성자", "trending_page_author");
         Blog rilog = saveRilog(author);
-        Post firstPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        Post secondPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        Post thirdPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post firstPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post secondPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post thirdPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
         saveTrending(10L, firstPost);
         saveTrending(30L, secondPost);
         saveTrending(20L, thirdPost);
@@ -262,7 +262,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(secondPost.getId(), thirdPost.getId());
+                .containsExactly(thirdPost.getId(), secondPost.getId());
         assertThat(result.hasNext()).isTrue();
     }
 
