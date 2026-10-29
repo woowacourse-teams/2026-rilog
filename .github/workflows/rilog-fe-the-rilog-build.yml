@@ -36,6 +36,8 @@ jobs:
           printf '%s\n' "$ENV_SECRET" > .env
       - name: Capture input and build
         env:
+          NEXT_PUBLIC_SENTRY_ENVIRONMENT: "preview"
+          NEXT_PUBLIC_SENTRY_ENABLED: "false"
           SENTRY_RELEASE: ${{ github.sha }}
           SENTRY_UPLOAD_REQUIRED: "false"
         run: |

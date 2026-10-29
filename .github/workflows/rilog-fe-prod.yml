@@ -68,13 +68,18 @@ jobs:
 
       - name: Build Next.js app
         env:
+          NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${{ github.event_name == 'push' && 'prod' || 'preview' }}
           SENTRY_RELEASE: ${{ github.sha }}
           SENTRY_UPLOAD_REQUIRED: ${{ github.event_name == 'push' && 'true' || 'false' }}
         shell: bash
         run: |
           if [[ "$SENTRY_UPLOAD_REQUIRED" == 'true' ]]; then
+            node --env-file=.env scripts/verify-sentry-production.mjs
             node --env-file=.env -e "if (!process.env.SENTRY_AUTH_TOKEN) { console.error('Production Sentry source map upload requires SENTRY_AUTH_TOKEN.'); process.exit(1); }"
             node --env-file=.env -e "if (!process.env.THE_RILOG_REVALIDATION_SECRET?.trim()) { console.error('Daily ISR requires THE_RILOG_REVALIDATION_SECRET.'); process.exit(1); }"
+          fi
+          if [[ '${{ github.event_name }}' != 'push' ]]; then
+            export NEXT_PUBLIC_SENTRY_ENABLED=false
           fi
           if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
             node scripts/create-the-rilog-fixture.mjs

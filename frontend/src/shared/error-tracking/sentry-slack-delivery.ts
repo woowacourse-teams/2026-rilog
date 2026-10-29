@@ -2,6 +2,8 @@ import 'server-only';
 
 import type { SentrySlackBreadcrumb, SentrySlackSummary } from './sentry-slack-summary';
 
+import { resolveSentryEnvironment } from './sentry-environment';
+
 const WINDOW_MS = 60_000;
 const DUPLICATE_MS = 5 * 60_000;
 const MAX_PER_IP = 10;
@@ -125,7 +127,13 @@ async function postSlackApi(body: unknown, token: string): Promise<{ ok: boolean
 }
 
 export async function deliverSentrySlackAlert(summary: SentrySlackSummary, source: string): Promise<boolean> {
-	if (process.env.NODE_ENV !== 'production') return false;
+	const config = resolveSentryEnvironment({
+		environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
+		enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
+		dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+		siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+	});
+	if (!config.enabled || config.environment !== 'prod') return false;
 	const token = process.env.SENTRY_SLACK_BOT_TOKEN;
 	const channel = process.env.SENTRY_SLACK_CHANNEL_ID;
 	const webhook = process.env.SENTRY_SLACK_WEBHOOK_URL;

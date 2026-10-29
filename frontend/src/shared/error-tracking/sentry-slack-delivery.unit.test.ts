@@ -1,8 +1,15 @@
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
 import { deliverSentrySlackAlert } from './sentry-slack-delivery';
+
+beforeEach(() => {
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'prod');
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENABLED', 'true');
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@example.invalid/1');
+	vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.rilog.kr');
+});
 
 it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 억제한다', async () => {
 	vi.stubEnv('NODE_ENV', 'production');
@@ -200,3 +207,30 @@ it('Slack 본문 전송이 실패하면 같은 오류의 다음 실행을 중복
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
+
+it.each(['preview', 'local', 'smoke', ''])(
+	'비운영 환경 %s는 상속한 Slack 설정으로 전송하지 않는다',
+	async (environment) => {
+		vi.stubEnv('NODE_ENV', 'production');
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', environment);
+		vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+		const post = vi.fn();
+		vi.stubGlobal('fetch', post);
+		await expect(
+			deliverSentrySlackAlert(
+				{
+					eventId: '66666666666666666666666666666666',
+					title: 'test',
+					errorType: 'Error',
+					route: '/write',
+					tags: { environment: 'prod' },
+					breadcrumbs: [],
+				},
+				'test',
+			),
+		).resolves.toBe(false);
+		expect(post).not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	},
+);
