@@ -60,7 +60,7 @@ public interface TrendingPostQueryRepository extends Repository<TrendingPost, Lo
                   OR (colog.id IS NOT NULL AND colog.blogType = :blogType)
                   OR (colog.id IS NULL AND rilog.blogType = :blogType)
               )
-            ORDER BY trending.score DESC, post.publishedAt DESC, post.id DESC
+            ORDER BY trending.score DESC, trending.id DESC
             """)
     Slice<PostFullFeedRow> findTrendingPosts(
             @Param("status") PostStatus status,

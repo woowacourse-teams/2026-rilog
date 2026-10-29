@@ -109,8 +109,8 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 최근 발행 순으로 반환한다.")
-    void readTrendingPostsOrdersByScoreAndPublicationTime() {
+    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 트렌딩 ID 내림차순으로 반환한다.")
+    void readTrendingPostsOrdersByScoreAndTrendingId() {
         // given
         User author = saveCompletedUser(1L, "트렌딩작성자", "trending_author");
         Blog rilog = saveRilog(author);
@@ -136,7 +136,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(highestScorePost.getId(), newerPost.getId(), olderPost.getId());
+                .containsExactly(highestScorePost.getId(), olderPost.getId(), newerPost.getId());
     }
 
     @Test
@@ -242,8 +242,8 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("점수와 발행 시각이 같은 트렌딩 글은 게시글 ID 내림차순의 Slice와 다음 페이지 여부를 반환한다.")
-    void readTrendingPostsPaginatesTiesByPostId() {
+    @DisplayName("점수가 같은 트렌딩 글은 트렌딩 ID 내림차순의 Slice와 다음 페이지 여부를 반환한다.")
+    void readTrendingPostsPaginatesTiesByTrendingId() {
         // given
         User author = saveCompletedUser(4L, "페이지작성자", "trending_page_author");
         Blog rilog = saveRilog(author);
@@ -262,7 +262,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(thirdPost.getId(), secondPost.getId());
+                .containsExactly(secondPost.getId(), thirdPost.getId());
         assertThat(result.hasNext()).isTrue();
     }
 
