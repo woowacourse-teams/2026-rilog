@@ -65,12 +65,12 @@
 		color 120ms ease;
 }
 
-.post-detail-body [data-inline-comment-block-button]:hover {
+.post-detail-body [data-inline-comment-block-button]:hover:not(:disabled) {
 	background: var(--surface-hover);
 	color: var(--focus-ring);
 }
 
-.post-detail-body [data-inline-comment-block-button]:active {
+.post-detail-body [data-inline-comment-block-button]:active:not(:disabled) {
 	background: var(--surface-active);
 	color: var(--focus-ring);
 }

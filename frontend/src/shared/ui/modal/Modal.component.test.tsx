@@ -1,12 +1,111 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef, StrictMode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SyntheticEvent } from 'react';
 
+import BaseModal from './BaseModal';
+import ConfirmModal from './ConfirmModal';
 import Modal from './Modal';
 
 describe('Modal', () => {
+	it('닫는 도중 다시 열면 닫기 예약을 취소하고 열린 상태로 복구한다', async () => {
+		const ui = (open: boolean) => (
+			<BaseModal open={open} onDismiss={vi.fn()} exitDurationMs={240} accessibility={{ labelledBy: 'reopen-title' }}>
+				<h2 id="reopen-title">빠른 재진입</h2>
+			</BaseModal>
+		);
+		const { rerender } = render(ui(true));
+		const dialog = screen.getByRole('dialog', { name: '빠른 재진입' });
+		await waitFor(() => expect(dialog).toHaveAttribute('data-state', 'open'));
+		rerender(ui(false));
+		expect(dialog).toHaveAttribute('data-state', 'closing');
+		rerender(ui(true));
+		expect(dialog).toHaveAttribute('data-state', 'open');
+		expect(dialog).toHaveAttribute('open');
+		rerender(ui(false));
+		await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+	});
+
+	it('열린 모달의 초기 포커스 참조가 바뀌어도 다시 열거나 포커스를 빼앗지 않는다', async () => {
+		const first = createRef<HTMLInputElement>();
+		const second = createRef<HTMLInputElement>();
+		const ui = (open: boolean, target: 'first' | 'second') => (
+			<BaseModal
+				open={open}
+				onDismiss={vi.fn()}
+				accessibility={{ labelledBy: 'focus-modal-title' }}
+				initialFocusRef={target === 'first' ? first : second}
+			>
+				<h2 id="focus-modal-title">포커스 모달</h2>
+				<input ref={first} aria-label="첫 입력" />
+				<input ref={second} aria-label="둘째 입력" />
+			</BaseModal>
+		);
+		const { rerender } = render(ui(true, 'first'));
+		const dialog = screen.getByRole('dialog', { name: '포커스 모달' });
+		await waitFor(() => expect(dialog).toHaveAttribute('data-state', 'open'));
+		expect(screen.getByRole('textbox', { name: '첫 입력' })).toHaveFocus();
+		rerender(ui(true, 'second'));
+		expect(dialog).toHaveAttribute('data-state', 'open');
+		expect(screen.getByRole('textbox', { name: '첫 입력' })).toHaveFocus();
+		rerender(ui(false, 'first'));
+		rerender(ui(false, 'second'));
+		await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+	});
+
+	it('열린 모달을 제거하면 ref가 해제돼도 실제 dialog를 닫는다', () => {
+		const { unmount } = render(
+			<StrictMode>
+				<BaseModal open onDismiss={vi.fn()} accessibility={{ labelledBy: 'unmount-title' }}>
+					<h2 id="unmount-title">제거 모달</h2>
+				</BaseModal>
+			</StrictMode>,
+		);
+		const dialog = screen.getByRole('dialog', { name: '제거 모달' });
+		unmount();
+		expect(dialog).not.toHaveAttribute('open');
+	});
+
+	it('Strict Mode에서 열린 채 마운트된 모달도 닫으면 native dialog 잠금을 해제한다', async () => {
+		const props = { accessibility: { labelledBy: 'strict-modal-title' }, onDismiss: vi.fn() };
+		const { rerender } = render(
+			<StrictMode>
+				<BaseModal {...props} open>
+					<h2 id="strict-modal-title">열린 모달</h2>
+				</BaseModal>
+			</StrictMode>,
+		);
+		const dialog = screen.getByRole('dialog', { name: '열린 모달' });
+		expect(dialog).toHaveAttribute('open');
+		rerender(
+			<StrictMode>
+				<BaseModal {...props} open={false}>
+					<h2 id="strict-modal-title">열린 모달</h2>
+				</BaseModal>
+			</StrictMode>,
+		);
+		await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+	});
+
+	it('중첩 확인창에서 Escape로 취소해도 부모 댓글창의 닫기를 요청하지 않는다', async () => {
+		const closeComments = vi.fn();
+		const cancelDelete = vi.fn();
+		render(
+			<BaseModal open historyManaged onDismiss={closeComments} accessibility={{ labelledBy: 'comments-title' }}>
+				<h2 id="comments-title">댓글</h2>
+				<ConfirmModal open title="댓글 삭제" onConfirm={vi.fn()} onCancel={cancelDelete} />
+			</BaseModal>,
+		);
+
+		await userEvent.keyboard('{Escape}');
+		expect(closeComments).not.toHaveBeenCalled();
+		fireEvent(screen.getByRole('dialog', { name: '댓글 삭제' }), new Event('cancel', { cancelable: true }));
+		expect(cancelDelete).toHaveBeenCalledOnce();
+		expect(closeComments).not.toHaveBeenCalled();
+	});
+
 	it('title과 description을 accessible dialog 정보로 연결한다', () => {
 		render(
 			<Modal open title="새 팀 만들기" description="팀 정보를 입력해 주세요." onClose={vi.fn()}>
