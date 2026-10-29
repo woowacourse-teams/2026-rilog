@@ -1,28 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const sentryDsn = process.env.SENTRY_SMOKE_DSN;
+import { resolveSentrySmokeConfig } from './test-harness/sentry-smoke-config.mjs';
+
+const { dsn: sentryDsn } = resolveSentrySmokeConfig(process.env);
 const isProductionSmoke = process.env.SENTRY_SMOKE_PRODUCTION === 'true';
 const isPostHogReplaySmoke = process.env.POSTHOG_REPLAY_SMOKE === 'true';
-
-if (!sentryDsn) {
-	throw new Error('SENTRY_SMOKE_DSN에 테스트용 Sentry DSN을 설정해 주세요.');
-}
-
-let parsedDsn: URL;
-try {
-	parsedDsn = new URL(sentryDsn);
-} catch {
-	throw new Error('SENTRY_SMOKE_DSN에 Sentry에서 복사한 실제 DSN을 입력해 주세요.');
-}
-
-if (
-	parsedDsn.protocol !== 'https:' ||
-	!parsedDsn.username ||
-	!parsedDsn.hostname ||
-	!/^\/\d+\/?$/.test(parsedDsn.pathname)
-) {
-	throw new Error('SENTRY_SMOKE_DSN 형식이 올바르지 않습니다. 테스트 프로젝트의 DSN을 확인해 주세요.');
-}
 
 export default defineConfig({
 	testDir: './src/test/sentry-e2e',
@@ -48,13 +30,16 @@ export default defineConfig({
 			NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 			NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
 			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: isPostHogReplaySmoke
-				? (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ?? '')
+				? (process.env.SENTRY_SMOKE_POSTHOG_PROJECT_TOKEN ?? '')
 				: '',
-			NEXT_PUBLIC_POSTHOG_HOST: isPostHogReplaySmoke ? (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? '') : '',
+			NEXT_PUBLIC_POSTHOG_HOST: isPostHogReplaySmoke ? (process.env.SENTRY_SMOKE_POSTHOG_HOST ?? '') : '',
 			NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER: isPostHogReplaySmoke ? 'true' : 'false',
 			NEXT_PUBLIC_SENTRY_DSN: sentryDsn,
 			NEXT_PUBLIC_SENTRY_ENABLED: 'true',
-			NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'local',
+			NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'smoke',
+			SENTRY_SLACK_BOT_TOKEN: '',
+			SENTRY_SLACK_CHANNEL_ID: '',
+			SENTRY_SLACK_WEBHOOK_URL: '',
 			SENTRY_AUTH_TOKEN: '',
 		},
 	},

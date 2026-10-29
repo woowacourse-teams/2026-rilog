@@ -102,7 +102,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
+          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

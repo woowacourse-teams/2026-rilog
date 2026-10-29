@@ -1,6 +1,10 @@
 import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 
+import { resolveSentrySmokeConfig } from './test-harness/sentry-smoke-config.mjs';
+
+const smokeConfig = process.env.SENTRY_FEED_503_SMOKE === 'true' ? resolveSentrySmokeConfig(process.env) : undefined;
+
 const isSentryUploadRequired = process.env.SENTRY_UPLOAD_REQUIRED === 'true';
 
 const nextConfig: NextConfig = {
@@ -77,9 +81,9 @@ export default withSentryConfig(nextConfig, {
 	// For all available options, see:
 	// https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-	org: 'rilog-fontend',
+	org: smokeConfig?.org ?? 'rilog-fontend',
 
-	project: 'rilog-frontend-nextjs',
+	project: smokeConfig?.project ?? 'rilog-frontend-nextjs',
 	release: {
 		name: process.env.SENTRY_RELEASE,
 		create: isSentryUploadRequired,
