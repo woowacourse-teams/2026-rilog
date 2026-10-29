@@ -54,6 +54,7 @@ export default defineConfig({
 			NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER: isPostHogReplaySmoke ? 'true' : 'false',
 			NEXT_PUBLIC_SENTRY_DSN: sentryDsn,
 			NEXT_PUBLIC_SENTRY_ENABLED: 'true',
+			NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'local',
 			SENTRY_AUTH_TOKEN: '',
 		},
 	},

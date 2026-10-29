@@ -3,23 +3,32 @@ import * as Sentry from '@sentry/nextjs';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
 import { shouldCaptureAutomaticError } from './api-error-reporter';
+import { resolveSentryEnvironment } from './sentry-environment';
 import { filterSentryEvent, filterSentrySpan } from './sentry-privacy';
 import { summarizeSentryEventForSlack, type SentrySlackSummary } from './sentry-slack-summary';
 
 interface InitializeSentryOptions {
+	runtime?: 'browser' | 'node' | 'edge';
 	tracesSampleRate?: number;
 	onSlackAlert?: (summary: SentrySlackSummary) => void;
 	getSessionReplayUrl?: () => string | undefined;
 }
 
 export function initializeSentry(options: InitializeSentryOptions = {}): void {
-	const isProduction = process.env.NODE_ENV === 'production';
-	const { getSessionReplayUrl, onSlackAlert, ...sentryOptions } = options;
+	const { runtime = 'node', getSessionReplayUrl, onSlackAlert, ...sentryOptions } = options;
+	const config = resolveSentryEnvironment({
+		environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
+		enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
+		dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+		siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+		browserOrigin: typeof window === 'undefined' ? undefined : window.location.origin,
+	});
 	try {
 		Sentry.init({
 			dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-			enabled: isProduction || process.env.NEXT_PUBLIC_SENTRY_ENABLED === 'true',
-			environment: isProduction ? 'prod' : 'local',
+			enabled: config.enabled,
+			environment: config.environment,
+			initialScope: { tags: { runtime } },
 			sendDefaultPii: false,
 			beforeSend: (event, hint) => {
 				hint.attachments = [];
@@ -38,7 +47,8 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 					logNonProductionWarning('PostHog session replay URL preparation failed.');
 				}
 				if (
-					isProduction &&
+					config.enabled &&
+					config.environment === 'prod' &&
 					filtered.environment === 'prod' &&
 					(!filtered.level || filtered.level === 'error' || filtered.level === 'fatal')
 				) {
