@@ -3,9 +3,6 @@
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
-import type { User } from '@/domains/user/model/user';
-import UserAvatar from '@/domains/user/ui/UserAvatar';
-import UserBlogLink from '@/domains/user/ui/UserBlogLink';
 import { useAuth } from '@/features/auth/model/use-auth';
 import { useAuthAction } from '@/features/login/model/use-auth-action';
 import { useNotificationUnreadCountQuery } from '@/shared/api/notifications/queries/unread-count/use-query';
@@ -20,19 +17,7 @@ import NotificationIcon from '@/widgets/sidebar/assets/notification.svg';
 
 import { mapMyInfoResponse } from '../lib/map-my-info-response';
 
-function UserProfile({ user }: { user: User | null | undefined }) {
-	const userAvatar = (
-		<UserAvatar
-			src={user?.profileImageUrl}
-			fallback={user?.nickname.slice(0, 1).toUpperCase() ?? 'P'}
-			label={user === null || user === undefined ? '사용자 프로필' : `${user.nickname} 프로필`}
-			size="lg"
-			hasBorder
-		/>
-	);
-
-	return user?.slug ? <UserBlogLink slug={user.slug}>{userAvatar}</UserBlogLink> : userAvatar;
-}
+import MobileProfileMenu from './MobileProfileMenu';
 
 export default function MobileHeader() {
 	const { isAuthenticated } = useAuth();
@@ -78,7 +63,7 @@ export default function MobileHeader() {
 								<NotificationIcon width={24} height={24} aria-hidden="true" focusable="false" />
 							)}
 						</ButtonLink>
-						<UserProfile user={user} />
+						<MobileProfileMenu user={user} />
 					</>
 				) : (
 					<Button size="icon" variant="secondary" className="w-max rounded-full! px-4" onClick={handleLoginClick}>
