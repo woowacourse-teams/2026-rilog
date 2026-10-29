@@ -109,8 +109,8 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 최근 발행 순으로 반환한다.")
-    void readTrendingPostsOrdersByScoreAndPublicationTime() {
+    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 트렌딩 ID 내림차순으로 반환한다.")
+    void readTrendingPostsOrdersByScoreAndTrendingId() {
         // given
         User author = saveCompletedUser(1L, "트렌딩작성자", "trending_author");
         Blog rilog = saveRilog(author);
@@ -124,11 +124,11 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 author,
                 BASE_PUBLISHED_AT.plusMinutes(1)
         ));
-        saveTrending(10L, olderPost);
-        saveTrending(20L, newerPost);
+        saveTrending(20L, olderPost);
+        saveTrending(10L, newerPost);
         jdbcTemplate.update("update trending_post set score = 100");
         Post highestScorePost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.minusDays(1)));
-        saveTrending(30L, highestScorePost);
+        saveTrending(5L, highestScorePost);
 
         // when
         FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
@@ -136,7 +136,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(highestScorePost.getId(), newerPost.getId(), olderPost.getId());
+                .containsExactly(highestScorePost.getId(), olderPost.getId(), newerPost.getId());
     }
 
     @Test
@@ -251,8 +251,9 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         Post secondPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         Post thirdPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         saveTrending(10L, firstPost);
-        saveTrending(20L, secondPost);
-        saveTrending(30L, thirdPost);
+        saveTrending(30L, secondPost);
+        saveTrending(20L, thirdPost);
+        jdbcTemplate.update("update trending_post set score = 100");
         FullFeedSearchCommand command = new FullFeedSearchCommand(null, null, 0, 2);
 
         // when
@@ -261,7 +262,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(firstPost.getId(), secondPost.getId());
+                .containsExactly(secondPost.getId(), thirdPost.getId());
         assertThat(result.hasNext()).isTrue();
     }
 
