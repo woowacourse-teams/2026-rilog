@@ -1,0 +1,104 @@
+name: Create Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [production]
+
+concurrency:
+  group: release-tag
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out release helpers
+        uses: actions/checkout@v4
+        with:
+          ref: production
+
+      - name: Calculate next version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          # PR에 포함된 모든 커밋 메시지 수집 (Squash 커밋 제목 포함)
+          commit_messages="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" \
+            --jq '.[].commit.message')"
+          all_text=$(printf "%s\n%s" "$PR_TITLE" "$commit_messages")
+
+          # 1. Major (Breaking Change) 감지:
+          # - 대괄호 형태: [Feature!], [Fix!], [Feature]! 등
+          # - 콜론 형태: feature!:, feat!:, fix(api)!: 등
+          # - 본문/제목: BREAKING CHANGE:, BREAKING-CHANGE:
+          is_major=false
+          if echo "$all_text" | grep -qiE '(^BREAKING[ -]CHANGE:|^\[[A-Za-z]+!\]|^\[[A-Za-z]+\]!|^[A-Za-z]+(\([^)]*\))?[[:space:]]*![[:space:]]*:)'; then
+            is_major=true
+          fi
+
+          # 2. Minor (Feature) 감지:
+          # - 대괄호 형태: [Feature], [Feat]
+          # - 콜론 형태: feature:, feat:, feature(auth):, feat(ui): 등
+          is_minor=false
+          if echo "$all_text" | grep -qiE '(^\[(feat|feature)\]|^(feat|feature)(\([^)]*\))?[[:space:]]*:)'; then
+            is_minor=true
+          fi
+
+          # 3. 최신 태그 조회 (정식 semver 태그 대상)
+          latest="$(gh api --paginate "repos/$GITHUB_REPOSITORY/tags" --jq '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
+
+          if [ -z "$latest" ]; then
+            tag="v0.1.0"
+          else
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            if [ "$is_major" = true ]; then
+              tag="v$((major + 1)).0.0"
+            elif [ "$is_minor" = true ]; then
+              tag="v${major}.$((minor + 1)).0"
+            else
+              tag="v${major}.${minor}.$((patch + 1))"
+            fi
+          fi
+
+          echo "Bump 결정: major=$is_major, minor=$is_minor (최신: ${latest:-없음} → $tag)"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$MERGE_SHA" \
+            --title "$TAG_NAME" \
+            --generate-notes
+
+      - name: Customize GitHub Release notes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+        run: node scripts/update-release-notes.cjs
+
+      - name: Record run
+        env:
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+        run: |
+          {
+            echo "## Release"
+            echo "- Tag: \`$TAG_NAME\`"
+            echo "- Release: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG_NAME"
+          } >> "$GITHUB_STEP_SUMMARY"
