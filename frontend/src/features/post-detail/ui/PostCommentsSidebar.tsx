@@ -14,6 +14,7 @@ interface PostCommentsSidebarProps extends Omit<
 	Parameters<typeof PostCommentsPanelContent>[0],
 	'titleId' | 'titleRef' | 'inputRef' | 'showCloseButton' | 'isMobile' | 'isOpen'
 > {
+	isOpen?: never;
 	open: boolean;
 	onClosed?: () => void;
 }
