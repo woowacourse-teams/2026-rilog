@@ -165,3 +165,47 @@ it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나
 		}),
 	).toBeNull();
 });
+
+it('원인 요청은 최근 breadcrumb에서 밀려나도 쿼리 없이 별도 보존한다', () => {
+	const summary = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		tags: {
+			http_status: '500',
+			request_id: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d',
+			error_kind: 'server_response',
+			user_impact: 'load_failed',
+		},
+		contexts: {
+			api_request: {
+				method: 'POST',
+				url: 'https://api.rilog.kr/v1/posts/295/views?custom=private#secret',
+				headers: { cookie: 'private' },
+			},
+		},
+		breadcrumbs: Array.from({ length: 5 }, () => ({ category: 'ui.click', message: 'button' })),
+	});
+	expect(summary?.apiRequest).toEqual({
+		method: 'POST',
+		url: 'https://api.rilog.kr/v1/posts/[id]/views',
+		statusCode: 500,
+		requestId: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d',
+	});
+	expect(summary?.tags).toMatchObject({ error_kind: 'server_response', user_impact: 'load_failed' });
+	expect(parseSentrySlackSummary(summary)).toEqual(summary);
+	expect(JSON.stringify(summary)).not.toMatch(/private|cookie|secret|295/);
+});
+
+it('외부 저장소의 presigned URL과 임의 request ID는 새 원인 요청 필드로 보내지 않는다', () => {
+	const summary = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		tags: { request_id: 'person@example.com' },
+		contexts: { api_request: { method: 'PUT', url: 'https://storage.example/private-key?signature=private' } },
+	});
+	expect(summary?.apiRequest).toEqual({ method: 'PUT' });
+	expect(JSON.stringify(summary)).not.toMatch(/storage.example|private|person/);
+	expect(
+		parseSentrySlackSummary({ ...summary, apiRequest: { method: 'POST', url: 'https://evil.example/private' } }),
+	).toBeNull();
+});

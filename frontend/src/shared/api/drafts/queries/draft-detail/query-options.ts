@@ -10,5 +10,6 @@ export const draftDetailQueryOptions = (draftId: number) =>
 		queryKey: draftsQueryKeys.detail(draftId),
 		queryFn: () => readDraftDetail({ draftId }),
 		staleTime: 60_000,
+		meta: { errorOperation: 'draft.read' },
 		retry: false,
 	});

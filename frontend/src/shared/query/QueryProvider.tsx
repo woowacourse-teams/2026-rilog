@@ -33,12 +33,13 @@ export default function QueryProvider({ children }: QueryProviderProps) {
 					onError: (error, query) =>
 						apiErrorReporter.report(error, {
 							operation: typeof query.meta?.errorOperation === 'string' ? query.meta.errorOperation : 'query',
+							userImpact: query.state.data === undefined ? 'load_failed' : 'load_failed_with_data',
 						}),
 				}),
 				mutationCache: new MutationCache({
 					onError: (error, _variables, _context, mutation) => {
 						if (mutation.options.meta?.errorTracking !== 'local')
-							apiErrorReporter.report(error, { operation: 'mutation' });
+							apiErrorReporter.report(error, { operation: 'mutation', userImpact: 'action_failed' });
 						globalMutationErrorHandler(error);
 					},
 				}),

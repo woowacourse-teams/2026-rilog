@@ -5,7 +5,7 @@ import { isApiRequestError, normalizeApiError } from '@/shared/api/api-error';
 import { getApiRequestDiagnostics } from '@/shared/api/request-diagnostics';
 import { logNonProductionWarning } from '@/shared/utils/non-production-console';
 
-import { shouldReportApiError } from './api-error-policy';
+import { classifyApiError, shouldReportApiError } from './api-error-policy';
 
 const reported = new WeakSet<object>();
 
@@ -27,9 +27,15 @@ export function createApiErrorReporter(tracker: ErrorTracker) {
 				const failure = normalizeApiError(error);
 				const original = failure.cause;
 				if (typeof original === 'object' && original !== null && reported.has(original)) return;
-				if (!shouldReportApiError(failure, context)) return;
+				const classification = classifyApiError(failure, context);
+				if (!classification.report) return;
 
-				const tags: Record<string, string> = { report_source: 'api', operation: context.operation };
+				const tags: Record<string, string> = {
+					report_source: 'api',
+					operation: context.operation,
+					error_kind: classification.kind,
+					user_impact: context.userImpact ?? 'unknown',
+				};
 				const contexts: Record<string, Record<string, unknown>> = {};
 				if ('response' in failure) {
 					tags.http_status = String(failure.response.status);

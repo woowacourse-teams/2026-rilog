@@ -88,6 +88,7 @@ export function parseSentryWebhook(payload: unknown, target: SentryWebhookTarget
 	const values = record(event.exception)?.values;
 	const exception = record(Array.isArray(values) ? values.at(-1) : undefined);
 	const metadata = record(event.metadata);
+	const apiRequest = record(record(event.contexts)?.api_request);
 	const safeEvent: ErrorEvent = {
 		type: undefined,
 		event_id: eventId.toLowerCase(),
@@ -98,6 +99,7 @@ export function parseSentryWebhook(payload: unknown, target: SentryWebhookTarget
 		message: text(event.message) || undefined,
 		request: { url: text(record(event.request)?.url) },
 		tags: eventTags,
+		contexts: { api_request: { method: text(apiRequest?.method), url: text(apiRequest?.url) } },
 		exception: {
 			values: [
 				{
