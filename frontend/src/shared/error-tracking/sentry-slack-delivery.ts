@@ -39,6 +39,9 @@ function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 	const tags = Object.entries(summary.tags)
 		.map(([key, value]) => `${key}: ${value}`)
 		.join('\n');
+	const request = summary.apiRequest
+		? ['원인 요청', ...Object.entries(summary.apiRequest).map(([key, value]) => `${key}: ${value}`)].join('\n')
+		: '';
 	const title = summary.title.replace(/`/g, "'");
 	const flow = eventUrl
 		? summary.breadcrumbs.map(
@@ -51,6 +54,7 @@ function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 			`🔴 ${summary.errorType}`,
 			summary.route,
 			title,
+			request,
 			tags ? `\`\`\`${tags}\`\`\`` : '',
 			`Sentry event ID: ${summary.eventId}`,
 			eventUrl ? `Sentry 이벤트: ${eventUrl}` : '수집 상태: SDK 전송 전 · Sentry 저장 미확인',
@@ -66,6 +70,7 @@ function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 				text: { type: 'mrkdwn', text: summary.route === 'unknown' ? '경로 알 수 없음' : summary.route },
 			},
 			{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${title}\`\`\`` } },
+			...(request ? [{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${request}\`\`\`` } }] : []),
 			...(tags ? [{ type: 'section', text: { type: 'mrkdwn', text: `\`\`\`${tags}\`\`\`` } }] : []),
 			{ type: 'context', elements: [{ type: 'mrkdwn', text: `Sentry event ID: \`${summary.eventId}\`` }] },
 			{

@@ -33,6 +33,8 @@ const payload = {
 				['environment', 'prod'],
 				['operation', 'post.publish'],
 				['http_status', '503'],
+				['error_kind', 'server_response'],
+				['request_id', '671a5cb0-bfc5-4cab-b9bf-42044df2b76d'],
 			],
 			request: { url: 'https://www.rilog.kr/write', headers: [['Authorization', 'Bearer private']] },
 			breadcrumbs: {
@@ -42,6 +44,9 @@ const payload = {
 						data: { method: 'POST', url: 'https://api.rilog.kr/v1/posts?token=private', status_code: 503 },
 					},
 				],
+			},
+			contexts: {
+				api_request: { method: 'POST', url: 'https://api.rilog.kr/v1/posts/295?unlisted=private', body: 'private' },
 			},
 			web_url: 'https://attacker.example/forged',
 		},
@@ -87,6 +92,13 @@ it('서명된 운영 event alert만 정제하고 실제 Sentry 링크와 함께 
 		eventUrl: `https://rilog-frontend.sentry.io/issues/123/events/${eventId}/`,
 	});
 	expect(summary).toMatchObject({ eventId, route: '/write', tags: { environment: 'prod', operation: 'post.publish' } });
+	expect(summary.apiRequest).toEqual({
+		method: 'POST',
+		url: 'https://api.rilog.kr/v1/posts/[id]',
+		statusCode: 503,
+		requestId: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d',
+	});
+	expect(summary.tags.error_kind).toBe('server_response');
 	expect(JSON.stringify(summary)).not.toContain('private');
 	expect(JSON.stringify(summary)).not.toContain('attacker.example');
 });

@@ -22,6 +22,7 @@ export const useOverwriteDraftMutation = () => {
 		onError: async (error) => {
 			apiErrorReporter.report(error, {
 				operation: 'draft.overwrite',
+				userImpact: 'save_failed',
 			});
 			if (isInvalidApiResponseError(error)) {
 				await queryClient.invalidateQueries({ queryKey: draftsQueryKeys.all });

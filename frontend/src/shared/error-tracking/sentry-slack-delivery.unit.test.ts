@@ -21,6 +21,12 @@ it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 
 	const summary = {
 		eventId: '0123456789abcdef0123456789abcdef',
 		title: '게시물 저장 실패',
+		apiRequest: {
+			method: 'POST',
+			url: 'https://api.rilog.kr/v1/posts/[id]/views',
+			statusCode: 500,
+			requestId: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d',
+		},
 		errorType: 'TypeError',
 		route: '/write',
 		tags: { operation: 'post.publish', http_status: '503', environment: 'prod' },
@@ -36,6 +42,9 @@ it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 
 	expect(request.body).toContain(summary.eventId);
 	expect(request.body).toContain('Sentry 저장 미확인');
 	expect(request.body).toContain('/write');
+	expect(request.body).toContain('원인 요청');
+	expect(request.body).toContain('671a5cb0-bfc5-4cab-b9bf-42044df2b76d');
+	expect(request.body).toContain('https://api.rilog.kr/v1/posts/[id]/views');
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });

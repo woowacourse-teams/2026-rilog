@@ -55,6 +55,8 @@ it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하
 	const sent = JSON.stringify(envelopes);
 	expect(sent).toContain('INTERNAL_SERVER_ERROR');
 	expect(sent).toContain('post.publish');
+	expect(sent).toContain('server_response');
+	expect(sent).toContain('user_impact');
 	expect(sent).toContain('api_request');
 	expect(sent).toContain('api_response');
 	expect(sent).toContain('PostHog Recording URL');

@@ -5,7 +5,7 @@ import type { HTTPError } from 'ky';
 import type { NormalizedApiError } from '@/shared/api/api-error';
 import { API_ERROR_CODES } from '@/shared/api/error-codes';
 
-import { shouldReportApiError } from './api-error-policy';
+import { classifyApiError, shouldReportApiError } from './api-error-policy';
 
 const createHttpFailure = (status: number): NormalizedApiError => ({
 	type: 'http',
@@ -33,4 +33,24 @@ it.each([
 		detail: { status, error: 'Service Unavailable', errorCode, message: '등록 실패', invalidParams: null },
 	};
 	expect(shouldReportApiError(failure, { operation: 'post.view.register' })).toBe(expected);
+});
+
+it.each([
+	[400, 'REQUEST_VALIDATION_FAILED', 'validation', false],
+	[400, 'UNRECOGNIZED_UPLOAD_ERROR', 'unexpected_response', true],
+	[500, 'POST_VIEW_COUNT_MISSING', 'server_response', true],
+	[429, 'TOO_MANY_REQUESTS', 'rate_limit', true],
+] as const)('HTTP %s / %s를 %s로 분류하고 보고 여부를 보존한다', async (status, code, kind, report) => {
+	const { createApiFailure } = await import('@/test/fixtures/api-error');
+	expect(classifyApiError(await createApiFailure(code, status), { operation: 'upload.presign' })).toEqual({
+		kind,
+		report,
+	});
+});
+
+it('일반 HTTP 400은 정상 검증 거부로 단정하지 않는다', () => {
+	expect(classifyApiError(createHttpFailure(400), { operation: 'upload.put' })).toEqual({
+		kind: 'unexpected_response',
+		report: true,
+	});
 });
