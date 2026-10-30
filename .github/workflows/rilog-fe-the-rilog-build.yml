@@ -68,7 +68,7 @@ jobs:
           NODE
       - name: Package preparation artifact
         run: |
-          tar --exclude=.next/cache --exclude=.next/dev -czf the-rilog-preparation.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml next.config.ts .the-rilog-build/snapshot.json .the-rilog-build/manifest.json
+          tar --exclude=.next/cache --exclude=.next/dev -czf the-rilog-preparation.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json .the-rilog-build/manifest.json
       - uses: actions/upload-artifact@v4
         with:
           name: the-rilog-build-preparation-${{ github.run_id }}

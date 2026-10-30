@@ -1,11 +1,13 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
-const dsn = process.env.SENTRY_SMOKE_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+import { resolveSentrySmokeConfig } from './sentry-smoke-config.mjs';
+
+const { dsn, projectId, org, project } = resolveSentrySmokeConfig(process.env);
 const isPostHogReplaySmoke = process.argv.includes('--posthog-replay');
 
-if (!process.env.SENTRY_AUTH_TOKEN || !dsn) {
-	console.error('SENTRY_AUTH_TOKEN and SENTRY_SMOKE_DSN or NEXT_PUBLIC_SENTRY_DSN are required in .env.');
+if (!process.env.SENTRY_AUTH_TOKEN) {
+	console.error('SENTRY_AUTH_TOKEN for the dedicated smoke upload target is required.');
 	process.exit(1);
 }
 
@@ -14,17 +16,13 @@ if (process.env.SENTRY_SMOKE_DRY_RUN === 'true') {
 	process.exit(1);
 }
 
-if (isPostHogReplaySmoke && (!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST)) {
-	console.error('The replay smoke requires NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN and NEXT_PUBLIC_POSTHOG_HOST in .env.');
-	process.exit(1);
-}
-
 if (
 	isPostHogReplaySmoke &&
-	!process.env.SENTRY_SLACK_WEBHOOK_URL &&
-	!(process.env.SENTRY_SLACK_BOT_TOKEN && process.env.SENTRY_SLACK_CHANNEL_ID)
+	(!process.env.SENTRY_SMOKE_POSTHOG_PROJECT_TOKEN || !process.env.SENTRY_SMOKE_POSTHOG_HOST)
 ) {
-	console.error('The replay smoke requires a Slack webhook or both bot token and channel ID.');
+	console.error(
+		'The replay smoke requires SENTRY_SMOKE_POSTHOG_PROJECT_TOKEN and SENTRY_SMOKE_POSTHOG_HOST for a test project.',
+	);
 	process.exit(1);
 }
 
@@ -39,6 +37,12 @@ const env = {
 	...process.env,
 	SENTRY_RELEASE: release,
 	SENTRY_SMOKE_DSN: dsn,
+	SENTRY_SMOKE_PROJECT_ID: projectId,
+	SENTRY_SMOKE_ORG: org,
+	SENTRY_SMOKE_PROJECT_SLUG: project,
+	SENTRY_SLACK_BOT_TOKEN: '',
+	SENTRY_SLACK_CHANNEL_ID: '',
+	SENTRY_SLACK_WEBHOOK_URL: '',
 	SENTRY_FEED_503_SMOKE: 'true',
 	SENTRY_UPLOAD_REQUIRED: 'true',
 	SENTRY_SMOKE_PRODUCTION: 'true',
@@ -46,11 +50,12 @@ const env = {
 	NEXT_PUBLIC_API_BASE_URL: 'https://api.rilog.test',
 	NEXT_PUBLIC_SITE_URL: 'http://127.0.0.1:3109',
 	NEXT_PUBLIC_DEV_MASTER_TOKEN: '',
-	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: isPostHogReplaySmoke ? process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN : '',
-	NEXT_PUBLIC_POSTHOG_HOST: isPostHogReplaySmoke ? process.env.NEXT_PUBLIC_POSTHOG_HOST : '',
+	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: isPostHogReplaySmoke ? process.env.SENTRY_SMOKE_POSTHOG_PROJECT_TOKEN : '',
+	NEXT_PUBLIC_POSTHOG_HOST: isPostHogReplaySmoke ? process.env.SENTRY_SMOKE_POSTHOG_HOST : '',
 	NEXT_PUBLIC_POSTHOG_OPT_OUT_USERAGENT_FILTER: isPostHogReplaySmoke ? 'true' : 'false',
 	NEXT_PUBLIC_SENTRY_DSN: dsn,
 	NEXT_PUBLIC_SENTRY_ENABLED: 'true',
+	NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'smoke',
 	THE_RILOG_SNAPSHOT_PATH: '.the-rilog-build/fixture.json',
 	THE_RILOG_ALLOW_FIXTURE: 'true',
 };
@@ -78,9 +83,9 @@ if (!existsSync('.next-sentry-feed-503/BUILD_ID')) {
 
 run('pnpm', ['test:sentry:post-503']);
 
-const issuesUrl = new URL('https://rilog-fontend.sentry.io/issues/');
-issuesUrl.searchParams.set('environment', 'prod');
-issuesUrl.searchParams.set('project', new URL(dsn).pathname.replaceAll('/', ''));
+const issuesUrl = new URL(`https://${org}.sentry.io/issues/`);
+issuesUrl.searchParams.set('environment', 'smoke');
+issuesUrl.searchParams.set('project', projectId);
 issuesUrl.searchParams.set('statsPeriod', '24h');
-console.info(`Sentry prod issues: ${issuesUrl}`);
+console.info(`Sentry smoke issues: ${issuesUrl}`);
 console.info(`Find release ${release} and request_id sentry-smoke-post-503.`);
