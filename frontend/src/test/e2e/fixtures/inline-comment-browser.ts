@@ -66,13 +66,24 @@ export const renderInlineCommentWorkspace = async (page: Page, selectionId?: num
 	const params = new URLSearchParams();
 	if (selectionId !== undefined) params.set('selectionId', String(selectionId));
 	if (!isAuthenticated) params.set('guest', '1');
-	await page.goto(`/about${params.size > 0 ? `?${params}` : ''}`);
-	const styles = await page
-		.locator('link[rel="stylesheet"]')
-		.evaluateAll((links) =>
-			links.map((link) => `<link rel="stylesheet" href="${(link as HTMLLinkElement).href}">`).join(''),
-		);
-	await page.setContent(`<html><head>${styles}</head><body><div id="root"></div></body></html>`);
+	// Read the real generated stylesheet links without mounting a throwaway Next runtime.
+	// Mounting /about then replacing its DOM leaves auth requests and router listeners behind.
+	const response = await page.request.get('/about');
+	const html = await response.text();
+	const styles = (html.match(/<link\b[^>]*>/g) ?? []).filter((link) => /rel=["']stylesheet["']/.test(link)).join('');
+	if (!styles) throw new Error('브라우저 fixture에 실제 앱 스타일시트가 필요합니다.');
+	const fixtureUrl = `/about${params.size > 0 ? `?${params}` : ''}`;
+	const absoluteUrl = new URL(fixtureUrl, response.url()).href;
+	await page.route(
+		absoluteUrl,
+		(route) =>
+			route.fulfill({
+				contentType: 'text/html',
+				body: `<html><head>${styles}</head><body><div id="root"></div></body></html>`,
+			}),
+		{ times: 1 },
+	);
+	await page.goto(fixtureUrl);
 	await page.addStyleTag({ content: css });
 	await page.addScriptTag({ content: code });
 };

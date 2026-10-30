@@ -2,7 +2,8 @@
 if (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT !== 'prod') {
 	throw new Error('Production deployment requires NEXT_PUBLIC_SENTRY_ENVIRONMENT=prod.');
 }
-if (new URL(process.env.NEXT_PUBLIC_SITE_URL ?? '').origin !== 'https://www.rilog.kr') {
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+if (!URL.canParse(siteUrl) || new URL(siteUrl).origin !== 'https://www.rilog.kr') {
 	throw new Error('Production deployment requires the canonical HTTPS site URL.');
 }
 if (process.env.NEXT_PUBLIC_SENTRY_ENABLED !== 'false' && !process.env.NEXT_PUBLIC_SENTRY_DSN?.trim()) {

@@ -3,6 +3,7 @@ import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import BaseModal from './BaseModal';
+import { useModalOpen } from './modal-open-context';
 
 describe('BaseModal', () => {
 	afterEach(() => {
@@ -309,4 +310,32 @@ describe('BaseModal', () => {
 
 		expect(screen.getByRole('alertdialog', { name: '중요 알림' })).toBeInTheDocument();
 	});
+});
+
+function ModalOpenProbe({ name }: { name: string }) {
+	const open = useModalOpen();
+	return <span>{`${name}:${String(open)}`}</span>;
+}
+
+it('중첩 모달과 바깥 컨텍스트는 각각 실제 열림 상태를 보존한다', () => {
+	const view = (open: boolean) => (
+		<>
+			<ModalOpenProbe name="outside" />
+			<BaseModal open={open} accessibility={{ labelledBy: 'outer-title' }} onDismiss={vi.fn()}>
+				<span id="outer-title">상위 모달</span>
+				<ModalOpenProbe name="outer" />
+				<BaseModal open={false} accessibility={{ labelledBy: 'inner-title' }} onDismiss={vi.fn()}>
+					<span id="inner-title">하위 모달</span>
+					<ModalOpenProbe name="inner" />
+				</BaseModal>
+			</BaseModal>
+		</>
+	);
+	const { rerender } = render(view(true));
+	expect(screen.getByText('outside:null')).toBeInTheDocument();
+	expect(screen.getByText('outer:true')).toBeInTheDocument();
+	expect(screen.getByText('inner:false')).toBeInTheDocument();
+	rerender(view(false));
+	expect(screen.getByText('outer:false')).toBeInTheDocument();
+	expect(screen.getByText('inner:false')).toBeInTheDocument();
 });

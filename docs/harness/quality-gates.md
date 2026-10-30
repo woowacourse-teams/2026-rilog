@@ -39,7 +39,7 @@ check
 
 `check`는 format, lint, typecheck, unit, component와 build를 실행하며 E2E는 포함하지 않는다. `typecheck`는 `next typegen && tsc --noEmit`으로 build 전에 실행된다. 컴파일 타임의 타입 검사는 외부 JSON 값을 검사하지 않으므로 선택한 입력 경계에는 런타임 가드와 실패 흐름 테스트를 둔다. 실제 script가 추가되기 전에는 없는 명령을 완료 검증으로 보고하지 않는다.
 
-현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책, 실제 편집기 입력, 인라인 댓글 Selection·모달 동작과 읽기 위치를 검증한다. 색상·고정 폰트 크기·아이콘 파일 경로는 이 게이트의 보호 대상이 아니다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
+현재 E2E는 외부 API 없이 글쓰기의 history, beforeunload, 파일 입력과 모바일 접근 정책, 실제 편집기 입력, 인라인 댓글 Selection·바텀시트·History 동작과 읽기 위치를 검증한다. 기존 전체 시나리오는 Chromium에서 실행하고, 모바일 댓글 시나리오는 WebKit·Firefox에서도 실행한다. 색상·고정 폰트 크기·아이콘 파일 경로는 이 게이트의 보호 대상이 아니다. `test:e2e:prod`는 `pnpm build`가 먼저 완료돼 있어야 하며 기존 서버를 재사용하지 않는다.
 
 ```sh
 pnpm check
@@ -51,21 +51,18 @@ CI와 동일한 production E2E를 재현할 때는 build 전부터 아래 환경
 더 리로그의 초기 정적 HTML은 명시적 테스트 스냅샷으로 빌드한다. ISR 갱신도 API 수집·검증 실패 시 입력과 캐시를 유지하고, 성공 후 production HTML의 checksum·capturedAt을 확인하는 회귀 검증을 둔다. 먼저 `node scripts/create-the-rilog-fixture.mjs`를 실행하고, `THE_RILOG_SNAPSHOT_PATH=.the-rilog-build/fixture.json`, `THE_RILOG_ALLOW_FIXTURE=true`로 `pnpm prepare:the-rilog`를 실행한 뒤 check를 실행한다. 전체 명령은 [더 리로그 빌드 안내](../qa/the-rilog-build.md)에 있다. 실제 API 실패를 fixture로 자동 대체하지 않는다.
 
 ```sh
+export NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test
+export NEXT_PUBLIC_DEV_MASTER_TOKEN=''
+export NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=''
+export NEXT_PUBLIC_SENTRY_DSN=''
+export NEXT_PUBLIC_SENTRY_ENABLED=false
+export THE_RILOG_SNAPSHOT_PATH=.the-rilog-build/fixture.json
+export THE_RILOG_ALLOW_FIXTURE=true
+
 node scripts/create-the-rilog-fixture.mjs
-THE_RILOG_SNAPSHOT_PATH=.the-rilog-build/fixture.json \
-THE_RILOG_ALLOW_FIXTURE=true \
 pnpm prepare:the-rilog
-
-NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test \
-NEXT_PUBLIC_DEV_MASTER_TOKEN='' \
-NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN='' \
-NEXT_PUBLIC_SENTRY_DSN='' \
 pnpm check
-
-NEXT_PUBLIC_API_BASE_URL=https://api.rilog.test \
-NEXT_PUBLIC_DEV_MASTER_TOKEN='' \
-NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN='' \
-NEXT_PUBLIC_SENTRY_DSN='' \
+pnpm exec playwright install chromium webkit firefox
 pnpm test:e2e:prod
 ```
 
@@ -88,7 +85,7 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 
 CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한다. pnpm 저장소는 `setup-node`로 cache한다. Next.js `.next/cache`는 로컬 확인에서 약 475MB로, 압축해도 약 387MB였다. GitHub의 PR cache는 해당 PR 범위에서만 재사용되고 최근 CI에서 build 컴파일은 약 16~20초였으므로, 대용량 cache의 전송 비용이 절감 시간을 넘을 수 있어 추가하지 않았다.
 
-`pnpm check`가 만든 production build를 `pnpm start` E2E에서 재사용한다. E2E는 기본 headless Chromium 프로젝트만 사용하므로 전체 Chromium 대신 headless shell과 시스템 의존성만 설치한다. 브라우저 바이너리 cache는 복원 시간과 다운로드 시간이 비슷하고 Linux 시스템 의존성을 대신할 수 없어 운영하지 않는다. 권한은 `contents: read`, timeout은 20분이고 동일 PR의 이전 실행은 취소한다. 변경 전후 시간은 Actions의 `Detect frontend changes`, `Run frontend checks`, `Install Playwright Chromium headless shell`, `Run production E2E` 단계로 비교한다.
+`pnpm check`가 만든 production build를 `pnpm start` E2E에서 재사용한다. 기존 전체 E2E는 headless Chromium에서 실행하며, 모바일 댓글의 선택·시트·뒤로가기 시나리오는 WebKit·Firefox에서도 실행한다. CI는 `pnpm exec playwright install --with-deps chromium webkit firefox`로 세 엔진과 시스템 의존성을 설치한다. 로컬 최초 실행에서는 `pnpm exec playwright install chromium webkit firefox`로 엔진을 준비한다. 브라우저 바이너리 cache는 복원 시간과 다운로드 시간이 비슷하고 Linux 시스템 의존성을 대신할 수 없어 운영하지 않는다. 권한은 `contents: read`, timeout은 20분이고 동일 PR의 이전 실행은 취소한다. 변경 전후 시간은 Actions의 `Detect frontend changes`, `Run frontend checks`, `Install Playwright browsers`, `Run production E2E` 단계로 비교한다.
 
 실패하면 다음 파일을 7일간 `frontend-quality-<run id>` artifact로 보관한다.
 

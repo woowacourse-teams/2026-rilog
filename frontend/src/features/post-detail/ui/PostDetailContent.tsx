@@ -15,6 +15,8 @@ import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 import { logNonProductionInfo } from '@/shared/utils/non-production-console';
 
+import { createReadingVisitId } from '../lib/create-reading-visit-id';
+
 import InlineCommentHighlights from './InlineCommentHighlights';
 import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
 
@@ -129,7 +131,7 @@ export default function PostDetailContent({
 			readingVisitRef.current = {
 				key,
 				postId,
-				id: window.crypto.randomUUID(),
+				id: createReadingVisitId(),
 				hasReached50Percent: false,
 				lastSent: null,
 				pendingExitTimer: null,
