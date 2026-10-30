@@ -24,15 +24,37 @@ public class S3ObjectTagger {
     private static final String S3_TAGGING_SUCCESS_EVENT = "s3_object_tagging_success";
     private static final String S3_TAGGING_FAILED_LOG_FORMAT =
             "event=s3_object_tagging_failed bucket={} key={} tagStatus={}";
+    private static final String NO_SUCH_KEY_ERROR_CODE = "NoSuchKey";
 
     private final S3Client s3Client;
     private final S3Properties properties;
 
-    public void tag(List<S3TagTarget> uploadTargets) {
-        uploadTargets.forEach(this::changeS3ObjectTag);
+    /**
+     * 대상마다 태그를 바꾸고, 실패한 대상은 기록만 하고 건너뛴다.
+     *
+     * @return 태그를 바꾼 대상
+     */
+    public List<S3TagTarget> tag(List<S3TagTarget> uploadTargets) {
+        return tag(uploadTargets, false);
     }
 
-    private void changeS3ObjectTag(S3TagTarget uploadTarget) {
+    /**
+     * {@link #tag}와 같지만 객체가 없으면(NoSuchKey) 실패로 기록하지 않고 건너뛴다.
+     * 압축 실패나 지원하지 않는 형식으로 만들어지지 않았을 수 있는 압축본처럼 없어도 정상인 대상에 쓴다.
+     *
+     * @return 태그를 바꾼 대상
+     */
+    public List<S3TagTarget> tagIfExists(List<S3TagTarget> uploadTargets) {
+        return tag(uploadTargets, true);
+    }
+
+    private List<S3TagTarget> tag(List<S3TagTarget> uploadTargets, boolean skipMissing) {
+        return uploadTargets.stream()
+                .filter(uploadTarget -> changeS3ObjectTag(uploadTarget, skipMissing))
+                .toList();
+    }
+
+    private boolean changeS3ObjectTag(S3TagTarget uploadTarget, boolean skipMissing) {
         long startedAt = System.nanoTime();
         try {
             s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
@@ -47,7 +69,11 @@ public class S3ObjectTagger {
                     .addKeyValue("key", uploadTarget.key())
                     .addKeyValue("tagStatus", uploadTarget.tagStatus())
                     .addKeyValue("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+            return true;
         } catch (SdkException exception) {
+            if (skipMissing && isMissingObject(exception)) {
+                return false;
+            }
             var event = log.atError()
                     .addKeyValue("event", S3_TAGGING_FAILED_EVENT)
                     .addKeyValue("operation", "put_object_tagging")
@@ -71,7 +97,15 @@ public class S3ObjectTagger {
                             uploadTarget.key(),
                             uploadTarget.tagStatus()
                     );
+            return false;
         }
+    }
+
+    // NoSuchBucket 등 다른 404는 설정 오류이므로 실패로 기록한다.
+    private boolean isMissingObject(SdkException exception) {
+        return exception instanceof S3Exception s3Exception
+                && s3Exception.awsErrorDetails() != null
+                && NO_SUCH_KEY_ERROR_CODE.equals(s3Exception.awsErrorDetails().errorCode());
     }
 
     private void addAwsField(LoggingEventBuilder event, String key, String value) {

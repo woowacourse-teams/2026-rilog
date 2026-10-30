@@ -27,10 +27,12 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
     private final S3ObjectTagger objectTagger;
     private final S3ObjectKeyResolver objectKeyResolver;
     private final S3ImageObjectKeyPolicy imageObjectKeyPolicy;
+    private final S3CompactObjectKeyPolicy compactObjectKeyPolicy;
+    private final ImageCompactionRequester imageCompactionRequester;
 
     @Override
     public void attach(TagAssets assets) {
-        objectTagger.tag(toTargets(resolveObjectKeys(assets), TagStatus.CONFIRMED));
+        followTagging(objectTagger.tag(toTargets(resolveObjectKeys(assets), TagStatus.CONFIRMED)));
     }
 
     @Override
@@ -59,12 +61,41 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
                 TagStatus.TEMPORARY
         ));
 
-        objectTagger.tag(targets);
+        followTagging(objectTagger.tag(targets));
     }
 
     @Override
     public void detach(Long requesterId, TagAssets assets) {
-        objectTagger.tag(toOwnedTargets(requesterId, resolveObjectKeys(assets), TagStatus.TEMPORARY));
+        followTagging(objectTagger.tag(toOwnedTargets(requesterId, resolveObjectKeys(assets), TagStatus.TEMPORARY)));
+    }
+
+    // 원본 태그를 바꾼 뒤 압축본을 맞춘다. 태깅에 실패한 원본은 압축본도 그대로 둔다.
+    private void followTagging(List<S3TagTarget> taggedTargets) {
+        requestCompaction(taggedTargets);
+        releaseCompacts(taggedTargets);
+    }
+
+    // CONFIRMED로 바뀐 raw 원본만 압축한다. 태깅에 실패한 원본은 TEMPORARY로 남아 지워질 수 있으므로 압축하지 않는다.
+    private void requestCompaction(List<S3TagTarget> taggedTargets) {
+        taggedTargets.stream()
+                .filter(target -> target.tagStatus() == TagStatus.CONFIRMED)
+                .map(S3TagTarget::key)
+                .filter(compactObjectKeyPolicy::isCompactable)
+                .forEach(imageCompactionRequester::request);
+    }
+
+    // TEMPORARY로 바뀐 raw 원본의 압축본도 TEMPORARY로 바꿔 원본과 함께 수명주기로 지운다.
+    // 압축본은 없을 수 있어 없는 객체는 건너뛴다. 다시 확정되면 재압축이 태그 없이 덮어써 TEMPORARY가 풀린다.
+    private void releaseCompacts(List<S3TagTarget> taggedTargets) {
+        List<S3TagTarget> compactTargets = taggedTargets.stream()
+                .filter(target -> target.tagStatus() == TagStatus.TEMPORARY)
+                .map(S3TagTarget::key)
+                .flatMap(rawObjectKey -> compactObjectKeyPolicy.compactKeys(rawObjectKey).stream())
+                .map(compactObjectKey -> new S3TagTarget(compactObjectKey, TagStatus.TEMPORARY))
+                .toList();
+        if (!compactTargets.isEmpty()) {
+            objectTagger.tagIfExists(compactTargets);
+        }
     }
 
     private Set<String> resolveObjectKeys(TagAssets assets) {

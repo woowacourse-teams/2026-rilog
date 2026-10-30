@@ -1,6 +1,7 @@
 # Rilog image server
 
 외부 이미지 URL을 다운로드하고 정적 WebP로 변환해 S3의 독립 객체로 저장한다.
+사용 확정(CONFIRMED)된 raw 원본의 너비별 WebP 압축본도 만든다(ADR 0022).
 클라이언트는 Spring `POST /v1/uploads/image-imports`를 호출하고, Spring이 사용자 ID를 서명해 이 서버로 중계한다.
 Node 24, Express(HTTP), sharp(이미지 검증·변환), ipaddr.js(IP 분류), AWS SDK v3(S3)를 사용한다.
 Python 서버 대신 기존 JS 개발 경험과 sharp를 활용하며, 새 의존성은 lock 파일로 고정한다.
@@ -29,6 +30,27 @@ key는 Spring presigned 업로드(ADR 0020)와 같은 `{root}/{images|profiles}/
 422: 지원하지 않는 이미지, 429: 처리 중(Retry-After: 2), 502: 원본 또는 S3 실패, 504: 다운로드 시간 초과.
 Spring은 사용자 요청에서 비롯된 오류를 같은 상태·코드로, 그 밖의 오류는 502 `IMAGE_IMPORT_UNAVAILABLE`로 응답한다.
 
+`POST /api/images/compact`, JSON 최대 4KiB. Spring 전용이며 import와 같은 헤더·서명 규칙을 쓴다(서명 경로는 `/api/images/compact`):
+
+```json
+{"objectKey":"<root>/images/raw/7-<uuid>/original.png"}
+```
+
+- objectKey는 `{root}/{images|profiles}/raw/{userId}-{UUID}/original.{jpg|jpeg|png|webp|avif}`만 받는다(확장자 대소문자 무시).
+- WebP quality 80. `images` → 750, 1200, 1400, 2000 / `profiles` → 50, 360.
+- 원본보다 크거나 같은 너비는 확대하지 않고 원본 너비로 한 번 변환해 그 너비의 key에 저장한다. 원본 1300px이면 `1400.webp`, `2000.webp`는 1300px이다.
+- 저장 위치: `{root}/{images|profiles}/compact/{userId}-{UUID}/{width}.webp`. 같은 원본을 다시 요청하면 덮어쓴다. 태그는 붙이지 않는다.
+- EXIF 방향을 반영해 픽셀을 돌리고 메타데이터를 제거한다. 원본 너비는 회전을 반영한 값이다.
+- 한 번에 하나씩 처리하고 최대 10건까지 대기시킨다. 요청마다 대기를 포함한 시한 45초가 있고, 진행 중인 변환(최대 10초)이 끝나야 응답하므로 최대 약 55초다.
+  Nginx `proxy_read_timeout`(60초)과 Spring `image-server.compaction-read-timeout`(70초)은 이보다 길게 둔다.
+
+성공: `200`, `{ "keys": ["<root>/images/compact/7-<uuid>/750.webp", ...] }`.
+오류: 400 `INVALID_OBJECT_KEY`·`INVALID_JSON`, 401 서명 오류, 404 `SOURCE_NOT_FOUND`, 413 `IMAGE_TOO_LARGE`(원본 10MiB 초과),
+422 `INVALID_IMAGE`·`UNSUPPORTED_IMAGE`(움직이는 이미지), 429 `BUSY`(대기열 가득), 502 `STORAGE_UNAVAILABLE`, 504 `COMPACT_TIMEOUT`.
+서명을 통과한 요청이 실패하면 이미지 서버는 `{"event":"image_compact_failed","key":"<원본 key>","status":..,"code":..,"name":..,"durationMs":..}`를
+stderr에 남긴다. S3 읽기·저장 실패는 `s3_read_failed`(원본 key), `s3_compact_upload_failed`(압축본 key)도 함께 남긴다. 서명 실패(401)는 남기지 않는다.
+Spring은 실패 응답을 ERROR 로그로만 남기고 다시 시도하지 않는다. 응답이 늦어 끊긴 요청은 WARN으로 남기고 무시한다.
+
 ## 처리·보안 정책
 
 - HTTPS 443만 허용, IP 직접 입력·사용자 정보 포함 URL·리다이렉트 차단.
@@ -44,7 +66,7 @@ Spring은 사용자 요청에서 비롯된 오류를 같은 상태·코드로, �
 ## 기존 이미지 수명주기와의 경계
 
 `S3_ROOT_DIRECTORY`(Spring `AWS_S3_DIRECTORY`와 같은 값) 아래 목적별 raw 경로에 저장한다.
-Spring의 경로 기반 소유권 판별, TEMPORARY/CONFIRMED 태그 처리, raw 이벤트의 압축 Lambda에 그대로 편입된다.
+Spring의 경로 기반 소유권 판별, TEMPORARY/CONFIRMED 태그 처리, 사용 확정 시 압축(ADR 0022)에 그대로 편입된다.
 이전의 `images/imported` 객체는 이전하지 않는다. 결정은 `docs/adr/0018-external-image-import-server.md`,
 `docs/adr/0021-image-import-via-spring-hmac.md`에 기록했다.
 
@@ -57,7 +79,7 @@ npm test
 ```
 
 S3를 실제 호출하지 않는 테스트에서 DNS 우회 차단, 스트리밍 크기 제한, 이미지 디코딩,
-서명 검증, 목적별 raw 키 발급, 오류·동시 처리·health 흐름을 검증한다. 실제 IAM/버킷/CDN은 EC2 smoke test로 확인한다.
+서명 검증, 목적별 raw 키 발급, 오류·동시 처리·health 흐름과 압축 key 규칙, 너비별 변환, 대기열·시한 흐름을 검증한다. 실제 IAM/버킷/CDN은 EC2 smoke test로 확인한다.
 
 ## 이미지 빌드·배포
 
@@ -75,7 +97,8 @@ EC2의 `/opt/rilog-image`에 `deploy/compose.yaml`을 복사하고
 `deploy/image.env.example`을 참고해 같은 디렉터리에 **image.env**를 만든다.
 IMAGE_BASE_URL은 기존 S3/CloudFront 조회 주소다. `image.rilog.kr`은 import API 주소이므로 넣지 않는다.
 S3_ROOT_DIRECTORY와 RILOG_IMAGE_SERVER_SECRET은 Spring의 AWS_S3_DIRECTORY, INTERNAL_IMAGE_SERVER_SECRET과 같은 값이다.
-EC2 IAM Role에 `{root}/images/raw/*`, `{root}/profiles/raw/*`의 s3:PutObject, s3:PutObjectTagging 권한을 주고
+EC2 IAM Role에 `{root}/images/raw/*`, `{root}/profiles/raw/*`의 s3:PutObject, s3:PutObjectTagging, s3:GetObject와
+`{root}/images/compact/*`, `{root}/profiles/compact/*`의 s3:PutObject 권한을 주고
 IMDSv2 required/hop limit 2를 사용한다.
 SSE-KMS 버킷은 KMS 권한도 필요하다. AWS 키는 이미지에 포함하지 않는다.
 
