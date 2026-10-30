@@ -1,0 +1,11 @@
+changelog:
+  exclude:
+    labels:
+      - deploy
+  categories:
+    - title: 핵심 변경
+      labels:
+        - release/core
+    - title: 기타 변경
+      labels:
+        - "*"
