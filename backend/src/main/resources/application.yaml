@@ -70,6 +70,15 @@ internal-api:
     # 이미지 압축 Lambda와 공유하는 HMAC 비밀키. 기본값을 두지 않아 누락 시 기동에 실패한다.
     secret: ${INTERNAL_LAMBDA_SECRET}
 
+image-server:
+  # 외부 이미지 가져오기 서버. 사용자 ID를 담은 요청을 공유 비밀키의 HMAC으로 서명해 중계한다.
+  base-url: ${IMAGE_SERVER_BASE_URL:https://image.rilog.kr}
+  # 이미지 서버의 RILOG_IMAGE_SERVER_SECRET과 같은 값. 기본값을 두지 않아 누락 시 기동에 실패한다.
+  secret: ${INTERNAL_IMAGE_SERVER_SECRET}
+  connect-timeout: 3s
+  # 이미지 서버의 다운로드 10초, 변환 10초, S3 저장 15초 상한을 합친 값보다 길게 둔다.
+  read-timeout: 40s
+
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET}

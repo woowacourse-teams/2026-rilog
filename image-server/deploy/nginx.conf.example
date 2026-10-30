@@ -1,16 +1,12 @@
 # Host Ubuntu Nginx: install this file in /etc/nginx/sites-available/image.rilog.kr
-# Both map and limit_req_zone belong to the http context (sites-enabled is included there).
+# limit_req_zone belongs to the http context (sites-enabled is included there).
+# Only the Rilog backend calls the import API (HMAC signed), so there is no browser CORS.
 limit_req_zone $binary_remote_addr zone=rilog_image_import:1m rate=30r/m;
-map $http_origin $rilog_image_origin {
-    default "";
-    "https://rilog.kr" $http_origin;
-    "https://www.rilog.kr" $http_origin;
-}
 
 server {
     listen 80;
     server_name image.rilog.kr;
-    client_max_body_size 8k;
+    client_max_body_size 32k;
 
     location = /healthz {
         proxy_pass http://127.0.0.1:8000;
@@ -18,11 +14,6 @@ server {
     }
 
     location = /api/images/import {
-        add_header Access-Control-Allow-Origin $rilog_image_origin always;
-        add_header Vary Origin always;
-        add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
-        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
-        if ($request_method = OPTIONS) { return 204; }
         limit_req zone=rilog_image_import burst=5 nodelay;
         limit_req_status 429;
         proxy_pass http://127.0.0.1:8000;
