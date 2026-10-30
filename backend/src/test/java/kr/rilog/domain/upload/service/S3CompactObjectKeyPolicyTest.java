@@ -68,6 +68,34 @@ class S3CompactObjectKeyPolicyTest {
     }
 
     @Test
+    @DisplayName("raw 원본의 모든 너비 압축본 key를 만든다")
+    void createCompactKeysForEveryWidth() {
+        assertThat(policy.compactKeys("rilog/images/raw/" + IMAGE_ID + "/original.png")).containsExactly(
+                "rilog/images/compact/" + IMAGE_ID + "/750.webp",
+                "rilog/images/compact/" + IMAGE_ID + "/1200.webp",
+                "rilog/images/compact/" + IMAGE_ID + "/1400.webp",
+                "rilog/images/compact/" + IMAGE_ID + "/2000.webp"
+        );
+        assertThat(policy.compactKeys("rilog/profiles/raw/" + IMAGE_ID + "/original.jpg")).containsExactly(
+                "rilog/profiles/compact/" + IMAGE_ID + "/50.webp",
+                "rilog/profiles/compact/" + IMAGE_ID + "/360.webp"
+        );
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {
+            "rilog/images/raw/" + IMAGE_ID + "/original.gif",
+            "rilog/images/compact/" + IMAGE_ID + "/750.webp",
+            "rilog/images/originals/" + IMAGE_ID + ".png",
+            "rilog/files/a38e9b2c-4c13-4f52-9c31-0e52d768d517.pdf"
+    })
+    @DisplayName("압축하지 않는 key의 압축본 key는 비어 있다")
+    void noCompactKeysForNonCompactableKey(String objectKey) {
+        assertThat(policy.compactKeys(objectKey)).isEmpty();
+    }
+
+    @Test
     @DisplayName("압축본 key는 같은 디렉터리의 compact 아래에 너비별 webp로 만든다")
     void createCompactKey() {
         CompactSource image = policy.parse("rilog/images/raw/" + IMAGE_ID + "/original.png");

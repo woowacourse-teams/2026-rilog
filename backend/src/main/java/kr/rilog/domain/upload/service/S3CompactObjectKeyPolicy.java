@@ -5,6 +5,7 @@ import kr.rilog.domain.upload.exception.UploadException;
 import kr.rilog.global.s3.properties.S3Properties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +44,22 @@ public class S3CompactObjectKeyPolicy {
 
         Matcher matcher = rawKeyPattern.matcher(objectKey);
         return matcher.matches() && CompactionTarget.fromDirectory(matcher.group("directory")).isPresent();
+    }
+
+    /**
+     * raw 원본의 너비별 압축본 key. 압축하지 않는 원본이면 비어 있다.
+     *
+     * <p>원본보다 큰 너비도 이미지 서버가 같은 이름으로 만들므로 모든 너비의 key를 돌려준다.
+     */
+    public List<String> compactKeys(String rawObjectKey) {
+        if (!isCompactable(rawObjectKey)) {
+            return List.of();
+        }
+
+        CompactSource source = parse(rawObjectKey);
+        return source.target().getWidths().stream()
+                .map(width -> compactKey(source, width))
+                .toList();
     }
 
     public CompactSource parse(String rawObjectKey) {

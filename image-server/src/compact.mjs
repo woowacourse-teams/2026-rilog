@@ -1,6 +1,7 @@
 import { ApiError } from './download.mjs';
 
 // 목적별 디렉터리의 압축 너비. 원본보다 큰 너비도 파일은 만들고, 내용은 원본 너비로 변환한다.
+// Spring은 원본이 TEMPORARY가 되면 같은 너비로 압축본 key를 만들어 태깅한다. Spring CompactionTarget과 같이 바꾼다.
 export const COMPACT_WIDTHS = { images: [750, 1200, 1400, 2000], profiles: [50, 360] };
 
 // 압축 변환하는 원본 확장자. Spring S3CompactObjectKeyPolicy와 같은 목록이다(gif, svg, heic는 원본만 쓴다).

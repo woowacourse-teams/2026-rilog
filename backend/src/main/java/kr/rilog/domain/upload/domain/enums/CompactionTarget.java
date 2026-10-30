@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+// 압축본 key를 만들어 TEMPORARY로 태깅하는 데 쓴다. 이미지 서버 COMPACT_WIDTHS(image-server/src/compact.mjs)와 같이 바꾼다.
 public enum CompactionTarget {
 
     IMAGE("images", List.of(750, 1200, 1400, 2000)),
