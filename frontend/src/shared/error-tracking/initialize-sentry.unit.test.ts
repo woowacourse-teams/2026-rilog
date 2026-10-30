@@ -47,3 +47,19 @@ it('production 빌드의 smoke 이벤트는 운영 Slack callback을 실행하�
 	);
 	expect(onSlackAlert).not.toHaveBeenCalled();
 });
+
+it.each(['webhook', 'off'])('모드 %s는 SDK 이벤트는 유지하고 직접 Slack callback만 끈다', async (mode) => {
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_SLACK_MODE', mode);
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'prod');
+	vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.rilog.kr');
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@example.invalid/1');
+	const onSlackAlert = vi.fn();
+	initializeSentry({ onSlackAlert });
+	const options = vi.mocked(Sentry.init).mock.calls.at(-1)?.[0];
+	const event = await options?.beforeSend?.(
+		{ type: undefined, event_id: '11111111111111111111111111111111', environment: 'prod', message: 'test' },
+		{},
+	);
+	expect(event).toMatchObject({ environment: 'prod' });
+	expect(onSlackAlert).not.toHaveBeenCalled();
+});

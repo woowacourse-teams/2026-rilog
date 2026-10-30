@@ -71,6 +71,7 @@ it('실제 SDK 요청 문맥의 URL과 별도 query_string에서 민감 값을 �
 		request: {
 			url: 'https://api.rilog.test/v1/search?email=person%40example.com&page=2',
 			query_string: 'email=person%40example.com&nickname=private-nickname&content=private-content&page=2',
+			headers: { 'Sentry-Hook-Signature': 'fixture-sdk-hook-signature' },
 		},
 	});
 	await Sentry.flush(1000);
@@ -80,4 +81,5 @@ it('실제 SDK 요청 문맥의 URL과 별도 query_string에서 민감 값을 �
 	expect(sent).toContain('page=2');
 	expect(sent).not.toMatch(/person%40example\.com|private-nickname|private-content/);
 	expect(sent).toContain('%5BFiltered%5D');
+	expect(sent).not.toContain('fixture-sdk-hook-signature');
 });

@@ -5,7 +5,7 @@ type SpanJSON = Parameters<NonNullable<SentryOptions['beforeSendSpan']>>[0];
 type TransactionEvent = Parameters<NonNullable<SentryOptions['beforeSendTransaction']>>[0];
 
 const PRIVATE_KEY =
-	/^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-amz-.*|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|body|content)$/i;
+	/^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-amz-.*|password|secret|client_secret|api_key|private_key|access_token|refresh_token|id_token|token|signature|sentry-hook-signature|body|content)$/i;
 const PRIVATE_QUERY_KEY =
 	/^(code|state|password|client_secret|api_key|token|access_token|refresh_token|id_token|signature|nickname|email|filename|title|content|x-amz-.*)$/i;
 
@@ -79,13 +79,21 @@ function redact(value: unknown, depth = 0): unknown {
 	);
 }
 
+function safeHeaders(value: unknown): unknown {
+	if (!Array.isArray(value)) return redact(value);
+	return value.flatMap((entry: unknown) => {
+		if (!Array.isArray(entry) || typeof entry[0] !== 'string' || PRIVATE_KEY.test(entry[0])) return [];
+		return [redact(entry)];
+	});
+}
+
 /** Keep the SDK event and its stack; remove known credentials at the final transport boundary. */
 export function filterSentryEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
 	const request = event.request
 		? {
 				...event.request,
 				data: undefined,
-				headers: redact(event.request.headers),
+				headers: safeHeaders(event.request.headers),
 				query_string: safeQueryString(event.request.query_string),
 			}
 		: undefined;
