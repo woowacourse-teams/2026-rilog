@@ -1,4 +1,7 @@
 changelog:
+  exclude:
+    labels:
+      - deploy
   categories:
     - title: 핵심 변경
       labels:
