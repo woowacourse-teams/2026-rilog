@@ -94,36 +94,13 @@ jobs:
           echo "Bump 결정: major=$is_major, minor=$is_minor (최신: ${latest:-없음} → $tag)"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Generate release notes
+      - name: Create or update GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           TAG_NAME: ${{ steps.version.outputs.tag }}
           TARGET_COMMITISH: ${{ github.event.pull_request.merge_commit_sha }}
-          OUTPUT_PATH: release_notes.md
         run: node scripts/update-release-notes.cjs
-
-      - name: Create or update GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ steps.version.outputs.tag }}
-          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
-          ALREADY_EXISTS: ${{ steps.version.outputs.already_exists }}
-        run: |
-          if [ "$ALREADY_EXISTS" = "true" ]; then
-            echo "릴리즈를 갱신합니다: $TAG_NAME"
-            gh release edit "$TAG_NAME" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "$TAG_NAME" \
-              --notes-file release_notes.md
-          else
-            echo "릴리즈를 신규 생성합니다: $TAG_NAME"
-            gh release create "$TAG_NAME" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$MERGE_SHA" \
-              --title "$TAG_NAME" \
-              --notes-file release_notes.md
-          fi
 
       - name: Record run
         env:

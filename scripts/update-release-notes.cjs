@@ -63,11 +63,31 @@ async function requestGitHub(path, options = {}) {
   return response.json();
 }
 
+async function getExistingRelease(repository, tagName) {
+  const encodedTag = encodeURIComponent(tagName);
+  const token = process.env.GITHUB_TOKEN;
+  const apiUrl = process.env.GITHUB_API_URL ?? 'https://api.github.com';
+  const response = await fetch(`${apiUrl}/repos/${repository}/releases/tags/${encodedTag}`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`GitHub API ${response.status}: ${await response.text()}`);
+  }
+  return response.json();
+}
+
 async function updateReleaseNotes() {
   const repository = process.env.REPOSITORY;
   const tagName = process.env.TAG_NAME;
   const targetCommitish = process.env.TARGET_COMMITISH;
-  const outputPath = process.env.OUTPUT_PATH;
 
   if (!process.env.GITHUB_TOKEN || !repository || !tagName) {
     throw new Error('GITHUB_TOKEN, REPOSITORY and TAG_NAME are required');
@@ -86,22 +106,29 @@ async function updateReleaseNotes() {
   // 2. 릴리즈 노트 서식 적용 (KST 릴리즈 시각 및 헤더 정리)
   const body = formatReleaseNotes(generated.body ?? '', new Date().toISOString());
 
-  // 3. 파일 출력 또는 기존 릴리즈 PATCH (하위 호환)
-  if (outputPath) {
-    const fs = require('fs');
-    fs.writeFileSync(outputPath, body, 'utf8');
-    console.log(`Generated release notes for ${tagName} -> ${outputPath}`);
-    return;
-  }
+  // 3. 릴리즈 생성 또는 갱신 (멱등성 보장)
+  const existingRelease = await getExistingRelease(repository, tagName);
 
-  const encodedTag = encodeURIComponent(tagName);
-  const release = await requestGitHub(`/repos/${repository}/releases/tags/${encodedTag}`);
-  await requestGitHub(`/repos/${repository}/releases/${release.id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({body}),
-    headers: {'Content-Type': 'application/json'},
-  });
-  console.log(`Updated release notes for ${tagName}`);
+  if (existingRelease) {
+    await requestGitHub(`/repos/${repository}/releases/${existingRelease.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({name: tagName, body}),
+      headers: {'Content-Type': 'application/json'},
+    });
+    console.log(`Updated release notes for ${tagName}`);
+  } else {
+    await requestGitHub(`/repos/${repository}/releases`, {
+      method: 'POST',
+      body: JSON.stringify({
+        tag_name: tagName,
+        ...(targetCommitish ? {target_commitish: targetCommitish} : {}),
+        name: tagName,
+        body,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    });
+    console.log(`Created release for ${tagName}`);
+  }
 }
 
 if (require.main === module) {
