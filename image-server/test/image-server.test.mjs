@@ -5,7 +5,8 @@ import { EventEmitter } from 'node:events';
 import sharp from 'sharp';
 import { createApp } from '../src/app.mjs';
 import { createPublicLookup, downloadImage, validateUrl } from '../src/download.mjs';
-import { normalizeImage } from '../src/image.mjs';
+import { compactImage, normalizeImage } from '../src/image.mjs';
+import { createCompactQueue, resolveCompactTargets } from '../src/compact.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { sign } from '../src/auth.mjs';
 
@@ -14,11 +15,11 @@ const NOW = Date.parse('2026-10-29T00:00:00Z');
 const config = { rootDirectory: 'rilog', imageBaseUrl: 'https://cdn.example.com', secret: SECRET };
 const target = { userId: 7, imagePurpose: 'CONTENT' };
 
-function signedHeaders(raw, { secret = SECRET, timestamp = String(NOW / 1000) } = {}) {
+function signedHeaders(raw, { secret = SECRET, timestamp = String(NOW / 1000), path = '/api/images/import' } = {}) {
   return {
     'content-type': 'application/json',
     'x-rilog-image-timestamp': timestamp,
-    'x-rilog-image-signature': `v1=${sign(secret, timestamp, '/api/images/import', Buffer.from(raw)).toString('hex')}`,
+    'x-rilog-image-signature': `v1=${sign(secret, timestamp, path, Buffer.from(raw)).toString('hex')}`,
   };
 }
 
@@ -104,6 +105,11 @@ async function serve(t, dependencies) {
       return fetch(`${base}/api/images/import`, { method: 'POST', headers: signedHeaders(raw, options), body: raw });
     },
     postRaw: (raw, headers) => fetch(`${base}/api/images/import`, { method: 'POST', headers, body: raw }),
+    compact: (objectKey, options = {}) => {
+      const raw = JSON.stringify({ objectKey });
+      const headers = signedHeaders(raw, { path: '/api/images/compact', ...options });
+      return fetch(`${base}/api/images/compact`, { method: 'POST', headers, body: raw });
+    },
   };
 }
 
@@ -204,4 +210,163 @@ test('configuration requires runtime settings and rejects unsafe delivery URLs',
   }
   assert.throws(() => loadConfig({ ...env, RILOG_IMAGE_SERVER_SECRET: undefined }), /RILOG_IMAGE_SERVER_SECRET is required/);
   assert.throws(() => loadConfig({ ...env, RILOG_IMAGE_SERVER_SECRET: 'short' }), /at least 32/);
+});
+
+const IMAGE_ID = '7-0f8fad5b-d9cb-469f-a165-70867728950e';
+
+test('compact targets map raw originals to purpose widths and reject other keys', () => {
+  assert.deepEqual(resolveCompactTargets('rilog', `rilog/images/raw/${IMAGE_ID}/original.PNG`), [750, 1200, 1400, 2000].map(width => ({
+    width, key: `rilog/images/compact/${IMAGE_ID}/${width}.webp`,
+  })));
+  assert.deepEqual(resolveCompactTargets('rilog', `rilog/profiles/raw/${IMAGE_ID}/original.jpg`).map(({ key }) => key), [
+    `rilog/profiles/compact/${IMAGE_ID}/50.webp`, `rilog/profiles/compact/${IMAGE_ID}/360.webp`,
+  ]);
+  for (const key of [
+    null, `other/images/raw/${IMAGE_ID}/original.png`, `rilog/files/raw/${IMAGE_ID}/original.png`, `rilog/images/compact/${IMAGE_ID}/750.webp`,
+    `rilog/images/raw/${IMAGE_ID}/original.gif`, `rilog/images/raw/${IMAGE_ID}/original.svg`, `rilog/images/RAW/${IMAGE_ID}/original.png`,
+    `rilog/images/raw/x-${IMAGE_ID}/original.png`, `rilog/images/raw/${IMAGE_ID}/../original.png`, `rilog/images/originals/${IMAGE_ID}.png`,
+  ]) {
+    assert.throws(() => resolveCompactTargets('rilog', key), { code: 'INVALID_OBJECT_KEY' });
+  }
+});
+
+test('compaction keeps narrower originals at their width and corrects EXIF orientation', async () => {
+  const source = await sharp({ create: { width: 1300, height: 20, channels: 3, background: 'red' } }).jpeg().toBuffer();
+  const outputs = await compactImage(source, [750, 1200, 1400, 2000]);
+  assert.deepEqual(outputs.map(({ width }) => width), [750, 1200, 1400, 2000]);
+  const widths = await Promise.all(outputs.map(async ({ data }) => (await sharp(data).metadata()).width));
+  assert.deepEqual(widths, [750, 1200, 1300, 1300]);
+  assert.equal(outputs[2].data, outputs[3].data);
+  assert.equal((await sharp(outputs[0].data).metadata()).format, 'webp');
+
+  // Orientation 6(90도 회전): 저장된 픽셀은 40x10이지만 보이는 너비는 10이다.
+  const rotated = await sharp({ create: { width: 40, height: 10, channels: 3, background: 'blue' } })
+    .withMetadata({ orientation: 6 }).jpeg().toBuffer();
+  const [profile] = await compactImage(rotated, [50]);
+  const meta = await sharp(profile.data).metadata();
+  assert.deepEqual([meta.width, meta.height, meta.orientation], [10, 40, undefined]);
+});
+
+test('compaction rejects animated and corrupt images', async () => {
+  const frames = Buffer.from([255,0,0,255,0,0,255,0,0,255,0,0,0,0,255,0,0,255,0,0,255,0,0,255]);
+  const animated = await sharp(frames, { raw: { width: 2, height: 4, channels: 3, pageHeight: 2 } }).webp({ loop: 0, delay: [100, 100] }).toBuffer();
+  await assert.rejects(compactImage(animated, [750]), { code: 'UNSUPPORTED_IMAGE' });
+  await assert.rejects(compactImage(Buffer.from('<html/>'), [750]), { code: 'INVALID_IMAGE' });
+});
+
+test('compact API writes every width of a signed raw key and reports the keys', async t => {
+  const source = await sharp({ create: { width: 400, height: 300, channels: 3, background: 'green' } }).png().toBuffer();
+  const stored = new Map();
+  const api = await serve(t, {
+    readOriginal: async key => { assert.equal(key, `rilog/profiles/raw/${IMAGE_ID}/original.png`); return source; },
+    putCompact: async (key, data) => stored.set(key, data),
+  });
+  const response = await api.compact(`rilog/profiles/raw/${IMAGE_ID}/original.png`);
+  assert.equal(response.status, 200);
+  const keys = [`rilog/profiles/compact/${IMAGE_ID}/50.webp`, `rilog/profiles/compact/${IMAGE_ID}/360.webp`];
+  assert.deepEqual((await response.json()).keys, keys);
+  assert.deepEqual([...stored.keys()], keys);
+  assert.equal((await sharp(stored.get(keys[1])).metadata()).width, 360);
+});
+
+test('compact API rejects other signatures and maps source, image and storage failures', async t => {
+  const png = await sharp({ create: { width: 1, height: 1, channels: 3, background: 'red' } }).png().toBuffer();
+  let read = async () => png;
+  let put = async () => {};
+  const api = await serve(t, { readOriginal: (...args) => read(...args), putCompact: (...args) => put(...args) });
+  const key = `rilog/images/raw/${IMAGE_ID}/original.jpg`;
+
+  // 가져오기 경로로 만든 서명은 압축 경로에서 쓸 수 없다.
+  const forged = await api.compact(key, { path: '/api/images/import' });
+  assert.equal(forged.status, 401);
+  assert.equal((await forged.json()).error.code, 'INVALID_SIGNATURE');
+
+  const invalidKey = await api.compact(`rilog/images/raw/${IMAGE_ID}/original.gif`);
+  assert.equal(invalidKey.status, 400);
+  assert.equal((await invalidKey.json()).error.code, 'INVALID_OBJECT_KEY');
+
+  const cases = [
+    [async () => { throw Object.assign(new Error('missing'), { name: 'NoSuchKey' }); }, put, 404, 'SOURCE_NOT_FOUND'],
+    [async () => { throw new Error('secret'); }, put, 502, 'STORAGE_UNAVAILABLE'],
+    [async () => Buffer.from('broken'), put, 422, 'INVALID_IMAGE'],
+    [async () => png, async () => { throw new Error('secret'); }, 502, 'STORAGE_UNAVAILABLE'],
+  ];
+  for (const [nextRead, nextPut, status, code] of cases) {
+    read = nextRead;
+    put = nextPut;
+    const response = await api.compact(key);
+    assert.equal(response.status, status);
+    const body = await response.json();
+    assert.equal(body.error.code, code);
+    assert.ok(!JSON.stringify(body).includes('secret'));
+  }
+});
+
+test('compact API logs the failed object key with status and code', async t => {
+  const logs = [];
+  t.mock.method(console, 'error', line => logs.push(JSON.parse(line)));
+  const key = `rilog/images/raw/${IMAGE_ID}/original.png`;
+  const api = await serve(t, {
+    readOriginal: async () => Buffer.from('broken'),
+    putCompact: async () => {},
+  });
+
+  assert.equal((await api.compact(key)).status, 422);
+  assert.equal((await api.compact(`rilog/images/raw/${IMAGE_ID}/original.gif`)).status, 400);
+  assert.equal((await api.compact(key, { secret: 'another-image-server-secret-at-least-32-chars' })).status, 401);
+
+  const failures = logs.filter(({ event }) => event === 'image_compact_failed');
+  assert.deepEqual(failures.map(({ key: failedKey, status, code }) => ({ key: failedKey, status, code })), [
+    { key, status: 422, code: 'INVALID_IMAGE' },
+    { key: `rilog/images/raw/${IMAGE_ID}/original.gif`, status: 400, code: 'INVALID_OBJECT_KEY' },
+  ]);
+});
+
+test('compact API times out slow jobs and requests still waiting for them', async t => {
+  const png = await sharp({ create: { width: 1, height: 1, channels: 3, background: 'red' } }).png().toBuffer();
+  let unblock;
+  let entered;
+  const started = new Promise(resolve => { entered = resolve; });
+  const blocked = new Promise(resolve => { unblock = resolve; });
+  let reads = 0;
+  const api = await serve(t, {
+    compactDeadlineMs: 200,
+    readOriginal: async (key, signal) => {
+      reads++;
+      if (reads > 1) return png;
+      entered();
+      await blocked;
+      signal.throwIfAborted();
+      return png;
+    },
+    putCompact: async () => {},
+  });
+  const key = `rilog/profiles/raw/${IMAGE_ID}/original.png`;
+  const first = api.compact(key);
+  await started;
+  // 앞 작업이 시한을 넘기는 동안 기다리던 요청은 원본을 읽지 않고 시한 초과로 끝난다.
+  const waiting = await api.compact(key);
+  assert.equal(waiting.status, 504);
+  assert.equal((await waiting.json()).error.code, 'COMPACT_TIMEOUT');
+  assert.equal(reads, 1);
+  unblock();
+  const slow = await first;
+  assert.equal(slow.status, 504);
+  assert.equal((await slow.json()).error.code, 'COMPACT_TIMEOUT');
+  assert.equal((await api.compact(key)).status, 200);
+});
+
+test('compact queue runs jobs in order and rejects when the waiting list is full', async () => {
+  const run = createCompactQueue({ maxWaiting: 1 });
+  const signal = new AbortController().signal;
+  const order = [];
+  let release;
+  const first = run(() => new Promise(resolve => { release = resolve; }).then(() => order.push(1)), signal);
+  const second = run(async () => order.push(2), signal);
+  assert.throws(() => run(async () => order.push(3), signal), { code: 'BUSY' });
+  release();
+  await Promise.all([first, second]);
+  assert.deepEqual(order, [1, 2]);
+  await run(async () => order.push(4), signal);
+  assert.deepEqual(order, [1, 2, 4]);
 });
