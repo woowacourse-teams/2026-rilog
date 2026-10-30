@@ -32,25 +32,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          # PR에 포함된 모든 커밋 메시지 수집 (Squash 커밋 제목 포함)
-          commit_messages="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" \
-            --jq '.[].commit.message')"
+          # PR에 포함된 모든 커밋 메시지 수집 (제목과 전체 본문 분리)
+          commits_json="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits")"
+          commit_headers="$(echo "$commits_json" | jq -r '.[].commit.message | split("\n")[0] | sub("\r$"; "")')"
+          commit_messages="$(echo "$commits_json" | jq -r '.[].commit.message')"
+
+          titles=$(printf "%s\n%s" "$PR_TITLE" "$commit_headers")
           all_text=$(printf "%s\n%s" "$PR_TITLE" "$commit_messages")
 
           # 1. Major (Breaking Change) 감지:
-          # - 대괄호 형태: [Feature!], [Fix!], [Feature]! 등
-          # - 콜론 형태: feature!:, feat!:, fix(api)!: 등
-          # - 본문/제목: BREAKING CHANGE:, BREAKING-CHANGE:
+          # - 제목: [Feature!], [Fix!]!, feat!:, fix(api)!: 등 (선행 공백 허용)
+          # - 본문/제목: BREAKING CHANGE:, BREAKING-CHANGE: (글머리 기호/선행 공백 허용)
           is_major=false
-          if echo "$all_text" | grep -qiE '(^BREAKING[ -]CHANGE:|^\[[A-Za-z]+!\]|^\[[A-Za-z]+\]!|^[A-Za-z]+(\([^)]*\))?[[:space:]]*![[:space:]]*:)'; then
+          if echo "$titles" | grep -qiE '^[[:space:]]*(\[[A-Za-z]+!\]|\[[A-Za-z]+\]!|[A-Za-z]+(\([^)]*\))?[[:space:]]*![[:space:]]*:)'; then
+            is_major=true
+          elif echo "$all_text" | grep -qiE '^[[:space:]]*[-*]?[[:space:]]*BREAKING[ -]CHANGE:'; then
             is_major=true
           fi
 
           # 2. Minor (Feature) 감지:
+          # - 제목에서만 감지 (선행 공백 허용, 본문의 squash 서브 커밋 목록/설명으로 인한 오판 방지)
           # - 대괄호 형태: [Feature], [Feat]
           # - 콜론 형태: feature:, feat:, feature(auth):, feat(ui): 등
           is_minor=false
-          if echo "$all_text" | grep -qiE '(^\[(feat|feature)\]|^(feat|feature)(\([^)]*\))?[[:space:]]*:)'; then
+          if echo "$titles" | grep -qiE '^[[:space:]]*(\[(feat|feature)\]|(feat|feature)(\([^)]*\))?[[:space:]]*:)'; then
             is_minor=true
           fi
 
