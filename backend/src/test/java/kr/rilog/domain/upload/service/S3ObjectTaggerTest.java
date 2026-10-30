@@ -124,10 +124,11 @@ class S3ObjectTaggerTest {
         when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class)))
                 .thenReturn(PutObjectTaggingResponse.builder().build());
 
-        tagger.tag(targets);
+        List<S3TagTarget> tagged = tagger.tag(targets);
 
         verify(s3Client, times(targets.size()))
                 .putObjectTagging(any(PutObjectTaggingRequest.class));
+        assertThat(tagged).isEqualTo(targets);
     }
 
     @Test
@@ -162,8 +163,10 @@ class S3ObjectTaggerTest {
 
         try {
             MDC.put("requestId", "http-request-123");
-            tagger.tag(targets);
+            List<S3TagTarget> tagged = tagger.tag(targets);
             MDC.remove("requestId");
+
+            assertThat(tagged).containsExactly(targets.get(1));
 
             ArgumentCaptor<PutObjectTaggingRequest> requestCaptor =
                     ArgumentCaptor.forClass(PutObjectTaggingRequest.class);

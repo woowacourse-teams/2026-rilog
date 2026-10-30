@@ -28,11 +28,18 @@ public class S3ObjectTagger {
     private final S3Client s3Client;
     private final S3Properties properties;
 
-    public void tag(List<S3TagTarget> uploadTargets) {
-        uploadTargets.forEach(this::changeS3ObjectTag);
+    /**
+     * 대상마다 태그를 바꾸고, 실패한 대상은 기록만 하고 건너뛴다.
+     *
+     * @return 태그를 바꾼 대상
+     */
+    public List<S3TagTarget> tag(List<S3TagTarget> uploadTargets) {
+        return uploadTargets.stream()
+                .filter(this::changeS3ObjectTag)
+                .toList();
     }
 
-    private void changeS3ObjectTag(S3TagTarget uploadTarget) {
+    private boolean changeS3ObjectTag(S3TagTarget uploadTarget) {
         long startedAt = System.nanoTime();
         try {
             s3Client.putObjectTagging(PutObjectTaggingRequest.builder()
@@ -47,6 +54,7 @@ public class S3ObjectTagger {
                     .addKeyValue("key", uploadTarget.key())
                     .addKeyValue("tagStatus", uploadTarget.tagStatus())
                     .addKeyValue("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+            return true;
         } catch (SdkException exception) {
             var event = log.atError()
                     .addKeyValue("event", S3_TAGGING_FAILED_EVENT)
@@ -71,6 +79,7 @@ public class S3ObjectTagger {
                             uploadTarget.key(),
                             uploadTarget.tagStatus()
                     );
+            return false;
         }
     }
 
