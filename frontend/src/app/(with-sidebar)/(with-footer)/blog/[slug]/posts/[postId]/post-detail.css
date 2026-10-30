@@ -65,12 +65,12 @@
 		color 120ms ease;
 }
 
-.post-detail-body [data-inline-comment-block-button]:hover {
+.post-detail-body [data-inline-comment-block-button]:hover:not(:disabled) {
 	background: var(--surface-hover);
 	color: var(--focus-ring);
 }
 
-.post-detail-body [data-inline-comment-block-button]:active {
+.post-detail-body [data-inline-comment-block-button]:active:not(:disabled) {
 	background: var(--surface-active);
 	color: var(--focus-ring);
 }
@@ -159,4 +159,42 @@
 
 .post-detail-body .bn-block-content[data-content-type='codeBlock']:has(> .mermaid-diagram[data-state='ready']) > pre {
 	display: none;
+}
+
+/* Navigation feedback is independent of hover and native Selection. Keep the original underline. */
+.post-detail-body [data-inline-comment-highlight][data-inline-comment-navigation] {
+	height: 0.25rem;
+	transform: none;
+	background: color-mix(in oklab, var(--blue-600) 25%, transparent);
+	opacity: 1;
+	transition: none;
+}
+
+.post-detail-body [data-inline-comment-highlight][data-inline-comment-navigation]::before {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	bottom: 0;
+	height: var(--inline-comment-highlight-expanded-height);
+	background: var(--blue-600);
+	pointer-events: none;
+	animation: inline-comment-navigation 1500ms ease-out both;
+	animation-delay: var(--inline-comment-navigation-delay, 0ms);
+}
+
+@keyframes inline-comment-navigation {
+	0%,
+	66.6667% {
+		opacity: 0.18;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.post-detail-body [data-inline-comment-highlight][data-inline-comment-navigation]::before {
+		animation: none;
+		opacity: 0.18;
+	}
 }
