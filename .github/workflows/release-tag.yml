@@ -33,21 +33,25 @@ jobs:
         run: |
           set -euo pipefail
 
-          # 0. 멱등성 보장: 동일 머지 커밋에 이미 태그가 존재하는지 확인 (Re-run 대응)
-          existing_tag="$(gh api --paginate "repos/$GITHUB_REPOSITORY/tags" \
-            --jq --arg sha "$MERGE_SHA" '.[] | select(.commit.sha == $sha) | .name' \
+          # 1. 태그 목록 조회 (API 1회 호출로 재사용)
+          tags_json="$(gh api --paginate "repos/$GITHUB_REPOSITORY/tags")"
+
+          # 1-1. 멱등성 보장: 동일 머지 커밋에 이미 태그가 존재하는지 확인 (Re-run 대응)
+          existing_tag="$(echo "$tags_json" \
+            | jq -r --arg sha "$MERGE_SHA" '.[] | select(.commit.sha == $sha) | .name' \
             | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
 
           if [ -n "$existing_tag" ]; then
             echo "이미 $MERGE_SHA 커밋에 $existing_tag 태그가 존재합니다. 태그를 재사용합니다."
             echo "tag=$existing_tag" >> "$GITHUB_OUTPUT"
-            echo "already_exists=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "already_exists=false" >> "$GITHUB_OUTPUT"
+          # 1-2. 기준이 될 최신 정식 semver 태그 조회
+          latest="$(echo "$tags_json" | jq -r '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
 
-          # PR에 포함된 모든 커밋 메시지 수집 (제목과 전체 본문 분리)
+          # 2. PR에 포함된 모든 커밋 메시지 수집 (제목과 전체 본문 분리)
           commits_json="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits")"
           commit_headers="$(echo "$commits_json" | jq -r '.[].commit.message | split("\n")[0] | sub("\r$"; "")')"
           commit_messages="$(echo "$commits_json" | jq -r '.[].commit.message')"
@@ -55,7 +59,7 @@ jobs:
           titles=$(printf "%s\n%s" "$PR_TITLE" "$commit_headers")
           all_text=$(printf "%s\n%s" "$PR_TITLE" "$commit_messages")
 
-          # 1. Major (Breaking Change) 감지:
+          # 3. Major (Breaking Change) 감지:
           # - 제목: [Feature!], [Fix!]!, feat!:, fix(api)!: 등 (선행 공백 허용)
           # - 본문/제목: BREAKING CHANGE:, BREAKING-CHANGE: (글머리 기호/선행 공백 허용)
           is_major=false
@@ -65,7 +69,7 @@ jobs:
             is_major=true
           fi
 
-          # 2. Minor (Feature) 감지:
+          # 4. Minor (Feature) 감지:
           # - 제목에서만 감지 (선행 공백 허용, 본문의 squash 서브 커밋 목록/설명으로 인한 오판 방지)
           # - 대괄호 형태: [Feature], [Feat]
           # - 콜론 형태: feature:, feat:, feature(auth):, feat(ui): 등
@@ -74,10 +78,7 @@ jobs:
             is_minor=true
           fi
 
-          # 3. 최신 태그 조회 (정식 semver 태그 대상)
-          latest="$(gh api --paginate "repos/$GITHUB_REPOSITORY/tags" --jq '.[].name' \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
-
+          # 5. 다음 버전 산출
           if [ -z "$latest" ]; then
             tag="v0.1.0"
           else
