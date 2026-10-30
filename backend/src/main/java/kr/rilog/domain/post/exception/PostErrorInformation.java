@@ -13,6 +13,7 @@ public enum PostErrorInformation implements ErrorInformation {
     PRIVATE_POST_READ_FORBIDDEN(HttpStatus.FORBIDDEN, "비공개 게시글 조회 권한이 없습니다."),
     NOT_POST_AUTHOR(HttpStatus.FORBIDDEN, "해당 게시글의 작성자가 아닙니다."),
     POST_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "게시글 삭제 권한이 없습니다."),
+    POST_COMMENT_COUNT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 댓글 수 정보가 올바르지 않습니다."),
     INVALID_POST_CONTENT(HttpStatus.BAD_REQUEST, "게시글 본문 내용이 올바르지 않습니다."),
     INVALID_FEED_FILTER(HttpStatus.BAD_REQUEST, "사용할 수 없는 피드 필터 조합입니다."),
     DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 임시저장 글을 찾을 수 없습니다."),

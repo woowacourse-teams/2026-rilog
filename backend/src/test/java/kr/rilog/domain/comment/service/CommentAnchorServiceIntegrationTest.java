@@ -33,6 +33,7 @@ import kr.rilog.support.fixure.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 
@@ -85,6 +86,9 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     @DisplayName("공개 게시글에 작성자가 아닌 로그인 사용자가 인라인 댓글을 작성하면 선택 위치와 본문을 저장한다.")
@@ -1457,7 +1461,9 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
     private CommentAnchor saveAnchor(CommentAnchorSelection selection, User writer, String content) {
-        return commentAnchorRepository.saveAndFlush(CommentAnchor.create(selection, writer, content));
+        CommentAnchor anchor = commentAnchorRepository.saveAndFlush(CommentAnchor.create(selection, writer, content));
+        jdbcTemplate.update("UPDATE post SET comment_count = comment_count + 1 WHERE id = ?", selection.getPost().getId());
+        return anchor;
     }
 
     private BlogMember saveActiveBlogMember(Post post, User user, BlogPermission permission) {

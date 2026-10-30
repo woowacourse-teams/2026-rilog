@@ -5,6 +5,10 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.comment.entity.CommentAnchor;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.repository.CommentAnchorRepository;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
@@ -14,6 +18,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
+import kr.rilog.support.fixure.CommentAnchorFixture;
 import kr.rilog.support.fixure.PostFixture;
 import kr.rilog.support.fixure.TheRilogPostFixture;
 import kr.rilog.support.fixure.UserFixture;
@@ -28,6 +33,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static kr.rilog.support.fixure.PostContentFixture.content;
 import static kr.rilog.support.fixure.PostContentFixture.paragraph;
@@ -61,9 +68,49 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private CommentAnchorRepository commentAnchorRepository;
+
+    @Autowired
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
     @Test
-    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 최근 발행 순으로 반환한다.")
-    void readTrendingPostsOrdersByScoreAndPublicationTime() {
+    @DisplayName("트렌딩 피드는 삭제되지 않은 인라인 댓글 카운터와 댓글이 없는 게시글의 0을 반환한다.")
+    void readTrendingPostsReturnsInlineCommentCounts() {
+        // given
+        User author = saveCompletedUser(6L, "트렌딩댓글작성자", "trend_comments");
+        Blog rilog = saveRilog(author);
+        Post postWithComments = savePost(PostFixture.publicPublishedRilogPostAt(
+                rilog, author, BASE_PUBLISHED_AT.plusMinutes(1)
+        ));
+        Post postWithoutComments = savePost(PostFixture.publicPublishedRilogPostAt(
+                rilog, author, BASE_PUBLISHED_AT
+        ));
+        saveTrending(10L, postWithComments);
+        saveTrending(20L, postWithoutComments);
+        saveAnchor(CommentAnchorFixture.activeAnchor(postWithComments, author));
+        saveAnchor(CommentAnchorFixture.orphanedAnchor(postWithComments, author));
+        CommentAnchor deletedAnchor = CommentAnchorFixture.activeAnchor(postWithComments, author);
+        deletedAnchor.delete();
+        saveAnchor(deletedAnchor);
+
+        // when
+        FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
+
+        // then
+        Map<Long, Long> commentCounts = result.posts().stream()
+                .collect(Collectors.toMap(
+                        FullFeedPostResult.PostItemResult::postId,
+                        FullFeedPostResult.PostItemResult::totalCommentsCount
+                ));
+        assertThat(commentCounts)
+                .containsEntry(postWithComments.getId(), 2L)
+                .containsEntry(postWithoutComments.getId(), 0L);
+    }
+
+    @Test
+    @DisplayName("트렌딩 피드는 점수 내림차순으로, 동점이면 트렌딩 ID 내림차순으로 반환한다.")
+    void readTrendingPostsOrdersByScoreAndTrendingId() {
         // given
         User author = saveCompletedUser(1L, "트렌딩작성자", "trending_author");
         Blog rilog = saveRilog(author);
@@ -77,11 +124,11 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 author,
                 BASE_PUBLISHED_AT.plusMinutes(1)
         ));
-        saveTrending(10L, olderPost);
-        saveTrending(20L, newerPost);
+        saveTrending(20L, olderPost);
+        saveTrending(10L, newerPost);
         jdbcTemplate.update("update trending_post set score = 100");
         Post highestScorePost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT.minusDays(1)));
-        saveTrending(30L, highestScorePost);
+        saveTrending(5L, highestScorePost);
 
         // when
         FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
@@ -89,7 +136,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(highestScorePost.getId(), newerPost.getId(), olderPost.getId());
+                .containsExactly(highestScorePost.getId(), olderPost.getId(), newerPost.getId());
     }
 
     @Test
@@ -195,17 +242,18 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 Slice 페이지 정보와 다음 페이지 존재 여부를 반환한다.")
-    void readTrendingPostsReturnsRequestedSlice() {
+    @DisplayName("점수가 같은 트렌딩 글은 트렌딩 ID 내림차순의 Slice와 다음 페이지 여부를 반환한다.")
+    void readTrendingPostsPaginatesTiesByTrendingId() {
         // given
         User author = saveCompletedUser(4L, "페이지작성자", "trending_page_author");
         Blog rilog = saveRilog(author);
-        Post firstPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        Post secondPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        Post thirdPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
+        Post firstPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post secondPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
+        Post thirdPost = savePost(PostFixture.publicPublishedRilogPostAt(rilog, author, BASE_PUBLISHED_AT));
         saveTrending(10L, firstPost);
-        saveTrending(20L, secondPost);
-        saveTrending(30L, thirdPost);
+        saveTrending(30L, secondPost);
+        saveTrending(20L, thirdPost);
+        jdbcTemplate.update("update trending_post set score = 100");
         FullFeedSearchCommand command = new FullFeedSearchCommand(null, null, 0, 2);
 
         // when
@@ -214,7 +262,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(firstPost.getId(), secondPost.getId());
+                .containsExactly(secondPost.getId(), thirdPost.getId());
         assertThat(result.hasNext()).isTrue();
     }
 
@@ -258,5 +306,17 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 1000 - id,
                 BASE_PUBLISHED_AT
         );
+    }
+
+    private void saveAnchor(CommentAnchor anchor) {
+        CommentAnchorSelection selection = anchor.getCommentAnchorSelection();
+        commentAnchorSelectionRepository.saveAndFlush(selection);
+        commentAnchorRepository.saveAndFlush(anchor);
+        if (!anchor.isDeleted()) {
+            jdbcTemplate.update(
+                    "UPDATE post SET comment_count = comment_count + 1 WHERE id = ?",
+                    selection.getPost().getId()
+            );
+        }
     }
 }

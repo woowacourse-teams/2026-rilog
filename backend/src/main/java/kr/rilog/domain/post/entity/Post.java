@@ -106,6 +106,9 @@ public class Post extends BaseEntity {
 
     private LocalDateTime publishedAt;
 
+    @Column(name = "comment_count", nullable = false, updatable = false)
+    private long commentCount;
+
     // THINK Mapper ... ?
     public static Post create(
             Blog colog,

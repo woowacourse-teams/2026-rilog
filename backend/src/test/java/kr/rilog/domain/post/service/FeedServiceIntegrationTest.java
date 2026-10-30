@@ -28,6 +28,7 @@ import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -79,6 +80,9 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     @DisplayName("전체 피드는 삭제되지 않은 인라인 댓글 수를 반환한다.")
@@ -750,6 +754,12 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         CommentAnchorSelection selection = anchor.getCommentAnchorSelection();
         commentAnchorSelectionRepository.saveAndFlush(selection);
         commentAnchorRepository.saveAndFlush(anchor);
+        if (!anchor.isDeleted()) {
+            jdbcTemplate.update(
+                    "UPDATE post SET comment_count = comment_count + 1 WHERE id = ?",
+                    selection.getPost().getId()
+            );
+        }
     }
 
     private void saveDeletedAnchor(Post post, User author) {

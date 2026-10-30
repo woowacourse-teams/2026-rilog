@@ -18,6 +18,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.DynamicUpdate;
 
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_DELETE_FORBIDDEN;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
@@ -26,6 +27,7 @@ import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_
 
 @Getter
 @Entity
+@DynamicUpdate
 @Table(name = "comment_anchor")
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -66,10 +68,14 @@ public class CommentAnchor extends BaseEntity {
     }
 
     public void deleteBy(Long requesterId, Post post, BlogMembers blogMembers) {
+        validateCanDeleteBy(requesterId, post, blogMembers);
+        delete();
+    }
+
+    public void validateCanDeleteBy(Long requesterId, Post post, BlogMembers blogMembers) {
         if (!canBeDeletedBy(requesterId, post, blogMembers)) {
             throw new CommentException(COMMENT_ANCHOR_DELETE_FORBIDDEN);
         }
-        delete();
     }
 
     public boolean canBeDeletedBy(Long requesterId, Post post, BlogMembers blogMembers) {
