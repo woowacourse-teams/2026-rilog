@@ -118,7 +118,8 @@ public class ImageServerImportGateway implements ImageImportGateway {
         return importFailure(startedAt, "HTTP_ERROR", exception.getStatusCode().value(), exception);
     }
 
-    private Optional<String> readErrorCode(RestClientResponseException exception) {
+    // 이미지 서버 오류 본문 {"error":{"code":...}}의 code. 본문이 없거나(Nginx HTML 등) 형식이 다르면 비어 있다.
+    static Optional<String> readErrorCode(RestClientResponseException exception) {
         try {
             ErrorResponse response = exception.getResponseBodyAs(ErrorResponse.class);
             if (response == null || response.error() == null) {
@@ -160,12 +161,12 @@ public class ImageServerImportGateway implements ImageImportGateway {
     ) {
     }
 
-    private record ErrorResponse(
+    record ErrorResponse(
             ErrorBody error
     ) {
     }
 
-    private record ErrorBody(
+    record ErrorBody(
             String code,
             String message
     ) {

@@ -45,7 +45,7 @@ class ImageServerImportGatewayTest {
     private static final String OBJECT_KEY = "rilog/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.webp";
 
     private final ImageServerRequestSigner signer = new ImageServerRequestSigner(new ImageServerProperties(
-            URI.create(BASE_URL), SECRET, Duration.ofSeconds(1), Duration.ofSeconds(1)
+            URI.create(BASE_URL), SECRET, Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(1)
     ));
     private final RestClient.Builder builder = RestClient.builder().baseUrl(BASE_URL);
     private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
