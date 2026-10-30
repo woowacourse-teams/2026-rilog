@@ -11,6 +11,8 @@ const app = createApp({
     Key: key,
     Body: bytes,
     ContentType: 'image/webp',
+    // presigned 업로드와 같이 임시 상태로 저장하고, 사용 확정 시 Spring이 CONFIRMED로 바꾼다.
+    Tagging: 'status=TEMPORARY',
     CacheControl: 'public, max-age=31536000, immutable',
   }), { abortSignal: AbortSignal.timeout(15_000) }),
 });
