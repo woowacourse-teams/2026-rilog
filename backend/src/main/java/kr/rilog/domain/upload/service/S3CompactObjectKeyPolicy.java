@@ -14,7 +14,7 @@ import static kr.rilog.domain.upload.exception.UploadErrorInformation.INVALID_UP
  * 압축 원본 key({root}/{images|profiles}/raw/{userId}-{UUID}/original.{ext})에서
  * 압축본 key({root}/{images|profiles}/compact/{userId}-{UUID}/{width}.webp)를 만든다.
  *
- * <p>확장자는 이미지 압축 Lambda가 변환하는 형식만 허용한다. 나머지 형식은 Lambda가 서버를 호출하지 않는다.
+ * <p>확장자는 이미지 서버(와 이전 압축 Lambda)가 변환하는 형식만 허용한다. 나머지 형식은 압축을 요청하지 않고 원본만 쓴다.
  */
 @Component
 public class S3CompactObjectKeyPolicy {
@@ -34,6 +34,15 @@ public class S3CompactObjectKeyPolicy {
                         + "(?<uuid>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
                         + "/original\\.(?i:jpg|jpeg|png|webp|avif)$"
         );
+    }
+
+    public boolean isCompactable(String objectKey) {
+        if (objectKey == null) {
+            return false;
+        }
+
+        Matcher matcher = rawKeyPattern.matcher(objectKey);
+        return matcher.matches() && CompactionTarget.fromDirectory(matcher.group("directory")).isPresent();
     }
 
     public CompactSource parse(String rawObjectKey) {

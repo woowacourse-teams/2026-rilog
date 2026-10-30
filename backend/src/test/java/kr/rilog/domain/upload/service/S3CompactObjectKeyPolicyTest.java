@@ -35,6 +35,8 @@ class S3CompactObjectKeyPolicyTest {
     void parseRawObjectKey(String rawObjectKey, CompactionTarget expectedTarget) {
         CompactSource source = policy.parse(rawObjectKey);
 
+        assertThat(policy.isCompactable(rawObjectKey)).isTrue();
+
         assertThat(source.target()).isEqualTo(expectedTarget);
         assertThat(source.userId()).isEqualTo("7");
         assertThat(source.uuid()).isEqualTo(UUID);
@@ -59,6 +61,7 @@ class S3CompactObjectKeyPolicyTest {
     })
     @DisplayName("규칙에 맞지 않는 key는 거부한다")
     void rejectInvalidRawObjectKey(String rawObjectKey) {
+        assertThat(policy.isCompactable(rawObjectKey)).isFalse();
         assertThatThrownBy(() -> policy.parse(rawObjectKey))
                 .isInstanceOf(UploadException.class)
                 .hasMessage(UploadErrorInformation.INVALID_UPLOAD_TARGET.getMessage());

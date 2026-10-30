@@ -32,22 +32,105 @@ class S3TagAssetsLifecycleTest {
     private static final String LEGACY_KEY = ROOT_DIRECTORY
             + "/images/originals/a38e9b2c-4c13-4f52-9c31-0e52d768d517.png";
 
+    private static final String RAW_KEY = ROOT_DIRECTORY
+            + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+    private static final String PROFILE_RAW_KEY = ROOT_DIRECTORY
+            + "/profiles/raw/7-c38e9b2c-4c13-4f52-9c31-0e52d768d517/original.jpg";
+
     private S3ObjectTagger objectTagger;
     private S3ObjectKeyResolver objectKeyResolver;
+    private ImageCompactionRequester imageCompactionRequester;
     private S3TagAssetsLifecycle lifecycle;
 
     @BeforeEach
     void setUp() {
         objectTagger = mock(S3ObjectTagger.class);
         objectKeyResolver = mock(S3ObjectKeyResolver.class);
-        S3ImageObjectKeyPolicy imageObjectKeyPolicy = new S3ImageObjectKeyPolicy(
-                new S3Properties("bucket", "ap-northeast-2", ROOT_DIRECTORY, 10)
-        );
+        imageCompactionRequester = mock(ImageCompactionRequester.class);
+        S3Properties properties = new S3Properties("bucket", "ap-northeast-2", ROOT_DIRECTORY, 10);
         lifecycle = new S3TagAssetsLifecycle(
                 objectTagger,
                 objectKeyResolver,
-                imageObjectKeyPolicy
+                new S3ImageObjectKeyPolicy(properties),
+                new S3CompactObjectKeyPolicy(properties),
+                imageCompactionRequester
         );
+    }
+
+    @Test
+    @DisplayName("CONFIRMED 태깅에 성공한 raw 원본마다 압축을 요청한다.")
+    void requestCompactionForConfirmedRawImages() {
+        List<S3TagTarget> targets = List.of(
+                new S3TagTarget(RAW_KEY, TagStatus.CONFIRMED),
+                new S3TagTarget(PROFILE_RAW_KEY, TagStatus.CONFIRMED)
+        );
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectKeyResolver.resolve(RETAINED_URL)).thenReturn(Optional.of(PROFILE_RAW_KEY));
+        when(objectTagger.tag(anyList())).thenReturn(targets);
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL, RETAINED_URL)));
+
+        verify(imageCompactionRequester).request(RAW_KEY);
+        verify(imageCompactionRequester).request(PROFILE_RAW_KEY);
+        verifyNoMoreInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("태깅에 실패한 원본은 압축을 요청하지 않는다.")
+    void doNotRequestCompactionWhenTaggingFails() {
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectTagger.tag(anyList())).thenReturn(List.of());
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
+
+        verifyNoInteractions(imageCompactionRequester);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.gif",
+            "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.svg",
+            "/images/compact/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/750.webp",
+            "/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png"
+    })
+    @DisplayName("변환하지 않는 형식, 압축본, 기존 originals 원본은 압축을 요청하지 않는다.")
+    void doNotRequestCompactionForNonCompactableKeys(String path) {
+        String key = ROOT_DIRECTORY + path;
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(key));
+        when(objectTagger.tag(anyList())).thenReturn(List.of(new S3TagTarget(key, TagStatus.CONFIRMED)));
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
+
+        verifyNoInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("동기화에서는 새로 CONFIRMED가 된 원본만 압축하고 TEMPORARY로 바뀐 원본은 압축하지 않는다.")
+    void requestCompactionOnlyForAddedImagesWhenSynchronizing() {
+        String removedRawKey = ROOT_DIRECTORY + "/images/raw/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(removedRawKey));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.synchronize(
+                REQUESTER_ID,
+                new TagAssets(Set.of(RETAINED_URL, REMOVED_URL)),
+                new TagAssets(Set.of(RETAINED_URL, ADDED_URL))
+        );
+
+        verify(imageCompactionRequester).request(RAW_KEY);
+        verifyNoMoreInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("분리는 압축을 요청하지 않는다.")
+    void doNotRequestCompactionWhenDetaching() {
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verifyNoInteractions(imageCompactionRequester);
     }
 
     @Test

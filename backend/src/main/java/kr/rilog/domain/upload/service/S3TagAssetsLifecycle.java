@@ -27,10 +27,12 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
     private final S3ObjectTagger objectTagger;
     private final S3ObjectKeyResolver objectKeyResolver;
     private final S3ImageObjectKeyPolicy imageObjectKeyPolicy;
+    private final S3CompactObjectKeyPolicy compactObjectKeyPolicy;
+    private final ImageCompactionRequester imageCompactionRequester;
 
     @Override
     public void attach(TagAssets assets) {
-        objectTagger.tag(toTargets(resolveObjectKeys(assets), TagStatus.CONFIRMED));
+        requestCompaction(objectTagger.tag(toTargets(resolveObjectKeys(assets), TagStatus.CONFIRMED)));
     }
 
     @Override
@@ -59,12 +61,21 @@ public class S3TagAssetsLifecycle implements TagAssetsLifecycle {
                 TagStatus.TEMPORARY
         ));
 
-        objectTagger.tag(targets);
+        requestCompaction(objectTagger.tag(targets));
     }
 
     @Override
     public void detach(Long requesterId, TagAssets assets) {
         objectTagger.tag(toOwnedTargets(requesterId, resolveObjectKeys(assets), TagStatus.TEMPORARY));
+    }
+
+    // CONFIRMED로 바뀐 raw 원본만 압축한다. 태깅에 실패한 원본은 TEMPORARY로 남아 지워질 수 있으므로 압축하지 않는다.
+    private void requestCompaction(List<S3TagTarget> taggedTargets) {
+        taggedTargets.stream()
+                .filter(target -> target.tagStatus() == TagStatus.CONFIRMED)
+                .map(S3TagTarget::key)
+                .filter(compactObjectKeyPolicy::isCompactable)
+                .forEach(imageCompactionRequester::request);
     }
 
     private Set<String> resolveObjectKeys(TagAssets assets) {
