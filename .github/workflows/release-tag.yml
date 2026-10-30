@@ -29,8 +29,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           set -euo pipefail
+
+          # 0. 멱등성 보장: 동일 머지 커밋에 이미 태그가 존재하는지 확인 (Re-run 대응)
+          existing_tag="$(gh api --paginate "repos/$GITHUB_REPOSITORY/tags" \
+            --jq --arg sha "$MERGE_SHA" '.[] | select(.commit.sha == $sha) | .name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+
+          if [ -n "$existing_tag" ]; then
+            echo "이미 $MERGE_SHA 커밋에 $existing_tag 태그가 존재합니다. 태그를 재사용합니다."
+            echo "tag=$existing_tag" >> "$GITHUB_OUTPUT"
+            echo "already_exists=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "already_exists=false" >> "$GITHUB_OUTPUT"
 
           # PR에 포함된 모든 커밋 메시지 수집 (제목과 전체 본문 분리)
           commits_json="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits")"
@@ -79,24 +94,36 @@ jobs:
           echo "Bump 결정: major=$is_major, minor=$is_minor (최신: ${latest:-없음} → $tag)"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ steps.version.outputs.tag }}
-          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
-        run: |
-          gh release create "$TAG_NAME" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$MERGE_SHA" \
-            --title "$TAG_NAME" \
-            --generate-notes
-
-      - name: Customize GitHub Release notes
+      - name: Generate release notes
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           TAG_NAME: ${{ steps.version.outputs.tag }}
+          TARGET_COMMITISH: ${{ github.event.pull_request.merge_commit_sha }}
+          OUTPUT_PATH: release_notes.md
         run: node scripts/update-release-notes.cjs
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          ALREADY_EXISTS: ${{ steps.version.outputs.already_exists }}
+        run: |
+          if [ "$ALREADY_EXISTS" = "true" ]; then
+            echo "릴리즈를 갱신합니다: $TAG_NAME"
+            gh release edit "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TAG_NAME" \
+              --notes-file release_notes.md
+          else
+            echo "릴리즈를 신규 생성합니다: $TAG_NAME"
+            gh release create "$TAG_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$MERGE_SHA" \
+              --title "$TAG_NAME" \
+              --notes-file release_notes.md
+          fi
 
       - name: Record run
         env:

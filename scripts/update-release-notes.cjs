@@ -66,17 +66,36 @@ async function requestGitHub(path, options = {}) {
 async function updateReleaseNotes() {
   const repository = process.env.REPOSITORY;
   const tagName = process.env.TAG_NAME;
+  const targetCommitish = process.env.TARGET_COMMITISH;
+  const outputPath = process.env.OUTPUT_PATH;
+
   if (!process.env.GITHUB_TOKEN || !repository || !tagName) {
     throw new Error('GITHUB_TOKEN, REPOSITORY and TAG_NAME are required');
   }
 
+  // 1. GitHub API를 통해 릴리즈 노트 초안 자동 생성
+  const generated = await requestGitHub(`/repos/${repository}/releases/generate-notes`, {
+    method: 'POST',
+    body: JSON.stringify({
+      tag_name: tagName,
+      ...(targetCommitish ? {target_commitish: targetCommitish} : {}),
+    }),
+    headers: {'Content-Type': 'application/json'},
+  });
+
+  // 2. 릴리즈 노트 서식 적용 (KST 릴리즈 시각 및 헤더 정리)
+  const body = formatReleaseNotes(generated.body ?? '', new Date().toISOString());
+
+  // 3. 파일 출력 또는 기존 릴리즈 PATCH (하위 호환)
+  if (outputPath) {
+    const fs = require('fs');
+    fs.writeFileSync(outputPath, body, 'utf8');
+    console.log(`Generated release notes for ${tagName} -> ${outputPath}`);
+    return;
+  }
+
   const encodedTag = encodeURIComponent(tagName);
   const release = await requestGitHub(`/repos/${repository}/releases/tags/${encodedTag}`);
-  const body = formatReleaseNotes(
-    release.body ?? '',
-    release.published_at ?? release.created_at ?? new Date().toISOString()
-  );
-
   await requestGitHub(`/repos/${repository}/releases/${release.id}`, {
     method: 'PATCH',
     body: JSON.stringify({body}),
