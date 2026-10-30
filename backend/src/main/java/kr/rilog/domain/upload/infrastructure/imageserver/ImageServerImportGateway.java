@@ -7,6 +7,7 @@ import kr.rilog.domain.upload.service.dto.result.ImageImportResult;
 import kr.rilog.domain.upload.service.gateway.ImageImportGateway;
 import kr.rilog.global.exception.RilogInfrastructureException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -107,6 +108,10 @@ public class ImageServerImportGateway implements ImageImportGateway {
 
     private RuntimeException translate(long startedAt, RestClientResponseException exception) {
         Optional<ImageImportErrorInformation> clientError = readErrorCode(exception).map(CLIENT_ERRORS::get);
+        if (clientError.isEmpty() && exception.getStatusCode().isSameCodeAs(HttpStatus.TOO_MANY_REQUESTS)) {
+            // Nginx rate limit의 429는 HTML 본문이라 오류 코드가 없다. 의미는 이미지 서버의 BUSY와 같다.
+            clientError = Optional.of(BUSY);
+        }
         if (clientError.isPresent()) {
             return new UploadException(clientError.get());
         }

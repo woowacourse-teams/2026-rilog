@@ -123,6 +123,23 @@ class ImageServerImportGatewayTest {
     }
 
     @Test
+    @DisplayName("Nginx rate limit의 HTML 429는 이미지 서버 BUSY와 같이 429로 전달한다")
+    void forwardsProxyRateLimitAsBusy() {
+        server.expect(requestTo(BASE_URL + "/api/images/import"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                        .contentType(MediaType.TEXT_HTML)
+                        .body("<html>429 Too Many Requests</html>"));
+
+        assertThatThrownBy(() -> gateway.importImage(7L, SOURCE_URL, ImagePurpose.CONTENT))
+                .isInstanceOf(UploadException.class)
+                .satisfies(error -> {
+                    var information = ((UploadException) error).getErrorInformation();
+                    assertThat(information).isEqualTo(ImageImportErrorInformation.BUSY);
+                    assertThat(information.getHttpStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+                });
+    }
+
+    @Test
     @DisplayName("이미지 서버에 연결하지 못하면 이미지 서버 장애(502)로 감싼다")
     void wrapsConnectionFailure() {
         server.expect(requestTo(BASE_URL + "/api/images/import"))
