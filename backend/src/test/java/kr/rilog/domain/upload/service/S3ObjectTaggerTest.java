@@ -10,6 +10,7 @@ import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -198,6 +199,77 @@ class S3ObjectTaggerTest {
             MDC.remove("requestId");
             logCapture.stop();
         }
+    }
+
+    @Test
+    @DisplayName("없어도 되는 대상의 태깅은 객체가 없으면 기록하지 않고 다음 대상을 계속 처리한다.")
+    void skipMissingObjectWithoutLogging() {
+        S3Client s3Client = mock(S3Client.class);
+        List<S3TagTarget> targets = List.of(
+                new S3TagTarget("images/compact/750.webp", TagStatus.TEMPORARY),
+                new S3TagTarget("images/compact/1200.webp", TagStatus.TEMPORARY)
+        );
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class)))
+                .thenThrow(s3Failure(404, "NoSuchKey"))
+                .thenReturn(PutObjectTaggingResponse.builder().build());
+        LogCapture capture = LogCapture.start();
+
+        try {
+            List<S3TagTarget> tagged = new S3ObjectTagger(s3Client, s3Properties()).tagIfExists(targets);
+
+            assertThat(tagged).containsExactly(targets.get(1));
+            verify(s3Client, times(2)).putObjectTagging(any(PutObjectTaggingRequest.class));
+            assertThat(capture.appender().list).isEmpty();
+        } finally {
+            capture.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"404,NoSuchBucket", "403,AccessDenied"})
+    @DisplayName("없어도 되는 대상의 태깅도 객체가 없는 경우 외의 실패는 ERROR로 기록한다.")
+    void logOtherFailuresWhenSkippingMissingObjects(int status, String errorCode) {
+        S3Client s3Client = mock(S3Client.class);
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class))).thenThrow(s3Failure(status, errorCode));
+        LogCapture capture = LogCapture.start();
+
+        try {
+            List<S3TagTarget> tagged = new S3ObjectTagger(s3Client, s3Properties())
+                    .tagIfExists(List.of(new S3TagTarget(OBJECT_KEY, TagStatus.TEMPORARY)));
+
+            assertThat(tagged).isEmpty();
+            ILoggingEvent event = capture.onlyEvent();
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(logFields(event)).containsEntry("awsErrorCode", errorCode);
+        } finally {
+            capture.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("일반 태깅은 객체가 없어도 실패로 기록한다.")
+    void logMissingObjectWhenTagging() {
+        S3Client s3Client = mock(S3Client.class);
+        when(s3Client.putObjectTagging(any(PutObjectTaggingRequest.class))).thenThrow(s3Failure(404, "NoSuchKey"));
+        LogCapture capture = LogCapture.start();
+
+        try {
+            new S3ObjectTagger(s3Client, s3Properties()).tag(List.of(new S3TagTarget(OBJECT_KEY, TagStatus.CONFIRMED)));
+
+            ILoggingEvent event = capture.onlyEvent();
+            assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+            assertThat(logFields(event)).containsEntry("awsErrorCode", "NoSuchKey");
+        } finally {
+            capture.stop();
+        }
+    }
+
+    private static S3Exception s3Failure(int status, String errorCode) {
+        return (S3Exception) S3Exception.builder()
+                .message("tagging failed")
+                .statusCode(status)
+                .awsErrorDetails(AwsErrorDetails.builder().errorCode(errorCode).build())
+                .build();
     }
 
     private void whenPutObjectTaggingFailsThenSucceeds(S3Client s3Client, SdkClientException failure) {
