@@ -25,6 +25,7 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { installImageRowDrag } from '../lib/install-image-row-drag';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
@@ -195,6 +196,7 @@ export default function BlockNoteEditor({
 
 	useEffect(() => connectEditor(editor), [connectEditor, editor]);
 	usePostWriteTransferUpload(editor);
+	useEffect(() => installImageRowDrag(editor), [editor]);
 
 	useEffect(
 		() =>

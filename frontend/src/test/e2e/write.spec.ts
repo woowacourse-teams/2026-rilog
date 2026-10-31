@@ -155,6 +155,419 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await enableWriteAccess(page);
 	});
 
+	test('독립 이미지 블록을 다른 이미지 아래로 드래그해 세로 순서를 바꾼다', async ({ page }) => {
+		await page.route('**/rilog/images/originals/e2e-upload.png', (route) =>
+			route.fulfill({
+				contentType: 'image/svg+xml',
+				body: '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#ddd"/></svg>',
+			}),
+		);
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		await page
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles([
+				{ name: 'first.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+				{ name: 'second.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+			]);
+		const images = page.locator('.post-write-blocknote [data-content-type="image"] img');
+		await expect(images).toHaveCount(2);
+		await expect.poll(() => images.nth(1).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(320);
+		const targetBounds = await images.nth(1).boundingBox();
+		expect(targetBounds).not.toBeNull();
+		if (!targetBounds) return;
+		await images.first().dragTo(images.nth(1), {
+			targetPosition: { x: targetBounds.width / 2, y: targetBounds.height * 0.75 },
+		});
+		await expect(page.locator('.post-write-blocknote .bn-block-column-list')).toHaveCount(0);
+		await expect(images.first()).toHaveAttribute('alt', 'second.png');
+		await expect(images.nth(1)).toHaveAttribute('alt', 'first.png');
+	});
+
+	test('업로드한 이미지 두 장을 행으로 묶고 순서를 바꾼 뒤 꺼낼 수 있다', async ({ page }) => {
+		await page.route('**/rilog/images/originals/e2e-upload.png', (route) =>
+			route.fulfill({
+				contentType: 'image/svg+xml',
+				body: '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#ddd"/></svg>',
+			}),
+		);
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		await page
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles([
+				{ name: 'first.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+				{ name: 'second.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+			]);
+
+		const images = page.locator('.post-write-blocknote [data-content-type="image"] img');
+		await expect(images).toHaveCount(2);
+		await expect.poll(() => images.first().evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(320);
+		const editorBounds = await page.locator('.post-write-blocknote .bn-editor').boundingBox();
+		const targetBounds = await images.nth(1).boundingBox();
+		expect(editorBounds).not.toBeNull();
+		expect(targetBounds).not.toBeNull();
+		if (!editorBounds || !targetBounds) return;
+		expect(targetBounds.x - editorBounds.x).toBeLessThanOrEqual(48);
+		const outsideX = editorBounds.x - 100;
+		const targetY = targetBounds.y + targetBounds.height / 2;
+		await images
+			.first()
+			.evaluate((source) =>
+				source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() })),
+			);
+		const canDropBesideImage = await page.evaluate(
+			({ x, y }) => {
+				const event = new DragEvent('dragover', {
+					bubbles: true,
+					cancelable: true,
+					clientX: x,
+					clientY: y,
+					dataTransfer: new DataTransfer(),
+				});
+				document.body.dispatchEvent(event);
+				return event.defaultPrevented;
+			},
+			{ x: outsideX, y: targetY },
+		);
+		expect(canDropBesideImage).toBe(true);
+		const guide = page.locator('.post-write-image-row-guide');
+		await expect(guide).toBeVisible();
+		const guideBounds = await guide.boundingBox();
+		expect(guideBounds).not.toBeNull();
+		expect(guideBounds?.x).toBeCloseTo(targetBounds.x - 16 - 2.5);
+		expect(guideBounds?.y).toBeCloseTo(targetBounds.y);
+		expect(guideBounds?.height).toBeCloseTo(targetBounds.height);
+		await expect
+			.poll(() => guide.evaluate((element) => getComputedStyle(element).backgroundColor))
+			.toBe('rgb(221, 238, 255)');
+		await expect.poll(() => guide.evaluate((element) => getComputedStyle(element).width)).toBe('5px');
+		await expect(guide).toHaveCSS('pointer-events', 'none');
+		const rightWhitespaceX = editorBounds.x + editorBounds.width - 1;
+		expect(rightWhitespaceX - (targetBounds.x + targetBounds.width)).toBeGreaterThan(48);
+		await page.evaluate(
+			({ x, y }) =>
+				document.body.dispatchEvent(
+					new DragEvent('dragover', {
+						bubbles: true,
+						cancelable: true,
+						clientX: x,
+						clientY: y,
+						dataTransfer: new DataTransfer(),
+					}),
+				),
+			{ x: rightWhitespaceX, y: targetY },
+		);
+		await expect(guide).toBeVisible();
+		const rightGuideBounds = await guide.boundingBox();
+		expect(rightGuideBounds?.x).toBeCloseTo(targetBounds.x + targetBounds.width + 16 - 2.5);
+		await page.keyboard.press('Escape');
+		await expect(guide).toBeHidden();
+		await images.first().dragTo(page.locator('body'), { targetPosition: { x: outsideX, y: targetY } });
+
+		const row = page.locator('.post-write-blocknote .bn-block-column-list');
+		await expect(row).toHaveCount(1);
+		await expect(row.locator('.bn-block-column')).toHaveCount(2);
+		await expect(row.locator('[data-content-type="image"] img')).toHaveCount(2);
+		await expect(row.locator('img').first()).toHaveAttribute('alt', 'first.png');
+		const rowImages = row.locator('img');
+		const secondBounds = await rowImages.nth(1).boundingBox();
+		expect(secondBounds).not.toBeNull();
+		if (!secondBounds) return;
+		await rowImages
+			.first()
+			.evaluate((source) =>
+				source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() })),
+			);
+		await page.evaluate(
+			({ x, y }) =>
+				document.body.dispatchEvent(
+					new DragEvent('dragover', {
+						bubbles: true,
+						cancelable: true,
+						clientX: x,
+						clientY: y,
+						dataTransfer: new DataTransfer(),
+					}),
+				),
+			{ x: secondBounds.x + secondBounds.width - 1, y: secondBounds.y + secondBounds.height / 2 },
+		);
+		await expect(guide).toBeVisible();
+		await page.keyboard.press('Escape');
+		await rowImages.first().dragTo(rowImages.nth(1), {
+			targetPosition: { x: secondBounds.width - 1, y: secondBounds.height / 2 },
+		});
+		await expect(rowImages.first()).toHaveAttribute('alt', 'second.png');
+		await expect(rowImages.nth(1)).toHaveAttribute('alt', 'first.png');
+
+		const paragraph = page.locator('.post-write-blocknote .bn-block-content[data-content-type="paragraph"]').first();
+		await expect(paragraph).toBeVisible();
+		const paragraphBounds = await paragraph.boundingBox();
+		expect(paragraphBounds).not.toBeNull();
+		if (!paragraphBounds) return;
+		await rowImages
+			.first()
+			.evaluate((source) =>
+				source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() })),
+			);
+		await page.evaluate(
+			({ x, y }) =>
+				document.body.dispatchEvent(
+					new DragEvent('dragover', {
+						bubbles: true,
+						cancelable: true,
+						clientX: x,
+						clientY: y,
+						dataTransfer: new DataTransfer(),
+					}),
+				),
+			{ x: paragraphBounds.x + paragraphBounds.width / 2, y: paragraphBounds.y + paragraphBounds.height / 2 },
+		);
+		await expect(page.locator('.post-write-image-row-detach-guide')).toBeVisible();
+		await page.keyboard.press('Escape');
+		await paragraph.click();
+		await row.locator('img').first().dragTo(paragraph, { steps: 10 });
+		await expect(row).toHaveCount(0);
+		await expect(images).toHaveCount(2);
+		await expect(images.first()).toHaveAttribute('alt', 'first.png');
+		await expect(images.nth(1)).toHaveAttribute('alt', 'second.png');
+	});
+
+	// The column resize boundary depends on browser layout and cannot be measured by jsdom.
+	test('작은 이미지 행의 두 열 사이에 놓을 때 가이드가 열 조절바에 맞춰진다', async ({ page }) => {
+		await page.route('**/rilog/images/originals/e2e-upload.png', (route) =>
+			route.fulfill({
+				contentType: 'image/svg+xml',
+				body: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#ddd"/></svg>',
+			}),
+		);
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		await page
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles(
+				['first.png', 'second.png', 'third.png'].map((name) => ({
+					name,
+					mimeType: 'image/png',
+					buffer: TEST_IMAGE_BYTES,
+				})),
+			);
+
+		const images = page.locator('.post-write-blocknote [data-content-type="image"] img');
+		await expect(images).toHaveCount(3);
+		await expect.poll(() => images.nth(1).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(120);
+		const editorBounds = await page.locator('.post-write-blocknote .bn-editor').boundingBox();
+		const secondBounds = await images.nth(1).boundingBox();
+		expect(editorBounds).not.toBeNull();
+		expect(secondBounds).not.toBeNull();
+		if (!editorBounds || !secondBounds) return;
+		await images.first().dragTo(page.locator('body'), {
+			targetPosition: { x: editorBounds.x - 100, y: secondBounds.y + secondBounds.height / 2 },
+		});
+
+		const row = page.locator('.post-write-blocknote .bn-block-column-list');
+		await expect(row.locator('.bn-block-column')).toHaveCount(2);
+		const firstColumnBounds = await row.locator('.bn-block-column').first().boundingBox();
+		const firstImageBounds = await row.locator('img').first().boundingBox();
+		const secondImageBounds = await row.locator('img').nth(1).boundingBox();
+		expect(firstColumnBounds).not.toBeNull();
+		expect(firstImageBounds).not.toBeNull();
+		expect(secondImageBounds).not.toBeNull();
+		if (!firstColumnBounds || !firstImageBounds || !secondImageBounds) return;
+		const firstColumn = row.locator('.bn-block-column').first();
+		const separatorBeforeDrag = await firstColumn.evaluate((element) => {
+			element.parentElement?.classList.add('bn-column-list-hovered');
+			element.classList.add('bn-column-resize-border');
+			return getComputedStyle(element).boxShadow;
+		});
+		expect(separatorBeforeDrag).not.toBe('none');
+		await images
+			.nth(2)
+			.evaluate((source) =>
+				source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() })),
+			);
+		const separatorDuringDrag = await firstColumn.evaluate((element) => {
+			element.parentElement?.classList.add('bn-column-list-hovered');
+			element.classList.add('bn-column-resize-border');
+			return getComputedStyle(element).boxShadow;
+		});
+		expect(separatorDuringDrag).toBe('none');
+		const guide = page.locator('.post-write-image-row-guide');
+		for (const edgeX of [firstImageBounds.x + firstImageBounds.width, secondImageBounds.x]) {
+			await page.evaluate(
+				({ x, y }) =>
+					document.body.dispatchEvent(
+						new DragEvent('dragover', {
+							bubbles: true,
+							cancelable: true,
+							clientX: x,
+							clientY: y,
+							dataTransfer: new DataTransfer(),
+						}),
+					),
+				{ x: edgeX, y: secondImageBounds.y + secondImageBounds.height / 2 },
+			);
+			await expect(guide).toBeVisible();
+			const center = await guide.evaluate((element) => Number.parseFloat(element.style.left));
+			expect(center).toBeCloseTo(firstColumnBounds.x + firstColumnBounds.width + 2, 0);
+		}
+		await page.evaluate(
+			({ x, y }) =>
+				document.body.dispatchEvent(
+					new DragEvent('drop', {
+						bubbles: true,
+						cancelable: true,
+						clientX: x,
+						clientY: y,
+						dataTransfer: new DataTransfer(),
+					}),
+				),
+			{ x: secondImageBounds.x, y: secondImageBounds.y + secondImageBounds.height / 2 },
+		);
+		await expect(row.locator('img')).toHaveCount(3);
+		await expect(row.locator('img').nth(1)).toHaveAttribute('alt', 'third.png');
+		await expect(page.locator('.post-write-blocknote .bn-editor')).not.toHaveClass(/post-write-image-row-dragging/);
+	});
+
+	for (const { width, height, dropSide } of [
+		{ width: 1100, height: 720, dropSide: 'left' },
+		{ width: 1440, height: 900, dropSide: 'right' },
+	] as const) {
+		test(`${width}px 뷰포트에서 이미지 행 바깥 드롭 영역과 가이드 위치를 확인한다`, async ({ page }) => {
+			await page.setViewportSize({ width, height });
+			await page.route('**/rilog/images/originals/e2e-upload.png', (route) =>
+				route.fulfill({
+					contentType: 'image/svg+xml',
+					body: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#ddd"/></svg>',
+				}),
+			);
+			await page.goto('/write');
+			await page.getByRole('textbox', { name: '게시글 내용' }).click();
+			await page.keyboard.type('/이미지');
+			await page.keyboard.press('Enter');
+			await page
+				.getByRole('tabpanel', { name: '업로드' })
+				.locator('input[type="file"]')
+				.setInputFiles(
+					['first.png', 'second.png', 'third.png'].map((name) => ({
+						name,
+						mimeType: 'image/png',
+						buffer: TEST_IMAGE_BYTES,
+					})),
+				);
+			const images = page.locator('.post-write-blocknote [data-content-type="image"] img');
+			await expect(images).toHaveCount(3);
+			await expect.poll(() => images.nth(1).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(120);
+			const editor = page.locator('.post-write-blocknote .bn-editor');
+			const editorBounds = await editor.boundingBox();
+			const secondBounds = await images.nth(1).boundingBox();
+			expect(editorBounds).not.toBeNull();
+			expect(secondBounds).not.toBeNull();
+			if (!editorBounds || !secondBounds) return;
+			await images.first().dragTo(page.locator('body'), {
+				targetPosition: { x: editorBounds.x - 100, y: secondBounds.y + secondBounds.height / 2 },
+			});
+
+			const row = page.locator('.post-write-blocknote .bn-block-column-list');
+			await expect(row.locator('.bn-block-column')).toHaveCount(2);
+			const guide = page.locator('.post-write-image-row-guide');
+			await images
+				.nth(2)
+				.evaluate((source) =>
+					source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() })),
+				);
+			const refreshedEditorBounds = await editor.boundingBox();
+			expect(refreshedEditorBounds).not.toBeNull();
+			if (!refreshedEditorBounds) return;
+			for (const side of ['left', 'right'] as const) {
+				const column =
+					side === 'left' ? row.locator('.bn-block-column').first() : row.locator('.bn-block-column').last();
+				const targetImage = column.locator('img');
+				const columnBounds = await column.boundingBox();
+				const imageBounds = await targetImage.boundingBox();
+				expect(columnBounds).not.toBeNull();
+				expect(imageBounds).not.toBeNull();
+				if (!columnBounds || !imageBounds) return;
+				const edge = side === 'left' ? refreshedEditorBounds.x : refreshedEditorBounds.x + refreshedEditorBounds.width;
+				const direction = side === 'left' ? -1 : 1;
+				const pointerY = imageBounds.y + imageBounds.height / 2;
+				const dragOver = async (pointerX: number) =>
+					page.evaluate(
+						({ x, y }) => {
+							const event = new DragEvent('dragover', {
+								bubbles: true,
+								cancelable: true,
+								clientX: x,
+								clientY: y,
+								dataTransfer: new DataTransfer(),
+							});
+							document.body.dispatchEvent(event);
+							return event.defaultPrevented;
+						},
+						{ x: pointerX, y: pointerY },
+					);
+				expect(await dragOver(edge + direction * 101)).toBe(false);
+				await expect(guide).toBeHidden();
+				expect(await dragOver(edge + direction * 100)).toBe(true);
+				await expect(guide).toBeVisible();
+				const guideCenter = await guide.evaluate((element) => Number.parseFloat(element.style.left));
+				const columnEdge = side === 'left' ? columnBounds.x : columnBounds.x + columnBounds.width;
+				expect(guideCenter).toBeCloseTo(columnEdge + direction * 16, 0);
+				const guideBounds = await guide.boundingBox();
+				expect(guideBounds?.y).toBeCloseTo(imageBounds.y, 0);
+				expect(guideBounds?.height).toBeCloseTo(imageBounds.height, 0);
+				await expect(guide).toHaveCSS('pointer-events', 'none');
+			}
+			const targetImage = dropSide === 'left' ? row.locator('img').first() : row.locator('img').last();
+			const targetBounds = await targetImage.boundingBox();
+			expect(targetBounds).not.toBeNull();
+			if (!targetBounds) return;
+			const direction = dropSide === 'left' ? -1 : 1;
+			const dropX =
+				(dropSide === 'left' ? refreshedEditorBounds.x : refreshedEditorBounds.x + refreshedEditorBounds.width) +
+				direction * 100;
+			const dropY = targetBounds.y + targetBounds.height / 2;
+			await page.evaluate(
+				({ x, y }) =>
+					document.body.dispatchEvent(
+						new DragEvent('dragover', {
+							bubbles: true,
+							cancelable: true,
+							clientX: x,
+							clientY: y,
+							dataTransfer: new DataTransfer(),
+						}),
+					),
+				{ x: dropX, y: dropY },
+			);
+			await expect(guide).toBeVisible();
+			await page.evaluate(
+				({ x, y }) =>
+					document.body.dispatchEvent(
+						new DragEvent('drop', {
+							bubbles: true,
+							cancelable: true,
+							clientX: x,
+							clientY: y,
+							dataTransfer: new DataTransfer(),
+						}),
+					),
+				{ x: dropX, y: dropY },
+			);
+			await expect(row.locator('img')).toHaveCount(3);
+			await expect(row.locator('img').nth(dropSide === 'left' ? 0 : 2)).toHaveAttribute('alt', 'third.png');
+		});
+	}
+
 	test(
 		'뒤로가기를 취소하면 작성 내용을 유지하고 확인하면 이전 페이지로 이동한다',
 		{

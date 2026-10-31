@@ -188,6 +188,36 @@
 	outline-offset: 2px;
 }
 
+.post-write-blocknote
+	.bn-editor.post-write-image-row-dragging
+	.bn-column-list-hovered
+	> .bn-block-column:not(:last-child),
+.post-write-blocknote
+	.bn-editor.post-write-image-row-dragging
+	.bn-column-list-hovered
+	> .bn-block-column.bn-column-resize-border {
+	box-shadow: none;
+}
+
+.post-write-image-row-guide {
+	/* Match BlockNote's default vertical drop cursor. */
+	position: fixed;
+	z-index: 50;
+	width: 5px;
+	background: #ddeeff;
+	pointer-events: none;
+	transform: translateX(-50%);
+}
+
+.post-write-image-row-detach-guide {
+	position: fixed;
+	z-index: 50;
+	height: 5px;
+	background: #ddeeff;
+	pointer-events: none;
+	transform: translateY(-50%);
+}
+
 @media (max-width: 40rem) {
 	.post-write-blocknote .bn-editor {
 		min-height: 18rem;
