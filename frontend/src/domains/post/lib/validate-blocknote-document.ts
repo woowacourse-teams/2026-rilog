@@ -103,6 +103,9 @@ const hasValidProps = (type: string, props: Record<string, unknown>): boolean =>
 	return true;
 };
 
+const hasNoInlineContent = (content: unknown): boolean =>
+	content === undefined || (Array.isArray(content) && content.length === 0);
+
 const isBlock = (value: unknown, parentType?: string): boolean => {
 	if (
 		!isRecord(value) ||
@@ -121,11 +124,13 @@ const isBlock = (value: unknown, parentType?: string): boolean => {
 	)
 		return false;
 	if (parentType === 'columnList' && value.type !== 'column') return false;
-	if (value.type === 'columnList') return parentType === undefined && value.content === undefined;
+	if (value.type === 'columnList') {
+		return parentType === undefined && hasNoInlineContent(value.content) && value.children.length >= 2;
+	}
 	if (value.type === 'column') {
 		return (
 			parentType === 'columnList' &&
-			value.content === undefined &&
+			hasNoInlineContent(value.content) &&
 			isFiniteNumber(value.props.width) &&
 			value.props.width > 0 &&
 			value.children.length >= 1
@@ -135,7 +140,7 @@ const isBlock = (value: unknown, parentType?: string): boolean => {
 	if (value.type === 'codeBlock') return Array.isArray(value.content) && value.content.every(isPlainText);
 	if (value.type === 'table') return isTableContent(value.content);
 	if (value.type === 'divider' || FILE_BLOCKS.has(value.type)) {
-		return value.content === undefined || (Array.isArray(value.content) && value.content.length === 0);
+		return hasNoInlineContent(value.content);
 	}
 	return false;
 };

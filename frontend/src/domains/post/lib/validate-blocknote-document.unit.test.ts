@@ -39,19 +39,31 @@ describe('isBlockNoteDocument', () => {
 		children: [],
 	};
 
-	it('열 개수와 열 안의 블록 종류·개수에 관계없이 멀티컬럼 행을 허용한다', () => {
+	it('2열 이상의 멀티컬럼 행과 열 안의 다양한 블록 조합 및 빈 배열 content를 허용한다', () => {
 		const first = column('first');
 		const second = column('second');
-		expect(isBlockNoteDocument([row([first])])).toBe(true);
 		expect(isBlockNoteDocument([row([first, second])])).toBe(true);
 		expect(isBlockNoteDocument([row([first, second, column('third'), column('fourth')])])).toBe(true);
 		expect(isBlockNoteDocument([row([column('mixed', [image('one'), textBlock]), second])])).toBe(true);
 		expect(isBlockNoteDocument([row([column('text', [textBlock]), second])])).toBe(true);
+		expect(
+			isBlockNoteDocument([
+				{
+					...row([
+						{ ...first, content: [] },
+						{ ...second, content: [] },
+					]),
+					content: [],
+				},
+			]),
+		).toBe(true);
 	});
 
-	it('빈 열, 비정상 너비와 잘못된 columnList·column 위치를 거부한다', () => {
+	it('2열 미만 행, 빈 열, 비정상 너비와 잘못된 columnList·column 위치를 거부한다', () => {
 		const first = column('first');
 		const second = column('second');
+		expect(isBlockNoteDocument([row([])])).toBe(false);
+		expect(isBlockNoteDocument([row([first])])).toBe(false);
 		expect(isBlockNoteDocument([row([column('empty', []), second])])).toBe(false);
 		expect(isBlockNoteDocument([row([first, textBlock])])).toBe(false);
 		expect(isBlockNoteDocument([row([first, { ...second, props: { width: 0 } }])])).toBe(false);
