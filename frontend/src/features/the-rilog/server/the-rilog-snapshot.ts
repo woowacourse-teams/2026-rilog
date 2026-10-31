@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
 
-import type { Block } from '@blocknote/core';
-
 import { isBlockNoteDocument } from '@/domains/post/lib/validate-blocknote-document';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import { isRecord } from '@/shared/api/response-validation';
 import { isTheRilogResponse } from '@/shared/api/the-rilog/response-guards';
 import type { TheRilogResponse } from '@/shared/api/the-rilog/types';
@@ -14,7 +13,7 @@ export interface TheRilogSnapshot {
 	source: 'api' | 'fixture';
 	capturedAt: string;
 	data: TheRilogResponse;
-	newsContent: Block[] | null;
+	newsContent: PostContentBlock[] | null;
 	checksum: string;
 }
 
@@ -31,7 +30,7 @@ const canonicalize = (value: unknown): unknown => {
 	return value;
 };
 
-const checksum = (data: TheRilogResponse, newsContent: Block[] | null) =>
+const checksum = (data: TheRilogResponse, newsContent: PostContentBlock[] | null) =>
 	createHash('sha256')
 		.update(JSON.stringify(canonicalize({ data, newsContent })))
 		.digest('hex');
@@ -70,7 +69,7 @@ const pickPublicData = (data: TheRilogResponse): TheRilogResponse => ({
 
 export const createTheRilogSnapshot = (
 	data: TheRilogResponse,
-	newsContent: Block[] | null,
+	newsContent: PostContentBlock[] | null,
 	source: TheRilogSnapshot['source'],
 	capturedAt = new Date().toISOString(),
 ): TheRilogSnapshot => {
@@ -110,7 +109,7 @@ export const captureTheRilogSnapshot = async (): Promise<TheRilogSnapshot> => {
 	const { readTheRilog } = await import('@/shared/api/the-rilog/api');
 	const { readPostDetail } = await import('@/shared/api/posts/api');
 	const { data } = await readTheRilog();
-	let newsContent: Block[] | null = null;
+	let newsContent: PostContentBlock[] | null = null;
 	if (data.news !== null) {
 		const response = await readPostDetail({ slug: data.news.slug, postId: data.news.postId }, { cache: 'no-store' });
 		if (!response.data) throw new Error('뉴스 게시글 상세 응답이 없습니다.');

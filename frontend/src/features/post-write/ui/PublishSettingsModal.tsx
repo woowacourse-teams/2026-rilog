@@ -3,9 +3,8 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
-import type { Block } from '@blocknote/core';
-
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import type {
 	PostPublishCologOption,
 	PublicationSettings,
@@ -30,7 +29,7 @@ interface PublishSettingsModalProps {
 	postTitle: string;
 	settings: PublicationSettings;
 	selectedImageUrl: string | null;
-	bodyBlocks: Block[];
+	bodyBlocks: PostContentBlock[];
 	defaultImageUrl: string;
 	cologOptions: PostPublishCologOption[];
 	isCologOptionsPending: boolean;

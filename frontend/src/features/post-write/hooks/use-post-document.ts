@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { Block } from '@blocknote/core';
-
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import { isMeaningfulPostBody, validatePostDocument } from '@/features/post-write/lib/validate-post-document';
 import type { PostEditorHandle } from '@/features/post-write/model/post-editor';
 import type { EditorDocument } from '@/features/post-write/model/post-publication';
@@ -16,7 +15,7 @@ interface UsePostDocumentOptions {
 export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}) {
 	const titleRef = useRef<HTMLTextAreaElement>(null);
 	const editorRef = useRef<PostEditorHandle>(null);
-	const latestBlocksRef = useRef<Block[]>(initialDocument?.blocks ?? []);
+	const latestBlocksRef = useRef<PostContentBlock[]>(initialDocument?.blocks ?? []);
 
 	const [title, setTitle] = useState(initialDocument?.title ?? '');
 	const [isEditorReady, setIsEditorReady] = useState(false);
@@ -27,7 +26,7 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		titleRef.current?.focus();
 	}, []);
 
-	const handleEditorReady = useCallback((blocks: Block[]) => {
+	const handleEditorReady = useCallback((blocks: PostContentBlock[]) => {
 		latestBlocksRef.current = blocks;
 		setIsEditorReady(true);
 	}, []);
@@ -38,7 +37,7 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		setDocumentErrors((currentErrors) => ({ ...currentErrors, title: undefined }));
 	}, []);
 
-	const handleEditorChange = useCallback((blocks: Block[]) => {
+	const handleEditorChange = useCallback((blocks: PostContentBlock[]) => {
 		latestBlocksRef.current = blocks;
 		setIsDirty(true);
 		setDocumentErrors((currentErrors) => ({ ...currentErrors, body: undefined }));
