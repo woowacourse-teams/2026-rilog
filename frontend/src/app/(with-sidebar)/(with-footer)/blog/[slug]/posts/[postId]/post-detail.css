@@ -1,5 +1,36 @@
 @import '@blocknote/core/style.css';
 
+/*
+ * 이미지 행(column list)과 단일 이미지는 연속되어도 4px 간격을 유지한다.
+ * 이미지 단위마다 위아래 4px을 두고, 앞에 이미지 단위가 있으면 위쪽 여백을 없애 겹치지 않게 한다.
+ * 공통 본문 스타일의 단일 이미지 padding과 우선순위가 같아 class를 한 번 더 지정한다.
+ */
+.post-detail-body.post-detail-body
+	.bn-block-group
+	> :is(.bn-block-column-list, .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='image'])) {
+	padding-block: 4px;
+}
+
+.post-detail-body.post-detail-body
+	.bn-block-group
+	> :is(.bn-block-column-list, .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='image']))
+	+ :is(.bn-block-column-list, .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='image'])) {
+	padding-top: 0;
+}
+
+.post-detail-body .bn-block-column {
+	padding-inline: 2px;
+	padding-block: 0;
+}
+
+.post-detail-body .bn-block-column:first-child {
+	padding-left: 0;
+}
+
+.post-detail-body .bn-block-column:last-child {
+	padding-right: 0;
+}
+
 .post-detail-body .bn-block-outer[id] {
 	scroll-margin-top: 2.5rem;
 }
