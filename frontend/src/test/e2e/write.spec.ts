@@ -176,10 +176,13 @@ test.describe('글 작성 브라우저 흐름', () => {
 		const images = page.locator('.post-write-blocknote [data-content-type="image"] img');
 		await expect(images).toHaveCount(2);
 		await expect.poll(() => images.nth(1).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(320);
-		const targetBounds = await images.nth(1).boundingBox();
+		const targetBlock = page
+			.locator('.post-write-blocknote .bn-block[data-id]:has([data-content-type="image"])')
+			.nth(1);
+		const targetBounds = await targetBlock.boundingBox();
 		expect(targetBounds).not.toBeNull();
 		if (!targetBounds) return;
-		await images.first().dragTo(images.nth(1), {
+		await images.first().dragTo(targetBlock, {
 			targetPosition: { x: targetBounds.width / 2, y: targetBounds.height * 0.75 },
 		});
 		await expect(page.locator('.post-write-blocknote .bn-block-column-list')).toHaveCount(0);
@@ -423,12 +426,12 @@ test.describe('글 작성 브라우저 흐름', () => {
 		const row = page.locator('.post-write-blocknote .bn-block-column-list');
 		await expect(row.locator('.bn-block-column')).toHaveCount(2);
 		const firstColumnBounds = await row.locator('.bn-block-column').first().boundingBox();
-		const firstImageBounds = await row.locator('img').first().boundingBox();
+		const secondColumnBounds = await row.locator('.bn-block-column').nth(1).boundingBox();
 		const secondImageBounds = await row.locator('img').nth(1).boundingBox();
 		expect(firstColumnBounds).not.toBeNull();
-		expect(firstImageBounds).not.toBeNull();
+		expect(secondColumnBounds).not.toBeNull();
 		expect(secondImageBounds).not.toBeNull();
-		if (!firstColumnBounds || !firstImageBounds || !secondImageBounds) return;
+		if (!firstColumnBounds || !secondColumnBounds || !secondImageBounds) return;
 		const firstColumn = row.locator('.bn-block-column').first();
 		const separatorBeforeDrag = await firstColumn.evaluate((element) => {
 			element.parentElement?.classList.add('bn-column-list-hovered');
@@ -448,7 +451,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 		});
 		expect(separatorDuringDrag).toBe('none');
 		const guide = page.locator('.post-write-image-row-guide');
-		for (const edgeX of [firstImageBounds.x + firstImageBounds.width, secondImageBounds.x]) {
+		for (const edgeX of [firstColumnBounds.x + firstColumnBounds.width - 1, secondColumnBounds.x + 1]) {
 			await page.evaluate(
 				({ x, y }) =>
 					document.body.dispatchEvent(
@@ -464,7 +467,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 			);
 			await expect(guide).toBeVisible();
 			const center = await guide.evaluate((element) => Number.parseFloat(element.style.left));
-			expect(center).toBeCloseTo(firstColumnBounds.x + firstColumnBounds.width + 2, 0);
+			expect(center).toBeCloseTo((firstColumnBounds.x + firstColumnBounds.width + secondColumnBounds.x) / 2, 0);
 		}
 		await page.evaluate(
 			({ x, y }) =>
@@ -477,7 +480,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 						dataTransfer: new DataTransfer(),
 					}),
 				),
-			{ x: secondImageBounds.x, y: secondImageBounds.y + secondImageBounds.height / 2 },
+			{ x: secondColumnBounds.x + 1, y: secondImageBounds.y + secondImageBounds.height / 2 },
 		);
 		await expect(row.locator('img')).toHaveCount(3);
 		await expect(row.locator('img').nth(1)).toHaveAttribute('alt', 'third.png');
@@ -532,8 +535,10 @@ test.describe('글 작성 브라우저 흐름', () => {
 					source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() })),
 				);
 			const refreshedEditorBounds = await editor.boundingBox();
+			const rowBounds = await row.boundingBox();
 			expect(refreshedEditorBounds).not.toBeNull();
-			if (!refreshedEditorBounds) return;
+			expect(rowBounds).not.toBeNull();
+			if (!refreshedEditorBounds || !rowBounds) return;
 			for (const side of ['left', 'right'] as const) {
 				const column =
 					side === 'left' ? row.locator('.bn-block-column').first() : row.locator('.bn-block-column').last();
@@ -569,8 +574,8 @@ test.describe('글 작성 브라우저 흐름', () => {
 				const columnEdge = side === 'left' ? columnBounds.x : columnBounds.x + columnBounds.width;
 				expect(guideCenter).toBeCloseTo(columnEdge + direction * 16, 0);
 				const guideBounds = await guide.boundingBox();
-				expect(guideBounds?.y).toBeCloseTo(imageBounds.y, 0);
-				expect(guideBounds?.height).toBeCloseTo(imageBounds.height, 0);
+				expect(guideBounds?.y).toBeCloseTo(rowBounds.y, 0);
+				expect(guideBounds?.height).toBeCloseTo(rowBounds.height, 0);
 				await expect(guide).toHaveCSS('pointer-events', 'none');
 			}
 			const targetImage = dropSide === 'left' ? row.locator('img').first() : row.locator('img').last();
