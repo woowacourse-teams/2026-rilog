@@ -1,5 +1,6 @@
 /* BlockNote의 작성과 상세 화면에 공통 본문 스타일을 적용한다. */
 :is(.post-detail-body, .post-write-blocknote) {
+	--bn-font-family: var(--font-sans);
 	--post-body-line-height: 1.65;
 	--post-heading-1-line-height: 1.35;
 	--post-heading-2-line-height: 1.5;
@@ -13,6 +14,7 @@
 
 	min-width: 0;
 	color: var(--text-primary);
+	font-family: var(--font-sans);
 
 	& .bn-block-group > .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type='image']) {
 		padding-block: var(--post-image-block-space);
