@@ -46,6 +46,12 @@
 	min-height: 22rem;
 }
 
+.post-write-blocknote .bn-block-column {
+	/* BlockNote's overflow-x: auto also clips vertical overflow, which cuts off the selected image outline. */
+	min-width: 0;
+	overflow: visible;
+}
+
 .post-write-blocknote .bn-add-file-button {
 	color: var(--color-text-secondary);
 	background-color: var(--color-surface-hover);
