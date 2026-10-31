@@ -6,7 +6,7 @@ import type { DragSource, DropDirection } from './image-row-drop-policy';
 
 import { isBlockNoteDocument } from '@/domains/post/lib/validate-blocknote-document';
 
-import { applyImageRowDrop, classifyDragSource } from './image-row';
+import { applyImageRowDrop, classifyDragSource, getImageRowAddAction } from './image-row';
 import { POST_WRITE_SCHEMA } from './post-write-schema';
 
 const image = (id: string) => ({
@@ -198,5 +198,18 @@ describe('classifyDragSource', () => {
 		withEditor((editor) => {
 			editor.insertBlocks([{ id: 'empty', type: 'image', props: { url: '' } }], 'one', 'before');
 			expect(classifyDragSource(editor, ['empty'])).toEqual({ kind: 'other', blockId: 'empty' });
+		}));
+});
+
+describe('getImageRowAddAction', () => {
+	it('이미지 행의 첫 열에서는 행 아래에 블록을 추가하고 다른 열에서는 추가 버튼을 숨긴다', () =>
+		withEditor((editor) => {
+			drop(editor, standalone('one'), 'two', 'left');
+			drop(editor, standalone('three'), 'two', 'right');
+			const rowId = editor.document.find((block) => block.type === 'columnList')?.id;
+			expect(getImageRowAddAction(editor, 'one')).toEqual({ kind: 'after-row', rowId });
+			expect(getImageRowAddAction(editor, 'two')).toEqual({ kind: 'hidden' });
+			expect(getImageRowAddAction(editor, 'three')).toEqual({ kind: 'hidden' });
+			expect(getImageRowAddAction(editor, 'text')).toEqual({ kind: 'default' });
 		}));
 });
