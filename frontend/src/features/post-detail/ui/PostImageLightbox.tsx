@@ -124,7 +124,7 @@ export default function PostImageLightbox({
 			{displayedImage !== null && (
 				<div
 					data-testid="post-image-lightbox-stage"
-					className="flex h-full w-full touch-none items-center justify-center overflow-hidden p-4 select-none"
+					className="flex h-full w-full touch-none items-center justify-center overflow-hidden select-none sm:p-4"
 					{...stageGestureProps}
 				>
 					{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -133,7 +133,7 @@ export default function PostImageLightbox({
 						alt={displayedImage.alt}
 						draggable={false}
 						style={imageStyle}
-						className="max-h-full max-w-full origin-center object-contain"
+						className="max-h-full w-full max-w-full origin-center object-contain sm:w-auto"
 						onClick={(event) => event.stopPropagation()}
 					/>
 				</div>
