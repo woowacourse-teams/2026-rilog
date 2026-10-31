@@ -6,6 +6,7 @@ import { MAX_IMAGE_ROW_COLUMNS } from './image-row-drop-policy';
 type EditorBlock = PostWriteBlockNoteEditor['document'][number];
 type ColumnListBlock = Extract<EditorBlock, { type: 'columnList' }>;
 type ImageBlock = Extract<EditorBlock, { type: 'image' }>;
+type ImageRowAddAction = { kind: 'default' } | { kind: 'after-row'; rowId: string } | { kind: 'hidden' };
 
 /** 업로드가 끝났고 하위 블록이 없는 이미지 블록만 가로 배치에 참여한다. */
 export const isPlainImage = (block: EditorBlock | undefined): block is ImageBlock =>
@@ -25,6 +26,12 @@ export const findImageRow = (editor: PostWriteBlockNoteEditor, imageId: string):
 		(block): block is ColumnListBlock =>
 			isImageRow(block) && block.children.some((column) => column.children[0]?.id === imageId),
 	);
+
+export const getImageRowAddAction = (editor: PostWriteBlockNoteEditor, blockId: string): ImageRowAddAction => {
+	const row = findImageRow(editor, blockId);
+	if (row === undefined) return { kind: 'default' };
+	return row.children[0]?.children[0]?.id === blockId ? { kind: 'after-row', rowId: row.id } : { kind: 'hidden' };
+};
 
 const isInsideColumnList = (editor: PostWriteBlockNoteEditor, blockId: string): boolean => {
 	const contains = (block: EditorBlock): boolean =>

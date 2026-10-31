@@ -339,6 +339,52 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await expect(images.nth(1)).toHaveAttribute('alt', 'second.png');
 	});
 
+	test('이미지 행의 첫 열 추가 버튼은 행 아래에 문단을 만들고 다른 열에는 표시되지 않는다', async ({ page }) => {
+		await page.route('**/rilog/images/originals/e2e-upload.png', (route) =>
+			route.fulfill({
+				contentType: 'image/svg+xml',
+				body: '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#ddd"/></svg>',
+			}),
+		);
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		await page
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles([
+				{ name: 'first.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+				{ name: 'second.png', mimeType: 'image/png', buffer: TEST_IMAGE_BYTES },
+			]);
+
+		const images = page.locator('.post-write-blocknote [data-content-type="image"] img');
+		await expect(images).toHaveCount(2);
+		await expect.poll(() => images.nth(1).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(320);
+		const editorBounds = await page.locator('.post-write-blocknote .bn-editor').boundingBox();
+		const targetBounds = await images.nth(1).boundingBox();
+		expect(editorBounds).not.toBeNull();
+		expect(targetBounds).not.toBeNull();
+		if (!editorBounds || !targetBounds) return;
+		await images.first().dragTo(page.locator('body'), {
+			targetPosition: { x: editorBounds.x - 100, y: targetBounds.y + targetBounds.height / 2 },
+		});
+
+		const row = page.locator('.post-write-blocknote .bn-block-column-list');
+		await expect(row.locator('img')).toHaveCount(2);
+		const addButton = page.locator('.bn-side-menu').getByRole('button', { name: '블록 추가' });
+		await row.locator('img').nth(1).hover();
+		await expect(addButton).toHaveCount(0);
+		await row.locator('img').first().hover();
+		await expect(addButton).toBeVisible();
+		const paragraphs = page.locator('.post-write-blocknote .bn-block-content[data-content-type="paragraph"]');
+		const paragraphCount = await paragraphs.count();
+		await addButton.click();
+		await expect(paragraphs).toHaveCount(paragraphCount + 1);
+		await expect(row.locator('.bn-block-column')).toHaveCount(2);
+		await expect(row.locator('.bn-block-content[data-content-type="paragraph"]')).toHaveCount(0);
+	});
+
 	// The column resize boundary depends on browser layout and cannot be measured by jsdom.
 	test('작은 이미지 행의 두 열 사이에 놓을 때 가이드가 열 조절바에 맞춰진다', async ({ page }) => {
 		await page.route('**/rilog/images/originals/e2e-upload.png', (route) =>
