@@ -85,14 +85,14 @@ export default function PostImageLightbox({
 			{totalCount > 0 && (
 				<p
 					aria-live="polite"
-					className="absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-body-3 text-white"
+					className="absolute top-9 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-1 text-body-3 text-white"
 				>
 					<span className="sr-only">전체 {totalCount}장 중 </span>
 					{displayedIndex + 1} / {totalCount}
 				</p>
 			)}
 			{totalCount > 1 && (
-				<>
+				<div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3">
 					<button
 						type="button"
 						aria-label="이전 이미지"
@@ -102,7 +102,7 @@ export default function PostImageLightbox({
 								onChangeIndex?.(displayedIndex - 1);
 							}
 						}}
-						className="absolute top-1/2 left-4 z-10 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white disabled:pointer-events-none disabled:opacity-40"
+						className="inline-flex size-10 items-center justify-center rounded-full bg-black/50 text-white disabled:pointer-events-none disabled:opacity-40"
 					>
 						<ChevronIcon aria-hidden="true" className="size-5 rotate-90" />
 					</button>
@@ -115,11 +115,11 @@ export default function PostImageLightbox({
 								onChangeIndex?.(displayedIndex + 1);
 							}
 						}}
-						className="absolute top-1/2 right-4 z-10 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white disabled:pointer-events-none disabled:opacity-40"
+						className="inline-flex size-10 items-center justify-center rounded-full bg-black/50 text-white disabled:pointer-events-none disabled:opacity-40"
 					>
 						<ChevronIcon aria-hidden="true" className="size-5 -rotate-90" />
 					</button>
-				</>
+				</div>
 			)}
 			{displayedImage !== null && (
 				<div
