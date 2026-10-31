@@ -79,7 +79,7 @@ public class FeedController implements FeedApiSpec {
                 page,
                 size
         );
-        BlogFeedPostResponse data = feedService.readBlogPosts(slug, requesterId, command);
+        BlogFeedPostResponse data = feedService.readChapterPosts(slug, requesterId, command);
         return ApiResponse.response(HttpStatus.OK, "시리즈와 챕터 게시글 목록 조회에 성공했습니다.", data);
     }
 

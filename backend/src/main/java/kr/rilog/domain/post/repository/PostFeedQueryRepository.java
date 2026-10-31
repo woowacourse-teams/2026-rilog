@@ -161,7 +161,6 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
               AND (:chapterId IS NULL OR (chapter.id = :chapterId AND chapter.blog.id = :rilogId))
               AND (:targetCologId IS NULL OR colog.id = :targetCologId)
               AND post.deletedAt IS NULL
-            ORDER BY post.publishedAt DESC, post.id DESC
             """)
     Slice<PostFullFeedRow> findRilogFeedPosts(
             @Param("rilogId") Long rilogId,
@@ -216,7 +215,6 @@ public interface PostFeedQueryRepository extends JpaRepository<Post, Long> {
               AND (:category IS NULL OR post.category = :category)
               AND (:chapterId IS NULL OR (chapter.id = :chapterId AND chapter.blog.id = :cologId))
               AND post.deletedAt IS NULL
-            ORDER BY post.publishedAt DESC, post.id DESC
             """)
     Slice<PostFullFeedRow> findCologFeedPosts(
             @Param("cologId") Long cologId,
