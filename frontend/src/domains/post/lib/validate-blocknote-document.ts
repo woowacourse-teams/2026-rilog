@@ -121,23 +121,14 @@ const isBlock = (value: unknown, parentType?: string): boolean => {
 	)
 		return false;
 	if (parentType === 'columnList' && value.type !== 'column') return false;
-	if (parentType === 'column' && value.type !== 'image') return false;
-	if (parentType === 'column' && value.children.length !== 0) return false;
-	if (value.type === 'columnList') {
-		return (
-			parentType === undefined &&
-			value.content === undefined &&
-			value.children.length >= 2 &&
-			value.children.length <= 3
-		);
-	}
+	if (value.type === 'columnList') return parentType === undefined && value.content === undefined;
 	if (value.type === 'column') {
 		return (
 			parentType === 'columnList' &&
 			value.content === undefined &&
 			isFiniteNumber(value.props.width) &&
 			value.props.width > 0 &&
-			value.children.length === 1
+			value.children.length >= 1
 		);
 	}
 	if (TEXT_BLOCKS.has(value.type)) return Array.isArray(value.content) && value.content.every(isInlineContent);
@@ -149,6 +140,6 @@ const isBlock = (value: unknown, parentType?: string): boolean => {
 	return false;
 };
 
-/** The post's BlockNote 0.53 schema, including image-only column lists. */
+/** The post's BlockNote 0.53 schema, including multi-column blocks. */
 export const isBlockNoteDocument = (value: unknown): value is PostContentBlock[] =>
 	Array.isArray(value) && value.every((block) => isBlock(block));

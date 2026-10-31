@@ -31,32 +31,33 @@ describe('isBlockNoteDocument', () => {
 		children,
 	});
 
-	it('이미지 하나씩 담긴 2~3열 행을 허용한다', () => {
-		expect(isBlockNoteDocument([row([column('first'), column('second')])])).toBe(true);
-		expect(isBlockNoteDocument([row([column('first'), column('second'), column('third')])])).toBe(true);
-	});
+	const textBlock = {
+		id: 'text',
+		type: 'paragraph',
+		props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
+		content: [],
+		children: [],
+	};
 
-	it('빈 열, 여러 이미지, 이미지 외 블록과 1열·4열 행을 거부한다', () => {
-		const paragraph = {
-			id: 'text',
-			type: 'paragraph',
-			props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
-			content: [],
-			children: [],
-		};
+	it('열 개수와 열 안의 블록 종류·개수에 관계없이 멀티컬럼 행을 허용한다', () => {
 		const first = column('first');
 		const second = column('second');
-		expect(isBlockNoteDocument([row([first])])).toBe(false);
-		expect(isBlockNoteDocument([row([first, second, column('third'), column('fourth')])])).toBe(false);
+		expect(isBlockNoteDocument([row([first])])).toBe(true);
+		expect(isBlockNoteDocument([row([first, second])])).toBe(true);
+		expect(isBlockNoteDocument([row([first, second, column('third'), column('fourth')])])).toBe(true);
+		expect(isBlockNoteDocument([row([column('mixed', [image('one'), textBlock]), second])])).toBe(true);
+		expect(isBlockNoteDocument([row([column('text', [textBlock]), second])])).toBe(true);
+	});
+
+	it('빈 열, 비정상 너비와 잘못된 columnList·column 위치를 거부한다', () => {
+		const first = column('first');
+		const second = column('second');
 		expect(isBlockNoteDocument([row([column('empty', []), second])])).toBe(false);
-		expect(isBlockNoteDocument([row([column('mixed', [image('one'), image('two')]), second])])).toBe(false);
-		expect(isBlockNoteDocument([row([column('text', [paragraph]), second])])).toBe(false);
-		expect(
-			isBlockNoteDocument([row([column('nested', [{ ...image('nested'), children: [paragraph] }]), second])]),
-		).toBe(false);
+		expect(isBlockNoteDocument([row([first, textBlock])])).toBe(false);
 		expect(isBlockNoteDocument([row([first, { ...second, props: { width: 0 } }])])).toBe(false);
 		expect(isBlockNoteDocument([column('orphan')])).toBe(false);
-		expect(isBlockNoteDocument([{ ...paragraph, children: [row([first, second])] }])).toBe(false);
+		expect(isBlockNoteDocument([{ ...textBlock, children: [row([first, second])] }])).toBe(false);
+		expect(isBlockNoteDocument([row([column('nested', [row([first, second])]), second])])).toBe(false);
 	});
 
 	it('편집기 스키마의 중첩 목록, 링크, 코드와 표를 포함한 저장 문서를 보존한다', () => {
