@@ -52,6 +52,11 @@
 	overflow: visible;
 }
 
+.post-write-blocknote .bn-block-column > .bn-trailing-block {
+	/* Clicking below a column must not append a block, since a column holds exactly one image. */
+	pointer-events: none;
+}
+
 .post-write-blocknote .bn-add-file-button {
 	color: var(--color-text-secondary);
 	background-color: var(--color-surface-hover);
