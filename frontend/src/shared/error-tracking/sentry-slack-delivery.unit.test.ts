@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { deliverSentrySlackAlert } from './sentry-slack-delivery';
+import { deliverSentrySlackAlert, resolveSentrySlackAlertLevel } from './sentry-slack-delivery';
 
 beforeEach(() => {
 	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'prod');
@@ -276,3 +276,59 @@ it('webhook 모드는 직접 SDK 전달을 거부하고 검증된 event 링크�
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
+
+it.each([
+	[{}, 'error', '🔴'],
+	[{ error_kind: 'server_response' }, 'error', '🔴'],
+	[{ error_kind: 'storage_rejected' }, 'error', '🔴'],
+	[{ error_kind: 'unexpected_response' }, 'error', '🔴'],
+	[{ error_kind: 'rate_limit' }, 'warn', '🟡'],
+	[{ error_kind: 'timeout' }, 'warn', '🟡'],
+	[{ error_kind: 'unknown' }, 'warn', '🟡'],
+	[{ error_kind: 'network', user_impact: 'save_failed' }, 'warn', '🟡'],
+	[{ error_kind: 'network', user_impact: 'action_failed' }, 'warn', '🟡'],
+	[{ error_kind: 'network', user_impact: 'load_failed' }, 'info', '🟢'],
+	[{ error_kind: 'network' }, 'info', '🟢'],
+] as const)(
+	'오류 태그 %o는 중요도 %s(%s)와 Sentry 바로가기 링크로 Slack 본문을 구성한다',
+	async (tags, expectedLevel, expectedBadge) => {
+		vi.stubEnv('NODE_ENV', 'production');
+		vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+		vi.stubEnv('SENTRY_SLACK_BOT_TOKEN', '');
+		vi.stubEnv('SENTRY_SLACK_CHANNEL_ID', '');
+		const post = vi.fn().mockResolvedValue({ ok: true });
+		vi.stubGlobal('fetch', post);
+		expect(resolveSentrySlackAlertLevel(tags)).toBe(expectedLevel);
+
+		const eventId = `888888888888888888888888888888${expectedLevel === 'error' ? '01' : expectedLevel === 'warn' ? '02' : '03'}`;
+		await expect(
+			deliverSentrySlackAlert(
+				{
+					eventId,
+					title: `${expectedLevel}-${JSON.stringify(tags)}`,
+					errorType: 'HTTPError',
+					route: '/feeds',
+					tags,
+					breadcrumbs: [],
+				},
+				`severity-ip-${expectedLevel}`,
+			),
+		).resolves.toBe(true);
+		const payload = JSON.parse((post.mock.calls[0] as [string, RequestInit])[1].body as string) as {
+			text: string;
+			blocks: Array<{ type: string; text?: { text: string }; elements?: Array<{ text: string }> }>;
+		};
+		expect(payload.text.startsWith(`${expectedBadge} HTTPError`)).toBe(true);
+		expect(payload.blocks[0]?.text?.text).toBe(`${expectedBadge} *HTTPError*`);
+		expect(payload.text).toContain(`https://rilog-fontend.sentry.io/issues/?query=${eventId}`);
+		expect(
+			payload.blocks.some((block) =>
+				block.elements?.some((el) =>
+					el.text.includes(`<https://rilog-fontend.sentry.io/issues/?query=${eventId}|Sentry에서 이벤트 조회>`),
+				),
+			),
+		).toBe(true);
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	},
+);

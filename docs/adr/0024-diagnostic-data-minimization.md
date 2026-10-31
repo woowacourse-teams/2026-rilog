@@ -20,6 +20,7 @@ SDK 오류·transaction·span과 Slack 요약·수신 parser가 공통 진단 �
 - request 및 중첩 header는 UUID X-Request-ID와 지정 Content-Type만 허용한다. raw User-Agent 등 나머지는 제거하며 SDK browser/OS/runtime context는 유지한다. SDK user는 숫자 형태의 내부 ID만 남긴다. 전달된 IP/geo와 server_name은 제거한다.
 - 파일명 key와 인증·본문 key의 중첩 표현도 제거한다. free text에서 알려진 토큰·이메일·첨부 파일명 패턴을 가린다. 임의 이름이나 작성 본문 전체를 탐지하는 DLP는 아니므로 Error 메시지·context에 사용자 원문을 넣지 않는 호출부 원칙은 유지한다.
 - replay는 승인된 PostHog origin과 `/project/{public-project-identifier}/replay/{UUID}`, 단일 숫자 t만 허용한다. 인증값·포트·fragment·인코딩된 임의 ID·추가 query는 거절한다. SDK에서 링크를 붙이기 전과 Slack 수신 양쪽에서 검증한다. 설치된 posthog-js 1.418.10은 project 구간에 공개 project token을 넣을 수 있고 세션 ID는 UUID로 만든다. 정상 replay 링크의 공개 프로젝트 식별자/세션 ID는 진단 목적상 유지한다.
+- Slack 알림 첫 줄은 `error_kind`와 `user_impact`를 기준으로 중요도를 3단계(`error` `🔴`: 런타임 예외·`server_response`·`storage_rejected`·`unexpected_response`, `warn` `🟡`: `rate_limit`·`timeout`·`unknown` 및 저장·액션 중 `network`, `info` `🟢`: 일반 조회 `network`)로 표시한다. 서명 webhook 전환 전(legacy 모드)에도 서버가 알고 있는 Sentry 조직 슬러그와 검증된 32자리 `eventId`만으로 `https://{org}.sentry.io/issues/?query={eventId}` 조회 링크를 함께 제공한다.
 
 ## 호환성과 손실
 
