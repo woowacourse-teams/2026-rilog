@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import type { PostLightboxImage } from '../hooks/use-post-image-lightbox';
-import type { PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent } from 'react';
 
 import ChevronIcon from '@/shared/assets/icons/chevron.svg';
 import XIcon from '@/shared/assets/icons/x.svg';
 import BaseModal from '@/shared/ui/modal/BaseModal';
+
+import { usePostImageLightboxGestures } from '../hooks/use-post-image-lightbox-gestures';
 
 interface PostImageLightboxProps {
 	open: boolean;
@@ -16,8 +17,6 @@ interface PostImageLightboxProps {
 	onClose: () => void;
 	onChangeIndex?: (nextIndex: number) => void;
 }
-
-const SWIPE_THRESHOLD_PX = 40;
 
 export default function PostImageLightbox({
 	open,
@@ -38,8 +37,13 @@ export default function PostImageLightbox({
 	const hasPrev = displayedIndex > 0;
 	const hasNext = displayedIndex < totalCount - 1;
 
-	const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
-	const didSwipeRef = useRef(false);
+	const { imageStyle, stageGestureProps } = usePostImageLightboxGestures({
+		open,
+		displayedIndex,
+		totalCount,
+		onClose,
+		onChangeIndex,
+	});
 
 	useEffect(() => {
 		if (!open || onChangeIndex === undefined) {
@@ -59,67 +63,6 @@ export default function PostImageLightbox({
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [open, images.length, currentIndex, onChangeIndex]);
-
-	const finishSwipe = (endX: number, endY: number) => {
-		const start = swipeStartRef.current;
-		swipeStartRef.current = null;
-		if (start === null || totalCount === 0 || onChangeIndex === undefined) {
-			return;
-		}
-
-		const deltaX = endX - start.x;
-		const deltaY = endY - start.y;
-		if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX || Math.abs(deltaX) <= Math.abs(deltaY)) {
-			return;
-		}
-
-		didSwipeRef.current = true;
-		if (deltaX < 0 && displayedIndex < totalCount - 1) {
-			onChangeIndex(displayedIndex + 1);
-		} else if (deltaX > 0 && displayedIndex > 0) {
-			onChangeIndex(displayedIndex - 1);
-		}
-	};
-
-	const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
-		const touch = event.touches[0];
-		if (touch === undefined) {
-			return;
-		}
-		didSwipeRef.current = false;
-		swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
-	};
-
-	const handleTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
-		const touch = event.changedTouches[0];
-		if (touch === undefined) {
-			return;
-		}
-		finishSwipe(touch.clientX, touch.clientY);
-	};
-
-	const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-		if (event.pointerType === 'touch') {
-			return;
-		}
-		didSwipeRef.current = false;
-		swipeStartRef.current = { x: event.clientX, y: event.clientY };
-	};
-
-	const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-		if (event.pointerType === 'touch') {
-			return;
-		}
-		finishSwipe(event.clientX, event.clientY);
-	};
-
-	const handleContainerClick = () => {
-		if (didSwipeRef.current) {
-			didSwipeRef.current = false;
-			return;
-		}
-		onClose();
-	};
 
 	return (
 		<BaseModal
@@ -181,19 +124,16 @@ export default function PostImageLightbox({
 			{displayedImage !== null && (
 				<div
 					data-testid="post-image-lightbox-stage"
-					className="flex h-full w-full touch-pan-y items-center justify-center p-4 select-none"
-					onTouchStart={handleTouchStart}
-					onTouchEnd={handleTouchEnd}
-					onPointerDown={handlePointerDown}
-					onPointerUp={handlePointerUp}
-					onClick={handleContainerClick}
+					className="flex h-full w-full touch-none items-center justify-center overflow-hidden p-4 select-none"
+					{...stageGestureProps}
 				>
 					{/* eslint-disable-next-line @next/next/no-img-element */}
 					<img
 						src={displayedImage.src}
 						alt={displayedImage.alt}
 						draggable={false}
-						className="max-h-full max-w-full object-contain"
+						style={imageStyle}
+						className="max-h-full max-w-full origin-center object-contain"
 						onClick={(event) => event.stopPropagation()}
 					/>
 				</div>

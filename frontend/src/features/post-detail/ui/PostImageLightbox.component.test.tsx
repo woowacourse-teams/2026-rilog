@@ -73,4 +73,50 @@ describe('PostImageLightbox', () => {
 		expect(screen.getByText('2 / 3')).toBeInTheDocument();
 		expect(screen.getAllByRole('img', { name: '둘째 이미지' })).toHaveLength(2);
 	});
+
+	it('모바일 두 손가락 핀치로 이미지를 확대하고 한 손가락 드래그로 이동한다', async () => {
+		renderContent();
+
+		await userEvent.click(screen.getByRole('img', { name: '첫 이미지', hidden: true }));
+
+		const stage = await screen.findByTestId('post-image-lightbox-stage');
+		const lightboxImage = stage.querySelector('img');
+		expect(lightboxImage).not.toBeNull();
+
+		// 두 손가락 간격 100px -> 200px로 핀치 확대 (2배)
+		fireEvent.touchStart(stage, {
+			touches: [
+				{ clientX: 100, clientY: 100 },
+				{ clientX: 200, clientY: 100 },
+			],
+		});
+		fireEvent.touchMove(stage, {
+			touches: [
+				{ clientX: 50, clientY: 100 },
+				{ clientX: 250, clientY: 100 },
+			],
+		});
+		fireEvent.touchEnd(stage, {
+			touches: [],
+			changedTouches: [{ clientX: 250, clientY: 100 }],
+		});
+
+		expect(lightboxImage).toHaveStyle({ transform: 'translate3d(0px, 0px, 0px) scale(2)' });
+
+		// 확대 상태에서는 한 손가락 좌우 드래그 시 다음 이미지로 넘어가지 않고 이미지를 이동한다
+		fireEvent.touchStart(stage, { touches: [{ clientX: 200, clientY: 100 }] });
+		fireEvent.touchMove(stage, { touches: [{ clientX: 80, clientY: 130 }] });
+		fireEvent.touchEnd(stage, {
+			touches: [],
+			changedTouches: [{ clientX: 80, clientY: 130 }],
+		});
+
+		expect(screen.getByText('1 / 3')).toBeInTheDocument();
+		expect(lightboxImage).toHaveStyle({ transform: 'translate3d(-120px, 30px, 0px) scale(2)' });
+
+		// 다음 이미지로 이동하면 확대 상태가 초기화된다
+		await userEvent.click(screen.getByRole('button', { name: '다음 이미지' }));
+		expect(screen.getByText('2 / 3')).toBeInTheDocument();
+		expect(lightboxImage?.style.transform).toBe('');
+	});
 });
