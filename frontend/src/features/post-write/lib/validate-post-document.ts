@@ -1,7 +1,7 @@
 import type { PostDocumentErrors } from '../model/post-write-validation';
-import type { Block } from '@blocknote/core';
 
 import { POST_TITLE_MAX_LENGTH } from '@/domains/post/model/post';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 const MEDIA_BLOCK_TYPES = new Set(['audio', 'file', 'image', 'video']);
 
@@ -27,7 +27,7 @@ const hasMeaningfulText = (value: unknown): boolean => {
 	return hasMeaningfulText(value.content) || hasMeaningfulText(value.rows) || hasMeaningfulText(value.cells);
 };
 
-const hasMediaUrl = (block: Block): boolean => {
+const hasMediaUrl = (block: PostContentBlock): boolean => {
 	if (!MEDIA_BLOCK_TYPES.has(block.type)) {
 		return false;
 	}
@@ -36,12 +36,12 @@ const hasMediaUrl = (block: Block): boolean => {
 	return typeof props.url === 'string' && props.url.trim().length > 0;
 };
 
-const isMeaningfulBlock = (block: Block): boolean =>
+const isMeaningfulBlock = (block: PostContentBlock): boolean =>
 	hasMeaningfulText(block.content) || hasMediaUrl(block) || block.children.some(isMeaningfulBlock);
 
-export const isMeaningfulPostBody = (blocks: Block[]) => blocks.some(isMeaningfulBlock);
+export const isMeaningfulPostBody = (blocks: PostContentBlock[]) => blocks.some(isMeaningfulBlock);
 
-export const validatePostDocument = (title: string, blocks: Block[]): PostDocumentErrors => {
+export const validatePostDocument = (title: string, blocks: PostContentBlock[]): PostDocumentErrors => {
 	const errors: PostDocumentErrors = {};
 	const trimmedTitle = title.trim();
 

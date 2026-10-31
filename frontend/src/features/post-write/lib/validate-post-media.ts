@@ -1,4 +1,4 @@
-import type { Block } from '@blocknote/core';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 export class InvalidPostMediaError extends Error {
 	constructor() {
@@ -23,7 +23,7 @@ export const validatePostMediaUrl = (url: string): void => {
 	}
 };
 
-export const validatePostMedia = (blocks: Block[]): void => {
+export const validatePostMedia = (blocks: PostContentBlock[]): void => {
 	for (const block of blocks) {
 		if (block.type === 'image' || block.type === 'file' || block.type === 'video' || block.type === 'audio') {
 			validatePostMediaUrl(block.props.url);

@@ -1,11 +1,10 @@
-import type { Block } from '@blocknote/core';
-
 import type { CologOption } from '@/domains/blog/model/colog';
 import type { PostCategory } from '@/domains/post/model/post';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 export interface EditorDocument {
 	title: string;
-	blocks: Block[];
+	blocks: PostContentBlock[];
 }
 
 export type TargetBlog = { type: 'RILOG'; slug: string } | { type: 'COLOG'; id: number; slug: string };

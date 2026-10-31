@@ -5,6 +5,60 @@ import { POST_DETAIL_READABILITY_CONTENT } from '@/test/fixtures/post-detail';
 import { isBlockNoteDocument } from './validate-blocknote-document';
 
 describe('isBlockNoteDocument', () => {
+	const image = (id: string) => ({
+		id,
+		type: 'image',
+		props: {
+			backgroundColor: 'default',
+			textAlignment: 'left',
+			name: id,
+			url: `https://example.com/${id}.png`,
+			caption: '',
+			showPreview: true,
+		},
+		children: [],
+	});
+	const column = (id: string, children: unknown[] = [image(id)]) => ({
+		id: `column-${id}`,
+		type: 'column',
+		props: { width: 1 },
+		children,
+	});
+	const row = (children: unknown[]) => ({
+		id: 'image-row',
+		type: 'columnList',
+		props: {},
+		children,
+	});
+
+	it('이미지 하나씩 담긴 2~3열 행을 허용한다', () => {
+		expect(isBlockNoteDocument([row([column('first'), column('second')])])).toBe(true);
+		expect(isBlockNoteDocument([row([column('first'), column('second'), column('third')])])).toBe(true);
+	});
+
+	it('빈 열, 여러 이미지, 이미지 외 블록과 1열·4열 행을 거부한다', () => {
+		const paragraph = {
+			id: 'text',
+			type: 'paragraph',
+			props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
+			content: [],
+			children: [],
+		};
+		const first = column('first');
+		const second = column('second');
+		expect(isBlockNoteDocument([row([first])])).toBe(false);
+		expect(isBlockNoteDocument([row([first, second, column('third'), column('fourth')])])).toBe(false);
+		expect(isBlockNoteDocument([row([column('empty', []), second])])).toBe(false);
+		expect(isBlockNoteDocument([row([column('mixed', [image('one'), image('two')]), second])])).toBe(false);
+		expect(isBlockNoteDocument([row([column('text', [paragraph]), second])])).toBe(false);
+		expect(
+			isBlockNoteDocument([row([column('nested', [{ ...image('nested'), children: [paragraph] }]), second])]),
+		).toBe(false);
+		expect(isBlockNoteDocument([row([first, { ...second, props: { width: 0 } }])])).toBe(false);
+		expect(isBlockNoteDocument([column('orphan')])).toBe(false);
+		expect(isBlockNoteDocument([{ ...paragraph, children: [row([first, second])] }])).toBe(false);
+	});
+
 	it('편집기 스키마의 중첩 목록, 링크, 코드와 표를 포함한 저장 문서를 보존한다', () => {
 		const serializedDocument: unknown = JSON.parse(JSON.stringify(POST_DETAIL_READABILITY_CONTENT));
 		expect(isBlockNoteDocument(serializedDocument)).toBe(true);

@@ -1,10 +1,12 @@
+import { BlockNoteSchema } from '@blocknote/core';
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
+import { withMultiColumn } from '@blocknote/xl-multi-column';
 
-import type { Block } from '@blocknote/core';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 import { removeEmptyUploadBlocks } from './remove-empty-upload-blocks';
 
-const editor = ServerBlockNoteEditor.create();
+const editor = ServerBlockNoteEditor.create({ schema: withMultiColumn(BlockNoteSchema.create()) });
 
-export const blocksToMarkdown = (blocks: Block[]): Promise<string> =>
+export const blocksToMarkdown = (blocks: PostContentBlock[]): Promise<string> =>
 	editor.blocksToMarkdownLossy(removeEmptyUploadBlocks(blocks));

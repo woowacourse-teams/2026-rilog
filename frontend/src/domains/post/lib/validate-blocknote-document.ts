@@ -1,4 +1,4 @@
-import type { Block } from '@blocknote/core';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -103,7 +103,7 @@ const hasValidProps = (type: string, props: Record<string, unknown>): boolean =>
 	return true;
 };
 
-const isBlock = (value: unknown): boolean => {
+const isBlock = (value: unknown, parentType?: string): boolean => {
 	if (
 		!isRecord(value) ||
 		!isString(value.id) ||
@@ -113,8 +113,33 @@ const isBlock = (value: unknown): boolean => {
 	) {
 		return false;
 	}
-	if (!Array.isArray(value.children) || !value.children.every(isBlock) || !hasValidProps(value.type, value.props))
+	const blockType = value.type;
+	if (
+		!Array.isArray(value.children) ||
+		!value.children.every((child: unknown) => isBlock(child, blockType)) ||
+		!hasValidProps(blockType, value.props)
+	)
 		return false;
+	if (parentType === 'columnList' && value.type !== 'column') return false;
+	if (parentType === 'column' && value.type !== 'image') return false;
+	if (parentType === 'column' && value.children.length !== 0) return false;
+	if (value.type === 'columnList') {
+		return (
+			parentType === undefined &&
+			value.content === undefined &&
+			value.children.length >= 2 &&
+			value.children.length <= 3
+		);
+	}
+	if (value.type === 'column') {
+		return (
+			parentType === 'columnList' &&
+			value.content === undefined &&
+			isFiniteNumber(value.props.width) &&
+			value.props.width > 0 &&
+			value.children.length === 1
+		);
+	}
 	if (TEXT_BLOCKS.has(value.type)) return Array.isArray(value.content) && value.content.every(isInlineContent);
 	if (value.type === 'codeBlock') return Array.isArray(value.content) && value.content.every(isPlainText);
 	if (value.type === 'table') return isTableContent(value.content);
@@ -124,5 +149,6 @@ const isBlock = (value: unknown): boolean => {
 	return false;
 };
 
-/** The editor's default BlockNote 0.53 schema, including its configured code block. */
-export const isBlockNoteDocument = (value: unknown): value is Block[] => Array.isArray(value) && value.every(isBlock);
+/** The post's BlockNote 0.53 schema, including image-only column lists. */
+export const isBlockNoteDocument = (value: unknown): value is PostContentBlock[] =>
+	Array.isArray(value) && value.every((block) => isBlock(block));

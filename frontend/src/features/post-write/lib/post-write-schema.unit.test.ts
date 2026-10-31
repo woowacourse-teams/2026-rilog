@@ -29,6 +29,26 @@ it('운영 편집기가 생성한 기본 문서와 기존 저장 fixture를 본�
 	expect(isBlockNoteDocument([])).toBe(true);
 });
 
+it('운영 편집기가 생성한 이미지 2열 문서를 저장 본문 가드가 허용한다', () => {
+	const editor = BlockNoteEditor.create({
+		schema: POST_WRITE_SCHEMA,
+		initialContent: [
+			{
+				type: 'columnList',
+				children: [
+					{ type: 'column', children: [{ type: 'image', props: { url: 'https://example.com/first.png' } }] },
+					{ type: 'column', children: [{ type: 'image', props: { url: 'https://example.com/second.png' } }] },
+				],
+			},
+		],
+	});
+	try {
+		expect(isBlockNoteDocument(JSON.parse(JSON.stringify(editor.document)))).toBe(true);
+	} finally {
+		editor.unmount();
+	}
+});
+
 it('운영 편집기의 제목 1~4와 중첩 목록·링크·인라인 스타일을 허용한다', () => {
 	for (const level of [1, 2, 3, 4] as const) {
 		expect(isBlockNoteDocument(createDocument([{ type: 'heading', props: { level }, content: '제목' }]))).toBe(true);

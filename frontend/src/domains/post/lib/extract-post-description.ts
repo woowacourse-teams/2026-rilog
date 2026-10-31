@@ -1,4 +1,4 @@
-import type { Block } from '@blocknote/core';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 const EXCLUDED_BLOCK_TYPES = new Set(['audio', 'codeBlock', 'file', 'image', 'video']);
 
@@ -13,7 +13,7 @@ const getInlineText = (content: unknown): string => {
 		.join('');
 };
 
-export const extractPostDescription = (blocks: Block[], maxLength = 160): string => {
+export const extractPostDescription = (blocks: PostContentBlock[], maxLength = 160): string => {
 	const text = blocks
 		.flatMap((block) => (EXCLUDED_BLOCK_TYPES.has(block.type) ? [] : [getInlineText(block.content)]))
 		.join(' ')

@@ -1,6 +1,6 @@
-import type { Block } from '@blocknote/core';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
-const isEmptyUploadBlock = (block: Block): boolean => {
+const isEmptyUploadBlock = (block: PostContentBlock): boolean => {
 	if (block.type !== 'image' && block.type !== 'file' && block.type !== 'video' && block.type !== 'audio') {
 		return false;
 	}
@@ -8,8 +8,8 @@ const isEmptyUploadBlock = (block: Block): boolean => {
 	return block.props.url.trim().length === 0;
 };
 
-export const removeEmptyUploadBlocks = (blocks: Block[]): Block[] => {
-	const result: Block[] = [];
+export const removeEmptyUploadBlocks = (blocks: PostContentBlock[]): PostContentBlock[] => {
+	const result: PostContentBlock[] = [];
 
 	for (const block of blocks) {
 		const children = removeEmptyUploadBlocks(block.children);
