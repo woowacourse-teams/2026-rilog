@@ -15,6 +15,17 @@ export const removeEmptyUploadBlocks = (blocks: PostContentBlock[]): PostContent
 		const children = removeEmptyUploadBlocks(block.children);
 		if (isEmptyUploadBlock(block)) {
 			result.push(...children);
+		} else if (block.type === 'column') {
+			if (children.length > 0) {
+				result.push({ ...block, children });
+			}
+		} else if (block.type === 'columnList') {
+			if (children.length === 1) {
+				const [remainingColumn] = children;
+				result.push(...(remainingColumn.type === 'column' ? remainingColumn.children : [remainingColumn]));
+			} else if (children.length > 1) {
+				result.push({ ...block, children });
+			}
 		} else {
 			result.push(block.children.length === 0 ? block : { ...block, children });
 		}
