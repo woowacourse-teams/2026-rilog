@@ -20,7 +20,8 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 			http_status: '503',
 			request_id: 'do-not-send',
 			secret: 'private',
-			'PostHog Recording URL': 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+			'PostHog Recording URL':
+				'https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 		},
 		user: { id: 'user-42' },
 		breadcrumbs: [
@@ -50,11 +51,11 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 			{
 				category: 'ui.click',
 				element: 'button',
-				selector: 'button#publish.primary[type="submit"][aria-label="발행"][value=[Filtered]]',
-				attributes: { id: 'publish', class: 'primary', type: 'submit', 'aria-label': '발행' },
+				selector: 'button[type="submit"]',
+				attributes: { type: 'submit' },
 			},
 		],
-		sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+		sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 	});
 	expect(JSON.stringify(summary)).not.toContain('token=private');
 	expect(JSON.stringify(summary)).not.toContain('user-42');
@@ -77,7 +78,7 @@ it('외부 요청이 임의의 태그나 긴 breadcrumb를 추가하면 거절�
 			tags: {},
 			breadcrumbs: [{ category: 'ui.click', attributes: { title: 'user@example.com' } }],
 		})?.breadcrumbs[0].attributes,
-	).toEqual({ title: '[Email]' });
+	).toBeUndefined();
 });
 
 it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한다', () => {
@@ -150,7 +151,9 @@ it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나
 	const summarized = summarizeSentryEventForSlack({
 		type: undefined,
 		event_id: EVENT_ID,
-		tags: { 'PostHog Recording URL': 'https://evil.example/project/phc_test/replay/session-1?t=30' },
+		tags: {
+			'PostHog Recording URL': 'https://evil.example/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
+		},
 	});
 	expect(summarized?.sessionReplayUrl).toBeUndefined();
 	expect(
@@ -161,7 +164,7 @@ it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나
 			route: '/write',
 			tags: {},
 			breadcrumbs: [],
-			sessionReplayUrl: 'https://evil.example/project/phc_test/replay/session-1?t=30',
+			sessionReplayUrl: 'https://evil.example/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 		}),
 	).toBeNull();
 });
@@ -208,4 +211,54 @@ it('외부 저장소의 presigned URL과 임의 request ID는 새 원인 요청 
 	expect(
 		parseSentrySlackSummary({ ...summary, apiRequest: { method: 'POST', url: 'https://evil.example/private' } }),
 	).toBeNull();
+});
+
+it('Slack 요약과 수신 parser는 임의 URL 값과 UI 작성 속성을 다시 제거한다', () => {
+	const summary = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		breadcrumbs: [
+			{
+				category: 'navigation',
+				data: { from: '/feeds?custom=private-query&page=2#private-hash', to: '/@private-slug/posts/42' },
+			},
+			{
+				category: 'ui.click',
+				message: 'button#private-id.private-class[title="private-title"][aria-label="private-label"][type="submit"]',
+			},
+		],
+	});
+	expect(JSON.stringify(summary)).not.toContain('private-');
+	expect(summary?.breadcrumbs[0]).toMatchObject({ from: '/feeds?page=2', to: '/blog/[slug]/posts/[postId]' });
+	const parsed = parseSentrySlackSummary({
+		...summary,
+		breadcrumbs: [
+			{
+				category: 'ui.click',
+				element: 'button',
+				selector: 'button#private-id',
+				attributes: { title: 'private-title', type: 'submit' },
+			},
+		],
+	});
+	expect(parsed?.breadcrumbs[0]).toEqual({
+		category: 'ui.click',
+		element: 'button',
+		selector: 'button[type="submit"]',
+		attributes: { type: 'submit' },
+	});
+});
+
+it.each([
+	'https://user:private-pass@us.posthog.com/project/123/replay/01234567-89ab-cdef-0123-456789abcdef',
+	'https://us.posthog.com:444/project/123/replay/01234567-89ab-cdef-0123-456789abcdef',
+	'https://us.posthog.com/project/123/replay/private%40email.com',
+	'https://us.posthog.com/project/123/replay/01234567-89ab-cdef-0123-456789abcdef#private-hash',
+])('replay URL의 인증값·비표준 포트·임의 식별자·fragment는 거절한다: %s', (value) => {
+	const summary = summarizeSentryEventForSlack({
+		type: undefined,
+		event_id: EVENT_ID,
+		tags: { 'PostHog Recording URL': value },
+	});
+	expect(summary?.sessionReplayUrl).toBeUndefined();
 });
