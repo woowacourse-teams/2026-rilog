@@ -46,6 +46,17 @@
 	min-height: 22rem;
 }
 
+.post-write-blocknote .bn-block-column {
+	/* BlockNote's overflow-x: auto also clips vertical overflow, which cuts off the selected image outline. */
+	min-width: 0;
+	overflow: visible;
+}
+
+.post-write-blocknote .bn-block-column > .bn-trailing-block {
+	/* Clicking below a column must not append a block, since a column holds exactly one image. */
+	pointer-events: none;
+}
+
 .post-write-blocknote .bn-add-file-button {
 	color: var(--color-text-secondary);
 	background-color: var(--color-surface-hover);
@@ -186,6 +197,36 @@
 .post-write-blocknote .ProseMirror-selectednode > .bn-block-content > * {
 	outline: 2px solid var(--focus-ring);
 	outline-offset: 2px;
+}
+
+.post-write-blocknote
+	.bn-editor.post-write-image-row-dragging
+	.bn-column-list-hovered
+	> .bn-block-column:not(:last-child),
+.post-write-blocknote
+	.bn-editor.post-write-image-row-dragging
+	.bn-column-list-hovered
+	> .bn-block-column.bn-column-resize-border {
+	box-shadow: none;
+}
+
+.post-write-image-row-guide {
+	/* Match BlockNote's default vertical drop cursor. */
+	position: fixed;
+	z-index: 50;
+	width: 5px;
+	background: #ddeeff;
+	pointer-events: none;
+	transform: translateX(-50%);
+}
+
+.post-write-image-row-detach-guide {
+	position: fixed;
+	z-index: 50;
+	height: 5px;
+	background: #ddeeff;
+	pointer-events: none;
+	transform: translateY(-50%);
 }
 
 @media (max-width: 40rem) {

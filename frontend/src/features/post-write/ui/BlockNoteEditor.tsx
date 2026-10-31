@@ -5,6 +5,7 @@ import { ko } from '@blocknote/core/locales';
 import {
 	FilePanelController,
 	getDefaultReactSlashMenuItems,
+	SideMenuController,
 	SuggestionMenuController,
 	useCreateBlockNote,
 } from '@blocknote/react';
@@ -25,6 +26,8 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { installImageRowDrag } from '../lib/install-image-row-drag';
+import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
@@ -33,6 +36,7 @@ import '../styles/blocknote-theme.css';
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
 import PostWriteFilePanel from './PostWriteFilePanel';
 import PostWriteFormattingToolbar from './PostWriteFormattingToolbar';
+import PostWriteSideMenu from './PostWriteSideMenu';
 
 const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
@@ -195,6 +199,8 @@ export default function BlockNoteEditor({
 
 	useEffect(() => connectEditor(editor), [connectEditor, editor]);
 	usePostWriteTransferUpload(editor);
+	useEffect(() => installImageRowDrag(editor), [editor]);
+	useEffect(() => keepImageRowSingleImage(editor), [editor]);
 
 	useEffect(
 		() =>
@@ -301,10 +307,12 @@ export default function BlockNoteEditor({
 				slashMenu={false}
 				formattingToolbar={false}
 				filePanel={false}
+				sideMenu={false}
 				onChange={() => onChange([...editor.document])}
 			>
 				<PostWriteFormattingToolbar />
 				<FilePanelController filePanel={PostWriteFilePanel} />
+				<SideMenuController sideMenu={PostWriteSideMenu} />
 				<SuggestionMenuController
 					triggerCharacter="/"
 					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
