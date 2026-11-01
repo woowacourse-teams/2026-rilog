@@ -17,6 +17,8 @@ const parseRaw = (src: string) => {
 	}
 };
 
+export const getImageKind = (src: string): ImageKind | null => parseRaw(src)?.kind ?? null;
+
 export const toCompactUrl = (src: string, size: number): string => {
 	const parsed = parseRaw(src);
 	if (!parsed) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toCompactUrl, toSrcSet } from './image';
+import { getImageKind, toCompactUrl, toSrcSet } from './image';
 
 describe('image utils', () => {
 	describe('toCompactUrl', () => {
@@ -54,6 +54,22 @@ describe('image utils', () => {
 			expect(toCompactUrl('not-a-valid-url', 750)).toBe('not-a-valid-url');
 			expect(toCompactUrl('/images/raw/uuid-123/original.png', 750)).toBe('/images/raw/uuid-123/original.png');
 			expect(toCompactUrl('', 750)).toBe('');
+		});
+	});
+
+	describe('getImageKind', () => {
+		it('신경로 images URL은 images kind를 반환한다', () => {
+			expect(getImageKind('https://cdn.rilog.test/images/raw/uuid/original.png')).toBe('images');
+		});
+
+		it('신경로 profiles URL은 profiles kind를 반환한다', () => {
+			expect(getImageKind('https://cdn.rilog.test/profiles/raw/user/original.png')).toBe('profiles');
+		});
+
+		it('구경로나 외부 URL은 null을 반환한다', () => {
+			expect(getImageKind('https://cdn.rilog.test/originals/legacy.png')).toBeNull();
+			expect(getImageKind('https://example.com/photo.jpg')).toBeNull();
+			expect(getImageKind('invalid-url')).toBeNull();
 		});
 	});
 
