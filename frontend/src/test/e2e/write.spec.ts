@@ -404,7 +404,8 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await page.keyboard.type('본문');
 		await expect(paragraphs.filter({ hasText: '본문' })).toHaveCount(1);
 		await expect(row.locator('.bn-block-content[data-content-type="paragraph"]')).toHaveCount(0);
-		await page.keyboard.press('Meta+ArrowLeft');
+		await page.keyboard.press('ArrowLeft');
+		await page.keyboard.press('ArrowLeft');
 		await expect.poll(() => page.evaluate(() => window.getSelection()?.anchorOffset)).toBe(0);
 		await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
 		await page.keyboard.press('Backspace');
