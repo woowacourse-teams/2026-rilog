@@ -19,7 +19,7 @@ export const usePostImageLightbox = () => {
 		}
 
 		const clickedImage = event.target;
-		const postImages = Array.from(event.currentTarget.querySelectorAll<HTMLImageElement>('img')).filter(
+		const postImages = Array.from(event.currentTarget.querySelectorAll<HTMLImageElement>('.bn-editor img')).filter(
 			(image) => image.closest('a') === null && (image.currentSrc || image.src) !== '',
 		);
 		const nextIndex = postImages.indexOf(clickedImage);

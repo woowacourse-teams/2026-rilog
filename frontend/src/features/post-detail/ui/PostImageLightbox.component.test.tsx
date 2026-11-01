@@ -28,6 +28,19 @@ describe('PostImageLightbox', () => {
 		expect(await screen.findByText('2 / 3')).toBeInTheDocument();
 	});
 
+	it('라이트박스를 닫은 뒤 본문 이미지를 다시 열어도 전체 이미지 개수가 유지된다', async () => {
+		const user = userEvent.setup();
+		renderContent();
+		const firstImage = screen.getByRole('img', { name: '첫 이미지', hidden: true });
+
+		await user.click(firstImage);
+		expect(await screen.findByText('1 / 3')).toBeInTheDocument();
+		await user.click(screen.getByRole('button', { name: '이미지 닫기' }));
+		await user.click(firstImage);
+
+		expect(screen.getByText('1 / 3')).toBeInTheDocument();
+	});
+
 	it('좌우 버튼으로 이전 및 다음 이미지를 탐색한다', async () => {
 		renderContent();
 
