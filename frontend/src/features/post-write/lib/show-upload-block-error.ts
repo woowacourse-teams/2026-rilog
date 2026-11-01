@@ -8,8 +8,14 @@ export const showUploadBlockError = (editor: PostWriteBlockNoteEditor, blockId: 
 	if (addFileButton === undefined || addFileButton === null) {
 		const cursorBlockId = editor.getTextCursorPosition().block.id;
 		// BlockNote 0.53 reuses the loading node, so replace it to render the retry button.
-		editor.replaceBlocks([block], [{ id: block.id, type: 'paragraph' }]);
-		editor.replaceBlocks([block.id], [block]);
+		editor.transact((transaction) => {
+			transaction.setMeta('addToHistory', false);
+			editor.replaceBlocks([block], [{ id: block.id, type: 'paragraph' }]);
+		});
+		editor.transact((transaction) => {
+			transaction.setMeta('addToHistory', false);
+			editor.replaceBlocks([block.id], [block]);
+		});
 		if (cursorBlockId !== block.id && editor.getBlock(cursorBlockId) !== undefined) {
 			editor.setTextCursorPosition(cursorBlockId, 'end');
 		}
