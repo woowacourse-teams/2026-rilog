@@ -72,7 +72,7 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 
 ## 현재 CI
 
-`.github/workflows/rilog-fe-quality-gates.yml`은 다음 조건에서 `pnpm check`·빌드, 브라우저별 production E2E, 결과 통합을 순서대로 실행한다.
+`.github/workflows/rilog-fe-quality-gates.yml`은 다음 조건에서 코드 검사와 빌드·전체 production E2E를 동시에 실행하고 마지막에 두 결과를 판정한다.
 
 - `develop`·`production` 대상 모든 PR
 - GitHub Actions의 수동 실행
