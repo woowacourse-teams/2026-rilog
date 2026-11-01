@@ -25,16 +25,12 @@ env:
 
 jobs:
   frontend-checks:
-    name: Frontend checks and build
-    outputs:
-      frontend: ${{ github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true' }}
+    name: Frontend source checks
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-
     defaults:
       run:
         working-directory: ./frontend
-
     steps:
       - uses: actions/checkout@v4
 
@@ -74,157 +70,111 @@ jobs:
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Run frontend checks
+      - name: Frontend source checks
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
         shell: bash
         run: |
-          QUALITY_LOG_DIR="${RUNNER_TEMP}/rilog-quality-logs"
-          mkdir -p "$QUALITY_LOG_DIR"
+          mkdir -p "$RUNNER_TEMP/quality-logs"
           set -o pipefail
-          node scripts/create-the-rilog-fixture.mjs
-          pnpm prepare:the-rilog
-          pnpm check 2>&1 | tee "$QUALITY_LOG_DIR/check.log"
-          node scripts/verify-the-rilog-build.mjs 2>&1 | tee "$QUALITY_LOG_DIR/the-rilog-build.log"
-
-      - name: Package production build
-        if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
-        run: tar --exclude='.next/cache' -czf "$RUNNER_TEMP/frontend-build.tar.gz" .next .the-rilog-build
-
+          pnpm check:source 2>&1 | tee "$RUNNER_TEMP/quality-logs/source.log"
       - uses: actions/upload-artifact@v4
-        if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
-        with:
-          name: frontend-build
-          path: ${{ runner.temp }}/frontend-build.tar.gz
-          compression-level: 0
-          retention-days: 1
-
-      - name: Upload failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
         with:
-          name: frontend-quality-${{ github.run_id }}
+          name: frontend-checks-diagnostics
           path: |
-            ${{ runner.temp }}/rilog-quality-logs
+            ${{ runner.temp }}/quality-logs
             frontend/test-results
             frontend/playwright-report
-          if-no-files-found: warn
           retention-days: 7
 
-  browser-e2e:
-    name: E2E (${{ matrix.project }})
-    needs: frontend-checks
-    if: needs.frontend-checks.outputs.frontend == 'true'
+  build-e2e:
+    name: Frontend build and E2E
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: chromium
-            browser: chromium
-          - project: webkit-comments
-            browser: webkit
-          - project: firefox-comments
-            browser: firefox
     defaults:
       run:
         working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+
+      - name: Detect frontend changes
+        id: changes
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git diff --name-only "$BASE_SHA" HEAD -- frontend/ .github/workflows/rilog-fe-quality-gates.yml .github/workflows/rilog-fe-the-rilog-build.yml > "$RUNNER_TEMP/frontend-changed-paths"
+          if [[ -s "$RUNNER_TEMP/frontend-changed-paths" ]]; then
+            echo 'frontend=true' >> "$GITHUB_OUTPUT"
+            echo 'Frontend 또는 품질 workflow 변경이 있어 전체 검증을 실행합니다.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'frontend=false' >> "$GITHUB_OUTPUT"
+            echo 'Frontend와 품질 workflow 변경이 없어 전체 검증을 건너뜁니다.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Setup pnpm
+        if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
         with:
           version: 11.21.0
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 24.19.0
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: ${{ runner.temp }}
-      - name: Restore production build
-        run: tar -xzf "$RUNNER_TEMP/frontend-build.tar.gz"
-      - name: Install browser
-        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
-      - name: Run production E2E
-        # The unchanged complete-suite gate is applied to merged reports below.
-        run: pnpm test:e2e:prod --project=${{ matrix.project }} --reporter=github,blob
-        env:
-          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/${{ matrix.project }}.zip
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: e2e-blob-${{ matrix.project }}
-          path: frontend/blob-report
-          if-no-files-found: error
-          retention-days: 7
+
+      - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Frontend build and E2E
+        if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/quality-logs"
+          set -o pipefail
+          node scripts/create-the-rilog-fixture.mjs
+          pnpm prepare:the-rilog
+          pnpm build 2>&1 | tee "$RUNNER_TEMP/quality-logs/build.log"
+          node scripts/verify-the-rilog-build.mjs
+          pnpm exec playwright install --with-deps chromium webkit firefox
+          pnpm test:e2e:prod 2>&1 | tee "$RUNNER_TEMP/quality-logs/e2e.log"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: e2e-diagnostics-${{ matrix.project }}
-          path: frontend/test-results
+          name: build-e2e-diagnostics
+          path: |
+            ${{ runner.temp }}/quality-logs
+            frontend/test-results
+            frontend/playwright-report
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true') }}
+        with:
+          name: frontend-e2e-results
+          path: |
+            frontend/test-results/results.json
+            frontend/playwright-report
+          if-no-files-found: error
           retention-days: 7
 
   frontend-quality:
     name: Frontend Quality
-    needs: [frontend-checks, browser-e2e]
+    needs: [frontend-checks, build-e2e]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: ./frontend
+    timeout-minutes: 5
     steps:
-      - name: Verify prerequisite results
-        working-directory: .
+      - name: Verify both results
         env:
           CHECKS_RESULT: ${{ needs.frontend-checks.result }}
-          FRONTEND: ${{ needs.frontend-checks.outputs.frontend }}
-          E2E_RESULT: ${{ needs.browser-e2e.result }}
+          E2E_RESULT: ${{ needs.build-e2e.result }}
         run: |
           test "$CHECKS_RESULT" = success
-          if [ "$FRONTEND" = true ]; then
-            test "$E2E_RESULT" = success
-          else
-            test "$FRONTEND" = false
-            test "$E2E_RESULT" = skipped
-          fi
-      - uses: actions/checkout@v4
-        if: needs.frontend-checks.outputs.frontend == 'true'
-      - uses: pnpm/action-setup@v4
-        if: needs.frontend-checks.outputs.frontend == 'true'
-        with:
-          version: 11.21.0
-      - uses: actions/setup-node@v4
-        if: needs.frontend-checks.outputs.frontend == 'true'
-        with:
-          node-version: 24.19.0
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        if: needs.frontend-checks.outputs.frontend == 'true'
-      - uses: actions/download-artifact@v4
-        if: needs.frontend-checks.outputs.frontend == 'true'
-        with:
-          pattern: e2e-blob-*
-          path: frontend/all-blob-reports
-          merge-multiple: true
-      - name: Verify complete E2E results
-        if: needs.frontend-checks.outputs.frontend == 'true'
-        run: |
-          test -f all-blob-reports/chromium.zip
-          test -f all-blob-reports/webkit-comments.zip
-          test -f all-blob-reports/firefox-comments.zip
-          pnpm exec playwright merge-reports --config playwright.merge.config.ts all-blob-reports
-          node -e "const r = require('./test-results/e2e-validation.json'); if (r.status !== 'passed') process.exit(1)"
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() && needs.frontend-checks.outputs.frontend == 'true' }}
-        with:
-          name: frontend-e2e-results
-          path: |
-            frontend/playwright-report
-            frontend/test-results/*.json
-          if-no-files-found: warn
-          retention-days: 7
+          test "$E2E_RESULT" = success
