@@ -142,7 +142,6 @@ export default function PostImageLightbox({
 			)}
 			{displayedImage !== null && (
 				<div
-					data-testid="post-image-lightbox-stage"
 					className="flex h-full w-full touch-none items-center justify-center overflow-hidden select-none sm:p-4"
 					{...stageGestureProps}
 				>

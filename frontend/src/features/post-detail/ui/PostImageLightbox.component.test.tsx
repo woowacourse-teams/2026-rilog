@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -9,6 +9,16 @@ const IMAGE_HTML =
 
 const renderContent = () =>
 	render(<PostDetailContent html={IMAGE_HTML} postId={1} ownerType="RILOG" category="TECH" />);
+
+const getLightboxStage = async () => {
+	const dialog = await screen.findByRole('dialog', { name: '이미지 확대 보기' });
+	const image = within(dialog).getByRole('img', { name: '첫 이미지' });
+	const stage = image.parentElement;
+	if (stage === null) {
+		throw new Error('확대 이미지 영역을 찾을 수 없습니다.');
+	}
+	return { image, stage };
+};
 
 describe('PostImageLightbox', () => {
 	it('본문 이미지를 클릭하면 확대 이미지를 보여준다', async () => {
@@ -86,7 +96,7 @@ describe('PostImageLightbox', () => {
 
 		await userEvent.click(screen.getByRole('img', { name: '첫 이미지', hidden: true }));
 
-		const stage = await screen.findByTestId('post-image-lightbox-stage');
+		const { stage } = await getLightboxStage();
 
 		fireEvent.touchStart(stage, { touches: [{ clientX: 200, clientY: 100 }] });
 		fireEvent.touchEnd(stage, { changedTouches: [{ clientX: 80, clientY: 100 }] });
@@ -109,9 +119,7 @@ describe('PostImageLightbox', () => {
 
 		await userEvent.click(screen.getByRole('img', { name: '첫 이미지', hidden: true }));
 
-		const stage = await screen.findByTestId('post-image-lightbox-stage');
-		const lightboxImage = stage.querySelector('img');
-		expect(lightboxImage).not.toBeNull();
+		const { image: lightboxImage, stage } = await getLightboxStage();
 
 		// 두 손가락 간격 100px -> 200px로 핀치 확대 (2배)
 		fireEvent.touchStart(stage, {
@@ -147,6 +155,6 @@ describe('PostImageLightbox', () => {
 		// 다음 이미지로 이동하면 확대 상태가 초기화된다
 		await userEvent.click(screen.getByRole('button', { name: '다음 이미지' }));
 		expect(screen.getByText('2 / 3')).toBeInTheDocument();
-		expect(lightboxImage?.style.transform).toBe('');
+		expect(lightboxImage.style.transform).toBe('');
 	});
 });
