@@ -27,6 +27,9 @@ const {
 	};
 });
 
+const route = vi.hoisted(() => ({ search: '' }));
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(route.search) }));
+
 vi.mock('@/features/analytics/ui/BlogProfileViewTracker', () => ({
 	default: function MockBlogProfileViewTracker({ blogType }: { blogType: BlogPublicProfile['type'] }) {
 		profileViewTrackerRenderMock(blogType);
@@ -146,6 +149,7 @@ const COLOG_PROFILE: BlogPublicProfile = {
 
 describe('BlogHome', () => {
 	beforeEach(() => {
+		route.search = '';
 		feedState.current = 'ready';
 		cologAsideRenderMock.mockClear();
 		headingRenderMock.mockClear();
@@ -228,6 +232,7 @@ describe('BlogHome', () => {
 	});
 
 	it('COLOG 피드에 제목을 전달해 toolbar와 게시글 목록 사이에 표시한다', () => {
+		route.search = 'chapter=3';
 		render(
 			<BlogHome
 				profile={COLOG_PROFILE}
@@ -253,6 +258,18 @@ describe('BlogHome', () => {
 			blogType: 'COLOG',
 			filter: { type: 'chapterId', chapterId: 3 },
 			initialRequestFailed: true,
+		});
+	});
+
+	it('초기 목록 조회가 실패해도 다른 챕터를 선택하면 새 목록 조회를 허용한다', () => {
+		route.search = 'chapter=4';
+		render(<BlogHome profile={COLOG_PROFILE} filter={{ type: 'chapterId', chapterId: 3 }} initialPostsRequestFailed />);
+
+		expect(feedRenderMock).toHaveBeenCalledWith({
+			slug: 'rilog-team',
+			blogType: 'COLOG',
+			filter: { type: 'chapterId', chapterId: 4 },
+			initialRequestFailed: false,
 		});
 	});
 
