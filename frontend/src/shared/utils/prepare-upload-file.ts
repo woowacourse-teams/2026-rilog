@@ -83,5 +83,3 @@ export const prepareUploadFile = async (file: File, type: string): Promise<File>
 			return normalizeContentType(file, format);
 	}
 };
-
-export const prepareImageUploadFile = (file: File): Promise<File> => prepareUploadFile(file, 'image');

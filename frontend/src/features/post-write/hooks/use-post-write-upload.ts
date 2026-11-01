@@ -5,7 +5,6 @@ import { useCallback, useRef } from 'react';
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 import type { UploadPostBodyFile } from '../model/post-editor';
 
-import { prepareUploadFile } from '@/shared/utils/prepare-upload-file';
 import { getUploadFormatError } from '@/shared/utils/upload-format';
 
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
@@ -26,11 +25,7 @@ export const usePostWriteUpload = (uploadFile: UploadPostBodyFile) => {
 				}
 			}
 			try {
-				const preparedFile =
-					blockType !== undefined || /\.heic$/i.test(file.name)
-						? await prepareUploadFile(file, blockType ?? 'image')
-						: file;
-				return await uploadFile(preparedFile);
+				return await uploadFile(file);
 			} catch (error) {
 				const message = getUploadErrorMessage(error);
 				if (blockId !== undefined) {
