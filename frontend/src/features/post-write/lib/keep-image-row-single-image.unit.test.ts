@@ -15,7 +15,7 @@ const column = (id: string) => ({
 });
 
 const setup = (
-	belowRow: { id: string; type: 'paragraph'; content: string },
+	belowRow: { id: string; type: 'paragraph' | 'heading' | 'bulletListItem'; content: string },
 	columns = [column('left'), column('right')],
 ) => {
 	const editor = BlockNoteEditor.create({
@@ -52,17 +52,32 @@ describe('keepImageRowSingleImage', () => {
 		cleanup();
 	});
 
-	it('내용이 있는 블록은 열 안으로 옮기지 않고 그대로 둔다', () => {
+	it('내용이 있는 문단 맨 앞에서 Backspace를 누르면 포커스와 이미지행을 유지한다', () => {
 		const { editor, cleanup, pressBackspace } = setup({ id: 'text', type: 'paragraph', content: '본문' });
 		editor.setTextCursorPosition('text', 'start');
 
 		expect(pressBackspace().defaultPrevented).toBe(true);
-
+		expect(pressBackspace().defaultPrevented).toBe(true);
 		expect(rowColumnChildIds(editor)).toEqual([['left'], ['right']]);
 		expect(editor.document.map((block) => block.id)).toEqual(['row', 'text']);
-		expect(editor.getTextCursorPosition().block.id).toBe('right');
+		expect(editor.document[1]?.content).toEqual([{ type: 'text', text: '본문', styles: {} }]);
+		expect(editor.getTextCursorPosition().block.id).toBe('text');
 		cleanup();
 	});
+
+	it.each(['heading', 'bulletListItem'] as const)(
+		'빈 %s 맨 앞의 Backspace는 서식 해제를 위해 기본 동작에 맡긴다',
+		(type) => {
+			const { editor, cleanup, pressBackspace } = setup({ id: 'formatted', type, content: '' });
+			editor.setTextCursorPosition('formatted', 'start');
+
+			pressBackspace();
+			expect(editor.document[1]?.type).toBe('paragraph');
+			expect(editor.getTextCursorPosition().block.id).toBe('formatted');
+			expect(rowColumnChildIds(editor)).toEqual([['left'], ['right']]);
+			cleanup();
+		},
+	);
 
 	it('3열 이미지행에서 열 이미지를 삭제하면 빈 블록을 남기지 않고 해당 열만 삭제한다', () => {
 		const { editor, cleanup, pressBackspace, pressDelete } = setup({ id: 'text', type: 'paragraph', content: '본문' }, [
