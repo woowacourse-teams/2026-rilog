@@ -72,7 +72,7 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 
 ## 현재 CI
 
-`.github/workflows/rilog-fe-quality-gates.yml`은 다음 조건에서 `pnpm check`와 production E2E를 한 job에서 실행한다.
+`.github/workflows/rilog-fe-quality-gates.yml`은 다음 조건에서 `pnpm check`·빌드, 브라우저별 production E2E, 결과 통합을 순서대로 실행한다.
 
 - `develop`·`production` 대상 모든 PR
 - GitHub Actions의 수동 실행
@@ -83,17 +83,28 @@ screenshot은 실패 진단용으로만 생성하며 기준 이미지 비교는 
 
 품질 CI의 정기 실행은 운영하지 않는다. 더 리로그 콘텐츠 갱신은 EC2의 오전 6시 systemd timer에서 수행하며 이 품질 workflow의 예약 실행이 아니다. 현재 검증은 고정된 의존성과 fixture를 사용하고 실제 계정·외부 API에 의존하지 않아 PR 검증과 필요 시 수동 실행으로 관리한다. 외부 서비스·시간 의존 계약이나 별도 브라우저 버전 검증을 도입하면 정기 실행의 필요성을 다시 검토한다.
 
-CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한다. pnpm 저장소는 `setup-node`로 cache한다. Next.js `.next/cache`는 로컬 확인에서 약 475MB로, 압축해도 약 387MB였다. GitHub의 PR cache는 해당 PR 범위에서만 재사용되고 최근 CI에서 build 컴파일은 약 16~20초였으므로, 대용량 cache의 전송 비용이 절감 시간을 넘을 수 있어 추가하지 않았다.
+CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한다. pnpm 저장소 cache는 각 job에서 재사용한다.
 
-`pnpm check`가 만든 production build를 `pnpm start` E2E에서 재사용한다. 기존 전체 E2E는 headless Chromium에서 실행하며, 모바일 댓글의 선택·시트·뒤로가기 시나리오는 WebKit·Firefox에서도 실행한다. CI는 `pnpm exec playwright install --with-deps chromium webkit firefox`로 세 엔진과 시스템 의존성을 설치한다. 로컬 최초 실행에서는 `pnpm exec playwright install chromium webkit firefox`로 엔진을 준비한다. 브라우저 바이너리 cache는 복원 시간과 다운로드 시간이 비슷하고 Linux 시스템 의존성을 대신할 수 없어 운영하지 않는다. 권한은 `contents: read`, timeout은 20분이고 동일 PR의 이전 실행은 취소한다. 변경 전후 시간은 Actions의 `Detect frontend changes`, `Run frontend checks`, `Install Playwright browsers`, `Run production E2E` 단계로 비교한다.
+### 병렬 실행과 최종 판정
 
-실패하면 다음 파일을 7일간 `frontend-quality-<run id>` artifact로 보관한다.
+1. `Frontend checks and build`가 변경 경로를 판단하고 `pnpm check`와 정적 빌드 검증을 실행한다. `.next/cache`를 제외한 `.next`와 `.the-rilog-build`를 tar로 묶어 1일 보관 artifact로 전달한다. 빌드는 한 번만 수행한다.
+2. `E2E (chromium)`, `E2E (webkit-comments)`, `E2E (firefox-comments)`가 같은 산출물을 내려받고 각자의 서버·fixture 파일로 실행한다. 각 job 내부의 `workers: 1`, `retries: 0`, 기존 테스트 선택 범위를 유지한다. `fail-fast: false`로 한 브라우저 실패가 다른 브라우저 진단을 취소하지 않게 한다.
+3. `Frontend Quality`는 항상 실행되어 선행 검사와 모든 브라우저 job의 성공을 확인한다. 비프론트 변경만 E2E 생략을 허용하며 실패·취소·예상 밖 생략은 실패로 처리한다.
+4. 세 blob artifact가 모두 있어야 결과를 병합한다. `playwright.merge.config.ts`에서 기존 필수 흐름 reporter를 실행해 필수 네 흐름의 누락·중복·skip·실패 및 브라우저 프로젝트 누락을 검사한다. 브라우저별 실행은 `--reporter=github,blob`으로 중간 보고만 하고 전체 필수 흐름 판정은 병합 단계에서 수행한다.
 
-- `${RUNNER_TEMP}/rilog-quality-logs/check.log`, `${RUNNER_TEMP}/rilog-quality-logs/e2e.log`
-- Playwright JSON 결과, 실패 screenshot과 trace
-- `playwright-report` HTML report
+로컬 `pnpm test:e2e:prod`는 기존처럼 전체 브라우저와 필수 흐름 검사를 한 번에 실행한다. CI 분할 실행 예시는 다음과 같다.
 
-단위·RTL·E2E가 0건을 수집하면 실패한다. `test:e2e:prod`는 필수 태그 4개 중 누락·중복·skip·미실행·실패가 있으면 custom reporter가 job을 실패시킨다. `test:e2e`는 파일·grep 선택으로 개별 흐름을 조사할 수 있다. retry는 0이고 CI에서는 `test.only`를 금지한다.
+```sh
+pnpm test:e2e:prod --project=chromium --reporter=github,blob
+pnpm exec playwright merge-reports --config playwright.merge.config.ts all-blob-reports
+node -e "const r = require('./test-results/e2e-validation.json'); if (r.status !== 'passed') process.exit(1)"
+```
+
+병합 명령에는 세 브라우저의 blob 결과가 모두 필요하다. 실제 blob 생성·병합 회귀 테스트는 성공, 프로젝트 누락, 필수 흐름 누락·중복·skip·실패의 통합 판정을 검증한다. 현재 Playwright의 병합 명령은 사용자 정의 reporter의 실패 반환만으로 비정상 종료하지 않을 수 있어, 최종 job은 `e2e-validation.json`의 `passed` 상태를 별도로 확인한다.
+
+검사·빌드와 브라우저 job의 timeout은 20분, 최종 통합은 10분이다. 테스트 0건은 실패하며 CI에서 `test.only`를 금지한다. 캐시 전달보다 실제 실행과 artifact 비용을 포함한 전체 대기 시간을 기준으로 개선을 평가한다.
+
+빌드 실패 로그, 브라우저별 blob·실패 trace/screenshot, 통합 HTML·JSON 결과는 7일 보관한다. 성공한 CI도 통합 결과를 남겨 프로젝트별 테스트 목록과 실행 시간을 비교할 수 있다. build artifact는 숨김 디렉터리 누락을 피하고 권한을 보존하도록 tar로 전달한다.
 
 `.github/workflows/rilog-fe-prod.yml`은 기존 `production` PR build와 `production` push 배포를 유지하고, 운영 artifact에 초기 스냅샷·갱신 스크립트·timer 설치 파일을 포함한다. 배포 시 server-only secret과 EC2 권한을 확인하고 systemd timer를 설치한다. 일일 콘텐츠 갱신은 `/the-rilog`만 재생성한다. 운영 설정과 실패 확인은 [더 리로그 빌드·갱신 안내](../qa/the-rilog-build.md)를 따른다. 품질 workflow는 `develop`·`production`에서 실행하지만 병합 필수 조건은 아니며, 배포 workflow의 선행 job도 아니다.
 

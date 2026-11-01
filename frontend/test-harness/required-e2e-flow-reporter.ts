@@ -1,3 +1,6 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
 
 import { REQUIRED_E2E_FLOW_TAGS } from '@/test/e2e/required-flows';
@@ -8,9 +11,17 @@ const REQUIRED_E2E_FLOW_TAG_SET = new Set(REQUIRED_E2E_FLOW_TAG_VALUES);
 
 export default class RequiredE2eFlowReporter implements Reporter {
 	private readonly diagnostics: string[] = [];
+
+	constructor(private readonly options: { expectedProjects?: string[]; resultFile?: string } = {}) {}
 	private readonly results = new Map<string, TestResult['status']>();
 
 	onBegin(_config: FullConfig, suite: Suite) {
+		for (const name of this.options.expectedProjects ?? []) {
+			if (!suite.suites.some((project) => project.project()?.name === name && project.allTests().length > 0)) {
+				this.diagnostics.push(`E2E 프로젝트 결과가 누락됐습니다: ${name}`);
+			}
+		}
+
 		const testsByTag = new Map(REQUIRED_E2E_FLOW_TAG_VALUES.map((tag) => [tag, [] as TestCase[]]));
 
 		for (const testCase of suite.allTests()) {
@@ -55,6 +66,17 @@ export default class RequiredE2eFlowReporter implements Reporter {
 					this.diagnostics.push(`${tag} 실행 결과가 passed가 아닙니다: ${status ?? '실행되지 않음'}`);
 				}
 			}
+		}
+
+		if (this.options.resultFile) {
+			mkdirSync(dirname(this.options.resultFile), { recursive: true });
+			writeFileSync(
+				this.options.resultFile,
+				JSON.stringify({
+					status: this.diagnostics.length === 0 ? result.status : 'failed',
+					diagnostics: this.diagnostics,
+				}),
+			);
 		}
 
 		if (this.diagnostics.length === 0) {

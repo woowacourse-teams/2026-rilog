@@ -14,24 +14,26 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  NEXT_PUBLIC_API_BASE_URL: https://api.rilog.test
+  NEXT_PUBLIC_DEV_MASTER_TOKEN: ""
+  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ""
+  NEXT_PUBLIC_SENTRY_DSN: ""
+  NEXT_PUBLIC_SENTRY_ENABLED: "false"
+  THE_RILOG_SNAPSHOT_PATH: .the-rilog-build/fixture.json
+  THE_RILOG_ALLOW_FIXTURE: "true"
+
 jobs:
-  frontend-quality:
-    name: Frontend Quality
+  frontend-checks:
+    name: Frontend checks and build
+    outputs:
+      frontend: ${{ github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     defaults:
       run:
         working-directory: ./frontend
-
-    env:
-      NEXT_PUBLIC_API_BASE_URL: https://api.rilog.test
-      NEXT_PUBLIC_DEV_MASTER_TOKEN: ""
-      NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ""
-      NEXT_PUBLIC_SENTRY_DSN: ""
-      NEXT_PUBLIC_SENTRY_ENABLED: "false"
-      THE_RILOG_SNAPSHOT_PATH: .the-rilog-build/fixture.json
-      THE_RILOG_ALLOW_FIXTURE: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -84,18 +86,17 @@ jobs:
           pnpm check 2>&1 | tee "$QUALITY_LOG_DIR/check.log"
           node scripts/verify-the-rilog-build.mjs 2>&1 | tee "$QUALITY_LOG_DIR/the-rilog-build.log"
 
-      - name: Install Playwright browsers
+      - name: Package production build
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
-        run: pnpm exec playwright install --with-deps chromium webkit firefox
+        run: tar --exclude='.next/cache' -czf "$RUNNER_TEMP/frontend-build.tar.gz" .next .the-rilog-build
 
-      - name: Run production E2E
+      - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request' || steps.changes.outputs.frontend == 'true'
-        shell: bash
-        run: |
-          QUALITY_LOG_DIR="${RUNNER_TEMP}/rilog-quality-logs"
-          mkdir -p "$QUALITY_LOG_DIR"
-          set -o pipefail
-          pnpm test:e2e:prod 2>&1 | tee "$QUALITY_LOG_DIR/e2e.log"
+        with:
+          name: frontend-build
+          path: ${{ runner.temp }}/frontend-build.tar.gz
+          compression-level: 0
+          retention-days: 1
 
       - name: Upload failure diagnostics
         if: failure()
@@ -106,5 +107,124 @@ jobs:
             ${{ runner.temp }}/rilog-quality-logs
             frontend/test-results
             frontend/playwright-report
+          if-no-files-found: warn
+          retention-days: 7
+
+  browser-e2e:
+    name: E2E (${{ matrix.project }})
+    needs: frontend-checks
+    if: needs.frontend-checks.outputs.frontend == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium
+            browser: chromium
+          - project: webkit-comments
+            browser: webkit
+          - project: firefox-comments
+            browser: firefox
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: ${{ runner.temp }}
+      - name: Restore production build
+        run: tar -xzf "$RUNNER_TEMP/frontend-build.tar.gz"
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - name: Run production E2E
+        # The unchanged complete-suite gate is applied to merged reports below.
+        run: pnpm test:e2e:prod --project=${{ matrix.project }} --reporter=github,blob
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/${{ matrix.project }}.zip
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-blob-${{ matrix.project }}
+          path: frontend/blob-report
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-diagnostics-${{ matrix.project }}
+          path: frontend/test-results
+          retention-days: 7
+
+  frontend-quality:
+    name: Frontend Quality
+    needs: [frontend-checks, browser-e2e]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Verify prerequisite results
+        working-directory: .
+        env:
+          CHECKS_RESULT: ${{ needs.frontend-checks.result }}
+          FRONTEND: ${{ needs.frontend-checks.outputs.frontend }}
+          E2E_RESULT: ${{ needs.browser-e2e.result }}
+        run: |
+          test "$CHECKS_RESULT" = success
+          if [ "$FRONTEND" = true ]; then
+            test "$E2E_RESULT" = success
+          else
+            test "$FRONTEND" = false
+            test "$E2E_RESULT" = skipped
+          fi
+      - uses: actions/checkout@v4
+        if: needs.frontend-checks.outputs.frontend == 'true'
+      - uses: pnpm/action-setup@v4
+        if: needs.frontend-checks.outputs.frontend == 'true'
+        with:
+          version: 11.21.0
+      - uses: actions/setup-node@v4
+        if: needs.frontend-checks.outputs.frontend == 'true'
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        if: needs.frontend-checks.outputs.frontend == 'true'
+      - uses: actions/download-artifact@v4
+        if: needs.frontend-checks.outputs.frontend == 'true'
+        with:
+          pattern: e2e-blob-*
+          path: frontend/all-blob-reports
+          merge-multiple: true
+      - name: Verify complete E2E results
+        if: needs.frontend-checks.outputs.frontend == 'true'
+        run: |
+          test -f all-blob-reports/chromium.zip
+          test -f all-blob-reports/webkit-comments.zip
+          test -f all-blob-reports/firefox-comments.zip
+          pnpm exec playwright merge-reports --config playwright.merge.config.ts all-blob-reports
+          node -e "const r = require('./test-results/e2e-validation.json'); if (r.status !== 'passed') process.exit(1)"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && needs.frontend-checks.outputs.frontend == 'true' }}
+        with:
+          name: frontend-e2e-results
+          path: |
+            frontend/playwright-report
+            frontend/test-results/*.json
           if-no-files-found: warn
           retention-days: 7
