@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PresignedUrlCreateRequest, PresignedUrlCreateResponse } from './types';
 
 import { InvalidApiResponseError, isRecord } from '@/shared/api/response-validation';
+import { UploadPreparationError } from '@/shared/utils/prepare-upload-file';
 
 import {
 	createPresignedUrl,
@@ -11,11 +12,17 @@ import {
 	uploadProfileImageWithPresignedUrl,
 } from './api';
 
-vi.hoisted(() => {
+const { heicToMock } = vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
+	return { heicToMock: vi.fn() };
 });
 
+vi.mock('heic-to', () => ({
+	heicTo: heicToMock,
+}));
+
 afterEach(() => {
+	heicToMock.mockReset();
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
 });
@@ -241,6 +248,60 @@ describe('uploadFileWithPresignedUrl', () => {
 		);
 		expect(isRecord(error) && error.type === 'unknown' && error.cause instanceof InvalidApiResponseError).toBe(true);
 		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('HEIC 이미지는 JPEG로 변환한 파일 정보로 Presigned URL을 발급받고 S3에 업로드한다', async () => {
+		heicToMock.mockResolvedValue(new Blob(['converted-jpeg'], { type: 'image/jpeg' }));
+		let presignedRequestBody: unknown;
+		let uploadedStorageBody: string | undefined;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+			if (url.includes('/v1/uploads/presigned-url')) {
+				if (input instanceof Request) {
+					presignedRequestBody = await input.clone().json();
+				}
+				return Response.json({
+					...MOCK_PRESIGNED_RESPONSE,
+					data: {
+						...MOCK_PRESIGNED_RESPONSE.data,
+						headers: { 'content-type': ['image/jpeg'] },
+					},
+				});
+			}
+			if (url.includes('https://s3.rilog.test/upload')) {
+				if (input instanceof Request) {
+					uploadedStorageBody = await input.clone().text();
+				}
+				return new Response(null, { status: 200 });
+			}
+			throw new Error(`Unexpected URL: ${url}`);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const heicFile = new File(['heic-bytes'], 'photo.heic', { type: 'image/heic' });
+		await uploadFileWithPresignedUrl({ file: heicFile, type: 'IMAGE' });
+
+		expect(presignedRequestBody).toEqual({
+			fileName: 'photo.jpg',
+			contentType: 'image/jpeg',
+			size: 'converted-jpeg'.length,
+			type: 'IMAGE',
+			imagePurpose: 'CONTENT',
+		});
+		const storageRequest = fetchMock.mock.calls[1]?.[0] as Request;
+		expect(storageRequest.headers.get('content-type')).toBe('image/jpeg');
+		expect(uploadedStorageBody).toBe('converted-jpeg');
+	});
+
+	it('지원하지 않는 이미지 확장자는 Presigned URL을 요청하지 않고 거절한다', async () => {
+		const fetchMock = vi.fn();
+		vi.stubGlobal('fetch', fetchMock);
+
+		const bmpFile = new File(['bmp-bytes'], 'legacy.bmp', { type: 'image/bmp' });
+		await expect(uploadFileWithPresignedUrl({ file: bmpFile, type: 'IMAGE' })).rejects.toThrowError(
+			new UploadPreparationError('지원하지 않는 이미지 형식입니다.'),
+		);
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 });
 

@@ -4,8 +4,9 @@ import { useState } from 'react';
 
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 
+import { getUploadFormatError } from '@/shared/utils/upload-format';
+
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
-import { getUploadFormatError } from '../lib/get-upload-format-error';
 import { getUploadedUrl } from '../lib/get-uploaded-url';
 import { insertUploadBlock, isUploadBlockType } from '../lib/insert-upload-block';
 
