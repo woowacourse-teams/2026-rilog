@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 
@@ -10,6 +10,7 @@ import { showUploadBlockError } from '../lib/show-upload-block-error';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
 
 export const IMAGE_IMPORT_ERROR_MESSAGE = '이미지를 가져오지 못했습니다. 파일로 다시 업로드해 주세요.';
+export const MAX_CONCURRENT_IMAGE_IMPORTS = 1;
 
 const isHttpUrl = (url: string): boolean => {
 	try {
@@ -25,9 +26,20 @@ const stripUrlHash = (url: string): string => {
 	return hashIndex === -1 ? url : url.slice(0, hashIndex);
 };
 
+interface PendingImportEntry {
+	editor: PostWriteBlockNoteEditor;
+	sourceUrl: string;
+	blockIds: Set<string>;
+	settlers: Array<() => void>;
+}
+
 export const usePostWriteImageImport = () => {
-	const inFlightUrlsRef = useRef<Set<string>>(new Set());
+	const pendingImportsByUrlRef = useRef<Map<string, PendingImportEntry>>(new Map());
+	const activeImportsByUrlRef = useRef<Map<string, PendingImportEntry>>(new Map());
+	const importQueueRef = useRef<string[]>([]);
+	const activeCountRef = useRef(0);
 	const uploadedImageUrlsRef = useRef<Set<string>>(new Set());
+	const processQueueRef = useRef<() => void>(() => undefined);
 
 	const registerUploadedImageUrl = useCallback((url: string) => {
 		const trimmedUrl = url.trim();
@@ -36,49 +48,108 @@ export const usePostWriteImageImport = () => {
 		uploadedImageUrlsRef.current.add(stripUrlHash(trimmedUrl));
 	}, []);
 
+	const processQueue = useCallback(() => {
+		while (activeCountRef.current < MAX_CONCURRENT_IMAGE_IMPORTS && importQueueRef.current.length > 0) {
+			const normalizedUrl = importQueueRef.current.shift();
+			if (normalizedUrl === undefined) break;
+
+			const entry = pendingImportsByUrlRef.current.get(normalizedUrl);
+			if (entry === undefined) continue;
+
+			pendingImportsByUrlRef.current.delete(normalizedUrl);
+			activeImportsByUrlRef.current.set(normalizedUrl, entry);
+			activeCountRef.current += 1;
+
+			void (async () => {
+				const { editor, sourceUrl, blockIds, settlers } = entry;
+				try {
+					const response = await importImage({
+						sourceUrl: normalizedUrl,
+						imagePurpose: 'CONTENT',
+					});
+					const importedUrl = response.data.url;
+					registerUploadedImageUrl(sourceUrl);
+					registerUploadedImageUrl(normalizedUrl);
+					registerUploadedImageUrl(importedUrl);
+
+					for (const id of blockIds) {
+						const currentBlock = editor.getBlock(id);
+						if (
+							currentBlock !== undefined &&
+							currentBlock.type === 'image' &&
+							(currentBlock.props.url === sourceUrl || stripUrlHash(currentBlock.props.url) === normalizedUrl)
+						) {
+							editor.updateBlock(id, { props: { url: importedUrl } });
+						}
+					}
+				} catch {
+					for (const id of blockIds) {
+						const currentBlock = editor.getBlock(id);
+						if (
+							currentBlock !== undefined &&
+							currentBlock.type === 'image' &&
+							(currentBlock.props.url === sourceUrl || stripUrlHash(currentBlock.props.url) === normalizedUrl)
+						) {
+							editor.updateBlock(id, { props: { url: '' } });
+							window.setTimeout(() => showUploadBlockError(editor, id, IMAGE_IMPORT_ERROR_MESSAGE), 0);
+						}
+					}
+				} finally {
+					activeImportsByUrlRef.current.delete(normalizedUrl);
+					activeCountRef.current -= 1;
+					for (const settle of settlers) {
+						settle();
+					}
+					processQueueRef.current();
+				}
+			})();
+		}
+	}, [registerUploadedImageUrl]);
+
+	useEffect(() => {
+		processQueueRef.current = processQueue;
+	}, [processQueue]);
+
 	const handleImageImport = useCallback(
-		async (editor: PostWriteBlockNoteEditor, blockId: string, sourceUrl: string) => {
+		(editor: PostWriteBlockNoteEditor, blockId: string, sourceUrl: string): Promise<void> => {
 			const trimmedUrl = sourceUrl.trim();
-			const baseUrl = stripUrlHash(trimmedUrl);
+			const normalizedUrl = stripUrlHash(trimmedUrl);
 			if (
 				trimmedUrl === '' ||
 				isTransientMediaUrl(trimmedUrl) ||
 				!isHttpUrl(trimmedUrl) ||
 				uploadedImageUrlsRef.current.has(trimmedUrl) ||
-				uploadedImageUrlsRef.current.has(baseUrl) ||
-				inFlightUrlsRef.current.has(trimmedUrl) ||
-				inFlightUrlsRef.current.has(baseUrl)
+				uploadedImageUrlsRef.current.has(normalizedUrl)
 			) {
-				return;
+				return Promise.resolve();
 			}
 
-			inFlightUrlsRef.current.add(trimmedUrl);
-			inFlightUrlsRef.current.add(baseUrl);
-			try {
-				const response = await importImage({
-					sourceUrl: trimmedUrl,
-					imagePurpose: 'CONTENT',
+			return new Promise<void>((resolve) => {
+				const activeEntry = activeImportsByUrlRef.current.get(normalizedUrl);
+				if (activeEntry !== undefined) {
+					activeEntry.blockIds.add(blockId);
+					activeEntry.settlers.push(resolve);
+					return;
+				}
+
+				const pendingEntry = pendingImportsByUrlRef.current.get(normalizedUrl);
+				if (pendingEntry !== undefined) {
+					pendingEntry.blockIds.add(blockId);
+					pendingEntry.settlers.push(resolve);
+					return;
+				}
+
+				pendingImportsByUrlRef.current.set(normalizedUrl, {
+					editor,
+					sourceUrl,
+					blockIds: new Set([blockId]),
+					settlers: [resolve],
 				});
-				const importedUrl = response.data.url;
-				registerUploadedImageUrl(trimmedUrl);
-				registerUploadedImageUrl(importedUrl);
-
-				const currentBlock = editor.getBlock(blockId);
-				if (currentBlock !== undefined && currentBlock.type === 'image' && currentBlock.props.url === sourceUrl) {
-					editor.updateBlock(blockId, { props: { url: importedUrl } });
-				}
-			} catch {
-				const currentBlock = editor.getBlock(blockId);
-				if (currentBlock !== undefined && currentBlock.type === 'image' && currentBlock.props.url === sourceUrl) {
-					editor.updateBlock(blockId, { props: { url: '' } });
-					window.setTimeout(() => showUploadBlockError(editor, blockId, IMAGE_IMPORT_ERROR_MESSAGE), 0);
-				}
-			} finally {
-				inFlightUrlsRef.current.delete(trimmedUrl);
-				inFlightUrlsRef.current.delete(baseUrl);
-			}
+				importQueueRef.current.push(normalizedUrl);
+				processQueue();
+			});
 		},
-		[registerUploadedImageUrl],
+		[processQueue],
 	);
 
 	return { handleImageImport, registerUploadedImageUrl };

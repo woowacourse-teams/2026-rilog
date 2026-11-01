@@ -118,6 +118,84 @@ describe('usePostWriteImageImport', () => {
 		expect(importSpy).not.toHaveBeenCalled();
 	});
 
+	it('동일한 외부 이미지 주소를 가진 여러 블록이 한 번에 들어오면 API를 1회만 호출하고 모든 블록을 업데이트한다', async () => {
+		blocksState['block-2'] = { id: 'block-2', type: 'image', props: { url: 'https://external.test/same.png' } };
+		blocksState['block-3'] = { id: 'block-3', type: 'image', props: { url: 'https://external.test/same.png' } };
+
+		const importSpy = vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/same-original.webp',
+				url: 'https://images.rilog.test/rilog/images/raw/test/same-original.webp',
+			},
+		});
+
+		const { result } = renderHook(() => usePostWriteImageImport());
+		await Promise.all([
+			result.current.handleImageImport(mockEditor, 'block-2', 'https://external.test/same.png'),
+			result.current.handleImageImport(mockEditor, 'block-3', 'https://external.test/same.png'),
+		]);
+
+		expect(importSpy).toHaveBeenCalledTimes(1);
+		expect(updateBlockMock).toHaveBeenCalledWith('block-2', {
+			props: { url: 'https://images.rilog.test/rilog/images/raw/test/same-original.webp' },
+		});
+		expect(updateBlockMock).toHaveBeenCalledWith('block-3', {
+			props: { url: 'https://images.rilog.test/rilog/images/raw/test/same-original.webp' },
+		});
+	});
+
+	it('이미지는 1장씩 순차적으로 요청을 처리하고 자리가 날 때마다 다음 이미지를 처리한다', async () => {
+		let activeConcurrentRequests = 0;
+		let maxConcurrentRequestsObserved = 0;
+		const totalRequests = 5;
+
+		for (let i = 1; i <= totalRequests; i++) {
+			blocksState[`block-${i}`] = {
+				id: `block-${i}`,
+				type: 'image',
+				props: { url: `https://external.test/photo-${i}.png` },
+			};
+		}
+
+		vi.spyOn(uploadsApi, 'importImage').mockImplementation(async ({ sourceUrl }) => {
+			activeConcurrentRequests += 1;
+			maxConcurrentRequestsObserved = Math.max(maxConcurrentRequestsObserved, activeConcurrentRequests);
+			await new Promise((resolve) => {
+				setTimeout(resolve, 10);
+			});
+			activeConcurrentRequests -= 1;
+			const fileName = sourceUrl.split('/').pop() ?? 'photo';
+			return {
+				status: 200,
+				message: '성공',
+				data: {
+					objectKey: `rilog/images/raw/test/${fileName}.webp`,
+					url: `https://images.rilog.test/rilog/images/raw/test/${fileName}.webp`,
+				},
+			};
+		});
+
+		const { result } = renderHook(() => usePostWriteImageImport());
+		const promises = Array.from({ length: totalRequests }, (_, index) =>
+			result.current.handleImageImport(
+				mockEditor,
+				`block-${index + 1}`,
+				`https://external.test/photo-${index + 1}.png`,
+			),
+		);
+
+		await Promise.all(promises);
+
+		expect(maxConcurrentRequestsObserved).toBe(1);
+		for (let i = 1; i <= totalRequests; i++) {
+			expect(updateBlockMock).toHaveBeenCalledWith(`block-${i}`, {
+				props: { url: `https://images.rilog.test/rilog/images/raw/test/photo-${i}.png.webp` },
+			});
+		}
+	});
+
 	it('data: 또는 blob: 같은 임시 미디어 URL이나 빈 URL은 무시한다', async () => {
 		const importSpy = vi.spyOn(uploadsApi, 'importImage');
 		const { result } = renderHook(() => usePostWriteImageImport());
