@@ -4,7 +4,12 @@ import type { PresignedUrlCreateRequest, PresignedUrlCreateResponse } from './ty
 
 import { InvalidApiResponseError, isRecord } from '@/shared/api/response-validation';
 
-import { createPresignedUrl, uploadFileToPresignedUrl, uploadFileWithPresignedUrl } from './api';
+import {
+	createPresignedUrl,
+	uploadFileToPresignedUrl,
+	uploadFileWithPresignedUrl,
+	uploadProfileImageWithPresignedUrl,
+} from './api';
 
 vi.hoisted(() => {
 	process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.rilog.test';
@@ -34,7 +39,13 @@ describe('createPresignedUrl', () => {
 	it('presign 성공 응답이 잘못된 JSON이면 업로드 URL로 사용하지 않는다', async () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken', { status: 200 })));
 		await expect(
-			createPresignedUrl({ fileName: 'a.png', contentType: 'image/png', size: 1, type: 'IMAGE' }),
+			createPresignedUrl({
+				fileName: 'a.png',
+				contentType: 'image/png',
+				size: 1,
+				type: 'IMAGE',
+				imagePurpose: 'CONTENT',
+			}),
 		).rejects.toMatchObject({
 			type: 'unknown',
 			cause: { name: 'InvalidApiResponseError' },
@@ -58,6 +69,7 @@ describe('createPresignedUrl', () => {
 			contentType: 'image/png',
 			size: 1024,
 			type: 'IMAGE',
+			imagePurpose: 'PROFILE',
 		};
 
 		const result = await createPresignedUrl(requestPayload);
@@ -137,23 +149,34 @@ describe('uploadFileToPresignedUrl', () => {
 });
 
 describe('uploadFileWithPresignedUrl', () => {
-	it('Presigned URL을 발급받은 후 S3 업로드까지 순차적으로 성공시킨다', async () => {
-		const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+	it('imagePurpose를 지정하지 않으면 CONTENT로 Presigned URL을 발급받아 S3 업로드까지 성공시킨다', async () => {
+		let presignedRequestBody: unknown;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
 			const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
 			if (url.includes('/v1/uploads/presigned-url')) {
-				return Promise.resolve(Response.json(MOCK_PRESIGNED_RESPONSE));
+				if (input instanceof Request) {
+					presignedRequestBody = await input.clone().json();
+				}
+				return Response.json(MOCK_PRESIGNED_RESPONSE);
 			}
 			if (url.includes('https://s3.rilog.test/upload')) {
-				return Promise.resolve(new Response(null, { status: 200 }));
+				return new Response(null, { status: 200 });
 			}
-			return Promise.reject(new Error(`Unexpected URL: ${url}`));
+			throw new Error(`Unexpected URL: ${url}`);
 		});
 		vi.stubGlobal('fetch', fetchMock);
 
-		const file = new File(['avatar-bytes'], 'avatar.png', { type: 'image/png' });
+		const file = new File(['cover-bytes'], 'cover.png', { type: 'image/png' });
 		const result = await uploadFileWithPresignedUrl({ file, type: 'IMAGE' });
 
 		expect(result).toEqual(MOCK_PRESIGNED_RESPONSE.data);
+		expect(presignedRequestBody).toEqual({
+			fileName: 'cover.png',
+			contentType: 'image/png',
+			size: file.size,
+			type: 'IMAGE',
+			imagePurpose: 'CONTENT',
+		});
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 
@@ -195,6 +218,7 @@ describe('uploadFileWithPresignedUrl', () => {
 		expect(presignedRequestBody).toMatchObject({
 			contentType: 'application/pdf',
 			type: 'FILE',
+			imagePurpose: 'CONTENT',
 		});
 
 		const storageRequest = fetchMock.mock.calls[1]?.[0] as Request;
@@ -217,5 +241,38 @@ describe('uploadFileWithPresignedUrl', () => {
 		);
 		expect(isRecord(error) && error.type === 'unknown' && error.cause instanceof InvalidApiResponseError).toBe(true);
 		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('uploadProfileImageWithPresignedUrl', () => {
+	it('프로필 이미지는 imagePurpose를 PROFILE로 고정해 Presigned URL을 발급받고 업로드한다', async () => {
+		let presignedRequestBody: unknown;
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+			if (url.includes('/v1/uploads/presigned-url')) {
+				if (input instanceof Request) {
+					presignedRequestBody = await input.clone().json();
+				}
+				return Response.json(MOCK_PRESIGNED_RESPONSE);
+			}
+			if (url.includes('https://s3.rilog.test/upload')) {
+				return new Response(null, { status: 200 });
+			}
+			throw new Error(`Unexpected URL: ${url}`);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File(['avatar-bytes'], 'avatar.png', { type: 'image/png' });
+		const result = await uploadProfileImageWithPresignedUrl({ file, type: 'IMAGE' });
+
+		expect(result).toEqual(MOCK_PRESIGNED_RESPONSE.data);
+		expect(presignedRequestBody).toEqual({
+			fileName: 'avatar.png',
+			contentType: 'image/png',
+			size: file.size,
+			type: 'IMAGE',
+			imagePurpose: 'PROFILE',
+		});
+		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 });

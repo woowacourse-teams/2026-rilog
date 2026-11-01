@@ -63,6 +63,7 @@ export const uploadFileToPresignedUrl = async (
 export const uploadFileWithPresignedUrl = async ({
 	file,
 	type,
+	imagePurpose = 'CONTENT',
 }: UploadFileOptions): Promise<PresignedUrlCreateResponse> => {
 	const contentType = file.type || 'application/octet-stream';
 
@@ -71,6 +72,7 @@ export const uploadFileWithPresignedUrl = async ({
 		contentType,
 		size: file.size,
 		type,
+		imagePurpose,
 	}).catch((error: unknown) => {
 		apiErrorReporter.report(error, { operation: 'upload.presign' });
 
@@ -87,3 +89,6 @@ export const uploadFileWithPresignedUrl = async ({
 
 	return data;
 };
+
+export const uploadProfileImageWithPresignedUrl = (options: Omit<UploadFileOptions, 'imagePurpose'>) =>
+	uploadFileWithPresignedUrl({ ...options, imagePurpose: 'PROFILE' });
