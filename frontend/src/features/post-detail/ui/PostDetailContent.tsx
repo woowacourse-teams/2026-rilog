@@ -20,6 +20,7 @@ import { createReadingVisitId } from '../lib/create-reading-visit-id';
 
 import InlineCommentHighlights from './InlineCommentHighlights';
 import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
+import PostImageFallback from './PostImageFallback';
 import PostImageLightbox from './PostImageLightbox';
 
 interface PostDetailContentProps {
@@ -330,7 +331,9 @@ export default function PostDetailContent({
 			aria-label="게시글 본문"
 			onClick={handleToggleClick}
 		>
-			<div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: html }} />
+			<PostImageFallback>
+				<div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: html }} />
+			</PostImageFallback>
 			{contentElement === null ? null : (
 				<InlineCommentHighlights
 					article={contentElement}
