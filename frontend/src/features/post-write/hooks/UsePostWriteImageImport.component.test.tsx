@@ -12,7 +12,7 @@ import { IMAGE_IMPORT_ERROR_MESSAGE, usePostWriteImageImport } from './use-post-
 describe('usePostWriteImageImport', () => {
 	let mockEditor: PostWriteBlockNoteEditor;
 	let updateBlockMock: ReturnType<typeof vi.fn>;
-	let blocksState: Record<string, { id: string; type: string; props: { url: string } }>;
+	let blocksState: Record<string, { id: string; type: string; props: { url: string; previewWidth?: number } }>;
 
 	beforeEach(() => {
 		vi.restoreAllMocks();
@@ -283,4 +283,30 @@ describe('usePostWriteImageImport', () => {
 		expect(result.current.hasPendingImports(updatedDoc)).toBe(false);
 	});
 
+	it('외부 이미지 블록 교체 시 기존 previewWidth 또는 렌더링된 너비를 보존하여 깜빡임과 크기 변화를 방지한다', async () => {
+		vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/imported.webp',
+				url: 'https://images.rilog.test/rilog/images/raw/test/imported.webp',
+			},
+		});
+
+		blocksState['block-preserved'] = {
+			id: 'block-preserved',
+			type: 'image',
+			props: { url: 'https://external.test/preserved.png', previewWidth: 420 },
+		};
+
+		const { result } = renderHook(() => usePostWriteImageImport());
+		await result.current.handleImageImport(mockEditor, 'block-preserved', 'https://external.test/preserved.png');
+
+		expect(updateBlockMock).toHaveBeenCalledWith('block-preserved', {
+			props: {
+				url: 'https://images.rilog.test/rilog/images/raw/test/imported.webp',
+				previewWidth: 420,
+			},
+		});
+	});
 });

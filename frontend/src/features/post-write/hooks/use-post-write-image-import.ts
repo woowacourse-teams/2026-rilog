@@ -11,6 +11,7 @@ import {
 	attachImageImportLoading,
 	detachImageImportLoading,
 	hasPendingImageImports,
+	preloadImage,
 } from '../lib/image-import-loading';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
@@ -98,6 +99,8 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 					registerUploadedImageUrl(normalizedUrl);
 					registerUploadedImageUrl(importedUrl);
 
+					await preloadImage(importedUrl);
+
 					for (const id of blockIds) {
 						const currentBlock = editor.getBlock(id);
 						if (
@@ -105,7 +108,21 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 							currentBlock.type === 'image' &&
 							(currentBlock.props.url === sourceUrl || stripUrlHash(currentBlock.props.url) === normalizedUrl)
 						) {
-							editor.updateBlock(id, { props: { url: importedUrl } });
+							const blockElement = editor.domElement?.querySelector(`[data-id="${id}"]`);
+							const imgElement = blockElement?.querySelector<HTMLImageElement>('img.bn-visual-media, img');
+							const currentWidth =
+								typeof currentBlock.props.previewWidth === 'number' && currentBlock.props.previewWidth > 0
+									? currentBlock.props.previewWidth
+									: imgElement && imgElement.clientWidth > 0
+										? Math.round(imgElement.clientWidth)
+										: undefined;
+
+							editor.updateBlock(id, {
+								props: {
+									url: importedUrl,
+									...(currentWidth !== undefined ? { previewWidth: currentWidth } : {}),
+								},
+							});
 						}
 						detachImageImportLoading(editor, id);
 					}
