@@ -41,8 +41,9 @@ Spring은 사용자 요청에서 비롯된 오류를 같은 상태·코드로, �
 - 원본보다 크거나 같은 너비는 확대하지 않고 원본 너비로 한 번 변환해 그 너비의 key에 저장한다. 원본 1300px이면 `1400.webp`, `2000.webp`는 1300px이다.
 - 저장 위치: `{root}/{images|profiles}/compact/{userId}-{UUID}/{width}.webp`. 같은 원본을 다시 요청하면 덮어쓴다. 태그는 붙이지 않는다.
 - EXIF 방향을 반영해 픽셀을 돌리고 메타데이터를 제거한다. 원본 너비는 회전을 반영한 값이다.
-- 한 번에 하나씩 처리하고 최대 10건까지 대기시킨다. 요청마다 대기를 포함한 시한 45초가 있고, 진행 중인 변환(최대 10초)이 끝나야 응답하므로 최대 약 55초다.
-  Nginx `proxy_read_timeout`(60초)과 Spring `image-server.compaction-read-timeout`(70초)은 이보다 길게 둔다.
+- 한 번에 하나씩 처리하고 최대 3건까지 대기시킨다. 요청마다 대기를 포함한 시한 25초가 있고, 진행 중인 변환(최대 10초)이 끝나야 응답하므로 최대 약 35초다.
+  Nginx `proxy_read_timeout`(40초)과 Spring `image-server.compaction-read-timeout`(45초)은 이보다 길게 둔다.
+  값을 줄일 때는 이미지 서버 → Nginx → Spring 순서로 배포한다.
 
 성공: `200`, `{ "keys": ["<root>/images/compact/7-<uuid>/750.webp", ...] }`.
 오류: 400 `INVALID_OBJECT_KEY`·`INVALID_JSON`, 401 서명 오류, 404 `SOURCE_NOT_FOUND`, 413 `IMAGE_TOO_LARGE`(원본 10MiB 초과),

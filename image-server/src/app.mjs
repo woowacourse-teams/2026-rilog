@@ -14,8 +14,9 @@ export const SIGNATURE_HEADER = 'x-rilog-image-signature';
 const PURPOSE_DIRECTORIES = { PROFILE: 'profiles', CONTENT: 'images' };
 // 압축 요청 하나의 시한. 대기열 대기, S3 읽기, 변환, 저장을 모두 포함한다. 시한이 지나도 진행 중인 변환 하나(최대 10초)는
 // 끝나야 응답하므로 Nginx proxy_read_timeout과 Spring 압축 read-timeout은 이 값에 10초를 더한 것보다 길게 둔다.
-const COMPACT_DEADLINE_MS = 45_000;
-const COMPACT_MAX_WAITING = 10;
+// 동시 요청 4건(Spring 스레드 2개 × 개발·운영 2대) × 건당 약 5초 × 여유 1.25배. 대기열은 동시 요청 수 - 1이다.
+const COMPACT_DEADLINE_MS = 25_000;
+const COMPACT_MAX_WAITING = 3;
 
 // 서명이 본문 해시를 포함하므로 본문을 수신 바이트로 받아 검증한 뒤 파싱한다.
 function parseBody(body) {
