@@ -4,6 +4,7 @@ import type { PostWriteBlockNoteEditor } from './post-write-schema';
  * 이미지행 바로 아래 문단의 맨 앞에서 Backspace를 누르면 BlockNote가 문단을 마지막 열 안으로 옮긴다.
  * 열에는 이미지 하나만 허용하므로 내용이 있으면 병합을 막고, 빈 문단이면 지운 뒤 마지막 열의 이미지에 포커스를 둔다.
  * 열 안의 이미지를 Backspace/Delete로 지우면 빈 블록으로 남기지 않고 해당 열(2열이면 행 전체)을 지운다.
+ * 열 안의 이미지에서 Enter를 누르면 열 대신 이미지행 아래에 문단을 만든다.
  */
 export const keepImageRowSingleImage = (editor: PostWriteBlockNoteEditor): (() => void) => {
 	const root = editor.domElement;
@@ -11,7 +12,7 @@ export const keepImageRowSingleImage = (editor: PostWriteBlockNoteEditor): (() =
 
 	const onKeyDown = (event: KeyboardEvent) => {
 		if (
-			(event.key !== 'Backspace' && event.key !== 'Delete') ||
+			(event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== 'Enter') ||
 			event.isComposing ||
 			event.altKey ||
 			event.ctrlKey ||
@@ -27,6 +28,15 @@ export const keepImageRowSingleImage = (editor: PostWriteBlockNoteEditor): (() =
 				(candidate) =>
 					candidate.type === 'columnList' && candidate.children.some((column) => column.id === parentBlock.id),
 			);
+			if (event.key === 'Enter') {
+				if (row === undefined) return;
+				event.preventDefault();
+				event.stopPropagation();
+				const paragraph = editor.insertBlocks([{ type: 'paragraph' }], row, 'after')[0];
+				editor.setTextCursorPosition(paragraph);
+				editor.focus();
+				return;
+			}
 			const columnIndex = row?.children.findIndex((column) => column.id === parentBlock.id) ?? -1;
 			const remainingColumns = row?.children.filter((column) => column.id !== parentBlock.id) ?? [];
 			const nextColumn =

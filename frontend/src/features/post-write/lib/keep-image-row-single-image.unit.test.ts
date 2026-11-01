@@ -26,14 +26,15 @@ const setup = (
 	document.body.append(host);
 	editor.mount(host);
 	const cleanup = keepImageRowSingleImage(editor);
-	const pressKey = (key: 'Backspace' | 'Delete') => {
+	const pressKey = (key: 'Backspace' | 'Delete' | 'Enter') => {
 		const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
 		editor.domElement?.dispatchEvent(event);
 		return event;
 	};
 	const pressBackspace = () => pressKey('Backspace');
 	const pressDelete = () => pressKey('Delete');
-	return { editor, cleanup, pressBackspace, pressDelete };
+	const pressEnter = () => pressKey('Enter');
+	return { editor, cleanup, pressBackspace, pressDelete, pressEnter };
 };
 
 const rowColumnChildIds = (editor: BlockNoteEditor<typeof POST_WRITE_SCHEMA.blockSchema>) =>
@@ -78,6 +79,17 @@ describe('keepImageRowSingleImage', () => {
 			cleanup();
 		},
 	);
+
+	it('열 이미지에서 Enter를 누르면 이미지행 아래에 문단을 만든다', () => {
+		const { editor, cleanup, pressEnter } = setup({ id: 'text', type: 'paragraph', content: '본문' });
+		editor.setTextCursorPosition('right');
+
+		expect(pressEnter().defaultPrevented).toBe(true);
+		expect(rowColumnChildIds(editor)).toEqual([['left'], ['right']]);
+		expect(editor.document.map((block) => block.type)).toEqual(['columnList', 'paragraph', 'paragraph']);
+		expect(editor.getTextCursorPosition().block.id).toBe(editor.document[1]?.id);
+		cleanup();
+	});
 
 	it('3열 이미지행에서 열 이미지를 삭제하면 빈 블록을 남기지 않고 해당 열만 삭제한다', () => {
 		const { editor, cleanup, pressBackspace, pressDelete } = setup({ id: 'text', type: 'paragraph', content: '본문' }, [
