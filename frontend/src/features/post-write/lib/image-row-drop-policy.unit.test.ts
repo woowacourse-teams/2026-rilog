@@ -77,6 +77,70 @@ describe('resolveImageRowDrop 블록 내부', () => {
 		expect(resolveImageRowDrop(110, 150, standalone('img1'), layout)).toBeNull();
 	});
 
+	it('왼쪽 정렬된 작은 이미지는 이미지 너비로 좌우를 판정하고 오른쪽 행 여백도 오른쪽 드롭을 받는다', () => {
+		const smallImage: DropLayout = {
+			editor: rect(0, 0, 800, 100),
+			blocks: [{ kind: 'image', id: 'small', rect: rect(0, 0, 800, 100), imageRect: rect(0, 0, 120, 100) }],
+		};
+		const source = standalone('moving');
+
+		expect(resolveImageRowDrop(20, 50, source, smallImage)?.direction).toBe('left');
+		expect(resolveImageRowDrop(100, 50, source, smallImage)?.direction).toBe('right');
+		expect(resolveImageRowDrop(120, 50, source, smallImage)?.direction).toBe('right');
+		expect(resolveImageRowDrop(500, 50, source, smallImage)?.direction).toBe('right');
+		expect(resolveImageRowDrop(60, 50, source, smallImage)?.direction).toBe('top');
+	});
+
+	it('가운데 정렬된 작은 이미지의 양쪽 행 여백은 각각 왼쪽과 오른쪽 드롭을 받는다', () => {
+		const centeredImage: DropLayout = {
+			editor: rect(0, 0, 800, 100),
+			blocks: [{ kind: 'image', id: 'centered', rect: rect(0, 0, 800, 100), imageRect: rect(340, 0, 460, 100) }],
+		};
+		const source = standalone('moving');
+
+		expect(resolveImageRowDrop(200, 50, source, centeredImage)?.direction).toBe('left');
+		expect(resolveImageRowDrop(600, 50, source, centeredImage)?.direction).toBe('right');
+		expect(resolveImageRowDrop(400, 50, source, centeredImage)?.direction).toBe('top');
+	});
+
+	it('오른쪽 정렬된 작은 이미지의 왼쪽 행 여백은 왼쪽 드롭을 받는다', () => {
+		const rightAlignedImage: DropLayout = {
+			editor: rect(0, 0, 800, 100),
+			blocks: [{ kind: 'image', id: 'right-aligned', rect: rect(0, 0, 800, 100), imageRect: rect(680, 0, 800, 100) }],
+		};
+		const source = standalone('moving');
+
+		expect(resolveImageRowDrop(200, 50, source, rightAlignedImage)?.direction).toBe('left');
+		expect(resolveImageRowDrop(690, 50, source, rightAlignedImage)?.direction).toBe('left');
+		expect(resolveImageRowDrop(740, 50, source, rightAlignedImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(780, 50, source, rightAlignedImage)?.direction).toBe('right');
+	});
+
+	it('축소된 열 이미지의 열 여백은 해당 방향, 이미지 안쪽은 이미지 너비의 좌우 25%로 판정한다', () => {
+		const rowWithSmallImages: DropLayout = {
+			editor: rect(0, 0, 400, 100),
+			blocks: [{
+				kind: 'row',
+				id: 'row',
+				rect: rect(0, 0, 400, 100),
+				columns: [
+					{ imageId: 'left', rect: rect(0, 0, 200, 100), imageRect: rect(0, 0, 80, 100) },
+					{ imageId: 'right', rect: rect(200, 0, 400, 100), imageRect: rect(320, 0, 400, 100) },
+				],
+			}],
+		};
+		const source = standalone('moving');
+
+		expect(resolveImageRowDrop(150, 50, source, rowWithSmallImages)).toMatchObject({ targetId: 'left', direction: 'right' });
+		expect(resolveImageRowDrop(250, 50, source, rowWithSmallImages)).toMatchObject({ targetId: 'right', direction: 'left' });
+		expect(resolveImageRowDrop(20, 50, source, rowWithSmallImages)?.direction).toBe('left');
+		expect(resolveImageRowDrop(60, 50, source, rowWithSmallImages)?.direction).toBe('right');
+		expect(resolveImageRowDrop(40, 50, source, rowWithSmallImages)?.direction).toBe('top');
+		expect(resolveImageRowDrop(340, 50, source, rowWithSmallImages)?.direction).toBe('left');
+		expect(resolveImageRowDrop(380, 50, source, rowWithSmallImages)?.direction).toBe('right');
+		expect(resolveImageRowDrop(360, 50, source, rowWithSmallImages)?.direction).toBe('top');
+	});
+
 	it('이미지행은 좌우를 내부 열 이미지 한 칸 너비 기준으로 위임한다', () => {
 		expect(resolveImageRowDrop(120, 250, standalone('img2'), layout)).toEqual({
 			targetId: 'a',

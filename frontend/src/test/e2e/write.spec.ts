@@ -254,22 +254,24 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await expect(guide).toHaveCSS('pointer-events', 'none');
 		const rightWhitespaceX = editorBounds.x + editorBounds.width - 1;
 		expect(rightWhitespaceX - (targetBounds.x + targetBounds.width)).toBeGreaterThan(48);
-		await page.evaluate(
-			({ x, y }) =>
-				document.body.dispatchEvent(
-					new DragEvent('dragover', {
-						bubbles: true,
-						cancelable: true,
-						clientX: x,
-						clientY: y,
-						dataTransfer: new DataTransfer(),
-					}),
-				),
-			{ x: rightWhitespaceX, y: targetY },
-		);
-		await expect(guide).toBeVisible();
-		const rightGuideBounds = await guide.boundingBox();
-		expect(rightGuideBounds?.x).toBeCloseTo(targetBounds.x + targetBounds.width + 16 - 2.5);
+		for (const dropX of [targetBounds.x + targetBounds.width - 1, rightWhitespaceX]) {
+			await page.evaluate(
+				({ x, y }) =>
+					document.body.dispatchEvent(
+						new DragEvent('dragover', {
+							bubbles: true,
+							cancelable: true,
+							clientX: x,
+							clientY: y,
+							dataTransfer: new DataTransfer(),
+						}),
+					),
+				{ x: dropX, y: targetY },
+			);
+			await expect(guide).toBeVisible();
+			const rightGuideBounds = await guide.boundingBox();
+			expect(rightGuideBounds?.x).toBeCloseTo(targetBounds.x + targetBounds.width + 16 - 2.5);
+		}
 		await page.keyboard.press('Escape');
 		await expect(guide).toBeHidden();
 		await images.first().dragTo(page.locator('body'), { targetPosition: { x: outsideX, y: targetY } });

@@ -35,7 +35,13 @@ export interface DropLayoutColumn {
 
 /** 최상위 블록 하나. 중첩 블록은 레이아웃에 넣지 않는다. */
 export type DropLayoutBlock =
-	| { kind: 'image'; id: string; rect: DropRect }
+	| {
+			kind: 'image';
+			id: string;
+			rect: DropRect;
+			/** 실제 이미지 영역. 없으면 rect 사용 */
+			imageRect?: DropRect;
+	  }
 	| { kind: 'row'; id: string; rect: DropRect; columns: DropLayoutColumn[] }
 	| { kind: 'other'; id: string; rect: DropRect };
 
@@ -173,7 +179,11 @@ export const resolveImageRowDrop = (
 	// 열 이미지는 부모 이미지행의 한 칸 너비를 기준으로 좌우를 판정한다.
 	let column: DropLayoutColumn | null = null;
 	let zone: DropRect = block.rect;
-	if (block.kind === 'row') {
+	if (block.kind === 'image') {
+		zone = block.imageRect ?? block.rect;
+		if (x < zone.left) return resolveHorizontal(source, block, 'left', null);
+		if (x > zone.right) return resolveHorizontal(source, block, 'right', null);
+	} else if (block.kind === 'row') {
 		const hit = block.columns.find((candidate) => isInside(candidate.rect, x, y));
 		// TODO(미정): 열 사이 간격에서는 가장 가까운 열을 대상으로 삼는다.
 		column =

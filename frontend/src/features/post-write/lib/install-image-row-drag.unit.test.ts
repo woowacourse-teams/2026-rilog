@@ -113,6 +113,34 @@ describe('installImageRowDrag', () => {
 			expect(layoutOf(editor)).toEqual(['one', 'text', 'two', 'three']);
 		}));
 
+	it('작은 이미지의 오른쪽 끝과 행 여백에 놓으면 이미지 오른쪽 가이드를 표시한다', () =>
+		setup(({ image, block, verticalGuide }) => {
+			vi.spyOn(image('two'), 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 200, 120, 100));
+			image('one').dispatchEvent(dragEvent('dragstart'));
+
+			for (const x of [205, 300]) {
+				const over = dragEvent('dragover', x, 250);
+				block('two').dispatchEvent(over);
+				expect(over.defaultPrevented).toBe(true);
+				expect(verticalGuide?.hidden).toBe(false);
+				expect(verticalGuide?.style.left).toBe('236px');
+			}
+		}));
+
+	it('오른쪽 정렬된 작은 이미지의 왼쪽 여백에 놓으면 이미지 왼쪽 가이드를 표시한다', () =>
+		setup(({ image, block, verticalGuide }) => {
+			vi.spyOn(image('two'), 'getBoundingClientRect').mockReturnValue(new DOMRect(280, 200, 120, 100));
+			image('one').dispatchEvent(dragEvent('dragstart'));
+
+			for (const x of [120, 295]) {
+				const over = dragEvent('dragover', x, 250);
+				block('two').dispatchEvent(over);
+				expect(over.defaultPrevented).toBe(true);
+				expect(verticalGuide?.hidden).toBe(false);
+				expect(verticalGuide?.style.left).toBe('264px');
+			}
+		}));
+
 	it('이미지를 일반 블록 아래쪽에 놓으면 가로 가이드를 표시하고 순서를 바꾼다', () =>
 		setup(({ editor, image, block, verticalGuide, horizontalGuide }) => {
 			image('one').dispatchEvent(dragEvent('dragstart'));

@@ -48,7 +48,14 @@ const readDropLayout = (editor: PostWriteBlockNoteEditor, root: HTMLElement): Dr
 					: { kind: 'other', id: block.id, rect },
 			);
 		} else if (isPlainImage(block)) {
-			blocks.push({ kind: 'image', id: block.id, rect });
+			const image = element.querySelector<HTMLImageElement>('.bn-block-content[data-content-type="image"] img');
+			const imageRect = image ? toRect(image) : rect;
+			blocks.push({
+				kind: 'image',
+				id: block.id,
+				rect,
+				imageRect: imageRect.right > imageRect.left && imageRect.bottom > imageRect.top ? imageRect : rect,
+			});
 		} else {
 			blocks.push({ kind: 'other', id: block.id, rect });
 		}
@@ -61,7 +68,7 @@ type GuideShape =
 	| { orientation: 'horizontal'; left: number; y: number; width: number };
 
 /** 판정 결과에 맞는 가이드선: 좌우는 삽입 경계의 세로선, 상하는 대상 블록(이미지행이면 행 전체)의 가로선. */
-const getGuideShape = (drop: DropPosition, layout: DropLayout, root: HTMLElement): GuideShape | null => {
+const getGuideShape = (drop: DropPosition, layout: DropLayout): GuideShape | null => {
 	if (drop.direction === 'top' || drop.direction === 'bottom') {
 		const block = layout.blocks.find((candidate) => candidate.id === drop.targetId);
 		if (block === undefined) return null;
@@ -90,10 +97,7 @@ const getGuideShape = (drop: DropPosition, layout: DropLayout, root: HTMLElement
 
 	const block = layout.blocks.find((candidate) => candidate.id === drop.targetId);
 	if (block === undefined) return null;
-	const image = [...root.querySelectorAll<HTMLElement>(BLOCK_SELECTOR)]
-		.find((element) => element.dataset.id === block.id)
-		?.querySelector('img');
-	const rect = image && image.getBoundingClientRect().width > 0 ? toRect(image) : block.rect;
+	const rect = block.kind === 'image' ? (block.imageRect ?? block.rect) : block.rect;
 	return {
 		orientation: 'vertical',
 		x: drop.direction === 'left' ? rect.left - GUIDE_GAP : rect.right + GUIDE_GAP,
@@ -155,7 +159,7 @@ export const installImageRowDrag = (editor: PostWriteBlockNoteEditor): (() => vo
 		clearGuide();
 		const resolved = resolveDrop(clientX, clientY);
 		if (resolved === null) return null;
-		const shape = getGuideShape(resolved.drop, resolved.layout, root);
+		const shape = getGuideShape(resolved.drop, resolved.layout);
 		if (shape === null) return null;
 		if (shape.orientation === 'vertical') {
 			verticalGuide.style.left = `${shape.x}px`;
