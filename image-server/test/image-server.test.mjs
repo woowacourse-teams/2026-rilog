@@ -73,6 +73,57 @@ test('download rejects redirects, oversized chunked bodies and compressed respon
   assert.deepEqual(await downloadImage(url, { request: requestWith(200, [Buffer.from('ok')]) }), Buffer.from('ok'));
 });
 
+const GITHUB_ATTACHMENT = 'https://github.com/user-attachments/assets/a5597338-3ae1-4e06-b90f-2794a0b1ffb0';
+const GITHUB_ASSET = 'https://github-production-user-asset-6210df.s3.amazonaws.com/1/a.png?X-Amz-Expires=300';
+
+function requestSequence(responses) {
+  const calls = [];
+  const request = (url, options, callback) => {
+    assert.equal(options.agent, false);
+    assert.equal(typeof options.lookup, 'function');
+    calls.push({ href: url.href, signal: options.signal });
+    const [statusCode, chunks, headers = {}] = responses[calls.length - 1];
+    const req = new EventEmitter();
+    queueMicrotask(() => {
+      const response = Readable.from(chunks);
+      response.statusCode = statusCode;
+      response.headers = headers;
+      callback(response);
+    });
+    return req;
+  };
+  return { request, calls };
+}
+
+test('download follows a GitHub attachment redirect to the asset host under one timeout', async () => {
+  const { request, calls } = requestSequence([[302, [], { location: GITHUB_ASSET }], [200, [Buffer.from('ok')]]]);
+  assert.deepEqual(await downloadImage(validateUrl(GITHUB_ATTACHMENT), { request }), Buffer.from('ok'));
+  assert.deepEqual(calls.map(({ href }) => href), [GITHUB_ATTACHMENT, GITHUB_ASSET]);
+  assert.equal(calls[0].signal, calls[1].signal);
+});
+
+test('download rejects redirects outside the GitHub attachment policy without a second request', async () => {
+  const cases = [
+    ['https://example.com/a', GITHUB_ASSET],
+    ['https://github.com/owner/repo/raw/main/a.png', GITHUB_ASSET],
+    [GITHUB_ATTACHMENT, 'https://example.com/a.png'],
+    [GITHUB_ATTACHMENT, 'http://github-production-user-asset-6210df.s3.amazonaws.com/a.png'],
+    [GITHUB_ATTACHMENT, 'https://169.254.169.254/latest/meta-data'],
+    [GITHUB_ATTACHMENT, undefined],
+  ];
+  for (const [source, location] of cases) {
+    const { request, calls } = requestSequence([[302, [], { location }]]);
+    await assert.rejects(downloadImage(validateUrl(source), { request }), { code: 'SOURCE_REJECTED' });
+    assert.equal(calls.length, 1);
+  }
+});
+
+test('download does not follow a second redirect from the GitHub asset host', async () => {
+  const { request, calls } = requestSequence([[302, [], { location: GITHUB_ASSET }], [302, [], { location: GITHUB_ASSET }]]);
+  await assert.rejects(downloadImage(validateUrl(GITHUB_ATTACHMENT), { request }), { code: 'SOURCE_REJECTED' });
+  assert.equal(calls.length, 2);
+});
+
 test('image parser rejects HTML/SVG, corruption, animation and oversized dimensions', async () => {
   for (const bytes of [Buffer.from('<html/>'), Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'), Buffer.from([0xff, 0xd8, 0xff])]) {
     await assert.rejects(normalizeImage(bytes), { code: 'INVALID_IMAGE' });

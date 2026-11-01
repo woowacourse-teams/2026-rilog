@@ -19,7 +19,7 @@ public enum ImageImportErrorInformation implements ErrorInformation {
     INVALID_IMAGE(HttpStatus.UNPROCESSABLE_CONTENT, "정적 JPEG, PNG, WebP 이미지만 지원합니다."),
     UNSUPPORTED_ENCODING(HttpStatus.UNPROCESSABLE_CONTENT, "압축된 HTTP 응답은 지원하지 않습니다."),
     BUSY(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해주세요."),
-    SOURCE_REJECTED(HttpStatus.BAD_GATEWAY, "외부 이미지를 가져올 수 없습니다. 리다이렉트는 지원하지 않습니다."),
+    SOURCE_REJECTED(HttpStatus.BAD_GATEWAY, "외부 이미지를 가져올 수 없습니다. 허용되지 않은 리다이렉트이거나 원본 응답 오류입니다."),
     SOURCE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "외부 이미지 서버에 연결할 수 없습니다."),
     SOURCE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "이미지 다운로드 시간이 초과되었습니다."),
     IMAGE_IMPORT_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "이미지를 가져올 수 없습니다. 잠시 후 다시 시도해주세요."),
