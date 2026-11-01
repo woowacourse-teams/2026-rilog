@@ -42,13 +42,15 @@ const other = (blockId: string): DragSource => ({ kind: 'other', blockId });
 const multi = (...blockIds: string[]): DragSource => ({ kind: 'multi', blockIds });
 
 describe('resolveImageRowDrop 블록 내부', () => {
-	it('위에서 60%는 위, 나머지 40%는 아래로 판정한다', () => {
-		expect(resolveImageRowDrop(250, 359, other('zz'), layout)).toEqual({
+	it('위쪽 40%와 아래쪽 20%만 상하 드롭을 받고 가운데 40%에는 가이드가 없다', () => {
+		expect(resolveImageRowDrop(250, 339, other('zz'), layout)).toEqual({
 			targetId: 'p2',
 			direction: 'top',
 			insertIndex: 3,
 		});
-		expect(resolveImageRowDrop(250, 360, other('zz'), layout)).toEqual({
+		expect(resolveImageRowDrop(250, 340, other('zz'), layout)).toBeNull();
+		expect(resolveImageRowDrop(250, 379, other('zz'), layout)).toBeNull();
+		expect(resolveImageRowDrop(250, 380, other('zz'), layout)).toEqual({
 			targetId: 'p2',
 			direction: 'bottom',
 			insertIndex: 4,
@@ -88,7 +90,9 @@ describe('resolveImageRowDrop 블록 내부', () => {
 		expect(resolveImageRowDrop(100, 50, source, smallImage)?.direction).toBe('right');
 		expect(resolveImageRowDrop(120, 50, source, smallImage)?.direction).toBe('right');
 		expect(resolveImageRowDrop(500, 50, source, smallImage)?.direction).toBe('right');
-		expect(resolveImageRowDrop(60, 50, source, smallImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(60, 20, source, smallImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(60, 50, source, smallImage)).toBeNull();
+		expect(resolveImageRowDrop(60, 80, source, smallImage)?.direction).toBe('bottom');
 	});
 
 	it('가운데 정렬된 작은 이미지의 양쪽 행 여백은 각각 왼쪽과 오른쪽 드롭을 받는다', () => {
@@ -100,7 +104,8 @@ describe('resolveImageRowDrop 블록 내부', () => {
 
 		expect(resolveImageRowDrop(200, 50, source, centeredImage)?.direction).toBe('left');
 		expect(resolveImageRowDrop(600, 50, source, centeredImage)?.direction).toBe('right');
-		expect(resolveImageRowDrop(400, 50, source, centeredImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(400, 20, source, centeredImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(400, 50, source, centeredImage)).toBeNull();
 	});
 
 	it('오른쪽 정렬된 작은 이미지의 왼쪽 행 여백은 왼쪽 드롭을 받는다', () => {
@@ -112,7 +117,8 @@ describe('resolveImageRowDrop 블록 내부', () => {
 
 		expect(resolveImageRowDrop(200, 50, source, rightAlignedImage)?.direction).toBe('left');
 		expect(resolveImageRowDrop(690, 50, source, rightAlignedImage)?.direction).toBe('left');
-		expect(resolveImageRowDrop(740, 50, source, rightAlignedImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(740, 20, source, rightAlignedImage)?.direction).toBe('top');
+		expect(resolveImageRowDrop(740, 50, source, rightAlignedImage)).toBeNull();
 		expect(resolveImageRowDrop(780, 50, source, rightAlignedImage)?.direction).toBe('right');
 	});
 
@@ -143,10 +149,11 @@ describe('resolveImageRowDrop 블록 내부', () => {
 		});
 		expect(resolveImageRowDrop(20, 50, source, rowWithSmallImages)?.direction).toBe('left');
 		expect(resolveImageRowDrop(60, 50, source, rowWithSmallImages)?.direction).toBe('right');
-		expect(resolveImageRowDrop(40, 50, source, rowWithSmallImages)?.direction).toBe('top');
+		expect(resolveImageRowDrop(40, 20, source, rowWithSmallImages)?.direction).toBe('top');
+		expect(resolveImageRowDrop(40, 50, source, rowWithSmallImages)).toBeNull();
 		expect(resolveImageRowDrop(340, 50, source, rowWithSmallImages)?.direction).toBe('left');
 		expect(resolveImageRowDrop(380, 50, source, rowWithSmallImages)?.direction).toBe('right');
-		expect(resolveImageRowDrop(360, 50, source, rowWithSmallImages)?.direction).toBe('top');
+		expect(resolveImageRowDrop(360, 50, source, rowWithSmallImages)).toBeNull();
 	});
 
 	it('이미지행은 좌우를 내부 열 이미지 한 칸 너비 기준으로 위임한다', () => {
@@ -161,17 +168,18 @@ describe('resolveImageRowDrop 블록 내부', () => {
 			direction: 'left',
 			insertIndex: 1,
 		});
-		// 열 너비의 25% 바로 바깥은 상하 판정이다.
-		expect(resolveImageRowDrop(100 + 38, 250, standalone('img2'), layout)?.direction).toBe('top');
+		// 열 너비의 25% 바로 바깥은 상하 판정 대상이며, 높이 가운데는 드롭하지 않는다.
+		expect(resolveImageRowDrop(100 + 38, 220, standalone('img2'), layout)?.direction).toBe('top');
+		expect(resolveImageRowDrop(100 + 38, 250, standalone('img2'), layout)).toBeNull();
 	});
 
 	it('열 이미지 위의 상하 판정은 부모 이미지행 전체 기준으로 위임한다', () => {
-		expect(resolveImageRowDrop(175, 259, other('p1'), layout)).toEqual({
+		expect(resolveImageRowDrop(175, 239, other('p1'), layout)).toEqual({
 			targetId: 'row2',
 			direction: 'top',
 			insertIndex: 2,
 		});
-		expect(resolveImageRowDrop(325, 260, other('p1'), layout)).toEqual({
+		expect(resolveImageRowDrop(325, 280, other('p1'), layout)).toEqual({
 			targetId: 'row2',
 			direction: 'bottom',
 			insertIndex: 3,

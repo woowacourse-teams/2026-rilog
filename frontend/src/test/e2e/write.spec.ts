@@ -180,10 +180,15 @@ test.describe('글 작성 브라우저 흐름', () => {
 			.locator('.post-write-blocknote .bn-block[data-id]:has([data-content-type="image"])')
 			.nth(1);
 		const targetBounds = await targetBlock.boundingBox();
+		const targetImageBounds = await images.nth(1).boundingBox();
 		expect(targetBounds).not.toBeNull();
-		if (!targetBounds) return;
+		expect(targetImageBounds).not.toBeNull();
+		if (!targetBounds || !targetImageBounds) return;
 		await images.first().dragTo(targetBlock, {
-			targetPosition: { x: targetBounds.width / 2, y: targetBounds.height * 0.75 },
+			targetPosition: {
+				x: targetImageBounds.x - targetBounds.x + targetImageBounds.width / 2,
+				y: targetBounds.height * 0.9,
+			},
 		});
 		await expect(page.locator('.post-write-blocknote .bn-block-column-list')).toHaveCount(0);
 		await expect(images.first()).toHaveAttribute('alt', 'second.png');
@@ -249,7 +254,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 		expect(guideBounds?.height).toBeCloseTo(targetBounds.height);
 		await expect
 			.poll(() => guide.evaluate((element) => getComputedStyle(element).backgroundColor))
-			.toBe('rgb(221, 238, 255)');
+			.toBe('rgb(37, 99, 235)');
 		await expect.poll(() => guide.evaluate((element) => getComputedStyle(element).width)).toBe('5px');
 		await expect(guide).toHaveCSS('pointer-events', 'none');
 		const rightWhitespaceX = editorBounds.x + editorBounds.width - 1;
@@ -332,12 +337,18 @@ test.describe('글 작성 브라우저 흐름', () => {
 						dataTransfer: new DataTransfer(),
 					}),
 				),
-			{ x: paragraphBounds.x + paragraphBounds.width / 2, y: paragraphBounds.y + paragraphBounds.height / 2 },
+			{ x: paragraphBounds.x + paragraphBounds.width / 2, y: paragraphBounds.y + paragraphBounds.height * 0.2 },
 		);
 		await expect(page.locator('.post-write-image-row-detach-guide')).toBeVisible();
 		await page.keyboard.press('Escape');
 		await paragraph.click();
-		await row.locator('img').first().dragTo(paragraph, { steps: 10 });
+		await row
+			.locator('img')
+			.first()
+			.dragTo(paragraph, {
+				targetPosition: { x: paragraphBounds.width / 2, y: paragraphBounds.height * 0.2 },
+				steps: 10,
+			});
 		await expect(row).toHaveCount(0);
 		await expect(images).toHaveCount(2);
 		await expect(images.first()).toHaveAttribute('alt', 'first.png');

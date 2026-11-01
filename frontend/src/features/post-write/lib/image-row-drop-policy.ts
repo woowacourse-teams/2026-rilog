@@ -6,8 +6,10 @@
 export const MAX_IMAGE_ROW_COLUMNS = 3;
 /** 좌우 판정 영역: 대상 요소 너비의 좌/우 25%. */
 export const SIDE_ZONE_RATIO = 0.25;
-/** 위 판정 영역: 대상 요소 높이의 위쪽 60%. */
-export const TOP_ZONE_RATIO = 0.6;
+/** 위 판정 영역: 대상 요소 높이의 위쪽 40%. */
+export const TOP_ZONE_RATIO = 0.4;
+/** 아래 판정 영역: 대상 요소 높이의 아래쪽 20%. */
+export const BOTTOM_ZONE_RATIO = 0.2;
 /** 에디터 바깥에서도 드롭을 인식하는 범위(px). */
 export const EDITOR_OUTSIDE_RANGE = 100;
 
@@ -134,7 +136,7 @@ const getRatio = (start: number, size: number, value: number) => (size <= 0 ? 0 
 
 /**
  * 커서 위치에서 드롭 가능한 위치를 판정한다. null이면 가이드선을 표시하지 않고 드롭을 막는다.
- * 순서: 에디터 바깥 > 좌우(25%) > 상하(위 60% / 아래 40%). 좌우가 X여도 상하로 폴백하지 않는다.
+ * 순서: 에디터 바깥 > 좌우(25%) > 상하(위 40% / 아래 20%). 가운데 40%와 좌우 X는 드롭하지 않는다.
  */
 export const resolveImageRowDrop = (
 	x: number,
@@ -206,6 +208,8 @@ export const resolveImageRowDrop = (
 		if (x >= zone.right - width * SIDE_ZONE_RATIO) return resolveHorizontal(source, block, 'right', column);
 	}
 
-	const direction = getRatio(block.rect.top, block.rect.bottom - block.rect.top, y) < TOP_ZONE_RATIO ? 'top' : 'bottom';
-	return resolveVertical(source, layout, blockIndex, direction);
+	const verticalRatio = getRatio(block.rect.top, block.rect.bottom - block.rect.top, y);
+	if (verticalRatio < TOP_ZONE_RATIO) return resolveVertical(source, layout, blockIndex, 'top');
+	if (verticalRatio >= 1 - BOTTOM_ZONE_RATIO) return resolveVertical(source, layout, blockIndex, 'bottom');
+	return null;
 };
