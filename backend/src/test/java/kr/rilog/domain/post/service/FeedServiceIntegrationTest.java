@@ -1,6 +1,7 @@
 package kr.rilog.domain.post.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
@@ -27,8 +28,11 @@ import kr.rilog.support.fixure.PostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -531,6 +535,72 @@ class FeedServiceIntegrationTest extends ServiceSupport {
                 .containsExactly(dailyPost.getId());
     }
 
+    @ParameterizedTest
+    @EnumSource(BlogType.class)
+    @DisplayName("챕터 전용 조회는 오래된 글부터 페이지를 나누고 일반 피드는 챕터 필터가 있어도 최신순을 유지한다.")
+    void readChapterPostsOldestFirstAndBlogFeedNewestFirst(BlogType blogType) {
+        User author = saveCompletedUser(40L, "순서작성자", "chapter_order_author");
+        Blog rilog = saveRilog(author);
+        Blog blog = blogType == COLOG ? saveColog(author, "chapter_order_team") : rilog;
+        Chapter chapter = saveChapter(blog, "기록", 0);
+        Post latest = saveChapterPostAt(rilog, blog, author, chapter, BASE_PUBLISHED_AT.plusMinutes(1));
+        Post firstSameTime = saveChapterPostAt(rilog, blog, author, chapter, BASE_PUBLISHED_AT);
+        Post secondSameTime = saveChapterPostAt(rilog, blog, author, chapter, BASE_PUBLISHED_AT);
+
+        BlogFeedPostResponse firstPage = feedService.readChapterPosts(blog.getSlug(), null,
+                new BlogFeedSearchCommand(null, chapter.getId(), null, 0, 2));
+        BlogFeedPostResponse secondPage = feedService.readChapterPosts(blog.getSlug(), null,
+                new BlogFeedSearchCommand(null, chapter.getId(), null, 1, 2));
+        BlogFeedPostResponse chapterFilteredFeed = feedService.readBlogPosts(blog.getSlug(), null,
+                new BlogFeedSearchCommand(null, chapter.getId(), null, 0, 10));
+        BlogFeedPostResponse feed = feedService.readBlogPosts(blog.getSlug(), null, DEFAULT_SEARCH);
+
+        assertThat(firstPage.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(firstSameTime.getId(), secondSameTime.getId());
+        assertThat(firstPage.hasNext()).isTrue();
+        assertThat(secondPage.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(latest.getId());
+        assertThat(secondPage.hasNext()).isFalse();
+        assertThat(chapterFilteredFeed.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(latest.getId(), secondSameTime.getId(), firstSameTime.getId());
+        assertThat(feed.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(latest.getId(), secondSameTime.getId(), firstSameTime.getId());
+    }
+
+    @ParameterizedTest
+    @EnumSource(BlogType.class)
+    @DisplayName("챕터 전용 조회는 비공개 글의 작성자 권한과 블로그별 챕터 경계를 유지한다.")
+    void readChapterPostsPreservesVisibilityAndChapterOwnership(BlogType blogType) {
+        User author = saveCompletedUser(41L, "권한작성자", "access_author");
+        Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "access_team");
+        Blog blog = blogType == COLOG ? colog : rilog;
+        Blog otherBlog = blogType == COLOG ? rilog : colog;
+        Chapter chapter = saveChapter(blog, "기록", 0);
+        Chapter otherChapter = saveChapter(otherBlog, "다른 블로그", 0);
+        Post publicPost = saveChapterPostAt(rilog, blog, author, chapter, BASE_PUBLISHED_AT);
+        Post privatePost = savePost(blog.isColog()
+                ? PostFixture.privatePublishedCologPost(rilog, blog, author, chapter)
+                : PostFixture.privatePublishedRilogPost(rilog, author, chapter));
+        saveChapterPostAt(rilog, otherBlog, author, otherChapter, BASE_PUBLISHED_AT);
+        User otherUser = saveCompletedUser(42L, "다른조회자", "chapter_other_reader");
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, chapter.getId(), null, 0, 10);
+
+        BlogFeedPostResponse anonymous = feedService.readChapterPosts(blog.getSlug(), null, command);
+        BlogFeedPostResponse otherReader = feedService.readChapterPosts(blog.getSlug(), otherUser.getId(), command);
+        BlogFeedPostResponse owner = feedService.readChapterPosts(blog.getSlug(), author.getId(), command);
+        BlogFeedPostResponse foreignChapter = feedService.readChapterPosts(blog.getSlug(), author.getId(),
+                new BlogFeedSearchCommand(null, otherChapter.getId(), null, 0, 10));
+
+        assertThat(anonymous.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(publicPost.getId());
+        assertThat(otherReader.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(publicPost.getId());
+        assertThat(owner.posts()).extracting(BlogFeedPostResponse.PostItemResponse::postId)
+                .containsExactly(publicPost.getId(), privatePost.getId());
+        assertThat(foreignChapter.posts()).isEmpty();
+    }
+
     @Test
     @DisplayName("Rilog 피드의 챕터 필터는 해당 Rilog 챕터에 연결된 글만 반환한다.")
     void readRilogFeedFiltersChapter() {
@@ -744,6 +814,14 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
     private Post savePost(Post post) {
         return postFeedQueryRepository.saveAndFlush(post);
+    }
+
+    private Post saveChapterPostAt(Blog rilog, Blog blog, User author, Chapter chapter, LocalDateTime publishedAt) {
+        Post post = blog.isColog()
+                ? PostFixture.publicPublishedColog(rilog, blog, author, chapter)
+                : PostFixture.publicPublishedRilogPost(rilog, author, chapter);
+        ReflectionTestUtils.setField(post, "publishedAt", publishedAt);
+        return savePost(post);
     }
 
     private Chapter saveChapter(Blog blog, String name, int order) {

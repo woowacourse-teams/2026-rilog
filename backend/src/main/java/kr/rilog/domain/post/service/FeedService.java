@@ -17,6 +17,7 @@ import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,10 +53,27 @@ public class FeedService {
     }
 
     public BlogFeedPostResponse readBlogPosts(String slug, Long requesterId, BlogFeedSearchCommand command) {
+        return readPosts(slug, requesterId, command, Sort.Direction.DESC);
+    }
+
+    public BlogFeedPostResponse readChapterPosts(String slug, Long requesterId, BlogFeedSearchCommand command) {
+        return readPosts(slug, requesterId, command, Sort.Direction.ASC);
+    }
+
+    private BlogFeedPostResponse readPosts(
+            String slug,
+            Long requesterId,
+            BlogFeedSearchCommand command,
+            Sort.Direction direction
+    ) {
         Blog blog = getBlog(slug);
         validateFeedFilters(blog, command);
         Long targetCologId = getTargetCologId(command);
-        PageRequest pageable = PageRequest.of(command.page(), command.size());
+        PageRequest pageable = PageRequest.of(
+                command.page(),
+                command.size(),
+                Sort.by(direction, "publishedAt", "id")
+        );
 
         Slice<PostFullFeedRow> posts = blog.isColog()
                 ? readCologPosts(blog, requesterId, command, pageable)

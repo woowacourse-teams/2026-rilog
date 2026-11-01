@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -143,7 +144,7 @@ class FeedServiceTest {
     void readPublicBlogPostsRequestsPublishedPublicPostsOfRilog() {
         // given
         Blog rilog = createRilog();
-        PageRequest pageable = PageRequest.of(PAGE, SIZE);
+        PageRequest pageable = PageRequest.of(PAGE, SIZE, Sort.by(Sort.Direction.DESC, "publishedAt", "id"));
         List<PostFullFeedRow> rows = List.of(
                 createFeedRow(2L),
                 createCologFeedRow(1L)
@@ -199,7 +200,7 @@ class FeedServiceTest {
     void readPublicBlogPostsRequestsPublishedPublicPostsOfColog() {
         // given
         Blog colog = createColog();
-        PageRequest pageable = PageRequest.of(PAGE, SIZE);
+        PageRequest pageable = PageRequest.of(PAGE, SIZE, Sort.by(Sort.Direction.DESC, "publishedAt", "id"));
         List<PostFullFeedRow> rows = List.of(
                 createCologFeedRow(2L),
                 createCologFeedRow(1L)
