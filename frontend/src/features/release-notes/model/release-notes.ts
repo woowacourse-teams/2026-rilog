@@ -142,6 +142,34 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
 			},
 		],
 	},
+	{
+		id: '2026-11-02-images-mobile-comments',
+		title: 'Rilog. 패치노트 v6',
+		publishedAt: '2026-11-02',
+		items: [
+			{
+				title: '🖼️ 사진을 나란히 놓아보세요',
+				description:
+					'사진을 여러 장 한 번에 올리고, 원하는 사진 옆으로 드래그해 보세요. 한 줄에 최대 3장까지 나란히 놓을 수 있어요. 사진 사이 간격도 깔끔하게 정돈했어요.',
+			},
+			{
+				title: '📱 모바일에서도 문장에 바로 댓글을 남겨보세요',
+				description:
+					'이야기하고 싶은 문장을 꾹 누르고 선택 범위를 조절하면 댓글을 남길 수 있어요. 이동 중에 글을 읽다가 떠오른 생각도 그 문장에 바로 남겨보세요.',
+			},
+			{
+				title: '💬 글을 읽던 자리에서 전체 댓글을 확인하세요',
+				description:
+					'모바일에서는 오른쪽 아래 댓글 버튼을 눌러보세요. 글 맨 위로 돌아가지 않고도 전체 댓글을 볼 수 있어요. PC에서도 창을 좁히면 같은 버튼이 나타나요.',
+			},
+		],
+		links: [
+			{
+				label: '업데이트 자세히 보기 ↗',
+				href: 'https://www.rilog.kr/@official/posts/367',
+			},
+		],
+	},
 ];
 
 export function getLatestReleaseNote(notes: readonly ReleaseNote[]): ReleaseNote | undefined {
