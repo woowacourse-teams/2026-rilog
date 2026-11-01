@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { PostLightboxImage } from '../hooks/use-post-image-lightbox';
 
@@ -36,13 +36,30 @@ export default function PostImageLightbox({
 	const totalCount = images.length;
 	const hasPrev = displayedIndex > 0;
 	const hasNext = displayedIndex < totalCount - 1;
+	const prevButtonRef = useRef<HTMLButtonElement>(null);
+	const nextButtonRef = useRef<HTMLButtonElement>(null);
+	const changeIndex = useCallback(
+		(nextIndex: number) => {
+			if (onChangeIndex === undefined) {
+				return;
+			}
+
+			if (nextIndex === 0 && document.activeElement === prevButtonRef.current) {
+				nextButtonRef.current?.focus({ preventScroll: true });
+			} else if (nextIndex === totalCount - 1 && document.activeElement === nextButtonRef.current) {
+				prevButtonRef.current?.focus({ preventScroll: true });
+			}
+			onChangeIndex(nextIndex);
+		},
+		[onChangeIndex, totalCount],
+	);
 
 	const { imageStyle, stageGestureProps } = usePostImageLightboxGestures({
 		open,
 		displayedIndex,
 		totalCount,
 		onClose,
-		onChangeIndex,
+		onChangeIndex: onChangeIndex === undefined ? undefined : changeIndex,
 	});
 
 	useEffect(() => {
@@ -53,16 +70,16 @@ export default function PostImageLightbox({
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'ArrowLeft' && currentIndex > 0) {
 				event.preventDefault();
-				onChangeIndex(currentIndex - 1);
+				changeIndex(currentIndex - 1);
 			} else if (event.key === 'ArrowRight' && currentIndex < images.length - 1) {
 				event.preventDefault();
-				onChangeIndex(currentIndex + 1);
+				changeIndex(currentIndex + 1);
 			}
 		};
 
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [open, images.length, currentIndex, onChangeIndex]);
+	}, [open, images.length, currentIndex, onChangeIndex, changeIndex]);
 
 	return (
 		<BaseModal
@@ -78,44 +95,46 @@ export default function PostImageLightbox({
 				type="button"
 				aria-label="이미지 닫기"
 				onClick={onClose}
-				className="absolute top-4 right-4 z-10 inline-flex size-10 items-center justify-center rounded-full bg-black/50 text-white"
+				className="absolute top-4 right-4 z-10 inline-flex size-10 items-center justify-center rounded-full bg-modal-backdrop text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 			>
 				<XIcon aria-hidden="true" className="size-5" />
 			</button>
 			{totalCount > 0 && (
 				<p
 					aria-live="polite"
-					className="absolute top-9 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-1 text-body-3 text-white"
+					className="absolute top-9 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-modal-backdrop px-3 py-1 text-body-3 text-text-on-dark"
 				>
 					<span className="sr-only">전체 {totalCount}장 중 </span>
 					{displayedIndex + 1} / {totalCount}
 				</p>
 			)}
 			{totalCount > 1 && (
-				<div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3">
+				<div className="absolute bottom-[calc(2rem+env(safe-area-inset-bottom))] left-1/2 z-10 flex -translate-x-1/2 items-center gap-3">
 					<button
+						ref={prevButtonRef}
 						type="button"
 						aria-label="이전 이미지"
 						disabled={!hasPrev}
 						onClick={() => {
 							if (hasPrev) {
-								onChangeIndex?.(displayedIndex - 1);
+								changeIndex(displayedIndex - 1);
 							}
 						}}
-						className="inline-flex size-10 items-center justify-center rounded-full bg-black/50 text-white disabled:pointer-events-none disabled:opacity-40"
+						className="inline-flex size-10 items-center justify-center rounded-full bg-modal-backdrop text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:pointer-events-none disabled:opacity-40"
 					>
 						<ChevronIcon aria-hidden="true" className="size-5 rotate-90" />
 					</button>
 					<button
+						ref={nextButtonRef}
 						type="button"
 						aria-label="다음 이미지"
 						disabled={!hasNext}
 						onClick={() => {
 							if (hasNext) {
-								onChangeIndex?.(displayedIndex + 1);
+								changeIndex(displayedIndex + 1);
 							}
 						}}
-						className="inline-flex size-10 items-center justify-center rounded-full bg-black/50 text-white disabled:pointer-events-none disabled:opacity-40"
+						className="inline-flex size-10 items-center justify-center rounded-full bg-modal-backdrop text-text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:pointer-events-none disabled:opacity-40"
 					>
 						<ChevronIcon aria-hidden="true" className="size-5 -rotate-90" />
 					</button>

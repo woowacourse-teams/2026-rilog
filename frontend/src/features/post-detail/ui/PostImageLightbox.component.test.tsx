@@ -64,6 +64,23 @@ describe('PostImageLightbox', () => {
 		expect(screen.getByText('2 / 3')).toBeInTheDocument();
 	});
 
+	it('탐색 버튼이 비활성화되는 첫 이미지와 마지막 이미지에서도 포커스를 모달 안에 유지한다', async () => {
+		const user = userEvent.setup();
+		renderContent();
+		await user.click(screen.getByRole('img', { name: '첫 이미지', hidden: true }));
+
+		const prevButton = screen.getByRole('button', { name: '이전 이미지' });
+		const nextButton = screen.getByRole('button', { name: '다음 이미지' });
+		await user.click(nextButton);
+		await user.click(nextButton);
+		expect(screen.getByText('3 / 3')).toBeInTheDocument();
+		expect(prevButton).toHaveFocus();
+
+		await user.keyboard('{ArrowLeft}{ArrowLeft}');
+		expect(screen.getByText('1 / 3')).toBeInTheDocument();
+		expect(nextButton).toHaveFocus();
+	});
+
 	it('좌우 스와이프로 연속해서 이미지를 탐색한다', async () => {
 		renderContent();
 
