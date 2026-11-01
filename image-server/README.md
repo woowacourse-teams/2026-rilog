@@ -55,6 +55,7 @@ Spring은 실패 응답을 ERROR 로그로만 남기고 다시 시도하지 않�
 ## 처리·보안 정책
 
 - HTTPS 443만 허용, IP 직접 입력·사용자 정보 포함 URL·리다이렉트 차단.
+- 예외로 `github.com/user-attachments/assets/`에서 GitHub 자산 S3 호스트로 가는 리다이렉트 1회만 따라간다. 다음 요청에도 같은 URL·DNS 검증을 적용하고 다운로드 10초 제한을 공유한다.
 - DNS의 모든 응답을 검사하고 검증된 IP로 연결한다. 사설망, 루프백, link-local, IPv4-mapped IPv6 등을 거부한다.
 - 외부 요청에 사용자 쿠키/Authorization을 전달하지 않는다. 프록시 환경 변수도 사용하지 않는다.
 - 다운로드 10초/10MiB, 정적 JPEG·PNG·WebP 1,600만 픽셀, 변환 10초, S3 요청 15초 제한.
