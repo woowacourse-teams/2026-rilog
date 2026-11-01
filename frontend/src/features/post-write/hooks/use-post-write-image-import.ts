@@ -7,6 +7,7 @@ import type { Block } from '@blocknote/core';
 
 import { importImage } from '@/shared/api/uploads/api';
 
+import { appendImageSizeHash } from '../lib/append-image-size-hash';
 import {
 	attachImageImportLoading,
 	detachImageImportLoading,
@@ -94,7 +95,21 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 						sourceUrl: normalizedUrl,
 						imagePurpose: 'CONTENT',
 					});
-					const importedUrl = response.data.url;
+					let importedUrl = response.data.url;
+
+					const firstBlockId = blockIds.values().next().value;
+					if (firstBlockId) {
+						const imgElement = editor.domElement?.querySelector<HTMLImageElement>(
+							`[data-id="${firstBlockId}"] img.bn-visual-media, [data-id="${firstBlockId}"] img`,
+						);
+						if (imgElement && imgElement.naturalWidth > 0 && imgElement.naturalHeight > 0) {
+							importedUrl = await appendImageSizeHash(
+								{ width: imgElement.naturalWidth, height: imgElement.naturalHeight },
+								response.data.objectKey ?? importedUrl,
+							);
+						}
+					}
+
 					registerUploadedImageUrl(sourceUrl);
 					registerUploadedImageUrl(normalizedUrl);
 					registerUploadedImageUrl(importedUrl);

@@ -60,4 +60,10 @@ describe('appendImageSizeHash', () => {
 		);
 		expect(decode).not.toHaveBeenCalled();
 	});
+
+	it('HTMLImageElement 또는 크기 객체로 크기 해시를 추가한다', async () => {
+		expect(await appendImageSizeHash({ width: 800, height: 600 }, 'posts/cover.png')).toBe(
+			'https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/posts/cover.png#800x600',
+		);
+	});
 });

@@ -61,6 +61,48 @@ describe('usePostWriteImageImport', () => {
 		});
 	});
 
+	it('에디터 DOM 이미지 크기가 확인되면 S3 주소에 크기 해시를 포함하여 블록을 업데이트한다', async () => {
+		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://rilog-bucket.s3.ap-northeast-2.amazonaws.com');
+
+		const domElement = document.createElement('div');
+		const blockElement = document.createElement('div');
+		blockElement.setAttribute('data-id', 'block-with-size');
+		const imgElement = document.createElement('img');
+		Object.defineProperty(imgElement, 'naturalWidth', { value: 1200 });
+		Object.defineProperty(imgElement, 'naturalHeight', { value: 800 });
+		blockElement.appendChild(imgElement);
+		domElement.appendChild(blockElement);
+
+		blocksState['block-with-size'] = {
+			id: 'block-with-size',
+			type: 'image',
+			props: { url: 'https://external.test/with-size.png' },
+		};
+
+		const editorWithDom = {
+			...mockEditor,
+			domElement,
+		} as unknown as PostWriteBlockNoteEditor;
+
+		vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/original.webp',
+				url: 'https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/rilog/images/raw/test/original.webp',
+			},
+		});
+
+		const { result } = renderHook(() => usePostWriteImageImport());
+		await result.current.handleImageImport(editorWithDom, 'block-with-size', 'https://external.test/with-size.png');
+
+		expect(updateBlockMock).toHaveBeenCalledWith('block-with-size', {
+			props: {
+				url: 'https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/rilog/images/raw/test/original.webp#1200x800',
+			},
+		});
+	});
+
 	it('importImage API 실패 시 블록 url을 비우고 showUploadBlockError를 호출한다', async () => {
 		vi.useFakeTimers();
 		vi.spyOn(uploadsApi, 'importImage').mockRejectedValue(new Error('Network Error'));

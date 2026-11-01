@@ -1,6 +1,8 @@
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
-export const appendImageSizeHash = async (file: File, url: string): Promise<string> => {
+export type ImageSizeSource = File | HTMLImageElement | { width: number; height: number };
+
+export const appendImageSizeHash = async (source: ImageSizeSource, url: string): Promise<string> => {
 	const publicUrl = getImageUrl(url);
 	let parsedUrl: URL;
 	try {
@@ -10,9 +12,7 @@ export const appendImageSizeHash = async (file: File, url: string): Promise<stri
 	}
 	// 백엔드의 S3ObjectKeyResolver는 S3 HTTPS URL의 path만 객체 키로 사용한다.
 	if (
-		!file.type.startsWith('image/') ||
 		url.includes('#') ||
-		typeof createImageBitmap !== 'function' ||
 		parsedUrl.protocol !== 'https:' ||
 		!/^.+\.s3\.[^.]+\.amazonaws\.com$/.test(parsedUrl.hostname)
 	) {
@@ -20,9 +20,27 @@ export const appendImageSizeHash = async (file: File, url: string): Promise<stri
 	}
 
 	try {
-		const bitmap = await createImageBitmap(file);
-		const { width, height } = bitmap;
-		bitmap.close();
+		let width: number;
+		let height: number;
+
+		if (typeof HTMLImageElement !== 'undefined' && source instanceof HTMLImageElement) {
+			width = source.naturalWidth;
+			height = source.naturalHeight;
+		} else if (typeof File !== 'undefined' && source instanceof File) {
+			if (!source.type.startsWith('image/') || typeof createImageBitmap !== 'function') {
+				return url;
+			}
+			const bitmap = await createImageBitmap(source);
+			width = bitmap.width;
+			height = bitmap.height;
+			bitmap.close();
+		} else if ('width' in source && 'height' in source) {
+			width = source.width;
+			height = source.height;
+		} else {
+			return url;
+		}
+
 		if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) return url;
 		const urlWithImageSizeHash = `${publicUrl}#${width}x${height}`;
 		// 게시글 API의 thumbnailImageUrl 길이 제한을 넘기지 않는다.
