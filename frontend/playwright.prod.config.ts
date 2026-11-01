@@ -13,6 +13,9 @@ const baseConfig = createPlaywrightConfig({
 	serverCommand: 'pnpm start',
 });
 
+const projects = baseConfig.projects;
+if (!projects?.length) throw new Error('Production E2E projects are required.');
+
 const isrTest = '**/the-rilog-isr.prod.spec.ts';
 const statefulTests = ['**/post-detail-regressions.spec.ts', '**/post-views.spec.ts'];
 const config = {
@@ -20,17 +23,17 @@ const config = {
 	workers: 2,
 	testIgnore: [],
 	projects: [
-		...baseConfig.projects.map((project) => ({ ...project, testIgnore: [isrTest, ...statefulTests] })),
+		...projects.map((project) => ({ ...project, testIgnore: [isrTest, ...statefulTests] })),
 		{
 			name: 'chromium-server-state',
-			use: baseConfig.projects[0].use,
+			use: projects[0].use,
 			testMatch: statefulTests,
 			workers: 1,
-			dependencies: baseConfig.projects.map((project) => project.name),
+			dependencies: projects.map((project) => project.name),
 		},
 		{
 			name: 'chromium-isr',
-			use: baseConfig.projects[0].use,
+			use: projects[0].use,
 			testMatch: isrTest,
 			dependencies: ['chromium-server-state'],
 		},
