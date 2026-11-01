@@ -68,7 +68,8 @@ public class S3ObjectTagger {
                     .addKeyValue("bucket", properties.bucket())
                     .addKeyValue("key", uploadTarget.key())
                     .addKeyValue("tagStatus", uploadTarget.tagStatus())
-                    .addKeyValue("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+                    .addKeyValue("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt))
+                    .log();
             return true;
         } catch (SdkException exception) {
             if (skipMissing && isMissingObject(exception)) {
