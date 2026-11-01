@@ -68,6 +68,15 @@ test.beforeEach(async ({ page }) => {
 	await page.route('**/remote-image.png', (route) =>
 		route.fulfill({ contentType: 'image/png', body: Buffer.from(TEST_IMAGE_BYTES) }),
 	);
+	await page.route('**/v1/uploads/image-imports', (route) =>
+		respond(route, {
+			objectKey: 'rilog/images/raw/imported/sample.webp',
+			url: 'https://images.example.com/rilog/images/raw/imported/sample.webp',
+		}),
+	);
+	await page.route('**/sample.webp', (route) =>
+		route.fulfill({ contentType: 'image/webp', body: Buffer.from(TEST_IMAGE_BYTES) }),
+	);
 	await page.goto('/write');
 	await expect(page.getByRole('textbox', { name: '게시글 내용' })).toBeVisible();
 });
@@ -209,7 +218,7 @@ test('차단 후 일반 텍스트와 서식 및 원격 이미지를 붙여넣으
 	await expect(editor.locator('strong')).toHaveText('정상 서식');
 	await expect(editor.locator('[data-content-type="image"] img')).toHaveAttribute(
 		'src',
-		'https://cdn.rilog.test/remote-image.png',
+		'https://images.example.com/rilog/images/raw/imported/sample.webp',
 	);
 	await expect(editor.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toHaveText(
 		TRANSFER_ERROR,

@@ -104,6 +104,20 @@ describe('usePostWriteImageImport', () => {
 		expect(importSpy).toHaveBeenCalledTimes(1);
 	});
 
+	it('파일로 직접 업로드한 이미지는 외부 이미지 가져오기 API를 호출하지 않는다', async () => {
+		const importSpy = vi.spyOn(uploadsApi, 'importImage');
+		const { result } = renderHook(() => usePostWriteImageImport());
+
+		result.current.registerUploadedImageUrl('https://cdn.rilog.test/uploaded-file.png#100x100');
+
+		// 해시가 있는 URL로 import 요청 시 스킵
+		await result.current.handleImageImport(mockEditor, 'block-1', 'https://cdn.rilog.test/uploaded-file.png#100x100');
+		// 해시가 제거된 원본 URL로 import 요청 시에도 스킵
+		await result.current.handleImageImport(mockEditor, 'block-1', 'https://cdn.rilog.test/uploaded-file.png');
+
+		expect(importSpy).not.toHaveBeenCalled();
+	});
+
 	it('data: 또는 blob: 같은 임시 미디어 URL이나 빈 URL은 무시한다', async () => {
 		const importSpy = vi.spyOn(uploadsApi, 'importImage');
 		const { result } = renderHook(() => usePostWriteImageImport());

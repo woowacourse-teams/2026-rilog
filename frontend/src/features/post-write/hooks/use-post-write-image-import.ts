@@ -20,32 +20,48 @@ const isHttpUrl = (url: string): boolean => {
 	}
 };
 
+const stripUrlHash = (url: string): string => {
+	const hashIndex = url.indexOf('#');
+	return hashIndex === -1 ? url : url.slice(0, hashIndex);
+};
+
 export const usePostWriteImageImport = () => {
 	const inFlightUrlsRef = useRef<Set<string>>(new Set());
-	const importedUrlsRef = useRef<Set<string>>(new Set());
+	const uploadedImageUrlsRef = useRef<Set<string>>(new Set());
+
+	const registerUploadedImageUrl = useCallback((url: string) => {
+		const trimmedUrl = url.trim();
+		if (trimmedUrl === '') return;
+		uploadedImageUrlsRef.current.add(trimmedUrl);
+		uploadedImageUrlsRef.current.add(stripUrlHash(trimmedUrl));
+	}, []);
 
 	const handleImageImport = useCallback(
 		async (editor: PostWriteBlockNoteEditor, blockId: string, sourceUrl: string) => {
 			const trimmedUrl = sourceUrl.trim();
+			const baseUrl = stripUrlHash(trimmedUrl);
 			if (
 				trimmedUrl === '' ||
 				isTransientMediaUrl(trimmedUrl) ||
 				!isHttpUrl(trimmedUrl) ||
+				uploadedImageUrlsRef.current.has(trimmedUrl) ||
+				uploadedImageUrlsRef.current.has(baseUrl) ||
 				inFlightUrlsRef.current.has(trimmedUrl) ||
-				importedUrlsRef.current.has(trimmedUrl)
+				inFlightUrlsRef.current.has(baseUrl)
 			) {
 				return;
 			}
 
 			inFlightUrlsRef.current.add(trimmedUrl);
+			inFlightUrlsRef.current.add(baseUrl);
 			try {
 				const response = await importImage({
 					sourceUrl: trimmedUrl,
 					imagePurpose: 'CONTENT',
 				});
 				const importedUrl = response.data.url;
-				importedUrlsRef.current.add(trimmedUrl);
-				importedUrlsRef.current.add(importedUrl);
+				registerUploadedImageUrl(trimmedUrl);
+				registerUploadedImageUrl(importedUrl);
 
 				const currentBlock = editor.getBlock(blockId);
 				if (currentBlock !== undefined && currentBlock.type === 'image' && currentBlock.props.url === sourceUrl) {
@@ -59,10 +75,11 @@ export const usePostWriteImageImport = () => {
 				}
 			} finally {
 				inFlightUrlsRef.current.delete(trimmedUrl);
+				inFlightUrlsRef.current.delete(baseUrl);
 			}
 		},
-		[],
+		[registerUploadedImageUrl],
 	);
 
-	return { handleImageImport };
+	return { handleImageImport, registerUploadedImageUrl };
 };

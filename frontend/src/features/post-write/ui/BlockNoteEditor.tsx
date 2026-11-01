@@ -12,6 +12,7 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 
 import type { PostEditorProps } from '../model/post-editor';
+import type { Block } from '@blocknote/core';
 import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
@@ -174,8 +175,23 @@ export default function BlockNoteEditor({
 	ref,
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
-	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile);
-	const { handleImageImport } = usePostWriteImageImport();
+	const { handleImageImport, registerUploadedImageUrl } = usePostWriteImageImport();
+	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile, registerUploadedImageUrl);
+
+	useEffect(() => {
+		if (initialBlocks === undefined) return;
+		const registerBlocks = (blocks: Block[]) => {
+			for (const block of blocks) {
+				if (block.type === 'image' && typeof block.props.url === 'string' && block.props.url !== '') {
+					registerUploadedImageUrl(block.props.url);
+				}
+				if (block.children && block.children.length > 0) {
+					registerBlocks(block.children);
+				}
+			}
+		};
+		registerBlocks(initialBlocks);
+	}, [initialBlocks, registerUploadedImageUrl]);
 
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
