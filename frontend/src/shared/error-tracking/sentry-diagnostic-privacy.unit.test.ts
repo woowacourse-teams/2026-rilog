@@ -2,17 +2,35 @@ import { expect, it } from 'vitest';
 
 import { safeDiagnosticQuery, safeDiagnosticUrl, safePostHogReplayUrl } from './sentry-diagnostic-privacy';
 
-it('페이지 번호와 크기는 숫자 범위 안에서만 남기고 임의 키와 잘못된 값은 버린다', () => {
-	expect(safeDiagnosticQuery('page=2&size=12&custom=private&size=private&page=12345').toString()).toBe(
-		'page=2&size=12',
-	);
-	expect(safeDiagnosticQuery({ page: 'person@example.com', size: '12', filename: 'private.png' }).toString()).toBe(
-		'size=12',
-	);
+it('페이지네이션 숫자와 고정 enum 필터·정렬만 남기고 임의 키와 허용 범위 밖 값은 버린다', () => {
+	expect(
+		safeDiagnosticQuery(
+			'page=2&size=12&category=tech&blogType=colog&order=trending&filter=UNREAD&custom=private&size=private&page=12345',
+		).toString(),
+	).toBe('page=2&size=12&category=tech&blogType=colog&order=trending&filter=UNREAD');
+	expect(
+		safeDiagnosticQuery({
+			page: 'person@example.com',
+			size: '12',
+			category: 'RETROSPECT',
+			blogType: 'RILOG',
+			order: 'private-order',
+			filter: 'private-filter',
+			filename: 'private.png',
+		}).toString(),
+	).toBe('size=12&category=RETROSPECT&blogType=RILOG');
 });
 
 it.each([
 	['/@private-slug/posts/42?custom=private#private', '/blog/[slug]/posts/[postId]'],
+	[
+		'/feeds?blogType=personal&category=tech&order=trending&custom=private#private',
+		'/feeds?blogType=personal&category=tech&order=trending',
+	],
+	[
+		'https://api.rilog.kr/v1/feeds/posts?page=0&size=12&category=TECH&blogType=COLOG&custom=private',
+		'https://api.rilog.kr/v1/feeds/posts?page=0&size=12&category=TECH&blogType=COLOG',
+	],
 	[
 		'https://api.rilog.kr/v1/blogs/private-slug/posts/42?page=2#private',
 		'https://api.rilog.kr/v1/blogs/[slug]/posts/42?page=2',

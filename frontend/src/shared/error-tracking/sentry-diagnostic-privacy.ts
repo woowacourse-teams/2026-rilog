@@ -3,9 +3,16 @@ import { normalizeSentryRoute } from './sentry-route';
 const BASE = 'https://www.rilog.kr';
 const API_ORIGINS = new Set(['https://api.rilog.kr', 'https://api.rilog.test']);
 const APP_ORIGINS = new Set([BASE, 'https://rilog.kr']);
-const PAGE_KEYS = new Set(['page', 'size']);
+const SAFE_QUERY_RULES: Readonly<Record<string, RegExp>> = {
+	page: /^\d{1,4}$/,
+	size: /^\d{1,4}$/,
+	category: /^(?:tech|daily|retrospect)$/i,
+	blogType: /^(?:personal|rilog|colog)$/i,
+	order: /^(?:trending|latest)$/i,
+	filter: /^(?:all|unread)$/i,
+};
 
-/** Only bounded pagination numbers are known to be non-user-authored query values. */
+/** Only bounded pagination numbers and fixed non-user-authored enum filters are kept. */
 export function safeDiagnosticQuery(value: unknown): URLSearchParams {
 	const entries: unknown[] =
 		typeof value === 'string'
@@ -19,7 +26,9 @@ export function safeDiagnosticQuery(value: unknown): URLSearchParams {
 	for (const entry of entries) {
 		if (!Array.isArray(entry) || entry.length !== 2) continue;
 		const [key, item] = entry as unknown[];
-		if (typeof key !== 'string' || !PAGE_KEYS.has(key) || typeof item !== 'string' || !/^\d{1,4}$/.test(item)) continue;
+		if (typeof key !== 'string' || typeof item !== 'string') continue;
+		const rule = SAFE_QUERY_RULES[key];
+		if (!rule?.test(item)) continue;
 		result.set(key, item);
 	}
 	return result;

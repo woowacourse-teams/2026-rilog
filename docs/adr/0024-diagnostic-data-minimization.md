@@ -12,7 +12,7 @@
 
 SDK 오류·transaction·span과 Slack 요약·수신 parser가 공통 진단 정제 함수를 사용한다. 원본 Error, 예외 스택과 줄·열, release/debug ID, operation, 상태, UUID request ID는 유지한다. 이벤트를 별도 allowlist DTO로 재구성하지 않는다.
 
-- URL query는 `page`, `size`의 1~4자리 숫자만 허용한다. 검색어·필터의 문자열 값은 기본적으로 제거한다. 별도 query_string의 문자열/객체/tuple 형식에도 적용한다.
+- URL query는 `page`, `size`의 1~4자리 숫자와 고정 enum 필터·정렬(`category`: `tech`/`daily`/`retrospect`, `blogType`: `personal`/`rilog`/`colog`, `order`: `trending`/`latest`, `filter`: `all`/`unread`)만 허용한다. 자유 입력 검색어·임의 문자열 필터와 알 수 없는 key는 제거한다. 별도 query_string의 문자열/객체/tuple 형식에도 적용한다.
 - fragment와 URL 인증값은 전달하지 않는다. 자사 app URL은 기존 route template으로 정규화한다. API의 블로그·사용자 slug 및 파일명·이메일 형태의 path segment는 치환한다. 임의 외부 URL은 object key나 서명을 복사하지 않는다.
 - 소스맵에 필요한 자사 `/_next/static/` JS/CSS/map 경로와 스택의 source filename은 유지한다. 코드 위치의 개인정보까지 완전히 제거한다는 보장은 하지 않는다.
 - UI breadcrumb는 표준 element와 enum으로 검증한 type/role만 남긴다. DOM id/class, aria-label, title, value, 임의 data 속성과 원문 selector는 제거한다. 구형 클라이언트 요약을 받아도 수신 parser가 다시 정제한다.
@@ -36,4 +36,4 @@ SDK는 기존 client가 있으면 재초기화를 생략하므로 transport 테�
 
 ## 운영 확인 한계
 
-2026-10-29 연결 Chrome `순재` 프로필의 Rilog Sentry 접근은 조직 로그인 화면으로 이동했다. 설정 저장·자격증명 입력·새 인증 생성은 하지 않았다. 서버 scrubbing/보관 기간/계정 권한의 현재 값은 미확인이다. 남은 점검과 전환 절차는 `docs/qa/sentry-privacy-review.md`를 따른다. SDK가 제거한 IP 필드와 네트워크 전송에서 Sentry가 관찰하는 접속 IP는 별개다. #817은 운영 점검이 끝날 때까지 닫지 않는다.
+2026-10-29 연결 Chrome `순재` 프로필의 Rilog Sentry 접근은 조직 로그인 화면으로 이동해 설정 저장·자격증명 입력·새 인증 생성은 하지 않았다. 이후 2026-10-31 리뷰에서 Sentry 프로젝트의 `Prevent Storing of IP Addresses` 옵션이 비활성화 상태였음을 확인하고 활성화했다. 고급 scrubbing/보관 기간/계정 권한의 추가 점검과 전환 절차는 `docs/qa/sentry-privacy-review.md`를 따른다. SDK가 제거한 IP 필드와 네트워크 전송에서 Sentry가 관찰하는 접속 IP는 별개다. #817은 운영 점검이 끝날 때까지 닫지 않는다.

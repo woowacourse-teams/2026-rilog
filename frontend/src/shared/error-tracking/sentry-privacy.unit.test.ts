@@ -56,8 +56,9 @@ it('별도 query_string의 민감한 값을 URL과 같은 기준으로 가리고
 	const event = {
 		exception: { values: [{ type: 'Error', value: 'Request failed' }] },
 		request: {
-			url: 'https://api.rilog.test/v1/search?email=person%40example.com&page=2',
-			query_string: 'email=person%40example.com&nickname=private-nickname&content=private-content&page=2',
+			url: 'https://api.rilog.test/v1/feeds/posts?email=person%40example.com&category=TECH&blogType=COLOG&order=trending&page=2',
+			query_string:
+				'email=person%40example.com&nickname=private-nickname&content=private-content&category=TECH&blogType=COLOG&order=trending&page=2',
 		},
 	} as Parameters<typeof filterSentryEvent>[0];
 
@@ -68,8 +69,12 @@ it('별도 query_string의 민감한 값을 URL과 같은 기준으로 가리고
 	expect(query.has('email')).toBe(false);
 	expect(query.has('nickname')).toBe(false);
 	expect(query.has('content')).toBe(false);
+	expect(query.get('category')).toBe('TECH');
+	expect(query.get('blogType')).toBe('COLOG');
+	expect(query.get('order')).toBe('trending');
 	expect(query.get('page')).toBe('2');
 	expect(sent.request?.url).not.toContain('person%40example.com');
+	expect(sent.request?.url).toContain('category=TECH&blogType=COLOG&order=trending&page=2');
 	expect(JSON.stringify(sent)).not.toMatch(/person%40example\.com|private-nickname|private-content/);
 });
 

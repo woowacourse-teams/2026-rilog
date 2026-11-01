@@ -5,9 +5,10 @@
 ## 현재 확인한 사실
 
 - SDK 버전: @sentry/nextjs 10.75.1. sendDefaultPii=false와 전송 직전 정제를 사용한다.
-- 코드: 원본 스택·release·debug ID·operation·HTTP 상태·request ID 보존, query/UI/header 최소화, replay 링크 검증.
-- 2026-10-29 현재 연결 Chrome 프로필에서는 `https://sentry.io/auth/login/rilog-frontend/`의 이메일/비밀번호 로그인 화면이 표시됨. 조직/프로젝트 Security & Privacy, 보관 기간, 접근 권한 값은 이번에 재확인하지 못함.
-- 실제 Sentry/Slack 이벤트를 새로 전송하거나 기존 이벤트를 삭제하지 않음. 설정·token·계정 권한 변경 없음.
+- 코드: 원본 스택·release·debug ID·operation·HTTP 상태·request ID 보존, 페이지네이션 및 고정 enum 필터·정렬(`category`, `blogType`, `order`, `filter`) 외 query/UI/header 최소화, replay 링크 검증.
+- 2026-10-29 현재 연결 Chrome 프로필에서는 `https://sentry.io/auth/login/rilog-frontend/`의 이메일/비밀번호 로그인 화면이 표시됨.
+- 2026-10-31 리뷰 과정에서 Sentry 프로젝트(`rilog-frontend-nextjs`)의 **Security & Privacy → Prevent Storing of IP Addresses** 옵션이 꺼져 있던 것을 확인하여 활성화 완료함. 고급 scrubbing 세부 규칙, 보관 기간, 접근 권한 값은 운영 배포 후 실제 쌓이는 이벤트를 보며 추가 점검 예정.
+- 이 PR 자체에서는 실제 Sentry/Slack 이벤트를 새로 전송하거나 기존 이벤트를 삭제하지 않으며 token·계정 권한 변경 없음.
 
 ## 로그인 후 읽기 전용 확인
 

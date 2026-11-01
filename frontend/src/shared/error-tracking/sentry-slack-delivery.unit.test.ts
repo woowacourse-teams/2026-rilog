@@ -320,11 +320,11 @@ it.each([
 		};
 		expect(payload.text.startsWith(`${expectedBadge} HTTPError`)).toBe(true);
 		expect(payload.blocks[0]?.text?.text).toBe(`${expectedBadge} *HTTPError*`);
-		expect(payload.text).toContain(`https://rilog-fontend.sentry.io/issues/?query=${eventId}`);
+		expect(payload.text).toContain(`https://rilog-frontend.sentry.io/issues/?query=${eventId}`);
 		expect(
 			payload.blocks.some((block) =>
 				block.elements?.some((el) =>
-					el.text.includes(`<https://rilog-fontend.sentry.io/issues/?query=${eventId}|Sentry에서 이벤트 조회>`),
+					el.text.includes(`<https://rilog-frontend.sentry.io/issues/?query=${eventId}|Sentry에서 이벤트 조회>`),
 				),
 			),
 		).toBe(true);
