@@ -224,3 +224,30 @@ test('차단 후 일반 텍스트와 서식 및 원격 이미지를 붙여넣으
 		TRANSFER_ERROR,
 	);
 });
+
+test('빈 줄 없이 붙어 있는 마크다운 이미지들이 포함된 텍스트를 붙여넣으면 각각 독립된 이미지 블록으로 생성되어 재업로드된다', async ({
+	page,
+}) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	const unnormalizedMarkdown = [
+		'본문 첫 줄',
+		'![](https://external.test/img-1.png)',
+		'![](https://external.test/img-2.png)',
+		'중간 본문',
+		'![](https://external.test/img-2.png)',
+		'마지막 본문',
+	].join('\n');
+
+	await dispatchTransfer(editor, {
+		eventType: 'paste',
+		format: 'text/plain',
+		content: unnormalizedMarkdown,
+	});
+
+	await expect(editor.locator('[data-content-type="image"]')).toHaveCount(3);
+	await expect(editor).toContainText('본문 첫 줄');
+	await expect(editor).toContainText('중간 본문');
+	await expect(editor).toContainText('마지막 본문');
+});
