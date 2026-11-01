@@ -29,7 +29,7 @@ public interface FeedApiSpec {
     );
 
     @Operation(
-            description = "블로그 유형과 로그인 사용자에 맞는 게시글을 조회합니다. category와 chapterId를 선택적으로 적용할 수 있으며, Rilog에서는 targetCologSlug로 특정 Colog에 작성한 글을 조회할 수 있습니다. targetCologSlug와 chapterId는 함께 사용할 수 없습니다.",
+            description = "블로그 유형과 로그인 사용자에 맞는 게시글을 발행일과 ID 내림차순으로 조회합니다. category와 chapterId를 선택적으로 적용할 수 있으며, Rilog에서는 targetCologSlug로 특정 Colog에 작성한 글을 조회할 수 있습니다. targetCologSlug와 chapterId는 함께 사용할 수 없습니다.",
             summary = "블로그 게시글 목록 조회 API"
     )
     ApiResponse<BlogFeedPostResponse> getBlogPosts(
@@ -47,7 +47,7 @@ public interface FeedApiSpec {
     );
 
     @Operation(
-            description = "Rilog의 시리즈 또는 Colog의 챕터에 연결된 게시글 목록을 조회합니다.",
+            description = "Rilog의 시리즈 또는 Colog의 챕터에 연결된 게시글 목록을 발행일과 ID 오름차순으로 조회합니다. 일반 블로그 피드의 챕터 필터는 기존 내림차순을 유지합니다.",
             summary = "시리즈/챕터 게시글 목록 조회 API"
     )
     ApiResponse<BlogFeedPostResponse> getChapterPosts(

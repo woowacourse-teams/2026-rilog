@@ -241,7 +241,7 @@ class FeedControllerTest {
         // given
         FeedService feedService = mock(FeedService.class);
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, 21L, null, 0, 3);
-        when(feedService.readBlogPosts("writer", 7L, command))
+        when(feedService.readChapterPosts("writer", 7L, command))
                 .thenReturn(emptyBlogFeedResponse("RILOG"));
         MockMvc mockMvc = mockMvc(feedService);
 
@@ -252,7 +252,7 @@ class FeedControllerTest {
                         .param("size", "3"))
                 .andExpect(status().isOk());
 
-        verify(feedService).readBlogPosts("writer", 7L, command);
+        verify(feedService).readChapterPosts("writer", 7L, command);
     }
 
     @Test
