@@ -29,6 +29,7 @@ import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
+import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
 import '../styles/blocknote-theme.css';
 
@@ -205,11 +206,6 @@ export default function BlockNoteEditor({
 		() =>
 			editor.onChange((currentEditor, context) => {
 				for (const change of context.getChanges()) {
-					if (change.block.type === 'heading' && change.block.props.level > 4) {
-						currentEditor.updateBlock(change.block, { props: { level: 4 } });
-						continue;
-					}
-
 					if (
 						(change.block.type === 'image' ||
 							change.block.type === 'file' ||
@@ -217,11 +213,20 @@ export default function BlockNoteEditor({
 							change.block.type === 'audio') &&
 						isTransientMediaUrl(change.block.props.url)
 					) {
-						currentEditor.updateBlock(change.block, { props: { url: '' } });
+						updateMediaUrlWithoutHistory(currentEditor, change.block.id, '');
 						window.setTimeout(
 							() => showUploadBlockError(currentEditor, change.block.id, TRANSIENT_MEDIA_UPLOAD_ERROR),
 							0,
 						);
+						continue;
+					}
+
+					if (change.source.type === 'undo' || change.source.type === 'redo') {
+						continue;
+					}
+
+					if (change.block.type === 'heading' && change.block.props.level > 4) {
+						currentEditor.updateBlock(change.block, { props: { level: 4 } });
 						continue;
 					}
 

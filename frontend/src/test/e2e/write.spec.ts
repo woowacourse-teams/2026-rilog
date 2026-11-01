@@ -509,6 +509,47 @@ test.describe('글 작성 브라우저 흐름', () => {
 		await expect(page.locator('[data-content-type="file"]')).toContainText(['first.pdf', 'second.pdf']);
 	});
 
+	test('기존 이미지를 파일 패널에서 교체하면 undo로 이전 이미지 주소로 돌아간다', async ({ page }) => {
+		let uploadCount = 0;
+		await page.route('**/v1/uploads/presigned-url', (route) => {
+			uploadCount += 1;
+			return respond(route, {
+				uploadId: `e2e-upload-${uploadCount}`,
+				objectKey: `rilog/images/originals/e2e-image-${uploadCount}.png`,
+				uploadUrl: new URL('/e2e-upload', page.url()).href,
+				headers: {},
+				expiresAt: '2026-08-28T00:00:00Z',
+			});
+		});
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/이미지');
+		await page.keyboard.press('Enter');
+		await page.getByRole('tabpanel', { name: '업로드' }).locator('input[type="file"]').setInputFiles({
+			name: 'first.png',
+			mimeType: 'image/png',
+			buffer: TEST_IMAGE_BYTES,
+		});
+		const image = page.locator('[data-content-type="image"] img');
+		await expect(image).toHaveAttribute('src', /e2e-image-1\.png(?:#\d+x\d+)?$/);
+
+		await page.locator('[data-content-type="image"]').click();
+		await page.getByRole('button', { name: '이미지 교체' }).click();
+		await page
+			.getByRole('dialog')
+			.getByRole('tabpanel', { name: '업로드' })
+			.locator('input[type="file"]')
+			.setInputFiles({
+				name: 'second.png',
+				mimeType: 'image/png',
+				buffer: TEST_IMAGE_BYTES,
+			});
+		await expect(image).toHaveAttribute('src', /e2e-image-2\.png(?:#\d+x\d+)?$/);
+		await page.keyboard.press('ControlOrMeta+z');
+		await expect(image).toHaveAttribute('src', /e2e-image-1\.png(?:#\d+x\d+)?$/);
+	});
+
 	test('두 이미지를 선택하면 첫 업로드가 지연되어도 두 블록이 함께 업로드 중으로 바뀐다', async ({ page }) => {
 		let releaseUploads: () => void = () => undefined;
 		const uploadsBlocked = new Promise<void>((resolve) => {
@@ -647,6 +688,35 @@ test.describe('글 작성 브라우저 흐름', () => {
 		);
 		await expect(imageBlock.getByText('이미지 추가', { exact: true })).toBeVisible();
 		await expect(imageBlock.locator('img[src^="data:"]')).toHaveCount(0);
+	});
+
+	test('텍스트와 base64 이미지를 붙여넣고 undo와 redo를 반복해도 data 주소가 복원되지 않는다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.evaluate(() => {
+			const clipboard = new DataTransfer();
+			clipboard.setData('text/html', '<p>붙여넣은 문장</p><img src="data:image/png;base64,private-image">');
+			document
+				.querySelector('[aria-label="게시글 내용"]')
+				?.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }));
+		});
+
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await expect(editor).toContainText('붙여넣은 문장');
+		await expect(page.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toBeVisible();
+
+		for (let attempt = 0; attempt < 4; attempt++) {
+			await page.keyboard.press('ControlOrMeta+z');
+			await expect(page.locator('[data-content-type="image"] img[src^="data:"]')).toHaveCount(0);
+		}
+
+		await expect(editor).not.toContainText('붙여넣은 문장');
+		await expect(page.locator('[data-content-type="image"]')).toHaveCount(0);
+		for (let attempt = 0; attempt < 4; attempt++) {
+			await page.keyboard.press('ControlOrMeta+Shift+z');
+			await expect(page.locator('[data-content-type="image"] img[src^="data:"]')).toHaveCount(0);
+		}
+		await expect(editor).toContainText('붙여넣은 문장');
 	});
 });
 
