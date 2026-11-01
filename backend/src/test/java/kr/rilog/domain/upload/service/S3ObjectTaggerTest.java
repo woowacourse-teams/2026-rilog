@@ -42,8 +42,8 @@ class S3ObjectTaggerTest {
 
     @ParameterizedTest
     @EnumSource(TagStatus.class)
-    @DisplayName("태깅 성공은 DEBUG 레벨에서도 로그를 남기지 않는다.")
-    void successfulTaggingDoesNotLog(TagStatus tagStatus) {
+    @DisplayName("태깅 성공은 대상 정보와 소요 시간을 INFO로 기록한다.")
+    void logSuccessfulTagging(TagStatus tagStatus) {
         S3Client s3Client = mock(S3Client.class);
         S3ObjectTagger tagger = new S3ObjectTagger(s3Client, s3Properties());
         LogCapture capture = LogCapture.start();
@@ -54,7 +54,15 @@ class S3ObjectTaggerTest {
             tagger.tag(List.of(new S3TagTarget(OBJECT_KEY, tagStatus)));
 
             verify(s3Client).putObjectTagging(any(PutObjectTaggingRequest.class));
-            assertThat(capture.appender().list).isEmpty();
+            ILoggingEvent event = capture.onlyEvent();
+            assertThat(event.getLevel()).isEqualTo(Level.INFO);
+            assertThat(logFields(event))
+                    .containsEntry("event", "s3_object_tagging_success")
+                    .containsEntry("operation", "put_object_tagging")
+                    .containsEntry("bucket", BUCKET)
+                    .containsEntry("key", OBJECT_KEY)
+                    .containsEntry("tagStatus", tagStatus.name());
+            assertDuration(event);
         } finally {
             capture.stop();
         }
@@ -176,7 +184,7 @@ class S3ObjectTaggerTest {
                     .extracting(PutObjectTaggingRequest::key)
                     .containsExactly("images/2026/failed.png", "images/2026/next.png");
 
-            ILoggingEvent event = logCapture.onlyEvent();
+            ILoggingEvent event = logCapture.onlyFailureEvent();
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
             assertThat(event.getMDCPropertyMap()).containsEntry("requestId", "http-request-123");
             assertThat(logFields(event))
@@ -219,7 +227,8 @@ class S3ObjectTaggerTest {
 
             assertThat(tagged).containsExactly(targets.get(1));
             verify(s3Client, times(2)).putObjectTagging(any(PutObjectTaggingRequest.class));
-            assertThat(capture.appender().list).isEmpty();
+            assertThat(logFields(capture.onlyEvent())).containsEntry("event", "s3_object_tagging_success")
+                    .containsEntry("key", "images/compact/1200.webp");
         } finally {
             capture.stop();
         }
@@ -308,6 +317,14 @@ class S3ObjectTaggerTest {
         private ILoggingEvent onlyEvent() {
             assertThat(appender.list).hasSize(1);
             return appender.list.getFirst();
+        }
+
+        private ILoggingEvent onlyFailureEvent() {
+            List<ILoggingEvent> failures = appender.list.stream()
+                    .filter(event -> "s3_object_tagging_failed".equals(logFields(event).get("event")))
+                    .toList();
+            assertThat(failures).hasSize(1);
+            return failures.getFirst();
         }
 
         private void stop() {
