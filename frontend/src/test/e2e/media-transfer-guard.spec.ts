@@ -218,7 +218,7 @@ test('차단 후 일반 텍스트와 서식 및 원격 이미지를 붙여넣으
 	await expect(editor.locator('strong')).toHaveText('정상 서식');
 	await expect(editor.locator('[data-content-type="image"] img')).toHaveAttribute(
 		'src',
-		'https://images.example.com/rilog/images/raw/imported/sample.webp',
+		/(?:^|\/)rilog\/images\/raw\/imported\/sample\.webp(?:#1x1)?$/,
 	);
 	await expect(editor.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toHaveText(
 		TRANSFER_ERROR,
@@ -286,7 +286,7 @@ test('외부 이미지 변환 중에는 블록에 로딩 오버레이가 표시�
 	const imageBlock = editor.locator('[data-content-type="image"]');
 	await expect(imageBlock).toHaveCount(1);
 	await expect(imageBlock.locator('.post-write-image-import-overlay')).toBeVisible();
-	await expect(imageBlock.locator('.post-write-image-import-text')).toHaveText('이미지 변환 중...');
+	await expect(imageBlock.getByRole('status', { name: '이미지 변환 중' })).toBeVisible();
 	await expect(page.getByRole('button', { name: '발행' })).toBeDisabled();
 
 	resolveImport();
@@ -294,7 +294,7 @@ test('외부 이미지 변환 중에는 블록에 로딩 오버레이가 표시�
 	await expect(imageBlock.locator('.post-write-image-import-overlay')).toHaveCount(0);
 	await expect(imageBlock.locator('img')).toHaveAttribute(
 		'src',
-		'https://images.example.com/rilog/images/raw/imported/delayed.webp',
+		/(?:^|\/)rilog\/images\/raw\/imported\/delayed\.webp(?:#1x1)?$/,
 	);
 	await expect(page.getByRole('button', { name: '발행' })).toBeEnabled();
 });

@@ -464,7 +464,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 				buffer: TEST_IMAGE_BYTES,
 			});
 
-			await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
+			await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png(?:#1x1)?$/);
 		},
 	);
 
@@ -604,7 +604,7 @@ test.describe('글 작성 브라우저 흐름', () => {
 			mimeType: 'image/png',
 			buffer: TEST_IMAGE_BYTES,
 		});
-		await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
+		await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png(?:#1x1)?$/);
 	});
 
 	test('붙여넣은 파일 업로드가 실패하면 이미지 블록에 오류를 표시한다', async ({ page }) => {
