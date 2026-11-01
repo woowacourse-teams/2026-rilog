@@ -34,7 +34,12 @@ it('서명 검증부터 영속 중복 검사·Slack 포맷까지 연결하고 fe
 				environment: 'prod',
 				level: 'error',
 				transaction: '/write',
-				tags: [['PostHog-Recording-URL', 'https://us.posthog.com/project/123/replay/fixture-session?t=30']],
+				tags: [
+					[
+						'PostHog-Recording-URL',
+						'https://us.posthog.com/project/123/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
+					],
+				],
 				exception: { values: [{ type: 'HTTPError', value: 'POST https://api.rilog.kr/v1/posts?token=private-value' }] },
 				request: { headers: { Authorization: 'Bearer private-value' }, data: 'private-body' },
 				breadcrumbs: {
@@ -66,7 +71,7 @@ it('서명 검증부터 영속 중복 검사·Slack 포맷까지 연결하고 fe
 		expect(url).toBe('https://hooks.slack.com/services/fixture');
 		expect(init.body).toContain('https://rilog-frontend.sentry.io/issues/123/events/11111111111111111111111111111111/');
 		expect(init.body).toContain('category: fetch');
-		expect(init.body).toContain('https://us.posthog.com/project/123/replay/fixture-session?t=30');
+		expect(init.body).toContain('https://us.posthog.com/project/123/replay/01234567-89ab-cdef-0123-456789abcdef?t=30');
 		expect(init.body).not.toContain('private-value');
 		expect(init.body).not.toContain('private-body');
 		expect(
