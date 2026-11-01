@@ -22,6 +22,7 @@ import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,6 +72,8 @@ class PostImportServiceTest {
     @Mock private CommentAnchorSelectionRepository selectionRepository;
     @Mock private PostViewCountRepository viewCountRepository;
     @Mock private PostViewStore postViewStore;
+    @Mock private PostCountCache postCountCache;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     private PostService postService;
 
@@ -78,7 +81,8 @@ class PostImportServiceTest {
     void setUp() {
         postService = new PostService(
                 postRepository, blogRepository, blogMemberRepository, userRepository,
-                chapterRepository, tagAssetsPublisher, selectionRepository, viewCountRepository, postViewStore
+                chapterRepository, tagAssetsPublisher, selectionRepository, viewCountRepository, postViewStore,
+                postCountCache, eventPublisher
         );
     }
 
