@@ -26,13 +26,14 @@ export const getTransferInsertionPoint = (editor: PostWriteBlockNoteEditor, even
 	return { referenceId, placement };
 };
 
-const insertBlock = (
+export const insertUploadBlock = (
 	editor: PostWriteBlockNoteEditor,
 	type: UploadBlockType,
+	file: File,
 	referenceId: string,
 	placement: 'before' | 'after',
-	props: { name: string } | undefined,
 ): string => {
+	const props = { name: file.name };
 	switch (type) {
 		case 'image':
 			return editor.insertBlocks([{ type: 'image', props }], referenceId, placement)[0].id;
@@ -44,18 +45,3 @@ const insertBlock = (
 			return editor.insertBlocks([{ type: 'audio', props }], referenceId, placement)[0].id;
 	}
 };
-
-export const insertUploadBlock = (
-	editor: PostWriteBlockNoteEditor,
-	type: UploadBlockType,
-	file: File,
-	referenceId: string,
-	placement: 'before' | 'after',
-): string => insertBlock(editor, type, referenceId, placement, { name: file.name });
-
-export const insertEmptyUploadBlock = (
-	editor: PostWriteBlockNoteEditor,
-	type: UploadBlockType,
-	referenceId: string,
-	placement: 'before' | 'after',
-): string => insertBlock(editor, type, referenceId, placement, undefined);

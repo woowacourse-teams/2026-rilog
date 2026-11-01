@@ -7,11 +7,7 @@ import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 import { getUploadedUrl } from '../lib/get-uploaded-url';
 import { getTransferBlockType, getTransferInsertionPoint, insertUploadBlock } from '../lib/insert-upload-block';
 
-import { usePostWriteMediaTransferGuard } from './use-post-write-media-transfer-guard';
-
 export const usePostWriteTransferUpload = (editor: PostWriteBlockNoteEditor) => {
-	const guardTransfer = usePostWriteMediaTransferGuard(editor);
-
 	useEffect(() => {
 		const editorElement = editor.domElement;
 		if (editorElement === undefined) {
@@ -19,8 +15,6 @@ export const usePostWriteTransferUpload = (editor: PostWriteBlockNoteEditor) => 
 		}
 
 		const handleTransfer = (event: ClipboardEvent | DragEvent) => {
-			if (guardTransfer(event)) return;
-
 			const transfer = event instanceof ClipboardEvent ? event.clipboardData : event.dataTransfer;
 			if (transfer === null) return;
 			const files = Array.from(transfer.files);
@@ -65,5 +59,5 @@ export const usePostWriteTransferUpload = (editor: PostWriteBlockNoteEditor) => 
 			editorElement.removeEventListener('paste', handleTransfer, true);
 			editorElement.removeEventListener('drop', handleTransfer, true);
 		};
-	}, [editor, guardTransfer]);
+	}, [editor]);
 };
