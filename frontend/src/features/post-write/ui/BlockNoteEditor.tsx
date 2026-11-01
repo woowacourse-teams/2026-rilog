@@ -15,6 +15,7 @@ import type { PostEditorProps } from '../model/post-editor';
 import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
+import { usePostWriteImageImport } from '../hooks/use-post-write-image-import';
 import { usePostWriteTransferUpload } from '../hooks/use-post-write-transfer-upload';
 import { usePostWriteUpload } from '../hooks/use-post-write-upload';
 import {
@@ -174,6 +175,7 @@ export default function BlockNoteEditor({
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
 	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile);
+	const { handleImageImport } = usePostWriteImageImport();
 
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
@@ -225,6 +227,10 @@ export default function BlockNoteEditor({
 						continue;
 					}
 
+					if (change.block.type === 'image' && change.block.props.url !== '') {
+						void handleImageImport(currentEditor, change.block.id, change.block.props.url);
+					}
+
 					if (
 						change.source.type !== 'local' ||
 						!(
@@ -245,7 +251,7 @@ export default function BlockNoteEditor({
 					}
 				}
 			}),
-		[editor],
+		[editor, handleImageImport],
 	);
 
 	// 제목에서 Enter를 누르거나 검증에 실패했을 때 실제 에디터로 focus할 수 있도록 useImperativeHandle(리모콘 역할) 사용

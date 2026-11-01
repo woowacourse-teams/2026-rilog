@@ -7,6 +7,8 @@ import type { PostEditorHandle } from '../model/post-editor';
 import type { Block } from '@blocknote/core';
 import type { ReactNode } from 'react';
 
+import * as uploadsApi from '@/shared/api/uploads/api';
+
 import { RECENT_CODE_LANGUAGE_KEY } from '../lib/recent-code-language';
 
 import BlockNoteEditor from './BlockNoteEditor';
@@ -289,6 +291,47 @@ describe('BlockNoteEditor', () => {
 			expect(alerts[1]).toHaveTextContent(
 				'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.',
 			);
+		});
+	});
+
+	it('외부 이미지 주소를 가진 image 블록이 추가되면 image-imports API를 호출해 내부 주소로 교체한다', async () => {
+		const importSpy = vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/original.webp',
+				url: 'https://images.rilog.test/rilog/images/raw/test/original.webp',
+			},
+		});
+
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const remoteImage = {
+			id: 'external-image-1',
+			type: 'image',
+			props: { url: 'https://external.test/sample.png' },
+			content: undefined,
+		};
+		vi.mocked(getBlock).mockImplementation((id: string) => ({
+			id,
+			type: 'image',
+			props: { url: 'https://external.test/sample.png' },
+		}));
+
+		callback(editor, {
+			getChanges: () => [{ type: 'insert', source: { type: 'paste' }, block: remoteImage, prevBlock: undefined }],
+		});
+
+		await waitFor(() => {
+			expect(importSpy).toHaveBeenCalledWith({
+				sourceUrl: 'https://external.test/sample.png',
+				imagePurpose: 'CONTENT',
+			});
+			expect(updateBlock).toHaveBeenCalledWith('external-image-1', {
+				props: { url: 'https://images.rilog.test/rilog/images/raw/test/original.webp' },
+			});
 		});
 	});
 
