@@ -26,4 +26,19 @@ describe('Avatar', () => {
 		expect(avatar).not.toHaveTextContent('R');
 		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://example.com/profile.png');
 	});
+
+	it('신경로 프로필 주소는 compact srcset을 렌더링하고 sizes 속성을 전달받을 수 있다', () => {
+		render(
+			<Avatar
+				src="https://cdn.rilog.test/profiles/raw/user-123/original.png"
+				fallback="R"
+				label="Rilog 프로필"
+				sizes="32px"
+			/>,
+		);
+
+		const img = screen.getByRole('img', { name: 'Rilog 프로필' }).querySelector('img');
+		expect(img?.getAttribute('srcset')).toContain('https://cdn.rilog.test/profiles/compact/user-123/50.webp 50w');
+		expect(img?.getAttribute('sizes')).toBe('32px');
+	});
 });
