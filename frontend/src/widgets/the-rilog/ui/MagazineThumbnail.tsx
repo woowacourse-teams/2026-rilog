@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
@@ -18,7 +18,7 @@ export default function MagazineThumbnail({ src }: MagazineThumbnailProps) {
 	return (
 		<div className={styles.artworkFrame} data-thumbnail-ratio="16:10" aria-hidden="true">
 			{imageUrl && !isFailed ? (
-				<Image
+				<ResponsiveImage
 					className={styles.artwork}
 					src={imageUrl}
 					alt=""

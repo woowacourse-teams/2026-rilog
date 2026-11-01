@@ -62,7 +62,7 @@ describe('BlogPostFeed', () => {
 		expect(within(postSection).getByText('2026년 8월 16일')).toBeInTheDocument();
 		expect(within(postSection).getByRole('img', { name: '접근 가능한 인터페이스 만들기 썸네일' })).toHaveAttribute(
 			'src',
-			expect.stringContaining(encodeURIComponent('https://images.rilog.test/post.png')),
+			expect.stringContaining('https://images.rilog.test/post.png'),
 		);
 		expect(
 			new URL(
