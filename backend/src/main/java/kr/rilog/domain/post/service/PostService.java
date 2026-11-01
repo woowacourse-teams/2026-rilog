@@ -130,10 +130,7 @@ public class PostService {
             return PostDetailResponse.fromRilog(post, viewerPermissions, viewCount);
         }
 
-        Blog colog = post.getColog();
-        long memberCount = getMemberCount(colog);
-        long postCount = getPostCount(colog);
-        return PostDetailResponse.fromColog(post, memberCount, postCount, viewerPermissions, viewCount);
+        return PostDetailResponse.fromColog(post, viewerPermissions, viewCount);
     }
 
     public TotalPostsCountResponse readPostsCount() {
@@ -232,18 +229,6 @@ public class PostService {
     private Post getPublishedPost(Long postId) {
         return postRepository.findDetailByIdAndStatus(postId, PostStatus.PUBLISHED)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
-    }
-
-    private long getPostCount(Blog colog) {
-        return postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-                colog.getId(),
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC
-        );
-    }
-
-    private long getMemberCount(Blog colog) {
-        return blogMemberRepository.countActiveMembers(colog.getId(), BlogMemberStatus.ACTIVE);
     }
 
     private void validateCanDeletePublishedPost(Post post, Long requesterId) {

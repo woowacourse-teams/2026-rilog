@@ -13,7 +13,6 @@ import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
-import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.entity.vo.PostDetail;
@@ -34,8 +33,12 @@ import kr.rilog.support.fixure.TheRilogPostFixture;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
 
@@ -537,58 +540,38 @@ class PostServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
 
-    @Test
-    @DisplayName("팀 블로그 게시글을 조회하면 삭제되지 않은 멤버만 집계한다.")
-    void readCologPostCountsOnlyNonDeletedMembers() {
+    @ParameterizedTest(name = "수정용 상세 조회: {0}")
+    @ValueSource(booleans = {false, true})
+    @DisplayName("코로그 상세 응답은 집계 필드 없이 블로그 프로필을 반환한다.")
+    void readCologPostReturnsProfileWithoutStatistics(boolean editable) {
         // given
-        User owner = saveCompletedUser(18L, "집계팀주인", "count_colog_owner");
+        User owner = saveCompletedUser(18L, "팀주인", "detail_colog_owner");
         Blog rilog = saveRilog(owner);
-        Blog colog = saveColog(owner, "count_colog");
-        User member = saveCompletedUser(19L, "집계팀멤버", "count_colog_member");
-        User deletedMember = saveCompletedUser(20L, "삭제팀멤버", "deleted_colog_member");
-
-        // 집계 대상
-        saveActiveMember(colog, member);
-
-        // 집계 제외
-        saveDeletedActiveMember(colog, deletedMember);
+        Blog colog = saveColog(owner, "detail_colog");
         Post readTarget = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
 
         // when
-        PostDetailResponse result = postService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
+        PostDetailResponse result = editable
+                ? postService.readEditablePostDetail(readTarget.getId(), owner.getId())
+                : postService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
+        JsonNode serializedOwner = JsonMapper.builder().build().valueToTree(result).path("owner");
 
         // then
-        assertThat(result.owner()).isInstanceOfSatisfying(
-                CologOwnerResponse.class,
-                ownerResponse -> assertThat(ownerResponse.memberCount()).isEqualTo(2L)
-        );
-    }
-
-    @Test
-    @DisplayName("팀 블로그 게시글을 조회하면 공개 발행 게시글만 집계한다.")
-    void readCologPostCountsOnlyPublicPublishedPosts() {
-        // given
-        User owner = saveCompletedUser(21L, "게시글집계팀주인", "post_count_owner");
-        Blog rilog = saveRilog(owner);
-        Blog colog = saveColog(owner, "post_count_colog");
-
-        // 집계 대상
-        Post readTarget = savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
-        savePost(PostFixture.publicPublishedColog(rilog, colog, owner));
-
-        // 집계 제외
-        savePost(PostFixture.privatePublishedCologPost(rilog, colog, owner));
-        savePost(PostFixture.publicDraftCologPost(rilog, colog, owner));
-        savePost(PostFixture.deletedPublicPublishedCologPost(rilog, colog, owner));
-
-        // when
-        PostDetailResponse result = postService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
-
-        // then
-        assertThat(result.owner()).isInstanceOfSatisfying(
-                CologOwnerResponse.class,
-                ownerResponse -> assertThat(ownerResponse.postCount()).isEqualTo(2L)
-        );
+        assertSoftly(softly -> {
+            softly.assertThat(serializedOwner.has("memberCount")).isFalse();
+            softly.assertThat(serializedOwner.has("postCount")).isFalse();
+            softly.assertThat(serializedOwner.path("type").asText()).isEqualTo("COLOG");
+            softly.assertThat(serializedOwner.path("blogId").asLong()).isEqualTo(colog.getId());
+            softly.assertThat(serializedOwner.path("slug").asText()).isEqualTo("detail_colog");
+            softly.assertThat(serializedOwner.path("name").asText()).isEqualTo("리로그");
+            softly.assertThat(serializedOwner.path("profileImageUrl").asText())
+                    .isEqualTo("https://example.com/profile.png");
+            softly.assertThat(serializedOwner.path("coverImageUrl").asText())
+                    .isEqualTo("https://example.com/cover.png");
+            softly.assertThat(result.viewerPermissions())
+                    .isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(editable, editable));
+            softly.assertThat(result.viewCount()).isEqualTo(editable ? 0L : null);
+        });
     }
 
     @Test
@@ -892,12 +875,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
     private BlogMember saveLeftMember(Blog blog, User user) {
         return blogMemberRepository.saveAndFlush(BlogMemberFixture.leftMember(blog, user));
-    }
-
-    private BlogMember saveDeletedActiveMember(Blog blog, User user) {
-        BlogMember member = saveActiveMember(blog, user);
-        member.delete();
-        return blogMemberRepository.saveAndFlush(member);
     }
 
     private Post savePost(Post post) {
