@@ -87,11 +87,11 @@ CI는 Ubuntu 24.04, Node 24.19.0, pnpm 11.21.0과 frozen lockfile을 사용한�
 
 ### 두 갈래 실행과 최종 판정
 
-- `Frontend source checks`는 `pnpm check:source`로 format·lint·typecheck·unit·component를 실행한다.
+- `Frontend source checks`는 `pnpm check:source`로 format·lint·typecheck·unit·component를 실행한다. 컴포넌트 테스트는 jsdom과 파일 격리를 유지한 채 worker 4개로 실행한다.
 - `Frontend build and E2E`는 동시에 시작해 fixture 준비·production build·정적 산출물 검증 후 Chromium·WebKit·Firefox 전체 E2E를 실행한다. 브라우저 설치·서버·의존성 준비는 한 job에서 수행하며 build artifact 전송이나 보고서 병합은 없다.
 - 두 job은 각각 같은 변경 경로를 확인해 비프론트 변경만 무거운 단계를 생략한다. 수동 실행은 전체 검증한다.
 - `Frontend Quality`는 항상 두 job의 성공을 확인한다. 실패·취소·job 생략은 최종 실패다. 최종 job은 checkout이나 의존성 설치가 필요 없다.
-- 전체 E2E에 기존 필수 네 흐름 reporter를 그대로 적용한다. 누락·중복·skip·미실행·실패를 허용하지 않는다. worker 1개, retry 0, 세 브라우저의 테스트 선택 범위를 유지한다.
+- 전체 E2E에 기존 필수 네 흐름 reporter를 그대로 적용한다. 누락·중복·skip·미실행·실패를 허용하지 않는다. production E2E는 worker 2개, retry 0으로 실행한다. 파일 내부 순서는 유지하고 독립 파일만 병렬 실행한다. Chromium·WebKit·Firefox의 독립 파일을 먼저 실행한다. 같은 서버 fixture 상태·로그 파일을 변경하는 상세 회귀 및 조회수 파일은 `chromium-server-state`에서 worker 1개로 이어서 실행하고, 이에 의존하는 `chromium-isr`가 마지막에 ISR 한 건을 실행한다. 두 후속 프로젝트는 기존 Chromium 설정을 사용한다. 기존 세 브라우저의 검증 항목은 유지한다.
 - 로컬 `pnpm check`는 `pnpm check:source && pnpm build`로 기존 전체 검증을 유지한다. 코드 검사와 build는 서로 다른 runner에서 실행해 `.next` 생성 경합을 피한다.
 - 검사 및 build/E2E timeout은 각각 20분이며 최종 판정은 5분이다. 코드 검사 실패 전 이미 시작된 build/E2E의 runner 사용은 발생할 수 있다.
 
