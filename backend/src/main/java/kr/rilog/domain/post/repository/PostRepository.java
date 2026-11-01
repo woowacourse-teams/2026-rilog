@@ -175,12 +175,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         """)
     Optional<Post> findDraftById(@Param("postId") Long postId);
 
-    long countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-            Long cologId,
-            PostStatus status,
-            PostVisibility visibility
-    );
-
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE Post post

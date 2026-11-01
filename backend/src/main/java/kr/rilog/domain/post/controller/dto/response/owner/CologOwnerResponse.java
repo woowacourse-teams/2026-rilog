@@ -9,25 +9,17 @@ public record CologOwnerResponse(
         String slug,
         String name,
         String profileImageUrl,
-        String coverImageUrl,
-        long memberCount,
-        long postCount
+        String coverImageUrl
 ) implements PostOwnerResponse {
 
-    public static CologOwnerResponse of(
-            Blog colog,
-            long memberCount,
-            long postCount
-    ) {
+    public static CologOwnerResponse of(Blog colog) {
         return new CologOwnerResponse(
                 BlogType.COLOG,
                 colog.getId(),
                 colog.getSlug(),
                 colog.getName(),
                 colog.getProfileImageUrl(),
-                colog.getCoverImageUrl(),
-                memberCount,
-                postCount
+                colog.getCoverImageUrl()
         );
     }
 }
