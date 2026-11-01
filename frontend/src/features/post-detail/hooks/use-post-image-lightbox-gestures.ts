@@ -204,7 +204,6 @@ export const usePostImageLightboxGestures = ({
 	const handleTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
 		if (event.touches.length === 1) {
 			const remainingTouch = event.touches[0];
-			pinchStartRef.current = null;
 			if (remainingTouch !== undefined && scale > MIN_SCALE) {
 				panStartRef.current = {
 					point: { x: remainingTouch.clientX, y: remainingTouch.clientY },

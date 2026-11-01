@@ -157,4 +157,47 @@ describe('PostImageLightbox', () => {
 		expect(screen.getByText('2 / 3')).toBeInTheDocument();
 		expect(lightboxImage.style.transform).toBe('');
 	});
+
+	it('핀치로 1배까지 축소하고 손가락을 하나씩 떼면 이미지가 전환되지 않고 다음 스와이프는 동작한다', async () => {
+		renderContent();
+
+		await userEvent.click(screen.getByRole('img', { name: '첫 이미지', hidden: true }));
+		const { stage } = await getLightboxStage();
+
+		fireEvent.touchStart(stage, {
+			touches: [
+				{ clientX: 100, clientY: 100 },
+				{ clientX: 200, clientY: 100 },
+			],
+		});
+		fireEvent.touchMove(stage, {
+			touches: [
+				{ clientX: 50, clientY: 100 },
+				{ clientX: 250, clientY: 100 },
+			],
+		});
+		fireEvent.touchMove(stage, {
+			touches: [
+				{ clientX: 100, clientY: 100 },
+				{ clientX: 200, clientY: 100 },
+			],
+		});
+		fireEvent.touchEnd(stage, {
+			touches: [{ clientX: 200, clientY: 100 }],
+			changedTouches: [{ clientX: 100, clientY: 100 }],
+		});
+		fireEvent.touchMove(stage, { touches: [{ clientX: 80, clientY: 100 }] });
+		fireEvent.touchEnd(stage, {
+			touches: [],
+			changedTouches: [{ clientX: 80, clientY: 100 }],
+		});
+
+		expect(screen.getByText('1 / 3')).toBeInTheDocument();
+		fireEvent.touchStart(stage, { touches: [{ clientX: 200, clientY: 100 }] });
+		fireEvent.touchEnd(stage, {
+			touches: [],
+			changedTouches: [{ clientX: 80, clientY: 100 }],
+		});
+		expect(screen.getByText('2 / 3')).toBeInTheDocument();
+	});
 });
