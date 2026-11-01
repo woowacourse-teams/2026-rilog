@@ -79,7 +79,7 @@ export default function SignUpForm({ completeSignUp, navigate }: SignUpFormProps
 		let profileImageUrl = '';
 		if (value.profileImageFile) {
 			try {
-				const uploadRes = await uploadFile({ file: value.profileImageFile, type: 'IMAGE' });
+				const uploadRes = await uploadFile({ file: value.profileImageFile, type: 'IMAGE', imagePurpose: 'PROFILE' });
 				profileImageUrl = uploadRes.objectKey;
 			} catch (error) {
 				// eslint-disable-next-line @typescript-eslint/only-throw-error -- 제출 실패 단계와 원본 오류를 구조적으로 전달한다.
