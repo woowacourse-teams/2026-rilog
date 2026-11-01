@@ -100,17 +100,6 @@ public interface BlogMemberRepository extends JpaRepository<BlogMember, Long> {
     );
 
     @Query("""
-            SELECT COUNT(bm.id)
-            FROM BlogMember bm
-            JOIN bm.user u
-            WHERE bm.blog.id = :blogId
-              AND bm.status = :status
-              AND bm.deletedAt IS NULL
-              AND u.deletedAt IS NULL
-            """)
-    long countActiveMembers(@Param("blogId") Long blogId, @Param("status") BlogMemberStatus status);
-
-    @Query("""
             SELECT bm.user.id
             FROM BlogMember bm
             JOIN bm.user u

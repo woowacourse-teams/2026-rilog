@@ -104,13 +104,7 @@ public record PostDetailResponse(
         );
     }
 
-    public static PostDetailResponse fromColog(
-            Post post,
-            long memberCount,
-            long postCount,
-            ViewerPermissionsResponse viewerPermissions,
-            Long viewCount
-    ) {
+    public static PostDetailResponse fromColog(Post post, ViewerPermissionsResponse viewerPermissions, Long viewCount) {
         return new PostDetailResponse(
                 post.getTitle(),
                 post.getContent().getContent(),
@@ -119,7 +113,7 @@ public record PostDetailResponse(
                 post.getCategory().getName(),
                 ChapterResponse.from(post.getChapter()),
                 AuthorResponse.from(post.getUser()),
-                CologOwnerResponse.of(post.getColog(), memberCount, postCount),
+                CologOwnerResponse.of(post.getColog()),
                 viewerPermissions,
                 viewCount,
                 post.getPostType().name(),
