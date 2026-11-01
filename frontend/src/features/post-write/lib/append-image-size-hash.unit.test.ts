@@ -19,6 +19,14 @@ describe('appendImageSizeHash', () => {
 		expect(close).toHaveBeenCalledOnce();
 	});
 
+	it('MIME 타입이 빈 PNG도 크기 해시를 기록한다', async () => {
+		vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ width: 24, height: 16, close: vi.fn() }));
+
+		const url = await appendImageSizeHash(new File(['image'], 'cover.png', { type: '' }), 'posts/cover.png');
+
+		expect(url).toBe('https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/posts/cover.png#24x16');
+	});
+
 	it('이미지를 읽을 수 없으면 기존 URL로 발행을 계속한다', async () => {
 		vi.stubGlobal('createImageBitmap', vi.fn().mockRejectedValue(new Error('decode failed')));
 

@@ -464,7 +464,10 @@ test.describe('글 작성 브라우저 흐름', () => {
 				buffer: TEST_IMAGE_BYTES,
 			});
 
-			await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute('src', /e2e-upload\.png$/);
+			await expect(page.locator('[data-content-type="image"] img')).toHaveAttribute(
+				'src',
+				/e2e-upload\.png(?:#\d+x\d+)?$/,
+			);
 		},
 	);
 
