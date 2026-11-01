@@ -20,10 +20,12 @@ ADR 0020은 사용 확정(CONFIRMED) 뒤 Spring이 이미지 서버의 압축 AP
   - 원본보다 크거나 같은 너비는 확대하지 않고 원본 너비로 한 번 변환해 그 너비 이름의 key에 같이 저장한다(원본 1300px → `1400.webp`, `2000.webp`는 1300px).
   - 압축본 key: `{root}/{images|profiles}/compact/{userId}-{UUID}/{width}.webp`. 다시 확정되면 같은 key에 덮어쓴다. status 태그는 붙이지 않는다.
 - 이미지 서버는 압축을 한 번에 하나씩 처리하고 최대 3건까지 대기시킨다. 대기열이 차면 429 `BUSY`다.
-  요청마다 대기를 포함한 시한 25초를 두고, 넘으면 504 `COMPACT_TIMEOUT`이다. 진행 중인 변환 하나(최대 10초)는 끝나야 응답하므로 최대 약 35초다.
+  요청마다 대기를 포함한 시한 25초를 두고, 넘으면 504 `COMPACT_TIMEOUT`이다. 진행 중인 변환 하나(최대 5초)는 끝나야 응답하므로 최대 약 30초다.
+  변환 상한 5초는 너비 4개가 모두 상한까지 걸려도 합계 20초로 시한 안에 들어오는 값이다. 10초면 상한을 통과하고도 시한에서 실패해 작업만 낭비한다.
+  변환 상한 초과는 손상 이미지와 구분하려고 422 `INVALID_IMAGE`가 아니라 504 `ENCODE_TIMEOUT`으로 응답한다.
 - 시한 = 동시 요청 4건(Spring 스레드 2개 × 개발·운영 2대) × 건당 약 5초(CPU 충분할 때 12MP AVIF, S3 제외 로컬 측정) × 여유 1.25배. 대기열 = 동시 요청 수 - 1.
   운영 대수가 다르면 다시 계산한다.
-- 타임아웃 순서: 이미지 서버 최대 35초 < Nginx `proxy_read_timeout` 40초 < Spring `image-server.compaction-read-timeout` 45초.
+- 타임아웃 순서: 이미지 서버 최대 30초 < Nginx `proxy_read_timeout` 35초 < Spring `image-server.compaction-read-timeout` 40초.
   값을 줄일 때는 이미지 서버 → Nginx → Spring 순서로 배포한다.
 - Spring 호출은 전용 `imageCompactionExecutor`(2 스레드, 대기 500)에서 비동기로 한다. 태깅 executor와 요청 스레드를 막지 않는다.
 - 실패 응답과 연결 실패는 `image_compaction_failed` ERROR 로그만 남긴다. 응답을 기다리다 끊긴 경우(read timeout)는

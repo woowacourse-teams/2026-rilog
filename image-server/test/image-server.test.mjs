@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { EventEmitter } from 'node:events';
+import { randomBytes } from 'node:crypto';
 import sharp from 'sharp';
 import { createApp } from '../src/app.mjs';
 import { createPublicLookup, downloadImage, validateUrl } from '../src/download.mjs';
@@ -252,6 +253,12 @@ test('compaction rejects animated and corrupt images', async () => {
   const animated = await sharp(frames, { raw: { width: 2, height: 4, channels: 3, pageHeight: 2 } }).webp({ loop: 0, delay: [100, 100] }).toBuffer();
   await assert.rejects(compactImage(animated, [750]), { code: 'UNSUPPORTED_IMAGE' });
   await assert.rejects(compactImage(Buffer.from('<html/>'), [750]), { code: 'INVALID_IMAGE' });
+});
+
+test('compaction reports an encode timeout separately from a corrupt image', async () => {
+  const size = 6000;
+  const noise = await sharp(randomBytes(size * size * 3), { raw: { width: size, height: size, channels: 3 } }).png({ compressionLevel: 0 }).toBuffer();
+  await assert.rejects(compactImage(noise, [size], { encodeTimeoutSeconds: 1 }), { status: 504, code: 'ENCODE_TIMEOUT' });
 });
 
 test('compact API writes every width of a signed raw key and reports the keys', async t => {

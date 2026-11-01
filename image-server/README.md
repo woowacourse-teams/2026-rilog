@@ -41,13 +41,13 @@ Spring은 사용자 요청에서 비롯된 오류를 같은 상태·코드로, �
 - 원본보다 크거나 같은 너비는 확대하지 않고 원본 너비로 한 번 변환해 그 너비의 key에 저장한다. 원본 1300px이면 `1400.webp`, `2000.webp`는 1300px이다.
 - 저장 위치: `{root}/{images|profiles}/compact/{userId}-{UUID}/{width}.webp`. 같은 원본을 다시 요청하면 덮어쓴다. 태그는 붙이지 않는다.
 - EXIF 방향을 반영해 픽셀을 돌리고 메타데이터를 제거한다. 원본 너비는 회전을 반영한 값이다.
-- 한 번에 하나씩 처리하고 최대 3건까지 대기시킨다. 요청마다 대기를 포함한 시한 25초가 있고, 진행 중인 변환(최대 10초)이 끝나야 응답하므로 최대 약 35초다.
-  Nginx `proxy_read_timeout`(40초)과 Spring `image-server.compaction-read-timeout`(45초)은 이보다 길게 둔다.
+- 한 번에 하나씩 처리하고 최대 3건까지 대기시킨다. 요청마다 대기를 포함한 시한 25초가 있고, 진행 중인 변환(최대 5초)이 끝나야 응답하므로 최대 약 30초다.
+  Nginx `proxy_read_timeout`(35초)과 Spring `image-server.compaction-read-timeout`(40초)은 이보다 길게 둔다.
   값을 줄일 때는 이미지 서버 → Nginx → Spring 순서로 배포한다.
 
 성공: `200`, `{ "keys": ["<root>/images/compact/7-<uuid>/750.webp", ...] }`.
 오류: 400 `INVALID_OBJECT_KEY`·`INVALID_JSON`, 401 서명 오류, 404 `SOURCE_NOT_FOUND`, 413 `IMAGE_TOO_LARGE`(원본 10MiB 초과),
-422 `INVALID_IMAGE`·`UNSUPPORTED_IMAGE`(움직이는 이미지), 429 `BUSY`(대기열 가득), 502 `STORAGE_UNAVAILABLE`, 504 `COMPACT_TIMEOUT`.
+422 `INVALID_IMAGE`·`UNSUPPORTED_IMAGE`(움직이는 이미지), 429 `BUSY`(대기열 가득), 502 `STORAGE_UNAVAILABLE`, 504 `COMPACT_TIMEOUT`(요청 시한 초과)·`ENCODE_TIMEOUT`(변환 1회 상한 초과).
 서명을 통과한 요청이 실패하면 이미지 서버는 `{"event":"image_compact_failed","key":"<원본 key>","status":..,"code":..,"name":..,"durationMs":..}`를
 stderr에 남긴다. S3 읽기·저장 실패는 `s3_read_failed`(원본 key), `s3_compact_upload_failed`(압축본 key)도 함께 남긴다. 서명 실패(401)는 남기지 않는다.
 Spring은 실패 응답을 ERROR 로그로만 남기고 다시 시도하지 않는다. 응답이 늦어 끊긴 요청은 WARN으로 남기고 무시한다.

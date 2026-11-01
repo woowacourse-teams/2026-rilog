@@ -7,7 +7,8 @@ const MAX_PIXELS = 16_000_000;
 // 압축 원본은 Spring presigned 업로드(10MiB)로 올라온 사용자 사진이다. 4800만 화소 휴대폰 사진까지 받는다.
 const MAX_COMPACT_PIXELS = 50_000_000;
 const COMPACT_WEBP_QUALITY = 80;
-const ENCODE_TIMEOUT_SECONDS = 10;
+// 너비 4개가 모두 상한까지 걸려도 합계 20초로 요청 시한(25초) 안에 들어오는 값. 넘으면 비정상 작업으로 보고 끊는다.
+const ENCODE_TIMEOUT_SECONDS = 5;
 
 function hasSupportedSignature(data) {
   return (data.length >= 3 && data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) ||
@@ -34,7 +35,7 @@ export async function normalizeImage(data) {
 
 // 너비마다 WebP 압축본을 만든다. 원본보다 크거나 같은 너비는 확대하지 않고 원본 너비로 한 번만 변환해 같이 쓴다.
 // 메모리를 아끼려고 너비별 변환을 순서대로 하고, 너비 사이마다 요청 시한(signal)을 확인한다.
-export async function compactImage(data, widths, { signal } = {}) {
+export async function compactImage(data, widths, { signal, encodeTimeoutSeconds = ENCODE_TIMEOUT_SECONDS } = {}) {
   let sourceWidth;
   try {
     const meta = await sharp(data, { limitInputPixels: MAX_COMPACT_PIXELS }).metadata();
@@ -51,22 +52,24 @@ export async function compactImage(data, widths, { signal } = {}) {
   for (const width of widths) {
     signal?.throwIfAborted();
     const targetWidth = Math.min(width, sourceWidth);
-    if (!encoded.has(targetWidth)) encoded.set(targetWidth, await encodeWebp(data, targetWidth));
+    if (!encoded.has(targetWidth)) encoded.set(targetWidth, await encodeWebp(data, targetWidth, encodeTimeoutSeconds));
     results.push({ width, data: encoded.get(targetWidth) });
   }
   return results;
 }
 
 // keepMetadata/withMetadata를 호출하지 않으므로 방향 보정 뒤 EXIF(GPS 포함), ICC, XMP를 모두 제거한다.
-async function encodeWebp(data, width) {
+async function encodeWebp(data, width, timeoutSeconds) {
   try {
     return await sharp(data, { limitInputPixels: MAX_COMPACT_PIXELS, failOn: 'none' })
       .autoOrient()
       .resize({ width, withoutEnlargement: true })
       .webp({ quality: COMPACT_WEBP_QUALITY })
-      .timeout({ seconds: ENCODE_TIMEOUT_SECONDS })
+      .timeout({ seconds: timeoutSeconds })
       .toBuffer();
-  } catch {
+  } catch (error) {
+    // sharp는 timeout 초과를 별도 타입 없이 "timeout: N% complete" 메시지로만 알린다.
+    if (error.message?.startsWith('timeout:')) throw new ApiError(504, 'ENCODE_TIMEOUT', '이미지 변환 시간이 초과되었습니다.');
     throw new ApiError(422, 'INVALID_IMAGE', '손상되었거나 처리 한도를 초과한 이미지입니다.');
   }
 }
