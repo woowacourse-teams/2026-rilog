@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node src/server.mjs",
-    "check": "node --check src/server.mjs && node --check src/app.mjs && node --check src/image.mjs && node --check src/download.mjs && node --check src/config.mjs && node --check src/auth.mjs",
+    "check": "node --check src/server.mjs && node --check src/app.mjs && node --check src/image.mjs && node --check src/download.mjs && node --check src/config.mjs && node --check src/auth.mjs && node --check src/compact.mjs",
     "test": "node --test"
   },
   "dependencies": {
