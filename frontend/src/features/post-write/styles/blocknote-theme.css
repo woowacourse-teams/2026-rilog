@@ -50,6 +50,15 @@
 	/* BlockNote's overflow-x: auto also clips vertical overflow, which cuts off the selected image outline. */
 	min-width: 0;
 	overflow: visible;
+	padding-inline: 20px;
+}
+
+.post-write-blocknote .bn-block-column:first-child {
+	padding-left: 0;
+}
+
+.post-write-blocknote .bn-block-column:last-child {
+	padding-right: 0;
 }
 
 .post-write-blocknote .bn-block-column > .bn-trailing-block {
@@ -211,22 +220,23 @@
 }
 
 .post-write-image-row-guide {
-	/* Match BlockNote's default vertical drop cursor. */
 	position: fixed;
 	z-index: 50;
 	width: 5px;
-	background: #ddeeff;
+	background: var(--focus-ring);
 	pointer-events: none;
 	transform: translateX(-50%);
+	opacity: 0.15;
 }
 
 .post-write-image-row-detach-guide {
 	position: fixed;
 	z-index: 50;
 	height: 5px;
-	background: #ddeeff;
+	background: var(--focus-ring);
 	pointer-events: none;
 	transform: translateY(-50%);
+	opacity: 0.15;
 }
 
 @media (max-width: 40rem) {
