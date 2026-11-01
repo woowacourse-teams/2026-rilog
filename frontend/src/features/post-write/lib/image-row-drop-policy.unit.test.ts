@@ -119,20 +119,28 @@ describe('resolveImageRowDrop 블록 내부', () => {
 	it('축소된 열 이미지의 열 여백은 해당 방향, 이미지 안쪽은 이미지 너비의 좌우 25%로 판정한다', () => {
 		const rowWithSmallImages: DropLayout = {
 			editor: rect(0, 0, 400, 100),
-			blocks: [{
-				kind: 'row',
-				id: 'row',
-				rect: rect(0, 0, 400, 100),
-				columns: [
-					{ imageId: 'left', rect: rect(0, 0, 200, 100), imageRect: rect(0, 0, 80, 100) },
-					{ imageId: 'right', rect: rect(200, 0, 400, 100), imageRect: rect(320, 0, 400, 100) },
-				],
-			}],
+			blocks: [
+				{
+					kind: 'row',
+					id: 'row',
+					rect: rect(0, 0, 400, 100),
+					columns: [
+						{ imageId: 'left', rect: rect(0, 0, 200, 100), imageRect: rect(0, 0, 80, 100) },
+						{ imageId: 'right', rect: rect(200, 0, 400, 100), imageRect: rect(320, 0, 400, 100) },
+					],
+				},
+			],
 		};
 		const source = standalone('moving');
 
-		expect(resolveImageRowDrop(150, 50, source, rowWithSmallImages)).toMatchObject({ targetId: 'left', direction: 'right' });
-		expect(resolveImageRowDrop(250, 50, source, rowWithSmallImages)).toMatchObject({ targetId: 'right', direction: 'left' });
+		expect(resolveImageRowDrop(150, 50, source, rowWithSmallImages)).toMatchObject({
+			targetId: 'left',
+			direction: 'right',
+		});
+		expect(resolveImageRowDrop(250, 50, source, rowWithSmallImages)).toMatchObject({
+			targetId: 'right',
+			direction: 'left',
+		});
 		expect(resolveImageRowDrop(20, 50, source, rowWithSmallImages)?.direction).toBe('left');
 		expect(resolveImageRowDrop(60, 50, source, rowWithSmallImages)?.direction).toBe('right');
 		expect(resolveImageRowDrop(40, 50, source, rowWithSmallImages)?.direction).toBe('top');

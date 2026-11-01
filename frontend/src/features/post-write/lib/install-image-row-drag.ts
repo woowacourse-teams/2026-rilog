@@ -21,6 +21,13 @@ const toRect = (element: Element): DropRect => {
 	return { left, top, right, bottom };
 };
 
+const readImageRect = (element: HTMLElement | undefined, fallback: DropRect): DropRect => {
+	const image = element?.querySelector<HTMLImageElement>('.bn-block-content[data-content-type="image"] img');
+	if (!image) return fallback;
+	const rect = toRect(image);
+	return rect.right > rect.left && rect.bottom > rect.top ? rect : fallback;
+};
+
 /** 최상위 블록과 이미지행의 열 영역을 DOM에서 읽어 판정 함수가 쓰는 레이아웃으로 만든다. */
 const readDropLayout = (editor: PostWriteBlockNoteEditor, root: HTMLElement): DropLayout => {
 	const elements = new Map<string, HTMLElement>();
@@ -39,8 +46,11 @@ const readDropLayout = (editor: PostWriteBlockNoteEditor, root: HTMLElement): Dr
 		if (isImageRow(block)) {
 			const columns = block.children.flatMap((column) => {
 				const imageId = column.children[0].id;
-				const columnElement = elements.get(imageId)?.closest('.bn-block-column');
-				return columnElement ? [{ imageId, rect: toRect(columnElement) }] : [];
+				const imageElement = elements.get(imageId);
+				const columnElement = imageElement?.closest('.bn-block-column');
+				if (!columnElement) return [];
+				const columnRect = toRect(columnElement);
+				return [{ imageId, rect: columnRect, imageRect: readImageRect(imageElement, columnRect) }];
 			});
 			blocks.push(
 				columns.length === block.children.length
@@ -48,14 +58,7 @@ const readDropLayout = (editor: PostWriteBlockNoteEditor, root: HTMLElement): Dr
 					: { kind: 'other', id: block.id, rect },
 			);
 		} else if (isPlainImage(block)) {
-			const image = element.querySelector<HTMLImageElement>('.bn-block-content[data-content-type="image"] img');
-			const imageRect = image ? toRect(image) : rect;
-			blocks.push({
-				kind: 'image',
-				id: block.id,
-				rect,
-				imageRect: imageRect.right > imageRect.left && imageRect.bottom > imageRect.top ? imageRect : rect,
-			});
+			blocks.push({ kind: 'image', id: block.id, rect, imageRect: readImageRect(element, rect) });
 		} else {
 			blocks.push({ kind: 'other', id: block.id, rect });
 		}

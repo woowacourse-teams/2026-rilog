@@ -141,6 +141,35 @@ describe('installImageRowDrag', () => {
 			}
 		}));
 
+	it('축소된 열 이미지 양쪽의 열 여백에 놓으면 이미지 사이 가이드를 표시한다', () =>
+		setup(({ editor, root, image, verticalGuide, horizontalGuide }) => {
+			applyImageRowDrop(
+				editor,
+				{ kind: 'standalone-image', blockId: 'one' },
+				{ targetId: 'two', direction: 'left', insertIndex: 0 },
+			);
+			const row = root.querySelector<HTMLElement>('.bn-block-column-list[data-id]');
+			const columns = row?.querySelectorAll<HTMLElement>('.bn-block-column');
+			expect(row).not.toBeNull();
+			expect(columns).toHaveLength(2);
+			if (!row || !columns) return;
+			vi.spyOn(row, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 200, 300, 100));
+			vi.spyOn(columns[0], 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 200, 150, 100));
+			vi.spyOn(columns[1], 'getBoundingClientRect').mockReturnValue(new DOMRect(250, 200, 150, 100));
+			vi.spyOn(image('one'), 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 200, 60, 100));
+			vi.spyOn(image('two'), 'getBoundingClientRect').mockReturnValue(new DOMRect(340, 200, 60, 100));
+			image('three').dispatchEvent(dragEvent('dragstart'));
+
+			for (const x of [200, 300]) {
+				const over = dragEvent('dragover', x, 250);
+				row.dispatchEvent(over);
+				expect(over.defaultPrevented).toBe(true);
+				expect(verticalGuide?.hidden).toBe(false);
+				expect(verticalGuide?.style.left).toBe('250px');
+				expect(horizontalGuide?.hidden).toBe(true);
+			}
+		}));
+
 	it('이미지를 일반 블록 아래쪽에 놓으면 가로 가이드를 표시하고 순서를 바꾼다', () =>
 		setup(({ editor, image, block, verticalGuide, horizontalGuide }) => {
 			image('one').dispatchEvent(dragEvent('dragstart'));
