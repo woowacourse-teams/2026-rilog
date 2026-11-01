@@ -18,6 +18,7 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
+import kr.rilog.domain.post.event.PostCountChangedEvent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
@@ -33,6 +34,7 @@ import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,6 +63,8 @@ public class PostService {
     private final CommentAnchorSelectionRepository selectionRepository;
     private final PostViewCountRepository viewCountRepository;
     private final PostViewStore postViewStore;
+    private final PostCountCache postCountCache;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -75,6 +79,7 @@ public class PostService {
         Post published = postRepository.save(post);
         viewCountRepository.initialize(published.getId());
         tagAssetsPublisher.attach(published.getTagAssets());
+        publishPostCountChangedEventIf(published.isIncludedInTotalCount());
         return PostPublishResult.of(published, publishingBlog);
     }
 
@@ -90,6 +95,7 @@ public class PostService {
         viewCountRepository.initialize(published.getId());
         tagAssetsPublisher.attach(published.getTagAssets());
 
+        publishPostCountChangedEventIf(published.isIncludedInTotalCount());
         return PostPublishResult.of(published, publishingBlog);
     }
 
@@ -134,8 +140,7 @@ public class PostService {
     }
 
     public TotalPostsCountResponse readPostsCount() {
-        long count = postRepository.countByStatusAndVisibilityAndDeletedAtIsNull(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
-        return new TotalPostsCountResponse(count);
+        return new TotalPostsCountResponse(postCountCache.getCount());
     }
 
     @Transactional
@@ -150,6 +155,7 @@ public class PostService {
 
         TagAssets previousTagAssets = post.getTagAssets();
         PostContent previousContent = post.getContent();
+        boolean wasCounted = post.isIncludedInTotalCount();
 
         post.update(command.toDetail(), targetBlog, chapter);
 
@@ -159,6 +165,7 @@ public class PostService {
         CommentAnchorSelections selections = findActiveCommentAnchorSelections(postId);
         selections.recalculate(previousContent, post.getContent());
 
+        publishPostCountChangedEventIf(wasCounted != post.isIncludedInTotalCount());
         return PostUpdateResult.of(post, targetBlog);
     }
 
@@ -166,8 +173,16 @@ public class PostService {
     public void deletePublishedPost(Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
+        boolean wasCounted = post.isIncludedInTotalCount();
         post.delete();
         tagAssetsPublisher.detach(requesterId, post.getTagAssets());
+        publishPostCountChangedEventIf(wasCounted);
+    }
+
+    private void publishPostCountChangedEventIf(boolean countChanged) {
+        if (countChanged) {
+            eventPublisher.publishEvent(new PostCountChangedEvent());
+        }
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {

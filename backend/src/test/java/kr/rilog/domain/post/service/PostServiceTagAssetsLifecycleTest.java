@@ -21,6 +21,7 @@ import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -80,6 +81,12 @@ class PostServiceTagAssetsLifecycleTest {
     @Mock
     private PostViewStore postViewStore;
 
+    @Mock
+    private PostCountCache postCountCache;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private PostService postService;
 
     @BeforeEach
@@ -93,7 +100,9 @@ class PostServiceTagAssetsLifecycleTest {
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
                 viewCountRepository,
-                postViewStore
+                postViewStore,
+                postCountCache,
+                eventPublisher
         );
     }
 
