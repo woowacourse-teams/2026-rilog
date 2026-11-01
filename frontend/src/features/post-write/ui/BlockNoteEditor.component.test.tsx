@@ -42,6 +42,7 @@ const suggestionMenuControllerProps = vi.fn<(props: SuggestionMenuControllerProp
 vi.mock('@blocknote/react', () => ({
 	useCreateBlockNote: (...args: unknown[]): MockEditor => useCreateBlockNote(...args),
 	FilePanelController: () => null,
+	SideMenuController: () => null,
 	SuggestionMenuController: (props: SuggestionMenuControllerProps) => {
 		suggestionMenuControllerProps(props);
 
