@@ -1,15 +1,16 @@
 import type { EditorDocument } from './post-publication';
-import type { Block } from '@blocknote/core';
 import type { Ref } from 'react';
+
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 export interface PostEditorHandle {
 	focus: () => void;
 }
 
 export interface PostEditorProps {
-	initialBlocks?: Block[];
-	onChange: (blocks: Block[]) => void;
-	onReady: (blocks: Block[]) => void;
+	initialBlocks?: PostContentBlock[];
+	onChange: (blocks: PostContentBlock[]) => void;
+	onReady: (blocks: PostContentBlock[]) => void;
 	uploadFile: UploadPostBodyFile;
 	ariaDescribedBy?: string;
 	ref?: Ref<PostEditorHandle>;

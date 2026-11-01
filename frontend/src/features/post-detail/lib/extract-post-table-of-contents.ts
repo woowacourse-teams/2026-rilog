@@ -1,4 +1,6 @@
-import type { Block, DefaultInlineContentSchema, DefaultStyleSchema, InlineContent } from '@blocknote/core';
+import type { DefaultInlineContentSchema, DefaultStyleSchema, InlineContent } from '@blocknote/core';
+
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 export interface PostTableOfContentsItem {
 	id: string;
@@ -50,12 +52,12 @@ const createPostHeadingAnchorId = (text: string, blockId: string, usedIds: Set<s
 };
 
 // h1부터 h4까지 추출
-export const extractPostHeadingAnchors = (blocks: Block[]): PostHeadingAnchor[] => {
+export const extractPostHeadingAnchors = (blocks: PostContentBlock[]): PostHeadingAnchor[] => {
 	const anchors: PostHeadingAnchor[] = [];
 	const usedIds = new Set<string>();
 
 	// 재귀로 목차 탐색
-	const visit = (currentBlocks: Block[]) => {
+	const visit = (currentBlocks: PostContentBlock[]) => {
 		currentBlocks.forEach((block) => {
 			if (
 				block.type === 'heading' &&
@@ -86,5 +88,5 @@ export const extractPostHeadingAnchors = (blocks: Block[]): PostHeadingAnchor[] 
 	return anchors;
 };
 
-export const extractPostTableOfContents = (blocks: Block[]): PostTableOfContentsItem[] =>
+export const extractPostTableOfContents = (blocks: PostContentBlock[]): PostTableOfContentsItem[] =>
 	extractPostHeadingAnchors(blocks).map(({ id, text, level }) => ({ id, text, level }));

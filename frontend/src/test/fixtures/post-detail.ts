@@ -1,6 +1,5 @@
-import type { Block } from '@blocknote/core';
-
 import type { PostDetail } from '@/domains/post/model/post';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import type { PostDetailResponse } from '@/shared/api/posts/types';
 
 export function createPostDetailResponseFixture(overrides: Partial<PostDetailResponse> = {}): PostDetailResponse {
@@ -34,7 +33,7 @@ const text = (value: string) => ({
 	styles: {},
 });
 
-const paragraph = (id: string, value: string): Block => ({
+const paragraph = (id: string, value: string): PostContentBlock => ({
 	id,
 	type: 'paragraph',
 	props: DEFAULT_TEXT_PROPS,
@@ -42,7 +41,7 @@ const paragraph = (id: string, value: string): Block => ({
 	children: [],
 });
 
-const heading = (id: string, value: string, level: 1 | 2 | 3): Block => ({
+const heading = (id: string, value: string, level: 1 | 2 | 3): PostContentBlock => ({
 	id,
 	type: 'heading',
 	props: { ...DEFAULT_TEXT_PROPS, level, isToggleable: false },
@@ -50,7 +49,7 @@ const heading = (id: string, value: string, level: 1 | 2 | 3): Block => ({
 	children: [],
 });
 
-const bullet = (id: string, value: string): Block => ({
+const bullet = (id: string, value: string): PostContentBlock => ({
 	id,
 	type: 'bulletListItem',
 	props: DEFAULT_TEXT_PROPS,
@@ -58,7 +57,7 @@ const bullet = (id: string, value: string): Block => ({
 	children: [],
 });
 
-const code = (id: string, value: string, language = 'typescript'): Block => ({
+const code = (id: string, value: string, language = 'typescript'): PostContentBlock => ({
 	id,
 	type: 'codeBlock',
 	props: { language },
@@ -66,7 +65,7 @@ const code = (id: string, value: string, language = 'typescript'): Block => ({
 	children: [],
 });
 
-export const POST_DETAIL_READABILITY_CONTENT: Block[] = [
+export const POST_DETAIL_READABILITY_CONTENT: PostContentBlock[] = [
 	heading('readability-heading-level-1', '읽기 좋은 기술 글의 구조', 1),
 	paragraph(
 		'introduction',
