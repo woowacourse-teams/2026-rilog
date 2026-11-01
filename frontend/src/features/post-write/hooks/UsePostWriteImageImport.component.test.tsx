@@ -206,4 +206,81 @@ describe('usePostWriteImageImport', () => {
 
 		expect(importSpy).not.toHaveBeenCalled();
 	});
+
+	it('이미지 변환 중 로딩 오버레이가 부착되고 완료 시 제거되며 onImportSettled가 호출된다', async () => {
+		const domElement = document.createElement('div');
+		const blockElement = document.createElement('div');
+		blockElement.setAttribute('data-id', 'block-1');
+		const mediaWrapper = document.createElement('div');
+		mediaWrapper.className = 'bn-visual-media-wrapper';
+		blockElement.appendChild(mediaWrapper);
+		domElement.appendChild(blockElement);
+
+		const editorWithDom = {
+			...mockEditor,
+			domElement,
+		} as unknown as PostWriteBlockNoteEditor;
+
+		const onImportSettled = vi.fn();
+		let resolveImport: (value: unknown) => void = () => undefined;
+		vi.spyOn(uploadsApi, 'importImage').mockReturnValue(
+			new Promise((resolve) => {
+				resolveImport = resolve;
+			}) as never,
+		);
+
+		const { result } = renderHook(() => usePostWriteImageImport({ onImportSettled }));
+		const importPromise = result.current.handleImageImport(editorWithDom, 'block-1', 'https://external.test/img.png');
+
+		// 진행 중: 로딩 클래스 및 오버레이 확인
+		expect(mediaWrapper.classList.contains('post-write-image-importing')).toBe(true);
+		expect(mediaWrapper.querySelector('.post-write-image-import-overlay')).not.toBeNull();
+
+		resolveImport({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/imported.webp',
+				url: 'https://images.rilog.test/rilog/images/raw/test/imported.webp',
+			},
+		});
+
+		await importPromise;
+
+		// 완료 후: 로딩 클래스 및 오버레이 제거 확인, 콜백 확인
+		expect(mediaWrapper.classList.contains('post-write-image-importing')).toBe(false);
+		expect(mediaWrapper.querySelector('.post-write-image-import-overlay')).toBeNull();
+		expect(onImportSettled).toHaveBeenCalledTimes(1);
+	});
+
+	it('hasPendingImports는 현재 문서의 블록 상태를 기반으로 로딩 여부를 반환한다', async () => {
+		vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/imported.webp',
+				url: 'https://images.rilog.test/rilog/images/raw/test/imported.webp',
+			},
+		});
+
+		const { result } = renderHook(() => usePostWriteImageImport());
+
+		const initialDoc = [{ type: 'image', props: { url: 'https://external.test/img.png' }, children: [] }] as never;
+		expect(result.current.hasPendingImports(initialDoc)).toBe(true);
+
+		// 사용자가 블록을 삭제하여 문서가 비면 즉시 false
+		expect(result.current.hasPendingImports([])).toBe(false);
+
+		// 임포트 완료된 URL로 갱신된 블록은 false
+		await result.current.handleImageImport(mockEditor, 'block-1', 'https://external.test/img.png');
+		const updatedDoc = [
+			{
+				type: 'image',
+				props: { url: 'https://images.rilog.test/rilog/images/raw/test/imported.webp' },
+				children: [],
+			},
+		] as never;
+		expect(result.current.hasPendingImports(updatedDoc)).toBe(false);
+	});
+
 });

@@ -3,14 +3,24 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
+import type { Block } from '@blocknote/core';
 
 import { importImage } from '@/shared/api/uploads/api';
 
+import {
+	attachImageImportLoading,
+	detachImageImportLoading,
+	hasPendingImageImports,
+} from '../lib/image-import-loading';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
 
 export const IMAGE_IMPORT_ERROR_MESSAGE = '이미지를 가져오지 못했습니다. 파일로 다시 업로드해 주세요.';
 export const MAX_CONCURRENT_IMAGE_IMPORTS = 1;
+
+interface UsePostWriteImageImportOptions {
+	onImportSettled?: () => void;
+}
 
 const isHttpUrl = (url: string): boolean => {
 	try {
@@ -33,13 +43,24 @@ interface PendingImportEntry {
 	settlers: Array<() => void>;
 }
 
-export const usePostWriteImageImport = () => {
+export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageImportOptions = {}) => {
 	const pendingImportsByUrlRef = useRef<Map<string, PendingImportEntry>>(new Map());
 	const activeImportsByUrlRef = useRef<Map<string, PendingImportEntry>>(new Map());
 	const importQueueRef = useRef<string[]>([]);
 	const activeCountRef = useRef(0);
 	const uploadedImageUrlsRef = useRef<Set<string>>(new Set());
 	const processQueueRef = useRef<() => void>(() => undefined);
+	const onImportSettledRef = useRef(onImportSettled);
+
+	useEffect(() => {
+		onImportSettledRef.current = onImportSettled;
+	}, [onImportSettled]);
+
+	const isUploadedImageUrl = useCallback((url: string): boolean => {
+		const trimmedUrl = url.trim();
+		if (trimmedUrl === '') return false;
+		return uploadedImageUrlsRef.current.has(trimmedUrl) || uploadedImageUrlsRef.current.has(stripUrlHash(trimmedUrl));
+	}, []);
 
 	const registerUploadedImageUrl = useCallback((url: string) => {
 		const trimmedUrl = url.trim();
@@ -47,6 +68,11 @@ export const usePostWriteImageImport = () => {
 		uploadedImageUrlsRef.current.add(trimmedUrl);
 		uploadedImageUrlsRef.current.add(stripUrlHash(trimmedUrl));
 	}, []);
+
+	const hasPendingImports = useCallback(
+		(blocks: Block[]): boolean => hasPendingImageImports(blocks, isUploadedImageUrl),
+		[isUploadedImageUrl],
+	);
 
 	const processQueue = useCallback(() => {
 		while (activeCountRef.current < MAX_CONCURRENT_IMAGE_IMPORTS && importQueueRef.current.length > 0) {
@@ -81,9 +107,11 @@ export const usePostWriteImageImport = () => {
 						) {
 							editor.updateBlock(id, { props: { url: importedUrl } });
 						}
+						detachImageImportLoading(editor, id);
 					}
 				} catch {
 					for (const id of blockIds) {
+						detachImageImportLoading(editor, id);
 						const currentBlock = editor.getBlock(id);
 						if (
 							currentBlock !== undefined &&
@@ -95,11 +123,15 @@ export const usePostWriteImageImport = () => {
 						}
 					}
 				} finally {
+					for (const id of blockIds) {
+						detachImageImportLoading(editor, id);
+					}
 					activeImportsByUrlRef.current.delete(normalizedUrl);
 					activeCountRef.current -= 1;
 					for (const settle of settlers) {
 						settle();
 					}
+					onImportSettledRef.current?.();
 					processQueueRef.current();
 				}
 			})();
@@ -123,6 +155,8 @@ export const usePostWriteImageImport = () => {
 			) {
 				return Promise.resolve();
 			}
+
+			attachImageImportLoading(editor, blockId);
 
 			return new Promise<void>((resolve) => {
 				const activeEntry = activeImportsByUrlRef.current.get(normalizedUrl);
@@ -152,5 +186,5 @@ export const usePostWriteImageImport = () => {
 		[processQueue],
 	);
 
-	return { handleImageImport, registerUploadedImageUrl };
+	return { handleImageImport, registerUploadedImageUrl, isUploadedImageUrl, hasPendingImports };
 };

@@ -11,6 +11,7 @@ import {
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 
+import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 import type { PostEditorProps } from '../model/post-editor';
 import type { Block } from '@blocknote/core';
 import type { FloatingUIOptions } from '@blocknote/react';
@@ -170,12 +171,28 @@ export default function BlockNoteEditor({
 	initialBlocks,
 	onChange,
 	onReady,
+	onMediaImportingChange,
 	uploadFile,
 	ariaDescribedBy,
 	ref,
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
-	const { handleImageImport, registerUploadedImageUrl } = usePostWriteImageImport();
+	const onMediaImportingChangeRef = useRef(onMediaImportingChange);
+
+	useEffect(() => {
+		onMediaImportingChangeRef.current = onMediaImportingChange;
+	}, [onMediaImportingChange]);
+
+	const editorRef = useRef<PostWriteBlockNoteEditor | null>(null);
+
+	const { handleImageImport, registerUploadedImageUrl, hasPendingImports } = usePostWriteImageImport({
+		onImportSettled: () => {
+			const current = editorRef.current;
+			if (current !== null) {
+				onMediaImportingChangeRef.current?.(hasPendingImports(current.document));
+			}
+		},
+	});
 	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile, registerUploadedImageUrl);
 
 	useEffect(() => {
@@ -215,6 +232,10 @@ export default function BlockNoteEditor({
 		},
 		[initialBlocks, uploadFileWithFeedback],
 	);
+
+	useEffect(() => {
+		editorRef.current = editor;
+	}, [editor]);
 
 	useEffect(() => connectEditor(editor), [connectEditor, editor]);
 	usePostWriteTransferUpload(editor);
@@ -266,8 +287,9 @@ export default function BlockNoteEditor({
 						currentEditor.updateBlock(change.block, { props: { language } });
 					}
 				}
+				onMediaImportingChangeRef.current?.(hasPendingImports(currentEditor.document));
 			}),
-		[editor, handleImageImport],
+		[editor, handleImageImport, hasPendingImports],
 	);
 
 	// 제목에서 Enter를 누르거나 검증에 실패했을 때 실제 에디터로 focus할 수 있도록 useImperativeHandle(리모콘 역할) 사용
@@ -277,8 +299,10 @@ export default function BlockNoteEditor({
 
 	// 에디터 생성이 끝나면 초기 문서를 부모에 전달해 발행 가능 상태로 전환
 	useEffect(() => {
-		onReady([...editor.document]);
-	}, [editor, onReady]);
+		const document = [...editor.document];
+		onReady(document);
+		onMediaImportingChangeRef.current?.(hasPendingImports(document));
+	}, [editor, hasPendingImports, onReady]);
 
 	// BlockNote가 생성한 실제 editable element에 접근성 이름과 오류 메시지 연결
 	useEffect(() => {
@@ -343,7 +367,11 @@ export default function BlockNoteEditor({
 				slashMenu={false}
 				formattingToolbar={false}
 				filePanel={false}
-				onChange={() => onChange([...editor.document])}
+				onChange={() => {
+					const document = [...editor.document];
+					onChange(document);
+					onMediaImportingChangeRef.current?.(hasPendingImports(document));
+				}}
 			>
 				<PostWriteFormattingToolbar />
 				<FilePanelController filePanel={PostWriteFilePanel} />

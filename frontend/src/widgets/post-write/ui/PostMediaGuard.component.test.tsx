@@ -179,4 +179,46 @@ describe('실제 저장 흐름의 미디어 검증', () => {
 		expect(JSON.stringify(expected.mock.calls)).not.toContain('private-image');
 		expect(JSON.stringify(expected.mock.calls)).toContain('https://cdn.rilog.test/body.png');
 	});
+
+	it('외부 이미지 변환 중(isMediaImporting)에는 발행 및 임시저장 버튼이 비활성화되고 완료 시 활성화된다', async () => {
+		const user = userEvent.setup();
+		function ImportingEditor({ onReady, onMediaImportingChange }: PostEditorProps) {
+			useEffect(() => onReady([paragraph]), [onReady]);
+			return (
+				<div>
+					<p>본문 내용</p>
+					<button type="button" onClick={() => onMediaImportingChange?.(true)}>
+						변환 시작
+					</button>
+					<button type="button" onClick={() => onMediaImportingChange?.(false)}>
+						변환 완료
+					</button>
+				</div>
+			);
+		}
+
+		renderWithQuery(
+			<AUTH_CONTEXT value={{ isAuthenticated: true, isInitialized: true, isOnboarding: false, sessionVersion: 0 }}>
+				<NewPostController editorComponent={ImportingEditor} />
+			</AUTH_CONTEXT>,
+		);
+		await waitFor(() => expect(usersApi.readMyInfo).toHaveBeenCalled());
+
+		const publishButton = screen.getByRole('button', { name: '발행' });
+		const saveButton = screen.getByRole('button', { name: '임시저장' });
+
+		// 초기에는 에디터가 준비되었으므로 활성화 상태
+		expect(publishButton).toBeEnabled();
+		expect(saveButton).toBeEnabled();
+
+		// 변환 중에는 비활성화
+		await user.click(screen.getByRole('button', { name: '변환 시작' }));
+		expect(publishButton).toBeDisabled();
+		expect(saveButton).toBeDisabled();
+
+		// 변환 완료 후 다시 활성화
+		await user.click(screen.getByRole('button', { name: '변환 완료' }));
+		expect(publishButton).toBeEnabled();
+		expect(saveButton).toBeEnabled();
+	});
 });

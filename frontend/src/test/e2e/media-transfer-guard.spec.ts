@@ -251,3 +251,50 @@ test('빈 줄 없이 붙어 있는 마크다운 이미지들이 포함된 텍스
 	await expect(editor).toContainText('중간 본문');
 	await expect(editor).toContainText('마지막 본문');
 });
+
+test('외부 이미지 변환 중에는 블록에 로딩 오버레이가 표시되고 발행 버튼이 비활성화되며 완료 시 해제된다', async ({
+	page,
+}) => {
+	let resolveImport: () => void = () => undefined;
+	await page.route('**/v1/uploads/image-imports', async (route) => {
+		await new Promise<void>((resolve) => {
+			resolveImport = resolve;
+		});
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 200,
+				message: '성공',
+				data: {
+					objectKey: 'rilog/images/raw/imported/delayed.webp',
+					url: 'https://images.example.com/rilog/images/raw/imported/delayed.webp',
+				},
+			}),
+		});
+	});
+
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	await dispatchTransfer(editor, {
+		eventType: 'paste',
+		format: 'text/html',
+		content: '<img src="https://cdn.rilog.test/remote-image.png">',
+	});
+
+	const imageBlock = editor.locator('[data-content-type="image"]');
+	await expect(imageBlock).toHaveCount(1);
+	await expect(imageBlock.locator('.post-write-image-import-overlay')).toBeVisible();
+	await expect(imageBlock.locator('.post-write-image-import-text')).toHaveText('이미지 변환 중...');
+	await expect(page.getByRole('button', { name: '발행' })).toBeDisabled();
+
+	resolveImport();
+
+	await expect(imageBlock.locator('.post-write-image-import-overlay')).toHaveCount(0);
+	await expect(imageBlock.locator('img')).toHaveAttribute(
+		'src',
+		'https://images.example.com/rilog/images/raw/imported/delayed.webp',
+	);
+	await expect(page.getByRole('button', { name: '발행' })).toBeEnabled();
+});
