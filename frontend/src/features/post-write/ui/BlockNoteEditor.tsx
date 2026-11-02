@@ -2,7 +2,13 @@
 
 import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
-import { getDefaultReactSlashMenuItems, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import {
+	FilePanelController,
+	getDefaultReactSlashMenuItems,
+	SideMenuController,
+	SuggestionMenuController,
+	useCreateBlockNote,
+} from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 
@@ -10,7 +16,8 @@ import type { PostEditorProps } from '../model/post-editor';
 import type { FloatingUIOptions } from '@blocknote/react';
 
 import '@blocknote/shadcn/style.css';
-import { usePostWriteMediaTransferGuard } from '../hooks/use-post-write-media-transfer-guard';
+import { usePostWriteTransferUpload } from '../hooks/use-post-write-transfer-upload';
+import { usePostWriteUpload } from '../hooks/use-post-write-upload';
 import {
 	calculateSlashMenuLayout,
 	clampSlashMenuCoordinate,
@@ -19,12 +26,20 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { installImageRowDrag } from '../lib/install-image-row-drag';
+import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
+import { showUploadBlockError } from '../lib/show-upload-block-error';
+import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
+import { isTransientMediaUrl } from '../lib/validate-post-media';
 import '../styles/blocknote-theme.css';
 
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
+import PostWriteFilePanel from './PostWriteFilePanel';
+import PostWriteFormattingToolbar from './PostWriteFormattingToolbar';
+import PostWriteSideMenu from './PostWriteSideMenu';
 
 const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
@@ -151,6 +166,9 @@ const slashMenuFloatingUIOptions = {
 	},
 } satisfies FloatingUIOptions;
 
+const TRANSIENT_MEDIA_UPLOAD_ERROR =
+	'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.';
+
 export default function BlockNoteEditor({
 	initialBlocks,
 	onChange,
@@ -160,6 +178,8 @@ export default function BlockNoteEditor({
 	ref,
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
+	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile);
+
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
 		{
@@ -169,21 +189,48 @@ export default function BlockNoteEditor({
 			schema: POST_WRITE_SCHEMA,
 			dictionary: {
 				...ko,
+				file_panel: {
+					...ko.file_panel,
+					upload: { ...ko.file_panel.upload, upload_error: '' },
+				},
 				placeholders: {
 					...ko.placeholders,
 					default: '마크다운 단축 문법을 사용할 수 있습니다. /를 입력하면 블록을 선택할 수 있습니다.',
 				},
 			},
-			uploadFile,
+			uploadFile: uploadFileWithFeedback,
 		},
-		[initialBlocks, uploadFile],
+		[initialBlocks, uploadFileWithFeedback],
 	);
-	const transferError = usePostWriteMediaTransferGuard(editor);
+
+	useEffect(() => connectEditor(editor), [connectEditor, editor]);
+	usePostWriteTransferUpload(editor);
+	useEffect(() => installImageRowDrag(editor), [editor]);
+	useEffect(() => keepImageRowSingleImage(editor), [editor]);
 
 	useEffect(
 		() =>
 			editor.onChange((currentEditor, context) => {
 				for (const change of context.getChanges()) {
+					if (
+						(change.block.type === 'image' ||
+							change.block.type === 'file' ||
+							change.block.type === 'video' ||
+							change.block.type === 'audio') &&
+						isTransientMediaUrl(change.block.props.url)
+					) {
+						updateMediaUrlWithoutHistory(currentEditor, change.block.id, '');
+						window.setTimeout(
+							() => showUploadBlockError(currentEditor, change.block.id, TRANSIENT_MEDIA_UPLOAD_ERROR),
+							0,
+						);
+						continue;
+					}
+
+					if (change.source.type === 'undo' || change.source.type === 'redo') {
+						continue;
+					}
+
 					if (change.block.type === 'heading' && change.block.props.level > 4) {
 						currentEditor.updateBlock(change.block, { props: { level: 4 } });
 						continue;
@@ -279,7 +326,18 @@ export default function BlockNoteEditor({
 
 	return (
 		<div className="post-write-blocknote">
-			<BlockNoteView editor={editor} theme="light" slashMenu={false} onChange={() => onChange([...editor.document])}>
+			<BlockNoteView
+				editor={editor}
+				theme="light"
+				slashMenu={false}
+				formattingToolbar={false}
+				filePanel={false}
+				sideMenu={false}
+				onChange={() => onChange([...editor.document])}
+			>
+				<PostWriteFormattingToolbar />
+				<FilePanelController filePanel={PostWriteFilePanel} />
+				<SideMenuController sideMenu={PostWriteSideMenu} />
 				<SuggestionMenuController
 					triggerCharacter="/"
 					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
@@ -300,11 +358,6 @@ export default function BlockNoteEditor({
 				/>
 			</BlockNoteView>
 			<CodeLanguageDropdownController editor={editor} />
-			{transferError !== null && (
-				<p className="mt-3 text-body-4 text-danger-text" role="alert">
-					{transferError}
-				</p>
-			)}
 		</div>
 	);
 }

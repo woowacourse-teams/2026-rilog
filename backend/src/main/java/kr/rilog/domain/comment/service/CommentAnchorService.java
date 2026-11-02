@@ -30,11 +30,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static kr.rilog.domain.blog.entity.enums.BlogMemberStatus.ACTIVE;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_SELECTION_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_COMMENT_COUNT_INVALID;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
@@ -49,6 +52,7 @@ public class CommentAnchorService {
     private final UserRepository userRepository;
     private final BlogMemberRepository blogMemberRepository;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final Clock clock;
 
     @Transactional
     public CommentAnchorCreateResult createCommentAnchor(
@@ -61,6 +65,8 @@ public class CommentAnchorService {
         User writer = getUser(requesterId);
 
         Selection selection = createSelection(post, command);
+        // 첫 INSERT 전에 Post 행을 갱신해 동시 생성 시 FK 잠금 승격을 피한다.
+        validateCommentCountUpdated(postRepository.incrementCommentCount(postId));
         CommentAnchorSelection anchorSelection = getOrCreateActiveSelection(post, selection);
         CommentAnchor commentAnchor = commentAnchorRepository.save(CommentAnchor.create(anchorSelection, writer, command.content()));
         notificationEventPublisher.commentAnchorCreated(commentAnchor.getId(), requesterId, commentAnchor.getCreatedAt());
@@ -79,6 +85,7 @@ public class CommentAnchorService {
         User writer = getUser(requesterId);
 
         CommentAnchorSelection anchorSelection = getSelection(postId, selectionId);
+        validateCommentCountUpdated(postRepository.incrementCommentCount(postId));
         CommentAnchor commentAnchor = commentAnchorRepository.save(CommentAnchor.create(anchorSelection, writer, command.content()));
         notificationEventPublisher.commentAnchorCreated(commentAnchor.getId(), requesterId, commentAnchor.getCreatedAt());
         return CommentAnchorCreateResult.from(commentAnchor);
@@ -108,7 +115,9 @@ public class CommentAnchorService {
         CommentAnchor commentAnchor = getCommentAnchor(postId, commentAnchorId);
         BlogMembers blogMembers = getActiveBlogMembers(post);
 
-        commentAnchor.deleteBy(requesterId, post, blogMembers);
+        commentAnchor.validateCanDeleteBy(requesterId, post, blogMembers);
+        softDeleteCommentAnchor(commentAnchorId);
+        validateCommentCountUpdated(postRepository.decrementCommentCount(postId));
         return CommentAnchorDeleteResult.from(commentAnchor);
     }
 
@@ -130,6 +139,17 @@ public class CommentAnchorService {
                 commentAnchorRepository.findAllByPostId(postId)
         );
         return CommentAnchorSidebarResult.from(post, groups, getActiveBlogMembers(post), requesterId);
+    }
+
+    private void softDeleteCommentAnchor(Long commentAnchorId) {
+        int deletedRows = commentAnchorRepository.softDeleteIfActive(
+                commentAnchorId,
+                LocalDateTime.now(clock)
+        );
+
+        if (deletedRows == 0) {
+            throw new CommentException(COMMENT_ANCHOR_NOT_FOUND);
+        }
     }
 
     private CommentAnchorSelection getOrCreateActiveSelection(Post post, Selection selection) {
@@ -172,6 +192,12 @@ public class CommentAnchorService {
         return BlogMembers.from(
                 blogMemberRepository.findAllWithUserByBlogIdAndStatus(post.getOwnBlogId(), ACTIVE)
         );
+    }
+
+    private void validateCommentCountUpdated(int updatedRows) {
+        if (updatedRows != 1) {
+            throw new PostException(POST_COMMENT_COUNT_INVALID);
+        }
     }
 
     private Selection createSelection(Post post, CommentAnchorCreateCommand command) {

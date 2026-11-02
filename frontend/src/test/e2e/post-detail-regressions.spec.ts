@@ -1,3 +1,5 @@
+import { rm, writeFile } from 'node:fs/promises';
+
 import { expect, test } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
@@ -7,7 +9,7 @@ import { createPostDetailResponseFixture } from '@/test/fixtures/post-detail';
 
 // These regressions need real Next navigation and the production editor/guard.
 // Raw API responses are controlled; BE deletion/authentication are not under test.
-async function mockRegressionApi(page: Page) {
+async function mockRegressionApi(page: Page, thumbnailImageUrl: string | null = null) {
 	const state = {
 		authenticated: true,
 		deleted: false,
@@ -74,6 +76,7 @@ async function mockRegressionApi(page: Page) {
 				await data(
 					createPostDetailResponseFixture({
 						title: '수정할 게시글',
+						thumbnailImageUrl,
 						owner: { type: 'RILOG', blogId: 1, slug: 'the_rilog', name: 'The Rilog.', profileImageUrl: null },
 						viewerPermissions: { canEdit: true, canDelete: true },
 						viewCount: 9,
@@ -105,6 +108,31 @@ async function mockRegressionApi(page: Page) {
 	});
 	return state;
 }
+
+test('대표 이미지 응답이 지연되어도 크기 해시로 영역을 먼저 확보한다', async ({ page }) => {
+	const imageResponse = Promise.withResolvers<void>();
+	const statePath = '.the-rilog-build/server-fixture-state.json';
+	const imageUrl = 'https://images.rilog.test/cover.png#1200x800';
+
+	try {
+		await writeFile(statePath, JSON.stringify({ thumbnailImageUrl: imageUrl }));
+		await page.route('https://images.rilog.test/cover.png', async (route) => {
+			await imageResponse.promise;
+			await route.abort();
+		});
+		await mockRegressionApi(page, imageUrl);
+		await page.goto('/@the_rilog/posts/100', { waitUntil: 'domcontentloaded' });
+		const figure = page.getByRole('figure', { name: 'Daily Headlines 대표 이미지' });
+		await expect(figure).toBeVisible();
+		const box = await figure.boundingBox();
+		expect(box).not.toBeNull();
+		expect(box?.height).toBeCloseTo((box?.width ?? 0) * (2 / 3), 0);
+		await expect(figure.locator('img')).toHaveAttribute('src', 'https://images.rilog.test/cover.png');
+	} finally {
+		imageResponse.resolve();
+		await rm(statePath, { force: true });
+	}
+});
 
 test('삭제 뒤 상세 재조회가 지연·404로 끝나도 실제 블로그 홈으로 이동한다', async ({ page }) => {
 	const state = await mockRegressionApi(page);

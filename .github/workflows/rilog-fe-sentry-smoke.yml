@@ -1,0 +1,45 @@
+name: Sentry Isolated Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentry-isolated-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      SENTRY_SMOKE_DSN: ${{ secrets.SENTRY_SMOKE_DSN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_SMOKE_AUTH_TOKEN }}
+      SENTRY_SMOKE_PROJECT_ID: ${{ vars.SENTRY_SMOKE_PROJECT_ID }}
+      SENTRY_SMOKE_PROJECT_SLUG: ${{ vars.SENTRY_SMOKE_PROJECT_SLUG }}
+      SENTRY_SMOKE_ORG: ${{ vars.SENTRY_SMOKE_ORG }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: smoke
+      NEXT_PUBLIC_SENTRY_ENABLED: "true"
+      SENTRY_SLACK_BOT_TOKEN: ""
+      SENTRY_SLACK_CHANNEL_ID: ""
+      SENTRY_SLACK_WEBHOOK_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.19.0"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+      - run: pnpm install --frozen-lockfile
+      - name: Validate isolated target before browser setup or build
+        run: |
+          node --input-type=module -e "import { resolveSentrySmokeConfig } from './test-harness/sentry-smoke-config.mjs'; resolveSentrySmokeConfig(process.env); if (!process.env.SENTRY_AUTH_TOKEN) throw new Error('Dedicated smoke upload token is required.');"
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Build, upload and capture in the dedicated smoke project
+        run: node test-harness/run-sentry-sourcemap-smoke.mjs

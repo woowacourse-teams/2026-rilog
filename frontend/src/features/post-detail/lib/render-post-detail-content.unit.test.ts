@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import { POST_DETAIL_READABILITY_CONTENT } from '@/test/fixtures/post-detail';
 
 import { renderPostDetailContent } from './render-post-detail-content';
@@ -103,6 +104,39 @@ const TOGGLE_BLOCKS: Block[] = [
 ];
 
 describe('renderPostDetailContent', () => {
+	it('저장된 이미지 2열의 두 URL을 각각 정적 HTML로 렌더링한다', async () => {
+		const blocks: PostContentBlock[] = [
+			{
+				id: 'image-row',
+				type: 'columnList',
+				props: {},
+				content: undefined,
+				children: [
+					{ id: 'first-column', type: 'column', props: { width: 1 }, content: undefined, children: [IMAGE_BLOCK] },
+					{
+						id: 'second-column',
+						type: 'column',
+						props: { width: 1 },
+						content: undefined,
+						children: [
+							{
+								...IMAGE_BLOCK,
+								id: 'second-image',
+								props: { ...IMAGE_BLOCK.props, url: 'https://images.rilog.test/second.png' },
+							},
+						],
+					},
+				],
+			},
+		];
+
+		const html = await renderPostDetailContent(blocks);
+
+		expect(html).toContain('data-node-type="columnList"');
+		expect(html).toContain('https://images.rilog.test/post.png');
+		expect(html).toContain('https://images.rilog.test/second.png');
+	});
+
 	it('가독성 점검 fixture의 주요 블록과 안전한 코드 원문을 정적 HTML로 변환한다', async () => {
 		const html = await renderPostDetailContent(POST_DETAIL_READABILITY_CONTENT);
 
@@ -143,6 +177,21 @@ describe('renderPostDetailContent', () => {
 		const html = await renderPostDetailContent([IMAGE_BLOCK]);
 
 		expect(html).toContain('<img');
+		expect(html).toContain('src="https://images.rilog.test/post.png"');
+	});
+
+	it('빈 업로드 블록은 렌더링하지 않고 자식 본문은 유지한다', async () => {
+		const pendingImage: Block = {
+			...IMAGE_BLOCK,
+			id: 'pending-image',
+			props: { ...IMAGE_BLOCK.props, url: '' },
+			children: [HEADING_BLOCKS[0]],
+		};
+
+		const html = await renderPostDetailContent([pendingImage, IMAGE_BLOCK]);
+
+		expect(html).not.toContain('data-id="pending-image"');
+		expect(html).toContain('data-id="heading-level-1"');
 		expect(html).toContain('src="https://images.rilog.test/post.png"');
 	});
 

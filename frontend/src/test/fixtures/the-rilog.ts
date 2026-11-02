@@ -1,5 +1,4 @@
-import type { Block } from '@blocknote/core';
-
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import { createTheRilogSnapshot } from '@/features/the-rilog/server/the-rilog-snapshot';
 import type { TheRilogResponse } from '@/shared/api/the-rilog/types';
 
@@ -38,7 +37,7 @@ export const createTheRilogFixtureData = (overrides: Partial<TheRilogResponse> =
 	...overrides,
 });
 
-export const createTheRilogFixtureNewsContent = (): Block[] =>
+export const createTheRilogFixtureNewsContent = (): PostContentBlock[] =>
 	['새 모델 공개', '웹 플랫폼 업데이트'].map((text, index) => ({
 		id: `headline-${index + 1}`,
 		type: 'heading',

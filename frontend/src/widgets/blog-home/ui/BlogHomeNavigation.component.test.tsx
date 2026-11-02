@@ -28,7 +28,7 @@ vi.mock('@/shared/ui/link/CustomLink', () => ({
 		...props
 	}: {
 		href: string;
-		onNavigate?: () => void;
+		onNavigate?: (event: { preventDefault: () => void }) => void;
 		children: ReactNode;
 	}) => (
 		<a
@@ -36,7 +36,7 @@ vi.mock('@/shared/ui/link/CustomLink', () => ({
 			{...props}
 			onClick={(event) => {
 				event.preventDefault();
-				if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.();
+				if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.(event);
 			}}
 		>
 			{children}

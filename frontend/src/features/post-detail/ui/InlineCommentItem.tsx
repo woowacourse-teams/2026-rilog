@@ -1,6 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+
+import type { CommentPanelSession } from '../hooks/use-comment-panel-session';
 
 import UserAvatar from '@/domains/user/ui/UserAvatar';
 import { analytics } from '@/features/analytics/model/events';
@@ -12,6 +14,8 @@ import CustomLink from '@/shared/ui/link/CustomLink';
 import AlertModal from '@/shared/ui/modal/AlertModal';
 import ConfirmModal from '@/shared/ui/modal/ConfirmModal';
 import { parseApiUtcDate, toApiUtcISOString } from '@/shared/utils/parse-api-utc-date';
+
+import { useCommentPanelSession } from '../hooks/use-comment-panel-session';
 
 import InlineCommentEditForm from './InlineCommentEditForm';
 
@@ -45,10 +49,15 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 	const { author } = comment;
 	const authorBlogPath = buildBlogHomePath(author.slug);
 	const [isEditing, setIsEditing] = useState(false);
-	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const session = useCommentPanelSession();
+	const currentSession = useRef(session);
+	useLayoutEffect(() => {
+		currentSession.current = session;
+	}, [session]);
+	const [deleteModalSession, setDeleteModalSession] = useState<CommentPanelSession | null>(null);
 	const deleteMutation = useDeletePostCommentAnchorMutation(postId, comment.commentId);
 	const isDeleteResponseUnconfirmed = isInvalidApiResponseError(deleteMutation.error);
-	const [isDeleteErrorOpen, setIsDeleteErrorOpen] = useState(false);
+	const [deleteErrorSession, setDeleteErrorSession] = useState<CommentPanelSession | null>(null);
 	const isDeleting = useRef(false);
 	const handleDelete = async () => {
 		if (!comment.canDelete || isDeleting.current) return;
@@ -56,10 +65,10 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 		try {
 			await deleteMutation.mutateAsync();
 			analytics.inlineCommentDeleted({ postId });
-			setIsDeleteModalOpen(false);
+			setDeleteModalSession(null);
 		} catch {
-			setIsDeleteModalOpen(false);
-			setIsDeleteErrorOpen(true);
+			setDeleteModalSession(null);
+			setDeleteErrorSession(session);
 		} finally {
 			isDeleting.current = false;
 		}
@@ -128,7 +137,7 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 						<span className="flex items-center gap-1">
 							<button
 								type="button"
-								onClick={() => setIsDeleteModalOpen(true)}
+								onClick={() => setDeleteModalSession(session)}
 								className="rounded-sm transition-colors hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
 							>
 								삭제
@@ -144,12 +153,12 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 						commentAnchorId={comment.commentId}
 						onSaved={() => {
 							setIsEditing(false);
-							editButtonRef.current?.focus();
+							if (session.isOpen && currentSession.current === session) editButtonRef.current?.focus();
 						}}
 						content={comment.content}
 						onCancel={() => {
 							setIsEditing(false);
-							editButtonRef.current?.focus();
+							if (session.isOpen && currentSession.current === session) editButtonRef.current?.focus();
 						}}
 					/>
 				</div>
@@ -160,24 +169,24 @@ export default function InlineCommentItem({ comment, postId }: InlineCommentItem
 			)}
 			{comment.canDelete && (
 				<ConfirmModal
-					open={isDeleteModalOpen}
+					open={session.isOpen && deleteModalSession === session}
 					title="댓글을 삭제할까요?"
 					description="삭제한 댓글은 복구할 수 없습니다."
 					confirmLabel={deleteMutation.isPending ? '삭제 중…' : '삭제'}
 					variant="danger"
 					isPending={deleteMutation.isPending}
 					onConfirm={() => void handleDelete()}
-					onCancel={() => setIsDeleteModalOpen(false)}
+					onCancel={() => setDeleteModalSession(null)}
 				/>
 			)}
 			<AlertModal
-				open={isDeleteErrorOpen}
+				open={session.isOpen && deleteErrorSession === session}
 				title={isDeleteResponseUnconfirmed ? '삭제 결과를 확인하지 못했습니다.' : '댓글을 삭제하지 못했습니다.'}
 				description={
 					isDeleteResponseUnconfirmed ? '댓글 목록에서 삭제 여부를 확인해 주세요.' : '잠시 후 다시 시도해 주세요.'
 				}
-				onAction={() => setIsDeleteErrorOpen(false)}
-				onClose={() => setIsDeleteErrorOpen(false)}
+				onAction={() => setDeleteErrorSession(null)}
+				onClose={() => setDeleteErrorSession(null)}
 			/>
 		</article>
 	);

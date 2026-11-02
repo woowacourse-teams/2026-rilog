@@ -12,7 +12,6 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
@@ -23,6 +22,7 @@ import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -75,10 +75,10 @@ class DraftServiceTest {
     private TagAssetsPublisher tagAssetsPublisher;
 
     @Mock
-    private HardTrendingRepository trendingRepository;
+    private PostViewCountRepository viewCountRepository;
 
     @Mock
-    private PostViewCountRepository viewCountRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     private DraftService draftService;
 
@@ -91,8 +91,8 @@ class DraftServiceTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
-                trendingRepository,
-                viewCountRepository
+                viewCountRepository,
+                eventPublisher
         );
     }
 

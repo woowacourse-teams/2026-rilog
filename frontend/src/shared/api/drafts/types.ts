@@ -1,10 +1,9 @@
-import type { Block } from '@blocknote/core';
-
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import type { PostCategoryRequest } from '@/shared/api/posts/types';
 
 export interface DraftSaveRequest {
 	title: string;
-	content: Block[];
+	content: PostContentBlock[];
 }
 
 export interface DraftSaveResponse {
@@ -39,7 +38,7 @@ export type DraftStatusResponse = 'PUBLISHED' | 'DRAFT';
 export interface DraftDetailResponse {
 	draftId: number;
 	title: string;
-	content: Block[];
+	content: PostContentBlock[];
 	status: DraftStatusResponse;
 	publishedAt: string;
 }
@@ -49,7 +48,7 @@ export type DraftPublishVisibilityRequest = 'PUBLIC' | 'PRIVATE';
 export interface DraftPublishRequest {
 	slug: string;
 	title: string;
-	content: Block[];
+	content: PostContentBlock[];
 	category: PostCategoryRequest;
 	visibility: DraftPublishVisibilityRequest;
 	thumbnailImageUrl: string | null;

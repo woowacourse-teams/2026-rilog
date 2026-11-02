@@ -4,6 +4,7 @@
 
 - `frontend/`: 사용자 UI와 프론트엔드 애플리케이션
 - `backend/`: API, 데이터와 서버 애플리케이션
+- `image-server/`: 외부 이미지 가져오기 전용 Node API와 Docker 배포 설정
 - `docs/`: 파트 공통 규칙과 ADR
 - `.github/`: PR 및 이슈 템플릿과 추후 도입할 자동화 설정
 

@@ -4,6 +4,15 @@ import { describe, expect, it } from 'vitest';
 import PostFeedImage from './PostFeedImage';
 
 describe('PostFeedImage', () => {
+	it('크기 해시는 피드 이미지 URL에 노출하지 않는다', () => {
+		render(
+			<PostFeedImage src="https://images.rilog.test/post.png#1200x800" alt="게시글 썸네일" width={640} height={360} />,
+		);
+
+		const src = screen.getByRole('img', { name: '게시글 썸네일' }).getAttribute('src') ?? '';
+		expect(decodeURIComponent(src)).toContain('https://images.rilog.test/post.png');
+		expect(decodeURIComponent(src)).not.toContain('#1200x800');
+	});
 	it('원본 이미지가 실패하면 전달받은 fallback으로 교체한다', () => {
 		render(
 			<PostFeedImage

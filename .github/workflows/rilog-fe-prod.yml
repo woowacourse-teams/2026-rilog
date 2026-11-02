@@ -68,13 +68,18 @@ jobs:
 
       - name: Build Next.js app
         env:
+          NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${{ github.event_name == 'push' && 'prod' || 'preview' }}
           SENTRY_RELEASE: ${{ github.sha }}
           SENTRY_UPLOAD_REQUIRED: ${{ github.event_name == 'push' && 'true' || 'false' }}
         shell: bash
         run: |
           if [[ "$SENTRY_UPLOAD_REQUIRED" == 'true' ]]; then
+            node --env-file=.env scripts/verify-sentry-production.mjs
             node --env-file=.env -e "if (!process.env.SENTRY_AUTH_TOKEN) { console.error('Production Sentry source map upload requires SENTRY_AUTH_TOKEN.'); process.exit(1); }"
             node --env-file=.env -e "if (!process.env.THE_RILOG_REVALIDATION_SECRET?.trim()) { console.error('Daily ISR requires THE_RILOG_REVALIDATION_SECRET.'); process.exit(1); }"
+          fi
+          if [[ '${{ github.event_name }}' != 'push' ]]; then
+            export NEXT_PUBLIC_SENTRY_ENABLED=false
           fi
           if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
             node scripts/create-the-rilog-fixture.mjs
@@ -97,7 +102,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
+          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

@@ -1,8 +1,15 @@
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { deliverSentrySlackAlert } from './sentry-slack-delivery';
+import { deliverSentrySlackAlert, resolveSentrySlackAlertLevel } from './sentry-slack-delivery';
+
+beforeEach(() => {
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'prod');
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENABLED', 'true');
+	vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@example.invalid/1');
+	vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.rilog.kr');
+});
 
 it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 억제한다', async () => {
 	vi.stubEnv('NODE_ENV', 'production');
@@ -14,6 +21,12 @@ it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 
 	const summary = {
 		eventId: '0123456789abcdef0123456789abcdef',
 		title: '게시물 저장 실패',
+		apiRequest: {
+			method: 'POST',
+			url: 'https://api.rilog.kr/v1/posts/[id]/views',
+			statusCode: 500,
+			requestId: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d',
+		},
 		errorType: 'TypeError',
 		route: '/write',
 		tags: { operation: 'post.publish', http_status: '503', environment: 'prod' },
@@ -27,7 +40,11 @@ it('허용한 요약만 Slack에 전송하고 같은 오류의 반복 알림을 
 	expect(request.body).not.toContain('fetch POST 503');
 	expect(request.body).toContain('post.publish');
 	expect(request.body).toContain(summary.eventId);
+	expect(request.body).toContain('Sentry 저장 미확인');
 	expect(request.body).toContain('/write');
+	expect(request.body).toContain('원인 요청');
+	expect(request.body).toContain('671a5cb0-bfc5-4cab-b9bf-42044df2b76d');
+	expect(request.body).toContain('https://api.rilog.kr/v1/posts/[id]/views');
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
@@ -48,7 +65,7 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 			errorType: 'HTTPError',
 			route: '/write',
 			tags: { operation: 'post.publish', http_status: '503' },
-			sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+			sessionReplayUrl: 'https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 			breadcrumbs: [
 				{ category: 'navigation', from: '/feed', to: '/write' },
 				{
@@ -81,13 +98,13 @@ it('Bot Token이 있으면 본문을 보내고 받은 ts로 breadcrumbs를 댓�
 	expect(parent.text).toContain('/write');
 	expect(parent.text).toContain('Sentry event ID: 11111111111111111111111111111111');
 	expect(parent.text).toContain(
-		'PostHog session replay: https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+		'PostHog session replay: https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 	);
 	expect(
 		parent.blocks.some(
 			(block) =>
 				block.text?.text ===
-				'<https://us.posthog.com/project/phc_test/replay/session-1?t=30|PostHog session replay 보기>',
+				'<https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30|PostHog session replay 보기>',
 		),
 	).toBe(true);
 	expect(parent.text).not.toContain('fetch POST');
@@ -200,3 +217,118 @@ it('Slack 본문 전송이 실패하면 같은 오류의 다음 실행을 중복
 	vi.unstubAllGlobals();
 	vi.unstubAllEnvs();
 });
+
+it.each(['preview', 'local', 'smoke', ''])(
+	'비운영 환경 %s는 상속한 Slack 설정으로 전송하지 않는다',
+	async (environment) => {
+		vi.stubEnv('NODE_ENV', 'production');
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', environment);
+		vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+		const post = vi.fn();
+		vi.stubGlobal('fetch', post);
+		await expect(
+			deliverSentrySlackAlert(
+				{
+					eventId: '66666666666666666666666666666666',
+					title: 'test',
+					errorType: 'Error',
+					route: '/write',
+					tags: { environment: 'prod' },
+					breadcrumbs: [],
+				},
+				'test',
+			),
+		).resolves.toBe(false);
+		expect(post).not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	},
+);
+
+it('webhook 모드는 직접 SDK 전달을 거부하고 검증된 event 링크만 전송한다', async () => {
+	vi.stubEnv('SENTRY_SLACK_MODE', 'webhook');
+	vi.stubEnv('SENTRY_WEBHOOK_ORG', 'rilog-frontend');
+	vi.stubEnv('SENTRY_SLACK_BOT_TOKEN', '');
+	vi.stubEnv('SENTRY_SLACK_CHANNEL_ID', '');
+	vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+	const post = vi.fn().mockResolvedValue({ ok: true });
+	vi.stubGlobal('fetch', post);
+	const summary = {
+		eventId: '77777777777777777777777777777777',
+		title: 'test',
+		errorType: 'Error',
+		route: '/write',
+		tags: { environment: 'prod' },
+		breadcrumbs: [],
+	};
+	const eventUrl = `https://rilog-frontend.sentry.io/issues/123/events/${summary.eventId}/`;
+	expect(await deliverSentrySlackAlert(summary, 'server')).toBe(false);
+	expect(
+		await deliverSentrySlackAlert(summary, 'sentry-webhook', {
+			mode: 'webhook',
+			eventUrl: 'https://attacker.example/',
+		}),
+	).toBe(false);
+	expect(post).not.toHaveBeenCalled();
+	expect(await deliverSentrySlackAlert(summary, 'sentry-webhook', { mode: 'webhook', eventUrl })).toBe(true);
+	const [, request] = post.mock.calls[0] as [string, RequestInit];
+	expect(request.body).toContain(eventUrl);
+	vi.unstubAllGlobals();
+	vi.unstubAllEnvs();
+});
+
+it.each([
+	[{}, 'error', '🔴'],
+	[{ error_kind: 'server_response' }, 'error', '🔴'],
+	[{ error_kind: 'storage_rejected' }, 'error', '🔴'],
+	[{ error_kind: 'unexpected_response' }, 'error', '🔴'],
+	[{ error_kind: 'rate_limit' }, 'warn', '🟡'],
+	[{ error_kind: 'timeout' }, 'warn', '🟡'],
+	[{ error_kind: 'unknown' }, 'warn', '🟡'],
+	[{ error_kind: 'network', user_impact: 'save_failed' }, 'warn', '🟡'],
+	[{ error_kind: 'network', user_impact: 'action_failed' }, 'warn', '🟡'],
+	[{ error_kind: 'network', user_impact: 'load_failed' }, 'info', '🟢'],
+	[{ error_kind: 'network' }, 'info', '🟢'],
+] as const)(
+	'오류 태그 %o는 중요도 %s(%s)와 Sentry 바로가기 링크로 Slack 본문을 구성한다',
+	async (tags, expectedLevel, expectedBadge) => {
+		vi.stubEnv('NODE_ENV', 'production');
+		vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test');
+		vi.stubEnv('SENTRY_SLACK_BOT_TOKEN', '');
+		vi.stubEnv('SENTRY_SLACK_CHANNEL_ID', '');
+		const post = vi.fn().mockResolvedValue({ ok: true });
+		vi.stubGlobal('fetch', post);
+		expect(resolveSentrySlackAlertLevel(tags)).toBe(expectedLevel);
+
+		const eventId = `888888888888888888888888888888${expectedLevel === 'error' ? '01' : expectedLevel === 'warn' ? '02' : '03'}`;
+		await expect(
+			deliverSentrySlackAlert(
+				{
+					eventId,
+					title: `${expectedLevel}-${JSON.stringify(tags)}`,
+					errorType: 'HTTPError',
+					route: '/feeds',
+					tags,
+					breadcrumbs: [],
+				},
+				`severity-ip-${expectedLevel}`,
+			),
+		).resolves.toBe(true);
+		const payload = JSON.parse((post.mock.calls[0] as [string, RequestInit])[1].body as string) as {
+			text: string;
+			blocks: Array<{ type: string; text?: { text: string }; elements?: Array<{ text: string }> }>;
+		};
+		expect(payload.text.startsWith(`${expectedBadge} HTTPError`)).toBe(true);
+		expect(payload.blocks[0]?.text?.text).toBe(`${expectedBadge} *HTTPError*`);
+		expect(payload.text).toContain(`https://rilog-frontend.sentry.io/issues/?query=${eventId}`);
+		expect(
+			payload.blocks.some((block) =>
+				block.elements?.some((el) =>
+					el.text.includes(`<https://rilog-frontend.sentry.io/issues/?query=${eventId}|Sentry에서 이벤트 조회>`),
+				),
+			),
+		).toBe(true);
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	},
+);

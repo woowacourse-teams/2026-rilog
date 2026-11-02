@@ -73,7 +73,8 @@ test('모바일에서 전체 댓글을 열고 Escape로 닫으면 진입점으�
 	await expect(dialog).toBeVisible();
 	await expect(dialog.getByText('표시할 댓글이 없습니다.')).toBeVisible();
 	const close = dialog.getByRole('button', { name: '댓글 사이드바 닫기' });
-	await expect(close).toBeInViewport();
+	await expect(close).toHaveCount(0);
+	await expect(dialog.getByRole('button', { name: '댓글창 확장' })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(dialog).toBeHidden();
 	await expect(entry).toBeFocused();

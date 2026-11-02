@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import { getImageUrl } from '@/shared/utils/get-image-url';
+import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
 import styles from './the-rilog-magazine.module.css';
 
@@ -13,7 +14,7 @@ interface MagazineThumbnailProps {
 
 export default function MagazineThumbnail({ src }: MagazineThumbnailProps) {
 	const [isFailed, setIsFailed] = useState(false);
-	const imageUrl = getImageUrl(src);
+	const imageUrl = getImageUrl(parseImageSizeHash(src ?? '')?.url ?? src);
 	return (
 		<div className={styles.artworkFrame} data-thumbnail-ratio="16:10" aria-hidden="true">
 			{imageUrl && !isFailed ? (

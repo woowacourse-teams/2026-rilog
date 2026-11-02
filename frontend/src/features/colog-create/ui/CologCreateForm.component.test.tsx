@@ -7,8 +7,7 @@ import { checkNicknameAvailability, checkSlugAvailability } from '@/shared/api/a
 import { createColog } from '@/shared/api/cologs/api';
 import type { CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
-import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
-import type { PresignedUrlCreateResponse } from '@/shared/api/uploads/types';
+import { uploadProfileImageWithPresignedUrl } from '@/shared/api/uploads/api';
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 import { createTestQueryClient } from '@/test/render-with-query';
 
@@ -84,6 +83,13 @@ describe('CologCreateForm', () => {
 			status: 200,
 			message: '사용가능한 슬러그입니다.',
 			data: null,
+		});
+		vi.mocked(uploadProfileImageWithPresignedUrl).mockResolvedValue({
+			uploadId: 'upload-1',
+			objectKey: 'image.png',
+			uploadUrl: 'https://uploads.rilog.test/image.png',
+			headers: {},
+			expiresAt: '2026-08-21T00:00:00Z',
 		});
 	});
 
@@ -393,13 +399,6 @@ describe('CologCreateForm', () => {
 			message: '',
 			data: { id: 1, name: '리로그', slug: 'rilog_team' },
 		});
-		vi.mocked(uploadFileWithPresignedUrl).mockResolvedValue({
-			uploadId: 'upload-1',
-			objectKey: 'image.png',
-			uploadUrl: 'https://uploads.rilog.test/image.png',
-			headers: {},
-			expiresAt: '2026-08-21T00:00:00Z',
-		} satisfies PresignedUrlCreateResponse);
 		const { unmount } = renderWithClient(<CologCreateForm navigate={navigate} />);
 		await fillRequiredFields(user);
 

@@ -1,8 +1,10 @@
 import { codeBlockOptions } from '@blocknote/code-block';
 import { BlockNoteSchema, createCodeBlockSpec } from '@blocknote/core';
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
+import { withMultiColumn } from '@blocknote/xl-multi-column';
 
-import type { Block } from '@blocknote/core';
+import { removeEmptyUploadBlocks } from '@/domains/post/lib/remove-empty-upload-blocks';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 import { extractPostHeadingAnchors } from './extract-post-table-of-contents';
 import { highlightPostCode } from './highlight-post-code';
@@ -21,11 +23,13 @@ const POST_DETAIL_TOGGLE_CHILDREN_SELECTOR = ':scope > .bn-block-group';
 const POST_DETAIL_HEADING_CONTENT_SELECTOR = '.bn-block-content[data-content-type="heading"]';
 const POST_DETAIL_CODE_CONTENT_SELECTOR =
 	'.bn-block-content[data-content-type="codeBlock"][data-language] > pre > code.bn-inline-content';
-const POST_DETAIL_SCHEMA = BlockNoteSchema.create().extend({
-	blockSpecs: {
-		codeBlock: createCodeBlockSpec({ supportedLanguages: codeBlockOptions.supportedLanguages }),
-	},
-});
+const POST_DETAIL_SCHEMA = withMultiColumn(
+	BlockNoteSchema.create().extend({
+		blockSpecs: {
+			codeBlock: createCodeBlockSpec({ supportedLanguages: codeBlockOptions.supportedLanguages }),
+		},
+	}),
+);
 const INLINE_COMMENT_SUPPORTED_BLOCK_TYPES = new Set([
 	'paragraph',
 	'heading',
@@ -138,8 +142,9 @@ const enhancePostDetailHtml = async (
 	return container.innerHTML;
 };
 
-export const renderPostDetailContent = async (blocks: Block[]): Promise<string> => {
-	const headingIdByBlockId = new Map(extractPostHeadingAnchors(blocks).map(({ blockId, id }) => [blockId, id]));
+export const renderPostDetailContent = async (blocks: PostContentBlock[]): Promise<string> => {
+	const content = removeEmptyUploadBlocks(blocks);
+	const headingIdByBlockId = new Map(extractPostHeadingAnchors(content).map(({ blockId, id }) => [blockId, id]));
 	const editor = ServerBlockNoteEditor.create({ schema: POST_DETAIL_SCHEMA });
 	editor.editor.isEditable = false;
 
@@ -147,7 +152,7 @@ export const renderPostDetailContent = async (blocks: Block[]): Promise<string> 
 	// 서버 전용 가상 DOM에 origin만 부여하고 외부 네트워크 요청이나 브라우저 저장소는 사용하지 않는다.
 	(editor as unknown as ServerBlockNoteEditorWithDom).jsdom.reconfigure({ url: 'https://server.rilog.local' });
 
-	const html = await editor.blocksToFullHTML(blocks);
+	const html = await editor.blocksToFullHTML(content);
 	const document = (editor as unknown as ServerBlockNoteEditorWithDom).jsdom.window.document;
 
 	return enhancePostDetailHtml(html, document, headingIdByBlockId);

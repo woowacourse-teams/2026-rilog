@@ -1,0 +1,66 @@
+/* The native dialog and composer stay in their final positions before focus. */
+.comment-compose-entry {
+	background: linear-gradient(var(--surface), var(--surface)) bottom / 100% 100% no-repeat;
+}
+
+.comment-compose-entry[data-state='opening'] {
+	background-size: 100% 0%;
+	box-shadow: none;
+}
+
+.comment-compose-entry[data-state='open'],
+.comment-compose-entry[data-state='closing'] {
+	transition-property: background-size, translate, top, height, overlay, display, box-shadow;
+}
+
+.comment-compose-entry[data-state='open']:has(textarea:focus),
+.comment-compose-entry[data-state='closing']:has(textarea:focus) {
+	transition-property: background-size, translate, overlay, display, box-shadow;
+}
+
+.comment-compose-entry[data-state='open'] {
+	transition-delay: 0ms, 0ms, 0ms, 0ms, 0ms, 0ms, 170ms;
+}
+
+.comment-compose-entry[data-state='open']:has(textarea:focus) {
+	transition-delay: 0ms, 0ms, 0ms, 0ms, 170ms;
+}
+
+.comment-compose-entry[data-state='closing'] {
+	transition-delay: 0ms;
+}
+
+.comment-compose-entry :is([data-comment-sheet-handle], [data-comment-panel-header], [data-comment-list]) {
+	opacity: 1;
+	translate: 0 0;
+	transition:
+		opacity 150ms ease-out 170ms,
+		translate 150ms cubic-bezier(0.32, 0.72, 0, 1) 170ms;
+}
+
+.comment-compose-entry[data-state='opening']
+	:is([data-comment-sheet-handle], [data-comment-panel-header], [data-comment-list]) {
+	opacity: 0;
+	translate: 0 20px;
+}
+
+.comment-compose-entry[data-state='closing']
+	:is([data-comment-sheet-handle], [data-comment-panel-header], [data-comment-list]) {
+	opacity: 0;
+	translate: 0 20px;
+	transition:
+		opacity 120ms ease-in,
+		translate 120ms ease-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.comment-compose-entry[data-state='open'],
+	.comment-compose-entry[data-state='open']:has(textarea:focus),
+	.comment-compose-entry[data-state='closing'],
+	.comment-compose-entry[data-state='closing']:has(textarea:focus),
+	.comment-compose-entry[data-state='closing']
+		:is([data-comment-sheet-handle], [data-comment-panel-header], [data-comment-list]),
+	.comment-compose-entry :is([data-comment-sheet-handle], [data-comment-panel-header], [data-comment-list]) {
+		transition: none;
+	}
+}

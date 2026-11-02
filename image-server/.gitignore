@@ -1,0 +1,5 @@
+node_modules/
+image.env
+image.env.*
+!image.env.example
+*.log

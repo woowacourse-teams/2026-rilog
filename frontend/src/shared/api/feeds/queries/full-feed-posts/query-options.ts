@@ -28,5 +28,6 @@ export const fullFeedPostsQueryOptions = ({
 			return lastPage?.data?.hasNext === true && page !== undefined ? page + 1 : undefined;
 		},
 		staleTime: 60_000,
+		meta: { errorOperation: 'feed.read' },
 		retry: false,
 	});

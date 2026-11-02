@@ -12,5 +12,6 @@ export const postDetailQueryOptions = (slug: string, postId: number, sessionVers
 		queryKey: postsQueryKeys.detail(slug, postId, sessionVersion),
 		queryFn: ({ signal }) => readPostDetail({ slug: stripAtPrefix(slug), postId }, { cache: 'no-store', signal }),
 		staleTime: 60_000,
+		meta: { errorOperation: 'post.read' },
 		retry: false,
 	});

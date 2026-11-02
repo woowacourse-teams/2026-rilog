@@ -35,6 +35,8 @@ public enum AuthErrorInformation implements ErrorInformation {
     AUTHENTICATION_CONTEXT_MISSING(HttpStatus.UNAUTHORIZED, "인증 사용자 정보가 없습니다."),
     AUTHENTICATION_ANNOTATION_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "인증 사용자 주입을 위해서는 @AuthGuard 선언이 필요합니다."),
     AUTHORIZATION_FAILED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    INVALID_LAMBDA_REQUEST_SIGNATURE(HttpStatus.UNAUTHORIZED, "Lambda 요청 서명이 유효하지 않습니다."),
+    LAMBDA_REQUEST_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "Lambda 요청 인증 설정이 올바르지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;

@@ -33,16 +33,15 @@ afterEach(() => {
 });
 
 describe('useSaveCologProfile', () => {
-	it('변경한 로고와 커버를 업로드한 objectKey로 프로필을 저장한다', async () => {
-		const uploadFile = vi.spyOn(uploadApi, 'uploadFileWithPresignedUrl');
-		uploadFile.mockResolvedValueOnce({
+	it('로고는 프로필 이미지로, 커버는 일반 이미지로 업로드한 objectKey로 프로필을 저장한다', async () => {
+		const uploadProfileImage = vi.spyOn(uploadApi, 'uploadProfileImageWithPresignedUrl').mockResolvedValueOnce({
 			uploadId: 'logo-upload-id',
 			objectKey: 'rilog/uploads/images/logo.png',
 			uploadUrl: 'https://s3.rilog.test/logo',
 			headers: {},
 			expiresAt: '2026-08-21T00:00:00Z',
 		});
-		uploadFile.mockResolvedValueOnce({
+		const uploadFile = vi.spyOn(uploadApi, 'uploadFileWithPresignedUrl').mockResolvedValueOnce({
 			uploadId: 'cover-upload-id',
 			objectKey: 'rilog/uploads/images/cover.png',
 			uploadUrl: 'https://s3.rilog.test/cover',
@@ -67,7 +66,7 @@ describe('useSaveCologProfile', () => {
 		const { result } = renderHook(() => useSaveCologProfile(), { wrapper: createWrapper() });
 		const savedValue = await result.current.mutateAsync({ slug: '@rilog-team', value });
 
-		expect(uploadFile).toHaveBeenCalledWith({ file: logoFile, type: 'IMAGE' });
+		expect(uploadProfileImage).toHaveBeenCalledWith({ file: logoFile, type: 'IMAGE' });
 		expect(uploadFile).toHaveBeenCalledWith({ file: coverImageFile, type: 'IMAGE' });
 		expect(updateBlogProfileMock).toHaveBeenCalledWith({
 			slug: '@rilog-team',

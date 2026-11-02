@@ -45,10 +45,10 @@ export default async function BasePostDetail({
 			chapterId={post.chapter?.id ?? null}
 		>
 			<PostViewRegistration postId={post.id} />
-			<main className="min-h-dvh bg-background px-4 py-5 sm:px-5 sm:py-7 lg:px-8 lg:py-10">
+			<main className="min-h-dvh bg-background px-0 pt-0 pb-5 md:px-5 md:py-7 lg:px-8 lg:py-10">
 				<div className={styles.postDetailShell}>
 					<div
-						className={`${styles.postDetailCard} mx-auto max-w-[87.5rem] rounded-xl border border-border-default bg-surface`}
+						className={`${styles.postDetailCard} mx-auto max-w-[87.5rem] rounded-none border-0 border-border-default bg-surface md:rounded-xl md:border`}
 					>
 						{header}
 						<PostDetailHero title={post.title} thumbnailUrl={post.thumbnailUrl} />

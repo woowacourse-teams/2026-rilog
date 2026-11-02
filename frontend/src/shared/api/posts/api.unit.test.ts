@@ -178,6 +178,14 @@ describe('readPostDetail', () => {
 		description: null,
 		source: null,
 	};
+	it('집계 수가 없는 코로그 소유자 상세를 반환한다', async () => {
+		const data = {
+			...detailData,
+			owner: { type: 'COLOG', blogId: 2, slug: 'team', name: '팀', profileImageUrl: null, coverImageUrl: null },
+		};
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data })));
+		await expect(readPostDetail({ slug: 'team', postId: 42 })).resolves.toMatchObject({ data });
+	});
 	it.each([0, 17, null])('상세 조회수 %s를 원값으로 보존한다', async (viewCount) => {
 		const data = { ...detailData, viewCount, viewerPermissions: { canEdit: false, canDelete: viewCount !== null } };
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data })));

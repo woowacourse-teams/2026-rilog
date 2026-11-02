@@ -22,5 +22,6 @@ export const myDraftListQueryOptions = ({ size = MY_DRAFT_LIST_PAGE_SIZE }: MyDr
 			return lastPage.data?.hasNext === true && page !== undefined ? page + 1 : undefined;
 		},
 		staleTime: 60_000,
+		meta: { errorOperation: 'draft.list' },
 		retry: false,
 	});

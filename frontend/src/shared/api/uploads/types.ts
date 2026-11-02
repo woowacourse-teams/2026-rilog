@@ -1,10 +1,12 @@
 export type UploadType = 'IMAGE' | 'FILE';
+export type ImagePurpose = 'PROFILE' | 'CONTENT';
 
 export interface PresignedUrlCreateRequest {
 	fileName: string;
 	contentType: string;
 	size: number;
 	type: UploadType;
+	imagePurpose: ImagePurpose;
 }
 
 export interface PresignedUrlCreateResponse {
@@ -18,4 +20,5 @@ export interface PresignedUrlCreateResponse {
 export interface UploadFileOptions {
 	file: File;
 	type: UploadType;
+	imagePurpose?: ImagePurpose;
 }

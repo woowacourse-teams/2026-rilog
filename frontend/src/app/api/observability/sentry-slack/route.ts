@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { deliverSentrySlackAlert } from '@/shared/error-tracking/sentry-slack-delivery';
+import { resolveSentrySlackMode } from '@/shared/error-tracking/sentry-slack-mode';
 import { parseSentrySlackSummary } from '@/shared/error-tracking/sentry-slack-summary';
 
 export const runtime = 'nodejs';
@@ -8,6 +9,8 @@ export const runtime = 'nodejs';
 const MAX_BODY_LENGTH = 8192;
 
 export async function POST(request: Request): Promise<NextResponse> {
+	if (resolveSentrySlackMode(process.env.SENTRY_SLACK_MODE ?? process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE) !== 'legacy')
+		return new NextResponse(null, { status: 410 });
 	const origin = request.headers.get('origin');
 	const site = process.env.NEXT_PUBLIC_SITE_URL;
 	if (!origin || !site || origin !== new URL(site).origin) return new NextResponse(null, { status: 403 });

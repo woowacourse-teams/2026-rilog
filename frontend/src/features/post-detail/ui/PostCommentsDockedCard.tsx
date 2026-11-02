@@ -8,7 +8,7 @@ import PostCommentsPanelContent from './PostCommentsPanelContent';
 
 type PostCommentsDockedCardProps = Omit<
 	Parameters<typeof PostCommentsPanelContent>[0],
-	'titleId' | 'titleRef' | 'inputRef'
+	'titleId' | 'titleRef' | 'inputRef' | 'isOpen'
 > & { open: boolean };
 
 export default function PostCommentsDockedCard({ open, ...props }: PostCommentsDockedCardProps) {
@@ -33,7 +33,7 @@ export default function PostCommentsDockedCard({ open, ...props }: PostCommentsD
 			data-state={open ? 'open' : 'closed'}
 			className="h-[calc(100dvh-3rem)] w-full overflow-hidden rounded-l-xl border border-border-default bg-surface"
 		>
-			<PostCommentsPanelContent {...props} titleId={titleId} titleRef={titleRef} inputRef={inputRef} />
+			<PostCommentsPanelContent {...props} isOpen={open} titleId={titleId} titleRef={titleRef} inputRef={inputRef} />
 		</section>
 	);
 }

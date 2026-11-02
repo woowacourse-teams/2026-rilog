@@ -15,8 +15,12 @@ import { useActiveElapsedTime } from '@/shared/hooks/use-active-elapsed-time';
 import MermaidCodeBlockPreviewController from '@/shared/ui/mermaid-diagram/MermaidCodeBlockPreviewController';
 import { logNonProductionInfo } from '@/shared/utils/non-production-console';
 
+import { usePostImageLightbox } from '../hooks/use-post-image-lightbox';
+import { createReadingVisitId } from '../lib/create-reading-visit-id';
+
 import InlineCommentHighlights from './InlineCommentHighlights';
 import InlineCommentSelectionToolbar from './InlineCommentSelectionToolbar';
+import PostImageLightbox from './PostImageLightbox';
 
 interface PostDetailContentProps {
 	html: string;
@@ -119,6 +123,7 @@ export default function PostDetailContent({
 	const contentRef = useRef<HTMLElement>(null);
 	const [contentElement, setContentElement] = useState<HTMLElement | null>(null);
 	const [visitEpoch, setVisitEpoch] = useState(0);
+	const imageLightbox = usePostImageLightbox();
 	const currentPostIdRef = useRef(postId);
 	const expandedToggleIdsRef = useRef(new Set<string>());
 	const readingVisitRef = useRef<ReadingVisit | null>(null);
@@ -129,7 +134,7 @@ export default function PostDetailContent({
 			readingVisitRef.current = {
 				key,
 				postId,
-				id: window.crypto.randomUUID(),
+				id: createReadingVisitId(),
 				hasReached50Percent: false,
 				lastSent: null,
 				pendingExitTimer: null,
@@ -294,6 +299,10 @@ export default function PostDetailContent({
 	}, [getActiveEngagementTime, getReadingVisit, postId, sendReadingProgress]);
 
 	const handleToggleClick = (event: MouseEvent<HTMLElement>) => {
+		if (imageLightbox.handleImageClick(event)) {
+			return;
+		}
+
 		const toggleButton = getToggleButton(event.target);
 		if (toggleButton === null || !event.currentTarget.contains(toggleButton)) {
 			return;
@@ -330,6 +339,13 @@ export default function PostDetailContent({
 					onOpenComments={handleInlineCommentOpen}
 				/>
 			)}
+			<PostImageLightbox
+				open={imageLightbox.open}
+				images={imageLightbox.images}
+				currentIndex={imageLightbox.currentIndex}
+				onClose={imageLightbox.handleClose}
+				onChangeIndex={imageLightbox.handleChangeIndex}
+			/>
 			<MermaidCodeBlockPreviewController container={contentElement} label="Mermaid 다이어그램" />
 			{contentElement !== null && onInlineCommentCreate !== undefined && (
 				<InlineCommentSelectionToolbar

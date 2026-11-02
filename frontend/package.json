@@ -20,7 +20,8 @@
 		"test:sentry:post-503": "playwright test --config playwright.sentry-smoke.config.ts sentry-post-503.spec.ts",
 		"test:sentry:post-503:prod": "node --env-file=.env test-harness/run-sentry-sourcemap-smoke.mjs",
 		"test:sentry:post-503:replay": "node --env-file=.env test-harness/run-sentry-sourcemap-smoke.mjs --posthog-replay",
-		"check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:component && pnpm build"
+		"check:source": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:component",
+		"check": "pnpm check:source && pnpm build"
 	},
 	"dependencies": {
 		"@blocknote/code-block": "0.53.0",
@@ -28,8 +29,11 @@
 		"@blocknote/react": "0.53.0",
 		"@blocknote/server-util": "0.53.0",
 		"@blocknote/shadcn": "0.53.0",
+		"@blocknote/xl-multi-column": "0.53.0",
 		"@sentry/nextjs": "^10.75.1",
 		"@tanstack/react-query": "5.101.4",
+		"dompurify": "3.4.14",
+		"heic-to": "1.6.6",
 		"ky": "2.0.2",
 		"mermaid": "11.17.2",
 		"next": "16.3.8",

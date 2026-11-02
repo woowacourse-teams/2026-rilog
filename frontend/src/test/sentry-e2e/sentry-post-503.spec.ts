@@ -89,17 +89,10 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 		if (isPostPublishEvent(request)) sentryEventCount += 1;
 	});
 	const sentryRequest = page.waitForRequest(isPostPublishEvent, { timeout: 30_000 });
-	const slackResponse =
-		process.env.SENTRY_SMOKE_PRODUCTION === 'true' &&
-		(process.env.SENTRY_SLACK_WEBHOOK_URL ||
-			(process.env.SENTRY_SLACK_BOT_TOKEN && process.env.SENTRY_SLACK_CHANNEL_ID))
-			? page.waitForResponse(
-					(response) =>
-						new URL(response.url()).pathname === '/api/observability/sentry-slack' &&
-						response.request().method() === 'POST',
-					{ timeout: 30_000 },
-				)
-			: null;
+	const slackRequests: string[] = [];
+	page.on('request', (request) => {
+		if (new URL(request.url()).pathname === '/api/observability/sentry-slack') slackRequests.push(request.url());
+	});
 	await dialog.getByRole('button', { name: '발행', exact: true }).click();
 	await expect(dialog.getByRole('alert')).toBeVisible();
 
@@ -118,16 +111,7 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 	expect(envelope).not.toContain(postBody);
 	expect(envelope).not.toContain('e2e-access-token');
 	expect((await eventRequest.response())?.ok()).toBe(true);
-	let alertBody: string | undefined;
-	if (slackResponse) {
-		const response = await slackResponse;
-		expect(response.status()).toBe(204);
-		alertBody = response.request().postData() ?? '';
-		expect(alertBody).toContain('post.publish');
-		expect(alertBody).toContain('"http_status":"503"');
-		expect(alertBody).not.toContain(postTitle);
-		expect(alertBody).not.toContain(postBody);
-	}
+	expect(slackRequests).toEqual([]);
 
 	const envelopeHeader = envelope?.split('\n', 1)[0];
 	if (envelopeHeader) {
@@ -136,10 +120,12 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 	}
 	const event = JSON.parse(envelope?.split('\n')[2] ?? '{}') as {
 		release?: string;
+		environment?: string;
 		debug_meta?: { images?: Array<{ debug_id?: string }> };
 		tags?: Record<string, unknown>;
 		contexts?: { posthog_session_replay?: { url?: unknown } };
 	};
+	expect(event.environment).toBe('smoke');
 	if (process.env.SENTRY_SMOKE_PRODUCTION === 'true') {
 		expect(event.release).toBe(process.env.SENTRY_RELEASE);
 		expect(event.debug_meta?.images?.some((image) => Boolean(image.debug_id))).toBe(true);
@@ -153,6 +139,5 @@ test('게시글 발행 503 오류를 Sentry에 한 번 기록한다', async ({ p
 		expect(parsedReplayUrl.pathname).toMatch(/^\/project\/[^/]+\/replay\/[^/]+$/);
 		expect(parsedReplayUrl.searchParams.get('t')).toMatch(/^\d+$/);
 		expect(event.contexts?.posthog_session_replay?.url).toBe(replayUrl);
-		expect(alertBody).toContain(String(replayUrl));
 	}
 });

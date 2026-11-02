@@ -14,13 +14,12 @@ import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse.ViewerPermissionsResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
-import kr.rilog.domain.post.entity.HardTrending;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
+import kr.rilog.domain.post.event.PostCountChangedEvent;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
@@ -35,9 +34,13 @@ import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
@@ -58,9 +61,10 @@ public class PostService {
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final CommentAnchorSelectionRepository selectionRepository;
-    private final HardTrendingRepository trendingRepository;
     private final PostViewCountRepository viewCountRepository;
     private final PostViewStore postViewStore;
+    private final PostCountCache postCountCache;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
@@ -74,9 +78,37 @@ public class PostService {
 
         Post published = postRepository.save(post);
         viewCountRepository.initialize(published.getId());
-        trendingRepository.save(HardTrending.from(published));
         tagAssetsPublisher.attach(published.getTagAssets());
+        publishPostCountChangedEventIf(published.isIncludedInTotalCount());
         return PostPublishResult.of(published, publishingBlog);
+    }
+
+    @Transactional
+    public PostPublishResult publishImported(PostSaveCommand command, Long targetUserId, Instant originalPublishedAt) {
+        Blog publishingBlog = getBlog(command.slug());
+        User writer = getUser(targetUserId);
+        LocalDateTime publishedAt = LocalDateTime.ofInstant(originalPublishedAt, ZoneId.systemDefault());
+
+        Post post = createImportedPost(publishingBlog, writer, command, publishedAt);
+
+        Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
+        tagAssetsPublisher.attach(published.getTagAssets());
+
+        publishPostCountChangedEventIf(published.isIncludedInTotalCount());
+        return PostPublishResult.of(published, publishingBlog);
+    }
+
+    private Post createImportedPost(Blog publishingBlog, User writer, PostSaveCommand command, LocalDateTime publishedAt) {
+        if (!publishingBlog.isColog()) {
+            publishingBlog.validateIsOwner(writer);
+            return Post.createImportedToRilog(publishingBlog, writer, command.toDetail(), publishedAt);
+        }
+
+        blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(publishingBlog.getId(), writer.getId(), BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(COLOG_POST_PUBLISH_FORBIDDEN));
+
+        return Post.createImportedToColog(publishingBlog, getRilog(writer), writer, command.toDetail(), publishedAt);
     }
 
     public PostDetailResponse readPostDetailByCanonicalPath(String slug, Long postId, Long requesterId) {
@@ -104,15 +136,11 @@ public class PostService {
             return PostDetailResponse.fromRilog(post, viewerPermissions, viewCount);
         }
 
-        Blog colog = post.getColog();
-        long memberCount = getMemberCount(colog);
-        long postCount = getPostCount(colog);
-        return PostDetailResponse.fromColog(post, memberCount, postCount, viewerPermissions, viewCount);
+        return PostDetailResponse.fromColog(post, viewerPermissions, viewCount);
     }
 
     public TotalPostsCountResponse readPostsCount() {
-        long count = postRepository.countByStatusAndVisibilityAndDeletedAtIsNull(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
-        return new TotalPostsCountResponse(count);
+        return new TotalPostsCountResponse(postCountCache.getCount());
     }
 
     @Transactional
@@ -127,6 +155,7 @@ public class PostService {
 
         TagAssets previousTagAssets = post.getTagAssets();
         PostContent previousContent = post.getContent();
+        boolean wasCounted = post.isIncludedInTotalCount();
 
         post.update(command.toDetail(), targetBlog, chapter);
 
@@ -136,7 +165,7 @@ public class PostService {
         CommentAnchorSelections selections = findActiveCommentAnchorSelections(postId);
         selections.recalculate(previousContent, post.getContent());
 
-        System.out.println("이벤트 발송");
+        publishPostCountChangedEventIf(wasCounted != post.isIncludedInTotalCount());
         return PostUpdateResult.of(post, targetBlog);
     }
 
@@ -144,8 +173,16 @@ public class PostService {
     public void deletePublishedPost(Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
+        boolean wasCounted = post.isIncludedInTotalCount();
         post.delete();
         tagAssetsPublisher.detach(requesterId, post.getTagAssets());
+        publishPostCountChangedEventIf(wasCounted);
+    }
+
+    private void publishPostCountChangedEventIf(boolean countChanged) {
+        if (countChanged) {
+            eventPublisher.publishEvent(new PostCountChangedEvent());
+        }
     }
 
     private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {
@@ -207,18 +244,6 @@ public class PostService {
     private Post getPublishedPost(Long postId) {
         return postRepository.findDetailByIdAndStatus(postId, PostStatus.PUBLISHED)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
-    }
-
-    private long getPostCount(Blog colog) {
-        return postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-                colog.getId(),
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC
-        );
-    }
-
-    private long getMemberCount(Blog colog) {
-        return blogMemberRepository.countActiveMembers(colog.getId(), BlogMemberStatus.ACTIVE);
     }
 
     private void validateCanDeletePublishedPost(Post post, Long requesterId) {

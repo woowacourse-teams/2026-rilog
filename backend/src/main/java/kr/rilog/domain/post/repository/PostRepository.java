@@ -20,6 +20,23 @@ import java.util.Optional;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+    @Modifying(flushAutomatically = true)
+    @Query(value = """
+            UPDATE post
+            SET comment_count = comment_count + 1
+            WHERE id = :postId
+            """, nativeQuery = true)
+    int incrementCommentCount(@Param("postId") Long postId);
+
+    @Modifying(flushAutomatically = true)
+    @Query(value = """
+            UPDATE post
+            SET comment_count = comment_count - 1
+            WHERE id = :postId
+              AND comment_count > 0
+            """, nativeQuery = true)
+    int decrementCommentCount(@Param("postId") Long postId);
+
     @Query("""
             select new kr.rilog.domain.post.repository.projection.PostViewTarget(p.id, p.user.id, p.visibility)
             from Post p
@@ -157,12 +174,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
           AND p.deletedAt IS NULL
         """)
     Optional<Post> findDraftById(@Param("postId") Long postId);
-
-    long countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-            Long cologId,
-            PostStatus status,
-            PostVisibility visibility
-    );
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""

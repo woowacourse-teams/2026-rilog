@@ -16,6 +16,7 @@ export const useSaveDraftMutation = () => {
 		onError: async (error) => {
 			apiErrorReporter.report(error, {
 				operation: 'draft.save',
+				userImpact: 'save_failed',
 			});
 			if (isInvalidApiResponseError(error)) {
 				await queryClient.invalidateQueries({ queryKey: draftsQueryKeys.all });

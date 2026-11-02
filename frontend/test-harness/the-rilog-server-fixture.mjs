@@ -6,6 +6,7 @@ import { appendFile, readFile } from 'node:fs/promises';
 
 const { createTheRilogFixtureData, createTheRilogFixtureNewsContent } =
 	await import('../src/test/fixtures/the-rilog.ts');
+const { createNavigationPosts } = await import('./blog-home-navigation-fixture.ts');
 const data = createTheRilogFixtureData();
 const originalFetch = globalThis.fetch;
 const envelope = (value) => Response.json({ status: 200, message: 'OK', data: value });
@@ -64,6 +65,35 @@ globalThis.fetch = async (input, init) => {
 		const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
 		await appendFile(process.env.THE_RILOG_SERVER_FIXTURE_HTTP_LOG, `${method} ${url.pathname}\n`);
 	}
+	const navigationBlog = url.pathname.match(/^\/v1\/blogs\/(navigation_personal|navigation_team)(\/index|\/posts)?$/);
+	if (navigationBlog) {
+		const slug = navigationBlog[1];
+		const type = slug === 'navigation_team' ? 'COLOG' : 'RILOG';
+		if (navigationBlog[2] === '/index')
+			return envelope({
+				blogType: type,
+				totalCount: 2,
+				chapterIndexes: [
+					{ chapterId: 3, name: '첫 번째', postCount: 1 },
+					{ chapterId: 4, name: '두 번째', postCount: 1 },
+				],
+				cologIndexes: [],
+			});
+		if (navigationBlog[2] === '/posts') return envelope(createNavigationPosts(slug, url.searchParams.get('chapterId')));
+		return envelope({
+			type,
+			id: 850,
+			name: '탐색 테스트',
+			slug,
+			introduction: null,
+			profileImageUrl: null,
+			coverImageUrl: null,
+			serviceUrl: null,
+			githubUrl: null,
+			memberCount: 1,
+			postCount: 2,
+		});
+	}
 	if (url.pathname === '/v1/the-rilog') {
 		if (process.env.THE_RILOG_SERVER_FIXTURE_REQUEST_LOG) {
 			await appendFile(process.env.THE_RILOG_SERVER_FIXTURE_REQUEST_LOG, `${url.pathname}\n`);
@@ -90,7 +120,21 @@ globalThis.fetch = async (input, init) => {
 	const detailMatch = url.pathname.match(/^\/v1\/blogs\/the_rilog\/posts\/(\d+)$/);
 	if (detailMatch) {
 		const detail = postDetail(Number(detailMatch[1]));
-		return detail ? envelope(detail) : Response.json({ errorCode: 'POST_NOT_FOUND' }, { status: 404 });
+		if (detail === null) return Response.json({ errorCode: 'POST_NOT_FOUND' }, { status: 404 });
+		const statePath = process.env.THE_RILOG_SERVER_FIXTURE_STATE_PATH;
+		let state = {};
+		if (statePath) {
+			try {
+				state = JSON.parse(await readFile(statePath, 'utf8'));
+			} catch (error) {
+				if (error.code !== 'ENOENT') throw error;
+			}
+		}
+		return envelope({
+			...detail,
+			thumbnailImageUrl:
+				typeof state.thumbnailImageUrl === 'string' ? state.thumbnailImageUrl : detail.thumbnailImageUrl,
+		});
 	}
 	if (url.pathname === '/v1/blogs/the_rilog') {
 		return envelope({

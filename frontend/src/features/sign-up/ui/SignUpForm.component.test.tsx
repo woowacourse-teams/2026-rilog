@@ -733,6 +733,26 @@ describe('SignUpForm', () => {
 		expect(screen.getByRole('alert')).toHaveTextContent('Failed to fetch');
 	});
 
+	it('프로필 이미지와 함께 온보딩하면 PROFILE 목적으로 업로드한다', async () => {
+		vi.stubGlobal(
+			'URL',
+			Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:profile-image'), revokeObjectURL: vi.fn() }),
+		);
+		const profileImageFile = new File(['profile'], 'profile.png', { type: 'image/png' });
+		renderSignUpForm();
+
+		await submitValidSignUp(profileImageFile);
+
+		await waitFor(() =>
+			expect(uploadFileMock).toHaveBeenCalledWith({
+				file: profileImageFile,
+				type: 'IMAGE',
+				imagePurpose: 'PROFILE',
+			}),
+		);
+		expect(onboardMock).toHaveBeenCalledWith(expect.objectContaining({ profileImageUrl: 'profiles/profile.png' }));
+	});
+
 	it('프로필 이미지 업로드 실패의 stage와 원본 오류를 보존한다', async () => {
 		vi.stubGlobal(
 			'URL',

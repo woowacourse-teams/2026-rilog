@@ -1,0 +1,9 @@
+node_modules
+.git
+**/*.env
+**/*.env.*
+image.env*
+test
+deploy
+README.md
+*.log

@@ -58,6 +58,28 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 				name: 'chromium',
 				use: devices['Desktop Chrome'],
 			},
+			{
+				name: 'webkit-comments',
+				testMatch: [
+					'**/mobile-comment-interaction.spec.ts',
+					'**/inline-comment-scroll-unlock.spec.ts',
+					'**/inline-comment-anchor-navigation.spec.ts',
+					'**/pc-inline-comment-selection.spec.ts',
+					'**/comment-sheet-gestures.spec.ts',
+				],
+				use: { ...devices['Desktop Safari'], hasTouch: true },
+			},
+			{
+				name: 'firefox-comments',
+				testMatch: [
+					'**/mobile-comment-interaction.spec.ts',
+					'**/inline-comment-scroll-unlock.spec.ts',
+					'**/inline-comment-anchor-navigation.spec.ts',
+					'**/pc-inline-comment-selection.spec.ts',
+					'**/comment-sheet-gestures.spec.ts',
+				],
+				use: devices['Desktop Firefox'],
+			},
 		],
 	});
 };

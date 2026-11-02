@@ -28,6 +28,7 @@ export default defineConfig({
 				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
 				NEXT_PUBLIC_SENTRY_DSN: 'http://public@127.0.0.1:3108/1',
 				NEXT_PUBLIC_SENTRY_ENABLED: 'true',
+				NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'local',
 				SENTRY_AUTH_TOKEN: '',
 			},
 		},

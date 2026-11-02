@@ -291,6 +291,10 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 		.last()
 		.getByRole('button', { name: '삭제' })
 		.click();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toBeHidden();
+	await expect(page.getByRole('dialog', { name: '인라인 댓글 2', exact: true })).toBeVisible();
+	await lastComment.getByRole('button', { name: '삭제', exact: true }).click();
 	await page.getByRole('dialog', { name: '댓글을 삭제할까요?' }).getByRole('button', { name: '삭제' }).click();
 	const deleteDialog = page.getByRole('dialog', { name: '댓글을 삭제할까요?' });
 	await expect(deleteDialog.getByRole('button', { name: '삭제 중…' })).toBeDisabled();
@@ -304,7 +308,7 @@ test('본문 선택의 초안을 복원하고 작성·수정·삭제 결과를 �
 	await expect(page.getByRole('dialog', { name: '인라인 댓글 1', exact: true })).toBeVisible();
 });
 
-test('모바일에서 본문을 선택해도 댓글 입력 툴바를 표시하지 않는다', async ({ page }) => {
+test('모바일에서 본문을 선택하면 댓글 추가 툴바를 표시한다', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.route('**/v1/**', (route) => route.abort());
 	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
@@ -320,7 +324,8 @@ test('모바일에서 본문을 선택해도 댓글 입력 툴바를 표시하�
 	await expect(page.getByRole('article', { name: '게시글 본문' })).toBeVisible();
 	const { text } = await dragText(page);
 	expect(text.trim()).not.toBe('');
-	await expect(page.getByRole('toolbar', { name: '인라인 댓글' })).toHaveCount(0);
+	await expect(page.getByRole('toolbar', { name: '인라인 댓글' })).toBeVisible();
+	await expect(page.getByRole('button', { name: '댓글 추가', exact: true })).toHaveText('댓글 추가');
 });
 
 test('1280px 경계를 오갈 때 댓글이 docked와 modal로 전환되고 본문과 겹치지 않는다', async ({ page }) => {

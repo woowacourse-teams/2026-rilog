@@ -1,6 +1,6 @@
 import type { MagazineContent } from '../model/magazine';
-import type { Block } from '@blocknote/core';
 
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import { extractPostHeadingAnchors } from '@/features/post-detail/lib/extract-post-table-of-contents';
 import type { DailyHeadline } from '@/features/the-rilog-daily-headlines/model/daily-headline';
 import type { TheRilogResponse } from '@/shared/api/the-rilog/types';
@@ -8,7 +8,7 @@ import { buildPostDetailPath } from '@/shared/routes/app-routes';
 
 const normalizeTitle = (title: string) => title.normalize('NFC').trim().replace(/\s+/g, ' ');
 
-const mapHeadlines = (data: TheRilogResponse, newsContent: Block[] | null): DailyHeadline[] => {
+const mapHeadlines = (data: TheRilogResponse, newsContent: PostContentBlock[] | null): DailyHeadline[] => {
 	if (data.news === null) {
 		if (newsContent !== null) throw new Error('뉴스가 없는 입력에 뉴스 본문이 포함되어 있습니다.');
 		return [];
@@ -31,7 +31,10 @@ const mapHeadlines = (data: TheRilogResponse, newsContent: Block[] | null): Dail
 	});
 };
 
-export const mapTheRilogContent = (data: TheRilogResponse, newsContent: Block[] | null): MagazineContent => ({
+export const mapTheRilogContent = (
+	data: TheRilogResponse,
+	newsContent: PostContentBlock[] | null,
+): MagazineContent => ({
 	dailyHeadlines: mapHeadlines(data, newsContent),
 	articles: data.spotlights.map((article) => ({
 		id: String(article.postId),

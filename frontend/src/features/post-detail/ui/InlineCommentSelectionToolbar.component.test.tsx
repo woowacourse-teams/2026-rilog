@@ -119,11 +119,15 @@ describe('InlineCommentSelectionToolbar', () => {
 		expect(screen.queryByRole('button', { name: '댓글 추가' })).not.toBeInTheDocument();
 	});
 
-	it('모바일에서는 선택 버튼을 표시하지 않는다', () => {
+	it('모바일은 네이티브 포인터 취소 후에도 선택 변경으로 댓글 버튼을 표시한다', () => {
 		isMobile = true;
 		renderToolbar();
+		const down = new Event('pointerdown', { bubbles: true, cancelable: true });
+		fireEvent(article, down);
+		fireEvent(article, new Event('pointercancel', { bubbles: true }));
 		select();
-		expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+		expect(down.defaultPrevented).toBe(false);
+		expect(screen.getByRole('button', { name: '댓글 추가' })).toBeVisible();
 	});
 
 	it('키보드로 활성화하고 Escape로 닫을 수 있다', async () => {

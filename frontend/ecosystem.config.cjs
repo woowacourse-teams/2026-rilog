@@ -13,6 +13,7 @@ module.exports = {
 			// 환경 변수
 			env: {
 				NODE_ENV: 'production',
+				NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'prod',
 				PORT: 3000,
 			},
 

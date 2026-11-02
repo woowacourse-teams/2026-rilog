@@ -8,7 +8,17 @@ spring:
       ddl-auto: create-drop
     open-in-view: false
 
+internal-api:
+  lambda:
+    secret: test-internal-lambda-secret-at-least-32-chars
+
+image-server:
+  base-url: http://localhost:8000
+  secret: test-image-server-secret-at-least-32-chars
+
 post:
+  trending:
+    enabled: false
   view:
     flush:
       enabled: false

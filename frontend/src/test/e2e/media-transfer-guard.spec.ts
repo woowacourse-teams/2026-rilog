@@ -4,7 +4,8 @@ import type { Locator, Route } from '@playwright/test';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
 
-const TRANSFER_ERROR = '붙여넣은 이미지에 저장할 수 없는 주소가 포함되어 있습니다. 이미지를 파일로 업로드해 주세요.';
+const TRANSFER_ERROR =
+	'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.';
 const TEST_IMAGE_BYTES = Array.from(
 	Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
 );
@@ -29,10 +30,17 @@ const dispatchTransfer = (editor: Locator, input: TransferInput) =>
 			if (transferInput.format !== undefined) transfer.setData(transferInput.format, transferInput.content ?? '');
 			if (transferInput.withFile)
 				transfer.items.add(new File([new Uint8Array(bytes)], 'pasted.png', { type: 'image/png' }));
+			const rect = element.getBoundingClientRect();
 			const event =
 				transferInput.eventType === 'paste'
 					? new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer })
-					: new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer });
+					: new DragEvent('drop', {
+							bubbles: true,
+							cancelable: true,
+							clientX: rect.left + 16,
+							clientY: rect.top + 16,
+							dataTransfer: transfer,
+						});
 			element.dispatchEvent(event);
 			return event.defaultPrevented;
 		},
@@ -64,17 +72,25 @@ test.beforeEach(async ({ page }) => {
 	await expect(page.getByRole('textbox', { name: '게시글 내용' })).toBeVisible();
 });
 
-const blockedTransfers: { name: string; input: TransferInput }[] = [
+const blockedTransfers: {
+	name: string;
+	input: TransferInput;
+	blockType: 'image' | 'file' | 'video';
+	expectedText?: string;
+}[] = [
 	{
 		name: 'HTML만 있는 HEIC 이미지 붙여넣기',
+		blockType: 'image',
+		expectedText: '함께 붙여넣은 본문',
 		input: {
 			eventType: 'paste',
 			format: 'text/html',
-			content: '<p>삽입 금지</p><img src="data:image/heic;base64,cHJpdmF0ZQ==">',
+			content: '<p>함께 붙여넣은 본문</p><img src="data:image/heic;base64,cHJpdmF0ZQ==">',
 		},
 	},
 	{
 		name: 'HTML과 단일 파일이 함께 있는 이미지 붙여넣기',
+		blockType: 'image',
 		input: {
 			eventType: 'paste',
 			format: 'text/html',
@@ -84,6 +100,7 @@ const blockedTransfers: { name: string; input: TransferInput }[] = [
 	},
 	{
 		name: 'BlockNote 전용 HTML의 파일 붙여넣기',
+		blockType: 'file',
 		input: {
 			eventType: 'paste',
 			format: 'blocknote/html',
@@ -93,6 +110,7 @@ const blockedTransfers: { name: string; input: TransferInput }[] = [
 	},
 	{
 		name: 'blob 미디어 HTML 드롭',
+		blockType: 'video',
 		input: {
 			eventType: 'drop',
 			format: 'text/html',
@@ -101,14 +119,13 @@ const blockedTransfers: { name: string; input: TransferInput }[] = [
 	},
 ];
 
-for (const { name, input } of blockedTransfers) {
-	test(`${name}를 하면 전체 삽입을 차단하고 기존 내용을 유지한다`, async ({ page }) => {
+for (const { name, input, blockType, expectedText } of blockedTransfers) {
+	test(`${name}를 하면 임시 주소를 차단하고 업로드 블록에 오류를 표시한다`, async ({ page }) => {
 		const title = page.getByRole('textbox', { name: '게시글 제목' });
 		await title.fill('보존할 제목');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
 		await editor.click();
 		await page.keyboard.insertText('보존할 본문');
-		const bodyBefore = await editor.textContent();
 		const uploadRequests: string[] = [];
 		page.on('request', (request) => {
 			if (request.url().includes('/v1/uploads/')) uploadRequests.push(request.url());
@@ -116,15 +133,38 @@ for (const { name, input } of blockedTransfers) {
 
 		expect(await dispatchTransfer(editor, input)).toBe(true);
 
-		await expect(page.getByRole('alert').filter({ hasText: TRANSFER_ERROR })).toHaveText(TRANSFER_ERROR);
+		const uploadBlock = editor.locator(`[data-content-type="${blockType}"]`);
+		await expect(uploadBlock.locator('.bn-add-file-button [role="alert"]')).toHaveText(TRANSFER_ERROR);
 		await expect(title).toHaveValue('보존할 제목');
-		await expect(editor).toHaveText(bodyBefore ?? '');
-		await expect(
-			editor.locator('[data-content-type="image"], [data-content-type="file"], [data-content-type="video"]'),
-		).toHaveCount(0);
+		await expect(editor).toContainText('보존할 본문');
+		if (expectedText !== undefined) {
+			await expect(editor).toContainText(expectedText);
+		}
+		await expect(uploadBlock).toHaveCount(1);
 		expect(uploadRequests).toEqual([]);
 	});
 }
+
+test('여러 base64 이미지와 텍스트를 함께 붙여넣으면 텍스트를 보존하고 각 이미지를 오류 블록으로 치환한다', async ({
+	page,
+}) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	await dispatchTransfer(editor, {
+		eventType: 'paste',
+		format: 'text/html',
+		content:
+			'<p>첫 번째 문단</p><img src="data:image/png;base64,Zmlyc3Q="><p>두 번째 문단</p><img src="data:image/png;base64,c2Vjb25k">',
+	});
+
+	await expect(editor).toContainText('첫 번째 문단');
+	await expect(editor).toContainText('두 번째 문단');
+	const imageAlerts = editor.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]');
+	await expect(imageAlerts).toHaveCount(2);
+	await expect(imageAlerts.nth(0)).toHaveText(TRANSFER_ERROR);
+	await expect(imageAlerts.nth(1)).toHaveText(TRANSFER_ERROR);
+});
 
 test('파일만 붙여넣으면 정상 업로드된 이미지 주소를 표시한다', async ({ page }) => {
 	const editor = page.getByRole('textbox', { name: '게시글 내용' });
@@ -132,7 +172,10 @@ test('파일만 붙여넣으면 정상 업로드된 이미지 주소를 표시�
 
 	await dispatchTransfer(editor, { eventType: 'paste', withFile: true });
 
-	await expect(editor.locator('[data-content-type="image"] img')).toHaveAttribute('src', /transfer-upload\.png$/);
+	await expect(editor.locator('[data-content-type="image"] img')).toHaveAttribute(
+		'src',
+		/transfer-upload\.png(#\d+x\d+)?$/,
+	);
 	await expect(page.getByRole('alert').filter({ hasText: TRANSFER_ERROR })).toHaveCount(0);
 });
 
@@ -146,13 +189,16 @@ test('차단 후 일반 텍스트와 서식 및 원격 이미지를 붙여넣으
 	});
 	await expect(page.getByRole('alert').filter({ hasText: TRANSFER_ERROR })).toHaveText(TRANSFER_ERROR);
 
+	await page.keyboard.press('Enter');
 	await dispatchTransfer(editor, {
 		eventType: 'paste',
 		format: 'text/plain',
 		content: 'data:image/png;base64,코드 예제',
 	});
 	await expect(editor).toContainText('data:image/png;base64,코드 예제');
-	await expect(page.getByRole('alert').filter({ hasText: TRANSFER_ERROR })).toHaveCount(0);
+	await expect(editor.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toHaveText(
+		TRANSFER_ERROR,
+	);
 	await page.keyboard.press('Enter');
 	await dispatchTransfer(editor, {
 		eventType: 'paste',
@@ -165,5 +211,7 @@ test('차단 후 일반 텍스트와 서식 및 원격 이미지를 붙여넣으
 		'src',
 		'https://cdn.rilog.test/remote-image.png',
 	);
-	await expect(page.getByRole('alert').filter({ hasText: TRANSFER_ERROR })).toHaveCount(0);
+	await expect(editor.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toHaveText(
+		TRANSFER_ERROR,
+	);
 });

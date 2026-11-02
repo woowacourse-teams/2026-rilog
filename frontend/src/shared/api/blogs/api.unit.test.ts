@@ -12,6 +12,7 @@ import {
 	readBlogIndex,
 	readBlogPublicProfile,
 	readPublicBlogPosts,
+	readPublicBlogChapterPosts,
 	renameBlogChapter,
 	updateBlogProfile,
 } from './api';
@@ -291,5 +292,61 @@ describe('deleteBlogChapter', () => {
 		const normalized = normalizeApiError(captured);
 		const diagnostics = getApiRequestDiagnostics(normalized.cause);
 		expect(diagnostics).toEqual({ method: 'DELETE', url: 'https://api.rilog.test/v1/blogs/private/chapters/2' });
+	});
+});
+
+describe('readPublicBlogChapterPosts', () => {
+	it('정규화한 slug의 챕터 전용 경로에 pagination을 전달한다', async () => {
+		const body = {
+			status: 200,
+			message: 'OK',
+			data: {
+				type: 'RILOG',
+				posts: [
+					{
+						postId: 4,
+						title: '시리즈 글',
+						totalCommentsCount: 0,
+						thumbnailImageUrl: null,
+						category: '기술',
+						chapter: { chapterId: 3, name: '시리즈', order: 0 },
+						visibility: 'PUBLIC',
+						publishedAt: '2026-11-01T00:00:00',
+						author: { userId: 1, nickname: '작성자', slug: 'author', profileImageUrl: null },
+						owner: { type: 'RILOG', blogId: 1, slug: 'author', name: '작성자', profileImageUrl: null },
+					},
+				],
+				page: 0,
+				size: 30,
+				numberOfElements: 1,
+				hasNext: false,
+			},
+		};
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(body));
+		vi.stubGlobal('fetch', fetchMock);
+		await expect(readPublicBlogChapterPosts({ slug: '@rilog/team', chapterId: 3, page: 0, size: 30 })).resolves.toEqual(
+			body,
+		);
+		expect((fetchMock.mock.calls[0]?.[0] as Request).url).toBe(
+			'https://api.rilog.test/v1/blogs/rilog%2Fteam/chapters/3/posts?page=0&size=30',
+		);
+	});
+
+	it.each([
+		null,
+		{ type: 'RILOG', posts: [{ postId: 4, title: null }], page: 0, size: 30, numberOfElements: 1, hasNext: false },
+	])('손상된 챕터 응답 %j를 거절하고 요청 정보를 보존한다', async (data) => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 200, message: 'OK', data })));
+		let failure: unknown;
+		try {
+			await readPublicBlogChapterPosts({ slug: 'author', chapterId: 3, page: 0, size: 30 });
+		} catch (error) {
+			failure = error;
+		}
+		expect(failure).toMatchObject({ type: 'unknown', cause: { name: 'InvalidApiResponseError' } });
+		expect(getApiRequestDiagnostics(normalizeApiError(failure).cause)).toMatchObject({
+			method: 'GET',
+			url: 'https://api.rilog.test/v1/blogs/author/chapters/3/posts',
+		});
 	});
 });

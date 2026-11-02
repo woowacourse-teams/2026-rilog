@@ -19,7 +19,6 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
@@ -31,6 +30,7 @@ import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.global.exception.RilogInfrastructureException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,6 +58,8 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,13 +95,16 @@ class PostServiceTest {
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
     @Mock
-    private HardTrendingRepository trendingRepository;
-
-    @Mock
     private PostViewCountRepository viewCountRepository;
 
     @Mock
     private PostViewStore postViewStore;
+
+    @Mock
+    private PostCountCache postCountCache;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
@@ -115,9 +120,10 @@ class PostServiceTest {
                 chapterRepository,
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
-                trendingRepository,
                 viewCountRepository,
-                postViewStore
+                postViewStore,
+                postCountCache,
+                eventPublisher
         );
     }
 
@@ -373,20 +379,13 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("팀 블로그 게시글을 조회하면 활성 멤버 수와 공개 게시글 수를 포함한다.")
-    void readCologPostContainsMemberAndPostCounts() {
+    @DisplayName("비회원의 팀 블로그 상세 조회는 통계 집계 없이 블로그 정보를 반환한다.")
+    void readCologPostReturnsProfileWithoutLoadingStatistics() {
         // given
         User writer = createWriter();
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
         when(postRepository.findDetailByCanonicalPath(Slug.from(COLOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(cologPost));
-        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(3L);
-        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-                COLOG_ID,
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC
-        )).thenReturn(5L);
 
         // when
         PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, null);
@@ -394,9 +393,12 @@ class PostServiceTest {
         // then
         assertThat(response.owner()).isEqualTo(new CologOwnerResponse(
                 BlogType.COLOG, COLOG_ID, COLOG_SLUG, cologPost.getColog().getName(),
-                cologPost.getColog().getProfileImageUrl(), cologPost.getColog().getCoverImageUrl(), 3L, 5L
+                cologPost.getColog().getProfileImageUrl(), cologPost.getColog().getCoverImageUrl()
         ));
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
+        verify(postRepository).findDetailByCanonicalPath(Slug.from(COLOG_SLUG), POST_ID);
+        verifyNoMoreInteractions(postRepository);
+        verifyNoInteractions(blogMemberRepository, postViewStore);
     }
 
     @Test
@@ -408,24 +410,24 @@ class PostServiceTest {
         BlogMember requesterMember = createMember(cologPost.getColog(), writer, BlogPermission.MEMBER);
         when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(cologPost));
-        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(3L);
-        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-                COLOG_ID,
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC
-        )).thenReturn(5L);
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
                 COLOG_ID,
                 WRITER_ID,
                 BlogMemberStatus.ACTIVE
         )).thenReturn(Optional.of(requesterMember));
+        when(postViewStore.currentCount(POST_ID)).thenReturn(42L);
 
         // when
         PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(true, true));
+        assertThat(response.viewCount()).isEqualTo(42L);
+        verify(postRepository).findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED);
+        verify(blogMemberRepository).findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                COLOG_ID, WRITER_ID, BlogMemberStatus.ACTIVE
+        );
+        verifyNoMoreInteractions(postRepository, blogMemberRepository);
     }
 
     @Test
@@ -436,13 +438,6 @@ class PostServiceTest {
         Post cologPost = createCologPost(writer, PostVisibility.PUBLIC);
         when(postRepository.findDetailByIdAndStatus(POST_ID, PostStatus.PUBLISHED))
                 .thenReturn(Optional.of(cologPost));
-        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(3L);
-        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-                COLOG_ID,
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC
-        )).thenReturn(5L);
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
                 COLOG_ID,
                 WRITER_ID,
@@ -466,13 +461,6 @@ class PostServiceTest {
         BlogMember requesterMember = createMember(cologPost.getColog(), requester, BlogPermission.ADMIN);
         when(postRepository.findDetailByCanonicalPath(Slug.from(COLOG_SLUG), POST_ID))
                 .thenReturn(Optional.of(cologPost));
-        when(blogMemberRepository.countActiveMembers(COLOG_ID, BlogMemberStatus.ACTIVE))
-                .thenReturn(3L);
-        when(postRepository.countByCologIdAndStatusAndVisibilityAndDeletedAtIsNull(
-                COLOG_ID,
-                PostStatus.PUBLISHED,
-                PostVisibility.PUBLIC
-        )).thenReturn(5L);
         when(blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
                 COLOG_ID,
                 REQUESTER_ID,

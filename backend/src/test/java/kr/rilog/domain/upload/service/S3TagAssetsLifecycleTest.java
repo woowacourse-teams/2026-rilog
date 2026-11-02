@@ -7,11 +7,15 @@ import kr.rilog.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class S3TagAssetsLifecycleTest {
@@ -30,22 +34,193 @@ class S3TagAssetsLifecycleTest {
     private static final String LEGACY_KEY = ROOT_DIRECTORY
             + "/images/originals/a38e9b2c-4c13-4f52-9c31-0e52d768d517.png";
 
+    private static final String RAW_KEY = ROOT_DIRECTORY
+            + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+    private static final String PROFILE_RAW_KEY = ROOT_DIRECTORY
+            + "/profiles/raw/7-c38e9b2c-4c13-4f52-9c31-0e52d768d517/original.jpg";
+
     private S3ObjectTagger objectTagger;
     private S3ObjectKeyResolver objectKeyResolver;
+    private ImageCompactionRequester imageCompactionRequester;
     private S3TagAssetsLifecycle lifecycle;
 
     @BeforeEach
     void setUp() {
         objectTagger = mock(S3ObjectTagger.class);
         objectKeyResolver = mock(S3ObjectKeyResolver.class);
-        S3ImageObjectKeyPolicy imageObjectKeyPolicy = new S3ImageObjectKeyPolicy(
-                new S3Properties("bucket", "ap-northeast-2", ROOT_DIRECTORY, 10)
-        );
+        imageCompactionRequester = mock(ImageCompactionRequester.class);
+        S3Properties properties = new S3Properties("bucket", "ap-northeast-2", ROOT_DIRECTORY, 10);
         lifecycle = new S3TagAssetsLifecycle(
                 objectTagger,
                 objectKeyResolver,
-                imageObjectKeyPolicy
+                new S3ImageObjectKeyPolicy(properties),
+                new S3CompactObjectKeyPolicy(properties),
+                imageCompactionRequester
         );
+    }
+
+    @Test
+    @DisplayName("CONFIRMED 태깅에 성공한 raw 원본마다 압축을 요청한다.")
+    void requestCompactionForConfirmedRawImages() {
+        List<S3TagTarget> targets = List.of(
+                new S3TagTarget(RAW_KEY, TagStatus.CONFIRMED),
+                new S3TagTarget(PROFILE_RAW_KEY, TagStatus.CONFIRMED)
+        );
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectKeyResolver.resolve(RETAINED_URL)).thenReturn(Optional.of(PROFILE_RAW_KEY));
+        when(objectTagger.tag(anyList())).thenReturn(targets);
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL, RETAINED_URL)));
+
+        verify(imageCompactionRequester).request(RAW_KEY);
+        verify(imageCompactionRequester).request(PROFILE_RAW_KEY);
+        verifyNoMoreInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("태깅에 실패한 원본은 압축을 요청하지 않는다.")
+    void doNotRequestCompactionWhenTaggingFails() {
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectTagger.tag(anyList())).thenReturn(List.of());
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
+
+        verifyNoInteractions(imageCompactionRequester);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.gif",
+            "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.svg",
+            "/images/compact/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/750.webp",
+            "/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png"
+    })
+    @DisplayName("변환하지 않는 형식, 압축본, 기존 originals 원본은 압축을 요청하지 않는다.")
+    void doNotRequestCompactionForNonCompactableKeys(String path) {
+        String key = ROOT_DIRECTORY + path;
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(key));
+        when(objectTagger.tag(anyList())).thenReturn(List.of(new S3TagTarget(key, TagStatus.CONFIRMED)));
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
+
+        verifyNoInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("동기화에서는 새로 CONFIRMED가 된 원본만 압축하고 TEMPORARY로 바뀐 원본은 압축하지 않는다.")
+    void requestCompactionOnlyForAddedImagesWhenSynchronizing() {
+        String removedRawKey = ROOT_DIRECTORY + "/images/raw/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(removedRawKey));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.synchronize(
+                REQUESTER_ID,
+                new TagAssets(Set.of(RETAINED_URL, REMOVED_URL)),
+                new TagAssets(Set.of(RETAINED_URL, ADDED_URL))
+        );
+
+        verify(imageCompactionRequester).request(RAW_KEY);
+        verifyNoMoreInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("분리는 압축을 요청하지 않는다.")
+    void doNotRequestCompactionWhenDetaching() {
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verifyNoInteractions(imageCompactionRequester);
+    }
+
+    @Test
+    @DisplayName("분리로 TEMPORARY가 된 raw 원본은 모든 너비의 압축본도 없으면 건너뛰도록 TEMPORARY로 태깅한다.")
+    void releaseCompactsWhenDetaching() {
+        String imageId = "7-b38e9b2c-4c13-4f52-9c31-0e52d768d517";
+        String profileId = "7-c38e9b2c-4c13-4f52-9c31-0e52d768d517";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectKeyResolver.resolve(RETAINED_URL)).thenReturn(Optional.of(PROFILE_RAW_KEY));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL, RETAINED_URL)));
+
+        ArgumentCaptor<List<S3TagTarget>> captor = ArgumentCaptor.captor();
+        verify(objectTagger).tagIfExists(captor.capture());
+        assertThat(captor.getValue()).containsExactlyInAnyOrder(
+                temporary(ROOT_DIRECTORY + "/images/compact/" + imageId + "/750.webp"),
+                temporary(ROOT_DIRECTORY + "/images/compact/" + imageId + "/1200.webp"),
+                temporary(ROOT_DIRECTORY + "/images/compact/" + imageId + "/1400.webp"),
+                temporary(ROOT_DIRECTORY + "/images/compact/" + imageId + "/2000.webp"),
+                temporary(ROOT_DIRECTORY + "/profiles/compact/" + profileId + "/50.webp"),
+                temporary(ROOT_DIRECTORY + "/profiles/compact/" + profileId + "/360.webp")
+        );
+    }
+
+    @Test
+    @DisplayName("동기화에서는 제거된 raw 원본의 압축본만 TEMPORARY로 태깅한다.")
+    void releaseCompactsOnlyForRemovedImagesWhenSynchronizing() {
+        String removedId = "7-a38e9b2c-4c13-4f52-9c31-0e52d768d517";
+        String removedRawKey = ROOT_DIRECTORY + "/profiles/raw/" + removedId + "/original.png";
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(removedRawKey));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.synchronize(
+                REQUESTER_ID,
+                new TagAssets(Set.of(RETAINED_URL, REMOVED_URL)),
+                new TagAssets(Set.of(RETAINED_URL, ADDED_URL))
+        );
+
+        verify(objectTagger).tagIfExists(List.of(
+                temporary(ROOT_DIRECTORY + "/profiles/compact/" + removedId + "/50.webp"),
+                temporary(ROOT_DIRECTORY + "/profiles/compact/" + removedId + "/360.webp")
+        ));
+    }
+
+    @Test
+    @DisplayName("원본을 TEMPORARY로 바꾸지 못하면 압축본도 태깅하지 않는다.")
+    void keepCompactsWhenRawTaggingFails() {
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectTagger.tag(anyList())).thenReturn(List.of());
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verify(objectTagger, never()).tagIfExists(anyList());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.gif",
+            "/images/compact/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/750.webp",
+            "/images/originals/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517.png",
+            "/files/a38e9b2c-4c13-4f52-9c31-0e52d768d517.pdf"
+    })
+    @DisplayName("압축하지 않는 원본, 압축본, 기존 originals, 일반 파일은 압축본을 태깅하지 않는다.")
+    void doNotReleaseCompactsForNonCompactableKeys(String path) {
+        String key = ROOT_DIRECTORY + path;
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(key));
+        when(objectTagger.tag(anyList())).thenReturn(List.of(temporary(key)));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verify(objectTagger, never()).tagIfExists(anyList());
+    }
+
+    @Test
+    @DisplayName("CONFIRMED로 연결한 원본의 압축본은 태깅하지 않는다.")
+    void doNotTagCompactsWhenAttaching() {
+        when(objectKeyResolver.resolve(ADDED_URL)).thenReturn(Optional.of(RAW_KEY));
+        when(objectTagger.tag(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        lifecycle.attach(new TagAssets(Set.of(ADDED_URL)));
+
+        verify(objectTagger, never()).tagIfExists(anyList());
+    }
+
+    private static S3TagTarget temporary(String key) {
+        return new S3TagTarget(key, TagStatus.TEMPORARY);
     }
 
     @Test
@@ -170,6 +345,70 @@ class S3TagAssetsLifecycleTest {
         lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
 
         verify(objectTagger).tag(List.of());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"images/raw", "profiles/raw"})
+    @DisplayName("신경로 원본도 소유자의 이미지만 분리 대상으로 태깅한다.")
+    void detachOnlyOwnedImageInPurposeDirectory(String directory) {
+        String ownedKey = ROOT_DIRECTORY + "/" + directory + "/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        String foreignKey = ROOT_DIRECTORY + "/" + directory + "/8-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(ownedKey));
+        when(objectKeyResolver.resolve(RETAINED_URL)).thenReturn(Optional.of(foreignKey));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL, RETAINED_URL)));
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(ownedKey, TagStatus.TEMPORARY)
+        ));
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 압축본도 분리 대상에서 제외한다.")
+    void excludeForeignCompactImageFromDetachTargets() {
+        String foreignCompactKey = ROOT_DIRECTORY + "/images/compact/8-a38e9b2c-4c13-4f52-9c31-0e52d768d517/750.webp";
+        when(objectKeyResolver.resolve(REMOVED_URL)).thenReturn(Optional.of(foreignCompactKey));
+
+        lifecycle.detach(REQUESTER_ID, new TagAssets(Set.of(REMOVED_URL)));
+
+        verify(objectTagger).tag(List.of());
+    }
+
+    @Test
+    @DisplayName("본문 이미지를 썸네일로 쓰다가 썸네일만 바꾸면 본문에 남은 이미지는 TEMPORARY로 바꾸지 않는다.")
+    void keepImageStillUsedByContentWhenThumbnailChanges() {
+        String contentImageUrl = "https://s3.example.com/content.png";
+        String previousThumbnailUrl = "https://s3.example.com/content.png#1200x1500";
+        String currentThumbnailUrl = "https://s3.example.com/thumbnail.png#800x600";
+        String contentImageKey = ROOT_DIRECTORY + "/images/raw/7-a38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        String thumbnailKey = ROOT_DIRECTORY + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(contentImageUrl)).thenReturn(Optional.of(contentImageKey));
+        when(objectKeyResolver.resolve(previousThumbnailUrl)).thenReturn(Optional.of(contentImageKey));
+        when(objectKeyResolver.resolve(currentThumbnailUrl)).thenReturn(Optional.of(thumbnailKey));
+
+        lifecycle.synchronize(
+                REQUESTER_ID,
+                new TagAssets(Set.of(contentImageUrl, previousThumbnailUrl)),
+                new TagAssets(Set.of(contentImageUrl, currentThumbnailUrl))
+        );
+
+        verify(objectTagger).tag(List.of(
+                new S3TagTarget(thumbnailKey, TagStatus.CONFIRMED)
+        ));
+    }
+
+    @Test
+    @DisplayName("같은 이미지의 크기 fragment만 바뀌면 태그를 바꾸지 않는다.")
+    void doNothingWhenOnlyImageSizeFragmentChanges() {
+        String previousUrl = "https://s3.example.com/thumbnail.png#1200x1500";
+        String currentUrl = "https://s3.example.com/thumbnail.png#1200x1501";
+        String thumbnailKey = ROOT_DIRECTORY + "/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.png";
+        when(objectKeyResolver.resolve(previousUrl)).thenReturn(Optional.of(thumbnailKey));
+        when(objectKeyResolver.resolve(currentUrl)).thenReturn(Optional.of(thumbnailKey));
+
+        lifecycle.synchronize(REQUESTER_ID, new TagAssets(Set.of(previousUrl)), new TagAssets(Set.of(currentUrl)));
+
+        verifyNoInteractions(objectTagger);
     }
 
     @Test

@@ -28,6 +28,32 @@ const createCommand = (): PublishPostCommand => ({
 });
 
 describe('buildDraftPublishRequest', () => {
+	it('임시저장 글 발행 시 중첩된 빈 업로드 블록만 제거한다', async () => {
+		const command = createCommand();
+		const pendingImage: Block = {
+			id: 'pending-image',
+			type: 'image',
+			props: {
+				backgroundColor: 'default',
+				textAlignment: 'left',
+				name: '',
+				url: '',
+				caption: '',
+				showPreview: true,
+				previewWidth: 512,
+			},
+			content: undefined,
+			children: [],
+		};
+		const parent = { ...paragraph, id: 'parent', children: [pendingImage, paragraph] };
+		command.document.blocks = [parent];
+
+		const request = await buildDraftPublishRequest(command, vi.fn());
+
+		expect(request.content).toEqual([{ ...parent, children: [paragraph] }]);
+		expect(command.document.blocks).toEqual([parent]);
+	});
+
 	it('공통 Editor command를 독립적인 임시저장 발행 API 요청으로 변환한다', async () => {
 		const uploadRepresentativeImage = vi.fn();
 

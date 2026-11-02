@@ -46,6 +46,58 @@
 	min-height: 22rem;
 }
 
+.post-write-blocknote .bn-block-column {
+	/* BlockNote's overflow-x: auto also clips vertical overflow, which cuts off the selected image outline. */
+	min-width: 0;
+	overflow: visible;
+	padding-inline: 20px;
+}
+
+.post-write-blocknote .bn-block-column:first-child {
+	padding-left: 0;
+}
+
+.post-write-blocknote .bn-block-column:last-child {
+	padding-right: 0;
+}
+
+.post-write-blocknote .bn-block-column > .bn-trailing-block {
+	/* Clicking below a column must not append a block, since a column holds exactly one image. */
+	pointer-events: none;
+}
+
+.post-write-blocknote .bn-add-file-button {
+	color: var(--color-text-secondary);
+	background-color: var(--color-surface-hover);
+	border: 1px solid var(--color-border-default);
+}
+
+.post-write-blocknote .bn-add-file-button:hover {
+	background-color: var(--color-surface-active) !important;
+}
+
+.post-write-blocknote .bn-add-file-button:has(.post-write-upload-error) {
+	flex-wrap: wrap;
+}
+
+.post-write-blocknote .bn-add-file-button .post-write-upload-error {
+	flex-basis: 100%;
+	color: var(--danger-text);
+	font-size: var(--text-body-4);
+	line-height: var(--text-body-4--line-height);
+}
+
+.post-write-blocknote .bn-tab-panel .post-write-upload-error,
+.post-write-blocknote .bn-tab-panel .post-write-upload-status {
+	margin-top: 0.5rem;
+	font-size: var(--text-body-4);
+	line-height: var(--text-body-4--line-height);
+}
+
+.post-write-blocknote .bn-tab-panel .post-write-upload-error {
+	color: var(--danger-text);
+}
+
 .post-write-blocknote .bn-default-styles {
 	font-family: var(--font-sans);
 }
@@ -154,6 +206,37 @@
 .post-write-blocknote .ProseMirror-selectednode > .bn-block-content > * {
 	outline: 2px solid var(--focus-ring);
 	outline-offset: 2px;
+}
+
+.post-write-blocknote
+	.bn-editor.post-write-image-row-dragging
+	.bn-column-list-hovered
+	> .bn-block-column:not(:last-child),
+.post-write-blocknote
+	.bn-editor.post-write-image-row-dragging
+	.bn-column-list-hovered
+	> .bn-block-column.bn-column-resize-border {
+	box-shadow: none;
+}
+
+.post-write-image-row-guide {
+	position: fixed;
+	z-index: 50;
+	width: 5px;
+	background: var(--focus-ring);
+	pointer-events: none;
+	transform: translateX(-50%);
+	opacity: 0.15;
+}
+
+.post-write-image-row-detach-guide {
+	position: fixed;
+	z-index: 50;
+	height: 5px;
+	background: var(--focus-ring);
+	pointer-events: none;
+	transform: translateY(-50%);
+	opacity: 0.15;
 }
 
 @media (max-width: 40rem) {

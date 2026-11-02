@@ -106,6 +106,9 @@ public class Post extends BaseEntity {
 
     private LocalDateTime publishedAt;
 
+    @Column(name = "comment_count", nullable = false, updatable = false)
+    private long commentCount;
+
     // THINK Mapper ... ?
     public static Post create(
             Blog colog,
@@ -148,6 +151,18 @@ public class Post extends BaseEntity {
                 .publishedAt(LocalDateTime.now())
                 .status(PUBLISHED)
                 .build();
+    }
+
+    public static Post createImportedToRilog(Blog rilog, User writer, PostDetail detail, LocalDateTime publishedAt) {
+        Post post = create(rilog, writer, detail, null);
+        post.publishedAt = Objects.requireNonNull(publishedAt);
+        return post;
+    }
+
+    public static Post createImportedToColog(Blog colog, Blog rilog, User writer, PostDetail detail, LocalDateTime publishedAt) {
+        Post post = create(colog, rilog, writer, detail, null);
+        post.publishedAt = Objects.requireNonNull(publishedAt);
+        return post;
     }
 
     public static Post createTheRilog(Blog blog, User writer, PostDetail detail, Chapter chapter, TheRilogPostMetadata metadata) {
@@ -285,6 +300,13 @@ public class Post extends BaseEntity {
 
     public boolean isPrivate() {
         return visibility == PostVisibility.PRIVATE;
+    }
+
+    public boolean isIncludedInTotalCount() {
+        return status == PUBLISHED
+                && visibility == PostVisibility.PUBLIC
+                && postType == PostType.STANDARD
+                && getDeletedAt() == null;
     }
 
     public void validateWrittenBy(Long requesterId) {

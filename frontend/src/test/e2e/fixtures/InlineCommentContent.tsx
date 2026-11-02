@@ -17,7 +17,8 @@ export default function InlineCommentContent({
 				aria-label="게시글 본문"
 				data-post-detail-content=""
 				data-comment-selection-ready={Boolean(onInlineCommentCreate)}
-				style={{ margin: '200px 80px', minHeight: '1500px' }}
+				className="mx-0 md:mx-20"
+				style={{ marginBlock: '200px', minHeight: '1500px' }}
 			>
 				<div className="bn-block-outer" data-id="block-1">
 					<p data-inline-comment-root data-inline-comment-block-id="block-1">
@@ -26,7 +27,7 @@ export default function InlineCommentContent({
 				</div>
 			</article>
 			{article && onInlineCommentCreate && (
-				<InlineCommentSelectionToolbar article={article} postId={81} onCreateComment={onInlineCommentCreate} />
+				<InlineCommentSelectionToolbar article={article} postId={106} onCreateComment={onInlineCommentCreate} />
 			)}
 		</>
 	);

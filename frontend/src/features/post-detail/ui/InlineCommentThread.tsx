@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { InlineCommentThreadModel } from '../model/inline-comment-thread';
 import type { RefObject } from 'react';
@@ -16,6 +17,15 @@ import { useInlineCommentDraft } from '../hooks/use-inline-comment-draft';
 import InlineCommentInput from './InlineCommentInput';
 import InlineCommentThreadContent from './InlineCommentThreadContent';
 
+interface MobileComposerOptions {
+	host: HTMLElement | null;
+	showAddButton: boolean;
+	isActive: boolean;
+	shouldFocus: boolean;
+	onActivate: () => void;
+	onSubmitted: () => void;
+}
+
 interface InlineCommentThreadProps {
 	thread: InlineCommentThreadModel;
 	postId: number;
@@ -23,6 +33,7 @@ interface InlineCommentThreadProps {
 	isCollapsible?: boolean;
 	inputRef?: RefObject<HTMLTextAreaElement | null>;
 	entrySource: InlineCommentCreateEntrySource;
+	mobileComposer?: MobileComposerOptions;
 }
 
 export default function InlineCommentThread({
@@ -32,6 +43,7 @@ export default function InlineCommentThread({
 	isCollapsible = true,
 	inputRef,
 	entrySource,
+	mobileComposer,
 }: InlineCommentThreadProps) {
 	const { commentText, onCommentChange } = useInlineCommentDraft(thread.anchor.anchorId);
 
@@ -47,6 +59,7 @@ export default function InlineCommentThread({
 			await mutation.mutateAsync({ content: commentText });
 			analytics.inlineCommentCreated({ postId, entrySource, commentType: 'reply' });
 			onCommentChange('');
+			mobileComposer?.onSubmitted();
 		} catch {
 			// 작성 실패 시 초안을 유지한다.
 		} finally {
@@ -54,31 +67,48 @@ export default function InlineCommentThread({
 		}
 	};
 
-	return (
-		<InlineCommentThreadContent
-			postId={postId}
-			anchor={thread.anchor}
-			isCollapsible={isCollapsible}
-			onNavigate={() => onNavigate(thread)}
-			renderInput={(isOpen) => (
-				<>
-					<InlineCommentInput
-						isOpen={isOpen}
-						value={commentText}
-						onChange={onCommentChange}
-						inputRef={inputRef}
-						isPending={mutation.isPending}
-						onSubmit={() => void handleSubmit()}
-					/>
-					{mutation.isError && (
-						<p role="alert" className="mt-2 text-label-1 text-danger-text">
-							{isResponseUnconfirmed
-								? '요청 결과를 확인하지 못했습니다. 댓글 목록에서 등록 여부를 확인해 주세요.'
-								: '댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'}
-						</p>
-					)}
-				</>
+	const renderComposer = (isOpen: boolean) => (
+		<>
+			<InlineCommentInput
+				isOpen={isOpen}
+				value={commentText}
+				onChange={onCommentChange}
+				inputRef={inputRef}
+				shouldAutoFocus={mobileComposer?.shouldFocus}
+				isPending={mutation.isPending}
+				onSubmit={() => void handleSubmit()}
+			/>
+			{mutation.isError && (
+				<p role="alert" className="mt-2 text-label-1 text-danger-text">
+					{isResponseUnconfirmed
+						? '요청 결과를 확인하지 못했습니다. 댓글 목록에서 등록 여부를 확인해 주세요.'
+						: '댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'}
+				</p>
 			)}
-		/>
+		</>
+	);
+	return (
+		<>
+			<InlineCommentThreadContent
+				postId={postId}
+				anchor={thread.anchor}
+				isCollapsible={isCollapsible}
+				onNavigate={() => onNavigate(thread)}
+				renderInput={mobileComposer === undefined ? renderComposer : undefined}
+				onSelectComposer={
+					mobileComposer !== undefined && isInitialized && isAuthenticated
+						? () => {
+								mobileComposer.onActivate();
+								if (mobileComposer.isActive) inputRef?.current?.focus({ preventScroll: true });
+							}
+						: undefined
+				}
+				isComposerSelected={mobileComposer?.isActive}
+				showAddButton={mobileComposer?.showAddButton}
+			/>
+			{mobileComposer?.isActive &&
+				mobileComposer.host !== null &&
+				createPortal(renderComposer(true), mobileComposer.host)}
+		</>
 	);
 }

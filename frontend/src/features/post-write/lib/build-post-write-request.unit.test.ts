@@ -28,6 +28,46 @@ const createCommand = (): PublishPostCommand => ({
 });
 
 describe('buildPostWriteRequest', () => {
+	it('빈 업로드 블록의 자식을 같은 위치에 보존하고 완료된 업로드는 유지한다', async () => {
+		const command = createCommand();
+		const child = { ...paragraph, id: 'nested-paragraph' };
+		const pendingImage: Block = {
+			id: 'pending-image',
+			type: 'image',
+			props: {
+				backgroundColor: 'default',
+				textAlignment: 'left',
+				name: '',
+				url: '',
+				caption: '',
+				showPreview: true,
+				previewWidth: 512,
+			},
+			content: undefined,
+			children: [child],
+		};
+		const uploadedFile: Block = {
+			id: 'uploaded-file',
+			type: 'file',
+			props: { backgroundColor: 'default', name: '', url: 'https://example.com/file.pdf', caption: '' },
+			content: undefined,
+			children: [],
+		};
+		const pendingFile: Block = {
+			id: 'pending-file',
+			type: 'file',
+			props: { backgroundColor: 'default', name: '', url: '  ', caption: '' },
+			content: undefined,
+			children: [],
+		};
+		command.document.blocks = [paragraph, pendingImage, uploadedFile, pendingFile];
+
+		const request = await buildPostWriteRequest(command, vi.fn());
+
+		expect(request.content).toEqual([paragraph, child, uploadedFile]);
+		expect(command.document.blocks).toEqual([paragraph, pendingImage, uploadedFile, pendingFile]);
+	});
+
 	it('공통 Editor command를 게시글 API 요청으로 변환한다', async () => {
 		const uploadRepresentativeImage = vi.fn();
 

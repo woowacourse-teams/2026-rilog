@@ -12,7 +12,6 @@ import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.HardTrendingRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.view.PostViewStore;
@@ -22,6 +21,7 @@ import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,13 +76,16 @@ class PostServiceTagAssetsLifecycleTest {
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
     @Mock
-    private HardTrendingRepository trendingRepository;
-
-    @Mock
     private PostViewCountRepository viewCountRepository;
 
     @Mock
     private PostViewStore postViewStore;
+
+    @Mock
+    private PostCountCache postCountCache;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private PostService postService;
 
@@ -96,9 +99,10 @@ class PostServiceTagAssetsLifecycleTest {
                 chapterRepository,
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
-                trendingRepository,
                 viewCountRepository,
-                postViewStore
+                postViewStore,
+                postCountCache,
+                eventPublisher
         );
     }
 
