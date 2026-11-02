@@ -1,23 +1,7 @@
-import { getImageUrl } from '@/shared/utils/get-image-url';
-
 export type ImageSizeSource = File | HTMLImageElement | { width: number; height: number };
 
 export const appendImageSizeHash = async (source: ImageSizeSource, url: string): Promise<string> => {
-	const publicUrl = getImageUrl(url);
-	let parsedUrl: URL;
-	try {
-		parsedUrl = new URL(publicUrl);
-	} catch {
-		return url;
-	}
-	// 백엔드의 S3ObjectKeyResolver는 S3 HTTPS URL의 path만 객체 키로 사용한다.
-	if (
-		url.includes('#') ||
-		parsedUrl.protocol !== 'https:' ||
-		!/^.+\.s3\.[^.]+\.amazonaws\.com$/.test(parsedUrl.hostname)
-	) {
-		return url;
-	}
+	if (!url || url.includes('#')) return url;
 
 	try {
 		let width: number;
@@ -42,7 +26,7 @@ export const appendImageSizeHash = async (source: ImageSizeSource, url: string):
 		}
 
 		if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) return url;
-		const urlWithImageSizeHash = `${publicUrl}#${width}x${height}`;
+		const urlWithImageSizeHash = `${url}#${width}x${height}`;
 		// 게시글 API의 thumbnailImageUrl 길이 제한을 넘기지 않는다.
 		return urlWithImageSizeHash.length <= 512 ? urlWithImageSizeHash : url;
 	} catch {

@@ -105,7 +105,7 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 						if (imgElement && imgElement.naturalWidth > 0 && imgElement.naturalHeight > 0) {
 							importedUrl = await appendImageSizeHash(
 								{ width: imgElement.naturalWidth, height: imgElement.naturalHeight },
-								response.data.objectKey ?? importedUrl,
+								importedUrl,
 							);
 						}
 					}
