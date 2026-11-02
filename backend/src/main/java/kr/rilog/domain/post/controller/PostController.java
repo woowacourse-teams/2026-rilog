@@ -12,6 +12,8 @@ import kr.rilog.domain.post.controller.apispec.PostApiSpec;
 import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
+import kr.rilog.global.idempotency.IdempotencyKey;
+import kr.rilog.global.idempotency.IdempotentRequest;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,9 +28,11 @@ public class PostController implements PostApiSpec {
 
     @AuthGuard
     @PostMapping("/posts")
+    @IdempotentRequest
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PostPublishResponse> create(
             @LoginUserId Long requesterId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody PostPublishRequest request
     ) {
         PostPublishResult result = postService.publish(request.toCommand(), requesterId);
