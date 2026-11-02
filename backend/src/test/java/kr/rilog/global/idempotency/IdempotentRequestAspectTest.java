@@ -179,7 +179,7 @@ class IdempotentRequestAspectTest {
     private FakeController proxied(FakeController controller) {
         AspectJProxyFactory factory = new AspectJProxyFactory(controller);
         factory.setProxyTargetClass(true);
-        factory.addAspect(new IdempotentRequestAspect(new CaffeineCompletedRequestStore()));
+        factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
         return factory.getProxy();
     }
 

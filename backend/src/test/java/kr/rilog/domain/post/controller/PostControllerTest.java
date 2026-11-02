@@ -16,7 +16,7 @@ import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.global.advice.GlobalExceptionHandler;
-import kr.rilog.global.idempotency.CaffeineCompletedRequestStore;
+import kr.rilog.global.idempotency.CompletedRequestStore;
 import kr.rilog.global.idempotency.IdempotentRequestAspect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -219,7 +219,7 @@ class PostControllerTest {
     private MockMvc idempotentMockMvc(PostService postService) {
         AspectJProxyFactory factory = new AspectJProxyFactory(new PostController(postService));
         factory.setProxyTargetClass(true);
-        factory.addAspect(new IdempotentRequestAspect(new CaffeineCompletedRequestStore()));
+        factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
         PostController controller = factory.getProxy();
         return mockMvcFor(controller);
     }

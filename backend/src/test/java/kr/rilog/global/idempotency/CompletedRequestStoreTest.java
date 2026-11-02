@@ -10,9 +10,9 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class CaffeineCompletedRequestStoreTest {
+class CompletedRequestStoreTest {
 
-    private final CompletedRequestStore store = new CaffeineCompletedRequestStore();
+    private final CompletedRequestStore store = new CompletedRequestStore();
 
     @Test
     @DisplayName("같은 키는 한 번만 실행하고 저장된 응답을 반환한다.")

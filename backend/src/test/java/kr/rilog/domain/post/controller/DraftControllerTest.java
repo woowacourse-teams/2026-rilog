@@ -5,7 +5,7 @@ import kr.rilog.domain.post.service.DraftService;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
-import kr.rilog.global.idempotency.CaffeineCompletedRequestStore;
+import kr.rilog.global.idempotency.CompletedRequestStore;
 import kr.rilog.global.idempotency.IdempotentRequestAspect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -101,7 +101,7 @@ class DraftControllerTest {
     private MockMvc idempotentMockMvc(DraftService draftService) {
         AspectJProxyFactory factory = new AspectJProxyFactory(new DraftController(draftService));
         factory.setProxyTargetClass(true);
-        factory.addAspect(new IdempotentRequestAspect(new CaffeineCompletedRequestStore()));
+        factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
         DraftController controller = factory.getProxy();
         return MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(7L))
