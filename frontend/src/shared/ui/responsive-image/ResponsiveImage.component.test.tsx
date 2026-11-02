@@ -50,6 +50,67 @@ describe('ResponsiveImage', () => {
 		expect(handleError).not.toHaveBeenCalled();
 	});
 
+	it('마운트 전에 srcset 이미지가 로드에 실패하면 raw 이미지로 폴백한다', () => {
+		const complete = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+		const naturalWidth = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(0);
+		const rawUrl = 'https://cdn.rilog.test/images/raw/uuid/original.png';
+		const handleError = vi.fn();
+
+		try {
+			render(<ResponsiveImage src={rawUrl} alt="실패 이미지" priority onError={handleError} />);
+			const image = screen.getByRole('img', { name: '실패 이미지' });
+
+			expect(image).toHaveAttribute('src', rawUrl);
+			expect(image).not.toHaveAttribute('srcset');
+			expect(image).not.toHaveAttribute('sizes');
+			expect(handleError).not.toHaveBeenCalled();
+
+			fireEvent.error(image);
+			expect(handleError).toHaveBeenCalledTimes(1);
+		} finally {
+			complete.mockRestore();
+			naturalWidth.mockRestore();
+		}
+	});
+
+	it('마운트 전에 raw 이미지가 로드에 실패하면 onError를 호출한다', () => {
+		const complete = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+		const naturalWidth = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(0);
+		const handleError = vi.fn();
+
+		try {
+			render(<ResponsiveImage src="https://example.com/broken.png" alt="실패 원본 이미지" onError={handleError} />);
+
+			expect(handleError).toHaveBeenCalledTimes(1);
+		} finally {
+			complete.mockRestore();
+			naturalWidth.mockRestore();
+		}
+	});
+
+	it('마운트 전에 로드가 끝난 이미지가 정상이면 폴백하지 않는다', () => {
+		const complete = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+		const naturalWidth = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(750);
+		const handleError = vi.fn();
+
+		try {
+			render(
+				<ResponsiveImage
+					src="https://cdn.rilog.test/images/raw/uuid/original.png"
+					alt="정상 이미지"
+					onError={handleError}
+				/>,
+			);
+			const image = screen.getByRole('img', { name: '정상 이미지' });
+
+			expect(image).toHaveAttribute('srcset');
+			expect(handleError).not.toHaveBeenCalled();
+		} finally {
+			complete.mockRestore();
+			naturalWidth.mockRestore();
+		}
+	});
+
 	it('원본으로 폴백한 뒤 src가 바뀌면 새 이미지의 srcset을 사용한다', () => {
 		const firstUrl = 'https://cdn.rilog.test/images/raw/first/original.png';
 		const nextUrl = 'https://cdn.rilog.test/images/raw/next/original.png';

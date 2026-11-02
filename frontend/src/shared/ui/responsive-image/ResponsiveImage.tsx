@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { ComponentPropsWithoutRef, SyntheticEvent } from 'react';
 
@@ -30,6 +30,8 @@ export default function ResponsiveImage({
 	...imgProps
 }: ResponsiveImageProps) {
 	const [rawFallbackSrc, setRawFallbackSrc] = useState<string | null>(null);
+	const imgRef = useRef<HTMLImageElement>(null);
+	const checkedFailedSrcRef = useRef<string | null>(null);
 	const useRaw = rawFallbackSrc === src;
 
 	const srcset = useRaw ? undefined : toSrcSet(src);
@@ -43,12 +45,27 @@ export default function ResponsiveImage({
 		onError?.(event);
 	};
 
+	useEffect(() => {
+		const image = imgRef.current;
+		if (image === null || checkedFailedSrcRef.current === src || !image.complete || image.naturalWidth !== 0) {
+			return;
+		}
+
+		checkedFailedSrcRef.current = src;
+		if (image.hasAttribute('srcset')) {
+			setRawFallbackSrc(src);
+		} else {
+			image.dispatchEvent(new Event('error'));
+		}
+	}, [src]);
+
 	const computedLoading = loading ?? (priority ? 'eager' : 'lazy');
 	const computedFetchPriority = fetchPriority ?? (priority ? 'high' : 'auto');
 	const computedClassName = fill ? `absolute inset-0 size-full ${className ?? ''}`.trim() : className;
 
 	return (
 		<img
+			ref={imgRef}
 			{...imgProps}
 			src={src}
 			srcSet={srcset}
