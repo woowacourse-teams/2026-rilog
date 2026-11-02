@@ -162,7 +162,15 @@ export default function PublishSettingsModal({
 			<form id={PUBLISH_FORM_ID} className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1" action={handleSubmit}>
 				<div className="grid gap-8 md:grid-cols-2 md:gap-10">
 					<section>
-						<Field label="대표 이미지" description="직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.">
+						<Field
+							label="대표 이미지"
+							description={
+								<>
+									<p>직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.</p>
+									<p>16:9 비율의 이미지를 권장해요. 최대 10MB까지 업로드할 수 있어요.</p>
+								</>
+							}
+						>
 							{({ id, describedBy }) => (
 								<div className="flex flex-col gap-2">
 									<div className={`grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
