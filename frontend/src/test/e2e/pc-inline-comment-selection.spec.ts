@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test';
 import type { PostCommentAnchorResponse, PostCommentAnchorSidebarGroupResponse } from '@/shared/api/posts/types';
 
 import { mockAuthenticatedAccess } from './fixtures/authenticated-access';
+import { renderInlineCommentWorkspace } from './fixtures/inline-comment-browser';
 
 const createComposerThreadGroup = (
 	selectionId: number,
@@ -157,3 +158,51 @@ for (const method of ['PATCH', 'DELETE'] as const) {
 		await expect(page.getByRole('alertdialog')).toHaveCount(0);
 	});
 }
+
+const openDockedComposer = async (page: Page) => {
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	const group = createComposerThreadGroup(91, '브라우저에', 0, { canDelete: true, canEdit: true });
+	await page.route('**/v1/**', (route) => route.abort());
+	await page.route('**/v1/posts/106/comment-anchors{,/sidebar}', (route) =>
+		route.fulfill({
+			json: {
+				status: 200,
+				message: 'OK',
+				data: route.request().url().endsWith('/sidebar')
+					? { anchorGroups: [group] }
+					: { blocks: [{ blockId: 'block-1', anchorGroups: [group] }] },
+			},
+		}),
+	);
+	await renderInlineCommentWorkspace(page);
+	const entry = page.getByRole('button', { name: '전체 댓글 1개 보기' });
+	await entry.focus();
+	await entry.press('Enter');
+	await expect(page.getByRole('region', { name: '전체 인라인 댓글 1', exact: true })).toBeVisible();
+};
+
+test('도킹 댓글은 본문과 입력란에서 Escape로 닫고 초안과 열기 버튼 focus를 복원한다', async ({ page }) => {
+	await openDockedComposer(page);
+	const panel = page.getByRole('region', { name: '전체 인라인 댓글 1', exact: true });
+	const entry = page.getByRole('button', { name: /전체 댓글.*보기/ });
+	await page.locator('[data-inline-comment-block-id="block-1"]').click();
+	await page.keyboard.press('Escape');
+	await expect(panel).toBeHidden();
+	await expect(entry).toBeFocused();
+	await entry.focus();
+	await entry.press('Enter');
+	await panel.getByRole('button', { name: '삭제', exact: true }).click();
+	const confirm = page.getByRole('dialog', { name: '댓글을 삭제할까요?' });
+	await expect(confirm).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(confirm).toBeHidden();
+	await expect(panel).toBeVisible();
+	const input = panel.getByRole('textbox', { name: '댓글 입력' });
+	await input.fill('Esc 이후에도 유지할 초안');
+	await page.keyboard.press('Escape');
+	await expect(panel).toBeHidden();
+	await expect(entry).toBeFocused();
+	await entry.focus();
+	await entry.press('Enter');
+	await expect(input).toHaveValue('Esc 이후에도 유지할 초안');
+});

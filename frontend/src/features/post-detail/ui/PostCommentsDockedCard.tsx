@@ -12,6 +12,7 @@ type PostCommentsDockedCardProps = Omit<
 > & { open: boolean };
 
 export default function PostCommentsDockedCard({ open, ...props }: PostCommentsDockedCardProps) {
+	const { onClose } = props;
 	const titleId = useId();
 	const titleRef = useRef<HTMLHeadingElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -23,6 +24,19 @@ export default function PostCommentsDockedCard({ open, ...props }: PostCommentsD
 	useEffect(() => {
 		if (shouldFocusInput) inputRef.current?.focus({ preventScroll: true });
 	}, [shouldFocusInput, props.selection, props.composerAnchorId]);
+
+	useEffect(() => {
+		if (!open) return;
+		const handleKeyDown = (event: KeyboardEvent) => {
+			// Let nested dialogs and controls finish their own Escape handling first.
+			if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
+			if (event.target instanceof Element && event.target.closest('[role="menu"], [role="listbox"]')) return;
+			event.preventDefault();
+			onClose();
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [open, onClose]);
 
 	return (
 		<section
