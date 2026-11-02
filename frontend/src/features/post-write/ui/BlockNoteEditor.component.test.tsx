@@ -15,7 +15,9 @@ interface MockEditor {
 	document: Block[];
 	domElement: HTMLDivElement;
 	focus: () => void;
+	getBlock: (id: string) => unknown;
 	onChange: (callback: unknown) => () => void;
+	transact: (callback: (transaction: { setMeta: (key: string, value: unknown) => void }) => void) => void;
 	updateBlock: (block: unknown, update: unknown) => void;
 }
 
@@ -85,23 +87,29 @@ describe('BlockNoteEditor', () => {
 	];
 	let editorElement: HTMLDivElement;
 	let focusEditor: () => void;
+	let getBlock: (id: string) => unknown;
 	let editorChangeCallback: unknown;
+	let setTransactionMeta: ReturnType<typeof vi.fn<(key: string, value: unknown) => void>>;
 	let updateBlock: (block: unknown, update: unknown) => void;
 
 	beforeEach(() => {
 		window.localStorage.clear();
 		editorElement = document.createElement('div');
 		focusEditor = vi.fn();
+		getBlock = vi.fn();
+		setTransactionMeta = vi.fn<(key: string, value: unknown) => void>();
 		updateBlock = vi.fn();
 		suggestionMenuControllerProps.mockClear();
 		useCreateBlockNote.mockReturnValue({
 			document: blocks,
 			domElement: editorElement,
 			focus: focusEditor,
+			getBlock,
 			onChange: (callback) => {
 				editorChangeCallback = callback;
 				return () => undefined;
 			},
+			transact: (callback) => callback({ setMeta: setTransactionMeta }),
 			updateBlock,
 		});
 	});
@@ -230,6 +238,83 @@ describe('BlockNoteEditor', () => {
 			getChanges: () => [{ type: 'insert', source: { type: 'paste' }, block: heading, prevBlock: undefined }],
 		});
 		expect(updateBlock).toHaveBeenCalledWith(heading, { props: { level: 4 } });
+	});
+
+	it('base64 또는 임시 주소가 있는 미디어 블록이 생성되면 url을 비우고 오류 블록으로 전환한다', async () => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const firstImage = {
+			id: 'pasted-image-1',
+			type: 'image',
+			props: { url: 'data:image/png;base64,Zmlyc3Q=' },
+			content: undefined,
+		};
+		const secondImage = {
+			id: 'pasted-image-2',
+			type: 'image',
+			props: { url: 'blob:https://rilog.test/second' },
+			content: undefined,
+		};
+		const remoteImage = {
+			id: 'pasted-image-remote',
+			type: 'image',
+			props: { url: 'https://cdn.rilog.test/valid.png' },
+			content: undefined,
+		};
+
+		for (const id of [firstImage.id, secondImage.id]) {
+			const blockNode = document.createElement('div');
+			blockNode.dataset.id = id;
+			const addFileButton = document.createElement('div');
+			addFileButton.className = 'bn-add-file-button';
+			blockNode.append(addFileButton);
+			editorElement.append(blockNode);
+		}
+		vi.mocked(getBlock).mockImplementation((id: string) => ({ id, type: 'image', props: { url: '' } }));
+
+		callback(editor, {
+			getChanges: () => [
+				{ type: 'insert', source: { type: 'paste' }, block: firstImage, prevBlock: undefined },
+				{ type: 'insert', source: { type: 'paste' }, block: secondImage, prevBlock: undefined },
+				{ type: 'insert', source: { type: 'paste' }, block: remoteImage, prevBlock: undefined },
+			],
+		});
+
+		expect(updateBlock).toHaveBeenCalledTimes(2);
+		expect(updateBlock).toHaveBeenCalledWith(firstImage.id, { props: { url: '' } });
+		expect(updateBlock).toHaveBeenCalledWith(secondImage.id, { props: { url: '' } });
+		expect(setTransactionMeta).toHaveBeenCalledWith('addToHistory', false);
+
+		await waitFor(() => {
+			const alerts = editorElement.querySelectorAll('[role="alert"]');
+			expect(alerts).toHaveLength(2);
+			expect(alerts[0]).toHaveTextContent(
+				'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.',
+			);
+			expect(alerts[1]).toHaveTextContent(
+				'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.',
+			);
+		});
+	});
+
+	it.each(['undo', 'redo'])('%s로 임시 미디어 URL이 복원되면 히스토리 밖에서 URL을 비운다', (sourceType) => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const image = {
+			id: 'pasted-image',
+			type: 'image',
+			props: { url: 'data:image/png;base64,Zmlyc3Q=' },
+			content: undefined,
+		};
+
+		callback(editor, {
+			getChanges: () => [{ type: 'update', source: { type: sourceType }, block: image, prevBlock: image }],
+		});
+
+		expect(updateBlock).toHaveBeenCalledWith(image.id, { props: { url: '' } });
+		expect(setTransactionMeta).toHaveBeenCalledWith('addToHistory', false);
 	});
 
 	it('초기 문서와 변경된 문서를 외부 계약으로 전달한다', async () => {

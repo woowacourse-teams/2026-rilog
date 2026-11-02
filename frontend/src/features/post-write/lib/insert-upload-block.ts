@@ -1,9 +1,11 @@
 import type { PostWriteBlockNoteEditor } from './post-write-schema';
 
+import { isSupportedImageFile } from '@/shared/utils/upload-format';
+
 export type UploadBlockType = 'image' | 'file' | 'video' | 'audio';
 
 export const getTransferBlockType = (file: File): UploadBlockType => {
-	if (file.type.startsWith('image/') || /\.heic$/i.test(file.name)) return 'image';
+	if (file.type.startsWith('image/') || isSupportedImageFile(file) || /\.heic$/i.test(file.name)) return 'image';
 	if (file.type.startsWith('video/')) return 'video';
 	if (file.type.startsWith('audio/')) return 'audio';
 	return 'file';
@@ -26,13 +28,14 @@ export const getTransferInsertionPoint = (editor: PostWriteBlockNoteEditor, even
 	return { referenceId, placement };
 };
 
-const insertBlock = (
+export const insertUploadBlock = (
 	editor: PostWriteBlockNoteEditor,
 	type: UploadBlockType,
+	file: File,
 	referenceId: string,
 	placement: 'before' | 'after',
-	props: { name: string } | undefined,
 ): string => {
+	const props = { name: file.name };
 	switch (type) {
 		case 'image':
 			return editor.insertBlocks([{ type: 'image', props }], referenceId, placement)[0].id;
@@ -44,18 +47,3 @@ const insertBlock = (
 			return editor.insertBlocks([{ type: 'audio', props }], referenceId, placement)[0].id;
 	}
 };
-
-export const insertUploadBlock = (
-	editor: PostWriteBlockNoteEditor,
-	type: UploadBlockType,
-	file: File,
-	referenceId: string,
-	placement: 'before' | 'after',
-): string => insertBlock(editor, type, referenceId, placement, { name: file.name });
-
-export const insertEmptyUploadBlock = (
-	editor: PostWriteBlockNoteEditor,
-	type: UploadBlockType,
-	referenceId: string,
-	placement: 'before' | 'after',
-): string => insertBlock(editor, type, referenceId, placement, undefined);

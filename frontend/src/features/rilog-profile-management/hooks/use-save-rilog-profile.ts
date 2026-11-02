@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { mapRilogProfileUpdateRequest } from '@/features/rilog-profile-management/lib/map-rilog-profile-update-request';
 import type { RilogProfileSettingsValue } from '@/features/rilog-profile-management/model/rilog-profile-settings';
 import { useUpdateBlogProfileMutation } from '@/shared/api/blogs/mutations/use-update-blog-profile-mutation';
-import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
+import { uploadProfileImageWithPresignedUrl } from '@/shared/api/uploads/api';
 
 interface SaveRilogProfileVariables {
 	slug: string;
@@ -20,7 +20,7 @@ export const useSaveRilogProfile = () => {
 			const profileImageUpload =
 				value.profileImageFile === null
 					? undefined
-					: await uploadFileWithPresignedUrl({ file: value.profileImageFile, type: 'IMAGE' });
+					: await uploadProfileImageWithPresignedUrl({ file: value.profileImageFile, type: 'IMAGE' });
 			const profileImageUrl = profileImageUpload?.objectKey ?? value.profileImageUrl ?? '';
 
 			await updateBlogProfile.mutateAsync({

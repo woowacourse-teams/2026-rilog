@@ -1,6 +1,5 @@
 import { isNormalizedApiError } from '@/shared/api/api-error';
-
-import { UploadPreparationError } from './prepare-upload-file';
+import { UploadPreparationError } from '@/shared/utils/prepare-upload-file';
 
 export const getUploadErrorMessage = (error: unknown): string =>
 	error instanceof UploadPreparationError

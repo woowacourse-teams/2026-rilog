@@ -31,6 +31,9 @@ import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
+import { showUploadBlockError } from '../lib/show-upload-block-error';
+import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
+import { isTransientMediaUrl } from '../lib/validate-post-media';
 import '../styles/blocknote-theme.css';
 
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
@@ -163,6 +166,9 @@ const slashMenuFloatingUIOptions = {
 	},
 } satisfies FloatingUIOptions;
 
+const TRANSIENT_MEDIA_UPLOAD_ERROR =
+	'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.';
+
 export default function BlockNoteEditor({
 	initialBlocks,
 	onChange,
@@ -206,6 +212,25 @@ export default function BlockNoteEditor({
 		() =>
 			editor.onChange((currentEditor, context) => {
 				for (const change of context.getChanges()) {
+					if (
+						(change.block.type === 'image' ||
+							change.block.type === 'file' ||
+							change.block.type === 'video' ||
+							change.block.type === 'audio') &&
+						isTransientMediaUrl(change.block.props.url)
+					) {
+						updateMediaUrlWithoutHistory(currentEditor, change.block.id, '');
+						window.setTimeout(
+							() => showUploadBlockError(currentEditor, change.block.id, TRANSIENT_MEDIA_UPLOAD_ERROR),
+							0,
+						);
+						continue;
+					}
+
+					if (change.source.type === 'undo' || change.source.type === 'redo') {
+						continue;
+					}
+
 					if (change.block.type === 'heading' && change.block.props.level > 4) {
 						currentEditor.updateBlock(change.block, { props: { level: 4 } });
 						continue;

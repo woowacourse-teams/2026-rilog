@@ -1,5 +1,7 @@
 import { getImageUrl } from '@/shared/utils/get-image-url';
 
+import { getTransferBlockType } from './insert-upload-block';
+
 export const appendImageSizeHash = async (file: File, url: string): Promise<string> => {
 	const publicUrl = getImageUrl(url);
 	let parsedUrl: URL;
@@ -10,7 +12,7 @@ export const appendImageSizeHash = async (file: File, url: string): Promise<stri
 	}
 	// 백엔드의 S3ObjectKeyResolver는 S3 HTTPS URL의 path만 객체 키로 사용한다.
 	if (
-		!file.type.startsWith('image/') ||
+		getTransferBlockType(file) !== 'image' ||
 		url.includes('#') ||
 		typeof createImageBitmap !== 'function' ||
 		parsedUrl.protocol !== 'https:' ||

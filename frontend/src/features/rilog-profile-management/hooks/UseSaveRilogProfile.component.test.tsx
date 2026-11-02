@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('useSaveRilogProfile', () => {
 	it('변경한 프로필 이미지를 업로드한 objectKey로 개인 프로필을 저장한다', async () => {
-		const uploadFile = vi.spyOn(uploadApi, 'uploadFileWithPresignedUrl').mockResolvedValue({
+		const uploadProfileImage = vi.spyOn(uploadApi, 'uploadProfileImageWithPresignedUrl').mockResolvedValue({
 			uploadId: 'profile-upload-id',
 			objectKey: 'rilog/uploads/images/profile.png',
 			uploadUrl: 'https://s3.rilog.test/profile',
@@ -56,7 +56,7 @@ describe('useSaveRilogProfile', () => {
 		const { result } = renderHook(() => useSaveRilogProfile(), { wrapper: createWrapper() });
 		const savedValue = await result.current.mutateAsync({ slug: '@rilogger', value });
 
-		expect(uploadFile).toHaveBeenCalledWith({ file: profileImageFile, type: 'IMAGE' });
+		expect(uploadProfileImage).toHaveBeenCalledWith({ file: profileImageFile, type: 'IMAGE' });
 		expect(updateBlogProfileMock).toHaveBeenCalledWith({
 			slug: '@rilogger',
 			request: {

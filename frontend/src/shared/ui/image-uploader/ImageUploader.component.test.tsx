@@ -31,18 +31,42 @@ describe('ImageUploader', () => {
 		expect(handleChange).toHaveBeenCalledOnce();
 	});
 
-	it('비이미지 파일은 전달하지 않고 input을 초기화한다', async () => {
+	it('비이미지 파일이나 허용되지 않은 이미지 확장자는 전달하지 않고 input을 초기화한다', async () => {
 		const user = userEvent.setup({ applyAccept: false });
 		const handleFileChange = vi.fn();
-		const file = new File(['not-an-image'], 'profile.txt', { type: 'text/plain' });
+		const textFile = new File(['not-an-image'], 'profile.txt', { type: 'text/plain' });
+		const bmpFile = new File(['bmp'], 'profile.bmp', { type: 'image/bmp' });
 
 		render(<ImageUploader onFileChange={handleFileChange} />);
 
 		const input = screen.getByLabelText('이미지 변경');
-		await user.upload(input, file);
+		await user.upload(input, textFile);
+		expect((input as HTMLInputElement).files).toHaveLength(0);
 
+		await user.upload(input, bmpFile);
 		expect((input as HTMLInputElement).files).toHaveLength(0);
 		expect(handleFileChange).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['profile.jpg', 'image/jpeg'],
+		['profile.jpeg', 'image/jpeg'],
+		['profile.png', 'image/png'],
+		['profile.webp', 'image/webp'],
+		['profile.gif', 'image/gif'],
+		['profile.avif', 'image/avif'],
+		['profile.heic', 'image/heic'],
+		['profile.svg', 'image/svg+xml'],
+	])('허용된 이미지 형식(%s)은 onFileChange로 전달한다', async (fileName, type) => {
+		const user = userEvent.setup({ applyAccept: false });
+		const handleFileChange = vi.fn();
+		const file = new File(['image'], fileName, { type });
+
+		render(<ImageUploader onFileChange={handleFileChange} />);
+
+		await user.upload(screen.getByLabelText('이미지 변경'), file);
+
+		expect(handleFileChange).toHaveBeenCalledWith(file);
 	});
 
 	it('추가 이미지 검증과 거절 콜백을 FileUploader에 전달한다', async () => {
