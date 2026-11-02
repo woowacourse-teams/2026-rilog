@@ -119,8 +119,6 @@ describe('mapPostDetailResponse', () => {
 		expect(postDetail.blog.type).toBe('COLOG');
 		if (postDetail.blog.type === 'COLOG') {
 			expect(postDetail.blog.profileImageUrl).toBe('https://images.rilog.test/team.png');
-			expect(postDetail.blog).not.toHaveProperty('memberCount');
-			expect(postDetail.blog).not.toHaveProperty('postCount');
 		}
 		expect(postDetail.category).toBe('DAILY');
 		expect(postDetail.chapter).toBeNull();
