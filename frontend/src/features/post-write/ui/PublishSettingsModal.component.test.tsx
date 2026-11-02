@@ -81,11 +81,11 @@ describe('PublishSettingsModal', () => {
 		});
 	});
 
-	it('대표 이미지 입력에 화면별 표시 비율과 용량 및 자동 선택 안내를 연결한다', () => {
+	it('대표 이미지 입력에 화면별 표시 비율과 용량 안내를 연결한다', () => {
 		renderModal();
 		const input = screen.getByLabelText('대표 이미지 추가');
 		expect(input).toHaveAccessibleDescription(
-			'최대 10MB 피드 썸네일은 16:9 비율로 표시되며, 게시글 상세에서는 원본 비율을 기준으로 표시돼요. 직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.',
+			'최대 10MB * 피드에는 16:9 비율로 표시돼요 * 게시글 상세에서는 원본 비율 그대로 표시돼요',
 		);
 	});
 

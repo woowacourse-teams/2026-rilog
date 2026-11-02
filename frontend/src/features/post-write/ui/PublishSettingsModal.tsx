@@ -170,6 +170,12 @@ export default function PublishSettingsModal({
 									최대 10MB
 								</span>
 							}
+							description={
+								<div id={`${imageGuideId}-ratio`} className="space-y-1 break-keep">
+									<p>* 피드에는 16:9 비율로 표시돼요</p>
+									<p>* 게시글 상세에서는 원본 비율 그대로 표시돼요</p>
+								</div>
+							}
 						>
 							{({ id }) => (
 								<div className="flex flex-col gap-2">
@@ -180,7 +186,7 @@ export default function PublishSettingsModal({
 											hasImage={hasRepresentativeImage}
 											fullWidth
 											disabled={isModalPending}
-											aria-describedby={`${imageGuideId}-size ${imageGuideId}-ratio ${imageGuideId}-auto${imageFileSizeError ? ` ${id}-file-error` : ''}`}
+											aria-describedby={`${imageGuideId}-size ${imageGuideId}-ratio${imageFileSizeError ? ` ${id}-file-error` : ''}`}
 											aria-invalid={imageFileSizeError !== null}
 											validateFile={(file) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES}
 											onFileRejected={(file) => {
@@ -210,9 +216,6 @@ export default function PublishSettingsModal({
 								</div>
 							)}
 						</Field>
-						<p id={`${imageGuideId}-ratio`} className="mt-3 text-label-1 break-keep text-text-secondary">
-							피드 썸네일은 16:9 비율로 표시되며, 게시글 상세에서는 원본 비율을 기준으로 표시돼요.
-						</p>
 						<figure
 							aria-label="게시글 썸네일 미리보기"
 							className="mt-5 overflow-hidden rounded-lg border border-border-default bg-surface"
@@ -232,9 +235,6 @@ export default function PublishSettingsModal({
 								</p>
 							</figcaption>
 						</figure>
-						<p id={`${imageGuideId}-auto`} className="mt-3 text-label-2 break-keep text-text-secondary">
-							직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.
-						</p>
 					</section>
 
 					<div className="space-y-8">
