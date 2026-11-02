@@ -1,3 +1,5 @@
+import { getTransferBlockType } from './insert-upload-block';
+
 export type ImageSizeSource = File | HTMLImageElement | { width: number; height: number };
 
 export const appendImageSizeHash = async (source: ImageSizeSource, url: string): Promise<string> => {
@@ -11,7 +13,7 @@ export const appendImageSizeHash = async (source: ImageSizeSource, url: string):
 			width = source.naturalWidth;
 			height = source.naturalHeight;
 		} else if (typeof File !== 'undefined' && source instanceof File) {
-			if (!source.type.startsWith('image/') || typeof createImageBitmap !== 'function') {
+			if (getTransferBlockType(source) !== 'image' || typeof createImageBitmap !== 'function') {
 				return url;
 			}
 			const bitmap = await createImageBitmap(source);

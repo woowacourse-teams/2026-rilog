@@ -219,7 +219,7 @@ describe('uploadFileWithPresignedUrl', () => {
 		});
 		vi.stubGlobal('fetch', fetchMock);
 
-		const file = new File(['pdf-bytes'], 'document.pdf', { type: 'application/pdf' });
+		const file = new File(['pdf-bytes'], 'document.pdf', { type: '' });
 		await uploadFileWithPresignedUrl({ file, type: 'FILE' });
 
 		expect(presignedRequestContentType).toContain('application/json');
@@ -232,6 +232,19 @@ describe('uploadFileWithPresignedUrl', () => {
 		const storageRequest = fetchMock.mock.calls[1]?.[0] as Request;
 		expect(storageRequest.method).toBe('PUT');
 		expect(storageRequest.headers.get('content-type')).toBe('application/pdf');
+	});
+
+	it('허용하지 않는 FILE 형식은 Presigned URL 요청 전에 거절한다', async () => {
+		const fetchMock = vi.fn();
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(
+			uploadFileWithPresignedUrl({
+				file: new File(['binary'], 'app.exe', { type: 'application/octet-stream' }),
+				type: 'FILE',
+			}),
+		).rejects.toThrowError(new UploadPreparationError('지원하지 않는 파일 형식입니다.'));
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
 	it.each([

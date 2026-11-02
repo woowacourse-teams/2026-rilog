@@ -37,7 +37,7 @@ class ImageServerRequestSignerTest {
 
     private ImageServerProperties properties(String secret) {
         return new ImageServerProperties(
-                URI.create("https://image.example.com"), secret, Duration.ofSeconds(1), Duration.ofSeconds(1)
+                URI.create("https://image.example.com"), secret, Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(1)
         );
     }
 }

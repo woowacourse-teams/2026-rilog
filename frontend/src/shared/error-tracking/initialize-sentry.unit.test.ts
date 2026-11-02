@@ -33,33 +33,33 @@ it('운영 실행 모드에서도 명시적 수집 비활성화를 SDK에 전달
 	expect(Sentry.init).toHaveBeenCalledWith(expect.objectContaining({ environment: 'prod', enabled: false }));
 });
 
-it('production 빌드의 smoke 이벤트는 운영 Slack callback을 실행하지 않는다', async () => {
-	vi.stubEnv('NODE_ENV', 'production');
-	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'smoke');
-	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENABLED', 'true');
-	vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@example.invalid/1');
-	const onSlackAlert = vi.fn();
-	initializeSentry({ onSlackAlert });
-	const options = vi.mocked(Sentry.init).mock.calls.at(-1)?.[0];
-	await options?.beforeSend?.(
-		{ type: undefined, event_id: '11111111111111111111111111111111', environment: 'prod', message: 'test' },
-		{},
-	);
-	expect(onSlackAlert).not.toHaveBeenCalled();
-});
-
-it.each(['webhook', 'off'])('모드 %s는 SDK 이벤트는 유지하고 직접 Slack callback만 끈다', async (mode) => {
-	vi.stubEnv('NEXT_PUBLIC_SENTRY_SLACK_MODE', mode);
-	vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'prod');
-	vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.rilog.kr');
-	vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@example.invalid/1');
-	const onSlackAlert = vi.fn();
-	initializeSentry({ onSlackAlert });
-	const options = vi.mocked(Sentry.init).mock.calls.at(-1)?.[0];
-	const event = await options?.beforeSend?.(
-		{ type: undefined, event_id: '11111111111111111111111111111111', environment: 'prod', message: 'test' },
-		{},
-	);
-	expect(event).toMatchObject({ environment: 'prod' });
-	expect(onSlackAlert).not.toHaveBeenCalled();
-});
+it.each(['legacy', 'webhook', 'off', undefined])(
+	'상속한 Slack 모드 %s에서도 SDK는 이벤트만 수집하고 직접 Slack 전송을 하지 않는다',
+	async (mode) => {
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_SLACK_MODE', mode);
+		vi.stubEnv('SENTRY_SLACK_MODE', mode);
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'prod');
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_ENABLED', 'true');
+		vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.rilog.kr');
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@example.invalid/1');
+		const fetch = vi.fn();
+		const sendBeacon = vi.fn();
+		vi.stubGlobal('fetch', fetch);
+		vi.stubGlobal('navigator', { sendBeacon });
+		try {
+			for (const runtime of ['browser', 'node', 'edge'] as const) {
+				initializeSentry({ runtime });
+				const options = vi.mocked(Sentry.init).mock.calls.at(-1)?.[0];
+				const event = await options?.beforeSend?.(
+					{ type: undefined, event_id: '11111111111111111111111111111111', environment: 'prod', message: 'test' },
+					{},
+				);
+				expect(event).toMatchObject({ environment: 'prod' });
+			}
+			expect(fetch).not.toHaveBeenCalled();
+			expect(sendBeacon).not.toHaveBeenCalled();
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	},
+);

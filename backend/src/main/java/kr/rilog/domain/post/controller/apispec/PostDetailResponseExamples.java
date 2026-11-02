@@ -69,9 +69,7 @@ final class PostDetailResponseExamples {
                   "slug": "rilog",
                   "name": "Rilog",
                   "profileImageUrl": null,
-                  "coverImageUrl": null,
-                  "memberCount": 8,
-                  "postCount": 42
+                  "coverImageUrl": null
                 },
                 "viewerPermissions": {
                   "canEdit": false,

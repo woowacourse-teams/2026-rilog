@@ -1,9 +1,11 @@
 import type { PostWriteBlockNoteEditor } from './post-write-schema';
 
+import { isSupportedImageFile } from '@/shared/utils/upload-format';
+
 export type UploadBlockType = 'image' | 'file' | 'video' | 'audio';
 
 export const getTransferBlockType = (file: File): UploadBlockType => {
-	if (file.type.startsWith('image/') || /\.heic$/i.test(file.name)) return 'image';
+	if (file.type.startsWith('image/') || isSupportedImageFile(file) || /\.heic$/i.test(file.name)) return 'image';
 	if (file.type.startsWith('video/')) return 'video';
 	if (file.type.startsWith('audio/')) return 'audio';
 	return 'file';

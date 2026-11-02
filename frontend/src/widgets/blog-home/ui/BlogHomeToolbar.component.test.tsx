@@ -22,7 +22,11 @@ vi.mock('@/shared/ui/link/CustomLink', () => ({
 		onClick,
 		onNavigate,
 		...props
-	}: ComponentProps<'a'> & { href: string; scroll?: boolean; onNavigate?: () => void }) {
+	}: ComponentProps<'a'> & {
+		href: string;
+		scroll?: boolean;
+		onNavigate?: (event: { preventDefault: () => void }) => void;
+	}) {
 		void _scroll;
 
 		return (
@@ -32,7 +36,7 @@ vi.mock('@/shared/ui/link/CustomLink', () => ({
 				onClick={(event) => {
 					event.preventDefault();
 					onClick?.(event);
-					if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.();
+					if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.(event);
 				}}
 			/>
 		);

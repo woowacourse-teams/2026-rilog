@@ -1,5 +1,6 @@
 import type { PostWriteBlockNoteEditor } from './post-write-schema';
-import type { Block } from '@blocknote/core';
+
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 import { isTransientMediaUrl } from './validate-post-media';
 
@@ -44,7 +45,10 @@ export const preloadImage = (url: string): Promise<void> => {
 	});
 };
 
-export const isImageBlockPendingImport = (block: Block, isUploadedImageUrl: (url: string) => boolean): boolean => {
+export const isImageBlockPendingImport = (
+	block: PostContentBlock,
+	isUploadedImageUrl: (url: string) => boolean,
+): boolean => {
 	if (block.type !== 'image') {
 		return false;
 	}
@@ -55,7 +59,10 @@ export const isImageBlockPendingImport = (block: Block, isUploadedImageUrl: (url
 	return !isUploadedImageUrl(url);
 };
 
-export const hasPendingImageImports = (blocks: Block[], isUploadedImageUrl: (url: string) => boolean): boolean => {
+export const hasPendingImageImports = (
+	blocks: PostContentBlock[],
+	isUploadedImageUrl: (url: string) => boolean,
+): boolean => {
 	for (const block of blocks) {
 		if (isImageBlockPendingImport(block, isUploadedImageUrl)) {
 			return true;

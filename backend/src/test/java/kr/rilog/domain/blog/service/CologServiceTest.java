@@ -28,6 +28,7 @@ import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,9 @@ class CologServiceTest {
     @Mock
     private TagAssetsPublisher tagAssetsPublisher;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private CologService cologService;
 
     @BeforeEach
@@ -95,7 +99,8 @@ class CologServiceTest {
                 postRepository,
                 userRepository,
                 tagAssetsPublisher,
-                Clock.fixed(NOW, ZoneOffset.UTC)
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                eventPublisher
         );
     }
 

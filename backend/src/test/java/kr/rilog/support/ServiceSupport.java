@@ -1,5 +1,7 @@
 package kr.rilog.support;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import kr.rilog.domain.post.service.PostCountCache;
 import kr.rilog.domain.post.view.PostViewCounterRegistry;
 import kr.rilog.support.configuration.DatabaseCleanerConfiguration;
 import kr.rilog.support.configuration.MySqlTestContainerConfiguration;
@@ -29,6 +31,9 @@ public abstract class ServiceSupport {
     @Autowired
     private PostViewCounterRegistry postViewCounterRegistry;
 
+    @Autowired
+    private PostCountCache postCountCache;
+
     @BeforeEach
     void cleanState() {
         dataCleaner.clean();
@@ -38,6 +43,11 @@ public abstract class ServiceSupport {
                 "조회수 테스트의 Counter 저장소를 찾을 수 없습니다."
         );
         counters.clear();
+        Cache<?, ?> counts = (Cache<?, ?>) Objects.requireNonNull(
+                ReflectionTestUtils.getField(postCountCache, "cache"),
+                "전체 글 수 테스트의 캐시를 찾을 수 없습니다."
+        );
+        counts.invalidateAll();
     }
 
 }

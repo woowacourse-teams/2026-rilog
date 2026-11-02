@@ -19,6 +19,7 @@ interface MockEditor {
 	focus: () => void;
 	getBlock: (id: string) => unknown;
 	onChange: (callback: unknown) => () => void;
+	transact: (callback: (transaction: { setMeta: (key: string, value: unknown) => void }) => void) => void;
 	updateBlock: (block: unknown, update: unknown) => void;
 }
 
@@ -45,6 +46,7 @@ const suggestionMenuControllerProps = vi.fn<(props: SuggestionMenuControllerProp
 vi.mock('@blocknote/react', () => ({
 	useCreateBlockNote: (...args: unknown[]): MockEditor => useCreateBlockNote(...args),
 	FilePanelController: () => null,
+	SideMenuController: () => null,
 	SuggestionMenuController: (props: SuggestionMenuControllerProps) => {
 		suggestionMenuControllerProps(props);
 
@@ -89,6 +91,7 @@ describe('BlockNoteEditor', () => {
 	let focusEditor: () => void;
 	let getBlock: (id: string) => unknown;
 	let editorChangeCallback: unknown;
+	let setTransactionMeta: ReturnType<typeof vi.fn<(key: string, value: unknown) => void>>;
 	let updateBlock: (block: unknown, update: unknown) => void;
 
 	beforeEach(() => {
@@ -97,6 +100,7 @@ describe('BlockNoteEditor', () => {
 		editorElement = document.createElement('div');
 		focusEditor = vi.fn();
 		getBlock = vi.fn();
+		setTransactionMeta = vi.fn<(key: string, value: unknown) => void>();
 		updateBlock = vi.fn();
 		suggestionMenuControllerProps.mockClear();
 		useCreateBlockNote.mockReturnValue({
@@ -108,6 +112,7 @@ describe('BlockNoteEditor', () => {
 				editorChangeCallback = callback;
 				return () => undefined;
 			},
+			transact: (callback) => callback({ setMeta: setTransactionMeta }),
 			updateBlock,
 		});
 	});
@@ -280,8 +285,9 @@ describe('BlockNoteEditor', () => {
 		});
 
 		expect(updateBlock).toHaveBeenCalledTimes(2);
-		expect(updateBlock).toHaveBeenCalledWith(firstImage, { props: { url: '' } });
-		expect(updateBlock).toHaveBeenCalledWith(secondImage, { props: { url: '' } });
+		expect(updateBlock).toHaveBeenCalledWith(firstImage.id, { props: { url: '' } });
+		expect(updateBlock).toHaveBeenCalledWith(secondImage.id, { props: { url: '' } });
+		expect(setTransactionMeta).toHaveBeenCalledWith('addToHistory', false);
 
 		await waitFor(() => {
 			const alerts = editorElement.querySelectorAll('[role="alert"]');
@@ -392,6 +398,25 @@ describe('BlockNoteEditor', () => {
 		});
 
 		expect(importSpy).not.toHaveBeenCalled();
+	});
+
+	it.each(['undo', 'redo'])('%s로 임시 미디어 URL이 복원되면 히스토리 밖에서 URL을 비운다', (sourceType) => {
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const image = {
+			id: 'pasted-image',
+			type: 'image',
+			props: { url: 'data:image/png;base64,Zmlyc3Q=' },
+			content: undefined,
+		};
+
+		callback(editor, {
+			getChanges: () => [{ type: 'update', source: { type: sourceType }, block: image, prevBlock: image }],
+		});
+
+		expect(updateBlock).toHaveBeenCalledWith(image.id, { props: { url: '' } });
+		expect(setTransactionMeta).toHaveBeenCalledWith('addToHistory', false);
 	});
 
 	it('초기 문서와 변경된 문서를 외부 계약으로 전달한다', async () => {

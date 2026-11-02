@@ -17,6 +17,7 @@
 - Nginx/Certbot은 Ubuntu 호스트에서 실행하고 Docker API는 127.0.0.1:8000에 공개한다.
 - 호출자 인증은 도입하지 않고 Nginx IP rate limit, 작업 동시성 1, 다운로드·디코딩 상한을 둔다.
 - 임의 외부 URL 요청은 DNS/IP 검증과 연결 대상 고정, 리다이렉트 금지로 내부망 접근을 제한한다.
+- GitHub 첨부 URL은 302로 서명된 S3 URL에 연결되므로 예외로 둔다. `github.com/user-attachments/assets/`에서 `github-production-user-asset-6210df.s3.amazonaws.com`으로 가는 리다이렉트 1회만 따라가고, 다음 요청에도 같은 URL·DNS 검증을 적용한다.
 - Docker 이미지는 외부에서 빌드해 koreaioi/rilog-image-server:latest에 push한다. EC2는 image.env와 Compose로 pull/run한다.
 
 ## 이유와 검토한 대안

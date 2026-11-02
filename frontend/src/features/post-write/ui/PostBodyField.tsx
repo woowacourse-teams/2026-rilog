@@ -1,11 +1,12 @@
 import type { PostEditorHandle, PostEditorProps } from '../model/post-editor';
-import type { Block } from '@blocknote/core';
 import type { ComponentType, RefObject } from 'react';
+
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 interface PostBodyFieldProps {
 	editorComponent: ComponentType<PostEditorProps>;
 	editorRef: RefObject<PostEditorHandle | null>;
-	initialBlocks?: Block[];
+	initialBlocks?: PostContentBlock[];
 	error?: string;
 	onReady: PostEditorProps['onReady'];
 	onChange: PostEditorProps['onChange'];

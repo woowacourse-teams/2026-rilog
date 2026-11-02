@@ -5,6 +5,7 @@ import { ko } from '@blocknote/core/locales';
 import {
 	FilePanelController,
 	getDefaultReactSlashMenuItems,
+	SideMenuController,
 	SuggestionMenuController,
 	useCreateBlockNote,
 } from '@blocknote/react';
@@ -13,8 +14,9 @@ import { useEffect, useImperativeHandle, useRef } from 'react';
 
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 import type { PostEditorProps } from '../model/post-editor';
-import type { Block } from '@blocknote/core';
 import type { FloatingUIOptions } from '@blocknote/react';
+
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 
 import '@blocknote/shadcn/style.css';
 import { usePostWriteImageImport } from '../hooks/use-post-write-image-import';
@@ -28,16 +30,20 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { installImageRowDrag } from '../lib/install-image-row-drag';
+import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
+import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
 import '../styles/blocknote-theme.css';
 
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
 import PostWriteFilePanel from './PostWriteFilePanel';
 import PostWriteFormattingToolbar from './PostWriteFormattingToolbar';
+import PostWriteSideMenu from './PostWriteSideMenu';
 
 const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
@@ -197,7 +203,7 @@ export default function BlockNoteEditor({
 
 	useEffect(() => {
 		if (initialBlocks === undefined) return;
-		const registerBlocks = (blocks: Block[]) => {
+		const registerBlocks = (blocks: PostContentBlock[]) => {
 			for (const block of blocks) {
 				if (block.type === 'image' && typeof block.props.url === 'string' && block.props.url !== '') {
 					registerUploadedImageUrl(block.props.url);
@@ -239,16 +245,13 @@ export default function BlockNoteEditor({
 
 	useEffect(() => connectEditor(editor), [connectEditor, editor]);
 	usePostWriteTransferUpload(editor);
+	useEffect(() => installImageRowDrag(editor), [editor]);
+	useEffect(() => keepImageRowSingleImage(editor), [editor]);
 
 	useEffect(
 		() =>
 			editor.onChange((currentEditor, context) => {
 				for (const change of context.getChanges()) {
-					if (change.block.type === 'heading' && change.block.props.level > 4) {
-						currentEditor.updateBlock(change.block, { props: { level: 4 } });
-						continue;
-					}
-
 					if (
 						(change.block.type === 'image' ||
 							change.block.type === 'file' ||
@@ -256,7 +259,7 @@ export default function BlockNoteEditor({
 							change.block.type === 'audio') &&
 						isTransientMediaUrl(change.block.props.url)
 					) {
-						currentEditor.updateBlock(change.block, { props: { url: '' } });
+						updateMediaUrlWithoutHistory(currentEditor, change.block.id, '');
 						window.setTimeout(
 							() => showUploadBlockError(currentEditor, change.block.id, TRANSIENT_MEDIA_UPLOAD_ERROR),
 							0,
@@ -266,6 +269,15 @@ export default function BlockNoteEditor({
 
 					if (change.block.type === 'image' && change.block.props.url !== '') {
 						void handleImageImport(currentEditor, change.block.id, change.block.props.url);
+					}
+
+					if (change.source.type === 'undo' || change.source.type === 'redo') {
+						continue;
+					}
+
+					if (change.block.type === 'heading' && change.block.props.level > 4) {
+						currentEditor.updateBlock(change.block, { props: { level: 4 } });
+						continue;
 					}
 
 					if (
@@ -367,6 +379,7 @@ export default function BlockNoteEditor({
 				slashMenu={false}
 				formattingToolbar={false}
 				filePanel={false}
+				sideMenu={false}
 				onChange={() => {
 					const document = [...editor.document];
 					onChange(document);
@@ -375,6 +388,7 @@ export default function BlockNoteEditor({
 			>
 				<PostWriteFormattingToolbar />
 				<FilePanelController filePanel={PostWriteFilePanel} />
+				<SideMenuController sideMenu={PostWriteSideMenu} />
 				<SuggestionMenuController
 					triggerCharacter="/"
 					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}

@@ -37,13 +37,18 @@ afterAll(async () => {
 	await Sentry.close(1000);
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+	await Sentry.close(1000);
+	Sentry.getCurrentScope().setClient(undefined);
+	Sentry.getCurrentScope().clear();
+	Sentry.setUser(null);
 	envelopes.length = 0;
 });
 
 it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하고 민감정보를 제거한다', async () => {
 	initializeSentry({
-		getSessionReplayUrl: () => 'https://us.posthog.com/project/phc_test/replay/session-1?t=30',
+		getSessionReplayUrl: () =>
+			'https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
 	});
 	errorTracker.setUser('42');
 	const error = await createApiFailure('INTERNAL_SERVER_ERROR', 500);
@@ -61,7 +66,7 @@ it('실제 SDK 전송에서 원본 오류, API 맥락, 사용자 ID를 유지하
 	expect(sent).toContain('api_response');
 	expect(sent).toContain('PostHog Recording URL');
 	expect(sent).toContain('posthog_session_replay');
-	expect(sent).toContain('https://us.posthog.com/project/phc_test/replay/session-1?t=30');
+	expect(sent).toContain('https://us.posthog.com/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30');
 	expect(sent).toContain('"id":"42"');
 	expect(sent).not.toContain('private-code');
 });
@@ -82,6 +87,90 @@ it('실제 SDK 요청 문맥의 URL과 별도 query_string에서 민감 값을 �
 	const sent = JSON.stringify(envelopes);
 	expect(sent).toContain('page=2');
 	expect(sent).not.toMatch(/person%40example\.com|private-nickname|private-content/);
-	expect(sent).toContain('%5BFiltered%5D');
+	expect(sent).not.toContain('email=');
 	expect(sent).not.toContain('fixture-sdk-hook-signature');
+});
+
+it('실제 SDK 전송에서도 임의 query·fragment·파일명·UI 속성을 제거하고 스택과 상관관계 ID를 보존한다', async () => {
+	initializeSentry({
+		getSessionReplayUrl: () =>
+			'https://user:private-password@us.posthog.com/project/123/replay/01234567-89ab-cdef-0123-456789abcdef',
+	});
+	Sentry.captureEvent({
+		message: 'Upload private-file.png failed at /feeds?custom=private-query#private-hash',
+		request: {
+			url: 'https://api.rilog.kr/v1/users/private-user?unexpected=private-query&page=2',
+			headers: { 'X-Custom-Identity': 'private-header' },
+		},
+		tags: { operation: 'upload.put', request_id: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d' },
+		contexts: { upload: { filename: 'private-filename.png', headers: [['Authorization', 'private-token']] } },
+		breadcrumbs: [
+			{ category: 'ui.click', message: 'button#private-id[title="private-title"][type="submit"]' },
+			{
+				category: 'fetch',
+				data: {
+					method: 'PUT',
+					url: 'https://storage.example/private-object?signature=private-signature',
+					custom: 'private-custom',
+				},
+			},
+			{ category: 'console', message: 'private-console' },
+		],
+		exception: {
+			values: [
+				{
+					type: 'Error',
+					value: 'Upload failed',
+					stacktrace: {
+						frames: [
+							{ filename: 'app.js', abs_path: 'https://www.rilog.kr/_next/static/chunks/app.js', lineno: 12, colno: 3 },
+						],
+					},
+				},
+			],
+		},
+	});
+	await Sentry.flush(1000);
+	expect(envelopes).toHaveLength(1);
+	const sent = JSON.stringify(envelopes);
+	expect(sent).not.toMatch(/private-|storage.example|X-Custom-Identity/);
+	expect(sent).toContain('app.js');
+	expect(sent).toContain('"lineno":12');
+	expect(sent).toContain('671a5cb0-bfc5-4cab-b9bf-42044df2b76d');
+	expect(sent).toContain('upload.put');
+	expect(sent).toContain('page=2');
+	expect(sent).not.toContain('posthog_session_replay');
+});
+
+it('서버 프로필 실패를 원본 스택·HTTP 진단과 함께 한 번 전송하고 개인정보는 제거한다', async () => {
+	const blogs = await import('@/shared/api/blogs/api');
+	const { getBlogPublicProfile } = await import('@/features/blog-profile/lib/get-blog-public-profile');
+	const failure = await createApiFailure('INTERNAL_SERVER_ERROR', 502);
+	if (!('response' in failure)) throw new Error('Expected HTTP failure');
+	failure.response.headers.set('X-Request-ID', '11111111-1111-4111-8111-111111111111');
+	rememberApiRequest(failure.cause, 'GET', 'https://api.rilog.test/v1/blogs/private-slug?token=private-token');
+	const read = vi.spyOn(blogs, 'readBlogPublicProfile').mockRejectedValue(failure);
+	try {
+		initializeSentry();
+		await expect(getBlogPublicProfile('private-slug')).rejects.toBe(failure.cause);
+		Sentry.captureException(failure.cause);
+		await Sentry.flush(1000);
+		expect(envelopes).toHaveLength(1);
+		const sent = JSON.stringify(envelopes);
+		for (const value of [
+			'HTTPError',
+			'stacktrace',
+			'blog.profile.read',
+			'load_failed',
+			'502',
+			'11111111-1111-4111-8111-111111111111',
+			'https://api.rilog.test/v1/blogs/[slug]',
+		]) {
+			expect(sent).toContain(value);
+		}
+		expect(sent).not.toContain('private-slug');
+		expect(sent).not.toContain('private-token');
+	} finally {
+		read.mockRestore();
+	}
 });

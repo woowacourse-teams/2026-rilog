@@ -11,6 +11,7 @@ import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.event.PostCountChangedEvent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
@@ -28,6 +29,7 @@ import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -51,6 +53,7 @@ public class DraftService {
     private final ChapterRepository chapterRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final PostViewCountRepository viewCountRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // THINK 멱등성.
     @Transactional
@@ -92,6 +95,9 @@ public class DraftService {
         TagAssets current = draft.getTagAssets();
         tagAssetsPublisher.synchronize(requesterId, previous, current);
 
+        if (draft.isIncludedInTotalCount()) {
+            eventPublisher.publishEvent(new PostCountChangedEvent());
+        }
         return PostPublishResult.of(draft);
     }
 

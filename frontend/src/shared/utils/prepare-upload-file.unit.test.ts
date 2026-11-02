@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MAX_IMAGE_FILE_SIZE_BYTES } from '@/shared/constants/image-upload';
 
-import { prepareImageUploadFile, prepareUploadFile, UploadPreparationError } from './prepare-upload-file';
+import { prepareUploadFile, UploadPreparationError } from './prepare-upload-file';
 
 const { heicToMock } = vi.hoisted(() => ({ heicToMock: vi.fn() }));
 
@@ -17,12 +17,12 @@ afterEach(() => {
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
-describe('prepareImageUploadFile', () => {
+describe('prepareUploadFile: image', () => {
 	it('HEIC 이미지는 JPEG로 변환해 확장자와 MIME 타입을 변경한다', async () => {
 		heicToMock.mockResolvedValue(new Blob(['jpeg-bytes'], { type: 'image/jpeg' }));
 		const heicFile = new File(['heic-bytes'], 'profile.HEIC', { type: 'image/heic' });
 
-		const prepared = await prepareImageUploadFile(heicFile);
+		const prepared = await prepareUploadFile(heicFile, 'image');
 
 		expect(heicToMock).toHaveBeenCalledWith({ blob: heicFile, type: 'image/jpeg', quality: 0.9 });
 		expect(prepared.name).toBe('profile.jpg');
@@ -33,13 +33,13 @@ describe('prepareImageUploadFile', () => {
 	it('GIF는 변환 없이 그대로 통과시킨다', async () => {
 		const gifFile = new File(['gif-bytes'], 'anim.gif', { type: 'image/gif' });
 
-		await expect(prepareImageUploadFile(gifFile)).resolves.toBe(gifFile);
+		await expect(prepareUploadFile(gifFile, 'image')).resolves.toBe(gifFile);
 	});
 
 	it('MIME 타입이 비어 있으면 확장자 기준으로 보정한다', async () => {
 		const pngFile = new File(['png-bytes'], 'photo.png', { type: '' });
 
-		const prepared = await prepareImageUploadFile(pngFile);
+		const prepared = await prepareUploadFile(pngFile, 'image');
 
 		expect(prepared.name).toBe('photo.png');
 		expect(prepared.type).toBe('image/png');
@@ -52,7 +52,7 @@ describe('prepareImageUploadFile', () => {
 			{ type: '' },
 		);
 
-		const prepared = await prepareImageUploadFile(svgFile);
+		const prepared = await prepareUploadFile(svgFile, 'image');
 		const text = await prepared.text();
 
 		expect(prepared.name).toBe('icon.svg');
@@ -66,7 +66,7 @@ describe('prepareImageUploadFile', () => {
 			type: 'image/svg+xml',
 		});
 
-		await expect(prepareImageUploadFile(svgFile)).rejects.toThrowError(
+		await expect(prepareUploadFile(svgFile, 'image')).rejects.toThrowError(
 			new UploadPreparationError('SVG 파일을 안전하게 처리할 수 없습니다.'),
 		);
 	});
@@ -74,7 +74,7 @@ describe('prepareImageUploadFile', () => {
 	it('지원하지 않는 이미지 확장자면 UploadPreparationError를 던진다', async () => {
 		const bmpFile = new File(['bmp-bytes'], 'legacy.bmp', { type: 'image/bmp' });
 
-		await expect(prepareImageUploadFile(bmpFile)).rejects.toThrowError(
+		await expect(prepareUploadFile(bmpFile, 'image')).rejects.toThrowError(
 			new UploadPreparationError('지원하지 않는 이미지 형식입니다.'),
 		);
 	});
@@ -84,7 +84,7 @@ describe('prepareImageUploadFile', () => {
 			type: 'image/heic',
 		});
 
-		await expect(prepareImageUploadFile(oversizedHeic)).rejects.toThrowError(
+		await expect(prepareUploadFile(oversizedHeic, 'image')).rejects.toThrowError(
 			new UploadPreparationError('이미지는 최대 10MB까지 업로드할 수 있습니다.'),
 		);
 		expect(heicToMock).not.toHaveBeenCalled();

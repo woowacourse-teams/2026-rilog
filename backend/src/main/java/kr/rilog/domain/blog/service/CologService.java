@@ -19,12 +19,14 @@ import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.event.PostCountChangedEvent;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +56,7 @@ public class CologService {
     private final UserRepository userRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final Clock clock;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
@@ -144,6 +147,7 @@ public class CologService {
         colog.delete();
         blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
+        eventPublisher.publishEvent(new PostCountChangedEvent());
     }
 
     public List<BlogMemberResult> getCologMembers(String slug) {

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
-import type { Block } from '@blocknote/core';
 
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import { importImage } from '@/shared/api/uploads/api';
 
 import { appendImageSizeHash } from '../lib/append-image-size-hash';
@@ -72,7 +72,7 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 	}, []);
 
 	const hasPendingImports = useCallback(
-		(blocks: Block[]): boolean => hasPendingImageImports(blocks, isUploadedImageUrl),
+		(blocks: PostContentBlock[]): boolean => hasPendingImageImports(blocks, isUploadedImageUrl),
 		[isUploadedImageUrl],
 	);
 

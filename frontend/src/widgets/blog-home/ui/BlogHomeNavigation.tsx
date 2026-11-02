@@ -23,7 +23,9 @@ const ROW_CLASS_NAME =
 	'flex min-h-11 min-w-0 flex-1 items-center gap-1.5 rounded-sm px-2 text-left text-body-4 font-normal text-navy-600 transition-colors hover:bg-surface-hover hover:text-text-primary focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus-ring active:bg-surface-active motion-reduce:transition-none sm:min-h-7';
 const BLOG_HOME_FEED_HEADING_ID = 'blog-home-feed-heading';
 
-const handleFilterNavigation = (onNavigate?: () => void) => {
+const handleFilterNavigation = (event: { preventDefault: () => void }, href: string, onNavigate?: () => void) => {
+	event.preventDefault();
+	if (`${window.location.pathname}${window.location.search}` !== href) window.history.pushState(null, '', href);
 	scrollToFeedTarget(BLOG_HOME_FEED_HEADING_ID);
 	onNavigate?.();
 };
@@ -51,7 +53,9 @@ function NavigationRow({
 			aria-label={`${item.name}, 글 ${item.postCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
 			className={isCurrent ? `${ROW_CLASS_NAME} bg-surface-hover font-semibold text-text-primary` : ROW_CLASS_NAME}
-			onNavigate={() => handleFilterNavigation(onNavigate)}
+			onNavigate={(event) =>
+				handleFilterNavigation(event, buildBlogHomeFilterHref(pathname, searchParams, filter, blogType), onNavigate)
+			}
 		>
 			<span className="min-w-0 truncate">{item.name}</span>
 			<span className="shrink-0 text-label-2 text-text-disabled">{item.postCount}</span>
@@ -80,7 +84,13 @@ function AllPostsRow({
 			aria-label={`전체, 글 ${totalCount}개`}
 			aria-current={isCurrent ? 'page' : undefined}
 			className={`${ROW_CLASS_NAME} w-full ${isCurrent ? 'bg-surface-hover font-semibold text-text-primary' : ''}`}
-			onNavigate={() => handleFilterNavigation(onNavigate)}
+			onNavigate={(event) =>
+				handleFilterNavigation(
+					event,
+					buildBlogHomeFilterHref(pathname, searchParams, ALL_BLOG_POSTS_FILTER, blogType),
+					onNavigate,
+				)
+			}
 		>
 			<span className="min-w-0 truncate">전체</span>
 			<span className="shrink-0 text-label-2 text-text-disabled">{totalCount}</span>

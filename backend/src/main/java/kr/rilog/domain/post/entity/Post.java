@@ -302,6 +302,13 @@ public class Post extends BaseEntity {
         return visibility == PostVisibility.PRIVATE;
     }
 
+    public boolean isIncludedInTotalCount() {
+        return status == PUBLISHED
+                && visibility == PostVisibility.PUBLIC
+                && postType == PostType.STANDARD
+                && getDeletedAt() == null;
+    }
+
     public void validateWrittenBy(Long requesterId) {
         if (!isWrittenBy(requesterId)) {
             throw new PostException(NOT_POST_AUTHOR);

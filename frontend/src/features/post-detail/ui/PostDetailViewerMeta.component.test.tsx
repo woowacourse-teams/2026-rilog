@@ -210,8 +210,6 @@ describe('PostDetailViewerMeta와 실제 상세 query', () => {
 			name: '팀',
 			profileImageUrl: null,
 			coverImageUrl: null,
-			memberCount: 3,
-			postCount: 2,
 		};
 		vi.spyOn(postsApi, 'readPostDetail')
 			.mockResolvedValueOnce({

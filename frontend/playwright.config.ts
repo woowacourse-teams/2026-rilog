@@ -41,6 +41,7 @@ export const createPlaywrightConfig = ({ reporters, reuseExistingServer, serverC
 				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: '',
 				NEXT_PUBLIC_SENTRY_DSN: '',
 				NEXT_PUBLIC_SENTRY_ENABLED: 'false',
+				SENTRY_SLACK_MODE: 'off',
 				SENTRY_SLACK_BOT_TOKEN: '',
 				SENTRY_SLACK_CHANNEL_ID: '',
 				SENTRY_SLACK_WEBHOOK_URL: '',

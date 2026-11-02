@@ -10,6 +10,7 @@ public record ImageServerProperties(
         URI baseUrl,
         String secret,
         Duration connectTimeout,
-        Duration readTimeout
+        Duration readTimeout,
+        Duration compactionReadTimeout
 ) {
 }

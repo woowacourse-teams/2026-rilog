@@ -8,7 +8,7 @@ import type {
 	UploadFileOptions,
 } from '@/shared/api/uploads/types';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
-import { prepareImageUploadFile } from '@/shared/utils/prepare-upload-file';
+import { prepareUploadFile } from '@/shared/utils/prepare-upload-file';
 
 const isPresignedUrlResponse = (value: unknown): value is PresignedUrlCreateResponse => {
 	if (!isRecord(value) || !isRecord(value.headers) || typeof value.uploadUrl !== 'string') return false;
@@ -68,7 +68,7 @@ export const uploadFileWithPresignedUrl = async ({
 	type,
 	imagePurpose = 'CONTENT',
 }: UploadFileOptions): Promise<PresignedUrlCreateResponse> => {
-	const uploadFile = type === 'IMAGE' ? await prepareImageUploadFile(file) : file;
+	const uploadFile = await prepareUploadFile(file, type === 'IMAGE' ? 'image' : 'file');
 	const contentType = uploadFile.type || 'application/octet-stream';
 
 	const response = await createPresignedUrl({

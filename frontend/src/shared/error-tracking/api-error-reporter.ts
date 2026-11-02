@@ -12,8 +12,8 @@ const reported = new WeakSet<object>();
 export function shouldCaptureAutomaticError(error: unknown, explicitApiReport = false): boolean {
 	if (explicitApiReport) return true;
 	if (error instanceof Error && error.name === 'AbortError') return false;
-	if (!isApiRequestError(error)) return true;
 	if (typeof error === 'object' && error !== null && reported.has(error)) return false;
+	if (!isApiRequestError(error)) return true;
 	const failure = normalizeApiError(error);
 	if (typeof failure.cause === 'object' && failure.cause !== null && reported.has(failure.cause)) return false;
 	return shouldReportApiError(failure, { operation: 'unhandled' });

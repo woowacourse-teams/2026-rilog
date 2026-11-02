@@ -22,6 +22,7 @@ import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,9 @@ class DraftServiceTest {
     @Mock
     private PostViewCountRepository viewCountRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private DraftService draftService;
 
     @BeforeEach
@@ -87,7 +91,8 @@ class DraftServiceTest {
                 userRepository,
                 chapterRepository,
                 tagAssetsPublisher,
-                viewCountRepository
+                viewCountRepository,
+                eventPublisher
         );
     }
 

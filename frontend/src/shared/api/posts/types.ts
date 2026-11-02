@@ -1,6 +1,5 @@
-import type { Block } from '@blocknote/core';
-
 import type { PostCategory, PostCategoryLabel, PostType } from '@/domains/post/model/post';
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import type { ChapterResponse } from '@/shared/api/blogs/types';
 
 export type PostCategoryRequest = PostCategory;
@@ -10,7 +9,7 @@ export type PostVisibilityRequest = 'PUBLIC' | 'PRIVATE';
 export interface PostWriteRequest {
 	slug: string;
 	title: string;
-	content: Block[];
+	content: PostContentBlock[];
 	category: PostCategoryRequest;
 	visibility: PostVisibilityRequest;
 	thumbnailImageUrl: string | null;
@@ -55,8 +54,6 @@ interface CologPostDetailOwnerResponse extends BasePostDetailOwnerResponse {
 	type: 'COLOG';
 	profileImageUrl: string | null;
 	coverImageUrl: string | null;
-	memberCount: number;
-	postCount: number;
 }
 
 type PostDetailOwnerResponse = RilogPostDetailOwnerResponse | CologPostDetailOwnerResponse;
@@ -77,7 +74,7 @@ export interface PostDetailResponse {
 	description: string | null;
 	source: PostSourceResponse | null;
 	title: string;
-	content: Block[];
+	content: PostContentBlock[];
 	publishedAt: string;
 	thumbnailImageUrl: string | null;
 	category: PostCategoryResponse;

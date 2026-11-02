@@ -5,7 +5,7 @@ import { blogsQueryKeys } from '@/shared/api/blogs/queries/keys';
 import { createColog } from '@/shared/api/cologs/api';
 import type { CologCreateRequest, CologCreateResponse } from '@/shared/api/cologs/types';
 import type { ApiResponse } from '@/shared/api/shared.types';
-import { uploadFileWithPresignedUrl } from '@/shared/api/uploads/api';
+import { uploadFileWithPresignedUrl, uploadProfileImageWithPresignedUrl } from '@/shared/api/uploads/api';
 import { usersQueryKeys } from '@/shared/api/users/queries/keys';
 import { apiErrorReporter } from '@/shared/error-tracking/api-error-reporter-instance';
 
@@ -18,7 +18,7 @@ export const useCreateCologMutation = () => {
 			let coverImageUrl = value.coverImageUrl || undefined;
 
 			if (value.logoFile) {
-				const uploadResult = await uploadFileWithPresignedUrl({ file: value.logoFile, type: 'IMAGE' });
+				const uploadResult = await uploadProfileImageWithPresignedUrl({ file: value.logoFile, type: 'IMAGE' });
 				profileImageUrl = uploadResult.objectKey;
 			}
 

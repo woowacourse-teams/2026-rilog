@@ -36,6 +36,7 @@
 | --- | --- | --- | --- | --- |
 | `oauth_login_completed` | `INFO` | OAuth 인증, 토큰 발급과 응답 구성이 완료된 후 | `provider`, `userId`, `onboardingStatus` | 토큰, 인증 `code`, OAuth `state`, 쿠키, redirect URL |
 | `http_request_exception` | `INFO` 또는 `ERROR` | HTTP 요청 예외를 최종 핸들러에서 응답으로 변환할 때 | `errorCode`, `httpStatus`, `method`, `path`, 선택적 외부 실패 문맥 | query string, 요청 본문, 외부 응답 본문, 토큰, 쿠키 |
+| `s3_object_tagging_success` | `INFO` | 비동기 S3 객체 태깅이 객체 단위로 성공할 때 | `operation=put_object_tagging`, `bucket`, `key`, `tagStatus`, `durationMs` | AWS credential, presigned URL, 외부 응답 본문 |
 | `s3_object_tagging_failed` | `ERROR` | 비동기 S3 객체 태깅 중 객체 단위 SDK 실패가 발생할 때 | `operation=put_object_tagging`, `bucket`, `key`, `tagStatus`, `durationMs`, 선택적 `externalStatus`, `awsErrorCode`, `awsRequestId` | AWS credential, presigned URL, 외부 응답 본문 |
 | `s3_image_ownership_mismatch` | `WARN` | 이미지 소유권이 맞지 않아 태깅 대상에서 제외할 때 | `requesterId`, `key`, `tagStatus` | 원본 파일명, 인증 정보 |
 | `async_uncaught_exception` | `ERROR` | `@Async` 메서드의 미처리 예외가 발생할 때 | `method` | 메서드 인자 원문, 토큰, 쿠키 |
@@ -80,7 +81,7 @@ Presigned URL 발급과 브라우저의 실제 S3 PUT은 다른 동작이다. �
 
 ## S3 결과와 숫자 필드
 
-비동기 태깅의 `CONFIRMED`, `TEMPORARY` 모두 성공 로그를 남기지 않는다. local/dev/prod에 동일하게 적용하며 DEBUG 또는 작업 완료 INFO로 대체하지 않는다. SDK 호출이 실패로 끝난 객체만 `s3_object_tagging_failed` ERROR를 한 번 기록하고 다음 객체 처리는 계속한다. 성공 여부나 복구 상태는 로그 부재로 판정하지 않고 현재 DB 참조와 실제 S3 태그를 확인한다.
+비동기 태깅의 `CONFIRMED`, `TEMPORARY` 모두 객체별 성공을 `s3_object_tagging_success` INFO로 기록한다([ADR 0024](../adr/0024-s3-tagging-success-log.md)). local/dev/prod에 동일하게 적용한다. SDK 호출이 실패로 끝난 객체는 `s3_object_tagging_failed` ERROR를 한 번 기록하고 다음 객체 처리는 계속한다. `tagIfExists`에서 객체가 없어 건너뛴 대상(`NoSuchKey`)은 성공도 실패도 기록하지 않는다. 성공 로그는 그 시점의 호출 결과일 뿐이므로 현재 상태나 복구 여부는 로그로 판정하지 않고 현재 DB 참조와 실제 S3 태그를 확인한다.
 
 `durationMs`는 `System.nanoTime()` 차이를 밀리초로 환산한 숫자다. 외부 작업의 응답/실패까지 측정하며 SDK 내부 재시도가 있다면 그 시간도 포함한다. 재시도 횟수를 추정하지 않는다. 상태 코드 역시 JSON 숫자로 출력한다.
 

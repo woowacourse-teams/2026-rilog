@@ -33,7 +33,7 @@ async function readBody(request: Request): Promise<Uint8Array | null> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-	const mode = resolveSentrySlackMode(process.env.SENTRY_SLACK_MODE ?? process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE);
+	const mode = resolveSentrySlackMode(process.env.SENTRY_SLACK_MODE);
 	const secret = process.env.SENTRY_WEBHOOK_CLIENT_SECRET;
 	const projectId = process.env.SENTRY_WEBHOOK_PROJECT_ID;
 	const org = process.env.SENTRY_WEBHOOK_ORG;
@@ -71,7 +71,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 		const event = parseSentryWebhook(payload, { projectId, org, environment });
 		if (event.kind !== 'ready') return new NextResponse(null, { status: event.kind === 'ignored' ? 204 : 400 });
 		const result = await deliverSentryWebhookOnce(directory, event.key, () =>
-			deliverSentrySlackAlert(event.summary, 'sentry-webhook', { mode: 'webhook', eventUrl: event.eventUrl }),
+			deliverSentrySlackAlert(event.summary, event.eventUrl),
 		);
 		return new NextResponse(null, { status: result === 'delivered' || result === 'duplicate' ? 204 : 503 });
 	} catch {

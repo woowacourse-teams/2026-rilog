@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Block } from '@blocknote/core';
 
+import type { PostContentBlock } from '@/domains/post/model/post-content';
 import type { PostEditorProps } from '@/features/post-write/model/post-editor';
 import type { PublishPost } from '@/features/post-write/model/post-publication';
 import type {
@@ -264,7 +265,7 @@ const createImage = (url: string): Block =>
 
 function FakeEditor({ initialBlocks, onChange, onReady, ariaDescribedBy, ref }: PostEditorProps) {
 	// BlockNote를 로드하지 않고도 부모와 주고받는 최신 본문 계약을 재현
-	const blocksRef = useRef<Block[]>(initialBlocks ?? [createParagraph()]);
+	const blocksRef = useRef<PostContentBlock[]>(initialBlocks ?? [createParagraph()]);
 	// focus 위임 여부를 실제 textarea focus로 검증하기 위한 ref
 	const editorRef = useRef<HTMLTextAreaElement>(null);
 

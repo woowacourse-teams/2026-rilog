@@ -5,7 +5,6 @@ import { useCallback, useRef } from 'react';
 import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 import type { UploadPostBodyFile } from '../model/post-editor';
 
-import { prepareUploadFile } from '@/shared/utils/prepare-upload-file';
 import { getUploadFormatError } from '@/shared/utils/upload-format';
 
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
@@ -27,11 +26,7 @@ export const usePostWriteUpload = (uploadFile: UploadPostBodyFile, onUploadSucce
 				}
 			}
 			try {
-				const preparedFile =
-					blockType !== undefined || /\.heic$/i.test(file.name)
-						? await prepareUploadFile(file, blockType ?? 'image')
-						: file;
-				const result = await uploadFile(preparedFile);
+				const result = await uploadFile(file);
 				const url = getUploadedUrl(result);
 				if (url !== null) {
 					onUploadSuccess?.(url);
