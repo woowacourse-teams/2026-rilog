@@ -70,7 +70,7 @@ export default function InlineCommentInput({
 						style={{
 							height: 'auto',
 							minHeight: '44px',
-							maxHeight: 'min(calc(4lh + 24px), var(--comment-input-max-height, calc(4lh + 24px)))',
+							maxHeight: 'min(calc(20lh + 1rem + 2px), var(--comment-input-max-height, calc(20lh + 1rem + 2px)))',
 							resize: 'none',
 							overflowY: 'auto',
 						}}

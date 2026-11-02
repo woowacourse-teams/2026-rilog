@@ -926,3 +926,27 @@ test('댓글창을 닫은 뒤 수정 요청이 실패해도 숨은 오류 모달
 	await expect(page.getByRole('button', { name: '저장', exact: true })).toBeEnabled();
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
+
+test('긴 신규 댓글은 모바일 시트의 가용 높이를 지키고 화면 축소 후에도 작성할 수 있다', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await mockThreadGroups(page, [createComposerThreadGroup(91, '브라우저에', 0)]);
+	await renderInlineCommentWorkspace(page, 91);
+	const input = page.getByRole('textbox', { name: '댓글 입력' });
+	await input.fill(Array.from({ length: 30 }, (_, index) => `긴 댓글 ${index + 1}`).join('\n'));
+	for (const height of [844, 480]) {
+		await page.setViewportSize({ width: 390, height });
+		await expect
+			.poll(() =>
+				input.evaluate((element) => {
+					const max = parseFloat(getComputedStyle(element).maxHeight);
+					return element.getBoundingClientRect().height <= max + 1 && element.scrollHeight > element.clientHeight;
+				}),
+			)
+			.toBe(true);
+		const submit = page.getByRole('button', { name: '작성', exact: true });
+		await expect(submit).toBeInViewport();
+		await expect(submit).toBeEnabled();
+	}
+	await input.fill('짧은 댓글');
+	await expect.poll(() => input.evaluate((element) => element.clientHeight)).toBeLessThan(70);
+});

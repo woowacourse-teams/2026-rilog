@@ -206,3 +206,23 @@ test('도킹 댓글은 본문과 입력란에서 Escape로 닫고 초안과 열�
 	await entry.press('Enter');
 	await expect(input).toHaveValue('Esc 이후에도 유지할 초안');
 });
+
+test('신규 댓글은 네 줄을 넘어 자동 확장하고 최대 높이에서 스크롤하며 지우면 줄어든다', async ({ page }) => {
+	await openDockedComposer(page);
+	const input = page.getByRole('textbox', { name: '댓글 입력' });
+	await input.fill('한 줄');
+	const initialHeight = await input.evaluate((element) => element.clientHeight);
+	await input.fill(Array.from({ length: 10 }, (_, index) => `${index + 1}번째 줄`).join('\n'));
+	await expect.poll(() => input.evaluate((element) => element.clientHeight)).toBeGreaterThan(initialHeight + 120);
+	await input.fill(Array.from({ length: 30 }, (_, index) => `${index + 1}번째 줄`).join('\n'));
+	const dimensions = await input.evaluate((element) => ({
+		height: element.getBoundingClientRect().height,
+		max: parseFloat(getComputedStyle(element).maxHeight),
+		client: element.clientHeight,
+		scroll: element.scrollHeight,
+	}));
+	expect(dimensions.height).toBeCloseTo(dimensions.max, 0);
+	expect(dimensions.scroll).toBeGreaterThan(dimensions.client);
+	await input.fill('짧게');
+	await expect.poll(() => input.evaluate((element) => element.clientHeight)).toBe(initialHeight);
+});
