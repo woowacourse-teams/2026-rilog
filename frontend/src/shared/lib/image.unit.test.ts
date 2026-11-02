@@ -32,12 +32,17 @@ describe('image utils', () => {
 			expect(compactUrl).toBe('https://cdn.rilog.test/images/compact/uuid-123/1400.webp?v=1#w=1200&h=800');
 		});
 
-		it('다양한 지원 확장자(대소문자 포함)를 처리한다', () => {
-			const extensions = ['jpg', 'JPG', 'jpeg', 'png', 'webp', 'gif', 'GIF'];
+		it('압축 대상 확장자(대소문자 포함)를 compact URL로 변환한다', () => {
+			const extensions = ['jpg', 'JPG', 'jpeg', 'png', 'webp', 'avif', 'AVIF'];
 			extensions.forEach((ext) => {
 				const rawUrl = `https://cdn.rilog.test/images/raw/uuid-123/original.${ext}`;
 				expect(toCompactUrl(rawUrl, 750)).toBe('https://cdn.rilog.test/images/compact/uuid-123/750.webp');
 			});
+		});
+
+		it('압축 대상이 아닌 GIF는 원본 URL을 반환한다', () => {
+			const rawUrl = 'https://cdn.rilog.test/images/raw/uuid-123/original.gif';
+			expect(toCompactUrl(rawUrl, 750)).toBe(rawUrl);
 		});
 
 		it('구경로(originals/{id}.png)는 변환하지 않고 원본을 반환한다', () => {
@@ -70,6 +75,10 @@ describe('image utils', () => {
 			expect(getImageKind('https://cdn.rilog.test/originals/legacy.png')).toBeNull();
 			expect(getImageKind('https://example.com/photo.jpg')).toBeNull();
 			expect(getImageKind('invalid-url')).toBeNull();
+		});
+
+		it('GIF 원본 URL은 압축 이미지 종류로 분류하지 않는다', () => {
+			expect(getImageKind('https://cdn.rilog.test/images/raw/uuid/original.gif')).toBeNull();
 		});
 	});
 
@@ -116,6 +125,10 @@ describe('image utils', () => {
 		it('외부 URL 이미지는 undefined를 반환한다', () => {
 			const externalUrl = 'https://images.unsplash.com/photo-123.jpg';
 			expect(toSrcSet(externalUrl)).toBeUndefined();
+		});
+
+		it('GIF 원본 URL은 srcset을 만들지 않는다', () => {
+			expect(toSrcSet('https://cdn.rilog.test/images/raw/uuid/original.gif')).toBeUndefined();
 		});
 
 		it('잘못된 URL 형식은 undefined를 반환한다', () => {

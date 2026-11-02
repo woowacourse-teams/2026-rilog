@@ -5,7 +5,7 @@ export const SIZES = {
 
 export type ImageKind = keyof typeof SIZES;
 
-const RAW_PATH = /^(.*)\/(images|profiles)\/raw\/([^/]+)\/original\.(png|jpe?g|webp|gif)$/i;
+const RAW_PATH = /^(.*)\/(images|profiles)\/raw\/([^/]+)\/original\.(png|jpe?g|webp|avif)$/i;
 
 const parseRaw = (src: string) => {
 	try {
