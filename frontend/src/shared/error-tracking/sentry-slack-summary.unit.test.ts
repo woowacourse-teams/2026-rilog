@@ -2,11 +2,11 @@ import { expect, it } from 'vitest';
 
 import type { ErrorEvent } from '@sentry/nextjs';
 
-import { parseSentrySlackSummary, summarizeSentryEventForSlack } from './sentry-slack-summary';
+import { summarizeSentryEventForSlack } from './sentry-slack-summary';
 
 const EVENT_ID = '0123456789abcdef0123456789abcdef';
 
-it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Slack 요약에 담는다', () => {
+it('webhook 이벤트에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Slack 요약에 담는다', () => {
 	const event = {
 		type: undefined,
 		event_id: EVENT_ID,
@@ -61,26 +61,6 @@ it('SDK 오류에서 제목과 허용한 태그, 최근 자동 breadcrumb만 Sla
 	expect(JSON.stringify(summary)).not.toContain('user-42');
 });
 
-it('외부 요청이 임의의 태그나 긴 breadcrumb를 추가하면 거절한다', () => {
-	const summary = {
-		eventId: EVENT_ID,
-		title: 'Error',
-		errorType: 'Error',
-		route: '/write',
-		tags: { secret: 'private' },
-		breadcrumbs: [{ category: 'navigation' }],
-	};
-	expect(parseSentrySlackSummary(summary)).toBeNull();
-	expect(parseSentrySlackSummary({ ...summary, tags: {}, breadcrumbs: [{ arbitrary: 'field' }] })).toBeNull();
-	expect(
-		parseSentrySlackSummary({
-			...summary,
-			tags: {},
-			breadcrumbs: [{ category: 'ui.click', attributes: { title: 'user@example.com' } }],
-		})?.breadcrumbs[0].attributes,
-	).toBeUndefined();
-});
-
 it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한다', () => {
 	const summary = summarizeSentryEventForSlack({
 		type: undefined,
@@ -104,7 +84,7 @@ it('API URL은 경로를 남기고 쿼리와 임의 도메인 URL은 제거한�
 	});
 });
 
-it('navigation의 상대 URL은 Slack 요약과 수신 parser에서 민감한 쿼리를 제거한다', () => {
+it('navigation의 상대 URL은 Slack 요약에서 민감한 쿼리를 제거한다', () => {
 	const relativeUrl = '/feeds?email=person%40example.com&nickname=private-nickname&content=private-content';
 	const summarized = summarizeSentryEventForSlack({
 		type: undefined,
@@ -113,16 +93,7 @@ it('navigation의 상대 URL은 Slack 요약과 수신 parser에서 민감한 �
 	});
 	expect(summarized?.breadcrumbs[0]).toEqual({ category: 'navigation', from: '/feeds', to: '/feeds' });
 
-	const parsed = parseSentrySlackSummary({
-		eventId: EVENT_ID,
-		title: 'Error',
-		errorType: 'Error',
-		route: '/feeds',
-		tags: {},
-		breadcrumbs: [{ category: 'navigation', from: relativeUrl, to: relativeUrl }],
-	});
-	expect(parsed?.breadcrumbs[0]).toEqual({ category: 'navigation', from: '/feeds', to: '/feeds' });
-	expect(JSON.stringify({ summarized, parsed })).not.toMatch(/person|private/);
+	expect(JSON.stringify(summarized)).not.toMatch(/person|private/);
 });
 
 it('클라이언트 오류에 transaction이 없어도 request URL을 식별자 없는 route로 정규화한다', () => {
@@ -135,19 +106,7 @@ it('클라이언트 오류에 transaction이 없어도 request URL을 식별자 
 	expect(JSON.stringify(summarized)).not.toMatch(/private-blog|person|72/);
 });
 
-it('수신 parser도 클라이언트 rewrite 경로를 식별자 없는 route로 정규화한다', () => {
-	const parsed = parseSentrySlackSummary({
-		eventId: EVENT_ID,
-		title: 'Error',
-		errorType: 'Error',
-		route: '/@private-blog/posts/72',
-		tags: {},
-		breadcrumbs: [],
-	});
-	expect(parsed?.route).toBe('/blog/[slug]/posts/[postId]');
-});
-
-it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나 거절한다', () => {
+it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외한다', () => {
 	const summarized = summarizeSentryEventForSlack({
 		type: undefined,
 		event_id: EVENT_ID,
@@ -156,17 +115,6 @@ it('허용되지 않은 PostHog replay URL은 Slack 요약에서 제외하거나
 		},
 	});
 	expect(summarized?.sessionReplayUrl).toBeUndefined();
-	expect(
-		parseSentrySlackSummary({
-			eventId: EVENT_ID,
-			title: 'Error',
-			errorType: 'Error',
-			route: '/write',
-			tags: {},
-			breadcrumbs: [],
-			sessionReplayUrl: 'https://evil.example/project/phc_test/replay/01234567-89ab-cdef-0123-456789abcdef?t=30',
-		}),
-	).toBeNull();
 });
 
 it('원인 요청은 최근 breadcrumb에서 밀려나도 쿼리 없이 별도 보존한다', () => {
@@ -195,7 +143,6 @@ it('원인 요청은 최근 breadcrumb에서 밀려나도 쿼리 없이 별도 �
 		requestId: '671a5cb0-bfc5-4cab-b9bf-42044df2b76d',
 	});
 	expect(summary?.tags).toMatchObject({ error_kind: 'server_response', user_impact: 'load_failed' });
-	expect(parseSentrySlackSummary(summary)).toEqual(summary);
 	expect(JSON.stringify(summary)).not.toMatch(/private|cookie|secret|295/);
 });
 
@@ -208,12 +155,9 @@ it('외부 저장소의 presigned URL과 임의 request ID는 새 원인 요청 
 	});
 	expect(summary?.apiRequest).toEqual({ method: 'PUT' });
 	expect(JSON.stringify(summary)).not.toMatch(/storage.example|private|person/);
-	expect(
-		parseSentrySlackSummary({ ...summary, apiRequest: { method: 'POST', url: 'https://evil.example/private' } }),
-	).toBeNull();
 });
 
-it('Slack 요약과 수신 parser는 임의 URL 값과 UI 작성 속성을 다시 제거한다', () => {
+it('Slack 요약은 임의 URL 값과 UI 작성 속성을 다시 제거한다', () => {
 	const summary = summarizeSentryEventForSlack({
 		type: undefined,
 		event_id: EVENT_ID,
@@ -230,23 +174,6 @@ it('Slack 요약과 수신 parser는 임의 URL 값과 UI 작성 속성을 다�
 	});
 	expect(JSON.stringify(summary)).not.toContain('private-');
 	expect(summary?.breadcrumbs[0]).toMatchObject({ from: '/feeds?page=2', to: '/blog/[slug]/posts/[postId]' });
-	const parsed = parseSentrySlackSummary({
-		...summary,
-		breadcrumbs: [
-			{
-				category: 'ui.click',
-				element: 'button',
-				selector: 'button#private-id',
-				attributes: { title: 'private-title', type: 'submit' },
-			},
-		],
-	});
-	expect(parsed?.breadcrumbs[0]).toEqual({
-		category: 'ui.click',
-		element: 'button',
-		selector: 'button[type="submit"]',
-		attributes: { type: 'submit' },
-	});
 });
 
 it.each([

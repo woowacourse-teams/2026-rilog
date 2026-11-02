@@ -37,7 +37,7 @@ SENTRY_SMOKE_POSTHOG_HOST=<테스트 PostHog host>
 
 ## Slack 격리
 
-runner와 Playwright webServer는 SENTRY_SLACK_BOT_TOKEN, SENTRY_SLACK_CHANNEL_ID, SENTRY_SLACK_WEBHOOK_URL을 빈 값으로 덮어쓴다. 앱의 smoke 환경도 운영 Slack callback과 서버 전달을 차단한다. 발행 E2E는 공개 Slack summary 요청이 발생하지 않는지 확인한다. Slack 포맷·중복·전송 실패 계약은 sentry-slack-delivery.unit.test.ts와 sentry-slack-summary.unit.test.ts에서 mock으로 검증한다. 운영 알림 경로 전환은 #815에서 별도 검증한다.
+runner와 Playwright webServer는 SENTRY_SLACK_MODE를 off로 고정하고 SENTRY_SLACK_BOT_TOKEN, SENTRY_SLACK_CHANNEL_ID, SENTRY_SLACK_WEBHOOK_URL을 빈 값으로 덮어쓴다. SDK는 Slack에 직접 전송하지 않으며, 폐기된 공개 relay는 항상 410을 반환한다. 발행 E2E는 공개 Slack summary 요청이 발생하지 않는지 확인한다. Slack 전송은 명시적인 서버 webhook 모드에서 서명된 Sentry alert만 허용한다. 서명·영속 중복 방지·정제·전송 실패와 재시도는 sentry-webhook/route.unit.test.ts, webhook-flow.unit.test.ts, sentry-webhook-delivery-state.unit.test.ts와 sentry-slack-delivery.unit.test.ts에서 외부 전송을 대체해 검증한다.
 
 ## 수동 workflow
 

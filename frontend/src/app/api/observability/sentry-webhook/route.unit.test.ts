@@ -85,12 +85,8 @@ afterEach(async () => {
 it('서명된 운영 event alert만 정제하고 실제 Sentry 링크와 함께 전달한다', async () => {
 	expect((await POST(request())).status).toBe(204);
 	expect(deliverSentrySlackAlert).toHaveBeenCalledOnce();
-	const [summary, source, options] = deliverSentrySlackAlert.mock.calls[0];
-	expect(source).toBe('sentry-webhook');
-	expect(options).toEqual({
-		mode: 'webhook',
-		eventUrl: `https://rilog-frontend.sentry.io/issues/123/events/${eventId}/`,
-	});
+	const [summary, eventUrl] = deliverSentrySlackAlert.mock.calls[0];
+	expect(eventUrl).toBe(`https://rilog-frontend.sentry.io/issues/123/events/${eventId}/`);
 	expect(summary).toMatchObject({ eventId, route: '/write', tags: { environment: 'prod', operation: 'post.publish' } });
 	expect(summary.apiRequest).toEqual({
 		method: 'POST',
@@ -200,3 +196,13 @@ it('상태 저장소가 쓸 수 없는 경로면 Slack 전송 전에 실패한�
 	expect((await POST(request())).status).toBe(503);
 	expect(deliverSentrySlackAlert).not.toHaveBeenCalled();
 });
+
+it.each([undefined, '', 'legacy', 'off', 'invalid'])(
+	'서버 모드 %s에서는 이전 공개 webhook 설정을 상속해도 전송하지 않는다',
+	async (mode) => {
+		vi.stubEnv('SENTRY_SLACK_MODE', mode);
+		vi.stubEnv('NEXT_PUBLIC_SENTRY_SLACK_MODE', 'webhook');
+		expect((await POST(request())).status).toBe(503);
+		expect(deliverSentrySlackAlert).not.toHaveBeenCalled();
+	},
+);

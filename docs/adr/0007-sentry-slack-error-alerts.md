@@ -1,5 +1,7 @@
 # ADR 0007: Sentry 전송 전 오류의 Slack 알림
 
+> 현재 Slack 전달은 [ADR 0025](0025-sentry-webhook-only-alerts.md)의 서명 웹훅 경로를 따른다. 아래는 이전 직접 전송 방식의 결정 기록이다.
+
 - 상태: 적용 예정
 - 영향: frontend 오류 관측과 운영 알림. 공개 제품 API 계약은 변경하지 않는다.
 - 기반: `fe/feature/#693-sentry에-오류-전후-흐름과-사용자-영향-기록`

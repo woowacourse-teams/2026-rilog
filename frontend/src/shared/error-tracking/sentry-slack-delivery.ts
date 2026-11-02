@@ -2,19 +2,7 @@ import 'server-only';
 
 import type { SentrySlackBreadcrumb, SentrySlackSummary } from './sentry-slack-summary';
 
-import { resolveSentryEnvironment } from './sentry-environment';
 import { resolveSentrySlackMode } from './sentry-slack-mode';
-
-const WINDOW_MS = 60_000;
-const DUPLICATE_MS = 5 * 60_000;
-const MAX_PER_IP = 10;
-const MAX_TOTAL = 60;
-const DEFAULT_SENTRY_ORG = 'rilog-frontend';
-const SENTRY_ORG_SLUG = /^[a-z0-9_-]+$/;
-const SENTRY_EVENT_ID = /^[a-f\d]{32}$/i;
-const recentByIp = new Map<string, number[]>();
-const recentTotal: number[] = [];
-const duplicateUntil = new Map<string, number>();
 
 export type SentrySlackAlertLevel = 'error' | 'warn' | 'info';
 
@@ -37,39 +25,9 @@ export function resolveSentrySlackAlertLevel(tags: Record<string, string>): Sent
 	}
 }
 
-function resolveSentryEventLookupUrl(eventId: string): string | undefined {
-	if (!SENTRY_EVENT_ID.test(eventId)) return undefined;
-	const configuredOrg = process.env.SENTRY_WEBHOOK_ORG?.trim();
-	const org = configuredOrg && SENTRY_ORG_SLUG.test(configuredOrg) ? configuredOrg : DEFAULT_SENTRY_ORG;
-	return `https://${org}.sentry.io/issues/?query=${eventId.toLowerCase()}`;
-}
-
-function admit(source: string, summary: SentrySlackSummary, now: number): { key: string; until: number } | null {
-	for (const [ip, times] of recentByIp) {
-		const current = times.filter((time) => now - time < WINDOW_MS);
-		if (current.length) recentByIp.set(ip, current);
-		else recentByIp.delete(ip);
-	}
-	const ipTimes = (recentByIp.get(source) ?? []).filter((time) => now - time < WINDOW_MS);
-	const totalTimes = recentTotal.filter((time) => now - time < WINDOW_MS);
-	recentTotal.splice(0, recentTotal.length, ...totalTimes);
-	for (const [key, until] of duplicateUntil) if (until <= now) duplicateUntil.delete(key);
-	const key = [summary.errorType, summary.title, summary.route, summary.tags.operation, summary.tags.http_status].join(
-		'|',
-	);
-	if (duplicateUntil.has(key) || ipTimes.length >= MAX_PER_IP || recentTotal.length >= MAX_TOTAL) return null;
-	ipTimes.push(now);
-	recentByIp.set(source, ipTimes);
-	recentTotal.push(now);
-	const until = now + DUPLICATE_MS;
-	duplicateUntil.set(key, until);
-	return { key, until };
-}
-
-function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
+function formatMainMessage(summary: SentrySlackSummary, eventUrl: string) {
 	const alertLevel = resolveSentrySlackAlertLevel(summary.tags);
 	const badge = ALERT_BADGE[alertLevel];
-	const lookupUrl = eventUrl ?? resolveSentryEventLookupUrl(summary.eventId);
 	const tags = Object.entries(summary.tags)
 		.map(([key, value]) => `${key}: ${value}`)
 		.join('\n');
@@ -77,12 +35,10 @@ function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 		? ['원인 요청', ...Object.entries(summary.apiRequest).map(([key, value]) => `${key}: ${value}`)].join('\n')
 		: '';
 	const title = summary.title.replace(/`/g, "'");
-	const flow = eventUrl
-		? summary.breadcrumbs.map(
-				(breadcrumb, index) =>
-					`직전 흐름 ${index + 1}\n${formatBreadcrumb(breadcrumb).slice(0, 2500).replace(/```/g, "'''")}`,
-			)
-		: [];
+	const flow = summary.breadcrumbs.map(
+		(breadcrumb, index) =>
+			`직전 흐름 ${index + 1}\n${formatBreadcrumb(breadcrumb).slice(0, 2500).replace(/```/g, "'''")}`,
+	);
 	return {
 		text: [
 			`${badge} ${summary.errorType}`,
@@ -91,9 +47,7 @@ function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 			request,
 			tags ? `\`\`\`${tags}\`\`\`` : '',
 			`Sentry event ID: ${summary.eventId}`,
-			eventUrl
-				? `Sentry 이벤트: ${eventUrl}`
-				: `수집 상태: SDK 전송 전 · Sentry 저장 미확인${lookupUrl ? ` (${lookupUrl})` : ''}`,
+			`Sentry 이벤트: ${eventUrl}`,
 			...flow,
 			summary.sessionReplayUrl ? `PostHog session replay: ${summary.sessionReplayUrl}` : '',
 		]
@@ -114,11 +68,7 @@ function formatMainMessage(summary: SentrySlackSummary, eventUrl?: string) {
 				elements: [
 					{
 						type: 'mrkdwn',
-						text: eventUrl
-							? `<${eventUrl}|Sentry 이벤트 보기> · 서명된 Sentry alert`
-							: lookupUrl
-								? `<${lookupUrl}|Sentry에서 이벤트 조회> · SDK 전송 전 · Sentry 저장 미확인`
-								: 'SDK 전송 전 · Sentry 저장 미확인',
+						text: `<${eventUrl}|Sentry 이벤트 보기> · 서명된 Sentry alert`,
 					},
 				],
 			},
@@ -181,104 +131,51 @@ async function postWithRetry(url: string, body: unknown, token?: string): Promis
 	return null;
 }
 
-async function postSlackApi(body: unknown, token: string): Promise<{ ok: boolean; ts?: string }> {
+async function postSlackApi(body: unknown, token: string): Promise<{ ok: boolean }> {
 	const response = await postWithRetry('https://slack.com/api/chat.postMessage', body, token);
 	if (!response?.ok) return { ok: false };
 	const data: unknown = await response.json();
 	if (!data || typeof data !== 'object') return { ok: false };
-	const result = data as { ok?: unknown; ts?: unknown };
-	return { ok: result.ok === true, ts: typeof result.ts === 'string' ? result.ts : undefined };
+	return { ok: 'ok' in data && data.ok === true };
 }
 
-interface SlackDeliveryOptions {
-	mode?: 'legacy' | 'webhook';
-	eventUrl?: string;
-}
-
-export async function deliverSentrySlackAlert(
-	summary: SentrySlackSummary,
-	source: string,
-	options: SlackDeliveryOptions = {},
-): Promise<boolean> {
-	const mode = resolveSentrySlackMode(process.env.SENTRY_SLACK_MODE ?? process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE);
-	const deliveryMode = options.mode ?? 'legacy';
-	if (mode !== deliveryMode) return false;
-	if (deliveryMode === 'webhook') {
-		const org = process.env.SENTRY_WEBHOOK_ORG;
-		if (!org || !/^[a-z0-9_-]+$/.test(org) || !options.eventUrl || !/^[a-f\d]{32}$/.test(summary.eventId)) return false;
-		try {
-			const url = new URL(options.eventUrl);
-			if (
-				url.origin !== `https://${org}.sentry.io` ||
-				url.username ||
-				url.password ||
-				url.search ||
-				url.hash ||
-				!/^\/issues\/[1-9]\d*\/events\/[a-f\d]{32}\/$/.test(url.pathname) ||
-				!url.pathname.endsWith(`/events/${summary.eventId}/`)
-			)
-				return false;
-		} catch {
+export async function deliverSentrySlackAlert(summary: SentrySlackSummary, eventUrl: string): Promise<boolean> {
+	if (resolveSentrySlackMode(process.env.SENTRY_SLACK_MODE) !== 'webhook') return false;
+	const org = process.env.SENTRY_WEBHOOK_ORG;
+	if (!org || !/^[a-z0-9_-]+$/.test(org) || !/^[a-f\d]{32}$/.test(summary.eventId)) return false;
+	try {
+		const url = new URL(eventUrl);
+		if (
+			url.origin !== `https://${org}.sentry.io` ||
+			url.username ||
+			url.password ||
+			url.search ||
+			url.hash ||
+			!/^\/issues\/[1-9]\d*\/events\/[a-f\d]{32}\/$/.test(url.pathname) ||
+			!url.pathname.endsWith(`/events/${summary.eventId}/`)
+		)
 			return false;
-		}
+	} catch {
+		return false;
 	}
-	const config = resolveSentryEnvironment({
-		environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
-		enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
-		dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-		siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-	});
-	if (deliveryMode === 'legacy' && (!config.enabled || config.environment !== 'prod')) return false;
 	const token = process.env.SENTRY_SLACK_BOT_TOKEN;
 	const channel = process.env.SENTRY_SLACK_CHANNEL_ID;
 	const webhook = process.env.SENTRY_SLACK_WEBHOOK_URL;
 	if ((!token || !channel) && !webhook) return false;
-	const admission = deliveryMode === 'legacy' ? admit(source, summary, Date.now()) : undefined;
-	if (deliveryMode === 'legacy' && !admission) return true;
-	let mainDelivered = false;
 	try {
-		const main = formatMainMessage(summary, deliveryMode === 'webhook' ? options.eventUrl : undefined);
+		const main = formatMainMessage(summary, eventUrl);
 		if (token && channel) {
-			const parent = await postSlackApi({ channel, ...main, unfurl_links: false }, token);
-			if (!parent.ok || !parent.ts) {
-				console.error('Sentry Slack parent alert delivery failed.');
-				return false;
-			}
-			mainDelivered = true;
-			if (deliveryMode === 'webhook') return true;
-			let repliesDelivered = true;
-			for (const [index, breadcrumb] of summary.breadcrumbs.entries()) {
-				// Slack generally allows one channel message per second, including thread replies.
-				await new Promise((resolve) => setTimeout(resolve, 1100));
-				const reply = await postSlackApi(
-					{
-						channel,
-						thread_ts: parent.ts,
-						reply_broadcast: false,
-						text: `*직전 흐름 ${index + 1}/${summary.breadcrumbs.length}*\n\`\`\`${formatBreadcrumb(breadcrumb)}\`\`\``,
-					},
-					token,
-				);
-				if (!reply.ok) {
-					console.error('Sentry Slack breadcrumb reply delivery failed.');
-					repliesDelivered = false;
-				}
-			}
-			return repliesDelivered;
+			const result = await postSlackApi({ channel, ...main, unfurl_links: false }, token);
+			if (result.ok) return true;
+			console.error('Sentry Slack alert delivery failed.');
+			return false;
 		}
 		if (!webhook) return false;
 		const response = await postWithRetry(webhook, main);
-		if (response?.ok) {
-			mainDelivered = true;
-			return true;
-		}
+		if (response?.ok) return true;
 		console.error('Sentry Slack alert delivery failed:', response?.status);
 	} catch {
 		console.error('Sentry Slack alert delivery failed.');
-	} finally {
-		if (admission && !mainDelivered && duplicateUntil.get(admission.key) === admission.until) {
-			duplicateUntil.delete(admission.key);
-		}
 	}
 	return false;
 }
