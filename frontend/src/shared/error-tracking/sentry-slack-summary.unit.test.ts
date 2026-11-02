@@ -262,3 +262,14 @@ it.each([
 	});
 	expect(summary?.sessionReplayUrl).toBeUndefined();
 });
+
+it.each([
+	{ transaction: 'GET /blog/[slug]/posts/[postId]' },
+	{ contexts: { nextjs: { request_path: '/blog/[slug]/posts/[postId]' } } },
+	{ transaction: 'GET /unrecognized', contexts: { nextjs: { request_path: '/@private-slug/posts/42?token=secret' } } },
+])('서버 경로 fallback은 개인정보 없이 정규화한다: %j', (fields) => {
+	const summary = summarizeSentryEventForSlack({ type: undefined, event_id: EVENT_ID, ...fields });
+	expect(summary?.route).toBe('/blog/[slug]/posts/[postId]');
+	expect(JSON.stringify(summary)).not.toContain('private-slug');
+	expect(JSON.stringify(summary)).not.toContain('secret');
+});

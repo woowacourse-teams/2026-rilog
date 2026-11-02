@@ -141,3 +141,36 @@ it('실제 SDK 전송에서도 임의 query·fragment·파일명·UI 속성을 �
 	expect(sent).toContain('page=2');
 	expect(sent).not.toContain('posthog_session_replay');
 });
+
+it('서버 프로필 실패를 원본 스택·HTTP 진단과 함께 한 번 전송하고 개인정보는 제거한다', async () => {
+	const blogs = await import('@/shared/api/blogs/api');
+	const { getBlogPublicProfile } = await import('@/features/blog-profile/lib/get-blog-public-profile');
+	const failure = await createApiFailure('INTERNAL_SERVER_ERROR', 502);
+	if (!('response' in failure)) throw new Error('Expected HTTP failure');
+	failure.response.headers.set('X-Request-ID', '11111111-1111-4111-8111-111111111111');
+	rememberApiRequest(failure.cause, 'GET', 'https://api.rilog.test/v1/blogs/private-slug?token=private-token');
+	const read = vi.spyOn(blogs, 'readBlogPublicProfile').mockRejectedValue(failure);
+	try {
+		initializeSentry();
+		await expect(getBlogPublicProfile('private-slug')).rejects.toBe(failure.cause);
+		Sentry.captureException(failure.cause);
+		await Sentry.flush(1000);
+		expect(envelopes).toHaveLength(1);
+		const sent = JSON.stringify(envelopes);
+		for (const value of [
+			'HTTPError',
+			'stacktrace',
+			'blog.profile.read',
+			'load_failed',
+			'502',
+			'11111111-1111-4111-8111-111111111111',
+			'https://api.rilog.test/v1/blogs/[slug]',
+		]) {
+			expect(sent).toContain(value);
+		}
+		expect(sent).not.toContain('private-slug');
+		expect(sent).not.toContain('private-token');
+	} finally {
+		read.mockRestore();
+	}
+});
