@@ -33,7 +33,9 @@ it('서명 검증부터 영속 중복 검사·Slack 포맷까지 연결하고 fe
 				event_id: '11111111111111111111111111111111',
 				environment: 'prod',
 				level: 'error',
-				transaction: '/write',
+				contexts: {
+					nextjs: { request_path: '/@private-slug/posts/42?token=private-value', secret: 'private-context' },
+				},
 				tags: [
 					[
 						'PostHog-Recording-URL',
@@ -71,6 +73,9 @@ it('서명 검증부터 영속 중복 검사·Slack 포맷까지 연결하고 fe
 		expect(url).toBe('https://hooks.slack.com/services/fixture');
 		expect(init.body).toContain('https://rilog-frontend.sentry.io/issues/123/events/11111111111111111111111111111111/');
 		expect(init.body).toContain('category: fetch');
+		expect(init.body).toContain('/blog/[slug]/posts/[postId]');
+		expect(init.body).not.toContain('private-slug');
+		expect(init.body).not.toContain('private-context');
 		expect(init.body).toContain('https://us.posthog.com/project/123/replay/01234567-89ab-cdef-0123-456789abcdef?t=30');
 		expect(init.body).not.toContain('private-value');
 		expect(init.body).not.toContain('private-body');

@@ -99,7 +99,10 @@ export function parseSentryWebhook(payload: unknown, target: SentryWebhookTarget
 		message: text(event.message) || undefined,
 		request: { url: text(record(event.request)?.url) },
 		tags: eventTags,
-		contexts: { api_request: { method: text(apiRequest?.method), url: text(apiRequest?.url) } },
+		contexts: {
+			api_request: { method: text(apiRequest?.method), url: text(apiRequest?.url) },
+			nextjs: { request_path: text(record(record(event.contexts)?.nextjs)?.request_path) },
+		},
 		exception: {
 			values: [
 				{
