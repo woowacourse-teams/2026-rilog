@@ -1,14 +1,14 @@
-import Image from 'next/image';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-import type { ComponentProps, ReactNode } from 'react';
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 
 type ImagePreviewShape = 'circle' | 'square' | 'rectangle';
 type ImagePreviewFit = 'cover' | 'contain';
 type ImagePreviewStatus = 'default' | 'error';
 
-interface ImagePreviewProps extends Omit<ComponentProps<typeof Image>, 'alt' | 'className' | 'fill' | 'src'> {
+interface ImagePreviewProps extends Omit<ComponentPropsWithoutRef<'img'>, 'alt' | 'className' | 'src'> {
 	alt: string;
-	src?: ComponentProps<typeof Image>['src'];
+	src?: string;
 	shape?: ImagePreviewShape;
 	fit?: ImagePreviewFit;
 	status?: ImagePreviewStatus;
@@ -43,7 +43,6 @@ export default function ImagePreview({
 	className,
 	imageClassName,
 	sizes = '100vw',
-	unoptimized = true,
 	...imageProps
 }: ImagePreviewProps) {
 	return (
@@ -51,10 +50,9 @@ export default function ImagePreview({
 			className={`relative overflow-hidden border bg-surface ${STATUS_CLASS_NAMES[status]} ${SHAPE_CLASS_NAMES[shape]} ${className ?? ''}`.trim()}
 		>
 			{src ? (
-				<Image
+				<ResponsiveImage
 					{...imageProps}
 					fill
-					unoptimized={unoptimized}
 					src={src}
 					alt={alt}
 					sizes={sizes}

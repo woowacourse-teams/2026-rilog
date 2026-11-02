@@ -8,9 +8,10 @@ import type { UploadPostBodyFile } from '../model/post-editor';
 import { getUploadFormatError } from '@/shared/utils/upload-format';
 
 import { getUploadErrorMessage } from '../lib/get-upload-error-message';
+import { getUploadedUrl } from '../lib/get-uploaded-url';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
 
-export const usePostWriteUpload = (uploadFile: UploadPostBodyFile) => {
+export const usePostWriteUpload = (uploadFile: UploadPostBodyFile, onUploadSuccess?: (url: string) => void) => {
 	const resetFailedUploadBlockRef = useRef<(blockId: string, message: string) => void>(() => undefined);
 	const getUploadBlockTypeRef = useRef<(blockId: string) => string | undefined>(() => undefined);
 
@@ -25,7 +26,12 @@ export const usePostWriteUpload = (uploadFile: UploadPostBodyFile) => {
 				}
 			}
 			try {
-				return await uploadFile(file);
+				const result = await uploadFile(file);
+				const url = getUploadedUrl(result);
+				if (url !== null) {
+					onUploadSuccess?.(url);
+				}
+				return result;
 			} catch (error) {
 				const message = getUploadErrorMessage(error);
 				if (blockId !== undefined) {
@@ -35,7 +41,7 @@ export const usePostWriteUpload = (uploadFile: UploadPostBodyFile) => {
 				return {};
 			}
 		},
-		[uploadFile],
+		[onUploadSuccess, uploadFile],
 	);
 
 	const connectEditor = useCallback((editor: PostWriteBlockNoteEditor) => {

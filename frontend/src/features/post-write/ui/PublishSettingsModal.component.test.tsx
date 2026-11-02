@@ -81,6 +81,14 @@ describe('PublishSettingsModal', () => {
 		});
 	});
 
+	it('대표 이미지 입력에 화면별 표시 비율과 용량 안내를 연결한다', () => {
+		renderModal();
+		const input = screen.getByLabelText('대표 이미지 추가');
+		expect(input).toHaveAccessibleDescription(
+			'최대 10MB * 피드에는 16:9 비율로 표시돼요 * 게시글 상세에서는 원본 비율 그대로 표시돼요',
+		);
+	});
+
 	it('피드와 상세 화면의 기본 썸네일을 미리보기로 표시한다', () => {
 		renderModal();
 

@@ -22,3 +22,13 @@ export interface UploadFileOptions {
 	type: UploadType;
 	imagePurpose?: ImagePurpose;
 }
+
+export interface ImageImportRequest {
+	sourceUrl: string;
+	imagePurpose: ImagePurpose;
+}
+
+export interface ImageImportResponse {
+	objectKey: string;
+	url: string;
+}

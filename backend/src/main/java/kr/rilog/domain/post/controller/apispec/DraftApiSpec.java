@@ -11,9 +11,11 @@ import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftListResponse;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.global.idempotency.IdempotencyKey;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "임시저장 API")
@@ -25,6 +27,7 @@ public interface DraftApiSpec {
     )
     ApiResponse<DraftIdResponse> saveDraft(
             @LoginUserId Long userId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody DraftSaveCommand command
     );
 

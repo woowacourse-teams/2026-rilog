@@ -105,30 +105,6 @@ function summarizeApiRequest(event: ErrorEvent): SentrySlackApiRequest | undefin
 	};
 }
 
-function parseApiRequest(value: unknown): SentrySlackApiRequest | null {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-	const request = value as Partial<SentrySlackApiRequest>;
-	if (Object.keys(value).some((key) => !['method', 'url', 'statusCode', 'requestId'].includes(key))) return null;
-	if (typeof request.method !== 'string' || !HTTP_METHOD.test(request.method)) return null;
-	if (request.url !== undefined && (typeof request.url !== 'string' || !diagnosticApiUrl(request.url))) return null;
-	if (request.requestId !== undefined && (typeof request.requestId !== 'string' || !REQUEST_ID.test(request.requestId)))
-		return null;
-	if (
-		request.statusCode !== undefined &&
-		(typeof request.statusCode !== 'number' ||
-			!Number.isInteger(request.statusCode) ||
-			request.statusCode < 100 ||
-			request.statusCode > 599)
-	)
-		return null;
-	return {
-		method: request.method,
-		...(request.url ? { url: diagnosticApiUrl(request.url) as string } : {}),
-		...(request.statusCode !== undefined ? { statusCode: request.statusCode } : {}),
-		...(request.requestId ? { requestId: request.requestId } : {}),
-	};
-}
-
 function cleanText(value: string, limit: number): string {
 	return value
 		.replace(
@@ -171,65 +147,7 @@ function summarizeBreadcrumb(breadcrumb: NonNullable<ErrorEvent['breadcrumbs']>[
 	return { category, ...(method ? { method } : {}), ...(url ? { url } : {}), ...(statusCode ? { statusCode } : {}) };
 }
 
-function parseBreadcrumb(value: unknown): SentrySlackBreadcrumb | null {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-	const item = value as Partial<SentrySlackBreadcrumb>;
-	if (typeof item.category !== 'string' || !BREADCRUMB_CATEGORIES.test(item.category)) return null;
-	const allowed = new Set(
-		item.category.startsWith('ui.')
-			? ['category', 'element', 'selector', 'attributes']
-			: item.category === 'navigation'
-				? ['category', 'from', 'to']
-				: ['category', 'method', 'url', 'statusCode'],
-	);
-	if (Object.keys(value).some((key) => !allowed.has(key))) return null;
-	if (item.category.startsWith('ui.')) {
-		if (item.element !== undefined && (typeof item.element !== 'string' || !/^[a-z][\w-]*$/i.test(item.element)))
-			return null;
-		if (item.selector !== undefined && (typeof item.selector !== 'string' || item.selector.length > 800)) return null;
-		if (item.attributes !== undefined) {
-			if (!item.attributes || typeof item.attributes !== 'object' || Array.isArray(item.attributes)) return null;
-			if (
-				Object.entries(item.attributes).length > 10 ||
-				Object.entries(item.attributes).some(
-					([key, attribute]) => !/^[\w:-]+$/.test(key) || typeof attribute !== 'string' || attribute.length > 300,
-				)
-			)
-				return null;
-		}
-		return {
-			category: item.category,
-			...safeUiDetails(item.selector, { element: item.element, attributes: item.attributes }),
-		};
-	}
-	if (item.category === 'navigation') {
-		if (
-			(item.from !== undefined && typeof item.from !== 'string') ||
-			(item.to !== undefined && typeof item.to !== 'string')
-		)
-			return null;
-		return {
-			category: item.category,
-			...(item.from ? { from: safeUrl(item.from) ?? '[URL]' } : {}),
-			...(item.to ? { to: safeUrl(item.to) ?? '[URL]' } : {}),
-		};
-	}
-	if (item.method !== undefined && (typeof item.method !== 'string' || !/^[A-Z]{3,7}$/.test(item.method))) return null;
-	if (item.url !== undefined && (typeof item.url !== 'string' || !safeUrl(item.url))) return null;
-	if (
-		item.statusCode !== undefined &&
-		(typeof item.statusCode !== 'number' || item.statusCode < 100 || item.statusCode > 599)
-	)
-		return null;
-	return {
-		category: item.category,
-		...(item.method ? { method: item.method } : {}),
-		...(item.url ? { url: safeUrl(item.url) as string } : {}),
-		...(item.statusCode ? { statusCode: item.statusCode } : {}),
-	};
-}
-
-/** Build the only data allowed to leave the Sentry SDK for the Slack notifier. */
+/** Build the allowed Slack summary from a validated Sentry webhook event. */
 export function summarizeSentryEventForSlack(event: ErrorEvent): SentrySlackSummary | null {
 	if (!event.event_id || !EVENT_ID.test(event.event_id)) return null;
 	const errorType = cleanText(event.exception?.values?.at(-1)?.type ?? 'Error', 80) || 'Error';
@@ -255,47 +173,6 @@ export function summarizeSentryEventForSlack(event: ErrorEvent): SentrySlackSumm
 		route: safeRoute(event),
 		tags,
 		breadcrumbs,
-		...(sessionReplayUrl ? { sessionReplayUrl } : {}),
-		...(apiRequest ? { apiRequest } : {}),
-	};
-}
-
-export function parseSentrySlackSummary(value: unknown): SentrySlackSummary | null {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-	const data = value as Partial<SentrySlackSummary>;
-	if (typeof data.eventId !== 'string' || !EVENT_ID.test(data.eventId)) return null;
-	if (typeof data.title !== 'string' || !data.title || data.title.length > 180) return null;
-	if (typeof data.errorType !== 'string' || !data.errorType || data.errorType.length > 80) return null;
-	const route =
-		data.route === 'unknown' ? 'unknown' : typeof data.route === 'string' ? normalizeSentryRoute(data.route) : null;
-	if (!route) return null;
-	if (!data.tags || typeof data.tags !== 'object' || Array.isArray(data.tags)) return null;
-	const sessionReplayUrl =
-		data.sessionReplayUrl === undefined
-			? undefined
-			: typeof data.sessionReplayUrl === 'string'
-				? safePostHogReplayUrl(data.sessionReplayUrl)
-				: null;
-	if (sessionReplayUrl === null) return null;
-	const apiRequest = data.apiRequest === undefined ? undefined : parseApiRequest(data.apiRequest);
-	if (apiRequest === null) return null;
-	if (!Array.isArray(data.breadcrumbs) || data.breadcrumbs.length > 3) return null;
-	const breadcrumbs = data.breadcrumbs.map(parseBreadcrumb);
-	if (breadcrumbs.some((item) => item === null)) return null;
-	if (
-		Object.entries(data.tags).some(
-			([name, item]) =>
-				!TAG_NAMES.includes(name as (typeof TAG_NAMES)[number]) || typeof item !== 'string' || !SAFE_TAG.test(item),
-		)
-	)
-		return null;
-	return {
-		eventId: data.eventId,
-		title: cleanText(data.title, 180),
-		errorType: cleanText(data.errorType, 80),
-		route,
-		tags: Object.fromEntries(Object.entries(data.tags)),
-		breadcrumbs: breadcrumbs.filter((item): item is SentrySlackBreadcrumb => item !== null),
 		...(sessionReplayUrl ? { sessionReplayUrl } : {}),
 		...(apiRequest ? { apiRequest } : {}),
 	};

@@ -27,6 +27,7 @@ it('Sentry smoke는 명시적 fixture를 먼저 생성하고 같은 입력으로
 	vi.stubEnv('SENTRY_AUTH_TOKEN', 'fixture-token');
 	vi.stubEnv('SENTRY_SMOKE_DSN', 'https://public@o0.ingest.sentry.io/2');
 	vi.stubEnv('SENTRY_SMOKE_DRY_RUN', 'false');
+	vi.stubEnv('SENTRY_SLACK_MODE', 'webhook');
 	vi.stubEnv('SENTRY_SLACK_BOT_TOKEN', 'inherited-token');
 	vi.stubEnv('SENTRY_SLACK_CHANNEL_ID', 'inherited-channel');
 	vi.stubEnv('SENTRY_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/inherited');
@@ -49,6 +50,7 @@ it('Sentry smoke는 명시적 fixture를 먼저 생성하고 같은 입력으로
 			THE_RILOG_SNAPSHOT_PATH: '.the-rilog-build/fixture.json',
 			THE_RILOG_ALLOW_FIXTURE: 'true',
 			NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'smoke',
+			SENTRY_SLACK_MODE: 'off',
 			SENTRY_SLACK_BOT_TOKEN: '',
 			SENTRY_SLACK_CHANNEL_ID: '',
 			SENTRY_SLACK_WEBHOOK_URL: '',

@@ -20,6 +20,7 @@ interface TransferInput {
 	eventType: 'paste' | 'drop';
 	format?: 'text/html' | 'blocknote/html' | 'text/plain';
 	content?: string;
+	plainText?: string;
 	withFile?: boolean;
 }
 
@@ -28,6 +29,7 @@ const dispatchTransfer = (editor: Locator, input: TransferInput) =>
 		(element, { input: transferInput, bytes }) => {
 			const transfer = new DataTransfer();
 			if (transferInput.format !== undefined) transfer.setData(transferInput.format, transferInput.content ?? '');
+			if (transferInput.plainText !== undefined) transfer.setData('text/plain', transferInput.plainText);
 			if (transferInput.withFile)
 				transfer.items.add(new File([new Uint8Array(bytes)], 'pasted.png', { type: 'image/png' }));
 			const rect = element.getBoundingClientRect();
@@ -67,6 +69,15 @@ test.beforeEach(async ({ page }) => {
 	await page.route('**/e2e-transfer-upload', (route) => route.fulfill({ status: 200 }));
 	await page.route('**/remote-image.png', (route) =>
 		route.fulfill({ contentType: 'image/png', body: Buffer.from(TEST_IMAGE_BYTES) }),
+	);
+	await page.route('**/v1/uploads/image-imports', (route) =>
+		respond(route, {
+			objectKey: 'rilog/images/raw/imported/sample.webp',
+			url: 'https://images.example.com/rilog/images/raw/imported/sample.webp',
+		}),
+	);
+	await page.route('**/sample.webp', (route) =>
+		route.fulfill({ contentType: 'image/webp', body: Buffer.from(TEST_IMAGE_BYTES) }),
 	);
 	await page.goto('/write');
 	await expect(page.getByRole('textbox', { name: '게시글 내용' })).toBeVisible();
@@ -209,9 +220,128 @@ test('차단 후 일반 텍스트와 서식 및 원격 이미지를 붙여넣으
 	await expect(editor.locator('strong')).toHaveText('정상 서식');
 	await expect(editor.locator('[data-content-type="image"] img')).toHaveAttribute(
 		'src',
-		'https://cdn.rilog.test/remote-image.png',
+		/(?:^|\/)rilog\/images\/raw\/imported\/sample\.webp(?:#1x1)?$/,
 	);
 	await expect(editor.locator('[data-content-type="image"] .bn-add-file-button [role="alert"]')).toHaveText(
 		TRANSFER_ERROR,
 	);
+});
+
+test('빈 줄 없이 붙어 있는 마크다운 이미지들이 포함된 텍스트를 붙여넣으면 각각 독립된 이미지 블록으로 생성되어 재업로드된다', async ({
+	page,
+}) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	const unnormalizedMarkdown = [
+		'본문 첫 줄',
+		'![](https://external.test/img-1.png)',
+		'![](https://external.test/img-2.png)',
+		'중간 본문',
+		'![](https://external.test/img-2.png)',
+		'마지막 본문',
+	].join('\n');
+
+	await dispatchTransfer(editor, {
+		eventType: 'paste',
+		format: 'text/plain',
+		content: unnormalizedMarkdown,
+	});
+
+	await expect(editor.locator('[data-content-type="image"]')).toHaveCount(3);
+	await expect(editor).toContainText('본문 첫 줄');
+	await expect(editor).toContainText('중간 본문');
+	await expect(editor).toContainText('마지막 본문');
+});
+
+test('마크다운 이미지 문법이 포함된 HTML 붙여넣기는 원래 서식을 유지한다', async ({ page }) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	await dispatchTransfer(editor, {
+		eventType: 'paste',
+		format: 'text/html',
+		content: '<p><strong>굵은 본문</strong></p><p>![](https://external.test/img-1.png)</p>',
+		plainText: '굵은 본문\n![](https://external.test/img-1.png)',
+	});
+
+	await expect(editor.locator('strong')).toHaveText('굵은 본문');
+});
+
+test('코드 블록에 연속된 마크다운 이미지 문법을 붙여넣으면 빈 줄 없이 보존한다', async ({ page }) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+	await page.keyboard.type('/코드');
+	await page.keyboard.press('Enter');
+	const code = editor.locator('[data-content-type="codeBlock"] pre code');
+	await expect(code).toBeAttached();
+
+	const markdown = '![](https://external.test/img-1.png)\n![](https://external.test/img-2.png)';
+	await dispatchTransfer(code, { eventType: 'paste', format: 'text/plain', content: markdown });
+
+	await expect(code).toHaveText(markdown);
+	await expect(editor.locator('[data-content-type="image"]')).toHaveCount(0);
+});
+
+test('이미 분리된 마크다운 이미지의 Windows 개행은 붙여넣기 이벤트를 다시 보내지 않는다', async ({ page }) => {
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	const pasteCount = await editor.evaluate((element) => {
+		const transfer = new DataTransfer();
+		transfer.setData('text/plain', '본문\r\n\r\n![](https://external.test/img-1.png)\r\n\r\n다음 본문');
+		let count = 0;
+		element.addEventListener('paste', () => count++);
+		element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer }));
+		return count;
+	});
+
+	expect(pasteCount).toBe(1);
+});
+
+test('외부 이미지 변환 중에는 블록에 로딩 오버레이가 표시되고 발행 버튼이 비활성화되며 완료 시 해제된다', async ({
+	page,
+}) => {
+	let resolveImport: () => void = () => undefined;
+	await page.route('**/v1/uploads/image-imports', async (route) => {
+		await new Promise<void>((resolve) => {
+			resolveImport = resolve;
+		});
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				status: 200,
+				message: '성공',
+				data: {
+					objectKey: 'rilog/images/raw/imported/delayed.webp',
+					url: 'https://images.example.com/rilog/images/raw/imported/delayed.webp',
+				},
+			}),
+		});
+	});
+
+	const editor = page.getByRole('textbox', { name: '게시글 내용' });
+	await editor.click();
+
+	await dispatchTransfer(editor, {
+		eventType: 'paste',
+		format: 'text/html',
+		content: '<img src="https://cdn.rilog.test/remote-image.png">',
+	});
+
+	const imageBlock = editor.locator('[data-content-type="image"]');
+	await expect(imageBlock).toHaveCount(1);
+	await expect(imageBlock.locator('.post-write-image-import-overlay')).toBeVisible();
+	await expect(imageBlock.getByRole('status', { name: '이미지 변환 중' })).toBeVisible();
+	await expect(page.getByRole('button', { name: '발행' })).toBeDisabled();
+
+	resolveImport();
+
+	await expect(imageBlock.locator('.post-write-image-import-overlay')).toHaveCount(0);
+	await expect(imageBlock.locator('img')).toHaveAttribute(
+		'src',
+		/(?:^|\/)rilog\/images\/raw\/imported\/delayed\.webp(?:#1x1)?$/,
+	);
+	await expect(page.getByRole('button', { name: '발행' })).toBeEnabled();
 });

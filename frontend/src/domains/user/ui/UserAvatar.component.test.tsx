@@ -10,4 +10,18 @@ describe('UserAvatar', () => {
 		expect(screen.getByRole('img', { name: 'Rilog 사용자' })).toHaveTextContent('R');
 		expect(screen.queryByRole('link')).not.toBeInTheDocument();
 	});
+
+	it('size prop에 맞는 기본 sizes를 전달한다', () => {
+		render(
+			<UserAvatar
+				src="https://cdn.rilog.test/profiles/raw/user-123/original.png"
+				fallback="R"
+				label="Rilog 사용자"
+				size="sm"
+			/>,
+		);
+
+		const img = screen.getByRole('img', { name: 'Rilog 사용자' }).querySelector('img');
+		expect(img?.getAttribute('sizes')).toBe('24px');
+	});
 });

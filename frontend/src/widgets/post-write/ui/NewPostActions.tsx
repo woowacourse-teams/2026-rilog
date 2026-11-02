@@ -12,11 +12,13 @@ interface NewPostActionsProps {
 }
 
 export default function NewPostActions({ editor, createDraft, onDraftCreated }: NewPostActionsProps) {
+	const isActionReady = editor.isEditorReady && !editor.isMediaImporting;
+
 	return (
 		<DraftPostActions
 			isEditorReady={editor.isEditorReady}
-			isSaveReady={editor.isEditorReady}
-			isPublishReady={editor.isEditorReady}
+			isSaveReady={isActionReady}
+			isPublishReady={isActionReady}
 			prepareDocument={editor.prepareDocument}
 			onSave={
 				createDraft === undefined

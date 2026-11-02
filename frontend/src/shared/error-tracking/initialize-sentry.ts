@@ -6,18 +6,15 @@ import { shouldCaptureAutomaticError } from './api-error-reporter';
 import { safePostHogReplayUrl } from './sentry-diagnostic-privacy';
 import { resolveSentryEnvironment } from './sentry-environment';
 import { filterSentryEvent, filterSentrySpan } from './sentry-privacy';
-import { resolveSentrySlackMode } from './sentry-slack-mode';
-import { summarizeSentryEventForSlack, type SentrySlackSummary } from './sentry-slack-summary';
 
 interface InitializeSentryOptions {
 	runtime?: 'browser' | 'node' | 'edge';
 	tracesSampleRate?: number;
-	onSlackAlert?: (summary: SentrySlackSummary) => void;
 	getSessionReplayUrl?: () => string | undefined;
 }
 
 export function initializeSentry(options: InitializeSentryOptions = {}): void {
-	const { runtime = 'node', getSessionReplayUrl, onSlackAlert, ...sentryOptions } = options;
+	const { runtime = 'node', getSessionReplayUrl, ...sentryOptions } = options;
 	const config = resolveSentryEnvironment({
 		environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
 		enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
@@ -48,20 +45,6 @@ export function initializeSentry(options: InitializeSentryOptions = {}): void {
 					}
 				} catch {
 					logNonProductionWarning('PostHog session replay URL preparation failed.');
-				}
-				if (
-					resolveSentrySlackMode(process.env.NEXT_PUBLIC_SENTRY_SLACK_MODE) === 'legacy' &&
-					config.enabled &&
-					config.environment === 'prod' &&
-					filtered.environment === 'prod' &&
-					(!filtered.level || filtered.level === 'error' || filtered.level === 'fatal')
-				) {
-					try {
-						const summary = summarizeSentryEventForSlack(filtered);
-						if (summary) onSlackAlert?.(summary);
-					} catch {
-						logNonProductionWarning('Sentry Slack alert preparation failed.');
-					}
 				}
 				return filtered;
 			},

@@ -20,6 +20,7 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 	const [title, setTitle] = useState(initialDocument?.title ?? '');
 	const [isEditorReady, setIsEditorReady] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
+	const [isMediaImporting, setIsMediaImporting] = useState(false);
 	const [documentErrors, setDocumentErrors] = useState<PostDocumentErrors>({});
 
 	useEffect(() => {
@@ -29,6 +30,10 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 	const handleEditorReady = useCallback((blocks: PostContentBlock[]) => {
 		latestBlocksRef.current = blocks;
 		setIsEditorReady(true);
+	}, []);
+
+	const handleMediaImportingChange = useCallback((isImporting: boolean) => {
+		setIsMediaImporting(isImporting);
 	}, []);
 
 	const handleTitleChange = useCallback((nextTitle: string) => {
@@ -44,6 +49,10 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 	}, []);
 
 	const preparePostDocument = useCallback((): EditorDocument | null => {
+		if (isMediaImporting) {
+			return null;
+		}
+
 		const nextErrors = validatePostDocument(title, latestBlocksRef.current);
 		setDocumentErrors(nextErrors);
 
@@ -58,7 +67,7 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		}
 
 		return { title: title.trim(), blocks: [...latestBlocksRef.current] };
-	}, [title]);
+	}, [isMediaImporting, title]);
 
 	const markClean = useCallback(() => {
 		setIsDirty(false);
@@ -78,10 +87,12 @@ export function usePostDocument({ initialDocument }: UsePostDocumentOptions = {}
 		title,
 		isEditorReady,
 		isDirty,
+		isMediaImporting,
 		documentErrors,
 		handleTitleChange,
 		handleEditorReady,
 		handleEditorChange,
+		handleMediaImportingChange,
 		preparePostDocument,
 		markClean,
 		getDocumentState,

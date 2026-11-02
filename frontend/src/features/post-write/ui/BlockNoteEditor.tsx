@@ -12,10 +12,14 @@ import {
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 
+import type { PostWriteBlockNoteEditor } from '../lib/post-write-schema';
 import type { PostEditorProps } from '../model/post-editor';
 import type { FloatingUIOptions } from '@blocknote/react';
 
+import type { PostContentBlock } from '@/domains/post/model/post-content';
+
 import '@blocknote/shadcn/style.css';
+import { usePostWriteImageImport } from '../hooks/use-post-write-image-import';
 import { usePostWriteTransferUpload } from '../hooks/use-post-write-transfer-upload';
 import { usePostWriteUpload } from '../hooks/use-post-write-upload';
 import {
@@ -173,12 +177,44 @@ export default function BlockNoteEditor({
 	initialBlocks,
 	onChange,
 	onReady,
+	onMediaImportingChange,
 	uploadFile,
 	ariaDescribedBy,
 	ref,
 }: PostEditorProps) {
 	const codeBlockSlashItemInProgress = useRef(false);
-	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile);
+	const onMediaImportingChangeRef = useRef(onMediaImportingChange);
+
+	useEffect(() => {
+		onMediaImportingChangeRef.current = onMediaImportingChange;
+	}, [onMediaImportingChange]);
+
+	const editorRef = useRef<PostWriteBlockNoteEditor | null>(null);
+
+	const { handleImageImport, registerUploadedImageUrl, hasPendingImports } = usePostWriteImageImport({
+		onImportSettled: () => {
+			const current = editorRef.current;
+			if (current !== null) {
+				onMediaImportingChangeRef.current?.(hasPendingImports(current.document));
+			}
+		},
+	});
+	const { uploadFileWithFeedback, connectEditor } = usePostWriteUpload(uploadFile, registerUploadedImageUrl);
+
+	useEffect(() => {
+		if (initialBlocks === undefined) return;
+		const registerBlocks = (blocks: PostContentBlock[]) => {
+			for (const block of blocks) {
+				if (block.type === 'image' && typeof block.props.url === 'string' && block.props.url !== '') {
+					registerUploadedImageUrl(block.props.url);
+				}
+				if (block.children && block.children.length > 0) {
+					registerBlocks(block.children);
+				}
+			}
+		};
+		registerBlocks(initialBlocks);
+	}, [initialBlocks, registerUploadedImageUrl]);
 
 	// 한국어 UI와 외부에서 주입한 이미지 uploader를 적용한 에디터
 	const editor = useCreateBlockNote(
@@ -203,6 +239,10 @@ export default function BlockNoteEditor({
 		[initialBlocks, uploadFileWithFeedback],
 	);
 
+	useEffect(() => {
+		editorRef.current = editor;
+	}, [editor]);
+
 	useEffect(() => connectEditor(editor), [connectEditor, editor]);
 	usePostWriteTransferUpload(editor);
 	useEffect(() => installImageRowDrag(editor), [editor]);
@@ -225,6 +265,10 @@ export default function BlockNoteEditor({
 							0,
 						);
 						continue;
+					}
+
+					if (change.block.type === 'image' && change.block.props.url !== '') {
+						void handleImageImport(currentEditor, change.block.id, change.block.props.url);
 					}
 
 					if (change.source.type === 'undo' || change.source.type === 'redo') {
@@ -255,8 +299,9 @@ export default function BlockNoteEditor({
 						currentEditor.updateBlock(change.block, { props: { language } });
 					}
 				}
+				onMediaImportingChangeRef.current?.(hasPendingImports(currentEditor.document));
 			}),
-		[editor],
+		[editor, handleImageImport, hasPendingImports],
 	);
 
 	// 제목에서 Enter를 누르거나 검증에 실패했을 때 실제 에디터로 focus할 수 있도록 useImperativeHandle(리모콘 역할) 사용
@@ -266,8 +311,10 @@ export default function BlockNoteEditor({
 
 	// 에디터 생성이 끝나면 초기 문서를 부모에 전달해 발행 가능 상태로 전환
 	useEffect(() => {
-		onReady([...editor.document]);
-	}, [editor, onReady]);
+		const document = [...editor.document];
+		onReady(document);
+		onMediaImportingChangeRef.current?.(hasPendingImports(document));
+	}, [editor, hasPendingImports, onReady]);
 
 	// BlockNote가 생성한 실제 editable element에 접근성 이름과 오류 메시지 연결
 	useEffect(() => {
@@ -333,7 +380,11 @@ export default function BlockNoteEditor({
 				formattingToolbar={false}
 				filePanel={false}
 				sideMenu={false}
-				onChange={() => onChange([...editor.document])}
+				onChange={() => {
+					const document = [...editor.document];
+					onChange(document);
+					onMediaImportingChangeRef.current?.(hasPendingImports(document));
+				}}
 			>
 				<PostWriteFormattingToolbar />
 				<FilePanelController filePanel={PostWriteFilePanel} />

@@ -1,7 +1,6 @@
-export type SentrySlackMode = 'legacy' | 'webhook' | 'off';
+export type SentrySlackMode = 'webhook' | 'off';
 
-/** Preserve legacy delivery until the operator has verified the replacement. */
+/** Delivery requires an explicit server-side webhook opt-in. */
 export function resolveSentrySlackMode(value: string | undefined): SentrySlackMode {
-	if (value === undefined || value === '' || value === 'legacy') return 'legacy';
 	return value === 'webhook' ? 'webhook' : 'off';
 }

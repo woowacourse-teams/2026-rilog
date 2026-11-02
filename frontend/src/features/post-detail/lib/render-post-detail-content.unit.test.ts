@@ -178,6 +178,24 @@ describe('renderPostDetailContent', () => {
 
 		expect(html).toContain('<img');
 		expect(html).toContain('src="https://images.rilog.test/post.png"');
+		expect(html).not.toContain('srcset=');
+	});
+
+	it('신경로 이미지 블록은 srcset, sizes, decoding 속성을 주입한다', async () => {
+		const rawImageBlock: Block = {
+			...IMAGE_BLOCK,
+			id: 'raw-image-block',
+			props: {
+				...IMAGE_BLOCK.props,
+				url: 'https://cdn.rilog.test/images/raw/test-uuid/original.png',
+			},
+		};
+
+		const html = await renderPostDetailContent([rawImageBlock]);
+
+		expect(html).toContain('srcset="https://cdn.rilog.test/images/compact/test-uuid/750.webp 750w,');
+		expect(html).toContain('sizes="(min-width: 672px) 672px, 100vw"');
+		expect(html).toContain('decoding="async"');
 	});
 
 	it('빈 업로드 블록은 렌더링하지 않고 자식 본문은 유지한다', async () => {

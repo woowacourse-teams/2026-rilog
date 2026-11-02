@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
@@ -10,8 +10,9 @@ interface PostFeedImageProps {
 	src: string | null;
 	fallbackSrc?: string;
 	alt: string;
-	width: number;
-	height: number;
+	width?: number;
+	height?: number;
+	sizes?: string;
 	className?: string;
 	fallbackClassName?: string;
 	isScaledOnInteraction?: boolean;
@@ -25,6 +26,7 @@ export default function PostFeedImage({
 	alt,
 	width,
 	height,
+	sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
 	className = '',
 	fallbackClassName = '',
 	isScaledOnInteraction = false,
@@ -35,11 +37,12 @@ export default function PostFeedImage({
 	const imageUrl = hasFallback ? getImageUrl(fallbackSrc) : sourceImageUrl;
 
 	return (
-		<Image
+		<ResponsiveImage
 			src={imageUrl}
 			alt={alt}
 			width={width}
 			height={height}
+			sizes={sizes}
 			loading="lazy"
 			className={`${className} ${hasFallback ? fallbackClassName : ''} ${
 				isScaledOnInteraction

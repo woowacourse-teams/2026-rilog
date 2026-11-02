@@ -1,7 +1,7 @@
 'use client';
 
 import { useIsMutating } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import type { PostContentBlock } from '@/domains/post/model/post-content';
@@ -16,6 +16,7 @@ import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import Modal from '@/shared/ui/modal/Modal';
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
@@ -84,6 +85,7 @@ export default function PublishSettingsModal({
 	onCologOptionsRefetch,
 	onPublish,
 }: PublishSettingsModalProps) {
+	const imageGuideId = useId();
 	// 블로그 선택
 	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => settings.blog?.type ?? RILOG);
 	const [imageFileSizeError, setImageFileSizeError] = useState<string | null>(null);
@@ -162,8 +164,21 @@ export default function PublishSettingsModal({
 			<form id={PUBLISH_FORM_ID} className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1" action={handleSubmit}>
 				<div className="grid gap-8 md:grid-cols-2 md:gap-10">
 					<section>
-						<Field label="대표 이미지" description="직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.">
-							{({ id, describedBy }) => (
+						<Field
+							label="대표 이미지"
+							labelAction={
+								<span id={`${imageGuideId}-size`} className="text-label-2 text-text-secondary">
+									최대 10MB
+								</span>
+							}
+							description={
+								<div id={`${imageGuideId}-ratio`} className="space-y-1 break-keep">
+									<p>* 피드에는 16:9 비율로 표시돼요</p>
+									<p>* 게시글 상세에서는 원본 비율 그대로 표시돼요</p>
+								</div>
+							}
+						>
+							{({ id }) => (
 								<div className="flex flex-col gap-2">
 									<div className={`grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
 										<ImageEditButton
@@ -172,9 +187,7 @@ export default function PublishSettingsModal({
 											hasImage={hasRepresentativeImage}
 											fullWidth
 											disabled={isModalPending}
-											aria-describedby={
-												imageFileSizeError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy
-											}
+											aria-describedby={`${imageGuideId}-size ${imageGuideId}-ratio${imageFileSizeError ? ` ${id}-file-error` : ''}`}
 											aria-invalid={imageFileSizeError !== null}
 											validateFile={(file) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES}
 											onFileRejected={(file) => {
@@ -210,10 +223,10 @@ export default function PublishSettingsModal({
 						>
 							<div className="aspect-video bg-thumbnail-background" data-ph-sensitive-media>
 								{/* 동적 blob/본문 URL을 그대로 미리보기 위한 UI 전용 이미지입니다. */}
-								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img
+								<ResponsiveImage
 									src={getImageUrl(parseImageSizeHash(previewUrl)?.url ?? previewUrl)}
 									alt="게시글 대표 이미지 미리보기"
+									sizes="(min-width: 768px) 420px, 100vw"
 									className="size-full object-cover"
 								/>
 							</div>

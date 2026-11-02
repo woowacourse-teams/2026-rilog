@@ -11,6 +11,7 @@ export interface PostEditorProps {
 	initialBlocks?: PostContentBlock[];
 	onChange: (blocks: PostContentBlock[]) => void;
 	onReady: (blocks: PostContentBlock[]) => void;
+	onMediaImportingChange?: (isImporting: boolean) => void;
 	uploadFile: UploadPostBodyFile;
 	ariaDescribedBy?: string;
 	ref?: Ref<PostEditorHandle>;
@@ -21,6 +22,7 @@ export type UploadPostBodyFile = (file: File) => Promise<string>;
 export interface PostWriteEditorContext {
 	isEditorReady: boolean;
 	isDirty: boolean;
+	isMediaImporting?: boolean;
 	prepareDocument: () => EditorDocument | null;
 	markClean: () => void;
 	openPublishSettings: () => void;

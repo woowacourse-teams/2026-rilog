@@ -15,7 +15,7 @@ describe('appendImageSizeHash', () => {
 
 		const url = await appendImageSizeHash(new File(['image'], 'cover.png', { type: 'image/png' }), 'posts/cover.png');
 
-		expect(url).toBe('https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/posts/cover.png#1200x800');
+		expect(url).toBe('posts/cover.png#1200x800');
 		expect(close).toHaveBeenCalledOnce();
 	});
 
@@ -24,7 +24,7 @@ describe('appendImageSizeHash', () => {
 
 		const url = await appendImageSizeHash(new File(['image'], 'cover.png', { type: '' }), 'posts/cover.png');
 
-		expect(url).toBe('https://rilog-bucket.s3.ap-northeast-2.amazonaws.com/posts/cover.png#24x16');
+		expect(url).toBe('posts/cover.png#24x16');
 	});
 
 	it('이미지를 읽을 수 없으면 기존 URL로 발행을 계속한다', async () => {
@@ -55,17 +55,7 @@ describe('appendImageSizeHash', () => {
 		expect(decode).not.toHaveBeenCalled();
 	});
 
-	it('S3 주소가 설정되지 않거나 다른 호스트면 원본 객체 키를 유지한다', async () => {
-		const decode = vi.fn();
-		vi.stubGlobal('createImageBitmap', decode);
-		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', 'https://cdn.rilog.test');
-		expect(await appendImageSizeHash(new File(['image'], 'cover.png', { type: 'image/png' }), 'posts/cover.png')).toBe(
-			'posts/cover.png',
-		);
-		vi.stubEnv('NEXT_PUBLIC_S3_BUCKET_URL', '');
-		expect(await appendImageSizeHash(new File(['image'], 'cover.png', { type: 'image/png' }), 'posts/cover.png')).toBe(
-			'posts/cover.png',
-		);
-		expect(decode).not.toHaveBeenCalled();
+	it('HTMLImageElement 또는 크기 객체로 크기 해시를 추가한다', async () => {
+		expect(await appendImageSizeHash({ width: 800, height: 600 }, 'posts/cover.png')).toBe('posts/cover.png#800x600');
 	});
 });
