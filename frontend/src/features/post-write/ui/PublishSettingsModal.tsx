@@ -1,7 +1,7 @@
 'use client';
 
 import { useIsMutating } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { POST_CATEGORY_OPTIONS, type PostCategory } from '@/domains/post/model/post';
 import type { PostContentBlock } from '@/domains/post/model/post-content';
@@ -84,6 +84,7 @@ export default function PublishSettingsModal({
 	onCologOptionsRefetch,
 	onPublish,
 }: PublishSettingsModalProps) {
+	const imageGuideId = useId();
 	// 블로그 선택
 	const [selectedBlog, setSelectedBlog] = useState<BlogOption>(() => settings.blog?.type ?? RILOG);
 	const [imageFileSizeError, setImageFileSizeError] = useState<string | null>(null);
@@ -164,17 +165,13 @@ export default function PublishSettingsModal({
 					<section>
 						<Field
 							label="대표 이미지"
-							description={
-								<>
-									<p>직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.</p>
-									<p>
-										피드 썸네일은 16:9 비율로 표시되며, 게시글 상세에서는 원본 비율을 기준으로 표시돼요. 최대 10MB까지
-										업로드할 수 있어요.
-									</p>
-								</>
+							labelAction={
+								<span id={`${imageGuideId}-size`} className="text-label-2 text-text-secondary">
+									최대 10MB
+								</span>
 							}
 						>
-							{({ id, describedBy }) => (
+							{({ id }) => (
 								<div className="flex flex-col gap-2">
 									<div className={`grid gap-2 ${hasRepresentativeImage ? 'grid-cols-2' : 'grid-cols-1'}`}>
 										<ImageEditButton
@@ -183,9 +180,7 @@ export default function PublishSettingsModal({
 											hasImage={hasRepresentativeImage}
 											fullWidth
 											disabled={isModalPending}
-											aria-describedby={
-												imageFileSizeError ? `${describedBy ?? ''} ${id}-file-error`.trim() : describedBy
-											}
+											aria-describedby={`${imageGuideId}-size ${imageGuideId}-ratio ${imageGuideId}-auto${imageFileSizeError ? ` ${id}-file-error` : ''}`}
 											aria-invalid={imageFileSizeError !== null}
 											validateFile={(file) => file.size <= MAX_IMAGE_FILE_SIZE_BYTES}
 											onFileRejected={(file) => {
@@ -215,6 +210,9 @@ export default function PublishSettingsModal({
 								</div>
 							)}
 						</Field>
+						<p id={`${imageGuideId}-ratio`} className="mt-3 text-label-1 break-keep text-text-secondary">
+							피드 썸네일은 16:9 비율로 표시되며, 게시글 상세에서는 원본 비율을 기준으로 표시돼요.
+						</p>
 						<figure
 							aria-label="게시글 썸네일 미리보기"
 							className="mt-5 overflow-hidden rounded-lg border border-border-default bg-surface"
@@ -234,6 +232,9 @@ export default function PublishSettingsModal({
 								</p>
 							</figcaption>
 						</figure>
+						<p id={`${imageGuideId}-auto`} className="mt-3 text-label-2 break-keep text-text-secondary">
+							직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.
+						</p>
 					</section>
 
 					<div className="space-y-8">

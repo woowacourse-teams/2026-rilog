@@ -85,7 +85,7 @@ describe('PublishSettingsModal', () => {
 		renderModal();
 		const input = screen.getByLabelText('대표 이미지 추가');
 		expect(input).toHaveAccessibleDescription(
-			'직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다. 피드 썸네일은 16:9 비율로 표시되며, 게시글 상세에서는 원본 비율을 기준으로 표시돼요. 최대 10MB까지 업로드할 수 있어요.',
+			'최대 10MB 피드 썸네일은 16:9 비율로 표시되며, 게시글 상세에서는 원본 비율을 기준으로 표시돼요. 직접 선택하지 않으면 본문의 첫 이미지가 대표 이미지로 저장됩니다.',
 		);
 	});
 
