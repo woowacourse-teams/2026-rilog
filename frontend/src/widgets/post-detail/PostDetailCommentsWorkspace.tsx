@@ -87,6 +87,7 @@ export default function PostDetailCommentsWorkspace({
 	} = useCommentHistory(postId, initialSelectionId !== null);
 	const isCommentsSidebarOpen = view === 'comments';
 	const openerRef = useRef<HTMLElement | null>(null);
+	const commentsEntryButtonRef = useRef<HTMLButtonElement>(null);
 	const pendingNavigation = useRef<InlineCommentThreadModel | null>(null);
 	const navigationCleanup = useRef<(() => void) | null>(null);
 	const cancelAnchorNavigation = useCallback(() => {
@@ -239,12 +240,16 @@ export default function PostDetailCommentsWorkspace({
 	const closeComments = useCallback(() => {
 		closeCommentView();
 		setIsDeletedCommentToastVisible(false);
-		if (isDocked && openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
+		if (isDocked) {
+			const opener = openerRef.current?.isConnected ? openerRef.current : commentsEntryButtonRef.current;
+			opener?.focus({ preventScroll: true });
+		}
 	}, [closeCommentView, isDocked]);
 
 	useEffect(() => {
-		if (view === 'closed' && isDocked && openerRef.current?.isConnected) {
-			openerRef.current.focus({ preventScroll: true });
+		if (view === 'closed' && isDocked && openerRef.current !== null) {
+			const opener = openerRef.current?.isConnected ? openerRef.current : commentsEntryButtonRef.current;
+			opener?.focus({ preventScroll: true });
 		}
 	}, [view, isDocked]);
 
@@ -291,12 +296,17 @@ export default function PostDetailCommentsWorkspace({
 			<aside className={`${styles.commentsColumn} max-md:hidden!`}>
 				<div ref={entryRef} className={styles.commentsEntry}>
 					{!isMobileViewport && isEntrySticky && (
-						<PostAllCommentsButton commentCount={inlineCommentCount} onClick={handleAllCommentsOpen} />
+						<PostAllCommentsButton
+							ref={commentsEntryButtonRef}
+							commentCount={inlineCommentCount}
+							onClick={handleAllCommentsOpen}
+						/>
 					)}
 				</div>
 			</aside>
 			{(isMobileViewport || !isEntrySticky) && (
 				<AllCommentsFloatingButton
+					ref={commentsEntryButtonRef}
 					count={inlineCommentCount}
 					hidden={view !== 'closed'}
 					onClick={handleAllCommentsOpen}

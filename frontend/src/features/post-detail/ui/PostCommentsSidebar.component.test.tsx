@@ -687,3 +687,40 @@ describe('댓글 패널의 하위 모달 수명주기', () => {
 		expect(screen.queryByRole('textbox', { name: '댓글 수정' })).not.toBeInTheDocument();
 	});
 });
+
+describe('도킹 댓글창 Escape', () => {
+	it('열린 패널은 본문에서 Escape를 누르면 닫기를 요청하고 닫힌 뒤에는 처리하지 않는다', () => {
+		const onClose = vi.fn();
+		const view = (open: boolean) => (
+			<PostCommentsDockedCard postId={81} open={open} mode="all" threads={[]} onClose={onClose} onNavigate={vi.fn()} />
+		);
+		const { rerender, unmount } = render(view(true));
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(onClose).toHaveBeenCalledOnce();
+		rerender(view(false));
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(onClose).toHaveBeenCalledOnce();
+		rerender(view(true));
+		unmount();
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(onClose).toHaveBeenCalledOnce();
+	});
+
+	it('중첩 dialog 또는 하위 UI가 처리한 Escape는 패널을 닫지 않는다', () => {
+		const onClose = vi.fn();
+		render(<PostCommentsDockedCard postId={81} open mode="all" threads={[]} onClose={onClose} onNavigate={vi.fn()} />);
+		const dialog = document.createElement('dialog');
+		dialog.setAttribute('open', '');
+		document.body.append(dialog);
+		try {
+			fireEvent.keyDown(dialog, { key: 'Escape' });
+			expect(onClose).not.toHaveBeenCalled();
+		} finally {
+			dialog.remove();
+		}
+		const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+		event.preventDefault();
+		fireEvent(document.body, event);
+		expect(onClose).not.toHaveBeenCalled();
+	});
+});

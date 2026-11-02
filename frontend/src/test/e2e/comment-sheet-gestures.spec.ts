@@ -185,7 +185,8 @@ for (const width of [390, 1440]) {
 		await renderInlineCommentWorkspace(page, 91);
 		const composer = page.getByRole('group', { name: '댓글 입력 및 작성', exact: true });
 		const input = composer.getByRole('textbox', { name: '댓글 입력' });
-		await input.fill('첫째 줄\n둘째 줄\n셋째 줄\n넷째 줄\n다섯째 줄');
+		const draft = Array.from({ length: 30 }, (_, index) => `${index + 1}번째 줄`).join('\n');
+		await input.fill(draft);
 		const submit = composer.getByRole('button', { name: '작성', exact: true });
 		await expect(submit).toBeEnabled();
 		if (width < 1280) {
@@ -239,7 +240,7 @@ for (const width of [390, 1440]) {
 			if (width < 768) {
 				await expect(page.getByRole('button', { name: '댓글 작성: 브라우저에서', exact: true })).toHaveCount(0);
 			}
-			await expect(input).toHaveValue('첫째 줄\n둘째 줄\n셋째 줄\n넷째 줄\n다섯째 줄');
+			await expect(input).toHaveValue(draft);
 		}
 	});
 }

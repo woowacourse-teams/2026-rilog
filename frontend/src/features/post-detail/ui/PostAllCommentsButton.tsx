@@ -1,17 +1,21 @@
+import type { Ref } from 'react';
+
 import CommentIcon from '@/shared/assets/icons/comment.svg';
 
 import { formatCommentCount } from '../lib/format-comment-count';
 
 interface PostAllCommentsButtonProps {
+	ref?: Ref<HTMLButtonElement>;
 	commentCount: number;
 	className?: string;
 	onClick?: () => void;
 }
 
-export default function PostAllCommentsButton({ commentCount, className, onClick }: PostAllCommentsButtonProps) {
+export default function PostAllCommentsButton({ commentCount, className, onClick, ref }: PostAllCommentsButtonProps) {
 	return (
 		<div className="flex justify-end border-b-2 border-border-strong bg-transparent pl-4 transition-colors">
 			<button
+				ref={ref}
 				type="button"
 				aria-label={`전체 댓글 ${commentCount}개 보기`}
 				className={`group inline-flex items-center gap-1 px-1 pt-0.5 pb-1.5 text-label-1 font-semibold text-text-secondary hover:border-focus-ring hover:text-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${className ?? ''}`}
