@@ -19,16 +19,31 @@ const SIZE_CLASS_NAMES: Record<UserAvatarSize, string> = {
 	xl: 'size-24 rounded-full text-heading-3 sm:size-32',
 };
 
+const USER_AVATAR_SIZES: Record<UserAvatarSize, string> = {
+	sm: '24px',
+	md: '32px',
+	lg: '40px',
+	xl: '(min-width: 640px) 128px, 96px',
+};
+
 const TONE_CLASS_NAMES: Record<UserAvatarTone, string> = {
 	subtle: 'bg-navy-100 text-navy-700',
 	strong: 'bg-navy-200 text-navy-800',
 };
 
-export default function UserAvatar({ className, size = 'md', tone = 'strong', src, ...avatarProps }: UserAvatarProps) {
+export default function UserAvatar({
+	className,
+	size = 'md',
+	tone = 'strong',
+	src,
+	sizes,
+	...avatarProps
+}: UserAvatarProps) {
 	return (
 		<Avatar
 			{...avatarProps}
 			src={getImageUrl(src) || undefined}
+			sizes={sizes ?? USER_AVATAR_SIZES[size]}
 			className={`font-bold ${SIZE_CLASS_NAMES[size]} ${TONE_CLASS_NAMES[tone]} ${className ?? ''}`.trim()}
 		/>
 	);

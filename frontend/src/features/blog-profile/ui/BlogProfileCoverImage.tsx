@@ -1,7 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
+
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 
 interface BlogProfileCoverImageProps {
 	src: string;
@@ -16,7 +17,7 @@ export default function BlogProfileCoverImage({ src, alt }: BlogProfileCoverImag
 	}
 
 	return (
-		<Image
+		<ResponsiveImage
 			src={src}
 			alt={alt}
 			fill

@@ -21,6 +21,15 @@ const SIZE_CLASS_NAMES: Record<CologAvatarSize, string> = {
 	max: 'size-45 rounded-2xl text-caption-3',
 };
 
+const COLOG_AVATAR_SIZES: Record<CologAvatarSize, string> = {
+	sm: '24px',
+	md: '32px',
+	aside: '40px',
+	lg: '48px',
+	xl: '(min-width: 640px) 128px, 96px',
+	max: '180px',
+};
+
 const TONE_CLASS_NAMES: Record<CologAvatarTone, string> = {
 	subtle: 'bg-navy-100 text-navy-700',
 	strong: 'bg-navy-200 text-navy-800',
@@ -31,12 +40,14 @@ export default function CologAvatar({
 	size = 'md',
 	tone = 'strong',
 	src,
+	sizes,
 	...avatarProps
 }: CologAvatarProps) {
 	return (
 		<Avatar
 			{...avatarProps}
 			src={getImageUrl(src) || undefined}
+			sizes={sizes ?? COLOG_AVATAR_SIZES[size]}
 			className={`font-bold ${SIZE_CLASS_NAMES[size]} ${TONE_CLASS_NAMES[tone]} ${className ?? ''}`.trim()}
 		/>
 	);

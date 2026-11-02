@@ -16,6 +16,7 @@ import Button from '@/shared/ui/button/Button';
 import Field from '@/shared/ui/field/Field';
 import ImageEditButton from '@/shared/ui/image-edit-button/ImageEditButton';
 import Modal from '@/shared/ui/modal/Modal';
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 import { getImageUrl } from '@/shared/utils/get-image-url';
 import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
@@ -210,10 +211,10 @@ export default function PublishSettingsModal({
 						>
 							<div className="aspect-video bg-thumbnail-background" data-ph-sensitive-media>
 								{/* 동적 blob/본문 URL을 그대로 미리보기 위한 UI 전용 이미지입니다. */}
-								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img
+								<ResponsiveImage
 									src={getImageUrl(parseImageSizeHash(previewUrl)?.url ?? previewUrl)}
 									alt="게시글 대표 이미지 미리보기"
+									sizes="(min-width: 768px) 420px, 100vw"
 									className="size-full object-cover"
 								/>
 							</div>

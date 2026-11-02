@@ -5,6 +5,7 @@ import { withMultiColumn } from '@blocknote/xl-multi-column';
 
 import { removeEmptyUploadBlocks } from '@/domains/post/lib/remove-empty-upload-blocks';
 import type { PostContentBlock } from '@/domains/post/model/post-content';
+import { toSrcSet } from '@/shared/lib/image';
 
 import { extractPostHeadingAnchors } from './extract-post-table-of-contents';
 import { highlightPostCode } from './highlight-post-code';
@@ -65,6 +66,19 @@ const markInlineCommentRoots = (container: HTMLElement) => {
 		const [inlineContent] = inlineContents;
 		inlineContent.dataset.inlineCommentRoot = '';
 		inlineContent.dataset.inlineCommentBlockId = blockId;
+	});
+};
+
+const addImageSrcSet = (container: HTMLElement) => {
+	container.querySelectorAll<HTMLImageElement>('.bn-block-content img').forEach((image) => {
+		const srcset = toSrcSet(image.getAttribute('src') ?? '');
+		if (srcset === undefined) {
+			return;
+		}
+		image.setAttribute('srcset', srcset);
+		image.setAttribute('sizes', '(min-width: 672px) 672px, 100vw');
+		image.setAttribute('decoding', 'async');
+		image.decoding = 'async';
 	});
 };
 
@@ -138,6 +152,7 @@ const enhancePostDetailHtml = async (
 	});
 
 	markInlineCommentRoots(container);
+	addImageSrcSet(container);
 
 	return container.innerHTML;
 };

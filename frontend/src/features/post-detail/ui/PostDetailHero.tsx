@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { POST_THUMBNAIL_FALLBACK_URL, resolvePostThumbnailUrl } from '@/domains/post/lib/post-thumbnail';
+import ResponsiveImage from '@/shared/ui/responsive-image/ResponsiveImage';
 import { parseImageSizeHash } from '@/shared/utils/image-size-hash';
 
 interface PostDetailHeroProps {
@@ -29,12 +30,11 @@ export default function PostDetailHero({ title, thumbnailUrl }: PostDetailHeroPr
 			}
 		>
 			{/* 원본 비율을 유지하되 높이가 너비의 75%를 넘을 때만 중앙을 기준으로 자른다. */}
-			{/* eslint-disable-next-line @next/next/no-img-element */}
-			<img
+			<ResponsiveImage
 				src={resolvedThumbnailUrl}
 				alt={title}
-				loading="eager"
-				fetchPriority="high"
+				priority
+				sizes="(min-width: 1400px) 1400px, 100vw"
 				className="block h-auto max-h-[75cqw] w-full object-cover object-center"
 				onError={() => {
 					setFailedImageUrl(resolvedThumbnailUrl);
