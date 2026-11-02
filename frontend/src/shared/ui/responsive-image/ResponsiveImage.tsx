@@ -29,13 +29,14 @@ export default function ResponsiveImage({
 	onError,
 	...imgProps
 }: ResponsiveImageProps) {
-	const [useRaw, setUseRaw] = useState(false);
+	const [rawFallbackSrc, setRawFallbackSrc] = useState<string | null>(null);
+	const useRaw = rawFallbackSrc === src;
 
 	const srcset = useRaw ? undefined : toSrcSet(src);
 
 	const handleError = (event: SyntheticEvent<HTMLImageElement, Event>) => {
 		if (!useRaw && srcset !== undefined) {
-			setUseRaw(true);
+			setRawFallbackSrc(src);
 			return;
 		}
 

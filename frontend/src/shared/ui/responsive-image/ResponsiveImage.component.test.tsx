@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import ResponsiveImage from './ResponsiveImage';
@@ -43,6 +43,25 @@ describe('ResponsiveImage', () => {
 
 		expect(img?.hasAttribute('srcset')).toBe(false);
 		expect(img?.getAttribute('src')).toBe(rawUrl);
+		expect(handleError).not.toHaveBeenCalled();
+	});
+
+	it('원본으로 폴백한 뒤 src가 바뀌면 새 이미지의 srcset을 사용한다', () => {
+		const firstUrl = 'https://cdn.rilog.test/images/raw/first/original.png';
+		const nextUrl = 'https://cdn.rilog.test/images/raw/next/original.png';
+		const handleError = vi.fn();
+		const { rerender } = render(<ResponsiveImage src={firstUrl} alt="테스트 이미지" onError={handleError} />);
+		const image = screen.getByRole('img', { name: '테스트 이미지' });
+
+		fireEvent.error(image);
+		expect(image).not.toHaveAttribute('srcset');
+
+		rerender(<ResponsiveImage src={nextUrl} alt="테스트 이미지" onError={handleError} />);
+		expect(image).toHaveAttribute('src', nextUrl);
+		expect(image.getAttribute('srcset')).toContain('https://cdn.rilog.test/images/compact/next/750.webp 750w');
+
+		fireEvent.error(image);
+		expect(image).not.toHaveAttribute('srcset');
 		expect(handleError).not.toHaveBeenCalled();
 	});
 
