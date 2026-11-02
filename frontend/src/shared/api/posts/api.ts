@@ -138,10 +138,7 @@ const isPostDetailResponse = (value: unknown): value is PostDetailResponse => {
 	)
 		return false;
 
-	return (
-		owner.type !== 'COLOG' ||
-		(isNullableString(owner.coverImageUrl) && isCount(owner.memberCount) && isCount(owner.postCount))
-	);
+	return owner.type !== 'COLOG' || isNullableString(owner.coverImageUrl);
 };
 
 export const publishPost = (request: PostWriteRequest): Promise<ApiResponse<PostWriteResponse>> => {

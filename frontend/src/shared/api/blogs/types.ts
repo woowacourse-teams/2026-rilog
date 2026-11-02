@@ -109,3 +109,10 @@ export interface PublicBlogFeedPostsRequest {
 
 export type PublicBlogPostsFilter =
 	{ type: 'all' } | { type: 'chapterId'; chapterId: number } | { type: 'targetCologSlug'; targetCologSlug: string };
+
+export interface PublicBlogChapterPostsRequest {
+	slug: string;
+	chapterId: number;
+	page: number;
+	size: number;
+}

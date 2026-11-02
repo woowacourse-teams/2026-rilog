@@ -54,8 +54,6 @@ interface CologPostDetailOwnerResponse extends BasePostDetailOwnerResponse {
 	type: 'COLOG';
 	profileImageUrl: string | null;
 	coverImageUrl: string | null;
-	memberCount: number;
-	postCount: number;
 }
 
 type PostDetailOwnerResponse = RilogPostDetailOwnerResponse | CologPostDetailOwnerResponse;

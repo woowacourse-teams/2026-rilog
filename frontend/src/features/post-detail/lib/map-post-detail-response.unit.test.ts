@@ -100,8 +100,6 @@ describe('mapPostDetailResponse', () => {
 				name: 'Rilog',
 				profileImageUrl: 'https://images.rilog.test/team.png',
 				coverImageUrl: null,
-				memberCount: 8,
-				postCount: 42,
 			},
 			viewCount: 0,
 			viewerPermissions: {
@@ -121,8 +119,6 @@ describe('mapPostDetailResponse', () => {
 		expect(postDetail.blog.type).toBe('COLOG');
 		if (postDetail.blog.type === 'COLOG') {
 			expect(postDetail.blog.profileImageUrl).toBe('https://images.rilog.test/team.png');
-			expect(postDetail.blog.memberCount).toBe(8);
-			expect(postDetail.blog.postCount).toBe(42);
 		}
 		expect(postDetail.category).toBe('DAILY');
 		expect(postDetail.chapter).toBeNull();

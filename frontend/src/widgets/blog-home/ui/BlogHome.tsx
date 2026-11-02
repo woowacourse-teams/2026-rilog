@@ -1,5 +1,10 @@
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
 import type { BlogPublicProfile } from '@/domains/blog/model/blog';
 import BlogProfileViewTracker from '@/features/analytics/ui/BlogProfileViewTracker';
+import { parseBlogHomeFilter } from '@/features/blog-home-index/lib/blog-home-filter';
 import BlogHomeIndexRecovery from '@/features/blog-home-index/ui/BlogHomeIndexRecovery';
 import BlogPostFeed from '@/features/blog-post-feed/ui/BlogPostFeed';
 import BlogProfileHero from '@/features/blog-profile/ui/BlogProfileHero';
@@ -23,10 +28,18 @@ interface BlogHomeProps {
 
 export default function BlogHome({
 	profile,
-	filter,
+	filter: initialFilter,
 	initialIndexRequestFailed = false,
 	initialPostsRequestFailed = false,
 }: BlogHomeProps) {
+	const searchParams = useSearchParams();
+	const filter = parseBlogHomeFilter(searchParams, profile.type) ?? initialFilter;
+	const isInitialFilter =
+		filter.type === initialFilter.type &&
+		(filter.type !== 'chapterId' ||
+			(initialFilter.type === 'chapterId' && filter.chapterId === initialFilter.chapterId)) &&
+		(filter.type !== 'targetCologSlug' ||
+			(initialFilter.type === 'targetCologSlug' && filter.targetCologSlug === initialFilter.targetCologSlug));
 	const action =
 		profile.type === 'COLOG' ? (
 			<CologSettingsButton slug={profile.slug} isOnCover />
@@ -72,7 +85,7 @@ export default function BlogHome({
 						blogType={profile.type}
 						slug={profile.slug}
 						filter={filter}
-						initialRequestFailed={initialPostsRequestFailed}
+						initialRequestFailed={isInitialFilter && initialPostsRequestFailed}
 						heading={
 							<BlogHomeFeedHeading
 								blogType={profile.type}

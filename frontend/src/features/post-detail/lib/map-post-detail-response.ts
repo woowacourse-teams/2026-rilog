@@ -23,8 +23,6 @@ export const mapPostDetailResponse = (response: PostDetailResponse, postId?: num
 					type: 'COLOG',
 					profileImageUrl: response.owner.profileImageUrl ?? null,
 					coverImageUrl: response.owner.coverImageUrl ?? null,
-					memberCount: response.owner.memberCount ?? 0,
-					postCount: response.owner.postCount ?? 0,
 					description: '',
 				}
 			: {
