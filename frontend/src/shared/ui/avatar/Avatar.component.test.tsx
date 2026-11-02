@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import Avatar from './Avatar';
@@ -25,6 +25,20 @@ describe('Avatar', () => {
 
 		expect(avatar).not.toHaveTextContent('R');
 		expect(avatar.querySelector('img')).toHaveAttribute('src', 'https://example.com/profile.png');
+	});
+
+	it('이미지 로드 실패 후 src가 바뀌면 새 프로필 이미지를 표시한다', () => {
+		const firstUrl = 'https://example.com/first.png';
+		const nextUrl = 'https://example.com/next.png';
+		const { rerender } = render(<Avatar src={firstUrl} fallback="R" label="Rilog 프로필" />);
+		const avatar = screen.getByRole('img', { name: 'Rilog 프로필' });
+
+		fireEvent.error(avatar.querySelector('img')!);
+		expect(avatar).toHaveTextContent('R');
+
+		rerender(<Avatar src={nextUrl} fallback="R" label="Rilog 프로필" />);
+		expect(avatar.querySelector('img')).toHaveAttribute('src', nextUrl);
+		expect(avatar).not.toHaveTextContent('R');
 	});
 
 	it('신경로 프로필 주소는 compact srcset을 렌더링하고 sizes 속성을 전달받을 수 있다', () => {

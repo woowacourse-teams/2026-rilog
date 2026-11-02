@@ -23,7 +23,8 @@ export default function Avatar({
 	sizes,
 	...avatarProps
 }: AvatarProps) {
-	const [isFailed, setIsFailed] = useState(false);
+	const [failedSrc, setFailedSrc] = useState<string | null>(null);
+	const isFailed = Boolean(src) && failedSrc === src;
 
 	return (
 		<span
@@ -39,7 +40,7 @@ export default function Avatar({
 					alt=""
 					sizes={sizes}
 					className="size-full rounded-[inherit] object-cover"
-					onError={() => setIsFailed(true)}
+					onError={() => setFailedSrc(src)}
 				/>
 			) : (
 				fallback
