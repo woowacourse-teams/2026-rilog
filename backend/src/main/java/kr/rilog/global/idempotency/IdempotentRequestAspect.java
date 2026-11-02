@@ -1,8 +1,7 @@
 package kr.rilog.global.idempotency;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import kr.rilog.domain.auth.annotation.LoginUserId;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -11,24 +10,18 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class IdempotentRequestAspect {
 
-    private static final Duration RETENTION = Duration.ofMinutes(1);
-    private static final long MAX_ENTRIES = 1_000;
-
-    private final Cache<RequestKey, Object> idempotentResponses = Caffeine.newBuilder()
-            .expireAfterWrite(RETENTION)
-            .maximumSize(MAX_ENTRIES)
-            .build();
+    private final CompletedRequestStore completedRequests;
 
     @Around("@annotation(kr.rilog.global.idempotency.IdempotentRequest)")
-    public Object replayCompletedRequest(ProceedingJoinPoint joinPoint) throws Throwable {
+    public Object executeIdempotently(ProceedingJoinPoint joinPoint) throws Throwable {
         Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
         Object[] args = joinPoint.getArgs();
         validateDeclaresIdempotencyKey(method);
@@ -42,7 +35,7 @@ public class IdempotentRequestAspect {
         RequestKey key = new RequestKey(method.toGenericString(), requesterId, idempotencyKey.get());
 
         try {
-            return idempotentResponses.get(key, ignored -> proceed(joinPoint));
+            return completedRequests.getOrExecute(key, () -> proceed(joinPoint));
         }catch (ProceedFailure failure){
             throw failure.getCause();
         }
@@ -80,12 +73,8 @@ public class IdempotentRequestAspect {
         }
     }
 
-    private record RequestKey(String operation, Long requesterId, IdempotencyKey idempotencyKey) {
-    }
-
-    // Caffeine의 함수는 checked 예외를 던질 수 없어 감쌌다가 원래 예외로 되돌린다.
+    // 저장소의 실행 함수는 checked 예외를 던질 수 없어 감쌌다가 원래 예외로 되돌린다.
     private static final class ProceedFailure extends RuntimeException {
-
         private ProceedFailure(Throwable cause) {
             super(cause);
         }

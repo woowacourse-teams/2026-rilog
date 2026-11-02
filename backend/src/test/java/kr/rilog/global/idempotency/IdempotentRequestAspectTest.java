@@ -30,7 +30,7 @@ class IdempotentRequestAspectTest {
 
     @Test
     @DisplayName("같은 사용자가 같은 키로 다시 요청하면 기존 응답을 반환하고 메서드를 다시 실행하지 않는다.")
-    void replayCompletedRequest() {
+    void reuseResponseOfCompletedRequest() {
         IdempotencyKey key = randomKey();
 
         Object first = controller.create(REQUESTER_ID, key);
@@ -179,7 +179,7 @@ class IdempotentRequestAspectTest {
     private FakeController proxied(FakeController controller) {
         AspectJProxyFactory factory = new AspectJProxyFactory(controller);
         factory.setProxyTargetClass(true);
-        factory.addAspect(new IdempotentRequestAspect());
+        factory.addAspect(new IdempotentRequestAspect(new CaffeineCompletedRequestStore()));
         return factory.getProxy();
     }
 
