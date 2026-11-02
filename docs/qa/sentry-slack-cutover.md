@@ -46,3 +46,32 @@ Sentry action 대상은 수신 서버의 /api/observability/sentry-webhook이다
 ## 현재 검증 범위
 
 로컬에서는 실제 crypto, 임시 파일시스템, HTTP handler, 기존 Slack 포맷/마스킹을 연결하고 Slack fetch만 대체해 검증한다. 계정별 플랜/권한, 실제 integration 생성, secret 설정, 테스트 채널 송신, 운영 전환은 별도 확인이 필요하다.
+
+## ENV_PROD_FE에 넣는 운영 설정
+
+현재 프론트엔드 배포 workflow는 개별 GitHub Variables가 아닌 Repository Secret `ENV_PROD_FE`를 빌드 `.env`와 EC2 `.env.production.local`에 사용한다. 기존 API·ISR·분석 설정을 보존하며 아래 값을 병합한다. 인증값에는 `NEXT_PUBLIC_` 접두사를 붙이지 않는다.
+
+```dotenv
+NEXT_PUBLIC_SITE_URL=https://www.rilog.kr
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=prod
+NEXT_PUBLIC_SENTRY_ENABLED=true
+NEXT_PUBLIC_SENTRY_DSN=<운영 프로젝트 DSN>
+SENTRY_AUTH_TOKEN=<운영 소스맵 업로드 토큰>
+SENTRY_SLACK_MODE=webhook
+NEXT_PUBLIC_SENTRY_SLACK_MODE=webhook
+SENTRY_WEBHOOK_CLIENT_SECRET=<integration Client Secret, 32자 이상>
+SENTRY_WEBHOOK_PROJECT_ID=4512133995429888
+SENTRY_WEBHOOK_ORG=rilog-frontend
+SENTRY_WEBHOOK_ENVIRONMENT=prod
+SENTRY_SLACK_STATE_DIR=/home/ubuntu/rilog-observability/sentry-slack
+SENTRY_SLACK_BOT_TOKEN=<기존 Slack bot token>
+SENTRY_SLACK_CHANNEL_ID=<기존 승인된 채널 ID>
+```
+
+- 상태 경로는 예시다. PM2 실행 사용자가 상위 경로를 생성·쓸 수 있어야 하며 배포 교체·재시작 뒤에도 보존해야 한다. 디렉터리 700, 상태 파일 600을 유지한다.
+- Bot 대신 `SENTRY_SLACK_WEBHOOK_URL`을 쓸 수 있다. Bot은 `chat:write` 및 대상 비공개 채널 멤버십을 확인한다.
+- Sentry integration의 issue alert action 수신 주소는 `https://www.rilog.kr/api/observability/sentry-webhook`이다. action 사용 가능 여부·서명을 테스트 환경에서 검증한다. Client Secret은 DSN이나 소스맵 업로드 토큰과 다른 값이다.
+- 운영 규칙은 대상 프로젝트, `prod`, error/fatal과 의도한 알림 빈도를 지정한다. high-priority 전환 규칙만으로 모든 오류 이벤트가 알림되는 것은 아니다. 사용할 수 없는 기존 Slack action은 재연결 또는 새 action으로 교체하고 중복 전달을 점검한다.
+- 이 예시는 최종 전환 값이다. 준비·격리 검증을 완료하기 전에는 두 mode를 `legacy`로 유지한다. `NEXT_PUBLIC_` mode 변경은 재빌드가 필요하다.
+- 위 설정은 운영 배포용이다. `SENTRY_SMOKE_AUTH_TOKEN`, `SENTRY_SMOKE_DSN` 및 `SENTRY_SMOKE_*` Variables는 격리 smoke workflow 전용으로 유지한다.
+- 배포 후 기존 자연 발생 이벤트의 event ID가 Sentry와 Slack에서 일치하는지, 서명 수신 2xx와 중복 재전송 억제, 서버 재시작 뒤 marker 보존을 확인한다. 인증 없는 유효 요약 API는 410, 웹훅의 잘못된 서명은 401이어야 한다. 503은 모드·필수 설정·상태 경로·Slack 전달 실패를 조사한다.

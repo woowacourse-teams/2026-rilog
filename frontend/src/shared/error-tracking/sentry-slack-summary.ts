@@ -50,10 +50,12 @@ const EVENT_ID = /^[a-f\d]{32}$/i;
 const ROUTE_BASE_URL = 'https://www.rilog.kr';
 const BREADCRUMB_CATEGORIES = /^(fetch|xhr|http|navigation|ui\.(click|input|submit))$/;
 function safeRoute(event: ErrorEvent): string {
-	for (const candidate of [event.transaction, event.request?.url]) {
+	for (const candidate of [event.transaction, event.request?.url, event.contexts?.nextjs?.request_path]) {
 		if (typeof candidate !== 'string') continue;
 		try {
-			const route = normalizeSentryRoute(new URL(candidate, ROUTE_BASE_URL).pathname);
+			const route = normalizeSentryRoute(
+				new URL(candidate.replace(/^(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\s+/, ''), ROUTE_BASE_URL).pathname,
+			);
 			if (route) return route;
 		} catch {
 			// Unknown SDK route data is not copied into Slack.
