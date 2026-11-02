@@ -16,9 +16,12 @@ import kr.rilog.domain.post.service.PostService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.global.advice.GlobalExceptionHandler;
+import kr.rilog.global.idempotency.CompletedRequestStore;
+import kr.rilog.global.idempotency.IdempotentRequestAspect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +30,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -79,6 +83,86 @@ class PostControllerTest {
         ArgumentCaptor<PostSaveCommand> commandCaptor = ArgumentCaptor.forClass(PostSaveCommand.class);
         verify(postService).publish(commandCaptor.capture(), eq(7L));
         assertThat(commandCaptor.getValue().slug()).isEqualTo(BLOG_SLUG);
+    }
+
+    @Test
+    @DisplayName("같은 멱등키로 게시글 발행을 다시 요청하면 한 번만 발행하고 같은 응답을 반환한다")
+    void createPublishesOnceForSameIdempotencyKey() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        when(postService.publish(any(PostSaveCommand.class), eq(7L)))
+                .thenReturn(new PostPublishResult(31L, BLOG_SLUG))
+                .thenReturn(new PostPublishResult(32L, BLOG_SLUG));
+        MockMvc mockMvc = idempotentMockMvc(postService);
+        String idempotencyKey = UUID.randomUUID().toString();
+
+        // when - then
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mockMvc.perform(post("/v1/posts")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                            .header("Idempotency-Key", idempotencyKey)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {
+                                      "slug": "writer",
+                                      "title": "BlockNote 도입기",
+                                      "content": [],
+                                      "category": "TECH",
+                                      "visibility": "PUBLIC",
+                                      "thumbnailImageUrl": null,
+                                      "profileImageUrl": null
+                                    }
+                                    """))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.data.postId").value(31));
+        }
+
+        verify(postService).publish(any(PostSaveCommand.class), eq(7L));
+    }
+
+    @Test
+    @DisplayName("멱등키 헤더가 UUID 형식이 아니면 발행하지 않고 400으로 응답한다")
+    void createRejectsInvalidIdempotencyKey() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        MockMvc mockMvc = idempotentMockMvc(postService);
+
+        // when - then
+        mockMvc.perform(post("/v1/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .header("Idempotency-Key", "not-a-uuid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "slug": "writer",
+                                  "title": "BlockNote 도입기",
+                                  "content": [],
+                                  "category": "TECH",
+                                  "visibility": "PUBLIC",
+                                  "thumbnailImageUrl": null,
+                                  "profileImageUrl": null
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_IDEMPOTENCY_KEY"));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("멱등키가 아닌 값의 타입 변환 실패는 기존처럼 서버 오류로 응답한다")
+    void otherTypeMismatchKeepsInternalServerError() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        MockMvc mockMvc = mockMvc(postService);
+
+        // when - then
+        mockMvc.perform(get("/v1/posts/{postId}", "not-a-number")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_SERVER_ERROR"));
+
+        verifyNoInteractions(postService);
     }
 
     @Test
@@ -174,7 +258,19 @@ class PostControllerTest {
     }
 
     private MockMvc mockMvc(PostService postService) {
-        return MockMvcBuilders.standaloneSetup(new PostController(postService))
+        return mockMvcFor(new PostController(postService));
+    }
+
+    private MockMvc idempotentMockMvc(PostService postService) {
+        AspectJProxyFactory factory = new AspectJProxyFactory(new PostController(postService));
+        factory.setProxyTargetClass(true);
+        factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
+        PostController controller = factory.getProxy();
+        return mockMvcFor(controller);
+    }
+
+    private MockMvc mockMvcFor(PostController controller) {
+        return MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(new BearerAuthenticationInterceptor(
                         new FixedAccessTokenProvider(),
                         mock(OnboardingTokenProvider.class)

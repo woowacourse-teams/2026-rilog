@@ -16,11 +16,13 @@ import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
 import kr.rilog.domain.post.controller.dto.response.PostUpdateResponse;
 import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
+import kr.rilog.global.idempotency.IdempotencyKey;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @Tag(name = "게시글 API")
 public interface PostApiSpec {
@@ -35,6 +37,7 @@ public interface PostApiSpec {
     )
     ApiResponse<PostPublishResponse> create(
             @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody PostPublishRequest request
     );
 
