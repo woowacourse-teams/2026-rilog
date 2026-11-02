@@ -10,13 +10,14 @@ interface PostBodyFieldProps {
 	error?: string;
 	onReady: PostEditorProps['onReady'];
 	onChange: PostEditorProps['onChange'];
+	onMediaImportingChange?: PostEditorProps['onMediaImportingChange'];
 	uploadFile: PostEditorProps['uploadFile'];
 }
 
 const POST_BODY_ERROR_ID = 'post-body-error';
 
 export default function PostBodyField(props: PostBodyFieldProps) {
-	const { editorRef, initialBlocks, error, onReady, onChange, uploadFile } = props;
+	const { editorRef, initialBlocks, error, onReady, onChange, onMediaImportingChange, uploadFile } = props;
 
 	return (
 		<>
@@ -25,6 +26,7 @@ export default function PostBodyField(props: PostBodyFieldProps) {
 				initialBlocks={initialBlocks}
 				onReady={onReady}
 				onChange={onChange}
+				onMediaImportingChange={onMediaImportingChange}
 				uploadFile={uploadFile}
 				ariaDescribedBy={error === undefined ? undefined : POST_BODY_ERROR_ID}
 			/>

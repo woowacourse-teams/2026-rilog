@@ -8,7 +8,7 @@ interface EditPostActionsProps {
 export default function EditPostActions({ editor }: EditPostActionsProps) {
 	return (
 		<WritePublishActionBar
-			isPublishReady={editor.isEditorReady}
+			isPublishReady={editor.isEditorReady && !editor.isMediaImporting}
 			publishLabel="수정"
 			onPublish={editor.openPublishSettings}
 		/>

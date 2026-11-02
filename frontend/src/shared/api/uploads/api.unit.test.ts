@@ -7,6 +7,7 @@ import { UploadPreparationError } from '@/shared/utils/prepare-upload-file';
 
 import {
 	createPresignedUrl,
+	importImage,
 	uploadFileToPresignedUrl,
 	uploadFileWithPresignedUrl,
 	uploadProfileImageWithPresignedUrl,
@@ -348,5 +349,61 @@ describe('uploadProfileImageWithPresignedUrl', () => {
 			imagePurpose: 'PROFILE',
 		});
 		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe('importImage', () => {
+	const MOCK_IMPORT_RESPONSE = {
+		status: 200,
+		message: '외부 이미지를 정상적으로 가져왔습니다',
+		data: {
+			objectKey: 'rilog/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.webp',
+			url: 'https://images.example.com/rilog/images/raw/7-b38e9b2c-4c13-4f52-9c31-0e52d768d517/original.webp',
+		},
+	};
+
+	it('sourceUrl과 imagePurpose를 담아 POST v1/uploads/image-imports로 요청한다', async () => {
+		let capturedRequest: Request | undefined;
+		let capturedBody: unknown;
+
+		const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+			if (input instanceof Request) {
+				capturedRequest = input;
+				capturedBody = await input.clone().json();
+			}
+			return Response.json(MOCK_IMPORT_RESPONSE);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const result = await importImage({
+			sourceUrl: 'https://external.example.com/photo.png',
+			imagePurpose: 'CONTENT',
+		});
+
+		expect(result).toEqual(MOCK_IMPORT_RESPONSE);
+		expect(capturedRequest?.method).toBe('POST');
+		expect(capturedRequest?.url).toBe('https://api.rilog.test/v1/uploads/image-imports');
+		expect(capturedBody).toEqual({
+			sourceUrl: 'https://external.example.com/photo.png',
+			imagePurpose: 'CONTENT',
+		});
+	});
+
+	it.each([
+		{ status: 200, message: 'OK', data: null },
+		{ ...MOCK_IMPORT_RESPONSE, status: '200' },
+		{ ...MOCK_IMPORT_RESPONSE, data: { ...MOCK_IMPORT_RESPONSE.data, url: 'not-a-url' } },
+		{ ...MOCK_IMPORT_RESPONSE, data: { ...MOCK_IMPORT_RESPONSE.data, objectKey: '' } },
+		{ ...MOCK_IMPORT_RESPONSE, data: { ...MOCK_IMPORT_RESPONSE.data, url: 'javascript:alert(1)' } },
+	])('응답이 올바르지 않으면 에러를 던진다', async (responseBody) => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const error: unknown = await importImage({
+			sourceUrl: 'https://external.example.com/photo.png',
+			imagePurpose: 'CONTENT',
+		}).catch((failure: unknown) => failure);
+
+		expect(isRecord(error) && error.type === 'unknown' && error.cause instanceof InvalidApiResponseError).toBe(true);
 	});
 });

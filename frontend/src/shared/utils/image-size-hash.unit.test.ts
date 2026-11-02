@@ -9,6 +9,11 @@ describe('parseImageSizeHash', () => {
 			width: 1200,
 			height: 800,
 		});
+		expect(parseImageSizeHash('https://cdn.rilog.test/photos/cover.webp?version=2#1200x800')).toEqual({
+			url: 'https://cdn.rilog.test/photos/cover.webp?version=2',
+			width: 1200,
+			height: 800,
+		});
 	});
 
 	it.each([

@@ -65,4 +65,23 @@ describe('usePostDocument', () => {
 		act(() => result.current.markClean());
 		expect(result.current.isDirty).toBe(false);
 	});
+
+	it('미디어 임포트 중(isMediaImporting)에는 preparePostDocument가 null을 반환하여 저장을 차단한다', () => {
+		const { result } = renderHook(() =>
+			usePostDocument({
+				initialDocument: { title: '제목', blocks: [createParagraph('본문')] },
+			}),
+		);
+
+		expect(result.current.isMediaImporting).toBe(false);
+		expect(result.current.preparePostDocument()).not.toBeNull();
+
+		act(() => result.current.handleMediaImportingChange(true));
+		expect(result.current.isMediaImporting).toBe(true);
+		expect(result.current.preparePostDocument()).toBeNull();
+
+		act(() => result.current.handleMediaImportingChange(false));
+		expect(result.current.isMediaImporting).toBe(false);
+		expect(result.current.preparePostDocument()).not.toBeNull();
+	});
 });

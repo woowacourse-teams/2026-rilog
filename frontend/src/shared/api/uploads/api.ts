@@ -1,6 +1,8 @@
 import { apiRequest, kyInstance } from '@/shared/api/client';
 import { isRecord, parseApiJsonResponse } from '@/shared/api/response-validation';
 import type {
+	ImageImportRequest,
+	ImageImportResponse,
 	PresignedUrlCreateRequest,
 	PresignedUrlCreateResponse,
 	UploadFileOptions,
@@ -94,3 +96,24 @@ export const uploadFileWithPresignedUrl = async ({
 
 export const uploadProfileImageWithPresignedUrl = (options: Omit<UploadFileOptions, 'imagePurpose'>) =>
 	uploadFileWithPresignedUrl({ ...options, imagePurpose: 'PROFILE' });
+
+const isImageImportResponse = (value: unknown): value is ImageImportResponse => {
+	if (!isRecord(value) || typeof value.objectKey !== 'string' || value.objectKey.length === 0) return false;
+	if (typeof value.url !== 'string') return false;
+	try {
+		const parsed = new URL(value.url);
+		return (parsed.protocol === 'https:' || parsed.protocol === 'http:') && !parsed.username && !parsed.password;
+	} catch {
+		return false;
+	}
+};
+
+export const importImage = (request: ImageImportRequest) =>
+	apiRequest(async () => {
+		const response = await kyInstance.post('v1/uploads/image-imports', { json: request });
+		return parseApiJsonResponse(response, 'uploads.import', isImageImportResponse);
+	}).catch((error: unknown) => {
+		apiErrorReporter.report(error, { operation: 'upload.import' });
+
+		throw error;
+	});

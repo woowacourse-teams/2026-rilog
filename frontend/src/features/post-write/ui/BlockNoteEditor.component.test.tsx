@@ -7,6 +7,8 @@ import type { PostEditorHandle } from '../model/post-editor';
 import type { Block } from '@blocknote/core';
 import type { ReactNode } from 'react';
 
+import * as uploadsApi from '@/shared/api/uploads/api';
+
 import { RECENT_CODE_LANGUAGE_KEY } from '../lib/recent-code-language';
 
 import BlockNoteEditor from './BlockNoteEditor';
@@ -93,6 +95,7 @@ describe('BlockNoteEditor', () => {
 	let updateBlock: (block: unknown, update: unknown) => void;
 
 	beforeEach(() => {
+		vi.restoreAllMocks();
 		window.localStorage.clear();
 		editorElement = document.createElement('div');
 		focusEditor = vi.fn();
@@ -296,6 +299,105 @@ describe('BlockNoteEditor', () => {
 				'붙여넣은 이미지 또는 파일에 저장할 수 없는 주소가 포함되어 있습니다. 파일로 다시 업로드해 주세요.',
 			);
 		});
+	});
+
+	it('외부 이미지 주소를 가진 image 블록이 추가되면 image-imports API를 호출해 내부 주소로 교체한다', async () => {
+		const importSpy = vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
+			status: 200,
+			message: '성공',
+			data: {
+				objectKey: 'rilog/images/raw/test/original.webp',
+				url: 'https://images.rilog.test/rilog/images/raw/test/original.webp',
+			},
+		});
+
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={defaultUploadFile} />);
+
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const remoteImage = {
+			id: 'external-image-1',
+			type: 'image',
+			props: { url: 'https://external.test/sample.png' },
+			content: undefined,
+		};
+		vi.mocked(getBlock).mockImplementation((id: string) => ({
+			id,
+			type: 'image',
+			props: { url: 'https://external.test/sample.png' },
+		}));
+
+		callback(editor, {
+			getChanges: () => [{ type: 'insert', source: { type: 'paste' }, block: remoteImage, prevBlock: undefined }],
+		});
+
+		await waitFor(() => {
+			expect(importSpy).toHaveBeenCalledWith({
+				sourceUrl: 'https://external.test/sample.png',
+				imagePurpose: 'CONTENT',
+			});
+			expect(updateBlock).toHaveBeenCalledWith('external-image-1', {
+				props: { url: 'https://images.rilog.test/rilog/images/raw/test/original.webp' },
+			});
+		});
+	});
+
+	it('기존 글 수정 시 이미 본문에 포함되어 있던 이미지는 외부 이미지 가져오기 API를 호출하지 않는다', () => {
+		const importSpy = vi.spyOn(uploadsApi, 'importImage');
+		const initialImageBlock = {
+			id: 'initial-image-1',
+			type: 'image',
+			props: { url: 'https://cdn.rilog.test/existing-post-image.png' },
+			content: undefined,
+			children: [],
+		} as unknown as Block;
+
+		render(
+			<BlockNoteEditor
+				initialBlocks={[initialImageBlock]}
+				onChange={vi.fn()}
+				onReady={vi.fn()}
+				uploadFile={defaultUploadFile}
+			/>,
+		);
+
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+
+		callback(editor, {
+			getChanges: () => [
+				{ type: 'update', source: { type: 'local' }, block: initialImageBlock, prevBlock: initialImageBlock },
+			],
+		});
+
+		expect(importSpy).not.toHaveBeenCalled();
+	});
+
+	it('사용자가 파일로 직접 업로드한 이미지는 외부 이미지 가져오기 API를 호출하지 않는다', async () => {
+		const importSpy = vi.spyOn(uploadsApi, 'importImage');
+		const uploadFileMock = vi.fn().mockResolvedValue('https://cdn.rilog.test/my-uploaded-file.png#800x600');
+
+		render(<BlockNoteEditor onChange={vi.fn()} onReady={vi.fn()} uploadFile={uploadFileMock} />);
+
+		// BlockNote에 전달된 uploadFile 실행 (파일 업로드 완료 시뮬레이션)
+		const options = useCreateBlockNote.mock.lastCall?.[0] as { uploadFile: (file: File) => Promise<string> };
+		await options.uploadFile(new File(['file-bytes'], 'photo.png', { type: 'image/png' }));
+
+		// 업로드된 URL로 이미지 블록이 업데이트됨
+		const callback = editorChangeCallback as (editor: MockEditor, context: { getChanges: () => unknown[] }) => void;
+		const editor = useCreateBlockNote.mock.results.at(-1)?.value as MockEditor;
+		const uploadedBlock = {
+			id: 'uploaded-image-1',
+			type: 'image',
+			props: { url: 'https://cdn.rilog.test/my-uploaded-file.png#800x600' },
+			content: undefined,
+		};
+
+		callback(editor, {
+			getChanges: () => [{ type: 'update', source: { type: 'local' }, block: uploadedBlock, prevBlock: uploadedBlock }],
+		});
+
+		expect(importSpy).not.toHaveBeenCalled();
 	});
 
 	it.each(['undo', 'redo'])('%s로 임시 미디어 URL이 복원되면 히스토리 밖에서 URL을 비운다', (sourceType) => {

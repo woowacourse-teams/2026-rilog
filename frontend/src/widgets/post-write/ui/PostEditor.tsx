@@ -49,6 +49,7 @@ export default function PostEditor({
 			{children({
 				isEditorReady: postDocument.isEditorReady,
 				isDirty,
+				isMediaImporting: postDocument.isMediaImporting,
 				prepareDocument: postDocument.prepare,
 				markClean: postDocument.markClean,
 				openPublishSettings: publication.open,
@@ -71,6 +72,7 @@ export default function PostEditor({
 						error={postDocument.errors.body}
 						onReady={postDocument.handleEditorReady}
 						onChange={postDocument.handleEditorChange}
+						onMediaImportingChange={postDocument.handleMediaImportingChange}
 						uploadFile={uploadFile}
 					/>
 				</div>
