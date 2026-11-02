@@ -26,7 +26,7 @@ describe('updateMediaUrlWithoutHistory', () => {
 		}
 	});
 
-	it('외부 이미지 삽입 뒤 URL과 너비를 바꿔도 undo는 이미지 삽입을 취소한다', () => {
+	it('외부 이미지 URL을 교체하며 표시 너비를 저장해도 undo는 이미지 삽입을 취소한다', () => {
 		const editor = BlockNoteEditor.create({
 			schema: POST_WRITE_SCHEMA,
 			initialContent: [{ id: 'paragraph-1', type: 'paragraph', content: '본문' }],

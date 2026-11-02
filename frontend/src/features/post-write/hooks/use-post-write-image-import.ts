@@ -46,12 +46,40 @@ interface PendingImportEntry {
 	settlers: Array<() => void>;
 }
 
+const replaceImportedImageUrl = (
+	editor: PostWriteBlockNoteEditor,
+	blockId: string,
+	normalizedSourceUrl: string,
+	importedUrl: string,
+) => {
+	const currentBlock = editor.getBlock(blockId);
+	if (
+		currentBlock === undefined ||
+		currentBlock.type !== 'image' ||
+		stripUrlHash(currentBlock.props.url.trim()) !== normalizedSourceUrl
+	) {
+		return;
+	}
+
+	const blockElement = editor.domElement?.querySelector(`[data-id="${blockId}"]`);
+	const imgElement = blockElement?.querySelector<HTMLImageElement>('img.bn-visual-media, img');
+	const currentWidth =
+		typeof currentBlock.props.previewWidth === 'number' && currentBlock.props.previewWidth > 0
+			? currentBlock.props.previewWidth
+			: imgElement && imgElement.clientWidth > 0
+				? Math.round(imgElement.clientWidth)
+				: undefined;
+
+	updateMediaUrlWithoutHistory(editor, blockId, importedUrl, currentWidth);
+};
+
 export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageImportOptions = {}) => {
 	const pendingImportsByUrlRef = useRef<Map<string, PendingImportEntry>>(new Map());
 	const activeImportsByUrlRef = useRef<Map<string, PendingImportEntry>>(new Map());
 	const importQueueRef = useRef<string[]>([]);
 	const activeCountRef = useRef(0);
 	const uploadedImageUrlsRef = useRef<Set<string>>(new Set());
+	const importedUrlBySourceUrlRef = useRef<Map<string, string>>(new Map());
 	const processQueueRef = useRef<() => void>(() => undefined);
 	const onImportSettledRef = useRef(onImportSettled);
 
@@ -111,32 +139,15 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 						}
 					}
 
-					registerUploadedImageUrl(sourceUrl);
-					registerUploadedImageUrl(normalizedUrl);
 					registerUploadedImageUrl(importedUrl);
 
 					await preloadImage(importedUrl);
 
 					for (const id of blockIds) {
-						const currentBlock = editor.getBlock(id);
-						if (
-							currentBlock !== undefined &&
-							currentBlock.type === 'image' &&
-							(currentBlock.props.url === sourceUrl || stripUrlHash(currentBlock.props.url) === normalizedUrl)
-						) {
-							const blockElement = editor.domElement?.querySelector(`[data-id="${id}"]`);
-							const imgElement = blockElement?.querySelector<HTMLImageElement>('img.bn-visual-media, img');
-							const currentWidth =
-								typeof currentBlock.props.previewWidth === 'number' && currentBlock.props.previewWidth > 0
-									? currentBlock.props.previewWidth
-									: imgElement && imgElement.clientWidth > 0
-										? Math.round(imgElement.clientWidth)
-										: undefined;
-
-							updateMediaUrlWithoutHistory(editor, id, importedUrl, currentWidth);
-						}
+						replaceImportedImageUrl(editor, id, normalizedUrl, importedUrl);
 						detachImageImportLoading(editor, id);
 					}
+					importedUrlBySourceUrlRef.current.set(normalizedUrl, importedUrl);
 				} catch {
 					for (const id of blockIds) {
 						detachImageImportLoading(editor, id);
@@ -181,6 +192,11 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 				uploadedImageUrlsRef.current.has(trimmedUrl) ||
 				uploadedImageUrlsRef.current.has(normalizedUrl)
 			) {
+				return Promise.resolve();
+			}
+			const cachedImportedUrl = importedUrlBySourceUrlRef.current.get(normalizedUrl);
+			if (cachedImportedUrl !== undefined) {
+				replaceImportedImageUrl(editor, blockId, normalizedUrl, cachedImportedUrl);
 				return Promise.resolve();
 			}
 

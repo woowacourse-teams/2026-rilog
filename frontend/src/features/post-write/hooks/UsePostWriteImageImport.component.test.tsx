@@ -125,7 +125,7 @@ describe('usePostWriteImageImport', () => {
 		expect(showErrorSpy).toHaveBeenCalledWith(mockEditor, 'block-1', IMAGE_IMPORT_ERROR_MESSAGE);
 	});
 
-	it('이미 임포트 완료된 URL은 다시 API를 호출하지 않는다', async () => {
+	it('변환한 외부 이미지를 다시 삽입하면 API 재호출 없이 새 블록을 내부 URL로 교체한다', async () => {
 		const importSpy = vi.spyOn(uploadsApi, 'importImage').mockResolvedValue({
 			status: 200,
 			message: '성공',
@@ -139,9 +139,29 @@ describe('usePostWriteImageImport', () => {
 		await result.current.handleImageImport(mockEditor, 'block-1', 'https://external.test/img.png');
 		expect(importSpy).toHaveBeenCalledTimes(1);
 
-		// 동일한 sourceUrl로 다시 호출
-		await result.current.handleImageImport(mockEditor, 'block-1', 'https://external.test/img.png');
+		blocksState['block-2'] = {
+			id: 'block-2',
+			type: 'image',
+			props: { url: 'https://external.test/img.png', previewWidth: 320 },
+		};
+		blocksState['block-3'] = {
+			id: 'block-3',
+			type: 'image',
+			props: { url: 'https://external.test/img.png#200x100' },
+		};
+		const externalDoc = [{ type: 'image', props: { url: 'https://external.test/img.png' }, children: [] }] as never;
+		expect(result.current.hasPendingImports(externalDoc)).toBe(true);
+
+		await result.current.handleImageImport(mockEditor, 'block-2', 'https://external.test/img.png');
+		await result.current.handleImageImport(mockEditor, 'block-3', 'https://external.test/img.png#200x100');
 		expect(importSpy).toHaveBeenCalledTimes(1);
+		expect(blocksState['block-2'].props).toEqual({
+			url: 'https://images.rilog.test/rilog/images/raw/test/original.webp',
+			previewWidth: 320,
+		});
+		expect(blocksState['block-3'].props.url).toBe('https://images.rilog.test/rilog/images/raw/test/original.webp');
+		expect(setTransactionMetaMock).toHaveBeenCalledWith('addToHistory', false);
+		expect(result.current.hasPendingImports([blocksState['block-2']] as never)).toBe(false);
 
 		// 임포트 결과로 발급된 URL로 호출되어도 무시
 		await result.current.handleImageImport(
