@@ -15,6 +15,7 @@ import {
 	preloadImage,
 } from '../lib/image-import-loading';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
+import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
 
 export const IMAGE_IMPORT_ERROR_MESSAGE = '이미지를 가져오지 못했습니다. 파일로 다시 업로드해 주세요.';
@@ -132,12 +133,7 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 										? Math.round(imgElement.clientWidth)
 										: undefined;
 
-							editor.updateBlock(id, {
-								props: {
-									url: importedUrl,
-									...(currentWidth !== undefined ? { previewWidth: currentWidth } : {}),
-								},
-							});
+							updateMediaUrlWithoutHistory(editor, id, importedUrl, currentWidth);
 						}
 						detachImageImportLoading(editor, id);
 					}
@@ -150,7 +146,7 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 							currentBlock.type === 'image' &&
 							(currentBlock.props.url === sourceUrl || stripUrlHash(currentBlock.props.url) === normalizedUrl)
 						) {
-							editor.updateBlock(id, { props: { url: '' } });
+							updateMediaUrlWithoutHistory(editor, id, '');
 							window.setTimeout(() => showUploadBlockError(editor, id, IMAGE_IMPORT_ERROR_MESSAGE), 0);
 						}
 					}

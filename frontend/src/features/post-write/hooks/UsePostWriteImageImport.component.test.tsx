@@ -12,6 +12,7 @@ import { IMAGE_IMPORT_ERROR_MESSAGE, usePostWriteImageImport } from './use-post-
 describe('usePostWriteImageImport', () => {
 	let mockEditor: PostWriteBlockNoteEditor;
 	let updateBlockMock: ReturnType<typeof vi.fn>;
+	let setTransactionMetaMock: ReturnType<typeof vi.fn>;
 	let blocksState: Record<string, { id: string; type: string; props: { url: string; previewWidth?: number } }>;
 
 	beforeEach(() => {
@@ -32,10 +33,13 @@ describe('usePostWriteImageImport', () => {
 				};
 			}
 		});
+		setTransactionMetaMock = vi.fn();
 
 		mockEditor = {
 			getBlock: vi.fn((id: string) => blocksState[id] as never),
 			updateBlock: updateBlockMock,
+			transact: (callback: (transaction: { setMeta: typeof setTransactionMetaMock }) => void) =>
+				callback({ setMeta: setTransactionMetaMock }),
 		} as unknown as PostWriteBlockNoteEditor;
 	});
 
@@ -59,6 +63,7 @@ describe('usePostWriteImageImport', () => {
 		expect(updateBlockMock).toHaveBeenCalledWith('block-1', {
 			props: { url: 'https://images.rilog.test/rilog/images/raw/test/original.webp' },
 		});
+		expect(setTransactionMetaMock).toHaveBeenCalledWith('addToHistory', false);
 	});
 
 	it('에디터 DOM 이미지 크기가 확인되면 S3 주소에 크기 해시를 포함하여 블록을 업데이트한다', async () => {
@@ -115,6 +120,7 @@ describe('usePostWriteImageImport', () => {
 		await promise;
 
 		expect(updateBlockMock).toHaveBeenCalledWith('block-1', { props: { url: '' } });
+		expect(setTransactionMetaMock).toHaveBeenCalledWith('addToHistory', false);
 		vi.runAllTimers();
 		expect(showErrorSpy).toHaveBeenCalledWith(mockEditor, 'block-1', IMAGE_IMPORT_ERROR_MESSAGE);
 	});
