@@ -55,11 +55,17 @@ export const usePostWriteTransferUpload = (editor: PostWriteBlockNoteEditor) => 
 				return;
 			}
 
-			if (event instanceof ClipboardEvent && files.length === 0 && !isDispatchingNormalizedPaste) {
+			if (
+				event instanceof ClipboardEvent &&
+				files.length === 0 &&
+				!isDispatchingNormalizedPaste &&
+				transfer.types.length === 1 &&
+				transfer.types.includes('text/plain')
+			) {
 				const plainText = transfer.getData('text/plain');
-				if (plainText.includes('![')) {
+				if (plainText.includes('![') && editor.getTextCursorPosition().block.type !== 'codeBlock') {
 					const normalized = normalizeMarkdownImages(plainText);
-					if (normalized !== plainText) {
+					if (normalized.replaceAll('\r\n', '\n') !== plainText.replaceAll('\r\n', '\n')) {
 						event.preventDefault();
 						event.stopPropagation();
 						isDispatchingNormalizedPaste = true;

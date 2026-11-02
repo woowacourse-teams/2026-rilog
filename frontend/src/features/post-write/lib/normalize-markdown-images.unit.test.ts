@@ -24,6 +24,12 @@ describe('normalizeMarkdownImages', () => {
 		expect(normalizeMarkdownImages(input)).toBe(input);
 	});
 
+	it('Windows 개행으로 이미 분리된 마크다운 이미지는 개행을 바꾸지 않는다', () => {
+		const input = '본문\r\n\r\n![](https://example.com/1.png)\r\n\r\n다음 본문';
+
+		expect(normalizeMarkdownImages(input)).toBe(input);
+	});
+
 	it('마크다운 이미지가 없는 일반 텍스트는 변경하지 않는다', () => {
 		const input = '일반 줄 1\n일반 줄 2\n[일반 링크](https://example.com)';
 

@@ -1,4 +1,5 @@
 export const normalizeMarkdownImages = (text: string): string => {
+	const newline = text.match(/\r\n|\n/)?.[0] ?? '\n';
 	const lines = text.split(/\r?\n/);
 	const normalizedLines: string[] = [];
 	const imageLineRegex = /^!\[[^\]]*\]\([^)\r\n]+\)$/;
@@ -20,5 +21,5 @@ export const normalizeMarkdownImages = (text: string): string => {
 		}
 	}
 
-	return normalizedLines.join('\n');
+	return normalizedLines.join(newline);
 };
