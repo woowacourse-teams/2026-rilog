@@ -214,6 +214,7 @@ export default function PublishSettingsModal({
 								<ResponsiveImage
 									src={getImageUrl(parseImageSizeHash(previewUrl)?.url ?? previewUrl)}
 									alt="게시글 대표 이미지 미리보기"
+									sizes="(min-width: 768px) 420px, 100vw"
 									className="size-full object-cover"
 								/>
 							</div>
