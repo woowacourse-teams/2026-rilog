@@ -264,13 +264,21 @@ describe('usePostWriteImageImport', () => {
 		}
 	});
 
-	it('data: 또는 blob: 같은 임시 미디어 URL이나 빈 URL은 무시한다', async () => {
+	it('변환 대상이 아닌 이미지 URL은 요청하지 않고 pending으로 표시하지 않는다', async () => {
 		const importSpy = vi.spyOn(uploadsApi, 'importImage');
 		const { result } = renderHook(() => usePostWriteImageImport());
 
-		await result.current.handleImageImport(mockEditor, 'block-1', 'data:image/png;base64,abc');
-		await result.current.handleImageImport(mockEditor, 'block-1', 'blob:http://localhost/123');
-		await result.current.handleImageImport(mockEditor, 'block-1', '');
+		for (const url of [
+			'data:image/png;base64,abc',
+			'blob:http://localhost/123',
+			'',
+			'/images/foo.png',
+			'//example.com/foo.png',
+		]) {
+			await result.current.handleImageImport(mockEditor, 'block-1', url);
+			const blocks = [{ type: 'image', props: { url }, children: [] }] as never;
+			expect(result.current.hasPendingImports(blocks)).toBe(false);
+		}
 
 		expect(importSpy).not.toHaveBeenCalled();
 	});

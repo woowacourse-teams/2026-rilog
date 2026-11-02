@@ -12,11 +12,11 @@ import {
 	attachImageImportLoading,
 	detachImageImportLoading,
 	hasPendingImageImports,
+	isImportableExternalImageUrl,
 	preloadImage,
 } from '../lib/image-import-loading';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
 import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
-import { isTransientMediaUrl } from '../lib/validate-post-media';
 
 export const IMAGE_IMPORT_ERROR_MESSAGE = '이미지를 가져오지 못했습니다. 파일로 다시 업로드해 주세요.';
 export const MAX_CONCURRENT_IMAGE_IMPORTS = 1;
@@ -24,15 +24,6 @@ export const MAX_CONCURRENT_IMAGE_IMPORTS = 1;
 interface UsePostWriteImageImportOptions {
 	onImportSettled?: () => void;
 }
-
-const isHttpUrl = (url: string): boolean => {
-	try {
-		const parsed = new URL(url.trim());
-		return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-	} catch {
-		return false;
-	}
-};
 
 const stripUrlHash = (url: string): string => {
 	const hashIndex = url.indexOf('#');
@@ -186,9 +177,7 @@ export const usePostWriteImageImport = ({ onImportSettled }: UsePostWriteImageIm
 			const trimmedUrl = sourceUrl.trim();
 			const normalizedUrl = stripUrlHash(trimmedUrl);
 			if (
-				trimmedUrl === '' ||
-				isTransientMediaUrl(trimmedUrl) ||
-				!isHttpUrl(trimmedUrl) ||
+				!isImportableExternalImageUrl(trimmedUrl) ||
 				uploadedImageUrlsRef.current.has(trimmedUrl) ||
 				uploadedImageUrlsRef.current.has(normalizedUrl)
 			) {

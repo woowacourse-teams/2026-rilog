@@ -2,10 +2,17 @@ import type { PostWriteBlockNoteEditor } from './post-write-schema';
 
 import type { PostContentBlock } from '@/domains/post/model/post-content';
 
-import { isTransientMediaUrl } from './validate-post-media';
-
 export const IMAGE_IMPORTING_CLASS = 'post-write-image-importing';
 export const IMAGE_IMPORT_OVERLAY_CLASS = 'post-write-image-import-overlay';
+
+export const isImportableExternalImageUrl = (url: string): boolean => {
+	try {
+		const parsed = new URL(url.trim());
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+	} catch {
+		return false;
+	}
+};
 
 export const preloadImage = (url: string): Promise<void> => {
 	if (typeof window === 'undefined' || typeof Image === 'undefined' || process.env.NODE_ENV === 'test') {
@@ -53,7 +60,7 @@ export const isImageBlockPendingImport = (
 		return false;
 	}
 	const url = typeof block.props.url === 'string' ? block.props.url.trim() : '';
-	if (url === '' || isTransientMediaUrl(url)) {
+	if (!isImportableExternalImageUrl(url)) {
 		return false;
 	}
 	return !isUploadedImageUrl(url);

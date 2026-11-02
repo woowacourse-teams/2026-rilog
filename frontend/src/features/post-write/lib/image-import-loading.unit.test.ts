@@ -25,6 +25,14 @@ describe('image-import-loading', () => {
 			expect(isImageBlockPendingImport(blobBlock, isUploadedImageUrl)).toBe(false);
 		});
 
+		it.each(['/images/foo.png', '//example.com/foo.png', 'images/foo.png', 'ftp://example.com/foo.png'])(
+			'변환하지 않는 이미지 URL %s가 새 블록에 들어오면 pending으로 표시하지 않는다',
+			(url) => {
+				const block = { type: 'image', props: { url } } as unknown as Block;
+				expect(isImageBlockPendingImport(block, isUploadedImageUrl)).toBe(false);
+			},
+		);
+
 		it('이미 업로드된 이미지 URL이면 false를 반환한다', () => {
 			const block = {
 				type: 'image',
