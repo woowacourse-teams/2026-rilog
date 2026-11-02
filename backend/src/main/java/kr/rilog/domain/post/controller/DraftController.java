@@ -16,6 +16,8 @@ import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.global.idempotency.IdempotencyKey;
+import kr.rilog.global.idempotency.IdempotentRequest;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,9 +32,11 @@ public class DraftController implements DraftApiSpec {
 
     @AuthGuard
     @PostMapping("/drafts")
+    @IdempotentRequest
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DraftIdResponse> saveDraft(
             @LoginUserId Long userId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody DraftSaveCommand command
     ) {
         DraftIdResult result = draftService.saveDraft(command, userId);
