@@ -121,6 +121,51 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("멱등키 헤더가 UUID 형식이 아니면 발행하지 않고 400으로 응답한다")
+    void createRejectsInvalidIdempotencyKey() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        MockMvc mockMvc = idempotentMockMvc(postService);
+
+        // when - then
+        mockMvc.perform(post("/v1/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .header("Idempotency-Key", "not-a-uuid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "slug": "writer",
+                                  "title": "BlockNote 도입기",
+                                  "content": [],
+                                  "category": "TECH",
+                                  "visibility": "PUBLIC",
+                                  "thumbnailImageUrl": null,
+                                  "profileImageUrl": null
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_IDEMPOTENCY_KEY"));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("멱등키가 아닌 값의 타입 변환 실패는 기존처럼 서버 오류로 응답한다")
+    void otherTypeMismatchKeepsInternalServerError() throws Exception {
+        // given
+        PostService postService = mock(PostService.class);
+        MockMvc mockMvc = mockMvc(postService);
+
+        // when - then
+        mockMvc.perform(get("/v1/posts/{postId}", "not-a-number")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_SERVER_ERROR"));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
     @DisplayName("블로그 게시글 상세 조회는 slug와 postId로 로그인하지 않아도 가능하다.")
     void getPostDetailsByCanonicalPathAllowsAnonymousUser() throws Exception {
         // given

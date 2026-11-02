@@ -23,6 +23,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
@@ -111,6 +112,17 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorInformation.getHttpStatus())
                 .body(ErrorDetail.of(errorInformation, invalidParams));
+    }
+
+    // 헤더 값 변환 중 던진 업무 예외는 Spring이 타입 변환 예외로 감싸므로 꺼내서 처리한다.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorDetail> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException e, HttpServletRequest request
+    ) {
+        if (e.getMostSpecificCause() instanceof RilogBusinessException businessException) {
+            return handleRilogBusinessException(businessException, request);
+        }
+        return handleUnknownException(e, request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

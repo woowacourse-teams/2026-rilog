@@ -1,10 +1,12 @@
 package kr.rilog.global.idempotency;
 
+import kr.rilog.global.idempotency.exception.IdempotencyException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+import static kr.rilog.global.idempotency.exception.IdempotencyErrorInformation.INVALID_IDEMPOTENCY_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -32,7 +34,8 @@ class IdempotencyKeyTest {
     @DisplayName("UUID 형식이 아닌 문자열은 거부한다.")
     void rejectInvalidUuidString() {
         assertThatThrownBy(() -> IdempotencyKey.from("not-a-uuid"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(IdempotencyException.class, exception ->
+                        assertThat(exception.getErrorInformation()).isEqualTo(INVALID_IDEMPOTENCY_KEY));
     }
 
     @Test
