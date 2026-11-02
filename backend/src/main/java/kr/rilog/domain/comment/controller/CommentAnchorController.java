@@ -20,6 +20,8 @@ import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
+import kr.rilog.global.idempotency.IdempotencyKey;
+import kr.rilog.global.idempotency.IdempotentRequest;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,11 +66,13 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
     }
 
     @AuthGuard
+    @IdempotentRequest
     @PostMapping("/posts/{postId}/comment-anchors")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CommentAnchorCreateResponse> createCommentAnchor(
             @PathVariable Long postId,
             @LoginUserId Long requesterId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody CommentAnchorCreateRequest dto
     ) {
         CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
@@ -80,12 +85,14 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
     }
 
     @AuthGuard
+    @IdempotentRequest
     @PostMapping("/posts/{postId}/selections/{selectionId}/comment-anchors")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CommentAnchorCreateResponse> addCommentAnchor(
             @PathVariable Long postId,
             @PathVariable Long selectionId,
             @LoginUserId Long requesterId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody CommentAnchorAddRequest dto
     ) {
         CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(

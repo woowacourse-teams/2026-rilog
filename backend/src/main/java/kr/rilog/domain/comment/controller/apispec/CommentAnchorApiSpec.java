@@ -14,9 +14,11 @@ import kr.rilog.domain.comment.controller.dto.response.CommentAnchorDeleteRespon
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorSidebarResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
+import kr.rilog.global.idempotency.IdempotencyKey;
 import kr.rilog.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @Tag(name = "인라인 댓글 API")
 public interface CommentAnchorApiSpec {
@@ -61,6 +63,7 @@ public interface CommentAnchorApiSpec {
             @Parameter(description = "게시글 ID", example = "1")
             @PathVariable Long postId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody CommentAnchorCreateRequest request
     );
 
@@ -78,6 +81,7 @@ public interface CommentAnchorApiSpec {
             @Parameter(description = "Selection(선택범위) ID", example = "1")
             @PathVariable Long selectionId,
             @Parameter(hidden = true) @LoginUserId Long requesterId,
+            @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody CommentAnchorAddRequest dto
     );
 
