@@ -23,12 +23,15 @@ describe('ResponsiveImage', () => {
 		expect(img?.getAttribute('sizes')).toBe('(max-width: 768px) 100vw, 50vw');
 	});
 
-	it('구경로 또는 외부 이미지는 srcset이 붙지 않는다', () => {
-		const legacyUrl = 'https://cdn.rilog.test/originals/legacy.png';
-		const { container } = render(<ResponsiveImage src={legacyUrl} alt="구경로 이미지" />);
+	it.each([
+		['구경로', 'https://cdn.rilog.test/originals/legacy.png'],
+		['외부', 'https://example.com/photo.png'],
+	])('%s 이미지에는 srcset과 sizes를 붙이지 않는다', (_, src) => {
+		render(<ResponsiveImage src={src} alt="테스트 이미지" sizes="50vw" />);
+		const image = screen.getByRole('img', { name: '테스트 이미지' });
 
-		const img = container.querySelector('img');
-		expect(img?.hasAttribute('srcset')).toBe(false);
+		expect(image).not.toHaveAttribute('srcset');
+		expect(image).not.toHaveAttribute('sizes');
 	});
 
 	it('srcset 이미지 에러 발생 시 raw로 1차 폴백하며 onError는 호출되지 않는다', () => {
@@ -42,6 +45,7 @@ describe('ResponsiveImage', () => {
 		fireEvent.error(img!);
 
 		expect(img?.hasAttribute('srcset')).toBe(false);
+		expect(img?.hasAttribute('sizes')).toBe(false);
 		expect(img?.getAttribute('src')).toBe(rawUrl);
 		expect(handleError).not.toHaveBeenCalled();
 	});
@@ -59,9 +63,11 @@ describe('ResponsiveImage', () => {
 		rerender(<ResponsiveImage src={nextUrl} alt="테스트 이미지" onError={handleError} />);
 		expect(image).toHaveAttribute('src', nextUrl);
 		expect(image.getAttribute('srcset')).toContain('https://cdn.rilog.test/images/compact/next/750.webp 750w');
+		expect(image).toHaveAttribute('sizes', '100vw');
 
 		fireEvent.error(image);
 		expect(image).not.toHaveAttribute('srcset');
+		expect(image).not.toHaveAttribute('sizes');
 		expect(handleError).not.toHaveBeenCalled();
 	});
 

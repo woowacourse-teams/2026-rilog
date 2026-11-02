@@ -52,7 +52,7 @@ export default function ResponsiveImage({
 			{...imgProps}
 			src={src}
 			srcSet={srcset}
-			sizes={sizes}
+			sizes={srcset !== undefined ? sizes : undefined}
 			alt={alt}
 			loading={computedLoading}
 			fetchPriority={computedFetchPriority}
