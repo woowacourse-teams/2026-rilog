@@ -75,3 +75,7 @@ SENTRY_SLACK_CHANNEL_ID=<기존 승인된 채널 ID>
 - 이 예시는 최종 전환 값이다. 준비·격리 검증을 완료하기 전에는 두 mode를 `legacy`로 유지한다. `NEXT_PUBLIC_` mode 변경은 재빌드가 필요하다.
 - 위 설정은 운영 배포용이다. `SENTRY_SMOKE_AUTH_TOKEN`, `SENTRY_SMOKE_DSN` 및 `SENTRY_SMOKE_*` Variables는 격리 smoke workflow 전용으로 유지한다.
 - 배포 후 기존 자연 발생 이벤트의 event ID가 Sentry와 Slack에서 일치하는지, 서명 수신 2xx와 중복 재전송 억제, 서버 재시작 뒤 marker 보존을 확인한다. 인증 없는 유효 요약 API는 410, 웹훅의 잘못된 서명은 401이어야 한다. 503은 모드·필수 설정·상태 경로·Slack 전달 실패를 조사한다.
+
+### 기존 ENV_PROD_FE 원문을 읽을 수 없을 때
+
+`ENV_SENTRY_WEBHOOK_FE` Repository Secret에 웹훅 전환 항목만 별도로 저장할 수 있다. 운영 FE workflow는 기존 ENV_PROD_FE 다음에 이 값을 추가하여 빌드·서버 환경에 동일한 override를 적용한다. 비어 있으면 기존 설정만 사용한다. 기존 API·ISR·분석·Slack 인증값을 복사하거나 덮어쓰지 않는다. 이 Secret에는 두 mode, Client Secret, 프로젝트 ID, 조직, 환경, 영속 상태 경로만 넣는다. 롤백 시 두 mode를 legacy로 바꿔 재빌드·배포하며 상태 marker는 보존한다.
