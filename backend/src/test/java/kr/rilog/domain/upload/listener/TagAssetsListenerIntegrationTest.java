@@ -38,9 +38,6 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    @MockitoBean
-    private S3TagAssetsLifecycle lifecycle;
-
     @AfterEach
     void tearDown() {
         MDC.clear();

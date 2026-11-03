@@ -38,9 +38,6 @@ class UploadServiceIntegrationTest extends ServiceSupport {
     @Autowired
     private S3Properties properties;
 
-    @MockitoBean
-    private S3Presigner s3Presigner;
-
     @ParameterizedTest
     @CsvSource(value = {
             "PROFILE,profiles",

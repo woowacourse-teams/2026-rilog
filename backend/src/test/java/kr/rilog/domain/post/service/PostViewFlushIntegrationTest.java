@@ -3,10 +3,6 @@ package kr.rilog.domain.post.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.post.view.PostViewCounterRegistry;
-import kr.rilog.domain.post.view.PostViewStore;
-import kr.rilog.domain.post.view.ViewFlushBatch;
-import kr.rilog.domain.post.view.ViewResult;
 import kr.rilog.domain.post.view.ViewerIdentity;
 import kr.rilog.domain.post.scheduler.PostViewFlushScheduler;
 import kr.rilog.domain.user.entity.User;
@@ -16,19 +12,14 @@ import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogMemberFixture;
 import kr.rilog.support.fixure.PostFixture;
 import kr.rilog.support.fixure.UserFixture;
+import kr.rilog.support.testdouble.ObservedPostViewStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -40,7 +31,6 @@ import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERV
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-@Import(PostViewFlushIntegrationTest.StoreObservationConfiguration.class)
 class PostViewFlushIntegrationTest extends ServiceSupport {
 
     @Autowired
@@ -62,8 +52,6 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
 
     @BeforeEach
     void prepareScenario() {
-        store.beforeCompletion = () -> { };
-        store.afterPreparation = () -> { };
         User author = userRepository.saveAndFlush(
                 UserFixture.completedWithNicknameAndSlug("집계작성자", "flush_author"));
         Blog blog = blogRepository.saveAndFlush(Blog.createRilog(author));
@@ -126,9 +114,9 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     void allowsDuplicateIncrementAfterAcknowledgmentFailure() {
         // given
         long postId = publishWithView();
-        store.beforeCompletion = () -> { throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR); };
+        store.beforeCompletion(() -> { throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR); });
         flushService.flushPendingViews();
-        store.beforeCompletion = () -> { };
+        store.reset();
 
         // when
         flushService.flushPendingViews();
@@ -165,11 +153,11 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         // given
         long firstPostId = publishWithView();
         long secondPostId = publishWithView();
-        store.beforeCompletion = () -> {
+        store.beforeCompletion(() -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
             assertThat(storedCount(firstPostId)).isEqualTo(1L);
             assertThat(storedCount(secondPostId)).isEqualTo(1L);
-        };
+        });
 
         // when
         flushService.flushPendingViews();
@@ -203,10 +191,10 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     void persistsViewsWhenPostIsDeletedAfterPreparation() {
         // given
         long postId = publishWithView();
-        store.afterPreparation = () -> {
-            store.afterPreparation = () -> { };
+        store.afterPreparation(() -> {
+            store.reset();
             postService.deletePublishedPost(postId, scenario.author().getId());
-        };
+        });
 
         // when
         flushService.flushPendingViews();
@@ -247,12 +235,12 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         CountDownLatch prepared = new CountDownLatch(1);
         CompletableFuture<Void> release = new CompletableFuture<>();
         AtomicBoolean firstPreparation = new AtomicBoolean(true);
-        store.afterPreparation = () -> {
+        store.afterPreparation(() -> {
             if (firstPreparation.compareAndSet(true, false)) {
                 prepared.countDown();
                 release.join();
             }
-        };
+        });
 
         // when
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -279,7 +267,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     void preservesViewsAcceptedDuringFlush() {
         // given
         long postId = publishWithView();
-        store.beforeCompletion = () -> store.recordView(postId, ViewerIdentity.member(999L));
+        store.beforeCompletion(() -> store.recordView(postId, ViewerIdentity.member(999L)));
 
         // when
         flushService.flushPendingViews();
@@ -303,49 +291,4 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     private record Scenario(User author, Blog blog) { }
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class StoreObservationConfiguration {
-
-        @Bean
-        @Primary
-        ObservedPostViewStore observedPostViewStore(PostViewCounterRegistry registry) {
-            return new ObservedPostViewStore(registry);
-        }
-    }
-
-    static class ObservedPostViewStore implements PostViewStore {
-
-        private final PostViewCounterRegistry registry;
-        private Runnable beforeCompletion = () -> { };
-        private Runnable afterPreparation = () -> { };
-
-        ObservedPostViewStore(PostViewCounterRegistry registry) {
-            this.registry = registry;
-        }
-
-        @Override
-        public ViewResult recordView(long postId, ViewerIdentity viewer) {
-            return registry.recordView(postId, viewer);
-        }
-
-        @Override
-        public long currentCount(long postId) {
-            return registry.currentCount(postId);
-        }
-
-        @Override
-        public List<ViewFlushBatch> prepareFlushBatches() {
-            List<ViewFlushBatch> batches = registry.prepareFlushBatches().stream()
-                    .sorted(Comparator.comparingLong(ViewFlushBatch::postId)).toList();
-            afterPreparation.run();
-            return batches;
-        }
-
-        @Override
-        public void completeFlush(long postId, UUID batchId) {
-            beforeCompletion.run();
-            registry.completeFlush(postId, batchId);
-        }
-    }
 }

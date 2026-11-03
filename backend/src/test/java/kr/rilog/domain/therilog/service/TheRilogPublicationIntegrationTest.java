@@ -14,20 +14,15 @@ import kr.rilog.domain.therilog.entity.vo.TheRilogPublicationArticle;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.UserFixture;
+import kr.rilog.support.testdouble.MutableClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 
-import java.time.LocalDate;
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -42,7 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-@Import(TheRilogPublicationIntegrationTest.FixedClockConfiguration.class)
 class TheRilogPublicationIntegrationTest extends ServiceSupport {
 
     @Autowired
@@ -63,11 +57,14 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private MutableClock clock;
 
     private Chapter enterprise;
 
     @BeforeEach
     void prepareOfficialBlog() {
+        clock.fix(Instant.parse("2026-10-14T20:00:00Z"));
         var owner = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("공식 계정", "the_rilog"));
         var blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
         chapterRepository.saveAndFlush(Chapter.create(blog, "news", 0));
@@ -122,15 +119,5 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     private TheRilogPublicationArticle spotlight(String rowId, PostType type) {
         return new TheRilogPublicationArticle(rowId, new PostDetail("기술 요약", content(paragraph("본문")).getContent(), TECH, PUBLIC, null),
                 new TheRilogPostMetadata(type, "핵심 요약", "출처", null));
-    }
-
-    @TestConfiguration
-    static class FixedClockConfiguration {
-
-        @Bean
-        @Primary
-        Clock publicationClock() {
-            return Clock.fixed(Instant.parse("2026-10-14T20:00:00Z"), ZoneOffset.UTC);
-        }
     }
 }
