@@ -3,6 +3,7 @@ package kr.rilog.support;
 import com.github.benmanes.caffeine.cache.Cache;
 import kr.rilog.domain.post.service.PostCountCache;
 import kr.rilog.domain.post.view.PostViewCounterRegistry;
+import kr.rilog.domain.upload.service.S3TagAssetsLifecycle;
 import kr.rilog.support.configuration.DatabaseCleanerConfiguration;
 import kr.rilog.support.configuration.MySqlTestContainerConfiguration;
 import kr.rilog.support.configuration.TagAssetsLifecycleTestConfiguration;
@@ -11,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +36,12 @@ public abstract class ServiceSupport {
 
     @Autowired
     private PostCountCache postCountCache;
+
+    @MockitoBean
+    protected S3Presigner s3Presigner;
+
+    @MockitoBean
+    protected S3TagAssetsLifecycle lifecycle;
 
     @BeforeEach
     void cleanState() {
