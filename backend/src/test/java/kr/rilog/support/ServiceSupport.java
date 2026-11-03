@@ -5,8 +5,14 @@ import kr.rilog.domain.post.service.PostCountCache;
 import kr.rilog.domain.post.view.PostViewCounterRegistry;
 import kr.rilog.domain.upload.service.S3TagAssetsLifecycle;
 import kr.rilog.support.configuration.DatabaseCleanerConfiguration;
+import kr.rilog.support.configuration.MutableClockConfiguration;
 import kr.rilog.support.configuration.MySqlTestContainerConfiguration;
+import kr.rilog.support.configuration.ObservedPostViewStoreConfiguration;
+import kr.rilog.support.configuration.PublicationEventFailureConfiguration;
 import kr.rilog.support.configuration.TagAssetsLifecycleTestConfiguration;
+import kr.rilog.support.testdouble.MutableClock;
+import kr.rilog.support.testdouble.ObservedPostViewStore;
+import kr.rilog.support.testdouble.PublicationEventFailure;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,7 +28,10 @@ import java.util.Objects;
 @Import({
         DatabaseCleanerConfiguration.class,
         MySqlTestContainerConfiguration.class,
-        TagAssetsLifecycleTestConfiguration.class
+        TagAssetsLifecycleTestConfiguration.class,
+        MutableClockConfiguration.class,
+        ObservedPostViewStoreConfiguration.class,
+        PublicationEventFailureConfiguration.class
 })
 @ActiveProfiles(resolver = TestDatabaseProfileResolver.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -36,6 +45,15 @@ public abstract class ServiceSupport {
 
     @Autowired
     private PostCountCache postCountCache;
+
+    @Autowired
+    private MutableClock clock;
+
+    @Autowired
+    private ObservedPostViewStore observedPostViewStore;
+
+    @Autowired
+    private PublicationEventFailure publicationEventFailure;
 
     @MockitoBean
     protected S3Presigner s3Presigner;
@@ -57,6 +75,10 @@ public abstract class ServiceSupport {
                 "전체 글 수 테스트의 캐시를 찾을 수 없습니다."
         );
         counts.invalidateAll();
+        // 공유 컨텍스트의 테스트 더블은 이전 테스트의 설정을 남기지 않는다.
+        clock.reset();
+        observedPostViewStore.reset();
+        publicationEventFailure.reset();
     }
 
 }

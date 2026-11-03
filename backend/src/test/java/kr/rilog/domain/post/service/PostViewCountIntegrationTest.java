@@ -19,7 +19,7 @@ import kr.rilog.support.fixure.BlogFixture;
 import kr.rilog.support.fixure.BlogMemberFixture;
 import kr.rilog.support.fixure.PostFixture;
 import kr.rilog.support.fixure.UserFixture;
-import org.junit.jupiter.api.BeforeEach;
+import kr.rilog.support.testdouble.PublicationEventFailure;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,10 +27,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
@@ -44,7 +40,6 @@ import static kr.rilog.global.exception.GlobalExceptionInformation.INTERNAL_SERV
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Import(PostViewCountIntegrationTest.EventFailureConfiguration.class)
 class PostViewCountIntegrationTest extends ServiceSupport {
 
     @Autowired
@@ -65,11 +60,6 @@ class PostViewCountIntegrationTest extends ServiceSupport {
     private PostViewStore postViewStore;
     @Autowired
     private PublicationEventFailure eventFailure;
-
-    @BeforeEach
-    void resetEventFailure() {
-        eventFailure.reset();
-    }
 
     @Test
     @DisplayName("게시글을 발행하면 조회수 누계를 0으로 저장한다.")
@@ -300,34 +290,5 @@ class PostViewCountIntegrationTest extends ServiceSupport {
     }
 
     private record CologScenario(Scenario author, User reader) {
-    }
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class EventFailureConfiguration {
-
-        @Bean
-        PublicationEventFailure publicationEventFailure() {
-            return new PublicationEventFailure();
-        }
-    }
-
-    static class PublicationEventFailure {
-
-        private Class<? extends TagAssetsEvent> failureType;
-
-        void failOn(Class<? extends TagAssetsEvent> failureType) {
-            this.failureType = failureType;
-        }
-
-        void reset() {
-            failureType = null;
-        }
-
-        @EventListener
-        public void receive(TagAssetsEvent event) {
-            if (failureType != null && failureType.isInstance(event)) {
-                throw new RilogInfrastructureException(INTERNAL_SERVER_ERROR);
-            }
-        }
     }
 }
