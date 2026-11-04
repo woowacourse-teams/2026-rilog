@@ -332,7 +332,12 @@ export default function PostDetailCommentsWorkspace({
 
 			{isDocked &&
 				createPortal(
-					<PostCommentsDockedCard key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />,
+					<PostCommentsDockedCard
+						key={createRequestId}
+						open={isCommentsSidebarOpen}
+						layoutHost={dockHost}
+						{...panelProps}
+					/>,
 					dockHost,
 				)}
 			{isLayoutReady && !isDocked && (
