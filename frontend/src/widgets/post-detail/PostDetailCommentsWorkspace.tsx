@@ -88,6 +88,8 @@ export default function PostDetailCommentsWorkspace({
 	const isCommentsSidebarOpen = view === 'comments';
 	const openerRef = useRef<HTMLElement | null>(null);
 	const commentsEntryButtonRef = useRef<HTMLButtonElement>(null);
+	const restoredOpenerRef = useRef<HTMLElement | null>(null);
+	const wasCommentsSidebarOpenRef = useRef(isCommentsSidebarOpen);
 	const pendingNavigation = useRef<InlineCommentThreadModel | null>(null);
 	const navigationCleanup = useRef<(() => void) | null>(null);
 	const cancelAnchorNavigation = useCallback(() => {
@@ -237,21 +239,32 @@ export default function PostDetailCommentsWorkspace({
 		openComments(null, 'all');
 	}, [cancelAnchorNavigation, openComments, postId]);
 
+	const restoreCommentsFocus = useCallback(() => {
+		const opener = openerRef.current?.isConnected ? openerRef.current : commentsEntryButtonRef.current;
+		if (opener !== null && document.activeElement !== opener) opener.focus({ preventScroll: true });
+		restoredOpenerRef.current = opener;
+	}, []);
 	const closeComments = useCallback(() => {
 		closeCommentView();
 		setIsDeletedCommentToastVisible(false);
 		if (isDocked) {
-			const opener = openerRef.current?.isConnected ? openerRef.current : commentsEntryButtonRef.current;
-			opener?.focus({ preventScroll: true });
+			restoreCommentsFocus();
 		}
-	}, [closeCommentView, isDocked]);
+	}, [closeCommentView, isDocked, restoreCommentsFocus]);
 
 	useEffect(() => {
-		if (view === 'closed' && isDocked && openerRef.current !== null) {
-			const opener = openerRef.current?.isConnected ? openerRef.current : commentsEntryButtonRef.current;
-			opener?.focus({ preventScroll: true });
+		const didClose = wasCommentsSidebarOpenRef.current && !isCommentsSidebarOpen;
+		wasCommentsSidebarOpenRef.current = isCommentsSidebarOpen;
+		// Container resizing can replace the focused floating entry with the sticky entry.
+		// Recover only a lost focus; never take it back after the reader has moved elsewhere.
+		const didLoseRestoredOpener =
+			restoredOpenerRef.current !== null &&
+			!restoredOpenerRef.current.isConnected &&
+			document.activeElement === document.body;
+		if (!isCommentsSidebarOpen && isDocked && (didClose || didLoseRestoredOpener)) {
+			restoreCommentsFocus();
 		}
-	}, [view, isDocked]);
+	}, [isCommentsSidebarOpen, isDocked, isEntrySticky, restoreCommentsFocus]);
 
 	const handleAnchorNavigate = useCallback(
 		(thread: InlineCommentThreadModel) => {
