@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+
 import { renderInlineCommentWorkspace } from './fixtures/inline-comment-browser';
 
 // Native history and transition geometry need a browser. #872 focus changes stay separate.
