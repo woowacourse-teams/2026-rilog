@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "issue": 872,
+  "archive": {
+    "filename": "evidence-872.tar.gz",
+    "sha256": "56c245b0d3bdeaeafb51482bfcc878f2b41bb4d2420eef805dacc7c440d5a906",
+    "bytes": 13810672,
+    "localPrivatePath": "~/.local/share/rilog-performance/872/evidence-872.tar.gz",
+    "containsPublicContentFixture": true,
+    "publish": false
+  },
+  "source": {
+    "baseCommit": "72857fff0be92b0e19b673901d5f9d83dadf5255",
+    "candidatePatchSha256": "094da2d6ef65066c668f3cb2f2b0c9ba18349e7f5a1c1da7b83d4cd7e6f62c66"
+  },
+  "resultSets": [
+    {
+      "directory": "verified-1440-4",
+      "resultsSha256": "3a90335f26011fd3bf0d364dd15f6fccc18a5f93064f8a2a7db899701b6a69ae",
+      "summarySha256": "40a564f2e1344a3d2e5cd41949c5fdb374d905b07ae2700295ebe0e9349da06b"
+    },
+    {
+      "directory": "verified-1440-1",
+      "resultsSha256": "1f840faa7913e38492d9eb66ccf50bb15c5e377f7055c267fc0f3f1029688718",
+      "summarySha256": "4811c1098c4e142f7432abe8ce30f963de02531a38107ce3b5933767517211e0"
+    },
+    {
+      "directory": "verified-1280-4",
+      "resultsSha256": "0335c5b8dd08b8445dd030b48e4bdb859e71d7f6e4fc55e6d21469972af5ad04",
+      "summarySha256": "8f8386be90acd577482ae13a9950b74a280591fdfb7d438ba5ea1b0501d647d8"
+    },
+    {
+      "directory": "verified-1280-1",
+      "resultsSha256": "44c2e1901d54f619bfd14dc4a37fcbc8286eaf99fc1687305b1321831c9d6c6d",
+      "summarySha256": "d418a2cec610eaff093615bdc76007e8103130671fd5a8476cfb9f69a9c13207"
+    }
+  ],
+  "notes": [
+    "Archive includes private public-content fixture for exact local replay; do not publish it automatically.",
+    "Only verified-* datasets determine final performance conclusions.",
+    "Source changes remain uncommitted; patch hash identifies the product candidate.",
+    "No API credentials/cookies were used in fixture capture."
+  ]
+}
