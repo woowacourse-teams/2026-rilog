@@ -65,3 +65,67 @@ for (const width of [1280, 1440, 1920]) {
 		});
 	}
 }
+
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+	test(`${reducedMotion}: 긴 초안을 같은 선택으로 다시 열어도 높이와 초점을 유지한다`, async ({ page }) => {
+		await page.setViewportSize({ width: 1920, height: 900 });
+		await page.emulateMedia({ reducedMotion });
+		await page.route('https://api.rilog.test/**', (route) =>
+			route.fulfill({
+				json: {
+					status: 200,
+					message: 'OK',
+					data: new URL(route.request().url()).pathname.endsWith('/comment-anchors/sidebar')
+						? { anchorGroups: [] }
+						: { blocks: [] },
+				},
+			}),
+		);
+		await renderInlineCommentWorkspace(page);
+		await page.getByRole('button', { name: '전체 댓글 0개 보기' }).click();
+		const selectAgain = async () => {
+			await page.locator('[data-inline-comment-block-id="block-1"]').evaluate((element) => {
+				const node = element.firstChild;
+				if (!node) throw new Error('본문이 없습니다.');
+				const range = document.createRange();
+				range.setStart(node, 0);
+				range.setEnd(node, 5);
+				window.getSelection()?.removeAllRanges();
+				window.getSelection()?.addRange(range);
+				document.dispatchEvent(new Event('selectionchange'));
+				element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
+			});
+			await page.getByRole('button', { name: '댓글 추가', exact: true }).click();
+		};
+		await selectAgain();
+		const input = page.getByRole('textbox', { name: '댓글 입력' });
+		await expect(input).toBeFocused();
+		await page.waitForTimeout(400);
+		const draft = 'longword '.repeat(30);
+		await input.fill(draft);
+		const before = await input.evaluate((element) => element.getBoundingClientRect().height);
+		await selectAgain();
+		await expect(input).toHaveValue(draft);
+		await expect(input).toBeFocused();
+		await page.waitForTimeout(400);
+		const after = await input.evaluate((element) => element.getBoundingClientRect().height);
+		expect(Math.abs(after - before)).toBeLessThan(2);
+		await input.evaluate((element) => {
+			const textarea = element as HTMLTextAreaElement;
+			textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+		});
+		await input.press('x');
+		const typed = await input.evaluate((element) => element.getBoundingClientRect().height);
+		expect(Math.abs(typed - after)).toBeLessThan(2);
+		await page.keyboard.press('Escape');
+		await expect(page.getByRole('region', { name: '인라인 댓글 0', exact: true })).toBeHidden();
+		await selectAgain();
+		await expect(input).toHaveValue(`${draft}x`);
+		await expect(input).toBeFocused();
+		await page.waitForTimeout(400);
+		const reopened = await input.evaluate((element) => element.getBoundingClientRect().height);
+		// Animated closed-to-open draft sizing also differs in develop; this PR
+		// protects the new keyed-remount regression and the reduced-motion path.
+		if (reducedMotion === 'reduce') expect(Math.abs(reopened - typed)).toBeLessThan(2);
+	});
+}

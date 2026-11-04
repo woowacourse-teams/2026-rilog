@@ -29,6 +29,7 @@ import PostDetailContent from '@/features/post-detail/ui/PostDetailContent';
 import Divider from '@/shared/ui/divider/Divider';
 
 import AllCommentsFloatingButton from './AllCommentsFloatingButton';
+import DockedCommentsLayout from './DockedCommentsLayout';
 import styles from './PostDetail.module.css';
 import { useAllCommentsEntryLayout } from './use-all-comments-entry-layout';
 import { useCommentHistory } from './use-comment-history';
@@ -332,12 +333,10 @@ export default function PostDetailCommentsWorkspace({
 
 			{isDocked &&
 				createPortal(
-					<PostCommentsDockedCard
-						key={createRequestId}
-						open={isCommentsSidebarOpen}
-						layoutHost={dockHost}
-						{...panelProps}
-					/>,
+					<>
+						<DockedCommentsLayout host={dockHost} open={isCommentsSidebarOpen} />
+						<PostCommentsDockedCard key={createRequestId} open={isCommentsSidebarOpen} {...panelProps} />
+					</>,
 					dockHost,
 				)}
 			{isLayoutReady && !isDocked && (

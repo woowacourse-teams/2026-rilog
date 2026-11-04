@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import { useAuth } from '@/features/auth/model/use-auth';
 
@@ -9,9 +9,9 @@ import PostCommentsPanelContent from './PostCommentsPanelContent';
 type PostCommentsDockedCardProps = Omit<
 	Parameters<typeof PostCommentsPanelContent>[0],
 	'titleId' | 'titleRef' | 'inputRef' | 'isOpen'
-> & { open: boolean; layoutHost?: HTMLElement };
+> & { open: boolean };
 
-export default function PostCommentsDockedCard({ open, layoutHost, ...props }: PostCommentsDockedCardProps) {
+export default function PostCommentsDockedCard({ open, ...props }: PostCommentsDockedCardProps) {
 	const { onClose } = props;
 	const titleId = useId();
 	const titleRef = useRef<HTMLHeadingElement>(null);
@@ -20,14 +20,6 @@ export default function PostCommentsDockedCard({ open, layoutHost, ...props }: P
 	const hasComposerThread =
 		props.composerAnchorId != null && props.threads.some(({ anchor }) => anchor.anchorId === props.composerAnchorId);
 	const shouldFocusInput = open && isAuthenticated && isInitialized && (props.selection != null || hasComposerThread);
-
-	useLayoutEffect(() => {
-		const shell = layoutHost?.parentElement;
-		if (!shell) return;
-		// Reflect the layout before focus restoration can flush pending styles.
-		shell.setAttribute('data-comments-open', String(open));
-		return () => shell.removeAttribute('data-comments-open');
-	}, [layoutHost, open]);
 
 	useEffect(() => {
 		if (shouldFocusInput) inputRef.current?.focus({ preventScroll: true });
