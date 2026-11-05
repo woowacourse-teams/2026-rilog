@@ -226,7 +226,7 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
+        verifyNoInteractions(postRepository);
     }
 
     @Test
@@ -242,7 +242,7 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
+        verifyNoInteractions(postRepository);
     }
 
     @Test
@@ -261,7 +261,7 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_NOT_FOUND.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
+        verifyNoInteractions(postRepository);
     }
 
     @Test

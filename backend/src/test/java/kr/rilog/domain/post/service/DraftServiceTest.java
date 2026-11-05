@@ -3,6 +3,7 @@ package kr.rilog.domain.post.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
@@ -34,6 +35,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.BlogFixture.createRilog;
@@ -42,10 +45,13 @@ import static kr.rilog.support.fixure.PostContentFixture.IMAGE_URL_A;
 import static kr.rilog.support.fixure.PostContentFixture.IMAGE_URL_B;
 import static kr.rilog.support.fixure.PostContentFixture.content;
 import static kr.rilog.support.fixure.PostContentFixture.imageBlock;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -115,17 +121,54 @@ class DraftServiceTest {
     }
 
     @Test
-    @DisplayName("작성자가 없으면 초안 이미지의 연결을 요청하지 않는다.")
-    void saveDraftDoesNotAttachTagAssetsWhenWriterDoesNotExist() {
+    @DisplayName("작성자가 없으면 초안을 저장하지 않고 이미지 연결도 요청하지 않는다.")
+    void saveDraftRejectsMissingWriterWithoutSavingOrAttachingTagAssets() {
         // given
         DraftSaveCommand command = new DraftSaveCommand("초안", content(imageBlock(IMAGE_URL_A)).getContent());
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
 
-        // when & then
-        assertThatThrownBy(() -> draftService.saveDraft(command, WRITER_ID))
+        // when
+        Throwable thrown = catchThrowable(() -> draftService.saveDraft(command, WRITER_ID));
+
+        // then
+        assertThat(thrown)
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
-        verify(tagAssetsPublisher, never()).attach(any());
+        verifyNoInteractions(postRepository, tagAssetsPublisher);
+    }
+
+    @Test
+    @DisplayName("작성자의 개인 블로그가 없으면 초안을 저장하지 않는다.")
+    void saveDraftRejectsMissingRilogWithoutSaving() {
+        // given
+        User writer = createUser(WRITER_ID);
+        DraftSaveCommand command = new DraftSaveCommand("초안", content(imageBlock(IMAGE_URL_A)).getContent());
+        when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
+        when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
+
+        // when
+        Throwable thrown = catchThrowable(() -> draftService.saveDraft(command, WRITER_ID));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(BlogException.class)
+                .hasMessage(RILOG_NOT_FOUND.getMessage());
+        verifyNoInteractions(postRepository, tagAssetsPublisher);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 초안을 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void getMyDraftRejectsMissingDraft() {
+        // given
+        when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
+
+        // when
+        Throwable thrown = catchThrowable(() -> draftService.getMyDraft(DRAFT_ID, WRITER_ID));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -145,6 +188,26 @@ class DraftServiceTest {
 
         // then
         verify(tagAssetsPublisher).synchronize(WRITER_ID, previous, TagAssets.of(IMAGE_URL_B));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 초안을 덮어쓰면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void overwriteDraftRejectsMissingDraft() {
+        // given
+        DraftOverwriteCommand command = new DraftOverwriteCommand(
+                "덮어쓴 초안",
+                content(imageBlock(IMAGE_URL_B)).getContent()
+        );
+        when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
+
+        // when
+        Throwable thrown = catchThrowable(() -> draftService.overwriteDraft(command, DRAFT_ID, WRITER_ID));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+        verifyNoInteractions(tagAssetsPublisher);
     }
 
     @Test
@@ -249,6 +312,22 @@ class DraftServiceTest {
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).detach(any(), any());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 초안을 삭제하면 초안을 찾을 수 없다는 예외가 발생한다.")
+    void deleteDraftRejectsMissingDraft() {
+        // given
+        when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
+
+        // when
+        Throwable thrown = catchThrowable(() -> draftService.deleteDraft(DRAFT_ID, WRITER_ID));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(PostException.class)
+                .hasMessage(DRAFT_NOT_FOUND.getMessage());
+        verifyNoInteractions(tagAssetsPublisher);
     }
 
     private Post draftWithImage(String imageUrl) {

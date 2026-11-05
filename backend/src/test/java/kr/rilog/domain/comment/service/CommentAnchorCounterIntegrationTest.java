@@ -2,6 +2,7 @@ package kr.rilog.domain.comment.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
@@ -64,19 +65,31 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("기존 선택 영역에 댓글을 추가하면 게시글의 댓글 카운터가 증가한다.")
-    void addingCommentIncrementsPostCounter() {
+    @DisplayName("기존 선택 영역에 댓글을 추가하면 범위, 본문, 작성자를 저장하고 댓글 카운터를 증가시킨다.")
+    void addingCommentPersistsCommentAndIncrementsPostCounter() {
         // given
         CommentAnchorCreateResult first = createComment();
         Long selectionId = commentAnchorRepository.findById(first.commentAnchorId()).orElseThrow()
                 .getCommentAnchorSelection().getId();
+        User commenter = UserFixture.user(201L, "counter_commenter");
+        commenter.completeOnboarding(
+                "추가댓글작성자", "counter_commenter", "댓글 작성자 소개",
+                "https://example.com/counter_commenter.png", "https://github.com/counter_commenter",
+                "counter_commenter@example.com"
+        );
+        commenter = userRepository.saveAndFlush(commenter);
+        var command = new CommentAnchorAddCommand("추가 댓글");
 
         // when
         CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
-                post.getId(), author.getId(), selectionId, new CommentAnchorAddCommand("추가 댓글"));
+                post.getId(), commenter.getId(), selectionId, command
+        );
 
         // then
-        assertThat(commentAnchorRepository.findById(result.commentAnchorId())).isPresent();
+        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+        assertThat(saved.getCommentAnchorSelection().getId()).isEqualTo(selectionId);
+        assertThat(saved.getContent()).isEqualTo(command.content());
+        assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
         assertThat(storedCount()).isEqualTo(2L);
     }
 
@@ -95,15 +108,16 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("선택 영역 저장 후 댓글 생성이 실패하면 선택 영역과 카운터 증가를 롤백한다.")
-    void failedCreationRollsBackSelectionAndCounter() {
+    @DisplayName("댓글 생성이 실패하면 댓글과 선택 영역을 남기지 않고 카운터 증가를 롤백한다.")
+    void failedCreationRollsBackCommentSelectionAndCounter() {
         // when - then
         assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(
                 post.getId(), author.getId(),
-                new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 0, 2, "댓글", "")
+                new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 0, 2, "댓글", " ")
         ))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
+        assertThat(commentAnchorRepository.count()).isZero();
         assertThat(storedCount()).isZero();
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM comment_anchor_selection WHERE post_id = ?", Long.class, post.getId()))
                 .isZero();

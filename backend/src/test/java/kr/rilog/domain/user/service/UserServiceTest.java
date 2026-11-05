@@ -8,6 +8,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
@@ -27,10 +28,12 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATE
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class UserServiceTest {
@@ -177,24 +180,45 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("존재하지 않는 사용자 ID로 정보를 조회하면 예외가 발생한다.")
+    void getUserInformationRejectsMissingUser() {
+        // given
+        Long userId = 1L;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // when
+        Throwable thrown = catchThrowable(() -> userService.getUserInformation(userId));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(UserException.class)
+                .hasMessage(USER_NOT_FOUND.getMessage());
+    }
+
+    @Test
     @DisplayName("이미 온보딩을 완료한 사용자는 다시 온보딩을 완료할 수 없다")
     void completeOnboardingRejectsCompletedUser() {
         // given
         User user = User.builder()
                 .id(1L)
                 .githubId(100L)
+                .nickname(Nickname.from("기존사용자"))
                 .slug(Slug.from("jinriro"))
                 .onboardingStatus(OnboardingStatus.COMPLETED)
                 .build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        // when - then
-        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+        // when
+        Throwable thrown = catchThrowable(() -> userService.completeOnboarding(1L, command()));
+
+        // then
+        assertThat(thrown)
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
                 .isEqualTo(ONBOARDING_ALREADY_COMPLETED);
-        verify(blogRepository, never()).existsByProfileName(any(String.class));
-        verify(blogRepository, never()).existsBySlug(any(Slug.class));
+        assertThat(user.getNickname()).isEqualTo("기존사용자");
+        assertThat(user.getSlug()).isEqualTo("jinriro");
+        verifyNoInteractions(blogRepository, blogMemberRepository, tagAssetsPublisher);
         verify(userRepository, never()).existsBySlug(any(Slug.class));
         verify(userRepository, never()).saveAndFlush(any(User.class));
     }

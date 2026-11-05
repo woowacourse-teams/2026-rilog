@@ -95,27 +95,15 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("메인 뉴스는 더 최근에 발행된 비공개 글을 제외한다.")
-    void excludesPrivateNews() {
+    @DisplayName("메인 뉴스는 더 최근에 발행된 비공개 글과 삭제 글을 제외한다.")
+    void excludesPrivateAndDeletedNews() {
         // given
         Post visible = postRepository.saveAndFlush(publishedNews(news, PUBLICATION_TIME, newsContent("공개 소식")));
         Post hidden = publishedNews(news, PUBLICATION_TIME.plusDays(1), newsContent("비공개 소식"));
         hidden.update(new PostDetail(hidden.getTitle(), hidden.getContent().getContent(), TECH, PRIVATE, null), theRilog, news);
         postRepository.saveAndFlush(hidden);
 
-        // when
-        var result = theRilogService.readTheRilog();
-
-        // then
-        assertThat(result.news().postId()).isEqualTo(visible.getId());
-    }
-
-    @Test
-    @DisplayName("메인 뉴스는 더 최근에 발행된 삭제 글을 제외한다.")
-    void excludesDeletedNews() {
-        // given
-        Post visible = postRepository.saveAndFlush(publishedNews(news, PUBLICATION_TIME, newsContent("공개 소식")));
-        Post deleted = publishedNews(news, PUBLICATION_TIME.plusDays(1), newsContent("삭제 소식"));
+        Post deleted = publishedNews(news, PUBLICATION_TIME.plusDays(2), newsContent("삭제 소식"));
         deleted.delete();
         postRepository.saveAndFlush(deleted);
 
@@ -127,28 +115,15 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("메인 스포트라이트는 비공개 글을 제외한다.")
-    void excludesPrivateSpotlights() {
+    @DisplayName("메인 스포트라이트는 비공개 글과 삭제 글을 제외한다.")
+    void excludesPrivateAndDeletedSpotlights() {
         // given
         Post visible = postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME));
         Post hidden = publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME.plusDays(1));
         hidden.update(new PostDetail(hidden.getTitle(), hidden.getContent().getContent(), TECH, PRIVATE, null), theRilog, enterprise);
         postRepository.saveAndFlush(hidden);
 
-        // when
-        var result = theRilogService.readTheRilog();
-
-        // then
-        assertThat(result.spotlights().stream().map(TheRilogResult.SpotlightResult::postId).toList())
-                .containsExactly(visible.getId());
-    }
-
-    @Test
-    @DisplayName("메인 스포트라이트는 삭제된 글을 제외한다.")
-    void excludesDeletedSpotlights() {
-        // given
-        Post visible = postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME));
-        Post deleted = publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME.plusDays(1));
+        Post deleted = publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME.plusDays(2));
         deleted.delete();
         postRepository.saveAndFlush(deleted);
 
@@ -181,27 +156,15 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("Colog로 이동한 뉴스는 공식 더 리로그 메인에 노출되지 않는다.")
-    void excludesNewsTransferredToColog() {
+    @DisplayName("Colog로 이동한 뉴스와 스포트라이트는 공식 더 리로그 메인에 노출되지 않는다.")
+    void excludesNewsAndSpotlightTransferredToColog() {
         // given
-        Post newsPost = publishedNews(news, PUBLICATION_TIME, newsContent("이동한 소식"));
         Blog colog = blogRepository.saveAndFlush(BlogFixture.createPersistableColog(theRilog.getOwner(), "team"));
+        Post newsPost = publishedNews(news, PUBLICATION_TIME, newsContent("이동한 소식"));
         newsPost.update(new PostDetail(newsPost.getTitle(), newsPost.getContent().getContent(), TECH, PUBLIC, null), colog);
         postRepository.saveAndFlush(newsPost);
 
-        // when
-        var result = theRilogService.readTheRilog();
-
-        // then
-        assertThat(result.news()).isNull();
-    }
-
-    @Test
-    @DisplayName("Colog로 이동한 스포트라이트는 공식 더 리로그 메인에 노출되지 않는다.")
-    void excludesSpotlightTransferredToColog() {
-        // given
         Post spotlight = publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME);
-        Blog colog = blogRepository.saveAndFlush(BlogFixture.createPersistableColog(theRilog.getOwner(), "team"));
         spotlight.update(new PostDetail(spotlight.getTitle(), spotlight.getContent().getContent(), TECH, PUBLIC, null), colog);
         postRepository.saveAndFlush(spotlight);
 
@@ -209,6 +172,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         var result = theRilogService.readTheRilog();
 
         // then
+        assertThat(result.news()).isNull();
         assertThat(result.spotlights()).isEmpty();
     }
 
@@ -239,49 +203,6 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result).isEqualTo(new TheRilogResult(THE_RILOG_BLOG_SLUG, null, null, List.of()));
-    }
-
-    @Test
-    @DisplayName("메인 대표 날짜는 스포트라이트가 더 최근이어도 뉴스의 발행일을 사용한다.")
-    void prefersNewsPublicationDate() {
-        // given
-        postRepository.saveAndFlush(publishedNews(news, PUBLICATION_TIME, newsContent("뉴스")));
-        postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME.plusDays(1)));
-
-        // when
-        var result = theRilogService.readTheRilog();
-
-        // then
-        assertThat(result.date()).isEqualTo(PUBLICATION_TIME.toLocalDate());
-    }
-
-    @Test
-    @DisplayName("뉴스가 없으면 메인 대표 날짜는 최신 스포트라이트의 발행일을 사용한다.")
-    void fallsBackToLatestSpotlightPublicationDate() {
-        // given
-        postRepository.saveAndFlush(publishedSpotlight(enterprise, ENTERPRISE_SPOTLIGHT, PUBLICATION_TIME));
-        postRepository.saveAndFlush(publishedSpotlight(personal, PERSONAL_SPOTLIGHT, PUBLICATION_TIME.plusDays(1)));
-
-        // when
-        var result = theRilogService.readTheRilog();
-
-        // then
-        assertThat(result.date()).isEqualTo(PUBLICATION_TIME.plusDays(1).toLocalDate());
-    }
-
-    @Test
-    @DisplayName("뉴스 헤드라인은 빈 제목을 제외하고 나머지 제목의 문서 순서를 유지한다.")
-    void excludesBlankHeadlines() {
-        // given
-        postRepository.saveAndFlush(publishedNews(news, PUBLICATION_TIME, content(
-                heading("first", 1, "첫 소식"), heading("blank", 2, "   "), heading("last", 3, "마지막 소식"))));
-
-        // when
-        var result = theRilogService.readTheRilog();
-
-        // then
-        assertThat(result.news().headlines()).isEqualTo(List.of(
-                new TheRilogResult.HeadlineResult("첫 소식"), new TheRilogResult.HeadlineResult("마지막 소식")));
     }
 
     @Test

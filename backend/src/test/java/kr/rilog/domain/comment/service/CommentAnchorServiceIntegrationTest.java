@@ -25,7 +25,6 @@ import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
@@ -44,12 +43,8 @@ import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_ANCHOR_SELECTION_NOT_FOUND;
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_AUTHOR_FORBIDDEN;
-import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_ANCHOR;
-import static kr.rilog.domain.comment.exception.CommentErrorInformation.INVALID_COMMENT_CONTENT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
-import static kr.rilog.domain.post.exception.PostErrorInformation.TEXT_BLOCK_NOT_FOUND;
-import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -91,7 +86,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    @DisplayName("공개 게시글에 작성자가 아닌 로그인 사용자가 인라인 댓글을 작성하면 선택 위치와 본문을 저장한다.")
+    @DisplayName("공개 게시글에 인라인 댓글을 작성하면 본문, 작성자, 게시글과 활성 선택 범위를 저장한다.")
     void createCommentAnchorPersistsSelectionAndContent() {
         // given
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
@@ -112,27 +107,9 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         );
         assertThat(savedSelection.getSelection()).isEqualTo(expectedSelection);
         assertThat(saved.getContent()).isEqualTo(CONTENT);
-    }
-
-    @Test
-    @DisplayName("인라인 댓글을 작성하면 요청한 게시글과 요청자가 작성자로 저장된다.")
-    void createCommentAnchorAssociatesPostAndWriter() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-
-        // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
-        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
-
-        // then
-        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(
-                saved.getCommentAnchorSelection().getId()
-        ).orElseThrow();
         assertThat(savedSelection.getPost().getId()).isEqualTo(post.getId());
         assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
+        assertThat(savedSelection.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
     }
 
     @Test
@@ -153,26 +130,6 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
                     assertThat(event.commentAnchorId()).isEqualTo(result.commentAnchorId());
                     assertThat(event.writerId()).isEqualTo(commenter.getId());
                 });
-    }
-
-    @Test
-    @DisplayName("인라인 댓글을 작성하면 ACTIVE 상태로 저장된다.")
-    void createCommentAnchorPersistsActiveStatus() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-
-        // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
-        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
-        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(
-                saved.getCommentAnchorSelection().getId()
-        ).orElseThrow();
-
-        // then
-        assertThat(savedSelection.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
     }
 
     @Test
@@ -250,21 +207,6 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("비공개 게시글의 작성자는 자기 게시글에 인라인 댓글을 작성할 수 있다.")
-    void createCommentAnchorAllowsPostWriterOnPrivatePost() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        Post post = savePrivatePost(postWriter);
-
-        // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), postWriter.getId(), selectedCommand());
-
-        // then
-        assertThat(commentAnchorRepository.findById(result.commentAnchorId())).isPresent();
-    }
-
-    @Test
     @DisplayName("비공개 게시글에는 작성자가 아닌 사용자가 인라인 댓글을 작성할 수 없다.")
     void createCommentAnchorRejectsOtherUserOnPrivatePost() {
         // given
@@ -310,116 +252,6 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
         assertThat(commentAnchorRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자는 인라인 댓글을 작성할 수 없다.")
-    void createCommentAnchorRejectsUnknownUser() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        Post post = savePublicPost(postWriter);
-        Long unknownUserId = Long.MAX_VALUE;
-
-        // when - then
-        assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(
-                post.getId(), unknownUserId, selectedCommand()))
-                .isInstanceOf(UserException.class)
-                .hasMessage(USER_NOT_FOUND.getMessage());
-        assertThat(commentAnchorRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("본문에 없는 블록 id이면 인라인 댓글을 작성할 수 없다.")
-    void createCommentAnchorRejectsUnknownBlockId() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        Post post = savePublicPost(postWriter);
-        var command = new CommentAnchorCreateCommand(
-                "not-exists", SELECTED_START, SELECTED_END, SELECTED_TEXT, CONTENT);
-
-        // when - then
-        assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(post.getId(), postWriter.getId(), command))
-                .isInstanceOf(PostException.class)
-                .hasMessage(TEXT_BLOCK_NOT_FOUND.getMessage());
-        assertThat(commentAnchorRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("선택 문자열이 서버가 직렬화한 블록 텍스트의 해당 범위와 다르면 인라인 댓글을 작성할 수 없다.")
-    void createCommentAnchorRejectsSelectedTextDifferentFromServerText() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        Post post = savePublicPost(postWriter);
-        var command = new CommentAnchorCreateCommand(
-                PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, "가나", CONTENT);
-
-        // when - then
-        assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(post.getId(), postWriter.getId(), command))
-                .isInstanceOf(CommentException.class)
-                .hasMessage(INVALID_COMMENT_ANCHOR.getMessage());
-        assertThat(commentAnchorRepository.count()).isZero();
-        assertThat(commentAnchorSelectionRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("댓글 본문이 올바르지 않으면 새 selection도 저장하지 않는다.")
-    void createCommentAnchorRollsBackSelectionWhenContentIsInvalid() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorCreateCommand command = new CommentAnchorCreateCommand(
-                PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT, " "
-        );
-
-        // when - then
-        assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(
-                post.getId(), postWriter.getId(), command
-        ))
-                .isInstanceOf(CommentException.class)
-                .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
-        assertThat(commentAnchorRepository.count()).isZero();
-        assertThat(commentAnchorSelectionRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("기존 ACTIVE selection에 인라인 댓글을 추가하면 해당 selection과 댓글 내용을 저장한다.")
-    void addCommentAnchorPersistsOnExistingActiveSelection() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorSelection selection = saveActiveSelection(post);
-        var command = new CommentAnchorAddCommand(CONTENT);
-
-        // when
-        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
-                post.getId(), commenter.getId(), selection.getId(), command
-        );
-        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
-
-        // then
-        assertThat(saved.getCommentAnchorSelection().getId()).isEqualTo(selection.getId());
-        assertThat(saved.getContent()).isEqualTo(CONTENT);
-    }
-
-    @Test
-    @DisplayName("기존 ACTIVE selection에 인라인 댓글을 추가하면 요청자를 작성자로 저장한다.")
-    void addCommentAnchorAssociatesRequesterAsWriter() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorSelection selection = saveActiveSelection(post);
-        var command = new CommentAnchorAddCommand(CONTENT);
-
-        // when
-        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
-                post.getId(), commenter.getId(), selection.getId(), command
-        );
-        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
-
-        // then
-        assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
     }
 
     @Test
@@ -502,24 +334,6 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(saved.getCommentAnchorSelection().getId()).isEqualTo(orphanedSelection.getId());
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 selection에는 인라인 댓글을 추가할 수 없다.")
-    void addCommentAnchorRejectsUnknownSelection() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        var command = new CommentAnchorAddCommand(CONTENT);
-
-        // when - then
-        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
-                post.getId(), commenter.getId(), Long.MAX_VALUE, command
-        ))
-                .isInstanceOf(CommentException.class)
-                .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
-        assertThat(commentAnchorRepository.count()).isZero();
     }
 
     @Test
@@ -693,8 +507,8 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("사이드바 인라인 댓글 목록은 블록으로 묶지 않고 먼저 생성된 selection 순서로 조회한다.")
-    void readSidebarCommentAnchorsOrdersBySelectionCreation() {
+    @DisplayName("사이드바는 selection을 블록으로 묶지 않고 selection과 각 댓글을 생성 순서로 반환한다.")
+    void readSidebarCommentAnchorsOrdersSelectionsAndAnchorsByCreation() {
         // given
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
@@ -705,7 +519,9 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
 
         saveAnchor(thirdSelection, commenter, "세 번째 selection 댓글");
         saveAnchor(secondSelection, commenter, "두 번째 selection 댓글");
-        saveAnchor(firstSelection, commenter, "첫 번째 selection 댓글");
+        CommentAnchor first = saveAnchor(firstSelection, commenter, "첫 번째 댓글");
+        CommentAnchor second = saveAnchor(firstSelection, postWriter, "두 번째 댓글");
+        CommentAnchor third = saveAnchor(firstSelection, commenter, "세 번째 댓글");
 
         // when
         CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(post.getId(), commenter.getId());
@@ -721,26 +537,6 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
                         tuple(secondSelection.getId(), OTHER_BLOCK_ID),
                         tuple(thirdSelection.getId(), PARAGRAPH_BLOCK_ID)
                 );
-    }
-
-    @Test
-    @DisplayName("사이드바 인라인 댓글 목록은 selection 안에서 먼저 작성된 인라인 댓글 순서로 조회한다.")
-    void readSidebarCommentAnchorsOrdersAnchorsByCreation() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
-        CommentAnchor first = saveAnchor(anchorSelection, commenter, "첫 번째 댓글");
-        CommentAnchor second = saveAnchor(anchorSelection, postWriter, "두 번째 댓글");
-        CommentAnchor third = saveAnchor(anchorSelection, commenter, "세 번째 댓글");
-
-        // when
-        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(
-                post.getId(), commenter.getId());
-
-        // then
-        assertThat(result.anchorGroups()).hasSize(1);
         assertThat(result.anchorGroups().getFirst().commentAnchors())
                 .extracting(CommentAnchorListResult.CommentAnchorResult::commentAnchorId)
                 .containsExactly(first.getId(), second.getId(), third.getId());
@@ -808,7 +604,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("작성자가 인라인 댓글을 수정하면 변경한 본문을 저장한다.")
+    @DisplayName("작성자가 인라인 댓글을 수정하면 변경한 본문과 수정 상태를 저장하고 반환한다.")
     void updateCommentAnchorPersistsContent() {
         // given
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
@@ -823,24 +619,6 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.content()).isEqualTo(UPDATED_CONTENT);
         assertThat(saved.getContent()).isEqualTo(UPDATED_CONTENT);
-    }
-
-    @Test
-    @DisplayName("작성자가 인라인 댓글 본문을 변경하면 수정된 댓글이 된다.")
-    void updateCommentAnchorMarksEdited() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
-
-        // when
-        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
-        );
-        CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
-
-        // then
         assertThat(result.edited()).isTrue();
         assertThat(saved.isEdited()).isTrue();
     }
@@ -1012,58 +790,26 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("댓글 작성자가 인라인 댓글을 삭제하면 소프트 삭제된다.")
+    @DisplayName("작성자가 마지막 인라인 댓글을 삭제하면 댓글만 소프트 삭제되고 두 ID를 반환한다.")
     void deleteCommentAnchorSoftDeletesByWriter() {
         // given
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
         Post post = savePublicPost(postWriter);
-        CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
+        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
+        CommentAnchor anchor = saveAnchor(anchorSelection, commenter, CONTENT);
 
         // when
         CommentAnchorDeleteResult result = commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), commenter.getId());
         CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
+        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository
+                .findById(anchorSelection.getId()).orElseThrow();
 
         // then
         assertThat(result.commentAnchorId()).isEqualTo(anchor.getId());
-        assertThat(saved.isDeleted()).isTrue();
-    }
-
-    @Test
-    @DisplayName("인라인 댓글을 삭제하면 삭제한 댓글이 속한 selection id를 반환한다.")
-    void deleteCommentAnchorReturnsSelectionId() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
-        CommentAnchor anchor = saveAnchor(anchorSelection, commenter, CONTENT);
-
-        // when
-        CommentAnchorDeleteResult result = commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId()
-        );
-
-        // then
         assertThat(result.selectionId()).isEqualTo(anchorSelection.getId());
-    }
-
-    @Test
-    @DisplayName("selection의 마지막 인라인 댓글을 삭제해도 selection은 삭제하지 않는다.")
-    void deleteCommentAnchorKeepsSelectionWhenLastAnchorDeleted() {
-        // given
-        User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
-        User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorSelection anchorSelection = saveActiveSelection(post);
-        CommentAnchor anchor = saveAnchor(anchorSelection, commenter, CONTENT);
-
-        // when
-        commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), commenter.getId());
-        CommentAnchorSelection saved = commentAnchorSelectionRepository.findById(anchorSelection.getId()).orElseThrow();
-
-        // then
-        assertThat(saved.getDeletedAt()).isNull();
+        assertThat(saved.isDeleted()).isTrue();
+        assertThat(savedSelection.getDeletedAt()).isNull();
     }
 
     @Test

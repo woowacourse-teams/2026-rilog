@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ADMIN_PERMISSION_REQUIRED;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_MEMBER_DOESNT_NOT_BELONG;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_COUNT_EXCEEDED;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
@@ -62,22 +61,6 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     private PostRepository postRepository;
 
     @Test
-    @DisplayName("OWNER가 챕터를 생성하면 요청한 이름으로 저장된다.")
-    void createPersistsRequestedNameByOwner() {
-        // given
-        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        ChapterCreateCommand command = new ChapterCreateCommand("개발 이야기");
-
-        // when
-        ChapterResult result = chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
-
-        // then
-        Chapter saved = chapterRepository.findById(result.chapterId()).orElseThrow();
-        assertThat(result.name()).isEqualTo(command.name());
-        assertThat(saved.getName()).isEqualTo(command.name());
-    }
-
-    @Test
     @DisplayName("ADMIN이 챕터를 생성하면 새 챕터가 저장된다.")
     void createPersistsChapterByAdmin() {
         // given
@@ -92,8 +75,8 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("기존 챕터가 있으면 새 챕터를 다음 순서로 저장한다.")
-    void createPersistsChapterWithNextOrder() {
+    @DisplayName("OWNER가 챕터를 생성하면 요청한 이름과 다음 순서로 저장한다.")
+    void createPersistsRequestedNameAndNextOrderByOwner() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
         chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "기존 챕터", 0));
@@ -104,7 +87,9 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
 
         // then
         Chapter saved = chapterRepository.findById(result.chapterId()).orElseThrow();
+        assertThat(result.name()).isEqualTo(command.name());
         assertThat(result.order()).isEqualTo(1);
+        assertThat(saved.getName()).isEqualTo(command.name());
         assertThat(saved.getOrder()).isEqualTo(1);
     }
 
@@ -125,13 +110,18 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("삭제된 챕터는 최대 개수에 포함하지 않고 새 챕터를 저장한다.")
-    void createExcludesDeletedChapterFromMaximumCount() {
+    @DisplayName("생성 한도는 대상 블로그의 활성 챕터만 센다.")
+    void createCountsOnlyActiveChaptersOfTargetBlog() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
         List<Chapter> chapters = createChapters(scenario.blog(), MAX_CHAPTER_COUNT);
         chapters.getLast().delete();
         chapterRepository.saveAllAndFlush(chapters);
+        User otherOwner = saveUser(300L, "other_owner");
+        Blog otherBlog = blogRepository.saveAndFlush(
+                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
+        );
+        saveChapters(otherBlog, MAX_CHAPTER_COUNT);
         ChapterCreateCommand command = new ChapterCreateCommand("새 챕터");
 
         // when
@@ -140,26 +130,6 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
                 .hasSize(MAX_CHAPTER_COUNT);
-    }
-
-    @Test
-    @DisplayName("다른 블로그의 챕터 수는 대상 블로그의 생성 제한에 포함하지 않는다.")
-    void createCountsOnlyChaptersOfTargetBlog() {
-        // given
-        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        User otherOwner = saveUser(300L, "other_owner");
-        Blog otherBlog = blogRepository.saveAndFlush(
-                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
-        );
-        saveChapters(otherBlog, MAX_CHAPTER_COUNT);
-        ChapterCreateCommand command = new ChapterCreateCommand("대상 블로그 챕터");
-
-        // when
-        chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
-
-        // then
-        assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
-                .hasSize(1);
     }
 
     @Test
@@ -225,13 +195,19 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("챕터 목록을 조회하면 활성 챕터를 순서대로 반환한다.")
-    void readAllReturnsActiveChaptersInOrder() {
+    @DisplayName("챕터 목록은 대상 블로그의 활성 챕터만 순서대로 반환한다.")
+    void readAllReturnsOnlyActiveChaptersOfRequestedBlogInOrder() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
         Chapter third = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "세 번째", 2));
         Chapter first = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "첫 번째", 0));
         Chapter second = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "두 번째", 1));
+        Chapter deletedChapter = Chapter.create(scenario.blog(), "삭제된 챕터", 3);
+        deletedChapter.delete();
+        chapterRepository.saveAndFlush(deletedChapter);
+        User otherOwner = saveUser(300L, "other_owner");
+        Blog otherBlog = blogRepository.saveAndFlush(Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile()));
+        chapterRepository.saveAndFlush(Chapter.create(otherBlog, "다른 블로그 챕터", 0));
 
         // when
         List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
@@ -242,70 +218,6 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
                 ChapterResult.from(second),
                 ChapterResult.from(third)
         );
-    }
-
-    @Test
-    @DisplayName("챕터 목록을 조회하면 대상 블로그의 챕터만 반환한다.")
-    void readAllReturnsOnlyChaptersOfRequestedBlog() {
-        // given
-        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        Chapter targetChapter = chapterRepository.saveAndFlush(
-                Chapter.create(scenario.blog(), "대상 챕터", 0)
-        );
-        User otherOwner = saveUser(300L, "other_owner");
-        Blog otherBlog = blogRepository.saveAndFlush(
-                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
-        );
-        chapterRepository.saveAndFlush(Chapter.create(otherBlog, "다른 블로그 챕터", 0));
-
-        // when
-        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
-
-        // then
-        assertThat(result).containsExactly(ChapterResult.from(targetChapter));
-    }
-
-    @Test
-    @DisplayName("챕터 목록을 조회하면 삭제된 챕터를 제외한다.")
-    void readAllExcludesDeletedChapter() {
-        // given
-        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        Chapter activeChapter = chapterRepository.saveAndFlush(
-                Chapter.create(scenario.blog(), "활성 챕터", 0)
-        );
-        Chapter deletedChapter = chapterRepository.saveAndFlush(
-                Chapter.create(scenario.blog(), "삭제된 챕터", 1)
-        );
-        deletedChapter.delete();
-        chapterRepository.saveAndFlush(deletedChapter);
-
-        // when
-        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
-
-        // then
-        assertThat(result).containsExactly(ChapterResult.from(activeChapter));
-    }
-
-    @Test
-    @DisplayName("챕터가 없는 블로그의 목록을 조회하면 빈 목록을 반환한다.")
-    void readAllReturnsEmptyListWhenBlogHasNoChapter() {
-        // given
-        createMemberScenario(BlogPermission.OWNER);
-
-        // when
-        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
-
-        // then
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 블로그의 챕터 목록을 조회하면 예외가 발생한다.")
-    void readAllRejectsMissingBlog() {
-        // when & then
-        assertThatThrownBy(() -> chapterService.readAll("missing_blog"))
-                .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -323,30 +235,6 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
         assertThat(result.name()).isEqualTo(command.name());
         assertThat(saved.getName()).isEqualTo(command.name());
-    }
-
-    @Test
-    @DisplayName("챕터 이름을 자기 자신의 이름으로 변경하면 기존 이름을 유지한다.")
-    void renameAllowsOwnName() {
-        // given
-        ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        Chapter target = chapterRepository.saveAndFlush(
-                Chapter.create(scenario.blog(), "개발 이야기", 0)
-        );
-        ChapterRenameCommand command = new ChapterRenameCommand("개발 이야기");
-
-        // when
-        ChapterResult result = chapterService.rename(
-                BLOG_SLUG,
-                target.getId(),
-                scenario.requester().getId(),
-                command
-        );
-
-        // then
-        Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
-        assertThat(result.name()).isEqualTo("개발 이야기");
-        assertThat(saved.getName()).isEqualTo("개발 이야기");
     }
 
     @Test

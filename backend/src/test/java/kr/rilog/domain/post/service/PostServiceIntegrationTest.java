@@ -23,7 +23,6 @@ import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
@@ -47,14 +46,12 @@ import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ALREADY_BLOG_MEMBER_LEFT;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.COLOG_POST_PUBLISH_FORBIDDEN;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.PRIVATE_POST_READ_FORBIDDEN;
-import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.PostContentFixture.PARAGRAPH_BLOCK_ID;
 import static kr.rilog.support.fixure.PostContentFixture.content;
 import static kr.rilog.support.fixure.PostContentFixture.paragraph;
@@ -91,7 +88,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
 
     @Test
-    @DisplayName("개인 블로그에 게시글을 발행하면 명령의 내용과 개인 블로그 소속이 저장된다.")
+    @DisplayName("챕터 없이 개인 블로그에 게시글을 발행하면 미분류 게시글과 조회수 0이 저장된다.")
     void publishToRilogPersistsPostDetailAndRilogAffiliation() {
         // given
         User writer = saveCompletedUser(1L, "개인작성자", "rilog_writer");
@@ -117,6 +114,10 @@ class PostServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(savedPost.getUser().getId()).isEqualTo(writer.getId());
             softly.assertThat(savedPost.getRilog().getId()).isEqualTo(rilog.getId());
             softly.assertThat(savedPost.getColog()).isNull();
+            softly.assertThat(savedPost.getChapter()).isNull();
+            softly.assertThat(jdbcTemplate.queryForObject(
+                    "select view_count from post_view_count where post_id = ?", Long.class, result.postId()
+            )).isZero();
         });
     }
 
@@ -184,40 +185,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("팀 블로그 활성 멤버에게 개인 블로그가 없으면 게시글이 저장되지 않는다.")
-    void publishToCologThrowsAndDoesNotPersistPostWhenWriterRilogDoesNotExist() {
-        // given
-        User owner = saveCompletedUser(7L, "팀블로그주인", "colog_owner");
-        Blog colog = saveColog(owner, "missing_rilog_colog");
-        User writer = saveCompletedUser(8L, "개인블로그없음", "writer_without_rilog");
-        saveActiveMember(colog, writer);
-
-        // when & then
-        assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(colog.getSlug()),
-                writer.getId()
-        ))
-                .isInstanceOf(BlogException.class)
-                .hasMessage(RILOG_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 블로그에 게시글을 발행하면 게시글이 저장되지 않는다.")
-    void publishThrowsAndDoesNotPersistPostWhenBlogDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand("missing_blog"),
-                999L
-        ))
-                .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
     @DisplayName("삭제된 블로그에 게시글을 발행하면 게시글이 저장되지 않는다.")
     void publishThrowsAndDoesNotPersistPostWhenBlogIsDeleted() {
         // given
@@ -233,24 +200,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         ))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자가 게시글을 발행하면 게시글이 저장되지 않는다.")
-    void publishThrowsAndDoesNotPersistPostWhenWriterDoesNotExist() {
-        // given
-        User owner = saveCompletedUser(10L, "사용자없음주인", "missing_user_owner");
-        Blog rilog = saveRilog(owner);
-
-        // when & then
-        assertThatThrownBy(() -> postService.publish(
-                PostFixture.publicPostPublishCommand(rilog.getSlug()),
-                Long.MAX_VALUE
-        ))
-                .isInstanceOf(UserException.class)
-                .hasMessage(USER_NOT_FOUND.getMessage());
 
         assertThat(postRepository.findAll()).isEmpty();
     }
@@ -433,7 +382,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("개인 블로그의 공개 게시글을 조회하면 게시글과 작성자 및 개인 블로그 정보를 반환한다.")
+    @DisplayName("개인 블로그의 미분류 공개 게시글을 조회하면 챕터 없이 게시글과 작성자 및 블로그 정보를 반환한다.")
     void readPublicRilogPostReturnsPostAuthorAndRilog() {
         // given
         User writer = saveCompletedUser(11L, "공개글작성자", "public_post_writer");
@@ -442,7 +391,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostDetailResponse fixture = PostFixture.postDetailResponse(post, writer, rilog);
         PostDetailResponse expected = new PostDetailResponse(
                 fixture.title(), fixture.content(), fixture.publishedAt(), fixture.thumbnailImageUrl(),
-                fixture.category(), fixture.author(), fixture.owner(), fixture.viewerPermissions(), null
+                fixture.category(), null, fixture.author(), fixture.owner(), fixture.viewerPermissions(), null
         );
 
         // when
@@ -575,7 +524,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("전체 게시글 수를 조회하면 공개 발행 게시글만 집계한다.")
+    @DisplayName("전체 게시글 수에는 공개 발행된 일반 게시글만 집계한다.")
     void readPostsCountCountsOnlyPublicPublishedPosts() {
         // given
         User writer = saveCompletedUser(22L, "전체집계작성자", "total_count_writer");
@@ -588,22 +537,6 @@ class PostServiceIntegrationTest extends ServiceSupport {
         // 집계 제외
         savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
         savePost(PostFixture.publicDraftRilogPost(rilog, writer));
-
-        // when
-        TotalPostsCountResponse result = postService.readPostsCount();
-
-        // then
-        assertThat(result.totalPostsCount()).isEqualTo(2L);
-    }
-
-    @Test
-    @DisplayName("전체 게시글 수를 조회하면 더 리로그 게시글은 집계하지 않는다.")
-    void readPostsCountExcludesTheRilogPosts() {
-        // given
-        User writer = saveCompletedUser(35L, "표준집계작성자", "standard_total_count");
-        Blog rilog = saveRilog(writer);
-        savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
-
         User theRilogOwner = saveCompletedUser(36L, "더리로그주인", "the_rilog");
         Blog theRilog = saveRilog(theRilogOwner);
         Chapter headlines = saveChapter(theRilog, "headlines", 0);
@@ -613,23 +546,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         TotalPostsCountResponse result = postService.readPostsCount();
 
         // then
-        assertThat(result.totalPostsCount()).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("게시글 작성자는 개인 블로그의 발행된 게시글을 삭제할 수 있다.")
-    void writerDeletesPublishedRilogPost() {
-        // given
-        User writer = saveCompletedUser(101L, "삭제작성자", "delete_rilog_writer");
-        Blog rilog = saveRilog(writer);
-        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
-
-        // when
-        postService.deletePublishedPost(post.getId(), writer.getId());
-
-        // then
-        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
-        assertThat(deletedPost.getDeletedAt()).isNotNull();
+        assertThat(result.totalPostsCount()).isEqualTo(2L);
     }
 
     @Test

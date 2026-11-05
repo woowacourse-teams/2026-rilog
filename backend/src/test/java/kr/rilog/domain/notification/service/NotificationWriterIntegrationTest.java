@@ -62,8 +62,8 @@ class NotificationWriterIntegrationTest extends ServiceSupport {
     private CommentAnchorRepository commentAnchorRepository;
 
     @Test
-    @DisplayName("다른 사용자가 인라인 댓글을 작성하면 게시글 작성자에게 게시글 인라인 댓글 알림을 저장한다.")
-    void writeNotifiesPostWriterWithPostInlineCommentType() {
+    @DisplayName("게시글 작성자에게 인라인 댓글 알림을 저장하고 댓글 출처와 발생 시각을 기록한다.")
+    void writePersistsPostWriterNotificationWithSourceAndOccurredAt() {
         // given
         User postWriter = saveCompletedUser(1L, "post_writer");
         User commenter = saveCompletedUser(2L, "commenter");
@@ -75,8 +75,13 @@ class NotificationWriterIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(findNotificationsOf(postWriter))
-                .extracting(Notification::getType)
-                .containsExactly(POST_INLINE_COMMENT);
+                .singleElement()
+                .satisfies(saved -> {
+                    assertThat(saved.getType()).isEqualTo(POST_INLINE_COMMENT);
+                    assertThat(saved.getSourceType()).isEqualTo(NotificationSourceType.INLINE_COMMENT);
+                    assertThat(saved.getSourceId()).isEqualTo(anchor.getId());
+                    assertThat(saved.getCreatedAt()).isEqualTo(OCCURRED_AT);
+                });
     }
 
     @Test
@@ -97,40 +102,6 @@ class NotificationWriterIntegrationTest extends ServiceSupport {
         assertThat(findNotificationsOf(participant))
                 .extracting(Notification::getType)
                 .containsExactly(SELECTION_INLINE_COMMENT);
-    }
-
-    @Test
-    @DisplayName("인라인 댓글 알림은 작성된 인라인 댓글을 출처로 저장한다.")
-    void writePersistsCommentAnchorAsSource() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User commenter = saveCompletedUser(2L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        Notification saved = findNotificationsOf(postWriter).getFirst();
-        assertThat(saved.getSourceType()).isEqualTo(NotificationSourceType.INLINE_COMMENT);
-        assertThat(saved.getSourceId()).isEqualTo(anchor.getId());
-    }
-
-    @Test
-    @DisplayName("알림의 생성 시각은 전달받은 발생 시각으로 저장한다.")
-    void writePersistsOccurredAtAsCreatedAt() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User commenter = saveCompletedUser(2L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(postWriter).getFirst().getCreatedAt()).isEqualTo(OCCURRED_AT);
     }
 
     @Test

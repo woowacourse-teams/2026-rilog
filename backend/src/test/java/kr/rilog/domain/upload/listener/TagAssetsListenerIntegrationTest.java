@@ -2,7 +2,6 @@ package kr.rilog.domain.upload.listener;
 
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.event.TagAssetsEvent;
-import kr.rilog.domain.upload.service.S3TagAssetsLifecycle;
 import kr.rilog.global.logging.RequestIdFilter;
 import kr.rilog.support.ServiceSupport;
 import org.junit.jupiter.api.AfterEach;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -44,24 +42,33 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("자산 연결 이벤트는 트랜잭션이 커밋된 후 S3 라이프사이클을 실행한다.")
-    void executeAttachAfterCommit() {
+    @DisplayName("자산 연결 이벤트는 커밋 후 원래 요청 ID로 S3 라이프사이클을 실행한다.")
+    void executeAttachAfterCommitWithOriginalRequestId() {
         TagAssets assets = TagAssets.of("https://s3.example.com/added.png");
         CountDownLatch executed = new CountDownLatch(1);
+        AtomicReference<String> asyncRequestId = new AtomicReference<>();
         doAnswer(invocation -> {
+            asyncRequestId.set(MDC.get(RequestIdFilter.MDC_KEY));
             executed.countDown();
             return null;
         }).when(lifecycle).attach(assets);
 
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new TagAssetsEvent.Attach(assets));
+        MDC.put(RequestIdFilter.MDC_KEY, "request-123");
+        try {
+            new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                eventPublisher.publishEvent(new TagAssetsEvent.Attach(assets));
 
-            assertThat(await(executed, BEFORE_COMPLETION_OBSERVATION_MILLIS, MILLISECONDS)).isFalse();
-            verifyNoInteractions(lifecycle);
-        });
+                assertThat(await(executed, BEFORE_COMPLETION_OBSERVATION_MILLIS, MILLISECONDS)).isFalse();
+                verifyNoInteractions(lifecycle);
+            });
+        } finally {
+            MDC.remove(RequestIdFilter.MDC_KEY);
+        }
 
         assertThat(await(executed, AFTER_COMMIT_TIMEOUT_SECONDS, SECONDS)).isTrue();
         verify(lifecycle).attach(assets);
+        assertThat(asyncRequestId).hasValue("request-123");
+        assertThat(MDC.get(RequestIdFilter.MDC_KEY)).isNull();
     }
 
     @Test
@@ -81,32 +88,6 @@ class TagAssetsListenerIntegrationTest extends ServiceSupport {
 
         assertThat(await(executed, BEFORE_COMPLETION_OBSERVATION_MILLIS, MILLISECONDS)).isFalse();
         verifyNoInteractions(lifecycle);
-    }
-
-    @Test
-    @DisplayName("자산 연결 이벤트는 커밋 후 비동기 실행 시 원래 요청 ID를 유지한다.")
-    void propagateRequestIdToAsyncAttachListener() {
-        TagAssets assets = TagAssets.of("https://s3.example.com/added.png");
-        CountDownLatch executed = new CountDownLatch(1);
-        AtomicReference<String> asyncRequestId = new AtomicReference<>();
-        doAnswer(invocation -> {
-            asyncRequestId.set(MDC.get(RequestIdFilter.MDC_KEY));
-            executed.countDown();
-            return null;
-        }).when(lifecycle).attach(assets);
-
-        MDC.put(RequestIdFilter.MDC_KEY, "request-123");
-        try {
-            new TransactionTemplate(transactionManager).executeWithoutResult(status ->
-                    eventPublisher.publishEvent(new TagAssetsEvent.Attach(assets))
-            );
-        } finally {
-            MDC.remove(RequestIdFilter.MDC_KEY);
-        }
-
-        assertThat(await(executed, AFTER_COMMIT_TIMEOUT_SECONDS, SECONDS)).isTrue();
-        assertThat(asyncRequestId).hasValue("request-123");
-        assertThat(MDC.get(RequestIdFilter.MDC_KEY)).isNull();
     }
 
     @Test

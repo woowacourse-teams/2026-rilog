@@ -57,32 +57,7 @@ class CologServiceIntegrationTest extends ServiceSupport {
     private PostRepository postRepository;
 
     @Test
-    @DisplayName("OWNER는 사용자를 MEMBER 멤버로 초대한다.")
-    void inviteMemberPersistsActiveMemberByOwner() {
-        // given
-        InvitationScenario scenario = createInvitationScenario();
-
-        CologMemberInviteCommand command = new CologMemberInviteCommand(
-                scenario.invitee().getId(),
-                "Backend"
-        );
-
-        // when
-        CologMemberInviteResult result = cologService.inviteMember(
-                scenario.owner().getId(),
-                COLOG_SLUG,
-                command
-        );
-
-        // then
-        BlogMember savedMember = getBlogMember(scenario);
-
-        assertThat(savedMember.getPermission()).isEqualTo(BlogPermission.MEMBER);
-        assertThat(result.permission()).isEqualTo(BlogPermission.MEMBER);
-    }
-
-    @Test
-    @DisplayName("활성 멤버가 19명인 Colog에 새 멤버를 초대하면 활성 멤버가 20명이 된다.")
+    @DisplayName("OWNER가 활성 멤버 19명인 Colog에 초대하면 새 MEMBER가 저장되고 활성 멤버가 20명이 된다.")
     void inviteMemberAllowsInviteUntilCologReachesMaximumMembers() {
         // given
         InvitationScenario scenario = createInvitationScenario();
@@ -101,6 +76,8 @@ class CologServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result.userId()).isEqualTo(scenario.invitee().getId());
+        assertThat(result.permission()).isEqualTo(BlogPermission.MEMBER);
+        assertThat(getBlogMember(scenario).getPermission()).isEqualTo(BlogPermission.MEMBER);
         assertThat(blogMemberRepository.countActiveMembersByBlogId(scenario.colog().getId()))
                 .isEqualTo(MAX_COLOG_MEMBER_COUNT);
     }
