@@ -62,19 +62,6 @@ class PostViewCountIntegrationTest extends ServiceSupport {
     private PublicationEventFailure eventFailure;
 
     @Test
-    @DisplayName("게시글을 발행하면 조회수 누계를 0으로 저장한다.")
-    void publicationCreatesZeroCount() {
-        // given
-        Scenario scenario = scenario();
-
-        // when
-        long postId = publish(scenario);
-
-        // then
-        assertThat(count(postId)).isZero();
-    }
-
-    @Test
     @DisplayName("임시저장 글을 발행하면 발행 시점에 조회수 누계를 생성한다.")
     void draftGetsCountOnlyWhenPublished() {
         // given

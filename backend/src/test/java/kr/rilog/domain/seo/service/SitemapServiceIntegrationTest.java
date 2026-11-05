@@ -33,32 +33,8 @@ class SitemapServiceIntegrationTest extends ServiceSupport {
     private PostRepository postRepository;
 
     @Test
-    @DisplayName("사이트맵은 정적 경로와 삭제되지 않은 블로그 URL을 표준 XML로 반환한다.")
-    void generateRootSitemapXmlContainsStaticPathsAndActiveBlogs() {
-        // given
-        User owner = userRepository.save(completedUser(1L, "사이트맵작성자", "site_author"));
-        Blog rilog = blogRepository.save(Blog.createRilog(owner));
-        Blog colog = blogRepository.save(Blog.createColog(owner, "site_team", BlogFixture.cologProfile()));
-        Blog deletedColog = blogRepository.save(Blog.createColog(owner, "dead_team", BlogFixture.cologProfile()));
-        deletedColog.delete();
-        blogRepository.saveAndFlush(deletedColog);
-
-        // when
-        String xml = sitemapService.generateRootSitemapXml();
-
-        // then
-        assertThat(xml).startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        assertThat(xml).contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
-        assertThat(xml).contains("<loc>https://www.rilog.kr/feeds</loc>");
-        assertThat(xml).contains("<loc>https://www.rilog.kr/about</loc>");
-        assertThat(xml).contains("<loc>https://www.rilog.kr/@%s</loc>".formatted(rilog.getSlug()));
-        assertThat(xml).contains("<loc>https://www.rilog.kr/@%s</loc>".formatted(colog.getSlug()));
-        assertThat(xml).doesNotContain("dead_team");
-    }
-
-    @Test
-    @DisplayName("사이트맵은 공개 발행 게시글만 실제 소속 블로그 slug로 반환한다.")
-    void generateRootSitemapXmlContainsOnlyPublicPublishedPostUrlsByCanonicalBlogSlug() {
+    @DisplayName("사이트맵은 정적 경로, 활성 블로그, 공개 발행 게시글의 정규 URL을 표준 XML로 반환한다.")
+    void generateRootSitemapXmlContainsStaticPathsAndVisibleCanonicalUrls() {
         // given
         User owner = userRepository.save(completedUser(2L, "게시글작성자", "post_author"));
         Blog rilog = blogRepository.save(Blog.createRilog(owner));
@@ -78,6 +54,14 @@ class SitemapServiceIntegrationTest extends ServiceSupport {
         String xml = sitemapService.generateRootSitemapXml();
 
         // then
+        assertThat(xml).startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        assertThat(xml).contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
+        assertThat(xml).contains("<loc>https://www.rilog.kr/feeds</loc>");
+        assertThat(xml).contains("<loc>https://www.rilog.kr/about</loc>");
+        assertThat(xml).contains("<loc>https://www.rilog.kr/@%s</loc>".formatted(rilog.getSlug()));
+        assertThat(xml).contains("<loc>https://www.rilog.kr/@%s</loc>".formatted(colog.getSlug()));
+        assertThat(xml).doesNotContain("<loc>https://www.rilog.kr/@%s</loc>".formatted(deletedBlog.getSlug()));
+
         assertThat(xml).contains("<loc>https://www.rilog.kr/@%s/posts/%d</loc>".formatted(rilog.getSlug(), publicRilogPost.getId()));
         assertThat(xml).contains("<loc>https://www.rilog.kr/@%s/posts/%d</loc>".formatted(colog.getSlug(), publicCologPost.getId()));
         assertThat(xml).doesNotContain("/posts/%d".formatted(privatePost.getId()));

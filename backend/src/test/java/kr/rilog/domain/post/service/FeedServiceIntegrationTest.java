@@ -15,7 +15,6 @@ import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.Post;
     import kr.rilog.domain.post.entity.enums.Category;
-import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.service.dto.command.BlogFeedSearchCommand;
 import kr.rilog.domain.post.service.dto.command.FullFeedSearchCommand;
@@ -41,7 +40,6 @@ import java.util.stream.Collectors;
 import static kr.rilog.domain.blog.entity.enums.BlogType.COLOG;
 import static kr.rilog.domain.blog.entity.enums.BlogType.RILOG;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
-import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_FEED_FILTER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -130,8 +128,10 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         // given
         User author = saveCompletedUser(1L, "피드작성자", "feed_author");
         Blog rilog = saveRilog(author);
+        Blog colog = saveColog(author, "full_private_colog");
         Post publicPublishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
         savePost(PostFixture.privatePublishedRilogPost(rilog, author));
+        savePost(PostFixture.privatePublishedCologPost(rilog, colog, author));
         savePost(PostFixture.publicDraftRilogPost(rilog, author));
         savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, author));
 
@@ -205,26 +205,6 @@ class FeedServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("전체 피드는 작성자가 발행한 비공개 게시글을 반환하지 않는다.")
-    void readFullFeedExcludesAuthorPrivatePosts() {
-        // given
-        User author = saveCompletedUser(30L, "비공개글작성자", "full_private_author");
-        Blog rilog = saveRilog(author);
-        Blog colog = saveColog(author, "full_private_colog");
-        Post publicPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        savePost(PostFixture.privatePublishedRilogPost(rilog, author));
-        savePost(PostFixture.privatePublishedCologPost(rilog, colog, author));
-
-        // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
-
-        // then
-        assertThat(result.posts())
-                .extracting(FullFeedPostResponse.PostItemResponse::postId)
-                .containsExactly(publicPost.getId());
-    }
-
-    @Test
     @DisplayName("전체 피드는 발행 시각과 게시글 아이디의 내림차순으로 정렬한다.")
     void readFullFeedOrdersByPublishedAtAndIdDescending() {
         // given
@@ -270,64 +250,46 @@ class FeedServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("전체 피드의 개인 블로그 게시글은 작성자와 개인 블로그 정보를 반환한다.")
-    void readFullFeedMapsRilogPostAuthorAndOwner() {
+    @DisplayName("전체 피드는 개인·팀 블로그 게시글의 작성자, 소속 블로그와 챕터를 반환한다.")
+    void readFullFeedMapsAuthorsOwnersAndChapter() {
         // given
-        User author = saveCompletedUser(4L, "개인작성자", "rilog_author");
-        Blog rilog = saveRilog(author);
-        Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-        FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, rilog);
-
-        // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
-
-        // then
-        assertThat(result.posts()).containsExactly(expected);
-    }
-
-    @Test
-    @DisplayName("전체 피드의 팀 블로그 게시글은 작성자와 팀 블로그 정보를 반환한다.")
-    void readFullFeedMapsCologPostAuthorAndOwner() {
-        // given
-        User author = saveCompletedUser(5L, "팀작성자", "colog_author");
-        Blog rilog = saveRilog(author);
-        Blog colog = saveColog(author, "team_blog");
-        Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, author));
-        FullFeedPostResponse.PostItemResponse expected = expectedFullFeedItem(post, author, colog);
-
-        // when
-        FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
-
-        // then
-        assertThat(result.posts()).containsExactly(expected);
-    }
-
-    @Test
-    @DisplayName("전체 피드는 게시글이 속한 챕터의 전체 정보를 반환한다.")
-    void readFullFeedReturnsChapter() {
-        // given
-        User author = saveCompletedUser(10L, "전체챕터작성자", "full_chapter_author");
-        Blog rilog = saveRilog(author);
+        User rilogAuthor = saveCompletedUser(4L, "개인작성자", "rilog_author");
+        Blog rilog = saveRilog(rilogAuthor);
+        Post rilogPost = savePost(PostFixture.publicPublishedRilogPost(rilog, rilogAuthor));
         Chapter chapter = saveChapter(rilog, "Spring", 0);
-        savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
+        Post chapterPost = savePost(PostFixture.publicPublishedRilogPost(rilog, rilogAuthor, chapter));
+        User cologAuthor = saveCompletedUser(5L, "팀작성자", "colog_author");
+        Blog cologAuthorRilog = saveRilog(cologAuthor);
+        Blog colog = saveColog(cologAuthor, "team_blog");
+        Post cologPost = savePost(PostFixture.publicPublishedColog(cologAuthorRilog, colog, cologAuthor));
 
         // when
         FullFeedPostResponse result = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
-        assertThat(result.posts().getFirst().chapter())
+        assertThat(result.posts()).containsExactlyInAnyOrder(
+                expectedFullFeedItem(rilogPost, rilogAuthor, rilog),
+                expectedFullFeedItem(chapterPost, rilogAuthor, rilog),
+                expectedFullFeedItem(cologPost, cologAuthor, colog)
+        );
+        assertThat(result.posts()).filteredOn(post -> post.postId().equals(chapterPost.getId()))
+                .singleElement().extracting(FullFeedPostResponse.PostItemResponse::chapter)
                 .isEqualTo(new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder()));
     }
 
     @Test
-    @DisplayName("개인 블로그 공개 글 조회는 해당 개인 블로그의 공개 발행 상태인 게시글만 반환한다.")
+    @DisplayName("개인 블로그 공개 글 조회는 해당 블로그의 공개 발행 글과 챕터를 반환한다.")
     void readPublicRilogPostsReturnsOnlyTargetPublicPublishedPosts() {
         // given
         User targetAuthor = saveCompletedUser(6L, "조회작성자", "target_rilog");
         Blog targetRilog = saveRilog(targetAuthor);
         User otherAuthor = saveCompletedUser(7L, "다른작성자", "other_rilog");
         Blog otherRilog = saveRilog(otherAuthor);
-        Post targetPost = savePost(PostFixture.publicPublishedRilogPost(targetRilog, targetAuthor));
+        Chapter chapter = saveChapter(targetRilog, "Java", 1);
+        Post targetPost = savePost(PostFixture.publicPublishedRilogPostAt(targetRilog, targetAuthor, BASE_PUBLISHED_AT));
+        Post chapterPost = saveChapterPostAt(
+                targetRilog, targetRilog, targetAuthor, chapter, BASE_PUBLISHED_AT.plusMinutes(1)
+        );
         savePost(PostFixture.privatePublishedRilogPost(targetRilog, targetAuthor));
         savePost(PostFixture.publicDraftRilogPost(targetRilog, targetAuthor));
         savePost(PostFixture.deletedPublicPublishedRilogPost(targetRilog, targetAuthor));
@@ -340,36 +302,22 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         assertThat(result.type()).isEqualTo(RILOG.name());
         assertThat(result.posts())
                 .extracting(BlogFeedPostResponse.PostItemResponse::postId)
-                .containsExactly(targetPost.getId());
-    }
-
-    @Test
-    @DisplayName("개인 블로그 공개 글 목록은 게시글이 속한 챕터의 전체 정보를 반환한다.")
-    void readPublicRilogPostsReturnsChapter() {
-        // given
-        User author = saveCompletedUser(11L, "개인챕터작성자", "rilog_chapter_author");
-        Blog rilog = saveRilog(author);
-        Chapter chapter = saveChapter(rilog, "Java", 1);
-        savePost(PostFixture.publicPublishedRilogPost(rilog, author, chapter));
-
-        // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), null, DEFAULT_SEARCH);
-
-        // then
+                .containsExactly(chapterPost.getId(), targetPost.getId());
         assertThat(result.posts().getFirst().chapter())
                 .isEqualTo(new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder()));
     }
 
     @Test
-    @DisplayName("팀 블로그 공개 글 조회는 해당 팀 블로그의 공개 발행 상태인 게시글만 반환한다.")
+    @DisplayName("팀 블로그 공개 글 조회는 해당 블로그의 공개 발행 글과 챕터를 반환한다.")
     void readPublicCologPostsReturnsOnlyTargetPublicPublishedPosts() {
         // given
         User author = saveCompletedUser(8L, "팀조회작성자", "team_feed_author");
         Blog rilog = saveRilog(author);
         Blog colog = saveColog(author, "target_team");
         Blog otherColog = saveColog(author, "other_team");
+        Chapter chapter = saveChapter(colog, "회고", 2);
         Post olderPost = savePost(PostFixture.publicPublishedColog(rilog, colog, author, BASE_PUBLISHED_AT));
-        Post latestPost = savePost(PostFixture.publicPublishedColog(rilog, colog, author, BASE_PUBLISHED_AT.plusMinutes(1)));
+        Post latestPost = saveChapterPostAt(rilog, colog, author, chapter, BASE_PUBLISHED_AT.plusMinutes(1));
         savePost(PostFixture.privatePublishedCologPost(rilog, colog, author));
         savePost(PostFixture.publicPublishedColog(rilog, otherColog, author));
 
@@ -384,22 +332,6 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         assertThat(result.posts())
                 .extracting(BlogFeedPostResponse.PostItemResponse::owner)
                 .containsOnly(expectedPublicBlogOwner(colog));
-    }
-
-    @Test
-    @DisplayName("팀 블로그 공개 글 목록은 게시글이 속한 챕터의 전체 정보를 반환한다.")
-    void readPublicCologPostsReturnsChapter() {
-        // given
-        User author = saveCompletedUser(12L, "팀챕터작성자", "colog_chapter_author");
-        Blog rilog = saveRilog(author);
-        Blog colog = saveColog(author, "chapter_team");
-        Chapter chapter = saveChapter(colog, "회고", 2);
-        savePost(PostFixture.publicPublishedColog(rilog, colog, author, chapter));
-
-        // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), null, DEFAULT_SEARCH);
-
-        // then
         assertThat(result.posts().getFirst().chapter())
                 .isEqualTo(new ChapterResponse(chapter.getId(), chapter.getName(), chapter.getOrder()));
     }
@@ -434,11 +366,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post privateCologPost = savePost(PostFixture.privatePublishedCologPost(rilog, colog, owner));
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                rilog.getSlug(),
-                owner.getId(),
-                DEFAULT_SEARCH
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), owner.getId(), DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -457,11 +385,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.privatePublishedRilogPost(rilog, owner));
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                rilog.getSlug(),
-                requester.getId(),
-                DEFAULT_SEARCH
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), requester.getId(), DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -483,11 +407,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.privatePublishedCologPost(otherRilog, colog, otherAuthor));
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                colog.getSlug(),
-                requester.getId(),
-                DEFAULT_SEARCH
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), requester.getId(), DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -655,11 +575,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, targetChapter.getId(), null, 0, 10);
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                colog.getSlug(),
-                requester.getId(),
-                command
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), requester.getId(), command);
 
         // then
         assertThat(result.posts())
@@ -726,34 +642,6 @@ class FeedServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("대상 Colog 필터와 챕터 필터를 함께 사용하면 예외가 발생한다.")
-    void readRilogFeedRejectsTargetCologWithChapter() {
-        // given
-        User owner = saveCompletedUser(24L, "필터검증작성자", "filter_owner");
-        Blog rilog = saveRilog(owner);
-        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, 1L, "target_colog", 0, 10);
-
-        // when & then
-        assertThatThrownBy(() -> feedService.readBlogPosts(rilog.getSlug(), null, command))
-                .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_FEED_FILTER.getMessage());
-    }
-
-    @Test
-    @DisplayName("Colog 피드에 대상 Colog 필터를 사용하면 예외가 발생한다.")
-    void readCologFeedRejectsTargetCologFilter() {
-        // given
-        User owner = saveCompletedUser(25L, "팀필터검증자", "colog_filter_owner");
-        Blog colog = saveColog(owner, "main_colog");
-        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, null, "target_colog", 0, 10);
-
-        // when & then
-        assertThatThrownBy(() -> feedService.readBlogPosts(colog.getSlug(), null, command))
-                .isInstanceOf(PostException.class)
-                .hasMessage(INVALID_FEED_FILTER.getMessage());
-    }
-
-    @Test
     @DisplayName("대상 Colog 필터의 블로그가 존재하지 않으면 예외가 발생한다.")
     void readRilogFeedThrowsWhenTargetCologDoesNotExist() {
         // given
@@ -763,15 +651,6 @@ class FeedServiceIntegrationTest extends ServiceSupport {
 
         // when & then
         assertThatThrownBy(() -> feedService.readBlogPosts(rilog.getSlug(), null, command))
-                .isInstanceOf(BlogException.class)
-                .hasMessage(BLOG_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 슬러그로 공개 블로그 글을 조회하면 예외가 발생한다.")
-    void readPublicBlogPostsThrowsWhenBlogDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> feedService.readBlogPosts("missing_blog", null, DEFAULT_SEARCH))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
     }

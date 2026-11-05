@@ -140,7 +140,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("트렌딩 피드는 다음 배치 전에도 만료·미래·비공개·초안·삭제 게시글은 반환하지 않는다.")
+    @DisplayName("트렌딩 피드는 다음 배치 전에도 만료·미래·비공개·초안·삭제·더 리로그 게시글을 제외한다.")
     void readTrendingPostsReturnsOnlyReadablePublishedPosts() {
         // given
         User author = saveCompletedUser(2L, "상태필터작성자", "trend_status");
@@ -162,24 +162,6 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         saveTrending(20L, privatePost);
         saveTrending(30L, draftPost);
         saveTrending(40L, deletedPost);
-
-        // when
-        FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
-
-        // then
-        assertThat(result.posts())
-                .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(publicPost.getId(), olderEligiblePost.getId());
-    }
-
-    @Test
-    @DisplayName("트렌딩 피드는 더 리로그 게시글을 반환하지 않는다.")
-    void readTrendingPostsExcludesTheRilogPosts() {
-        // given
-        User author = saveCompletedUser(5L, "표준트렌딩작성자", "standard_trending");
-        Blog rilog = saveRilog(author);
-        Post standardPost = savePost(PostFixture.publicPublishedRilogPost(rilog, author));
-
         User theRilogOwner = saveCompletedUser(6L, "더리로그주인", "the_rilog");
         Blog theRilog = saveRilog(theRilogOwner);
         Chapter headlines = saveChapter(theRilog, "headlines", 0);
@@ -188,8 +170,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
                 BASE_PUBLISHED_AT,
                 content(paragraph("오늘의 소식"))
         ));
-        saveTrending(10L, standardPost);
-        saveTrending(20L, theRilogPost);
+        saveTrending(70L, theRilogPost);
 
         // when
         FullFeedPostResult result = trendingService.readTrendingPostList(DEFAULT_SEARCH);
@@ -197,7 +178,7 @@ class TrendingServiceIntegrationTest extends ServiceSupport {
         // then
         assertThat(result.posts())
                 .extracting(FullFeedPostResult.PostItemResult::postId)
-                .containsExactly(standardPost.getId());
+                .containsExactly(publicPost.getId(), olderEligiblePost.getId());
     }
 
     @ParameterizedTest(name = "category={0}, blogType={1}, page={2}, size={3}")

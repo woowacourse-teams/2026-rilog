@@ -370,4 +370,5 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
 
     private record CommentCounts(long stored, long active) {
     }
+
 }

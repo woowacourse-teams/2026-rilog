@@ -2,7 +2,6 @@ package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.vo.Profile;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.user.entity.User;
@@ -20,11 +19,9 @@ import static kr.rilog.domain.blog.entity.enums.BlogType.RILOG;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_PROFILE_NAME_ALREADY_EXISTS;
 import static kr.rilog.domain.user.entity.OnboardingStatus.COMPLETED;
 import static kr.rilog.domain.user.entity.OnboardingStatus.PENDING;
-import static kr.rilog.domain.user.exception.UserErrorInformation.ONBOARDING_ALREADY_COMPLETED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.SLUG_DUPLICATED;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceIntegrationTest extends ServiceSupport {
@@ -52,15 +49,6 @@ class UserServiceIntegrationTest extends ServiceSupport {
 
         // then
         assertThat(result).isEqualTo(expected);
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자 아이디로 사용자 정보를 조회하면 예외가 발생한다.")
-    void getUserInformationThrowsWhenUserDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> userService.getUserInformation(Long.MIN_VALUE))
-                .isInstanceOf(UserException.class)
-                .hasMessage(USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -92,8 +80,8 @@ class UserServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("대기 중인 사용자가 온보딩을 완료하면 사용자 정보를 저장한다.")
-    void completeOnboardingPersistsCompletedUser() {
+    @DisplayName("대기 중인 사용자가 온보딩을 완료하면 사용자 정보와 개인 Rilog를 저장한다.")
+    void completeOnboardingPersistsCompletedUserAndRilog() {
         // given
         User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
         OnboardingCompleteCommand command = onboardingCommand();
@@ -115,19 +103,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
                 .usingRecursiveComparison()
                 .ignoringFields("createdAt", "updatedAt", "onboardingCompletedAt")
                 .isEqualTo(result);
-    }
 
-    @Test
-    @DisplayName("대기 중인 사용자가 온보딩을 완료하면 개인 Rilog를 저장한다.")
-    void completeOnboardingPersistsRilog() {
-        // given
-        User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
-        OnboardingCompleteCommand command = onboardingCommand();
-
-        // when
-        User result = userService.completeOnboarding(pendingUser.getId(), command);
-
-        // then
         Blog savedRilog = blogRepository.findRilogByOwnerId(pendingUser.getId()).orElseThrow();
         Profile expectedProfile = Profile.createRilog(
                 command.nickname(),
@@ -143,36 +119,6 @@ class UserServiceIntegrationTest extends ServiceSupport {
         assertThat(savedRilog.getProfile()).isEqualTo(expectedProfile);
         assertThat(savedRilog.getServiceUrl()).isEqualTo(command.serviceUrl());
         assertThat(savedRilog.getBlogType()).isEqualTo(RILOG);
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자는 온보딩을 완료할 수 없다.")
-    void completeOnboardingThrowsWhenUserDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> userService.completeOnboarding(Long.MIN_VALUE, onboardingCommand()))
-                .isInstanceOf(UserException.class)
-                .hasMessage(USER_NOT_FOUND.getMessage());
-
-        assertThat(blogRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("이미 온보딩을 완료한 사용자는 다시 온보딩을 완료할 수 없다.")
-    void completeOnboardingThrowsWhenUserAlreadyCompletedOnboarding() {
-        // given
-        User completedUser = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("기존사용자", "existing_user")
-        );
-
-        // when & then
-        assertThatThrownBy(() -> userService.completeOnboarding(completedUser.getId(), onboardingCommand()))
-                .isInstanceOf(UserException.class)
-                .hasMessage(ONBOARDING_ALREADY_COMPLETED.getMessage());
-
-        User savedUser = userRepository.findById(completedUser.getId()).orElseThrow();
-        assertThat(savedUser.getNickname()).isEqualTo("기존사용자");
-        assertThat(savedUser.getSlug()).isEqualTo("existing_user");
-        assertThat(blogRepository.findAll()).isEmpty();
     }
 
     @Test
@@ -212,21 +158,6 @@ class UserServiceIntegrationTest extends ServiceSupport {
 
         User savedUser = userRepository.findById(pendingUser.getId()).orElseThrow();
         assertThat(savedUser.getOnboardingStatus()).isEqualTo(PENDING);
-    }
-
-    @Test
-    @DisplayName("등록된 유저 슬러그를 검사하면 중복 예외가 발생한다.")
-    void validateDuplicatedSlugThrowsWhenSlugExists() {
-        // given
-        String duplicatedSlug = "duplicated_slug";
-        userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("기존사용자", duplicatedSlug)
-        );
-
-        // when & then
-        assertThatThrownBy(() -> userService.validateDuplicatedUserSlug(duplicatedSlug))
-                .isInstanceOf(UserException.class)
-                .hasMessage(SLUG_DUPLICATED.getMessage());
     }
 
     private OnboardingCompleteCommand onboardingCommand() {

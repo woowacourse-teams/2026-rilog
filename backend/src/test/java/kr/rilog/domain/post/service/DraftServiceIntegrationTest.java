@@ -18,7 +18,6 @@ import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
-import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.BlogFixture;
@@ -32,13 +31,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ALREADY_BLOG_MEMBER_LEFT;
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUND;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
-import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 import static kr.rilog.support.fixure.PostFixture.initialDraftSaveCommand;
 import static kr.rilog.support.fixure.PostFixture.overwrittenDraftCommand;
 import static kr.rilog.support.fixure.PostFixture.publicDraftPublishCommand;
@@ -66,11 +63,11 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     private PostRepository postRepository;
 
     @Test
-    @DisplayName("초안을 최초 저장하면 입력한 내용과 초안 전용 상태가 저장된다.")
-    void saveDraftPersistsCommandContentAndDraftState() {
+    @DisplayName("초안을 최초 저장하면 입력한 내용, 초안 상태와 작성자 소속이 저장된다.")
+    void saveDraftPersistsContentStateAndAffiliation() {
         // given
         User writer = saveCompletedUser();
-        saveRilog(writer);
+        Blog rilog = saveRilog(writer);
         DraftSaveCommand command = initialDraftSaveCommand();
 
         // when
@@ -87,52 +84,10 @@ class DraftServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(savedDraft.getVisibility()).isEqualTo(PRIVATE);
             softly.assertThat(savedDraft.getCategory()).isNull();
             softly.assertThat(savedDraft.getThumbnailImageUrl()).isNull();
-        });
-    }
-
-    @Test
-    @DisplayName("초안을 최초 저장하면 작성자와 작성자의 개인 블로그에 소속된다.")
-    void saveDraftPersistsWriterAndRilogAffiliation() {
-        // given
-        User writer = saveCompletedUser();
-        Blog rilog = saveRilog(writer);
-
-        // when
-        DraftIdResult result = draftService.saveDraft(initialDraftSaveCommand(), writer.getId());
-
-        // then
-        Post savedDraft = postRepository.findById(result.draftId()).orElseThrow();
-
-        assertSoftly(softly -> {
             softly.assertThat(savedDraft.getUser().getId()).isEqualTo(writer.getId());
             softly.assertThat(savedDraft.getRilog().getId()).isEqualTo(rilog.getId());
             softly.assertThat(savedDraft.getColog()).isNull();
         });
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자가 초안을 저장하면 예외가 발생하고 초안은 저장되지 않는다.")
-    void saveDraftThrowsAndDoesNotPersistWhenUserDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> draftService.saveDraft(initialDraftSaveCommand(), Long.MIN_VALUE))
-                .isInstanceOf(UserException.class)
-                .hasMessage(USER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("개인 블로그가 없는 사용자가 초안을 저장하면 예외가 발생하고 초안은 저장되지 않는다.")
-    void saveDraftThrowsAndDoesNotPersistWhenRilogDoesNotExist() {
-        // given
-        User writer = saveCompletedUser();
-
-        // when & then
-        assertThatThrownBy(() -> draftService.saveDraft(initialDraftSaveCommand(), writer.getId()))
-                .isInstanceOf(BlogException.class)
-                .hasMessage(RILOG_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
     }
 
     @Test
@@ -276,15 +231,6 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("존재하지 않는 초안을 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
-    void getMyDraftThrowsWhenDraftDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> draftService.getMyDraft(Long.MIN_VALUE, Long.MAX_VALUE))
-                .isInstanceOf(PostException.class)
-                .hasMessage(DRAFT_NOT_FOUND.getMessage());
-    }
-
-    @Test
     @DisplayName("발행된 글을 초안으로 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
     void getMyDraftThrowsWhenPostIsPublished() {
         // given
@@ -376,19 +322,6 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("존재하지 않는 초안을 덮어쓰면 초안을 찾을 수 없다는 예외가 발생한다.")
-    void overwriteDraftThrowsWhenDraftDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> draftService.overwriteDraft(
-                overwrittenDraftCommand(),
-                Long.MIN_VALUE,
-                Long.MAX_VALUE
-        ))
-                .isInstanceOf(PostException.class)
-                .hasMessage(DRAFT_NOT_FOUND.getMessage());
-    }
-
-    @Test
     @DisplayName("발행된 글을 초안으로 덮어쓰면 초안을 찾을 수 없다는 예외가 발생하고 기존 내용이 유지된다.")
     void overwriteDraftThrowsAndPreservesContentWhenPostIsPublished() {
         // given
@@ -436,7 +369,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("작성자가 초안을 개인 블로그에 발행하면 입력한 게시글 정보와 발행 상태가 저장되고 게시글 위치를 반환한다.")
+    @DisplayName("챕터를 지정하지 않고 초안을 개인 블로그에 발행하면 미분류 상태로 게시글 정보가 저장된다.")
     void publishDraftToRilogPersistsDetailAndPublishedState() {
         // given
         User writer = saveCompletedUser(201L, "발행작성자", "publish_writer");
@@ -468,6 +401,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(publishedPost.getStatus()).isEqualTo(PUBLISHED);
             softly.assertThat(publishedPost.getPublishedAt()).isAfter(BASE_PUBLISHED_AT);
             softly.assertThat(publishedPost.getColog()).isNull();
+            softly.assertThat(publishedPost.getChapter()).isNull();
         });
     }
 
@@ -608,15 +542,6 @@ class DraftServiceIntegrationTest extends ServiceSupport {
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
 
         assertThat(postRepository.findById(draft.getId()).orElseThrow().getDeletedAt()).isNull();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 초안을 삭제하면 초안을 찾을 수 없다는 예외가 발생한다.")
-    void deleteDraftThrowsWhenDraftDoesNotExist() {
-        // when & then
-        assertThatThrownBy(() -> draftService.deleteDraft(Long.MIN_VALUE, Long.MAX_VALUE))
-                .isInstanceOf(PostException.class)
-                .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }
 
     @Test

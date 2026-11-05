@@ -76,23 +76,6 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("게시글을 발행할 때 챕터를 생략하면 미분류 게시글로 저장된다.")
-    void publishWithoutChapterPersistsUnclassifiedPost() {
-        // given
-        PublishingScenario scenario = createRilogScenario(2L, "publish_unclassified");
-
-        // when
-        Long postId = postService.publish(
-                publishCommand(scenario.blog().getSlug(), null),
-                scenario.writer().getId()
-        ).postId();
-
-        // then
-        Post savedPost = postRepository.findDetailById(postId).orElseThrow();
-        assertThat(savedPost.getChapter()).isNull();
-    }
-
-    @Test
     @DisplayName("다른 블로그의 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
     void publishRejectsChapterOfOtherBlogAndPreservesPosts() {
         // given
@@ -166,25 +149,6 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         // then
         Post publishedPost = postRepository.findDetailById(draft.getId()).orElseThrow();
         assertThat(publishedPost.getChapter().getId()).isEqualTo(chapter.getId());
-    }
-
-    @Test
-    @DisplayName("초안을 발행할 때 챕터를 생략하면 미분류 게시글로 저장된다.")
-    void publishDraftWithoutChapterPersistsUnclassifiedPost() {
-        // given
-        PublishingScenario scenario = createRilogScenario(8L, "draft_unclassified");
-        Post draft = saveDraft(scenario);
-
-        // when
-        draftService.publishDraft(
-                draftPublishCommand(scenario.blog().getSlug(), null),
-                draft.getId(),
-                scenario.writer().getId()
-        );
-
-        // then
-        Post publishedPost = postRepository.findDetailById(draft.getId()).orElseThrow();
-        assertThat(publishedPost.getChapter()).isNull();
     }
 
     @Test
@@ -332,20 +296,6 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
                 chapter.getName(),
                 chapter.getOrder()
         ));
-    }
-
-    @Test
-    @DisplayName("미분류 게시글을 상세 조회하면 챕터를 null로 반환한다.")
-    void readPostReturnsNullChapterForUnclassifiedPost() {
-        // given
-        PublishingScenario scenario = createRilogScenario(15L, "read_unclassified");
-        Post post = savePublishedPost(scenario);
-
-        // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), post.getId(), null);
-
-        // then
-        assertThat(response.chapter()).isNull();
     }
 
     private PublishingScenario createRilogScenario(long githubId, String slug) {

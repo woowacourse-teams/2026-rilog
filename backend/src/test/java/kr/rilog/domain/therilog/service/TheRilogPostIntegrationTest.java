@@ -103,8 +103,8 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
             "ENTERPRISE_SPOTLIGHT, enterprise",
             "PERSONAL_SPOTLIGHT, personal"
     })
-    @DisplayName("더 리로그 발행은 유형에 맞는 기존 챕터에 글을 저장한다.")
-    void publishTheRilogPersistsPostInChapterSelectedByType(PostType postType, String expectedChapterName) {
+    @DisplayName("더 리로그 발행은 유형에 맞는 기존 챕터에 글을 저장하고 조회수를 초기화한다.")
+    void publishTheRilogPersistsPostInChapterAndInitializesViewCount(PostType postType, String expectedChapterName) {
         // given
         TheRilogPostPublishCommand command = command(postType);
 
@@ -116,18 +116,6 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         assertThat(result).isEqualTo(new PostPublishResult(savedPost.getId(), THE_RILOG_SLUG));
         assertThat(savedPost.getChapter().getName()).isEqualTo(expectedChapterName);
         assertThat(savedPost.getChapter().getBlog().getId()).isEqualTo(theRilog.getId());
-    }
-
-    @Test
-    @DisplayName("더 리로그 글을 발행하면 조회수가 0으로 초기화된다.")
-    void publishTheRilogInitializesViewCount() {
-        // given
-        TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
-
-        // when
-        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
-
-        // then
         assertThat(postViewCountRepository.findViewCountByPostId(result.postId()))
                 .contains(0L);
     }

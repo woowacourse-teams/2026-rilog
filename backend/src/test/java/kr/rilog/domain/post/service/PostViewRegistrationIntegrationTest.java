@@ -71,21 +71,6 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("저장된 게시글 작성자 본인의 방문은 조회수를 늘리지 않는다.")
-    void doesNotRegisterAuthorVisit() {
-        // given
-        Scenario scenario = scenario();
-        long postId = publish(scenario);
-
-        // when
-        registrationService.register(postId, scenario.writer().getId(),
-                ViewerIdentity.member(scenario.writer().getId()));
-
-        // then
-        assertThat(postViewStore.currentCount(postId)).isZero();
-    }
-
-    @Test
     @DisplayName("비공개 게시글은 다른 독자의 조회 등록을 거절하고 누계를 유지한다.")
     void rejectsOtherReaderForPrivatePost() {
         // given

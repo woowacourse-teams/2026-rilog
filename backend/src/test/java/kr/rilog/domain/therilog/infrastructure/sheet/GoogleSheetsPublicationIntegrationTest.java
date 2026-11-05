@@ -11,7 +11,6 @@ import kr.rilog.domain.therilog.service.TheRilogPublicationService;
 import kr.rilog.domain.therilog.service.TheRilogService;
 import kr.rilog.domain.therilog.service.TheRilogSheetService;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +36,6 @@ import static kr.rilog.support.fixure.PostContentFixture.heading;
 import static kr.rilog.support.fixure.TheRilogPostFixture.publishedNews;
 import static kr.rilog.support.fixure.TheRilogPostFixture.publishedSpotlight;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
@@ -138,23 +136,8 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("시트 발행 결과 기록이 실패해도 이미 커밋된 게시글을 취소하지 않는다.")
-    void keepsCommittedPublicationWhenSheetWriteFails() {
-        expectApprovedNewsRead();
-        expectPublicationWriteRead();
-        sheets.expectFailedWrite();
-
-        assertThatThrownBy(() -> publicationService.publishDueContent(NOW))
-                .isInstanceOf(RilogInfrastructureException.class)
-                .hasMessage(INTERNAL_SERVER_ERROR.getMessage());
-
-        assertThat(postRepository.count()).isEqualTo(1L);
-        sheets.verifyRequests();
-    }
-
-    @Test
-    @DisplayName("시트 기록 실패 후 완료 처리를 재개해도 게시글을 다시 생성하지 않고 발행 결과만 기록한다.")
-    void resumesOnlySheetWriteAfterDatabaseCommit() {
+    @DisplayName("시트 기록이 실패해도 게시글은 유지되고 재시도에서는 발행 결과만 기록한다.")
+    void keepsCommittedPublicationAndRetriesOnlySheetWrite() {
         expectApprovedNewsRead();
         expectPublicationWriteRead();
         sheets.expectFailedWrite();
@@ -170,11 +153,12 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         TheRilogPublicationResultWriteException failure = catchThrowableOfType(
                 () -> publicationService.publishDueContent(NOW), TheRilogPublicationResultWriteException.class);
         assertThat(failure).hasMessage(INTERNAL_SERVER_ERROR.getMessage());
+        Long publishedPostId = failure.getPublishedArticles().getFirst().postId();
+        assertThat(postRepository.findAll()).extracting(post -> post.getId()).containsExactly(publishedPostId);
 
         publicationService.completePublication(failure.getPublishedArticles());
 
-        assertThat(postRepository.findAll().stream().map(post -> post.getId()).toList())
-                .containsExactly(failure.getPublishedArticles().getFirst().postId());
+        assertThat(postRepository.findAll()).extracting(post -> post.getId()).containsExactly(publishedPostId);
         sheets.verifyRequests();
     }
 

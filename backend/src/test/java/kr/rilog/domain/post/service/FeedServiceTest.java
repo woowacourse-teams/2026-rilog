@@ -10,6 +10,7 @@ import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
+import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostFeedQueryRepository;
 import kr.rilog.domain.post.repository.projection.PostFullFeedRow;
 import kr.rilog.domain.blog.entity.vo.Slug;
@@ -30,8 +31,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.BLOG_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.INVALID_FEED_FILTER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -257,6 +260,42 @@ class FeedServiceTest {
                 .isInstanceOf(BlogException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(BLOG_NOT_FOUND);
+        verifyNoInteractions(postFeedQueryRepository);
+    }
+
+    @Test
+    @DisplayName("개인 블로그 피드에서 대상 팀 블로그 필터와 챕터 필터를 함께 사용할 수 없다.")
+    void readRilogFeedRejectsTargetCologWithChapter() {
+        // given
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG)))
+                .thenReturn(Optional.of(createRilog()));
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, 1L, COLOG_SLUG, PAGE, SIZE);
+
+        // when
+        Throwable thrown = catchThrowable(() -> feedService.readBlogPosts(RILOG_SLUG, null, command));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_FEED_FILTER.getMessage());
+        verifyNoInteractions(postFeedQueryRepository);
+    }
+
+    @Test
+    @DisplayName("팀 블로그 피드에서는 대상 팀 블로그 필터를 사용할 수 없다.")
+    void readCologFeedRejectsTargetCologFilter() {
+        // given
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG)))
+                .thenReturn(Optional.of(createColog()));
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, null, "other_colog", PAGE, SIZE);
+
+        // when
+        Throwable thrown = catchThrowable(() -> feedService.readBlogPosts(COLOG_SLUG, null, command));
+
+        // then
+        assertThat(thrown)
+                .isInstanceOf(PostException.class)
+                .hasMessage(INVALID_FEED_FILTER.getMessage());
         verifyNoInteractions(postFeedQueryRepository);
     }
 
