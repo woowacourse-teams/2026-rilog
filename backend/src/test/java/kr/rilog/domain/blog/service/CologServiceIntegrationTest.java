@@ -319,9 +319,7 @@ class CologServiceIntegrationTest extends ServiceSupport {
                 BlogPermission.MEMBER,
                 LocalDateTime.now()
         ));
-        Post cologPost = postRepository.saveAndFlush(
-                PostFixture.publicPublishedColog(rilog, scenario.colog(), scenario.owner())
-        );
+        Post cologPost = postRepository.saveAndFlush(PostFixture.publicPublishedColog(rilog, scenario.colog(), scenario.owner()));
 
         // when
         cologService.deleteColog(scenario.owner().getId(), COLOG_SLUG);
@@ -348,21 +346,11 @@ class CologServiceIntegrationTest extends ServiceSupport {
     }
 
     private InvitationScenario createInvitationScenario() {
-        User owner = userRepository.save(
-                createUser(100L, "owner")
-        );
-        User invitee = userRepository.save(
-                createUser(200L, "invitee")
-        );
+        User owner = userRepository.save(createUser(100L, "owner"));
+        User invitee = userRepository.save(createUser(200L, "invitee"));
 
-        Blog colog = blogRepository.save(
-                createColog(owner)
-        );
-
-        blogMemberRepository.saveAndFlush(
-                BlogMember.createOwner(colog, owner, LocalDateTime.now())
-        );
-
+        Blog colog = blogRepository.save(createColog(owner));
+        blogMemberRepository.saveAndFlush(BlogMember.createOwner(colog, owner, LocalDateTime.now()));
         return new InvitationScenario(owner, invitee, colog);
     }
 
@@ -483,6 +471,5 @@ class CologServiceIntegrationTest extends ServiceSupport {
                         BlogMemberStatus.ACTIVE
                 ).orElseThrow();
     }
-
 
 }

@@ -99,14 +99,11 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         Post post = savePublicPost(postWriter);
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(post.getId(), commenter.getId(), selectedCommand());
         CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
 
         // then
-        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(
-                saved.getCommentAnchorSelection().getId()
-        ).orElseThrow();
+        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository.findById(saved.getCommentAnchorSelection().getId()).orElseThrow();
         Selection expectedSelection = Selection.of(
                 PARAGRAPH_BLOCK_ID,
                 SELECTED_START,
@@ -147,8 +144,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         Post post = savePublicPost(postWriter);
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(post.getId(), commenter.getId(), selectedCommand());
 
         // then
         assertThat(applicationEvents.stream(NotificationEvent.CommentAnchorCreated.class))
@@ -189,10 +185,8 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         Post post = savePublicPost(postWriter);
 
         // when
-        CommentAnchorCreateResult firstResult = commentAnchorService.createCommentAnchor(
-                post.getId(), firstCommenter.getId(), selectedCommand());
-        CommentAnchorCreateResult secondResult = commentAnchorService.createCommentAnchor(
-                post.getId(), secondCommenter.getId(), selectedCommand());
+        CommentAnchorCreateResult firstResult = commentAnchorService.createCommentAnchor(post.getId(), firstCommenter.getId(), selectedCommand());
+        CommentAnchorCreateResult secondResult = commentAnchorService.createCommentAnchor(post.getId(), secondCommenter.getId(), selectedCommand());
 
         // then
         Long firstSelectionId = getSelectionId(firstResult);
@@ -211,8 +205,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorSelection existingSelection = saveActiveSelection(post);
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(post.getId(), commenter.getId(), selectedCommand());
 
         // then
         assertThat(getSelectionId(result)).isEqualTo(existingSelection.getId());
@@ -230,8 +223,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         saveActiveSelection(post);
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(post.getId(), commenter.getId(), selectedCommand());
 
         // then
         assertThat(getSelectionId(result)).isEqualTo(firstSelection.getId());
@@ -249,13 +241,10 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
-                post.getId(), commenter.getId(), selectedCommand());
+        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(post.getId(), commenter.getId(), selectedCommand());
 
         // then
-        CommentAnchorSelection activeSelection = commentAnchorSelectionRepository.findById(
-                getSelectionId(result)
-        ).orElseThrow();
+        CommentAnchorSelection activeSelection = commentAnchorSelectionRepository.findById(getSelectionId(result)).orElseThrow();
         assertThat(activeSelection.getId()).isNotEqualTo(orphanedSelection.getId());
         assertThat(activeSelection.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
     }
@@ -489,9 +478,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorAddCommand(CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
-                requestedPost.getId(), commenter.getId(), otherSelection.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(requestedPost.getId(), commenter.getId(), otherSelection.getId(), command))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
         assertThat(commentAnchorRepository.count()).isZero();
@@ -510,9 +497,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorAddCommand(CONTENT);
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
-                post.getId(), commenter.getId(), orphanedSelection.getId(), command
-        );
+        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(post.getId(), commenter.getId(), orphanedSelection.getId(), command);
         CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
 
         // then
@@ -550,9 +535,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorAddCommand(CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
-                post.getId(), commenter.getId(), deletedSelection.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(post.getId(), commenter.getId(), deletedSelection.getId(), command))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_SELECTION_NOT_FOUND.getMessage());
         assertThat(commentAnchorRepository.count()).isZero();
@@ -565,16 +548,12 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
         Post post = savePublicPost(postWriter);
-        CommentAnchorSelection activeSelection = saveSelection(
-                post,
-                Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "가나")
-        );
+        CommentAnchorSelection activeSelection = saveSelection(post, Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "가나"));
+
         saveAnchor(activeSelection, commenter, "첫 번째 댓글");
         saveAnchor(activeSelection, postWriter, "두 번째 댓글");
-        CommentAnchorSelection orphanedSelection = saveSelection(
-                post,
-                Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT)
-        );
+        CommentAnchorSelection orphanedSelection = saveSelection(post, Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT));
+
         orphanedSelection.orphan(LocalDateTime.of(2026, 9, 21, 12, 0));
         commentAnchorSelectionRepository.saveAndFlush(orphanedSelection);
         saveAnchor(orphanedSelection, commenter, "고아 댓글");
@@ -720,25 +699,16 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         User postWriter = saveCompletedUser(100L, "글작성자", "post_writer");
         User commenter = saveCompletedUser(101L, "댓글작성자", "commenter");
         Post post = savePublicPost(postWriter);
-        CommentAnchorSelection firstSelection = saveSelection(
-                post,
-                Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "가나")
-        );
-        CommentAnchorSelection secondSelection = saveSelection(
-                post,
-                Selection.of(OTHER_BLOCK_ID, 0, 2, "마바")
-        );
-        CommentAnchorSelection thirdSelection = saveSelection(
-                post,
-                Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT)
-        );
+        CommentAnchorSelection firstSelection = saveSelection(post, Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "가나"));
+        CommentAnchorSelection secondSelection = saveSelection(post, Selection.of(OTHER_BLOCK_ID, 0, 2, "마바"));
+        CommentAnchorSelection thirdSelection = saveSelection(post, Selection.of(PARAGRAPH_BLOCK_ID, SELECTED_START, SELECTED_END, SELECTED_TEXT));
+
         saveAnchor(thirdSelection, commenter, "세 번째 selection 댓글");
         saveAnchor(secondSelection, commenter, "두 번째 selection 댓글");
         saveAnchor(firstSelection, commenter, "첫 번째 selection 댓글");
 
         // when
-        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(
-                post.getId(), commenter.getId());
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(post.getId(), commenter.getId());
 
         // then
         assertThat(result.anchorGroups())
@@ -813,8 +783,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         saveAnchor(anchorSelection, commenter, CONTENT);
 
         // when
-        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(
-                post.getId(), postWriter.getId());
+        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(post.getId(), postWriter.getId());
 
         // then
         CommentAnchorListResult.CommentAnchorResult commentAnchor = result.anchorGroups().getFirst()
@@ -848,9 +817,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when
-        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
-        );
+        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT));
         CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
 
         // then
@@ -888,9 +855,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when
-        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(CONTENT)
-        );
+        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(CONTENT));
         CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
 
         // then
@@ -911,9 +876,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(orphanedSelection, commenter, CONTENT);
 
         // when
-        commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
-        );
+        commentAnchorService.updateCommentAnchor(post.getId(), anchor.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT));
         CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
 
         // then
@@ -931,9 +894,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), postWriter.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(post.getId(), anchor.getId(), postWriter.getId(), command))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_AUTHOR_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().getContent()).isEqualTo(CONTENT);
@@ -950,9 +911,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(post.getId(), anchor.getId(), commenter.getId(), command))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().getContent()).isEqualTo(CONTENT);
@@ -971,9 +930,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
-                requestedPost.getId(), otherAnchor.getId(), commenter.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(requestedPost.getId(), otherAnchor.getId(), commenter.getId(), command))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
     }
@@ -991,9 +948,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
-                post.getId(), deletedAnchor.getId(), commenter.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(post.getId(), deletedAnchor.getId(), commenter.getId(), command))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
     }
@@ -1012,9 +967,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(post.getId(), anchor.getId(), commenter.getId(), command))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
     }
@@ -1030,9 +983,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorUpdateCommand(UPDATED_CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(
-                deleted.getId(), anchor.getId(), postWriter.getId(), command
-        ))
+        assertThatThrownBy(() -> commentAnchorService.updateCommentAnchor(deleted.getId(), anchor.getId(), postWriter.getId(), command))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -1047,9 +998,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchorSelection anchorSelection = saveActiveSelection(post);
         CommentAnchor edited = saveAnchor(anchorSelection, commenter, "수정할 댓글");
         CommentAnchor unedited = saveAnchor(anchorSelection, commenter, "그대로인 댓글");
-        commentAnchorService.updateCommentAnchor(
-                post.getId(), edited.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT)
-        );
+        commentAnchorService.updateCommentAnchor(post.getId(), edited.getId(), commenter.getId(), new CommentAnchorUpdateCommand(UPDATED_CONTENT));
 
         // when
         CommentAnchorListResult result = commentAnchorService.readCommentAnchors(post.getId(), null);
@@ -1072,9 +1021,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when
-        CommentAnchorDeleteResult result = commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId()
-        );
+        CommentAnchorDeleteResult result = commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), commenter.getId());
         CommentAnchor saved = commentAnchorRepository.findById(anchor.getId()).orElseThrow();
 
         // then
@@ -1233,9 +1180,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), member.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), member.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_DELETE_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1258,9 +1203,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), leftAdmin.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), leftAdmin.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_DELETE_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1283,9 +1226,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), otherAdmin.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), otherAdmin.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_DELETE_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1302,9 +1243,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), stranger.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), stranger.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_DELETE_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1337,9 +1276,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), commenter.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1360,9 +1297,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(post), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), admin.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), admin.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
         assertThat(commentAnchorRepository.findById(anchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1380,9 +1315,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         commentAnchorRepository.saveAndFlush(deletedAnchor);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), deletedAnchor.getId(), commenter.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), deletedAnchor.getId(), commenter.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
     }
@@ -1399,9 +1332,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor otherAnchor = saveAnchor(saveActiveSelection(otherPost), commenter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                requestedPost.getId(), otherAnchor.getId(), firstWriter.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(requestedPost.getId(), otherAnchor.getId(), firstWriter.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
         assertThat(commentAnchorRepository.findById(otherAnchor.getId()).orElseThrow().isDeleted()).isFalse();
@@ -1420,9 +1351,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         commentAnchorSelectionRepository.saveAndFlush(deletedSelection);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                post.getId(), anchor.getId(), commenter.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(post.getId(), anchor.getId(), commenter.getId()))
                 .isInstanceOf(CommentException.class)
                 .hasMessage(COMMENT_ANCHOR_NOT_FOUND.getMessage());
     }
@@ -1437,9 +1366,7 @@ class CommentAnchorServiceIntegrationTest extends ServiceSupport {
         CommentAnchor anchor = saveAnchor(saveActiveSelection(deleted), postWriter, CONTENT);
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
-                deleted.getId(), anchor.getId(), postWriter.getId()
-        ))
+        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(deleted.getId(), anchor.getId(), postWriter.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }

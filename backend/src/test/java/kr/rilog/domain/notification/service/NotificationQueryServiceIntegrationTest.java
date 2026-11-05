@@ -81,18 +81,11 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
                 scenario.anchor(),
                 BASE_TIME
         );
-        Notification readNotification = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME.plusMinutes(1)
-        );
+        Notification readNotification = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.plusMinutes(1));
         markAsRead(readNotification, BASE_TIME.plusMinutes(2));
 
         // when
-        NotificationListResult result = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        );
+        NotificationListResult result = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId());
 
         // then
         assertThat(result.notifications())
@@ -105,28 +98,13 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     void readNotificationsWithUnreadExcludesReadNotifications() {
         // given
         InlineCommentScenario scenario = savePublicRilogScenario();
-        Notification unreadNotification = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME
-        );
-        Notification readNotification = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME.plusMinutes(1)
-        );
+        Notification unreadNotification = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
+        Notification readNotification = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.plusMinutes(1));
         markAsRead(readNotification, BASE_TIME.plusMinutes(2));
-        NotificationSearchCommand unreadSearch = new NotificationSearchCommand(
-                NotificationFilter.UNREAD,
-                0,
-                20
-        );
+        NotificationSearchCommand unreadSearch = new NotificationSearchCommand(NotificationFilter.UNREAD, 0, 20);
 
         // when
-        NotificationListResult result = notificationQueryService.readNotifications(
-                unreadSearch,
-                scenario.recipient().getId()
-        );
+        NotificationListResult result = notificationQueryService.readNotifications(unreadSearch, scenario.recipient().getId());
 
         // then
         assertThat(result.notifications())
@@ -141,11 +119,7 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         InlineCommentScenario scenario = savePublicRilogScenario();
         saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
         saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.plusMinutes(1));
-        Notification readNotification = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME.plusMinutes(2)
-        );
+        Notification readNotification = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.plusMinutes(2));
         markAsRead(readNotification, BASE_TIME.plusMinutes(3));
         saveNotification(scenario.commentWriter(), scenario.anchor(), BASE_TIME);
 
@@ -161,36 +135,17 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     void readNotificationsOrdersByCreatedAtAndIdDescending() {
         // given
         InlineCommentScenario scenario = savePublicRilogScenario();
-        Notification older = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME.minusMinutes(1)
-        );
-        Notification firstAtSameTime = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME
-        );
-        Notification secondAtSameTime = saveNotification(
-                scenario.recipient(),
-                scenario.anchor(),
-                BASE_TIME
-        );
+        Notification older = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME.minusMinutes(1));
+        Notification firstAtSameTime = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
+        Notification secondAtSameTime = saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
 
         // when
-        NotificationListResult result = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        );
+        NotificationListResult result = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId());
 
         // then
         assertThat(result.notifications())
                 .extracting(NotificationItemResult::notificationId)
-                .containsExactly(
-                        secondAtSameTime.getId(),
-                        firstAtSameTime.getId(),
-                        older.getId()
-                );
+                .containsExactly(secondAtSameTime.getId(), firstAtSameTime.getId(), older.getId());
     }
 
     @Test
@@ -224,10 +179,9 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         deleteSource(scenario, deletedSource);
 
         // when
-        NotificationItemResult item = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        ).notifications().getFirst();
+        NotificationItemResult item = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId())
+                .notifications()
+                .getFirst();
 
         // then
         assertSoftly(softly -> {
@@ -246,10 +200,9 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         blogRepository.saveAndFlush(scenario.colog());
 
         // when
-        NotificationItemResult item = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        ).notifications().getFirst();
+        NotificationItemResult item = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId())
+                .notifications()
+                .getFirst();
 
         // then
         assertSoftly(softly -> {
@@ -266,10 +219,9 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
 
         // when
-        NotificationItemResult item = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        ).notifications().getFirst();
+        NotificationItemResult item = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId())
+                .notifications()
+                .getFirst();
 
         // then
         assertSoftly(softly -> {
@@ -286,10 +238,9 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
 
         // when
-        NotificationItemResult item = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        ).notifications().getFirst();
+        NotificationItemResult item = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId())
+                .notifications()
+                .getFirst();
 
         // then
         assertSoftly(softly -> {
@@ -306,10 +257,9 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
         saveNotification(scenario.recipient(), scenario.anchor(), BASE_TIME);
 
         // when
-        NotificationItemResult item = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                scenario.recipient().getId()
-        ).notifications().getFirst();
+        NotificationItemResult item = notificationQueryService.readNotifications(DEFAULT_SEARCH, scenario.recipient().getId())
+                .notifications()
+                .getFirst();
 
         // then
         assertSoftly(softly -> {
@@ -323,18 +273,12 @@ class NotificationQueryServiceIntegrationTest extends ServiceSupport {
     void readNotificationsHidesContentForMissingSource() {
         // given
         User recipient = saveCompletedUser(1L, "missing_recipient");
-        notificationRepository.saveAndFlush(Notification.create(
-                recipient.getId(),
-                POST_INLINE_COMMENT,
-                Long.MAX_VALUE,
-                BASE_TIME
-        ));
+        notificationRepository.saveAndFlush(Notification.create(recipient.getId(), POST_INLINE_COMMENT, Long.MAX_VALUE, BASE_TIME));
 
         // when
-        NotificationItemResult item = notificationQueryService.readNotifications(
-                DEFAULT_SEARCH,
-                recipient.getId()
-        ).notifications().getFirst();
+        NotificationItemResult item = notificationQueryService.readNotifications(DEFAULT_SEARCH, recipient.getId())
+                .notifications()
+                .getFirst();
 
         // then
         assertSoftly(softly -> {

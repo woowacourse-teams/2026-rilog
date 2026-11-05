@@ -434,11 +434,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         Post privateCologPost = savePost(PostFixture.privatePublishedCologPost(rilog, colog, owner));
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                rilog.getSlug(),
-                owner.getId(),
-                DEFAULT_SEARCH
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), owner.getId(), DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -457,11 +453,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.privatePublishedRilogPost(rilog, owner));
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                rilog.getSlug(),
-                requester.getId(),
-                DEFAULT_SEARCH
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(rilog.getSlug(), requester.getId(), DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -483,11 +475,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         savePost(PostFixture.privatePublishedCologPost(otherRilog, colog, otherAuthor));
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                colog.getSlug(),
-                requester.getId(),
-                DEFAULT_SEARCH
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), requester.getId(), DEFAULT_SEARCH);
 
         // then
         assertThat(result.posts())
@@ -655,11 +643,7 @@ class FeedServiceIntegrationTest extends ServiceSupport {
         BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, targetChapter.getId(), null, 0, 10);
 
         // when
-        BlogFeedPostResponse result = feedService.readBlogPosts(
-                colog.getSlug(),
-                requester.getId(),
-                command
-        );
+        BlogFeedPostResponse result = feedService.readBlogPosts(colog.getSlug(), requester.getId(), command);
 
         // then
         assertThat(result.posts())

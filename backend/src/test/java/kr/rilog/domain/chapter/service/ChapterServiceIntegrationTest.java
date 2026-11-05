@@ -313,18 +313,11 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     void renamePersistsUniqueName() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        Chapter target = chapterRepository.saveAndFlush(
-                Chapter.create(scenario.blog(), "개발 이야기", 0)
-        );
+        Chapter target = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "개발 이야기", 0));
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when
-        ChapterResult result = chapterService.rename(
-                BLOG_SLUG,
-                target.getId(),
-                scenario.requester().getId(),
-                command
-        );
+        ChapterResult result = chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command);
 
         // then
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -361,19 +354,12 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     void renameRejectsOtherChapterNameAndPreservesName() {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
-        Chapter target = chapterRepository.saveAndFlush(
-                Chapter.create(scenario.blog(), "개발 이야기", 0)
-        );
+        Chapter target = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "개발 이야기", 0));
         chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "회고", 1));
         ChapterRenameCommand command = new ChapterRenameCommand("  회고  ");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.rename(
-                BLOG_SLUG,
-                target.getId(),
-                scenario.requester().getId(),
-                command
-        ))
+        assertThatThrownBy(() -> chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NAME_ALREADY_EXISTS.getMessage());
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -391,12 +377,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when
-        ChapterResult result = chapterService.rename(
-                BLOG_SLUG,
-                target.getId(),
-                scenario.requester().getId(),
-                command
-        );
+        ChapterResult result = chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command);
 
         // then
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -415,12 +396,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.rename(
-                BLOG_SLUG,
-                target.getId(),
-                scenario.requester().getId(),
-                command
-        ))
+        assertThatThrownBy(() -> chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -433,21 +409,12 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
         User otherOwner = saveUser(300L, "other_owner");
-        Blog otherBlog = blogRepository.saveAndFlush(
-                Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile())
-        );
-        Chapter otherChapter = chapterRepository.saveAndFlush(
-                Chapter.create(otherBlog, "다른 블로그 챕터", 0)
-        );
+        Blog otherBlog = blogRepository.saveAndFlush(Blog.createColog(otherOwner, "other_team", BlogFixture.cologProfile()));
+        Chapter otherChapter = chapterRepository.saveAndFlush(Chapter.create(otherBlog, "다른 블로그 챕터", 0));
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.rename(
-                BLOG_SLUG,
-                otherChapter.getId(),
-                scenario.requester().getId(),
-                command
-        ))
+        assertThatThrownBy(() -> chapterService.rename(BLOG_SLUG, otherChapter.getId(), scenario.requester().getId(), command))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
     }
@@ -468,8 +435,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         chapterService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
 
         // then
-        List<Chapter> remainingChapters = chapterRepository
-                .findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId());
+        List<Chapter> remainingChapters = chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId());
         assertThat(remainingChapters.stream().map(Chapter::getOrder).toList())
                 .containsExactly(0, 1, 2, 3, 4);
     }
@@ -480,11 +446,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         // given
         ChapterCreationScenario scenario = createMemberScenario(BlogPermission.OWNER);
         Chapter target = chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "삭제 대상", 0));
-        Post post = PostFixture.publicPublishedColog(
-                scenario.blog(),
-                scenario.blog(),
-                scenario.requester()
-        );
+        Post post = PostFixture.publicPublishedColog(scenario.blog(), scenario.blog(), scenario.requester());
         post.update(PostFixture.updatedPostDetail(), scenario.blog(), target);
         postRepository.saveAndFlush(post);
 
@@ -506,9 +468,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         }
 
         User requester = saveUser(200L, "requester");
-        blogMemberRepository.saveAndFlush(
-                BlogMember.invite(blog, requester, "Backend", permission, JOINED_AT)
-        );
+        blogMemberRepository.saveAndFlush(BlogMember.invite(blog, requester, "Backend", permission, JOINED_AT));
         return new ChapterCreationScenario(blog, requester);
     }
 
@@ -521,9 +481,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     }
 
     private ChapterCreationScenario createRilogOwnerScenario() {
-        User owner = userRepository.saveAndFlush(
-                UserFixture.completedWithNicknameAndSlug("러로", "owner_rilog")
-        );
+        User owner = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("러로", "owner_rilog"));
         Blog blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
         blogMemberRepository.saveAndFlush(BlogMember.createOwner(blog, owner, JOINED_AT));
         return new ChapterCreationScenario(blog, owner);

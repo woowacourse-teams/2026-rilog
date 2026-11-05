@@ -105,9 +105,8 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
                 .isInstanceOf(CommentException.class)
                 .hasMessage(INVALID_COMMENT_CONTENT.getMessage());
         assertThat(storedCount()).isZero();
-        assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM comment_anchor_selection WHERE post_id = ?", Long.class, post.getId()
-        )).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM comment_anchor_selection WHERE post_id = ?", Long.class, post.getId()))
+                .isZero();
     }
 
     @Test
