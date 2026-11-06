@@ -77,12 +77,12 @@ jobs:
 
   deploy:
     name: Deploy Rilog Dev
-    runs-on: [ self-hosted, Linux, ARM64, backend-dev ]
+    runs-on: [ self-hosted, Linux, ARM64, rilog-be-dev-v2 ]
     needs: build
-    if: github.event_name == 'push'
+    #if: github.event_name == 'push'
 
     steps:
       - name: Deploy to server
         run: |
-          cd /home/ubuntu
+          cd ~
           ./deploy.sh
