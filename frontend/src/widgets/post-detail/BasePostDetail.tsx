@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 import type { PostDetail } from '@/domains/post/model/post';
 import { extractPostTableOfContents } from '@/features/post-detail/lib/extract-post-table-of-contents';
-import { renderPostDetailContent } from '@/features/post-detail/lib/render-post-detail-content';
+import { getCachedPostDetailContent } from '@/features/post-detail/lib/get-cached-post-detail-content';
 import PostDetailHero from '@/features/post-detail/ui/PostDetailHero';
 import PostNavigationVisitProvider from '@/features/post-detail/ui/PostNavigationVisitProvider';
 import PostTableOfContents from '@/features/post-detail/ui/PostTableOfContents';
@@ -34,7 +34,7 @@ export default async function BasePostDetail({
 	afterProfile,
 }: BasePostDetailProps) {
 	const tableOfContents = extractPostTableOfContents(post.content);
-	const contentHtml = await renderPostDetailContent(post.content);
+	const contentHtml = await getCachedPostDetailContent(post.id, post.content);
 	// const description = extractPostDescription(post.content, 150);
 
 	return (
