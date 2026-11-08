@@ -103,7 +103,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh scripts/warm-post-detail-cache.mjs deploy
+          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -163,9 +163,10 @@ jobs:
             done
           fi
 
-          # 0. 이전 빌드 산출물 정리 (node_modules는 재사용해서 install 속도 확보)
-          mkdir -p $TARGET_DIR
-          rm -rf $TARGET_DIR/.next $TARGET_DIR/public
+          # 0. 이전 빌드 산출물 정리 (게시글 본문 HTML 캐시는 .next 밖에 유지)
+          mkdir -p "$TARGET_DIR"
+          rm -rf "$TARGET_DIR/.next"
+          rm -rf "$TARGET_DIR/public"
 
           # 1. 대상 디렉터리 생성 및 압축 해제
           mkdir -p $TARGET_DIR
@@ -189,8 +190,3 @@ jobs:
 
           # The daily job captures data and warms only /the-rilog; it never builds or reloads PM2.
           bash scripts/install-the-rilog-timer.sh
-
-          # Warm popular post HTML after the new Next process starts. Failures do not roll back deployment.
-          if ! node --env-file=.env.production.local scripts/warm-post-detail-cache.mjs; then
-            echo '::warning::Post detail cache warm-up failed; deployment remains active.'
-          fi
