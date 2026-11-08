@@ -1,14 +1,13 @@
 import 'server-only';
 
-import { unstable_cache } from 'next/cache';
+import { join } from 'node:path';
 
 import type { PostContentBlock } from '@/domains/post/model/post-content';
 
+import { readOrRenderPostDetailContent } from './post-detail-content-file-cache';
 import { renderPostDetailContent } from './render-post-detail-content';
 
-// 게시글 ID와 본문 블록이 캐시 키에 포함되어 본문 수정 시 새 HTML을 생성한다.
-export const getCachedPostDetailContent = unstable_cache(
-	(_postId: number, blocks: PostContentBlock[]) => renderPostDetailContent(blocks),
-	['post-detail-content-html'],
-	{ revalidate: false },
-);
+const CACHE_DIRECTORY = join(process.cwd(), '.post-detail-content-cache');
+
+export const getCachedPostDetailContent = (postId: number, blocks: PostContentBlock[]): Promise<string> =>
+	readOrRenderPostDetailContent(CACHE_DIRECTORY, postId, blocks, renderPostDetailContent);

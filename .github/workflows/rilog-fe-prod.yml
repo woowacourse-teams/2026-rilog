@@ -163,9 +163,10 @@ jobs:
             done
           fi
 
-          # 0. 이전 빌드 산출물 정리 (node_modules는 재사용해서 install 속도 확보)
-          mkdir -p $TARGET_DIR
-          rm -rf $TARGET_DIR/.next $TARGET_DIR/public
+          # 0. 이전 빌드 산출물 정리 (게시글 본문 HTML 캐시는 .next 밖에 유지)
+          mkdir -p "$TARGET_DIR"
+          rm -rf "$TARGET_DIR/.next"
+          rm -rf "$TARGET_DIR/public"
 
           # 1. 대상 디렉터리 생성 및 압축 해제
           mkdir -p $TARGET_DIR
