@@ -103,7 +103,7 @@ jobs:
       - name: Package artifacts
         # node_modules를 제외하고 빌드 산출물과 필수 설정 파일만 압축 (OOM 방지 및 빠른 업로드)
         run: |
-          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh deploy
+          tar --exclude=.next/cache --exclude=.next/dev -czf fe-build.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs next.config.ts test-harness/sentry-smoke-config.mjs .the-rilog-build/snapshot.json scripts/refresh-the-rilog.mjs scripts/install-the-rilog-timer.sh scripts/warm-post-detail-cache.mjs deploy
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -189,3 +189,8 @@ jobs:
 
           # The daily job captures data and warms only /the-rilog; it never builds or reloads PM2.
           bash scripts/install-the-rilog-timer.sh
+
+          # Warm popular post HTML after the new Next process starts. Failures do not roll back deployment.
+          if ! node --env-file=.env.production.local scripts/warm-post-detail-cache.mjs; then
+            echo '::warning::Post detail cache warm-up failed; deployment remains active.'
+          fi
