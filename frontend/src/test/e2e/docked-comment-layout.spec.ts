@@ -1,6 +1,31 @@
 import { expect, test } from '@playwright/test';
 
+import type { Page } from '@playwright/test';
+
 import { renderInlineCommentWorkspace } from './fixtures/inline-comment-browser';
+
+const mockEmptyCommentAnchors = (page: Page) =>
+	page.route('https://api.rilog.test/**', (route) => {
+		const { pathname } = new URL(route.request().url());
+		if (route.request().method() === 'GET' && pathname === '/v1/posts/106/comment-anchors/sidebar') {
+			return route.fulfill({ json: { status: 200, message: 'OK', data: { anchorGroups: [] } } });
+		}
+		if (route.request().method() === 'GET' && pathname === '/v1/posts/106/comment-anchors') {
+			return route.fulfill({ json: { status: 200, message: 'OK', data: { blocks: [] } } });
+		}
+		return route.abort('failed');
+	});
+
+const waitForLayoutTransition = (page: Page) =>
+	page.locator('section[role="region"][data-state]').evaluate(async (element) => {
+		const host = element.parentElement;
+		const shell = host?.parentElement;
+		if (!host || !shell) throw new Error('댓글창 배치를 찾을 수 없습니다.');
+		await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+		const animations = [shell, host, element].flatMap((node) => node.getAnimations());
+		await Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
+		await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+	});
 
 // Native history and transition geometry need a browser. #872 focus changes stay separate.
 for (const width of [1280, 1440, 1920]) {
@@ -8,17 +33,7 @@ for (const width of [1280, 1440, 1920]) {
 		test(`${width}px ${method}: 댓글창 배치와 닫힌 공간을 유지한다`, async ({ page }) => {
 			await page.setViewportSize({ width, height: 900 });
 			await page.emulateMedia({ reducedMotion: 'no-preference' });
-			await page.route('https://api.rilog.test/**', (route) =>
-				route.fulfill({
-					json: {
-						status: 200,
-						message: 'OK',
-						data: new URL(route.request().url()).pathname.endsWith('/comment-anchors/sidebar')
-							? { anchorGroups: [] }
-							: { blocks: [] },
-					},
-				}),
-			);
+			await mockEmptyCommentAnchors(page);
 			await renderInlineCommentWorkspace(page);
 			const entry = page.getByRole('button', { name: '전체 댓글 0개 보기', exact: true });
 			const panel = page.getByRole('region', { name: '전체 인라인 댓글 0', exact: true });
@@ -38,7 +53,7 @@ for (const width of [1280, 1440, 1920]) {
 			const before = await layout();
 			await entry.click();
 			await expect(panel).toBeVisible();
-			await page.waitForTimeout(400);
+			await waitForLayoutTransition(page);
 			const opened = await layout();
 			expect(opened.gutter).toBeGreaterThan(0);
 			expect(opened.width).toBeGreaterThan(before.width);
@@ -46,7 +61,7 @@ for (const width of [1280, 1440, 1920]) {
 			else if (method === 'Escape') await page.keyboard.press('Escape');
 			else await page.goBack();
 			await expect(panel).toBeHidden();
-			await page.waitForTimeout(400);
+			await waitForLayoutTransition(page);
 			const closed = await layout();
 			expect(closed.hostWidth).toBeLessThan(1);
 			expect(Math.abs(closed.width - before.width)).toBeLessThan(2);
@@ -60,7 +75,7 @@ for (const width of [1280, 1440, 1920]) {
 			await page.keyboard.press('Escape');
 			await expect(dialog).toBeHidden();
 			await page.setViewportSize({ width, height: 900 });
-			await page.waitForTimeout(400);
+			await waitForLayoutTransition(page);
 			expect((await layout()).hostWidth).toBeLessThan(1);
 		});
 	}
@@ -70,17 +85,7 @@ for (const reducedMotion of ['reduce', 'no-preference'] as const) {
 	test(`${reducedMotion}: 긴 초안을 같은 선택으로 다시 열어도 높이와 초점을 유지한다`, async ({ page }) => {
 		await page.setViewportSize({ width: 1920, height: 900 });
 		await page.emulateMedia({ reducedMotion });
-		await page.route('https://api.rilog.test/**', (route) =>
-			route.fulfill({
-				json: {
-					status: 200,
-					message: 'OK',
-					data: new URL(route.request().url()).pathname.endsWith('/comment-anchors/sidebar')
-						? { anchorGroups: [] }
-						: { blocks: [] },
-				},
-			}),
-		);
+		await mockEmptyCommentAnchors(page);
 		await renderInlineCommentWorkspace(page);
 		await page.getByRole('button', { name: '전체 댓글 0개 보기' }).click();
 		const selectAgain = async () => {
@@ -100,14 +105,14 @@ for (const reducedMotion of ['reduce', 'no-preference'] as const) {
 		await selectAgain();
 		const input = page.getByRole('textbox', { name: '댓글 입력' });
 		await expect(input).toBeFocused();
-		await page.waitForTimeout(400);
+		await waitForLayoutTransition(page);
 		const draft = 'longword '.repeat(30);
 		await input.fill(draft);
 		const before = await input.evaluate((element) => element.getBoundingClientRect().height);
 		await selectAgain();
 		await expect(input).toHaveValue(draft);
 		await expect(input).toBeFocused();
-		await page.waitForTimeout(400);
+		await waitForLayoutTransition(page);
 		const after = await input.evaluate((element) => element.getBoundingClientRect().height);
 		expect(Math.abs(after - before)).toBeLessThan(2);
 		await input.evaluate((element) => {
@@ -122,7 +127,7 @@ for (const reducedMotion of ['reduce', 'no-preference'] as const) {
 		await selectAgain();
 		await expect(input).toHaveValue(`${draft}x`);
 		await expect(input).toBeFocused();
-		await page.waitForTimeout(400);
+		await waitForLayoutTransition(page);
 		const reopened = await input.evaluate((element) => element.getBoundingClientRect().height);
 		// Animated closed-to-open draft sizing also differs in develop; this PR
 		// protects the new keyed-remount regression and the reduced-motion path.
