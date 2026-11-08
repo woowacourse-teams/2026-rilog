@@ -242,7 +242,7 @@ export default function PostDetailCommentsWorkspace({
 	const restoreCommentsFocus = useCallback(() => {
 		const opener = openerRef.current?.isConnected ? openerRef.current : commentsEntryButtonRef.current;
 		if (opener !== null && document.activeElement !== opener) opener.focus({ preventScroll: true });
-		restoredOpenerRef.current = opener;
+		restoredOpenerRef.current = document.activeElement === opener ? opener : null;
 	}, []);
 	const closeComments = useCallback(() => {
 		closeCommentView();
@@ -253,15 +253,36 @@ export default function PostDetailCommentsWorkspace({
 	}, [closeCommentView, isDocked, restoreCommentsFocus]);
 
 	useEffect(() => {
+		const clearRestoredOpener = (event: Event) => {
+			if (
+				restoredOpenerRef.current !== null &&
+				(!(event.target instanceof Node) || !restoredOpenerRef.current.contains(event.target))
+			) {
+				restoredOpenerRef.current = null;
+			}
+		};
+		window.addEventListener('pointerdown', clearRestoredOpener, true);
+		window.addEventListener('focusin', clearRestoredOpener, true);
+		return () => {
+			window.removeEventListener('pointerdown', clearRestoredOpener, true);
+			window.removeEventListener('focusin', clearRestoredOpener, true);
+		};
+	}, []);
+
+	useEffect(() => {
 		const didClose = wasCommentsSidebarOpenRef.current && !isCommentsSidebarOpen;
 		wasCommentsSidebarOpenRef.current = isCommentsSidebarOpen;
+		if (isCommentsSidebarOpen) {
+			restoredOpenerRef.current = null;
+			return;
+		}
 		// Container resizing can replace the focused floating entry with the sticky entry.
 		// Recover only a lost focus; never take it back after the reader has moved elsewhere.
 		const didLoseRestoredOpener =
 			restoredOpenerRef.current !== null &&
 			!restoredOpenerRef.current.isConnected &&
 			document.activeElement === document.body;
-		if (!isCommentsSidebarOpen && isDocked && (didClose || didLoseRestoredOpener)) {
+		if (isDocked && (didClose || didLoseRestoredOpener)) {
 			restoreCommentsFocus();
 		}
 	}, [isCommentsSidebarOpen, isDocked, isEntrySticky, restoreCommentsFocus]);

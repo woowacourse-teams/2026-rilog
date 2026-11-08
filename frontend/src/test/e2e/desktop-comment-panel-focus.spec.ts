@@ -143,14 +143,30 @@ for (const method of ['button', 'Escape', 'history'] as const) {
 }
 
 for (const width of [1280, 1440, 1920]) {
-	test(`${width}px: 닫기 전환 중 다음 Tab으로 이동한 focus를 빼앗지 않는다`, async ({ page }) => {
+	test(`${width}px: 닫기 전환 중 이동하거나 본문 클릭으로 해제한 focus를 빼앗지 않는다`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: 'no-preference' });
 		await prepare(page, width);
 		await open(page);
 		await panel(page).getByRole('button', { name: '댓글 사이드바 닫기' }).click();
 		await page.keyboard.press('Tab');
-		await expect(page.getByRole('link', { name: '작성자 프로필' })).toBeFocused();
+		const next = await page.evaluateHandle(() => document.activeElement);
+		expect(
+			await entry(page).evaluate(
+				(button) => document.activeElement !== button && document.activeElement !== document.body,
+			),
+		).toBe(true);
 		await settle(page);
-		await expect(page.getByRole('link', { name: '작성자 프로필' })).toBeFocused();
+		expect(await next.evaluate((element) => element === document.activeElement)).toBe(true);
+
+		await open(page);
+		await panel(page).getByRole('button', { name: '댓글 사이드바 닫기' }).click();
+		await expect(panel(page)).toBeHidden();
+		await settle(page);
+		await expect(entry(page)).toBeFocused();
+		await page.getByRole('article', { name: '게시글 본문' }).click();
+		expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+		await page.setViewportSize({ width: 900, height: 900 });
+		await settle(page);
+		await expect(entry(page)).not.toBeFocused();
 	});
 }
