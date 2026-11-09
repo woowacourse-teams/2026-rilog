@@ -59,7 +59,7 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         assertThat(jdbc.queryForObject("select min(calculated_at) from trending_post", LocalDateTime.class))
                 .isEqualTo(NOW);
         assertThat(jdbc.queryForObject("select score from trending_post where post_id = ?", BigDecimal.class, older.getId()))
-                .isEqualByComparingTo("50");
+                .isEqualByComparingTo("120");
 
         TrendingRefreshService differentPolicy = new TrendingRefreshService(candidates,
                 (candidate, at) -> candidate.postId().equals(older.getId()) ? BigDecimal.TEN : BigDecimal.ZERO,

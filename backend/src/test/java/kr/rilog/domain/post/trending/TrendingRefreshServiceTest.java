@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.trending;
 
+import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.repository.TrendingPostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ class TrendingRefreshServiceTest {
         TrendingRefreshService service = new TrendingRefreshService(candidates, scorePolicy, posts);
         LocalDateTime evaluatedAt = LocalDateTime.of(2026, 4, 30, 12, 0);
         LocalDateTime from = LocalDateTime.of(2026, 2, 28, 12, 0);
-        TrendingCandidate candidate = new TrendingCandidate(1L, from, 2L, 3L);
+        TrendingCandidate candidate = new TrendingCandidate(1L, from, 2L, 3L, Category.TECH);
         when(candidates.findCandidates(from, evaluatedAt)).thenReturn(List.of(candidate));
         when(scorePolicy.calculate(candidate, evaluatedAt)).thenReturn(new BigDecimal("1.25"));
 
