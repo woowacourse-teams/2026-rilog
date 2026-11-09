@@ -19,6 +19,16 @@ const PURPOSE_DIRECTORIES = { PROFILE: 'profiles', CONTENT: 'images' };
 const COMPACT_DEADLINE_MS = 25_000;
 const COMPACT_MAX_WAITING = 3;
 
+// import 대기열 큐 도입. 프론트가 외부 이미지 여러 장을 동시에 보내도 바로 429로 거절하지 않고 한 장씩 차례로 처리하기 위함.
+// - 대기 시간 상한: Spring import read-timeout(40초) 안에 응답하려면 다운로드(최대 10초), 변환, S3 업로드 시간을
+//   빼야 한다. 그 안에 차례가 오지 않으면 BUSY(429)로 끝내서, Spring이 이미 포기한 요청을 변환하지 않는다.
+// - 대기 건수 상한: 원본을 줄인 뒤 import 변환은 한 장에 약 0.3~1.6초다. 20초 동안 처리할 수 있는 건수에 맞춰 10건으로 둔다.
+// - 머무름 상한: 다운로드는 대기열 밖에서 먼저 하므로, 다운로드 중이거나 기다리는 요청도 원본(최대 10MiB)을 메모리에 들고 있다.
+//   실행 1건 + 대기 10건을 넘는 요청은 다운로드 전에 거절해 들고 있는 원본 수를 묶는다.
+const IMPORT_QUEUE_WAIT_MS = 20_000;
+const IMPORT_MAX_WAITING = 10;
+const IMPORT_MAX_IN_FLIGHT = IMPORT_MAX_WAITING + 1;
+
 // 서명이 본문 해시를 포함하므로 본문을 수신 바이트로 받아 검증한 뒤 파싱한다.
 function parseBody(body) {
   try {
@@ -47,6 +57,9 @@ function verifyRequest(config, path, req, body, now) {
   });
 }
 
+// 대기열이 가득 찼거나 대기 시한이 지났을 때의 429 응답. Retry-After는 오류 처리기에서 붙인다.
+const busy = () => new ApiError(429, 'BUSY', '잠시 후 다시 시도해주세요.');
+
 function storageUnavailable(event, error, fields = {}) {
   console.error(JSON.stringify({ event, ...fields, name: error.name, requestId: error.$metadata?.requestId }));
   return new ApiError(502, 'STORAGE_UNAVAILABLE', '이미지를 저장할 수 없습니다.');
@@ -55,12 +68,15 @@ function storageUnavailable(event, error, fields = {}) {
 export function createApp({
   config, upload, readOriginal, putCompact,
   download = downloadImage, normalize = normalizeImage, compact = compactImage,
-  now = Date.now, compactDeadlineMs = COMPACT_DEADLINE_MS,
+  now = Date.now, compactDeadlineMs = COMPACT_DEADLINE_MS, importQueueWaitMs = IMPORT_QUEUE_WAIT_MS,
 }) {
   const app = express();
   app.disable('x-powered-by');
-  let active = false;
+  // import와 압축은 대기열을 따로!! 사용. 한쪽이 밀려도 다른 쪽은 기다리지 않는다.
+  const runImport = createJobQueue({ maxWaiting: IMPORT_MAX_WAITING });
   const runCompact = createJobQueue({ maxWaiting: COMPACT_MAX_WAITING });
+  // 다운로드 중, 대기 중, 변환·업로드 중인 import 요청 수.
+  let importsInFlight = 0;
 
   app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
   // Spring은 sourceUrl을 4,096자(문자 수)까지 받는다. 비ASCII는 문자당 최대 3바이트, JSON 이스케이프는 6바이트라
@@ -71,13 +87,21 @@ export function createApp({
       verifyRequest(config, IMPORT_PATH, req, body, now());
     } catch (error) { return next(error); }
 
-    if (active) return res.status(429).set('Retry-After', '2').json({ error: { code: 'BUSY', message: '잠시 후 다시 시도해주세요.' } });
-    active = true;
+    if (importsInFlight >= IMPORT_MAX_IN_FLIGHT) return next(busy());
+    importsInFlight += 1;
+    // 응답을 보내기 전에 연결이 닫히면(Spring 타임아웃 등) 받을 사람이 없으므로 기다리던 변환을 대기열에서 뺀다.
+    const disconnected = new AbortController();
+    res.on('close', () => { if (!res.writableFinished) disconnected.abort(); });
+    let waitSignal;
     try {
       const request = parseBody(body);
       const { userId, directory } = validateImportTarget(request);
       const url = validateUrl(request.sourceUrl);
-      const bytes = await normalize(await download(url));
+      // 다운로드는 네트워크 대기가 대부분이라 대기열 밖에서 한다. 변환 중인 앞 요청과 동시에 받아 두면 차례가 왔을 때 바로 변환한다.
+      const source = await download(url);
+      // 대기 시간은 대기열에 들어가는 지금부터 잰다. 시한이 지나거나 연결이 끊기면 대기열에서 빠진다.
+      waitSignal = AbortSignal.any([AbortSignal.timeout(importQueueWaitMs), disconnected.signal]);
+      const bytes = await runImport(() => normalize(source), waitSignal);
       const key = `${config.rootDirectory}/${directory}/raw/${userId}-${randomUUID()}/original.webp`;
       try {
         await upload(key, bytes);
@@ -85,8 +109,13 @@ export function createApp({
         throw storageUnavailable('s3_upload_failed', error);
       }
       res.status(201).json({ key, url: `${config.imageBaseUrl}/${key}` });
-    } catch (error) { next(error); }
-    finally { active = false; }
+    } catch (error) {
+      // 대기열에서 시한이 지나 빠진 경우(대기열이 signal.reason으로 실패시킨다)는 서버가 바쁜 것이므로 BUSY(429)로 알린다.
+      if (waitSignal?.aborted && error === waitSignal.reason) return next(busy());
+      next(error);
+    } finally {
+      importsInFlight -= 1;
+    }
   });
 
   // Spring이 원본을 사용 확정(CONFIRMED)한 뒤 호출한다. 같은 {userId}-{UUID}의 compact/{width}.webp를 만들고 덮어쓴다.
@@ -147,7 +176,10 @@ export function createApp({
   app.use((req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: '요청한 API가 없습니다.' } }));
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
-    if (error instanceof ApiError) return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+    if (error instanceof ApiError) {
+      if (error.code === 'BUSY') res.set('Retry-After', '2');
+      return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+    }
     if (error.type === 'entity.too.large') return res.status(413).json({ error: { code: 'BODY_TOO_LARGE', message: '요청 본문이 너무 큽니다.' } });
     console.error(JSON.stringify({ event: 'request_failed', name: error.name }));
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: '이미지 처리 중 오류가 발생했습니다.' } });
