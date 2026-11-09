@@ -25,8 +25,6 @@ const RILOG_RESPONSE = {
 	coverImageUrl: 'https://images.rilog.test/default-cover.png',
 	serviceUrl: null,
 	githubUrl: 'https://github.com/jetproc',
-	memberCount: 1,
-	postCount: 7,
 };
 
 const INDEX_RESPONSE = {

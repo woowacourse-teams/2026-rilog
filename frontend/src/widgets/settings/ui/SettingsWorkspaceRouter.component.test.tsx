@@ -46,8 +46,6 @@ describe('SettingsWorkspaceRouter', () => {
 					coverImageUrl: null,
 					serviceUrl: null,
 					githubUrl: null,
-					memberCount: 1,
-					postCount: 0,
 				},
 			},
 			isError: false,

@@ -14,8 +14,6 @@ const COLOG_RESPONSE: BlogPublicProfileResponse = {
 	coverImageUrl: 'https://example.com/team-cover.png',
 	serviceUrl: 'https://rilog.example.com',
 	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
-	memberCount: 5,
-	postCount: 10,
 };
 
 describe('mapBlogPublicProfileResponse', () => {
@@ -30,8 +28,6 @@ describe('mapBlogPublicProfileResponse', () => {
 			coverImageUrl: 'https://example.com/team-cover.png',
 			serviceUrl: 'https://rilog.example.com',
 			githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
-			memberCount: 5,
-			postCount: 10,
 		});
 	});
 
@@ -46,8 +42,6 @@ describe('mapBlogPublicProfileResponse', () => {
 			coverImageUrl: '',
 			serviceUrl: null,
 			githubUrl: 'https://github.com/jetproc',
-			memberCount: 1,
-			postCount: 7,
 		};
 
 		expect(mapBlogPublicProfileResponse(response)).toEqual({
@@ -60,8 +54,6 @@ describe('mapBlogPublicProfileResponse', () => {
 			coverImageUrl: '',
 			serviceUrl: undefined,
 			githubUrl: 'https://github.com/jetproc',
-			memberCount: 1,
-			postCount: 7,
 		});
 	});
 
@@ -85,8 +77,6 @@ describe('mapBlogPublicProfileResponse', () => {
 			coverImageUrl: null,
 			serviceUrl: undefined,
 			githubUrl: undefined,
-			memberCount: 5,
-			postCount: 10,
 		});
 	});
 });

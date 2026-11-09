@@ -11,6 +11,4 @@ export const mapBlogPublicProfileResponse = (response: BlogPublicProfileResponse
 	coverImageUrl: response.coverImageUrl,
 	serviceUrl: response.serviceUrl ?? undefined,
 	githubUrl: response.githubUrl ?? undefined,
-	memberCount: response.memberCount,
-	postCount: response.postCount,
 });
