@@ -276,4 +276,20 @@ class PostViewCounterRegistryTest {
         assertThat(loads.get()).isZero();
         assertThat(registry.snapshot()).isEmpty();
     }
+
+    @Test
+    @DisplayName("스냅샷은 서로 다른 게시글의 초기화된 카운터를 모두 반환한다.")
+    void snapshotContainsAllInitializedCounters() {
+        // given
+        var registry = registry(ticks, id -> id * 10);
+        PostViewCounter first = registry.getOrLoad(1);
+        PostViewCounter second = registry.getOrLoad(2);
+
+        // when
+        var snapshot = registry.snapshot();
+
+        // then
+        assertThat(snapshot).containsExactlyInAnyOrder(first, second);
+    }
+
 }

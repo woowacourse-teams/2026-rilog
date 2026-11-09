@@ -4,7 +4,7 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.entity.enums.Category;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.upload.domain.enums.ImagePurpose;
 import kr.rilog.domain.upload.domain.enums.UploadType;
@@ -40,7 +40,7 @@ class AdminPostImportServiceTest {
 
     private UserRepository users;
     private BlogRepository blogs;
-    private PostService posts;
+    private PostCommandService posts;
     private S3Presigner presigner;
     private AdminPostImportService service;
 
@@ -48,7 +48,7 @@ class AdminPostImportServiceTest {
     void setUp() {
         users = mock(UserRepository.class);
         blogs = mock(BlogRepository.class);
-        posts = mock(PostService.class);
+        posts = mock(PostCommandService.class);
         presigner = mock(S3Presigner.class);
         var properties = new S3Properties("test-bucket", "ap-northeast-2", "rilog/uploads", 10);
         var keyPolicy = new S3ImageObjectKeyPolicy(properties);

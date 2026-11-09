@@ -22,8 +22,6 @@ describe('PostDetailBlogProfileSection', () => {
 				description: 'API에서 조회한 블로그 소개입니다.',
 				profileImageUrl: null,
 				coverImageUrl: null,
-				memberCount: 1,
-				postCount: 3,
 			},
 			response: {
 				status: 200,

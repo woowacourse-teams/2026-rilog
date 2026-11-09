@@ -11,8 +11,10 @@ import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
+import kr.rilog.domain.post.service.PostQueryService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -48,6 +50,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class PostControllerTest {
 
+    private final PostCommandService postCommandService = mock(PostCommandService.class);
+    private final PostQueryService postQueryService = mock(PostQueryService.class);
+
     private static final Long POST_ID = 1L;
     private static final String BLOG_SLUG = "writer";
 
@@ -55,10 +60,9 @@ class PostControllerTest {
     @DisplayName("게시글 발행은 request body의 slug를 발행 대상 블로그 slug로 전달한다")
     void createPassesSlugFromRequestBody() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        when(postService.publish(any(PostSaveCommand.class), eq(7L)))
+        when(postCommandService.publish(any(PostSaveCommand.class), eq(7L)))
                 .thenReturn(new PostPublishResult(31L, BLOG_SLUG));
-        MockMvc mockMvc = mockMvc(postService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(post("/v1/posts")
@@ -81,7 +85,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.data.slug").value(BLOG_SLUG));
 
         ArgumentCaptor<PostSaveCommand> commandCaptor = ArgumentCaptor.forClass(PostSaveCommand.class);
-        verify(postService).publish(commandCaptor.capture(), eq(7L));
+        verify(postCommandService).publish(commandCaptor.capture(), eq(7L));
         assertThat(commandCaptor.getValue().slug()).isEqualTo(BLOG_SLUG);
     }
 
@@ -89,11 +93,10 @@ class PostControllerTest {
     @DisplayName("같은 멱등키로 게시글 발행을 다시 요청하면 한 번만 발행하고 같은 응답을 반환한다")
     void createPublishesOnceForSameIdempotencyKey() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        when(postService.publish(any(PostSaveCommand.class), eq(7L)))
+        when(postCommandService.publish(any(PostSaveCommand.class), eq(7L)))
                 .thenReturn(new PostPublishResult(31L, BLOG_SLUG))
                 .thenReturn(new PostPublishResult(32L, BLOG_SLUG));
-        MockMvc mockMvc = idempotentMockMvc(postService);
+        MockMvc mockMvc = idempotentMockMvc();
         String idempotencyKey = UUID.randomUUID().toString();
 
         // when - then
@@ -117,15 +120,14 @@ class PostControllerTest {
                     .andExpect(jsonPath("$.data.postId").value(31));
         }
 
-        verify(postService).publish(any(PostSaveCommand.class), eq(7L));
+        verify(postCommandService).publish(any(PostSaveCommand.class), eq(7L));
     }
 
     @Test
     @DisplayName("멱등키 헤더가 UUID 형식이 아니면 발행하지 않고 400으로 응답한다")
     void createRejectsInvalidIdempotencyKey() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        MockMvc mockMvc = idempotentMockMvc(postService);
+        MockMvc mockMvc = idempotentMockMvc();
 
         // when - then
         mockMvc.perform(post("/v1/posts")
@@ -146,15 +148,14 @@ class PostControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_IDEMPOTENCY_KEY"));
 
-        verifyNoInteractions(postService);
+        verifyNoInteractions(postCommandService);
     }
 
     @Test
     @DisplayName("멱등키가 아닌 값의 타입 변환 실패는 기존처럼 서버 오류로 응답한다")
     void otherTypeMismatchKeepsInternalServerError() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        MockMvc mockMvc = mockMvc(postService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/posts/{postId}", "not-a-number")
@@ -162,16 +163,15 @@ class PostControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.errorCode").value("INTERNAL_SERVER_ERROR"));
 
-        verifyNoInteractions(postService);
+        verifyNoInteractions(postQueryService);
     }
 
     @Test
     @DisplayName("블로그 게시글 상세 조회는 slug와 postId로 로그인하지 않아도 가능하다.")
     void getPostDetailsByCanonicalPathAllowsAnonymousUser() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        when(postService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(anonymousResponse());
-        MockMvc mockMvc = mockMvc(postService);
+        when(postQueryService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(anonymousResponse());
+        MockMvc mockMvc = mockMvc();
         JsonMapper mapper = JsonMapper.builder().build();
 
         // when
@@ -190,16 +190,47 @@ class PostControllerTest {
             softly.assertThat(mapper.treeToValue(body.at("/data/viewerPermissions"), PostDetailResponse.ViewerPermissionsResponse.class))
                     .isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
         });
-        verify(postService).readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null);
+        verify(postQueryService).readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null);
+    }
+
+    @Test
+    @DisplayName("팀 블로그 게시글 상세 응답은 집계 필드 없이 블로그 프로필을 반환한다.")
+    void getPostDetailsByCanonicalPathSerializesCologOwnerProfile() throws Exception {
+        // given
+        String cologSlug = "team_blog";
+        PostDetailResponse post = anonymousResponse();
+        PostDetailResponse cologPost = new PostDetailResponse(
+                post.title(), post.content(), post.publishedAt(), post.thumbnailImageUrl(), post.category(),
+                post.chapter(), post.author(),
+                new CologOwnerResponse(
+                        BlogType.COLOG, 4L, cologSlug, "리로그",
+                        "https://example.com/profile.png", "https://example.com/cover.png"
+                ),
+                post.viewerPermissions(), post.viewCount()
+        );
+        when(postQueryService.readPostDetailByCanonicalPath(cologSlug, POST_ID, null)).thenReturn(cologPost);
+
+        // when
+        var response = mockMvc().perform(get("/v1/blogs/{slug}/posts/{postId}", cologSlug, POST_ID));
+
+        // then
+        response.andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.owner.type").value("COLOG"))
+                .andExpect(jsonPath("$.data.owner.blogId").value(4))
+                .andExpect(jsonPath("$.data.owner.slug").value(cologSlug))
+                .andExpect(jsonPath("$.data.owner.name").value("리로그"))
+                .andExpect(jsonPath("$.data.owner.profileImageUrl").value("https://example.com/profile.png"))
+                .andExpect(jsonPath("$.data.owner.coverImageUrl").value("https://example.com/cover.png"))
+                .andExpect(jsonPath("$.data.owner.memberCount").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.owner.postCount").doesNotHaveJsonPath());
     }
 
     @Test
     @DisplayName("미분류 게시글 상세 조회 응답은 chapter를 null로 반환한다.")
     void getPostDetailsByCanonicalPathReturnsNullChapterForUnclassifiedPost() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        when(postService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(responseWithoutChapter());
-        MockMvc mockMvc = mockMvc(postService);
+        when(postQueryService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null)).thenReturn(responseWithoutChapter());
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID))
@@ -211,9 +242,8 @@ class PostControllerTest {
     @DisplayName("블로그 게시글 상세 조회에 Access Token이 있으면 로그인 사용자 ID를 전달한다")
     void getPostDetailsByCanonicalPathPassesRequesterIdWhenAccessTokenExists() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        when(postService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, 7L)).thenReturn(response());
-        MockMvc mockMvc = mockMvc(postService);
+        when(postQueryService.readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, 7L)).thenReturn(response());
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
@@ -221,15 +251,14 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200));
 
-        verify(postService).readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, 7L);
+        verify(postQueryService).readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, 7L);
     }
 
     @Test
     @DisplayName("블로그 게시글 상세 조회에 잘못된 Authorization 헤더가 있으면 요청을 거부한다")
     void getPostDetailsByCanonicalPathRejectsInvalidAuthorizationHeader() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        MockMvc mockMvc = mockMvc(postService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/blogs/{slug}/posts/{postId}", BLOG_SLUG, POST_ID)
@@ -237,16 +266,15 @@ class PostControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_AUTHORIZATION_HEADER"));
 
-        verifyNoInteractions(postService);
+        verifyNoInteractions(postQueryService);
     }
 
     @Test
     @DisplayName("게시글 수정 초기 데이터 조회는 로그인 사용자 ID로 조회한다")
     void getEditablePostDetailsPassesRequesterId() throws Exception {
         // given
-        PostService postService = mock(PostService.class);
-        when(postService.readEditablePostDetail(POST_ID, 7L)).thenReturn(response());
-        MockMvc mockMvc = mockMvc(postService);
+        when(postQueryService.readEditablePostDetail(POST_ID, 7L)).thenReturn(response());
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/posts/{postId}", POST_ID)
@@ -254,15 +282,15 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200));
 
-        verify(postService).readEditablePostDetail(POST_ID, 7L);
+        verify(postQueryService).readEditablePostDetail(POST_ID, 7L);
     }
 
-    private MockMvc mockMvc(PostService postService) {
-        return mockMvcFor(new PostController(postService));
+    private MockMvc mockMvc() {
+        return mockMvcFor(new PostController(postCommandService, postQueryService));
     }
 
-    private MockMvc idempotentMockMvc(PostService postService) {
-        AspectJProxyFactory factory = new AspectJProxyFactory(new PostController(postService));
+    private MockMvc idempotentMockMvc() {
+        AspectJProxyFactory factory = new AspectJProxyFactory(new PostController(postCommandService, postQueryService));
         factory.setProxyTargetClass(true);
         factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
         PostController controller = factory.getProxy();

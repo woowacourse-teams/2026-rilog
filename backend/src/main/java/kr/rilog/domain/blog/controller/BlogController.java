@@ -10,7 +10,8 @@ import kr.rilog.domain.blog.controller.dto.request.BlogProfileUpdateRequest;
 import kr.rilog.domain.blog.controller.dto.response.BlogIndexResponse;
 import kr.rilog.domain.blog.controller.dto.response.BlogPublicProfileResponse;
 import kr.rilog.domain.blog.entity.vo.Slug;
-import kr.rilog.domain.blog.service.BlogService;
+import kr.rilog.domain.blog.service.BlogCommandService;
+import kr.rilog.domain.blog.service.BlogQueryService;
 import kr.rilog.domain.blog.service.dto.result.BlogIndexResult;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
 import kr.rilog.global.response.ApiResponse;
@@ -23,7 +24,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BlogController implements BlogApiSpec {
 
-    private final BlogService blogService;
+    private final BlogCommandService blogCommandService;
+
+    private final BlogQueryService blogQueryService;
 
     @GetMapping("/availability/slug")
     public ApiResponse<Void> validateSlug(
@@ -34,7 +37,7 @@ public class BlogController implements BlogApiSpec {
                     message = "슬러그는 영문을 1자 이상 포함하고 영문, 숫자, 언더스코어(_)만 사용할 수 있습니다."
             ) String slug
     ) {
-        blogService.validateDuplicatedSlug(slug);
+        blogQueryService.validateDuplicatedSlug(slug);
         return ApiResponse.response(HttpStatus.OK, "사용가능한 슬러그입니다.");
     }
 
@@ -43,13 +46,13 @@ public class BlogController implements BlogApiSpec {
             @RequestParam("nickname")
             @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하이어야 합니다.") String nickname
     ) {
-        blogService.validateDuplicatedProfileName(nickname);
+        blogQueryService.validateDuplicatedProfileName(nickname);
         return ApiResponse.response(HttpStatus.OK, "사용가능한 닉네임입니다.");
     }
 
     @GetMapping("/blogs/{slug}")
     public ApiResponse<BlogPublicProfileResponse> getPublicProfile(@PathVariable("slug") String slug) {
-        BlogPublicProfileResult result = blogService.getPublicProfile(slug);
+        BlogPublicProfileResult result = blogQueryService.getPublicProfile(slug);
         BlogPublicProfileResponse data = BlogPublicProfileResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "공개 프로필 조회에 성공했습니다.", data);
     }
@@ -61,7 +64,7 @@ public class BlogController implements BlogApiSpec {
             @PathVariable("slug") String slug,
             @Valid @RequestBody BlogProfileUpdateRequest dto
     ) {
-        blogService.changeBlogProfile(requesterId, slug, dto.toCommand());
+        blogCommandService.changeBlogProfile(requesterId, slug, dto.toCommand());
         return ApiResponse.response(HttpStatus.OK, "프로필을 수정했습니다.");
     }
 
@@ -69,7 +72,7 @@ public class BlogController implements BlogApiSpec {
     public ApiResponse<BlogIndexResponse> getBlogIndex(
             @PathVariable("slug") String slug
     ) {
-        BlogIndexResult result = blogService.readBlogIndex(slug);
+        BlogIndexResult result = blogQueryService.readBlogIndex(slug);
         BlogIndexResponse data = BlogIndexResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "블로그 인덱스 조회에 성공했습니다.", data);
     }

@@ -1,7 +1,8 @@
 package kr.rilog.domain.post.controller;
 
 import kr.rilog.domain.auth.annotation.LoginUserId;
-import kr.rilog.domain.post.service.DraftService;
+import kr.rilog.domain.post.service.DraftCommandService;
+import kr.rilog.domain.post.service.DraftQueryService;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
@@ -35,13 +36,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class DraftControllerTest {
 
+    private final DraftCommandService draftCommandService = mock(DraftCommandService.class);
+    private final DraftQueryService draftQueryService = mock(DraftQueryService.class);
+
     @Test
     @DisplayName("GET /v1/drafts/me는 로그인 사용자의 임시저장 목록을 조회한다.")
     void readMyDraftListReturnsAuthenticatedUsersDrafts() throws Exception {
         // given
-        DraftService draftService = mock(DraftService.class);
         LocalDateTime publishedAt = LocalDateTime.of(2026, 8, 25, 12, 0);
-        when(draftService.readMyDraftList(7L, 1, 2))
+        when(draftQueryService.readMyDraftList(7L, 1, 2))
                 .thenReturn(new DraftListResult(
                         List.of(new DraftListResult.DraftItemResult(10L, "임시저장 제목", publishedAt)),
                         1,
@@ -49,7 +52,7 @@ class DraftControllerTest {
                         1,
                         false
                 ));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new DraftController(draftService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new DraftController(draftCommandService, draftQueryService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(7L))
                 .build();
 
@@ -66,18 +69,17 @@ class DraftControllerTest {
                 .andExpect(jsonPath("$.data.numberOfElements").value(1))
                 .andExpect(jsonPath("$.data.hasNext").value(false));
 
-        verify(draftService).readMyDraftList(7L, 1, 2);
+        verify(draftQueryService).readMyDraftList(7L, 1, 2);
     }
 
     @Test
     @DisplayName("같은 멱등키로 최초 임시저장을 다시 요청하면 한 번만 저장하고 같은 응답을 반환한다.")
     void saveDraftSavesOnceForSameIdempotencyKey() throws Exception {
         // given
-        DraftService draftService = mock(DraftService.class);
-        when(draftService.saveDraft(any(DraftSaveCommand.class), eq(7L)))
+        when(draftCommandService.saveDraft(any(DraftSaveCommand.class), eq(7L)))
                 .thenReturn(new DraftIdResult(10L))
                 .thenReturn(new DraftIdResult(11L));
-        MockMvc mockMvc = idempotentMockMvc(draftService);
+        MockMvc mockMvc = idempotentMockMvc();
         String idempotencyKey = UUID.randomUUID().toString();
 
         // when - then
@@ -95,11 +97,11 @@ class DraftControllerTest {
                     .andExpect(jsonPath("$.data.draftId").value(10L));
         }
 
-        verify(draftService).saveDraft(any(DraftSaveCommand.class), eq(7L));
+        verify(draftCommandService).saveDraft(any(DraftSaveCommand.class), eq(7L));
     }
 
-    private MockMvc idempotentMockMvc(DraftService draftService) {
-        AspectJProxyFactory factory = new AspectJProxyFactory(new DraftController(draftService));
+    private MockMvc idempotentMockMvc() {
+        AspectJProxyFactory factory = new AspectJProxyFactory(new DraftController(draftCommandService, draftQueryService));
         factory.setProxyTargetClass(true);
         factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
         DraftController controller = factory.getProxy();

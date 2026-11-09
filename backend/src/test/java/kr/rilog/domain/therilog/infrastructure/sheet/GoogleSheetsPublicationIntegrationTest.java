@@ -7,11 +7,11 @@ import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.therilog.infrastructure.content.TheRilogBlockNoteConverter;
 import kr.rilog.domain.therilog.exception.TheRilogPublicationResultWriteException;
+import kr.rilog.domain.therilog.service.TheRilogCommandService;
 import kr.rilog.domain.therilog.service.TheRilogPublicationService;
-import kr.rilog.domain.therilog.service.TheRilogService;
+import kr.rilog.domain.therilog.service.TheRilogQueryService;
 import kr.rilog.domain.therilog.service.TheRilogSheetService;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.global.exception.RilogInfrastructureException;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,6 @@ import static kr.rilog.support.fixure.PostContentFixture.heading;
 import static kr.rilog.support.fixure.TheRilogPostFixture.publishedNews;
 import static kr.rilog.support.fixure.TheRilogPostFixture.publishedSpotlight;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
@@ -49,7 +48,10 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
             "originalArticleUrl", "articleType", "description", "thumbnailImageUrl", "sourceProfileName", "sourceProfileImage");
 
     @Autowired
-    private TheRilogService theRilogService;
+    private TheRilogQueryService theRilogQueryService;
+
+    @Autowired
+    private TheRilogCommandService theRilogCommandService;
 
     @Autowired
     private PostRepository postRepository;
@@ -81,7 +83,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         personal = chapterRepository.saveAndFlush(Chapter.create(blog, "personal", 2));
         sheets = new GoogleSheetsTestSupport(directory, "NEWS!A:G");
         publicationService = new TheRilogPublicationService(new TheRilogSheetService(sheets.client()),
-                new TheRilogBlockNoteConverter(), theRilogService);
+                new TheRilogBlockNoteConverter(), theRilogCommandService);
     }
 
     @Test
@@ -111,7 +113,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
         var published = publicationService.publishDueContent(Instant.parse("2026-10-14T20:00:00Z"));
 
-        assertThat(published.getFirst().postId()).isEqualTo(theRilogService.readTheRilog().news().postId());
+        assertThat(published.getFirst().postId()).isEqualTo(theRilogQueryService.readTheRilog().news().postId());
         sheets.verifyRequests();
     }
 
@@ -133,28 +135,13 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         var published = publicationService.publishDueContent(NOW);
 
         assertThat(published.stream().map(article -> article.rowId()).toList()).containsExactly("overdue", "latest");
-        assertThat(theRilogService.readTheRilog().news().postId()).isEqualTo(published.getLast().postId());
+        assertThat(theRilogQueryService.readTheRilog().news().postId()).isEqualTo(published.getLast().postId());
         sheets.verifyRequests();
     }
 
     @Test
-    @DisplayName("시트 발행 결과 기록이 실패해도 이미 커밋된 게시글을 취소하지 않는다.")
-    void keepsCommittedPublicationWhenSheetWriteFails() {
-        expectApprovedNewsRead();
-        expectPublicationWriteRead();
-        sheets.expectFailedWrite();
-
-        assertThatThrownBy(() -> publicationService.publishDueContent(NOW))
-                .isInstanceOf(RilogInfrastructureException.class)
-                .hasMessage(INTERNAL_SERVER_ERROR.getMessage());
-
-        assertThat(postRepository.count()).isEqualTo(1L);
-        sheets.verifyRequests();
-    }
-
-    @Test
-    @DisplayName("시트 기록 실패 후 완료 처리를 재개해도 게시글을 다시 생성하지 않고 발행 결과만 기록한다.")
-    void resumesOnlySheetWriteAfterDatabaseCommit() {
+    @DisplayName("시트 기록이 실패해도 게시글은 유지되고 재시도에서는 발행 결과만 기록한다.")
+    void keepsCommittedPublicationAndRetriesOnlySheetWrite() {
         expectApprovedNewsRead();
         expectPublicationWriteRead();
         sheets.expectFailedWrite();
@@ -170,11 +157,12 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         TheRilogPublicationResultWriteException failure = catchThrowableOfType(
                 () -> publicationService.publishDueContent(NOW), TheRilogPublicationResultWriteException.class);
         assertThat(failure).hasMessage(INTERNAL_SERVER_ERROR.getMessage());
+        Long publishedPostId = failure.getPublishedArticles().getFirst().postId();
+        assertThat(postRepository.findAll()).extracting(post -> post.getId()).containsExactly(publishedPostId);
 
         publicationService.completePublication(failure.getPublishedArticles());
 
-        assertThat(postRepository.findAll().stream().map(post -> post.getId()).toList())
-                .containsExactly(failure.getPublishedArticles().getFirst().postId());
+        assertThat(postRepository.findAll()).extracting(post -> post.getId()).containsExactly(publishedPostId);
         sheets.verifyRequests();
     }
 
@@ -202,7 +190,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
         var published = publicationService.publishDueContent(Instant.parse("2026-10-14T20:00:00Z"));
 
-        var main = theRilogService.readTheRilog();
+        var main = theRilogQueryService.readTheRilog();
         assertThat(published).hasSize(2);
         assertThat(main.news().postId()).isEqualTo(previousNews.getId());
         assertThat(main.spotlights().stream().map(article -> article.postId()).toList()).containsExactly(

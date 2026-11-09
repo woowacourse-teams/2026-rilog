@@ -19,6 +19,7 @@ import java.util.Set;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.DUPLICATED_PUBLISH;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_POST_PUBLISH_FORBIDDEN;
+import static kr.rilog.domain.post.entity.enums.Category.DAILY;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
@@ -44,6 +45,31 @@ class PostTest {
 
     private static final Long OTHER_USER_ID = 2L;
     private static final LocalDateTime BASE_DRAFT_SAVED_AT = LocalDateTime.of(2026, 8, 25, 12, 0);
+
+    @Test
+    @DisplayName("개인 블로그 게시글을 최초 발행하면 입력한 상세 정보와 발행 상태를 가진다.")
+    void createRilogPostAppliesDetailAndPublishedState() {
+        // given
+        User writer = createUser(1L);
+        Blog rilog = createRilog(writer);
+        PostContent body = content(paragraph("발행할 본문"));
+        PostDetail detail = new PostDetail("첫 게시글", body.getContent(), DAILY, PRIVATE, "https://example.com/first.png");
+
+        // when
+        Post published = Post.create(rilog, writer, detail, null);
+
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(published.getTitle()).isEqualTo(detail.title());
+            softly.assertThat(published.getContent()).isEqualTo(body);
+            softly.assertThat(published.getCategory()).isEqualTo(detail.category());
+            softly.assertThat(published.getVisibility()).isEqualTo(detail.visibility());
+            softly.assertThat(published.getThumbnailImageUrl()).isEqualTo(detail.thumbnailUrl());
+            softly.assertThat(published.getStatus()).isEqualTo(PUBLISHED);
+            softly.assertThat(published.getPublishedAt()).isNotNull();
+            softly.assertThat(published.getChapter()).isNull();
+        });
+    }
 
     @Test
     @DisplayName("초안을 생성하면 입력한 내용과 초안 전용 상태를 가진다.")

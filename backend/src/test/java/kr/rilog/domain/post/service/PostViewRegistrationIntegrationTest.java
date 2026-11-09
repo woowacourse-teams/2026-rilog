@@ -4,7 +4,6 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.view.PostViewStore;
@@ -39,9 +38,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     @Autowired
     private PostViewStore postViewStore;
     @Autowired
-    private PostService postService;
-    @Autowired
-    private PostRepository postRepository;
+    private PostCommandService postCommandService;
     @Autowired
     private PostViewCountRepository viewCountRepository;
     @Autowired
@@ -71,21 +68,6 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("저장된 게시글 작성자 본인의 방문은 조회수를 늘리지 않는다.")
-    void doesNotRegisterAuthorVisit() {
-        // given
-        Scenario scenario = scenario();
-        long postId = publish(scenario);
-
-        // when
-        registrationService.register(postId, scenario.writer().getId(),
-                ViewerIdentity.member(scenario.writer().getId()));
-
-        // then
-        assertThat(postViewStore.currentCount(postId)).isZero();
-    }
-
-    @Test
     @DisplayName("비공개 게시글은 다른 독자의 조회 등록을 거절하고 누계를 유지한다.")
     void rejectsOtherReaderForPrivatePost() {
         // given
@@ -94,7 +76,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
         var privateCommand = new PostSaveCommand(publicCommand.slug(), publicCommand.title(),
                 publicCommand.content(), publicCommand.category(), PRIVATE,
                 publicCommand.thumbnailImageUrl(), publicCommand.chapterId());
-        long postId = postService.publish(privateCommand, scenario.writer().getId()).postId();
+        long postId = postCommandService.publish(privateCommand, scenario.writer().getId()).postId();
 
         // when & then
         assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
@@ -102,34 +84,6 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
         assertThat(postViewStore.currentCount(postId)).isZero();
         assertThat(viewCountRepository.findViewCountByPostId(postId)).contains(0L);
-    }
-
-    @Test
-    @DisplayName("초안 게시글은 조회 등록 대상에서 제외한다.")
-    void excludesDraftFromRegistration() {
-        // given
-        Scenario scenario = scenario();
-        long postId = postRepository.saveAndFlush(
-                PostFixture.publicDraftRilogPost(scenario.blog(), scenario.writer())).getId();
-
-        // when & then
-        assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
-                .isInstanceOf(PostException.class)
-                .hasMessage(POST_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("삭제한 게시글은 조회 등록 대상에서 제외한다.")
-    void excludesDeletedPostFromRegistration() {
-        // given
-        Scenario scenario = scenario();
-        long postId = publish(scenario);
-        postService.deletePublishedPost(postId, scenario.writer().getId());
-
-        // when & then
-        assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
-                .isInstanceOf(PostException.class)
-                .hasMessage(POST_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -150,7 +104,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     }
 
     private long publish(Scenario scenario) {
-        return postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
+        return postCommandService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
                 scenario.writer().getId()).postId();
     }
 

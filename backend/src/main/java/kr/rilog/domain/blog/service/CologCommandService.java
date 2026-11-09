@@ -1,0 +1,197 @@
+package kr.rilog.domain.blog.service;
+
+import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Slug;
+import kr.rilog.domain.blog.exception.BlogErrorInformation;
+import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
+import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
+import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
+import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
+import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
+import kr.rilog.domain.post.event.PostCountChangedEvent;
+import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
+import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.exception.UserException;
+import kr.rilog.domain.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
+import static kr.rilog.domain.blog.entity.enums.BlogPermission.OWNER;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class CologCommandService {
+
+    private static final int MAX_COLOG_MEMBER_COUNT = 20;
+    private static final int MAX_COLOG_COUNT_PER_USER = 10;
+
+    private final BlogRepository blogRepository;
+    private final BlogMemberRepository blogMemberRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final TagAssetsPublisher tagAssetsPublisher;
+    private final Clock clock;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public CologCreateResult create(Long ownerId, CologCreateCommand command) {
+        User owner = getUser(ownerId);
+        validateUserCologCount(owner.getId());
+        validateSlugUnique(command.slug());
+        validateProfileNameUnique(command.name());
+
+        Blog colog = Blog.createColog(
+                owner,
+                command.slug(),
+                command.toProfile()
+        );
+
+        Blog savedColog = saveColog(colog);
+        BlogMember ownerMember = BlogMember.createOwner(savedColog, owner, LocalDateTime.now(clock));
+        blogMemberRepository.save(ownerMember);
+
+        tagAssetsPublisher.attach(savedColog.getTagAssets());
+
+        return CologCreateResult.from(savedColog);
+    }
+
+    public CologMemberInviteResult inviteMember(Long requesterId, String slug, CologMemberInviteCommand command) {
+        Blog colog = getColog(Slug.from(slug));
+
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        requesterMember.validateAdminPermission();
+
+        User invitee = getUser(command.userId());
+        validateNotActiveMember(colog.getId(), invitee.getId());
+        validateCologMemberCount(colog.getId());
+        validateUserCologCount(invitee.getId());
+
+        BlogMember member = BlogMember.invite(
+                colog,
+                invitee,
+                command.blogRole(),
+                MEMBER,
+                LocalDateTime.now(clock)
+        );
+        BlogMember savedMember = blogMemberRepository.save(member);
+
+        return CologMemberInviteResult.from(savedMember);
+    }
+
+    public void leaveColog(Long requesterId, String slug) {
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+
+        requesterMember.leaveBySelf();
+    }
+
+    public void removeMember(Long requesterId, String slug, Long memberId) {
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
+
+        requesterMember.remove(targetMember);
+    }
+
+    public void updateMember(Long requesterId, String slug, Long memberId, CologMemberUpdateCommand command) {
+        if (command.isEmpty()) {
+            throw new BlogException(COLOG_MEMBER_UPDATE_REQUEST_EMPTY);
+        }
+
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        BlogMember targetMember = getActiveMemberById(colog.getId(), memberId);
+
+        requesterMember.updateMemberInformation(targetMember, command.permission(), command.blogRole());
+        if (command.permission() == OWNER) {
+            colog.transferOwnerTo(targetMember.getUser());
+        }
+    }
+
+    public void deleteColog(Long requesterId, String slug) {
+        Blog colog = getColog(Slug.from(slug));
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
+        requesterMember.validateCanDeleteColog();
+
+        LocalDateTime deletedAt = LocalDateTime.now(clock);
+        colog.delete();
+        blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
+        postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
+        eventPublisher.publishEvent(new PostCountChangedEvent());
+    }
+
+    private User getUser(Long ownerId) {
+        return userRepository.findById(ownerId)
+                .orElseThrow(() -> new UserException(USER_NOT_FOUND));
+    }
+
+    private Blog getColog(Slug slug) {
+        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(slug, BlogType.COLOG)
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
+    }
+
+    private BlogMember getActiveMember(Long blogId, Long userId, BlogErrorInformation errorInformation) {
+        return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(blogId, userId, BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(errorInformation));
+    }
+
+    private BlogMember getActiveMemberById(Long blogId, Long memberId) {
+        return blogMemberRepository.findByIdAndBlogIdAndStatusAndDeletedAtIsNull(memberId, blogId, BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
+    }
+
+    private void validateNotActiveMember(Long blodIg, Long userId) {
+        if (blogMemberRepository.existsByBlogIdAndUserIdAndStatus(blodIg, userId, BlogMemberStatus.ACTIVE)) {
+            throw new BlogException(BLOG_MEMBER_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateCologMemberCount(Long cologId) {
+        if (blogMemberRepository.countActiveMembersByBlogId(cologId) >= MAX_COLOG_MEMBER_COUNT) {
+            throw new BlogException(COLOG_MEMBER_COUNT_EXCEEDED);
+        }
+    }
+
+    private void validateUserCologCount(Long userId) {
+        if (blogMemberRepository.countActiveCologsByUserId(userId) >= MAX_COLOG_COUNT_PER_USER) {
+            throw new BlogException(USER_COLOG_COUNT_EXCEEDED);
+        }
+    }
+
+    private void validateSlugUnique(String slug) {
+        if (blogRepository.existsBySlug(Slug.from(slug))) {
+            throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateProfileNameUnique(String profileName) {
+        if (blogRepository.existsByProfileName(profileName)) {
+            throw new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        }
+    }
+
+    private Blog saveColog(Blog colog) {
+        try {
+            return blogRepository.saveAndFlush(colog);
+        } catch (DataIntegrityViolationException exception) {
+            throw new BlogException(BLOG_SLUG_ALREADY_EXISTS);
+        }
+    }
+
+}

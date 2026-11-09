@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OnboardingCompletionService {
 
-    private final UserService userService;
+    private final UserCommandService userCommandService;
     private final AuthTokenPairIssuer authTokenPairIssuer;
 
     public AuthTokenPair complete(Long userId, OnboardingCompleteCommand command) {
-        User user = userService.completeOnboarding(userId, command);
+        User user = userCommandService.completeOnboarding(userId, command);
         return authTokenPairIssuer.issue(user);
     }
 }

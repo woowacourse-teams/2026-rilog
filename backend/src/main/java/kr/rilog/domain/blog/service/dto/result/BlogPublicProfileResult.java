@@ -12,12 +12,10 @@ public record BlogPublicProfileResult(
         String profileImageUrl,
         String coverImageUrl,
         String serviceUrl,
-        String githubUrl,
-        long memberCount,
-        long postCount
+        String githubUrl
 ) {
 
-    public static BlogPublicProfileResult from(Blog blog, long memberCount, long postCount) {
+    public static BlogPublicProfileResult from(Blog blog) {
         return new BlogPublicProfileResult(
                 blog.getBlogType(),
                 blog.getId(),
@@ -27,9 +25,7 @@ public record BlogPublicProfileResult(
                 blog.getProfileImageUrl(),
                 blog.getCoverImageUrl(),
                 blog.getServiceUrl(),
-                blog.getGithubUrl(),
-                memberCount,
-                postCount
+                blog.getGithubUrl()
         );
     }
 }

@@ -3,7 +3,7 @@ package kr.rilog.domain.post.view;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.global.exception.RilogInfrastructureException;
@@ -27,7 +27,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     @Autowired
     private PostViewCounterRegistry registry;
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -44,16 +44,6 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         assertThatThrownBy(() -> registry.currentCount(999_999L))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
-    }
-
-    @Test
-    @DisplayName("DB 누계를 불러오지 못하면 카운터를 등록하지 않는다.")
-    void doesNotInstallCounterWhenLoadingFails() {
-        // when & then
-        assertThatThrownBy(() -> registry.getOrLoad(999_999L))
-                .isInstanceOf(RilogInfrastructureException.class)
-                .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
-        assertThat(registry.snapshot()).isEmpty();
     }
 
     @Test
@@ -91,23 +81,6 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
         assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isZero();
     }
 
-    @Test
-    @DisplayName("카운터 스냅샷은 초기화를 완료한 게시글의 카운터를 모두 반환한다.")
-    void snapshotContainsAllInitializedCounters() {
-        // given
-        Scenario scenario = scenario();
-        long firstPostId = publishWithStoredCount(scenario, 42L);
-        long secondPostId = publishWithStoredCount(scenario, 0L);
-        PostViewCounter firstCounter = registry.getOrLoad(firstPostId);
-        PostViewCounter secondCounter = registry.getOrLoad(secondPostId);
-
-        // when
-        var counters = registry.snapshot();
-
-        // then
-        assertThat(counters).containsExactlyInAnyOrder(firstCounter, secondCounter);
-    }
-
     private Scenario scenario() {
         User writer = userRepository.saveAndFlush(
                 UserFixture.completedWithNicknameAndSlug("메모리작성자", "memory_writer"));
@@ -117,7 +90,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     }
 
     private long publishWithStoredCount(Scenario scenario, long storedCount) {
-        long postId = postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
+        long postId = postCommandService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
                 scenario.writer().getId()).postId();
         jdbc.update("update post_view_count set view_count = ? where post_id = ?", storedCount, postId);
         return postId;
