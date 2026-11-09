@@ -33,7 +33,7 @@ const buildWorkspace = async (): Promise<WorkspaceBundle> => {
 					const html = Array.from(
 						{ length: 80 },
 						(_, index) =>
-							`<div class="bn-block-outer"><div class="bn-block" data-id="block-${index + 1}"><div class="bn-block-content" data-content-type="paragraph"><p class="bn-inline-content" data-inline-comment-root data-inline-comment-block-id="block-${index + 1}">${index + 1}. Rilog 본문을 읽던 위치를 유지합니다. ${'댓글 창을 열고 닫아도 이어 읽을 수 있어야 합니다. '.repeat(8)}</p></div></div></div>`,
+							`<div class="bn-block-outer" data-id="block-${index + 1}"><div class="bn-block"><div class="bn-block-content" data-content-type="paragraph"><p class="bn-inline-content" data-inline-comment-root data-inline-comment-block-id="block-${index + 1}">${index + 1}. Rilog 본문을 읽던 위치를 유지합니다. ${'댓글 창을 열고 닫아도 이어 읽을 수 있어야 합니다. '.repeat(8)}</p></div></div></div>`,
 					).join('');
 					return source
 						.replace('html=""', `html={${JSON.stringify(html)}}`)
