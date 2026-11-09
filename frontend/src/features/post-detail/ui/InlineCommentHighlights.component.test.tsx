@@ -119,6 +119,25 @@ describe('InlineCommentHighlights', () => {
 		});
 	});
 
+	it('블록의 스크롤 위치가 바뀐 뒤 다시 그리면 밑줄 좌표를 갱신한다', async () => {
+		const { container } = render(
+			<PostDetailContent html={HTML} postId={1} ownerType="RILOG" category="TECH" inlineCommentBlocks={BLOCKS} />,
+		);
+		const host = container.querySelector<HTMLElement>('.bn-block-outer');
+		expect(host).not.toBeNull();
+		if (host === null) return;
+
+		host.scrollLeft = 12;
+		host.scrollTop = 5;
+		fireEvent.resize(window);
+
+		await waitFor(() => {
+			const lines = container.querySelectorAll('[data-inline-comment-anchor-id="1"]');
+			expect(lines[0]).toHaveStyle({ left: '22px', top: '43px' });
+			expect(lines[1]).toHaveStyle({ left: '22px', top: '63px' });
+		});
+	});
+
 	it('중첩 위치에서는 마지막 ACTIVE anchor를 hover하고 클릭한다', async () => {
 		const handleOpen = vi.fn();
 		const { container } = render(

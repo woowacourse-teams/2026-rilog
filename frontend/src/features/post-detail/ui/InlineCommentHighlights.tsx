@@ -35,6 +35,31 @@ interface RenderedBlock {
 	anchorsById: Map<number, RenderedAnchor>;
 }
 
+interface MeasuredAnchor {
+	anchor: InlineCommentAnchorModel;
+	anchorIndex: number;
+	range: Range;
+	rects: ReturnType<typeof normalizeInlineCommentHighlightRects>;
+}
+
+interface MeasuredBlock {
+	block: InlineCommentBlockModel;
+	root: HTMLElement;
+	host: HTMLElement;
+	hostRect: DOMRect;
+	scrollLeft: number;
+	scrollTop: number;
+	activeAnchors: InlineCommentAnchorModel[];
+	anchors: MeasuredAnchor[];
+}
+
+interface PreparedLayer {
+	root: HTMLElement;
+	host: HTMLElement;
+	layer: HTMLElement;
+	renderedBlock: RenderedBlock;
+}
+
 const HIGHLIGHT_LAYER_SELECTOR = '[data-inline-comment-highlight-layer]';
 const HIGHLIGHT_LINE_HEIGHT_PX = 2;
 const HIGHLIGHT_VERTICAL_OFFSET_PX = 4;
@@ -82,57 +107,53 @@ export default function InlineCommentHighlights({
 			}
 		};
 
-		const drawHighlights = () => {
-			clearActiveAnchor();
-			removeHighlightLayers(article);
-			renderedBlocksByRoot = new Map();
-
-			blocks.forEach((block) => {
+		const measureHighlightBlocks = (): MeasuredBlock[] =>
+			blocks.flatMap((block) => {
 				const root = findInlineCommentRoot(article, block.blockId);
 				if (root === null) {
-					return;
+					return [];
 				}
 
 				const host = root.closest<HTMLElement>('.bn-block-outer[data-id]');
 				if (host === null) {
-					return;
+					return [];
 				}
 
 				const activeAnchors = block.anchors.filter((anchor) => anchor.state === 'ACTIVE');
 				if (activeAnchors.length === 0) {
-					return;
+					return [];
 				}
 
-				const layer = host.ownerDocument.createElement('span');
-				layer.dataset.inlineCommentHighlightLayer = '';
-				host.dataset.inlineCommentHighlightHost = '';
-				host.append(layer);
-
-				const renderedBlock: RenderedBlock = { block, anchorsById: new Map() };
-				renderedBlocksByRoot.set(root, renderedBlock);
 				const hostRect = host.getBoundingClientRect();
+				const scrollLeft = host.scrollLeft;
+				const scrollTop = host.scrollTop;
 				const rootRange = host.ownerDocument.createRange();
 				rootRange.selectNodeContents(root);
 				const rootRects = Array.from(rootRange.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
 
-				block.anchors.forEach((anchor, anchorIndex) => {
-					if (anchor.state !== 'ACTIVE') {
-						return;
-					}
-
+				const anchors = block.anchors.flatMap((anchor, anchorIndex) => {
+					if (anchor.state !== 'ACTIVE') return [];
 					const range = restoreInlineCommentRange(root, anchor.range);
-					if (range === null) {
-						return;
-					}
+					if (range === null) return [];
 
 					const rects = normalizeInlineCommentHighlightRects(
 						Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0),
 						rootRects,
 					);
-					if (rects.length === 0) {
-						return;
-					}
+					return rects.length === 0 ? [] : [{ anchor, anchorIndex, range, rects }];
+				});
 
+				return [{ block, root, host, hostRect, scrollLeft, scrollTop, activeAnchors, anchors }];
+			});
+
+		const buildHighlightLayers = (measuredBlocks: readonly MeasuredBlock[]): PreparedLayer[] =>
+			measuredBlocks.map((measuredBlock) => {
+				const { block, root, host, hostRect, scrollLeft, scrollTop, activeAnchors, anchors } = measuredBlock;
+				const layer = host.ownerDocument.createElement('span');
+				layer.dataset.inlineCommentHighlightLayer = '';
+				const renderedBlock: RenderedBlock = { block, anchorsById: new Map() };
+
+				anchors.forEach(({ anchor, anchorIndex, range, rects }) => {
 					const renderedAnchor: RenderedAnchor = {
 						blockId: block.blockId,
 						anchor,
@@ -148,8 +169,8 @@ export default function InlineCommentHighlights({
 						line.dataset.inlineCommentAnchorId = String(anchor.anchorId);
 						line.dataset.inlineCommentAnchorOrder = String(anchorIndex);
 						line.setAttribute('aria-hidden', 'true');
-						line.style.left = `${rect.left - hostRect.left + host.scrollLeft}px`;
-						line.style.top = `${rect.bottom - hostRect.top + host.scrollTop - HIGHLIGHT_LINE_HEIGHT_PX}px`;
+						line.style.left = `${rect.left - hostRect.left + scrollLeft}px`;
+						line.style.top = `${rect.bottom - hostRect.top + scrollTop - HIGHLIGHT_LINE_HEIGHT_PX}px`;
 						line.style.width = `${rect.width}px`;
 						line.style.setProperty(
 							'--inline-comment-highlight-expanded-height',
@@ -191,7 +212,23 @@ export default function InlineCommentHighlights({
 					});
 				});
 				layer.append(blockButton);
+				return { root, host, layer, renderedBlock };
 			});
+
+		const replaceHighlightLayers = (preparedLayers: readonly PreparedLayer[]) => {
+			clearActiveAnchor();
+			removeHighlightLayers(article);
+			preparedLayers.forEach(({ host, layer }) => {
+				host.dataset.inlineCommentHighlightHost = '';
+				host.append(layer);
+			});
+			renderedBlocksByRoot = new Map(preparedLayers.map(({ root, renderedBlock }) => [root, renderedBlock]));
+		};
+
+		const drawHighlights = () => {
+			const measuredBlocks = measureHighlightBlocks();
+			const preparedLayers = buildHighlightLayers(measuredBlocks);
+			replaceHighlightLayers(preparedLayers);
 		};
 
 		const findPointerAnchor = (event: PointerEvent | MouseEvent): RenderedAnchor | null => {
