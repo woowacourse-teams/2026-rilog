@@ -5,7 +5,6 @@ import { ko } from '@blocknote/core/locales';
 import {
 	FilePanelController,
 	getDefaultReactSlashMenuItems,
-	SideMenuController,
 	SuggestionMenuController,
 	useCreateBlockNote,
 } from '@blocknote/react';
@@ -43,7 +42,7 @@ import '../styles/blocknote-theme.css';
 import CodeLanguageDropdownController from './CodeLanguageDropdown';
 import PostWriteFilePanel from './PostWriteFilePanel';
 import PostWriteFormattingToolbar from './PostWriteFormattingToolbar';
-import PostWriteSideMenu from './PostWriteSideMenu';
+import PostWriteSideMenuController from './PostWriteSideMenuController';
 
 const CODE_GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
@@ -388,7 +387,7 @@ export default function BlockNoteEditor({
 			>
 				<PostWriteFormattingToolbar />
 				<FilePanelController filePanel={PostWriteFilePanel} />
-				<SideMenuController sideMenu={PostWriteSideMenu} />
+				<PostWriteSideMenuController />
 				<SuggestionMenuController
 					triggerCharacter="/"
 					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
