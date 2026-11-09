@@ -46,9 +46,9 @@ class LogDecayTrendingScorePolicyTest {
     @ParameterizedTest
     @CsvSource({
             "0, 100",
-            "12, 90",
-            "24, 80",
-            "168, 80",
+            "24, 100",
+            "168, 100",
+            "180, 90",
             "192, 80",
             "264, 61.717443",
             "336, 43.434885",

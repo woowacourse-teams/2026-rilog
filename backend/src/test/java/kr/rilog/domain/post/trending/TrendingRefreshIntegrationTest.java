@@ -47,7 +47,7 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
             equalScoreIds.add(post(rilog, author, NOW).getId());
         }
         Post newer = post(rilog, author, NOW.minusHours(1));
-        Post older = post(rilog, author, NOW.minusDays(7));
+        Post older = post(rilog, author, NOW.minusDays(8));
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, ?)", newer.getId(), 100L);
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, ?)", older.getId(), 100L);
 
