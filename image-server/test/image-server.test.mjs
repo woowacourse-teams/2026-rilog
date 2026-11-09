@@ -146,6 +146,22 @@ test('image conversion generates a decodable WebP with original dimensions', asy
   assert.equal(meta.hasAlpha, true);
 });
 
+test('image conversion shrinks originals wider than 2000 and keeps the aspect ratio', async () => {
+  const wide = await sharp({ create: { width: 3000, height: 1500, channels: 3, background: 'red' } }).jpeg().toBuffer();
+  const meta = await sharp(await normalizeImage(wide)).metadata();
+  assert.equal(meta.width, 2000);
+  assert.equal(meta.height, 1000);
+});
+
+test('image conversion applies EXIF orientation before measuring the width to shrink', async () => {
+  // 저장은 가로 3000×1200이지만 Orientation 6(90도 회전)이라 보이는 크기는 세로 1200×3000이다.
+  const portrait = await sharp({ create: { width: 3000, height: 1200, channels: 3, background: 'red' } })
+    .jpeg().withMetadata({ orientation: 6 }).toBuffer();
+  const meta = await sharp(await normalizeImage(portrait)).metadata();
+  assert.equal(meta.width, 1200);
+  assert.equal(meta.height, 3000);
+});
+
 async function serve(t, dependencies) {
   const server = createApp({ config, now: () => NOW, ...dependencies }).listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
