@@ -149,10 +149,10 @@ describe('InlineCommentHighlights', () => {
 			resolveReady = resolve;
 		});
 		Object.defineProperty(document, 'fonts', { configurable: true, value: { status: 'loaded', ready } });
-		const { getByRole } = render(
+		const { findByRole } = render(
 			<PostDetailContent html={HTML} postId={1} ownerType="RILOG" category="TECH" inlineCommentBlocks={BLOCKS} />,
 		);
-		const button = getByRole('button', { name: '인용 “댓글”의 댓글 0개 보기' });
+		const button = await findByRole('button', { name: '인용 “댓글”의 댓글 0개 보기' });
 		button.focus();
 
 		await act(async () => {
@@ -177,7 +177,9 @@ describe('InlineCommentHighlights', () => {
 		const { container } = render(
 			<PostDetailContent html={HTML} postId={1} ownerType="RILOG" category="TECH" inlineCommentBlocks={BLOCKS} />,
 		);
-		expect(container.querySelector('[data-inline-comment-anchor-id="1"]')).toHaveStyle({ top: '38px' });
+		await waitFor(() =>
+			expect(container.querySelector('[data-inline-comment-anchor-id="1"]')).toHaveStyle({ top: '38px' }),
+		);
 
 		top = 50;
 		await act(async () => {
@@ -188,7 +190,7 @@ describe('InlineCommentHighlights', () => {
 		expect(container.querySelector('[data-inline-comment-anchor-id="1"]')).toHaveStyle({ top: '58px' });
 	});
 
-	it('첫 ResizeObserver 알림에서 본문 크기가 같으면 초점을 유지하고 크기가 바뀌면 밑줄을 갱신한다', () => {
+	it('첫 ResizeObserver 알림에서 본문 크기가 같으면 초점을 유지하고 크기가 바뀌면 밑줄을 갱신한다', async () => {
 		let articleWidth = 200;
 		let top = 30;
 		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
@@ -207,10 +209,10 @@ describe('InlineCommentHighlights', () => {
 			disconnect() {}
 		}
 		vi.stubGlobal('ResizeObserver', TestResizeObserver);
-		const { container, getByRole } = render(
+		const { container, findByRole } = render(
 			<PostDetailContent html={HTML} postId={1} ownerType="RILOG" category="TECH" inlineCommentBlocks={BLOCKS} />,
 		);
-		const button = getByRole('button', { name: '인용 “댓글”의 댓글 0개 보기' });
+		const button = await findByRole('button', { name: '인용 “댓글”의 댓글 0개 보기' });
 		button.focus();
 
 		act(() => onResize([], {} as ResizeObserver));

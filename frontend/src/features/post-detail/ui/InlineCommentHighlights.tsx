@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type { RenderedAnchor, RenderedBlock } from '../lib/inline-comment-highlight-layer';
 import type { InlineCommentBlockModel } from '../model/inline-comment';
@@ -32,7 +32,8 @@ export default function InlineCommentHighlights({
 	onOpenComments,
 }: InlineCommentHighlightsProps) {
 	const iconTemplateRef = useRef<HTMLSpanElement>(null);
-	useLayoutEffect(() => {
+
+	useEffect(() => {
 		let isMounted = true;
 		let activeAnchor: RenderedAnchor | null = null;
 		let renderedBlocksByRoot = new Map<HTMLElement, RenderedBlock>();
