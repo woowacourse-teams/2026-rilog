@@ -17,7 +17,6 @@ import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
-import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
@@ -71,18 +70,16 @@ class PostImportServiceTest {
     @Mock private TagAssetsPublisher tagAssetsPublisher;
     @Mock private CommentAnchorSelectionRepository selectionRepository;
     @Mock private PostViewCountRepository viewCountRepository;
-    @Mock private PostViewStore postViewStore;
-    @Mock private PostCountCache postCountCache;
     @Mock private ApplicationEventPublisher eventPublisher;
 
-    private PostService postService;
+    private PostCommandService postCommandService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(
+        postCommandService = new PostCommandService(
                 postRepository, blogRepository, blogMemberRepository, userRepository,
-                chapterRepository, tagAssetsPublisher, selectionRepository, viewCountRepository, postViewStore,
-                postCountCache, eventPublisher
+                chapterRepository, tagAssetsPublisher, selectionRepository, viewCountRepository,
+                eventPublisher
         );
     }
 
@@ -98,7 +95,7 @@ class PostImportServiceTest {
         stubSave();
 
         // when
-        PostPublishResult result = postService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT);
+        PostPublishResult result = postCommandService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT);
 
         // then
         Post post = savedPost();
@@ -127,7 +124,7 @@ class PostImportServiceTest {
         stubSave();
 
         // when
-        PostPublishResult result = postService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT);
+        PostPublishResult result = postCommandService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT);
 
         // then
         Post post = savedPost();
@@ -150,7 +147,7 @@ class PostImportServiceTest {
         stubDestination(otherRilog, writer);
 
         // when - then
-        assertThatThrownBy(() -> postService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT))
+        assertThatThrownBy(() -> postCommandService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
 
@@ -170,7 +167,7 @@ class PostImportServiceTest {
         )).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT))
+        assertThatThrownBy(() -> postCommandService.publishImported(command, TARGET_USER_ID, ORIGINAL_PUBLISHED_AT))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_POST_PUBLISH_FORBIDDEN.getMessage());
 

@@ -34,10 +34,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PostChapterAssociationIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
+    @Autowired
+    private PostQueryService postQueryService;
 
     @Autowired
-    private DraftService draftService;
+    private DraftCommandService draftCommandService;
 
     @Autowired
     private UserRepository userRepository;
@@ -65,7 +67,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Chapter chapter = saveChapter(scenario.blog(), "발행 챕터", 0);
 
         // when
-        Long postId = postService.publish(
+        Long postId = postCommandService.publish(
                 publishCommand(scenario.blog().getSlug(), chapter.getId()),
                 scenario.writer().getId()
         ).postId();
@@ -84,7 +86,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Chapter otherChapter = saveChapter(other.blog(), "다른 블로그 챕터", 0);
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(
+        assertThatThrownBy(() -> postCommandService.publish(
                 publishCommand(scenario.blog().getSlug(), otherChapter.getId()),
                 scenario.writer().getId()
         ))
@@ -104,7 +106,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         chapterRepository.saveAndFlush(deletedChapter);
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(
+        assertThatThrownBy(() -> postCommandService.publish(
                 publishCommand(scenario.blog().getSlug(), deletedChapter.getId()),
                 scenario.writer().getId()
         ))
@@ -121,7 +123,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         PublishingScenario scenario = createRilogScenario(6L, "publish_missing");
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(
+        assertThatThrownBy(() -> postCommandService.publish(
                 publishCommand(scenario.blog().getSlug(), Long.MAX_VALUE),
                 scenario.writer().getId()
         ))
@@ -140,7 +142,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post draft = saveDraft(scenario);
 
         // when
-        draftService.publishDraft(
+        draftCommandService.publishDraft(
                 draftPublishCommand(scenario.blog().getSlug(), chapter.getId()),
                 draft.getId(),
                 scenario.writer().getId()
@@ -159,7 +161,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post draft = saveDraft(scenario);
 
         // when & then
-        assertThatThrownBy(() -> draftService.publishDraft(
+        assertThatThrownBy(() -> draftCommandService.publishDraft(
                 draftPublishCommand(scenario.blog().getSlug(), Long.MAX_VALUE),
                 draft.getId(),
                 scenario.writer().getId()
@@ -180,7 +182,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(scenario.blog().getSlug(), chapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -201,7 +203,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, previousChapter);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(scenario.blog().getSlug(), targetChapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -221,7 +223,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, chapter);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(scenario.blog().getSlug(), null),
                 post.getId(),
                 scenario.writer().getId()
@@ -242,7 +244,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(targetColog.getSlug(), targetChapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -263,7 +265,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, sourceChapter);
 
         // when & then
-        assertThatThrownBy(() -> postService.update(
+        assertThatThrownBy(() -> postCommandService.update(
                 updateCommand(targetColog.getSlug(), sourceChapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -284,7 +286,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, chapter);
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(
                 scenario.blog().getSlug(),
                 post.getId(),
                 scenario.writer().getId()

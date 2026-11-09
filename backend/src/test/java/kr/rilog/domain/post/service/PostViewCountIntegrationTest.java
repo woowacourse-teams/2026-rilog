@@ -43,9 +43,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PostViewCountIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
     @Autowired
-    private DraftService draftService;
+    private PostQueryService postQueryService;
+    @Autowired
+    private DraftCommandService draftCommandService;
     @Autowired
     private PostRepository postRepository;
     @Autowired
@@ -66,11 +68,11 @@ class PostViewCountIntegrationTest extends ServiceSupport {
     void draftGetsCountOnlyWhenPublished() {
         // given
         Scenario scenario = scenario();
-        long draftId = draftService.saveDraft(PostFixture.initialDraftSaveCommand(), scenario.writer().getId()).draftId();
+        long draftId = draftCommandService.saveDraft(PostFixture.initialDraftSaveCommand(), scenario.writer().getId()).draftId();
         assertThat(jdbc.queryForObject("select count(*) from post_view_count", Long.class)).isZero();
 
         // when
-        draftService.publishDraft(PostFixture.publicDraftPublishCommand(scenario.blog().getSlug()), draftId, scenario.writer().getId());
+        draftCommandService.publishDraft(PostFixture.publicDraftPublishCommand(scenario.blog().getSlug()), draftId, scenario.writer().getId());
 
         // then
         assertThat(count(draftId)).isZero();
@@ -86,7 +88,7 @@ class PostViewCountIntegrationTest extends ServiceSupport {
 
         // when
         for (int i = 0; i < 3; i++) {
-            postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), postId, null);
+            postQueryService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), postId, null);
         }
 
         // then
@@ -103,7 +105,7 @@ class PostViewCountIntegrationTest extends ServiceSupport {
         jdbc.update("delete from post_view_count where post_id = ?", postId);
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(
                 scenario.blog().getSlug(), postId, scenario.writer().getId()))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
@@ -120,7 +122,7 @@ class PostViewCountIntegrationTest extends ServiceSupport {
         jdbc.update("delete from post_view_count where post_id = ?", postId);
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), postId, requesterId);
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), postId, requesterId);
 
         // then
         assertThat(response.viewCount()).isNull();
@@ -153,7 +155,7 @@ class PostViewCountIntegrationTest extends ServiceSupport {
         jdbc.update("update post_view_count set view_count = 42 where post_id = ?", postId);
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(
                 scenario.author().blog().getSlug(), postId, scenario.reader().getId());
 
         // then
@@ -202,11 +204,11 @@ class PostViewCountIntegrationTest extends ServiceSupport {
     void draftPublicationFailureRollsBackStatusAndCount() {
         // given
         Scenario scenario = scenario();
-        long draftId = draftService.saveDraft(PostFixture.initialDraftSaveCommand(), scenario.writer().getId()).draftId();
+        long draftId = draftCommandService.saveDraft(PostFixture.initialDraftSaveCommand(), scenario.writer().getId()).draftId();
         eventFailure.failOn(TagAssetsEvent.Synchronize.class);
 
         // when & then
-        assertThatThrownBy(() -> draftService.publishDraft(
+        assertThatThrownBy(() -> draftCommandService.publishDraft(
                 PostFixture.publicDraftPublishCommand(scenario.blog().getSlug()), draftId, scenario.writer().getId()))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(INTERNAL_SERVER_ERROR.getMessage());
@@ -222,11 +224,11 @@ class PostViewCountIntegrationTest extends ServiceSupport {
         PostSaveCommand publicCommand = PostFixture.publicPostPublishCommand(scenario.blog().getSlug());
         PostSaveCommand privateCommand = new PostSaveCommand(publicCommand.slug(), publicCommand.title(),
                 publicCommand.content(), publicCommand.category(), PRIVATE, publicCommand.thumbnailImageUrl(), null);
-        long postId = postService.publish(privateCommand, scenario.writer().getId()).postId();
+        long postId = postCommandService.publish(privateCommand, scenario.writer().getId()).postId();
         jdbc.update("update post_view_count set view_count = 17 where post_id = ?", postId);
 
         // when
-        PostDetailResponse response = postService.readEditablePostDetail(postId, scenario.writer().getId());
+        PostDetailResponse response = postQueryService.readEditablePostDetail(postId, scenario.writer().getId());
 
         // then
         assertThat(response.viewCount()).isEqualTo(17L);
@@ -234,12 +236,12 @@ class PostViewCountIntegrationTest extends ServiceSupport {
 
     private PostDetailResponse readDetail(Scenario scenario, long postId, boolean editable) {
         return editable
-                ? postService.readEditablePostDetail(postId, scenario.writer().getId())
-                : postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), postId, scenario.writer().getId());
+                ? postQueryService.readEditablePostDetail(postId, scenario.writer().getId())
+                : postQueryService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), postId, scenario.writer().getId());
     }
 
     private long publish(Scenario scenario) {
-        return postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()), scenario.writer().getId()).postId();
+        return postCommandService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()), scenario.writer().getId()).postId();
     }
 
     private long count(long postId) {

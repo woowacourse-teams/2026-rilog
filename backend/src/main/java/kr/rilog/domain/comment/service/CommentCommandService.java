@@ -1,8 +1,6 @@
 package kr.rilog.domain.comment.service;
 
-import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.comment.controller.dto.response.CommentCreateResponse;
-import kr.rilog.domain.comment.controller.dto.response.CommentListResponse;
 import kr.rilog.domain.comment.entity.Comment;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.repository.CommentRepository;
@@ -21,8 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 import static kr.rilog.domain.comment.exception.CommentErrorInformation.COMMENT_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
@@ -30,28 +26,14 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class CommentService {
+@Transactional
+public class CommentCommandService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final BlogMemberRepository blogMemberRepository;
     private final Clock clock;
 
-    public CommentListResponse readComments(Long postId) {
-        Post post = getPublishedPost(postId);
-        Set<Long> activeMemberUserIds = new HashSet<>(
-                blogMemberRepository.findActiveUserIdsByBlogId(post.getOwnBlogId())
-        );
-        return CommentListResponse.from(
-                post,
-                commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(postId),
-                activeMemberUserIds
-        );
-    }
-
-    @Transactional
     public CommentCreateResponse createComment(Long postId, Long requesterId, CommentCreateCommand command) {
         Post post = getPublishedPost(postId);
         User user = getUser(requesterId);
@@ -59,7 +41,6 @@ public class CommentService {
         return CommentCreateResponse.from(commentRepository.save(comment));
     }
 
-    @Transactional
     public CommentCreateResponse createReply(
             Long postId,
             Long parentCommentId,
@@ -74,13 +55,11 @@ public class CommentService {
         return CommentCreateResponse.from(commentRepository.save(reply));
     }
 
-    @Transactional
     public void updateComment(Long commentId, Long requesterId, CommentUpdateCommand command) {
         Comment comment = getComment(commentId);
         comment.updateContent(requesterId, command.content());
     }
 
-    @Transactional
     public void deleteComment(Long commentId, Long requesterId) {
         Comment comment = getComment(commentId);
         comment.deleteBy(requesterId);

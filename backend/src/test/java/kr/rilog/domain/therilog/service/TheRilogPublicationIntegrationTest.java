@@ -40,7 +40,9 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 class TheRilogPublicationIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private TheRilogService theRilogService;
+    private TheRilogCommandService theRilogCommandService;
+    @Autowired
+    private TheRilogQueryService theRilogQueryService;
 
     @Autowired
     private PostRepository postRepository;
@@ -77,10 +79,10 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     void commitsCompletePublication() {
         TheRilogPublication publication = thursdayPublication();
 
-        var published = theRilogService.publishPublication(publication);
+        var published = theRilogCommandService.publishPublication(publication);
 
         var savedIds = postRepository.findAll().stream().map(post -> post.getId()).toList();
-        var main = theRilogService.readTheRilog();
+        var main = theRilogQueryService.readTheRilog();
         assertSoftly(softly -> {
             softly.assertThat(published.stream().map(article -> article.postId()).toList())
                     .containsExactlyInAnyOrderElementsOf(savedIds).hasSize(6);
@@ -97,7 +99,7 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
         chapterRepository.delete(enterprise);
         TheRilogPublication publication = thursdayPublication();
 
-        assertThatThrownBy(() -> theRilogService.publishPublication(publication))
+        assertThatThrownBy(() -> theRilogCommandService.publishPublication(publication))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
 

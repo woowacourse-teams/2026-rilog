@@ -10,7 +10,8 @@ import kr.rilog.domain.post.controller.dto.request.DraftOverwriteRequest;
 import kr.rilog.domain.post.controller.dto.response.DraftIdResponse;
 import kr.rilog.domain.post.controller.dto.response.DraftListResponse;
 import kr.rilog.domain.post.controller.dto.response.PostPublishResponse;
-import kr.rilog.domain.post.service.DraftService;
+import kr.rilog.domain.post.service.DraftCommandService;
+import kr.rilog.domain.post.service.DraftQueryService;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
@@ -28,7 +29,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DraftController implements DraftApiSpec {
 
-    private final DraftService draftService;
+    private final DraftCommandService draftCommandService;
+    private final DraftQueryService draftQueryService;
 
     @AuthGuard
     @PostMapping("/drafts")
@@ -39,7 +41,7 @@ public class DraftController implements DraftApiSpec {
             @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody DraftSaveCommand command
     ) {
-        DraftIdResult result = draftService.saveDraft(command, userId);
+        DraftIdResult result = draftCommandService.saveDraft(command, userId);
         DraftIdResponse data = DraftIdResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "최초 임시저장에 성공했습니다.", data);
     }
@@ -51,7 +53,7 @@ public class DraftController implements DraftApiSpec {
             @RequestParam int page,
             @RequestParam int size
     ) {
-        DraftListResult result = draftService.readMyDraftList(requesterId, page, size);
+        DraftListResult result = draftQueryService.readMyDraftList(requesterId, page, size);
         DraftListResponse data = DraftListResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "임시저장 목록 조회에 성공했습니다.", data);
     }
@@ -63,7 +65,7 @@ public class DraftController implements DraftApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody DraftOverwriteRequest dto
     ) {
-        DraftIdResult result = draftService.overwriteDraft(dto.toCommand(), postId, requesterId);
+        DraftIdResult result = draftCommandService.overwriteDraft(dto.toCommand(), postId, requesterId);
         DraftIdResponse data = DraftIdResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "임시저장을 덮어썼습니다.", data);
     }
@@ -75,7 +77,7 @@ public class DraftController implements DraftApiSpec {
             @PathVariable Long postId,
             @LoginUserId Long requesterId
     ) {
-        draftService.deleteDraft(postId, requesterId);
+        draftCommandService.deleteDraft(postId, requesterId);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "임시저장을 삭제했습니다.");
     }
 
@@ -85,7 +87,7 @@ public class DraftController implements DraftApiSpec {
             @LoginUserId Long requesterId,
             @PathVariable("draftId") Long draftId
     ) {
-        DraftDetailResult result = draftService.getMyDraft(draftId, requesterId);
+        DraftDetailResult result = draftQueryService.getMyDraft(draftId, requesterId);
         DraftDetailResponse data = DraftDetailResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "임시저장 글을 성공적으로 불러왔습니다.", data);
     }
@@ -97,7 +99,7 @@ public class DraftController implements DraftApiSpec {
             @PathVariable("draftId") Long draftId,
             @Valid @RequestBody DraftPublishRequest dto
     ) {
-        PostPublishResult result = draftService.publishDraft(dto.toCommand(), draftId, requesterId);
+        PostPublishResult result = draftCommandService.publishDraft(dto.toCommand(), draftId, requesterId);
         PostPublishResponse data = PostPublishResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "임시저장 글을 성공적으로 발행했습니다.", data);
     }

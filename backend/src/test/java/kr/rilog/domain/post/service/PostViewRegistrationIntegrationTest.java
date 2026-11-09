@@ -39,7 +39,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     @Autowired
     private PostViewStore postViewStore;
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
     @Autowired
     private PostRepository postRepository;
     @Autowired
@@ -79,7 +79,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
         var privateCommand = new PostSaveCommand(publicCommand.slug(), publicCommand.title(),
                 publicCommand.content(), publicCommand.category(), PRIVATE,
                 publicCommand.thumbnailImageUrl(), publicCommand.chapterId());
-        long postId = postService.publish(privateCommand, scenario.writer().getId()).postId();
+        long postId = postCommandService.publish(privateCommand, scenario.writer().getId()).postId();
 
         // when & then
         assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
@@ -109,7 +109,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
         // given
         Scenario scenario = scenario();
         long postId = publish(scenario);
-        postService.deletePublishedPost(postId, scenario.writer().getId());
+        postCommandService.deletePublishedPost(postId, scenario.writer().getId());
 
         // when & then
         assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
@@ -135,7 +135,7 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     }
 
     private long publish(Scenario scenario) {
-        return postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
+        return postCommandService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
                 scenario.writer().getId()).postId();
     }
 

@@ -4,7 +4,6 @@ import kr.rilog.domain.blog.entity.BlogMembers;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
-import kr.rilog.domain.comment.entity.vo.CommentAnchorGroups;
 import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
@@ -14,8 +13,6 @@ import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorUpdateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
-import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
-import kr.rilog.domain.comment.service.dto.result.CommentAnchorSidebarResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorUpdateResult;
 import kr.rilog.domain.notification.event.NotificationEventPublisher;
 import kr.rilog.domain.post.entity.Post;
@@ -43,8 +40,8 @@ import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class CommentAnchorService {
+@Transactional
+public class CommentAnchorCommandService {
 
     private final CommentAnchorRepository commentAnchorRepository;
     private final CommentAnchorSelectionRepository commentAnchorSelectionRepository;
@@ -54,7 +51,6 @@ public class CommentAnchorService {
     private final NotificationEventPublisher notificationEventPublisher;
     private final Clock clock;
 
-    @Transactional
     public CommentAnchorCreateResult createCommentAnchor(
             Long postId,
             Long requesterId,
@@ -73,7 +69,6 @@ public class CommentAnchorService {
         return CommentAnchorCreateResult.from(commentAnchor);
     }
 
-    @Transactional
     public CommentAnchorCreateResult addCommentAnchor(
             Long postId,
             Long requesterId,
@@ -91,7 +86,6 @@ public class CommentAnchorService {
         return CommentAnchorCreateResult.from(commentAnchor);
     }
 
-    @Transactional
     public CommentAnchorUpdateResult updateCommentAnchor(
             Long postId,
             Long commentAnchorId,
@@ -107,7 +101,6 @@ public class CommentAnchorService {
         return CommentAnchorUpdateResult.from(commentAnchor);
     }
 
-    @Transactional
     public CommentAnchorDeleteResult deleteCommentAnchor(Long postId, Long commentAnchorId, Long requesterId) {
         Post post = getPublishedPost(postId);
         post.validateReadableBy(requesterId);
@@ -119,26 +112,6 @@ public class CommentAnchorService {
         softDeleteCommentAnchor(commentAnchorId);
         validateCommentCountUpdated(postRepository.decrementCommentCount(postId));
         return CommentAnchorDeleteResult.from(commentAnchor);
-    }
-
-    public CommentAnchorListResult readCommentAnchors(Long postId, Long requesterId) {
-        Post post = getPublishedPost(postId);
-        post.validateReadableBy(requesterId);
-
-        CommentAnchorGroups groups = CommentAnchorGroups.from(
-                commentAnchorRepository.findAllByPostId(postId)
-        );
-        return CommentAnchorListResult.from(post, groups, getActiveBlogMembers(post), requesterId);
-    }
-
-    public CommentAnchorSidebarResult readSidebarCommentAnchors(Long postId, Long requesterId) {
-        Post post = getPublishedPost(postId);
-        post.validateReadableBy(requesterId);
-
-        CommentAnchorGroups groups = CommentAnchorGroups.from(
-                commentAnchorRepository.findAllByPostId(postId)
-        );
-        return CommentAnchorSidebarResult.from(post, groups, getActiveBlogMembers(post), requesterId);
     }
 
     private void softDeleteCommentAnchor(Long commentAnchorId) {

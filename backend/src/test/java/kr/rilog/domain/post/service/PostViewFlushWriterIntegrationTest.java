@@ -29,7 +29,7 @@ class PostViewFlushWriterIntegrationTest extends ServiceSupport {
     @Autowired
     private PostViewFlushWriter writer;
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -89,7 +89,7 @@ class PostViewFlushWriterIntegrationTest extends ServiceSupport {
                 UserFixture.completedWithNicknameAndSlug("배치작성자", "flush_writer"));
         Blog blog = blogRepository.saveAndFlush(Blog.createRilog(author));
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(blog, author));
-        return postService.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), author.getId()).postId();
+        return postCommandService.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), author.getId()).postId();
     }
 
     private ViewFlushBatch batch(long postId, long delta) {

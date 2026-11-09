@@ -43,7 +43,9 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
     private static final LocalDateTime JOINED_AT = LocalDateTime.of(2026, 8, 30, 12, 0);
 
     @Autowired
-    private ChapterService chapterService;
+    private ChapterCommandService chapterCommandService;
+    @Autowired
+    private ChapterQueryService chapterQueryService;
 
     @Autowired
     private UserRepository userRepository;
@@ -68,7 +70,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("개발 이야기");
 
         // when
-        ChapterResult result = chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
+        ChapterResult result = chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command);
 
         // then
         assertThat(chapterRepository.findById(result.chapterId())).isPresent();
@@ -83,7 +85,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("새 챕터");
 
         // when
-        ChapterResult result = chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
+        ChapterResult result = chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command);
 
         // then
         Chapter saved = chapterRepository.findById(result.chapterId()).orElseThrow();
@@ -102,7 +104,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("초과 챕터");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.create(BLOG_SLUG, scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_COUNT_EXCEEDED.getMessage());
         assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
@@ -125,7 +127,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("새 챕터");
 
         // when
-        chapterService.create(BLOG_SLUG, scenario.requester().getId(), command);
+        chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command);
 
         // then
         assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
@@ -141,7 +143,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("초과 시리즈");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.create(
+        assertThatThrownBy(() -> chapterCommandService.create(
                 scenario.blog().getSlug(),
                 scenario.requester().getId(),
                 command
@@ -159,7 +161,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("  개발 이야기  ");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.create(BLOG_SLUG, scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NAME_ALREADY_EXISTS.getMessage());
         assertThat(chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId()))
@@ -174,7 +176,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("개발 이야기");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.create(BLOG_SLUG, scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
         assertThat(chapterRepository.findAll()).isEmpty();
@@ -188,7 +190,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterCreateCommand command = new ChapterCreateCommand("개발 이야기");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.create(BLOG_SLUG, scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.create(BLOG_SLUG, scenario.requester().getId(), command))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_MEMBER_DOESNT_NOT_BELONG.getMessage());
         assertThat(chapterRepository.findAll()).isEmpty();
@@ -210,7 +212,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         chapterRepository.saveAndFlush(Chapter.create(otherBlog, "다른 블로그 챕터", 0));
 
         // when
-        List<ChapterResult> result = chapterService.readAll(BLOG_SLUG);
+        List<ChapterResult> result = chapterQueryService.readAll(BLOG_SLUG);
 
         // then
         assertThat(result).containsExactly(
@@ -229,7 +231,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when
-        ChapterResult result = chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command);
+        ChapterResult result = chapterCommandService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command);
 
         // then
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -247,7 +249,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("  회고  ");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NAME_ALREADY_EXISTS.getMessage());
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -265,7 +267,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when
-        ChapterResult result = chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command);
+        ChapterResult result = chapterCommandService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command);
 
         // then
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -284,7 +286,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.rename(BLOG_SLUG, target.getId(), scenario.requester().getId(), command))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ADMIN_PERMISSION_REQUIRED.getMessage());
         Chapter saved = chapterRepository.findById(target.getId()).orElseThrow();
@@ -302,7 +304,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         ChapterRenameCommand command = new ChapterRenameCommand("새로운 이야기");
 
         // when & then
-        assertThatThrownBy(() -> chapterService.rename(BLOG_SLUG, otherChapter.getId(), scenario.requester().getId(), command))
+        assertThatThrownBy(() -> chapterCommandService.rename(BLOG_SLUG, otherChapter.getId(), scenario.requester().getId(), command))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
     }
@@ -320,7 +322,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         chapterRepository.saveAndFlush(Chapter.create(scenario.blog(), "여섯 번째", 5));
 
         // when
-        chapterService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
+        chapterCommandService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
 
         // then
         List<Chapter> remainingChapters = chapterRepository.findAllByBlogIdAndDeletedAtIsNullOrderByOrderAsc(scenario.blog().getId());
@@ -339,7 +341,7 @@ class ChapterServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(post);
 
         // when
-        chapterService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
+        chapterCommandService.delete(BLOG_SLUG, target.getId(), scenario.requester().getId());
 
         // then
         Post preservedPost = postRepository.findDetailById(post.getId()).orElseThrow();

@@ -1,7 +1,8 @@
 package kr.rilog.domain.therilog.service;
 
 import kr.rilog.domain.post.service.FeedService;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
+import kr.rilog.domain.post.service.PostQueryService;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -54,13 +55,15 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     private static final String SOURCE_PROFILE_IMAGE = "https://example.com/profile.png";
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
+    @Autowired
+    private PostQueryService postQueryService;
 
     @Autowired
     private FeedService feedService;
 
     @Autowired
-    private TheRilogService theRilogService;
+    private TheRilogCommandService theRilogCommandService;
 
     @Autowired
     private PostRepository postRepository;
@@ -109,7 +112,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(postType);
 
         // when
-        PostPublishResult result = theRilogService.publishTheRilog(command, writer.getId());
+        PostPublishResult result = theRilogCommandService.publishTheRilog(command, writer.getId());
 
         // then
         Post savedPost = findPost(result.postId());
@@ -128,7 +131,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when & then
-        assertThatThrownBy(() -> theRilogService.publishTheRilog(command, other.getId()))
+        assertThatThrownBy(() -> theRilogCommandService.publishTheRilog(command, other.getId()))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
         assertThat(postRepository.count()).isZero();
@@ -149,7 +152,7 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         TheRilogPostPublishCommand command = command(PostType.ENTERPRISE_SPOTLIGHT);
 
         // when & then
-        assertThatThrownBy(() -> theRilogService.publishTheRilog(command, writer.getId()))
+        assertThatThrownBy(() -> theRilogCommandService.publishTheRilog(command, writer.getId()))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
         assertThat(postRepository.count()).isZero();
@@ -160,10 +163,10 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("메인 피드는 일반 발행 글을 포함하고 더 리로그 전용 발행 글은 제외한다.")
     void mainFeedExcludesTheRilogPublications() {
         // given
-        var standard = postService.publish(PostFixture.publicPostPublishCommand(THE_RILOG_SLUG), writer.getId());
-        theRilogService.publishTheRilog(command(PostType.DAILY_HEADLINES), writer.getId());
-        theRilogService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
-        theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        var standard = postCommandService.publish(PostFixture.publicPostPublishCommand(THE_RILOG_SLUG), writer.getId());
+        theRilogCommandService.publishTheRilog(command(PostType.DAILY_HEADLINES), writer.getId());
+        theRilogCommandService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
+        theRilogCommandService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // when
         var feed = feedService.readFullFeedPostList(new FullFeedSearchCommand(null, null, 0, 10));
@@ -177,12 +180,12 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
     @DisplayName("일반 발행과 더 리로그 발행은 배치를 우회하여 트렌딩에 등록하지 않는다.")
     void publicationDoesNotRegisterTrendingBeforeBatch() {
         // given
-        postService.publish(PostFixture.publicPostPublishCommand(THE_RILOG_SLUG), writer.getId());
+        postCommandService.publish(PostFixture.publicPostPublishCommand(THE_RILOG_SLUG), writer.getId());
 
         // when
-        theRilogService.publishTheRilog(command(PostType.DAILY_HEADLINES), writer.getId());
-        theRilogService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
-        theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        theRilogCommandService.publishTheRilog(command(PostType.DAILY_HEADLINES), writer.getId());
+        theRilogCommandService.publishTheRilog(command(PostType.ENTERPRISE_SPOTLIGHT), writer.getId());
+        theRilogCommandService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
 
         // then
         assertThat(jdbc.queryForList("select post_id from trending_post", Long.class))
@@ -195,11 +198,11 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
         // given
         Blog colog = blogRepository.saveAndFlush(Blog.createColog(writer, "team", BlogFixture.cologProfile()));
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(colog, writer));
-        PostPublishResult published = theRilogService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
+        PostPublishResult published = theRilogCommandService.publishTheRilog(command(PostType.PERSONAL_SPOTLIGHT), writer.getId());
         PostUpdateCommand command = updateCommand("변경", "team", null);
 
         // when
-        PostUpdateResult result = postService.update(command, published.postId(), writer.getId());
+        PostUpdateResult result = postCommandService.update(command, published.postId(), writer.getId());
 
         // then
         Post savedPost = findPost(published.postId());
@@ -210,9 +213,9 @@ class TheRilogPostIntegrationTest extends ServiceSupport {
             softly.assertThat(result).isEqualTo(new PostUpdateResult(savedPost.getId(), "team"));
             softly.assertThat(savedPost.getColog().getId()).isEqualTo(colog.getId());
             softly.assertThat(savedPost.getSource()).isEqualTo(expectedSource);
-            softly.assertThat(postService.readPostDetailByCanonicalPath("team", published.postId(), null).source())
+            softly.assertThat(postQueryService.readPostDetailByCanonicalPath("team", published.postId(), null).source())
                     .isEqualTo(expectedResponse);
-            softly.assertThat(postService.readEditablePostDetail(published.postId(), writer.getId()).source())
+            softly.assertThat(postQueryService.readEditablePostDetail(published.postId(), writer.getId()).source())
                     .isEqualTo(expectedResponse);
         });
     }

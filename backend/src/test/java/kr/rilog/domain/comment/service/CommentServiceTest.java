@@ -76,17 +76,15 @@ class CommentServiceTest {
     @Mock
     private BlogMemberRepository blogMemberRepository;
 
-    private CommentService commentService;
+    private CommentCommandService commentCommandService;
+    private CommentQueryService commentQueryService;
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(
-                commentRepository,
-                postRepository,
-                userRepository,
-                blogMemberRepository,
-                Clock.fixed(NOW, ZoneOffset.UTC)
+        commentCommandService = new CommentCommandService(
+                commentRepository, postRepository, userRepository, Clock.fixed(NOW, ZoneOffset.UTC)
         );
+        commentQueryService = new CommentQueryService(commentRepository, postRepository, blogMemberRepository);
     }
 
     @Test
@@ -102,7 +100,7 @@ class CommentServiceTest {
         when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
 
         // when
-        CommentCreateResponse response = commentService.createComment(
+        CommentCreateResponse response = commentCommandService.createComment(
                 POST_ID,
                 USER_ID,
                 new CommentCreateCommand("댓글입니다.")
@@ -134,7 +132,7 @@ class CommentServiceTest {
         when(commentRepository.save(any(Comment.class))).thenReturn(savedReply);
 
         // when
-        CommentCreateResponse response = commentService.createReply(
+        CommentCreateResponse response = commentCommandService.createReply(
                 POST_ID,
                 COMMENT_ID,
                 USER_ID,
@@ -165,7 +163,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(parent));
 
         // when - then
-        assertThatThrownBy(() -> commentService.createReply(
+        assertThatThrownBy(() -> commentCommandService.createReply(
                 POST_ID,
                 COMMENT_ID,
                 USER_ID,
@@ -192,7 +190,7 @@ class CommentServiceTest {
                 .thenReturn(List.of(USER_ID));
 
         // when
-        CommentListResponse response = commentService.readComments(POST_ID);
+        CommentListResponse response = commentQueryService.readComments(POST_ID);
 
         // then
         assertThat(response.comments()).hasSize(1);
@@ -220,7 +218,7 @@ class CommentServiceTest {
                 .thenReturn(List.of(postAuthor.getId(), OTHER_USER_ID));
 
         // when
-        CommentListResponse response = commentService.readComments(POST_ID);
+        CommentListResponse response = commentQueryService.readComments(POST_ID);
 
         // then
         CommentListResponse.CommentResponse rootResponse = response.comments().getFirst();
@@ -239,7 +237,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(createPrivatePost(POST_ID)));
 
         // when - then
-        assertThatThrownBy(() -> commentService.readComments(POST_ID))
+        assertThatThrownBy(() -> commentQueryService.readComments(POST_ID))
                 .isInstanceOf(PostException.class)
                 .extracting(ERROR_INFORMATION)
                 .isEqualTo(PRIVATE_POST_READ_FORBIDDEN);
@@ -261,7 +259,7 @@ class CommentServiceTest {
                 .thenReturn(List.of(OTHER_USER_ID));
 
         // when
-        CommentListResponse response = commentService.readComments(POST_ID);
+        CommentListResponse response = commentQueryService.readComments(POST_ID);
 
         // then
         assertThat(response.comments()).isEmpty();
@@ -276,7 +274,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(comment));
 
         // when
-        commentService.updateComment(COMMENT_ID, USER_ID, new CommentUpdateCommand("수정 후입니다."));
+        commentCommandService.updateComment(COMMENT_ID, USER_ID, new CommentUpdateCommand("수정 후입니다."));
 
         // then
         assertThat(comment.getContent()).isEqualTo("수정 후입니다.");
@@ -291,7 +289,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(comment));
 
         // when - then
-        assertThatThrownBy(() -> commentService.updateComment(
+        assertThatThrownBy(() -> commentCommandService.updateComment(
                 COMMENT_ID,
                 OTHER_USER_ID,
                 new CommentUpdateCommand("수정 후입니다.")
@@ -310,7 +308,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(comment));
 
         // when
-        commentService.deleteComment(COMMENT_ID, USER_ID);
+        commentCommandService.deleteComment(COMMENT_ID, USER_ID);
 
         // then
         assertThat(comment.getDeletedAt()).isNotNull();
@@ -325,7 +323,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(comment));
 
         // when
-        commentService.deleteComment(COMMENT_ID, USER_ID);
+        commentCommandService.deleteComment(COMMENT_ID, USER_ID);
 
         // then
         verify(commentRepository).softDeleteAllRepliesByParentId(
@@ -345,7 +343,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.of(reply));
 
         // when
-        commentService.deleteComment(REPLY_ID, USER_ID);
+        commentCommandService.deleteComment(REPLY_ID, USER_ID);
 
         // then
         verify(commentRepository, never()).softDeleteAllRepliesByParentId(any(), any());
@@ -359,7 +357,7 @@ class CommentServiceTest {
                 .thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> commentService.createComment(
+        assertThatThrownBy(() -> commentCommandService.createComment(
                 POST_ID,
                 USER_ID,
                 new CommentCreateCommand("댓글입니다.")
@@ -378,7 +376,7 @@ class CommentServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> commentService.createComment(
+        assertThatThrownBy(() -> commentCommandService.createComment(
                 POST_ID,
                 USER_ID,
                 new CommentCreateCommand("댓글입니다.")

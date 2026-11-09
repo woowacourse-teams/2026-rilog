@@ -48,7 +48,9 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     private static final LocalDateTime BASE_PUBLISHED_AT = LocalDateTime.of(2026, 8, 25, 12, 0);
 
     @Autowired
-    private DraftService draftService;
+    private DraftCommandService draftCommandService;
+    @Autowired
+    private DraftQueryService draftQueryService;
 
     @Autowired
     private UserRepository userRepository;
@@ -71,7 +73,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         DraftSaveCommand command = initialDraftSaveCommand();
 
         // when
-        DraftIdResult result = draftService.saveDraft(command, writer.getId());
+        DraftIdResult result = draftCommandService.saveDraft(command, writer.getId());
 
         // then
         Post savedDraft = postRepository.findById(result.draftId()).orElseThrow();
@@ -112,7 +114,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         );
 
         // when
-        DraftListResult result = draftService.readMyDraftList(requester.getId(), 0, 10);
+        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 10);
 
         // then
         assertThat(result.drafts()).containsExactly(new DraftListResult.DraftItemResult(
@@ -133,7 +135,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         Post latestDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "가장 최신 초안", BASE_PUBLISHED_AT.plusMinutes(1)));
 
         // when
-        DraftListResult result = draftService.readMyDraftList(requester.getId(), 0, 10);
+        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 10);
 
         // then
         assertThat(result.drafts())
@@ -152,7 +154,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         Post latestDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "최신 초안", BASE_PUBLISHED_AT.plusMinutes(2)));
 
         // when
-        DraftListResult result = draftService.readMyDraftList(requester.getId(), 0, 2);
+        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 2);
 
         // then
         assertSoftly(softly -> {
@@ -173,7 +175,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         User requester = saveCompletedUser();
 
         // when
-        DraftListResult result = draftService.readMyDraftList(requester.getId(), 0, 10);
+        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 10);
 
         // then
         assertSoftly(softly -> {
@@ -204,7 +206,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         );
 
         // when
-        DraftDetailResult result = draftService.getMyDraft(draft.getId(), requester.getId());
+        DraftDetailResult result = draftQueryService.getMyDraft(draft.getId(), requester.getId());
 
         // then
         assertThat(result).isEqualTo(expected);
@@ -225,7 +227,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.getMyDraft(draft.getId(), requester.getId()))
+        assertThatThrownBy(() -> draftQueryService.getMyDraft(draft.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
     }
@@ -239,7 +241,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, requester));
 
         // when & then
-        assertThatThrownBy(() -> draftService.getMyDraft(publishedPost.getId(), requester.getId()))
+        assertThatThrownBy(() -> draftQueryService.getMyDraft(publishedPost.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }
@@ -258,7 +260,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.getMyDraft(deletedDraft.getId(), requester.getId()))
+        assertThatThrownBy(() -> draftQueryService.getMyDraft(deletedDraft.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }
@@ -278,7 +280,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         DraftOverwriteCommand command = overwrittenDraftCommand();
 
         // when
-        DraftIdResult result = draftService.overwriteDraft(command, draft.getId(), writer.getId());
+        DraftIdResult result = draftCommandService.overwriteDraft(command, draft.getId(), writer.getId());
 
         // then
         Post overwrittenDraft = postRepository.findById(draft.getId()).orElseThrow();
@@ -305,7 +307,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.overwriteDraft(
+        assertThatThrownBy(() -> draftCommandService.overwriteDraft(
                 overwrittenDraftCommand(),
                 draft.getId(),
                 requester.getId()
@@ -330,7 +332,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> draftService.overwriteDraft(
+        assertThatThrownBy(() -> draftCommandService.overwriteDraft(
                 overwrittenDraftCommand(),
                 publishedPost.getId(),
                 writer.getId()
@@ -356,7 +358,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.overwriteDraft(
+        assertThatThrownBy(() -> draftCommandService.overwriteDraft(
                 overwrittenDraftCommand(),
                 deletedDraft.getId(),
                 writer.getId()
@@ -384,7 +386,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         DraftPublishCommand command = publicDraftPublishCommand(rilog.getSlug());
 
         // when
-        PostPublishResult result = draftService.publishDraft(command, draft.getId(), writer.getId());
+        PostPublishResult result = draftCommandService.publishDraft(command, draft.getId(), writer.getId());
 
         // then
         Post publishedPost = postRepository.findById(draft.getId()).orElseThrow();
@@ -424,7 +426,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when
-        PostPublishResult result = draftService.publishDraft(
+        PostPublishResult result = draftCommandService.publishDraft(
                 publicDraftPublishCommand(colog.getSlug()),
                 draft.getId(),
                 writer.getId()
@@ -455,7 +457,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.publishDraft(
+        assertThatThrownBy(() -> draftCommandService.publishDraft(
                 publicDraftPublishCommand(rilog.getSlug()),
                 draft.getId(),
                 requester.getId()
@@ -490,7 +492,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.publishDraft(
+        assertThatThrownBy(() -> draftCommandService.publishDraft(
                 publicDraftPublishCommand(colog.getSlug()),
                 draft.getId(),
                 writer.getId()
@@ -515,7 +517,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when
-        draftService.deleteDraft(draft.getId(), writer.getId());
+        draftCommandService.deleteDraft(draft.getId(), writer.getId());
 
         // then
         Post deletedDraft = postRepository.findById(draft.getId()).orElseThrow();
@@ -537,7 +539,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.deleteDraft(draft.getId(), requester.getId()))
+        assertThatThrownBy(() -> draftCommandService.deleteDraft(draft.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
 
@@ -553,7 +555,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> draftService.deleteDraft(publishedPost.getId(), writer.getId()))
+        assertThatThrownBy(() -> draftCommandService.deleteDraft(publishedPost.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(DRAFT_NOT_FOUND.getMessage());
 
@@ -574,7 +576,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when & then
-        assertThatThrownBy(() -> draftService.deleteDraft(deletedDraft.getId(), writer.getId()))
+        assertThatThrownBy(() -> draftCommandService.deleteDraft(deletedDraft.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(DRAFT_NOT_FOUND.getMessage());
     }

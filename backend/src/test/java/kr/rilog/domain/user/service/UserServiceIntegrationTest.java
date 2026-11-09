@@ -27,7 +27,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private UserService userService;
+    private UserCommandService userCommandService;
+    @Autowired
+    private UserQueryService userQueryService;
 
     @Autowired
     private UserRepository userRepository;
@@ -45,7 +47,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         UserInfoResult expected = UserInfoResult.from(savedUser);
 
         // when
-        UserInfoResult result = userService.getUserInformation(savedUser.getId());
+        UserInfoResult result = userQueryService.getUserInformation(savedUser.getId());
 
         // then
         assertThat(result).isEqualTo(expected);
@@ -61,7 +63,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         UserInfoResult expected = UserInfoResult.from(savedUser);
 
         // when
-        UserInfoResult result = userService.getUserInfo("ri_log_01");
+        UserInfoResult result = userQueryService.getUserInfo("ri_log_01");
 
         // then
         assertThat(result).isEqualTo(expected);
@@ -74,7 +76,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         userRepository.saveAndFlush(UserFixture.pending());
 
         // when & then
-        assertThatThrownBy(() -> userService.getUserInfo("pending_user"))
+        assertThatThrownBy(() -> userQueryService.getUserInfo("pending_user"))
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
     }
@@ -87,7 +89,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         OnboardingCompleteCommand command = onboardingCommand();
 
         // when
-        User result = userService.completeOnboarding(pendingUser.getId(), command);
+        User result = userCommandService.completeOnboarding(pendingUser.getId(), command);
 
         // then
         User savedUser = userRepository.findById(pendingUser.getId()).orElseThrow();
@@ -132,7 +134,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
 
         // when & then
-        assertThatThrownBy(() -> userService.completeOnboarding(pendingUser.getId(), onboardingCommand()))
+        assertThatThrownBy(() -> userCommandService.completeOnboarding(pendingUser.getId(), onboardingCommand()))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_PROFILE_NAME_ALREADY_EXISTS.getMessage());
 
@@ -152,7 +154,7 @@ class UserServiceIntegrationTest extends ServiceSupport {
         User pendingUser = userRepository.saveAndFlush(UserFixture.pending());
 
         // when & then
-        assertThatThrownBy(() -> userService.completeOnboarding(pendingUser.getId(), onboardingCommand()))
+        assertThatThrownBy(() -> userCommandService.completeOnboarding(pendingUser.getId(), onboardingCommand()))
                 .isInstanceOf(UserException.class)
                 .hasMessage(SLUG_DUPLICATED.getMessage());
 

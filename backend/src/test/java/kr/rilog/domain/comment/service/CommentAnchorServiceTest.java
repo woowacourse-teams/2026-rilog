@@ -66,14 +66,13 @@ class CommentAnchorServiceTest {
     @Mock
     private NotificationEventPublisher notificationEventPublisher;
 
-    private CommentAnchorService commentAnchorService;
+    private CommentAnchorCommandService commentAnchorCommandService;
     private User writer;
 
     @BeforeEach
     void setUp() {
-        commentAnchorService = new CommentAnchorService(
-                commentAnchorRepository, commentAnchorSelectionRepository, postRepository,
-                userRepository, blogMemberRepository, notificationEventPublisher, Clock.systemUTC()
+        commentAnchorCommandService = new CommentAnchorCommandService(
+                commentAnchorRepository, commentAnchorSelectionRepository, postRepository, userRepository, blogMemberRepository, notificationEventPublisher, Clock.systemUTC()
         );
         writer = User.builder().id(WRITER_ID).build();
         Post post = Post.builder()
@@ -94,7 +93,7 @@ class CommentAnchorServiceTest {
         var command = new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 2, 4, "나다", CONTENT);
 
         // when
-        Throwable thrown = catchThrowable(() -> commentAnchorService.createCommentAnchor(POST_ID, UNKNOWN_USER_ID, command));
+        Throwable thrown = catchThrowable(() -> commentAnchorCommandService.createCommentAnchor(POST_ID, UNKNOWN_USER_ID, command));
 
         // then
         assertThat(thrown)
@@ -111,7 +110,7 @@ class CommentAnchorServiceTest {
         var command = new CommentAnchorCreateCommand("not-exists", 2, 4, "나다", CONTENT);
 
         // when
-        Throwable thrown = catchThrowable(() -> commentAnchorService.createCommentAnchor(POST_ID, WRITER_ID, command));
+        Throwable thrown = catchThrowable(() -> commentAnchorCommandService.createCommentAnchor(POST_ID, WRITER_ID, command));
 
         // then
         assertThat(thrown)
@@ -128,7 +127,7 @@ class CommentAnchorServiceTest {
         var command = new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 2, 4, "가나", CONTENT);
 
         // when
-        Throwable thrown = catchThrowable(() -> commentAnchorService.createCommentAnchor(POST_ID, WRITER_ID, command));
+        Throwable thrown = catchThrowable(() -> commentAnchorCommandService.createCommentAnchor(POST_ID, WRITER_ID, command));
 
         // then
         assertThat(thrown)
@@ -149,7 +148,7 @@ class CommentAnchorServiceTest {
 
         // when
         Throwable thrown = catchThrowable(
-                () -> commentAnchorService.addCommentAnchor(POST_ID, WRITER_ID, selectionId, command)
+                () -> commentAnchorCommandService.addCommentAnchor(POST_ID, WRITER_ID, selectionId, command)
         );
 
         // then

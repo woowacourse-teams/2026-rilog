@@ -7,8 +7,9 @@ import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.therilog.infrastructure.content.TheRilogBlockNoteConverter;
 import kr.rilog.domain.therilog.exception.TheRilogPublicationResultWriteException;
+import kr.rilog.domain.therilog.service.TheRilogCommandService;
 import kr.rilog.domain.therilog.service.TheRilogPublicationService;
-import kr.rilog.domain.therilog.service.TheRilogService;
+import kr.rilog.domain.therilog.service.TheRilogQueryService;
 import kr.rilog.domain.therilog.service.TheRilogSheetService;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
@@ -47,7 +48,10 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
             "originalArticleUrl", "articleType", "description", "thumbnailImageUrl", "sourceProfileName", "sourceProfileImage");
 
     @Autowired
-    private TheRilogService theRilogService;
+    private TheRilogQueryService theRilogQueryService;
+
+    @Autowired
+    private TheRilogCommandService theRilogCommandService;
 
     @Autowired
     private PostRepository postRepository;
@@ -79,7 +83,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         personal = chapterRepository.saveAndFlush(Chapter.create(blog, "personal", 2));
         sheets = new GoogleSheetsTestSupport(directory, "NEWS!A:G");
         publicationService = new TheRilogPublicationService(new TheRilogSheetService(sheets.client()),
-                new TheRilogBlockNoteConverter(), theRilogService);
+                new TheRilogBlockNoteConverter(), theRilogCommandService);
     }
 
     @Test
@@ -109,7 +113,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
         var published = publicationService.publishDueContent(Instant.parse("2026-10-14T20:00:00Z"));
 
-        assertThat(published.getFirst().postId()).isEqualTo(theRilogService.readTheRilog().news().postId());
+        assertThat(published.getFirst().postId()).isEqualTo(theRilogQueryService.readTheRilog().news().postId());
         sheets.verifyRequests();
     }
 
@@ -131,7 +135,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
         var published = publicationService.publishDueContent(NOW);
 
         assertThat(published.stream().map(article -> article.rowId()).toList()).containsExactly("overdue", "latest");
-        assertThat(theRilogService.readTheRilog().news().postId()).isEqualTo(published.getLast().postId());
+        assertThat(theRilogQueryService.readTheRilog().news().postId()).isEqualTo(published.getLast().postId());
         sheets.verifyRequests();
     }
 
@@ -186,7 +190,7 @@ class GoogleSheetsPublicationIntegrationTest extends ServiceSupport {
 
         var published = publicationService.publishDueContent(Instant.parse("2026-10-14T20:00:00Z"));
 
-        var main = theRilogService.readTheRilog();
+        var main = theRilogQueryService.readTheRilog();
         assertThat(published).hasSize(2);
         assertThat(main.news().postId()).isEqualTo(previousNews.getId());
         assertThat(main.spotlights().stream().map(article -> article.postId()).toList()).containsExactly(

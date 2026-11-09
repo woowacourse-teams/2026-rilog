@@ -31,13 +31,7 @@ public record BlogPublicProfileResponse(
         String serviceUrl,
 
         @Schema(description = "GitHub URL", example = "https://github.com/rilog")
-        String githubUrl,
-
-        @Schema(description = "활성 멤버 수", example = "10")
-        long memberCount,
-
-        @Schema(description = "공개 게시글 수", example = "24")
-        long postCount
+        String githubUrl
 ) {
 
     public static BlogPublicProfileResponse from(BlogPublicProfileResult result) {
@@ -50,9 +44,7 @@ public record BlogPublicProfileResponse(
                 result.profileImageUrl(),
                 result.coverImageUrl(),
                 result.serviceUrl(),
-                result.githubUrl(),
-                result.memberCount(),
-                result.postCount()
+                result.githubUrl()
         );
     }
 }

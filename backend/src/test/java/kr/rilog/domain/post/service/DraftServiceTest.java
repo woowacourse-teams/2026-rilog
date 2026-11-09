@@ -86,20 +86,15 @@ class DraftServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    private DraftService draftService;
+    private DraftCommandService draftCommandService;
+    private DraftQueryService draftQueryService;
 
     @BeforeEach
     void setUp() {
-        draftService = new DraftService(
-                postRepository,
-                blogRepository,
-                blogMemberRepository,
-                userRepository,
-                chapterRepository,
-                tagAssetsPublisher,
-                viewCountRepository,
-                eventPublisher
+        draftCommandService = new DraftCommandService(
+                postRepository, blogRepository, blogMemberRepository, userRepository, chapterRepository, tagAssetsPublisher, viewCountRepository, eventPublisher
         );
+        draftQueryService = new DraftQueryService(postRepository);
     }
 
     @Test
@@ -114,7 +109,7 @@ class DraftServiceTest {
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        draftService.saveDraft(command, WRITER_ID);
+        draftCommandService.saveDraft(command, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).attach(TagAssets.of(IMAGE_URL_A));
@@ -128,7 +123,7 @@ class DraftServiceTest {
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> draftService.saveDraft(command, WRITER_ID));
+        Throwable thrown = catchThrowable(() -> draftCommandService.saveDraft(command, WRITER_ID));
 
         // then
         assertThat(thrown)
@@ -147,7 +142,7 @@ class DraftServiceTest {
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> draftService.saveDraft(command, WRITER_ID));
+        Throwable thrown = catchThrowable(() -> draftCommandService.saveDraft(command, WRITER_ID));
 
         // then
         assertThat(thrown)
@@ -163,7 +158,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> draftService.getMyDraft(DRAFT_ID, WRITER_ID));
+        Throwable thrown = catchThrowable(() -> draftQueryService.getMyDraft(DRAFT_ID, WRITER_ID));
 
         // then
         assertThat(thrown)
@@ -184,7 +179,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
         // when
-        draftService.overwriteDraft(command, DRAFT_ID, WRITER_ID);
+        draftCommandService.overwriteDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).synchronize(WRITER_ID, previous, TagAssets.of(IMAGE_URL_B));
@@ -201,7 +196,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> draftService.overwriteDraft(command, DRAFT_ID, WRITER_ID));
+        Throwable thrown = catchThrowable(() -> draftCommandService.overwriteDraft(command, DRAFT_ID, WRITER_ID));
 
         // then
         assertThat(thrown)
@@ -222,7 +217,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
         // when & then
-        assertThatThrownBy(() -> draftService.overwriteDraft(command, DRAFT_ID, 99L))
+        assertThatThrownBy(() -> draftCommandService.overwriteDraft(command, DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
@@ -252,7 +247,7 @@ class DraftServiceTest {
                 .thenReturn(Optional.of(membership));
 
         // when
-        draftService.publishDraft(command, DRAFT_ID, WRITER_ID);
+        draftCommandService.publishDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).synchronize(
@@ -279,7 +274,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
         // when & then
-        assertThatThrownBy(() -> draftService.publishDraft(command, DRAFT_ID, 99L))
+        assertThatThrownBy(() -> draftCommandService.publishDraft(command, DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
@@ -294,7 +289,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
         // when
-        draftService.deleteDraft(DRAFT_ID, WRITER_ID);
+        draftCommandService.deleteDraft(DRAFT_ID, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).detach(WRITER_ID, assets);
@@ -308,7 +303,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
         // when & then
-        assertThatThrownBy(() -> draftService.deleteDraft(DRAFT_ID, 99L))
+        assertThatThrownBy(() -> draftCommandService.deleteDraft(DRAFT_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).detach(any(), any());
@@ -321,7 +316,7 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> draftService.deleteDraft(DRAFT_ID, WRITER_ID));
+        Throwable thrown = catchThrowable(() -> draftCommandService.deleteDraft(DRAFT_ID, WRITER_ID));
 
         // then
         assertThat(thrown)

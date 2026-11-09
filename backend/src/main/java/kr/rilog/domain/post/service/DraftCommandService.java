@@ -15,13 +15,10 @@ import kr.rilog.domain.post.event.PostCountChangedEvent;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
-import kr.rilog.domain.post.repository.projection.DraftListRow;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
-import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
 import kr.rilog.domain.post.service.dto.result.DraftIdResult;
-import kr.rilog.domain.post.service.dto.result.DraftListResult;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
@@ -30,21 +27,18 @@ import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
-import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
-public class DraftService {
+public class DraftCommandService {
 
     private final PostRepository postRepository;
     private final BlogRepository blogRepository;
@@ -56,7 +50,6 @@ public class DraftService {
     private final ApplicationEventPublisher eventPublisher;
 
     // THINK 멱등성.
-    @Transactional
     public DraftIdResult saveDraft(DraftSaveCommand command, Long writerId) {
         User writer = getUser(writerId);
         Blog rilog = getRilog(writer);
@@ -66,19 +59,6 @@ public class DraftService {
         return DraftIdResult.from(saved.getId());
     }
 
-    public DraftListResult readMyDraftList(Long requesterId, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size);
-        Slice<DraftListRow> drafts = postRepository.findDraftsByWriterId(requesterId, DRAFT, pageable);
-        return DraftListResult.from(drafts);
-    }
-
-    public DraftDetailResult getMyDraft(Long draftId, Long requesterId) {
-        Post draft = getDraft(draftId);
-        draft.validateWrittenBy(requesterId);
-        return DraftDetailResult.from(draft);
-    }
-
-    @Transactional
     public PostPublishResult publishDraft(DraftPublishCommand command, Long draftId, Long requesterId) {
         Post draft = getDraft(draftId);
         draft.validateWrittenBy(requesterId);
@@ -101,7 +81,6 @@ public class DraftService {
         return PostPublishResult.of(draft);
     }
 
-    @Transactional
     public DraftIdResult overwriteDraft(DraftOverwriteCommand command, Long postId, Long requesterId) {
         Post draft = getDraft(postId);
         draft.validateWrittenBy(requesterId);
@@ -113,7 +92,6 @@ public class DraftService {
         return DraftIdResult.from(draft.getId());
     }
 
-    @Transactional
     public void deleteDraft(Long postId, Long requesterId) {
         Post draft = getDraft(postId);
         draft.validateWrittenBy(requesterId);

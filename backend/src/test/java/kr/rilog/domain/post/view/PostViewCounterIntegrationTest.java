@@ -3,7 +3,7 @@ package kr.rilog.domain.post.view;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.global.exception.RilogInfrastructureException;
@@ -27,7 +27,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     @Autowired
     private PostViewCounterRegistry registry;
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -117,7 +117,7 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     }
 
     private long publishWithStoredCount(Scenario scenario, long storedCount) {
-        long postId = postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
+        long postId = postCommandService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
                 scenario.writer().getId()).postId();
         jdbc.update("update post_view_count set view_count = ? where post_id = ?", storedCount, postId);
         return postId;

@@ -11,7 +11,8 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.service.dto.command.BlogProfileUpdateCommand;
 import kr.rilog.domain.blog.service.dto.result.BlogPublicProfileResult;
-import kr.rilog.domain.blog.service.BlogService;
+import kr.rilog.domain.blog.service.BlogCommandService;
+import kr.rilog.domain.blog.service.BlogQueryService;
 import kr.rilog.global.advice.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,13 +40,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class BlogControllerTest {
 
+    private final BlogCommandService blogCommandService = mock(BlogCommandService.class);
+    private final BlogQueryService blogQueryService = mock(BlogQueryService.class);
+
     @ParameterizedTest
     @ValueSource(strings = {"Ab1_", "a2345678901234567890", "ri__log_01"})
     @DisplayName("GET /v1/availability/slug는 블로그 슬러그 사용 가능 여부를 확인한다")
     void validateSlugAcceptsValidSlug(String slug) throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/slug")
@@ -54,7 +57,7 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("사용가능한 슬러그입니다."));
 
-        verify(blogService).validateDuplicatedSlug(slug);
+        verify(blogQueryService).validateDuplicatedSlug(slug);
     }
 
     @ParameterizedTest
@@ -62,15 +65,14 @@ class BlogControllerTest {
     @DisplayName("GET /v1/availability/slug는 길이가 올바르지 않은 슬러그를 거절한다")
     void validateSlugRejectsInvalidLength(String slug) throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/slug")
                         .param("slug", slug))
                 .andExpect(status().isBadRequest());
 
-        verify(blogService, never()).validateDuplicatedSlug(slug);
+        verify(blogQueryService, never()).validateDuplicatedSlug(slug);
     }
 
     @ParameterizedTest
@@ -78,15 +80,14 @@ class BlogControllerTest {
     @DisplayName("GET /v1/availability/slug는 정책에 맞지 않은 슬러그를 거절한다")
     void validateSlugRejectsInvalidPolicy(String slug) throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/slug")
                         .param("slug", slug))
                 .andExpect(status().isBadRequest());
 
-        verify(blogService, never()).validateDuplicatedSlug(slug);
+        verify(blogQueryService, never()).validateDuplicatedSlug(slug);
     }
 
     @Test
@@ -94,10 +95,9 @@ class BlogControllerTest {
     void validateSlugRejectsDuplicatedSlug() throws Exception {
         // given
         String slug = "ri_log_01";
-        BlogService blogService = mock(BlogService.class);
         doThrow(new BlogException(BLOG_SLUG_ALREADY_EXISTS))
-                .when(blogService).validateDuplicatedSlug(slug);
-        MockMvc mockMvc = mockMvc(blogService);
+                .when(blogQueryService).validateDuplicatedSlug(slug);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/slug")
@@ -111,8 +111,7 @@ class BlogControllerTest {
     @DisplayName("GET /v1/availability/nickname은 블로그 프로필 이름 사용 가능 여부를 확인한다")
     void validateNicknameAcceptsValidNickname(String nickname) throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/nickname")
@@ -121,7 +120,7 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("사용가능한 닉네임입니다."));
 
-        verify(blogService).validateDuplicatedProfileName(nickname);
+        verify(blogQueryService).validateDuplicatedProfileName(nickname);
     }
 
     @ParameterizedTest
@@ -129,15 +128,14 @@ class BlogControllerTest {
     @DisplayName("GET /v1/availability/nickname은 길이가 올바르지 않은 이름을 거절한다")
     void validateNicknameRejectsInvalidLength(String nickname) throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/nickname")
                         .param("nickname", nickname))
                 .andExpect(status().isBadRequest());
 
-        verify(blogService, never()).validateDuplicatedProfileName(nickname);
+        verify(blogQueryService, never()).validateDuplicatedProfileName(nickname);
     }
 
     @Test
@@ -145,10 +143,9 @@ class BlogControllerTest {
     void validateNicknameRejectsDuplicatedProfileName() throws Exception {
         // given
         String nickname = "러로";
-        BlogService blogService = mock(BlogService.class);
         doThrow(new BlogException(BLOG_PROFILE_NAME_ALREADY_EXISTS))
-                .when(blogService).validateDuplicatedProfileName(nickname);
-        MockMvc mockMvc = mockMvc(blogService);
+                .when(blogQueryService).validateDuplicatedProfileName(nickname);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/nickname")
@@ -161,22 +158,20 @@ class BlogControllerTest {
     @DisplayName("GET /v1/availability/nickname은 요청 파라미터가 없으면 거절한다")
     void validateNicknameRejectsMissingParameter() throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/availability/nickname"))
                 .andExpect(status().isBadRequest());
 
-        verify(blogService, never()).validateDuplicatedProfileName(org.mockito.ArgumentMatchers.anyString());
+        verify(blogQueryService, never()).validateDuplicatedProfileName(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
     @DisplayName("GET /v1/blogs/{slug}는 블로그 컨트롤러에서 공개 프로필 정보를 조회한다")
     void getPublicProfileReturnsBlogProfile() throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        when(blogService.getPublicProfile("rilog_team"))
+        when(blogQueryService.getPublicProfile("rilog_team"))
                 .thenReturn(new BlogPublicProfileResult(
                         BlogType.COLOG,
                         2L,
@@ -186,11 +181,9 @@ class BlogControllerTest {
                         "https://example.com/logo.png",
                         "https://example.com/cover.png",
                         "https://rilog.example.com",
-                        "https://github.com/rilog",
-                        10L,
-                        24L
+                        "https://github.com/rilog"
                 ));
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/blogs/{slug}", "rilog_team"))
@@ -204,19 +197,18 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.data.coverImageUrl").value("https://example.com/cover.png"))
                 .andExpect(jsonPath("$.data.serviceUrl").value("https://rilog.example.com"))
                 .andExpect(jsonPath("$.data.githubUrl").value("https://github.com/rilog"))
-                .andExpect(jsonPath("$.data.memberCount").value(10L))
-                .andExpect(jsonPath("$.data.postCount").value(24L))
+                .andExpect(jsonPath("$.data.memberCount").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.postCount").doesNotHaveJsonPath())
                 .andExpect(jsonPath("$.data.user").doesNotExist());
 
-        verify(blogService).getPublicProfile("rilog_team");
+        verify(blogQueryService).getPublicProfile("rilog_team");
     }
 
     @Test
     @DisplayName("GET /v1/blogs/{slug}는 개인 블로그 공개 프로필을 조회한다")
     void getPublicProfileReturnsRilogProfile() throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        when(blogService.getPublicProfile("riro"))
+        when(blogQueryService.getPublicProfile("riro"))
                 .thenReturn(new BlogPublicProfileResult(
                         BlogType.RILOG,
                         3L,
@@ -226,11 +218,9 @@ class BlogControllerTest {
                         "https://example.com/profile.png",
                         null,
                         null,
-                        "https://github.com/riro",
-                        1L,
-                        7L
+                        "https://github.com/riro"
                 ));
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/blogs/{slug}", "riro"))
@@ -244,18 +234,17 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.data.coverImageUrl").value(nullValue()))
                 .andExpect(jsonPath("$.data.serviceUrl").value(nullValue()))
                 .andExpect(jsonPath("$.data.githubUrl").value("https://github.com/riro"))
-                .andExpect(jsonPath("$.data.memberCount").value(1L))
-                .andExpect(jsonPath("$.data.postCount").value(7L));
+                .andExpect(jsonPath("$.data.memberCount").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.postCount").doesNotHaveJsonPath());
 
-        verify(blogService).getPublicProfile("riro");
+        verify(blogQueryService).getPublicProfile("riro");
     }
 
     @Test
     @DisplayName("PATCH /v1/blogs/{slug}/profiles는 로그인 사용자의 블로그 프로필 수정을 처리한다")
     void updateBlogProfileChangesProfileForLoginUser() throws Exception {
         // given
-        BlogService blogService = mock(BlogService.class);
-        MockMvc mockMvc = mockMvc(blogService);
+        MockMvc mockMvc = mockMvc();
         BlogProfileUpdateCommand command = new BlogProfileUpdateCommand(
                 "https://example.com/new-profile.png",
                 "https://example.com/new-cover.png",
@@ -285,11 +274,11 @@ class BlogControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("프로필을 수정했습니다."));
 
-        verify(blogService).changeBlogProfile(7L, "rilog_team", command);
+        verify(blogCommandService).changeBlogProfile(7L, "rilog_team", command);
     }
 
-    private MockMvc mockMvc(BlogService blogService) {
-        return MockMvcBuilders.standaloneSetup(new BlogController(blogService))
+    private MockMvc mockMvc() {
+        return MockMvcBuilders.standaloneSetup(new BlogController(blogCommandService, blogQueryService))
                 .addInterceptors(new BearerAuthenticationInterceptor(
                         new FixedAccessTokenProvider(),
                         mock(OnboardingTokenProvider.class)

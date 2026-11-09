@@ -42,12 +42,8 @@ class UserServiceTest {
     private final BlogRepository blogRepository = mock(BlogRepository.class);
     private final BlogMemberRepository blogMemberRepository = mock(BlogMemberRepository.class);
     private final TagAssetsPublisher tagAssetsPublisher = mock(TagAssetsPublisher.class);
-    private final UserService userService = new UserService(
-            userRepository,
-            blogRepository,
-            blogMemberRepository,
-            tagAssetsPublisher
-    );
+    private final UserCommandService userCommandService = new UserCommandService(userRepository, blogRepository, blogMemberRepository, tagAssetsPublisher);
+    private final UserQueryService userQueryService = new UserQueryService(userRepository);
 
     @Test
     @DisplayName("PENDING 사용자는 온보딩을 완료할 수 있다")
@@ -68,7 +64,7 @@ class UserServiceTest {
         when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        User completedUser = userService.completeOnboarding(1L, command);
+        User completedUser = userCommandService.completeOnboarding(1L, command);
 
         // then
         verify(blogRepository).existsByProfileName(command.nickname());
@@ -113,7 +109,7 @@ class UserServiceTest {
         when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        User completedUser = userService.completeOnboarding(1L, command());
+        User completedUser = userCommandService.completeOnboarding(1L, command());
 
         // then
         ArgumentCaptor<Blog> blogCaptor = ArgumentCaptor.forClass(Blog.class);
@@ -158,7 +154,7 @@ class UserServiceTest {
         when(blogRepository.save(any(Blog.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        userService.completeOnboarding(1L, command);
+        userCommandService.completeOnboarding(1L, command);
 
         // then
         verify(tagAssetsPublisher).attach(new TagAssets(Set.of(command.profileImageUrl())));
@@ -171,7 +167,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+        assertThatThrownBy(() -> userCommandService.completeOnboarding(1L, command()))
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
                 .isEqualTo(USER_NOT_FOUND);
@@ -187,7 +183,7 @@ class UserServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> userService.getUserInformation(userId));
+        Throwable thrown = catchThrowable(() -> userQueryService.getUserInformation(userId));
 
         // then
         assertThat(thrown)
@@ -209,7 +205,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         // when
-        Throwable thrown = catchThrowable(() -> userService.completeOnboarding(1L, command()));
+        Throwable thrown = catchThrowable(() -> userCommandService.completeOnboarding(1L, command()));
 
         // then
         assertThat(thrown)
@@ -236,7 +232,7 @@ class UserServiceTest {
         when(blogRepository.existsByProfileName("러로")).thenReturn(true);
 
         // when - then
-        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+        assertThatThrownBy(() -> userCommandService.completeOnboarding(1L, command()))
                 .isInstanceOf(BlogException.class)
                 .extracting("errorInformation")
                 .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
@@ -258,7 +254,7 @@ class UserServiceTest {
         when(userRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(true);
 
         // when - then
-        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+        assertThatThrownBy(() -> userCommandService.completeOnboarding(1L, command()))
                 .isInstanceOf(UserException.class)
                 .extracting("errorInformation")
                 .isEqualTo(SLUG_DUPLICATED);
@@ -280,7 +276,7 @@ class UserServiceTest {
         when(blogRepository.existsBySlug(Slug.from("ri_log_01"))).thenReturn(true);
 
         // when - then
-        assertThatThrownBy(() -> userService.completeOnboarding(1L, command()))
+        assertThatThrownBy(() -> userCommandService.completeOnboarding(1L, command()))
                 .isInstanceOf(BlogException.class)
                 .extracting("errorInformation")
                 .isEqualTo(BLOG_SLUG_ALREADY_EXISTS);

@@ -1,6 +1,6 @@
 package kr.rilog.domain.therilog.service;
 
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
@@ -43,10 +43,10 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
     private static final LocalDateTime PUBLICATION_TIME = LocalDateTime.of(2026, 9, 30, 6, 0);
 
     @Autowired
-    private TheRilogService theRilogService;
+    private TheRilogQueryService theRilogQueryService;
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
 
     @Autowired
     private PostRepository postRepository;
@@ -88,7 +88,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(publishedNews(news, PUBLICATION_TIME.minusDays(1), newsContent("과거 뉴스")));
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result.news().postId()).isEqualTo(latest.getId());
@@ -108,7 +108,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(deleted);
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result.news().postId()).isEqualTo(visible.getId());
@@ -128,7 +128,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(deleted);
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result.spotlights().stream().map(TheRilogResult.SpotlightResult::postId).toList())
@@ -148,7 +148,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         Post personal2 = postRepository.saveAndFlush(publishedSpotlight(personal, PERSONAL_SPOTLIGHT, PUBLICATION_TIME.plusDays(1)));
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result.spotlights().stream().map(TheRilogResult.SpotlightResult::postId).toList())
@@ -169,7 +169,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(spotlight);
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result.news()).isNull();
@@ -186,7 +186,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         blogRepository.saveAndFlush(theRilog);
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result).isEqualTo(new TheRilogResult(THE_RILOG_BLOG_SLUG, null, null, List.of()));
@@ -199,7 +199,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
         postRepository.saveAndFlush(PostFixture.publicPublishedRilogPostWithParagraph(theRilog, theRilog.getOwner(), "일반 글 본문"));
 
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result).isEqualTo(new TheRilogResult(THE_RILOG_BLOG_SLUG, null, null, List.of()));
@@ -214,10 +214,10 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
                 TECH, PUBLIC, null, news.getId());
 
         // when
-        postService.update(command, newsPost.getId(), theRilog.getOwner().getId());
+        postCommandService.update(command, newsPost.getId(), theRilog.getOwner().getId());
 
         // then
-        assertThat(theRilogService.readTheRilog().news().headlines())
+        assertThat(theRilogQueryService.readTheRilog().news().headlines())
                 .isEqualTo(List.of(new TheRilogResult.HeadlineResult("수정 후")));
     }
 
@@ -225,7 +225,7 @@ class TheRilogServiceIntegrationTest extends ServiceSupport {
     @DisplayName("콘텐츠가 아직 없으면 더 리로그 메인은 빈 결과를 반환한다.")
     void returnsEmptyMainBeforeFirstPublication() {
         // when
-        var result = theRilogService.readTheRilog();
+        var result = theRilogQueryService.readTheRilog();
 
         // then
         assertThat(result).isEqualTo(new TheRilogResult(THE_RILOG_BLOG_SLUG, null, null, List.of()));

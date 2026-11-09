@@ -108,23 +108,15 @@ class PostServiceTest {
 
     private final JsonNode content = JsonNodeFactory.instance.arrayNode();
 
-    private PostService postService;
+    private PostCommandService postCommandService;
+    private PostQueryService postQueryService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(
-                postRepository,
-                blogRepository,
-                blogMemberRepository,
-                userRepository,
-                chapterRepository,
-                tagAssetsPublisher,
-                commentAnchorSelectionRepository,
-                viewCountRepository,
-                postViewStore,
-                postCountCache,
-                eventPublisher
+        postCommandService = new PostCommandService(
+                postRepository, blogRepository, blogMemberRepository, userRepository, chapterRepository, tagAssetsPublisher, commentAnchorSelectionRepository, viewCountRepository, eventPublisher
         );
+        postQueryService = new PostQueryService(postRepository, blogMemberRepository, postViewStore, postCountCache);
     }
 
     @Test
@@ -145,7 +137,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        PostPublishResult result = postService.publish(command, WRITER_ID);
+        PostPublishResult result = postCommandService.publish(command, WRITER_ID);
 
         // then
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -182,7 +174,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        PostPublishResult result = postService.publish(command, WRITER_ID);
+        PostPublishResult result = postCommandService.publish(command, WRITER_ID);
 
         // then
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -209,7 +201,7 @@ class PostServiceTest {
                 .thenReturn(false);
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(COLOG_POST_PUBLISH_FORBIDDEN.getMessage());
         verify(blogRepository, never()).findRilogByOwnerId(WRITER_ID);
@@ -223,7 +215,7 @@ class PostServiceTest {
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
         verifyNoInteractions(postRepository);
@@ -239,7 +231,7 @@ class PostServiceTest {
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(UserException.class)
                 .hasMessage(USER_NOT_FOUND.getMessage());
         verifyNoInteractions(postRepository);
@@ -258,7 +250,7 @@ class PostServiceTest {
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(COLOG_SLUG), WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.publish(createCommand(COLOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_NOT_FOUND.getMessage());
         verifyNoInteractions(postRepository);
@@ -279,7 +271,7 @@ class PostServiceTest {
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
 
         // when - then
-        assertThatThrownBy(() -> postService.publish(createCommand(RILOG_SLUG), WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.publish(createCommand(RILOG_SLUG), WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(RILOG_POST_PUBLISH_FORBIDDEN.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -295,7 +287,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(publicPost));
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null);
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -316,7 +308,7 @@ class PostServiceTest {
         when(postViewStore.currentCount(POST_ID)).thenThrow(new RilogInfrastructureException(POST_VIEW_COUNT_MISSING));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, WRITER_ID))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, WRITER_ID))
                 .isInstanceOf(RilogInfrastructureException.class)
                 .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
     }
@@ -330,7 +322,7 @@ class PostServiceTest {
                 .thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(wrongSlug, POST_ID, null))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(wrongSlug, POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -351,7 +343,7 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
+        PostDetailResponse response = postQueryService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(true, true));
@@ -372,7 +364,7 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
-        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
+        PostDetailResponse response = postQueryService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
@@ -388,7 +380,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(cologPost));
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, null);
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, null);
 
         // then
         assertThat(response.owner()).isEqualTo(new CologOwnerResponse(
@@ -418,7 +410,7 @@ class PostServiceTest {
         when(postViewStore.currentCount(POST_ID)).thenReturn(42L);
 
         // when
-        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
+        PostDetailResponse response = postQueryService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(true, true));
@@ -445,7 +437,7 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when
-        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
+        PostDetailResponse response = postQueryService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
@@ -468,7 +460,7 @@ class PostServiceTest {
         )).thenReturn(Optional.of(requesterMember));
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, REQUESTER_ID);
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(COLOG_SLUG, POST_ID, REQUESTER_ID);
 
         // then
         assertThat(response.viewerPermissions()).isEqualTo(PostDetailResponse.ViewerPermissionsResponse.of(false, true));
@@ -484,7 +476,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -499,7 +491,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(privatePost));
 
         // when
-        PostDetailResponse response = postService.readEditablePostDetail(POST_ID, WRITER_ID);
+        PostDetailResponse response = postQueryService.readEditablePostDetail(POST_ID, WRITER_ID);
 
         // then
         assertThat(response.title()).isEqualTo("게시글 제목");
@@ -515,7 +507,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(privatePost));
 
         // when - then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, 999L))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(RILOG_SLUG, POST_ID, 999L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -535,7 +527,7 @@ class PostServiceTest {
         )).thenReturn(Optional.empty());
 
         // when - then
-        assertThatThrownBy(() -> postService.deletePublishedPost(POST_ID, WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(POST_ID, WRITER_ID))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
     }

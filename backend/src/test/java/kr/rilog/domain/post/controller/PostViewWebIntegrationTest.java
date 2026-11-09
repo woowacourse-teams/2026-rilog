@@ -7,7 +7,7 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.post.view.ViewerCookieResolver;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
@@ -37,7 +37,7 @@ class PostViewWebIntegrationTest extends ServiceSupport {
     @Autowired private UserRepository users;
     @Autowired private BlogRepository blogs;
     @Autowired private BlogMemberRepository members;
-    @Autowired private PostService posts;
+    @Autowired private PostCommandService postCommandService;
     @Autowired private PostViewCountRepository counts;
     @Autowired private AccessTokenProvider tokens;
     private final JsonMapper objectMapper = JsonMapper.builder().build();
@@ -52,7 +52,7 @@ class PostViewWebIntegrationTest extends ServiceSupport {
         var writer = users.saveAndFlush(UserFixture.completedWithNicknameAndSlug("글작성자", "http_writer"));
         var blog = blogs.saveAndFlush(Blog.createRilog(writer));
         members.saveAndFlush(BlogMemberFixture.owner(blog, writer));
-        postId = posts.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), writer.getId()).postId();
+        postId = postCommandService.publish(PostFixture.publicPostPublishCommand(blog.getSlug()), writer.getId()).postId();
         authorToken = tokens.issue(writer.getId(), GlobalRole.USER, writer.getSlug()).value();
         detail = "/v1/blogs/" + blog.getSlug() + "/posts/" + postId;
         mvc = MockMvcBuilders.webAppContextSetup(context).build();

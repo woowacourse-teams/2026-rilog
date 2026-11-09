@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CommentAnchorCounterIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private CommentAnchorService commentAnchorService;
+    private CommentAnchorCommandService commentAnchorCommandService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -81,7 +81,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
         var command = new CommentAnchorAddCommand("추가 댓글");
 
         // when
-        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+        CommentAnchorCreateResult result = commentAnchorCommandService.addCommentAnchor(
                 post.getId(), commenter.getId(), selectionId, command
         );
 
@@ -100,7 +100,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
         CommentAnchorCreateResult comment = createComment();
 
         // when
-        commentAnchorService.deleteCommentAnchor(post.getId(), comment.commentAnchorId(), author.getId());
+        commentAnchorCommandService.deleteCommentAnchor(post.getId(), comment.commentAnchorId(), author.getId());
 
         // then
         assertThat(commentAnchorRepository.findById(comment.commentAnchorId()).orElseThrow().isDeleted()).isTrue();
@@ -111,7 +111,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
     @DisplayName("댓글 생성이 실패하면 댓글과 선택 영역을 남기지 않고 카운터 증가를 롤백한다.")
     void failedCreationRollsBackCommentSelectionAndCounter() {
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.createCommentAnchor(
+        assertThatThrownBy(() -> commentAnchorCommandService.createCommentAnchor(
                 post.getId(), author.getId(),
                 new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 0, 2, "댓글", " ")
         ))
@@ -132,7 +132,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
                 .getCommentAnchorSelection().getId();
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.addCommentAnchor(
+        assertThatThrownBy(() -> commentAnchorCommandService.addCommentAnchor(
                 post.getId(), author.getId(), selectionId, new CommentAnchorAddCommand("")
         ))
                 .isInstanceOf(CommentException.class)
@@ -149,7 +149,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
         jdbcTemplate.update("UPDATE post SET comment_count = 0 WHERE id = ?", post.getId());
 
         // when - then
-        assertThatThrownBy(() -> commentAnchorService.deleteCommentAnchor(
+        assertThatThrownBy(() -> commentAnchorCommandService.deleteCommentAnchor(
                 post.getId(), comment.commentAnchorId(), author.getId()
         ))
                 .isInstanceOf(PostException.class)
@@ -159,7 +159,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
     }
 
     private CommentAnchorCreateResult createComment() {
-        return commentAnchorService.createCommentAnchor(post.getId(), author.getId(),
+        return commentAnchorCommandService.createCommentAnchor(post.getId(), author.getId(),
                 new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 0, 2, "댓글", "작성한 댓글"));
     }
 

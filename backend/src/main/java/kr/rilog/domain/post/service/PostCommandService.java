@@ -11,12 +11,8 @@ import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
 import kr.rilog.domain.comment.entity.vo.CommentAnchorSelections;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
-import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
-import kr.rilog.domain.post.controller.dto.response.PostDetailResponse.ViewerPermissionsResponse;
-import kr.rilog.domain.post.controller.dto.response.TotalPostsCountResponse;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostStatus;
-import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.entity.vo.PostContent;
 import kr.rilog.domain.post.event.PostCountChangedEvent;
 import kr.rilog.domain.post.exception.PostException;
@@ -26,7 +22,6 @@ import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
-import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
@@ -50,9 +45,9 @@ import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
-public class PostService {
+public class PostCommandService {
 
     private final PostRepository postRepository;
     private final BlogRepository blogRepository;
@@ -62,11 +57,8 @@ public class PostService {
     private final TagAssetsPublisher tagAssetsPublisher;
     private final CommentAnchorSelectionRepository selectionRepository;
     private final PostViewCountRepository viewCountRepository;
-    private final PostViewStore postViewStore;
-    private final PostCountCache postCountCache;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Transactional
     public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
         Blog publishingBlog = getBlog(command.slug());
         User writer = getUser(requesterId);
@@ -83,7 +75,6 @@ public class PostService {
         return PostPublishResult.of(published, publishingBlog);
     }
 
-    @Transactional
     public PostPublishResult publishImported(PostSaveCommand command, Long targetUserId, Instant originalPublishedAt) {
         Blog publishingBlog = getBlog(command.slug());
         User writer = getUser(targetUserId);
@@ -111,39 +102,6 @@ public class PostService {
         return Post.createImportedToColog(publishingBlog, getRilog(writer), writer, command.toDetail(), publishedAt);
     }
 
-    public PostDetailResponse readPostDetailByCanonicalPath(String slug, Long postId, Long requesterId) {
-        Post post = getPost(slug, postId);
-        post.validateReadableBy(requesterId);
-        ViewerPermissionsResponse viewerPermissions = viewerPermissionsFor(post, requesterId);
-
-        return toPostDetailResponse(post, viewerPermissions);
-    }
-
-    public PostDetailResponse readEditablePostDetail(Long postId, Long requesterId) {
-        Post post = getPublishedPost(postId);
-        post.validateWrittenBy(requesterId);
-        ViewerPermissionsResponse viewerPermissions = viewerPermissionsFor(post, requesterId);
-
-        return toPostDetailResponse(post, viewerPermissions);
-    }
-
-    private PostDetailResponse toPostDetailResponse(
-            Post post,
-            ViewerPermissionsResponse viewerPermissions
-    ) {
-        Long viewCount = viewerPermissions.canDelete() ? postViewStore.currentCount(post.getId()) : null;
-        if (!post.isCologAffiliated()) {
-            return PostDetailResponse.fromRilog(post, viewerPermissions, viewCount);
-        }
-
-        return PostDetailResponse.fromColog(post, viewerPermissions, viewCount);
-    }
-
-    public TotalPostsCountResponse readPostsCount() {
-        return new TotalPostsCountResponse(postCountCache.getCount());
-    }
-
-    @Transactional
     public PostUpdateResult update(PostUpdateCommand command, Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         post.validateWrittenBy(requesterId);
@@ -169,7 +127,6 @@ public class PostService {
         return PostUpdateResult.of(post, targetBlog);
     }
 
-    @Transactional
     public void deletePublishedPost(Long postId, Long requesterId) {
         Post post = getPublishedPost(postId);
         validateCanDeletePublishedPost(post, requesterId);
@@ -236,11 +193,6 @@ public class PostService {
                 .orElseThrow(() -> new ChapterException(CHAPTER_NOT_FOUND));
     }
 
-    private Post getPost(String slug, Long postId) {
-        return postRepository.findDetailByCanonicalPath(Slug.from(slug), postId)
-                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
-    }
-
     private Post getPublishedPost(Long postId) {
         return postRepository.findDetailByIdAndStatus(postId, PostStatus.PUBLISHED)
                 .orElseThrow(() -> new PostException(POST_NOT_FOUND));
@@ -254,22 +206,8 @@ public class PostService {
 
     private boolean canDeletePost(Post post, Long requesterId) {
         return findActiveBlogMember(post.getOwnBlogId(), requesterId)
-                .map(member -> canDelete(post, requesterId, member))
+                .map(member -> post.canBeDeletedBy(requesterId, member))
                 .orElse(false);
-    }
-
-    private ViewerPermissionsResponse viewerPermissionsFor(Post post, Long requesterId) {
-        return findActiveBlogMember(post.getOwnBlogId(), requesterId)
-                .map(member -> {
-                    boolean canEdit = post.isWrittenBy(requesterId);
-                    boolean canDelete = canDelete(post, requesterId, member);
-                    return ViewerPermissionsResponse.of(canEdit, canDelete);
-                })
-                .orElseGet(ViewerPermissionsResponse::none);
-    }
-
-    private boolean canDelete(Post post, Long requesterId, BlogMember member) {
-        return post.isWrittenBy(requesterId) || member.hasDeletePermission();
     }
 
     private Optional<BlogMember> findActiveBlogMember(Long blogId, Long requesterId) {

@@ -14,7 +14,6 @@ import kr.rilog.domain.post.entity.enums.PostStatus;
 import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
-import kr.rilog.domain.post.view.PostViewStore;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class PostServiceTagAssetsLifecycleTest {
+class PostCommandServiceTagAssetsLifecycleTest {
 
     private static final Long POST_ID = 1L;
     private static final Long WRITER_ID = 1L;
@@ -79,19 +78,13 @@ class PostServiceTagAssetsLifecycleTest {
     private PostViewCountRepository viewCountRepository;
 
     @Mock
-    private PostViewStore postViewStore;
-
-    @Mock
-    private PostCountCache postCountCache;
-
-    @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    private PostService postService;
+    private PostCommandService postCommandService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(
+        postCommandService = new PostCommandService(
                 postRepository,
                 blogRepository,
                 blogMemberRepository,
@@ -100,8 +93,6 @@ class PostServiceTagAssetsLifecycleTest {
                 tagAssetsPublisher,
                 commentAnchorSelectionRepository,
                 viewCountRepository,
-                postViewStore,
-                postCountCache,
                 eventPublisher
         );
     }
@@ -119,7 +110,7 @@ class PostServiceTagAssetsLifecycleTest {
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        postService.publish(command, WRITER_ID);
+        postCommandService.publish(command, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).attach(TagAssets.of(command.thumbnailImageUrl()));
@@ -134,7 +125,7 @@ class PostServiceTagAssetsLifecycleTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(command, WRITER_ID))
+        assertThatThrownBy(() -> postCommandService.publish(command, WRITER_ID))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(BLOG_NOT_FOUND.getMessage());
         verify(tagAssetsPublisher, never()).attach(any());
@@ -158,7 +149,7 @@ class PostServiceTagAssetsLifecycleTest {
                 .thenReturn(List.of());
 
         // when
-        postService.update(command, POST_ID, WRITER_ID);
+        postCommandService.update(command, POST_ID, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).synchronize(WRITER_ID, previous, post.getTagAssets());
@@ -176,7 +167,7 @@ class PostServiceTagAssetsLifecycleTest {
                 .thenReturn(Optional.of(post));
 
         // when & then
-        assertThatThrownBy(() -> postService.update(command, POST_ID, 99L))
+        assertThatThrownBy(() -> postCommandService.update(command, POST_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
@@ -200,7 +191,7 @@ class PostServiceTagAssetsLifecycleTest {
         )).thenReturn(Optional.of(membership));
 
         // when
-        postService.deletePublishedPost(POST_ID, WRITER_ID);
+        postCommandService.deletePublishedPost(POST_ID, WRITER_ID);
 
         // then
         verify(tagAssetsPublisher).detach(WRITER_ID, assets);
@@ -216,7 +207,7 @@ class PostServiceTagAssetsLifecycleTest {
                 .thenReturn(Optional.of(post));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(POST_ID, 99L))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(POST_ID, 99L))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
         verify(tagAssetsPublisher, never()).detach(any(), any());

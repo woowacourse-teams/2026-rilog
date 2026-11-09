@@ -2,10 +2,8 @@ package kr.rilog.domain.chapter.service;
 
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
-import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
-import kr.rilog.domain.post.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,14 +24,12 @@ class ChapterServiceTest {
         // given
         BlogRepository blogRepository = mock(BlogRepository.class);
         ChapterRepository chapterRepository = mock(ChapterRepository.class);
-        ChapterService chapterService = new ChapterService(
-                blogRepository, mock(BlogMemberRepository.class), chapterRepository, mock(PostRepository.class)
-        );
+        ChapterQueryService chapterQueryService = new ChapterQueryService(blogRepository, chapterRepository);
         String slug = "missing_blog";
         when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(slug))).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> chapterService.readAll(slug));
+        Throwable thrown = catchThrowable(() -> chapterQueryService.readAll(slug));
 
         // then
         assertThat(thrown)

@@ -64,7 +64,9 @@ class PostServiceIntegrationTest extends ServiceSupport {
     private static final LocalDateTime PUBLISHED_AT = LocalDateTime.of(2026, 8, 23, 12, 0);
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
+    @Autowired
+    private PostQueryService postQueryService;
 
     @Autowired
     private UserRepository userRepository;
@@ -96,7 +98,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostSaveCommand command = PostFixture.publicPostPublishCommand(rilog.getSlug());
 
         // when
-        PostPublishResult result = postService.publish(command, writer.getId());
+        PostPublishResult result = postCommandService.publish(command, writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(result.postId())
@@ -131,7 +133,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostSaveCommand command = PostFixture.publicPostPublishCommand(colog.getSlug());
 
         // when
-        PostPublishResult result = postService.publish(command, writer.getId());
+        PostPublishResult result = postCommandService.publish(command, writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(result.postId())
@@ -155,7 +157,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         saveRilog(writer);
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(
+        assertThatThrownBy(() -> postCommandService.publish(
                 PostFixture.publicPostPublishCommand(colog.getSlug()),
                 writer.getId()
         ))
@@ -174,7 +176,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User writer = saveCompletedUser(6L, "다른작성자", "other_writer");
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(
+        assertThatThrownBy(() -> postCommandService.publish(
                 PostFixture.publicPostPublishCommand(ownerRilog.getSlug()),
                 writer.getId()
         ))
@@ -194,7 +196,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         blogRepository.saveAndFlush(deletedRilog);
 
         // when & then
-        assertThatThrownBy(() -> postService.publish(
+        assertThatThrownBy(() -> postCommandService.publish(
                 PostFixture.publicPostPublishCommand(deletedRilog.getSlug()),
                 owner.getId()
         ))
@@ -214,7 +216,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
         // when
-        PostUpdateResult result = postService.update(command, post.getId(), writer.getId());
+        PostUpdateResult result = postCommandService.update(command, post.getId(), writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
@@ -247,7 +249,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         );
 
         // when
-        postService.update(command, post.getId(), writer.getId());
+        postCommandService.update(command, post.getId(), writer.getId());
 
         // then
         CommentAnchorSelection savedAnchorSelection = commentAnchorSelectionRepository
@@ -268,7 +270,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(targetColog.getSlug());
 
         // when
-        PostUpdateResult result = postService.update(command, post.getId(), writer.getId());
+        PostUpdateResult result = postCommandService.update(command, post.getId(), writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
@@ -288,7 +290,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
         // when
-        PostUpdateResult result = postService.update(command, post.getId(), writer.getId());
+        PostUpdateResult result = postCommandService.update(command, post.getId(), writer.getId());
 
         // then
         Post savedPost = postRepository.findDetailById(post.getId()).orElseThrow();
@@ -308,7 +310,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
         // when & then
-        assertThatThrownBy(() -> postService.update(command, draftPost.getId(), writer.getId()))
+        assertThatThrownBy(() -> postCommandService.update(command, draftPost.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
 
@@ -328,7 +330,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(rilog.getSlug());
 
         // when & then
-        assertThatThrownBy(() -> postService.update(command, post.getId(), requester.getId()))
+        assertThatThrownBy(() -> postCommandService.update(command, post.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
 
@@ -350,7 +352,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(currentColog.getSlug());
 
         // when & then
-        assertThatThrownBy(() -> postService.update(command, post.getId(), writer.getId()))
+        assertThatThrownBy(() -> postCommandService.update(command, post.getId(), writer.getId()))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
 
@@ -372,7 +374,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         PostUpdateCommand command = PostFixture.updateCommandTo(targetColog.getSlug());
 
         // when & then
-        assertThatThrownBy(() -> postService.update(command, post.getId(), writer.getId()))
+        assertThatThrownBy(() -> postCommandService.update(command, post.getId(), writer.getId()))
                 .isInstanceOf(BlogException.class)
                 .hasMessage(ALREADY_BLOG_MEMBER_LEFT.getMessage());
 
@@ -395,7 +397,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         );
 
         // when
-        PostDetailResponse result = postService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId(), null);
+        PostDetailResponse result = postQueryService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId(), null);
 
         // then
         assertThat(result).isEqualTo(expected);
@@ -412,7 +414,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Blog otherRilog = saveRilog(otherOwner);
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(otherRilog.getSlug(), post.getId(), null))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(otherRilog.getSlug(), post.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -426,7 +428,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
         // when
-        PostDetailResponse result = postService.readEditablePostDetail(privatePost.getId(), writer.getId());
+        PostDetailResponse result = postQueryService.readEditablePostDetail(privatePost.getId(), writer.getId());
 
         // then
         assertThat(result.title()).isEqualTo(privatePost.getTitle());
@@ -441,7 +443,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post privatePost = savePost(PostFixture.privatePublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), privatePost.getId(), null))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(rilog.getSlug(), privatePost.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -456,7 +458,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         User otherUser = saveCompletedUser(15L, "비공개타인", "private_outsider");
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), privatePost.getId(), otherUser.getId()))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(rilog.getSlug(), privatePost.getId(), otherUser.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
     }
@@ -470,7 +472,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId() + 1, null))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(rilog.getSlug(), post.getId() + 1, null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -484,7 +486,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.readPostDetailByCanonicalPath(rilog.getSlug(), deletedPost.getId(), null))
+        assertThatThrownBy(() -> postQueryService.readPostDetailByCanonicalPath(rilog.getSlug(), deletedPost.getId(), null))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -501,8 +503,8 @@ class PostServiceIntegrationTest extends ServiceSupport {
 
         // when
         PostDetailResponse result = editable
-                ? postService.readEditablePostDetail(readTarget.getId(), owner.getId())
-                : postService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
+                ? postQueryService.readEditablePostDetail(readTarget.getId(), owner.getId())
+                : postQueryService.readPostDetailByCanonicalPath(colog.getSlug(), readTarget.getId(), null);
         JsonNode serializedOwner = JsonMapper.builder().build().valueToTree(result).path("owner");
 
         // then
@@ -543,7 +545,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         savePost(TheRilogPostFixture.publishedNews(headlines, PUBLISHED_AT, content(paragraph("오늘의 소식"))));
 
         // when
-        TotalPostsCountResponse result = postService.readPostsCount();
+        TotalPostsCountResponse result = postQueryService.readPostsCount();
 
         // then
         assertThat(result.totalPostsCount()).isEqualTo(2L);
@@ -561,7 +563,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), writer.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(post.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
 
@@ -580,7 +582,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when
-        postService.deletePublishedPost(post.getId(), writer.getId());
+        postCommandService.deletePublishedPost(post.getId(), writer.getId());
 
         // then
         Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
@@ -599,7 +601,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when
-        postService.deletePublishedPost(post.getId(), owner.getId());
+        postCommandService.deletePublishedPost(post.getId(), owner.getId());
 
         // then
         Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
@@ -620,7 +622,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when
-        postService.deletePublishedPost(post.getId(), admin.getId());
+        postCommandService.deletePublishedPost(post.getId(), admin.getId());
 
         // then
         Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
@@ -641,7 +643,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), member.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(post.getId(), member.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
 
@@ -662,7 +664,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), admin.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(post.getId(), admin.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
 
@@ -682,7 +684,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedColog(rilog, colog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), requester.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(post.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
 
@@ -699,7 +701,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post post = savePost(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(post.getId(), requester.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(post.getId(), requester.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_DELETE_FORBIDDEN.getMessage());
 
@@ -715,7 +717,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post draft = savePost(PostFixture.publicDraftRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(draft.getId(), writer.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(draft.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -729,7 +731,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
         Post deletedPost = savePost(PostFixture.deletedPublicPublishedRilogPost(rilog, writer));
 
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(deletedPost.getId(), writer.getId()))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(deletedPost.getId(), writer.getId()))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }
@@ -738,7 +740,7 @@ class PostServiceIntegrationTest extends ServiceSupport {
     @DisplayName("존재하지 않는 게시글을 삭제하면 게시글을 찾을 수 없다는 예외가 발생한다.")
     void deleteMissingPostThrowsPostNotFound() {
         // when & then
-        assertThatThrownBy(() -> postService.deletePublishedPost(Long.MAX_VALUE, Long.MAX_VALUE))
+        assertThatThrownBy(() -> postCommandService.deletePublishedPost(Long.MAX_VALUE, Long.MAX_VALUE))
                 .isInstanceOf(PostException.class)
                 .hasMessage(POST_NOT_FOUND.getMessage());
     }

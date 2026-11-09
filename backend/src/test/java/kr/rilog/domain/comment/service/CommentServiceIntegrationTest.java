@@ -26,7 +26,9 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 class CommentServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private CommentService commentService;
+    private CommentCommandService commentCommandService;
+    @Autowired
+    private CommentQueryService commentQueryService;
 
     @Autowired
     private UserRepository userRepository;
@@ -55,7 +57,7 @@ class CommentServiceIntegrationTest extends ServiceSupport {
         Comment reply = commentRepository.saveAndFlush(Comment.createReply(rootComment, replier, "답글입니다."));
 
         // when
-        CommentListResponse response = commentService.readComments(post.getId());
+        CommentListResponse response = commentQueryService.readComments(post.getId());
 
         // then
         CommentListResponse.CommentResponse rootResponse = response.comments().getFirst();
@@ -89,8 +91,8 @@ class CommentServiceIntegrationTest extends ServiceSupport {
         Comment reply = commentRepository.saveAndFlush(Comment.createReply(rootComment, replier, "남아있는 답글입니다."));
 
         // when
-        commentService.deleteComment(rootComment.getId(), writer.getId());
-        CommentListResponse response = commentService.readComments(post.getId());
+        commentCommandService.deleteComment(rootComment.getId(), writer.getId());
+        CommentListResponse response = commentQueryService.readComments(post.getId());
 
         // then
         Comment savedRootComment = commentRepository.findById(rootComment.getId()).orElseThrow();

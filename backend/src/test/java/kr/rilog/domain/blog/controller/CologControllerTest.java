@@ -4,7 +4,8 @@ import kr.rilog.domain.auth.annotation.LoginUserId;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.enums.BlogPermission;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
-import kr.rilog.domain.blog.service.CologService;
+import kr.rilog.domain.blog.service.CologCommandService;
+import kr.rilog.domain.blog.service.CologQueryService;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
@@ -38,12 +39,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class CologControllerTest {
 
+    private final CologCommandService cologCommandService = mock(CologCommandService.class);
+    private final CologQueryService cologQueryService = mock(CologQueryService.class);
+
     @Test
     @DisplayName("공개 블로그 프로필 조회 경로는 팀 컨트롤러에서 제공하지 않는다")
     void publicBlogProfilePathIsNotProvidedByCologController() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .build();
 
         // when - then
@@ -55,8 +58,7 @@ class CologControllerTest {
     @DisplayName("이전 공개 프로필 조회 경로는 제공하지 않는다")
     void oldPublicProfilePathIsRemoved() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .build();
 
         // when - then
@@ -68,8 +70,7 @@ class CologControllerTest {
     @DisplayName("기존 팀 상세 조회 경로는 제공하지 않는다")
     void getDetailPathIsRemoved() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .build();
 
         // when - then
@@ -81,8 +82,7 @@ class CologControllerTest {
     @DisplayName("기존 팀 프로필 조회 경로는 제공하지 않는다")
     void getProfilePathIsRemoved() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .build();
 
         // when - then
@@ -94,7 +94,6 @@ class CologControllerTest {
     @DisplayName("POST /v1/cologs는 로그인 사용자의 팀을 생성한다")
     void createCreatesCologForLoginUser() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
         CologCreateCommand command = new CologCreateCommand(
                 "리로그 팀",
                 "rilog_team",
@@ -105,9 +104,9 @@ class CologControllerTest {
                 "https://github.com/rilog",
                 "test@test.com"
         );
-        when(cologService.create(1L, command))
+        when(cologCommandService.create(1L, command))
                 .thenReturn(new CologCreateResult(2L, "리로그 팀", "rilog_team"));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(1L))
                 .build();
 
@@ -131,15 +130,14 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.name").value("리로그 팀"))
                 .andExpect(jsonPath("$.data.slug").value("rilog_team"));
 
-        verify(cologService).create(1L, command);
+        verify(cologCommandService).create(1L, command);
     }
 
     @Test
     @DisplayName("GET /v1/users/me/cologs/overview는 인증된 사용자의 팀 목록과 챕터를 조회한다")
     void getMyCologsOverviewReturnsAuthenticatedUsersCologsWithChapters() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        when(cologService.getMyCologsOverview(7L))
+        when(cologQueryService.getMyCologsOverview(7L))
                 .thenReturn(List.of(new MyCologResponse(
                         1L,
                         "rilog_team",
@@ -147,7 +145,7 @@ class CologControllerTest {
                         "https://example.com/logo.png",
                         List.of(new ChapterResponse(10L, "Spring", 0))
                 )));
-        MockMvc mockMvc = mockMvc(cologService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/users/me/cologs/overview")
@@ -161,15 +159,14 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data[0].chapters[0].name").value("Spring"))
                 .andExpect(jsonPath("$.data[0].chapters[0].order").value(0));
 
-        verify(cologService).getMyCologsOverview(7L);
+        verify(cologQueryService).getMyCologsOverview(7L);
     }
 
     @Test
     @DisplayName("GET /v1/cologs/{slug}/members는 팀 멤버 목록을 조회한다")
     void getCologMembersReturnsMembers() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        when(cologService.getCologMembers("rilog_team"))
+        when(cologQueryService.getCologMembers("rilog_team"))
                 .thenReturn(List.of(
                         new BlogMemberResult(
                                 1L,
@@ -182,7 +179,7 @@ class CologControllerTest {
                                 LocalDateTime.of(2026, 8, 13, 12, 0)
                         )
                 ));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .build();
 
         // when - then
@@ -197,18 +194,17 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data[0].blogRole").value("Backend"))
                 .andExpect(jsonPath("$.data[0].joinedAt").value("2026-08-13T12:00:00"));
 
-        verify(cologService).getCologMembers("rilog_team");
+        verify(cologQueryService).getCologMembers("rilog_team");
     }
 
     @Test
     @DisplayName("POST /v1/cologs/{slug}/members는 로그인 사용자의 팀 멤버 초대를 처리한다")
     void inviteMemberInvitesCologMemberForLoginUser() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
         CologMemberInviteCommand command = new CologMemberInviteCommand(10L, "Backend");
-        when(cologService.inviteMember(1L, "rilog_team", command))
+        when(cologCommandService.inviteMember(1L, "rilog_team", command))
                 .thenReturn(new CologMemberInviteResult(3L, 10L, BlogPermission.MEMBER, "Backend"));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologService))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(1L))
                 .build();
 
@@ -227,15 +223,14 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.data.permission").value("MEMBER"))
                 .andExpect(jsonPath("$.data.blogRole").value("Backend"));
 
-        verify(cologService).inviteMember(1L, "rilog_team", command);
+        verify(cologCommandService).inviteMember(1L, "rilog_team", command);
     }
 
     @Test
     @DisplayName("DELETE /v1/cologs/{slug}/members/me는 로그인 사용자의 팀 탈퇴를 처리한다")
     void leaveCologRemovesLoginUserFromColog() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = mockMvc(cologService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(delete("/v1/cologs/{slug}/members/me", "rilog_team")
@@ -244,15 +239,14 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.status").value(204))
                 .andExpect(jsonPath("$.message").value("팀 블로그에서 탈퇴했습니다."));
 
-        verify(cologService).leaveColog(7L, "rilog_team");
+        verify(cologCommandService).leaveColog(7L, "rilog_team");
     }
 
     @Test
     @DisplayName("DELETE /v1/cologs/{slug}/members/{memberId}는 팀 멤버 내보내기를 처리한다")
     void removeMemberRemovesTargetMemberFromColog() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = mockMvc(cologService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(delete("/v1/cologs/{slug}/members/{memberId}", "rilog_team", 3L)
@@ -261,15 +255,14 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.status").value(204))
                 .andExpect(jsonPath("$.message").value("팀 멤버를 내보냈습니다."));
 
-        verify(cologService).removeMember(7L, "rilog_team", 3L);
+        verify(cologCommandService).removeMember(7L, "rilog_team", 3L);
     }
 
     @Test
     @DisplayName("PATCH /v1/cologs/{slug}/members/{memberId}는 팀 멤버 정보 수정을 처리한다")
     void updateMemberUpdatesTargetMember() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = mockMvc(cologService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(patch("/v1/cologs/{slug}/members/{memberId}", "rilog_team", 3L)
@@ -285,7 +278,7 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("팀 멤버 정보를 수정했습니다."));
 
-        verify(cologService).updateMember(
+        verify(cologCommandService).updateMember(
                 7L,
                 "rilog_team",
                 3L,
@@ -297,8 +290,7 @@ class CologControllerTest {
     @DisplayName("DELETE /v1/cologs/{slug}는 로그인 사용자의 팀 블로그 삭제를 처리한다")
     void deleteCologDeletesAuthenticatedUsersColog() throws Exception {
         // given
-        CologService cologService = mock(CologService.class);
-        MockMvc mockMvc = mockMvc(cologService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(delete("/v1/cologs/{slug}", "rilog_team")
@@ -307,11 +299,11 @@ class CologControllerTest {
                 .andExpect(jsonPath("$.status").value(204))
                 .andExpect(jsonPath("$.message").value("팀 블로그를 삭제했습니다."));
 
-        verify(cologService).deleteColog(7L, "rilog_team");
+        verify(cologCommandService).deleteColog(7L, "rilog_team");
     }
 
-    private MockMvc mockMvc(CologService cologService) {
-        return MockMvcBuilders.standaloneSetup(new CologController(cologService))
+    private MockMvc mockMvc() {
+        return MockMvcBuilders.standaloneSetup(new CologController(cologCommandService, cologQueryService))
                 .setCustomArgumentResolvers(new FixedLoginUserIdArgumentResolver(7L))
                 .build();
     }

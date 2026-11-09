@@ -1,10 +1,10 @@
 package kr.rilog.domain.blog.service;
 
-import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogErrorInformation;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -12,19 +12,14 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.blog.service.dto.command.CologCreateCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberInviteCommand;
 import kr.rilog.domain.blog.service.dto.command.CologMemberUpdateCommand;
-import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
-import kr.rilog.domain.blog.service.dto.result.CologOverview;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
-import kr.rilog.domain.chapter.entity.Chapter;
-import kr.rilog.domain.chapter.repository.ChapterRepository;
-import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.event.PostCountChangedEvent;
+import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,32 +28,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
 
-import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.MEMBER;
 import static kr.rilog.domain.blog.entity.enums.BlogPermission.OWNER;
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
-public class CologService {
+public class CologCommandService {
 
     private static final int MAX_COLOG_MEMBER_COUNT = 20;
     private static final int MAX_COLOG_COUNT_PER_USER = 10;
 
     private final BlogRepository blogRepository;
     private final BlogMemberRepository blogMemberRepository;
-    private final ChapterRepository chapterRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagAssetsPublisher tagAssetsPublisher;
     private final Clock clock;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Transactional
     public CologCreateResult create(Long ownerId, CologCreateCommand command) {
         User owner = getUser(ownerId);
         validateUserCologCount(owner.getId());
@@ -80,11 +71,10 @@ public class CologService {
         return CologCreateResult.from(savedColog);
     }
 
-    @Transactional
     public CologMemberInviteResult inviteMember(Long requesterId, String slug, CologMemberInviteCommand command) {
         Blog colog = getColog(Slug.from(slug));
 
-        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_INVITE_FORBIDDEN);
+        BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
         requesterMember.validateAdminPermission();
 
         User invitee = getUser(command.userId());
@@ -104,7 +94,6 @@ public class CologService {
         return CologMemberInviteResult.from(savedMember);
     }
 
-    @Transactional
     public void leaveColog(Long requesterId, String slug) {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
@@ -112,7 +101,6 @@ public class CologService {
         requesterMember.leaveBySelf();
     }
 
-    @Transactional
     public void removeMember(Long requesterId, String slug, Long memberId) {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
@@ -121,7 +109,6 @@ public class CologService {
         requesterMember.remove(targetMember);
     }
 
-    @Transactional
     public void updateMember(Long requesterId, String slug, Long memberId, CologMemberUpdateCommand command) {
         if (command.isEmpty()) {
             throw new BlogException(COLOG_MEMBER_UPDATE_REQUEST_EMPTY);
@@ -137,7 +124,6 @@ public class CologService {
         }
     }
 
-    @Transactional
     public void deleteColog(Long requesterId, String slug) {
         Blog colog = getColog(Slug.from(slug));
         BlogMember requesterMember = getActiveMember(colog.getId(), requesterId, BLOG_MEMBER_DOESNT_NOT_BELONG);
@@ -148,43 +134,6 @@ public class CologService {
         blogMemberRepository.softDeleteAllByBlogId(colog.getId(), deletedAt);
         postRepository.softDeleteAllByCologId(colog.getId(), deletedAt);
         eventPublisher.publishEvent(new PostCountChangedEvent());
-    }
-
-    public List<BlogMemberResult> getCologMembers(String slug) {
-        Blog colog = getColog(slug);
-
-        return blogMemberRepository.findAllWithUserByBlogIdAndStatus(colog.getId(), BlogMemberStatus.ACTIVE).stream()
-                .map(BlogMemberResult::from)
-                .sorted(Comparator.comparing(BlogMemberResult::nickname))
-                .toList();
-    }
-
-    private Blog getColog(String slug) {
-        return blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(slug), BlogType.COLOG)
-                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
-    }
-
-    public List<MyCologResponse> getMyCologsOverview(Long requesterId) {
-        List<Blog> cologs = blogRepository.findAllActiveCologsByUserId(requesterId);
-        List<Chapter> chapters = findChaptersByCologs(cologs);
-
-        return CologOverview.group(cologs, chapters).stream()
-                .map(MyCologResponse::from)
-                .toList();
-    }
-
-    private List<Chapter> findChaptersByCologs(List<Blog> cologs) {
-        if (cologs.isEmpty()) {
-            return List.of();
-        }
-
-        return chapterRepository.findAllByBlogIds(getCologIds(cologs));
-    }
-
-    private List<Long> getCologIds(List<Blog> cologs) {
-        return cologs.stream()
-                .map(Blog::getId)
-                .toList();
     }
 
     private User getUser(Long ownerId) {
