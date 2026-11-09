@@ -1,10 +1,13 @@
 package kr.rilog.domain.user.service;
 
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.entity.enums.BlogType;
+import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.OnboardingStatus;
 import kr.rilog.domain.user.entity.User;
@@ -12,8 +15,6 @@ import kr.rilog.domain.user.entity.vo.Nickname;
 import kr.rilog.domain.user.exception.UserException;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.domain.user.service.dto.command.OnboardingCompleteCommand;
-import kr.rilog.domain.upload.domain.vo.TagAssets;
-import kr.rilog.domain.blog.entity.vo.Slug;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,14 +37,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-class UserServiceTest {
+class UserCommandServiceTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final BlogRepository blogRepository = mock(BlogRepository.class);
     private final BlogMemberRepository blogMemberRepository = mock(BlogMemberRepository.class);
     private final TagAssetsPublisher tagAssetsPublisher = mock(TagAssetsPublisher.class);
-    private final UserCommandService userCommandService = new UserCommandService(userRepository, blogRepository, blogMemberRepository, tagAssetsPublisher);
-    private final UserQueryService userQueryService = new UserQueryService(userRepository);
+    private final UserCommandService userCommandService = new UserCommandService(
+            userRepository, blogRepository, blogMemberRepository, tagAssetsPublisher
+    );
 
     @Test
     @DisplayName("PENDING 사용자는 온보딩을 완료할 수 있다")
@@ -121,6 +123,7 @@ class UserServiceTest {
                         Blog::getSlug,
                         Blog::getIntroduction,
                         Blog::getProfileImageUrl,
+                        Blog::getCoverImageUrl,
                         Blog::getServiceUrl,
                         Blog::getGithubUrl,
                         Blog::getEmail,
@@ -132,6 +135,7 @@ class UserServiceTest {
                         "ri_log_01",
                         "기록하는 개발자입니다.",
                         "https://example.com/profile.png",
+                        null,
                         "https://rilog.example.com",
                         "https://github.com/jinriro",
                         "riro@example.com",
@@ -173,22 +177,6 @@ class UserServiceTest {
                 .isEqualTo(USER_NOT_FOUND);
         verify(userRepository, never()).saveAndFlush(any(User.class));
         verify(blogRepository, never()).save(any(Blog.class));
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자 ID로 정보를 조회하면 예외가 발생한다.")
-    void getUserInformationRejectsMissingUser() {
-        // given
-        Long userId = 1L;
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        // when
-        Throwable thrown = catchThrowable(() -> userQueryService.getUserInformation(userId));
-
-        // then
-        assertThat(thrown)
-                .isInstanceOf(UserException.class)
-                .hasMessage(USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -236,7 +224,11 @@ class UserServiceTest {
                 .isInstanceOf(BlogException.class)
                 .extracting("errorInformation")
                 .isEqualTo(BLOG_PROFILE_NAME_ALREADY_EXISTS);
+        assertThat(user.getOnboardingStatus()).isEqualTo(OnboardingStatus.PENDING);
+        assertThat(user.getNickname()).isNull();
         verify(userRepository, never()).saveAndFlush(any(User.class));
+        verify(blogRepository, never()).save(any(Blog.class));
+        verify(blogMemberRepository, never()).save(any(BlogMember.class));
         verify(tagAssetsPublisher, never()).attach(any());
     }
 

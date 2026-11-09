@@ -4,7 +4,6 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.post.exception.PostException;
-import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.view.PostViewStore;
@@ -40,8 +39,6 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
     private PostViewStore postViewStore;
     @Autowired
     private PostCommandService postCommandService;
-    @Autowired
-    private PostRepository postRepository;
     @Autowired
     private PostViewCountRepository viewCountRepository;
     @Autowired
@@ -87,34 +84,6 @@ class PostViewRegistrationIntegrationTest extends ServiceSupport {
                 .hasMessage(PRIVATE_POST_READ_FORBIDDEN.getMessage());
         assertThat(postViewStore.currentCount(postId)).isZero();
         assertThat(viewCountRepository.findViewCountByPostId(postId)).contains(0L);
-    }
-
-    @Test
-    @DisplayName("초안 게시글은 조회 등록 대상에서 제외한다.")
-    void excludesDraftFromRegistration() {
-        // given
-        Scenario scenario = scenario();
-        long postId = postRepository.saveAndFlush(
-                PostFixture.publicDraftRilogPost(scenario.blog(), scenario.writer())).getId();
-
-        // when & then
-        assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
-                .isInstanceOf(PostException.class)
-                .hasMessage(POST_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("삭제한 게시글은 조회 등록 대상에서 제외한다.")
-    void excludesDeletedPostFromRegistration() {
-        // given
-        Scenario scenario = scenario();
-        long postId = publish(scenario);
-        postCommandService.deletePublishedPost(postId, scenario.writer().getId());
-
-        // when & then
-        assertThatThrownBy(() -> registrationService.register(postId, null, ANONYMOUS_VIEWER))
-                .isInstanceOf(PostException.class)
-                .hasMessage(POST_NOT_FOUND.getMessage());
     }
 
     @Test

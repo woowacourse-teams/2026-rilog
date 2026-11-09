@@ -3,7 +3,11 @@ package kr.rilog.domain.comment.service;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
+import kr.rilog.domain.comment.entity.CommentAnchorSelection;
+import kr.rilog.domain.comment.entity.enums.AnchorStatus;
+import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.comment.exception.CommentException;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
@@ -41,6 +45,8 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
     @Autowired
     private CommentAnchorRepository commentAnchorRepository;
     @Autowired
+    private CommentAnchorSelectionRepository commentAnchorSelectionRepository;
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     private User author;
@@ -54,13 +60,26 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("새 선택 영역에 댓글을 작성하면 게시글의 댓글 카운터가 증가한다.")
+    @DisplayName("다른 사용자의 게시글에 댓글을 작성하면 활성 선택과 댓글을 저장하고 카운터를 증가시킨다.")
     void creatingCommentIncrementsPostCounter() {
+        // given
+        User commenter = saveCommenter();
+        var command = new CommentAnchorCreateCommand(PARAGRAPH_BLOCK_ID, 0, 2, "댓글", "작성한 댓글");
+
         // when
-        CommentAnchorCreateResult result = createComment();
+        CommentAnchorCreateResult result = commentAnchorCommandService.createCommentAnchor(
+                post.getId(), commenter.getId(), command
+        );
 
         // then
-        assertThat(commentAnchorRepository.findById(result.commentAnchorId())).isPresent();
+        CommentAnchor saved = commentAnchorRepository.findById(result.commentAnchorId()).orElseThrow();
+        CommentAnchorSelection savedSelection = commentAnchorSelectionRepository
+                .findById(saved.getCommentAnchorSelection().getId()).orElseThrow();
+        assertThat(savedSelection.getSelection()).isEqualTo(Selection.of(PARAGRAPH_BLOCK_ID, 0, 2, "댓글"));
+        assertThat(savedSelection.getStatus()).isEqualTo(AnchorStatus.ACTIVE);
+        assertThat(savedSelection.getPost().getId()).isEqualTo(post.getId());
+        assertThat(saved.getWriter().getId()).isEqualTo(commenter.getId());
+        assertThat(saved.getContent()).isEqualTo(command.content());
         assertThat(storedCount()).isEqualTo(1L);
     }
 
@@ -71,13 +90,7 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
         CommentAnchorCreateResult first = createComment();
         Long selectionId = commentAnchorRepository.findById(first.commentAnchorId()).orElseThrow()
                 .getCommentAnchorSelection().getId();
-        User commenter = UserFixture.user(201L, "counter_commenter");
-        commenter.completeOnboarding(
-                "추가댓글작성자", "counter_commenter", "댓글 작성자 소개",
-                "https://example.com/counter_commenter.png", "https://github.com/counter_commenter",
-                "counter_commenter@example.com"
-        );
-        commenter = userRepository.saveAndFlush(commenter);
+        User commenter = saveCommenter();
         var command = new CommentAnchorAddCommand("추가 댓글");
 
         // when
@@ -156,6 +169,16 @@ class CommentAnchorCounterIntegrationTest extends ServiceSupport {
                 .hasMessage(POST_COMMENT_COUNT_INVALID.getMessage());
         assertThat(commentAnchorRepository.findById(comment.commentAnchorId()).orElseThrow().isDeleted()).isFalse();
         assertThat(storedCount()).isZero();
+    }
+
+    private User saveCommenter() {
+        User commenter = UserFixture.user(201L, "counter_commenter");
+        commenter.completeOnboarding(
+                "인라인댓글작성자", "counter_commenter", "댓글 작성자 소개",
+                "https://example.com/counter_commenter.png", "https://github.com/counter_commenter",
+                "counter_commenter@example.com"
+        );
+        return userRepository.saveAndFlush(commenter);
     }
 
     private CommentAnchorCreateResult createComment() {

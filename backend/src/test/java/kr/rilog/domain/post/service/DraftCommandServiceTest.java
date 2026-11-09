@@ -1,7 +1,10 @@
 package kr.rilog.domain.post.service;
 
+import kr.rilog.domain.post.service.dto.result.DraftIdResult;
+import org.mockito.ArgumentCaptor;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Slug;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
@@ -18,6 +21,7 @@ import kr.rilog.domain.post.repository.PostViewCountRepository;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
 import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
+import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.upload.domain.vo.TagAssets;
 import kr.rilog.domain.upload.service.TagAssetsPublisher;
 import kr.rilog.domain.user.entity.User;
@@ -28,6 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -39,6 +45,7 @@ import static kr.rilog.domain.blog.exception.BlogErrorInformation.RILOG_NOT_FOUN
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
 import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
 import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+import static kr.rilog.support.fixure.BlogFixture.createColog;
 import static kr.rilog.support.fixure.BlogFixture.createRilog;
 import static kr.rilog.support.fixure.BlogFixture.createUser;
 import static kr.rilog.support.fixure.PostContentFixture.IMAGE_URL_A;
@@ -55,7 +62,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class DraftServiceTest {
+class DraftCommandServiceTest {
 
     private static final Long DRAFT_ID = 1L;
     private static final Long WRITER_ID = 1L;
@@ -87,18 +94,23 @@ class DraftServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     private DraftCommandService draftCommandService;
-    private DraftQueryService draftQueryService;
 
     @BeforeEach
     void setUp() {
         draftCommandService = new DraftCommandService(
-                postRepository, blogRepository, blogMemberRepository, userRepository, chapterRepository, tagAssetsPublisher, viewCountRepository, eventPublisher
+                postRepository,
+                blogRepository,
+                blogMemberRepository,
+                userRepository,
+                chapterRepository,
+                tagAssetsPublisher,
+                viewCountRepository,
+                eventPublisher
         );
-        draftQueryService = new DraftQueryService(postRepository);
     }
 
     @Test
-    @DisplayName("초안을 저장하면 본문 이미지의 연결을 요청한다.")
+    @DisplayName("초안 내용과 작성자 소속을 저장하고 저장된 ID를 반환하며 이미지를 연결한다.")
     void saveDraftAttachesTagAssets() {
         // given
         User writer = createUser(WRITER_ID);
@@ -106,12 +118,25 @@ class DraftServiceTest {
         DraftSaveCommand command = new DraftSaveCommand("초안", content(imageBlock(IMAGE_URL_A)).getContent());
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
         when(blogRepository.findRilogByOwnerId(WRITER_ID)).thenReturn(Optional.of(rilog));
-        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(postRepository.save(any(Post.class))).thenReturn(draftWithImage(rilog, writer, IMAGE_URL_A));
 
         // when
-        draftCommandService.saveDraft(command, WRITER_ID);
+        DraftIdResult result = draftCommandService.saveDraft(command, WRITER_ID);
 
         // then
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(captor.capture());
+        Post submitted = captor.getValue();
+        assertThat(result.draftId()).isEqualTo(DRAFT_ID);
+        assertThat(submitted.getTitle()).isEqualTo(command.title());
+        assertThat(submitted.getContent()).isEqualTo(PostContent.from(command.content()));
+        assertThat(submitted.getStatus()).isEqualTo(PostStatus.DRAFT);
+        assertThat(submitted.getVisibility()).isEqualTo(PostVisibility.PRIVATE);
+        assertThat(submitted.getCategory()).isNull();
+        assertThat(submitted.getThumbnailImageUrl()).isNull();
+        assertThat(submitted.getUser()).isSameAs(writer);
+        assertThat(submitted.getRilog()).isSameAs(rilog);
+        assertThat(submitted.getColog()).isNull();
         verify(tagAssetsPublisher).attach(TagAssets.of(IMAGE_URL_A));
     }
 
@@ -152,21 +177,6 @@ class DraftServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 초안을 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
-    void getMyDraftRejectsMissingDraft() {
-        // given
-        when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.empty());
-
-        // when
-        Throwable thrown = catchThrowable(() -> draftQueryService.getMyDraft(DRAFT_ID, WRITER_ID));
-
-        // then
-        assertThat(thrown)
-                .isInstanceOf(PostException.class)
-                .hasMessage(DRAFT_NOT_FOUND.getMessage());
-    }
-
-    @Test
     @DisplayName("초안을 덮어쓰면 이전 본문 이미지와 현재 본문 이미지의 동기화를 요청한다.")
     void overwriteDraftSynchronizesTagAssets() {
         // given
@@ -179,9 +189,10 @@ class DraftServiceTest {
         when(postRepository.findDraftById(DRAFT_ID)).thenReturn(Optional.of(draft));
 
         // when
-        draftCommandService.overwriteDraft(command, DRAFT_ID, WRITER_ID);
+        DraftIdResult result = draftCommandService.overwriteDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
+        assertThat(result).isEqualTo(new DraftIdResult(DRAFT_ID));
         verify(tagAssetsPublisher).synchronize(WRITER_ID, previous, TagAssets.of(IMAGE_URL_B));
     }
 
@@ -221,17 +232,22 @@ class DraftServiceTest {
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
+        assertThat(draft.getTitle()).isEqualTo("초안");
+        assertThat(draft.getContent()).isEqualTo(PostContent.from(content(imageBlock(IMAGE_URL_A)).getContent()));
+        assertThat(draft.getPublishedAt()).isEqualTo(NOW);
     }
 
-    @Test
-    @DisplayName("초안을 발행하면 이전 본문 이미지와 발행 이미지의 동기화를 요청한다.")
-    void publishDraftSynchronizesTagAssets() {
+    @ParameterizedTest
+    @EnumSource(BlogType.class)
+    @DisplayName("초안을 발행하면 초안 ID와 대상 블로그 slug를 반환하고 이미지 동기화를 요청한다.")
+    void publishDraftReturnsTargetAndSynchronizesTagAssets(BlogType targetType) {
         // given
         User writer = createUser(WRITER_ID);
         Blog rilog = createRilog(writer);
+        Blog target = targetType == BlogType.COLOG ? createColog(writer) : rilog;
         Post draft = draftWithImage(rilog, writer, IMAGE_URL_A);
         DraftPublishCommand command = new DraftPublishCommand(
-                rilog.getSlug(),
+                target.getSlug(),
                 "발행 글",
                 content(imageBlock(IMAGE_URL_B)).getContent(),
                 Category.TECH,
@@ -245,11 +261,16 @@ class DraftServiceTest {
         when(userRepository.findById(WRITER_ID)).thenReturn(Optional.of(writer));
         when(blogMemberRepository.findWithBlogBySlugAndUserId(Slug.from(rilog.getSlug()), WRITER_ID))
                 .thenReturn(Optional.of(membership));
+        if (target.isColog()) {
+            when(blogMemberRepository.findWithBlogBySlugAndUserId(Slug.from(target.getSlug()), WRITER_ID))
+                    .thenReturn(Optional.of(BlogMember.createOwner(target, writer, NOW)));
+        }
 
         // when
-        draftCommandService.publishDraft(command, DRAFT_ID, WRITER_ID);
+        PostPublishResult result = draftCommandService.publishDraft(command, DRAFT_ID, WRITER_ID);
 
         // then
+        assertThat(result).isEqualTo(new PostPublishResult(DRAFT_ID, target.getSlug()));
         verify(tagAssetsPublisher).synchronize(
                 WRITER_ID,
                 previous,
@@ -278,6 +299,9 @@ class DraftServiceTest {
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).synchronize(any(), any(), any());
+        assertThat(draft.getStatus()).isEqualTo(PostStatus.DRAFT);
+        assertThat(draft.getTitle()).isEqualTo("초안");
+        verifyNoInteractions(userRepository, blogMemberRepository, viewCountRepository, eventPublisher);
     }
 
     @Test
@@ -307,6 +331,7 @@ class DraftServiceTest {
                 .isInstanceOf(PostException.class)
                 .hasMessage(NOT_POST_AUTHOR.getMessage());
         verify(tagAssetsPublisher, never()).detach(any(), any());
+        assertThat(draft.getDeletedAt()).isNull();
     }
 
     @Test

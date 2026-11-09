@@ -18,8 +18,8 @@ import static org.mockito.Mockito.when;
 class SitemapServiceTest {
 
     @Test
-    @DisplayName("lastmod는 서비스 시간대의 LocalDateTime을 UTC ISO 문자열로 변환한다.")
-    void generateRootSitemapXmlConvertsLocalDateTimeToUtcLastmod() {
+    @DisplayName("사이트맵은 표준 XML에 정적 경로와 UTC로 변환한 수정 시각을 담는다.")
+    void generateRootSitemapXmlIncludesStaticPathsAndUtcLastmod() {
         // given
         BlogSeoRepository blogSeoRepository = mock(BlogSeoRepository.class);
         PostSeoRepository postSeoRepository = mock(PostSeoRepository.class);
@@ -37,6 +37,10 @@ class SitemapServiceTest {
         String xml = sitemapService.generateRootSitemapXml();
 
         // then
-        assertThat(xml).contains("<lastmod>2026-09-21T10:00:00Z</lastmod>");
+        assertThat(xml).startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+                .contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">",
+                        "<loc>https://www.rilog.kr/feeds</loc>",
+                        "<loc>https://www.rilog.kr/about</loc>",
+                        "<lastmod>2026-09-21T10:00:00Z</lastmod>");
     }
 }

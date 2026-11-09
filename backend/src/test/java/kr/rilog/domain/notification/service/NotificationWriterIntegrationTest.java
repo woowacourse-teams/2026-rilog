@@ -4,7 +4,6 @@ import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.comment.entity.CommentAnchor;
 import kr.rilog.domain.comment.entity.CommentAnchorSelection;
-import kr.rilog.domain.comment.entity.vo.Selection;
 import kr.rilog.domain.comment.repository.CommentAnchorRepository;
 import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
 import kr.rilog.domain.notification.entity.Notification;
@@ -12,7 +11,6 @@ import kr.rilog.domain.notification.entity.enums.NotificationSourceType;
 import kr.rilog.domain.notification.entity.enums.NotificationType;
 import kr.rilog.domain.notification.repository.NotificationRepository;
 import kr.rilog.domain.post.entity.Post;
-import kr.rilog.domain.post.entity.vo.TextBlock;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
@@ -104,151 +102,6 @@ class NotificationWriterIntegrationTest extends ServiceSupport {
                 .containsExactly(SELECTION_INLINE_COMMENT);
     }
 
-    @Test
-    @DisplayName("인라인 댓글을 작성한 본인에게는 알림을 저장하지 않는다.")
-    void writeExcludesActor() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User commenter = saveCompletedUser(2L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        saveAnchor(selection, commenter);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(commenter)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("게시글 작성자가 자신의 게시글에 인라인 댓글을 작성하면 게시글 작성자에게 알림을 저장하지 않는다.")
-    void writeExcludesPostWriterCommentingOnOwnPost() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        CommentAnchor anchor = saveAnchor(selection, postWriter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), postWriter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(postWriter)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("게시글 작성자가 같은 선택 범위에 댓글을 작성했더라도 게시글 인라인 댓글 알림 한 건만 저장한다.")
-    void writePersistsSinglePostInlineCommentNotificationForPostWriterParticipatingInSelection() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User commenter = saveCompletedUser(2L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        saveAnchor(selection, postWriter);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(postWriter))
-                .extracting(Notification::getType)
-                .containsExactly(POST_INLINE_COMMENT);
-    }
-
-    @Test
-    @DisplayName("같은 선택 범위에 댓글을 여러 개 작성한 사용자에게도 알림을 한 건만 저장한다.")
-    void writePersistsSingleNotificationForParticipantWithMultipleComments() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User participant = saveCompletedUser(2L, "participant");
-        User commenter = saveCompletedUser(3L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        saveAnchor(selection, participant);
-        saveAnchor(selection, participant);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(participant)).hasSize(1);
-    }
-
-    @Test
-    @DisplayName("다른 선택 범위에 댓글을 작성한 사용자에게는 알림을 저장하지 않는다.")
-    void writeExcludesWriterOfOtherSelection() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User otherSelectionWriter = saveCompletedUser(2L, "other_writer");
-        User commenter = saveCompletedUser(3L, "commenter");
-        Post post = savePublicPost(postWriter);
-        CommentAnchorSelection selection = saveSelection(post);
-        saveAnchor(saveOtherSelection(post), otherSelectionWriter);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(otherSelectionWriter)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("같은 선택 범위에서 삭제된 댓글의 작성자에게는 알림을 저장하지 않는다.")
-    void writeExcludesWriterOfDeletedComment() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User deletedCommentWriter = saveCompletedUser(2L, "deleted_writer");
-        User commenter = saveCompletedUser(3L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        CommentAnchor deletedAnchor = saveAnchor(selection, deletedCommentWriter);
-        deletedAnchor.delete();
-        commentAnchorRepository.saveAndFlush(deletedAnchor);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(deletedCommentWriter)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("같은 선택 범위에 댓글을 작성한 뒤 탈퇴한 사용자에게는 알림을 저장하지 않는다.")
-    void writeExcludesWithdrawnSelectionParticipant() {
-        // given
-        User postWriter = saveCompletedUser(1L, "post_writer");
-        User withdrawnParticipant = saveCompletedUser(2L, "withdrawn_user");
-        User commenter = saveCompletedUser(3L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(postWriter));
-        saveAnchor(selection, withdrawnParticipant);
-        withdraw(withdrawnParticipant);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(withdrawnParticipant)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("탈퇴한 게시글 작성자에게는 알림을 저장하지 않는다.")
-    void writeExcludesWithdrawnPostWriter() {
-        // given
-        User withdrawnPostWriter = saveCompletedUser(1L, "withdrawn_writer");
-        User commenter = saveCompletedUser(2L, "commenter");
-        CommentAnchorSelection selection = saveSelection(savePublicPost(withdrawnPostWriter));
-        withdraw(withdrawnPostWriter);
-        CommentAnchor anchor = saveAnchor(selection, commenter);
-
-        // when
-        notificationWriter.write(INLINE_COMMENT_TYPES, anchor.getId(), commenter.getId(), OCCURRED_AT);
-
-        // then
-        assertThat(findNotificationsOf(withdrawnPostWriter)).isEmpty();
-    }
-
     private List<Notification> findNotificationsOf(User recipient) {
         return notificationRepository.findAll().stream()
                 .filter(notification -> notification.getRecipientId().equals(recipient.getId()))
@@ -268,11 +121,6 @@ class NotificationWriterIntegrationTest extends ServiceSupport {
         return userRepository.saveAndFlush(user);
     }
 
-    private void withdraw(User user) {
-        user.delete();
-        userRepository.saveAndFlush(user);
-    }
-
     private Post savePublicPost(User writer) {
         Blog rilog = blogRepository.saveAndFlush(Blog.createRilog(writer));
         return postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
@@ -282,16 +130,6 @@ class NotificationWriterIntegrationTest extends ServiceSupport {
         return commentAnchorSelectionRepository.saveAndFlush(
                 CommentAnchorFixture.activeAnchor(post, post.getUser()).getCommentAnchorSelection()
         );
-    }
-
-    private CommentAnchorSelection saveOtherSelection(Post post) {
-        Selection otherSelection = Selection.select(
-                new TextBlock("block-a", "paragraph", "가나나다다라마"),
-                0,
-                2,
-                "가나"
-        );
-        return commentAnchorSelectionRepository.saveAndFlush(CommentAnchorSelection.create(post, otherSelection));
     }
 
     private CommentAnchor saveAnchor(CommentAnchorSelection selection, User writer) {

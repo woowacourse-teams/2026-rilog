@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.entity.vo.TheRilogPostMetadata;
@@ -41,8 +42,6 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
 
     @Autowired
     private TheRilogCommandService theRilogCommandService;
-    @Autowired
-    private TheRilogQueryService theRilogQueryService;
 
     @Autowired
     private PostRepository postRepository;
@@ -75,21 +74,26 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("완성된 목요일 발행분은 공식 계정으로 여섯 게시글과 조회수를 함께 저장한다.")
+    @DisplayName("목요일 발행분은 여섯 게시글의 발행 시각과 각 초기 조회수를 함께 저장한다.")
     void commitsCompletePublication() {
+        // given
         TheRilogPublication publication = thursdayPublication();
 
+        // when
         var published = theRilogCommandService.publishPublication(publication);
 
-        var savedIds = postRepository.findAll().stream().map(post -> post.getId()).toList();
-        var main = theRilogQueryService.readTheRilog();
+        // then
+        List<Post> saved = postRepository.findAll();
+        var savedIds = saved.stream().map(Post::getId).toList();
+        var initializedIds = jdbc.queryForList("select post_id from post_view_count where view_count = 0", Long.class);
         assertSoftly(softly -> {
             softly.assertThat(published.stream().map(article -> article.postId()).toList())
                     .containsExactlyInAnyOrderElementsOf(savedIds).hasSize(6);
-            softly.assertThat(jdbc.queryForObject("select count(*) from post_view_count", Long.class)).isEqualTo(6L);
-            softly.assertThat(main.news().headlines()).hasSize(8);
-            softly.assertThat(main.spotlights()).hasSize(5);
-            softly.assertThat(main.date()).isEqualTo(publication.date());
+            softly.assertThat(initializedIds).containsExactlyInAnyOrderElementsOf(savedIds);
+            softly.assertThat(saved).extracting(post -> post.getPublishedAt().toLocalDate()).containsOnly(publication.date());
+            softly.assertThat(saved).filteredOn(post -> post.getPostType() == PostType.DAILY_HEADLINES)
+                    .singleElement().satisfies(news -> assertThat(news.getContent().getContent())
+                            .isEqualTo(publication.articles().getFirst().detail().content()));
         });
     }
 

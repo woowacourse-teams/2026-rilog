@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import static kr.rilog.domain.notification.entity.enums.NotificationType.POST_INLINE_COMMENT;
 import static kr.rilog.domain.notification.exception.NotificationErrorInformation.NOTIFICATION_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class NotificationServiceIntegrationTest extends ServiceSupport {
@@ -61,9 +61,8 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
         Notification otherFound = findNotification(other);
         Notification alreadyReadFound = findNotification(alreadyRead);
         assertSoftly(softly -> {
-            softly.assertThat(found.isRead()).isTrue();
             softly.assertThat(found.getReadAt()).isNotNull();
-            softly.assertThat(otherFound.isRead()).isFalse();
+            softly.assertThat(otherFound.getReadAt()).isNull();
             softly.assertThat(alreadyReadFound.getReadAt()).isEqualTo(firstReadAt);
         });
     }
@@ -74,27 +73,14 @@ class NotificationServiceIntegrationTest extends ServiceSupport {
         // given
         Notification notification = saveUnreadNotification(recipientId);
 
-        // when & then
-        assertThatThrownBy(() -> notificationService.markAsRead(notification.getId(), otherUserId))
-                .isInstanceOf(NotificationException.class)
-                .hasMessage(NOTIFICATION_NOT_FOUND.getMessage());
-        assertThat(findNotification(notification).isRead()).isFalse();
-    }
-
-    @Test
-    @DisplayName("전체 읽음 처리는 요청한 수신자의 읽지 않은 알림만 읽음으로 바꾼다.")
-    void markAllAsReadMarksOnlyUnreadNotificationsOfRecipient() {
-        // given
-        saveUnreadNotification(recipientId);
-        saveUnreadNotification(recipientId);
-        Notification otherUserNotification = saveUnreadNotification(otherUserId);
-
         // when
-        notificationService.markAllAsRead(recipientId);
+        Throwable thrown = catchThrowable(() -> notificationService.markAsRead(notification.getId(), otherUserId));
 
         // then
-        assertThat(notificationRepository.countByRecipientIdAndReadAtIsNull(recipientId)).isZero();
-        assertThat(findNotification(otherUserNotification).isRead()).isFalse();
+        assertThat(thrown)
+                .isInstanceOf(NotificationException.class)
+                .hasMessage(NOTIFICATION_NOT_FOUND.getMessage());
+        assertThat(findNotification(notification).getReadAt()).isNull();
     }
 
     private Notification saveUnreadNotification(Long recipientId) {

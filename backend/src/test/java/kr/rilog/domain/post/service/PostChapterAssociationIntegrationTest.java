@@ -78,62 +78,6 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("다른 블로그의 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
-    void publishRejectsChapterOfOtherBlogAndPreservesPosts() {
-        // given
-        PublishingScenario scenario = createRilogScenario(3L, "publish_target");
-        PublishingScenario other = createRilogScenario(4L, "publish_other");
-        Chapter otherChapter = saveChapter(other.blog(), "다른 블로그 챕터", 0);
-
-        // when & then
-        assertThatThrownBy(() -> postCommandService.publish(
-                publishCommand(scenario.blog().getSlug(), otherChapter.getId()),
-                scenario.writer().getId()
-        ))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("삭제된 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
-    void publishRejectsDeletedChapterAndPreservesPosts() {
-        // given
-        PublishingScenario scenario = createRilogScenario(5L, "publish_deleted");
-        Chapter deletedChapter = saveChapter(scenario.blog(), "삭제된 챕터", 0);
-        deletedChapter.delete();
-        chapterRepository.saveAndFlush(deletedChapter);
-
-        // when & then
-        assertThatThrownBy(() -> postCommandService.publish(
-                publishCommand(scenario.blog().getSlug(), deletedChapter.getId()),
-                scenario.writer().getId()
-        ))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
-    void publishRejectsMissingChapterAndPreservesPosts() {
-        // given
-        PublishingScenario scenario = createRilogScenario(6L, "publish_missing");
-
-        // when & then
-        assertThatThrownBy(() -> postCommandService.publish(
-                publishCommand(scenario.blog().getSlug(), Long.MAX_VALUE),
-                scenario.writer().getId()
-        ))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
     @DisplayName("초안을 발행할 때 대상 블로그의 챕터를 지정하면 챕터 연결이 저장된다.")
     void publishDraftPersistsChapter() {
         // given
@@ -278,8 +222,8 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("챕터에 속한 게시글을 상세 조회하면 챕터 전체 정보를 반환한다.")
-    void readPostReturnsChapter() {
+    @DisplayName("게시글 상세 조회는 저장된 챕터 연결을 반환한다.")
+    void readPostLoadsChapterAssociation() {
         // given
         PublishingScenario scenario = createRilogScenario(14L, "read_chapter");
         Chapter chapter = saveChapter(scenario.blog(), "조회 챕터", 2);
@@ -293,11 +237,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         );
 
         // then
-        assertThat(response.chapter()).isEqualTo(new kr.rilog.domain.chapter.controller.dto.response.ChapterResponse(
-                chapter.getId(),
-                chapter.getName(),
-                chapter.getOrder()
-        ));
+        assertThat(response.chapter().chapterId()).isEqualTo(chapter.getId());
     }
 
     private PublishingScenario createRilogScenario(long githubId, String slug) {

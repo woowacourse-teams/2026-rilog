@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.blog.entity.vo.Profile;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.FullFeedPostResponse;
 import kr.rilog.domain.post.controller.dto.response.BlogFeedPostResponse;
 import kr.rilog.domain.post.entity.enums.Category;
@@ -109,7 +110,7 @@ class FeedServiceTest {
         // given
         PageRequest pageable = PageRequest.of(PAGE, SIZE);
         List<PostFullFeedRow> rows = List.of(
-                createFeedRow(2L),
+                createCologFeedRow(2L),
                 createFeedRow(1L)
         );
         when(postFeedQueryRepository.findFullFeedWithInlineCommentCount(
@@ -124,18 +125,26 @@ class FeedServiceTest {
         FullFeedPostResponse response = feedService.readFullFeedPostList(DEFAULT_FULL_FEED_SEARCH);
 
         // then
-        assertThat(response.posts())
-                .extracting(FullFeedPostResponse.PostItemResponse::postId)
-                .containsExactly(2L, 1L);
-        assertThat(response.posts())
-                .extracting(post -> post.author().nickname())
-                .containsExactly("작성자", "작성자");
-        assertThat(response.posts())
-                .extracting(post -> post.owner().type())
-                .containsExactly(BlogType.RILOG, BlogType.RILOG);
-        assertThat(response.posts())
-                .extracting(post -> post.owner().name())
-                .containsExactly("작성자", "작성자");
+        FullFeedPostResponse.AuthorResponse author =
+                new FullFeedPostResponse.AuthorResponse(1L, "작성자", "writer", "https://example.com/profile.png");
+        assertThat(response.posts()).containsExactly(
+                new FullFeedPostResponse.PostItemResponse(
+                        2L, "팀 게시글 제목", "https://example.com/team_thumbnail.png",
+                        Category.TECH.getName(), "PUBLIC", LocalDateTime.of(2026, 8, 13, 12, 0), 3L,
+                        new ChapterResponse(10L, "회고", 2), author,
+                        new FullFeedPostResponse.OwnerResponse(
+                                BlogType.COLOG, COLOG_ID, COLOG_SLUG, "팀 블로그", "https://example.com/colog_logo.png"
+                        )
+                ),
+                new FullFeedPostResponse.PostItemResponse(
+                        1L, "게시글 제목", "https://example.com/thumbnail.png",
+                        Category.TECH.getName(), "PUBLIC", LocalDateTime.of(2026, 8, 13, 12, 0), 0L,
+                        null, author,
+                        new FullFeedPostResponse.OwnerResponse(
+                                BlogType.RILOG, RILOG_ID, RILOG_SLUG, "작성자", "https://example.com/profile.png"
+                        )
+                )
+        );
         assertThat(response.page()).isEqualTo(PAGE);
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.numberOfElements()).isEqualTo(rows.size());
@@ -230,12 +239,11 @@ class FeedServiceTest {
         assertThat(response.posts())
                 .extracting(post -> post.author().nickname())
                 .containsExactly("작성자", "작성자");
-        assertThat(response.posts())
-                .extracting(post -> post.owner().type())
-                .containsExactly(BlogType.COLOG, BlogType.COLOG);
-        assertThat(response.posts())
-                .extracting(post -> post.owner().name())
-                .containsExactly("팀 블로그", "팀 블로그");
+        assertThat(response.posts()).extracting(BlogFeedPostResponse.PostItemResponse::owner)
+                .containsOnly(new BlogFeedPostResponse.OwnerResponse(
+                        BlogType.COLOG, COLOG_ID, COLOG_SLUG, "팀 블로그", "https://example.com/colog_logo.png"
+                ));
+        assertThat(response.posts().getFirst().chapter()).isEqualTo(new ChapterResponse(10L, "회고", 2));
         assertThat(response.size()).isEqualTo(SIZE);
         assertThat(response.hasNext()).isFalse();
         verify(postFeedQueryRepository).findCologFeedPosts(
@@ -299,6 +307,69 @@ class FeedServiceTest {
         verifyNoInteractions(postFeedQueryRepository);
     }
 
+    @Test
+    @DisplayName("대상 Colog가 없으면 Rilog 피드를 조회하지 않는다.")
+    void readRilogFeedRejectsMissingTargetColog() {
+        // given
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(null, null, COLOG_SLUG, PAGE, SIZE);
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG)))
+                .thenReturn(Optional.of(createRilog()));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> feedService.readBlogPosts(RILOG_SLUG, null, command))
+                .isInstanceOf(BlogException.class)
+                .extracting(ERROR_INFORMATION)
+                .isEqualTo(BLOG_NOT_FOUND);
+        verifyNoInteractions(postFeedQueryRepository);
+    }
+
+    @Test
+    @DisplayName("Rilog 피드는 대상 팀의 ID와 카테고리를 저장소에 전달한다.")
+    void readRilogFeedRequestsTargetCologAndCategory() {
+        // given
+        long requesterId = 42L;
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(Category.TECH, null, COLOG_SLUG, PAGE, SIZE);
+        PageRequest pageable = PageRequest.of(PAGE, SIZE, Sort.by(Sort.Direction.DESC, "publishedAt", "id"));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(RILOG_SLUG))).thenReturn(Optional.of(createRilog()));
+        when(blogRepository.findBySlugAndBlogTypeAndDeletedAtIsNull(Slug.from(COLOG_SLUG), BlogType.COLOG))
+                .thenReturn(Optional.of(createColog()));
+        when(postFeedQueryRepository.findRilogFeedPosts(
+                RILOG_ID, requesterId, PostStatus.PUBLISHED, PostVisibility.PUBLIC, Category.TECH, null, COLOG_ID, pageable
+        )).thenReturn(new SliceImpl<>(List.of(), pageable, false));
+
+        // when
+        feedService.readBlogPosts(RILOG_SLUG, requesterId, command);
+
+        // then
+        verify(postFeedQueryRepository).findRilogFeedPosts(
+                RILOG_ID, requesterId, PostStatus.PUBLISHED, PostVisibility.PUBLIC, Category.TECH, null, COLOG_ID, pageable
+        );
+    }
+
+    @Test
+    @DisplayName("Colog 피드는 요청자와 카테고리, 챕터 조건을 저장소에 전달한다.")
+    void readCologFeedRequestsCategoryAndChapter() {
+        // given
+        long requesterId = 42L;
+        long chapterId = 10L;
+        BlogFeedSearchCommand command = new BlogFeedSearchCommand(Category.TECH, chapterId, null, PAGE, SIZE);
+        PageRequest pageable = PageRequest.of(PAGE, SIZE, Sort.by(Sort.Direction.DESC, "publishedAt", "id"));
+        when(blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(COLOG_SLUG))).thenReturn(Optional.of(createColog()));
+        when(postFeedQueryRepository.findCologFeedPosts(
+                COLOG_ID, requesterId, PostStatus.PUBLISHED, PostVisibility.PUBLIC, Category.TECH, chapterId, pageable
+        )).thenReturn(new SliceImpl<>(List.of(), pageable, false));
+
+        // when
+        feedService.readBlogPosts(COLOG_SLUG, requesterId, command);
+
+        // then
+        verify(postFeedQueryRepository).findCologFeedPosts(
+                COLOG_ID, requesterId, PostStatus.PUBLISHED, PostVisibility.PUBLIC, Category.TECH, chapterId, pageable
+        );
+    }
+
     private PostFullFeedRow createFeedRow(Long postId) {
         return new PostFullFeedRow(
                 postId,
@@ -348,9 +419,9 @@ class FeedServiceTest {
                 Category.TECH,
                 PostVisibility.PUBLIC,
                 LocalDateTime.of(2026, 8, 13, 12, 0),
-                null,
-                null,
-                null,
+                10L,
+                "회고",
+                2,
                 1L,
                 "작성자",
                 "writer",
@@ -359,7 +430,8 @@ class FeedServiceTest {
                 COLOG_ID,
                 COLOG_SLUG,
                 "팀 블로그",
-                "https://example.com/colog_logo.png"
+                "https://example.com/colog_logo.png",
+                3L
         );
     }
 

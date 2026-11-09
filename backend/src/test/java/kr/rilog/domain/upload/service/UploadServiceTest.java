@@ -270,23 +270,33 @@ class UploadServiceTest {
 
     @ParameterizedTest
     @CsvSource(value = {
-            "PROFILE,PROFILE",
-            "CONTENT,CONTENT",
-            "null,CONTENT"
+            "PROFILE,profiles",
+            "CONTENT,images",
+            "null,images"
     }, nullValues = "null")
-    @DisplayName("이미지 목적에 맞는 원본 키를 만들고, 목적이 없으면 일반 이미지로 처리한다.")
-    void createImageObjectKeyByPurpose(ImagePurpose requested, ImagePurpose expected) throws Exception {
-        var service = new UploadService(s3Presigner, s3Client,
-                new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10), imageObjectKeyPolicy);
+    @DisplayName("목적별 업로더 소유 원본 키로 TEMPORARY 업로드를 서명한다.")
+    void createImageObjectKeyByPurpose(ImagePurpose requested, String directory) throws Exception {
+        // given
+        var properties = new S3Properties("bucket", "ap-northeast-2", "rilog/uploads", 10);
+        var keyPolicy = new S3ImageObjectKeyPolicy(properties);
+        var service = new UploadService(s3Presigner, s3Client, properties, keyPolicy);
         var command = new PresignedUrlCreateCommand("image.png", "image/png", 1024, UploadType.IMAGE, requested);
-        when(imageObjectKeyPolicy.create(eq(USER_ID), any(UUID.class), eq(expected), eq("png"))).thenReturn(OBJECT_KEY);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
         when(presignedRequest.url()).thenReturn(URI.create("https://example.com/upload").toURL());
 
+        // when
         PresignedUrlCreateResult result = service.createUploadUrl(USER_ID, command);
 
-        verify(imageObjectKeyPolicy).create(eq(USER_ID), any(UUID.class), eq(expected), eq("png"));
-        assertThat(result.objectKey()).isEqualTo(OBJECT_KEY);
+        // then
+        ArgumentCaptor<PutObjectPresignRequest> captor = ArgumentCaptor.forClass(PutObjectPresignRequest.class);
+        verify(s3Presigner).presignPutObject(captor.capture());
+        var putRequest = captor.getValue().putObjectRequest();
+        assertThat(result.objectKey()).isEqualTo("rilog/uploads/%s/raw/%d-%s/original.png"
+                .formatted(directory, USER_ID, result.uploadId()));
+        assertThat(putRequest.key()).isEqualTo(result.objectKey());
+        assertThat(putRequest.tagging()).isEqualTo("status=TEMPORARY");
+        assertThat(keyPolicy.isOwnedBy(result.objectKey(), USER_ID)).isTrue();
+        assertThat(keyPolicy.isOwnedBy(result.objectKey(), USER_ID + 1)).isFalse();
     }
 
     @Test

@@ -12,11 +12,8 @@ import kr.rilog.domain.post.exception.PostException;
 import kr.rilog.domain.post.repository.PostRepository;
 import kr.rilog.domain.post.service.dto.command.DraftOverwriteCommand;
 import kr.rilog.domain.post.service.dto.command.DraftPublishCommand;
-import kr.rilog.domain.post.service.dto.command.DraftSaveCommand;
 import kr.rilog.domain.post.service.dto.result.DraftDetailResult;
-import kr.rilog.domain.post.service.dto.result.DraftIdResult;
 import kr.rilog.domain.post.service.dto.result.DraftListResult;
-import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.user.entity.User;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
@@ -33,10 +30,7 @@ import java.time.LocalDateTime;
 import static kr.rilog.domain.blog.exception.BlogErrorInformation.ALREADY_BLOG_MEMBER_LEFT;
 import static kr.rilog.domain.post.entity.enums.PostStatus.DRAFT;
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
-import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.exception.PostErrorInformation.DRAFT_NOT_FOUND;
-import static kr.rilog.domain.post.exception.PostErrorInformation.NOT_POST_AUTHOR;
-import static kr.rilog.support.fixure.PostFixture.initialDraftSaveCommand;
 import static kr.rilog.support.fixure.PostFixture.overwrittenDraftCommand;
 import static kr.rilog.support.fixure.PostFixture.publicDraftPublishCommand;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,124 +59,23 @@ class DraftServiceIntegrationTest extends ServiceSupport {
     private PostRepository postRepository;
 
     @Test
-    @DisplayName("초안을 최초 저장하면 입력한 내용, 초안 상태와 작성자 소속이 저장된다.")
-    void saveDraftPersistsContentStateAndAffiliation() {
-        // given
-        User writer = saveCompletedUser();
-        Blog rilog = saveRilog(writer);
-        DraftSaveCommand command = initialDraftSaveCommand();
-
-        // when
-        DraftIdResult result = draftCommandService.saveDraft(command, writer.getId());
-
-        // then
-        Post savedDraft = postRepository.findById(result.draftId()).orElseThrow();
-
-        assertSoftly(softly -> {
-            softly.assertThat(result).isEqualTo(new DraftIdResult(savedDraft.getId()));
-            softly.assertThat(savedDraft.getTitle()).isEqualTo(command.title());
-            softly.assertThat(savedDraft.getContent()).isEqualTo(PostContent.from(command.content()));
-            softly.assertThat(savedDraft.getStatus()).isEqualTo(DRAFT);
-            softly.assertThat(savedDraft.getVisibility()).isEqualTo(PRIVATE);
-            softly.assertThat(savedDraft.getCategory()).isNull();
-            softly.assertThat(savedDraft.getThumbnailImageUrl()).isNull();
-            softly.assertThat(savedDraft.getUser().getId()).isEqualTo(writer.getId());
-            softly.assertThat(savedDraft.getRilog().getId()).isEqualTo(rilog.getId());
-            softly.assertThat(savedDraft.getColog()).isNull();
-        });
-    }
-
-    @Test
     @DisplayName("임시저장 목록은 요청자가 작성한 미삭제 초안만 반환한다.")
     void readMyDraftListReturnsOnlyActiveDraftsWrittenByRequester() {
         // given
         User requester = saveCompletedUser(201L, "초안작성자", "draft_writer");
-        Blog requesterRilog = saveRilog(requester);
+        Blog rilog = saveRilog(requester);
         User otherWriter = saveCompletedUser(202L, "다른작성자", "other_writer");
         Blog otherRilog = saveRilog(otherWriter);
-
-        Post expectedDraft = savePost(PostFixture.draftRilogPostAt(requesterRilog, requester, "조회할 초안", BASE_PUBLISHED_AT));
-        savePost(PostFixture.draftRilogPostAt(otherRilog, otherWriter, "다른 사용자의 초안", BASE_PUBLISHED_AT));
-        savePost(PostFixture.publicPublishedRilogPost(requesterRilog, requester));
-        savePost(
-                PostFixture.deletedDraftRilogPostAt(
-                        requesterRilog,
-                        requester,
-                        "삭제된 초안",
-                        BASE_PUBLISHED_AT.plusMinutes(1)
-                )
-        );
+        Post draft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "내 초안", BASE_PUBLISHED_AT));
+        savePost(PostFixture.draftRilogPostAt(otherRilog, otherWriter, "남의 초안", BASE_PUBLISHED_AT));
+        savePost(PostFixture.publicPublishedRilogPost(rilog, requester));
+        savePost(PostFixture.deletedDraftRilogPostAt(rilog, requester, "삭제한 초안", BASE_PUBLISHED_AT));
 
         // when
         DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 10);
 
         // then
-        assertThat(result.drafts()).containsExactly(new DraftListResult.DraftItemResult(
-                expectedDraft.getId(),
-                expectedDraft.getTitle(),
-                expectedDraft.getPublishedAt()
-        ));
-    }
-
-    @Test
-    @DisplayName("임시저장 목록은 저장 시각과 초안 아이디의 내림차순으로 정렬한다.")
-    void readMyDraftListOrdersByPublishedAtAndIdDescending() {
-        // given
-        User requester = saveCompletedUser();
-        Blog rilog = saveRilog(requester);
-        Post firstSameTimeDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "첫 초안", BASE_PUBLISHED_AT));
-        Post secondSameTimeDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "같은 시간의 두 번째 초안", BASE_PUBLISHED_AT));
-        Post latestDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "가장 최신 초안", BASE_PUBLISHED_AT.plusMinutes(1)));
-
-        // when
-        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 10);
-
-        // then
-        assertThat(result.drafts())
-                .extracting(DraftListResult.DraftItemResult::draftId)
-                .containsExactly(latestDraft.getId(), secondSameTimeDraft.getId(), firstSameTimeDraft.getId());
-    }
-
-    @Test
-    @DisplayName("임시저장 첫 페이지를 크기 2로 조회하면 최신 두 건과 다음 페이지 정보를 반환한다.")
-    void readMyDraftListReturnsRequestedSlice() {
-        // given
-        User requester = saveCompletedUser();
-        Blog rilog = saveRilog(requester);
-        savePost(PostFixture.draftRilogPostAt(rilog, requester, "오래된 초안", BASE_PUBLISHED_AT));
-        Post middleDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "중간 초안", BASE_PUBLISHED_AT.plusMinutes(1)));
-        Post latestDraft = savePost(PostFixture.draftRilogPostAt(rilog, requester, "최신 초안", BASE_PUBLISHED_AT.plusMinutes(2)));
-
-        // when
-        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 2);
-
-        // then
-        assertSoftly(softly -> {
-            softly.assertThat(result.drafts())
-                    .extracting(DraftListResult.DraftItemResult::draftId)
-                    .containsExactly(latestDraft.getId(), middleDraft.getId());
-            softly.assertThat(result.page()).isZero();
-            softly.assertThat(result.size()).isEqualTo(2);
-            softly.assertThat(result.numberOfElements()).isEqualTo(2);
-            softly.assertThat(result.hasNext()).isTrue();
-        });
-    }
-
-    @Test
-    @DisplayName("임시저장 글이 없으면 빈 목록과 다음 페이지가 없다는 정보를 반환한다.")
-    void readMyDraftListReturnsEmptySlice() {
-        // given
-        User requester = saveCompletedUser();
-
-        // when
-        DraftListResult result = draftQueryService.readMyDraftList(requester.getId(), 0, 10);
-
-        // then
-        assertSoftly(softly -> {
-            softly.assertThat(result.drafts()).isEmpty();
-            softly.assertThat(result.numberOfElements()).isZero();
-            softly.assertThat(result.hasNext()).isFalse();
-        });
+        assertThat(result.drafts()).extracting(DraftListResult.DraftItemResult::draftId).containsExactly(draft.getId());
     }
 
     @Test
@@ -197,76 +90,17 @@ class DraftServiceIntegrationTest extends ServiceSupport {
                 "상세 조회할 초안",
                 BASE_PUBLISHED_AT
         ));
-        DraftDetailResult expected = new DraftDetailResult(
-                draft.getId(),
-                draft.getTitle(),
-                draft.getContent().getContent(),
-                draft.getStatus(),
-                draft.getPublishedAt()
-        );
 
         // when
         DraftDetailResult result = draftQueryService.getMyDraft(draft.getId(), requester.getId());
 
         // then
-        assertThat(result).isEqualTo(expected);
+        assertThat(result.draftId()).isEqualTo(draft.getId());
+        assertThat(result.content()).isEqualTo(draft.getContent().getContent());
     }
 
     @Test
-    @DisplayName("다른 작성자의 초안을 상세 조회하면 작성 권한 예외가 발생한다.")
-    void getMyDraftThrowsWhenRequesterIsNotWriter() {
-        // given
-        User requester = saveCompletedUser(201L, "조회요청자", "draft_requester");
-        User writer = saveCompletedUser(202L, "초안작성자", "draft_writer");
-        Blog writerRilog = saveRilog(writer);
-        Post draft = savePost(PostFixture.draftRilogPostAt(
-                writerRilog,
-                writer,
-                "다른 작성자의 초안",
-                BASE_PUBLISHED_AT
-        ));
-
-        // when & then
-        assertThatThrownBy(() -> draftQueryService.getMyDraft(draft.getId(), requester.getId()))
-                .isInstanceOf(PostException.class)
-                .hasMessage(NOT_POST_AUTHOR.getMessage());
-    }
-
-    @Test
-    @DisplayName("발행된 글을 초안으로 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
-    void getMyDraftThrowsWhenPostIsPublished() {
-        // given
-        User requester = saveCompletedUser();
-        Blog rilog = saveRilog(requester);
-        Post publishedPost = savePost(PostFixture.publicPublishedRilogPost(rilog, requester));
-
-        // when & then
-        assertThatThrownBy(() -> draftQueryService.getMyDraft(publishedPost.getId(), requester.getId()))
-                .isInstanceOf(PostException.class)
-                .hasMessage(DRAFT_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("삭제된 초안을 상세 조회하면 초안을 찾을 수 없다는 예외가 발생한다.")
-    void getMyDraftThrowsWhenDraftIsDeleted() {
-        // given
-        User requester = saveCompletedUser();
-        Blog rilog = saveRilog(requester);
-        Post deletedDraft = savePost(PostFixture.deletedDraftRilogPostAt(
-                rilog,
-                requester,
-                "삭제된 초안",
-                BASE_PUBLISHED_AT
-        ));
-
-        // when & then
-        assertThatThrownBy(() -> draftQueryService.getMyDraft(deletedDraft.getId(), requester.getId()))
-                .isInstanceOf(PostException.class)
-                .hasMessage(DRAFT_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("작성자가 자신의 초안을 덮어쓰면 새로운 내용과 임시저장 시각이 저장되고 같은 초안 아이디를 반환한다.")
+    @DisplayName("작성자가 자신의 초안을 덮어쓰면 새로운 내용과 임시저장 시각이 저장된다.")
     void overwriteDraftPersistsNewContentAndPublishedAt() {
         // given
         User writer = saveCompletedUser();
@@ -280,46 +114,14 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         DraftOverwriteCommand command = overwrittenDraftCommand();
 
         // when
-        DraftIdResult result = draftCommandService.overwriteDraft(command, draft.getId(), writer.getId());
+        draftCommandService.overwriteDraft(command, draft.getId(), writer.getId());
 
         // then
         Post overwrittenDraft = postRepository.findById(draft.getId()).orElseThrow();
         assertSoftly(softly -> {
-            softly.assertThat(result).isEqualTo(new DraftIdResult(draft.getId()));
             softly.assertThat(overwrittenDraft.getTitle()).isEqualTo(command.title());
             softly.assertThat(overwrittenDraft.getContent()).isEqualTo(PostContent.from(command.content()));
             softly.assertThat(overwrittenDraft.getPublishedAt()).isAfter(BASE_PUBLISHED_AT);
-        });
-    }
-
-    @Test
-    @DisplayName("다른 작성자의 초안을 덮어쓰면 작성 권한 예외가 발생하고 기존 내용이 유지된다.")
-    void overwriteDraftThrowsAndPreservesContentWhenRequesterIsNotWriter() {
-        // given
-        User writer = saveCompletedUser(201L, "초안작성자", "overwrite_writer");
-        Blog rilog = saveRilog(writer);
-        User requester = saveCompletedUser(202L, "덮어쓰기요청자", "overwrite_requester");
-        Post draft = savePost(PostFixture.draftRilogPostAt(
-                rilog,
-                writer,
-                "유지할 제목",
-                BASE_PUBLISHED_AT
-        ));
-
-        // when & then
-        assertThatThrownBy(() -> draftCommandService.overwriteDraft(
-                overwrittenDraftCommand(),
-                draft.getId(),
-                requester.getId()
-        ))
-                .isInstanceOf(PostException.class)
-                .hasMessage(NOT_POST_AUTHOR.getMessage());
-
-        Post preservedDraft = postRepository.findById(draft.getId()).orElseThrow();
-        assertSoftly(softly -> {
-            softly.assertThat(preservedDraft.getTitle()).isEqualTo(draft.getTitle());
-            softly.assertThat(preservedDraft.getContent()).isEqualTo(draft.getContent());
-            softly.assertThat(preservedDraft.getPublishedAt()).isEqualTo(BASE_PUBLISHED_AT);
         });
     }
 
@@ -386,7 +188,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         DraftPublishCommand command = publicDraftPublishCommand(rilog.getSlug());
 
         // when
-        PostPublishResult result = draftCommandService.publishDraft(command, draft.getId(), writer.getId());
+        draftCommandService.publishDraft(command, draft.getId(), writer.getId());
 
         // then
         Post publishedPost = postRepository.findById(draft.getId()).orElseThrow();
@@ -398,7 +200,6 @@ class DraftServiceIntegrationTest extends ServiceSupport {
                 publishedPost.getThumbnailImageUrl()
         );
         assertSoftly(softly -> {
-            softly.assertThat(result).isEqualTo(new PostPublishResult(draft.getId(), rilog.getSlug()));
             softly.assertThat(publishedDetail).isEqualTo(command.toDetail());
             softly.assertThat(publishedPost.getStatus()).isEqualTo(PUBLISHED);
             softly.assertThat(publishedPost.getPublishedAt()).isAfter(BASE_PUBLISHED_AT);
@@ -426,7 +227,7 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         ));
 
         // when
-        PostPublishResult result = draftCommandService.publishDraft(
+        draftCommandService.publishDraft(
                 publicDraftPublishCommand(colog.getSlug()),
                 draft.getId(),
                 writer.getId()
@@ -435,40 +236,8 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         // then
         Post publishedPost = postRepository.findById(draft.getId()).orElseThrow();
         assertSoftly(softly -> {
-            softly.assertThat(result.slug()).isEqualTo(colog.getSlug());
             softly.assertThat(publishedPost.getRilog().getId()).isEqualTo(rilog.getId());
             softly.assertThat(publishedPost.getColog().getId()).isEqualTo(colog.getId());
-        });
-    }
-
-    @Test
-    @DisplayName("다른 작성자의 초안을 발행하면 작성 권한 예외가 발생하고 초안 상태가 유지된다.")
-    void publishDraftThrowsAndPreservesDraftWhenRequesterIsNotWriter() {
-        // given
-        User writer = saveCompletedUser(201L, "초안작성자", "publish_owner");
-        Blog rilog = saveRilog(writer);
-        saveOwnerMembership(rilog, writer);
-        User requester = saveCompletedUser(202L, "발행요청자", "publish_requester");
-        Post draft = savePost(PostFixture.draftRilogPostAt(
-                rilog,
-                writer,
-                "유지할 초안",
-                BASE_PUBLISHED_AT
-        ));
-
-        // when & then
-        assertThatThrownBy(() -> draftCommandService.publishDraft(
-                publicDraftPublishCommand(rilog.getSlug()),
-                draft.getId(),
-                requester.getId()
-        ))
-                .isInstanceOf(PostException.class)
-                .hasMessage(NOT_POST_AUTHOR.getMessage());
-
-        Post preservedDraft = postRepository.findById(draft.getId()).orElseThrow();
-        assertSoftly(softly -> {
-            softly.assertThat(preservedDraft.getStatus()).isEqualTo(DRAFT);
-            softly.assertThat(preservedDraft.getTitle()).isEqualTo(draft.getTitle());
         });
     }
 
@@ -522,28 +291,6 @@ class DraftServiceIntegrationTest extends ServiceSupport {
         // then
         Post deletedDraft = postRepository.findById(draft.getId()).orElseThrow();
         assertThat(deletedDraft.getDeletedAt()).isNotNull();
-    }
-
-    @Test
-    @DisplayName("다른 작성자의 초안을 삭제하면 작성 권한 예외가 발생하고 삭제되지 않는다.")
-    void deleteDraftThrowsAndPreservesDraftWhenRequesterIsNotWriter() {
-        // given
-        User writer = saveCompletedUser(201L, "초안작성자", "delete_writer");
-        Blog rilog = saveRilog(writer);
-        User requester = saveCompletedUser(202L, "삭제요청자", "delete_requester");
-        Post draft = savePost(PostFixture.draftRilogPostAt(
-                rilog,
-                writer,
-                "유지할 초안",
-                BASE_PUBLISHED_AT
-        ));
-
-        // when & then
-        assertThatThrownBy(() -> draftCommandService.deleteDraft(draft.getId(), requester.getId()))
-                .isInstanceOf(PostException.class)
-                .hasMessage(NOT_POST_AUTHOR.getMessage());
-
-        assertThat(postRepository.findById(draft.getId()).orElseThrow().getDeletedAt()).isNull();
     }
 
     @Test

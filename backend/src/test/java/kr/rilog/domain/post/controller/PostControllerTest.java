@@ -11,6 +11,7 @@ import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.blog.entity.enums.BlogType;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
 import kr.rilog.domain.post.controller.dto.response.PostDetailResponse;
+import kr.rilog.domain.post.controller.dto.response.owner.CologOwnerResponse;
 import kr.rilog.domain.post.controller.dto.response.owner.RilogOwnerResponse;
 import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.post.service.PostQueryService;
@@ -190,6 +191,38 @@ class PostControllerTest {
                     .isEqualTo(PostDetailResponse.ViewerPermissionsResponse.none());
         });
         verify(postQueryService).readPostDetailByCanonicalPath(BLOG_SLUG, POST_ID, null);
+    }
+
+    @Test
+    @DisplayName("팀 블로그 게시글 상세 응답은 집계 필드 없이 블로그 프로필을 반환한다.")
+    void getPostDetailsByCanonicalPathSerializesCologOwnerProfile() throws Exception {
+        // given
+        String cologSlug = "team_blog";
+        PostDetailResponse post = anonymousResponse();
+        PostDetailResponse cologPost = new PostDetailResponse(
+                post.title(), post.content(), post.publishedAt(), post.thumbnailImageUrl(), post.category(),
+                post.chapter(), post.author(),
+                new CologOwnerResponse(
+                        BlogType.COLOG, 4L, cologSlug, "리로그",
+                        "https://example.com/profile.png", "https://example.com/cover.png"
+                ),
+                post.viewerPermissions(), post.viewCount()
+        );
+        when(postQueryService.readPostDetailByCanonicalPath(cologSlug, POST_ID, null)).thenReturn(cologPost);
+
+        // when
+        var response = mockMvc().perform(get("/v1/blogs/{slug}/posts/{postId}", cologSlug, POST_ID));
+
+        // then
+        response.andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.owner.type").value("COLOG"))
+                .andExpect(jsonPath("$.data.owner.blogId").value(4))
+                .andExpect(jsonPath("$.data.owner.slug").value(cologSlug))
+                .andExpect(jsonPath("$.data.owner.name").value("리로그"))
+                .andExpect(jsonPath("$.data.owner.profileImageUrl").value("https://example.com/profile.png"))
+                .andExpect(jsonPath("$.data.owner.coverImageUrl").value("https://example.com/cover.png"))
+                .andExpect(jsonPath("$.data.owner.memberCount").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.owner.postCount").doesNotHaveJsonPath());
     }
 
     @Test

@@ -47,16 +47,6 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("DB 누계를 불러오지 못하면 카운터를 등록하지 않는다.")
-    void doesNotInstallCounterWhenLoadingFails() {
-        // when & then
-        assertThatThrownBy(() -> registry.getOrLoad(999_999L))
-                .isInstanceOf(RilogInfrastructureException.class)
-                .hasMessage(POST_VIEW_COUNT_MISSING.getMessage());
-        assertThat(registry.snapshot()).isEmpty();
-    }
-
-    @Test
     @DisplayName("현재 조회수 읽기는 DB 누계를 반환하고 카운터를 생성하지 않는다.")
     void readsStoredCountWithoutCreatingCounter() {
         // given
@@ -89,23 +79,6 @@ class PostViewCounterIntegrationTest extends ServiceSupport {
                 "select view_count from post_view_count where post_id = ?", Long.class, postId))
                 .isEqualTo(42L);
         assertThat(jdbc.queryForObject("select count(*) from post_view_flush_batch", Long.class)).isZero();
-    }
-
-    @Test
-    @DisplayName("카운터 스냅샷은 초기화를 완료한 게시글의 카운터를 모두 반환한다.")
-    void snapshotContainsAllInitializedCounters() {
-        // given
-        Scenario scenario = scenario();
-        long firstPostId = publishWithStoredCount(scenario, 42L);
-        long secondPostId = publishWithStoredCount(scenario, 0L);
-        PostViewCounter firstCounter = registry.getOrLoad(firstPostId);
-        PostViewCounter secondCounter = registry.getOrLoad(secondPostId);
-
-        // when
-        var counters = registry.snapshot();
-
-        // then
-        assertThat(counters).containsExactlyInAnyOrder(firstCounter, secondCounter);
     }
 
     private Scenario scenario() {

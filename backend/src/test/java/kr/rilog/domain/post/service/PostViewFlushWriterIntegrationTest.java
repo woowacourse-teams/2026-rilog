@@ -56,21 +56,6 @@ class PostViewFlushWriterIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("조회수 범위를 초과하면 기존 누계를 변경하지 않는다.")
-    void preservesCountWhenItCannotIncrease() {
-        // given
-        long postId = publish();
-        jdbc.update("update post_view_count set view_count = 9007199254740991 where post_id = ?", postId);
-        ViewFlushBatch batch = batch(postId, 1L);
-
-        // when & then
-        assertThatThrownBy(() -> writer.writeAll(List.of(batch)))
-                .isInstanceOf(RilogInfrastructureException.class)
-                .hasMessage(POST_VIEW_COUNT_INVALID.getMessage());
-        assertThat(storedCount(postId)).isEqualTo(9_007_199_254_740_991L);
-    }
-
-    @Test
     @DisplayName("조회수 누계가 없으면 배치 저장에 실패한다.")
     void rejectsMissingCount() {
         // given

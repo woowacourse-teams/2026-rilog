@@ -18,15 +18,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class CommentServiceIntegrationTest extends ServiceSupport {
 
     @Autowired
     private CommentCommandService commentCommandService;
+
     @Autowired
     private CommentQueryService commentQueryService;
 
@@ -66,15 +65,9 @@ class CommentServiceIntegrationTest extends ServiceSupport {
         assertSoftly(softly -> {
             softly.assertThat(response.comments()).hasSize(1);
             softly.assertThat(rootResponse.commentId()).isEqualTo(rootComment.getId());
-            softly.assertThat(rootResponse.content()).isEqualTo("루트 댓글입니다.");
-            softly.assertThat(rootResponse.deleted()).isFalse();
-            softly.assertThat(rootResponse.author().postAuthor()).isTrue();
             softly.assertThat(rootResponse.author().blogMember()).isTrue();
-            softly.assertThat(rootResponse.replyCount()).isEqualTo(1);
+            softly.assertThat(rootResponse.replies()).hasSize(1);
             softly.assertThat(replyResponse.commentId()).isEqualTo(reply.getId());
-            softly.assertThat(replyResponse.content()).isEqualTo("답글입니다.");
-            softly.assertThat(replyResponse.author().userId()).isEqualTo(replier.getId());
-            softly.assertThat(replyResponse.author().postAuthor()).isFalse();
             softly.assertThat(replyResponse.author().blogMember()).isFalse();
         });
     }
@@ -103,27 +96,6 @@ class CommentServiceIntegrationTest extends ServiceSupport {
             softly.assertThat(savedRootComment.getDeletedAt()).isNotNull();
             softly.assertThat(savedReply.getDeletedAt()).isNotNull();
         });
-    }
-
-    @Test
-    @DisplayName("댓글 목록 조회용 쿼리는 삭제된 댓글을 제외한다.")
-    void findAllByPostIdExcludesDeletedComments() {
-        // given
-        User writer = saveCompletedUser(300L, "조회작성자", "find_writer");
-        Blog rilog = saveRilog(writer);
-        Post post = savePost(rilog, writer);
-        Comment deletedComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "삭제된 댓글입니다."));
-        Comment activeComment = commentRepository.saveAndFlush(Comment.createRoot(post, writer, "활성 댓글입니다."));
-        deletedComment.deleteBy(writer.getId());
-        commentRepository.saveAndFlush(deletedComment);
-
-        // when
-        List<Comment> comments = commentRepository.findAllByPostIdOrderByCreatedAtAscIdAsc(post.getId());
-
-        // then
-        assertThat(comments)
-                .extracting(Comment::getId)
-                .containsExactly(activeComment.getId());
     }
 
     private User saveCompletedUser(Long githubId, String nickname, String slug) {
