@@ -2,6 +2,7 @@ package kr.rilog.domain.post.entity;
 
 import jakarta.persistence.*;
 import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.post.entity.enums.Category;
@@ -313,6 +314,10 @@ public class Post extends BaseEntity {
         if (!isWrittenBy(requesterId)) {
             throw new PostException(NOT_POST_AUTHOR);
         }
+    }
+
+    public boolean canBeDeletedBy(Long requesterId, BlogMember activeMember) {
+        return isWrittenBy(requesterId) || activeMember.hasDeletePermission();
     }
 
     public boolean isWrittenBy(Long requesterId) {

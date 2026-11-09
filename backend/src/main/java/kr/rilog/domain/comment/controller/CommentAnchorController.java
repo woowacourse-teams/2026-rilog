@@ -14,7 +14,8 @@ import kr.rilog.domain.comment.controller.dto.response.CommentAnchorDeleteRespon
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorListResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorSidebarResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentAnchorUpdateResponse;
-import kr.rilog.domain.comment.service.CommentAnchorService;
+import kr.rilog.domain.comment.service.CommentAnchorCommandService;
+import kr.rilog.domain.comment.service.CommentAnchorQueryService;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorDeleteResult;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorListResult;
@@ -41,7 +42,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CommentAnchorController implements CommentAnchorApiSpec {
 
-    private final CommentAnchorService commentAnchorService;
+    private final CommentAnchorCommandService commentAnchorCommandService;
+    private final CommentAnchorQueryService commentAnchorQueryService;
 
     @OptionalAuthGuard
     @GetMapping("/posts/{postId}/comment-anchors")
@@ -49,7 +51,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
             @PathVariable Long postId,
             @NullableLoginUserId Long requesterId
     ) {
-        CommentAnchorListResult result = commentAnchorService.readCommentAnchors(postId, requesterId);
+        CommentAnchorListResult result = commentAnchorQueryService.readCommentAnchors(postId, requesterId);
         CommentAnchorListResponse data = CommentAnchorListResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "인라인 댓글 목록 조회에 성공했습니다.", data);
     }
@@ -60,7 +62,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
             @PathVariable Long postId,
             @NullableLoginUserId Long requesterId
     ) {
-        CommentAnchorSidebarResult result = commentAnchorService.readSidebarCommentAnchors(postId, requesterId);
+        CommentAnchorSidebarResult result = commentAnchorQueryService.readSidebarCommentAnchors(postId, requesterId);
         CommentAnchorSidebarResponse data = CommentAnchorSidebarResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "사이드바 인라인 댓글 목록 조회에 성공했습니다.", data);
     }
@@ -75,7 +77,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
             @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody CommentAnchorCreateRequest dto
     ) {
-        CommentAnchorCreateResult result = commentAnchorService.createCommentAnchor(
+        CommentAnchorCreateResult result = commentAnchorCommandService.createCommentAnchor(
                 postId,
                 requesterId,
                 dto.toCommand()
@@ -95,7 +97,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
             @RequestHeader(name = "Idempotency-Key", required = false) IdempotencyKey idempotencyKey,
             @Valid @RequestBody CommentAnchorAddRequest dto
     ) {
-        CommentAnchorCreateResult result = commentAnchorService.addCommentAnchor(
+        CommentAnchorCreateResult result = commentAnchorCommandService.addCommentAnchor(
                 postId,
                 requesterId,
                 selectionId,
@@ -113,7 +115,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody CommentAnchorUpdateRequest dto
     ) {
-        CommentAnchorUpdateResult result = commentAnchorService.updateCommentAnchor(
+        CommentAnchorUpdateResult result = commentAnchorCommandService.updateCommentAnchor(
                 postId,
                 commentAnchorId,
                 requesterId,
@@ -130,7 +132,7 @@ public class CommentAnchorController implements CommentAnchorApiSpec {
             @PathVariable Long commentAnchorId,
             @LoginUserId Long requesterId
     ) {
-        CommentAnchorDeleteResult result = commentAnchorService.deleteCommentAnchor(
+        CommentAnchorDeleteResult result = commentAnchorCommandService.deleteCommentAnchor(
                 postId,
                 commentAnchorId,
                 requesterId

@@ -8,7 +8,8 @@ import kr.rilog.domain.comment.controller.dto.request.CommentCreateRequest;
 import kr.rilog.domain.comment.controller.dto.request.CommentUpdateRequest;
 import kr.rilog.domain.comment.controller.dto.response.CommentCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentListResponse;
-import kr.rilog.domain.comment.service.CommentService;
+import kr.rilog.domain.comment.service.CommentCommandService;
+import kr.rilog.domain.comment.service.CommentQueryService;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,11 +28,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CommentController implements CommentApiSpec {
 
-    private final CommentService commentService;
+    private final CommentCommandService commentCommandService;
+    private final CommentQueryService commentQueryService;
 
     @GetMapping("/posts/{postId}/comments")
     public ApiResponse<CommentListResponse> readComments(@PathVariable Long postId) {
-        CommentListResponse data = commentService.readComments(postId);
+        CommentListResponse data = commentQueryService.readComments(postId);
         return ApiResponse.response(HttpStatus.OK, "댓글 목록 조회에 성공했습니다.", data);
     }
 
@@ -43,7 +45,7 @@ public class CommentController implements CommentApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody CommentCreateRequest request
     ) {
-        CommentCreateResponse data = commentService.createComment(postId, requesterId, request.toCommand());
+        CommentCreateResponse data = commentCommandService.createComment(postId, requesterId, request.toCommand());
         return ApiResponse.response(HttpStatus.CREATED, "댓글을 작성했습니다.", data);
     }
 
@@ -56,7 +58,7 @@ public class CommentController implements CommentApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody CommentCreateRequest request
     ) {
-        CommentCreateResponse data = commentService.createReply(postId, commentId, requesterId, request.toCommand());
+        CommentCreateResponse data = commentCommandService.createReply(postId, commentId, requesterId, request.toCommand());
         return ApiResponse.response(HttpStatus.CREATED, "답글을 작성했습니다.", data);
     }
 
@@ -67,7 +69,7 @@ public class CommentController implements CommentApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody CommentUpdateRequest request
     ) {
-        commentService.updateComment(commentId, requesterId, request.toCommand());
+        commentCommandService.updateComment(commentId, requesterId, request.toCommand());
         return ApiResponse.response(HttpStatus.OK, "댓글을 수정했습니다.");
     }
 
@@ -78,7 +80,7 @@ public class CommentController implements CommentApiSpec {
             @PathVariable Long commentId,
             @LoginUserId Long requesterId
     ) {
-        commentService.deleteComment(commentId, requesterId);
+        commentCommandService.deleteComment(commentId, requesterId);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "댓글을 삭제했습니다.");
     }
 

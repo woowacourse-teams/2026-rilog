@@ -45,7 +45,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
     private static final int CONCURRENT_REQUESTS = 8;
 
     @Autowired
-    private CommentAnchorService commentAnchorService;
+    private CommentAnchorCommandService commentAnchorCommandService;
 
     @Autowired
     private CommentAnchorRepository commentAnchorRepository;
@@ -72,7 +72,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
         PostScenario scenario = publicPost();
 
         // when
-        concurrently(CONCURRENT_REQUESTS, index -> commentAnchorService.createCommentAnchor(
+        concurrently(CONCURRENT_REQUESTS, index -> commentAnchorCommandService.createCommentAnchor(
                 scenario.post().getId(), scenario.writer().getId(), selectedCommand(index)
         ));
 
@@ -90,7 +90,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
         Long selectionId = selectionId(first.commentAnchorId());
 
         // when
-        concurrently(CONCURRENT_REQUESTS, index -> commentAnchorService.addCommentAnchor(
+        concurrently(CONCURRENT_REQUESTS, index -> commentAnchorCommandService.addCommentAnchor(
                 scenario.post().getId(), scenario.writer().getId(), selectionId,
                 new CommentAnchorAddCommand(CONTENT)
         ));
@@ -109,7 +109,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
         List<Long> commentIds = comments(scenario, CONCURRENT_REQUESTS);
 
         // when
-        concurrently(CONCURRENT_REQUESTS, index -> commentAnchorService.deleteCommentAnchor(
+        concurrently(CONCURRENT_REQUESTS, index -> commentAnchorCommandService.deleteCommentAnchor(
                 scenario.post().getId(), commentIds.get(index), scenario.writer().getId()
         ));
 
@@ -132,7 +132,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
                     commentAnchorRepository.findById(commentId).orElseThrow();
                     commentsLoaded.countDown();
                     await(commentsLoaded);
-                    commentAnchorService.deleteCommentAnchor(
+                    commentAnchorCommandService.deleteCommentAnchor(
                             scenario.post().getId(), commentId, scenario.writer().getId()
                     );
                 });
@@ -161,12 +161,12 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
         // when
         concurrently(CONCURRENT_REQUESTS * 2, index -> {
             if (index < CONCURRENT_REQUESTS) {
-                commentAnchorService.addCommentAnchor(
+                commentAnchorCommandService.addCommentAnchor(
                         scenario.post().getId(), scenario.writer().getId(), selectionId,
                         new CommentAnchorAddCommand(CONTENT)
                 );
             } else {
-                commentAnchorService.deleteCommentAnchor(
+                commentAnchorCommandService.deleteCommentAnchor(
                         scenario.post().getId(), commentIds.get(index - CONCURRENT_REQUESTS),
                         scenario.writer().getId()
                 );
@@ -229,7 +229,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
             }));
             try {
                 await(commentLoaded);
-                commentAnchorService.deleteCommentAnchor(
+                commentAnchorCommandService.deleteCommentAnchor(
                         scenario.post().getId(), commentId, scenario.writer().getId()
                 );
             } finally {
@@ -251,7 +251,7 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
 
         // when
         concurrently(CONCURRENT_REQUESTS, index -> transaction().execute(status -> {
-            CommentAnchorCreateResult created = commentAnchorService.createCommentAnchor(
+            CommentAnchorCreateResult created = commentAnchorCommandService.createCommentAnchor(
                     scenario.post().getId(), scenario.writer().getId(), selectedCommand(index)
             );
             if (index == 0) {
@@ -281,14 +281,14 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
     }
 
     private CommentAnchorCreateResult createComment(PostScenario scenario) {
-        return commentAnchorService.createCommentAnchor(
+        return commentAnchorCommandService.createCommentAnchor(
                 scenario.post().getId(), scenario.writer().getId(), selectedCommand(0)
         );
     }
 
     private List<Long> comments(PostScenario scenario, int count) {
         return IntStream.range(0, count)
-                .mapToObj(index -> commentAnchorService.createCommentAnchor(
+                .mapToObj(index -> commentAnchorCommandService.createCommentAnchor(
                         scenario.post().getId(), scenario.writer().getId(), selectedCommand(index)
                 ).commentAnchorId())
                 .toList();
@@ -370,4 +370,5 @@ class CommentAnchorCounterConcurrencyIntegrationTest extends ServiceSupport {
 
     private record CommentCounts(long stored, long active) {
     }
+
 }

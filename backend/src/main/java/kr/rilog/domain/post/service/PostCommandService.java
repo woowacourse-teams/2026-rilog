@@ -1,0 +1,229 @@
+package kr.rilog.domain.post.service;
+
+import kr.rilog.domain.blog.entity.Blog;
+import kr.rilog.domain.blog.entity.BlogMember;
+import kr.rilog.domain.blog.entity.enums.BlogMemberStatus;
+import kr.rilog.domain.blog.exception.BlogException;
+import kr.rilog.domain.blog.repository.BlogMemberRepository;
+import kr.rilog.domain.blog.repository.BlogRepository;
+import kr.rilog.domain.chapter.entity.Chapter;
+import kr.rilog.domain.chapter.exception.ChapterException;
+import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.comment.entity.vo.CommentAnchorSelections;
+import kr.rilog.domain.comment.repository.CommentAnchorSelectionRepository;
+import kr.rilog.domain.post.entity.Post;
+import kr.rilog.domain.post.entity.enums.PostStatus;
+import kr.rilog.domain.post.entity.vo.PostContent;
+import kr.rilog.domain.post.event.PostCountChangedEvent;
+import kr.rilog.domain.post.exception.PostException;
+import kr.rilog.domain.post.repository.PostRepository;
+import kr.rilog.domain.post.repository.PostViewCountRepository;
+import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
+import kr.rilog.domain.post.service.dto.command.PostUpdateCommand;
+import kr.rilog.domain.post.service.dto.result.PostPublishResult;
+import kr.rilog.domain.post.service.dto.result.PostUpdateResult;
+import kr.rilog.domain.upload.domain.vo.TagAssets;
+import kr.rilog.domain.upload.service.TagAssetsPublisher;
+import kr.rilog.domain.user.entity.User;
+import kr.rilog.domain.user.exception.UserException;
+import kr.rilog.domain.user.repository.UserRepository;
+import kr.rilog.domain.blog.entity.vo.Slug;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Optional;
+
+import static kr.rilog.domain.blog.exception.BlogErrorInformation.*;
+import static kr.rilog.domain.chapter.exception.ChapterErrorInformation.CHAPTER_NOT_FOUND;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_DELETE_FORBIDDEN;
+import static kr.rilog.domain.post.exception.PostErrorInformation.POST_NOT_FOUND;
+import static kr.rilog.domain.user.exception.UserErrorInformation.USER_NOT_FOUND;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class PostCommandService {
+
+    private final PostRepository postRepository;
+    private final BlogRepository blogRepository;
+    private final BlogMemberRepository blogMemberRepository;
+    private final UserRepository userRepository;
+    private final ChapterRepository chapterRepository;
+    private final TagAssetsPublisher tagAssetsPublisher;
+    private final CommentAnchorSelectionRepository selectionRepository;
+    private final PostViewCountRepository viewCountRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public PostPublishResult publish(PostSaveCommand command, Long requesterId) {
+        Blog publishingBlog = getBlog(command.slug());
+        User writer = getUser(requesterId);
+        Chapter chapter = getChapterIfPresent(command.chapterId(), publishingBlog);
+
+        Post post = publishingBlog.isColog()
+                ? publishToColog(command, publishingBlog, writer, chapter)
+                : publishToRilog(command, publishingBlog, writer, chapter);
+
+        Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
+        tagAssetsPublisher.attach(published.getTagAssets());
+        publishPostCountChangedEventIf(published.isIncludedInTotalCount());
+        return PostPublishResult.of(published, publishingBlog);
+    }
+
+    public PostPublishResult publishImported(PostSaveCommand command, Long targetUserId, Instant originalPublishedAt) {
+        Blog publishingBlog = getBlog(command.slug());
+        User writer = getUser(targetUserId);
+        LocalDateTime publishedAt = LocalDateTime.ofInstant(originalPublishedAt, ZoneId.systemDefault());
+
+        Post post = createImportedPost(publishingBlog, writer, command, publishedAt);
+
+        Post published = postRepository.save(post);
+        viewCountRepository.initialize(published.getId());
+        tagAssetsPublisher.attach(published.getTagAssets());
+
+        publishPostCountChangedEventIf(published.isIncludedInTotalCount());
+        return PostPublishResult.of(published, publishingBlog);
+    }
+
+    private Post createImportedPost(Blog publishingBlog, User writer, PostSaveCommand command, LocalDateTime publishedAt) {
+        if (!publishingBlog.isColog()) {
+            publishingBlog.validateIsOwner(writer);
+            return Post.createImportedToRilog(publishingBlog, writer, command.toDetail(), publishedAt);
+        }
+
+        blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(publishingBlog.getId(), writer.getId(), BlogMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BlogException(COLOG_POST_PUBLISH_FORBIDDEN));
+
+        return Post.createImportedToColog(publishingBlog, getRilog(writer), writer, command.toDetail(), publishedAt);
+    }
+
+    public PostUpdateResult update(PostUpdateCommand command, Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        post.validateWrittenBy(requesterId);
+
+        BlogMember ownBlogMember = getBlogMember(Slug.from(post.getOwnSlug()), requesterId);
+        BlogMember targetMember = getBlogMember(Slug.from(command.newSlug()), requesterId);
+        Blog targetBlog = ownBlogMember.transfer(targetMember);
+        Chapter chapter = getChapterIfPresent(command.chapterId(), targetBlog);
+
+        TagAssets previousTagAssets = post.getTagAssets();
+        PostContent previousContent = post.getContent();
+        boolean wasCounted = post.isIncludedInTotalCount();
+
+        post.update(command.toDetail(), targetBlog, chapter);
+
+        TagAssets updatedTagAssets = post.getTagAssets();
+        tagAssetsPublisher.synchronize(requesterId, previousTagAssets, updatedTagAssets);
+
+        CommentAnchorSelections selections = findActiveCommentAnchorSelections(postId);
+        selections.recalculate(previousContent, post.getContent());
+
+        publishPostCountChangedEventIf(wasCounted != post.isIncludedInTotalCount());
+        return PostUpdateResult.of(post, targetBlog);
+    }
+
+    public void deletePublishedPost(Long postId, Long requesterId) {
+        Post post = getPublishedPost(postId);
+        validateCanDeletePublishedPost(post, requesterId);
+        boolean wasCounted = post.isIncludedInTotalCount();
+        post.delete();
+        tagAssetsPublisher.detach(requesterId, post.getTagAssets());
+        publishPostCountChangedEventIf(wasCounted);
+    }
+
+    private void publishPostCountChangedEventIf(boolean countChanged) {
+        if (countChanged) {
+            eventPublisher.publishEvent(new PostCountChangedEvent());
+        }
+    }
+
+    private Post publishToRilog(PostSaveCommand command, Blog rilog, User writer, Chapter chapter) {
+        rilog.validateIsOwner(writer);
+        return Post.create(rilog, writer, command.toDetail(), chapter);
+    }
+
+    private Post publishToColog(PostSaveCommand command, Blog colog, User writer, Chapter chapter) {
+        validateCologMember(colog, writer);
+        Blog rilog = getRilog(writer);
+        return Post.create(colog, rilog, writer, command.toDetail(), chapter);
+    }
+
+    private void validateCologMember(Blog colog, User writer) {
+        boolean activeMember = blogMemberRepository.existsByBlogIdAndUserIdAndStatus(
+                colog.getId(),
+                writer.getId(),
+                BlogMemberStatus.ACTIVE
+        );
+        if (!activeMember) {
+            throw new BlogException(COLOG_POST_PUBLISH_FORBIDDEN);
+        }
+    }
+
+    private User getUser(Long requesterId) {
+        return userRepository.findById(requesterId)
+                .orElseThrow(() -> new UserException(USER_NOT_FOUND));
+    }
+
+    private Blog getBlog(String slug) {
+        return blogRepository.findBySlugAndDeletedAtIsNull(Slug.from(slug))
+                .orElseThrow(() -> new BlogException(BLOG_NOT_FOUND));
+    }
+
+    private Blog getRilog(User writer) {
+        return blogRepository.findRilogByOwnerId(writer.getId())
+                .orElseThrow(() -> new BlogException(RILOG_NOT_FOUND));
+    }
+
+    private BlogMember getBlogMember(Slug slug, Long memberId) {
+        return blogMemberRepository.findWithBlogBySlugAndUserId(slug, memberId)
+                .orElseThrow(() -> new BlogException(BLOG_MEMBER_DOESNT_NOT_BELONG));
+    }
+
+    private Chapter getChapterIfPresent(Long chapterId, Blog blog) {
+        if (chapterId == null) {
+            return null;
+        }
+
+        return chapterRepository.findByIdAndBlogIdAndDeletedAtIsNull(chapterId, blog.getId())
+                .orElseThrow(() -> new ChapterException(CHAPTER_NOT_FOUND));
+    }
+
+    private Post getPublishedPost(Long postId) {
+        return postRepository.findDetailByIdAndStatus(postId, PostStatus.PUBLISHED)
+                .orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+
+    private void validateCanDeletePublishedPost(Post post, Long requesterId) {
+        if (!canDeletePost(post, requesterId)) {
+            throw new PostException(POST_DELETE_FORBIDDEN);
+        }
+    }
+
+    private boolean canDeletePost(Post post, Long requesterId) {
+        return findActiveBlogMember(post.getOwnBlogId(), requesterId)
+                .map(member -> post.canBeDeletedBy(requesterId, member))
+                .orElse(false);
+    }
+
+    private Optional<BlogMember> findActiveBlogMember(Long blogId, Long requesterId) {
+        if (requesterId == null) {
+            return Optional.empty();
+        }
+
+        return blogMemberRepository.findByBlogIdAndUserIdAndStatusAndDeletedAtIsNull(
+                blogId,
+                requesterId,
+                BlogMemberStatus.ACTIVE
+        );
+    }
+
+    private CommentAnchorSelections findActiveCommentAnchorSelections(Long postId) {
+        return CommentAnchorSelections.from(selectionRepository.findAllActiveByPostId(postId));
+    }
+
+}

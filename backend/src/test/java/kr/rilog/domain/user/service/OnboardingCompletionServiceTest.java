@@ -22,12 +22,12 @@ class OnboardingCompletionServiceTest {
     @DisplayName("인증된 사용자 ID로 온보딩을 완료하고 Access/Refresh 발급을 조합한다")
     void completeUsesAuthenticatedUserIdAndIssuesTokenPair() {
         // given
-        UserService userService = mock(UserService.class);
+        UserCommandService userCommandService = mock(UserCommandService.class);
         AuthTokenPairIssuer authTokenPairIssuer = mock(AuthTokenPairIssuer.class);
         OnboardingCompleteCommand command = command();
         User completedUser = completedUser();
 
-        when(userService.completeOnboarding(1L, command))
+        when(userCommandService.completeOnboarding(1L, command))
                 .thenReturn(completedUser);
         when(authTokenPairIssuer.issue(completedUser))
                 .thenReturn(new AuthTokenPair(
@@ -36,7 +36,7 @@ class OnboardingCompletionServiceTest {
                 ));
 
         OnboardingCompletionService service = new OnboardingCompletionService(
-                userService,
+                userCommandService,
                 authTokenPairIssuer
         );
 

@@ -38,7 +38,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     @Autowired
     private ObservedPostViewStore store;
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -133,7 +133,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         // given
         long deletedPostId = publishWithView();
         long activePostId = publishWithView();
-        postService.deletePublishedPost(deletedPostId, scenario.author().getId());
+        postCommandService.deletePublishedPost(deletedPostId, scenario.author().getId());
 
         // when
         flushService.flushPendingViews();
@@ -193,7 +193,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         long postId = publishWithView();
         store.afterPreparation(() -> {
             store.reset();
-            postService.deletePublishedPost(postId, scenario.author().getId());
+            postCommandService.deletePublishedPost(postId, scenario.author().getId());
         });
 
         // when
@@ -212,7 +212,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
         long deletedPostId = publishWithView();
         long activePostId = publishWithView();
         long failedPostId = publishWithView();
-        postService.deletePublishedPost(deletedPostId, scenario.author().getId());
+        postCommandService.deletePublishedPost(deletedPostId, scenario.author().getId());
         jdbc.update("delete from post_view_count where post_id = ?", failedPostId);
 
         // when
@@ -280,7 +280,7 @@ class PostViewFlushIntegrationTest extends ServiceSupport {
     }
 
     private long publishWithView() {
-        long postId = postService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
+        long postId = postCommandService.publish(PostFixture.publicPostPublishCommand(scenario.blog().getSlug()),
                 scenario.author().getId()).postId();
         store.recordView(postId, ViewerIdentity.anonymous(UUID.randomUUID()));
         return postId;

@@ -7,7 +7,8 @@ import kr.rilog.domain.chapter.controller.apispec.ChapterApiSpec;
 import kr.rilog.domain.chapter.controller.dto.request.ChapterCreateRequest;
 import kr.rilog.domain.chapter.controller.dto.request.ChapterRenameRequest;
 import kr.rilog.domain.chapter.controller.dto.response.ChapterResponse;
-import kr.rilog.domain.chapter.service.ChapterService;
+import kr.rilog.domain.chapter.service.ChapterCommandService;
+import kr.rilog.domain.chapter.service.ChapterQueryService;
 import kr.rilog.domain.chapter.service.dto.result.ChapterResult;
 import kr.rilog.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChapterController implements ChapterApiSpec {
 
-    private final ChapterService chapterService;
+    private final ChapterCommandService chapterCommandService;
+
+    private final ChapterQueryService chapterQueryService;
 
     @AuthGuard
     @PostMapping("/blogs/{slug}/chapters")
@@ -39,14 +42,14 @@ public class ChapterController implements ChapterApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody ChapterCreateRequest request
     ) {
-        ChapterResult result = chapterService.create(slug, requesterId, request.toCommand());
+        ChapterResult result = chapterCommandService.create(slug, requesterId, request.toCommand());
         ChapterResponse data = ChapterResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "챕터를 생성했습니다.", data);
     }
 
     @GetMapping("/blogs/{slug}/chapters")
     public ApiResponse<List<ChapterResponse>> readAll(@PathVariable String slug) {
-        List<ChapterResponse> data = chapterService.readAll(slug).stream()
+        List<ChapterResponse> data = chapterQueryService.readAll(slug).stream()
                 .map(ChapterResponse::from)
                 .toList();
         return ApiResponse.response(HttpStatus.OK, "챕터 목록을 조회했습니다.", data);
@@ -60,7 +63,7 @@ public class ChapterController implements ChapterApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody ChapterRenameRequest request
     ) {
-        ChapterResult result = chapterService.rename(slug, chapterId, requesterId, request.toCommand());
+        ChapterResult result = chapterCommandService.rename(slug, chapterId, requesterId, request.toCommand());
         ChapterResponse data = ChapterResponse.from(result);
         return ApiResponse.response(HttpStatus.OK, "챕터 이름을 변경했습니다.", data);
     }
@@ -73,7 +76,7 @@ public class ChapterController implements ChapterApiSpec {
             @PathVariable Long chapterId,
             @LoginUserId Long requesterId
     ) {
-        chapterService.delete(slug, chapterId, requesterId);
+        chapterCommandService.delete(slug, chapterId, requesterId);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "챕터를 삭제했습니다.");
     }
 
