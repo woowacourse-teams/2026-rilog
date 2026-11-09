@@ -143,8 +143,6 @@ const COLOG_PROFILE: BlogPublicProfile = {
 	slug: 'rilog-team',
 	profileImageUrl: null,
 	coverImageUrl: null,
-	memberCount: 5,
-	postCount: 10,
 };
 
 describe('BlogHome', () => {
@@ -195,7 +193,7 @@ describe('BlogHome', () => {
 	it('RILOG에는 개인 settings와 시리즈·코로그 탐색, API 코로그 aside를 조립한다', () => {
 		render(
 			<BlogHome
-				profile={{ ...COLOG_PROFILE, type: 'RILOG', name: '파라디', slug: 'jetproc', memberCount: 1 }}
+				profile={{ ...COLOG_PROFILE, type: 'RILOG', name: '파라디', slug: 'jetproc' }}
 				filter={{ type: 'all' }}
 				initialIndexRequestFailed
 			/>,

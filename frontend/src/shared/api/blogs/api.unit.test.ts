@@ -68,8 +68,6 @@ describe('readBlogPublicProfile', () => {
 				coverImageUrl: 'https://example.com/coverImage.png',
 				serviceUrl: 'https://rilog.example.com',
 				githubUrl: 'https://github.com/rilog',
-				memberCount: 10,
-				postCount: 24,
 			},
 		};
 		const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));

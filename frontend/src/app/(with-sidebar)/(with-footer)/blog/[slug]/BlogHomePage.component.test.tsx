@@ -37,8 +37,6 @@ const READY_STATE: BlogHomeInitialState = {
 		slug: 'jetproc',
 		profileImageUrl: null,
 		coverImageUrl: null,
-		memberCount: 1,
-		postCount: 7,
 	},
 	filter: { type: 'all' },
 	isInitialIndexRequestFailed: false,
@@ -58,8 +56,6 @@ const PROFILE_RESPONSE = {
 		coverImageUrl: null,
 		serviceUrl: null,
 		githubUrl: null,
-		memberCount: 1,
-		postCount: 7,
 	},
 };
 

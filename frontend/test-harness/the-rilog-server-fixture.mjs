@@ -90,8 +90,6 @@ globalThis.fetch = async (input, init) => {
 			coverImageUrl: null,
 			serviceUrl: null,
 			githubUrl: null,
-			memberCount: 1,
-			postCount: 2,
 		});
 	}
 	if (url.pathname === '/v1/the-rilog') {
@@ -147,8 +145,6 @@ globalThis.fetch = async (input, init) => {
 			coverImageUrl: null,
 			serviceUrl: null,
 			githubUrl: null,
-			memberCount: 1,
-			postCount: 3,
 		});
 	}
 	if (url.pathname === '/v1/blogs/the_rilog/index') {

@@ -15,8 +15,6 @@ const COLOG_PROFILE_FIXTURE: BlogPublicProfile = {
 	coverImageUrl: '/images/frontend-lab-cover.png',
 	serviceUrl: 'https://frontend-lab.example.com',
 	githubUrl: 'https://github.com/frontend-lab',
-	memberCount: 5,
-	postCount: 10,
 };
 
 describe('BlogProfileHero', () => {
@@ -106,7 +104,6 @@ describe('BlogProfileHero', () => {
 					type: 'RILOG',
 					name: '파라디',
 					slug: 'jetproc',
-					memberCount: 1,
 				}}
 			/>,
 		);
