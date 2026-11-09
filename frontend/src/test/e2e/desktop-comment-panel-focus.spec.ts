@@ -53,6 +53,7 @@ const prepare = async (page: Page, width: number, selectionId?: number) => {
 	});
 	await renderDesktopCommentWorkspace(page, selectionId);
 	await expect(page.getByRole('article', { name: '게시글 본문' })).toContainText('80. Rilog');
+	await expect(page.getByRole('button', { name: '인용 “Rilog”의 댓글 1개 보기' }).first()).toBeAttached();
 	if (selectionId === undefined) await expect(entry(page)).toBeVisible();
 };
 const settle = (page: Page) =>
