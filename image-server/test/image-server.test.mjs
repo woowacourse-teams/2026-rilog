@@ -7,7 +7,8 @@ import sharp from 'sharp';
 import { createApp } from '../src/app.mjs';
 import { createPublicLookup, downloadImage, validateUrl } from '../src/download.mjs';
 import { compactImage, normalizeImage } from '../src/image.mjs';
-import { createCompactQueue, resolveCompactTargets } from '../src/compact.mjs';
+import { resolveCompactTargets } from '../src/compact.mjs';
+import { createJobQueue } from '../src/queue.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { sign } from '../src/auth.mjs';
 
@@ -414,8 +415,8 @@ test('compact API times out slow jobs and requests still waiting for them', asyn
   assert.equal((await api.compact(key)).status, 200);
 });
 
-test('compact queue runs jobs in order and rejects when the waiting list is full', async () => {
-  const run = createCompactQueue({ maxWaiting: 1 });
+test('job queue runs jobs in order and rejects when the waiting list is full', async () => {
+  const run = createJobQueue({ maxWaiting: 1 });
   const signal = new AbortController().signal;
   const order = [];
   let release;

@@ -3,7 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { ApiError, validateUrl, downloadImage } from './download.mjs';
 import { compactImage, normalizeImage } from './image.mjs';
 import { verifySignature } from './auth.mjs';
-import { createCompactQueue, resolveCompactTargets } from './compact.mjs';
+import { resolveCompactTargets } from './compact.mjs';
+import { createJobQueue } from './queue.mjs';
 
 export const IMPORT_PATH = '/api/images/import';
 export const COMPACT_PATH = '/api/images/compact';
@@ -59,7 +60,7 @@ export function createApp({
   const app = express();
   app.disable('x-powered-by');
   let active = false;
-  const runCompact = createCompactQueue({ maxWaiting: COMPACT_MAX_WAITING });
+  const runCompact = createJobQueue({ maxWaiting: COMPACT_MAX_WAITING });
 
   app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
   // Spring은 sourceUrl을 4,096자(문자 수)까지 받는다. 비ASCII는 문자당 최대 3바이트, JSON 이스케이프는 6바이트라
