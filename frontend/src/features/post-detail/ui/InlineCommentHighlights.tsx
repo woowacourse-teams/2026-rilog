@@ -36,6 +36,8 @@ export default function InlineCommentHighlights({
 		let isMounted = true;
 		let activeAnchor: RenderedAnchor | null = null;
 		let renderedBlocksByRoot = new Map<HTMLElement, RenderedBlock>();
+		let lastDrawnSize: { width: number; height: number } | null = null;
+		let isFirstResizeNotification = true;
 
 		const clearActiveAnchor = () => {
 			activeAnchor?.lines.forEach((line) => delete line.dataset.inlineCommentActive);
@@ -57,6 +59,8 @@ export default function InlineCommentHighlights({
 		};
 
 		const drawHighlights = () => {
+			const { width, height } = article.getBoundingClientRect();
+			lastDrawnSize = { width, height };
 			const preparedLayers = prepareHighlightLayers({
 				article,
 				blocks,
@@ -116,12 +120,23 @@ export default function InlineCommentHighlights({
 		article.addEventListener('click', handleClick);
 		window.addEventListener('resize', drawHighlights);
 
-		const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(drawHighlights);
+		const handleObservedResize = () => {
+			if (isFirstResizeNotification) {
+				isFirstResizeNotification = false;
+				const { width, height } = article.getBoundingClientRect();
+				if (lastDrawnSize?.width === width && lastDrawnSize.height === height) return;
+			}
+			drawHighlights();
+		};
+		const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(handleObservedResize);
 		resizeObserver?.observe(article);
 
-		void article.ownerDocument.fonts?.ready.then(() => {
-			if (isMounted) drawHighlights();
-		});
+		const fonts = article.ownerDocument.fonts;
+		if (fonts && fonts.status !== 'loaded') {
+			void fonts.ready.then(() => {
+				if (isMounted) drawHighlights();
+			});
+		}
 
 		return () => {
 			isMounted = false;
