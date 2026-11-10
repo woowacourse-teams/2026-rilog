@@ -20,22 +20,22 @@ class LogDecayTrendingScorePolicyTest {
     @Test
     @DisplayName("외부 댓글마다 조회수의 5%를 더하되 20개부터는 100%까지만 가산한다")
     void addsFivePercentPerCommentWithOneHundredPercentCap() {
-        assertThat(score(100, 0, NOW)).isEqualByComparingTo("100");
-        assertThat(score(100, 1, NOW)).isEqualByComparingTo("105");
-        assertThat(score(100, 19, NOW)).isEqualByComparingTo("195");
-        assertThat(score(100, 20, NOW)).isEqualByComparingTo("200");
-        assertThat(score(100, Long.MAX_VALUE, NOW)).isEqualByComparingTo("200");
+        assertThat(score(100, 0, NOW)).isEqualByComparingTo("200");
+        assertThat(score(100, 1, NOW)).isEqualByComparingTo("210");
+        assertThat(score(100, 19, NOW)).isEqualByComparingTo("390");
+        assertThat(score(100, 20, NOW)).isEqualByComparingTo("400");
+        assertThat(score(100, Long.MAX_VALUE, NOW)).isEqualByComparingTo("400");
         assertThat(score(0, 20, NOW)).isZero();
     }
 
     @ParameterizedTest
     @CsvSource({
-            "TECH, 0, 150",
-            "TECH, 9, 195",
-            "TECH, 10, 200",
-            "TECH, 11, 200",
-            "TECH, 9223372036854775807, 200",
-            "RETROSPECT, 0, 100"
+            "TECH, 0, 300",
+            "TECH, 9, 390",
+            "TECH, 10, 400",
+            "TECH, 11, 400",
+            "TECH, 9223372036854775807, 400",
+            "RETROSPECT, 0, 200"
     })
     @DisplayName("기술 글에만 댓글 10개분을 더하고 가산율을 최대 100%로 제한한다")
     void appliesTechCreditBeforeCap(Category category, long comments, String expected) {
@@ -45,10 +45,10 @@ class LogDecayTrendingScorePolicyTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0, 100",
-            "24, 100",
-            "168, 100",
-            "180, 90",
+            "0, 200",
+            "24, 200",
+            "168, 200",
+            "180, 140",
             "192, 80",
             "264, 61.717443",
             "336, 43.434885",

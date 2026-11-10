@@ -8,8 +8,9 @@ import java.time.LocalDateTime;
 
 public class LogDecayTrendingScorePolicy implements TrendingScorePolicy {
 
+    private static final double FIRST_WEEK_WEIGHT = 2.0;
     private static final double EARLY_WEIGHT = 0.8;
-    private static final int FULL_WEIGHT_END_DAYS = 7;
+    private static final int FIRST_WEEK_END_DAYS = 7;
     private static final int EARLY_DECAY_END_DAYS = 8;
     private static final int LATE_DECAY_START_DAYS = 14;
     private static final double LATE_DECAY_HALF_LIFE_DAYS = 7;
@@ -41,12 +42,12 @@ public class LogDecayTrendingScorePolicy implements TrendingScorePolicy {
     }
 
     private double timeWeight(double elapsedDays) {
-        if (elapsedDays <= FULL_WEIGHT_END_DAYS) {
-            return 1;
+        if (elapsedDays <= FIRST_WEEK_END_DAYS) {
+            return FIRST_WEEK_WEIGHT;
         }
         if (elapsedDays <= EARLY_DECAY_END_DAYS) {
-            double progress = (elapsedDays - FULL_WEIGHT_END_DAYS) / (EARLY_DECAY_END_DAYS - FULL_WEIGHT_END_DAYS);
-            return 1 - (1 - EARLY_WEIGHT) * progress;
+            double progress = (elapsedDays - FIRST_WEEK_END_DAYS) / (EARLY_DECAY_END_DAYS - FIRST_WEEK_END_DAYS);
+            return FIRST_WEEK_WEIGHT - (FIRST_WEEK_WEIGHT - EARLY_WEIGHT) * progress;
         }
         if (elapsedDays <= LATE_DECAY_START_DAYS) {
             double progress = (elapsedDays - EARLY_DECAY_END_DAYS) / (LATE_DECAY_START_DAYS - EARLY_DECAY_END_DAYS);
