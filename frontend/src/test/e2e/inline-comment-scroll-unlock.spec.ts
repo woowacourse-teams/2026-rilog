@@ -223,29 +223,53 @@ const dismissAndCheckScroll = async (page: Page, browserName: string) => {
 	if (browserName === 'chromium') {
 		await scrollToTopAndWait(page, browserName);
 		const session = await page.context().newCDPSession(page);
-		await session.send('Emulation.setTouchEmulationEnabled', { enabled: true });
-		await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 190, y: 650 }] });
-		for (let step = 1; step <= 6; step += 1) {
-			await session.send('Input.dispatchTouchEvent', {
-				type: 'touchMove',
-				touchPoints: [{ x: 190, y: 650 - step * 50 }],
-			});
-			await page.evaluate(() => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve())));
+		let gestureFailed = false;
+		try {
+			await session.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+			await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 190, y: 650 }] });
+			for (let step = 1; step <= 6; step += 1) {
+				await session.send('Input.dispatchTouchEvent', {
+					type: 'touchMove',
+					touchPoints: [{ x: 190, y: 650 - step * 50 }],
+				});
+				await page.evaluate(() => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve())));
+			}
+			await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+			let lastScrollY = -1;
+			let lastMovementAt = performance.now();
+			// Observe actual movement and 200ms of quiet before later response/wheel checks.
+			// A missing scrollend must not stall the test or count as successful scrolling.
+			await expect
+				.poll(
+					async () => {
+						const scrollY = await page.evaluate(() => window.scrollY);
+						if (scrollY !== lastScrollY) {
+							lastScrollY = scrollY;
+							lastMovementAt = performance.now();
+						}
+						return { scrollY, hasMoved: scrollY > 100, hasSettled: performance.now() - lastMovementAt >= 200 };
+					},
+					{
+						timeout: 5000,
+						intervals: [50],
+						message: `터치 스크롤이 이동한 뒤 멈춰야 합니다. ${JSON.stringify(diagnostics)}`,
+					},
+				)
+				.toMatchObject({ hasMoved: true, hasSettled: true });
+		} catch (error) {
+			gestureFailed = true;
+			throw error;
+		} finally {
+			try {
+				try {
+					await session.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+				} finally {
+					await session.detach();
+				}
+			} catch (error) {
+				if (!gestureFailed) throw error;
+			}
 		}
-		// Finish compositor momentum before this helper returns to later response/wheel checks.
-		const touchSettled = page.evaluate(
-			() =>
-				new Promise<void>((resolve) => {
-					document.addEventListener('scrollend', () => resolve(), { once: true });
-				}),
-		);
-		await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-		await touchSettled;
-		await session.send('Emulation.setTouchEmulationEnabled', { enabled: false });
-		await session.detach();
-		await expect
-			.poll(() => page.evaluate(() => window.scrollY), { message: JSON.stringify(diagnostics) })
-			.toBeGreaterThan(100);
 	}
 };
 
