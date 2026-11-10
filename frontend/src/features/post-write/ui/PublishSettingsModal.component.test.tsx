@@ -203,6 +203,17 @@ describe('PublishSettingsModal', () => {
 		expect(screen.getByRole('button', { name: '다시 시도' })).toHaveAttribute('aria-busy', 'true');
 	});
 
+	it('회고를 선택한 상태에서 발행하면 모달의 카테고리 표시를 유지한다', async () => {
+		const user = userEvent.setup();
+		const onPublish = vi.fn();
+		renderModal({ settings: { ...DEFAULT_PROPS.settings, category: 'RETROSPECT' }, onPublish });
+
+		await user.click(screen.getByRole('button', { name: '발행' }));
+
+		expect(onPublish).toHaveBeenCalledWith('RILOG');
+		expect(screen.getByRole('combobox', { name: '카테고리' })).toHaveDisplayValue('회고');
+	});
+
 	it('카테고리를 select에서 변경한다', async () => {
 		const user = userEvent.setup();
 		const handleCategoryChange = vi.fn();

@@ -112,7 +112,7 @@ export default function PublishSettingsModal({
 				? '소속된 Colog가 없습니다.'
 				: undefined;
 
-	// React form action으로 제출을 처리하고 필수 설정의 focus 처리 후 실제 발행 요청을 부모에 위임
+	// 제출 후 폼이 자동 초기화되지 않도록 기본 동작을 막고 발행 요청을 부모에 위임
 	const handleSubmit = () => {
 		if (isCreatingSeries) {
 			return;
@@ -161,7 +161,14 @@ export default function PublishSettingsModal({
 			cancelAction={{}}
 			primaryAction={{ label: '발행', type: 'submit', form: PUBLISH_FORM_ID }}
 		>
-			<form id={PUBLISH_FORM_ID} className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1" action={handleSubmit}>
+			<form
+				id={PUBLISH_FORM_ID}
+				className="-mx-1 max-h-[min(60dvh,38rem)] overflow-y-auto p-1"
+				onSubmit={(event) => {
+					event.preventDefault();
+					handleSubmit();
+				}}
+			>
 				<div className="grid gap-8 md:grid-cols-2 md:gap-10">
 					<section>
 						<Field
