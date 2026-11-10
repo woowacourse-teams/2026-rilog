@@ -47,7 +47,7 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
             equalScoreIds.add(post(rilog, author, NOW).getId());
         }
         Post newer = post(rilog, author, NOW.minusHours(1));
-        Post older = post(rilog, author, NOW.minusDays(7));
+        Post older = post(rilog, author, NOW.minusDays(8));
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, ?)", newer.getId(), 100L);
         jdbc.update("insert into post_view_count (post_id, view_count) values (?, ?)", older.getId(), 100L);
 
@@ -59,7 +59,7 @@ class TrendingRefreshIntegrationTest extends ServiceSupport {
         assertThat(jdbc.queryForObject("select min(calculated_at) from trending_post", LocalDateTime.class))
                 .isEqualTo(NOW);
         assertThat(jdbc.queryForObject("select score from trending_post where post_id = ?", BigDecimal.class, older.getId()))
-                .isEqualByComparingTo("50");
+                .isEqualByComparingTo("120");
 
         TrendingRefreshService differentPolicy = new TrendingRefreshService(candidates,
                 (candidate, at) -> candidate.postId().equals(older.getId()) ? BigDecimal.TEN : BigDecimal.ZERO,
