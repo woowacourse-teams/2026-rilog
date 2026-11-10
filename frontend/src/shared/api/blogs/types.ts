@@ -35,8 +35,6 @@ export interface BlogPublicProfileResponse {
 	coverImageUrl: string | null;
 	serviceUrl: string | null;
 	githubUrl: string | null;
-	memberCount: number;
-	postCount: number;
 }
 
 export interface BlogPublicProfileRequest {

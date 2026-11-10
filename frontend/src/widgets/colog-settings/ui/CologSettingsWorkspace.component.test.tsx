@@ -84,8 +84,6 @@ const PROFILE_RESPONSE: BlogPublicProfileResponse = {
 	coverImageUrl: 'https://example.com/cover.png',
 	serviceUrl: 'https://rilog.example.com',
 	githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
-	memberCount: 3,
-	postCount: 12,
 };
 
 describe('CologSettingsWorkspace', () => {

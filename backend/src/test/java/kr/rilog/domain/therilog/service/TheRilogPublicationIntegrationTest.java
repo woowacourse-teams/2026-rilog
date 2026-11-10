@@ -5,6 +5,7 @@ import kr.rilog.domain.blog.repository.BlogRepository;
 import kr.rilog.domain.chapter.entity.Chapter;
 import kr.rilog.domain.chapter.exception.ChapterException;
 import kr.rilog.domain.chapter.repository.ChapterRepository;
+import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostType;
 import kr.rilog.domain.post.entity.vo.PostDetail;
 import kr.rilog.domain.post.entity.vo.TheRilogPostMetadata;
@@ -14,20 +15,15 @@ import kr.rilog.domain.therilog.entity.vo.TheRilogPublicationArticle;
 import kr.rilog.domain.user.repository.UserRepository;
 import kr.rilog.support.ServiceSupport;
 import kr.rilog.support.fixure.UserFixture;
+import kr.rilog.support.testdouble.MutableClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 
-import java.time.LocalDate;
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -42,11 +38,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-@Import(TheRilogPublicationIntegrationTest.FixedClockConfiguration.class)
 class TheRilogPublicationIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private TheRilogService theRilogService;
+    private TheRilogCommandService theRilogCommandService;
 
     @Autowired
     private PostRepository postRepository;
@@ -63,11 +58,14 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private MutableClock clock;
 
     private Chapter enterprise;
 
     @BeforeEach
     void prepareOfficialBlog() {
+        clock.fix(Instant.parse("2026-10-14T20:00:00Z"));
         var owner = userRepository.saveAndFlush(UserFixture.completedWithNicknameAndSlug("공식 계정", "the_rilog"));
         var blog = blogRepository.saveAndFlush(Blog.createRilog(owner));
         chapterRepository.saveAndFlush(Chapter.create(blog, "news", 0));
@@ -76,21 +74,26 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("완성된 목요일 발행분은 공식 계정으로 여섯 게시글과 조회수를 함께 저장한다.")
+    @DisplayName("목요일 발행분은 여섯 게시글의 발행 시각과 각 초기 조회수를 함께 저장한다.")
     void commitsCompletePublication() {
+        // given
         TheRilogPublication publication = thursdayPublication();
 
-        var published = theRilogService.publishPublication(publication);
+        // when
+        var published = theRilogCommandService.publishPublication(publication);
 
-        var savedIds = postRepository.findAll().stream().map(post -> post.getId()).toList();
-        var main = theRilogService.readTheRilog();
+        // then
+        List<Post> saved = postRepository.findAll();
+        var savedIds = saved.stream().map(Post::getId).toList();
+        var initializedIds = jdbc.queryForList("select post_id from post_view_count where view_count = 0", Long.class);
         assertSoftly(softly -> {
             softly.assertThat(published.stream().map(article -> article.postId()).toList())
                     .containsExactlyInAnyOrderElementsOf(savedIds).hasSize(6);
-            softly.assertThat(jdbc.queryForObject("select count(*) from post_view_count", Long.class)).isEqualTo(6L);
-            softly.assertThat(main.news().headlines()).hasSize(8);
-            softly.assertThat(main.spotlights()).hasSize(5);
-            softly.assertThat(main.date()).isEqualTo(publication.date());
+            softly.assertThat(initializedIds).containsExactlyInAnyOrderElementsOf(savedIds);
+            softly.assertThat(saved).extracting(post -> post.getPublishedAt().toLocalDate()).containsOnly(publication.date());
+            softly.assertThat(saved).filteredOn(post -> post.getPostType() == PostType.DAILY_HEADLINES)
+                    .singleElement().satisfies(news -> assertThat(news.getContent().getContent())
+                            .isEqualTo(publication.articles().getFirst().detail().content()));
         });
     }
 
@@ -100,7 +103,7 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
         chapterRepository.delete(enterprise);
         TheRilogPublication publication = thursdayPublication();
 
-        assertThatThrownBy(() -> theRilogService.publishPublication(publication))
+        assertThatThrownBy(() -> theRilogCommandService.publishPublication(publication))
                 .isInstanceOf(ChapterException.class)
                 .hasMessage(CHAPTER_NOT_FOUND.getMessage());
 
@@ -122,15 +125,5 @@ class TheRilogPublicationIntegrationTest extends ServiceSupport {
     private TheRilogPublicationArticle spotlight(String rowId, PostType type) {
         return new TheRilogPublicationArticle(rowId, new PostDetail("기술 요약", content(paragraph("본문")).getContent(), TECH, PUBLIC, null),
                 new TheRilogPostMetadata(type, "핵심 요약", "출처", null));
-    }
-
-    @TestConfiguration
-    static class FixedClockConfiguration {
-
-        @Bean
-        @Primary
-        Clock publicationClock() {
-            return Clock.fixed(Instant.parse("2026-10-14T20:00:00Z"), ZoneOffset.UTC);
-        }
     }
 }

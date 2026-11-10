@@ -16,8 +16,6 @@ describe('mapRilogProfileSettingsResponse', () => {
 			coverImageUrl: null,
 			serviceUrl: 'https://www.rilog.kr',
 			githubUrl: 'https://github.com/rilog',
-			memberCount: 1,
-			postCount: 3,
 		};
 
 		expect(mapRilogProfileSettingsResponse(response)).toEqual({
@@ -42,8 +40,6 @@ describe('mapRilogProfileSettingsResponse', () => {
 			coverImageUrl: null,
 			serviceUrl: null,
 			githubUrl: null,
-			memberCount: 1,
-			postCount: 0,
 		};
 
 		expect(mapRilogProfileSettingsResponse(response)).toEqual({

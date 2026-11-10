@@ -1,5 +1,6 @@
 package kr.rilog.domain.post.trending;
 
+import kr.rilog.domain.post.entity.enums.Category;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -15,7 +16,7 @@ public class TrendingCandidateRepository {
 
     public List<TrendingCandidate> findCandidates(LocalDateTime from, LocalDateTime until) {
         return jdbcTemplate.query("""
-                SELECT p.id, p.published_at, COALESCE(v.view_count, 0) AS view_count,
+                SELECT p.id, p.published_at, p.category, COALESCE(v.view_count, 0) AS view_count,
                     (SELECT COUNT(*) FROM comment_anchor a
                      JOIN comment_anchor_selection s ON s.id = a.comment_anchor_selection_id
                      JOIN users writer ON writer.id = a.user_id AND writer.deleted_at IS NULL
@@ -30,11 +31,15 @@ public class TrendingCandidateRepository {
                 LEFT JOIN post_view_count v ON v.post_id = p.id
                 WHERE p.status = 'PUBLISHED' AND p.visibility = 'PUBLIC' AND p.post_type = 'STANDARD'
                   AND p.deleted_at IS NULL AND p.published_at >= ? AND p.published_at <= ?
-                """, (rs, rowNum) -> new TrendingCandidate(
-                rs.getLong("id"),
-                rs.getTimestamp("published_at").toLocalDateTime(),
-                rs.getLong("view_count"),
-                rs.getLong("external_comment_count")
-        ), from, until);
+                """, (rs, rowNum) -> {
+            String category = rs.getString("category");
+            return new TrendingCandidate(
+                    rs.getLong("id"),
+                    rs.getTimestamp("published_at").toLocalDateTime(),
+                    rs.getLong("view_count"),
+                    rs.getLong("external_comment_count"),
+                    category == null ? null : Category.valueOf(category)
+            );
+        }, from, until);
     }
 }

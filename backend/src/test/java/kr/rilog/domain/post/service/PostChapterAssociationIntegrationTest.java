@@ -34,10 +34,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PostChapterAssociationIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
+    @Autowired
+    private PostQueryService postQueryService;
 
     @Autowired
-    private DraftService draftService;
+    private DraftCommandService draftCommandService;
 
     @Autowired
     private UserRepository userRepository;
@@ -65,7 +67,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Chapter chapter = saveChapter(scenario.blog(), "발행 챕터", 0);
 
         // when
-        Long postId = postService.publish(
+        Long postId = postCommandService.publish(
                 publishCommand(scenario.blog().getSlug(), chapter.getId()),
                 scenario.writer().getId()
         ).postId();
@@ -73,79 +75,6 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         // then
         Post savedPost = postRepository.findDetailById(postId).orElseThrow();
         assertThat(savedPost.getChapter().getId()).isEqualTo(chapter.getId());
-    }
-
-    @Test
-    @DisplayName("게시글을 발행할 때 챕터를 생략하면 미분류 게시글로 저장된다.")
-    void publishWithoutChapterPersistsUnclassifiedPost() {
-        // given
-        PublishingScenario scenario = createRilogScenario(2L, "publish_unclassified");
-
-        // when
-        Long postId = postService.publish(
-                publishCommand(scenario.blog().getSlug(), null),
-                scenario.writer().getId()
-        ).postId();
-
-        // then
-        Post savedPost = postRepository.findDetailById(postId).orElseThrow();
-        assertThat(savedPost.getChapter()).isNull();
-    }
-
-    @Test
-    @DisplayName("다른 블로그의 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
-    void publishRejectsChapterOfOtherBlogAndPreservesPosts() {
-        // given
-        PublishingScenario scenario = createRilogScenario(3L, "publish_target");
-        PublishingScenario other = createRilogScenario(4L, "publish_other");
-        Chapter otherChapter = saveChapter(other.blog(), "다른 블로그 챕터", 0);
-
-        // when & then
-        assertThatThrownBy(() -> postService.publish(
-                publishCommand(scenario.blog().getSlug(), otherChapter.getId()),
-                scenario.writer().getId()
-        ))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("삭제된 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
-    void publishRejectsDeletedChapterAndPreservesPosts() {
-        // given
-        PublishingScenario scenario = createRilogScenario(5L, "publish_deleted");
-        Chapter deletedChapter = saveChapter(scenario.blog(), "삭제된 챕터", 0);
-        deletedChapter.delete();
-        chapterRepository.saveAndFlush(deletedChapter);
-
-        // when & then
-        assertThatThrownBy(() -> postService.publish(
-                publishCommand(scenario.blog().getSlug(), deletedChapter.getId()),
-                scenario.writer().getId()
-        ))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 챕터로 게시글을 발행하면 예외가 발생하고 게시글이 저장되지 않는다.")
-    void publishRejectsMissingChapterAndPreservesPosts() {
-        // given
-        PublishingScenario scenario = createRilogScenario(6L, "publish_missing");
-
-        // when & then
-        assertThatThrownBy(() -> postService.publish(
-                publishCommand(scenario.blog().getSlug(), Long.MAX_VALUE),
-                scenario.writer().getId()
-        ))
-                .isInstanceOf(ChapterException.class)
-                .hasMessage(CHAPTER_NOT_FOUND.getMessage());
-
-        assertThat(postRepository.findAll()).isEmpty();
     }
 
     @Test
@@ -157,7 +86,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post draft = saveDraft(scenario);
 
         // when
-        draftService.publishDraft(
+        draftCommandService.publishDraft(
                 draftPublishCommand(scenario.blog().getSlug(), chapter.getId()),
                 draft.getId(),
                 scenario.writer().getId()
@@ -169,25 +98,6 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("초안을 발행할 때 챕터를 생략하면 미분류 게시글로 저장된다.")
-    void publishDraftWithoutChapterPersistsUnclassifiedPost() {
-        // given
-        PublishingScenario scenario = createRilogScenario(8L, "draft_unclassified");
-        Post draft = saveDraft(scenario);
-
-        // when
-        draftService.publishDraft(
-                draftPublishCommand(scenario.blog().getSlug(), null),
-                draft.getId(),
-                scenario.writer().getId()
-        );
-
-        // then
-        Post publishedPost = postRepository.findDetailById(draft.getId()).orElseThrow();
-        assertThat(publishedPost.getChapter()).isNull();
-    }
-
-    @Test
     @DisplayName("존재하지 않는 챕터로 초안을 발행하면 예외가 발생하고 초안 상태가 유지된다.")
     void publishDraftRejectsMissingChapterAndPreservesDraft() {
         // given
@@ -195,7 +105,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post draft = saveDraft(scenario);
 
         // when & then
-        assertThatThrownBy(() -> draftService.publishDraft(
+        assertThatThrownBy(() -> draftCommandService.publishDraft(
                 draftPublishCommand(scenario.blog().getSlug(), Long.MAX_VALUE),
                 draft.getId(),
                 scenario.writer().getId()
@@ -216,7 +126,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(scenario.blog().getSlug(), chapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -237,7 +147,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, previousChapter);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(scenario.blog().getSlug(), targetChapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -257,7 +167,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, chapter);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(scenario.blog().getSlug(), null),
                 post.getId(),
                 scenario.writer().getId()
@@ -278,7 +188,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario);
 
         // when
-        postService.update(
+        postCommandService.update(
                 updateCommand(targetColog.getSlug(), targetChapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -299,7 +209,7 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
         Post post = savePublishedPost(scenario, sourceChapter);
 
         // when & then
-        assertThatThrownBy(() -> postService.update(
+        assertThatThrownBy(() -> postCommandService.update(
                 updateCommand(targetColog.getSlug(), sourceChapter.getId()),
                 post.getId(),
                 scenario.writer().getId()
@@ -312,40 +222,22 @@ class PostChapterAssociationIntegrationTest extends ServiceSupport {
     }
 
     @Test
-    @DisplayName("챕터에 속한 게시글을 상세 조회하면 챕터 전체 정보를 반환한다.")
-    void readPostReturnsChapter() {
+    @DisplayName("게시글 상세 조회는 저장된 챕터 연결을 반환한다.")
+    void readPostLoadsChapterAssociation() {
         // given
         PublishingScenario scenario = createRilogScenario(14L, "read_chapter");
         Chapter chapter = saveChapter(scenario.blog(), "조회 챕터", 2);
         Post post = savePublishedPost(scenario, chapter);
 
         // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(
+        PostDetailResponse response = postQueryService.readPostDetailByCanonicalPath(
                 scenario.blog().getSlug(),
                 post.getId(),
                 scenario.writer().getId()
         );
 
         // then
-        assertThat(response.chapter()).isEqualTo(new kr.rilog.domain.chapter.controller.dto.response.ChapterResponse(
-                chapter.getId(),
-                chapter.getName(),
-                chapter.getOrder()
-        ));
-    }
-
-    @Test
-    @DisplayName("미분류 게시글을 상세 조회하면 챕터를 null로 반환한다.")
-    void readPostReturnsNullChapterForUnclassifiedPost() {
-        // given
-        PublishingScenario scenario = createRilogScenario(15L, "read_unclassified");
-        Post post = savePublishedPost(scenario);
-
-        // when
-        PostDetailResponse response = postService.readPostDetailByCanonicalPath(scenario.blog().getSlug(), post.getId(), null);
-
-        // then
-        assertThat(response.chapter()).isNull();
+        assertThat(response.chapter().chapterId()).isEqualTo(chapter.getId());
     }
 
     private PublishingScenario createRilogScenario(long githubId, String slug) {

@@ -25,7 +25,7 @@ public class TheRilogPublicationService {
 
     private final TheRilogSheetService sheetService;
     private final TheRilogBlockNoteConverter converter;
-    private final TheRilogService theRilogService;
+    private final TheRilogCommandService theRilogCommandService;
 
     public List<TheRilogPublishedArticle> publishDueContent(Instant now) {
         LocalDate date = now.atZone(SEOUL).toLocalDate();
@@ -39,7 +39,7 @@ public class TheRilogPublicationService {
         var articles = rows.stream().map(row -> row.toArticle(converter.convert(row.content()))).toList();
         TheRilogPublication publication = TheRilogPublication.of(date, articles);
         warnIfCountsDiffer(publication);
-        List<TheRilogPublishedArticle> published = theRilogService.publishPublication(publication);
+        List<TheRilogPublishedArticle> published = theRilogCommandService.publishPublication(publication);
         log.info("더 리로그 발행분의 DB 저장을 완료했습니다. date={}, articles={}", date, published);
         completePublication(published);
         return published;

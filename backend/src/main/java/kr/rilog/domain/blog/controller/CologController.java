@@ -11,7 +11,8 @@ import kr.rilog.domain.blog.controller.dto.response.BlogMemberResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologCreateResponse;
 import kr.rilog.domain.blog.controller.dto.response.CologMemberInviteResponse;
 import kr.rilog.domain.blog.controller.dto.response.MyCologResponse;
-import kr.rilog.domain.blog.service.CologService;
+import kr.rilog.domain.blog.service.CologCommandService;
+import kr.rilog.domain.blog.service.CologQueryService;
 import kr.rilog.domain.blog.service.dto.result.BlogMemberResult;
 import kr.rilog.domain.blog.service.dto.result.CologCreateResult;
 import kr.rilog.domain.blog.service.dto.result.CologMemberInviteResult;
@@ -27,7 +28,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CologController implements CologApiSpec {
 
-    private final CologService cologService;
+    private final CologCommandService cologCommandService;
+
+    private final CologQueryService cologQueryService;
 
     @AuthGuard
     @PostMapping("/cologs")
@@ -36,7 +39,7 @@ public class CologController implements CologApiSpec {
             @LoginUserId Long requesterId,
             @Valid @RequestBody CologCreateRequest request
     ) {
-        CologCreateResult result = cologService.create(requesterId, request.toCommand());
+        CologCreateResult result = cologCommandService.create(requesterId, request.toCommand());
         CologCreateResponse data = CologCreateResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "팀 블로그가 생성되었습니다.", data);
     }
@@ -49,7 +52,7 @@ public class CologController implements CologApiSpec {
             @PathVariable("slug") String slug,
             @Valid @RequestBody CologMemberInviteRequest request
     ) {
-        CologMemberInviteResult result = cologService.inviteMember(requesterId, slug, request.toCommand());
+        CologMemberInviteResult result = cologCommandService.inviteMember(requesterId, slug, request.toCommand());
         CologMemberInviteResponse data = CologMemberInviteResponse.from(result);
         return ApiResponse.response(HttpStatus.CREATED, "팀 멤버가 초대되었습니다.", data);
     }
@@ -60,7 +63,7 @@ public class CologController implements CologApiSpec {
             @LoginUserId Long requesterId,
             @PathVariable("slug") String slug
     ) {
-        cologService.deleteColog(requesterId, slug);
+        cologCommandService.deleteColog(requesterId, slug);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 블로그를 삭제했습니다.");
     }
 
@@ -70,7 +73,7 @@ public class CologController implements CologApiSpec {
             @LoginUserId Long requesterId,
             @PathVariable("slug") String slug
     ) {
-        cologService.leaveColog(requesterId, slug);
+        cologCommandService.leaveColog(requesterId, slug);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 블로그에서 탈퇴했습니다.");
     }
 
@@ -81,7 +84,7 @@ public class CologController implements CologApiSpec {
             @PathVariable("slug") String slug,
             @PathVariable("memberId") Long memberId
     ) {
-        cologService.removeMember(requesterId, slug, memberId);
+        cologCommandService.removeMember(requesterId, slug, memberId);
         return ApiResponse.response(HttpStatus.NO_CONTENT, "팀 멤버를 내보냈습니다.");
     }
 
@@ -93,13 +96,13 @@ public class CologController implements CologApiSpec {
             @PathVariable("memberId") Long memberId,
             @Valid @RequestBody CologMemberUpdateRequest request
     ) {
-        cologService.updateMember(requesterId, slug, memberId, request.toCommand());
+        cologCommandService.updateMember(requesterId, slug, memberId, request.toCommand());
         return ApiResponse.response(HttpStatus.OK, "팀 멤버 정보를 수정했습니다.");
     }
 
     @GetMapping("/cologs/{slug}/members")
     public ApiResponse<List<BlogMemberResponse>> getCologMembers(@PathVariable("slug") String slug) {
-        List<BlogMemberResult> results = cologService.getCologMembers(slug);
+        List<BlogMemberResult> results = cologQueryService.getCologMembers(slug);
         List<BlogMemberResponse> data = results.stream()
                 .map(BlogMemberResponse::from)
                 .toList();
@@ -110,7 +113,7 @@ public class CologController implements CologApiSpec {
     @AuthGuard
     @GetMapping("/users/me/cologs/overview")
     public ApiResponse<List<MyCologResponse>> getMyCologsOverview(@LoginUserId Long requesterId) {
-        List<MyCologResponse> data = cologService.getMyCologsOverview(requesterId);
+        List<MyCologResponse> data = cologQueryService.getMyCologsOverview(requesterId);
         return ApiResponse.response(HttpStatus.OK, "나의 팀 목록을 조회합니다.", data);
     }
 

@@ -1,7 +1,8 @@
 package kr.rilog.domain.comment.controller;
 
 import kr.rilog.domain.auth.annotation.LoginUserId;
-import kr.rilog.domain.comment.service.CommentAnchorService;
+import kr.rilog.domain.comment.service.CommentAnchorCommandService;
+import kr.rilog.domain.comment.service.CommentAnchorQueryService;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorAddCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentAnchorCreateCommand;
 import kr.rilog.domain.comment.service.dto.result.CommentAnchorCreateResult;
@@ -40,7 +41,7 @@ class CommentAnchorControllerTest {
     @DisplayName("같은 멱등키로 새 선택 영역 댓글 작성을 다시 요청하면 한 번만 작성하고 같은 응답을 반환한다.")
     void createCommentAnchorCreatesOnceForSameIdempotencyKey() throws Exception {
         // given
-        CommentAnchorService service = mock(CommentAnchorService.class);
+        CommentAnchorCommandService service = mock(CommentAnchorCommandService.class);
         when(service.createCommentAnchor(eq(POST_ID), eq(REQUESTER_ID), any(CommentAnchorCreateCommand.class)))
                 .thenReturn(new CommentAnchorCreateResult(10L))
                 .thenReturn(new CommentAnchorCreateResult(11L));
@@ -72,7 +73,7 @@ class CommentAnchorControllerTest {
     @DisplayName("같은 멱등키로 기존 선택 영역 댓글 추가를 다시 요청하면 한 번만 작성하고 같은 응답을 반환한다.")
     void addCommentAnchorCreatesOnceForSameIdempotencyKey() throws Exception {
         // given
-        CommentAnchorService service = mock(CommentAnchorService.class);
+        CommentAnchorCommandService service = mock(CommentAnchorCommandService.class);
         when(service.addCommentAnchor(eq(POST_ID), eq(REQUESTER_ID), eq(SELECTION_ID), any(CommentAnchorAddCommand.class)))
                 .thenReturn(new CommentAnchorCreateResult(10L))
                 .thenReturn(new CommentAnchorCreateResult(11L));
@@ -96,8 +97,8 @@ class CommentAnchorControllerTest {
         verify(service).addCommentAnchor(eq(POST_ID), eq(REQUESTER_ID), eq(SELECTION_ID), any(CommentAnchorAddCommand.class));
     }
 
-    private MockMvc idempotentMockMvc(CommentAnchorService service) {
-        AspectJProxyFactory factory = new AspectJProxyFactory(new CommentAnchorController(service));
+    private MockMvc idempotentMockMvc(CommentAnchorCommandService service) {
+        AspectJProxyFactory factory = new AspectJProxyFactory(new CommentAnchorController(service, mock(CommentAnchorQueryService.class)));
         factory.setProxyTargetClass(true);
         factory.addAspect(new IdempotentRequestAspect(new CompletedRequestStore()));
         CommentAnchorController controller = factory.getProxy();

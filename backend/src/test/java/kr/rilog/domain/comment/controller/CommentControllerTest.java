@@ -10,7 +10,8 @@ import kr.rilog.domain.auth.resolver.LoginUserIdArgumentResolver;
 import kr.rilog.domain.auth.resolver.NullableLoginUserIdArgumentResolver;
 import kr.rilog.domain.comment.controller.dto.response.CommentCreateResponse;
 import kr.rilog.domain.comment.controller.dto.response.CommentListResponse;
-import kr.rilog.domain.comment.service.CommentService;
+import kr.rilog.domain.comment.service.CommentCommandService;
+import kr.rilog.domain.comment.service.CommentQueryService;
 import kr.rilog.domain.comment.service.dto.command.CommentCreateCommand;
 import kr.rilog.domain.comment.service.dto.command.CommentUpdateCommand;
 import kr.rilog.global.advice.GlobalExceptionHandler;
@@ -45,12 +46,14 @@ class CommentControllerTest {
     private static final Long COMMENT_ID = 2L;
     private static final Long USER_ID = 7L;
 
+    private final CommentCommandService commentCommandService = mock(CommentCommandService.class);
+    private final CommentQueryService commentQueryService = mock(CommentQueryService.class);
+
     @Test
     @DisplayName("게시글 댓글 목록은 로그인하지 않아도 조회할 수 있다")
     void readCommentsAllowsAnonymousUser() throws Exception {
         // given
-        CommentService commentService = mock(CommentService.class);
-        when(commentService.readComments(POST_ID))
+        when(commentQueryService.readComments(POST_ID))
                 .thenReturn(new CommentListResponse(List.of(
                         new CommentListResponse.CommentResponse(
                                 COMMENT_ID,
@@ -70,7 +73,7 @@ class CommentControllerTest {
                                 List.of()
                         )
                 )));
-        MockMvc mockMvc = mockMvc(commentService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(get("/v1/posts/{postId}/comments", POST_ID))
@@ -80,17 +83,16 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.data.comments[0].author.postAuthor").value(true))
                 .andExpect(jsonPath("$.data.comments[0].author.blogMember").value(true));
 
-        verify(commentService).readComments(POST_ID);
+        verify(commentQueryService).readComments(POST_ID);
     }
 
     @Test
     @DisplayName("게시글에 댓글을 작성한다")
     void createComment() throws Exception {
         // given
-        CommentService commentService = mock(CommentService.class);
-        when(commentService.createComment(eq(POST_ID), eq(USER_ID), any(CommentCreateCommand.class)))
+        when(commentCommandService.createComment(eq(POST_ID), eq(USER_ID), any(CommentCreateCommand.class)))
                 .thenReturn(new CommentCreateResponse(COMMENT_ID));
-        MockMvc mockMvc = mockMvc(commentService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(post("/v1/posts/{postId}/comments", POST_ID)
@@ -106,7 +108,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.data.commentId").value(COMMENT_ID));
 
         ArgumentCaptor<CommentCreateCommand> commandCaptor = ArgumentCaptor.forClass(CommentCreateCommand.class);
-        verify(commentService).createComment(eq(POST_ID), eq(USER_ID), commandCaptor.capture());
+        verify(commentCommandService).createComment(eq(POST_ID), eq(USER_ID), commandCaptor.capture());
         assertThat(commandCaptor.getValue().content()).isEqualTo("댓글입니다.");
     }
 
@@ -114,10 +116,9 @@ class CommentControllerTest {
     @DisplayName("루트 댓글에 답글을 작성한다")
     void createReply() throws Exception {
         // given
-        CommentService commentService = mock(CommentService.class);
-        when(commentService.createReply(eq(POST_ID), eq(COMMENT_ID), eq(USER_ID), any(CommentCreateCommand.class)))
+        when(commentCommandService.createReply(eq(POST_ID), eq(COMMENT_ID), eq(USER_ID), any(CommentCreateCommand.class)))
                 .thenReturn(new CommentCreateResponse(3L));
-        MockMvc mockMvc = mockMvc(commentService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(post("/v1/posts/{postId}/comments/{commentId}/replies", POST_ID, COMMENT_ID)
@@ -131,15 +132,14 @@ class CommentControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.commentId").value(3L));
 
-        verify(commentService).createReply(eq(POST_ID), eq(COMMENT_ID), eq(USER_ID), any(CommentCreateCommand.class));
+        verify(commentCommandService).createReply(eq(POST_ID), eq(COMMENT_ID), eq(USER_ID), any(CommentCreateCommand.class));
     }
 
     @Test
     @DisplayName("댓글 내용을 수정한다")
     void updateComment() throws Exception {
         // given
-        CommentService commentService = mock(CommentService.class);
-        MockMvc mockMvc = mockMvc(commentService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(patch("/v1/comments/{commentId}", COMMENT_ID)
@@ -154,7 +154,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.status").value(200));
 
         ArgumentCaptor<CommentUpdateCommand> commandCaptor = ArgumentCaptor.forClass(CommentUpdateCommand.class);
-        verify(commentService).updateComment(eq(COMMENT_ID), eq(USER_ID), commandCaptor.capture());
+        verify(commentCommandService).updateComment(eq(COMMENT_ID), eq(USER_ID), commandCaptor.capture());
         assertThat(commandCaptor.getValue().content()).isEqualTo("수정된 댓글입니다.");
     }
 
@@ -162,23 +162,21 @@ class CommentControllerTest {
     @DisplayName("댓글을 삭제한다")
     void deleteComment() throws Exception {
         // given
-        CommentService commentService = mock(CommentService.class);
-        MockMvc mockMvc = mockMvc(commentService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(delete("/v1/comments/{commentId}", COMMENT_ID)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isNoContent());
 
-        verify(commentService).deleteComment(COMMENT_ID, USER_ID);
+        verify(commentCommandService).deleteComment(COMMENT_ID, USER_ID);
     }
 
     @Test
     @DisplayName("댓글 내용이 비어있으면 작성 요청을 거부한다")
     void createCommentRejectsBlankContent() throws Exception {
         // given
-        CommentService commentService = mock(CommentService.class);
-        MockMvc mockMvc = mockMvc(commentService);
+        MockMvc mockMvc = mockMvc();
 
         // when - then
         mockMvc.perform(post("/v1/posts/{postId}/comments", POST_ID)
@@ -193,8 +191,8 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("REQUEST_VALIDATION_FAILED"));
     }
 
-    private MockMvc mockMvc(CommentService commentService) {
-        return MockMvcBuilders.standaloneSetup(new CommentController(commentService))
+    private MockMvc mockMvc() {
+        return MockMvcBuilders.standaloneSetup(new CommentController(commentCommandService, commentQueryService))
                 .addInterceptors(new BearerAuthenticationInterceptor(
                         new StubAccessTokenProvider(),
                         mock(OnboardingTokenProvider.class)

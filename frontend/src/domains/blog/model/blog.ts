@@ -20,8 +20,6 @@ export interface BlogPublicProfile extends BaseBlog {
 	coverImageUrl: string | null;
 	serviceUrl?: string;
 	githubUrl?: string;
-	memberCount: number;
-	postCount: number;
 }
 
 // 개인 블로그 (Rilog)

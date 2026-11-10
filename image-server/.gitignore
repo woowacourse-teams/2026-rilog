@@ -3,3 +3,4 @@ image.env
 image.env.*
 !image.env.example
 *.log
+bench/

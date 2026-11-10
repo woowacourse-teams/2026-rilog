@@ -945,6 +945,43 @@ test.describe('글 작성 브라우저 흐름', () => {
 		);
 	});
 
+	test('제목과 본문 블록 핸들이 텍스트 줄의 세로 중앙에 놓인다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+
+		for (const level of [1, 2, 3, 4]) {
+			await page.keyboard.type(`${'#'.repeat(level)} 제목 ${level}`);
+			const heading = page.locator(
+				`.post-write-blocknote [data-content-type="heading"]${level === 1 ? ':not([data-level])' : `[data-level="${level}"]`}`,
+			);
+			await expect(heading).toContainText(`제목 ${level}`);
+			await heading.hover();
+			const handle = page.locator('.bn-side-menu');
+			await expect(handle).toBeVisible();
+			await expect
+				.poll(async () => {
+					const textBox = await heading.locator('.bn-inline-content').boundingBox();
+					const handleBox = await handle.boundingBox();
+					if (!textBox || !handleBox) return Number.POSITIVE_INFINITY;
+					return Math.abs(handleBox.y + handleBox.height / 2 - (textBox.y + textBox.height / 2));
+				})
+				.toBeLessThan(3);
+			await page.keyboard.press('End');
+			await page.keyboard.press('Enter');
+		}
+		await page.keyboard.type('본문 문장');
+		const paragraph = page.locator('.post-write-blocknote [data-content-type="paragraph"]').last();
+		await paragraph.hover();
+		await expect
+			.poll(async () => {
+				const textBox = await paragraph.locator('.bn-inline-content').boundingBox();
+				const handleBox = await page.locator('.bn-side-menu').boundingBox();
+				if (!textBox || !handleBox) return Number.POSITIVE_INFINITY;
+				return Math.abs(handleBox.y + handleBox.height / 2 - (textBox.y + textBox.height / 2));
+			})
+			.toBeLessThan(3);
+	});
+
 	test(
 		'파일 선택으로 업로드한 이미지를 편집기에 표시한다',
 		{

@@ -4,7 +4,7 @@ import kr.rilog.domain.admin.service.AdminPostImportService;
 import kr.rilog.domain.blog.entity.Blog;
 import kr.rilog.domain.blog.repository.BlogMemberRepository;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.blog.service.CologService;
+import kr.rilog.domain.blog.service.CologCommandService;
 import kr.rilog.domain.post.entity.Post;
 import kr.rilog.domain.post.entity.enums.PostVisibility;
 import kr.rilog.domain.post.repository.PostRepository;
@@ -26,8 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Instant;
-
 import static kr.rilog.domain.post.entity.enums.PostStatus.PUBLISHED;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PRIVATE;
 import static kr.rilog.domain.post.entity.enums.PostVisibility.PUBLIC;
@@ -36,16 +34,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostCountCacheIntegrationTest extends ServiceSupport {
 
     @Autowired
-    private PostService postService;
+    private PostCommandService postCommandService;
+    @Autowired
+    private PostQueryService postQueryService;
 
     @Autowired
-    private DraftService draftService;
+    private DraftCommandService draftCommandService;
 
     @Autowired
     private AdminPostImportService adminPostImportService;
 
     @Autowired
-    private CologService cologService;
+    private CologCommandService cologCommandService;
 
     @Autowired
     private UserRepository userRepository;
@@ -69,16 +69,16 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         User writer = saveWriter();
         Blog rilog = saveRilog(writer);
         Post draft = postRepository.saveAndFlush(PostFixture.publicDraftRilogPost(rilog, writer));
-        assertThat(postService.readPostsCount().totalPostsCount()).isZero();
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isZero();
 
         // when
-        PostPublishResult result = draftService.publishDraft(
+        PostPublishResult result = draftCommandService.publishDraft(
                 PostFixture.publicDraftPublishCommand(rilog.getSlug()), draft.getId(), writer.getId()
         );
 
         // then
         assertThat(postRepository.findById(result.postId()).orElseThrow().getStatus()).isEqualTo(PUBLISHED);
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(1L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(1L);
     }
 
     @Test
@@ -88,14 +88,14 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         User writer = saveWriter();
         Blog rilog = saveRilog(writer);
         Post post = postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(1L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(1L);
 
         // when
-        postService.deletePublishedPost(post.getId(), writer.getId());
+        postCommandService.deletePublishedPost(post.getId(), writer.getId());
 
         // then
         assertThat(postRepository.findById(post.getId()).orElseThrow().getDeletedAt()).isNotNull();
-        assertThat(postService.readPostsCount().totalPostsCount()).isZero();
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isZero();
     }
 
     @ParameterizedTest(name = "기존 비공개 여부: {0}")
@@ -109,14 +109,14 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
                 ? PostFixture.privatePublishedRilogPost(rilog, writer)
                 : PostFixture.publicPublishedRilogPost(rilog, writer));
         PostVisibility targetVisibility = initiallyPrivate ? PUBLIC : PRIVATE;
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(initiallyPrivate ? 0L : 1L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(initiallyPrivate ? 0L : 1L);
 
         // when
-        postService.update(updateCommand(post, post.getTitle(), targetVisibility), post.getId(), writer.getId());
+        postCommandService.update(updateCommand(post, post.getTitle(), targetVisibility), post.getId(), writer.getId());
 
         // then
         assertThat(postRepository.findById(post.getId()).orElseThrow().getVisibility()).isEqualTo(targetVisibility);
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(initiallyPrivate ? 1L : 0L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(initiallyPrivate ? 1L : 0L);
     }
 
     @Test
@@ -131,14 +131,14 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         blogMemberRepository.saveAndFlush(BlogMemberFixture.owner(colog, writer));
         Post cologPost = postRepository.saveAndFlush(PostFixture.publicPublishedColog(rilog, colog, writer));
         postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(2L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(2L);
 
         // when
-        cologService.deleteColog(writer.getId(), colog.getSlug());
+        cologCommandService.deleteColog(writer.getId(), colog.getSlug());
 
         // then
         assertThat(postRepository.findById(cologPost.getId()).orElseThrow().getDeletedAt()).isNotNull();
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(1L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(1L);
     }
 
     @Test
@@ -147,13 +147,13 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         // given
         User writer = saveWriter();
         Blog rilog = saveRilog(writer);
-        assertThat(postService.readPostsCount().totalPostsCount()).isZero();
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isZero();
         // 이벤트 없는 직접 저장으로 불필요한 캐시 무효화도 관찰한다.
         postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when
         PostPublishResult result = new TransactionTemplate(transactionManager).execute(status -> {
-            PostPublishResult published = postService.publish(
+            PostPublishResult published = postCommandService.publish(
                     PostFixture.publicPostPublishCommand(rilog.getSlug()), writer.getId()
             );
             status.setRollbackOnly();
@@ -163,7 +163,7 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         // then
         assertThat(postRepository.findById(result.postId())).isEmpty();
         assertThat(postRepository.countByStatusAndVisibilityAndDeletedAtIsNull(PUBLISHED, PUBLIC)).isEqualTo(1L);
-        assertThat(postService.readPostsCount().totalPostsCount()).isZero();
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isZero();
     }
 
     @Test
@@ -173,15 +173,15 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         User writer = saveWriter();
         Blog rilog = saveRilog(writer);
         Post post = postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(1L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(1L);
         postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
 
         // when
-        postService.update(updateCommand(post, "수정된 제목", PUBLIC), post.getId(), writer.getId());
+        postCommandService.update(updateCommand(post, "수정된 제목", PUBLIC), post.getId(), writer.getId());
 
         // then
         assertThat(postRepository.findById(post.getId()).orElseThrow().getTitle()).isEqualTo("수정된 제목");
-        assertThat(postService.readPostsCount().totalPostsCount()).isEqualTo(1L);
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isEqualTo(1L);
     }
 
     @Test
@@ -190,7 +190,7 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         // given
         User writer = saveWriter();
         Blog rilog = saveRilog(writer);
-        assertThat(postService.readPostsCount().totalPostsCount()).isZero();
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isZero();
         postRepository.saveAndFlush(PostFixture.publicPublishedRilogPost(rilog, writer));
         PostSaveCommand publicCommand = PostFixture.publicPostPublishCommand(rilog.getSlug());
         PostSaveCommand privateCommand = new PostSaveCommand(
@@ -199,11 +199,11 @@ class PostCountCacheIntegrationTest extends ServiceSupport {
         );
 
         // when
-        PostPublishResult result = postService.publish(privateCommand, writer.getId());
+        PostPublishResult result = postCommandService.publish(privateCommand, writer.getId());
 
         // then
         assertThat(postRepository.findById(result.postId()).orElseThrow().getVisibility()).isEqualTo(PRIVATE);
-        assertThat(postService.readPostsCount().totalPostsCount()).isZero();
+        assertThat(postQueryService.readPostsCount().totalPostsCount()).isZero();
     }
 
     private User saveWriter() {

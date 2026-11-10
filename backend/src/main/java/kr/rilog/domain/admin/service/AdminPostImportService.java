@@ -2,7 +2,7 @@ package kr.rilog.domain.admin.service;
 
 import kr.rilog.domain.blog.exception.BlogException;
 import kr.rilog.domain.blog.repository.BlogRepository;
-import kr.rilog.domain.post.service.PostService;
+import kr.rilog.domain.post.service.PostCommandService;
 import kr.rilog.domain.post.service.dto.command.PostSaveCommand;
 import kr.rilog.domain.post.service.dto.result.PostPublishResult;
 import kr.rilog.domain.upload.domain.enums.UploadType;
@@ -29,7 +29,7 @@ public class AdminPostImportService {
     private final UserRepository userRepository;
     private final BlogRepository blogRepository;
     private final UploadService uploadService;
-    private final PostService postService;
+    private final PostCommandService postCommandService;
 
     @Transactional
     public PresignedUrlCreateResult createUploadUrl(Long targetUserId, PresignedUrlCreateCommand command) {
@@ -44,7 +44,7 @@ public class AdminPostImportService {
     @Transactional
     public PostPublishResult publish(Long targetUserId, PostSaveCommand command, Instant originalPublishedAt) {
         validateTarget(targetUserId);
-        return postService.publishImported(command, targetUserId, originalPublishedAt);
+        return postCommandService.publishImported(command, targetUserId, originalPublishedAt);
     }
 
     private void validateTarget(Long targetUserId) {

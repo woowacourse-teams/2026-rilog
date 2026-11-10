@@ -16,8 +16,6 @@ describe('mapCologProfileSettingsResponse', () => {
 			coverImageUrl: 'https://example.com/cover.png',
 			serviceUrl: 'https://rilog.example.com',
 			githubUrl: 'https://github.com/woowacourse-teams/2026-rilog',
-			memberCount: 5,
-			postCount: 10,
 		};
 
 		expect(mapCologProfileSettingsResponse(response)).toEqual({
@@ -44,8 +42,6 @@ describe('mapCologProfileSettingsResponse', () => {
 			coverImageUrl: null,
 			serviceUrl: null,
 			githubUrl: null,
-			memberCount: 1,
-			postCount: 0,
 		};
 
 		expect(mapCologProfileSettingsResponse(response)).toEqual({
