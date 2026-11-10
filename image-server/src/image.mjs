@@ -4,6 +4,10 @@ import { ApiError, MAX_BYTES } from './download.mjs';
 sharp.concurrency(1);
 sharp.cache(false);
 const MAX_PIXELS = 16_000_000;
+// import 원본의 최대 너비. 압축본의 가장 큰 너비(COMPACT_WIDTHS의 2000)와 맞춰, 화면에 보이는 크기는 그대로 두고
+// 그보다 큰 원본은 저장하지 않는다. 원본을 그대로 변환하면 16MP WebP 한 장이 약 330MiB를 써서 512MiB 컨테이너가
+// 압축과 겹칠 때 OOM이 났다. 줄이면 같은 입력이 약 120MiB, 시간은 1/3로 준다(docs/reports 2026-11-05 보고서 9장).
+const IMPORT_MAX_WIDTH = 2000;
 // 압축 원본은 Spring presigned 업로드(10MiB)로 올라온 사용자 사진이다. 4800만 화소 휴대폰 사진까지 받는다.
 const MAX_COMPACT_PIXELS = 50_000_000;
 const COMPACT_WEBP_QUALITY = 80;
@@ -24,7 +28,16 @@ export async function normalizeImage(data) {
     if (!['jpeg', 'png', 'webp'].includes(meta.format) || (meta.pages ?? 1) !== 1) {
       throw new ApiError(422, 'INVALID_IMAGE', '정적 JPEG, PNG, WebP 이미지만 지원합니다.');
     }
-    const result = await image.rotate().webp({ quality: 85 }).timeout({ seconds: 10 }).toBuffer();
+    const result = await image
+      // EXIF 방향을 먼저 반영해야 세로 사진도 "보이는 너비" 기준으로 줄인다.
+      .rotate()
+      // 너비가 2000보다 크면 비율을 유지해 2000으로 줄이고, 작으면 확대하지 않고 그대로 둔다.
+      // JPEG와 WebP는 libvips가 처음부터 줄인 크기로 디코드(shrink-on-load)해서, 원본 크기의 화소를
+      // PNG는 이 방식이 없어 원본 크기로 디코드한 뒤 줄이므로, 인코딩할 화소가 줄어드는 만큼만 가벼워진다.
+      .resize({ width: IMPORT_MAX_WIDTH, withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .timeout({ seconds: 10 })
+      .toBuffer();
     if (result.length > MAX_BYTES) throw new ApiError(413, 'IMAGE_TOO_LARGE', '변환 결과가 너무 큽니다.');
     return result;
   } catch (error) {
@@ -59,6 +72,8 @@ export async function compactImage(data, widths, { signal, encodeTimeoutSeconds 
 }
 
 // keepMetadata/withMetadata를 호출하지 않으므로 방향 보정 뒤 EXIF(GPS 포함), ICC, XMP를 모두 제거한다.
+// resize가 있으므로 JPEG와 WebP 원본은 목표 너비 근처까지 줄인 크기로 디코드된다(shrink-on-load).
+// 그래서 2,450만 화소 휴대폰 사진도 너비 2000 압축 한 번에 약 150MiB 안에서 끝난다.
 async function encodeWebp(data, width, timeoutSeconds) {
   try {
     return await sharp(data, { limitInputPixels: MAX_COMPACT_PIXELS, failOn: 'none' })

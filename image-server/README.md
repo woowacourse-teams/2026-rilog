@@ -1,6 +1,6 @@
 # Rilog image server
 
-외부 이미지 URL을 다운로드하고 정적 WebP로 변환해 S3의 독립 객체로 저장한다.
+외부 이미지 URL을 다운로드하고 정적 WebP로 변환해 Rilog. S3 Object로 저장한다.
 사용 확정(CONFIRMED)된 raw 원본의 너비별 WebP 압축본도 만든다(ADR 0022).
 클라이언트는 Spring `POST /v1/uploads/image-imports`를 호출하고, Spring이 사용자 ID를 서명해 이 서버로 중계한다.
 Node 24, Express(HTTP), sharp(이미지 검증·변환), ipaddr.js(IP 분류), AWS SDK v3(S3)를 사용한다.
@@ -19,7 +19,7 @@ Nginx와 Certbot은 Ubuntu 호스트에 설치한다. API는 프로세스당 한
 
 - 헤더: `X-Rilog-Image-Timestamp: <unix 초>`, `X-Rilog-Image-Signature: v1=<hex>`.
 - 서명: `HMAC-SHA256(RILOG_IMAGE_SERVER_SECRET, "{timestamp}\nPOST\n/api/images/import\n{sha256hex(본문 바이트)}")`.
-  과거 300초, 미래 30초까지 받는다. 서명 검증은 동시 처리 슬롯과 본문 파싱보다 먼저 한다.
+  과거 300초, 미래 30초까지 받는다. 서명 검증은 대기열과 본문 파싱보다 먼저 한다.
 - `imagePurpose`: `PROFILE` → `profiles`, `CONTENT` → `images`. `userId`는 양의 정수.
 
 성공: `201`, `{ "key": "<root>/images/raw/7-<uuid>/original.webp", "url": "https://delivery.example.com/<key>" }`.
@@ -27,7 +27,10 @@ key는 Spring presigned 업로드(ADR 0020)와 같은 `{root}/{images|profiles}/
 동일 주소도 매번 새로운 UUID로 저장하고 `status=TEMPORARY` 태그를 붙인다. 조회 URL은 IMAGE_BASE_URL과 key를 결합한다.
 오류: `{ "error": { "code": "INVALID_URL", "message": "..." } }`.
 400: 잘못된 URL/내부망/DNS 정책/JSON/userId·imagePurpose, 401: 서명 오류, 413: 본문·파일 상한,
-422: 지원하지 않는 이미지, 429: 처리 중(Retry-After: 2), 502: 원본 또는 S3 실패, 504: 다운로드 시간 초과.
+422: 지원하지 않는 이미지, 429: 대기열 가득 또는 대기 20초 초과(Retry-After: 2), 502: 원본 또는 S3 실패, 504: 다운로드 시간 초과.
+- 변환은 한 번에 하나씩 하고 나머지는 도착 순서대로 기다린다. 대기는 최대 10건, 20초다. 다운로드는 대기열 밖에서 먼저 하며,
+  다운로드 중인 요청까지 11건을 넘으면 다운로드 전에 429다. 기다리는 중 호출자가 연결을 끊으면 변환하지 않는다(ADR 0026).
+
 Spring은 사용자 요청에서 비롯된 오류를 같은 상태·코드로, 그 밖의 오류는 502 `IMAGE_IMPORT_UNAVAILABLE`로 응답한다.
 
 `POST /api/images/compact`, JSON 최대 4KiB. Spring 전용이며 import와 같은 헤더·서명 규칙을 쓴다(서명 경로는 `/api/images/compact`):
@@ -59,8 +62,9 @@ Spring은 실패 응답을 ERROR 로그로만 남기고 다시 시도하지 않�
 - DNS의 모든 응답을 검사하고 검증된 IP로 연결한다. 사설망, 루프백, link-local, IPv4-mapped IPv6 등을 거부한다.
 - 외부 요청에 사용자 쿠키/Authorization을 전달하지 않는다. 프록시 환경 변수도 사용하지 않는다.
 - 다운로드 10초/10MiB, 정적 JPEG·PNG·WebP 1,600만 픽셀, 변환 10초, S3 요청 15초 제한.
+- 컨테이너는 `MALLOC_ARENA_MAX=2`로 실행한다(Dockerfile). 변환 스레드마다 생기는 glibc 메모리 풀의 잔류 메모리를 줄여 512MiB 안에서 OOM을 막는다(ADR 0026).
 - 파일 시그니처와 실제 디코딩을 검사한다. GIF/SVG/AVIF/애니메이션은 초기 지원에서 제외한다.
-- WebP quality 85, 방향 보정, 메타데이터 제거. 원본 바이트 보존 방식이 아니다.
+- WebP quality 85, 방향 보정, 너비 2000 초과 시 비율 유지 축소(확대 없음), 메타데이터 제거. 원본 바이트·해상도 보존 방식이 아니다(ADR 0026).
 - 호출자는 Spring과 공유한 비밀키의 HMAC 서명으로 확인한다(ADR 0021). 브라우저가 직접 호출하지 않으므로 CORS는 두지 않는다.
 - IP rate limit은 호스트 Nginx가 담당하며 Spring 서버 IP로 합산된다. 프론트의 다중 이미지 가져오기는 순차 처리한다.
 - Nginx 타임아웃/사용자 연결 해제로 이미 시작된 S3 저장이 취소되는 것은 아니다. 실패·재시도로 고아/중복 객체가 생길 수 있다.

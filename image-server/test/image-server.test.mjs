@@ -7,7 +7,8 @@ import sharp from 'sharp';
 import { createApp } from '../src/app.mjs';
 import { createPublicLookup, downloadImage, validateUrl } from '../src/download.mjs';
 import { compactImage, normalizeImage } from '../src/image.mjs';
-import { createCompactQueue, resolveCompactTargets } from '../src/compact.mjs';
+import { resolveCompactTargets } from '../src/compact.mjs';
+import { createJobQueue } from '../src/queue.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { sign } from '../src/auth.mjs';
 
@@ -145,6 +146,22 @@ test('image conversion generates a decodable WebP with original dimensions', asy
   assert.equal(meta.hasAlpha, true);
 });
 
+test('image conversion shrinks originals wider than 2000 and keeps the aspect ratio', async () => {
+  const wide = await sharp({ create: { width: 3000, height: 1500, channels: 3, background: 'red' } }).jpeg().toBuffer();
+  const meta = await sharp(await normalizeImage(wide)).metadata();
+  assert.equal(meta.width, 2000);
+  assert.equal(meta.height, 1000);
+});
+
+test('image conversion applies EXIF orientation before measuring the width to shrink', async () => {
+  // 저장은 가로 3000×1200이지만 Orientation 6(90도 회전)이라 보이는 크기는 세로 1200×3000이다.
+  const portrait = await sharp({ create: { width: 3000, height: 1200, channels: 3, background: 'red' } })
+    .jpeg().withMetadata({ orientation: 6 }).toBuffer();
+  const meta = await sharp(await normalizeImage(portrait)).metadata();
+  assert.equal(meta.width, 1200);
+  assert.equal(meta.height, 3000);
+});
+
 async function serve(t, dependencies) {
   const server = createApp({ config, now: () => NOW, ...dependencies }).listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
@@ -209,22 +226,112 @@ test('import rejects signed requests without a valid user or purpose', async t =
   }
 });
 
-test('busy imports return 429 while health stays available; slot is released on failure', async t => {
+test('concurrent imports wait in order and are converted one at a time; health stays available', async t => {
+  const order = [];
+  let running = 0;
+  let maxRunning = 0;
   let unblock;
-  let entered;
-  const started = new Promise(resolve => { entered = resolve; });
   const blocked = new Promise(resolve => { unblock = resolve; });
-  const api = await serve(t, { download: async () => { entered(); await blocked; throw new Error('failure'); }, upload: async () => {} });
-  const first = api.post({ sourceUrl: 'https://example.com/a' });
-  await started;
-  try {
-    assert.equal((await fetch(`${api.base}/healthz`)).status, 200);
-    const busy = await api.post({ sourceUrl: 'https://example.com/b' });
-    assert.equal(busy.status, 429);
-    assert.equal(busy.headers.get('retry-after'), '2');
-  } finally { unblock(); }
-  assert.equal((await first).status, 500);
-  assert.equal((await api.post({ sourceUrl: 'http://example.com/a' })).status, 400);
+  const api = await serve(t, {
+    download: async url => Buffer.from(url.pathname),
+    normalize: async source => {
+      running++;
+      maxRunning = Math.max(maxRunning, running);
+      if (source.toString() === '/0') await blocked;
+      order.push(source.toString());
+      running--;
+      return source;
+    },
+    upload: async () => {},
+  });
+  const first = api.post({ sourceUrl: 'https://example.com/0' });
+  await new Promise(resolve => setTimeout(resolve, 50));
+  const rest = [1, 2, 3].map(i => api.post({ sourceUrl: `https://example.com/${i}` }));
+  await new Promise(resolve => setTimeout(resolve, 50));
+  assert.equal((await fetch(`${api.base}/healthz`)).status, 200);
+  unblock();
+  const statuses = await Promise.all([first, ...rest].map(async response => (await response).status));
+  assert.deepEqual(statuses, [201, 201, 201, 201]);
+  assert.equal(maxRunning, 1);
+  assert.deepEqual(order, ['/0', '/1', '/2', '/3']);
+});
+
+test('imports beyond the running and waiting limit return 429; slot is released on failure', async t => {
+  let unblock;
+  const blocked = new Promise(resolve => { unblock = resolve; });
+  let failNext = true;
+  const api = await serve(t, {
+    download: async () => Buffer.from('x'),
+    normalize: async source => {
+      await blocked;
+      if (failNext) { failNext = false; throw new Error('failure'); }
+      return source;
+    },
+    upload: async () => {},
+  });
+  // 실행 1건 + 대기 10건까지는 기다리고, 12번째는 바로 거절한다.
+  const accepted = Array.from({ length: 11 }, (_, i) => api.post({ sourceUrl: `https://example.com/${i}` }));
+  await new Promise(resolve => setTimeout(resolve, 100));
+  const busy = await api.post({ sourceUrl: 'https://example.com/busy' });
+  assert.equal(busy.status, 429);
+  assert.equal(busy.headers.get('retry-after'), '2');
+  assert.equal((await busy.json()).error.code, 'BUSY');
+  unblock();
+  const statuses = await Promise.all(accepted.map(async response => (await response).status));
+  assert.equal(statuses[0], 500);
+  assert.deepEqual(statuses.slice(1), Array(10).fill(201));
+  assert.equal((await api.post({ sourceUrl: 'https://example.com/after' })).status, 201);
+});
+
+test('imports still waiting after the wait limit return 429 without being converted', async t => {
+  let unblock;
+  const blocked = new Promise(resolve => { unblock = resolve; });
+  const converted = [];
+  const api = await serve(t, {
+    importQueueWaitMs: 100,
+    download: async url => Buffer.from(url.pathname),
+    normalize: async source => {
+      if (source.toString() === '/slow') await blocked;
+      converted.push(source.toString());
+      return source;
+    },
+    upload: async () => {},
+  });
+  const slow = api.post({ sourceUrl: 'https://example.com/slow' });
+  await new Promise(resolve => setTimeout(resolve, 50));
+  const waiting = await api.post({ sourceUrl: 'https://example.com/waiting' });
+  assert.equal(waiting.status, 429);
+  assert.equal(waiting.headers.get('retry-after'), '2');
+  unblock();
+  assert.equal((await slow).status, 201);
+  assert.deepEqual(converted, ['/slow']);
+});
+
+test('imports whose caller disconnects while waiting are not converted', async t => {
+  let unblock;
+  const blocked = new Promise(resolve => { unblock = resolve; });
+  const converted = [];
+  const api = await serve(t, {
+    download: async url => Buffer.from(url.pathname),
+    normalize: async source => {
+      if (source.toString() === '/slow') await blocked;
+      converted.push(source.toString());
+      return source;
+    },
+    upload: async () => {},
+  });
+  const slow = api.post({ sourceUrl: 'https://example.com/slow' });
+  await new Promise(resolve => setTimeout(resolve, 50));
+  const caller = new AbortController();
+  const raw = JSON.stringify({ ...target, sourceUrl: 'https://example.com/gone' });
+  const gone = fetch(`${api.base}/api/images/import`, { method: 'POST', headers: signedHeaders(raw), body: raw, signal: caller.signal });
+  await new Promise(resolve => setTimeout(resolve, 50));
+  caller.abort();
+  await assert.rejects(gone, { name: 'AbortError' });
+  await new Promise(resolve => setTimeout(resolve, 50));
+  unblock();
+  assert.equal((await slow).status, 201);
+  assert.deepEqual(converted, ['/slow']);
 });
 
 test('body and storage failures have stable errors without internal details', async t => {
@@ -414,8 +521,8 @@ test('compact API times out slow jobs and requests still waiting for them', asyn
   assert.equal((await api.compact(key)).status, 200);
 });
 
-test('compact queue runs jobs in order and rejects when the waiting list is full', async () => {
-  const run = createCompactQueue({ maxWaiting: 1 });
+test('job queue runs jobs in order and rejects when the waiting list is full', async () => {
+  const run = createJobQueue({ maxWaiting: 1 });
   const signal = new AbortController().signal;
   const order = [];
   let release;
