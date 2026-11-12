@@ -1,13 +1,8 @@
 'use client';
 
-import { filterSuggestionItems } from '@blocknote/core/extensions';
+import { SuggestionMenu } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
-import {
-	FilePanelController,
-	getDefaultReactSlashMenuItems,
-	SuggestionMenuController,
-	useCreateBlockNote,
-} from '@blocknote/react';
+import { FilePanelController, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 
@@ -29,12 +24,16 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { filterSlashMenuItems } from '../lib/filter-slash-menu-items';
+import { getPostWriteSlashMenuItems } from '../lib/get-post-write-slash-menu-items';
 import { installImageRowDrag } from '../lib/install-image-row-drag';
+import { installTableExit } from '../lib/install-table-exit';
 import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
 import { getRecentCodeLanguage } from '../lib/recent-code-language';
 import { showUploadBlockError } from '../lib/show-upload-block-error';
+import { slashMenuDictionary } from '../lib/slash-menu-dictionary';
 import { updateMediaUrlWithoutHistory } from '../lib/update-media-url-without-history';
 import { isTransientMediaUrl } from '../lib/validate-post-media';
 import '../styles/blocknote-theme.css';
@@ -224,6 +223,7 @@ export default function BlockNoteEditor({
 			schema: POST_WRITE_SCHEMA,
 			dictionary: {
 				...ko,
+				slash_menu: slashMenuDictionary,
 				file_panel: {
 					...ko.file_panel,
 					upload: { ...ko.file_panel.upload, upload_error: '' },
@@ -243,8 +243,40 @@ export default function BlockNoteEditor({
 	}, [editor]);
 
 	useEffect(() => connectEditor(editor), [connectEditor, editor]);
+
+	const newToggleIds = useRef(new Set<string>());
+	useEffect(() => {
+		const element = editor.domElement;
+		if (!element) return;
+		const enterToggleBody = (event: KeyboardEvent) => {
+			if (
+				event.key !== 'Enter' ||
+				event.isComposing ||
+				event.keyCode === 229 ||
+				editor.getExtension(SuggestionMenu)?.shown() ||
+				event.shiftKey ||
+				event.ctrlKey ||
+				event.metaKey ||
+				event.altKey ||
+				!(event.target instanceof Node) ||
+				!element.contains(event.target)
+			)
+				return;
+			const block = editor.getTextCursorPosition().block;
+			if (block.type !== 'toggleListItem' || !newToggleIds.current.has(block.id)) return;
+			const child = block.children[0];
+			if (!child) return;
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			newToggleIds.current.delete(block.id);
+			editor.setTextCursorPosition(child.id, 'start');
+		};
+		element.ownerDocument.addEventListener('keydown', enterToggleBody, true);
+		return () => element.ownerDocument.removeEventListener('keydown', enterToggleBody, true);
+	}, [editor]);
 	usePostWriteTransferUpload(editor);
 	useEffect(() => installImageRowDrag(editor), [editor]);
+	useEffect(() => installTableExit(editor), [editor]);
 	useEffect(() => keepImageRowSingleImage(editor), [editor]);
 
 	useEffect(
@@ -390,9 +422,18 @@ export default function BlockNoteEditor({
 				<PostWriteSideMenuController />
 				<SuggestionMenuController
 					triggerCharacter="/"
-					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
+					getItems={(query) => Promise.resolve(filterSlashMenuItems(getPostWriteSlashMenuItems(editor), query))}
 					onItemClick={(item) => {
-						if ('key' in item && item.key === 'code_block') {
+						if ('key' in item && item.key === 'toggle_list') {
+							item.onItemClick();
+							const block = editor.getTextCursorPosition().block;
+							if (block.type === 'toggleListItem' && block.children.length === 0) {
+								// Adding the first child opens the toggle through BlockNote's own change handler.
+								editor.updateBlock(block, { children: [{ type: 'paragraph' }] });
+								editor.setTextCursorPosition(block.id, 'end');
+								newToggleIds.current.add(block.id);
+							}
+						} else if ('key' in item && item.key === 'code_block') {
 							codeBlockSlashItemInProgress.current = true;
 							try {
 								item.onItemClick();

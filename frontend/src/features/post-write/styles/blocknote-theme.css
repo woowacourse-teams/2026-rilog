@@ -1,3 +1,13 @@
+/* Empty toggle bodies should offer guidance while the cursor is still in the title. */
+.post-write-blocknote
+	.bn-block:has(> [data-content-type='toggleListItem'])
+	> .bn-block-group
+	> .bn-block-outer
+	> .bn-block
+	> [data-content-type='paragraph']:has(.ProseMirror-trailingBreak:only-child)::after {
+	content: '마크다운 단축 문법을 사용할 수 있습니다. /를 입력하면 블록을 선택할 수 있습니다.';
+}
+
 .post-write-blocknote {
 	--radius: var(--radius-xl);
 	--card: var(--surface);

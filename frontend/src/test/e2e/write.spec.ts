@@ -1007,6 +1007,65 @@ test.describe('글 작성 브라우저 흐름', () => {
 		},
 	);
 
+	for (const title of ['', '토글 제목']) {
+		test(`새 토글은 펼쳐지고 ${title || '빈 제목'}에서 Enter로 내부에 입력한다`, async ({ page }) => {
+			await page.goto('/write');
+			await page.getByRole('textbox', { name: '게시글 내용' }).click();
+			await page.keyboard.type('/togglelists');
+			await page.keyboard.press('Enter');
+			const toggle = page.locator('[data-content-type="toggleListItem"]');
+			await expect(toggle.locator('.bn-toggle-wrapper')).toHaveAttribute('data-show-children', 'true');
+			const block = page.locator('.bn-block-outer').filter({ has: toggle }).last();
+			const body = block.locator('[data-content-type="paragraph"]');
+			await expect(body).toBeVisible();
+			if (!title) {
+				await expect
+					.poll(() => body.evaluate((element) => getComputedStyle(element, '::after').content))
+					.toContain('마크다운 단축 문법');
+			}
+			if (title) await page.keyboard.insertText(title);
+			await page.keyboard.press('Enter');
+			await page.keyboard.insertText('토글 내부 본문');
+			await expect(block.locator('[data-content-type="paragraph"]')).toContainText('토글 내부 본문');
+			if (!title) {
+				await expect
+					.poll(() => body.evaluate((element) => getComputedStyle(element, '::after').content))
+					.not.toContain('마크다운 단축 문법');
+				await toggle.locator('.bn-toggle-button').click();
+				await expect(toggle.locator('.bn-toggle-wrapper')).toHaveAttribute('data-show-children', 'false');
+				await toggle.locator('.bn-toggle-button').click();
+				await expect(body).toBeVisible();
+			}
+		});
+	}
+
+	test('표 마지막 셀 끝의 Enter는 표 아래로 이동하고 Shift+Enter는 셀 안에 줄바꿈한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/table');
+		await page.keyboard.press('Enter');
+		const cells = page.locator('[data-content-type="table"] td');
+		await cells.first().click();
+		await page.keyboard.insertText('첫 셀');
+		await page.keyboard.press('Enter');
+		await page.keyboard.insertText('계속 입력');
+		await expect(cells.nth(3)).toContainText('계속 입력');
+		await cells.last().click();
+		await page.keyboard.insertText('마지막 셀');
+		await page.keyboard.press('Shift+Enter');
+		await page.keyboard.insertText('셀 내부 줄바꿈');
+		await expect(cells.last()).toContainText('셀 내부 줄바꿈');
+		await page.keyboard.press('ArrowLeft');
+		await page.keyboard.press('Enter');
+		await page.keyboard.insertText('중간 입력');
+		await expect(cells.last()).toContainText('중간 입력');
+		await page.keyboard.press('ArrowRight');
+		await page.keyboard.press('Enter');
+		await page.keyboard.insertText('표 밖 본문');
+		await expect(page.locator('.post-write-blocknote [data-content-type="paragraph"]')).toContainText('표 밖 본문');
+		await expect(cells.last()).not.toContainText('표 밖 본문');
+	});
+
 	test('슬래시 메뉴와 파일 블록 팝오버에서 여러 이미지와 파일을 선택하면 모두 순서대로 추가한다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
