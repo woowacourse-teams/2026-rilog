@@ -4,7 +4,7 @@ export const slashMenuDictionary = {
 	...ko.slash_menu,
 	check_list: {
 		...ko.slash_menu.check_list,
-		title: '할일목록',
+		title: '할 일 목록',
 		aliases: [...ko.slash_menu.check_list.aliases, '할일목록', 'checklists'],
 	},
 	toggle_list: {

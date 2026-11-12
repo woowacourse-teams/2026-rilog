@@ -1,6 +1,6 @@
 'use client';
 
-import { filterSuggestionItems, SuggestionMenu } from '@blocknote/core/extensions';
+import { SuggestionMenu } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
 import {
 	FilePanelController,
@@ -29,6 +29,7 @@ import {
 	SLASH_MENU_INITIAL_HEIGHT,
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
+import { filterSlashMenuItems } from '../lib/filter-slash-menu-items';
 import { installImageRowDrag } from '../lib/install-image-row-drag';
 import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
@@ -423,7 +424,7 @@ export default function BlockNoteEditor({
 				<PostWriteSideMenuController />
 				<SuggestionMenuController
 					triggerCharacter="/"
-					getItems={(query) => Promise.resolve(filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query))}
+					getItems={(query) => Promise.resolve(filterSlashMenuItems(getDefaultReactSlashMenuItems(editor), query))}
 					onItemClick={(item) => {
 						if ('key' in item && item.key === 'toggle_list') {
 							item.onItemClick();
