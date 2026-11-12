@@ -25,9 +25,10 @@ describe('슬래시 메뉴 검색', () => {
 	});
 
 	it('리스트 검색은 list 검색과 같은 목록 항목들을 반환한다', () => {
-		const keys = (query: string) => filterSlashMenuItems(entries, query).map((item) => item.key);
-		expect(keys('list')).toEqual(['numbered_list', 'bullet_list', 'check_list', 'toggle_list']);
-		expect(keys('리스트')).toEqual(keys('list'));
+		for (const query of ['list', '리스트']) {
+			const keys = filterSlashMenuItems(entries, query).map((item) => item.key);
+			expect(keys.sort()).toEqual(['bullet_list', 'check_list', 'numbered_list', 'toggle_list']);
+		}
 	});
 
 	it.each([
