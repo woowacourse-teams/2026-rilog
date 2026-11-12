@@ -25,6 +25,9 @@ describe('제목4 슬래시 메뉴', () => {
 		const instance = editor();
 		editors.push(instance);
 		const items = getPostWriteSlashMenuItems(instance);
+		expect(items.find((item) => item.title === '접을 수 있는 제목4')?.subtext).toBe(
+			instance.dictionary.slash_menu.toggle_heading_3.subtext,
+		);
 		expect(items.filter((item) => item.group === '제목').map((item) => item.title)).toEqual([
 			'제목1',
 			'제목2',

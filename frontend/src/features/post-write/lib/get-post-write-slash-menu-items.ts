@@ -15,7 +15,7 @@ export const getPostWriteSlashMenuItems = (editor: PostWriteBlockNoteEditor) => 
 		...heading4,
 		key: 'toggle_heading_4',
 		title: '접을 수 있는 제목4',
-		subtext: '내용을 표시하거나 숨길 수 있는 하위 소단락 제목',
+		subtext: editor.dictionary.slash_menu.toggle_heading_3.subtext,
 		group: editor.dictionary.slash_menu.toggle_heading_3.group,
 		aliases: [...editor.dictionary.slash_menu.heading_4.aliases, '접기', '토글'],
 		badge: undefined,
