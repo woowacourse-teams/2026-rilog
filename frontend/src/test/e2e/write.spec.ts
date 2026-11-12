@@ -1007,6 +1007,43 @@ test.describe('글 작성 브라우저 흐름', () => {
 		},
 	);
 
+	for (const title of ['', '토글 제목']) {
+		test(`새 토글은 펼쳐지고 ${title || '빈 제목'}에서 Enter로 내부에 입력한다`, async ({ page }) => {
+			await page.goto('/write');
+			await page.getByRole('textbox', { name: '게시글 내용' }).click();
+			await page.keyboard.type('/togglelists');
+			await page.keyboard.press('Enter');
+			const toggle = page.locator('[data-content-type="toggleListItem"]');
+			await expect(toggle.locator('.bn-toggle-wrapper')).toHaveAttribute('data-show-children', 'true');
+			const block = page.locator('.bn-block-outer').filter({ has: toggle }).last();
+			const body = block.locator('[data-content-type="paragraph"]');
+			await expect(body).toBeVisible();
+			await expect
+				.poll(() => body.evaluate((element) => getComputedStyle(element, '::after').content))
+				.toContain('마크다운 단축 문법');
+			if (title) await page.keyboard.insertText(title);
+			await page.keyboard.press('Enter');
+			await page.keyboard.insertText('토글 내부 본문');
+			await expect(block.locator('[data-content-type="paragraph"]')).toContainText('토글 내부 본문');
+			await expect
+				.poll(() => body.evaluate((element) => getComputedStyle(element, '::after').content))
+				.not.toContain('마크다운 단축 문법');
+			await toggle.locator('.bn-toggle-button').click();
+			await expect(toggle.locator('.bn-toggle-wrapper')).toHaveAttribute('data-show-children', 'false');
+			await toggle.locator('.bn-toggle-button').click();
+			await expect(block.locator('[data-content-type="paragraph"]')).toBeVisible();
+		});
+	}
+
+	test('추가된 영문 검색어로 슬래시 메뉴에서 표를 선택한다', async ({ page }) => {
+		await page.goto('/write');
+		const editor = page.getByRole('textbox', { name: '게시글 내용' });
+		await editor.click();
+		await page.keyboard.type('/table');
+		await page.keyboard.press('Enter');
+		await expect(page.locator('.post-write-blocknote [data-content-type="table"]')).toBeVisible();
+	});
+
 	test('슬래시 메뉴와 파일 블록 팝오버에서 여러 이미지와 파일을 선택하면 모두 순서대로 추가한다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });
