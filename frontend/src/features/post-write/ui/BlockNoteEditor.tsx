@@ -2,12 +2,7 @@
 
 import { SuggestionMenu } from '@blocknote/core/extensions';
 import { ko } from '@blocknote/core/locales';
-import {
-	FilePanelController,
-	getDefaultReactSlashMenuItems,
-	SuggestionMenuController,
-	useCreateBlockNote,
-} from '@blocknote/react';
+import { FilePanelController, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 
@@ -30,6 +25,7 @@ import {
 } from '../lib/calculate-slash-menu-layout';
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
 import { filterSlashMenuItems } from '../lib/filter-slash-menu-items';
+import { getPostWriteSlashMenuItems } from '../lib/get-post-write-slash-menu-items';
 import { installImageRowDrag } from '../lib/install-image-row-drag';
 import { installTableExit } from '../lib/install-table-exit';
 import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
@@ -426,7 +422,7 @@ export default function BlockNoteEditor({
 				<PostWriteSideMenuController />
 				<SuggestionMenuController
 					triggerCharacter="/"
-					getItems={(query) => Promise.resolve(filterSlashMenuItems(getDefaultReactSlashMenuItems(editor), query))}
+					getItems={(query) => Promise.resolve(filterSlashMenuItems(getPostWriteSlashMenuItems(editor), query))}
 					onItemClick={(item) => {
 						if ('key' in item && item.key === 'toggle_list') {
 							item.onItemClick();
