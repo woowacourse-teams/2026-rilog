@@ -1035,6 +1035,33 @@ test.describe('글 작성 브라우저 흐름', () => {
 		});
 	}
 
+	test('표 마지막 셀 끝의 Enter는 표 아래로 이동하고 Shift+Enter는 셀 안에 줄바꿈한다', async ({ page }) => {
+		await page.goto('/write');
+		await page.getByRole('textbox', { name: '게시글 내용' }).click();
+		await page.keyboard.type('/table');
+		await page.keyboard.press('Enter');
+		const cells = page.locator('[data-content-type="table"] td');
+		await cells.first().click();
+		await page.keyboard.insertText('첫 셀');
+		await page.keyboard.press('Enter');
+		await page.keyboard.insertText('계속 입력');
+		await expect(cells.nth(3)).toContainText('계속 입력');
+		await cells.last().click();
+		await page.keyboard.insertText('마지막 셀');
+		await page.keyboard.press('Shift+Enter');
+		await page.keyboard.insertText('셀 내부 줄바꿈');
+		await expect(cells.last()).toContainText('셀 내부 줄바꿈');
+		await page.keyboard.press('ArrowLeft');
+		await page.keyboard.press('Enter');
+		await page.keyboard.insertText('중간 입력');
+		await expect(cells.last()).toContainText('중간 입력');
+		await page.keyboard.press('ArrowRight');
+		await page.keyboard.press('Enter');
+		await page.keyboard.insertText('표 밖 본문');
+		await expect(page.locator('.post-write-blocknote [data-content-type="paragraph"]')).toContainText('표 밖 본문');
+		await expect(cells.last()).not.toContainText('표 밖 본문');
+	});
+
 	test('추가된 영문 검색어로 슬래시 메뉴에서 표를 선택한다', async ({ page }) => {
 		await page.goto('/write');
 		const editor = page.getByRole('textbox', { name: '게시글 내용' });

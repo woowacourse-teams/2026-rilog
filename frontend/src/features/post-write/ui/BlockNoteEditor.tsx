@@ -31,6 +31,7 @@ import {
 import { constrainEditorDragSelection } from '../lib/constrain-editor-drag-selection';
 import { filterSlashMenuItems } from '../lib/filter-slash-menu-items';
 import { installImageRowDrag } from '../lib/install-image-row-drag';
+import { installTableExit } from '../lib/install-table-exit';
 import { keepImageRowSingleImage } from '../lib/keep-image-row-single-image';
 import { limitEditorHeadingLevels } from '../lib/limit-editor-heading-levels';
 import { POST_WRITE_SCHEMA } from '../lib/post-write-schema';
@@ -279,6 +280,7 @@ export default function BlockNoteEditor({
 	}, [editor]);
 	usePostWriteTransferUpload(editor);
 	useEffect(() => installImageRowDrag(editor), [editor]);
+	useEffect(() => installTableExit(editor), [editor]);
 	useEffect(() => keepImageRowSingleImage(editor), [editor]);
 
 	useEffect(
