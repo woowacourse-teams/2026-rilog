@@ -2,7 +2,7 @@ import { ko } from '@blocknote/core/locales';
 
 export const slashMenuDictionary = {
 	...ko.slash_menu,
-	heading_4: { ...ko.slash_menu.heading_4, group: ko.slash_menu.heading.group },
+	heading_4: { ...ko.slash_menu.heading_4, group: ko.slash_menu.heading.group, subtext: '섹션 소제목' },
 	check_list: {
 		...ko.slash_menu.check_list,
 		title: '할 일 목록',
