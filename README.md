@@ -80,16 +80,16 @@
 | | |
 | :--- | :--- |
 | **Frontend** | Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · TanStack Query · BlockNote |
-| **Backend** | Java 21 · Spring Boot 4 · JPA · PostgreSQL · Redis |
-| **Infra** | AWS S3 · Docker · GitHub Actions · EC2 · Sentry · PostHog |
+| **Backend** | Java 21 · Spring Boot 4 · JPA · MySQL · Redis |
+| **Infra** | AWS S3 · Docker · GitHub Actions · EC2 · n8n · Sentry · PostHog |
 
 ---
 
 ## Team
 
-| <a href="https://github.com/JetProc"><img src="https://avatars.githubusercontent.com/u/46674347?v=4" width="90" alt="파라디" /></a> | <a href="https://github.com/gustn99"><img src="https://avatars.githubusercontent.com/u/141705278?v=4" width="90" alt="아지" /></a> | <a href="https://github.com/koreaioi"><img src="https://avatars.githubusercontent.com/u/147616203?v=4" width="90" alt="koreaioi" /></a> | <a href="https://github.com/Wlsflfh"><img src="https://avatars.githubusercontent.com/u/185534795?v=4" width="90" alt="진리로" /></a> |
+| <a href="https://github.com/JetProc"><img src="https://avatars.githubusercontent.com/u/46674347?v=4" width="90" alt="파라디" /></a> | <a href="https://github.com/gustn99"><img src="https://avatars.githubusercontent.com/u/141705278?v=4" width="90" alt="아지" /></a> | <a href="https://github.com/koreaioi"><img src="https://avatars.githubusercontent.com/u/147616203?v=4" width="90" alt="송송" /></a> | <a href="https://github.com/Wlsflfh"><img src="https://avatars.githubusercontent.com/u/185534795?v=4" width="90" alt="진리로" /></a> |
 | :---: | :---: | :---: | :---: |
-| [**파라디**](https://www.rilog.kr/@jetproc) | [**아지**](https://www.rilog.kr/@gustn99) | [**koreaioi**](https://www.rilog.kr/@koreaioi) | [**진리로**](https://www.rilog.kr/@jinriro) |
+| [**파라디**](https://www.rilog.kr/@jetproc) | [**아지**](https://www.rilog.kr/@gustn99) | [**송송**](https://www.rilog.kr/@koreaioi) | [**진리로**](https://www.rilog.kr/@jinriro) |
 | Frontend | Frontend | Backend | Backend |
 
 <br />
