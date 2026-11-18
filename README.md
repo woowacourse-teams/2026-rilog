@@ -1,124 +1,101 @@
-# Rilog.
+<div align="center">
 
-Rilog.는 개인 블로그와 팀 블로그인 **Co-log**를 함께 운영할 수 있는 기록 서비스입니다. 글을 쓰고 임시저장하거나 발행하면 피드와 각 블로그에서 읽을 수 있습니다.
+<a href="https://www.rilog.kr">
+  <img src="frontend/public/images/default-og-image.png" alt="Rilog." width="400" />
+</a>
 
-## 시스템 개요
+**write deeper. grow together.**
 
-```mermaid
-flowchart LR
-    Browser[Browser]
-    Frontend[Next.js Frontend]
-    Backend[Spring Boot API]
-    Postgres[(PostgreSQL)]
-    Redis[(Redis)]
-    S3[(AWS S3)]
-    GitHub[GitHub OAuth]
-    PostHog[PostHog]
+개발자와 팀이 만들고 배우는 과정을 기록하는 블로그 플랫폼
 
-    Browser --> Frontend
-    Frontend --> Backend
-    Backend --> Postgres
-    Backend --> Redis
-    Backend --> GitHub
-    Backend -->|Presigned URL| Browser
-    Browser -->|Direct upload| S3
-    Browser --> PostHog
-```
+[rilog.kr](https://www.rilog.kr) &nbsp;·&nbsp; [The Rilog.](https://www.rilog.kr/the-rilog) &nbsp;·&nbsp; [About](https://www.rilog.kr/about)
 
-화면과 사용자 상호작용은 프론트엔드가, API·인증·도메인 규칙은 백엔드가 맡습니다. 파일은 백엔드가 발급한 Presigned URL로 S3에 직접 올리고, OAuth state와 인증 세션은 Redis에서 관리합니다.
+<br />
 
-## 저장소 구조
+| **320+** | **120+** | **25+** |
+| :---: | :---: | :---: |
+| 발행된 게시글 | 개인 블로그 | 팀 블로그 Colog |
 
-```text
-.
-├─ frontend/    # Next.js 사용자 애플리케이션
-├─ backend/     # Spring Boot API와 도메인 로직
-├─ image-server/ # 외부 이미지 가져오기 Node API와 Docker 배포 설정
-├─ docs/        # 백엔드 가이드, ADR, 팀 하네스
-├─ .github/     # 이슈·PR 템플릿과 배포 워크플로우
-└─ AGENTS.md    # 저장소 공통 작업 규칙
-```
+</div>
 
-프론트엔드는 `app`, `widgets`, `features`, `domains`, `shared`로 사용자 흐름과 공통 기반을 나눕니다.
+---
 
-백엔드는 도메인별 `controller`·`service`·`repository`와 공통 `global` 영역으로 구성합니다.
+## Features
 
-## 기술 스택과 현재 역할
+### 개인 블로그와 팀 블로그 Colog
 
-### 프론트엔드
+개인 블로그는 **시리즈**로, 팀 블로그 Colog는 **챕터**로 글을 엮어 기록을 쌓습니다.
 
-- **Next.js 16.3 · React 19.2 · TypeScript 5.9**: App Router로 화면과 레이아웃을 조립하고, TypeScript로 화면 사이의 계약을 확인합니다.
-- **Tailwind CSS 4.3**: 공통 디자인 토큰을 바탕으로 UI를 만듭니다.
-- **TanStack Query 5 · ky 2**: TanStack Query는 서버 상태와 캐시를, ky는 HTTP 요청과 오류 정규화를 맡습니다.
-- **BlockNote 0.53**: 브라우저에서만 필요한 에디터를 별도 경계에서 불러와 글쓰기 기능이 에디터 구현에 묶이지 않도록 합니다.
-- **PostHog**: 자동 수집 대신 로그인·발행처럼 의미 있는 성공 행동을 기록합니다.
+| 개인 블로그 | Colog |
+| :---: | :---: |
+| <img src="docs/assets/readme/personal-blog-home.png" alt="개인 블로그 홈" width="420" /> | <img src="docs/assets/readme/colog-blog-home.png" alt="Colog 홈" width="420" /> |
 
-### 백엔드와 운영
+### 문장 위에서 시작되는 인라인 댓글
 
-- **Java 21 · Spring Boot 4.1**: REST API, 인증, 도메인 서비스와 외부 연동의 기반입니다.
-- **Spring Data JPA · PostgreSQL**: 블로그, 게시글, 멤버십처럼 관계가 있는 데이터를 저장합니다.
-- **Redis · GitHub OAuth · JWT**: OAuth 요청 상태를 한 번만 처리하고 인증 세션을 관리하며, Access/Refresh Token 기반 로그인을 지원합니다.
-- **AWS S3 SDK**: Presigned URL을 발급해 파일을 서버를 거치지 않고 업로드하고, 업로드 자산의 생명주기를 관리합니다.
-- **Vitest · React Testing Library · Playwright · JUnit**: 순수 로직, 컴포넌트 상호작용, 핵심 사용자 흐름, 백엔드 테스트를 나누어 검증합니다.
-- **Docker · GitHub Actions · EC2/PM2**: 백엔드는 컨테이너 이미지로, 프론트엔드는 빌드 결과물로 패키징해 배포합니다.
+이야기하고 싶은 문장을 드래그해 그 자리에 댓글을 남깁니다. 본문이 수정되어도 대화는 보존됩니다.
 
-## 로컬 개발
+| 문장 하이라이트 | 인라인 댓글 |
+| :---: | :---: |
+| <img src="docs/assets/readme/inline-comment-highlight.png" alt="문장 하이라이트" width="420" /> | <img src="docs/assets/readme/inline-comment-workspace.png" alt="인라인 댓글" width="420" /> |
 
-### 사전 준비
+### 글쓰기에 집중하는 에디터
 
-- Git
-- Node.js 24.19.0과 pnpm 11.21.0
-- Java 21
-- PostgreSQL과 Redis
-- GitHub OAuth 및 AWS S3 접근에 필요한 개발 환경값
+슬래시 커맨드로 블록을 작성하고, 이미지를 한 줄에 최대 3장까지 나란히 배치합니다.
 
-### 프론트엔드
+<p align="center">
+  <img src="docs/assets/readme/post-image-columns.png" alt="이미지 가로 배치" width="840" />
+</p>
 
-```bash
-cd frontend
-nvm install
-nvm use
-corepack enable
-cp .env.example .env
-pnpm install --frozen-lockfile
-pnpm dev
-```
+### The Rilog. & 피드
 
-개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. `.env`에는 API 주소가 필요하며, 업로드와 분석 기능은 S3·PostHog 환경값이 준비된 경우에만 모두 사용할 수 있습니다. 변수 설명과 세부 명령은 [frontend/README.md](frontend/README.md)를 참고하세요.
+매일 오전 6시에 갱신되는 매거진 The Rilog.와 카테고리별 피드에서 좋은 글을 발견합니다.
 
-### 백엔드
+| The Rilog. | 피드 |
+| :---: | :---: |
+| <img src="docs/assets/readme/the-rilog-magazine.png" alt="The Rilog." width="420" /> | <img src="docs/assets/readme/category-feeds.png" alt="피드" width="420" /> |
 
-백엔드 설정은 실제 인증 정보를 저장소에 두지 않고 환경변수로 받습니다. 로컬 프로필을 실행하기 전에 다음 값을 준비해야 합니다.
+---
 
-| 범주            | 필요한 환경변수                                                           |
-| --------------- | ------------------------------------------------------------------------- |
-| 데이터베이스    | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`                                    |
-| 캐시            | `REDIS_HOST`, `REDIS_PORT`                                                |
-| GitHub OAuth    | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URI`         |
-| 토큰·쿠키       | `ACCESS_TOKEN_*`, `ONBOARDING_TOKEN_*`, `REFRESH_TOKEN_*`                 |
-| 저장소·네트워크 | `AWS_S3_BUCKET`, `AWS_REGION`, `AWS_S3_DIRECTORY`, `CORS_ALLOWED_ORIGINS` |
+## Getting Started
 
-```bash
-cd backend
-./gradlew bootRun --args='--spring.profiles.active=local'
-```
+| 1. GitHub로 시작 | 2. 개인 블로그 기록 | 3. Colog 함께 운영 |
+| :--- | :--- | :--- |
+| GitHub 계정으로 바로 로그인하고 나만의 블로그 주소(`/@slug`)를 만듭니다. | `/` 슬래시 에디터로 글을 작성하고 시리즈로 묶어 아카이빙합니다. | 팀 블로그 Colog를 개설해 멤버를 초대하고 챕터별로 팀의 여정을 남깁니다. |
 
-백엔드용 환경변수 예시 파일이나 Docker Compose는 아직 제공하지 않습니다. 팀에서 공유받은 개발용 환경값을 사용하고, 실제 비밀값은 저장소에 추가하지 않습니다.
+---
 
-## 검증
+## Colog Showcase
 
-루트에는 통합 실행 명령이 없습니다. 각 애플리케이션 디렉터리에서 필요한 검증을 실행합니다.
+| | Colog | 대표 기록 |
+| :---: | :--- | :--- |
+| <img src="https://techcourse-project-2026.s3.ap-northeast-2.amazonaws.com/rilog/images/originals/4-470b8ef4-8209-4199-9edb-3be2f61ec95d.jpg" width="56" alt="Rilog." /> | [**Rilog.**](https://www.rilog.kr/@rilog) | [프론트엔드 개발자가 AWS 서버를 옮기면 벌어지는 일](https://www.rilog.kr/@rilog/posts/523)<br />[THE Rilog. - Jev 도입기](https://www.rilog.kr/@rilog/posts/502) |
+| <img src="https://techcourse-project-2026.s3.ap-northeast-2.amazonaws.com/rilog/images/originals/78-7634cfc2-4657-43de-889c-0dfe6d0192f5.jpg" width="56" alt="Homo Scribens" /> | [**Homo Scribens**](https://www.rilog.kr/@homo_scribens) | [\[시스템 디자인\] 기능/비기능 요구사항 정의](https://www.rilog.kr/@homo_scribens/posts/579)<br />[\[시스템 디자인\] 분산 로깅 설계](https://www.rilog.kr/@homo_scribens/posts/554) |
+| <img src="https://techcourse-project-2026.s3.ap-northeast-2.amazonaws.com/rilog/images/originals/11a83883-5cc5-4dfd-823a-1bb241215ba4harudle.png" width="56" alt="하루들" /> | [**하루들**](https://www.rilog.kr/@harudle) | [RDS에서 EC2 PostgreSQL로 데이터베이스 전환기](https://www.rilog.kr/@harudle/posts/372)<br />[하루들 팀이 일하는 방식을 고쳐온 이야기](https://www.rilog.kr/@harudle/posts/518) |
+| <img src="https://techcourse-project-2026.s3.ap-northeast-2.amazonaws.com/rilog/images/originals/15-9b12516e-037c-4721-a76e-639016a94bb8.png" width="56" alt="Knot" /> | [**Knot**](https://www.rilog.kr/@knot) | [EP.9 녹음 모델 전사 품질 개선 과정](https://www.rilog.kr/@knot/posts/362)<br />[EP.4 서로 다른 ‘안다’의 기준](https://www.rilog.kr/@knot/posts/262) |
 
-```bash
-# 프론트엔드
-cd frontend
-pnpm check
-pnpm test:e2e
+---
 
-# 백엔드
-cd backend
-./gradlew test
-./gradlew build
-```
+## Tech Stack
 
-`pnpm check`는 포맷, 린트, 타입 검사, 단위·컴포넌트 테스트와 프로덕션 빌드를 실행합니다. Playwright E2E는 브라우저가 필요하므로 핵심 사용자 흐름을 바꾼 경우 별도로 실행합니다. 세부 품질 기준은 [frontend/AGENTS.md](frontend/AGENTS.md)와 [quality-gates.md](docs/harness/quality-gates.md)를 따릅니다.
+| | |
+| :--- | :--- |
+| **Frontend** | Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · TanStack Query · BlockNote |
+| **Backend** | Java 21 · Spring Boot 4 · JPA · PostgreSQL · Redis |
+| **Infra** | AWS S3 · Docker · GitHub Actions · EC2 · Sentry · PostHog |
+
+---
+
+## Team
+
+| <a href="https://github.com/JetProc"><img src="https://avatars.githubusercontent.com/u/46674347?v=4" width="90" alt="파라디" /></a> | <a href="https://github.com/gustn99"><img src="https://avatars.githubusercontent.com/u/141705278?v=4" width="90" alt="아지" /></a> | <a href="https://github.com/koreaioi"><img src="https://avatars.githubusercontent.com/u/147616203?v=4" width="90" alt="koreaioi" /></a> | <a href="https://github.com/Wlsflfh"><img src="https://avatars.githubusercontent.com/u/185534795?v=4" width="90" alt="진리로" /></a> |
+| :---: | :---: | :---: | :---: |
+| [**파라디**](https://www.rilog.kr/@jetproc) | [**아지**](https://www.rilog.kr/@gustn99) | [**koreaioi**](https://www.rilog.kr/@koreaioi) | [**진리로**](https://www.rilog.kr/@jinriro) |
+| Frontend | Frontend | Backend | Backend |
+
+<br />
+
+<div align="center">
+
+[공지 블로그 (`@official`)](https://www.rilog.kr/@official) &nbsp;·&nbsp; [Rilog. Colog (`@rilog`)](https://www.rilog.kr/@rilog) &nbsp;·&nbsp; [rilog.admin@gmail.com](mailto:rilog.admin@gmail.com)
+
+</div>
